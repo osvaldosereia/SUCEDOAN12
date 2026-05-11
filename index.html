@@ -365,48 +365,6 @@
             </div>
             
             <div class="chk-section">
-                <div class="chk-title">Seus Dados</div>
-
-                <div class="input-group">
-                    <label class="input-label">Nome Completo</label>
-                    <input type="text" id="chk-nome" class="input-text" placeholder="Seu nome" required>
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label">CPF <span style="color:var(--danger); font-size:11px;">(Nota Fiscal)</span></label>
-                    <input type="tel" id="chk-cpf" class="input-text" placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)" required>
-                </div>
-                
-                <div class="input-group">
-                    <label class="input-label">WhatsApp (Celular)</label>
-                    <input type="tel" id="chk-whats" class="input-text" placeholder="(00) 00000-0000" maxlength="15" oninput="mascaraWhats(this)" required>
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label">CEP</label>
-                    <input type="tel" id="chk-cep" class="input-text" placeholder="00000-000" maxlength="9" oninput="mascaraCEP(this)" onblur="buscaCEP(this.value)" required>
-                </div>
-                
-                <div class="input-group">
-                    <label class="input-label">Endereço (Rua, Número, Complemento)</label>
-                    <input type="text" id="chk-endereco" class="input-text" placeholder="Rua X, nº 123" required>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="input-group" style="margin-bottom:0;">
-                        <label class="input-label">Bairro</label>
-                        <input type="text" id="chk-bairro" class="input-text" required>
-                    </div>
-                    <div class="input-group" style="margin-bottom:0;">
-                        <label class="input-label">Cidade / UF</label>
-                        <input type="text" id="chk-cidade-uf" class="input-text" readonly style="background: #e2e8f0; color: #64748b;">
-                        <input type="hidden" id="chk-cidade">
-                        <input type="hidden" id="chk-estado">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="chk-section">
                 <div class="chk-title">Pagamento (Ao receber o pedido)</div>
                 <div class="pay-options" id="main-payment-options">
                     <button class="pay-btn selected" onclick="selectPayment('PIX', this)">PIX</button>
@@ -1264,23 +1222,6 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
         window.selectPayment = function(metodo, btn) { $('chk-pagamento').value = metodo; document.querySelectorAll('#main-payment-options .pay-btn').forEach(el => el.classList.remove('selected')); btn.classList.add('selected'); if(metodo === 'Cartão Alimentação' || metodo === 'Cartão Refeição') $('voucher-brands-container').style.display = 'grid'; else { $('voucher-brands-container').style.display = 'none'; $('chk-voucher').value = ''; document.querySelectorAll('.brand-btn').forEach(el => el.classList.remove('selected')); } };
         window.selectVoucherBrand = function(brand, btn) { $('chk-voucher').value = brand; document.querySelectorAll('.brand-btn').forEach(el => el.classList.remove('selected')); btn.classList.add('selected'); };
         
-        window.buscaCEP = async function(cep) {
-            let num = cep.replace(/\D/g, "");
-            if(num.length !== 8) return;
-            try {
-                let res = await fetch(`https://viacep.com.br/ws/${num}/json/`);
-                let data = await res.json();
-                if(!data.erro) {
-                    $('chk-endereco').value = data.logradouro + ", ";
-                    $('chk-bairro').value = data.bairro;
-                    $('chk-cidade-uf').value = data.localidade + " / " + data.uf;
-                    $('chk-cidade').value = data.localidade;
-                    $('chk-estado').value = data.uf;
-                    $('chk-endereco').focus();
-                }
-            } catch(e) { console.log(e); }
-        }
-
         function renderCheckoutItems() {
             let htmlItems = STATE.cartOrder.map(id => {
                 // Não renderiza itens que começam com fee_ para que a taxa extra fique oculta visualmente
@@ -1376,35 +1317,11 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
         window.sendOrder = async function() {
             const btn = $('btn-send-order'); if (btn.disabled) return;
             
-            const nome = $('chk-nome').value.trim(); 
-            const cpf = $('chk-cpf').value.replace(/\D/g,"");
-            const whats = $('chk-whats').value.replace(/\D/g,"");
-            const cep = $('chk-cep').value.replace(/\D/g,"");
-            const endereco = $('chk-endereco').value.trim();
-            const bairro = $('chk-bairro').value.trim();
-            const cidade = $('chk-cidade').value.trim();
-            const estado = $('chk-estado').value.trim();
-            
             let pag = $('chk-pagamento').value; 
             let voucher = $('chk-voucher').value;
             
             if ((pag === 'Cartão Alimentação' || pag === 'Cartão Refeição') && !voucher) return alert("Por favor, selecione a bandeira do cartão."); 
             if (voucher) pag += ` (${voucher})`;
-            
-            if (!nome || !cpf || !whats || !cep || !endereco || !bairro || !cidade || !estado) {
-                return alert("Por favor, preencha todos os seus dados de entrega e contato para prosseguir."); 
-            }
-            
-            salvarDadosLocalmente({ 
-                nome, 
-                cpf: $('chk-cpf').value, 
-                whats: $('chk-whats').value, 
-                cep: $('chk-cep').value, 
-                endereco, 
-                bairro, 
-                cidade, 
-                estado 
-            });
             
             btn.innerHTML = "Processando...";
             const orderId = String(Date.now()).slice(-6); 
@@ -1445,19 +1362,8 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
                 });
             }
 
-            // O Webhook envia a taxa extra em "outras_despesas"
+            // O Webhook envia a taxa extra em "outras_despesas" (sem dados do cliente)
             const makePayload = {
-                cliente: {
-                    nome: nome,
-                    cpf: cpf,
-                    whats: whats,
-                    cidade: cidade,
-                    estado: estado,
-                    cep: cep,
-                    bairro: bairro,
-                    endereco: endereco,
-                    pagamento: pag
-                },
                 pedido: {
                     itens: pedidoItens,
                     total: final,
@@ -1482,18 +1388,9 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
             if (STATE.deliveryDiscount > 0) descontosTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
             if (STATE.couponDiscount > 0) descontosTxt += `\n🎟️ CUPOM (${STATE.appliedCoupon}): -${fmt(STATE.couponDiscount)}`;
 
-            // O Whatsapp omite a despesa extra, o cliente vê apenas o valor embutido no total
+            // O Whatsapp omite a despesa extra e os dados pessoais do cliente
             const msg = `*PEDIDO #${orderId}*
 ------------------------------
-*DADOS DO CLIENTE*
-👤 *NOME:* ${nome}
-📄 *CPF:* ${cpf}
-📱 *WHATS:* ${whats}
-📍 *ENDEREÇO:* ${endereco}
-🏘️ *BAIRRO:* ${bairro}
-🏙️ *CIDADE:* ${cidade} - ${estado}
-📌 *CEP:* ${cep}
-
 *INFORMAÇÕES*
 💳 *PAGAMENTO:* ${pag}
 🚚 *DATA ENTREGA:* ${STATE.deliveryDateStr}
@@ -1545,28 +1442,6 @@ ${itemsTxt}
         }
         
         function saveCart() {}
-        
-        function carregarDadosSalvos() { 
-            try { 
-                let d = JSON.parse(localStorage.getItem('da_user') || '{}'); 
-                if(d.nome) $('chk-nome').value = d.nome; 
-                if(d.cpf) $('chk-cpf').value = d.cpf; 
-                if(d.whats) $('chk-whats').value = d.whats;
-                if(d.cep) $('chk-cep').value = d.cep;
-                if(d.endereco) $('chk-endereco').value = d.endereco;
-                if(d.bairro) $('chk-bairro').value = d.bairro;
-                if(d.cidade && d.estado) {
-                    $('chk-cidade').value = d.cidade;
-                    $('chk-estado').value = d.estado;
-                    $('chk-cidade-uf').value = d.cidade + " / " + d.estado;
-                }
-            } catch(e){} 
-        }
-        function salvarDadosLocalmente(dados) { localStorage.setItem('da_user', JSON.stringify(dados)); }
-        
-        window.mascaraCPF = function(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); i.value = v; }
-        window.mascaraWhats = function(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/^(\d{2})(\d)/g, "($1) $2"); v = v.replace(/(\d)(\d{4})$/, "$1-$2"); i.value = v; }
-        window.mascaraCEP = function(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/^(\d{5})(\d)/, "$1-$2"); i.value = v; }
 
     async function fetchWithCache(url) {
         try { 
@@ -1662,7 +1537,7 @@ ${itemsTxt}
                 });
                 aplicarDescontos(STATE.prods);
             }
-            loadCart(); carregarDadosSalvos(); updateTotals(); handleRoute();
+            loadCart(); updateTotals(); handleRoute();
         } catch (e) { console.error("Erro na inicialização:", e); }
     }
         
