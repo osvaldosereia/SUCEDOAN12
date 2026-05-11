@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dona Antônia - Supermercado e Cestas</title>
+    
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="description" id="meta-description" content="Supermercado online e cestas básicas com entrega em Cuiabá e Várzea Grande.">
     <link rel="icon" href="data:,">
     
@@ -1477,10 +1481,37 @@ ${itemsTxt}
         }; 
 
         // ==========================================
-        // DADOS E INICIALIZAÇÃO
+        // DADOS, INICIALIZAÇÃO E ANTI-CACHE AGRESSIVO
         // ==========================================
-        function loadCart() { try { let saved = localStorage.getItem('da_cart'); let savedOrder = localStorage.getItem('da_cart_order'); let savedCustom = localStorage.getItem('da_custom'); if (saved) STATE.cart = JSON.parse(saved); if (savedOrder) STATE.cartOrder = JSON.parse(savedOrder); if (savedCustom) STATE.basketCustomizations = JSON.parse(savedCustom); } catch(e) {} }
-        function saveCart() { localStorage.setItem('da_cart', JSON.stringify(STATE.cart)); localStorage.setItem('da_cart_order', JSON.stringify(STATE.cartOrder)); localStorage.setItem('da_custom', JSON.stringify(STATE.basketCustomizations));}
+        
+        // Função que varre o celular do cliente e apaga tudo do site, exceto os dados do usuário
+        function forcarLimpezaDeCacheClient() {
+            const chavesProtegidas = ['da_user']; // O que NÃO queremos apagar (dados de entrega)
+            const todasAsChaves = Object.keys(localStorage);
+            
+            todasAsChaves.forEach(chave => {
+                if (!chavesProtegidas.includes(chave)) {
+                    localStorage.removeItem(chave);
+                }
+            });
+            console.log("Limpeza de cache agressiva concluída. Apenas dados do usuário mantidos.");
+        }
+
+        // Executamos a limpeza imediatamente assim que o script é lido
+        forcarLimpezaDeCacheClient();
+
+        // O Carrinho agora vive apenas na memória enquanto a aba está aberta.
+        // Se a página for atualizada, ele zera, garantindo que não há preços velhos.
+        function loadCart() { 
+            STATE.cart = {}; 
+            STATE.cartOrder = []; 
+            STATE.basketCustomizations = {}; 
+        }
+        
+        function saveCart() { 
+            // Função mantida vazia para não quebrar o código existente, 
+            // mas NÃO SALVA MAIS NADA no localStorage.
+        }
         
         function carregarDadosSalvos() { 
             try { 
@@ -1504,18 +1535,21 @@ ${itemsTxt}
         window.mascaraWhats = function(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/^(\d{2})(\d)/g, "($1) $2"); v = v.replace(/(\d)(\d{4})$/, "$1-$2"); i.value = v; }
         window.mascaraCEP = function(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/^(\d{5})(\d)/, "$1-$2"); i.value = v; }
 
-    async function fetchWithCache(url, key) {
+    async function fetchWithCache(url) {
         try { 
-            // 1. Limpamos o cache antigo que possa ter ficado preso no telemóvel dos clientes
-            localStorage.removeItem(key);
-            localStorage.removeItem(key + '_time');
-
-            // 2. Criamos uma URL nova a cada milissegundo para forçar o download (Cache-Busting)
+            // Criamos uma URL nova a cada milissegundo para forçar o download (Cache-Busting)
             let separador = url.includes('?') ? '&' : '?';
             let urlSemCache = url + separador + 'nocache=' + Date.now();
             
-            // 3. Fazemos a requisição direta ao servidor
-            let res = await fetch(urlSemCache).then(r => r.json()); 
+            // Fazemos a requisição com parâmetros rigorosos para ignorar o cache HTTP
+            let res = await fetch(urlSemCache, {
+                cache: 'no-store', // Diz ao navegador para buscar na rede sempre
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            }).then(r => r.json()); 
+            
             return res; 
         } catch (e) { 
             console.error("Erro ao buscar ficheiro sem cache:", e);
@@ -1581,7 +1615,9 @@ ${itemsTxt}
 
     async function init() {
         try {
-            const r2 = await fetchWithCache('/site/produtos.json?v=2', 'cache_prods_v2');
+            // Chamamos a função apenas com a URL. O sistema anti-cache tratará do resto.
+            const r2 = await fetchWithCache('/site/produtos.json?v=2');
+            
             if (r2 && r2.length > 0) {
                 STATE.prods = r2.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => {
                     let baseName = p.nome ? formatName(p.nome.trim()) : "Produto"; 
