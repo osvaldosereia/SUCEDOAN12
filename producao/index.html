@@ -455,12 +455,11 @@
 
         window.searchGoogleInfo = function(nome) { 
             if(!nome) return; 
-            // Busca o nome do produto + termos relevantes para compradores
             window.open(`https://www.google.com/search?q=${encodeURIComponent(nome + " pesquise em sites especializados e traga um breve review sobre o produto. Inclua as informações mais relevantes para exclarecer duvidas e convencer o cliente a comprar o produto. Retire os links e valores da resposta.")}`, '_blank'); 
         }
 
         // ==========================================================
-        // GESTOR DE COMUNICAÇÃO COM GITHUB (ATUALIZADO)
+        // GESTOR DE COMUNICAÇÃO COM GITHUB
         // ==========================================================
         const GitHubAPI = {
             getConfig: function() {
@@ -475,11 +474,9 @@
                 return { "Authorization": `Bearer ${cfg.token}`, "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" };
             },
             
-            // NOVO: Codificador seguro para grandes volumes de texto (Salvar Nuvem)
             encodeUTF8toBase64: function(str) {
                 const bytes = new TextEncoder().encode(str);
                 let binString = '';
-                // Processa em pequenos blocos para evitar estouro de memória no navegador
                 const chunkSize = 8192;
                 for (let i = 0; i < bytes.length; i += chunkSize) {
                     const chunk = bytes.subarray(i, i + chunkSize);
@@ -488,15 +485,14 @@
                 return btoa(binString);
             },
             
-            // NOVO: Descodificador seguro que remove quebras de linha (Baixar Nuvem)
             decodeBase64toUTF8: function(base64) {
-                const cleanBase64 = base64.replace(/\s/g, ''); // Limpa \n e espaços
+                const cleanBase64 = base64.replace(/\s/g, ''); 
                 const binString = atob(cleanBase64);
                 const bytes = new Uint8Array(binString.length);
                 for (let i = 0; i < binString.length; i++) {
                     bytes[i] = binString.charCodeAt(i);
                 }
-                return new TextDecoder('utf-8').decode(bytes); // Decodifica perfeitamente acentos e emojis
+                return new TextDecoder('utf-8').decode(bytes); 
             },
 
             getFileData: async function(path) {
@@ -517,7 +513,6 @@
                 let finalBase64 = content;
                 if (!isBase64Ready) {
                     const contentStr = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
-                    // Usa o novo sistema de codificação seguro em vez do antigo btoa(unescape...)
                     finalBase64 = this.encodeUTF8toBase64(contentStr); 
                 }
                 
@@ -609,7 +604,6 @@
                     }
                 });
 
-                // Limpeza Profunda
                 if (Array.isArray(cleanP.tag_global)) {
                     cleanP.tag_global = cleanP.tag_global.filter(t => tagsDoSistema.includes(t));
                 }
@@ -746,14 +740,12 @@
             try { const m = await localforage.getItem(MARCAS_KEY); if(m && Array.isArray(m)) marcasDoSistema = m; } catch (err) {}
             try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {} 
             
-            // CÓDIGO CORRIGIDO: Rastreio e Auto-limpeza de IDs e Códigos (SKUs) duplicados
             let idsExistentes = new Set();
             let skusExistentes = new Set();
             let precisaSalvarCat = false, precisaSalvarMarca = false, precisaSalvarTag = false;
             let precisaSalvarProd = false;
 
             products.forEach((p, index) => {
-                // 1. VALIDAÇÃO DE ID ÚNICO
                 if (!p.id || idsExistentes.has(p.id)) {
                     p.id = Date.now().toString() + index.toString() + Math.floor(Math.random() * 10000).toString();
                     p.last_update = Date.now();
@@ -761,7 +753,6 @@
                 }
                 idsExistentes.add(p.id);
 
-                // 2. VALIDAÇÃO DE CÓDIGO (SKU) ÚNICO
                 if (!p.codigo || skusExistentes.has(p.codigo)) {
                     p.codigo = Date.now().toString().slice(-6) + index.toString().padStart(4, '0') + Math.floor(Math.random() * 1000).toString();
                     p.last_update = Date.now();
@@ -1023,7 +1014,6 @@
             const gridContainer = document.getElementById('product-grid');
             const mainContent = document.getElementById('main-content-pim');
             
-            // LÓGICA DE PERSISTÊNCIA DA BUSCA
             if (searchTerm === null && !keepLoaded) {
                 searchTerm = ultimoTermoPesquisa;
             } else if (searchTerm !== null) {
@@ -1201,7 +1191,6 @@
             else if(['preco','estoque','preco_custo'].includes(field)) { finalVal = parseFloat(value.toString().replace(',','.')) || 0; }
             p[field] = finalVal; p.last_update = Date.now(); await saveDataLocally(); 
             
-            // Mantém o termo de pesquisa e a quantidade de cards carregados
             renderGrid(ultimoTermoPesquisa, true); 
         }
         
@@ -1605,7 +1594,6 @@
                     return alert("Arquivo produtos.json não encontrado ou vazio na nuvem.");
                 }
                 
-                // UTILIZA O NOSSO NOVO DESCODIFICADOR SEGURO
                 const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
                 const parsedData = JSON.parse(decodedStr);
                 
@@ -1719,7 +1707,7 @@
             }
 
            return {
-                "ID": p.id || "", 
+                "ID": "", // CÓDIGO CORRIGIDO: Coluna enviada em branco força o Bling a atualizar o produto baseando-se no Código (SKU)
                 "Código": p.codigo || "",
                 "Descrição": p.nome || "",
                 "Unidade": "UN",
@@ -1892,7 +1880,6 @@
                             produtoExistente.last_update = Date.now();
                             atualizados++;
                         } else {
-                            // CÓDIGO CORRIGIDO: Garante ID e SKU 100% únicos na importação
                             let novoIdBling = idBling || (Date.now().toString() + idx.toString() + Math.floor(Math.random() * 10000).toString());
                             let novoSkuBling = skuBling || (Date.now().toString().slice(-6) + idx.toString().padStart(4, '0') + Math.floor(Math.random() * 1000).toString());
 
