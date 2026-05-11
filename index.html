@@ -1301,15 +1301,14 @@ const BASKETS = [
                 cidade, 
                 estado 
             });
-            
             btn.innerHTML = "Processando...";
             const orderId = String(Date.now()).slice(-6); 
             let itemsTxt = ""; 
             let totalBruto = 0; 
             let totalDescontoCestas = 0;
-            
             let pedidoItens = [];
 
+            // 1. Processamento dos Itens do Carrinho
             Object.entries(STATE.cart).forEach(([cartId, q]) => { 
                 const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
                 if (p) { 
@@ -1322,33 +1321,30 @@ const BASKETS = [
                             qtd: q,
                             price: p.price
                         });
-                    }
-                    else { 
+                    } else { 
                         let bId = String(cartId).replace('fee_', ''); 
                         let bObj = BASKETS.find(b => b.id === bId); 
                         if (bObj && bObj.oldPrice) totalDescontoCestas += ((bObj.oldPrice - bObj.preco) * q); 
                     } 
                 } 
             });
-            
+
+            // 2. Cálculos de Descontos e Total
             let totalDescontoFormatado = STATE.deliveryDiscount + STATE.couponDiscount + STATE.atacadoDiscount + totalDescontoCestas;
             let final = totalBruto - totalDescontoFormatado;
-            
-            let customTxt = "\n\n------------------------\n";
+
+            // 3. Lógica de Status das Cestas (Padrão vs Alterada)
+            let basketStatusTxt = "";
             let hasBasket = Object.keys(STATE.basketCustomizations).length > 0;
             if (hasBasket) {
                 Object.keys(STATE.basketCustomizations).forEach(bId => {
                     let diff = STATE.basketCustomizations[bId];
-                    if(diff.changed) {
-                        customTxt += `*Cesta Escolhida:* ${diff.name} (ALTERADA)\n`;
-                    } else { 
-                        customTxt += `*Cesta Escolhida:* ${diff.name} (PADRÃO)\n`; 
-                    }
+                    let status = diff.changed ? "(ALTERADA)" : "(PADRÃO)";
+                    basketStatusTxt += `\n*Cesta Escolhida:* ${diff.name} ${status}`;
                 });
-            } else { 
-                customTxt += `*Pedido Personalizado (Itens Avulsos)*\n`; 
             }
-            
+
+            // 4. Envio de Dados para o Make.com (Webhook)
             const makePayload = {
                 cliente: {
                     nome: nome,
@@ -1366,7 +1362,7 @@ const BASKETS = [
                     total: final,
                     outras_despesas: 0,
                     desconto: totalDescontoFormatado,
-                    observacoes: `Entrega: ${STATE.deliveryDateStr} | ` + customTxt.replace(/\n/g, " ")
+                    observacoes: `Entrega: ${STATE.deliveryDateStr} | Status: ${basketStatusTxt.replace(/\n/g, " ")}`
                 }
             };
 
@@ -1380,20 +1376,50 @@ const BASKETS = [
                 console.error("Erro na comunicação com o Make.com");
             }
 
-            if (totalDescontoCestas > 0) itemsTxt += `\n🎁 BÔNUS CESTA: -${fmt(totalDescontoCestas)}`;
-            if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
-            if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
-            if (STATE.couponDiscount > 0) itemsTxt += `\n🎟️ CUPOM (${STATE.appliedCoupon}): -${fmt(STATE.couponDiscount)}`;
-            
-            const msg = `*PEDIDO #${orderId}*\n*NOME:* ${nome}\n*CPF:* ${cpf}\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n*TOTAL:* ${fmt(final)}${customTxt}`;
-            
+            // 5. Montagem dos Descontos para o Texto do WhatsApp
+            let descontosTxt = "";
+            if (totalDescontoCestas > 0) descontosTxt += `\n🎁 BÔNUS CESTA: -${fmt(totalDescontoCestas)}`;
+            if (STATE.atacadoDiscount > 0) descontosTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
+            if (STATE.deliveryDiscount > 0) descontosTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
+            if (STATE.couponDiscount > 0) descontosTxt += `\n🎟️ CUPOM (${STATE.appliedCoupon}): -${fmt(STATE.couponDiscount)}`;
+
+            // 6. Montagem da Mensagem Final do WhatsApp
+            const msg = `*PEDIDO #${orderId}*
+------------------------------
+*DADOS DO CLIENTE*
+👤 *NOME:* ${nome}
+📄 *CPF:* ${cpf}
+📱 *WHATS:* ${whats}
+📍 *ENDEREÇO:* ${endereco}
+🏘️ *BAIRRO:* ${bairro}
+🏙️ *CIDADE:* ${cidade} - ${estado}
+📌 *CEP:* ${cep}
+
+*INFORMAÇÕES*
+💳 *PAGAMENTO:* ${pag}
+🚚 *DATA ENTREGA:* ${STATE.deliveryDateStr}
+------------------------------
+*ITENS DO PEDIDO*
+${itemsTxt}
+*RESUMO DE VALORES*${descontosTxt}
+💰 *TOTAL:* ${fmt(final)}
+------------------------------${basketStatusTxt}`;
+
+            // 7. Redirecionamento e Limpeza
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             
-            STATE.cart = {}; STATE.cartOrder = []; STATE.basketCustomizations = {}; STATE.appliedCoupon = null; $('chk-cupom').value = '';
-            saveCart(); updateTotals(); renderCheckoutItems(); closeCheckout();
+            STATE.cart = {}; 
+            STATE.cartOrder = []; 
+            STATE.basketCustomizations = {}; 
+            STATE.appliedCoupon = null; 
+            $('chk-cupom').value = '';
+            
+            saveCart(); 
+            updateTotals(); 
+            renderCheckoutItems(); 
+            closeCheckout();
             
             setTimeout(() => { btn.innerHTML = `Enviar Pedido`; }, 3000);
-        };
 
         // ==========================================
         // DADOS E INICIALIZAÇÃO
