@@ -746,13 +746,14 @@
             try { const m = await localforage.getItem(MARCAS_KEY); if(m && Array.isArray(m)) marcasDoSistema = m; } catch (err) {}
             try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {} 
             
-            // CÓDIGO CORRIGIDO: Variável para rastrear os IDs que já passaram
+            // CÓDIGO CORRIGIDO: Rastreio e Auto-limpeza de IDs e Códigos (SKUs) duplicados
             let idsExistentes = new Set();
+            let skusExistentes = new Set();
             let precisaSalvarCat = false, precisaSalvarMarca = false, precisaSalvarTag = false;
             let precisaSalvarProd = false;
 
             products.forEach((p, index) => {
-                // 1. VALIDAÇÃO DE ID ÚNICO: Se não tiver ID ou se já existir na lista, cria um novo!
+                // 1. VALIDAÇÃO DE ID ÚNICO
                 if (!p.id || idsExistentes.has(p.id)) {
                     p.id = Date.now().toString() + index.toString() + Math.floor(Math.random() * 10000).toString();
                     p.last_update = Date.now();
@@ -760,11 +761,13 @@
                 }
                 idsExistentes.add(p.id);
 
-                if (!p.codigo) {
-                    p.codigo = Date.now().toString().slice(-5) + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                // 2. VALIDAÇÃO DE CÓDIGO (SKU) ÚNICO
+                if (!p.codigo || skusExistentes.has(p.codigo)) {
+                    p.codigo = Date.now().toString().slice(-6) + index.toString().padStart(4, '0') + Math.floor(Math.random() * 1000).toString();
                     p.last_update = Date.now();
                     precisaSalvarProd = true;
                 }
+                skusExistentes.add(p.codigo);
 
                 if (p.marca) p.marca = String(p.marca).toUpperCase().trim();
                 if (p.marca && !marcasDoSistema.includes(p.marca)) { marcasDoSistema.push(p.marca); precisaSalvarMarca = true; }
@@ -1198,7 +1201,7 @@
             else if(['preco','estoque','preco_custo'].includes(field)) { finalVal = parseFloat(value.toString().replace(',','.')) || 0; }
             p[field] = finalVal; p.last_update = Date.now(); await saveDataLocally(); 
             
-            // CÓDIGO CORRIGIDO: Mantém o termo de pesquisa e a quantidade de cards carregados
+            // Mantém o termo de pesquisa e a quantidade de cards carregados
             renderGrid(ultimoTermoPesquisa, true); 
         }
         
@@ -1208,9 +1211,8 @@
 
             const timestamp = Date.now();
             
-            // CÓDIGO CORRIGIDO: Adicionando aleatoriedade para IDs únicos
             const uniqueId = timestamp.toString() + Math.floor(Math.random() * 100000).toString();
-            const novoSku = timestamp.toString().slice(-8) + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            const novoSku = timestamp.toString().slice(-6) + Math.floor(Math.random() * 1000).toString().padStart(4, '0');
 
             const novoProduto = {
                 ...p,
@@ -1233,9 +1235,8 @@
         async function createNewProduct() { 
             const timestamp = Date.now(); 
             
-            // CÓDIGO CORRIGIDO: Adicionando aleatoriedade para IDs únicos
             const uniqueId = timestamp.toString() + Math.floor(Math.random() * 100000).toString();
-            const sku = timestamp.toString().slice(-8) + Math.floor(Math.random() * 1000).toString().padStart(3, '0'); 
+            const sku = timestamp.toString().slice(-6) + Math.floor(Math.random() * 1000).toString().padStart(4, '0'); 
             
             products.unshift({ 
                 id: uniqueId, 
@@ -1854,10 +1855,10 @@
                     let atualizados = 0;
                     let adicionados = 0;
                     
-                    linhas.forEach(linha => {
+                    linhas.forEach((linha, idx) => {
                         let eanBling = (linha["GTIN/EAN"] || linha["EAN"] || linha["GTIN"] || "").toString().trim();
                         let idBling = (linha["ID"] || "").toString().trim();
-                        let skuBling = (linha["Código"] || linha["Codigo"] || idBling || timestamp.toString().slice(-8) + Math.floor(Math.random()*1000)).toString().trim();
+                        let skuBling = (linha["Código"] || linha["Codigo"] || "").toString().trim();
                         let nome = linha["Descrição"] || linha["Descricao"] || "Produto Importado";
                         let precoStr = linha["Preço"] || linha["Preco"] || "0";
                         let preco = parseFloat(precoStr.toString().replace(',','.')) || 0;
@@ -1891,12 +1892,13 @@
                             produtoExistente.last_update = Date.now();
                             atualizados++;
                         } else {
-                            // CÓDIGO CORRIGIDO: Garante um ID único misturando Data, Quantidade Adicionada e Aleatoriedade
-                            let novoIdBling = idBling || (Date.now().toString() + adicionados.toString() + Math.floor(Math.random() * 10000).toString());
+                            // CÓDIGO CORRIGIDO: Garante ID e SKU 100% únicos na importação
+                            let novoIdBling = idBling || (Date.now().toString() + idx.toString() + Math.floor(Math.random() * 10000).toString());
+                            let novoSkuBling = skuBling || (Date.now().toString().slice(-6) + idx.toString().padStart(4, '0') + Math.floor(Math.random() * 1000).toString());
 
                             products.unshift({
                                 id: novoIdBling,
-                                codigo: skuBling,
+                                codigo: novoSkuBling,
                                 gtin: eanBling,
                                 nome: nome,
                                 preco: preco,
