@@ -31,10 +31,13 @@
         .svg-icon { width: 1.2em; height: 1.2em; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
         .svg-icon-fill { width: 1.2em; height: 1.2em; fill: currentColor; }
 
+        .mobile-hide { display: none !important; }
+
         /* =========================================
            1. CABEÇALHO FIXO
         ========================================= */
-        .header-main { position: fixed; top: 0; left: 0; width: 100%; height: max(var(--h-top), calc(var(--h-top) + env(safe-area-inset-top))); padding: env(safe-area-inset-top) 15px 0 15px; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); z-index: 1300; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--border-light); }
+        .header-main { position: fixed; top: 0; left: 0; width: 100%; height: max(var(--h-top), calc(var(--h-top) + env(safe-area-inset-top))); padding: env(safe-area-inset-top) 15px 0 15px; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); z-index: 1300; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-light); }
+        .header-inner { width: 100%; display: flex; align-items: center; gap: 15px; }
         .header-logo { height: 45px; width: auto; max-width: 150px; object-fit: contain; cursor: pointer; flex-shrink: 0; }
         .search-container { flex: 1; position: relative; display: flex; align-items: center; }
         .search-icon-pos { position: absolute; left: 14px; color: var(--text-light); display: flex; align-items: center; }
@@ -56,7 +59,7 @@
         .subcat-title { font-size: 15px; font-weight: 900; color: var(--text-light); padding: 25px 20px 10px 20px; background: var(--bg-body); border-bottom: 1px solid var(--border-light); margin: 0; text-transform: uppercase; letter-spacing: 1px; }
 
         /* =========================================
-           3. DESIGN DO CARD HORIZONTAL ATUALIZADO
+           3. DESIGN DO CARD (Base Mobile Horizontal)
         ========================================= */
         .product-card-list { display: flex; align-items: stretch; width: 100%; gap: 16px; background: transparent; padding: 16px 20px; border-bottom: 1px solid var(--border-light); cursor: pointer; position: relative; }
         .product-card-list:last-child { border-bottom: none; }
@@ -70,7 +73,6 @@
         
         .product-name-list { font-weight: 600; font-size: 14.5px; color: var(--text-dark); line-height: 1.3; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         
-        /* NOVO: Linha base que separa o preço (esquerda) e a ação (direita) */
         .card-bottom-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: auto; }
 
         .price-container { display: flex; flex-direction: column; gap: 0px; }
@@ -113,7 +115,7 @@
         /* =========================================
            5. MODAIS E CHECKOUT
         ========================================= */
-        .full-screen-detail { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: var(--bg-body); z-index: 2000; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1); }
+        .full-screen-detail { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: var(--bg-body); z-index: 2450; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1); }
         .full-screen-detail.active { transform: translateX(0); }
         .detail-close { position: absolute; top: max(20px, env(safe-area-inset-top)); right: 20px; width: 44px; height: 44px; background: rgba(255,255,255,0.95); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2100; box-shadow: 0 4px 15px rgba(0,0,0,0.1); cursor: pointer; color: var(--text-dark); transition: 0.2s; }
         .detail-close:active { transform: scale(0.9); }
@@ -161,7 +163,7 @@
         .btn-send:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2); }
         
         /* =========================================
-           6. BARRA INFERIOR (PADRÃO 4 ÍCONES)
+           6. BARRA INFERIOR (PADRÃO 4 ÍCONES - Somente Mobile)
         ========================================= */
         .app-bottom-bar { 
             position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: space-between; 
@@ -174,7 +176,7 @@
         }
         .app-nav-item.active { color: var(--primary); }
         .app-nav-item .svg-icon { width: 1.8em; height: 1.8em; stroke-width: 2.2; }
-        .app-nav-item .cart-badge { 
+        .cart-badge { 
             position: absolute; top: 10px; right: 50%; transform: translateX(10px); background: var(--danger); color: #fff; 
             font-size: 10.5px; font-weight: 900; padding: 2px 6px; border-radius: 12px; border: 2px solid #fff; display: none; box-shadow: 0 2px 5px rgba(239,68,68,0.3);
         }
@@ -193,6 +195,81 @@
         .carrossel-column .img-wrapper { width: 85px; height: 85px; }
         .carrossel-column .product-name-list { font-size: 13.5px; -webkit-line-clamp: 2; margin-bottom: 4px; }
 
+
+        /* =========================================
+           8. ADAPTAÇÃO DESKTOP (Responsivo)
+        ========================================= */
+        .desktop-nav { display: none; align-items: center; gap: 24px; }
+        .desktop-nav-item { font-size: 14.5px; font-weight: 800; color: var(--text-dark); cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: color 0.2s; position: relative;}
+        .desktop-nav-item:hover { color: var(--primary); opacity: 0.7; }
+        .desktop-nav-item .svg-icon { width: 1.5em; height: 1.5em; }
+
+        @media (min-width: 768px) {
+            .mobile-hide { display: flex !important; }
+            .desktop-hide { display: none !important; }
+            .app-bottom-bar { display: none !important; }
+
+            /* Header Desktop */
+            .header-main { padding: 0 30px; }
+            .header-inner { max-width: 1200px; margin: 0 auto; gap: 40px; justify-content: space-between; }
+            .search-container { max-width: 450px; flex: unset; margin: 0 auto; width: 100%; }
+            .desktop-nav { display: flex; }
+            
+            /* Container Global Desktop */
+            .main-container { max-width: 1200px; margin: 0 auto; left: 50%; transform: translateX(-50%); padding-bottom: 40px; padding-top: 30px; }
+            
+            /* Ajustes no Título da Sessão */
+            .ver-tudo-header { top: -30px; background: transparent; backdrop-filter: none; border-bottom: none; font-size: 22px; padding: 0 0 20px 0; margin: 0; box-shadow: none; pointer-events: none;}
+            .ver-tudo-header svg { display: none; }
+            
+            /* Grid System (Substitui as listas horizontais) */
+            .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; background: transparent !important; padding: 0 !important; }
+            
+            /* Card Versão Desktop (Vertical) */
+            .product-card-list { background: #fff; border: 1px solid var(--border-light); border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: transform 0.2s, box-shadow 0.2s; flex-direction: column; padding: 24px; height: 100%; align-items: center; text-align: center;}
+            .product-card-list:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
+            .product-card-list .img-wrapper { width: 160px; height: 160px; margin-bottom: 16px; margin-top: 10px;}
+            .product-card-list .product-details { width: 100%; align-items: center; justify-content: flex-start; padding: 0; }
+            .product-card-list .product-name-list { font-size: 15px; margin-bottom: 12px; }
+            .product-card-list .card-bottom-row { flex-direction: column; width: 100%; gap: 16px; margin-top: 15px; }
+            .product-card-list .price-container { align-items: center; }
+            .product-card-list .card-action-area { width: 100%; justify-content: center; }
+            
+            /* Expandir botão de Adicionar */
+            .product-card-list .btn-quick-add-list { width: 100%; height: 42px; border-radius: 12px; gap: 8px; }
+            .product-card-list .btn-quick-add-list::after { content: "Adicionar"; font-size: 14px; display: inline; }
+            .product-card-list .qty-controls { width: 100%; height: 42px; border-radius: 12px;}
+
+            /* Carrossel Desktop */
+            .carrossel-wrapper { gap: 20px; padding: 10px 0 25px 0;}
+            .carrossel-column { width: 280px; }
+            .carrossel-column .product-card-list { padding: 20px; }
+            
+            /* Modal das Cestas Desktop */
+            .full-screen-detail { width: 700px; height: 90vh; top: 50%; left: 50%; transform: translate(100vw, -50%); border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+            .full-screen-detail.active { transform: translate(-50%, -50%); }
+            .detail-close { top: -15px; right: -15px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+            
+            /* Forçar card horizontal apenas dentro do Modal para não quebrar a UI */
+            #basket-items-container .product-card-list { flex-direction: row; text-align: left; padding: 16px; }
+            #basket-items-container .product-card-list .img-wrapper { width: 90px; height: 90px; margin-bottom: 0; margin-top: 0;}
+            #basket-items-container .product-card-list .product-details { align-items: flex-start; justify-content: space-between; }
+            #basket-items-container .product-card-list .card-bottom-row { flex-direction: row; justify-content: space-between; margin-top: auto; gap: 8px; }
+            #basket-items-container .product-card-list .price-container { align-items: flex-start; }
+            #basket-items-container .product-card-list .qty-controls { width: 92px; height: 38px; border-radius: 19px; }
+
+            #basket-summary-container { position: sticky; bottom: 0; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index:10; }
+
+            /* Checkout Drawer */
+            .checkout-drawer { max-width: 480px; box-shadow: -10px 0 40px rgba(0,0,0,0.1); }
+            
+            /* Página de Produto Desktop Split-View */
+            .prod-page-container { background: #fff; border-radius: 24px; border: 1px solid var(--border-light); display: flex; flex-wrap: wrap; overflow: hidden; min-height: 500px; margin-bottom: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.04); padding: 0;}
+            .prod-page-img-box { width: 50%; height: auto; min-height: 400px; border-bottom: none; border-right: 1px solid var(--border-light); padding: 40px; background: #f8fafc;}
+            .prod-page-info { width: 50%; padding: 40px; display: flex; flex-direction: column; justify-content: center; }
+            .prod-page-desc-box { width: 100%; border-top: 1px solid var(--border-light); padding: 40px; border-bottom: none; margin-top: 0; }
+            .prod-sticky-bottom { position: relative; bottom: auto; background: transparent; padding: 0; box-shadow: none; border-top: none; margin-top: 30px; width: 100%; z-index: 1;}
+        }
     </style>
 </head>
 <body>
@@ -223,11 +300,23 @@
     </div>
     
     <div class="header-main" id="header-main">
-        <a href="#/" style="display:flex; align-items:center; text-decoration:none;"><img src="../img/logoantonia5.png" alt="Dona Antônia" class="header-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y5ZmFmYiIvPjwvc3ZnPg=='"></a>
-        <div class="search-container">
-            <div class="search-icon-pos"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
-            <input type="text" id="app-search-input" class="topbar-search" placeholder="O que você precisa?" oninput="handleSearchInput()">
-            <div class="clear-search-btn" id="clear-search-btn" onclick="clearSearch()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div>
+        <div class="header-inner">
+            <a href="#/" style="display:flex; align-items:center; text-decoration:none;"><img src="../img/logoantonia5.png" alt="Dona Antônia" class="header-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y5ZmFmYiIvPjwvc3ZnPg=='"></a>
+            
+            <div class="search-container">
+                <div class="search-icon-pos"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
+                <input type="text" id="app-search-input" class="topbar-search" placeholder="O que você precisa?" oninput="handleSearchInput()">
+                <div class="clear-search-btn" id="clear-search-btn" onclick="clearSearch()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div>
+            </div>
+
+            <div class="desktop-nav mobile-hide">
+                <a href="#/mercado" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l1.5 12h15L21 9M3 9h18M3 9L4.5 3h15L21 9"></path></svg> Mercado</a>
+                <a href="#/ofertas" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg> Ofertas</a>
+                <div class="desktop-nav-item" onclick="openCheckout()">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg> Carrinho
+                    <span class="cart-badge" id="top-cart-count" style="position:absolute; top:-8px; right:-12px;">0</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -245,7 +334,7 @@
             </div>
             <div style="padding: 20px;">
                 <div id="basket-items-header" style="background: #fef2f2; color: #dc2626; font-size: 15px; font-weight: 800; padding: 14px; border-radius: 12px; text-align: center; margin-bottom: 20px; border: 1px solid #fca5a5;">Ajuste os itens da sua cesta conforme sua necessidade:</div>
-                <div id="basket-items-container" style="display: flex; flex-direction: column; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-light); overflow: hidden;"></div>
+                <div id="basket-items-container" class="products-grid" style="display: flex; flex-direction: column; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-light); overflow: hidden;"></div>
                 <div id="basket-summary-container" style="background: #ffffff; padding: 20px; border-radius: 16px; margin-top: 25px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
                     <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 18px; margin-bottom: 15px; color: var(--text-dark);"><span>Total (<span id="basket-total-items">0</span> itens)</span><span id="basket-total-price">R$ 0,00</span></div>
                     <div id="basket-diff-container" style="display: none; margin-bottom: 15px; font-size: 13px; color: var(--text-light); background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px dashed var(--border-light);"></div>
@@ -351,7 +440,7 @@
             </div>
             
             <button class="btn-send" id="btn-send-order" onclick="sendOrder()">
-                <svg class="svg-icon-fill" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"></path></svg>
+                <svg class="svg-icon-fill" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"></path></svg>
                 Enviar Pedido
             </button>
             
@@ -616,7 +705,6 @@ const BASKETS = [
         function renderInicio() {
             const vitrine = $('vitrine'); vitrine.innerHTML = '';
             
-            // --- MERCADO E DEPARTAMENTOS ---
             let catMap = new Set(); 
             STATE.prods.forEach(p => { 
                 if(p.categoria === 'Cestas') return; 
@@ -656,7 +744,7 @@ const BASKETS = [
         }
 
         function renderCestas() {
-            let html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Cestas Básicas</div><div style="background: #fff;">`;
+            let html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Cestas Básicas</div><div class="products-grid">`;
             
             BASKETS.forEach(basket => {
                 let prices = calculateBasketPrices(basket.id);
@@ -725,16 +813,18 @@ const BASKETS = [
                 let destaques = todasOfertas.filter(p => p.discountPercent >= 15);
                 let outrasOfertas = todasOfertas.filter(p => p.discountPercent < 15);
                 
-                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Ofertas</div><div style="background: #fff;">`;
+                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Ofertas</div>`;
                 
                 if (destaques.length > 0) {
-                    html += `<h3 class="subcat-title">Ofertas em Destaque</h3>`;
+                    html += `<h3 class="subcat-title">Ofertas em Destaque</h3><div class="products-grid">`;
                     destaques.forEach(p => html += renderCardHTML(p));
+                    html += `</div>`;
                 }
                 
                 if (outrasOfertas.length > 0) {
-                    html += `<h3 class="subcat-title">Mais Ofertas</h3>`;
+                    html += `<h3 class="subcat-title">Mais Ofertas</h3><div class="products-grid">`;
                     outrasOfertas.forEach(p => html += renderCardHTML(p));
+                    html += `</div>`;
                 }
                 
             } else {
@@ -748,16 +838,17 @@ const BASKETS = [
                     groups[s].push(p);
                 });
                 
-                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${cat}</div><div style="background: #fff;">`;
+                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${cat}</div>`;
                 
                 Object.keys(groups).sort().forEach(g => {
                     let subName = g === 'Geral' ? `Diversos (${cat})` : g;
-                    html += `<h3 class="subcat-title">${subName}</h3>`;
+                    html += `<h3 class="subcat-title">${subName}</h3><div class="products-grid">`;
                     groups[g].forEach(p => html += renderCardHTML(p));
+                    html += `</div>`;
                 });
             }
 
-            html += '</div></div>'; $('vitrine').innerHTML = html; lazyLoadImages();
+            html += '</div>'; $('vitrine').innerHTML = html; lazyLoadImages();
         }
 
         function renderProductPage(id) {
@@ -779,7 +870,24 @@ const BASKETS = [
                 ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)" style="height:54px; width:100%; font-size:16px; border-radius:12px;">${iconPlus} Adicionar à Sacola</div>` 
                 : `<div class="qty-controls" style="height:54px; background:#f8fafc; width:100%; border-radius:12px; position:static;"><button class="qty-btn" style="width:48px;" onclick="updateCartItem('${prod.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display" style="font-size:20px;">${q}</span><button class="qty-btn" style="width:48px;" onclick="updateCartItem('${prod.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`;
             
-            let html = `<div class="prod-page-container"><div class="ver-tudo-header" style="margin:-15px 0 0 0; box-shadow:none; border:none;" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Detalhes</div><div class="prod-page-img-box"><img src="${prod.img}" class="prod-page-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'"></div><div class="prod-page-info"><div class="prod-page-marca">${prod.marca || prod.categoria}</div>${embalagemTag}<h1 class="prod-page-title" style="margin-top:6px;">${prod.name}</h1><div class="prod-page-price-box"><div style="width:100%;"><div>${oldPriceHtml}</div><div class="prod-page-price">${discountBadge}${fmt(prod.price)}</div>${atacadoText}</div></div></div>${descHtml}</div><div class="prod-sticky-bottom" id="action-card-${prod.id}">${controlsHtml}</div>`;
+            let html = `<div class="prod-page-container">
+                            <div class="ver-tudo-header" style="margin:-15px 0 0 0; box-shadow:none; border:none; width: 100%;" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Detalhes</div>
+                            <div class="prod-page-img-box"><img src="${prod.img}" class="prod-page-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'"></div>
+                            <div class="prod-page-info">
+                                <div class="prod-page-marca">${prod.marca || prod.categoria}</div>
+                                ${embalagemTag}
+                                <h1 class="prod-page-title" style="margin-top:6px;">${prod.name}</h1>
+                                <div class="prod-page-price-box">
+                                    <div style="width:100%;">
+                                        <div>${oldPriceHtml}</div>
+                                        <div class="prod-page-price">${discountBadge}${fmt(prod.price)}</div>
+                                        ${atacadoText}
+                                    </div>
+                                </div>
+                                <div class="prod-sticky-bottom" id="action-card-${prod.id}">${controlsHtml}</div>
+                            </div>
+                            ${descHtml}
+                        </div>`;
             $('vitrine').innerHTML = html;
         }
 
@@ -788,7 +896,7 @@ const BASKETS = [
             let results = STATE.prods.filter(p => { let textoBusca = norm(p.name + " " + p.categoria + " " + p.subcategoria); return terms.every(term => textoBusca.includes(term)); });
             let header = `<div class="ver-tudo-header" style="margin: -15px 0 0 0;" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${STATE.searchQuery ? `Resultados para "${STATE.searchQuery}"` : 'Busca'}</div>`;
             if(results.length === 0) { $('vitrine').innerHTML = `<div style="padding: 15px 0;">${header}<div style="padding: 40px; text-align: center; font-weight:600; color:var(--text-light); background:var(--bg-card); margin: 20px;">Ops, não achamos "${STATE.searchQuery}".</div></div>`; return; }
-            let html = `<div style="padding: 15px 0;">${header}<div style="background: #fff;">`;
+            let html = `<div style="padding: 15px 0;">${header}<div class="products-grid">`;
             results.forEach(p => html += renderCardHTML(p)); html += '</div></div>'; $('vitrine').innerHTML = html; lazyLoadImages();
         }
 
@@ -812,10 +920,14 @@ const BASKETS = [
                 ? `<span style="text-decoration: line-through; font-size: 16px; color: #94a3b8; margin-right: 10px;">De: ${fmt(crossedPrice)}</span> Por: ${fmt(prices.final)}` 
                 : "Valor: " + fmt(prices.final);
             
-            $('basket-items-header').style.display = 'block'; $('basket-items-container').style.display = 'flex'; $('basket-summary-container').style.display = 'block'; $('vip-list-container').style.display = 'none';
+            $('basket-items-header').style.display = 'block'; $('basket-items-container').style.display = 'grid'; $('basket-summary-container').style.display = 'block'; $('vip-list-container').style.display = 'none';
             currentBasketItems = [];
             basket.produtos.forEach(itemString => { let parts = itemString.split("x "); if(parts.length === 2) { let qty = parseInt(parts[0]); let pObj = STATE.prods.find(p => p.codigo === parts[1].trim() || p.id === parts[1].trim()); if (pObj) { let pClone = {...pObj}; pClone.basketQty = qty; currentBasketItems.push({ pObj: pClone, qty: qty }); } } });
-            renderBasketItemsList(); $('basketDetailModal').classList.add('active');
+            renderBasketItemsList(); 
+            
+            $('overlay').classList.add('open');
+            $('overlay').onclick = () => { closeCheckout(); closeBasketDetail(); };
+            $('basketDetailModal').classList.add('active');
         };
 
         function renderBasketItemsList() {
@@ -870,7 +982,6 @@ const BASKETS = [
                 $('basket-total-price').innerText = basket ? fmt(precoDinamicoAtual) : 'R$ 0,00';
             }
             
-            // Lógica do DIFF (Adicionados / Retirados visualmente no Modal)
             let diffAdded = [];
             let diffRemoved = [];
             currentBasketItems.forEach(item => {
@@ -903,7 +1014,13 @@ const BASKETS = [
         }
 
         window.updateBasketItemQty = function(index, delta) { let item = currentBasketItems[index]; if (!item) return; let newQty = item.qty + delta; if (newQty < 0) newQty = 0; if (newQty > item.pObj.stock) return alert("Estoque insuficiente."); item.qty = newQty; renderBasketItemsList(); };
-        window.closeBasketDetail = function() { $('basketDetailModal').classList.remove('active'); window.currentBasketId = null; };
+        window.closeBasketDetail = function() { 
+            $('basketDetailModal').classList.remove('active'); 
+            window.currentBasketId = null; 
+            if(!$('checkout-drawer').classList.contains('open')) {
+                $('overlay').classList.remove('open');
+            }
+        };
 
         window.addBasketToCart = function() {
             if (!window.currentBasketId) return; 
@@ -1027,10 +1144,19 @@ const BASKETS = [
             while(options.length < 3) { checkDate.setDate(checkDate.getDate() + 1); if(checkDate.getDay() !== 0) { let desc = options.length === 0 ? 0 : (options.length === 1 ? 3.00 : 6.00); options.push({ title: 'Agendar', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: desc }); } }
             STATE.deliveryOptions = options; let sel = options[STATE.selectedDeliveryIndex || 0]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
             $('delivery-options-list').innerHTML = options.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})"><span>${opt.title} (${opt.dateStr})</span> ${opt.discount > 0 ? `<span style="color:var(--success); font-weight: 900;">-${fmt(opt.discount)}</span>` : ''}</button>`).join('');
-            renderCheckoutItems(); updateTotals(); $('checkout-drawer').scrollTop = 0; $('checkout-drawer').classList.add('open'); $('overlay').classList.add('open'); $('overlay').onclick = () => closeCheckout();
+            renderCheckoutItems(); updateTotals(); $('checkout-drawer').scrollTop = 0; 
+            
+            $('overlay').classList.add('open');
+            $('overlay').onclick = () => { closeCheckout(); closeBasketDetail(); };
+            $('checkout-drawer').classList.add('open'); 
         };
         
-        window.closeCheckout = function() { $('checkout-drawer').classList.remove('open'); $('overlay').classList.remove('open'); };
+        window.closeCheckout = function() { 
+            $('checkout-drawer').classList.remove('open'); 
+            if(!$('basketDetailModal').classList.contains('active')) {
+                $('overlay').classList.remove('open'); 
+            }
+        };
         
         window.selectDelivery = function(idx) { STATE.selectedDeliveryIndex = idx; let sel = STATE.deliveryOptions[idx]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr; $('delivery-options-list').innerHTML = STATE.deliveryOptions.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})"><span>${opt.title} (${opt.dateStr})</span> ${opt.discount > 0 ? `<span style="color:var(--success); font-weight: 900;">-${fmt(opt.discount)}</span>` : ''}</button>`).join(''); updateTotals(); };
         window.selectPayment = function(metodo, btn) { $('chk-pagamento').value = metodo; document.querySelectorAll('#main-payment-options .pay-btn').forEach(el => el.classList.remove('selected')); btn.classList.add('selected'); if(metodo === 'Cartão Alimentação' || metodo === 'Cartão Refeição') $('voucher-brands-container').style.display = 'grid'; else { $('voucher-brands-container').style.display = 'none'; $('chk-voucher').value = ''; document.querySelectorAll('.brand-btn').forEach(el => el.classList.remove('selected')); } };
@@ -1126,17 +1252,18 @@ const BASKETS = [
             $('sum-total').innerText = fmt(finalTotal);
             let btn = $('btn-send-order'); if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerHTML = `Pedido Mínimo: ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--text-light)'; btn.style.boxShadow = 'none'; } else { btn.disabled = false; btn.innerHTML = 'Enviar Pedido'; btn.style.background = 'var(--success)'; btn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)'; }
             
-            let badge = $('bottom-cart-count'); 
+            let badges = document.querySelectorAll('.cart-badge');
             let bottomTotal = $('bottom-cart-total');
+            
             if (count > 0) { 
-                badge.style.display = 'block'; 
-                badge.innerText = count > 99 ? '99+' : count; 
+                let txt = count > 99 ? '99+' : count;
+                badges.forEach(b => { b.style.display = 'block'; b.innerText = txt; });
                 if(bottomTotal) {
                     bottomTotal.style.display = 'block';
                     bottomTotal.innerText = fmt(finalTotal);
                 }
             } else { 
-                badge.style.display = 'none'; 
+                badges.forEach(b => { b.style.display = 'none'; });
                 if(bottomTotal) bottomTotal.style.display = 'none';
             }
         }
@@ -1181,7 +1308,6 @@ const BASKETS = [
             let totalBruto = 0; 
             let totalDescontoCestas = 0;
             
-            // Para o Webhook do Make
             let pedidoItens = [];
 
             Object.entries(STATE.cart).forEach(([cartId, q]) => { 
@@ -1191,7 +1317,7 @@ const BASKETS = [
                     if (!String(cartId).startsWith('fee_cesta')) {
                         itemsTxt += `${q}x ${p.name}\n`; 
                         pedidoItens.push({
-                            sku: String(p.codigo || p.id), // <-- Ajuste aqui: enviando APENAS o SKU para forçar a regra no Make
+                            sku: String(p.codigo || p.id),
                             nome: p.name,
                             qtd: q,
                             price: p.price
@@ -1223,7 +1349,6 @@ const BASKETS = [
                 customTxt += `*Pedido Personalizado (Itens Avulsos)*\n`; 
             }
             
-            // Payload para o Make.com (Conforme Blueprint)
             const makePayload = {
                 cliente: {
                     nome: nome,
@@ -1252,7 +1377,7 @@ const BASKETS = [
                     body: JSON.stringify(makePayload)
                 });
             } catch (err) {
-                console.error("Erro na comunicação com o Make.com, prosseguindo para o WhatsApp.");
+                console.error("Erro na comunicação com o Make.com");
             }
 
             if (totalDescontoCestas > 0) itemsTxt += `\n🎁 BÔNUS CESTA: -${fmt(totalDescontoCestas)}`;
