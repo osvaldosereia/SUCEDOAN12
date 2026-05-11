@@ -409,17 +409,15 @@
         </div>
     </div>
 
-    <!-- NOVO MODAL: TROCA DE PRODUTOS DA CESTA -->
     <div class="full-screen-detail" id="swapModal" style="z-index: 2600;">
         <div class="swap-header">
             <h2 id="swapModalTitle" style="font-size: 18px; font-weight: 900; color: var(--text-dark); text-align: center; margin-bottom: 5px;">Trocando Produto</h2>
-            <button class="btn-voltar-gigante" onclick="closeSwapModal()">
+            <button class="btn-voltar-gigante" style="background: var(--primary); color: #fff; border: none;" onclick="closeSwapModal()">
                 <svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                Cancelar e Voltar para a Cesta
+                Voltar para a lista de produtos
             </button>
         </div>
         <div class="modal-scroll-area" style="padding: 20px; background: #f8fafc;">
-            <div style="font-size: 15px; font-weight: 800; color: var(--text-light); margin-bottom: 15px; text-align: center;">Escolha um produto para substituir:</div>
             <div id="swap-items-container" class="products-grid"></div>
         </div>
     </div>
@@ -665,51 +663,40 @@ const BASKETS = [
             let cardContent = '';
 
             if (isBasketItem) {
-                // Monta a interface didática: " - X unidades + "
+                // Monta a interface didática do seletor de quantidade
                 let unitText = q === 1 ? 'unidade' : 'unidades';
                 let qtyDidatic = `
-                    <div class="qty-controls-didatic">
+                    <div class="qty-controls-didatic" style="margin-top: 8px;">
                         <button class="qty-btn-round" onclick="updateBasketItemQty(${index}, -1); event.stopPropagation();">${iconMinus}</button>
                         <span class="qty-display-didatic">${q} ${unitText}</span>
                         <button class="qty-btn-round" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();">${iconPlus}</button>
                     </div>`;
-                
-                // Nova linha alinhada horizontalmente e forçada a não quebrar (nowrap)
-                basketExtras = `
-                <div class="basket-action-row">
-                    ${qtyDidatic}
-                    <button class="btn-didatico btn-didatico-remover" onclick="removeBasketItem(${index}); event.stopPropagation();">
-                        <svg class="svg-icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        Retirar
-                    </button>
-                    <button class="btn-didatico btn-didatico-trocar" onclick="openSwapModal(${index}); event.stopPropagation();">
-                        <svg class="svg-icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        Trocar
-                    </button>
-                </div>`;
 
-                // Layout de "dois andares" para que os botões caibam na largura total do card
+                // Layout ajustado: Quadrado à esquerda, detalhes à direita e botões em tela cheia na parte inferior
                 cardContent = `
                     ${esgotadoTag}
                     <div style="display: flex; gap: 16px; width: 100%;">
-                        <div class="img-wrapper">
-                            <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'">
+                        <div class="img-wrapper" style="width: 100px; height: 100px; border-radius: 12px; overflow: hidden; background: #fff; border: 1px solid var(--border-light); flex-shrink: 0;">
+                            <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'" style="width: 100%; height: 100%; object-fit: cover;">
                         </div>
-                        <div class="product-details" style="padding-top:0; padding-bottom:0;">
-                            <div>
-                                ${tagEmbalagem}
-                                <div class="product-name-list">${prod.name}</div>
-                            </div>
-                            <div class="card-bottom-row" style="margin-top: auto;">
-                                <div class="price-container">
-                                    <div>${oldPriceHtml}</div>
-                                    <div class="tag-preco-list">${discountBadge + fmt(prod.price)}</div>
-                                    ${atacadoTag}
-                                </div>
-                            </div>
+                        <div class="product-details" style="padding: 0; align-items: flex-start; justify-content: flex-start; text-align: left; flex: 1;">
+                            ${tagEmbalagem}
+                            <div class="product-name-list" style="margin-bottom: 4px;">${prod.name}</div>
+                            <div class="tag-preco-list" style="margin-bottom: 4px;">${discountBadge + fmt(prod.price)}</div>
+                            ${qtyDidatic}
                         </div>
                     </div>
-                    ${basketExtras}
+                    
+                    <div style="display: flex; gap: 10px; width: 100%; margin-top: 15px;">
+                        <button class="btn-didatico btn-didatico-remover" style="flex: 1;" onclick="removeBasketItem(${index}); event.stopPropagation();">
+                            <svg class="svg-icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            Excluir Produto
+                        </button>
+                        <button class="btn-didatico btn-didatico-trocar" style="flex: 1;" onclick="openSwapModal(${index}); event.stopPropagation();">
+                            <svg class="svg-icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Trocar Produto
+                        </button>
+                    </div>
                 `;
             } else {
                 controlsHtml = q === 0 
@@ -1121,17 +1108,35 @@ const BASKETS = [
             let item = currentBasketItems[index];
             if(!item) return;
             let cat = item.pObj.categoria;
-            // Filtra os produtos pela mesma categoria e exclui o próprio item para não aparecer como sugestão
+            
+            // Pega a primeira palavra do produto atual usando a função de normalização já existente (tira acentos/maiúsculas)
+            let firstWord = norm(item.pObj.name).split(' ')[0];
+
+            // Filtra os produtos pela mesma categoria e exclui o próprio item
             let swapProds = STATE.prods.filter(p => p.categoria === cat && p.id !== item.pObj.id);
             
             $('swapModalTitle').innerText = "Trocando: " + item.pObj.name;
             
             let html = '';
             if(swapProds.length === 0) {
-                html = '<div style="padding: 20px; text-align: center; color: var(--text-light);">Nenhum produto similar disponível para troca no momento.</div>';
+                html = '<div style="padding: 20px; text-align: center; color: var(--text-light);">Nenhum produto disponível na mesma categoria.</div>';
             } else {
+                // Separa entre produtos que combinam com a primeira palavra e os demais
+                let matches = [];
+                let others = [];
                 swapProds.forEach(p => {
-                    html += `
+                    if (norm(p.name).includes(firstWord)) {
+                        matches.push(p);
+                    } else {
+                        others.push(p);
+                    }
+                });
+
+                // Função didática para renderizar o card de opções dentro da busca
+                const renderOptionCard = (p, isReplace) => {
+                    let btnText = isReplace ? "Substituir por este produto" : "Adicionar mais este produto";
+                    let btnColor = isReplace ? "var(--success)" : "var(--primary)";
+                    return `
                     <div class="product-card-list" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light);">
                         <div class="img-wrapper"><img src="${p.img}" class="product-icon-list" onerror="this.src='${errorImgFallback}'"></div>
                         <div class="product-details">
@@ -1140,33 +1145,57 @@ const BASKETS = [
                                 <div class="price-container">
                                     <div class="tag-preco-list" style="font-size:16px;">${fmt(p.price)}</div>
                                 </div>
-                                <button class="btn-didatico" style="background: var(--success); color: white; width: 100%; padding: 12px; font-size: 15px;" onclick="confirmSwap(${index}, '${p.id}')">✅ Escolher este</button>
+                                <button class="btn-didatico" style="background: ${btnColor}; color: white; width: 100%; padding: 12px; font-size: 14px;" onclick="confirmSwap(${index}, '${p.id}', ${isReplace})">✅ ${btnText}</button>
                             </div>
                         </div>
                     </div>`;
-                });
+                };
+
+                // Exibe os produtos que deram "Match" primeiro
+                if (matches.length > 0) {
+                    html += `<div style="font-weight: 800; font-size: 15px; color: var(--text-light); margin-bottom: 15px; text-align: center;">Opções sugeridas:</div>`;
+                    matches.forEach(p => html += renderOptionCard(p, true));
+                }
+
+                // Exibe os outros produtos da sessão abaixo
+                if (others.length > 0) {
+                    html += `<div style="font-weight: 800; font-size: 15px; color: var(--text-light); margin: 25px 0 15px; text-align: center;">Outros produtos desta sessão:</div>`;
+                    others.forEach(p => html += renderOptionCard(p, false));
+                }
             }
+            
             $('swap-items-container').innerHTML = html;
             $('swapModal').classList.add('active');
-            
-            // Força a rolagem para o topo da lista de trocas
             document.querySelector('#swapModal .modal-scroll-area').scrollTop = 0;
         };
 
-        window.confirmSwap = function(index, newProdId) {
+        // Recebemos um terceiro parâmetro (isReplace) para saber a ação correta
+        window.confirmSwap = function(index, newProdId, isReplace) {
             let newProd = STATE.prods.find(p => p.id === newProdId);
             if(!newProd) return;
             
-            // Mantém a quantidade exata que o cliente tinha do produto antigo (Instrução Tática: oldQty)
-            let oldQty = currentBasketItems[index].qty;
-            let pClone = {...newProd, basketQty: oldQty};
-            currentBasketItems[index] = { pObj: pClone, qty: oldQty };
+            if (isReplace) {
+                // Substitui o produto atual, mas mantém a quantidade que estava antes
+                let oldQty = currentBasketItems[index].qty;
+                let pClone = {...newProd, basketQty: oldQty};
+                currentBasketItems[index] = { pObj: pClone, qty: oldQty };
+                showToast("Produto trocado com sucesso!");
+            } else {
+                // Adiciona como um NOVO produto na cesta
+                let existingIndex = currentBasketItems.findIndex(item => item.pObj.id === newProdId);
+                if (existingIndex > -1) {
+                    currentBasketItems[existingIndex].qty += 1;
+                } else {
+                    let pClone = {...newProd, basketQty: 1};
+                    currentBasketItems.push({ pObj: pClone, qty: 1 });
+                }
+                showToast("Produto adicionado à cesta!");
+            }
             
-            closeSwapModal();
+            // O modal NÃO é fechado mais aqui. O cliente usará o botão "Voltar".
             
-            // Esta chamada atualiza instantaneamente a cesta e recalcula todos os preços totais com base no novo item
+            // Atualiza os cálculos e a interface imediatamente por trás
             renderBasketItemsList();
-            showToast("Produto trocado com sucesso!");
         };
 
         window.closeSwapModal = function() {
