@@ -556,12 +556,12 @@ const BASKETS = [
             };
         }
 
-        function calculateBasketPrices(basketId) {
+       function calculateBasketPrices(basketId) {
             const basket = BASKETS.find(b => b.id === basketId);
             if(!basket) return { original: 0, final: 0, atacado: 0 };
             
             let dyn = getBasketDynamicPrice(basket);
-            let original = dyn.valorFinal; // O preço base agora é dinâmico
+            let original = dyn.valorFinal; // O preço base já vem arredondado da função anterior
             
             let atacado = 0;
             if(STATE.prods.length > 0) {
@@ -571,14 +571,17 @@ const BASKETS = [
                         let qty = parseInt(p[0]);
                         let cod = p[1].trim();
                         let pObj = STATE.prods.find(x => x.codigo === cod || String(x.id) === cod);
+                        
+                        // Calcula o desconto de atacado (5%) se tiver 3 ou mais unidades
                         if(pObj && qty >= 3) {
-                            atacado += (pObj.price * 0.02) * qty;
+                            atacado += (pObj.price * 0.05) * qty; 
                         }
                     }
                 });
             }
             
-            let finalPrice = original - atacado;
+            // Arredonda o valor FINAL para cima (garante que os cards ficam sem centavos)
+            let finalPrice = Math.ceil(original - atacado);
             
             return { original: original, final: finalPrice, atacado: atacado };
         }
@@ -1061,8 +1064,8 @@ const BASKETS = [
             let dyn = getBasketDynamicPrice(basket);
             let diferencaFixa = dyn.taxaExtra; // A taxa congelada
             
-            let precoDinamicoAtual = valorSomaDosItensAtuais + diferencaFixa - totalAtacadoItemsAtuais;
-            let precoSemAtacado = valorSomaDosItensAtuais + diferencaFixa;
+            let precoDinamicoAtual = Math.ceil(valorSomaDosItensAtuais + diferencaFixa - totalAtacadoItemsAtuais);
+let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
 
             $('basket-total-items').innerText = totalItemsCount; 
             if (totalAtacadoItemsAtuais > 0) {
