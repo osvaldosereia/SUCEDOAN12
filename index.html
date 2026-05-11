@@ -97,9 +97,71 @@
         /* =========================================
            NOVAS CLASSES DIDÁTICAS PARA AS CESTAS
         ========================================= */
-        .basket-action-row { display: flex; gap: 8px; margin-top: 12px; width: 100%; border-top: 1px dashed var(--border-light); padding-top: 12px; }
-        .btn-didatico { flex: 1; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 14px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .btn-didatico:active { transform: scale(0.96); }
+        .basket-action-row { 
+            display: flex; 
+            flex-wrap: wrap; /* Permite que os itens caiam para a linha de baixo em telas minúsculas se necessário, mas tenta mantê-los juntos */
+            flex-direction: row; 
+            align-items: center; 
+            justify-content: center; /* Centraliza tudo horizontalmente */
+            gap: 8px; 
+            margin-top: 15px; 
+            width: 100%; 
+            border-top: 1px dashed var(--border-light); 
+            padding-top: 15px; 
+        }
+
+        /* Estilização do seletor didático ( - X unidades + ) */
+        .qty-controls-didatic {
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            background: #f1f5f9; 
+            padding: 4px 6px; 
+            border-radius: 30px; /* Bordas bem arredondadas para dar aparência de pílula */
+            border: 1px solid var(--border-light);
+        }
+        .qty-btn-round {
+            width: 32px; 
+            height: 32px; 
+            border-radius: 50%; 
+            background: #ffffff; 
+            border: none; 
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08); 
+            font-weight: 900; 
+            color: var(--primary); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .qty-btn-round:active {
+            transform: scale(0.9);
+            background: #e2e8f0;
+        }
+        .qty-display-didatic {
+            font-size: 13px; 
+            font-weight: 800; 
+            color: var(--text-dark); 
+            white-space: nowrap; /* Impede que o texto quebre em duas linhas */
+            padding: 0 4px;
+        }
+
+        /* Estilização dos Botões de Retirar e Trocar */
+        .btn-didatico { 
+            padding: 8px 14px; 
+            border-radius: 20px; /* Formato de pílula */
+            font-weight: 800; 
+            font-size: 13px; 
+            border: none; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 5px; /* Espaço entre ícone e texto */
+            transition: 0.2s; 
+        }
+        .btn-didatico:active { transform: scale(0.94); }
         .btn-didatico-remover { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
         .btn-didatico-trocar { background: #e0f2fe; color: #0284c7; border: 1px solid #7dd3fc; }
 
@@ -600,17 +662,25 @@ const BASKETS = [
             let basketExtras = '';
 
             if (isBasketItem) {
-                controlsHtml = `<div class="qty-controls"><button class="qty-btn" onclick="updateBasketItemQty(${index}, -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display">${q}</span><button class="qty-btn" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();">${iconPlus}</button></div>`;
+                // Monta a interface didática: " - X unidades + "
+                let unitText = q === 1 ? 'unidade' : 'unidades';
+                let qtyDidatic = `
+                    <div class="qty-controls-didatic">
+                        <button class="qty-btn-round" onclick="updateBasketItemQty(${index}, -1); event.stopPropagation();">${iconMinus}</button>
+                        <span class="qty-display-didatic">${q} ${unitText}</span>
+                        <button class="qty-btn-round" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();">${iconPlus}</button>
+                    </div>`;
                 
-                // Botões didáticos que deixam o card mais alto
+                // Nova linha alinhada horizontalmente (mesma linha)
                 basketExtras = `
                 <div class="basket-action-row">
+                    ${qtyDidatic}
                     <button class="btn-didatico btn-didatico-remover" onclick="removeBasketItem(${index}); event.stopPropagation();">
-                        <svg class="svg-icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <svg class="svg-icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         Retirar
                     </button>
                     <button class="btn-didatico btn-didatico-trocar" onclick="openSwapModal(${index}); event.stopPropagation();">
-                        <svg class="svg-icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <svg class="svg-icon" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                         Trocar
                     </button>
                 </div>`;
@@ -637,7 +707,8 @@ const BASKETS = [
                                 <div class="tag-preco-list">${isBasketItem ? '' : discountBadge + fmt(prod.price)}</div>
                                 ${atacadoTag}
                             </div>
-                            <div class="card-action-area" id="${isBasketItem ? 'basket-card-' + index : 'action-card-' + prod.id}">${controlsHtml}</div>
+                            <!-- Omitindo action-area se for cesta, para usar o basketExtras abaixo da linha do preço -->
+                            ${isBasketItem ? '' : `<div class="card-action-area" id="action-card-${prod.id}">${controlsHtml}</div>`}
                         </div>
                         ${basketExtras}
                     </div>
@@ -953,6 +1024,7 @@ const BASKETS = [
                 let dyn = getBasketDynamicPrice(basket);
                 let diferencaFixa = dyn.taxaExtra; // A taxa congelada
                 
+                // NOTA TÉCNICA: O recalculo ocorre de forma imediata porque utiliza o valorAtualizado da array currentBasketItems
                 let precoDinamicoAtual = Math.ceil(valorSomaDosItensAtuais + diferencaFixa - totalAtacadoItemsAtuais);
                 let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
 
@@ -1046,17 +1118,23 @@ const BASKETS = [
             }
             $('swap-items-container').innerHTML = html;
             $('swapModal').classList.add('active');
+            
+            // Força a rolagem para o topo da lista de trocas
+            document.querySelector('#swapModal .modal-scroll-area').scrollTop = 0;
         };
 
         window.confirmSwap = function(index, newProdId) {
             let newProd = STATE.prods.find(p => p.id === newProdId);
             if(!newProd) return;
-            // Mantém a quantidade que estava antes
+            
+            // Mantém a quantidade exata que o cliente tinha do produto antigo (Instrução Tática: oldQty)
             let oldQty = currentBasketItems[index].qty;
             let pClone = {...newProd, basketQty: oldQty};
             currentBasketItems[index] = { pObj: pClone, qty: oldQty };
             
             closeSwapModal();
+            
+            // Esta chamada atualiza instantaneamente a cesta e recalcula todos os preços totais com base no novo item
             renderBasketItemsList();
             showToast("Produto trocado com sucesso!");
         };
