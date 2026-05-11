@@ -163,7 +163,7 @@
         .btn-send:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2); }
         
         /* =========================================
-           6. BARRA INFERIOR (PADRÃO 4 ÍCONES - Somente Mobile)
+           6. BARRA INFERIOR (Somente Mobile)
         ========================================= */
         .app-bottom-bar { 
             position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: space-between; 
@@ -175,7 +175,7 @@
             color: var(--text-light); text-decoration: none; font-size: 10.5px; font-weight: 800; height: 100%; transition: color 0.2s; position: relative; cursor: pointer;
         }
         .app-nav-item.active { color: var(--primary); }
-        .app-nav-item .svg-icon { width: 1.8em; height: 1.8em; stroke-width: 2.2; }
+        .app-nav-item .svg-icon { stroke-width: 2.2; }
         .cart-badge { 
             position: absolute; top: 10px; right: 50%; transform: translateX(10px); background: var(--danger); color: #fff; 
             font-size: 10.5px; font-weight: 900; padding: 2px 6px; border-radius: 12px; border: 2px solid #fff; display: none; box-shadow: 0 2px 5px rgba(239,68,68,0.3);
@@ -278,21 +278,24 @@
 
     <div class="app-bottom-bar">
         <a href="#/" class="app-nav-item active" id="nav-inicio">
-            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><path d="M9 22V12h6v10"></path></svg>
-            Início
+            <svg class="svg-icon" style="color: #3b82f6; width: 2em; height: 2em;" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><path d="M9 22V12h6v10"></path></svg>
+            <span style="font-size: 12.5px; font-weight: 900;">Início</span>
         </a>
-        <a href="#/mercado" class="app-nav-item" id="nav-mercado">
-            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l1.5 12h15L21 9M3 9h18M3 9L4.5 3h15L21 9"></path></svg>
-            Mercado
-        </a>
+        
         <a href="#/ofertas" class="app-nav-item" id="nav-ofertas">
-            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg>
-            Ofertas
+            <svg class="svg-icon" style="color: #ef4444; width: 2em; height: 2em;" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg>
+            <span style="font-size: 12.5px; font-weight: 900;">Ofertas</span>
         </a>
+
+        <a href="#/informacoes" class="app-nav-item" id="nav-informacoes">
+            <svg class="svg-icon" style="color: #8b5cf6; width: 2em; height: 2em;" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span style="font-size: 12.5px; font-weight: 900;">Loja</span>
+        </a>
+
         <div class="app-nav-item" onclick="openCheckout()">
-            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+            <svg class="svg-icon" style="color: #10b981; width: 2em; height: 2em;" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
             <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                <span>Carrinho</span>
+                <span style="font-size: 12.5px; font-weight: 900;">Carrinho</span>
                 <span id="bottom-cart-total" style="font-size: 11px; color: var(--success); font-weight: 900; display: none; line-height: 1;">R$ 0,00</span>
             </div>
             <span class="cart-badge" id="bottom-cart-count">0</span>
@@ -478,7 +481,7 @@ const BASKETS = [
             "BELA15": { type: "percentage", value: 15, minOrder: 200, includeCategories: ["beleza", "higiene"] }
         };
 
-        const MIN_ORDER = 75; 
+        const MIN_ORDER = 85; 
 
         function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
         function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
@@ -549,9 +552,10 @@ const BASKETS = [
             if($('overlay').classList.contains('open')) $('overlay').classList.remove('open'); 
 
             document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active'));
-            if(hash === '#/' || hash === '') $('nav-inicio').classList.add('active');
-            else if(hash === '#/ofertas') $('nav-ofertas').classList.add('active');
-            else if(hash === '#/mercado' || hash.startsWith('#/departamento/')) $('nav-mercado').classList.add('active');
+            if(hash === '#/' || hash === '') { if($('nav-inicio')) $('nav-inicio').classList.add('active'); }
+            else if(hash === '#/ofertas') { if($('nav-ofertas')) $('nav-ofertas').classList.add('active'); }
+            else if(hash === '#/informacoes') { if($('nav-informacoes')) $('nav-informacoes').classList.add('active'); }
+            else if(hash === '#/mercado' || hash.startsWith('#/departamento/')) { if($('nav-mercado')) $('nav-mercado').classList.add('active'); }
 
             if (hash === '#/' || hash === '') {
                 renderInicio();
@@ -561,6 +565,9 @@ const BASKETS = [
                 document.title = "Cestas Básicas - Dona Antônia";
             } else if (hash === '#/ofertas') {
                 renderDepartamentoCompleto('Ofertas');
+            } else if (hash === '#/informacoes') {
+                renderInformacoes();
+                document.title = "Informações - Dona Antônia";
             } else if (hash === '#/mercado') {
                 initMercado();
                 document.title = "Mercado Completo - Dona Antônia";
@@ -702,8 +709,52 @@ const BASKETS = [
         };
 
         // ==========================================
-        // RENDERIZAÇÃO: PÁGINAS PRINCIPAIS
+        // RENDERIZAÇÃO: PÁGINAS PRINCIPAIS E INFORMAÇÕES
         // ==========================================
+
+        function renderInformacoes() {
+            let html = `
+            <div style="padding: 15px 0 30px 0;">
+                <div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Informações da Loja
+                </div>
+                
+                <div style="padding: 20px;">
+                    <div style="background: #fff; padding: 25px; border-radius: 16px; border: 1px solid var(--border-light); margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                        <h2 style="font-size: 20px; font-weight: 900; margin-bottom: 10px; color: var(--text-dark);">Super Cestas Básicas Dona Antônia</h2>
+                        
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
+                            <span style="color: #f59e0b; font-size: 20px; font-weight: 900; letter-spacing: 2px;">★★★★★</span>
+                            <span style="font-size: 14.5px; color: var(--text-light); font-weight: 600;">5,0 (25 avaliações no Google)</span>
+                        </div>
+                        
+                        <div style="font-size: 14.5px; color: var(--text-light); line-height: 1.6; margin-bottom: 20px;">
+                            <strong>Cesta básica</strong><br>
+                            Endereço: R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT, 78090-660
+                        </div>
+                        
+                        <div style="background: #fef3c7; color: #d97706; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 14.5px; margin-bottom: 20px; border: 1px solid #fde68a; line-height: 1.5;">
+                            🛵 ENTREGA GRÁTIS EM CUIABÁ E VÁRZEA GRANDE<br>
+                            🛍️ PEDIDO MÍNIMO ${fmt(MIN_ORDER)}
+                        </div>
+
+                        <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 10px; background: #25D366; color: #fff; text-decoration: none; padding: 16px; border-radius: 14px; font-weight: 900; font-size: 16px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); transition: 0.2s;">
+                            <svg style="width: 24px; height: 24px; fill: currentColor;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg>
+                            (65) 99815-0975
+                        </a>
+
+                        <h3 style="font-size: 16px; font-weight: 900; margin-bottom: 12px; color: var(--text-dark);">Nossas Redes Sociais</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <a href="#instagram" class="pay-btn" style="text-decoration: none; color: #e1306c; border-color: #e1306c; display: flex; align-items: center; justify-content: center; gap: 8px;">Instagram</a>
+                            <a href="#facebook" class="pay-btn" style="text-decoration: none; color: #1877f2; border-color: #1877f2; display: flex; align-items: center; justify-content: center; gap: 8px;">Facebook</a>
+                            <a href="#tiktok" class="pay-btn" style="text-decoration: none; color: #000000; border-color: #000000; display: flex; align-items: center; justify-content: center; gap: 8px;">TikTok</a>
+                            <a href="#pinterest" class="pay-btn" style="text-decoration: none; color: #bd081c; border-color: #bd081c; display: flex; align-items: center; justify-content: center; gap: 8px;">Pinterest</a>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            $('vitrine').innerHTML = html;
+        }
 
         function renderInicio() {
             const vitrine = $('vitrine'); vitrine.innerHTML = '';
@@ -1423,7 +1474,7 @@ ${itemsTxt}
             closeCheckout();
             
             setTimeout(() => { btn.innerHTML = `Enviar Pedido`; }, 3000);
-        }; // <--- Chave de fechamento da função sendOrder que estava faltando
+        }; 
 
         // ==========================================
         // DADOS E INICIALIZAÇÃO
