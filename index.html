@@ -95,6 +95,29 @@
         .qty-display { font-weight: 900; font-size: 15px; flex: 1; text-align: center; color: var(--text-dark); }
 
         /* =========================================
+           NOVAS CLASSES DIDÁTICAS PARA AS CESTAS
+        ========================================= */
+        .basket-action-row { display: flex; gap: 8px; margin-top: 12px; width: 100%; border-top: 1px dashed var(--border-light); padding-top: 12px; }
+        .btn-didatico { flex: 1; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 14px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-didatico:active { transform: scale(0.96); }
+        .btn-didatico-remover { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+        .btn-didatico-trocar { background: #e0f2fe; color: #0284c7; border: 1px solid #7dd3fc; }
+
+        .swap-header { padding: 20px; background: rgba(255,255,255,0.98); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-light); position: sticky; top: 0; z-index: 10; }
+        .btn-voltar-gigante { width: 100%; background: #f1f5f9; color: var(--text-dark); padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 900; border: 1px solid var(--border-light); display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .btn-voltar-gigante:active { transform: scale(0.98); background: #e2e8f0; }
+
+        #toast-msg {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-150%);
+            background: var(--success); color: white; padding: 14px 24px; border-radius: 30px;
+            font-weight: 900; font-size: 15px; z-index: 9999; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); opacity: 0; pointer-events: none; text-align: center; width: 90%; max-width: 400px;
+        }
+        #toast-msg.show {
+            transform: translateX(-50%) translateY(0); opacity: 1;
+        }
+
+        /* =========================================
            4. PÁGINA INDIVIDUAL DO PRODUTO
         ========================================= */
         .prod-page-container { padding-bottom: 30px; }
@@ -217,17 +240,17 @@
             .product-card-list .btn-quick-add-list::after { content: "Adicionar"; font-size: 14px; display: inline; }
             .product-card-list .qty-controls { width: 100%; height: 42px; border-radius: 12px;}
             
-            /* Modal das Cestas Desktop */
+            /* Modal das Cestas Desktop e Swap Modal */
             .full-screen-detail { width: 700px; height: 90vh; top: 50%; left: 50%; transform: translate(100vw, -50%); border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
             .full-screen-detail.active { transform: translate(-50%, -50%); }
             .detail-close { top: -15px; right: -15px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
             
             /* Forçar card horizontal apenas dentro do Modal para não quebrar a UI */
-            #basket-items-container .product-card-list { flex-direction: row; text-align: left; padding: 16px; }
-            #basket-items-container .product-card-list .img-wrapper { width: 90px; height: 90px; margin-bottom: 0; margin-top: 0;}
-            #basket-items-container .product-card-list .product-details { align-items: flex-start; justify-content: space-between; }
-            #basket-items-container .product-card-list .card-bottom-row { flex-direction: row; justify-content: space-between; margin-top: auto; gap: 8px; }
-            #basket-items-container .product-card-list .price-container { align-items: flex-start; }
+            #basket-items-container .product-card-list, #swap-items-container .product-card-list { flex-direction: row; text-align: left; padding: 16px; }
+            #basket-items-container .product-card-list .img-wrapper, #swap-items-container .product-card-list .img-wrapper { width: 90px; height: 90px; margin-bottom: 0; margin-top: 0;}
+            #basket-items-container .product-card-list .product-details, #swap-items-container .product-card-list .product-details { align-items: flex-start; justify-content: space-between; }
+            #basket-items-container .product-card-list .card-bottom-row, #swap-items-container .product-card-list .card-bottom-row { flex-direction: row; justify-content: space-between; margin-top: auto; gap: 8px; width: 100%; }
+            #basket-items-container .product-card-list .price-container, #swap-items-container .product-card-list .price-container { align-items: flex-start; }
             #basket-items-container .product-card-list .qty-controls { width: 92px; height: 38px; border-radius: 19px; }
 
             #basket-summary-container { position: sticky; bottom: 0; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index:10; }
@@ -245,6 +268,8 @@
     </style>
 </head>
 <body>
+
+    <div id="toast-msg"></div>
 
     <div class="overlay" id="overlay"></div>
 
@@ -317,6 +342,21 @@
                 </div>
                 <div id="vip-list-container" style="display: none; margin-top: 20px;"><div id="vip-items-grid"></div></div>
             </div>
+        </div>
+    </div>
+
+    <!-- NOVO MODAL: TROCA DE PRODUTOS DA CESTA -->
+    <div class="full-screen-detail" id="swapModal" style="z-index: 2600;">
+        <div class="swap-header">
+            <h2 id="swapModalTitle" style="font-size: 18px; font-weight: 900; color: var(--text-dark); text-align: center; margin-bottom: 5px;">Trocando Produto</h2>
+            <button class="btn-voltar-gigante" onclick="closeSwapModal()">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Cancelar e Voltar para a Cesta
+            </button>
+        </div>
+        <div class="modal-scroll-area" style="padding: 20px; background: #f8fafc;">
+            <div style="font-size: 15px; font-weight: 800; color: var(--text-light); margin-bottom: 15px; text-align: center;">Escolha um produto para substituir:</div>
+            <div id="swap-items-container" class="products-grid"></div>
         </div>
     </div>
 
@@ -465,6 +505,16 @@ const BASKETS = [
         const errorImgFallback = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjY2JkNWUxIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE2IDExVjdhNCA0IDAgMDAtOCAwdjRNNCA5aDE2bDEgMTJIM2wxLTEyeiIvPjwvc3ZnPg==";
 
         // ==========================================
+        // TOAST NOTIFICATIONS (Aviso na Tela)
+        // ==========================================
+        window.showToast = function(msg) {
+            let toast = $('toast-msg');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        };
+
+        // ==========================================
         // ROTEADOR HASH E NAVEGAÇÃO
         // ==========================================
         function handleRoute() {
@@ -476,6 +526,7 @@ const BASKETS = [
 
             if($('basketDetailModal').classList.contains('active')) $('basketDetailModal').classList.remove('active');
             if($('checkout-drawer').classList.contains('open')) $('checkout-drawer').classList.remove('open');
+            if($('swapModal').classList.contains('active')) $('swapModal').classList.remove('active');
             if($('overlay').classList.contains('open')) $('overlay').classList.remove('open'); 
 
             document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active'));
@@ -526,7 +577,7 @@ const BASKETS = [
         window.clearSearch = function() { $('app-search-input').value = ''; $('clear-search-btn').style.display = 'none'; STATE.searchQuery = ''; window.history.back(); };
 
         // ==========================================
-        // RENDERIZAÇÃO DE CARDS
+        // RENDERIZAÇÃO DE CARDS E BOTÕES DIDÁTICOS
         // ==========================================
         function renderCardHTML(prod, isBasketItem = false, index = null) {
             let q = isBasketItem ? prod.basketQty : (STATE.cart[prod.id] || 0);
@@ -546,8 +597,23 @@ const BASKETS = [
             let onClickAction = isBasketItem ? "" : `onclick="window.location.hash='#/produto/${prod.slug}'"`;
 
             let controlsHtml = '';
+            let basketExtras = '';
+
             if (isBasketItem) {
                 controlsHtml = `<div class="qty-controls"><button class="qty-btn" onclick="updateBasketItemQty(${index}, -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display">${q}</span><button class="qty-btn" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();">${iconPlus}</button></div>`;
+                
+                // Botões didáticos que deixam o card mais alto
+                basketExtras = `
+                <div class="basket-action-row">
+                    <button class="btn-didatico btn-didatico-remover" onclick="removeBasketItem(${index}); event.stopPropagation();">
+                        <svg class="svg-icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        Retirar
+                    </button>
+                    <button class="btn-didatico btn-didatico-trocar" onclick="openSwapModal(${index}); event.stopPropagation();">
+                        <svg class="svg-icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Trocar
+                    </button>
+                </div>`;
             } else {
                 controlsHtml = q === 0 
                     ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)">${iconPlus}</div>`
@@ -573,6 +639,7 @@ const BASKETS = [
                             </div>
                             <div class="card-action-area" id="${isBasketItem ? 'basket-card-' + index : 'action-card-' + prod.id}">${controlsHtml}</div>
                         </div>
+                        ${basketExtras}
                     </div>
                 </div>`;
         }
@@ -836,7 +903,7 @@ const BASKETS = [
         }
 
         // ==========================================
-        // LÓGICA DE CESTAS E MODAL
+        // LÓGICA DE CESTAS, MODAL, RETIRAR E TROCAR
         // ==========================================
         window.openBasketDetail = function(basketId) {
             const basket = BASKETS.find(b => b.id === basketId); if (!basket) return;
@@ -855,7 +922,7 @@ const BASKETS = [
             renderBasketItemsList(); 
             
             $('overlay').classList.add('open');
-            $('overlay').onclick = () => { closeCheckout(); closeBasketDetail(); };
+            $('overlay').onclick = () => { closeCheckout(); closeBasketDetail(); closeSwapModal(); };
             $('basketDetailModal').classList.add('active');
         };
 
@@ -864,88 +931,144 @@ const BASKETS = [
             let totalItemsCount = 0;
             
             if(currentBasketItems.length === 0) { 
-                container.innerHTML = "<p style='color: #888; text-align:center; padding: 20px;'>Nenhum item carregado.</p>"; 
-                return; 
-            }
-            
-            let html = '';
-            let valorSomaDosItensAtuais = 0;
-            let totalAtacadoItemsAtuais = 0;
-            
-            currentBasketItems.forEach((item, index) => {
-                totalItemsCount += item.qty; 
-                item.pObj.basketQty = item.qty;
-                valorSomaDosItensAtuais += (item.qty * item.pObj.price);
-                if (item.qty >= 3) {
-                    totalAtacadoItemsAtuais += (item.pObj.price * 0.05) * item.qty;
-                }
-                html += renderCardHTML(item.pObj, true, index);
-            });
-            container.innerHTML = html; 
-            
-            const basket = BASKETS.find(b => b.id === window.currentBasketId);
-            
-            let dyn = getBasketDynamicPrice(basket);
-            let diferencaFixa = dyn.taxaExtra; // A taxa congelada
-            
-            let precoDinamicoAtual = Math.ceil(valorSomaDosItensAtuais + diferencaFixa - totalAtacadoItemsAtuais);
-let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
-
-            $('basket-total-items').innerText = totalItemsCount; 
-            if (totalAtacadoItemsAtuais > 0) {
-                $('basket-total-price').innerHTML = `<span style="text-decoration:line-through; font-size:14px; color:#94a3b8; margin-right:8px;">${fmt(precoSemAtacado)}</span> ${fmt(precoDinamicoAtual)}`;
+                container.innerHTML = "<p style='color: #888; text-align:center; padding: 20px;'>A cesta está vazia.</p>"; 
             } else {
-                $('basket-total-price').innerText = basket ? fmt(precoDinamicoAtual) : 'R$ 0,00';
-            }
-            
-            let origMap = {};
-            if(basket) {
-                basket.produtos.forEach(str => { 
-                    let p = str.split("x "); 
-                    if(p.length === 2) {
-                        let qtd = parseInt(p[0]);
-                        let cod = p[1].trim();
-                        origMap[cod] = qtd;
+                let html = '';
+                let valorSomaDosItensAtuais = 0;
+                let totalAtacadoItemsAtuais = 0;
+                
+                currentBasketItems.forEach((item, index) => {
+                    totalItemsCount += item.qty; 
+                    item.pObj.basketQty = item.qty;
+                    valorSomaDosItensAtuais += (item.qty * item.pObj.price);
+                    if (item.qty >= 3) {
+                        totalAtacadoItemsAtuais += (item.pObj.price * 0.05) * item.qty;
                     }
+                    html += renderCardHTML(item.pObj, true, index);
                 });
-            }
+                container.innerHTML = html; 
+                
+                const basket = BASKETS.find(b => b.id === window.currentBasketId);
+                
+                let dyn = getBasketDynamicPrice(basket);
+                let diferencaFixa = dyn.taxaExtra; // A taxa congelada
+                
+                let precoDinamicoAtual = Math.ceil(valorSomaDosItensAtuais + diferencaFixa - totalAtacadoItemsAtuais);
+                let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
 
-            let diffAdded = [];
-            let diffRemoved = [];
-            currentBasketItems.forEach(item => {
-                let pid = item.pObj.codigo || item.pObj.id;
-                let origQty = origMap[pid] || 0;
-                let currentQty = item.qty;
-                if(currentQty > origQty) diffAdded.push(`${currentQty - origQty}x ${item.pObj.name}`);
-                else if(currentQty < origQty) diffRemoved.push(`${origQty - currentQty}x ${item.pObj.name}`);
-            });
-            
-            let diffContainer = $('basket-diff-container');
-            if(diffContainer) {
-                if(diffAdded.length > 0 || diffRemoved.length > 0) {
-                    let diffHtml = '<div style="font-weight: 800; margin-bottom: 8px; color: var(--text-dark);">Alterações feitas na cesta:</div>';
-                    if(diffAdded.length > 0) {
-                        diffHtml += '<div style="color: var(--success); margin-bottom: 6px;"><strong>+ Adicionados:</strong><br>' + diffAdded.map(x => `+ ${x}`).join('<br>') + '</div>';
-                    }
-                    if(diffRemoved.length > 0) {
-                        diffHtml += '<div style="color: var(--danger);"><strong>- Retirados:</strong><br>' + diffRemoved.map(x => `- ${x}`).join('<br>') + '</div>';
-                    }
-                    diffContainer.innerHTML = diffHtml;
-                    diffContainer.style.display = 'block';
+                $('basket-total-items').innerText = totalItemsCount; 
+                if (totalAtacadoItemsAtuais > 0) {
+                    $('basket-total-price').innerHTML = `<span style="text-decoration:line-through; font-size:14px; color:#94a3b8; margin-right:8px;">${fmt(precoSemAtacado)}</span> ${fmt(precoDinamicoAtual)}`;
                 } else {
-                    diffContainer.style.display = 'none';
-                    diffContainer.innerHTML = '';
+                    $('basket-total-price').innerText = basket ? fmt(precoDinamicoAtual) : 'R$ 0,00';
+                }
+                
+                let origMap = {};
+                if(basket) {
+                    basket.produtos.forEach(str => { 
+                        let p = str.split("x "); 
+                        if(p.length === 2) {
+                            let qtd = parseInt(p[0]);
+                            let cod = p[1].trim();
+                            origMap[cod] = qtd;
+                        }
+                    });
+                }
+
+                let diffAdded = [];
+                let diffRemoved = [];
+                currentBasketItems.forEach(item => {
+                    let pid = item.pObj.codigo || item.pObj.id;
+                    let origQty = origMap[pid] || 0;
+                    let currentQty = item.qty;
+                    if(currentQty > origQty) diffAdded.push(`${currentQty - origQty}x ${item.pObj.name}`);
+                    else if(currentQty < origQty) diffRemoved.push(`${origQty - currentQty}x ${item.pObj.name}`);
+                });
+                
+                let diffContainer = $('basket-diff-container');
+                if(diffContainer) {
+                    if(diffAdded.length > 0 || diffRemoved.length > 0) {
+                        let diffHtml = '<div style="font-weight: 800; margin-bottom: 8px; color: var(--text-dark);">Alterações feitas na cesta:</div>';
+                        if(diffAdded.length > 0) {
+                            diffHtml += '<div style="color: var(--success); margin-bottom: 6px;"><strong>+ Adicionados:</strong><br>' + diffAdded.map(x => `+ ${x}`).join('<br>') + '</div>';
+                        }
+                        if(diffRemoved.length > 0) {
+                            diffHtml += '<div style="color: var(--danger);"><strong>- Retirados:</strong><br>' + diffRemoved.map(x => `- ${x}`).join('<br>') + '</div>';
+                        }
+                        diffContainer.innerHTML = diffHtml;
+                        diffContainer.style.display = 'block';
+                    } else {
+                        diffContainer.style.display = 'none';
+                        diffContainer.innerHTML = '';
+                    }
                 }
             }
-            
             lazyLoadImages();
         }
 
         window.updateBasketItemQty = function(index, delta) { let item = currentBasketItems[index]; if (!item) return; let newQty = item.qty + delta; if (newQty < 0) newQty = 0; if (newQty > item.pObj.stock) return alert("Estoque insuficiente."); item.qty = newQty; renderBasketItemsList(); };
+        
+        window.removeBasketItem = function(index) {
+            let itemNome = currentBasketItems[index].pObj.name;
+            currentBasketItems.splice(index, 1);
+            renderBasketItemsList();
+            showToast("O item " + itemNome + " foi retirado da cesta.");
+        };
+
+        window.openSwapModal = function(index) {
+            let item = currentBasketItems[index];
+            if(!item) return;
+            let cat = item.pObj.categoria;
+            // Filtra os produtos pela mesma categoria e exclui o próprio item para não aparecer como sugestão
+            let swapProds = STATE.prods.filter(p => p.categoria === cat && p.id !== item.pObj.id);
+            
+            $('swapModalTitle').innerText = "Trocando: " + item.pObj.name;
+            
+            let html = '';
+            if(swapProds.length === 0) {
+                html = '<div style="padding: 20px; text-align: center; color: var(--text-light);">Nenhum produto similar disponível para troca no momento.</div>';
+            } else {
+                swapProds.forEach(p => {
+                    html += `
+                    <div class="product-card-list" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light);">
+                        <div class="img-wrapper"><img src="${p.img}" class="product-icon-list" onerror="this.src='${errorImgFallback}'"></div>
+                        <div class="product-details">
+                            <div class="product-name-list">${p.name}</div>
+                            <div class="card-bottom-row" style="margin-top:10px; flex-direction:column; align-items:flex-start; width:100%; gap:10px;">
+                                <div class="price-container">
+                                    <div class="tag-preco-list" style="font-size:16px;">${fmt(p.price)}</div>
+                                </div>
+                                <button class="btn-didatico" style="background: var(--success); color: white; width: 100%; padding: 12px; font-size: 15px;" onclick="confirmSwap(${index}, '${p.id}')">✅ Escolher este</button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            }
+            $('swap-items-container').innerHTML = html;
+            $('swapModal').classList.add('active');
+        };
+
+        window.confirmSwap = function(index, newProdId) {
+            let newProd = STATE.prods.find(p => p.id === newProdId);
+            if(!newProd) return;
+            // Mantém a quantidade que estava antes
+            let oldQty = currentBasketItems[index].qty;
+            let pClone = {...newProd, basketQty: oldQty};
+            currentBasketItems[index] = { pObj: pClone, qty: oldQty };
+            
+            closeSwapModal();
+            renderBasketItemsList();
+            showToast("Produto trocado com sucesso!");
+        };
+
+        window.closeSwapModal = function() {
+            $('swapModal').classList.remove('active');
+        };
+
         window.closeBasketDetail = function() { 
             $('basketDetailModal').classList.remove('active'); 
             window.currentBasketId = null; 
-            if(!$('checkout-drawer').classList.contains('open')) {
+            if(!$('checkout-drawer').classList.contains('open') && !$('swapModal').classList.contains('active')) {
                 $('overlay').classList.remove('open');
             }
         };
@@ -1066,13 +1189,13 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
             renderCheckoutItems(); updateTotals(); $('checkout-drawer').scrollTop = 0; 
             
             $('overlay').classList.add('open');
-            $('overlay').onclick = () => { closeCheckout(); closeBasketDetail(); };
+            $('overlay').onclick = () => { closeCheckout(); closeBasketDetail(); closeSwapModal(); };
             $('checkout-drawer').classList.add('open'); 
         };
         
         window.closeCheckout = function() { 
             $('checkout-drawer').classList.remove('open'); 
-            if(!$('basketDetailModal').classList.contains('active')) {
+            if(!$('basketDetailModal').classList.contains('active') && !$('swapModal').classList.contains('active')) {
                 $('overlay').classList.remove('open'); 
             }
         };
