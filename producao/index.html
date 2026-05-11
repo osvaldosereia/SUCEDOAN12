@@ -163,6 +163,9 @@
         let filtroAtivo = { tipo: null, valor: null };
         let advancedFilters = { cat: '', sub: '', subsub: '', marca: '', ncm: '', stock: '', validade: '', tag: '' };
         
+        // VARIÁVEL GLOBAL ADICIONADA PARA PERSISTÊNCIA DE PESQUISA
+        let ultimoTermoPesquisa = "";
+        
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
     </script>
 
@@ -692,7 +695,7 @@
             isFilter24hActive = !isFilter24hActive; 
             const btn = document.getElementById('btn-24h'); 
             if(isFilter24hActive) btn.classList.add('primary'); else btn.classList.remove('primary'); 
-            renderGrid(); 
+            renderGrid(ultimoTermoPesquisa); 
         }
         
         function openSidebar(id) { 
@@ -707,7 +710,7 @@
                 if(openSidebars.length === 0) { 
                     document.getElementById('sidebar-overlay').style.opacity = '0'; 
                     setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); 
-                    renderGrid(null, true);
+                    renderGrid(ultimoTermoPesquisa, true);
                 } 
             }, 50); 
         }
@@ -716,7 +719,7 @@
             document.querySelectorAll('.sidebar').forEach(el => el.classList.remove('open')); 
             document.getElementById('sidebar-overlay').style.opacity = '0'; 
             setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); 
-            renderGrid(null, true); 
+            renderGrid(ultimoTermoPesquisa, true); 
         }
 
         window.onload = async function() { 
@@ -743,10 +746,20 @@
             try { const m = await localforage.getItem(MARCAS_KEY); if(m && Array.isArray(m)) marcasDoSistema = m; } catch (err) {}
             try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {} 
             
+            // CÓDIGO CORRIGIDO: Variável para rastrear os IDs que já passaram
+            let idsExistentes = new Set();
             let precisaSalvarCat = false, precisaSalvarMarca = false, precisaSalvarTag = false;
             let precisaSalvarProd = false;
 
-            products.forEach(p => {
+            products.forEach((p, index) => {
+                // 1. VALIDAÇÃO DE ID ÚNICO: Se não tiver ID ou se já existir na lista, cria um novo!
+                if (!p.id || idsExistentes.has(p.id)) {
+                    p.id = Date.now().toString() + index.toString() + Math.floor(Math.random() * 10000).toString();
+                    p.last_update = Date.now();
+                    precisaSalvarProd = true;
+                }
+                idsExistentes.add(p.id);
+
                 if (!p.codigo) {
                     p.codigo = Date.now().toString().slice(-5) + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
                     p.last_update = Date.now();
@@ -817,7 +830,7 @@
             [marcasDoSistema, tagsDoSistema].forEach(lista => lista.sort((a, b) => a.localeCompare(b)));
 
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
-            renderGrid();
+            renderGrid(ultimoTermoPesquisa);
         }
         
         function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
@@ -910,6 +923,7 @@
             const subsubSelect = document.getElementById(`subsubcat-${sku}`);
             if(subSelect) subSelect.innerHTML = gerarOptionsSubcategorias(novaCategoria, '');
             if(subsubSelect) subsubSelect.innerHTML = gerarOptionsSubSubcategorias(novaCategoria, '', '');
+            renderGrid(ultimoTermoPesquisa, true);
         }
 
         window.mudarSubcategoriaDoProduto = async function(sku, novaSubcategoria) { 
@@ -920,6 +934,7 @@
             await saveDataLocally();
             const subsubSelect = document.getElementById(`subsubcat-${sku}`);
             if(subsubSelect) subsubSelect.innerHTML = gerarOptionsSubSubcategorias(p.categoria, novaSubcategoria, '');
+            renderGrid(ultimoTermoPesquisa, true);
         }
 
         window.atualizarSubcatsFiltro = function(catNome) {
@@ -975,7 +990,7 @@
         // ==========================================================
         // FILTROS AVANÇADOS E GLOBAIS
         // ==========================================================
-        window.limparFiltroGrid = function() { filtroAtivo = { tipo: null, valor: null }; document.getElementById('active-filter-banner').style.display = 'none'; renderGrid(); }
+        window.limparFiltroGrid = function() { filtroAtivo = { tipo: null, valor: null }; document.getElementById('active-filter-banner').style.display = 'none'; renderGrid(ultimoTermoPesquisa); }
 
         function renderizarFiltrosAvancados() {
             document.getElementById('flt-cat').innerHTML = gerarOptionsCategorias('');
@@ -995,7 +1010,7 @@
             
             filtroAtivo = { tipo: 'avancado', valor: 'Filtros Combinados' };
             document.getElementById('active-filter-banner').style.display = 'flex'; document.getElementById('filter-text-display').innerText = 'Filtros Avançados Ativos';
-            closeSidebar('filtros-sidebar'); renderGrid();
+            closeSidebar('filtros-sidebar'); renderGrid(ultimoTermoPesquisa);
         }
 
         // ==========================================================
@@ -1004,6 +1019,16 @@
         function renderGrid(searchTerm = null, keepLoaded = false) {
             const gridContainer = document.getElementById('product-grid');
             const mainContent = document.getElementById('main-content-pim');
+            
+            // LÓGICA DE PERSISTÊNCIA DA BUSCA
+            if (searchTerm === null && !keepLoaded) {
+                searchTerm = ultimoTermoPesquisa;
+            } else if (searchTerm !== null) {
+                ultimoTermoPesquisa = searchTerm;
+            } else {
+                searchTerm = ultimoTermoPesquisa;
+            }
+
             const currentScroll = mainContent ? mainContent.scrollTop : 0;
             const oldItemsCarregados = keepLoaded ? Math.max(itemsCarregados, ITENS_POR_PAGINA) : ITENS_POR_PAGINA;
 
@@ -1172,7 +1197,9 @@
             if(field === 'validade' && typeof value === 'string' && value.includes('-')) { const partes = value.split('-'); if(partes[0].length === 4) finalVal = `${partes[2]}/${partes[1]}/${partes[0]}`; } 
             else if(['preco','estoque','preco_custo'].includes(field)) { finalVal = parseFloat(value.toString().replace(',','.')) || 0; }
             p[field] = finalVal; p.last_update = Date.now(); await saveDataLocally(); 
-            if(['preco', 'preco_custo'].includes(field)) renderGrid(null, true); 
+            
+            // CÓDIGO CORRIGIDO: Mantém o termo de pesquisa e a quantidade de cards carregados
+            renderGrid(ultimoTermoPesquisa, true); 
         }
         
         window.duplicarProduto = async function(sku) {
@@ -1180,11 +1207,14 @@
             if (!p) return;
 
             const timestamp = Date.now();
-            const novoSku = timestamp.toString().slice(-8);
+            
+            // CÓDIGO CORRIGIDO: Adicionando aleatoriedade para IDs únicos
+            const uniqueId = timestamp.toString() + Math.floor(Math.random() * 100000).toString();
+            const novoSku = timestamp.toString().slice(-8) + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
 
             const novoProduto = {
                 ...p,
-                id: timestamp,
+                id: uniqueId,
                 codigo: novoSku,
                 url_imagem: "", 
                 last_update: timestamp
@@ -1192,14 +1222,36 @@
 
             products.unshift(novoProduto);
             await saveDataLocally();
-            renderGrid();
+            renderGrid(ultimoTermoPesquisa);
             window.scrollTo(0, 0); 
             mostrarAlerta("Produto duplicado com sucesso!", "sucesso");
         };
 
-        async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); renderGrid(null, true); }
-        async function deleteProduct(sku) { if(!confirm(`Apagar produto permanentemente?`)) return; products = products.filter(p => p.codigo !== sku); await saveDataLocally(); renderGrid(); }
-        async function createNewProduct() { const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, descricao: "", last_update: timestamp }); await saveDataLocally(); renderGrid(); window.scrollTo(0, 0); }
+        async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); renderGrid(ultimoTermoPesquisa, true); }
+        async function deleteProduct(sku) { if(!confirm(`Apagar produto permanentemente?`)) return; products = products.filter(p => p.codigo !== sku); await saveDataLocally(); renderGrid(ultimoTermoPesquisa); }
+        
+        async function createNewProduct() { 
+            const timestamp = Date.now(); 
+            
+            // CÓDIGO CORRIGIDO: Adicionando aleatoriedade para IDs únicos
+            const uniqueId = timestamp.toString() + Math.floor(Math.random() * 100000).toString();
+            const sku = timestamp.toString().slice(-8) + Math.floor(Math.random() * 1000).toString().padStart(3, '0'); 
+            
+            products.unshift({ 
+                id: uniqueId, 
+                codigo: sku, 
+                nome: "", 
+                preco: 0, 
+                preco_custo: 0, 
+                situacao: 'A', 
+                estoque: 0, 
+                descricao: "", 
+                last_update: timestamp 
+            }); 
+            await saveDataLocally(); 
+            renderGrid(ultimoTermoPesquisa); 
+            window.scrollTo(0, 0); 
+        }
 
         // ==========================================================
         // EDITOR DE CANVAS (NITIDEZ INCLUÍDA)
@@ -1281,7 +1333,7 @@
             if(!currentEditingSku) return; const sku = currentEditingSku; const base64full = canvas.toDataURL('image/webp', 0.9); const base64data = base64full.split(',')[1];
             const p = products.find(x => x.codigo === sku); 
             p.url_imagem = base64full; p.last_update = Date.now(); await saveDataLocally(); 
-            imageQueue.push({ sku: sku, base64data: base64data }); updateImageBadge(); closeSidebar('editor-sidebar'); renderGrid(null, true);
+            imageQueue.push({ sku: sku, base64data: base64data }); updateImageBadge(); closeSidebar('editor-sidebar'); renderGrid(ultimoTermoPesquisa, true);
         }
 
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
@@ -1350,21 +1402,21 @@
             const nome = prompt("Nova Categoria:"); if (!nome) return; const nm = nome.toUpperCase().trim(); 
             if(categoriasDoSistema.find(c => c.nome === nm)) return alert("Já existe!"); 
             categoriasDoSistema.push({ nome: nm, subcategorias: [] }); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); 
-            renderizarSidebarCategorias(); renderGrid(null, true); 
+            renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true); 
         }
         window.editarCategoria = async function(cIndex) { 
             const novoNome = prompt("Renomear categoria para:", categoriasDoSistema[cIndex].nome); if (!novoNome) return; 
             const old = categoriasDoSistema[cIndex].nome; const nm = novoNome.toUpperCase().trim(); categoriasDoSistema[cIndex].nome = nm; 
             products.forEach(p => { if(p.categoria === old) p.categoria = nm; }); 
             await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); 
-            renderizarSidebarCategorias(); renderGrid(null, true); 
+            renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true); 
         }
         window.removerCategoria = async function(cIndex) { 
             if (!confirm(`Apagar a categoria "${categoriasDoSistema[cIndex].nome}" e todos os seus níveis?`)) return; 
             const old = categoriasDoSistema[cIndex].nome; categoriasDoSistema.splice(cIndex, 1); 
             products.forEach(p => { if(p.categoria === old) { p.categoria = ""; p.subcategoria = ""; p.subsubcategoria = ""; } }); 
             await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); 
-            renderizarSidebarCategorias(); renderGrid(null, true); 
+            renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true); 
         }
 
         window.criarNovaSubcategoria = async function(cIndex) {
@@ -1379,13 +1431,13 @@
             const old = categoriasDoSistema[cIndex].subcategorias[sIndex].nome; const novoNome = prompt("Renomear subcategoria para:", old); if (!novoNome) return;
             const nm = novoNome.toUpperCase().trim(); categoriasDoSistema[cIndex].subcategorias[sIndex].nome = nm; const catName = categoriasDoSistema[cIndex].nome;
             products.forEach(p => { if(p.categoria === catName && p.subcategoria === old) p.subcategoria = nm; });
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(null, true);
+            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
         }
         window.removerSubcategoria = async function(cIndex, sIndex) {
             const old = categoriasDoSistema[cIndex].subcategorias[sIndex].nome; if (!confirm(`Apagar a subcategoria "${old}" e seus níveis?`)) return;
             const catName = categoriasDoSistema[cIndex].nome; categoriasDoSistema[cIndex].subcategorias.splice(sIndex, 1);
             products.forEach(p => { if(p.categoria === catName && p.subcategoria === old) { p.subcategoria = ""; p.subsubcategoria = ""; }});
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(null, true);
+            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
         }
 
         window.criarNovaSubSubcategoria = async function(cIndex, sIndex) {
@@ -1403,7 +1455,7 @@
             const nm = novoNome.toUpperCase().trim(); pai.subsubcategorias[ssIndex] = nm; 
             const catName = categoriasDoSistema[cIndex].nome; const subName = pai.nome;
             products.forEach(p => { if(p.categoria === catName && p.subcategoria === subName && p.subsubcategoria === old) p.subsubcategoria = nm; });
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(null, true);
+            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
         }
         window.removerSubSubcategoria = async function(cIndex, sIndex, ssIndex) {
             const pai = categoriasDoSistema[cIndex].subcategorias[sIndex];
@@ -1411,7 +1463,7 @@
             const catName = categoriasDoSistema[cIndex].nome; const subName = pai.nome;
             pai.subsubcategorias.splice(ssIndex, 1);
             products.forEach(p => { if(p.categoria === catName && p.subcategoria === subName && p.subsubcategoria === old) p.subsubcategoria = ""; });
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(null, true);
+            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
         }
 
         // ==========================================================
@@ -1433,7 +1485,7 @@
         window.criarNovoItem = async function(lista, storageKey, sidebarId) { 
             const nome = prompt("Nome do novo item:"); if (!nome || nome.trim() === "") return; 
             const nm = nome.toUpperCase().trim(); if(lista.includes(nm)) return alert("Já existe!"); 
-            lista.push(nm); await localforage.setItem(storageKey, lista); renderizarCRUD(lista, sidebarId); renderGrid(null, true); 
+            lista.push(nm); await localforage.setItem(storageKey, lista); renderizarCRUD(lista, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
         }
 
       window.editarItem = async function(sidebarId, index) { 
@@ -1450,7 +1502,7 @@
                 }
             }); 
             
-            await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(null, true); 
+            await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
         }
 
         window.removerItem = async function(sidebarId, index) { 
@@ -1465,7 +1517,7 @@
                 }
             }); 
             
-            await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(null, true); 
+            await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
         }
 
         // ==========================================================
@@ -1485,7 +1537,7 @@
                 }
             });
             if(encontrados > 0) {
-                saveDataLocally(); renderGrid();
+                saveDataLocally(); renderGrid(ultimoTermoPesquisa);
                 alert(`✅ Sucesso! ${encontrados} itens atualizados.`);
                 closeSidebar('pedidos-sidebar'); document.getElementById('order-text-input').value = "";
             } else { alert("❌ Nenhum produto encontrado com o nome exato."); }
@@ -1839,8 +1891,11 @@
                             produtoExistente.last_update = Date.now();
                             atualizados++;
                         } else {
+                            // CÓDIGO CORRIGIDO: Garante um ID único misturando Data, Quantidade Adicionada e Aleatoriedade
+                            let novoIdBling = idBling || (Date.now().toString() + adicionados.toString() + Math.floor(Math.random() * 10000).toString());
+
                             products.unshift({
-                                id: idBling || Date.now().toString(),
+                                id: novoIdBling,
                                 codigo: skuBling,
                                 gtin: eanBling,
                                 nome: nome,
@@ -1859,7 +1914,7 @@
                     
                     await saveDataLocally();
                     await loadData(); 
-                    renderGrid();
+                    renderGrid(ultimoTermoPesquisa);
                     
                     mostrarAlerta(`✅ Concluído! ${adicionados} produtos criados e ${atualizados} atualizados.`, "sucesso");
                     document.getElementById('csv-file-atualizar').value = "";
