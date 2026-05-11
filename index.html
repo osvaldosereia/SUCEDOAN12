@@ -510,9 +510,11 @@ const BASKETS = [
             return Infinity;
         }
 
-        // Nova lógica de cálculo dinâmico da Cesta (15% + arredondamento)
+        // Nova lógica de cálculo dinâmico da Cesta (Percentuais Variáveis + Arredondamento)
         function getBasketDynamicPrice(basket) {
             let valorPadraoCesta = 0;
+            
+            // 1. Calcula o valor de custo original (soma dos produtos originais)
             if(STATE.prods.length > 0) {
                 basket.produtos.forEach(str => {
                     let p = str.split("x ");
@@ -525,15 +527,32 @@ const BASKETS = [
                 });
             }
             
-            // Soma 15% ao valor de custo original
-            let valorComTaxa = valorPadraoCesta * 1.15;
-            // Arredonda para cima (sem centavos)
+            // 2. Determina a taxa extra com base no nome da cesta
+            let nomeCesta = basket.nome.toLowerCase();
+            let multiplicador = 1.15; // Deixamos 15% como fallback (segurança) caso haja algum erro de nome
+            
+            if (nomeCesta.includes("economica") || nomeCesta.includes("econômica")) {
+                multiplicador = 1.12; // 12%
+            } else if (nomeCesta.includes("mini")) {
+                multiplicador = 1.10; // 10%
+            } else if (nomeCesta.includes("pequena")) {
+                multiplicador = 1.12; // 12%
+            } else if (nomeCesta.includes("media") || nomeCesta.includes("média")) {
+                multiplicador = 1.17; // 17%
+            } else if (nomeCesta.includes("grande")) {
+                multiplicador = 1.20; // 20%
+            }
+            
+            // 3. Soma a taxa específica ao valor de custo original
+            let valorComTaxa = valorPadraoCesta * multiplicador;
+            
+            // 4. Arredonda para cima (sem centavos), incluindo a diferença na taxa
             let valorFinalArredondado = Math.ceil(valorComTaxa);
             
             return {
                 valorPadrao: valorPadraoCesta,
                 valorFinal: valorFinalArredondado,
-                taxaExtra: valorFinalArredondado - valorPadraoCesta
+                taxaExtra: valorFinalArredondado - valorPadraoCesta // Diferença real em Reais (Congelada)
             };
         }
 
