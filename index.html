@@ -172,21 +172,9 @@
         .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; z-index: 2400; transition: opacity 0.35s ease; }
         .overlay.open { opacity: 1; pointer-events: all; }
 
-        /* =========================================
-           7. CARROSSEL DE DESTAQUES E OFERTAS
-        ========================================= */
-        .carrossel-destaque-container { background: transparent; border-bottom: 1px solid var(--border-light); margin-bottom: 15px; }
-        .carrossel-wrapper { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; padding: 10px 20px 25px 20px; -webkit-overflow-scrolling: touch; }
-        .carrossel-wrapper::-webkit-scrollbar { display: none; }
-        
-        .carrossel-column { width: 85vw; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; gap: 12px; position: relative; }
-        .carrossel-column .product-card-list { border-bottom: none; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.04); padding: 14px; gap: 12px;}
-        .carrossel-column .img-wrapper { width: 85px; height: 85px; }
-        .carrossel-column .product-name-list { font-size: 13.5px; -webkit-line-clamp: 2; margin-bottom: 4px; }
-
 
         /* =========================================
-           8. ADAPTAÇÃO DESKTOP (Responsivo)
+           7. ADAPTAÇÃO DESKTOP (Responsivo)
         ========================================= */
         .desktop-nav { display: none; align-items: center; gap: 24px; }
         .desktop-nav-item { font-size: 14.5px; font-weight: 800; color: var(--text-dark); cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: color 0.2s; position: relative;}
@@ -228,11 +216,6 @@
             .product-card-list .btn-quick-add-list { width: 100%; height: 42px; border-radius: 12px; gap: 8px; }
             .product-card-list .btn-quick-add-list::after { content: "Adicionar"; font-size: 14px; display: inline; }
             .product-card-list .qty-controls { width: 100%; height: 42px; border-radius: 12px;}
-
-            /* Carrossel Desktop */
-            .carrossel-wrapper { gap: 20px; padding: 10px 0 25px 0;}
-            .carrossel-column { width: 280px; }
-            .carrossel-column .product-card-list { padding: 20px; }
             
             /* Modal das Cestas Desktop */
             .full-screen-detail { width: 700px; height: 90vh; top: 50%; left: 50%; transform: translate(100vw, -50%); border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
@@ -513,7 +496,7 @@ const BASKETS = [
                 renderInformacoes();
                 document.title = "Informações - Dona Antônia";
             } else if (hash === '#/mercado') {
-                initMercado();
+                renderInicio(); // O Mercado agora é idêntico ao Início (só botões)
                 document.title = "Mercado Completo - Dona Antônia";
             } else if (hash.startsWith('#/departamento/')) {
                 let parts = hash.split('/'); 
@@ -592,40 +575,6 @@ const BASKETS = [
                         </div>
                     </div>
                 </div>`;
-        }
-
-       // ==========================================
-        // CARROSSEL DINÂMICO DE OFERTAS (UNIFICADO)
-        // ==========================================
-        function getCarrosselOfertasHTML(isVIP = false) {
-            let todasOfertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0)
-                                          .sort((a,b) => b.discountPercent - a.discountPercent)
-                                          .slice(0, 20);
-
-            if(todasOfertas.length === 0) return '';
-
-            let columnsHtml = '';
-            
-            for(let i = 0; i < todasOfertas.length; i += 2) {
-                let chunk = todasOfertas.slice(i, i + 2);
-                let chunkHtml = chunk.map(p => renderCardHTML(p)).join('');
-                columnsHtml += `<div class="carrossel-column">${chunkHtml}</div>`;
-            }
-
-            let onClickBtn = isVIP ? "closeBasketDetail(); window.location.hash='#/ofertas'" : "window.location.hash='#/ofertas'";
-            
-            let btnHtml = todasOfertas.length > 2 ? `<div style="padding: 0 20px 15px 20px;"><button onclick="${onClickBtn}" class="btn-ver-todos-cat">Ver todas as ${todasOfertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
-            return `
-            <div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); margin-bottom: 15px; border-top: 1px solid var(--border-light);">
-                <div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="${onClickBtn}">
-                    <svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> 
-                    Ofertas
-                </div>
-                <div class="carrossel-wrapper" style="padding: 0 20px 10px 20px; align-items: flex-start;">
-                    ${columnsHtml}
-                </div>
-                ${btnHtml}
-            </div>`;
         }
 
         window.quickAddToCart = function(id, event) {
@@ -707,10 +656,9 @@ const BASKETS = [
                 catMap.add(c); 
             });
             
-            let htmlMercado = getCarrosselOfertasHTML(false);
-
-            htmlMercado += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
+            let htmlMercado = '<div style="padding: 15px 20px;">';
             
+            // Botão Cestas Básicas
             htmlMercado += `<a href="#/cestas" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
                         <div style="display:flex; align-items:center; gap:14px;">
                             <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef2f2; display:flex; align-items:center; justify-content:center; color: var(--danger);">
@@ -721,13 +669,25 @@ const BASKETS = [
                         <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
                     </a>`;
 
+            // Botão Ofertas
+            htmlMercado += `<a href="#/ofertas" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
+                        <div style="display:flex; align-items:center; gap:14px;">
+                            <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef2f2; display:flex; align-items:center; justify-content:center; color: var(--danger);">
+                                <svg class="svg-icon" style="width: 1.2em; height: 1.2em;" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg>
+                            </div>
+                            <span style="font-size: 16px; font-weight: 900; color: var(--danger);">OFERTAS</span>
+                        </div>
+                        <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
+                    </a>`;
+
+            // Botões Departamentos
             Array.from(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach((cat) => {
                 htmlMercado += `<a href="#/departamento/${encodeHash(cat)}" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
                             <div style="display:flex; align-items:center; gap:14px;">
                                 <div style="width: 38px; height: 38px; border-radius: 10px; background: #f1f5f9; display:flex; align-items:center; justify-content:center; color: var(--text-dark);">
                                     <svg class="svg-icon" style="width: 1.2em; height: 1.2em;" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                                 </div>
-                                <span style="font-size: 16px; font-weight: 800;">${cat}</span>
+                                <span style="font-size: 16px; font-weight: 800; text-transform: uppercase;">${cat}</span>
                             </div>
                             <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
                         </a>`;
@@ -768,32 +728,6 @@ const BASKETS = [
             });
             html += '</div></div>';
             $('vitrine').innerHTML = html;
-        }
-
-        function initMercado() {
-            const vitrine = $('vitrine'); vitrine.innerHTML = '';
-            let catMap = new Set(); 
-            STATE.prods.forEach(p => { 
-                if(p.categoria === 'Cestas') return; 
-                let c = p.categoria || 'Outros'; 
-                catMap.add(c); 
-            });
-            
-            let html = getCarrosselOfertasHTML(false);
-
-            html += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
-            Array.from(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach((cat) => {
-                html += `<a href="#/departamento/${encodeHash(cat)}" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
-                            <div style="display:flex; align-items:center; gap:14px;">
-                                <div style="width: 38px; height: 38px; border-radius: 10px; background: #f1f5f9; display:flex; align-items:center; justify-content:center; color: var(--text-dark);">
-                                    <svg class="svg-icon" style="width: 1.2em; height: 1.2em;" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-                                </div>
-                                <span style="font-size: 16px; font-weight: 800;">${cat}</span>
-                            </div>
-                            <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
-                        </a>`;
-            });
-            html += '</div>'; vitrine.innerHTML = html; lazyLoadImages();
         }
 
         function renderDepartamentoCompleto(cat) {
@@ -1092,9 +1026,7 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
                 catMap.add(c); 
             });
             
-            let htmlMercado = getCarrosselOfertasHTML(true);
-
-            htmlMercado += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
+            let htmlMercado = '<div style="padding: 15px 20px;">';
             Array.from(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach((cat) => {
                 htmlMercado += `<a href="#/departamento/${encodeHash(cat)}" onclick="closeBasketDetail();" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
                             <div style="display:flex; align-items:center; gap:14px;">
