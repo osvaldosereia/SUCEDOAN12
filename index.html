@@ -76,12 +76,11 @@
 
         .product-details { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; padding-top: 2px; padding-bottom: 2px; }
         
-        /* CORREÇÃO DO ESTOURO DO NOME */
-        .product-name-list { font-weight: 600; font-size: 14.5px; color: var(--text-dark); line-height: 1.3; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; overflow-wrap: break-word; }
+        .product-name-list { font-weight: 600; font-size: 14.5px; color: var(--text-dark); line-height: 1.3; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         
-        .card-bottom-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: auto; width: 100%; min-width: 0; }
+        .card-bottom-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: auto; }
 
-        .price-container { display: flex; flex-direction: column; gap: 0px; min-width: 0; }
+        .price-container { display: flex; flex-direction: column; gap: 0px; }
         .old-price { font-size: 12px; color: var(--text-light); text-decoration: line-through; font-weight: 600; }
         .tag-preco-list { font-size: 17px; font-weight: 900; color: var(--text-dark); margin-top: 2px; display: flex; align-items: center; }
         
@@ -98,6 +97,7 @@
         /* =========================================
            NOVAS CLASSES DIDÁTICAS PARA AS CESTAS
         ========================================= */
+        /* Força todos os itens a ficarem em uma linha única e centralizada no cartão */
         .basket-action-row { 
             display: flex; 
             flex-wrap: nowrap; 
@@ -107,10 +107,11 @@
             gap: 6px; 
             margin-top: 15px; 
             width: 100%; 
-            border-top: none; 
-            padding-top: 0px; 
+            border-top: 1px dashed var(--border-light); 
+            padding-top: 15px; 
         }
 
+        /* Estilização do seletor didático ( - X unidades + ) */
         .qty-controls-didatic {
             display: flex; 
             align-items: center; 
@@ -149,6 +150,7 @@
             padding: 0 4px;
         }
 
+        /* Estilização dos Botões de Retirar e Trocar */
         .btn-didatico { 
             padding: 8px 12px; 
             border-radius: 20px; 
@@ -436,7 +438,9 @@
             </div>
             
             <button class="btn-send" id="btn-send-order" onclick="sendOrder()">
-                <svg class="svg-icon-fill" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg> Enviar para o WhatsApp`;
+                <svg class="svg-icon-fill" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg>
+                Enviar para o WhatsApp
+            </button>
             
         </div>
     </div>
@@ -670,7 +674,7 @@ const BASKETS = [
                         <button class="qty-btn-round" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();">${iconPlus}</button>
                     </div>`;
                 
-                // Nova linha de botões: Centralizados, na mesma linha, sem borda pontilhada
+                // Nova linha alinhada horizontalmente e forçada a não quebrar (nowrap)
                 basketExtras = `
                 <div class="basket-action-row">
                     ${qtyDidatic}
@@ -684,14 +688,14 @@ const BASKETS = [
                     </button>
                 </div>`;
 
-                // CORREÇÃO: "min-width: 0" garante que o layout não estoure para a direita
+                // Layout de "dois andares" para que os botões caibam na largura total do card
                 cardContent = `
                     ${esgotadoTag}
-                    <div style="display: flex; gap: 12px; width: 100%; min-width: 0;">
+                    <div style="display: flex; gap: 16px; width: 100%;">
                         <div class="img-wrapper">
                             <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'">
                         </div>
-                        <div class="product-details" style="padding-top:0; padding-bottom:0; min-width: 0;">
+                        <div class="product-details" style="padding-top:0; padding-bottom:0;">
                             <div>
                                 ${tagEmbalagem}
                                 <div class="product-name-list">${prod.name}</div>
@@ -1048,8 +1052,9 @@ const BASKETS = [
                 const basket = BASKETS.find(b => b.id === window.currentBasketId);
                 
                 let dyn = getBasketDynamicPrice(basket);
-                let diferencaFixa = dyn.taxaExtra; 
+                let diferencaFixa = dyn.taxaExtra; // A taxa congelada
                 
+                // NOTA TÉCNICA: O recalculo ocorre de forma imediata porque utiliza o valorAtualizado da array currentBasketItems
                 let precoDinamicoAtual = Math.ceil(valorSomaDosItensAtuais + diferencaFixa - totalAtacadoItemsAtuais);
                 let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
 
@@ -1087,10 +1092,10 @@ const BASKETS = [
                     if(diffAdded.length > 0 || diffRemoved.length > 0) {
                         let diffHtml = '<div style="font-weight: 800; margin-bottom: 8px; color: var(--text-dark);">Alterações feitas na cesta:</div>';
                         if(diffAdded.length > 0) {
-                            diffHtml += '<div style="color: var(--success); margin-bottom: 6px;"><strong>+ Incluídos (Adicionados/Trocados):</strong><br>' + diffAdded.map(x => `+ ${x}`).join('<br>') + '</div>';
+                            diffHtml += '<div style="color: var(--success); margin-bottom: 6px;"><strong>+ Adicionados:</strong><br>' + diffAdded.map(x => `+ ${x}`).join('<br>') + '</div>';
                         }
                         if(diffRemoved.length > 0) {
-                            diffHtml += '<div style="color: var(--danger);"><strong>- Retirados (Removidos/Substituídos):</strong><br>' + diffRemoved.map(x => `- ${x}`).join('<br>') + '</div>';
+                            diffHtml += '<div style="color: var(--danger);"><strong>- Retirados:</strong><br>' + diffRemoved.map(x => `- ${x}`).join('<br>') + '</div>';
                         }
                         diffContainer.innerHTML = diffHtml;
                         diffContainer.style.display = 'block';
@@ -1116,16 +1121,8 @@ const BASKETS = [
             let item = currentBasketItems[index];
             if(!item) return;
             let cat = item.pObj.categoria;
-            
-            // Lógica de busca precisa pela primeira palavra do produto
-            let itemNomeNormalizado = norm(item.pObj.name);
-            let primeiraPalavra = itemNomeNormalizado.split(' ')[0];
-
-            let swapProds = STATE.prods.filter(p => {
-                return p.categoria === cat && 
-                       p.id !== item.pObj.id && 
-                       norm(p.name).includes(primeiraPalavra);
-            });
+            // Filtra os produtos pela mesma categoria e exclui o próprio item para não aparecer como sugestão
+            let swapProds = STATE.prods.filter(p => p.categoria === cat && p.id !== item.pObj.id);
             
             $('swapModalTitle').innerText = "Trocando: " + item.pObj.name;
             
@@ -1152,6 +1149,7 @@ const BASKETS = [
             $('swap-items-container').innerHTML = html;
             $('swapModal').classList.add('active');
             
+            // Força a rolagem para o topo da lista de trocas
             document.querySelector('#swapModal .modal-scroll-area').scrollTop = 0;
         };
 
@@ -1159,11 +1157,14 @@ const BASKETS = [
             let newProd = STATE.prods.find(p => p.id === newProdId);
             if(!newProd) return;
             
+            // Mantém a quantidade exata que o cliente tinha do produto antigo (Instrução Tática: oldQty)
             let oldQty = currentBasketItems[index].qty;
             let pClone = {...newProd, basketQty: oldQty};
             currentBasketItems[index] = { pObj: pClone, qty: oldQty };
             
             closeSwapModal();
+            
+            // Esta chamada atualiza instantaneamente a cesta e recalcula todos os preços totais com base no novo item
             renderBasketItemsList();
             showToast("Produto trocado com sucesso!");
         };
@@ -1364,6 +1365,113 @@ const BASKETS = [
                 btn.style.boxShadow = 'none'; 
             } else { 
                 btn.disabled = false; 
+                btn.innerHTML = `<svg class="svg-icon-fill" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg> Enviar para o WhatsApp`; 
+                btn.style.background = 'var(--whatsapp)'; 
+                btn.style.boxShadow = '0 4px 15px rgba(37, 211, 102, 0.3)'; 
+            }
+            
+            let badges = document.querySelectorAll('.cart-badge');
+            let bottomTotal = $('bottom-cart-total');
+            
+            if (count > 0) { 
+                let txt = count > 99 ? '99+' : count;
+                badges.forEach(b => { b.style.display = 'block'; b.innerText = txt; });
+                if(bottomTotal) {
+                    bottomTotal.style.display = 'block';
+                    bottomTotal.innerText = fmt(finalTotal);
+                }
+            } else { 
+                badges.forEach(b => { b.style.display = 'none'; });
+                if(bottomTotal) bottomTotal.style.display = 'none';
+            }
+        }
+
+        window.sendOrder = async function() {
+            const btn = $('btn-send-order'); if (btn.disabled) return;
+            
+            btn.innerHTML = "Processando...";
+            const orderId = String(Date.now()).slice(-6); 
+            let itemsTxt = ""; 
+            let totalBruto = 0; 
+            let totalTaxasExtras = 0;
+            let pedidoItens = [];
+
+            Object.entries(STATE.cart).forEach(([cartId, q]) => { 
+                const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
+                if (p) { 
+                    totalBruto += p.price * q; 
+                    if (!String(cartId).startsWith('fee_cesta')) {
+                        itemsTxt += `${q}x ${p.name}\n`; 
+                        pedidoItens.push({
+                            sku: String(p.codigo || p.id),
+                            nome: p.name,
+                            qtd: q,
+                            price: p.price
+                        });
+                    } else { 
+                        totalTaxasExtras += (p.price * q);
+                    } 
+                } 
+            });
+
+            let totalDescontoFormatado = STATE.atacadoDiscount;
+            let final = totalBruto - totalDescontoFormatado;
+
+            let basketStatusTxt = "";
+            let hasBasket = Object.keys(STATE.basketCustomizations).length > 0;
+            if (hasBasket) {
+                Object.keys(STATE.basketCustomizations).forEach(bId => {
+                    let diff = STATE.basketCustomizations[bId];
+                    let status = diff.changed ? "(ALTERADA)" : "(PADRÃO)";
+                    basketStatusTxt += `\n*Cesta Escolhida:* ${diff.name} ${status}`;
+                });
+            }
+
+            const makePayload = {
+                pedido: {
+                    itens: pedidoItens,
+                    total: final,
+                    outras_despesas: totalTaxasExtras,
+                    desconto: totalDescontoFormatado,
+                    observacoes: `Status: ${basketStatusTxt.replace(/\n/g, " ")}`
+                }
+            };
+
+            try {
+                await fetch('https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(makePayload)
+                });
+            } catch (err) {
+                console.error("Erro na comunicação com o Make.com");
+            }
+
+            let descontosTxt = "";
+            if (STATE.atacadoDiscount > 0) descontosTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
+
+            const msg = `*NOVA LISTA #${orderId}*
+------------------------------
+*ITENS SELECIONADOS*
+${itemsTxt}
+*RESUMO DE VALORES*${descontosTxt}
+💰 *TOTAL ESTIMADO:* ${fmt(final)}
+------------------------------${basketStatusTxt}
+
+Olá! Gostaria de finalizar o pedido desta lista. Como faço para pagar e combinar a entrega?`;
+
+            window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
+            
+            STATE.cart = {}; 
+            STATE.cartOrder = []; 
+            STATE.basketCustomizations = {}; 
+            
+            saveCart(); 
+            updateTotals(); 
+            renderCheckoutItems(); 
+            closeCheckout();
+            
+            setTimeout(() => { 
                 btn.innerHTML = `<svg class="svg-icon-fill" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg> Enviar para o WhatsApp`; 
             }, 3000);
         }; 
