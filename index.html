@@ -520,7 +520,7 @@ const BASKETS = [
                         let cod = p[1].trim();
                         let pObj = STATE.prods.find(x => x.codigo === cod || String(x.id) === cod);
                         if(pObj && qty >= 3) {
-                            atacado += (pObj.price * 0.05) * qty;
+                            atacado += (pObj.price * 0.02) * qty;
                         }
                     }
                 });
