@@ -532,15 +532,15 @@ const BASKETS = [
             let multiplicador = 1.15; // Deixamos 15% como fallback (segurança) caso haja algum erro de nome
             
             if (nomeCesta.includes("economica") || nomeCesta.includes("econômica")) {
-                multiplicador = 1.12; // 10%
+                multiplicador = 1.10; // 10%
             } else if (nomeCesta.includes("mini")) {
-                multiplicador = 1.10; // 8%
+                multiplicador = 1.08; // 8%
             } else if (nomeCesta.includes("pequena")) {
-                multiplicador = 1.12; // 10%
+                multiplicador = 1.10; // 10%
             } else if (nomeCesta.includes("media") || nomeCesta.includes("média")) {
-                multiplicador = 1.17; // 19%
+                multiplicador = 1.19; // 19%
             } else if (nomeCesta.includes("grande")) {
-                multiplicador = 1.20; // 23%
+                multiplicador = 1.23; // 23%
             }
             
             // 3. Soma a taxa específica ao valor de custo original
