@@ -654,16 +654,19 @@ const BASKETS = [
             if(todasOfertas.length === 0) return '';
 
             let columnsHtml = '';
-            for(let i = 0; i < todasOfertas.length; i += 3) {
-                let chunk = todasOfertas.slice(i, i + 3);
+            
+            // Alteramos o loop para avançar de 2 em 2 (i += 2)
+            for(let i = 0; i < todasOfertas.length; i += 2) {
+                // Pegamos uma "fatia" (slice) de 2 itens em vez de 3
+                let chunk = todasOfertas.slice(i, i + 2);
                 let chunkHtml = chunk.map(p => renderCardHTML(p)).join('');
                 columnsHtml += `<div class="carrossel-column">${chunkHtml}</div>`;
             }
 
             let onClickBtn = isVIP ? "closeBasketDetail(); window.location.hash='#/ofertas'" : "window.location.hash='#/ofertas'";
             
-            let btnHtml = todasOfertas.length > 3 ? `<div style="padding: 0 20px 15px 20px;"><button onclick="${onClickBtn}" class="btn-ver-todos-cat">Ver todas as ${todasOfertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
-
+            // Alteramos a condição do botão "Ver todas" para exibir caso haja mais de 2 ofertas
+            let btnHtml = todasOfertas.length > 2 ? `<div style="padding: 0 20px 15px 20px;"><button onclick="${onClickBtn}" class="btn-ver-todos-cat">Ver todas as ${todasOfertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
             return `
             <div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); margin-bottom: 15px; border-top: 1px solid var(--border-light);">
                 <div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="${onClickBtn}">
