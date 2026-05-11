@@ -58,28 +58,32 @@
         /* =========================================
            3. DESIGN DO CARD HORIZONTAL ATUALIZADO
         ========================================= */
-        .product-card-list { display: flex; align-items: stretch; width: 100%; gap: 16px; background: transparent; padding: 16px 20px; border-bottom: 1px solid var(--border-light); cursor: pointer; position: relative; }
+       .product-card-list { display: flex; align-items: stretch; width: 100%; gap: 16px; background: transparent; padding: 16px 20px; border-bottom: 1px solid var(--border-light); cursor: pointer; position: relative; }
         .product-card-list:last-child { border-bottom: none; }
 
-        .img-wrapper { position: relative; width: 130px; height: 130px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: transparent; }
+        .img-wrapper { position: relative; width: 110px; height: 110px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: transparent; }
         .product-icon-list { width: 100%; height: 100%; object-fit: contain; }
         
         .embalagem-tag-text { font-size: 11px; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px; font-weight: 800; letter-spacing: 0.5px; }
 
-        .product-details { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-        .product-name-list { font-weight: 600; font-size: 14.5px; color: var(--text-dark); line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-details { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; padding-top: 2px; padding-bottom: 2px; }
         
-        .price-container { display: flex; flex-direction: column; gap: 0px; margin-top: auto; padding-right: 100px;}
-        .old-price { font-size: 12.5px; color: var(--text-light); text-decoration: line-through; font-weight: 600; }
-        .tag-preco-list { font-size: 18px; font-weight: 900; color: var(--text-dark); margin-top: 2px; display: flex; align-items: center; }
+        .product-name-list { font-weight: 600; font-size: 14.5px; color: var(--text-dark); line-height: 1.3; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         
-        .card-action-area { position: absolute; right: 20px; bottom: 16px; display: flex; align-items: center; }
+        /* NOVO: Linha base que separa o preço (esquerda) e a ação (direita) */
+        .card-bottom-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: auto; }
+
+        .price-container { display: flex; flex-direction: column; gap: 0px; }
+        .old-price { font-size: 12px; color: var(--text-light); text-decoration: line-through; font-weight: 600; }
+        .tag-preco-list { font-size: 17px; font-weight: 900; color: var(--text-dark); margin-top: 2px; display: flex; align-items: center; }
         
-        .btn-quick-add-list { background: #f1f5f9; color: var(--primary); width: 40px; height: 40px; border-radius: 50%; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; border: 1px solid var(--border-light); }
+        .card-action-area { display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0; }
+        
+        .btn-quick-add-list { background: #f1f5f9; color: var(--primary); width: 38px; height: 38px; border-radius: 50%; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; border: 1px solid var(--border-light); }
         .btn-quick-add-list:active { background: var(--primary); color: #ffffff; transform: scale(0.9); }
         
-        .qty-controls { display: flex; align-items: center; justify-content: space-between; border-radius: 20px; border: 1px solid var(--border-light); overflow: hidden; height: 40px; background: #ffffff; width: 95px; position: absolute; right: 20px; bottom: 16px; }
-        .qty-btn { width: 34px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 900; cursor: pointer; background: transparent; border: none; }
+        .qty-controls { display: flex; align-items: center; justify-content: space-between; border-radius: 19px; border: 1px solid var(--border-light); overflow: hidden; height: 38px; background: #ffffff; width: 92px; }
+        .qty-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 900; cursor: pointer; background: transparent; border: none; }
         .qty-btn:active { background: #f1f5f9; }
         .qty-display { font-weight: 900; font-size: 15px; flex: 1; text-align: center; color: var(--text-dark); }
 
@@ -186,11 +190,8 @@
         
         .carrossel-column { width: 85vw; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; gap: 12px; position: relative; }
         .carrossel-column .product-card-list { border-bottom: none; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.04); padding: 14px; gap: 12px;}
-        .carrossel-column .img-wrapper { width: 95px; height: 95px; }
-        .carrossel-column .product-name-list { font-size: 13.5px; -webkit-line-clamp: 2; }
-        .carrossel-column .qty-controls { right: 14px; bottom: 14px; }
-        .carrossel-column .btn-quick-add-list { right: 14px; bottom: 14px; }
-        .carrossel-column .price-container { padding-right: 90px; }
+        .carrossel-column .img-wrapper { width: 85px; height: 85px; }
+        .carrossel-column .product-name-list { font-size: 13.5px; -webkit-line-clamp: 2; margin-bottom: 4px; }
 
     </style>
 </head>
@@ -476,27 +477,26 @@ const BASKETS = [
         // ==========================================
         // RENDERIZAÇÃO DE CARDS
         // ==========================================
-        function renderCardHTML(prod, isBasketItem = false, index = null) {
+       function renderCardHTML(prod, isBasketItem = false, index = null) {
             let q = isBasketItem ? prod.basketQty : (STATE.cart[prod.id] || 0);
             
             let isOutOfStock = prod.stock <= 0 && !isBasketItem;
             let esgotadoTag = isOutOfStock ? `<div style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.85); color: #fff; padding: 4px 8px; border-radius: 6px; font-weight: 900; font-size: 10px; z-index: 10;">ESGOTADO</div>` : '';
             let baseClass = isOutOfStock ? 'product-card-list esgotado' : 'product-card-list';
             
-            let discountBadge = (prod.discountPercent > 0 && !isBasketItem) ? `<span style="color: var(--danger); font-size: 14px; margin-right: 5px; font-weight: 900;">-${prod.discountPercent}%</span>` : '';
+            let discountBadge = (prod.discountPercent > 0 && !isBasketItem) ? `<span style="color: var(--danger); font-size: 13px; margin-right: 4px; font-weight: 900;">-${prod.discountPercent}%</span>` : '';
             let oldPriceHtml = (prod.discountPercent > 0 && !isBasketItem) ? `<span class="old-price">${fmt(prod.oldPrice)}</span>` : '';
             
             let embalagem = prod.embalagem || extractVolume(prod.name);
             let tagEmbalagem = embalagem ? `<div class="embalagem-tag-text">${embalagem}</div>` : '';
 
-            // Tag de Atacado exibida apenas fora do contexto visual do carrinho (para incentivar compra)
-            let atacadoTag = (!isBasketItem) ? `<div style="font-size: 10.5px; color: var(--success); font-weight: 800; margin-top: 3px; line-height:1.1;">A partir de 3un:<br>pague ${fmt(prod.price * 0.95)}/un</div>` : '';
+            let atacadoTag = (!isBasketItem) ? `<div style="font-size: 10px; color: var(--success); font-weight: 800; margin-top: 4px; line-height:1.2;">A partir de 3un:<br>pague ${fmt(prod.price * 0.95)}/un</div>` : '';
 
             let onClickAction = isBasketItem ? "" : `onclick="window.location.hash='#/produto/${prod.slug}'"`;
 
             let controlsHtml = '';
             if (isBasketItem) {
-                controlsHtml = `<div class="qty-controls" style="position:relative; right:0; bottom:0;"><button class="qty-btn" onclick="updateBasketItemQty(${index}, -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display">${q}</span><button class="qty-btn" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();">${iconPlus}</button></div>`;
+                controlsHtml = `<div class="qty-controls"><button class="qty-btn" onclick="updateBasketItemQty(${index}, -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display">${q}</span><button class="qty-btn" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();">${iconPlus}</button></div>`;
             } else {
                 controlsHtml = q === 0 
                     ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)">${iconPlus}</div>`
@@ -510,14 +510,18 @@ const BASKETS = [
                         <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'">
                     </div>
                     <div class="product-details">
-                        ${tagEmbalagem}
-                        <div class="product-name-list">${prod.name}</div>
-                        <div class="price-container">
-                            <div>${oldPriceHtml}</div>
-                            <div class="tag-preco-list">${isBasketItem ? '' : discountBadge + fmt(prod.price)}</div>
-                            ${atacadoTag}
+                        <div>
+                            ${tagEmbalagem}
+                            <div class="product-name-list">${prod.name}</div>
                         </div>
-                        <div class="card-action-area" id="${isBasketItem ? 'basket-card-' + index : 'action-card-' + prod.id}">${controlsHtml}</div>
+                        <div class="card-bottom-row">
+                            <div class="price-container">
+                                <div>${oldPriceHtml}</div>
+                                <div class="tag-preco-list">${isBasketItem ? '' : discountBadge + fmt(prod.price)}</div>
+                                ${atacadoTag}
+                            </div>
+                            <div class="card-action-area" id="${isBasketItem ? 'basket-card-' + index : 'action-card-' + prod.id}">${controlsHtml}</div>
+                        </div>
                     </div>
                 </div>`;
         }
@@ -623,7 +627,7 @@ const BASKETS = [
             lazyLoadImages();
         }
 
-        function renderCestas() {
+       function renderCestas() {
             let html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Cestas Básicas</div><div style="background: #fff;">`;
             
             BASKETS.forEach(basket => {
@@ -639,12 +643,14 @@ const BASKETS = [
                     </div>
                     <div class="product-details">
                         <div class="product-name-list">${basket.nome}</div>
-                        <div class="price-container" style="padding-right: 90px;">
-                            <div>${oldPriceHtml}</div>
-                            <div class="tag-preco-list" style="color: var(--danger);">${fmt(displayPrice)}</div>
-                        </div>
-                        <div class="card-action-area">
-                            <div class="btn-quick-add-list" style="width: auto; padding: 0 15px; border-radius: 12px; font-size: 13.5px; font-weight: 800; color: #fff; background: var(--text-dark);">Ver Cesta</div>
+                        <div class="card-bottom-row">
+                            <div class="price-container">
+                                <div>${oldPriceHtml}</div>
+                                <div class="tag-preco-list" style="color: var(--danger);">${fmt(displayPrice)}</div>
+                            </div>
+                            <div class="card-action-area">
+                                <div class="btn-quick-add-list" style="width: auto; height: 36px; padding: 0 15px; border-radius: 12px; font-size: 13.5px; font-weight: 800; color: #fff; background: var(--text-dark);">Ver Cesta</div>
+                            </div>
                         </div>
                     </div>
                 </div>`;
