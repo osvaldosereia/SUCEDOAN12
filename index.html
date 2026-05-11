@@ -182,7 +182,7 @@
         .overlay.open { opacity: 1; pointer-events: all; }
 
         /* =========================================
-           7. CARROSSSEL DE DESTAQUES E OFERTAS
+           7. CARROSSEL DE DESTAQUES E OFERTAS
         ========================================= */
         .carrossel-destaque-container { background: transparent; border-bottom: 1px solid var(--border-light); margin-bottom: 15px; }
         .carrossel-wrapper { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; padding: 10px 20px 25px 20px; -webkit-overflow-scrolling: touch; }
@@ -1191,8 +1191,7 @@ const BASKETS = [
                     if (!String(cartId).startsWith('fee_cesta')) {
                         itemsTxt += `${q}x ${p.name}\n`; 
                         pedidoItens.push({
-                            id: String(p.id),
-                            sku: String(p.codigo || p.id),
+                            sku: String(p.codigo || p.id), // <-- Ajuste aqui: enviando APENAS o SKU para forçar a regra no Make
                             nome: p.name,
                             qtd: q,
                             price: p.price
