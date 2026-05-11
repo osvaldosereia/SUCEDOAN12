@@ -27,6 +27,7 @@
             --border-light: #e2e8f0;
             --h-top: 70px;
             --header-total: var(--h-top);
+            --whatsapp: #25D366;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -117,7 +118,7 @@
         .prod-sticky-bottom { position: fixed; bottom: max(65px, calc(65px + env(safe-area-inset-bottom))); left: 0; width: 100%; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); padding: 15px 20px; display: flex; gap: 15px; border-top: 1px solid var(--border-light); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); }
 
         /* =========================================
-           5. MODAIS E CHECKOUT
+           5. MODAIS E LISTA (CHECKOUT SIMPLIFICADO)
         ========================================= */
         .full-screen-detail { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: var(--bg-body); z-index: 2450; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1); }
         .full-screen-detail.active { transform: translateX(0); }
@@ -132,22 +133,6 @@
         .chk-section { margin-bottom: 25px; background: #ffffff; padding: 24px; border-radius: 20px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
         .chk-title { font-size: 1.1rem; font-weight: 900; margin-bottom: 18px; color: var(--text-dark); }
         
-        .input-group { margin-bottom: 15px; }
-        .input-label { display: block; font-size: 12.5px; font-weight: 700; color: var(--text-light); margin-bottom: 6px; }
-        .input-text { width: 100%; padding: 16px; border: 1px solid var(--border-light); background: #f8fafc; border-radius: 12px; font-size: 15px; outline: none; font-family: 'Inter', sans-serif; transition: all 0.3s; }
-        .input-text:focus { border-color: var(--primary); background: #ffffff; box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
-        
-        .pay-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .pay-btn { padding: 15px; border: 1px solid var(--border-light); border-radius: 12px; background: #f8fafc; font-weight: 800; font-size: 13.5px; color: var(--text-light); cursor: pointer; transition: all 0.2s; text-align: center; }
-        .pay-btn.selected { border-color: var(--primary); background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        
-        #delivery-options-list { grid-template-columns: 1fr; gap: 10px; }
-        #delivery-options-list .pay-btn { display: flex; justify-content: space-between; align-items: center; text-align: left; padding: 16px 20px; }
-        
-        .city-selector { display: flex; gap: 12px; margin-bottom: 20px; }
-        .city-btn { flex: 1; padding: 15px; border: 1px solid var(--border-light); background: #f8fafc; border-radius: 12px; font-weight: 800; font-size: 14px; color: var(--text-light); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .city-btn.active { border-color: var(--primary); background: var(--primary); color: #fff; }
-
         .cart-item-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px dashed var(--border-light); gap: 15px; }
         .cart-item-row:last-child { border-bottom: none; padding-bottom: 0; }
         .cart-item-info { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
@@ -163,8 +148,8 @@
         .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14.5px; color: var(--text-light); font-weight: 700;}
         .summary-row.total { font-size: 1.5rem; font-weight: 900; color: var(--text-dark); margin-bottom: 0; border-top: 1px dashed var(--border-light); padding-top: 16px; margin-top: 16px;}
         
-        .btn-send { width: 100%; background: var(--success); color: #fff; padding: 18px; border-radius: 14px; font-weight: 900; font-size: 16px; text-transform: uppercase; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);}
-        .btn-send:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2); }
+        .btn-send { width: 100%; background: var(--whatsapp); color: #fff; padding: 18px; border-radius: 14px; font-weight: 900; font-size: 16px; text-transform: uppercase; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);}
+        .btn-send:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(37, 211, 102, 0.2); }
         
         /* =========================================
            6. BARRA INFERIOR (Somente Mobile)
@@ -299,7 +284,7 @@
         <div class="app-nav-item" onclick="openCheckout()">
             <svg class="svg-icon" style="color: #10b981; width: 2em; height: 2em;" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
             <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                <span style="font-size: 12.5px; font-weight: 900;">Carrinho</span>
+                <span style="font-size: 12.5px; font-weight: 900;">Lista</span>
                 <span id="bottom-cart-total" style="font-size: 11px; color: var(--success); font-weight: 900; display: none; line-height: 1;">R$ 0,00</span>
             </div>
             <span class="cart-badge" id="bottom-cart-count">0</span>
@@ -320,7 +305,7 @@
                 <a href="#/mercado" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l1.5 12h15L21 9M3 9h18M3 9L4.5 3h15L21 9"></path></svg> Mercado</a>
                 <a href="#/ofertas" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg> Ofertas</a>
                 <div class="desktop-nav-item" onclick="openCheckout()">
-                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg> Carrinho
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg> Sua Lista
                     <span class="cart-badge" id="top-cart-count" style="position:absolute; top:-8px; right:-12px;">0</span>
                 </div>
             </div>
@@ -345,7 +330,7 @@
                 <div id="basket-summary-container" style="background: #ffffff; padding: 20px; border-radius: 16px; margin-top: 25px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
                     <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 18px; margin-bottom: 15px; color: var(--text-dark);"><span>Total (<span id="basket-total-items">0</span> itens)</span><span id="basket-total-price">R$ 0,00</span></div>
                     <div id="basket-diff-container" style="display: none; margin-bottom: 15px; font-size: 13px; color: var(--text-light); background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px dashed var(--border-light);"></div>
-                    <button class="btn-send" onclick="addBasketToCart()">Adicionar Cesta à Sacola</button>
+                    <button class="btn-send" onclick="addBasketToCart()" style="background: var(--text-dark); box-shadow: none;">Adicionar Cesta à Lista</button>
                 </div>
                 <div id="vip-list-container" style="display: none; margin-top: 20px;"><div id="vip-items-grid"></div></div>
             </div>
@@ -353,59 +338,21 @@
     </div>
 
     <div class="checkout-drawer" id="checkout-drawer">
-        <div class="chk-header">Minha Sacola <div style="cursor: pointer; padding: 5px;" onclick="closeCheckout()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div></div>
+        <div class="chk-header">Minha Lista <div style="cursor: pointer; padding: 5px;" onclick="closeCheckout()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div></div>
         
         <div class="chk-body">
             
             <div class="chk-section" id="chk-items-list" style="padding: 10px 20px;"></div>
-            
-            <div class="chk-section">
-                <div class="chk-title">Agendamento de Entrega</div>
-                <div class="pay-options" id="delivery-options-list"></div>
-            </div>
-            
-            <div class="chk-section">
-                <div class="chk-title">Pagamento (Ao receber o pedido)</div>
-                <div class="pay-options" id="main-payment-options">
-                    <button class="pay-btn selected" onclick="selectPayment('PIX', this)">PIX</button>
-                    <button class="pay-btn" onclick="selectPayment('Dinheiro', this)">Dinheiro</button>
-                    <button class="pay-btn" onclick="selectPayment('Débito', this)">Débito</button>
-                    <button class="pay-btn" onclick="selectPayment('Crédito', this)">Crédito</button>
-                    <button class="pay-btn" onclick="selectPayment('Cartão Alimentação', this)">Alimentação</button>
-                    <button class="pay-btn" onclick="selectPayment('Cartão Refeição', this)">Refeição</button>
-                </div>
-                <div id="voucher-brands-container" style="display:none; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border-light);">
-                    <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Pluxee', this)">Pluxee</button>
-                    <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Sodexo', this)">Sodexo</button>
-                    <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Alelo', this)">Alelo</button>
-                    <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Flash', this)">Flash</button>
-                    <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Caju', this)">Caju</button>
-                    <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Ifood', this)">iFood</button>
-                </div>
-                <input type="hidden" id="chk-pagamento" value="PIX">
-                <input type="hidden" id="chk-voucher" value="">
-            </div>
-
-            <div class="chk-section" id="cupom-section">
-                <div class="chk-title">Cupom de Desconto</div>
-                <div style="display: flex; gap: 12px;">
-                    <input type="text" id="chk-cupom" class="input-text" placeholder="Código" style="margin-bottom:0; text-transform: uppercase;">
-                    <button class="pay-btn" onclick="applyCoupon()" style="margin-bottom:0; background: var(--text-dark); color: white; border:none; padding: 0 25px;">Aplicar</button>
-                </div>
-                <div id="cupom-msg" style="font-size: 14.5px; margin-top: 12px; font-weight: 800; display: none;"></div>
-            </div>
 
             <div class="chk-inline-summary">
                 <div class="summary-row"><span>Subtotal dos Produtos</span><span id="sum-sub">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-atacado-row"><span>Desconto Atacado (Volume)</span><span id="sum-atacado-desc">R$ 0,00</span></div>
-                <div class="summary-row" style="color: var(--success); display: none;" id="sum-desc-row"><span>Desconto Agendamento</span><span id="sum-desc">R$ 0,00</span></div>
-                <div class="summary-row" style="color: var(--success); display: none;" id="sum-cupom-row"><span>Cupom Aplicado</span><span id="sum-cupom-desc">R$ 0,00</span></div>
-                <div class="summary-row total"><span>Total a Pagar</span><span id="sum-total">R$ 0,00</span></div>
+                <div class="summary-row total"><span>Total Estimado</span><span id="sum-total">R$ 0,00</span></div>
             </div>
             
             <button class="btn-send" id="btn-send-order" onclick="sendOrder()">
-                <svg class="svg-icon-fill" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"></path></svg>
-                Enviar Pedido
+                <svg class="svg-icon-fill" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg>
+                Enviar para o WhatsApp
             </button>
             
         </div>
@@ -414,10 +361,9 @@
     <script>
         const $ = id => document.getElementById(id);
         const STATE = {
-            prods: [], cart: {}, cartOrder: [], deliveryOptions: [], 
-            selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
+            prods: [], cart: {}, cartOrder: [],
             searchQuery: '', scrollMap: {}, basketCustomizations: {}, currentRoute: '#/',
-            appliedCoupon: null, couponDiscount: 0, atacadoDiscount: 0
+            atacadoDiscount: 0
         };
 
         let currentBasketItems = [];
@@ -435,12 +381,6 @@ const BASKETS = [
   { "id": "cesta8", "nome": "Grande Koblenz", "imagem": "img/CESTA-GRANDE-KOBLENZ.webp", "produtos": ["4x P500", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
   { "id": "cesta9", "nome": "Grande Bonini", "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] }
 ];
-
-        const COUPONS = {
-            "VIVI10": { type: "percentage", value: 10, minOrder: 150, excludeCategories: ["mercearia basica"] },
-            "DIREITO10": { type: "percentage", value: 10, minOrder: 150, excludeCategories: ["mercearia basica"] },
-            "BELA15": { type: "percentage", value: 15, minOrder: 200, includeCategories: ["beleza", "higiene"] }
-        };
 
         const MIN_ORDER = 85; 
 
@@ -468,11 +408,9 @@ const BASKETS = [
             return Infinity;
         }
 
-        // Nova lógica de cálculo dinâmico da Cesta (Percentuais Variáveis + Arredondamento)
         function getBasketDynamicPrice(basket) {
             let valorPadraoCesta = 0;
             
-            // 1. Calcula o valor de custo original (soma dos produtos originais)
             if(STATE.prods.length > 0) {
                 basket.produtos.forEach(str => {
                     let p = str.split("x ");
@@ -485,32 +423,28 @@ const BASKETS = [
                 });
             }
             
-            // 2. Determina a taxa extra com base no nome da cesta
             let nomeCesta = basket.nome.toLowerCase();
-            let multiplicador = 1.15; // Deixamos 15% como fallback (segurança) caso haja algum erro de nome
+            let multiplicador = 1.15; 
             
             if (nomeCesta.includes("economica") || nomeCesta.includes("econômica")) {
-                multiplicador = 1.10; // 10%
+                multiplicador = 1.10; 
             } else if (nomeCesta.includes("mini")) {
-                multiplicador = 1.08; // 8%
+                multiplicador = 1.08; 
             } else if (nomeCesta.includes("pequena")) {
-                multiplicador = 1.10; // 10%
+                multiplicador = 1.10; 
             } else if (nomeCesta.includes("media") || nomeCesta.includes("média")) {
-                multiplicador = 1.22; // 19%
+                multiplicador = 1.22; 
             } else if (nomeCesta.includes("grande")) {
-                multiplicador = 1.28; // 28%
+                multiplicador = 1.28; 
             }
             
-            // 3. Soma a taxa específica ao valor de custo original
             let valorComTaxa = valorPadraoCesta * multiplicador;
-            
-            // 4. Arredonda para cima (sem centavos), incluindo a diferença na taxa
             let valorFinalArredondado = Math.ceil(valorComTaxa);
             
             return {
                 valorPadrao: valorPadraoCesta,
                 valorFinal: valorFinalArredondado,
-                taxaExtra: valorFinalArredondado - valorPadraoCesta // Diferença real em Reais (Congelada)
+                taxaExtra: valorFinalArredondado - valorPadraoCesta 
             };
         }
 
@@ -519,7 +453,7 @@ const BASKETS = [
             if(!basket) return { original: 0, final: 0, atacado: 0 };
             
             let dyn = getBasketDynamicPrice(basket);
-            let original = dyn.valorFinal; // O preço base já vem arredondado da função anterior
+            let original = dyn.valorFinal; 
             
             let atacado = 0;
             if(STATE.prods.length > 0) {
@@ -530,7 +464,6 @@ const BASKETS = [
                         let cod = p[1].trim();
                         let pObj = STATE.prods.find(x => x.codigo === cod || String(x.id) === cod);
                         
-                        // Calcula o desconto de atacado (5%) se tiver 3 ou mais unidades
                         if(pObj && qty >= 3) {
                             atacado += (pObj.price * 0.05) * qty; 
                         }
@@ -538,7 +471,6 @@ const BASKETS = [
                 });
             }
             
-            // Arredonda o valor FINAL para cima (garante que os cards ficam sem centavos)
             let finalPrice = Math.ceil(original - atacado);
             
             return { original: original, final: finalPrice, atacado: atacado };
@@ -930,7 +862,7 @@ const BASKETS = [
             let descHtml = prod.descricao ? `<div class="prod-page-desc-box"><div class="prod-page-desc-title">Detalhes do Produto</div><div class="prod-page-desc-content">${prod.descricao}</div></div>` : '';
             
             let controlsHtml = q === 0 
-                ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)" style="height:54px; width:100%; font-size:16px; border-radius:12px;">${iconPlus} Adicionar à Sacola</div>` 
+                ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)" style="height:54px; width:100%; font-size:16px; border-radius:12px;">${iconPlus} Adicionar à Lista</div>` 
                 : `<div class="qty-controls" style="height:54px; background:#f8fafc; width:100%; border-radius:12px; position:static;"><button class="qty-btn" style="width:48px;" onclick="updateCartItem('${prod.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display" style="font-size:20px;">${q}</span><button class="qty-btn" style="width:48px;" onclick="updateCartItem('${prod.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`;
             
             let html = `<div class="prod-page-container">
@@ -1179,12 +1111,12 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
             $('vip-items-grid').innerHTML = `
                 <div style="background: var(--success); color: white; padding: 25px; border-radius: 16px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
                     <div style="font-size: 45px; margin-bottom: 10px;">✓</div>
-                    <h2 style="font-size: 22px; font-weight: 900; margin-bottom: 5px;">Cesta na Sacola!</h2>
+                    <h2 style="font-size: 22px; font-weight: 900; margin-bottom: 5px;">Cesta na Lista!</h2>
                 </div>
                 <h3 style="font-size: 18px; font-weight: 900; text-align: center; margin-top: 15px; margin-bottom: 15px; color: var(--text-dark); padding: 0 20px;">Veja mais produtos que você pode estar precisando:</h3>
                 ${htmlMercado}
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; padding: 0 20px;">
-                    <button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)">Finalizar Pedido</button>
+                    <button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)">Visualizar Lista Completa</button>
                 </div>`;
             
             $('vip-list-container').style.display = 'block'; 
@@ -1195,15 +1127,10 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
         }
 
         // ==========================================
-        // CHECKOUT E CUPOM E BUSCA CEP
+        // LISTA E ENVIO PARA WHATSAPP
         // ==========================================
         window.openCheckout = function() {
-            if (STATE.cartOrder.length === 0) return alert("Sua sacola está vazia!");
-            let options = []; let date = new Date(); let checkDate = new Date(date);
-            if (date.getHours() < 10 && date.getDay() !== 0) { options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 }); }
-            while(options.length < 3) { checkDate.setDate(checkDate.getDate() + 1); if(checkDate.getDay() !== 0) { let desc = options.length === 0 ? 0 : (options.length === 1 ? 3.00 : 6.00); options.push({ title: 'Agendar', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: desc }); } }
-            STATE.deliveryOptions = options; let sel = options[STATE.selectedDeliveryIndex || 0]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
-            $('delivery-options-list').innerHTML = options.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})"><span>${opt.title} (${opt.dateStr})</span> ${opt.discount > 0 ? `<span style="color:var(--success); font-weight: 900;">-${fmt(opt.discount)}</span>` : ''}</button>`).join('');
+            if (STATE.cartOrder.length === 0) return alert("Sua lista está vazia!");
             renderCheckoutItems(); updateTotals(); $('checkout-drawer').scrollTop = 0; 
             
             $('overlay').classList.add('open');
@@ -1218,13 +1145,8 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
             }
         };
         
-        window.selectDelivery = function(idx) { STATE.selectedDeliveryIndex = idx; let sel = STATE.deliveryOptions[idx]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr; $('delivery-options-list').innerHTML = STATE.deliveryOptions.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})"><span>${opt.title} (${opt.dateStr})</span> ${opt.discount > 0 ? `<span style="color:var(--success); font-weight: 900;">-${fmt(opt.discount)}</span>` : ''}</button>`).join(''); updateTotals(); };
-        window.selectPayment = function(metodo, btn) { $('chk-pagamento').value = metodo; document.querySelectorAll('#main-payment-options .pay-btn').forEach(el => el.classList.remove('selected')); btn.classList.add('selected'); if(metodo === 'Cartão Alimentação' || metodo === 'Cartão Refeição') $('voucher-brands-container').style.display = 'grid'; else { $('voucher-brands-container').style.display = 'none'; $('chk-voucher').value = ''; document.querySelectorAll('.brand-btn').forEach(el => el.classList.remove('selected')); } };
-        window.selectVoucherBrand = function(brand, btn) { $('chk-voucher').value = brand; document.querySelectorAll('.brand-btn').forEach(el => el.classList.remove('selected')); btn.classList.add('selected'); };
-        
         function renderCheckoutItems() {
             let htmlItems = STATE.cartOrder.map(id => {
-                // Não renderiza itens que começam com fee_ para que a taxa extra fique oculta visualmente
                 if (String(id).startsWith('fee_')) return ''; 
                 
                 let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id]; if(!p) return '';
@@ -1247,32 +1169,17 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
             $('chk-items-list').innerHTML = htmlItems;
         }
 
-        window.applyCoupon = function() {
-            let code = $('chk-cupom').value.trim().toUpperCase();
-            if (!code) { STATE.appliedCoupon = null; updateTotals(); $('cupom-msg').style.display = 'none'; return; }
-            if (COUPONS[code]) { STATE.appliedCoupon = code; $('cupom-msg').innerText = "Cupom aplicado!"; $('cupom-msg').style.color = "var(--success)"; $('cupom-msg').style.display = 'block'; } else { STATE.appliedCoupon = null; $('cupom-msg').innerText = "Cupom inválido."; $('cupom-msg').style.color = "var(--danger)"; $('cupom-msg').style.display = 'block'; }
-            updateTotals();
-        };
-
         function updateTotals() {
-            let sumBase = 0; let count = 0; let eligibleForCouponSubtotal = 0; let atacadoTotal = 0;
+            let sumBase = 0; let count = 0; let atacadoTotal = 0;
             
             Object.entries(STATE.cart).forEach(([id, q]) => { 
                 let p = STATE.prods.find(x => String(x.id) === String(id)); 
                 if (p) { 
-                    // O fee_cesta vai somar aqui, aumentando o subtotal silenciosamente
                     sumBase += p.price * q; 
                     if (!String(id).startsWith('fee_cesta')) {
                         count += q; 
                         if (q >= 3) {
                             atacadoTotal += (p.price * 0.05) * q;
-                        }
-                        
-                        if (STATE.appliedCoupon && COUPONS[STATE.appliedCoupon]) {
-                            let rule = COUPONS[STATE.appliedCoupon]; let catN = norm(p.categoria); let isEligible = true;
-                            if (rule.excludeCategories && rule.excludeCategories.includes(catN)) isEligible = false;
-                            if (rule.includeCategories && !rule.includeCategories.includes(catN)) isEligible = false;
-                            if (isEligible) eligibleForCouponSubtotal += p.price * q;
                         }
                     } 
                 } 
@@ -1280,23 +1187,25 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
             
             $('sum-sub').innerText = fmt(sumBase); 
             
-            $('sum-desc').innerText = `- ${fmt(STATE.deliveryDiscount)}`; $('sum-desc-row').style.display = STATE.deliveryDiscount > 0 ? 'flex' : 'none'; 
-            
             STATE.atacadoDiscount = atacadoTotal;
             $('sum-atacado-desc').innerText = `- ${fmt(atacadoTotal)}`; 
             $('sum-atacado-row').style.display = atacadoTotal > 0 ? 'flex' : 'none';
             
-            STATE.couponDiscount = 0;
-            if (STATE.appliedCoupon && COUPONS[STATE.appliedCoupon]) {
-                let rule = COUPONS[STATE.appliedCoupon];
-                if (sumBase >= rule.minOrder) { STATE.couponDiscount = eligibleForCouponSubtotal * (rule.value / 100); $('cupom-msg').innerText = "Cupom aplicado!"; $('cupom-msg').style.color = "var(--success)"; $('cupom-msg').style.display = 'block'; } else { $('cupom-msg').innerText = `Mínimo de ${fmt(rule.minOrder)} para usar.`; $('cupom-msg').style.color = "var(--danger)"; $('cupom-msg').style.display = 'block'; STATE.couponDiscount = 0; }
-            }
-            $('sum-cupom-desc').innerText = `- ${fmt(STATE.couponDiscount)}`; $('sum-cupom-row').style.display = STATE.couponDiscount > 0 ? 'flex' : 'none';
-
-            let finalTotal = sumBase - STATE.deliveryDiscount - STATE.couponDiscount - STATE.atacadoDiscount; 
+            let finalTotal = sumBase - STATE.atacadoDiscount; 
             $('sum-total').innerText = fmt(finalTotal);
             
-            let btn = $('btn-send-order'); if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerHTML = `Pedido Mínimo: ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--text-light)'; btn.style.boxShadow = 'none'; } else { btn.disabled = false; btn.innerHTML = 'Enviar Pedido'; btn.style.background = 'var(--success)'; btn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)'; }
+            let btn = $('btn-send-order'); 
+            if (finalTotal < MIN_ORDER) { 
+                btn.disabled = true; 
+                btn.innerHTML = `Pedido Mínimo: ${fmt(MIN_ORDER)}`; 
+                btn.style.background = 'var(--text-light)'; 
+                btn.style.boxShadow = 'none'; 
+            } else { 
+                btn.disabled = false; 
+                btn.innerHTML = `<svg class="svg-icon-fill" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg> Enviar para o WhatsApp`; 
+                btn.style.background = 'var(--whatsapp)'; 
+                btn.style.boxShadow = '0 4px 15px rgba(37, 211, 102, 0.3)'; 
+            }
             
             let badges = document.querySelectorAll('.cart-badge');
             let bottomTotal = $('bottom-cart-total');
@@ -1316,12 +1225,6 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
 
         window.sendOrder = async function() {
             const btn = $('btn-send-order'); if (btn.disabled) return;
-            
-            let pag = $('chk-pagamento').value; 
-            let voucher = $('chk-voucher').value;
-            
-            if ((pag === 'Cartão Alimentação' || pag === 'Cartão Refeição') && !voucher) return alert("Por favor, selecione a bandeira do cartão."); 
-            if (voucher) pag += ` (${voucher})`;
             
             btn.innerHTML = "Processando...";
             const orderId = String(Date.now()).slice(-6); 
@@ -1343,13 +1246,12 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
                             price: p.price
                         });
                     } else { 
-                        // Separar o valor da taxa extra para ser enviada apenas como despesa
                         totalTaxasExtras += (p.price * q);
                     } 
                 } 
             });
 
-            let totalDescontoFormatado = STATE.deliveryDiscount + STATE.couponDiscount + STATE.atacadoDiscount;
+            let totalDescontoFormatado = STATE.atacadoDiscount;
             let final = totalBruto - totalDescontoFormatado;
 
             let basketStatusTxt = "";
@@ -1362,14 +1264,13 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
                 });
             }
 
-            // O Webhook envia a taxa extra em "outras_despesas" (sem dados do cliente)
             const makePayload = {
                 pedido: {
                     itens: pedidoItens,
                     total: final,
                     outras_despesas: totalTaxasExtras,
                     desconto: totalDescontoFormatado,
-                    observacoes: `Entrega: ${STATE.deliveryDateStr} | Status: ${basketStatusTxt.replace(/\n/g, " ")}`
+                    observacoes: `Status: ${basketStatusTxt.replace(/\n/g, " ")}`
                 }
             };
 
@@ -1385,36 +1286,31 @@ let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
 
             let descontosTxt = "";
             if (STATE.atacadoDiscount > 0) descontosTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
-            if (STATE.deliveryDiscount > 0) descontosTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
-            if (STATE.couponDiscount > 0) descontosTxt += `\n🎟️ CUPOM (${STATE.appliedCoupon}): -${fmt(STATE.couponDiscount)}`;
 
-            // O Whatsapp omite a despesa extra e os dados pessoais do cliente
-            const msg = `*PEDIDO #${orderId}*
+            const msg = `*NOVA LISTA #${orderId}*
 ------------------------------
-*INFORMAÇÕES*
-💳 *PAGAMENTO:* ${pag}
-🚚 *DATA ENTREGA:* ${STATE.deliveryDateStr}
-------------------------------
-*ITENS DO PEDIDO*
+*ITENS SELECIONADOS*
 ${itemsTxt}
 *RESUMO DE VALORES*${descontosTxt}
-💰 *TOTAL:* ${fmt(final)}
-------------------------------${basketStatusTxt}`;
+💰 *TOTAL ESTIMADO:* ${fmt(final)}
+------------------------------${basketStatusTxt}
+
+Olá! Gostaria de finalizar o pedido desta lista. Como faço para pagar e combinar a entrega?`;
 
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             
             STATE.cart = {}; 
             STATE.cartOrder = []; 
             STATE.basketCustomizations = {}; 
-            STATE.appliedCoupon = null; 
-            $('chk-cupom').value = '';
             
             saveCart(); 
             updateTotals(); 
             renderCheckoutItems(); 
             closeCheckout();
             
-            setTimeout(() => { btn.innerHTML = `Enviar Pedido`; }, 3000);
+            setTimeout(() => { 
+                btn.innerHTML = `<svg class="svg-icon-fill" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg> Enviar para o WhatsApp`; 
+            }, 3000);
         }; 
 
         // ==========================================
