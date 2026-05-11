@@ -58,7 +58,7 @@
         /* =========================================
            3. DESIGN DO CARD HORIZONTAL ATUALIZADO
         ========================================= */
-       .product-card-list { display: flex; align-items: stretch; width: 100%; gap: 16px; background: transparent; padding: 16px 20px; border-bottom: 1px solid var(--border-light); cursor: pointer; position: relative; }
+        .product-card-list { display: flex; align-items: stretch; width: 100%; gap: 16px; background: transparent; padding: 16px 20px; border-bottom: 1px solid var(--border-light); cursor: pointer; position: relative; }
         .product-card-list:last-child { border-bottom: none; }
 
         .img-wrapper { position: relative; width: 110px; height: 110px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: transparent; }
@@ -276,9 +276,37 @@
                     <input type="text" id="chk-nome" class="input-text" placeholder="Seu nome" required>
                 </div>
 
-                <div class="input-group" style="margin-bottom:0;">
-                    <label class="input-label">CPF <span style="color:var(--danger); font-size:11px;">(Necessário para Nota Fiscal)</span></label>
+                <div class="input-group">
+                    <label class="input-label">CPF <span style="color:var(--danger); font-size:11px;">(Nota Fiscal)</span></label>
                     <input type="tel" id="chk-cpf" class="input-text" placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)" required>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">WhatsApp (Celular)</label>
+                    <input type="tel" id="chk-whats" class="input-text" placeholder="(00) 00000-0000" maxlength="15" oninput="mascaraWhats(this)" required>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">CEP</label>
+                    <input type="tel" id="chk-cep" class="input-text" placeholder="00000-000" maxlength="9" oninput="mascaraCEP(this)" onblur="buscaCEP(this.value)" required>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">Endereço (Rua, Número, Complemento)</label>
+                    <input type="text" id="chk-endereco" class="input-text" placeholder="Rua X, nº 123" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="input-group" style="margin-bottom:0;">
+                        <label class="input-label">Bairro</label>
+                        <input type="text" id="chk-bairro" class="input-text" required>
+                    </div>
+                    <div class="input-group" style="margin-bottom:0;">
+                        <label class="input-label">Cidade / UF</label>
+                        <input type="text" id="chk-cidade-uf" class="input-text" readonly style="background: #e2e8f0; color: #64748b;">
+                        <input type="hidden" id="chk-cidade">
+                        <input type="hidden" id="chk-estado">
+                    </div>
                 </div>
             </div>
             
@@ -477,7 +505,7 @@ const BASKETS = [
         // ==========================================
         // RENDERIZAÇÃO DE CARDS
         // ==========================================
-       function renderCardHTML(prod, isBasketItem = false, index = null) {
+        function renderCardHTML(prod, isBasketItem = false, index = null) {
             let q = isBasketItem ? prod.basketQty : (STATE.cart[prod.id] || 0);
             
             let isOutOfStock = prod.stock <= 0 && !isBasketItem;
@@ -627,7 +655,7 @@ const BASKETS = [
             lazyLoadImages();
         }
 
-       function renderCestas() {
+        function renderCestas() {
             let html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Cestas Básicas</div><div style="background: #fff;">`;
             
             BASKETS.forEach(basket => {
@@ -990,7 +1018,7 @@ const BASKETS = [
         }
 
         // ==========================================
-        // CHECKOUT E CUPOM
+        // CHECKOUT E CUPOM E BUSCA CEP
         // ==========================================
         window.openCheckout = function() {
             if (STATE.cartOrder.length === 0) return alert("Sua sacola está vazia!");
@@ -1007,7 +1035,23 @@ const BASKETS = [
         window.selectDelivery = function(idx) { STATE.selectedDeliveryIndex = idx; let sel = STATE.deliveryOptions[idx]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr; $('delivery-options-list').innerHTML = STATE.deliveryOptions.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})"><span>${opt.title} (${opt.dateStr})</span> ${opt.discount > 0 ? `<span style="color:var(--success); font-weight: 900;">-${fmt(opt.discount)}</span>` : ''}</button>`).join(''); updateTotals(); };
         window.selectPayment = function(metodo, btn) { $('chk-pagamento').value = metodo; document.querySelectorAll('#main-payment-options .pay-btn').forEach(el => el.classList.remove('selected')); btn.classList.add('selected'); if(metodo === 'Cartão Alimentação' || metodo === 'Cartão Refeição') $('voucher-brands-container').style.display = 'grid'; else { $('voucher-brands-container').style.display = 'none'; $('chk-voucher').value = ''; document.querySelectorAll('.brand-btn').forEach(el => el.classList.remove('selected')); } };
         window.selectVoucherBrand = function(brand, btn) { $('chk-voucher').value = brand; document.querySelectorAll('.brand-btn').forEach(el => el.classList.remove('selected')); btn.classList.add('selected'); };
-        window.selectCity = function(city, btn) { $('chk-cidade').value = city; document.querySelectorAll('.city-btn').forEach(el => el.classList.remove('active')); btn.classList.add('active'); };
+        
+        window.buscaCEP = async function(cep) {
+            let num = cep.replace(/\D/g, "");
+            if(num.length !== 8) return;
+            try {
+                let res = await fetch(`https://viacep.com.br/ws/${num}/json/`);
+                let data = await res.json();
+                if(!data.erro) {
+                    $('chk-endereco').value = data.logradouro + ", ";
+                    $('chk-bairro').value = data.bairro;
+                    $('chk-cidade-uf').value = data.localidade + " / " + data.uf;
+                    $('chk-cidade').value = data.localidade;
+                    $('chk-estado').value = data.uf;
+                    $('chk-endereco').focus();
+                }
+            } catch(e) { console.log(e); }
+        }
 
         function renderCheckoutItems() {
             let htmlItems = STATE.cartOrder.map(id => {
@@ -1080,7 +1124,7 @@ const BASKETS = [
 
             let finalTotal = sumBase - STATE.deliveryDiscount - STATE.couponDiscount - STATE.atacadoDiscount; 
             $('sum-total').innerText = fmt(finalTotal);
-            let btn = $('btn-send-order'); if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerHTML = `Pedido Mínimo: ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--text-light)'; btn.style.boxShadow = 'none'; } else { btn.disabled = false; btn.innerHTML = 'Enviar Pedido via WhatsApp'; btn.style.background = 'var(--success)'; btn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)'; }
+            let btn = $('btn-send-order'); if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerHTML = `Pedido Mínimo: ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--text-light)'; btn.style.boxShadow = 'none'; } else { btn.disabled = false; btn.innerHTML = 'Enviar Pedido'; btn.style.background = 'var(--success)'; btn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)'; }
             
             let badge = $('bottom-cart-count'); 
             let bottomTotal = $('bottom-cart-total');
@@ -1097,27 +1141,73 @@ const BASKETS = [
             }
         }
 
-     window.sendOrder = function() {
+        window.sendOrder = async function() {
             const btn = $('btn-send-order'); if (btn.disabled) return;
-            const nome = $('chk-nome').value.trim(); const cpf = $('chk-cpf').value.replace(/\D/g,"");
-            let pag = $('chk-pagamento').value; let voucher = $('chk-voucher').value;
-            if ((pag === 'Cartão Alimentação' || pag === 'Cartão Refeição') && !voucher) return alert("Por favor, selecione a bandeira do cartão."); if (voucher) pag += ` (${voucher})`;
-            if (!nome || !cpf) return alert("Preencha seu Nome e CPF para prosseguir."); 
-            salvarDadosLocalmente({ nome, cpf: $('chk-cpf').value });
+            
+            // Dados do Cliente
+            const nome = $('chk-nome').value.trim(); 
+            const cpf = $('chk-cpf').value.replace(/\D/g,"");
+            const whats = $('chk-whats').value.replace(/\D/g,"");
+            const cep = $('chk-cep').value.replace(/\D/g,"");
+            const endereco = $('chk-endereco').value.trim();
+            const bairro = $('chk-bairro').value.trim();
+            const cidade = $('chk-cidade').value.trim();
+            const estado = $('chk-estado').value.trim();
+            
+            let pag = $('chk-pagamento').value; 
+            let voucher = $('chk-voucher').value;
+            
+            if ((pag === 'Cartão Alimentação' || pag === 'Cartão Refeição') && !voucher) return alert("Por favor, selecione a bandeira do cartão."); 
+            if (voucher) pag += ` (${voucher})`;
+            
+            if (!nome || !cpf || !whats || !cep || !endereco || !bairro || !cidade || !estado) {
+                return alert("Por favor, preencha todos os seus dados de entrega e contato para prosseguir."); 
+            }
+            
+            salvarDadosLocalmente({ 
+                nome, 
+                cpf: $('chk-cpf').value, 
+                whats: $('chk-whats').value, 
+                cep: $('chk-cep').value, 
+                endereco, 
+                bairro, 
+                cidade, 
+                estado 
+            });
             
             btn.innerHTML = "Processando...";
-            const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let totalBruto = 0; let totalDescontoCestas = 0;
+            const orderId = String(Date.now()).slice(-6); 
+            let itemsTxt = ""; 
+            let totalBruto = 0; 
+            let totalDescontoCestas = 0;
             
+            // Para o Webhook do Make
+            let pedidoItens = [];
+
             Object.entries(STATE.cart).forEach(([cartId, q]) => { 
                 const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
                 if (p) { 
                     totalBruto += p.price * q; 
-                    if (!String(cartId).startsWith('fee_cesta')) itemsTxt += `${q}x ${p.name}\n`; 
-                    else { let bId = String(cartId).replace('fee_', ''); let bObj = BASKETS.find(b => b.id === bId); if (bObj && bObj.oldPrice) totalDescontoCestas += ((bObj.oldPrice - bObj.preco) * q); } 
+                    if (!String(cartId).startsWith('fee_cesta')) {
+                        itemsTxt += `${q}x ${p.name}\n`; 
+                        pedidoItens.push({
+                            id: String(p.id),
+                            sku: String(p.codigo || p.id),
+                            nome: p.name,
+                            qtd: q,
+                            price: p.price
+                        });
+                    }
+                    else { 
+                        let bId = String(cartId).replace('fee_', ''); 
+                        let bObj = BASKETS.find(b => b.id === bId); 
+                        if (bObj && bObj.oldPrice) totalDescontoCestas += ((bObj.oldPrice - bObj.preco) * q); 
+                    } 
                 } 
             });
             
-            let final = totalBruto - STATE.deliveryDiscount - STATE.couponDiscount - STATE.atacadoDiscount;
+            let totalDescontoFormatado = STATE.deliveryDiscount + STATE.couponDiscount + STATE.atacadoDiscount + totalDescontoCestas;
+            let final = totalBruto - totalDescontoFormatado;
             
             let customTxt = "\n\n------------------------\n";
             let hasBasket = Object.keys(STATE.basketCustomizations).length > 0;
@@ -1134,6 +1224,38 @@ const BASKETS = [
                 customTxt += `*Pedido Personalizado (Itens Avulsos)*\n`; 
             }
             
+            // Payload para o Make.com (Conforme Blueprint)
+            const makePayload = {
+                cliente: {
+                    nome: nome,
+                    cpf: cpf,
+                    whats: whats,
+                    cidade: cidade,
+                    estado: estado,
+                    cep: cep,
+                    bairro: bairro,
+                    endereco: endereco,
+                    pagamento: pag
+                },
+                pedido: {
+                    itens: pedidoItens,
+                    total: final,
+                    outras_despesas: 0,
+                    desconto: totalDescontoFormatado,
+                    observacoes: `Entrega: ${STATE.deliveryDateStr} | ` + customTxt.replace(/\n/g, " ")
+                }
+            };
+
+            try {
+                await fetch('https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(makePayload)
+                });
+            } catch (err) {
+                console.error("Erro na comunicação com o Make.com, prosseguindo para o WhatsApp.");
+            }
+
             if (totalDescontoCestas > 0) itemsTxt += `\n🎁 BÔNUS CESTA: -${fmt(totalDescontoCestas)}`;
             if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
             if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
@@ -1146,7 +1268,7 @@ const BASKETS = [
             STATE.cart = {}; STATE.cartOrder = []; STATE.basketCustomizations = {}; STATE.appliedCoupon = null; $('chk-cupom').value = '';
             saveCart(); updateTotals(); renderCheckoutItems(); closeCheckout();
             
-            setTimeout(() => { btn.innerHTML = `Enviar Pedido via WhatsApp`; }, 3000);
+            setTimeout(() => { btn.innerHTML = `Enviar Pedido`; }, 3000);
         };
 
         // ==========================================
@@ -1154,7 +1276,23 @@ const BASKETS = [
         // ==========================================
         function loadCart() { try { let saved = localStorage.getItem('da_cart'); let savedOrder = localStorage.getItem('da_cart_order'); let savedCustom = localStorage.getItem('da_custom'); if (saved) STATE.cart = JSON.parse(saved); if (savedOrder) STATE.cartOrder = JSON.parse(savedOrder); if (savedCustom) STATE.basketCustomizations = JSON.parse(savedCustom); } catch(e) {} }
         function saveCart() { localStorage.setItem('da_cart', JSON.stringify(STATE.cart)); localStorage.setItem('da_cart_order', JSON.stringify(STATE.cartOrder)); localStorage.setItem('da_custom', JSON.stringify(STATE.basketCustomizations));}
-        function carregarDadosSalvos() { try { let d = JSON.parse(localStorage.getItem('da_user') || '{}'); if(d.nome) $('chk-nome').value = d.nome; if(d.cpf) $('chk-cpf').value = d.cpf; } catch(e){} }
+        
+        function carregarDadosSalvos() { 
+            try { 
+                let d = JSON.parse(localStorage.getItem('da_user') || '{}'); 
+                if(d.nome) $('chk-nome').value = d.nome; 
+                if(d.cpf) $('chk-cpf').value = d.cpf; 
+                if(d.whats) $('chk-whats').value = d.whats;
+                if(d.cep) $('chk-cep').value = d.cep;
+                if(d.endereco) $('chk-endereco').value = d.endereco;
+                if(d.bairro) $('chk-bairro').value = d.bairro;
+                if(d.cidade && d.estado) {
+                    $('chk-cidade').value = d.cidade;
+                    $('chk-estado').value = d.estado;
+                    $('chk-cidade-uf').value = d.cidade + " / " + d.estado;
+                }
+            } catch(e){} 
+        }
         function salvarDadosLocalmente(dados) { localStorage.setItem('da_user', JSON.stringify(dados)); }
         
         window.mascaraCPF = function(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); i.value = v; }
