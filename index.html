@@ -1506,15 +1506,19 @@ ${itemsTxt}
 
     async function fetchWithCache(url, key) {
         try { 
-            let cached = localStorage.getItem(key); 
-            let cacheTime = localStorage.getItem(key + '_time'); 
-            let now = Date.now(); 
-            if (cached && cacheTime && (now - cacheTime < 30 * 60000)) return JSON.parse(cached); 
-            let res = await fetch(url).then(r => r.json()); 
-            localStorage.setItem(key, JSON.stringify(res)); 
-            localStorage.setItem(key + '_time', now); 
+            // 1. Limpamos o cache antigo que possa ter ficado preso no telemóvel dos clientes
+            localStorage.removeItem(key);
+            localStorage.removeItem(key + '_time');
+
+            // 2. Criamos uma URL nova a cada milissegundo para forçar o download (Cache-Busting)
+            let separador = url.includes('?') ? '&' : '?';
+            let urlSemCache = url + separador + 'nocache=' + Date.now();
+            
+            // 3. Fazemos a requisição direta ao servidor
+            let res = await fetch(urlSemCache).then(r => r.json()); 
             return res; 
         } catch (e) { 
+            console.error("Erro ao buscar ficheiro sem cache:", e);
             return []; 
         }
     }
