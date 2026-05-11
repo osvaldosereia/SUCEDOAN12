@@ -397,7 +397,7 @@
                 </div>
             </div>
             <div style="padding: 20px;">
-                <div id="basket-items-header" style="background: #fef2f2; color: #dc2626; font-size: 15px; font-weight: 800; padding: 14px; border-radius: 12px; text-align: center; margin-bottom: 20px; border: 1px solid #fca5a5;">Ajuste os itens da sua cesta conforme sua necessidade:</div>
+           
                 <div id="basket-items-container" class="products-grid" style="display: flex; flex-direction: column; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-light); overflow: hidden;"></div>
                 <div id="basket-summary-container" style="background: #ffffff; padding: 20px; border-radius: 16px; margin-top: 25px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
                     <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 18px; margin-bottom: 15px; color: var(--text-dark);"><span>Total (<span id="basket-total-items">0</span> itens)</span><span id="basket-total-price">R$ 0,00</span></div>
@@ -423,7 +423,7 @@
     </div>
 
     <div class="checkout-drawer" id="checkout-drawer">
-        <div class="chk-header">Minha Lista <div style="cursor: pointer; padding: 5px;" onclick="closeCheckout()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div></div>
+        <div class="chk-header">Meus Produtos <div style="cursor: pointer; padding: 5px;" onclick="closeCheckout()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div></div>
         
         <div class="chk-body">
             
@@ -1140,7 +1140,7 @@ const BASKETS = [
 
                 // NOVIDADE: Textos ajustados e passando "this" para identificar o clique
                 const renderOptionCard = (p, isReplace) => {
-                    let btnText = isReplace ? "Trocar por este produto" : "Adicionar mais este produto";
+                    let btnText = isReplace ? "Trocar por este" : "Adicionar mais este";
                     let btnColor = isReplace ? "var(--success)" : "var(--primary)";
                     return `
                     <div class="product-card-list" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light);">
@@ -1321,12 +1321,12 @@ const BASKETS = [
             $('vip-items-grid').innerHTML = `
                 <div style="background: var(--success); color: white; padding: 25px; border-radius: 16px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
                     <div style="font-size: 45px; margin-bottom: 10px;">✓</div>
-                    <h2 style="font-size: 22px; font-weight: 900; margin-bottom: 5px;">Cesta na Lista!</h2>
+                    <h2 style="font-size: 22px; font-weight: 900; margin-bottom: 5px;">Pronto!</h2>
                 </div>
-                <h3 style="font-size: 18px; font-weight: 900; text-align: center; margin-top: 15px; margin-bottom: 15px; color: var(--text-dark); padding: 0 20px;">Veja mais produtos que você pode estar precisando:</h3>
+                <h3 style="font-size: 18px; font-weight: 900; text-align: center; margin-top: 15px; margin-bottom: 15px; color: var(--text-dark); padding: 0 20px;">Continue comprando:</h3>
                 ${htmlMercado}
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; padding: 0 20px;">
-                    <button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)">Visualizar Lista Completa</button>
+                    <button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)">Finalizar Pedido</button>
                 </div>`;
             
             $('vip-list-container').style.display = 'block'; 
