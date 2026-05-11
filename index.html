@@ -97,13 +97,14 @@
         /* =========================================
            NOVAS CLASSES DIDÁTICAS PARA AS CESTAS
         ========================================= */
+        /* Força todos os itens a ficarem em uma linha única e centralizada no cartão */
         .basket-action-row { 
             display: flex; 
-            flex-wrap: wrap; /* Permite que os itens caiam para a linha de baixo em telas minúsculas se necessário, mas tenta mantê-los juntos */
+            flex-wrap: nowrap; 
             flex-direction: row; 
             align-items: center; 
-            justify-content: center; /* Centraliza tudo horizontalmente */
-            gap: 8px; 
+            justify-content: center; 
+            gap: 6px; 
             margin-top: 15px; 
             width: 100%; 
             border-top: 1px dashed var(--border-light); 
@@ -117,8 +118,9 @@
             gap: 6px; 
             background: #f1f5f9; 
             padding: 4px 6px; 
-            border-radius: 30px; /* Bordas bem arredondadas para dar aparência de pílula */
+            border-radius: 30px; 
             border: 1px solid var(--border-light);
+            white-space: nowrap;
         }
         .qty-btn-round {
             width: 32px; 
@@ -134,6 +136,7 @@
             justify-content: center; 
             cursor: pointer;
             transition: 0.2s;
+            flex-shrink: 0;
         }
         .qty-btn-round:active {
             transform: scale(0.9);
@@ -143,14 +146,14 @@
             font-size: 13px; 
             font-weight: 800; 
             color: var(--text-dark); 
-            white-space: nowrap; /* Impede que o texto quebre em duas linhas */
+            white-space: nowrap; 
             padding: 0 4px;
         }
 
         /* Estilização dos Botões de Retirar e Trocar */
         .btn-didatico { 
-            padding: 8px 14px; 
-            border-radius: 20px; /* Formato de pílula */
+            padding: 8px 12px; 
+            border-radius: 20px; 
             font-weight: 800; 
             font-size: 13px; 
             border: none; 
@@ -158,8 +161,9 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            gap: 5px; /* Espaço entre ícone e texto */
+            gap: 4px; 
             transition: 0.2s; 
+            white-space: nowrap;
         }
         .btn-didatico:active { transform: scale(0.94); }
         .btn-didatico-remover { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
@@ -284,7 +288,7 @@
             .ver-tudo-header { top: -30px; background: transparent; backdrop-filter: none; border-bottom: none; font-size: 22px; padding: 0 0 20px 0; margin: 0; box-shadow: none; pointer-events: none;}
             .ver-tudo-header svg { display: none; }
             
-            /* Grid System (Substitui as listas horizontais) */
+            /* Grid System */
             .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; background: transparent !important; padding: 0 !important; }
             
             /* Card Versão Desktop (Vertical) */
@@ -302,22 +306,20 @@
             .product-card-list .btn-quick-add-list::after { content: "Adicionar"; font-size: 14px; display: inline; }
             .product-card-list .qty-controls { width: 100%; height: 42px; border-radius: 12px;}
             
-            /* Modal das Cestas Desktop e Swap Modal */
+            /* Modais e Modal de Swap */
             .full-screen-detail { width: 700px; height: 90vh; top: 50%; left: 50%; transform: translate(100vw, -50%); border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
             .full-screen-detail.active { transform: translate(-50%, -50%); }
             .detail-close { top: -15px; right: -15px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
             
-            /* Forçar card horizontal apenas dentro do Modal para não quebrar a UI */
-            #basket-items-container .product-card-list, #swap-items-container .product-card-list { flex-direction: row; text-align: left; padding: 16px; }
+            /* No desktop os itens da cesta mantem-se horizontais dentro do card */
+            #basket-items-container .product-card-list, #swap-items-container .product-card-list { flex-direction: column; align-items: stretch; text-align: left; padding: 16px; }
             #basket-items-container .product-card-list .img-wrapper, #swap-items-container .product-card-list .img-wrapper { width: 90px; height: 90px; margin-bottom: 0; margin-top: 0;}
             #basket-items-container .product-card-list .product-details, #swap-items-container .product-card-list .product-details { align-items: flex-start; justify-content: space-between; }
             #basket-items-container .product-card-list .card-bottom-row, #swap-items-container .product-card-list .card-bottom-row { flex-direction: row; justify-content: space-between; margin-top: auto; gap: 8px; width: 100%; }
             #basket-items-container .product-card-list .price-container, #swap-items-container .product-card-list .price-container { align-items: flex-start; }
-            #basket-items-container .product-card-list .qty-controls { width: 92px; height: 38px; border-radius: 19px; }
 
             #basket-summary-container { position: sticky; bottom: 0; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index:10; }
 
-            /* Checkout Drawer */
             .checkout-drawer { max-width: 480px; box-shadow: -10px 0 40px rgba(0,0,0,0.1); }
             
             /* Página de Produto Desktop Split-View */
@@ -660,6 +662,7 @@ const BASKETS = [
 
             let controlsHtml = '';
             let basketExtras = '';
+            let cardContent = '';
 
             if (isBasketItem) {
                 // Monta a interface didática: " - X unidades + "
@@ -671,7 +674,7 @@ const BASKETS = [
                         <button class="qty-btn-round" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();">${iconPlus}</button>
                     </div>`;
                 
-                // Nova linha alinhada horizontalmente (mesma linha)
+                // Nova linha alinhada horizontalmente e forçada a não quebrar (nowrap)
                 basketExtras = `
                 <div class="basket-action-row">
                     ${qtyDidatic}
@@ -684,14 +687,37 @@ const BASKETS = [
                         Trocar
                     </button>
                 </div>`;
+
+                // Layout de "dois andares" para que os botões caibam na largura total do card
+                cardContent = `
+                    ${esgotadoTag}
+                    <div style="display: flex; gap: 16px; width: 100%;">
+                        <div class="img-wrapper">
+                            <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'">
+                        </div>
+                        <div class="product-details" style="padding-top:0; padding-bottom:0;">
+                            <div>
+                                ${tagEmbalagem}
+                                <div class="product-name-list">${prod.name}</div>
+                            </div>
+                            <div class="card-bottom-row" style="margin-top: auto;">
+                                <div class="price-container">
+                                    <div>${oldPriceHtml}</div>
+                                    <div class="tag-preco-list">${discountBadge + fmt(prod.price)}</div>
+                                    ${atacadoTag}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    ${basketExtras}
+                `;
             } else {
                 controlsHtml = q === 0 
                     ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)">${iconPlus}</div>`
                     : `<div class="qty-controls"><button class="qty-btn" onclick="updateCartItem('${prod.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display">${q}</span><button class="qty-btn" onclick="updateCartItem('${prod.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`;
-            }
-
-            return `
-                <div class="${baseClass}" ${onClickAction}>
+                
+                // Layout padrão da vitrine
+                cardContent = `
                     ${esgotadoTag}
                     <div class="img-wrapper">
                         <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'">
@@ -704,14 +730,18 @@ const BASKETS = [
                         <div class="card-bottom-row">
                             <div class="price-container">
                                 <div>${oldPriceHtml}</div>
-                                <div class="tag-preco-list">${isBasketItem ? '' : discountBadge + fmt(prod.price)}</div>
+                                <div class="tag-preco-list">${discountBadge + fmt(prod.price)}</div>
                                 ${atacadoTag}
                             </div>
-                            <!-- Omitindo action-area se for cesta, para usar o basketExtras abaixo da linha do preço -->
-                            ${isBasketItem ? '' : `<div class="card-action-area" id="action-card-${prod.id}">${controlsHtml}</div>`}
+                            <div class="card-action-area" id="action-card-${prod.id}">${controlsHtml}</div>
                         </div>
-                        ${basketExtras}
                     </div>
+                `;
+            }
+
+            return `
+                <div class="${baseClass}" ${onClickAction} style="${isBasketItem ? 'flex-direction: column;' : ''}">
+                    ${cardContent}
                 </div>`;
         }
 
