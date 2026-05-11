@@ -439,7 +439,6 @@
 
             <div class="chk-inline-summary">
                 <div class="summary-row"><span>Subtotal dos Produtos</span><span id="sum-sub">R$ 0,00</span></div>
-                <div class="summary-row" style="color: var(--success); display: none;" id="sum-basket-row"><span>Bônus Cesta Fechada</span><span id="sum-basket-desc">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-atacado-row"><span>Desconto Atacado (Volume)</span><span id="sum-atacado-desc">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-desc-row"><span>Desconto Agendamento</span><span id="sum-desc">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-cupom-row"><span>Cupom Aplicado</span><span id="sum-cupom-desc">R$ 0,00</span></div>
@@ -468,15 +467,15 @@
 const ORDEM_CATEGORIAS = ['mercearia basica', 'cafe da manha', 'macarrao e molhos', 'temperos', 'sucos e refris', 'bebidas', 'frios', 'congelados', 'hortifruti', 'padaria', 'carnes', 'limpeza', 'lavanderia', 'beleza', 'higiene', 'sabonete', 'shampoo', 'cabelo'];
         
 const BASKETS = [
-  { "id": "cesta1", "nome": "Economica Bonini", "preco": 90, "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x P434", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
-  { "id": "cesta2", "nome": "Mini Bonini", "preco": 175, "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta3", "nome": "Mini Koblenz", "preco": 185, "imagem": "img/CESTA-MINI-KOBLENZ.webp", "produtos": ["1x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta4", "nome": "Pequena Bonini", "preco": 225, "imagem": "img/CESTA-PEQUENA-BONINI.webp", "produtos": ["2x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta5", "nome": "Pequena Koblenz", "preco": 235, "imagem": "img/CESTA-PEQUENA-KOBLENZ.webp", "produtos": ["2x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta6", "nome": "Média Koblenz", "preco": 340, "imagem": "img/CESTA-MEDIA-KOBLENZ.webp", "produtos": ["3x P500", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta7", "nome": "Média Bonini", "preco": 335, "imagem": "img/CESTA-MEDIA-BONINI.webp", "produtos": ["3x P0026", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta8", "nome": "Grande Koblenz", "preco": 415, "imagem": "img/CESTA-GRANDE-KOBLENZ.webp", "produtos": ["4x P500", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta9", "nome": "Grande Bonini", "preco": 400, "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] }
+  { "id": "cesta1", "nome": "Economica Bonini", "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x P434", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
+  { "id": "cesta2", "nome": "Mini Bonini", "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta3", "nome": "Mini Koblenz", "imagem": "img/CESTA-MINI-KOBLENZ.webp", "produtos": ["1x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta4", "nome": "Pequena Bonini", "imagem": "img/CESTA-PEQUENA-BONINI.webp", "produtos": ["2x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta5", "nome": "Pequena Koblenz", "imagem": "img/CESTA-PEQUENA-KOBLENZ.webp", "produtos": ["2x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta6", "nome": "Média Koblenz", "imagem": "img/CESTA-MEDIA-KOBLENZ.webp", "produtos": ["3x P500", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta7", "nome": "Média Bonini", "imagem": "img/CESTA-MEDIA-BONINI.webp", "produtos": ["3x P0026", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta8", "nome": "Grande Koblenz", "imagem": "img/CESTA-GRANDE-KOBLENZ.webp", "produtos": ["4x P500", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta9", "nome": "Grande Bonini", "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] }
 ];
 
         const COUPONS = {
@@ -511,9 +510,39 @@ const BASKETS = [
             return Infinity;
         }
 
+        // Nova lógica de cálculo dinâmico da Cesta (15% + arredondamento)
+        function getBasketDynamicPrice(basket) {
+            let valorPadraoCesta = 0;
+            if(STATE.prods.length > 0) {
+                basket.produtos.forEach(str => {
+                    let p = str.split("x ");
+                    if(p.length === 2) {
+                        let qty = parseInt(p[0]);
+                        let cod = p[1].trim();
+                        let pObj = STATE.prods.find(x => x.codigo === cod || String(x.id) === cod);
+                        if(pObj) valorPadraoCesta += (pObj.price * qty);
+                    }
+                });
+            }
+            
+            // Soma 15% ao valor de custo original
+            let valorComTaxa = valorPadraoCesta * 1.15;
+            // Arredonda para cima (sem centavos)
+            let valorFinalArredondado = Math.ceil(valorComTaxa);
+            
+            return {
+                valorPadrao: valorPadraoCesta,
+                valorFinal: valorFinalArredondado,
+                taxaExtra: valorFinalArredondado - valorPadraoCesta
+            };
+        }
+
         function calculateBasketPrices(basketId) {
             const basket = BASKETS.find(b => b.id === basketId);
             if(!basket) return { original: 0, final: 0, atacado: 0 };
+            
+            let dyn = getBasketDynamicPrice(basket);
+            let original = dyn.valorFinal; // O preço base agora é dinâmico
             
             let atacado = 0;
             if(STATE.prods.length > 0) {
@@ -530,7 +559,6 @@ const BASKETS = [
                 });
             }
             
-            let original = basket.preco;
             let finalPrice = original - atacado;
             
             return { original: original, final: finalPrice, atacado: atacado };
@@ -666,9 +694,7 @@ const BASKETS = [
 
             let columnsHtml = '';
             
-            // Alteramos o loop para avançar de 2 em 2 (i += 2)
             for(let i = 0; i < todasOfertas.length; i += 2) {
-                // Pegamos uma "fatia" (slice) de 2 itens em vez de 3
                 let chunk = todasOfertas.slice(i, i + 2);
                 let chunkHtml = chunk.map(p => renderCardHTML(p)).join('');
                 columnsHtml += `<div class="carrossel-column">${chunkHtml}</div>`;
@@ -676,7 +702,6 @@ const BASKETS = [
 
             let onClickBtn = isVIP ? "closeBasketDetail(); window.location.hash='#/ofertas'" : "window.location.hash='#/ofertas'";
             
-            // Alteramos a condição do botão "Ver todas" para exibir caso haja mais de 2 ofertas
             let btnHtml = todasOfertas.length > 2 ? `<div style="padding: 0 20px 15px 20px;"><button onclick="${onClickBtn}" class="btn-ver-todos-cat">Ver todas as ${todasOfertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
             return `
             <div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); margin-bottom: 15px; border-top: 1px solid var(--border-light);">
@@ -807,7 +832,7 @@ const BASKETS = [
             BASKETS.forEach(basket => {
                 let prices = calculateBasketPrices(basket.id);
                 let displayPrice = prices.final;
-                let crossedPrice = prices.atacado > 0 ? prices.original : basket.oldPrice;
+                let crossedPrice = prices.atacado > 0 ? prices.original : null;
 
                 let oldPriceHtml = crossedPrice ? `<span class="old-price">${fmt(crossedPrice)}</span>` : '';
                 html += `
@@ -973,7 +998,7 @@ const BASKETS = [
             $('basketModalImg').src = basket.imagem; $('basketModalTitle').innerText = basket.nome;
             
             let prices = calculateBasketPrices(basketId);
-            let crossedPrice = prices.atacado > 0 ? prices.original : basket.oldPrice;
+            let crossedPrice = prices.atacado > 0 ? prices.original : null;
             $('basketModalPrice').innerHTML = crossedPrice 
                 ? `<span style="text-decoration: line-through; font-size: 16px; color: #94a3b8; margin-right: 10px;">De: ${fmt(crossedPrice)}</span> Por: ${fmt(prices.final)}` 
                 : "Valor: " + fmt(prices.final);
@@ -1014,22 +1039,9 @@ const BASKETS = [
             
             const basket = BASKETS.find(b => b.id === window.currentBasketId);
             
-            let valorPadraoCesta = 0;
-            let origMap = {};
-            if(basket) {
-                basket.produtos.forEach(str => { 
-                    let p = str.split("x "); 
-                    if(p.length === 2) {
-                        let qtd = parseInt(p[0]);
-                        let cod = p[1].trim();
-                        origMap[cod] = qtd;
-                        let pObj = STATE.prods.find(x => x.codigo === cod || String(x.id) === cod);
-                        if(pObj) valorPadraoCesta += (pObj.price * qtd);
-                    }
-                });
-            }
+            let dyn = getBasketDynamicPrice(basket);
+            let diferencaFixa = dyn.taxaExtra; // A taxa congelada
             
-            let diferencaFixa = basket ? (basket.preco - valorPadraoCesta) : 0;
             let precoDinamicoAtual = valorSomaDosItensAtuais + diferencaFixa - totalAtacadoItemsAtuais;
             let precoSemAtacado = valorSomaDosItensAtuais + diferencaFixa;
 
@@ -1040,6 +1052,18 @@ const BASKETS = [
                 $('basket-total-price').innerText = basket ? fmt(precoDinamicoAtual) : 'R$ 0,00';
             }
             
+            let origMap = {};
+            if(basket) {
+                basket.produtos.forEach(str => { 
+                    let p = str.split("x "); 
+                    if(p.length === 2) {
+                        let qtd = parseInt(p[0]);
+                        let cod = p[1].trim();
+                        origMap[cod] = qtd;
+                    }
+                });
+            }
+
             let diffAdded = [];
             let diffRemoved = [];
             currentBasketItems.forEach(item => {
@@ -1086,20 +1110,18 @@ const BASKETS = [
             if (!basket) return;
             
             let origItemsMap = {}; 
-            let valorPadraoCesta = 0;
             basket.produtos.forEach(str => { 
                 let p = str.split("x "); 
                 if(p.length === 2) {
                     let qtd = parseInt(p[0]);
                     let cod = p[1].trim();
                     origItemsMap[cod] = qtd; 
-                    
-                    let pObj = STATE.prods.find(x => x.codigo === cod || String(x.id) === cod);
-                    if(pObj) valorPadraoCesta += (pObj.price * qtd);
                 }
             });
 
-            let diferencaFixa = basket.preco - valorPadraoCesta;
+            // Recupera a taxa extra congelada (15% + arredondamento) calculada na hora
+            let dyn = getBasketDynamicPrice(basket);
+            let diferencaFixa = dyn.taxaExtra;
 
             let basketDiff = { id: basket.id, name: basket.nome, removed: [], added: [] }; 
             let hasChanges = false; 
@@ -1124,10 +1146,10 @@ const BASKETS = [
             basketDiff.changed = hasChanges;
             STATE.basketCustomizations[basket.id] = basketDiff;
 
-            if (addedCount > 0 && Math.abs(diferencaFixa) > 0.01) { 
+            // Se adicionou produtos, lança a "Taxa Oculta" na sacola
+            if (addedCount > 0 && diferencaFixa > 0.01) { 
                 let feeId = 'fee_' + basket.id; 
-                let isDiscount = diferencaFixa < 0; 
-                let feeName = isDiscount ? 'Desconto Promo (' + basket.nome + ')' : 'Embalagem/Montagem (' + basket.nome + ')'; 
+                let feeName = 'Taxa Oculta (' + basket.nome + ')'; 
                 let feeProd = STATE.prods.find(p => p.id === feeId); 
                 
                 if (!feeProd) { 
@@ -1239,7 +1261,10 @@ const BASKETS = [
 
         function renderCheckoutItems() {
             let htmlItems = STATE.cartOrder.map(id => {
-                if (String(id).startsWith('fee_cesta')) return ''; let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id]; if(!p) return '';
+                // Não renderiza itens que começam com fee_ para que a taxa extra fique oculta visualmente
+                if (String(id).startsWith('fee_')) return ''; 
+                
+                let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id]; if(!p) return '';
                 return `
                     <div class="cart-item-row">
                         <div class="cart-item-info">
@@ -1267,15 +1292,15 @@ const BASKETS = [
         };
 
         function updateTotals() {
-            let sumBase = 0; let count = 0; let basketDiscountTotal = 0; let eligibleForCouponSubtotal = 0; let atacadoTotal = 0;
+            let sumBase = 0; let count = 0; let eligibleForCouponSubtotal = 0; let atacadoTotal = 0;
             
             Object.entries(STATE.cart).forEach(([id, q]) => { 
                 let p = STATE.prods.find(x => String(x.id) === String(id)); 
                 if (p) { 
+                    // O fee_cesta vai somar aqui, aumentando o subtotal silenciosamente
                     sumBase += p.price * q; 
                     if (!String(id).startsWith('fee_cesta')) {
                         count += q; 
-                        // Lógica de Atacado: 3 ou mais itens aplica 5% extra no valor base
                         if (q >= 3) {
                             atacadoTotal += (p.price * 0.05) * q;
                         }
@@ -1286,13 +1311,12 @@ const BASKETS = [
                             if (rule.includeCategories && !rule.includeCategories.includes(catN)) isEligible = false;
                             if (isEligible) eligibleForCouponSubtotal += p.price * q;
                         }
-                    } else { let bId = String(id).replace('fee_', ''); let basketObj = BASKETS.find(b => b.id === bId); if (basketObj && basketObj.oldPrice) basketDiscountTotal += ((basketObj.oldPrice - basketObj.preco) * q); } 
+                    } 
                 } 
             });
             
-            let subtotalVisual = sumBase + basketDiscountTotal;
-            $('sum-sub').innerText = fmt(subtotalVisual); 
-            $('sum-basket-desc').innerText = `- ${fmt(basketDiscountTotal)}`; $('sum-basket-row').style.display = basketDiscountTotal > 0 ? 'flex' : 'none';
+            $('sum-sub').innerText = fmt(sumBase); 
+            
             $('sum-desc').innerText = `- ${fmt(STATE.deliveryDiscount)}`; $('sum-desc-row').style.display = STATE.deliveryDiscount > 0 ? 'flex' : 'none'; 
             
             STATE.atacadoDiscount = atacadoTotal;
@@ -1308,6 +1332,7 @@ const BASKETS = [
 
             let finalTotal = sumBase - STATE.deliveryDiscount - STATE.couponDiscount - STATE.atacadoDiscount; 
             $('sum-total').innerText = fmt(finalTotal);
+            
             let btn = $('btn-send-order'); if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerHTML = `Pedido Mínimo: ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--text-light)'; btn.style.boxShadow = 'none'; } else { btn.disabled = false; btn.innerHTML = 'Enviar Pedido'; btn.style.background = 'var(--success)'; btn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)'; }
             
             let badges = document.querySelectorAll('.cart-badge');
@@ -1329,7 +1354,6 @@ const BASKETS = [
         window.sendOrder = async function() {
             const btn = $('btn-send-order'); if (btn.disabled) return;
             
-            // Dados do Cliente
             const nome = $('chk-nome').value.trim(); 
             const cpf = $('chk-cpf').value.replace(/\D/g,"");
             const whats = $('chk-whats').value.replace(/\D/g,"");
@@ -1359,14 +1383,14 @@ const BASKETS = [
                 cidade, 
                 estado 
             });
+            
             btn.innerHTML = "Processando...";
             const orderId = String(Date.now()).slice(-6); 
             let itemsTxt = ""; 
             let totalBruto = 0; 
-            let totalDescontoCestas = 0;
+            let totalTaxasExtras = 0;
             let pedidoItens = [];
 
-            // 1. Processamento dos Itens do Carrinho
             Object.entries(STATE.cart).forEach(([cartId, q]) => { 
                 const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
                 if (p) { 
@@ -1380,18 +1404,15 @@ const BASKETS = [
                             price: p.price
                         });
                     } else { 
-                        let bId = String(cartId).replace('fee_', ''); 
-                        let bObj = BASKETS.find(b => b.id === bId); 
-                        if (bObj && bObj.oldPrice) totalDescontoCestas += ((bObj.oldPrice - bObj.preco) * q); 
+                        // Separar o valor da taxa extra para ser enviada apenas como despesa
+                        totalTaxasExtras += (p.price * q);
                     } 
                 } 
             });
 
-            // 2. Cálculos de Descontos e Total
-            let totalDescontoFormatado = STATE.deliveryDiscount + STATE.couponDiscount + STATE.atacadoDiscount + totalDescontoCestas;
+            let totalDescontoFormatado = STATE.deliveryDiscount + STATE.couponDiscount + STATE.atacadoDiscount;
             let final = totalBruto - totalDescontoFormatado;
 
-            // 3. Lógica de Status das Cestas (Padrão vs Alterada)
             let basketStatusTxt = "";
             let hasBasket = Object.keys(STATE.basketCustomizations).length > 0;
             if (hasBasket) {
@@ -1402,7 +1423,7 @@ const BASKETS = [
                 });
             }
 
-            // 4. Envio de Dados para o Make.com (Webhook)
+            // O Webhook envia a taxa extra em "outras_despesas"
             const makePayload = {
                 cliente: {
                     nome: nome,
@@ -1418,7 +1439,7 @@ const BASKETS = [
                 pedido: {
                     itens: pedidoItens,
                     total: final,
-                    outras_despesas: 0,
+                    outras_despesas: totalTaxasExtras,
                     desconto: totalDescontoFormatado,
                     observacoes: `Entrega: ${STATE.deliveryDateStr} | Status: ${basketStatusTxt.replace(/\n/g, " ")}`
                 }
@@ -1434,14 +1455,12 @@ const BASKETS = [
                 console.error("Erro na comunicação com o Make.com");
             }
 
-            // 5. Montagem dos Descontos para o Texto do WhatsApp
             let descontosTxt = "";
-            if (totalDescontoCestas > 0) descontosTxt += `\n🎁 BÔNUS CESTA: -${fmt(totalDescontoCestas)}`;
             if (STATE.atacadoDiscount > 0) descontosTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
             if (STATE.deliveryDiscount > 0) descontosTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
             if (STATE.couponDiscount > 0) descontosTxt += `\n🎟️ CUPOM (${STATE.appliedCoupon}): -${fmt(STATE.couponDiscount)}`;
 
-           // 6. Montagem da Mensagem Final do WhatsApp
+            // O Whatsapp omite a despesa extra, o cliente vê apenas o valor embutido no total
             const msg = `*PEDIDO #${orderId}*
 ------------------------------
 *DADOS DO CLIENTE*
@@ -1463,7 +1482,6 @@ ${itemsTxt}
 💰 *TOTAL:* ${fmt(final)}
 ------------------------------${basketStatusTxt}`;
 
-            // 7. Redirecionamento e Limpeza
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             
             STATE.cart = {}; 
@@ -1484,9 +1502,8 @@ ${itemsTxt}
         // DADOS, INICIALIZAÇÃO E ANTI-CACHE AGRESSIVO
         // ==========================================
         
-        // Função que varre o celular do cliente e apaga tudo do site, exceto os dados do usuário
         function forcarLimpezaDeCacheClient() {
-            const chavesProtegidas = ['da_user']; // O que NÃO queremos apagar (dados de entrega)
+            const chavesProtegidas = ['da_user']; 
             const todasAsChaves = Object.keys(localStorage);
             
             todasAsChaves.forEach(chave => {
@@ -1497,21 +1514,15 @@ ${itemsTxt}
             console.log("Limpeza de cache agressiva concluída. Apenas dados do usuário mantidos.");
         }
 
-        // Executamos a limpeza imediatamente assim que o script é lido
         forcarLimpezaDeCacheClient();
 
-        // O Carrinho agora vive apenas na memória enquanto a aba está aberta.
-        // Se a página for atualizada, ele zera, garantindo que não há preços velhos.
         function loadCart() { 
             STATE.cart = {}; 
             STATE.cartOrder = []; 
             STATE.basketCustomizations = {}; 
         }
         
-        function saveCart() { 
-            // Função mantida vazia para não quebrar o código existente, 
-            // mas NÃO SALVA MAIS NADA no localStorage.
-        }
+        function saveCart() {}
         
         function carregarDadosSalvos() { 
             try { 
@@ -1537,13 +1548,11 @@ ${itemsTxt}
 
     async function fetchWithCache(url) {
         try { 
-            // Criamos uma URL nova a cada milissegundo para forçar o download (Cache-Busting)
             let separador = url.includes('?') ? '&' : '?';
             let urlSemCache = url + separador + 'nocache=' + Date.now();
             
-            // Fazemos a requisição com parâmetros rigorosos para ignorar o cache HTTP
             let res = await fetch(urlSemCache, {
-                cache: 'no-store', // Diz ao navegador para buscar na rede sempre
+                cache: 'no-store',
                 headers: {
                     'Cache-Control': 'no-cache',
                     'Pragma': 'no-cache'
@@ -1615,7 +1624,6 @@ ${itemsTxt}
 
     async function init() {
         try {
-            // Chamamos a função apenas com a URL. O sistema anti-cache tratará do resto.
             const r2 = await fetchWithCache('/site/produtos.json?v=2');
             
             if (r2 && r2.length > 0) {
