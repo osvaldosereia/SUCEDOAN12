@@ -1383,7 +1383,7 @@ const BASKETS = [
             if (STATE.deliveryDiscount > 0) descontosTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
             if (STATE.couponDiscount > 0) descontosTxt += `\n🎟️ CUPOM (${STATE.appliedCoupon}): -${fmt(STATE.couponDiscount)}`;
 
-            // 6. Montagem da Mensagem Final do WhatsApp
+           // 6. Montagem da Mensagem Final do WhatsApp
             const msg = `*PEDIDO #${orderId}*
 ------------------------------
 *DADOS DO CLIENTE*
@@ -1420,6 +1420,7 @@ ${itemsTxt}
             closeCheckout();
             
             setTimeout(() => { btn.innerHTML = `Enviar Pedido`; }, 3000);
+        }; // <--- Chave de fechamento da função sendOrder que estava faltando
 
         // ==========================================
         // DADOS E INICIALIZAÇÃO
@@ -1541,7 +1542,7 @@ ${itemsTxt}
         } catch (e) { console.error("Erro na inicialização:", e); }
     }
         
-        document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
