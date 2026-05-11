@@ -1104,24 +1104,30 @@ const BASKETS = [
             showToast("O item " + itemNome + " foi retirado da cesta.");
         };
 
-        window.openSwapModal = function(index) {
+       window.openSwapModal = function(index) {
             let item = currentBasketItems[index];
             if(!item) return;
             let cat = item.pObj.categoria;
             
-            // Pega a primeira palavra do produto atual usando a função de normalização já existente (tira acentos/maiúsculas)
+            // Pega a primeira palavra do produto atual
             let firstWord = norm(item.pObj.name).split(' ')[0];
 
             // Filtra os produtos pela mesma categoria e exclui o próprio item
             let swapProds = STATE.prods.filter(p => p.categoria === cat && p.id !== item.pObj.id);
             
             $('swapModalTitle').innerText = "Trocando: " + item.pObj.name;
+
+            // NOVIDADE: Reseta a cor do botão de voltar sempre que abre a janela de trocas
+            let btnVoltar = document.querySelector('#swapModal .btn-voltar-gigante');
+            if (btnVoltar) {
+                btnVoltar.style.background = "var(--primary)";
+                btnVoltar.style.transform = "scale(1)";
+            }
             
             let html = '';
             if(swapProds.length === 0) {
                 html = '<div style="padding: 20px; text-align: center; color: var(--text-light);">Nenhum produto disponível na mesma categoria.</div>';
             } else {
-                // Separa entre produtos que combinam com a primeira palavra e os demais
                 let matches = [];
                 let others = [];
                 swapProds.forEach(p => {
@@ -1132,9 +1138,9 @@ const BASKETS = [
                     }
                 });
 
-                // Função didática para renderizar o card de opções dentro da busca
+                // NOVIDADE: Textos ajustados e passando "this" para identificar o clique
                 const renderOptionCard = (p, isReplace) => {
-                    let btnText = isReplace ? "Substituir por este produto" : "Adicionar mais este produto";
+                    let btnText = isReplace ? "Trocar por este produto" : "Adicionar mais este produto";
                     let btnColor = isReplace ? "var(--success)" : "var(--primary)";
                     return `
                     <div class="product-card-list" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light);">
@@ -1145,19 +1151,17 @@ const BASKETS = [
                                 <div class="price-container">
                                     <div class="tag-preco-list" style="font-size:16px;">${fmt(p.price)}</div>
                                 </div>
-                                <button class="btn-didatico" style="background: ${btnColor}; color: white; width: 100%; padding: 12px; font-size: 14px;" onclick="confirmSwap(${index}, '${p.id}', ${isReplace})">✅ ${btnText}</button>
+                                <button class="btn-didatico" style="background: ${btnColor}; color: white; width: 100%; padding: 12px; font-size: 14px; transition: all 0.3s;" onclick="confirmSwap(${index}, '${p.id}', ${isReplace}, this)">✅ ${btnText}</button>
                             </div>
                         </div>
                     </div>`;
                 };
 
-                // Exibe os produtos que deram "Match" primeiro
                 if (matches.length > 0) {
                     html += `<div style="font-weight: 800; font-size: 15px; color: var(--text-light); margin-bottom: 15px; text-align: center;">Opções sugeridas:</div>`;
                     matches.forEach(p => html += renderOptionCard(p, true));
                 }
 
-                // Exibe os outros produtos da sessão abaixo
                 if (others.length > 0) {
                     html += `<div style="font-weight: 800; font-size: 15px; color: var(--text-light); margin: 25px 0 15px; text-align: center;">Outros produtos desta sessão:</div>`;
                     others.forEach(p => html += renderOptionCard(p, false));
@@ -1169,19 +1173,20 @@ const BASKETS = [
             document.querySelector('#swapModal .modal-scroll-area').scrollTop = 0;
         };
 
-        // Recebemos um terceiro parâmetro (isReplace) para saber a ação correta
-        window.confirmSwap = function(index, newProdId, isReplace) {
+        // NOVIDADE: Adicionado o parâmetro "btnElement" para mudar as cores e remover os avisos antigos
+        window.confirmSwap = function(index, newProdId, isReplace, btnElement) {
             let newProd = STATE.prods.find(p => p.id === newProdId);
             if(!newProd) return;
             
             if (isReplace) {
-                // Substitui o produto atual, mas mantém a quantidade que estava antes
                 let oldQty = currentBasketItems[index].qty;
                 let pClone = {...newProd, basketQty: oldQty};
                 currentBasketItems[index] = { pObj: pClone, qty: oldQty };
-                showToast("Produto trocado com sucesso!");
+                
+                // Modifica o texto e cor do botão clicado
+                btnElement.innerHTML = "✅ Troca feita";
+                btnElement.style.background = "#64748b"; // Cinza indicando que já foi clicado
             } else {
-                // Adiciona como um NOVO produto na cesta
                 let existingIndex = currentBasketItems.findIndex(item => item.pObj.id === newProdId);
                 if (existingIndex > -1) {
                     currentBasketItems[existingIndex].qty += 1;
@@ -1189,12 +1194,25 @@ const BASKETS = [
                     let pClone = {...newProd, basketQty: 1};
                     currentBasketItems.push({ pObj: pClone, qty: 1 });
                 }
-                showToast("Produto adicionado à cesta!");
+                
+                // Modifica o texto e cor do botão clicado
+                btnElement.innerHTML = "✅ Adicionado";
+                btnElement.style.background = "#64748b"; // Cinza indicando que já foi clicado
             }
             
-            // O modal NÃO é fechado mais aqui. O cliente usará o botão "Voltar".
+            // NOVIDADE: Faz o botão VOLTAR mudar de cor e "piscar" dando um pulinho na tela
+            let btnVoltar = document.querySelector('#swapModal .btn-voltar-gigante');
+            if (btnVoltar) {
+                btnVoltar.style.transition = "all 0.3s ease";
+                btnVoltar.style.background = "var(--success)"; // Muda para verde
+                btnVoltar.style.transform = "scale(1.05)"; // Dá uma inchada rápida (Piscada)
+                
+                setTimeout(() => {
+                    btnVoltar.style.transform = "scale(1)"; // Volta ao tamanho original após 0.3s
+                }, 300);
+            }
             
-            // Atualiza os cálculos e a interface imediatamente por trás
+            // Atualiza a cesta atrás do modal sem fechar a janela
             renderBasketItemsList();
         };
 
