@@ -196,8 +196,6 @@
 </head>
 <body>
 
-    <div id="codigos-carrossel-destaque" data-codigos="92238569:40, 83719006:37, 33059000:35, 32675205:30" style="display: none;"></div>
-
     <div class="overlay" id="overlay"></div>
 
     <div class="app-bottom-bar">
@@ -317,6 +315,7 @@
             <div class="chk-inline-summary">
                 <div class="summary-row"><span>Subtotal dos Produtos</span><span id="sum-sub">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-basket-row"><span>Bônus Cesta Fechada</span><span id="sum-basket-desc">R$ 0,00</span></div>
+                <div class="summary-row" style="color: var(--success); display: none;" id="sum-atacado-row"><span>Desconto Atacado (Volume)</span><span id="sum-atacado-desc">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-desc-row"><span>Desconto Agendamento</span><span id="sum-desc">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-cupom-row"><span>Cupom Aplicado</span><span id="sum-cupom-desc">R$ 0,00</span></div>
                 <div class="summary-row total"><span>Total a Pagar</span><span id="sum-total">R$ 0,00</span></div>
@@ -336,7 +335,7 @@
             prods: [], cart: {}, cartOrder: [], deliveryOptions: [], 
             selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
             searchQuery: '', scrollMap: {}, basketCustomizations: {}, currentRoute: '#/',
-            appliedCoupon: null, couponDiscount: 0
+            appliedCoupon: null, couponDiscount: 0, atacadoDiscount: 0
         };
 
         let currentBasketItems = [];
@@ -385,6 +384,31 @@ const BASKETS = [
                 return diff >= 0 ? diff : Infinity; 
             }
             return Infinity;
+        }
+
+        function calculateBasketPrices(basketId) {
+            const basket = BASKETS.find(b => b.id === basketId);
+            if(!basket) return { original: 0, final: 0, atacado: 0 };
+            
+            let atacado = 0;
+            if(STATE.prods.length > 0) {
+                basket.produtos.forEach(str => {
+                    let p = str.split("x ");
+                    if(p.length === 2) {
+                        let qty = parseInt(p[0]);
+                        let cod = p[1].trim();
+                        let pObj = STATE.prods.find(x => x.codigo === cod || String(x.id) === cod);
+                        if(pObj && qty >= 3) {
+                            atacado += (pObj.price * 0.05) * qty;
+                        }
+                    }
+                });
+            }
+            
+            let original = basket.preco;
+            let finalPrice = original - atacado;
+            
+            return { original: original, final: finalPrice, atacado: atacado };
         }
 
         const iconPlus = `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>`;
@@ -465,6 +489,9 @@ const BASKETS = [
             let embalagem = prod.embalagem || extractVolume(prod.name);
             let tagEmbalagem = embalagem ? `<div class="embalagem-tag-text">${embalagem}</div>` : '';
 
+            // Tag de Atacado exibida apenas fora do contexto visual do carrinho (para incentivar compra)
+            let atacadoTag = (!isBasketItem) ? `<div style="font-size: 10.5px; color: var(--success); font-weight: 800; margin-top: 3px; line-height:1.1;">A partir de 3un:<br>pague ${fmt(prod.price * 0.95)}/un</div>` : '';
+
             let onClickAction = isBasketItem ? "" : `onclick="window.location.hash='#/produto/${prod.slug}'"`;
 
             let controlsHtml = '';
@@ -488,6 +515,7 @@ const BASKETS = [
                         <div class="price-container">
                             <div>${oldPriceHtml}</div>
                             <div class="tag-preco-list">${isBasketItem ? '' : discountBadge + fmt(prod.price)}</div>
+                            ${atacadoTag}
                         </div>
                         <div class="card-action-area" id="${isBasketItem ? 'basket-card-' + index : 'action-card-' + prod.id}">${controlsHtml}</div>
                     </div>
@@ -498,38 +526,9 @@ const BASKETS = [
         // CARROSSEL DINÂMICO DE OFERTAS (UNIFICADO)
         // ==========================================
         function getCarrosselOfertasHTML(isVIP = false) {
-            let destaques = [];
-            let codigosElement = $('codigos-carrossel-destaque');
-            
-            if (codigosElement) {
-                let codigosText = codigosElement.getAttribute('data-codigos');
-                if (codigosText) {
-                    let itensCarrossel = codigosText.split(',').map(c => c.trim()).slice(0, 20);
-                    itensCarrossel.forEach(item => {
-                        let partes = item.split(':'); 
-                        let cod = partes[0].trim(); 
-                        let customDiscount = partes.length > 1 ? parseInt(partes[1].trim()) : null;
-                        let prodOriginal = STATE.prods.find(p => String(p.codigo) === cod || String(p.id) === cod);
-                        
-                        if (prodOriginal) {
-                            let prod = { ...prodOriginal };
-                            if (customDiscount && !isNaN(customDiscount)) {
-                                prod.discountPercent = customDiscount;
-                                let precoBase = prod.oldPrice || prod.price; 
-                                prod.oldPrice = precoBase;
-                                prod.price = precoBase * (1 - (customDiscount / 100));
-                            }
-                            destaques.push(prod);
-                        }
-                    });
-                }
-            }
-            
-            let destaquesIds = new Set(destaques.map(p => p.id));
-            let outrasOfertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0 && !destaquesIds.has(p.id))
-                                           .sort((a, b) => getDaysToExpiry(a.vencimento) - getDaysToExpiry(b.vencimento));
-            
-            let todasOfertas = [...destaques, ...outrasOfertas];
+            let todasOfertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0)
+                                          .sort((a,b) => b.discountPercent - a.discountPercent)
+                                          .slice(0, 20);
 
             if(todasOfertas.length === 0) return '';
 
@@ -597,7 +596,6 @@ const BASKETS = [
 
             htmlMercado += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
             
-            // ADICIONANDO O BOTÃO DE CESTAS AQUI
             htmlMercado += `<a href="#/cestas" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
                         <div style="display:flex; align-items:center; gap:14px;">
                             <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef2f2; display:flex; align-items:center; justify-content:center; color: var(--danger);">
@@ -629,7 +627,11 @@ const BASKETS = [
             let html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Cestas Básicas</div><div style="background: #fff;">`;
             
             BASKETS.forEach(basket => {
-                let oldPriceHtml = basket.oldPrice ? `<span class="old-price">${fmt(basket.oldPrice)}</span>` : '';
+                let prices = calculateBasketPrices(basket.id);
+                let displayPrice = prices.final;
+                let crossedPrice = prices.atacado > 0 ? prices.original : basket.oldPrice;
+
+                let oldPriceHtml = crossedPrice ? `<span class="old-price">${fmt(crossedPrice)}</span>` : '';
                 html += `
                 <div class="product-card-list" onclick="openBasketDetail('${basket.id}')">
                     <div class="img-wrapper">
@@ -639,7 +641,7 @@ const BASKETS = [
                         <div class="product-name-list">${basket.nome}</div>
                         <div class="price-container" style="padding-right: 90px;">
                             <div>${oldPriceHtml}</div>
-                            <div class="tag-preco-list" style="color: var(--danger);">${fmt(basket.preco)}</div>
+                            <div class="tag-preco-list" style="color: var(--danger);">${fmt(displayPrice)}</div>
                         </div>
                         <div class="card-action-area">
                             <div class="btn-quick-add-list" style="width: auto; padding: 0 15px; border-radius: 12px; font-size: 13.5px; font-weight: 800; color: #fff; background: var(--text-dark);">Ver Cesta</div>
@@ -682,36 +684,12 @@ const BASKETS = [
             
             if (cat === 'Ofertas' || cat === 'Ofertas do Dia') {
                 document.title = `Ofertas - Dona Antônia`;
-                let destaques = [];
-                let codigosElement = $('codigos-carrossel-destaque');
                 
-                if (codigosElement) {
-                    let codigosText = codigosElement.getAttribute('data-codigos');
-                    if (codigosText) {
-                        let itensCarrossel = codigosText.split(',').map(c => c.trim()).slice(0, 20);
-                        itensCarrossel.forEach(item => {
-                            let partes = item.split(':'); 
-                            let cod = partes[0].trim(); 
-                            let customDiscount = partes.length > 1 ? parseInt(partes[1].trim()) : null;
-                            let prodOriginal = STATE.prods.find(p => String(p.codigo) === cod || String(p.id) === cod);
-                            
-                            if (prodOriginal) {
-                                let prod = { ...prodOriginal };
-                                if (customDiscount && !isNaN(customDiscount)) {
-                                    prod.discountPercent = customDiscount;
-                                    let precoBase = prod.oldPrice || prod.price; 
-                                    prod.oldPrice = precoBase;
-                                    prod.price = precoBase * (1 - (customDiscount / 100));
-                                }
-                                destaques.push(prod);
-                            }
-                        });
-                    }
-                }
-                
-                let destaquesIds = new Set(destaques.map(p => p.id));
-                let outrasOfertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0 && !destaquesIds.has(p.id))
+                let todasOfertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0)
                                                .sort((a,b) => b.discountPercent - a.discountPercent);
+                
+                let destaques = todasOfertas.filter(p => p.discountPercent >= 15);
+                let outrasOfertas = todasOfertas.filter(p => p.discountPercent < 15);
                 
                 html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Ofertas</div><div style="background: #fff;">`;
                 
@@ -721,7 +699,7 @@ const BASKETS = [
                 }
                 
                 if (outrasOfertas.length > 0) {
-                    html += `<h3 class="subcat-title">Mais Ofertas (Maiores Descontos)</h3>`;
+                    html += `<h3 class="subcat-title">Mais Ofertas</h3>`;
                     outrasOfertas.forEach(p => html += renderCardHTML(p));
                 }
                 
@@ -759,13 +737,15 @@ const BASKETS = [
             let oldPriceHtml = (prod.discountPercent > 0) ? `<div class="prod-page-oldprice" style="display:inline-block; text-decoration: line-through; color: var(--text-light); margin-bottom: 4px;">De: ${fmt(prod.oldPrice)}</div>` : '';
             
             let embalagemTag = prod.embalagem ? `<div class="embalagem-tag-text" style="font-size:13px;">${prod.embalagem}</div>` : '';
+            let atacadoText = `<div style="font-size: 14px; color: var(--success); font-weight: 800; margin-top: 5px;">A partir de 3 unidades pague ${fmt(prod.price * 0.95)} cada</div>`;
+            
             let descHtml = prod.descricao ? `<div class="prod-page-desc-box"><div class="prod-page-desc-title">Detalhes do Produto</div><div class="prod-page-desc-content">${prod.descricao}</div></div>` : '';
             
             let controlsHtml = q === 0 
                 ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)" style="height:54px; width:100%; font-size:16px; border-radius:12px;">${iconPlus} Adicionar à Sacola</div>` 
                 : `<div class="qty-controls" style="height:54px; background:#f8fafc; width:100%; border-radius:12px; position:static;"><button class="qty-btn" style="width:48px;" onclick="updateCartItem('${prod.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display" style="font-size:20px;">${q}</span><button class="qty-btn" style="width:48px;" onclick="updateCartItem('${prod.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`;
             
-            let html = `<div class="prod-page-container"><div class="ver-tudo-header" style="margin:-15px 0 0 0; box-shadow:none; border:none;" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Detalhes</div><div class="prod-page-img-box"><img src="${prod.img}" class="prod-page-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'"></div><div class="prod-page-info"><div class="prod-page-marca">${prod.marca || prod.categoria}</div>${embalagemTag}<h1 class="prod-page-title" style="margin-top:6px;">${prod.name}</h1><div class="prod-page-price-box"><div style="width:100%;"><div>${oldPriceHtml}</div><div class="prod-page-price">${discountBadge}${fmt(prod.price)}</div></div></div></div>${descHtml}</div><div class="prod-sticky-bottom" id="action-card-${prod.id}">${controlsHtml}</div>`;
+            let html = `<div class="prod-page-container"><div class="ver-tudo-header" style="margin:-15px 0 0 0; box-shadow:none; border:none;" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Detalhes</div><div class="prod-page-img-box"><img src="${prod.img}" class="prod-page-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'"></div><div class="prod-page-info"><div class="prod-page-marca">${prod.marca || prod.categoria}</div>${embalagemTag}<h1 class="prod-page-title" style="margin-top:6px;">${prod.name}</h1><div class="prod-page-price-box"><div style="width:100%;"><div>${oldPriceHtml}</div><div class="prod-page-price">${discountBadge}${fmt(prod.price)}</div>${atacadoText}</div></div></div>${descHtml}</div><div class="prod-sticky-bottom" id="action-card-${prod.id}">${controlsHtml}</div>`;
             $('vitrine').innerHTML = html;
         }
 
@@ -791,7 +771,13 @@ const BASKETS = [
             const basket = BASKETS.find(b => b.id === basketId); if (!basket) return;
             window.currentBasketId = basketId;
             $('basketModalImg').src = basket.imagem; $('basketModalTitle').innerText = basket.nome;
-            $('basketModalPrice').innerHTML = basket.oldPrice ? `<span style="text-decoration: line-through; font-size: 16px; color: #94a3b8; margin-right: 10px;">De: ${fmt(basket.oldPrice)}</span> Por: ${fmt(basket.preco)}` : "Valor Sugerido: " + fmt(basket.preco);
+            
+            let prices = calculateBasketPrices(basketId);
+            let crossedPrice = prices.atacado > 0 ? prices.original : basket.oldPrice;
+            $('basketModalPrice').innerHTML = crossedPrice 
+                ? `<span style="text-decoration: line-through; font-size: 16px; color: #94a3b8; margin-right: 10px;">De: ${fmt(crossedPrice)}</span> Por: ${fmt(prices.final)}` 
+                : "Valor: " + fmt(prices.final);
+            
             $('basket-items-header').style.display = 'block'; $('basket-items-container').style.display = 'flex'; $('basket-summary-container').style.display = 'block'; $('vip-list-container').style.display = 'none';
             currentBasketItems = [];
             basket.produtos.forEach(itemString => { let parts = itemString.split("x "); if(parts.length === 2) { let qty = parseInt(parts[0]); let pObj = STATE.prods.find(p => p.codigo === parts[1].trim() || p.id === parts[1].trim()); if (pObj) { let pClone = {...pObj}; pClone.basketQty = qty; currentBasketItems.push({ pObj: pClone, qty: qty }); } } });
@@ -809,11 +795,15 @@ const BASKETS = [
             
             let html = '';
             let valorSomaDosItensAtuais = 0;
+            let totalAtacadoItemsAtuais = 0;
             
             currentBasketItems.forEach((item, index) => {
                 totalItemsCount += item.qty; 
                 item.pObj.basketQty = item.qty;
                 valorSomaDosItensAtuais += (item.qty * item.pObj.price);
+                if (item.qty >= 3) {
+                    totalAtacadoItemsAtuais += (item.pObj.price * 0.05) * item.qty;
+                }
                 html += renderCardHTML(item.pObj, true, index);
             });
             container.innerHTML = html; 
@@ -836,10 +826,15 @@ const BASKETS = [
             }
             
             let diferencaFixa = basket ? (basket.preco - valorPadraoCesta) : 0;
-            let precoDinamicoAtual = valorSomaDosItensAtuais + diferencaFixa;
+            let precoDinamicoAtual = valorSomaDosItensAtuais + diferencaFixa - totalAtacadoItemsAtuais;
+            let precoSemAtacado = valorSomaDosItensAtuais + diferencaFixa;
 
             $('basket-total-items').innerText = totalItemsCount; 
-            $('basket-total-price').innerText = basket ? fmt(precoDinamicoAtual) : 'R$ 0,00';
+            if (totalAtacadoItemsAtuais > 0) {
+                $('basket-total-price').innerHTML = `<span style="text-decoration:line-through; font-size:14px; color:#94a3b8; margin-right:8px;">${fmt(precoSemAtacado)}</span> ${fmt(precoDinamicoAtual)}`;
+            } else {
+                $('basket-total-price').innerText = basket ? fmt(precoDinamicoAtual) : 'R$ 0,00';
+            }
             
             // Lógica do DIFF (Adicionados / Retirados visualmente no Modal)
             let diffAdded = [];
@@ -1038,13 +1033,19 @@ const BASKETS = [
         };
 
         function updateTotals() {
-            let sumBase = 0; let count = 0; let basketDiscountTotal = 0; let eligibleForCouponSubtotal = 0;
+            let sumBase = 0; let count = 0; let basketDiscountTotal = 0; let eligibleForCouponSubtotal = 0; let atacadoTotal = 0;
+            
             Object.entries(STATE.cart).forEach(([id, q]) => { 
                 let p = STATE.prods.find(x => String(x.id) === String(id)); 
                 if (p) { 
                     sumBase += p.price * q; 
                     if (!String(id).startsWith('fee_cesta')) {
                         count += q; 
+                        // Lógica de Atacado: 3 ou mais itens aplica 5% extra no valor base
+                        if (q >= 3) {
+                            atacadoTotal += (p.price * 0.05) * q;
+                        }
+                        
                         if (STATE.appliedCoupon && COUPONS[STATE.appliedCoupon]) {
                             let rule = COUPONS[STATE.appliedCoupon]; let catN = norm(p.categoria); let isEligible = true;
                             if (rule.excludeCategories && rule.excludeCategories.includes(catN)) isEligible = false;
@@ -1060,6 +1061,10 @@ const BASKETS = [
             $('sum-basket-desc').innerText = `- ${fmt(basketDiscountTotal)}`; $('sum-basket-row').style.display = basketDiscountTotal > 0 ? 'flex' : 'none';
             $('sum-desc').innerText = `- ${fmt(STATE.deliveryDiscount)}`; $('sum-desc-row').style.display = STATE.deliveryDiscount > 0 ? 'flex' : 'none'; 
             
+            STATE.atacadoDiscount = atacadoTotal;
+            $('sum-atacado-desc').innerText = `- ${fmt(atacadoTotal)}`; 
+            $('sum-atacado-row').style.display = atacadoTotal > 0 ? 'flex' : 'none';
+            
             STATE.couponDiscount = 0;
             if (STATE.appliedCoupon && COUPONS[STATE.appliedCoupon]) {
                 let rule = COUPONS[STATE.appliedCoupon];
@@ -1067,7 +1072,8 @@ const BASKETS = [
             }
             $('sum-cupom-desc').innerText = `- ${fmt(STATE.couponDiscount)}`; $('sum-cupom-row').style.display = STATE.couponDiscount > 0 ? 'flex' : 'none';
 
-            let finalTotal = sumBase - STATE.deliveryDiscount - STATE.couponDiscount; $('sum-total').innerText = fmt(finalTotal);
+            let finalTotal = sumBase - STATE.deliveryDiscount - STATE.couponDiscount - STATE.atacadoDiscount; 
+            $('sum-total').innerText = fmt(finalTotal);
             let btn = $('btn-send-order'); if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerHTML = `Pedido Mínimo: ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--text-light)'; btn.style.boxShadow = 'none'; } else { btn.disabled = false; btn.innerHTML = 'Enviar Pedido via WhatsApp'; btn.style.background = 'var(--success)'; btn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)'; }
             
             let badge = $('bottom-cart-count'); 
@@ -1105,7 +1111,7 @@ const BASKETS = [
                 } 
             });
             
-            let final = totalBruto - STATE.deliveryDiscount - STATE.couponDiscount;
+            let final = totalBruto - STATE.deliveryDiscount - STATE.couponDiscount - STATE.atacadoDiscount;
             
             let customTxt = "\n\n------------------------\n";
             let hasBasket = Object.keys(STATE.basketCustomizations).length > 0;
@@ -1123,6 +1129,7 @@ const BASKETS = [
             }
             
             if (totalDescontoCestas > 0) itemsTxt += `\n🎁 BÔNUS CESTA: -${fmt(totalDescontoCestas)}`;
+            if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
             if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
             if (STATE.couponDiscount > 0) itemsTxt += `\n🎟️ CUPOM (${STATE.appliedCoupon}): -${fmt(STATE.couponDiscount)}`;
             
@@ -1176,9 +1183,11 @@ const BASKETS = [
                 if(partes.length === 3) {
                     let vDate = new Date(partes[2], partes[1] - 1, partes[0]); 
                     let daysToExpiry = (vDate - now) / (1000 * 60 * 60 * 24);
-                    if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 35; 
-                    else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 30; 
-                    else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 25;
+                    
+                    if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 20; 
+                    else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 15; 
+                    else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 10;
+                    else if (daysToExpiry > 90 && daysToExpiry <= 120) p.discountPercent = 5;
                 }
             }
             
@@ -1204,12 +1213,12 @@ const BASKETS = [
             return randA - randB; 
         });
         
-        let r20 = 5, r15 = 5, r10 = 100; 
+        let r15 = 5, r10 = 5, r5 = 100; 
         
         eligibleForRandom.forEach(p => { 
-            if (r20 > 0) { p.discountPercent = 20; r20--; } 
-            else if (r15 > 0) { p.discountPercent = 15; r15--; } 
+            if (r15 > 0) { p.discountPercent = 15; r15--; } 
             else if (r10 > 0) { p.discountPercent = 10; r10--; } 
+            else if (r5 > 0) { p.discountPercent = 5; r5--; } 
         });
         
         products.forEach(p => { 
