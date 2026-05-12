@@ -864,22 +864,27 @@ const BASKETS = [
                 let displayPrice = prices.final;
                 let crossedPrice = prices.atacado > 0 ? prices.original : null;
 
-                let oldPriceHtml = crossedPrice ? `<span class="old-price">${fmt(crossedPrice)}</span>` : '';
+                let oldPriceHtml = crossedPrice ? `<div class="old-price" style="font-size: 14px; margin-bottom: 2px;">${fmt(crossedPrice)}</div>` : '';
+                
+                // NOVIDADE: Card vertical com foto grande, nome destacado, valor abaixo do nome e botão largo.
                 html += `
-                <div class="product-card-list" onclick="openBasketDetail('${basket.id}')">
-                    <div class="img-wrapper">
-                        <img src="${basket.imagem}" class="product-icon-list" style="border-radius:10px; object-fit:cover;" alt="${basket.nome}" onerror="this.src='../img/logoantonia5.png'">
+                <div class="product-card-list" onclick="openBasketDetail('${basket.id}')" style="flex-direction: column; padding: 20px; align-items: flex-start;">
+                    
+                    <div style="width: 100%; height: 220px; border-radius: 16px; overflow: hidden; margin-bottom: 16px; background: #f8fafc; flex-shrink: 0;">
+                        <img src="${basket.imagem}" style="width: 100%; height: 100%; object-fit: cover;" alt="${basket.nome}" onerror="this.src='../img/logoantonia5.png'">
                     </div>
-                    <div class="product-details">
-                        <div class="product-name-list">${basket.nome}</div>
-                        <div class="card-bottom-row">
-                            <div class="price-container">
-                                <div>${oldPriceHtml}</div>
-                                <div class="tag-preco-list" style="color: var(--danger);">${fmt(displayPrice)}</div>
-                            </div>
-                            <div class="card-action-area">
-                                <div class="btn-quick-add-list" style="width: auto; height: 36px; padding: 0 15px; border-radius: 12px; font-size: 13.5px; font-weight: 800; color: #fff; background: var(--text-dark);">Ver Cesta</div>
-                            </div>
+                    
+                    <div class="product-details" style="width: 100%; padding: 0;">
+                        
+                        <div class="product-name-list" style="font-size: 20px; font-weight: 900; margin-bottom: 8px; color: var(--text-dark);">${basket.nome}</div>
+                        
+                        <div class="price-container" style="margin-bottom: 16px;">
+                            ${oldPriceHtml}
+                            <div class="tag-preco-list" style="color: var(--danger); font-size: 24px;">${fmt(displayPrice)}</div>
+                        </div>
+                        
+                        <div class="card-action-area" style="width: 100%;">
+                            <div class="btn-quick-add-list" style="width: 100%; height: 46px; border-radius: 12px; font-size: 15px; font-weight: 900; color: #fff; background: var(--text-dark);">Ver Cesta</div>
                         </div>
                     </div>
                 </div>`;
