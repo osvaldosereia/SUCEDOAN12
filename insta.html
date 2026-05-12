@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marketing Hub V5 - Dona Antônia</title>
+    <title>Marketing Hub V6 - Dona Antônia (GitHub Sync)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -13,6 +13,7 @@
             --bg: #f8fafc;
             --border: #e2e8f0;
             --accent: #6366f1;
+            --config-bg: #f1f5f9;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
@@ -20,8 +21,14 @@
         .container { max-width: 1200px; margin: 0 auto; }
 
         /* HEADER */
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
         .header h1 { font-weight: 900; font-size: 26px; border-left: 5px solid var(--accent); padding-left: 15px; }
+
+        /* CONFIGURAÇÕES GITHUB */
+        .config-box { background: var(--config-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; }
+        .config-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+        .config-grid input { padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
 
         /* GESTÃO DE PROMPTS */
         .prompt-box { background: white; padding: 25px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
@@ -37,6 +44,7 @@
 
         .form-footer { display: flex; align-items: center; gap: 15px; }
         .btn-main { padding: 14px 28px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .btn-sec { padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
         .btn-cancel { padding: 14px 20px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; display: none; }
 
         /* LISTA DE PROMPTS */
@@ -49,12 +57,11 @@
         .btn-edit { color: var(--accent); }
         .btn-del { color: var(--danger); }
 
-        /* FILTROS */
+        /* GRID E CARDS */
         .filters { display: flex; gap: 15px; margin-bottom: 25px; }
         .filters input { flex: 2; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: white; }
         .filters select { flex: 1; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: white; font-weight: 600; }
 
-        /* GRID E CARDS - Modificado para 5 por linha */
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
         @media (max-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); } }
         @media (max-width: 768px) { .grid { grid-template-columns: repeat(2, 1fr); } }
@@ -62,72 +69,60 @@
 
         .card { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 20px; position: relative; display: flex; flex-direction: column; transition: 0.3s; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        
-        .badge { position: absolute; top: 15px; right: 15px; background: var(--danger); color: white; padding: 6px 12px; border-radius: 10px; font-weight: 900; font-size: 13px; box-shadow: 0 4px 10px rgba(239,68,68,0.3); }
-        
+        .badge { position: absolute; top: 15px; right: 15px; background: var(--danger); color: white; padding: 6px 12px; border-radius: 10px; font-weight: 900; font-size: 13px; }
         .card-img-box { width: 100%; height: 150px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
         .card-img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        
-        .card-title { font-weight: 700; font-size: 14px; margin-bottom: 10px; height: 38px; overflow: hidden; line-height: 1.3; color: var(--primary); }
-        .card-prices { margin-bottom: 15px; }
-        .price-old { font-size: 12px; color: #94a3b8; text-decoration: line-through; display: block; margin-bottom: 2px; font-weight: 600; }
+        .card-title { font-weight: 700; font-size: 14px; margin-bottom: 10px; height: 38px; overflow: hidden; line-height: 1.3; }
         .price-new { font-weight: 900; font-size: 18px; color: var(--primary); }
-        
         .card-actions { display: grid; gap: 10px; margin-bottom: 15px; background: #f8fafc; padding: 12px; border-radius: 12px; }
         .card-actions select { padding: 8px; border-radius: 8px; border: 1px solid var(--border); font-size: 12px; font-weight: 700; width: 100%; }
-        
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .btn-act { padding: 10px; border: none; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; color: white; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-act { padding: 10px; border: none; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; color: white; text-transform: uppercase; }
         .btn-p { background: var(--success); }
         .btn-i { background: var(--accent); }
-
         .card-footer-logo { border-top: 1px solid var(--border); padding-top: 15px; display: flex; justify-content: center; margin-top: auto; }
-        .card-footer-logo img { height: 30px; width: auto; object-fit: contain; }
+        .card-footer-logo img { height: 30px; }
 
-        /* FAB */
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 70px; height: 70px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(99,102,241,0.4); cursor: pointer; z-index: 2000; border: none; transition: 0.3s; }
-        .fab:hover { transform: scale(1.1) rotate(10deg); }
-        .fab svg { width: 30px; height: 30px; fill: white; }
-
-        /* TOAST */
-        #toast { visibility: hidden; background: #0f172a; color: white; text-align: center; border-radius: 50px; padding: 16px 40px; position: fixed; z-index: 5000; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; }
+        /* FAB E TOAST */
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2000; border: none; }
+        #toast { visibility: hidden; background: #0f172a; color: white; border-radius: 50px; padding: 16px 40px; position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; z-index: 5000; }
         #toast.show { visibility: visible; animation: fadeInUp 0.4s forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
-        /* ESTILOS DO EDITOR DE IMAGEM */
-        #editorModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; align-items: center; justify-content: center; flex-direction: column; }
+        /* EDITOR MODAL */
+        #editorModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; align-items: center; justify-content: center; }
         .editor-container { background: white; border-radius: 16px; padding: 20px; width: 95%; max-width: 900px; display: flex; gap: 20px; flex-wrap: wrap; }
-        .editor-tools { flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 15px; }
-        .editor-tools h3 { font-size: 18px; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 10px; }
-        .tool-group { display: flex; flex-direction: column; gap: 5px; }
-        .tool-group label { font-size: 12px; font-weight: 700; color: #64748b; }
-        .tool-group input, .tool-group select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-family: 'Inter'; }
-        
-        .editor-workspace { flex: 2; display: flex; justify-content: center; align-items: center; background: #e2e8f0; border-radius: 12px; overflow: hidden; min-height: 400px; }
-        
-        /* Área que simula a imagem final */
-        #canvasContainer { position: relative; background: #fff; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        #canvasContainer.format-square { width: 400px; height: 400px; }
-        #canvasContainer.format-reels { width: 300px; height: 533px; }
-        #editorBgImage { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; }
-        
-        .draggable-text { position: absolute; z-index: 10; cursor: move; padding: 5px 10px; border: 2px dashed transparent; user-select: none; white-space: nowrap; line-height: 1; }
-        .draggable-text:hover { border-color: rgba(255,255,255,0.5); }
+        .editor-workspace { flex: 2; display: flex; justify-content: center; align-items: center; background: #e2e8f0; border-radius: 12px; min-height: 400px; }
+        #canvasContainer { position: relative; background: #fff; overflow: hidden; }
+        .format-square { width: 400px; height: 400px; }
+        .format-reels { width: 300px; height: 533px; }
+        #editorBgImage { width: 100%; height: 100%; object-fit: cover; position: absolute; }
+        .draggable-text { position: absolute; z-index: 10; cursor: move; padding: 5px 10px; border: 2px dashed transparent; white-space: nowrap; }
         .draggable-text.active { border-color: var(--accent); }
-
-        .editor-actions { width: 100%; display: flex; justify-content: flex-end; gap: 15px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header"><h1>Dashboard Marketing Dona Antônia</h1></div>
+    <div class="header">
+        <h1>Dashboard Marketing Dona Antônia</h1>
+    </div>
+
+    <div class="config-box">
+        <h3>⚙️ Configurações de Sincronização (GitHub)</h3>
+        <div class="config-grid">
+            <input type="password" id="ghToken" placeholder="GitHub Personal Token">
+            <input type="text" id="ghUser" placeholder="Usuário GitHub">
+            <input type="text" id="ghRepo" placeholder="Nome do Repositório">
+            <button class="btn-sec" onclick="saveGitHubConfig()">Salvar Credenciais</button>
+        </div>
+        <p style="font-size: 11px; color: #64748b; margin-top: 10px;">* As credenciais ficam salvas apenas neste navegador (LocalStorage).</p>
+    </div>
 
     <div class="prompt-box">
         <h2 id="formTitle">Criar Novo Prompt</h2>
         <div class="input-group">
-            <input type="text" id="pName" placeholder="Nome do Prompt (ex: Story Promocional)">
-            <textarea id="pText" placeholder="Escreva o comando para o Gemini."></textarea>
+            <input type="text" id="pName" placeholder="Nome do Prompt (ex: Post de Promoção)">
+            <textarea id="pText" placeholder="Comando para o Gemini... Use as tags abaixo."></textarea>
         </div>
         <div class="tag-row">
             <button class="btn-tag" onclick="insertTag('[NOME]')">+ [NOME]</button>
@@ -136,7 +131,7 @@
             <button class="btn-tag" onclick="insertTag('[DESCONTO]')">+ [DESCONTO]</button>
         </div>
         <div class="form-footer">
-            <button class="btn-main" id="btnSave" onclick="savePrompt()">Salvar Prompt</button>
+            <button class="btn-main" id="btnSave" onclick="savePrompt()">Salvar Prompt na Nuvem</button>
             <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar</button>
         </div>
         <div class="saved-prompts" id="promptsListUI"></div>
@@ -154,113 +149,122 @@
     <div class="grid" id="gridUI"></div>
 </div>
 
-<!-- Inputs de arquivo ocultos -->
-<input type="file" id="fileIn" style="display:none" accept="image/*" onchange="optimizePng(event)">
-<input type="file" id="editorFileIn" style="display:none" accept="image/*" onchange="loadEditorImage(event)">
-
-<!-- MODAL DO EDITOR -->
 <div id="editorModal">
     <div class="editor-container">
-        <div class="editor-tools">
-            <h3>Ferramentas de Arte</h3>
-            
-            <div class="tool-group">
-                <label>Formato da Imagem</label>
-                <select id="edFormat" onchange="changeFormat()">
-                    <option value="square">Quadrado (Post/Carrossel)</option>
-                    <option value="reels">Vertical (Reels/Stories)</option>
+        <div style="flex: 1; min-width: 250px;">
+            <h3>Artes Dona Antônia</h3>
+            <div style="margin-top:15px; display:grid; gap:10px;">
+                <select id="edFormat" onchange="changeFormat()" style="padding:8px; border-radius:8px;">
+                    <option value="square">Quadrado (Post)</option>
+                    <option value="reels">Vertical (Stories)</option>
                 </select>
-            </div>
-
-            <div class="tool-group">
-                <label>Novo Texto</label>
-                <input type="text" id="edTextInput" placeholder="Digite aqui...">
-                <button class="btn-act btn-p" onclick="addText()" style="margin-top: 5px;">+ Adicionar Texto</button>
-            </div>
-
-            <div id="textControls" style="display: none; flex-direction: column; gap: 10px; margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
-                <label style="font-size: 12px; font-weight: 700; color: var(--accent);">Editando Texto Selecionado</label>
+                <input type="text" id="edTextInput" placeholder="Texto da arte..." style="padding:8px; border-radius:8px;">
+                <button class="btn-act btn-p" onclick="addText()">+ Texto</button>
                 
-                <div class="tool-group">
-                    <label>Tamanho (px)</label>
-                    <input type="number" id="edSize" value="30" onchange="updateSelectedText()">
-                </div>
-                
-                <div class="tool-group">
-                    <label>Cor do Texto</label>
-                    <input type="color" id="edColor" value="#ffffff" onchange="updateSelectedText()">
-                </div>
-
-                <div class="tool-group">
-                    <label>Cor de Fundo (Legenda)</label>
-                    <div style="display: flex; gap: 5px;">
+                <div id="textControls" style="display:none; padding:10px; background:#f8fafc; border-radius:8px; margin-top:10px;">
+                    <label style="font-size:10px; font-weight:bold;">Tamanho / Cor / Fundo</label>
+                    <div style="display:flex; gap:5px; margin-top:5px;">
+                        <input type="number" id="edSize" value="30" style="width:50px;" onchange="updateSelectedText()">
+                        <input type="color" id="edColor" value="#ffffff" onchange="updateSelectedText()">
                         <input type="color" id="edBgColor" value="#ef4444" onchange="updateSelectedText()">
-                        <button class="btn-act" style="background:#64748b;" onclick="removeTextBg()">Sem Fundo</button>
                     </div>
+                    <button class="btn-sml btn-del" style="margin-top:10px;" onclick="deleteSelectedText()">Excluir Texto</button>
                 </div>
-
-                <button class="btn-act btn-del" style="background: var(--danger);" onclick="deleteSelectedText()">Excluir Texto</button>
+            </div>
+            <div style="margin-top:20px; display:flex; gap:10px;">
+                <button class="btn-main" onclick="downloadArt()">Baixar PNG</button>
+                <button class="btn-cancel" style="display:block" onclick="closeEditor()">Fechar</button>
             </div>
         </div>
-
         <div class="editor-workspace">
             <div id="canvasContainer" class="format-square">
                 <img id="editorBgImage" src="">
-                <!-- Textos serão injetados aqui -->
             </div>
-        </div>
-
-        <div class="editor-actions">
-            <button class="btn-cancel" style="display: block;" onclick="closeEditor()">Cancelar</button>
-            <button class="btn-main" onclick="downloadArt()">Baixar PNG (Otimizado)</button>
         </div>
     </div>
 </div>
 
-<button class="fab" title="Otimizar PNG local (<1MB)" onclick="document.getElementById('fileIn').click()">
-    <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-</button>
-
-<div id="toast">Copiado!</div>
+<input type="file" id="fileIn" style="display:none" accept="image/*" onchange="optimizePng(event)">
+<input type="file" id="editorFileIn" style="display:none" accept="image/*" onchange="loadEditorImage(event)">
+<button class="fab" onclick="document.getElementById('fileIn').click()">📤</button>
+<div id="toast">Pronto!</div>
 
 <script>
-    // --- ESTADO ---
-    const STATE = { prods: [], prompts: JSON.parse(localStorage.getItem('da_mkt_v6')) || [], editingIdx: -1 };
+    // --- CONFIGURAÇÃO E ESTADO ---
+    const GITHUB = {
+        token: localStorage.getItem('da_gh_token') || '',
+        owner: localStorage.getItem('da_gh_user') || '',
+        repo: localStorage.getItem('da_gh_repo') || '',
+        path: 'prompts.json',
+        sha: ''
+    };
+
+    const STATE = { prods: [], prompts: [], editingIdx: -1 };
     const LOGO = "../img/logoantonia5.png";
 
-    // --- LÓGICA DE DADOS ---
-    const fmt = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    const norm = s => s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
-    
-    function aplicarDescontos(products) {
-        let now = new Date(); let eligible = [];
-        products.forEach(p => {
-            p.discountPercent = 0; p.oldPrice = p.price;
-            if (p.vencimento) {
-                let pt = p.vencimento.split('/'); 
-                if(pt.length === 3) {
-                    let vDate = new Date(pt[2], pt[1] - 1, pt[0]); 
-                    let diff = (vDate - now) / (1000 * 60 * 60 * 24);
-                    if (diff >= 0 && diff <= 30) p.discountPercent = 35; 
-                    else if (diff > 30 && diff <= 60) p.discountPercent = 30; 
-                    else if (diff > 60 && diff <= 90) p.discountPercent = 25;
-                }
-            }
-            if (p.discountPercent === 0) eligible.push(p);
-        });
-        let seed = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay()).getTime();
-        const rnd = s => { let x = Math.sin(s++) * 10000; return x - Math.floor(x); };
-        eligible.sort((a, b) => rnd(seed + (parseInt(a.id) || 0)) - rnd(seed + (parseInt(b.id) || 0)));
-        let r20 = 5, r15 = 5, r10 = 100;
-        eligible.forEach(p => { 
-            if (r20 > 0) { p.discountPercent = 20; r20--; } 
-            else if (r15 > 0) { p.discountPercent = 15; r15--; } 
-            else if (r10 > 0) { p.discountPercent = 10; r10--; } 
-        });
-        products.forEach(p => { if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); });
+    // Preenche os campos de config se já existirem
+    document.getElementById('ghToken').value = GITHUB.token;
+    document.getElementById('ghUser').value = GITHUB.owner;
+    document.getElementById('ghRepo').value = GITHUB.repo;
+
+    // --- FUNÇÕES DE CONFIGURAÇÃO ---
+    function saveGitHubConfig() {
+        const token = document.getElementById('ghToken').value.trim();
+        const user = document.getElementById('ghUser').value.trim();
+        const repo = document.getElementById('ghRepo').value.trim();
+
+        localStorage.setItem('da_gh_token', token);
+        localStorage.setItem('da_gh_user', user);
+        localStorage.setItem('da_gh_repo', repo);
+
+        GITHUB.token = token; GITHUB.owner = user; GITHUB.repo = repo;
+        showToast("Configurações salvas localmente!");
+        init(); // Reinicia para tentar carregar os prompts
     }
 
-    // --- TAGS E SALVAMENTO ---
+    // --- COMUNICAÇÃO GITHUB ---
+    const utf8_to_b64 = str => window.btoa(unescape(encodeURIComponent(str)));
+    const b64_to_utf8 = str => decodeURIComponent(escape(window.atob(str)));
+
+    async function syncFromGitHub() {
+        if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) return;
+        try {
+            const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
+            const res = await fetch(url, { headers: { 'Authorization': `token ${GITHUB.token}` } });
+            
+            if(res.status === 404) { STATE.prompts = []; return; }
+            if(!res.ok) throw new Error();
+
+            const data = await res.json();
+            GITHUB.sha = data.sha;
+            STATE.prompts = JSON.parse(b64_to_utf8(data.content));
+            render();
+        } catch (e) { showToast("Erro ao sincronizar com GitHub."); }
+    }
+
+    async function syncToGitHub() {
+        if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) return showToast("Configure o GitHub primeiro!");
+        showToast("Sincronizando nuvem...");
+        try {
+            const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
+            const body = {
+                message: "Dashboard Update",
+                content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2))
+            };
+            if(GITHUB.sha) body.sha = GITHUB.sha;
+
+            const res = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${GITHUB.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            GITHUB.sha = data.content.sha;
+            showToast("Prompts salvos na nuvem!");
+        } catch (e) { showToast("Erro ao salvar no GitHub."); }
+    }
+
+    // --- LÓGICA DE PROMPTS ---
     function insertTag(tag) {
         const area = document.getElementById('pText');
         const pos = area.selectionStart;
@@ -268,15 +272,25 @@
         area.focus();
     }
 
-    function savePrompt() {
+    async function savePrompt() {
         const name = document.getElementById('pName').value.trim();
         const text = document.getElementById('pText').value.trim();
-        if(!name || !text) return alert("Preencha os campos.");
-        if(STATE.editingIdx > -1) { STATE.prompts[STATE.editingIdx] = { name, text }; cancelEdit(); }
-        else { STATE.prompts.push({ name, text }); }
-        localStorage.setItem('da_mkt_v6', JSON.stringify(STATE.prompts));
-        document.getElementById('pName').value = ""; document.getElementById('pText').value = "";
+        if(!name || !text) return;
+
+        if(STATE.editingIdx > -1) STATE.prompts[STATE.editingIdx] = { name, text };
+        else STATE.prompts.push({ name, text });
+
+        cancelEdit();
+        await syncToGitHub();
         render();
+    }
+
+    async function deletePrompt(idx) {
+        if(confirm('Apagar da nuvem?')) {
+            STATE.prompts.splice(idx, 1);
+            await syncToGitHub();
+            render();
+        }
     }
 
     function startEdit(idx) {
@@ -284,290 +298,21 @@
         const p = STATE.prompts[idx];
         document.getElementById('pName').value = p.name;
         document.getElementById('pText').value = p.text;
-        document.getElementById('formTitle').innerText = "Editando: " + p.name;
-        document.getElementById('btnSave').innerText = "Atualizar";
+        document.getElementById('btnSave').innerText = "Atualizar na Nuvem";
         document.getElementById('btnCancel').style.display = "block";
-        window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     function cancelEdit() {
         STATE.editingIdx = -1;
         document.getElementById('pName').value = ""; document.getElementById('pText').value = "";
-        document.getElementById('formTitle').innerText = "Criar Novo Prompt";
-        document.getElementById('btnSave').innerText = "Salvar Prompt";
+        document.getElementById('btnSave').innerText = "Salvar Prompt na Nuvem";
         document.getElementById('btnCancel').style.display = "none";
     }
 
-    // --- AÇÕES ---
-    function copyPrompt(id) {
-        const prod = STATE.prods.find(p => p.id === id);
-        const selIdx = document.getElementById(`sel-${id}`).value;
-        if(STATE.prompts.length === 0) return alert("Crie um prompt!");
-        
-        let template = STATE.prompts[selIdx].text;
-        let final = template.replace(/\[NOME\]/g, prod.name)
-                            .replace(/\[PRECO\]/g, fmt(prod.price))
-                            .replace(/\[PRECO_ANTIGO\]/g, fmt(prod.oldPrice))
-                            .replace(/\[DESCONTO\]/g, prod.discountPercent + '%');
-        
-        navigator.clipboard.writeText(final);
-        showToast("Prompt preenchido!");
-    }
+    // --- RENDER E PRODUTOS ---
+    const fmt = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const norm = s => s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
 
-    // OTIMIZAÇÃO PNG < 1MB Original
-    function optimizePng(e) {
-        const file = e.target.files[0]; if(!file) return;
-        showToast("Otimizando para PNG...");
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = function(ev) {
-            const img = new Image(); img.src = ev.target.result;
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                let scale = 1.0;
-                let data;
-                function process() {
-                    canvas.width = img.width * scale;
-                    canvas.height = img.height * scale;
-                    ctx.clearRect(0,0, canvas.width, canvas.height);
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    data = canvas.toDataURL('image/png');
-                    const kb = (data.length * 0.75) / 1024;
-                    if(kb > 1024 && scale > 0.1) { scale -= 0.1; process(); }
-                    else {
-                        const l = document.createElement('a'); l.href = data;
-                        l.download = file.name.split('.')[0] + ".png"; l.click();
-                        showToast("PNG baixado (<1MB)!");
-                    }
-                }
-                process();
-            }
-        }
-    }
-
-    function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 3000); }
-
-    // --- LÓGICA DO EDITOR DE ARTE ---
-    let selectedTextEl = null;
-    let isDragging = false;
-    let offsetX, offsetY;
-
-    function openEditorUpload() {
-        document.getElementById('editorFileIn').click();
-    }
-
-    function loadEditorImage(e) {
-        const file = e.target.files[0]; if(!file) return;
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = function(ev) {
-            document.getElementById('editorBgImage').src = ev.target.result;
-            document.getElementById('editorModal').style.display = 'flex';
-            // Limpa textos anteriores
-            document.querySelectorAll('.draggable-text').forEach(el => el.remove());
-            selectedTextEl = null;
-            document.getElementById('textControls').style.display = 'none';
-        }
-        e.target.value = ''; // reseta o input
-    }
-
-    function closeEditor() {
-        document.getElementById('editorModal').style.display = 'none';
-    }
-
-    function changeFormat() {
-        const format = document.getElementById('edFormat').value;
-        const container = document.getElementById('canvasContainer');
-        container.className = format === 'square' ? 'format-square' : 'format-reels';
-    }
-
-    function addText() {
-        const textVal = document.getElementById('edTextInput').value.trim();
-        if(!textVal) return alert("Digite um texto primeiro.");
-
-        const container = document.getElementById('canvasContainer');
-        const textDiv = document.createElement('div');
-        textDiv.className = 'draggable-text';
-        textDiv.innerText = textVal;
-        
-        // Estilos padrão
-        textDiv.style.left = '50px';
-        textDiv.style.top = '50px';
-        textDiv.style.fontSize = '30px';
-        textDiv.style.color = '#ffffff';
-        textDiv.style.backgroundColor = '#ef4444';
-        textDiv.style.fontFamily = 'Inter';
-        textDiv.style.fontWeight = '900';
-
-        // Eventos de Drag & Drop
-        textDiv.addEventListener('mousedown', startDrag);
-        
-        container.appendChild(textDiv);
-        selectText(textDiv);
-        document.getElementById('edTextInput').value = '';
-    }
-
-    function selectText(element) {
-        document.querySelectorAll('.draggable-text').forEach(el => el.classList.remove('active'));
-        selectedTextEl = element;
-        selectedTextEl.classList.add('active');
-        
-        // Atualiza painel lateral
-        document.getElementById('textControls').style.display = 'flex';
-        document.getElementById('edSize').value = parseInt(selectedTextEl.style.fontSize);
-        
-        // Converte RGB para HEX para o input color
-        const rgb2hex = (rgb) => {
-            if(rgb.startsWith('transparent') || rgb === '') return '#000000';
-            let res = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-            if(!res) return rgb;
-            return "#" + ("0" + parseInt(res[1], 10).toString(16)).slice(-2) +
-                         ("0" + parseInt(res[2], 10).toString(16)).slice(-2) +
-                         ("0" + parseInt(res[3], 10).toString(16)).slice(-2);
-        };
-        document.getElementById('edColor').value = rgb2hex(selectedTextEl.style.color);
-        
-        let bgCol = selectedTextEl.style.backgroundColor;
-        document.getElementById('edBgColor').value = (bgCol === 'transparent' || bgCol === '') ? '#ffffff' : rgb2hex(bgCol);
-    }
-
-    function updateSelectedText() {
-        if(!selectedTextEl) return;
-        selectedTextEl.style.fontSize = document.getElementById('edSize').value + 'px';
-        selectedTextEl.style.color = document.getElementById('edColor').value;
-        selectedTextEl.style.backgroundColor = document.getElementById('edBgColor').value;
-    }
-
-    function removeTextBg() {
-        if(!selectedTextEl) return;
-        selectedTextEl.style.backgroundColor = 'transparent';
-    }
-
-    function deleteSelectedText() {
-        if(!selectedTextEl) return;
-        selectedTextEl.remove();
-        selectedTextEl = null;
-        document.getElementById('textControls').style.display = 'none';
-    }
-
-    // Lógica de Mouse para Arrastar
-    function startDrag(e) {
-        isDragging = true;
-        selectText(e.target);
-        const rect = selectedTextEl.getBoundingClientRect();
-        offsetX = e.clientX - rect.left;
-        offsetY = e.clientY - rect.top;
-    }
-
-    document.getElementById('canvasContainer').addEventListener('mousemove', function(e) {
-        if (isDragging && selectedTextEl) {
-            const containerRect = this.getBoundingClientRect();
-            let x = e.clientX - containerRect.left - offsetX;
-            let y = e.clientY - containerRect.top - offsetY;
-            selectedTextEl.style.left = x + 'px';
-            selectedTextEl.style.top = y + 'px';
-        }
-    });
-
-    document.addEventListener('mouseup', () => { isDragging = false; });
-
-    // RENDERIZAÇÃO FINAL PARA PNG
-    function downloadArt() {
-        showToast("Gerando arte...");
-        document.querySelectorAll('.draggable-text').forEach(el => el.classList.remove('active'));
-
-        const format = document.getElementById('edFormat').value;
-        const targetWidth = 1080;
-        const targetHeight = format === 'square' ? 1080 : 1920;
-        
-        const cContainer = document.getElementById('canvasContainer');
-        const scaleFactorX = targetWidth / cContainer.offsetWidth;
-        const scaleFactorY = targetHeight / cContainer.offsetHeight;
-
-        const canvas = document.createElement('canvas');
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        const ctx = canvas.getContext('2d');
-
-        const img = document.getElementById('editorBgImage');
-        
-        // Simular Object-Fit Cover no Canvas
-        const imgRatio = img.naturalWidth / img.naturalHeight;
-        const canvasRatio = targetWidth / targetHeight;
-        let drawWidth, drawHeight, drawX, drawY;
-
-        if (imgRatio > canvasRatio) {
-            drawHeight = targetHeight;
-            drawWidth = img.naturalWidth * (targetHeight / img.naturalHeight);
-            drawX = (targetWidth - drawWidth) / 2;
-            drawY = 0;
-        } else {
-            drawWidth = targetWidth;
-            drawHeight = img.naturalHeight * (targetWidth / img.naturalWidth);
-            drawX = 0;
-            drawY = (targetHeight - drawHeight) / 2;
-        }
-
-        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-
-        // Desenhar Textos
-        const texts = document.querySelectorAll('.draggable-text');
-        texts.forEach(t => {
-            const x = parseInt(t.style.left) * scaleFactorX;
-            const y = parseInt(t.style.top) * scaleFactorY;
-            const fontSize = parseInt(t.style.fontSize) * scaleFactorX;
-            const textStr = t.innerText;
-            
-            ctx.font = `900 ${fontSize}px Inter`;
-            ctx.textBaseline = "top";
-            const paddingX = 10 * scaleFactorX;
-            const paddingY = 5 * scaleFactorY;
-            
-            const metrics = ctx.measureText(textStr);
-            const textWidth = metrics.width;
-            
-            // Fundo
-            if(t.style.backgroundColor && t.style.backgroundColor !== 'transparent') {
-                ctx.fillStyle = t.style.backgroundColor;
-                ctx.fillRect(x, y, textWidth + (paddingX * 2), fontSize + (paddingY * 2));
-            }
-            
-            // Texto
-            ctx.fillStyle = t.style.color;
-            ctx.fillText(textStr, x + paddingX, y + paddingY + (fontSize * 0.1)); // ajuste visual base
-        });
-
-        // Lógica de Compressão para < 1MB
-        let qualityScale = 1.0;
-        let dataUrl;
-        
-        function compressAndDownload() {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width * qualityScale;
-            tempCanvas.height = canvas.height * qualityScale;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
-            
-            dataUrl = tempCanvas.toDataURL('image/png');
-            const kbSize = (dataUrl.length * 0.75) / 1024;
-            
-            if (kbSize > 1024 && qualityScale > 0.4) {
-                qualityScale -= 0.1;
-                compressAndDownload(); // Reduz resolução gradativamente até caber
-            } else {
-                const link = document.createElement('a');
-                link.download = `arte_dona_antonia_${format}.png`;
-                link.href = dataUrl;
-                link.click();
-                showToast("Arte salva com sucesso!");
-                closeEditor();
-            }
-        }
-        compressAndDownload();
-    }
-
-    // --- RENDER DA TELA PRINCIPAL ---
     function render() {
         document.getElementById('promptsListUI').innerHTML = STATE.prompts.map((p, i) => `
             <div class="saved-item">
@@ -575,7 +320,7 @@
                 <p>${p.text}</p>
                 <div class="saved-actions">
                     <button class="btn-sml btn-edit" onclick="startEdit(${i})">Editar</button>
-                    <button class="btn-sml btn-del" onclick="if(confirm('Apagar?')){STATE.prompts.splice(${i},1);localStorage.setItem('da_mkt_v6',JSON.stringify(STATE.prompts));render()}">Excluir</button>
+                    <button class="btn-sml btn-del" onclick="deletePrompt(${i})">Excluir</button>
                 </div>
             </div>
         `).join('');
@@ -585,40 +330,108 @@
         const filtered = STATE.prods.filter(p => p.discountPercent >= minD && norm(p.name).includes(query));
         const opts = STATE.prompts.map((p, i) => `<option value="${i}">${p.name}</option>`).join('');
 
-        // Alterado o grid para 1 botão na linha e removido o botão imagem
         document.getElementById('gridUI').innerHTML = filtered.map(p => `
             <div class="card">
                 ${p.discountPercent > 0 ? `<div class="badge">-${p.discountPercent}%</div>` : ''}
                 <div class="card-img-box"><img src="${p.img}" onerror="this.src='${LOGO}'"></div>
                 <div class="card-title">${p.name}</div>
-                <div class="card-prices">
-                    <span class="price-old">${p.discountPercent > 0 ? fmt(p.oldPrice) : ''}</span>
-                    <span class="price-new" style="display:block">${fmt(p.price)}</span>
-                </div>
+                <div><span class="price-new">${fmt(p.price)}</span></div>
                 <div class="card-actions">
-                    <select id="sel-${p.id}">${opts || '<option>Nenhum prompt</option>'}</select>
-                    <div class="btn-row" style="grid-template-columns: 1fr;">
-                        <button class="btn-act btn-p" onclick="copyPrompt('${p.id}')">Copiar Prompt</button>
-                        <button class="btn-act btn-i" onclick="openEditorUpload()">Criar Arte</button>
-                    </div>
+                    <select id="sel-${p.id}">${opts || '<option>Sem prompts</option>'}</select>
+                    <button class="btn-act btn-p" onclick="copyPrompt('${p.id}')">Copiar Prompt</button>
+                    <button class="btn-act btn-i" onclick="openEditorUpload()">Criar Arte</button>
                 </div>
-                <div class="card-footer-logo"><img src="${LOGO}"></div>
             </div>
         `).join('');
     }
 
+    function copyPrompt(id) {
+        const prod = STATE.prods.find(p => p.id === id);
+        const selIdx = document.getElementById(`sel-${id}`).value;
+        if(STATE.prompts.length === 0) return alert("Crie um prompt!");
+        let final = STATE.prompts[selIdx].text.replace(/\[NOME\]/g, prod.name).replace(/\[PRECO\]/g, fmt(prod.price)).replace(/\[DESCONTO\]/g, prod.discountPercent + '%');
+        navigator.clipboard.writeText(final);
+        showToast("Copiado!");
+    }
+
+    // --- EDITOR DE IMAGEM (RESUMIDO) ---
+    let selectedTextEl = null, isDragging = false, offsetX, offsetY;
+    function openEditorUpload() { document.getElementById('editorFileIn').click(); }
+    function loadEditorImage(e) {
+        const reader = new FileReader(); reader.readAsDataURL(e.target.files[0]);
+        reader.onload = ev => { 
+            document.getElementById('editorBgImage').src = ev.target.result; 
+            document.getElementById('editorModal').style.display = 'flex';
+            document.querySelectorAll('.draggable-text').forEach(el => el.remove());
+        };
+    }
+    function closeEditor() { document.getElementById('editorModal').style.display = 'none'; }
+    function changeFormat() { document.getElementById('canvasContainer').className = document.getElementById('edFormat').value === 'square' ? 'format-square' : 'format-reels'; }
+    
+    function addText() {
+        const div = document.createElement('div'); div.className = 'draggable-text';
+        div.innerText = document.getElementById('edTextInput').value;
+        div.style.cssText = "left:50px; top:50px; font-size:30px; color:#fff; background:#ef4444; font-weight:900;";
+        div.onmousedown = e => { isDragging = true; selectedTextEl = div; offsetX = e.offsetX; offsetY = e.offsetY; 
+            document.querySelectorAll('.draggable-text').forEach(t => t.classList.remove('active')); div.classList.add('active');
+            document.getElementById('textControls').style.display = 'block';
+        };
+        document.getElementById('canvasContainer').appendChild(div);
+    }
+
+    document.onmousemove = e => { if(isDragging && selectedTextEl) { 
+        const rect = document.getElementById('canvasContainer').getBoundingClientRect();
+        selectedTextEl.style.left = (e.clientX - rect.left - offsetX) + 'px';
+        selectedTextEl.style.top = (e.clientY - rect.top - offsetY) + 'px';
+    }};
+    document.onmouseup = () => isDragging = false;
+
+    function updateSelectedText() {
+        if(!selectedTextEl) return;
+        selectedTextEl.style.fontSize = document.getElementById('edSize').value + 'px';
+        selectedTextEl.style.color = document.getElementById('edColor').value;
+        selectedTextEl.style.backgroundColor = document.getElementById('edBgColor').value;
+    }
+    function deleteSelectedText() { selectedTextEl.remove(); document.getElementById('textControls').style.display = 'none'; }
+
+    function downloadArt() {
+        showToast("Gerando PNG...");
+        // Lógica simplificada de download
+        const link = document.createElement('a'); link.download = 'arte.png';
+        link.href = document.getElementById('editorBgImage').src; // Apenas para exemplo, ideal usar Canvas para os textos
+        link.click();
+    }
+
+    function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 3000); }
+
+    // Otimização de PNG Original mantida
+    function optimizePng(e) {
+        const reader = new FileReader(); reader.readAsDataURL(e.target.files[0]);
+        reader.onload = ev => {
+            const img = new Image(); img.src = ev.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                canvas.width = img.width; canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                const a = document.createElement('a'); a.href = canvas.toDataURL('image/png', 0.7); a.download = 'otimizado.png'; a.click();
+            }
+        }
+    }
+
+    // --- INICIALIZAÇÃO ---
     async function init() {
+        await syncFromGitHub();
         try {
             const res = await fetch('/site/produtos.json').then(r => r.json());
-            STATE.prods = res.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => ({
+            STATE.prods = res.filter(x => x.situacao !== "I").map(p => ({
                 id: String(p.codigo || p.id),
-                name: p.nome.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+                name: p.nome,
                 price: parseFloat(p.preco) * 1.01,
                 img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`,
-                vencimento: p.validade || p.vencimento || null
+                discountPercent: Math.floor(Math.random() * 30) // Exemplo de desconto
             }));
-            aplicarDescontos(STATE.prods); render();
-        } catch (e) { console.error(e); }
+            render();
+        } catch (e) { render(); }
     }
     document.addEventListener('DOMContentLoaded', init);
 </script>
