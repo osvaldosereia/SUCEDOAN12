@@ -9,7 +9,7 @@
     <style>
         :root {
             --bg: #f4f4f5; --card: #ffffff; --text: #0f172a; --text-muted: #64748b;
-            --primary: #000000; --success: #10b981; --border: #e4e4e7;
+            --primary: #000000; --success: #10b981; --danger: #ef4444; --border: #e4e4e7;
         }
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding-bottom: 20px;}
         
@@ -23,11 +23,21 @@
         .btn-config { background: transparent; color: white; padding: 8px; }
         .btn-action { background: var(--primary); color: white; padding: 12px; width: 100%; font-size: 14px; }
         .btn-success { background: var(--success); color: white; padding: 12px; width: 100%; font-size: 14px; }
+        .btn-danger { background: var(--danger); color: white; padding: 10px 15px; font-size: 13px; }
+
+        /* Barra de Ações de Seleção */
+        #acao-selecao { display: none; background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 15px; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
         /* Lista de Pedidos */
-        .order-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
-        .order-card:active { transform: scale(0.98); }
-        .order-card.concluido { opacity: 0.6; border-color: var(--success); background: #ecfdf5; }
+        .order-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.02); position: relative; }
+        .order-card:active { transform: scale(0.99); }
+        .order-card.concluido { opacity: 0.7; border-color: var(--success); background: #ecfdf5; }
+        
+        /* Checkbox Customizada */
+        .checkbox-container { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
+        .checkbox-container input { width: 20px; height: 20px; cursor: pointer; }
+
+        .order-content { flex: 1; display: flex; justify-content: space-between; align-items: center; }
         .order-id { font-size: 18px; font-weight: 900; }
         .order-date { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 600;}
         .badge { background: #fef08a; color: #854d0e; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; display: inline-block; }
@@ -41,20 +51,12 @@
         .item-info { padding: 15px; }
         .item-title { font-size: 18px; font-weight: 900; margin: 0 0 15px 0; line-height: 1.2; }
         
-        /* Destaque da Quantidade */
         .qty-highlight { background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; font-size: 32px; font-weight: 900; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: -1px; }
 
         .item-meta { display: flex; justify-content: space-between; background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e2e8f0; }
         .meta-box { text-align: center; flex: 1; }
         .meta-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 800; }
         .meta-value { font-size: 18px; font-weight: 900; color: var(--primary); }
-
-        /* Teclado Numérico (Novo) */
-        .keypad-container { background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1; }
-        .keypad-title { text-align: center; font-size: 11px; font-weight: 900; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; }
-        .keypad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-        .key-btn { background: #ffffff; color: var(--text); font-size: 20px; font-weight: 900; padding: 15px 0; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 2px 0 var(--border); cursor: pointer; transition: 0.1s; }
-        .key-btn:active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 0 0 transparent; transform: translateY(2px); }
 
         /* Config Modal */
         #config-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
@@ -73,6 +75,11 @@
     </header>
 
     <div class="container" id="view-pedidos">
+        <div id="acao-selecao">
+            <span id="txt-selecionados" style="font-weight: 800; font-size: 14px;">0 selecionados</span>
+            <button class="btn-danger" onclick="excluirSelecionados()"><i data-lucide="trash-2"></i> Excluir do GitHub</button>
+        </div>
+
         <h2 style="font-weight: 900; font-size: 16px; color: var(--text-muted); margin-bottom: 15px;">LISTA DE PEDIDOS</h2>
         <div id="lista-pedidos">Carregando pedidos...</div>
     </div>
@@ -89,8 +96,8 @@
         <div class="modal-content">
             <h3 style="margin:0; font-weight:900;">Credenciais GitHub</h3>
             <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Insira os mesmos dados do Sucedoan PIM.</p>
-            <input type="text" id="cfg-user" placeholder="Usuário GitHub (Ex: donantonia)">
-            <input type="text" id="cfg-repo" placeholder="Repositório (Ex: base-dados)">
+            <input type="text" id="cfg-user" placeholder="Usuário GitHub">
+            <input type="text" id="cfg-repo" placeholder="Repositório">
             <input type="password" id="cfg-token" placeholder="Token de Acesso (ghp_...)">
             <button class="btn-action" onclick="salvarConfig()" style="margin-top: 10px;">Salvar e Recarregar</button>
             <button class="btn-action" onclick="fecharConfig()" style="background: var(--border); color: var(--text);">Cancelar</button>
@@ -98,7 +105,6 @@
     </div>
 
     <script>
-        // Utilitários de conversão seguras para o GitHub
         function encodeBase64(str) { return btoa(new TextEncoder().encode(str).reduce((d, b) => d + String.fromCharCode(b), '')); }
         function decodeBase64(b64) { return new TextDecoder('utf-8').decode(Uint8Array.from(atob(b64.replace(/\s/g, '')), c => c.charCodeAt(0))); }
 
@@ -106,97 +112,62 @@
         let fileSha = null;
         let todosOsPedidos = [];
         let pedidoAtivo = null;
+        let idsSelecionados = new Set(); // Guarda os IDs dos pedidos marcados para exclusão
 
         window.onload = () => {
             lucide.createIcons();
             carregarConfig();
         };
 
-        // --- INÍCIO DAS FUNÇÕES ATUALIZADAS DO LOCALSTORAGE ---
-
         function carregarConfig() {
             try {
-                // Tenta buscar os dados do LocalStorage
                 const configSalva = localStorage.getItem('separador_config');
-                
-                // Se existir, converte o texto (JSON) para um objeto JavaScript
-                if (configSalva) {
-                    cfg = JSON.parse(configSalva);
-                } else {
-                    cfg = null;
-                }
-            } catch (erro) {
-                console.error("Erro ao ler as configurações:", erro);
-                cfg = null; // Em caso de erro (ex: JSON inválido), redefine a configuração
-            }
+                cfg = configSalva ? JSON.parse(configSalva) : null;
+            } catch (erro) { console.error(erro); cfg = null; }
 
-            // Se não houver configuração ou se o token estiver vazio, abre a janela
-            if (!cfg || !cfg.token || cfg.token.trim() === '') {
-                abrirConfig(); 
-            } else { 
-                buscarPedidos(); 
-            }
+            if (!cfg || !cfg.token) { abrirConfig(); } else { buscarPedidos(); }
         }
 
         function abrirConfig() {
-            // Preenche os campos se a configuração existir, caso contrário, deixa em branco
             document.getElementById('cfg-user').value = cfg ? cfg.user : '';
             document.getElementById('cfg-repo').value = cfg ? cfg.repo : '';
             document.getElementById('cfg-token').value = cfg ? cfg.token : '';
-            
             document.getElementById('config-modal').style.display = 'flex';
         }
 
-        function fecharConfig() { 
-            document.getElementById('config-modal').style.display = 'none'; 
-        }
+        function fecharConfig() { document.getElementById('config-modal').style.display = 'none'; }
 
         function salvarConfig() {
-            // O .trim() remove espaços em branco antes ou depois do texto digitado
             const user = document.getElementById('cfg-user').value.trim();
             const repo = document.getElementById('cfg-repo').value.trim();
             const token = document.getElementById('cfg-token').value.trim();
-
-            // Validação: Impede guardar se algum campo estiver vazio
-            if (!user || !repo || !token) {
-                alert("Por favor, preencha todos os campos antes de guardar e recarregar.");
-                return;
-            }
-
-            // Atualiza a variável global
-            cfg = { user: user, repo: repo, token: token };
-            
-            // Converte o objeto em texto e guarda de forma persistente no LocalStorage
+            if (!user || !repo || !token) { alert("Preencha tudo!"); return; }
+            cfg = { user, repo, token };
             localStorage.setItem('separador_config', JSON.stringify(cfg));
-            
             fecharConfig(); 
             buscarPedidos();
         }
 
-        // --- FIM DAS FUNÇÕES ATUALIZADAS DO LOCALSTORAGE ---
-
         async function buscarPedidos() {
-            document.getElementById('lista-pedidos').innerHTML = '<div style="text-align:center; padding: 20px;"><i data-lucide="loader" class="spin"></i> Buscando na nuvem...</div>';
+            document.getElementById('lista-pedidos').innerHTML = '<div style="text-align:center; padding: 20px;"><i data-lucide="loader" class="spin"></i> Buscando...</div>';
             lucide.createIcons();
-            
+            idsSelecionados.clear();
+            atualizarBarraAcoes();
+
             try {
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/pedidoseparar.json`;
                 const res = await fetch(url, { headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" }, cache: "no-store" });
-
-                if (res.status === 404) { document.getElementById('lista-pedidos').innerHTML = 'Nenhum pedido na fila.'; todosOsPedidos = []; return; }
-                if (!res.ok) throw new Error("Verifique as suas credenciais e a conexão com a internet.");
-
+                if (res.status === 404) { document.getElementById('lista-pedidos').innerHTML = 'Vazio.'; todosOsPedidos = []; return; }
                 const data = await res.json();
                 fileSha = data.sha;
                 todosOsPedidos = JSON.parse(decodeBase64(data.content));
                 renderizarListaPedidos();
             } catch (err) {
-                document.getElementById('lista-pedidos').innerHTML = `<p style="color:red; font-weight:bold;">Erro: ${err.message}</p>`;
+                document.getElementById('lista-pedidos').innerHTML = `<p style="color:red;">Erro: ${err.message}</p>`;
             }
         }
 
         function renderizarListaPedidos() {
-            // Ordenar: Pendentes primeiro, mais recentes no topo. Concluídos depois.
             const ordenados = [...todosOsPedidos].sort((a, b) => {
                 if (a.status === b.status) return new Date(b.data) - new Date(a.data);
                 return a.status === 'pendente' ? -1 : 1;
@@ -205,35 +176,68 @@
             const html = ordenados.map((pedido) => {
                 const totalSkus = pedido.itens.length;
                 const totalUnidades = pedido.itens.reduce((soma, i) => soma + i.quantidade, 0);
-                const separados = pedido.itens.filter(i => i.status === 'separado').length;
                 const isConcluido = pedido.status === 'concluido';
-                
-                // Formatar Data e Hora
                 const dataObj = new Date(pedido.data);
-                const dataFormatada = dataObj.toLocaleDateString('pt-BR') + ' às ' + dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                
-                // Preciso de encontrar o index real na array original para abrir o pedido correto
+                const dataFormatada = dataObj.toLocaleDateString('pt-BR') + ' ' + dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
                 const realIndex = todosOsPedidos.findIndex(p => p.id === pedido.id);
 
                 return `
-                <div class="order-card ${isConcluido ? 'concluido' : ''}" onclick="abrirPedido(${realIndex})">
-                    <div>
-                        <div class="order-id">Pedido #${pedido.id}</div>
-                        <div class="order-date"><i data-lucide="calendar" size="12"></i> ${dataFormatada}</div>
-                        <div style="font-size: 12px; font-weight: 800; color: var(--text); margin-top: 6px;">
-                            ${totalSkus} Itens Diferentes (${totalUnidades} Peças)
-                        </div>
+                <div class="order-card ${isConcluido ? 'concluido' : ''}" onclick="cliqueCard(event, ${realIndex})">
+                    <div class="checkbox-container">
+                        <input type="checkbox" ${idsSelecionados.has(pedido.id) ? 'checked' : ''} onchange="toggleSelecao(event, '${pedido.id}')">
                     </div>
-                    <div style="text-align: right;">
+                    <div class="order-content">
+                        <div>
+                            <div class="order-id">Pedido #${pedido.id}</div>
+                            <div class="order-date"><i data-lucide="calendar" size="12"></i> ${dataFormatada}</div>
+                            <div style="font-size: 11px; font-weight: 800; color: var(--text); margin-top: 4px;">
+                                ${totalSkus} Itens (${totalUnidades} Peças)
+                            </div>
+                        </div>
                         <div class="badge" style="background: ${isConcluido ? '#d1fae5' : '#fef08a'}; color: ${isConcluido ? '#065f46' : '#854d0e'};">
-                            ${isConcluido ? 'SEPARADO' : `${separados} de ${totalSkus}`}
+                            ${isConcluido ? 'SEPARADO' : 'PENDENTE'}
                         </div>
                     </div>
                 </div>`;
             }).join('');
 
-            document.getElementById('lista-pedidos').innerHTML = html || 'Nenhum pedido encontrado.';
+            document.getElementById('lista-pedidos').innerHTML = html || 'Nenhum pedido.';
             lucide.createIcons();
+        }
+
+        // Garante que o checkbox não abra o pedido ao ser clicado
+        function cliqueCard(event, index) {
+            if (event.target.tagName === 'INPUT') return;
+            abrirPedido(index);
+        }
+
+        function toggleSelecao(event, id) {
+            if (event.target.checked) idsSelecionados.add(id);
+            else idsSelecionados.delete(id);
+            atualizarBarraAcoes();
+        }
+
+        function atualizarBarraAcoes() {
+            const barra = document.getElementById('acao-selecao');
+            const txt = document.getElementById('txt-selecionados');
+            if (idsSelecionados.size > 0) {
+                barra.style.display = 'flex';
+                txt.innerText = `${idsSelecionados.size} pedido(s) selecionado(s)`;
+            } else {
+                barra.style.display = 'none';
+            }
+        }
+
+        async function excluirSelecionados() {
+            if (!confirm(`Tens a certeza que desejas excluir ${idsSelecionados.size} pedido(s) do GitHub?\nEsta ação não pode ser desfeita.`)) return;
+
+            // Filtra mantendo apenas os que NÃO estão no Set de selecionados
+            todosOsPedidos = todosOsPedidos.filter(p => !idsSelecionados.has(p.id));
+            
+            // Limpa a seleção e atualiza a nuvem
+            idsSelecionados.clear();
+            await salvarNoGitHub(false, "Pedidos excluídos pelo separador");
+            buscarPedidos(); // Recarrega a lista
         }
 
         function abrirPedido(index) {
@@ -259,8 +263,6 @@
 
         function renderizarItensDoPedido() {
             const pedido = todosOsPedidos[pedidoAtivo];
-            
-            // Ordenar por Gôndola e Prateleira para criar a Rota de Recolha
             pedido.itens.sort((a, b) => {
                 if (a.gondola === b.gondola) return String(a.prateleira).localeCompare(String(b.prateleira));
                 return String(a.gondola).localeCompare(String(b.gondola));
@@ -268,110 +270,53 @@
 
             const html = pedido.itens.map((item, idx) => {
                 const isSeparado = item.status === 'separado';
-                
-                // Construção do Teclado ou Botão de Exceção
-                let areaControle = '';
-                if (!isSeparado) {
-                    if (item.gtin && item.gtin.trim() !== "") {
-                        areaControle = `
-                        <div class="keypad-container">
-                            <div class="keypad-title">Qual é o Último Número do Código?</div>
-                            <div class="keypad">
-                                ${[0,1,2,3,4,5,6,7,8,9].map(num => `<button class="key-btn" onclick="confirmarSeparacao(${idx}, '${num}')">${num}</button>`).join('')}
-                            </div>
-                        </div>`;
-                    } else {
-                        // Produto que não tem código de barras registado no sistema
-                        areaControle = `<button class="btn-action" style="background:#f59e0b;" onclick="confirmarSeparacao(${idx}, null)"><i data-lucide="alert-triangle"></i> Não tem EAN - Forçar Separação</button>`;
-                    }
-                } else {
-                    areaControle = `<button class="btn-success" disabled><i data-lucide="check-circle"></i> Separado e Verificado</button>`;
-                }
+                let areaControle = !isSeparado ? 
+                    `<button class="btn-action" onclick="confirmarSeparacao(${idx})"><i data-lucide="check"></i> Marcar como Separado</button>` :
+                    `<button class="btn-success" disabled><i data-lucide="check-circle"></i> Separado</button>`;
 
                 return `
                 <div class="item-card ${isSeparado ? 'separado' : ''}">
                     <img src="${formatarImagem(item.url_imagem)}" class="item-img" onerror="this.src='https://placehold.co/400x400/f4f4f5/ef4444?text=ERRO'">
-                    
                     <div class="item-info">
                         <div class="qty-highlight">${item.quantidade} UN</div>
                         <h3 class="item-title">${item.nome}</h3>
-                        
                         <div class="item-meta">
-                            <div class="meta-box" style="border-right: 1px solid var(--border);">
-                                <div class="meta-label">Gôndola</div>
-                                <div class="meta-value">${item.gondola}</div>
-                            </div>
-                            <div class="meta-box">
-                                <div class="meta-label">Prateleira</div>
-                                <div class="meta-value">${item.prateleira}</div>
-                            </div>
+                            <div class="meta-box" style="border-right: 1px solid var(--border);"><div class="meta-label">Gôndola</div><div class="meta-value">${item.gondola}</div></div>
+                            <div class="meta-box"><div class="meta-label">Prateleira</div><div class="meta-value">${item.prateleira}</div></div>
                         </div>
-
                         ${areaControle}
                     </div>
                 </div>`;
             }).join('');
-
             document.getElementById('lista-itens').innerHTML = html;
             lucide.createIcons();
-            
-            // Fazer scroll até ao topo ao atualizar
             window.scrollTo(0, 0);
         }
 
-        async function confirmarSeparacao(itemIndex, digitClicado) {
+        async function confirmarSeparacao(itemIndex) {
             const item = todosOsPedidos[pedidoAtivo].itens[itemIndex];
-            
-            // Verificação de EAN
-            if (digitClicado !== null) {
-                const ultimoNumeroReal = item.gtin.slice(-1); // Pega o último caractere do EAN
-                
-                if (digitClicado !== ultimoNumeroReal) {
-                    alert("❌ Código incorreto!\nVerifique se pegou o produto correto.");
-                    return;
-                }
-            } else {
-                // Caso excecional de produto sem EAN cadastrado
-                const conf = confirm(`Atenção: Este produto não tem código de barras no sistema.\nTem a certeza absoluta de que separou ${item.quantidade} UN do produto:\n"${item.nome}"?`);
-                if (!conf) return;
-            }
-
-            // Produto verificado!
             item.status = 'separado';
-            
-            // Verificar se o pedido já está todo completo
             const todosSeparados = todosOsPedidos[pedidoAtivo].itens.every(i => i.status === 'separado');
             if(todosSeparados) {
                 todosOsPedidos[pedidoAtivo].status = 'concluido';
-                salvarNoGitHub(true); // Guarda e mostra alerta
+                salvarNoGitHub(true, "Pedido concluído");
             } else {
                 renderizarItensDoPedido();
-                salvarNoGitHub(false); // Guarda o progresso em segundo plano (backup em tempo real)
+                salvarNoGitHub(false, "Item separado");
             }
         }
 
-        async function salvarNoGitHub(pedidoCompleto = false) {
+        async function salvarNoGitHub(pedidoCompleto = false, mensagem = "Atualização") {
             try {
-                // Indicador visual na app (opcional, pode ser util se a net falhar)
-                const body = { message: "Atualização no status de separação", content: encodeBase64(JSON.stringify(todosOsPedidos, null, 2)), sha: fileSha };
+                const body = { message: mensagem, content: encodeBase64(JSON.stringify(todosOsPedidos, null, 2)), sha: fileSha };
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/pedidoseparar.json`;
-                
                 const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json", "Content-Type": "application/json" }, body: JSON.stringify(body) });
-
                 if (res.ok) {
                     const data = await res.json();
                     fileSha = data.content.sha; 
-                    
-                    if(pedidoCompleto) {
-                        alert("🎉 Pedido 100% separado e salvo na nuvem!");
-                        voltarParaPedidos();
-                    }
-                } else {
-                    if(pedidoCompleto) alert("Aviso: Os itens foram separados localmente, mas houve um erro ao enviar para a nuvem. Verifique a internet.");
+                    if(pedidoCompleto) { alert("🎉 Pedido concluído!"); voltarParaPedidos(); }
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
     </script>
 </body>
