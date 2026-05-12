@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Prompts - Dona Antônia (V7 Super Compact)</title>
+    <title>Gerenciador de Prompts - Dona Antônia (Super Compact)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -20,27 +20,24 @@
         body { background-color: var(--bg); color: #0f172a; padding: 20px; padding-bottom: 60px; }
         .container { max-width: 1200px; margin: 0 auto; }
 
-        /* HEADER */
         .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
         .header h1 { font-weight: 900; font-size: 26px; border-left: 5px solid var(--accent); padding-left: 15px; }
 
-        /* CONFIGURAÇÕES GITHUB */
         .config-box { background: var(--config-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; }
         .config-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
         .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
-        .config-grid input { padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline-color: var(--accent); }
+        .config-grid input { padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
 
-        /* FORMULÁRIO DE PROMPT */
         .prompt-box { background: white; padding: 25px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .prompt-box h2 { font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--primary); }
         
         .form-grid { display: grid; grid-template-columns: 200px 1fr; gap: 20px; }
         @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
 
-        .img-upload-box { border: 2px dashed var(--border); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 4/5; cursor: pointer; overflow: hidden; position: relative; background: #fcfcfc; transition: 0.2s; }
-        .img-upload-box:hover { border-color: var(--accent); background: #f8fafc; }
+        .img-upload-box { border: 2px dashed var(--border); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 4/5; cursor: pointer; overflow: hidden; position: relative; background: #fcfcfc; }
+        .img-upload-box:hover { border-color: var(--accent); }
         .img-upload-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none; }
-        .img-upload-text { font-size: 11px; color: #64748b; text-align: center; padding: 10px; font-weight: 600; line-height: 1.4; }
+        .img-upload-text { font-size: 11px; color: #64748b; text-align: center; padding: 10px; font-weight: 600; }
 
         .input-group { display: flex; flex-direction: column; gap: 12px; }
         .input-group input, .input-group textarea { padding: 14px; border: 1px solid var(--border); border-radius: 10px; width: 100%; font-size: 14px; outline-color: var(--accent); background: #fcfcfc; }
@@ -51,22 +48,17 @@
         .btn-sec { padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
         .btn-cancel { padding: 14px 20px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; display: none; }
 
-        /* GRID DE RESULTADOS */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; margin-top: 20px; }
         .card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 15px; display: flex; flex-direction: column; transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1); }
         .card-img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 10px; margin-bottom: 15px; background: #f1f5f9; }
-        .card-title { font-weight: 800; font-size: 16px; margin-bottom: 8px; color: var(--primary); }
-        .card-desc { font-size: 12px; color: #64748b; margin-bottom: 15px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+        .card-title { font-weight: 800; font-size: 16px; margin-bottom: 8px; }
+        .card-desc { font-size: 12px; color: #64748b; margin-bottom: 15px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
         .card-actions { display: grid; gap: 10px; }
-        .btn-copy { background: var(--success); color: white; padding: 10px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px; transition: 0.2s; }
-        .btn-copy:active { transform: scale(0.95); }
-
+        .btn-copy { background: var(--success); color: white; padding: 10px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px; }
         .card-footer { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
-        .btn-sml { background: none; border: none; font-size: 11px; font-weight: 800; cursor: pointer; text-transform: uppercase; }
+        .btn-sml { background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; }
 
-        /* TOAST */
-        #toast { visibility: hidden; background: #0f172a; color: white; border-radius: 50px; padding: 16px 40px; position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; z-index: 5000; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        #toast { visibility: hidden; background: #0f172a; color: white; border-radius: 50px; padding: 16px 40px; position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; z-index: 5000; }
         #toast.show { visibility: visible; animation: fadeInUp 0.4s forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
     </style>
@@ -79,12 +71,12 @@
     </div>
 
     <div class="config-box">
-        <h3>⚙️ Credenciais GitHub</h3>
+        <h3>⚙️ Configurações de Nuvem (GitHub)</h3>
         <div class="config-grid">
-            <input type="password" id="ghToken" placeholder="GitHub Personal Token">
-            <input type="text" id="ghUser" placeholder="Usuário GitHub">
-            <input type="text" id="ghRepo" placeholder="Nome do Repositório">
-            <button class="btn-sec" onclick="saveGitHubConfig()">💾 Salvar e Conectar</button>
+            <input type="password" id="ghToken" placeholder="GitHub Token">
+            <input type="text" id="ghUser" placeholder="Usuário">
+            <input type="text" id="ghRepo" placeholder="Repositório">
+            <button class="btn-sec" onclick="saveGitHubConfig()">Conectar</button>
         </div>
     </div>
 
@@ -94,18 +86,18 @@
             <div>
                 <input type="file" id="pImageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
                 <div class="img-upload-box" onclick="document.getElementById('pImageInput').click()">
-                    <span class="img-upload-text" id="uploadStatus">📸 Clique para Foto (4:5)<br><small>Max 200KB automático</small></span>
+                    <span class="img-upload-text">📸 Clique para Foto (4:5)<br><small id="sizeInfo">Max 200KB</small></span>
                     <img id="pImgPreview" src="" alt="Preview">
                 </div>
             </div>
             <div class="input-group">
-                <input type="text" id="pName" placeholder="Título do Prompt (Ex: Reels de Ofertas)">
-                <textarea id="pText" placeholder="Escreva aqui o seu prompt detalhado..."></textarea>
+                <input type="text" id="pName" placeholder="Título do Prompt">
+                <textarea id="pText" placeholder="Comando do prompt..."></textarea>
             </div>
         </div>
         <div class="form-footer">
-            <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar Edição</button>
-            <button class="btn-main" id="btnSave" onclick="savePrompt()">💾 Salvar Prompt</button>
+            <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar</button>
+            <button class="btn-main" id="btnSave" onclick="savePrompt()">💾 Salvar Prompt Compactado</button>
         </div>
     </div>
 
@@ -115,78 +107,56 @@
 <div id="toast">Pronto!</div>
 
 <script>
-    // --- ESTADO GLOBAL ---
     const GITHUB = {
-        token: '',
-        owner: '',
-        repo: '',
+        token: localStorage.getItem('da_gh_token') || '',
+        owner: localStorage.getItem('da_gh_user') || '',
+        repo: localStorage.getItem('da_gh_repo') || '',
         path: 'prompts.json',
         sha: ''
     };
 
     const STATE = { prompts: [], editingIdx: -1, currentImageBase64: "" };
 
-    // --- CARREGAMENTO INICIAL DE CONFIGS ---
-    function initConfigs() {
-        GITHUB.token = localStorage.getItem('da_gh_token') || '';
-        GITHUB.owner = localStorage.getItem('da_gh_user') || '';
-        GITHUB.repo = localStorage.getItem('da_gh_repo') || '';
-
-        document.getElementById('ghToken').value = GITHUB.token;
-        document.getElementById('ghUser').value = GITHUB.owner;
-        document.getElementById('ghRepo').value = GITHUB.repo;
-
-        if(GITHUB.token && GITHUB.owner && GITHUB.repo) {
-            syncFromGitHub();
-        }
-    }
+    document.getElementById('ghToken').value = GITHUB.token;
+    document.getElementById('ghUser').value = GITHUB.owner;
+    document.getElementById('ghRepo').value = GITHUB.repo;
 
     function saveGitHubConfig() {
-        const t = document.getElementById('ghToken').value.trim();
-        const u = document.getElementById('ghUser').value.trim();
-        const r = document.getElementById('ghRepo').value.trim();
-
-        localStorage.setItem('da_gh_token', t);
-        localStorage.setItem('da_gh_user', u);
-        localStorage.setItem('da_gh_repo', r);
-
-        GITHUB.token = t; GITHUB.owner = u; GITHUB.repo = r;
-        showToast("Configurações Salvas Localmente!");
+        GITHUB.token = document.getElementById('ghToken').value.trim();
+        GITHUB.owner = document.getElementById('ghUser').value.trim();
+        GITHUB.repo = document.getElementById('ghRepo').value.trim();
+        localStorage.setItem('da_gh_token', GITHUB.token);
+        localStorage.setItem('da_gh_user', GITHUB.owner);
+        localStorage.setItem('da_gh_repo', GITHUB.repo);
+        showToast("Conectado!");
         syncFromGitHub();
     }
 
-    // --- COMUNICAÇÃO GITHUB ---
     const utf8_to_b64 = str => window.btoa(unescape(encodeURIComponent(str)));
     const b64_to_utf8 = str => decodeURIComponent(escape(window.atob(str)));
 
     async function syncFromGitHub() {
-        if(!GITHUB.token) return;
+        if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) return;
         try {
             const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
             const res = await fetch(url, { headers: { 'Authorization': `token ${GITHUB.token}` } });
-            
             if(res.status === 404) { STATE.prompts = []; render(); return; }
-            if(!res.ok) throw new Error();
-
             const data = await res.json();
             GITHUB.sha = data.sha;
             STATE.prompts = JSON.parse(b64_to_utf8(data.content));
             render();
-            showToast("Dados sincronizados da nuvem!");
-        } catch (e) { showToast("Erro ao conectar ao GitHub."); }
+        } catch (e) { console.error(e); }
     }
 
     async function syncToGitHub() {
         if(!GITHUB.token) return showToast("Configure o GitHub!");
-        showToast("Sincronizando nuvem...");
         try {
             const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
             const body = {
-                message: "Dashboard Update",
+                message: "Update Prompts",
                 content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2))
             };
             if(GITHUB.sha) body.sha = GITHUB.sha;
-
             const res = await fetch(url, {
                 method: 'PUT',
                 headers: { 'Authorization': `token ${GITHUB.token}`, 'Content-Type': 'application/json' },
@@ -194,16 +164,17 @@
             });
             const data = await res.json();
             GITHUB.sha = data.content.sha;
-            showToast("Salvo na nuvem com sucesso!");
-        } catch (e) { showToast("Erro ao salvar no GitHub."); }
+            showToast("Salvo na Nuvem!");
+        } catch (e) { showToast("Erro ao salvar."); }
     }
 
-    // --- LÓGICA DE SUPER COMPRESSÃO (MAX 200KB) ---
+    // --- LÓGICA DE SUPER COMPRESSÃO ---
+    // Esta função converte a imagem e reduz a qualidade até ela ficar menor que 200KB
     function handleImageSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        showToast("Processando imagem...");
+        showToast("Compactando...");
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
@@ -211,7 +182,7 @@
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Redimensionamento para 4:5
+                // Redimensiona o tamanho máximo para manter leve
                 canvas.width = 800; 
                 canvas.height = 1000;
                 
@@ -220,16 +191,16 @@
                 const y = (canvas.height / scale - img.height) / 2;
                 ctx.drawImage(img, x, y, img.width, img.height, 0, 0, img.width * scale, img.height * scale);
 
-                // Compressão Iterativa
                 let quality = 0.9;
                 let base64 = "";
-                const MAX_SIZE = 200 * 1024; // 200KB
+                const MAX_BYTE_SIZE = 200 * 1024; // Limite de 200KB
 
+                // Loop para reduzir a qualidade até atingir o limite
                 do {
                     base64 = canvas.toDataURL('image/jpeg', quality);
-                    const size = (base64.length * (3/4));
-                    if (size <= MAX_SIZE || quality <= 0.1) break;
-                    quality -= 0.1;
+                    const sizeInBytes = (base64.length * (3/4));
+                    if (sizeInBytes <= MAX_BYTE_SIZE || quality <= 0.1) break;
+                    quality -= 0.1; 
                 } while (quality > 0.1);
 
                 STATE.currentImageBase64 = base64;
@@ -237,25 +208,23 @@
                 preview.src = base64;
                 preview.style.display = 'block';
                 
-                const finalSize = Math.round((base64.length * (3/4)) / 1024);
-                document.getElementById('uploadStatus').innerHTML = `✅ Imagem pronta!<br><small>${finalSize}KB</small>`;
+                const finalSizeKB = Math.round((base64.length * (3/4)) / 1024);
+                document.getElementById('sizeInfo').innerText = `Tamanho: ${finalSizeKB}KB (OK!)`;
+                showToast(`Imagem pronta: ${finalSizeKB}KB`);
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
-    // --- CRUD ---
     async function savePrompt() {
         const name = document.getElementById('pName').value.trim();
         const text = document.getElementById('pText').value.trim();
-        
-        if(!name || !text) return showToast("Preencha título e texto!");
+        if(!name || !text) return showToast("Preencha tudo!");
 
-        const promptObj = { name, text, image: STATE.currentImageBase64 };
-
-        if(STATE.editingIdx > -1) STATE.prompts[STATE.editingIdx] = promptObj;
-        else STATE.prompts.push(promptObj);
+        const promptData = { name, text, image: STATE.currentImageBase64 };
+        if(STATE.editingIdx > -1) STATE.prompts[STATE.editingIdx] = promptData;
+        else STATE.prompts.push(promptData);
 
         cancelEdit();
         render();
@@ -263,49 +232,39 @@
     }
 
     function render() {
-        const grid = document.getElementById('gridUI');
-        if(STATE.prompts.length === 0) {
-            grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#64748b; padding:40px;">Nenhum prompt encontrado.</p>';
-            return;
-        }
-
-        grid.innerHTML = STATE.prompts.map((p, i) => `
+        const gridUI = document.getElementById('gridUI');
+        gridUI.innerHTML = STATE.prompts.map((p, i) => `
             <div class="card">
-                <img src="${p.image || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='}" class="card-img">
+                <img src="${p.image || ''}" class="card-img">
                 <div class="card-title">${p.name}</div>
                 <div class="card-desc">${p.text}</div>
                 <div class="card-actions">
-                    <button class="btn-copy" onclick="copyText(${i})">📋 Copiar Prompt</button>
+                    <button class="btn-copy" onclick="copyPromptText(${i})">📋 Copiar Prompt</button>
                 </div>
                 <div class="card-footer">
-                    <button class="btn-sml" style="color:var(--accent)" onclick="startEdit(${i})">Editar</button>
-                    <button class="btn-sml" style="color:var(--danger)" onclick="deletePrompt(${i})">Excluir</button>
+                    <button class="btn-sml" style="color:var(--accent)" onclick="startEdit(${i})">✏️ Editar</button>
+                    <button class="btn-sml" style="color:var(--danger)" onclick="deletePrompt(${i})">🗑️ Apagar</button>
                 </div>
             </div>
         `).join('');
     }
 
-    function copyText(i) {
+    function copyPromptText(i) {
         navigator.clipboard.writeText(STATE.prompts[i].text);
-        showToast("Copiado para a área de transferência!");
+        showToast("Copiado!");
     }
 
-    function startEdit(i) {
-        STATE.editingIdx = i;
-        const p = STATE.prompts[i];
+    function startEdit(idx) {
+        STATE.editingIdx = idx;
+        const p = STATE.prompts[idx];
         document.getElementById('pName').value = p.name;
         document.getElementById('pText').value = p.text;
         STATE.currentImageBase64 = p.image || "";
-        
         const preview = document.getElementById('pImgPreview');
-        if(p.image) {
-            preview.src = p.image;
-            preview.style.display = 'block';
-        }
-        
-        document.getElementById('formTitle').innerText = "Editando Prompt";
+        preview.src = p.image;
+        preview.style.display = p.image ? 'block' : 'none';
         document.getElementById('btnCancel').style.display = "block";
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo(0,0);
     }
 
     function cancelEdit() {
@@ -314,13 +273,12 @@
         document.getElementById('pText').value = "";
         STATE.currentImageBase64 = "";
         document.getElementById('pImgPreview').style.display = "none";
-        document.getElementById('uploadStatus').innerHTML = `📸 Clique para Foto (4:5)<br><small>Max 200KB automático</small>`;
-        document.getElementById('formTitle').innerText = "Novo Prompt";
         document.getElementById('btnCancel').style.display = "none";
+        document.getElementById('sizeInfo').innerText = "Max 200KB";
     }
 
     async function deletePrompt(i) {
-        if(confirm("Deseja mesmo excluir este prompt permanentemente?")) {
+        if(confirm("Apagar?")) {
             STATE.prompts.splice(i, 1);
             render();
             await syncToGitHub();
@@ -334,8 +292,7 @@
         setTimeout(() => t.className = "", 3000);
     }
 
-    // Inicialização
-    window.onload = initConfigs;
+    document.addEventListener('DOMContentLoaded', syncFromGitHub);
 </script>
 </body>
 </html>
