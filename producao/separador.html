@@ -112,27 +112,68 @@
             carregarConfig();
         };
 
+        // --- INÍCIO DAS FUNÇÕES ATUALIZADAS DO LOCALSTORAGE ---
+
         function carregarConfig() {
-            cfg = JSON.parse(localStorage.getItem('separador_config'));
-            if (!cfg || !cfg.token) { abrirConfig(); } else { buscarPedidos(); }
+            try {
+                // Tenta buscar os dados do LocalStorage
+                const configSalva = localStorage.getItem('separador_config');
+                
+                // Se existir, converte o texto (JSON) para um objeto JavaScript
+                if (configSalva) {
+                    cfg = JSON.parse(configSalva);
+                } else {
+                    cfg = null;
+                }
+            } catch (erro) {
+                console.error("Erro ao ler as configurações:", erro);
+                cfg = null; // Em caso de erro (ex: JSON inválido), redefine a configuração
+            }
+
+            // Se não houver configuração ou se o token estiver vazio, abre a janela
+            if (!cfg || !cfg.token || cfg.token.trim() === '') {
+                abrirConfig(); 
+            } else { 
+                buscarPedidos(); 
+            }
         }
 
         function abrirConfig() {
-            if(cfg) {
-                document.getElementById('cfg-user').value = cfg.user;
-                document.getElementById('cfg-repo').value = cfg.repo;
-                document.getElementById('cfg-token').value = cfg.token;
-            }
+            // Preenche os campos se a configuração existir, caso contrário, deixa em branco
+            document.getElementById('cfg-user').value = cfg ? cfg.user : '';
+            document.getElementById('cfg-repo').value = cfg ? cfg.repo : '';
+            document.getElementById('cfg-token').value = cfg ? cfg.token : '';
+            
             document.getElementById('config-modal').style.display = 'flex';
         }
 
-        function fecharConfig() { document.getElementById('config-modal').style.display = 'none'; }
+        function fecharConfig() { 
+            document.getElementById('config-modal').style.display = 'none'; 
+        }
 
         function salvarConfig() {
-            cfg = { user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value, token: document.getElementById('cfg-token').value };
+            // O .trim() remove espaços em branco antes ou depois do texto digitado
+            const user = document.getElementById('cfg-user').value.trim();
+            const repo = document.getElementById('cfg-repo').value.trim();
+            const token = document.getElementById('cfg-token').value.trim();
+
+            // Validação: Impede guardar se algum campo estiver vazio
+            if (!user || !repo || !token) {
+                alert("Por favor, preencha todos os campos antes de guardar e recarregar.");
+                return;
+            }
+
+            // Atualiza a variável global
+            cfg = { user: user, repo: repo, token: token };
+            
+            // Converte o objeto em texto e guarda de forma persistente no LocalStorage
             localStorage.setItem('separador_config', JSON.stringify(cfg));
-            fecharConfig(); buscarPedidos();
+            
+            fecharConfig(); 
+            buscarPedidos();
         }
+
+        // --- FIM DAS FUNÇÕES ATUALIZADAS DO LOCALSTORAGE ---
 
         async function buscarPedidos() {
             document.getElementById('lista-pedidos').innerHTML = '<div style="text-align:center; padding: 20px;"><i data-lucide="loader" class="spin"></i> Buscando na nuvem...</div>';
