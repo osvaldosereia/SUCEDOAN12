@@ -857,7 +857,7 @@ const BASKETS = [
         }
 
         function renderCestas() {
-            let html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Cestas Básicas</div><div class="products-grid">`;
+            let html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.location.hash='#/'" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Cestas Básicas</div><div class="products-grid">`;
             
             BASKETS.forEach(basket => {
                 let prices = calculateBasketPrices(basket.id);
@@ -930,7 +930,7 @@ const BASKETS = [
                     groups[s].push(p);
                 });
                 
-                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${cat}</div>`;
+                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.location.hash='#/'" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${cat}</div>`;
                 
                 Object.keys(groups).sort().forEach(g => {
                     let subName = g === 'Geral' ? `Diversos (${cat})` : g;
@@ -986,7 +986,7 @@ const BASKETS = [
         function renderSearch() {
             let terms = STATE.searchQuery.split(' ').filter(t => t.trim().length > 0); 
             let results = STATE.prods.filter(p => { let textoBusca = norm(p.name + " " + p.categoria + " " + p.subcategoria); return terms.every(term => textoBusca.includes(term)); });
-            let header = `<div class="ver-tudo-header" style="margin: -15px 0 0 0;" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${STATE.searchQuery ? `Resultados para "${STATE.searchQuery}"` : 'Busca'}</div>`;
+            let header = `<div class="ver-tudo-header" style="margin: -15px 0 0 0;" onclick="window.location.hash='#/'"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${STATE.searchQuery ? `Resultados para "${STATE.searchQuery}"` : 'Busca'}</div>`;
             if(results.length === 0) { $('vitrine').innerHTML = `<div style="padding: 15px 0;">${header}<div style="padding: 40px; text-align: center; font-weight:600; color:var(--text-light); background:var(--bg-card); margin: 20px;">Ops, não achamos "${STATE.searchQuery}".</div></div>`; return; }
             let html = `<div style="padding: 15px 0;">${header}<div class="products-grid">`;
             results.forEach(p => html += renderCardHTML(p)); html += '</div></div>'; $('vitrine').innerHTML = html; lazyLoadImages();
