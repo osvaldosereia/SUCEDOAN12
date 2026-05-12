@@ -900,7 +900,7 @@ const BASKETS = [
                 
                 let html = '';
                 // AJUSTE 1: Passando 'true' para o card ficar grande idêntico ao primeiro carrossel
-                results.slice(0, 15).forEach(p => html += renderMiniCardHTML(p, true));
+                results.slice(0, 25).forEach(p => html += renderMiniCardHTML(p, true));
                 
                 if(results.length === 0) {
                     html = '<div style="padding:10px; font-size:14px; color:var(--text-light); font-weight: 600; width: 100%; text-align: center;">Nenhum produto encontrado.</div>';
