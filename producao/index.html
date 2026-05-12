@@ -1524,68 +1524,131 @@
             await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
         }
 
-        // ==========================================================
-        // BAIXAR PEDIDO POR TEXTO COM AUTO-SYNC PARA GITHUB
-        // ==========================================================
-        async function processarBaixaPedidoTexto() {
-            // 1. Obtém o texto do pedido
-            const texto = document.getElementById('order-text-input').value;
-            if(!texto) return alert("Por favor, cole o texto do pedido primeiro.");
+       // ==========================================================
+// BAIXAR PEDIDO POR TEXTO E EXPORTAR PARA BLING
+// ==========================================================
+async function processarBaixaPedidoTexto() {
+    const texto = document.getElementById('order-text-input').value;
+    if(!texto) return alert("Por favor, cole o texto do pedido primeiro.");
 
-            const linhas = texto.split('\n'); 
-            let encontrados = 0; 
-            let falhas = [];
+    // 1. Extração do Número do Pedido e Criação de Dados do Cliente
+    // Procura por "PEDIDO" seguido opcionalmente de "#" e captura os números
+    const matchPedido = texto.match(/PEDIDO\s*#?(\d+)/i);
+    const numeroPedido = matchPedido ? matchPedido[1] : Date.now().toString().slice(-6);
+    const nomeComprador = "PEDIDO " + numeroPedido;
+    
+    // Formata a data de hoje para o padrão Brasileiro (DD/MM/YYYY) exigido pelo Bling
+    const hoje = new Date();
+    const dataAtual = String(hoje.getDate()).padStart(2, '0') + '/' + String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
 
-            // 2. Processa cada linha do pedido
-            linhas.forEach(linha => {
-                const linhaLimpa = linha.trim();
-                // Regex para capturar "1x Nome do Produto" ou "1 Nome do Produto"
-                const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
+    const linhas = texto.split('\n'); 
+    let encontrados = 0; 
+    let falhas = [];
+    
+    // Variáveis para guardar os dados para o Excel do Bling
+    let itensPedidoBling = [];
+    let totalPedidoCalc = 0;
 
-                if(match) {
-                    const qtd = parseInt(match[1]);
-                    const nomeProcurado = match[2].trim().toLowerCase();
+    // 2. Processamento Linha a Linha
+    linhas.forEach(linha => {
+        const linhaLimpa = linha.trim();
+        const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
 
-                    // Procura o produto pelo nome exato (ignorando maiúsculas/minúsculas)
-                    const p = products.find(prod => (prod.nome || "").toLowerCase() === nomeProcurado);
+        if(match) {
+            const qtd = parseInt(match[1]);
+            const nomeProcurado = match[2].trim().toLowerCase();
 
-                    if(p) {
-                        // Abate o stock (mínimo zero)
-                        p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
-                        p.last_update = Date.now(); 
-                        encontrados++; 
-                    } else {
-                        falhas.push(match[2].trim()); 
-                    }
-                }
-            });
+            // Busca o produto no banco de dados local
+            const p = products.find(prod => (prod.nome || "").toLowerCase() === nomeProcurado);
 
-            // 3. Finalização e Sincronização
-            if(encontrados > 0) {
-                // Guarda localmente primeiro
-                await saveDataLocally(); 
+            if(p) {
+                // Abate o stock
+                p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
+                p.last_update = Date.now(); 
+                encontrados++; 
                 
-                // Atualiza a visualização no ecrã
-                renderGrid(ultimoTermoPesquisa);
+                // 3. Cálculos Financeiros para o Bling
+                const valorUn = parseFloat(p.preco) || 0;
+                const valorTotalItem = valorUn * qtd;
+                totalPedidoCalc += valorTotalItem; // Soma ao total geral do pedido
 
-                // --- NOVIDADE: SINCRONIZAÇÃO AUTOMÁTICA ---
-                // Envia a atualização para a fila do GitHub (produtos.json)
-                salvarProdutosJSON(); 
-                // -------------------------------------------
-
-                let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nSincronização com GitHub iniciada (veja a fila no topo).`;
-                if(falhas.length > 0) {
-                    msg += `\n\n⚠️ Itens não encontrados:\n- ` + falhas.join('\n- ');
-                }
-                alert(msg);
-
-                // Fecha o menu lateral e limpa o campo
-                closeSidebar('pedidos-sidebar'); 
-                document.getElementById('order-text-input').value = "";
+                // Prepara a linha do produto no formato EXATO do CSV do Bling
+                itensPedidoBling.push({
+                    "Número pedido": numeroPedido,
+                    "Nome Comprador": nomeComprador,
+                    "Data": dataAtual,
+                    "CPF/CNPJ Comprador": "",
+                    "Endereço Comprador": "",
+                    "Bairro Comprador": "",
+                    "Número Comprador": "",
+                    "Complemento Comprador": "",
+                    "CEP Comprador": "",
+                    "Cidade Comprador": "",
+                    "UF Comprador": "",
+                    "Telefone Comprador": "",
+                    "Celular Comprador": "",
+                    "E-mail Comprador": "",
+                    "Produto": p.nome,
+                    "SKU": p.codigo,
+                    "Un": "UN",
+                    "Quantidade": qtd,
+                    "Valor Unitário": valorUn.toFixed(2).replace('.', ','), // Formato brasileiro de moeda
+                    "Valor Total": valorTotalItem.toFixed(2).replace('.', ','),
+                    "Total Pedido": "", // Vamos preencher isto no final, quando tivermos a soma de tudo!
+                    "Valor Frete Pedido": "0,00",
+                    "Valor Desconto Pedido": "0,00",
+                    "Outras despesas": "0,00",
+                    "Nome Entrega": "",
+                    "Endereço Entrega": "",
+                    "Número Entrega": "",
+                    "Complemento Entrega": "",
+                    "Cidade Entrega": "",
+                    "UF Entrega": "",
+                    "CEP Entrega": "",
+                    "Bairro Entrega": "",
+                    "Transportadora": "",
+                    "Serviço": "",
+                    "Tipo Frete": "R", // R = Por Conta do Remetente (Padrão)
+                    "Observações": "Pedido importado via Sucedoan PIM",
+                    "Qtd Parcela": "1",
+                    "Data Prevista": dataAtual,
+                    "Vendedor": "",
+                    "Forma Pagamento": "",
+                    "ID Forma Pagamento": ""
+                });
             } else {
-                alert("❌ Nenhum produto encontrado. Verifique se os nomes estão idênticos ao sistema.");
+                falhas.push(match[2].trim()); 
             }
         }
+    });
+
+    // 4. Finalização e Exportação
+    if(encontrados > 0) {
+        await saveDataLocally(); 
+        renderGrid(ultimoTermoPesquisa);
+        salvarProdutosJSON(); // Sincroniza com o GitHub
+
+        // Antes de exportar, preenchemos o valor "Total Pedido" em todas as linhas
+        const totalPedidoFormatado = totalPedidoCalc.toFixed(2).replace('.', ',');
+        itensPedidoBling.forEach(item => {
+            item["Total Pedido"] = totalPedidoFormatado;
+        });
+
+        // 5. Aciona o descarregamento do ficheiro CSV
+        downloadCSVBling(itensPedidoBling, `Bling_Pedido_Venda_${numeroPedido}.csv`);
+
+        let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nPlanilha de Venda Bling descarregada!\nSincronização com GitHub iniciada.`;
+        if(falhas.length > 0) {
+            msg += `\n\n⚠️ Itens não encontrados no sistema (Não exportados para o Bling):\n- ` + falhas.join('\n- ');
+        }
+        alert(msg);
+
+        closeSidebar('pedidos-sidebar'); 
+        document.getElementById('order-text-input').value = "";
+    } else {
+        alert("❌ Nenhum produto encontrado. Verifique se os nomes estão idênticos ao sistema.");
+    }
+}
 
         // ==========================================================
         // LIMPEZA INTELIGENTE DE IMAGENS DO GITHUB
