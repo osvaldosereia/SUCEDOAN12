@@ -66,11 +66,9 @@
         /* =========================================
            3. DESIGN DO CARD (Base Mobile Horizontal)
         ========================================= */
-        /* Aumentamos o padding (espaço interno) de 16px para 20px para deixar o card mais alto */
         .product-card-list { display: flex; align-items: stretch; width: 100%; gap: 16px; background: transparent; padding: 20px; border-bottom: 1px solid var(--border-light); cursor: pointer; position: relative; }
         .product-card-list:last-child { border-bottom: none; }
 
-        /* Aumentamos a largura e altura da imagem de 110px para 125px */
         .img-wrapper { position: relative; width: 125px; height: 125px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: transparent; }
         .product-icon-list { width: 100%; height: 100%; object-fit: contain; }
         
@@ -97,76 +95,23 @@
         .qty-display { font-weight: 900; font-size: 15px; flex: 1; text-align: center; color: var(--text-dark); }
 
         /* =========================================
+           CARROSSEL E MINI CARDS (NOVO FLUXO VIP)
+        ========================================= */
+        .carousel-container { display: flex; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; gap: 12px; padding-bottom: 5px; flex-shrink: 0; scroll-snap-type: x mandatory; }
+        .carousel-container::-webkit-scrollbar { display: none; }
+        .carousel-card { flex: 0 0 140px; scroll-snap-align: start; display: flex; flex-direction: column; border: 1px solid var(--border-light); border-radius: 12px; padding: 12px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+
+        /* =========================================
            NOVAS CLASSES DIDÁTICAS PARA AS CESTAS
         ========================================= */
-        /* Força todos os itens a ficarem em uma linha única e centralizada no cartão */
-        .basket-action-row { 
-            display: flex; 
-            flex-wrap: nowrap; 
-            flex-direction: row; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 6px; 
-            margin-top: 15px; 
-            width: 100%; 
-            border-top: 1px dashed var(--border-light); 
-            padding-top: 15px; 
-        }
+        .basket-action-row { display: flex; flex-wrap: nowrap; flex-direction: row; align-items: center; justify-content: center; gap: 6px; margin-top: 15px; width: 100%; border-top: 1px dashed var(--border-light); padding-top: 15px; }
 
-        /* Estilização do seletor didático ( - X unidades + ) */
-        .qty-controls-didatic {
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            background: #f1f5f9; 
-            padding: 4px 6px; 
-            border-radius: 30px; 
-            border: 1px solid var(--border-light);
-            white-space: nowrap;
-        }
-        .qty-btn-round {
-            width: 32px; 
-            height: 32px; 
-            border-radius: 50%; 
-            background: #ffffff; 
-            border: none; 
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08); 
-            font-weight: 900; 
-            color: var(--primary); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            cursor: pointer;
-            transition: 0.2s;
-            flex-shrink: 0;
-        }
-        .qty-btn-round:active {
-            transform: scale(0.9);
-            background: #e2e8f0;
-        }
-        .qty-display-didatic {
-            font-size: 13px; 
-            font-weight: 800; 
-            color: var(--text-dark); 
-            white-space: nowrap; 
-            padding: 0 4px;
-        }
+        .qty-controls-didatic { display: flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 4px 6px; border-radius: 30px; border: 1px solid var(--border-light); white-space: nowrap; }
+        .qty-btn-round { width: 32px; height: 32px; border-radius: 50%; background: #ffffff; border: none; box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-weight: 900; color: var(--primary); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
+        .qty-btn-round:active { transform: scale(0.9); background: #e2e8f0; }
+        .qty-display-didatic { font-size: 13px; font-weight: 800; color: var(--text-dark); white-space: nowrap; padding: 0 4px; }
 
-        /* Estilização dos Botões de Retirar e Trocar */
-        .btn-didatico { 
-            padding: 8px 12px; 
-            border-radius: 20px; 
-            font-weight: 800; 
-            font-size: 13px; 
-            border: none; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 4px; 
-            transition: 0.2s; 
-            white-space: nowrap;
-        }
+        .btn-didatico { padding: 8px 12px; border-radius: 20px; font-weight: 800; font-size: 13px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; white-space: nowrap; }
         .btn-didatico:active { transform: scale(0.94); }
         .btn-didatico-remover { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
         .btn-didatico-trocar { background: #e0f2fe; color: #0284c7; border: 1px solid #7dd3fc; }
@@ -181,9 +126,7 @@
             font-weight: 900; font-size: 15px; z-index: 9999; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s;
             box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); opacity: 0; pointer-events: none; text-align: center; width: 90%; max-width: 400px;
         }
-        #toast-msg.show {
-            transform: translateX(-50%) translateY(0); opacity: 1;
-        }
+        #toast-msg.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
         /* =========================================
            4. PÁGINA INDIVIDUAL DO PRODUTO
@@ -277,23 +220,18 @@
             .desktop-hide { display: none !important; }
             .app-bottom-bar { display: none !important; }
 
-            /* Header Desktop */
             .header-main { padding: 0 30px; }
             .header-inner { max-width: 1200px; margin: 0 auto; gap: 40px; justify-content: space-between; }
             .search-container { max-width: 450px; flex: unset; margin: 0 auto; width: 100%; }
             .desktop-nav { display: flex; }
             
-            /* Container Global Desktop */
             .main-container { max-width: 1200px; margin: 0 auto; left: 50%; transform: translateX(-50%); padding-bottom: 40px; padding-top: 30px; }
             
-            /* Ajustes no Título da Sessão */
             .ver-tudo-header { top: -30px; background: transparent; backdrop-filter: none; border-bottom: none; font-size: 22px; padding: 0 0 20px 0; margin: 0; box-shadow: none; pointer-events: none;}
             .ver-tudo-header svg { display: none; }
             
-            /* Grid System */
             .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; background: transparent !important; padding: 0 !important; }
             
-            /* Card Versão Desktop (Vertical) */
             .product-card-list { background: #fff; border: 1px solid var(--border-light); border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: transform 0.2s, box-shadow 0.2s; flex-direction: column; padding: 24px; height: 100%; align-items: center; text-align: center;}
             .product-card-list:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
             .product-card-list .img-wrapper { width: 160px; height: 160px; margin-bottom: 16px; margin-top: 10px;}
@@ -303,17 +241,14 @@
             .product-card-list .price-container { align-items: center; }
             .product-card-list .card-action-area { width: 100%; justify-content: center; }
             
-            /* Expandir botão de Adicionar */
             .product-card-list .btn-quick-add-list { width: 100%; height: 42px; border-radius: 12px; gap: 8px; }
             .product-card-list .btn-quick-add-list::after { content: "Adicionar"; font-size: 14px; display: inline; }
             .product-card-list .qty-controls { width: 100%; height: 42px; border-radius: 12px;}
             
-            /* Modais e Modal de Swap */
             .full-screen-detail { width: 700px; height: 90vh; top: 50%; left: 50%; transform: translate(100vw, -50%); border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
             .full-screen-detail.active { transform: translate(-50%, -50%); }
             .detail-close { top: -15px; right: -15px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
             
-            /* No desktop os itens da cesta mantem-se horizontais dentro do card */
             #basket-items-container .product-card-list, #swap-items-container .product-card-list { flex-direction: column; align-items: stretch; text-align: left; padding: 16px; }
             #basket-items-container .product-card-list .img-wrapper, #swap-items-container .product-card-list .img-wrapper { width: 90px; height: 90px; margin-bottom: 0; margin-top: 0;}
             #basket-items-container .product-card-list .product-details, #swap-items-container .product-card-list .product-details { align-items: flex-start; justify-content: space-between; }
@@ -324,7 +259,6 @@
 
             .checkout-drawer { max-width: 480px; box-shadow: -10px 0 40px rgba(0,0,0,0.1); }
             
-            /* Página de Produto Desktop Split-View */
             .prod-page-container { background: #fff; border-radius: 24px; border: 1px solid var(--border-light); display: flex; flex-wrap: wrap; overflow: hidden; min-height: 500px; margin-bottom: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.04); padding: 0;}
             .prod-page-img-box { width: 50%; height: auto; min-height: 400px; border-bottom: none; border-right: 1px solid var(--border-light); padding: 40px; background: #f8fafc;}
             .prod-page-info { width: 50%; padding: 40px; display: flex; flex-direction: column; justify-content: center; }
@@ -391,14 +325,14 @@
     <div class="full-screen-detail" id="basketDetailModal">
         <div class="detail-close" onclick="closeBasketDetail()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div>
         <div class="modal-scroll-area">
-            <div style="background: var(--bg-card); padding-bottom: 20px;">
+            <div id="basketModalTopInfo" style="background: var(--bg-card); padding-bottom: 20px;">
                 <img id="basketModalImg" src="" alt="Cesta" style="width: 100%; height: 35vh; object-fit: cover;">
                 <div style="padding: 20px 20px 0;">
                     <h1 style="font-size: 26px; font-weight: 900; margin-bottom: 8px; color: var(--text-dark);" id="basketModalTitle">Nome da Cesta</h1>
                     <p style="font-weight: 900; font-size: 24px; color: var(--danger); margin-bottom: 5px; letter-spacing: -0.5px;" id="basketModalPrice">R$ 0,00</p>
                 </div>
             </div>
-            <div style="padding: 20px;">
+            <div style="padding: 20px;" id="basketModalContentArea">
              <div id="basket-items-header" style="display: none !important;"></div>
                 <div id="basket-items-container" class="products-grid" style="display: flex; flex-direction: column; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-light); overflow: hidden;"></div>
                 <div id="basket-summary-container" style="background: #ffffff; padding: 20px; border-radius: 16px; margin-top: 25px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
@@ -406,7 +340,7 @@
                     <div id="basket-diff-container" style="display: none; margin-bottom: 15px; font-size: 13px; color: var(--text-light); background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px dashed var(--border-light);"></div>
                     <button class="btn-send" onclick="addBasketToCart()" style="background: var(--text-dark); box-shadow: none;">Adicionar Cesta à Lista</button>
                 </div>
-                <div id="vip-list-container" style="display: none; margin-top: 20px;"><div id="vip-items-grid"></div></div>
+                <div id="vip-list-container" style="display: none;"></div>
             </div>
         </div>
     </div>
@@ -437,7 +371,7 @@
                 <div class="summary-row total"><span>Total Estimado</span><span id="sum-total">R$ 0,00</span></div>
             </div>
             
-            <button class="btn-send" id="btn-send-order" onclick="sendOrder()">
+            <button class="btn-send" id="btn-send-order" onclick="sendOrder(this)">
                 <svg class="svg-icon-fill" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg>
                 Enviar para o WhatsApp
             </button>
@@ -484,20 +418,8 @@ const BASKETS = [
             return words.map((w, index) => (w.length >= 4 || index === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' '); 
         }
 
-        function getDaysToExpiry(vencimento) {
-            if (!vencimento) return Infinity; 
-            let partes = vencimento.split('/');
-            if (partes.length === 3) {
-                let vDate = new Date(partes[2], partes[1] - 1, partes[0]);
-                let diff = (vDate - new Date()) / (1000 * 60 * 60 * 24);
-                return diff >= 0 ? diff : Infinity; 
-            }
-            return Infinity;
-        }
-
         function getBasketDynamicPrice(basket) {
             let valorPadraoCesta = 0;
-            
             if(STATE.prods.length > 0) {
                 basket.produtos.forEach(str => {
                     let p = str.split("x ");
@@ -509,39 +431,25 @@ const BASKETS = [
                     }
                 });
             }
-            
             let nomeCesta = basket.nome.toLowerCase();
             let multiplicador = 1.15; 
-            
-            if (nomeCesta.includes("economica") || nomeCesta.includes("econômica")) {
-                multiplicador = 1.10; 
-            } else if (nomeCesta.includes("mini")) {
-                multiplicador = 1.08; 
-            } else if (nomeCesta.includes("pequena")) {
-                multiplicador = 1.10; 
-            } else if (nomeCesta.includes("media") || nomeCesta.includes("média")) {
-                multiplicador = 1.22; 
-            } else if (nomeCesta.includes("grande")) {
-                multiplicador = 1.23; 
-            }
+            if (nomeCesta.includes("economica") || nomeCesta.includes("econômica")) multiplicador = 1.10; 
+            else if (nomeCesta.includes("mini")) multiplicador = 1.08; 
+            else if (nomeCesta.includes("pequena")) multiplicador = 1.10; 
+            else if (nomeCesta.includes("media") || nomeCesta.includes("média")) multiplicador = 1.22; 
+            else if (nomeCesta.includes("grande")) multiplicador = 1.23; 
             
             let valorComTaxa = valorPadraoCesta * multiplicador;
             let valorFinalArredondado = Math.ceil(valorComTaxa);
             
-            return {
-                valorPadrao: valorPadraoCesta,
-                valorFinal: valorFinalArredondado,
-                taxaExtra: valorFinalArredondado - valorPadraoCesta 
-            };
+            return { valorPadrao: valorPadraoCesta, valorFinal: valorFinalArredondado, taxaExtra: valorFinalArredondado - valorPadraoCesta };
         }
 
        function calculateBasketPrices(basketId) {
             const basket = BASKETS.find(b => b.id === basketId);
             if(!basket) return { original: 0, final: 0, atacado: 0 };
-            
             let dyn = getBasketDynamicPrice(basket);
             let original = dyn.valorFinal; 
-            
             let atacado = 0;
             if(STATE.prods.length > 0) {
                 basket.produtos.forEach(str => {
@@ -550,16 +458,11 @@ const BASKETS = [
                         let qty = parseInt(p[0]);
                         let cod = p[1].trim();
                         let pObj = STATE.prods.find(x => x.codigo === cod || String(x.id) === cod);
-                        
-                        if(pObj && qty >= 3) {
-                            atacado += (pObj.price * 0.05) * qty; 
-                        }
+                        if(pObj && qty >= 3) atacado += (pObj.price * 0.05) * qty; 
                     }
                 });
             }
-            
             let finalPrice = Math.ceil(original - atacado);
-            
             return { original: original, final: finalPrice, atacado: atacado };
         }
 
@@ -568,9 +471,6 @@ const BASKETS = [
         const placeholderImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8fafc'/%3E%3C/svg%3E";
         const errorImgFallback = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjY2JkNWUxIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE2IDExVjdhNCA0IDAgMDAtOCAwdjRNNCA5aDE2bDEgMTJIM2wxLTEyeiIvPjwvc3ZnPg==";
 
-        // ==========================================
-        // TOAST NOTIFICATIONS (Aviso na Tela)
-        // ==========================================
         window.showToast = function(msg) {
             let toast = $('toast-msg');
             toast.innerText = msg;
@@ -578,9 +478,6 @@ const BASKETS = [
             setTimeout(() => toast.classList.remove('show'), 3000);
         };
 
-        // ==========================================
-        // ROTEADOR HASH E NAVEGAÇÃO
-        // ==========================================
         function handleRoute() {
             let hash = window.location.hash || '#/';
             const vitrine = $('vitrine');
@@ -599,29 +496,14 @@ const BASKETS = [
             else if(hash === '#/informacoes') { if($('nav-informacoes')) $('nav-informacoes').classList.add('active'); }
             else if(hash === '#/mercado' || hash.startsWith('#/departamento/')) { if($('nav-mercado')) $('nav-mercado').classList.add('active'); }
 
-            if (hash === '#/' || hash === '') {
-                renderInicio();
-                document.title = "Dona Antônia - Supermercado e Cestas";
-            } else if (hash === '#/cestas') {
-                renderCestas();
-                document.title = "Cestas Básicas - Dona Antônia";
-            } else if (hash === '#/ofertas') {
-                renderDepartamentoCompleto('Ofertas');
-            } else if (hash === '#/informacoes') {
-                renderInformacoes();
-                document.title = "Informações - Dona Antônia";
-            } else if (hash === '#/mercado') {
-                renderInicio(); // O Mercado agora é idêntico ao Início (só botões)
-                document.title = "Mercado Completo - Dona Antônia";
-            } else if (hash.startsWith('#/departamento/')) {
-                let parts = hash.split('/'); 
-                renderDepartamentoCompleto(decodeHash(parts[2]));
-            } else if (hash.startsWith('#/produto/')) {
-                renderProductPage(decodeHash(hash.split('#/produto/')[1]));
-            } else if (hash === '#/buscar') {
-                renderSearch();
-                document.title = "Buscar - Dona Antônia";
-            }
+            if (hash === '#/' || hash === '') { renderInicio(); document.title = "Dona Antônia - Supermercado e Cestas"; } 
+            else if (hash === '#/cestas') { renderCestas(); document.title = "Cestas Básicas - Dona Antônia"; } 
+            else if (hash === '#/ofertas') { renderDepartamentoCompleto('Ofertas'); } 
+            else if (hash === '#/informacoes') { renderInformacoes(); document.title = "Informações - Dona Antônia"; } 
+            else if (hash === '#/mercado') { renderInicio(); document.title = "Mercado Completo - Dona Antônia"; } 
+            else if (hash.startsWith('#/departamento/')) { let parts = hash.split('/'); renderDepartamentoCompleto(decodeHash(parts[2])); } 
+            else if (hash.startsWith('#/produto/')) { renderProductPage(decodeHash(hash.split('#/produto/')[1])); } 
+            else if (hash === '#/buscar') { renderSearch(); document.title = "Buscar - Dona Antônia"; }
             
             requestAnimationFrame(() => { vitrine.scrollTop = STATE.scrollMap[hash] || 0; });
         }
@@ -640,9 +522,7 @@ const BASKETS = [
         };
         window.clearSearch = function() { $('app-search-input').value = ''; $('clear-search-btn').style.display = 'none'; STATE.searchQuery = ''; window.history.back(); };
 
-        // ==========================================
-        // RENDERIZAÇÃO DE CARDS E BOTÕES DIDÁTICOS
-        // ==========================================
+        // Card Render Padrão
         function renderCardHTML(prod, isBasketItem = false, index = null) {
             let q = isBasketItem ? prod.basketQty : (STATE.cart[prod.id] || 0);
             
@@ -656,17 +536,13 @@ const BASKETS = [
             let embalagem = prod.embalagem || extractVolume(prod.name);
             let tagEmbalagem = embalagem ? `<div class="embalagem-tag-text">${embalagem}</div>` : '';
 
-// Alterado: tamanho (10px -> 12px), peso da fonte (800 -> 600) e cor (para um verde mais escuro #047857)
             let atacadoTag = (!isBasketItem) ? `<div style="font-size: 12px; color: #047857; font-weight: 600; margin-top: 6px; line-height: 1.3;">A partir de 3un:<br>pague ${fmt(prod.price * 0.95)}/un</div>` : '';
-            
             let onClickAction = isBasketItem ? "" : `onclick="window.location.hash='#/produto/${prod.slug}'"`;
 
             let controlsHtml = '';
-            let basketExtras = '';
             let cardContent = '';
 
             if (isBasketItem) {
-                // Monta a interface didática do seletor de quantidade
                 let unitText = q === 1 ? 'unidade' : 'unidades';
                 let qtyDidatic = `
                     <div class="qty-controls-didatic" style="margin-top: 8px;">
@@ -675,7 +551,6 @@ const BASKETS = [
                         <button class="qty-btn-round" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();">${iconPlus}</button>
                     </div>`;
 
-                // Layout ajustado: Quadrado à esquerda, detalhes à direita e botões em tela cheia na parte inferior
                 cardContent = `
                     ${esgotadoTag}
                     <div style="display: flex; gap: 16px; width: 100%;">
@@ -706,7 +581,6 @@ const BASKETS = [
                     ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)">${iconPlus}</div>`
                     : `<div class="qty-controls"><button class="qty-btn" onclick="updateCartItem('${prod.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display">${q}</span><button class="qty-btn" onclick="updateCartItem('${prod.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`;
                 
-                // Layout padrão da vitrine
                 cardContent = `
                     ${esgotadoTag}
                     <div class="img-wrapper">
@@ -735,6 +609,34 @@ const BASKETS = [
                 </div>`;
         }
 
+        // Mini Card para o Novo Carrossel do Fluxo VIP
+        function renderMiniCardHTML(prod) {
+            let q = STATE.cart[prod.id] || 0;
+            let esgotadoTag = (prod.stock <= 0) ? `<div style="position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.85); color: #fff; padding: 2px 4px; border-radius: 4px; font-weight: 900; font-size: 9px; z-index: 10;">ESGOTADO</div>` : '';
+            let discountBadge = (prod.discountPercent > 0) ? `<span style="color: var(--danger); font-size: 11px; margin-right: 2px; font-weight: 900;">-${prod.discountPercent}%</span>` : '';
+            let oldPriceHtml = (prod.discountPercent > 0) ? `<span style="font-size: 10px; color: var(--text-light); text-decoration: line-through; font-weight: 600;">${fmt(prod.oldPrice)}</span>` : '';
+            
+            let controlsHtml = q === 0 
+                ? `<div class="btn-quick-add-list" style="width: 28px; height: 28px; margin-left: auto;" onclick="quickAddToCart('${prod.id}', event)">${iconPlus}</div>`
+                : `<div class="qty-controls" style="width: 70px; height: 28px; margin-left: auto;"><button class="qty-btn" style="width: 20px;" onclick="updateCartItem('${prod.id}', -1); event.stopPropagation();">-</button><span class="qty-display" style="font-size: 13px;">${q}</span><button class="qty-btn" style="width: 20px;" onclick="updateCartItem('${prod.id}', 1); event.stopPropagation();">+</button></div>`;
+                
+            return `
+            <div class="carousel-card">
+                ${esgotadoTag}
+                <div style="height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+                    <img src="${prod.img}" onerror="this.src='${errorImgFallback}'" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                </div>
+                <div style="font-size: 12px; font-weight: 600; line-height: 1.2; height: 2.4em; overflow: hidden; margin-bottom: 4px; color: var(--text-dark);">${prod.name}</div>
+                <div style="display: flex; flex-direction: column; margin-top: auto;">
+                    ${oldPriceHtml}
+                    <div style="font-size: 14px; font-weight: 900; color: var(--text-dark);">${discountBadge}${fmt(prod.price)}</div>
+                </div>
+                <div style="margin-top: 8px; display: flex; justify-content: flex-end;" id="mini-action-${prod.id}">
+                    ${controlsHtml}
+                </div>
+            </div>`;
+        }
+
         window.quickAddToCart = function(id, event) {
             event.stopPropagation(); let p = STATE.prods.find(x => String(x.id) === String(id)); if(!p) return;
             let currentInCart = STATE.cart[id] || 0; if(currentInCart + 1 > p.stock) return alert("Ops! Limite de estoque para este item.");
@@ -751,14 +653,18 @@ const BASKETS = [
 
         window.updateAllCardUIs = function() {
             STATE.prods.forEach(p => { 
-                let q = STATE.cart[p.id] || 0; let els = document.querySelectorAll('#action-card-' + p.id); 
+                let q = STATE.cart[p.id] || 0; 
+                let els = document.querySelectorAll('#action-card-' + p.id); 
                 els.forEach(el => { el.innerHTML = q === 0 ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${p.id}', event)">${iconPlus}</div>` : `<div class="qty-controls"><button class="qty-btn" onclick="updateCartItem('${p.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display">${q}</span><button class="qty-btn" onclick="updateCartItem('${p.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`; }); 
+                
+                let miniEls = document.querySelectorAll('#mini-action-' + p.id);
+                miniEls.forEach(el => {
+                    el.innerHTML = q === 0 
+                        ? `<div class="btn-quick-add-list" style="width: 28px; height: 28px; margin-left: auto;" onclick="quickAddToCart('${p.id}', event)">${iconPlus}</div>`
+                        : `<div class="qty-controls" style="width: 70px; height: 28px; margin-left: auto;"><button class="qty-btn" style="width: 20px; font-weight:900;" onclick="updateCartItem('${p.id}', -1); event.stopPropagation();">-</button><span class="qty-display" style="font-size: 13px;">${q}</span><button class="qty-btn" style="width: 20px; font-weight:900;" onclick="updateCartItem('${p.id}', 1); event.stopPropagation();">+</button></div>`;
+                });
             });
         };
-
-        // ==========================================
-        // RENDERIZAÇÃO: PÁGINAS PRINCIPAIS E INFORMAÇÕES
-        // ==========================================
 
         function renderInformacoes() {
             let html = `
@@ -793,10 +699,10 @@ const BASKETS = [
 
                         <h3 style="font-size: 16px; font-weight: 900; margin-bottom: 12px; color: var(--text-dark);">Nossas Redes Sociais</h3>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <a href="#instagram" class="pay-btn" style="text-decoration: none; color: #e1306c; border-color: #e1306c; display: flex; align-items: center; justify-content: center; gap: 8px;">Instagram</a>
-                            <a href="#facebook" class="pay-btn" style="text-decoration: none; color: #1877f2; border-color: #1877f2; display: flex; align-items: center; justify-content: center; gap: 8px;">Facebook</a>
-                            <a href="#tiktok" class="pay-btn" style="text-decoration: none; color: #000000; border-color: #000000; display: flex; align-items: center; justify-content: center; gap: 8px;">TikTok</a>
-                            <a href="#pinterest" class="pay-btn" style="text-decoration: none; color: #bd081c; border-color: #bd081c; display: flex; align-items: center; justify-content: center; gap: 8px;">Pinterest</a>
+                            <a href="#instagram" class="pay-btn" style="text-decoration: none; color: #e1306c; border-color: #e1306c; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid; padding: 10px; border-radius: 8px;">Instagram</a>
+                            <a href="#facebook" class="pay-btn" style="text-decoration: none; color: #1877f2; border-color: #1877f2; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid; padding: 10px; border-radius: 8px;">Facebook</a>
+                            <a href="#tiktok" class="pay-btn" style="text-decoration: none; color: #000000; border-color: #000000; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid; padding: 10px; border-radius: 8px;">TikTok</a>
+                            <a href="#pinterest" class="pay-btn" style="text-decoration: none; color: #bd081c; border-color: #bd081c; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid; padding: 10px; border-radius: 8px;">Pinterest</a>
                         </div>
                     </div>
                 </div>
@@ -816,7 +722,6 @@ const BASKETS = [
             
             let htmlMercado = '<div style="padding: 15px 20px;">';
             
-            // Botão Cestas Básicas
             htmlMercado += `<a href="#/cestas" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
                         <div style="display:flex; align-items:center; gap:14px;">
                             <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef2f2; display:flex; align-items:center; justify-content:center; color: var(--danger);">
@@ -827,7 +732,6 @@ const BASKETS = [
                         <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
                     </a>`;
 
-            // Botão Ofertas
             htmlMercado += `<a href="#/ofertas" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
                         <div style="display:flex; align-items:center; gap:14px;">
                             <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef2f2; display:flex; align-items:center; justify-content:center; color: var(--danger);">
@@ -838,7 +742,6 @@ const BASKETS = [
                         <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
                     </a>`;
 
-            // Botões Departamentos
             Array.from(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach((cat) => {
                 htmlMercado += `<a href="#/departamento/${encodeHash(cat)}" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
                             <div style="display:flex; align-items:center; gap:14px;">
@@ -863,26 +766,19 @@ const BASKETS = [
                 let prices = calculateBasketPrices(basket.id);
                 let displayPrice = prices.final;
                 let crossedPrice = prices.atacado > 0 ? prices.original : null;
-
                 let oldPriceHtml = crossedPrice ? `<div class="old-price" style="font-size: 14px; margin-bottom: 2px;">${fmt(crossedPrice)}</div>` : '';
                 
-                // NOVIDADE: Card vertical com foto grande, nome destacado, valor abaixo do nome e botão largo.
                 html += `
                 <div class="product-card-list" onclick="openBasketDetail('${basket.id}')" style="flex-direction: column; padding: 20px; align-items: flex-start;">
-                    
                     <div style="width: 100%; height: 220px; border-radius: 16px; overflow: hidden; margin-bottom: 16px; background: #f8fafc; flex-shrink: 0;">
                         <img src="${basket.imagem}" style="width: 100%; height: 100%; object-fit: cover;" alt="${basket.nome}" onerror="this.src='../img/logoantonia5.png'">
                     </div>
-                    
                     <div class="product-details" style="width: 100%; padding: 0;">
-                        
                         <div class="product-name-list" style="font-size: 20px; font-weight: 900; margin-bottom: 8px; color: var(--text-dark);">${basket.nome}</div>
-                        
                         <div class="price-container" style="margin-bottom: 16px;">
                             ${oldPriceHtml}
                             <div class="tag-preco-list" style="color: var(--danger); font-size: 24px;">${fmt(displayPrice)}</div>
                         </div>
-                        
                         <div class="card-action-area" style="width: 100%;">
                             <div class="btn-quick-add-list" style="width: 100%; height: 46px; border-radius: 12px; font-size: 15px; font-weight: 900; color: #fff; background: var(--text-dark);">Ver Cesta</div>
                         </div>
@@ -895,43 +791,30 @@ const BASKETS = [
 
         function renderDepartamentoCompleto(cat) {
             let html = '';
-            
             if (cat === 'Ofertas' || cat === 'Ofertas do Dia') {
                 document.title = `Ofertas - Dona Antônia`;
-                
-                let todasOfertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0)
-                                               .sort((a,b) => b.discountPercent - a.discountPercent);
-                
+                let todasOfertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0).sort((a,b) => b.discountPercent - a.discountPercent);
                 let destaques = todasOfertas.filter(p => p.discountPercent >= 15);
                 let outrasOfertas = todasOfertas.filter(p => p.discountPercent < 15);
                 
                 html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Ofertas</div>`;
-                
                 if (destaques.length > 0) {
                     html += `<h3 class="subcat-title">Ofertas em Destaque</h3><div class="products-grid">`;
                     destaques.forEach(p => html += renderCardHTML(p));
                     html += `</div>`;
                 }
-                
                 if (outrasOfertas.length > 0) {
                     html += `<h3 class="subcat-title">Mais Ofertas</h3><div class="products-grid">`;
                     outrasOfertas.forEach(p => html += renderCardHTML(p));
                     html += `</div>`;
                 }
-                
             } else {
                 let results = STATE.prods.filter(p => p.categoria === cat).sort((a,b) => (b.discountPercent >= 25 ? b.discountPercent : 0) - (a.discountPercent >= 25 ? a.discountPercent : 0) || a.name.localeCompare(b.name));
                 document.title = `${cat} - Dona Antônia`;
-                
                 let groups = {};
-                results.forEach(p => {
-                    let s = p.subcategoria || 'Geral';
-                    if(!groups[s]) groups[s] = [];
-                    groups[s].push(p);
-                });
+                results.forEach(p => { let s = p.subcategoria || 'Geral'; if(!groups[s]) groups[s] = []; groups[s].push(p); });
                 
                 html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.location.hash='#/'" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${cat}</div>`;
-                
                 Object.keys(groups).sort().forEach(g => {
                     let subName = g === 'Geral' ? `Diversos (${cat})` : g;
                     html += `<h3 class="subcat-title">${subName}</h3><div class="products-grid">`;
@@ -939,25 +822,19 @@ const BASKETS = [
                     html += `</div>`;
                 });
             }
-
             html += '</div>'; $('vitrine').innerHTML = html; lazyLoadImages();
         }
 
         function renderProductPage(id) {
             let prod = STATE.prods.find(p => String(p.slug) === String(id));
             if(!prod) { $('vitrine').innerHTML = '<div style="padding:40px; text-align:center;">Produto não encontrado.</div>'; return; }
-            
             document.title = `${prod.name} - Dona Antônia`;
-            
             let q = STATE.cart[prod.id] || 0;
             let discountBadge = (prod.discountPercent > 0) ? `<span style="color: var(--danger); font-size: 16px; margin-right: 6px; font-weight: 900;">-${prod.discountPercent}%</span>` : '';
             let oldPriceHtml = (prod.discountPercent > 0) ? `<div class="prod-page-oldprice" style="display:inline-block; text-decoration: line-through; color: var(--text-light); margin-bottom: 4px;">De: ${fmt(prod.oldPrice)}</div>` : '';
-            
             let embalagemTag = prod.embalagem ? `<div class="embalagem-tag-text" style="font-size:13px;">${prod.embalagem}</div>` : '';
             let atacadoText = `<div style="font-size: 14px; color: var(--success); font-weight: 800; margin-top: 5px;">A partir de 3 unidades pague ${fmt(prod.price * 0.95)} cada</div>`;
-            
             let descHtml = prod.descricao ? `<div class="prod-page-desc-box"><div class="prod-page-desc-title">Detalhes do Produto</div><div class="prod-page-desc-content">${prod.descricao}</div></div>` : '';
-            
             let controlsHtml = q === 0 
                 ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)" style="height:54px; width:100%; font-size:16px; border-radius:12px;">${iconPlus} Adicionar à Lista</div>` 
                 : `<div class="qty-controls" style="height:54px; background:#f8fafc; width:100%; border-radius:12px; position:static;"><button class="qty-btn" style="width:48px;" onclick="updateCartItem('${prod.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display" style="font-size:20px;">${q}</span><button class="qty-btn" style="width:48px;" onclick="updateCartItem('${prod.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`;
@@ -992,18 +869,54 @@ const BASKETS = [
             results.forEach(p => html += renderCardHTML(p)); html += '</div></div>'; $('vitrine').innerHTML = html; lazyLoadImages();
         }
 
+        // LÓGICA DE BUSCA DO FLUXO VIP
+        window.handlePostBasketSearch = function() {
+            let val = $('post-basket-search').value;
+            $('pb-clear-btn').style.display = val.length > 0 ? 'flex' : 'none';
+            if(val.length >= 2) {
+                let terms = norm(val).split(' ').filter(t => t.trim().length > 0);
+                let results = STATE.prods.filter(p => {
+                    if (p.categoria === 'Cestas') return false;
+                    let textoBusca = norm(p.name + " " + p.categoria + " " + p.subcategoria);
+                    return terms.every(term => textoBusca.includes(term));
+                });
+                let html = '';
+                results.slice(0, 10).forEach(p => html += renderMiniCardHTML(p));
+                if(results.length === 0) html = '<div style="padding:10px; font-size:13px; color:var(--text-light); font-weight: 600;">Nenhum produto encontrado.</div>';
+                $('post-basket-search-results').innerHTML = html;
+                $('post-basket-search-results').style.display = 'flex';
+            } else {
+                $('post-basket-search-results').innerHTML = '';
+                $('post-basket-search-results').style.display = 'none';
+            }
+        };
+
+        window.clearPostBasketSearch = function() {
+            $('post-basket-search').value = '';
+            $('pb-clear-btn').style.display = 'none';
+            $('post-basket-search-results').innerHTML = '';
+            $('post-basket-search-results').style.display = 'none';
+        };
+
         function lazyLoadImages() {
             const images = document.querySelectorAll('.lazy-img');
             const observer = new IntersectionObserver((entries, obs) => { entries.forEach(entry => { if (entry.isIntersecting) { const img = entry.target; img.src = img.getAttribute('data-src'); img.classList.remove('lazy-img'); obs.unobserve(img); } }); }, { root: null, rootMargin: '300px' });
             images.forEach(img => observer.observe(img));
         }
 
-        // ==========================================
-        // LÓGICA DE CESTAS, MODAL, RETIRAR E TROCAR
-        // ==========================================
         window.openBasketDetail = function(basketId) {
             const basket = BASKETS.find(b => b.id === basketId); if (!basket) return;
             window.currentBasketId = basketId;
+            
+            $('basketModalTopInfo').style.display = 'block';
+            
+            let scrollArea = document.querySelector('#basketDetailModal .modal-scroll-area');
+            if(scrollArea) {
+                scrollArea.style.overflowY = 'auto';
+                scrollArea.style.paddingBottom = '120px';
+                scrollArea.style.display = 'block';
+            }
+            
             $('basketModalImg').src = basket.imagem; $('basketModalTitle').innerText = basket.nome;
             
             let prices = calculateBasketPrices(basketId);
@@ -1047,9 +960,8 @@ const BASKETS = [
                 const basket = BASKETS.find(b => b.id === window.currentBasketId);
                 
                 let dyn = getBasketDynamicPrice(basket);
-                let diferencaFixa = dyn.taxaExtra; // A taxa congelada
+                let diferencaFixa = dyn.taxaExtra; 
                 
-                // NOTA TÉCNICA: O recalculo ocorre de forma imediata porque utiliza o valorAtualizado da array currentBasketItems
                 let precoDinamicoAtual = Math.ceil(valorSomaDosItensAtuais + diferencaFixa - totalAtacadoItemsAtuais);
                 let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
 
@@ -1072,8 +984,7 @@ const BASKETS = [
                     });
                 }
 
-                let diffAdded = [];
-                let diffRemoved = [];
+                let diffAdded = []; let diffRemoved = [];
                 currentBasketItems.forEach(item => {
                     let pid = item.pObj.codigo || item.pObj.id;
                     let origQty = origMap[pid] || 0;
@@ -1086,17 +997,11 @@ const BASKETS = [
                 if(diffContainer) {
                     if(diffAdded.length > 0 || diffRemoved.length > 0) {
                         let diffHtml = '<div style="font-weight: 800; margin-bottom: 8px; color: var(--text-dark);">Alterações feitas na cesta:</div>';
-                        if(diffAdded.length > 0) {
-                            diffHtml += '<div style="color: var(--success); margin-bottom: 6px;"><strong>+ Adicionados:</strong><br>' + diffAdded.map(x => `+ ${x}`).join('<br>') + '</div>';
-                        }
-                        if(diffRemoved.length > 0) {
-                            diffHtml += '<div style="color: var(--danger);"><strong>- Retirados:</strong><br>' + diffRemoved.map(x => `- ${x}`).join('<br>') + '</div>';
-                        }
-                        diffContainer.innerHTML = diffHtml;
-                        diffContainer.style.display = 'block';
+                        if(diffAdded.length > 0) diffHtml += '<div style="color: var(--success); margin-bottom: 6px;"><strong>+ Adicionados:</strong><br>' + diffAdded.map(x => `+ ${x}`).join('<br>') + '</div>';
+                        if(diffRemoved.length > 0) diffHtml += '<div style="color: var(--danger);"><strong>- Retirados:</strong><br>' + diffRemoved.map(x => `- ${x}`).join('<br>') + '</div>';
+                        diffContainer.innerHTML = diffHtml; diffContainer.style.display = 'block';
                     } else {
-                        diffContainer.style.display = 'none';
-                        diffContainer.innerHTML = '';
+                        diffContainer.style.display = 'none'; diffContainer.innerHTML = '';
                     }
                 }
             }
@@ -1116,37 +1021,20 @@ const BASKETS = [
             let item = currentBasketItems[index];
             if(!item) return;
             let cat = item.pObj.categoria;
-            
-            // Pega a primeira palavra do produto atual
             let firstWord = norm(item.pObj.name).split(' ')[0];
-
-            // Filtra os produtos pela mesma categoria e exclui o próprio item
             let swapProds = STATE.prods.filter(p => p.categoria === cat && p.id !== item.pObj.id);
             
             $('swapModalTitle').innerText = "Trocando: " + item.pObj.name;
-
-            // NOVIDADE: Reseta a cor do botão de voltar sempre que abre a janela de trocas
             let btnVoltar = document.querySelector('#swapModal .btn-voltar-gigante');
-            if (btnVoltar) {
-                btnVoltar.style.background = "var(--primary)";
-                btnVoltar.style.transform = "scale(1)";
-            }
+            if (btnVoltar) { btnVoltar.style.background = "var(--primary)"; btnVoltar.style.transform = "scale(1)"; }
             
             let html = '';
             if(swapProds.length === 0) {
                 html = '<div style="padding: 20px; text-align: center; color: var(--text-light);">Nenhum produto disponível na mesma categoria.</div>';
             } else {
-                let matches = [];
-                let others = [];
-                swapProds.forEach(p => {
-                    if (norm(p.name).includes(firstWord)) {
-                        matches.push(p);
-                    } else {
-                        others.push(p);
-                    }
-                });
+                let matches = []; let others = [];
+                swapProds.forEach(p => { if (norm(p.name).includes(firstWord)) matches.push(p); else others.push(p); });
 
-                // NOVIDADE: Textos ajustados e passando "this" para identificar o clique
                 const renderOptionCard = (p, isReplace) => {
                     let btnText = isReplace ? "Trocar por este" : "Adicionar mais este";
                     let btnColor = isReplace ? "var(--success)" : "var(--primary)";
@@ -1165,23 +1053,14 @@ const BASKETS = [
                     </div>`;
                 };
 
-                if (matches.length > 0) {
-                    html += `<div style="font-weight: 800; font-size: 15px; color: var(--text-light); margin-bottom: 15px; text-align: center;">Opções sugeridas:</div>`;
-                    matches.forEach(p => html += renderOptionCard(p, true));
-                }
-
-                if (others.length > 0) {
-                    html += `<div style="font-weight: 800; font-size: 15px; color: var(--text-light); margin: 25px 0 15px; text-align: center;">Outros produtos desta sessão:</div>`;
-                    others.forEach(p => html += renderOptionCard(p, false));
-                }
+                if (matches.length > 0) { html += `<div style="font-weight: 800; font-size: 15px; color: var(--text-light); margin-bottom: 15px; text-align: center;">Opções sugeridas:</div>`; matches.forEach(p => html += renderOptionCard(p, true)); }
+                if (others.length > 0) { html += `<div style="font-weight: 800; font-size: 15px; color: var(--text-light); margin: 25px 0 15px; text-align: center;">Outros produtos desta sessão:</div>`; others.forEach(p => html += renderOptionCard(p, false)); }
             }
-            
             $('swap-items-container').innerHTML = html;
             $('swapModal').classList.add('active');
             document.querySelector('#swapModal .modal-scroll-area').scrollTop = 0;
         };
 
-        // NOVIDADE: Adicionado o parâmetro "btnElement" para mudar as cores e remover os avisos antigos
         window.confirmSwap = function(index, newProdId, isReplace, btnElement) {
             let newProd = STATE.prods.find(p => p.id === newProdId);
             if(!newProd) return;
@@ -1190,43 +1069,23 @@ const BASKETS = [
                 let oldQty = currentBasketItems[index].qty;
                 let pClone = {...newProd, basketQty: oldQty};
                 currentBasketItems[index] = { pObj: pClone, qty: oldQty };
-                
-                // Modifica o texto e cor do botão clicado
-                btnElement.innerHTML = "✅ Troca feita";
-                btnElement.style.background = "#64748b"; // Cinza indicando que já foi clicado
+                btnElement.innerHTML = "✅ Troca feita"; btnElement.style.background = "#64748b"; 
             } else {
                 let existingIndex = currentBasketItems.findIndex(item => item.pObj.id === newProdId);
-                if (existingIndex > -1) {
-                    currentBasketItems[existingIndex].qty += 1;
-                } else {
-                    let pClone = {...newProd, basketQty: 1};
-                    currentBasketItems.push({ pObj: pClone, qty: 1 });
-                }
-                
-                // Modifica o texto e cor do botão clicado
-                btnElement.innerHTML = "✅ Adicionado";
-                btnElement.style.background = "#64748b"; // Cinza indicando que já foi clicado
+                if (existingIndex > -1) { currentBasketItems[existingIndex].qty += 1; } 
+                else { let pClone = {...newProd, basketQty: 1}; currentBasketItems.push({ pObj: pClone, qty: 1 }); }
+                btnElement.innerHTML = "✅ Adicionado"; btnElement.style.background = "#64748b";
             }
             
-            // NOVIDADE: Faz o botão VOLTAR mudar de cor e "piscar" dando um pulinho na tela
             let btnVoltar = document.querySelector('#swapModal .btn-voltar-gigante');
             if (btnVoltar) {
-                btnVoltar.style.transition = "all 0.3s ease";
-                btnVoltar.style.background = "var(--success)"; // Muda para verde
-                btnVoltar.style.transform = "scale(1.05)"; // Dá uma inchada rápida (Piscada)
-                
-                setTimeout(() => {
-                    btnVoltar.style.transform = "scale(1)"; // Volta ao tamanho original após 0.3s
-                }, 300);
+                btnVoltar.style.transition = "all 0.3s ease"; btnVoltar.style.background = "var(--success)"; btnVoltar.style.transform = "scale(1.05)"; 
+                setTimeout(() => { btnVoltar.style.transform = "scale(1)"; }, 300);
             }
-            
-            // Atualiza a cesta atrás do modal sem fechar a janela
             renderBasketItemsList();
         };
 
-        window.closeSwapModal = function() {
-            $('swapModal').classList.remove('active');
-        };
+        window.closeSwapModal = function() { $('swapModal').classList.remove('active'); };
 
         window.closeBasketDetail = function() { 
             $('basketDetailModal').classList.remove('active'); 
@@ -1245,13 +1104,10 @@ const BASKETS = [
             basket.produtos.forEach(str => { 
                 let p = str.split("x "); 
                 if(p.length === 2) {
-                    let qtd = parseInt(p[0]);
-                    let cod = p[1].trim();
-                    origItemsMap[cod] = qtd; 
+                    let qtd = parseInt(p[0]); let cod = p[1].trim(); origItemsMap[cod] = qtd; 
                 }
             });
 
-            // Recupera a taxa extra congelada (15% + arredondamento) calculada na hora
             let dyn = getBasketDynamicPrice(basket);
             let diferencaFixa = dyn.taxaExtra;
 
@@ -1278,7 +1134,6 @@ const BASKETS = [
             basketDiff.changed = hasChanges;
             STATE.basketCustomizations[basket.id] = basketDiff;
 
-            // Se adicionou produtos, lança a "Taxa Oculta" na sacola
             if (addedCount > 0 && diferencaFixa > 0.01) { 
                 let feeId = 'fee_' + basket.id; 
                 let feeName = 'Taxa Oculta (' + basket.nome + ')'; 
@@ -1297,56 +1152,58 @@ const BASKETS = [
             if (addedCount > 0) { 
                 updateTotals(); 
                 saveCart(); 
+                $('basketModalTopInfo').style.display = 'none'; // Esconde a imagem da cesta
                 $('basket-items-header').style.display = 'none'; 
                 $('basket-items-container').style.display = 'none'; 
                 $('basket-summary-container').style.display = 'none'; 
-                renderVIPList(); 
+                renderPostBasketView(); 
             }
         };
 
-        function renderVIPList() {
-            let catMap = new Set(); 
-            STATE.prods.forEach(p => { 
-                if(p.categoria === 'Cestas') return; 
-                let c = p.categoria || 'Outros'; 
-                catMap.add(c); 
-            });
+        // NOVO FLUXO VIP DE COMPRA DIRETAMENTE NA MESMA TELA
+        function renderPostBasketView() {
+            let ofertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0)
+                                     .sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 10);
             
-            let htmlMercado = '<div style="padding: 15px 20px;">';
-            Array.from(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach((cat) => {
-                htmlMercado += `<a href="#/departamento/${encodeHash(cat)}" onclick="closeBasketDetail();" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
-                            <div style="display:flex; align-items:center; gap:14px;">
-                                <div style="width: 38px; height: 38px; border-radius: 10px; background: #f1f5f9; display:flex; align-items:center; justify-content:center; color: var(--text-dark);">
-                                    <svg class="svg-icon" style="width: 1.2em; height: 1.2em;" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-                                </div>
-                                <span style="font-size: 16px; font-weight: 800;">${cat}</span>
-                            </div>
-                            <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
-                        </a>`;
-            });
-            htmlMercado += '</div>';
+            let ofertasHtml = '';
+            ofertas.forEach(p => ofertasHtml += renderMiniCardHTML(p));
 
-            $('vip-items-grid').innerHTML = `
-                <div style="background: var(--success); color: white; padding: 25px; border-radius: 16px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
-                    <div style="font-size: 45px; margin-bottom: 10px;">✓</div>
-                    <h2 style="font-size: 22px; font-weight: 900; margin-bottom: 5px;">Pronto!</h2>
-                </div>
-                <h3 style="font-size: 18px; font-weight: 900; text-align: center; margin-top: 15px; margin-bottom: 15px; color: var(--text-dark); padding: 0 20px;">Continue comprando:</h3>
-                ${htmlMercado}
-                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; padding: 0 20px;">
-                    <button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)">Finalizar Pedido</button>
+            $('vip-list-container').innerHTML = `
+                <div style="display: flex; flex-direction: column; flex: 1; padding: 10px 0;">
+                    <h2 style="font-size: 22px; font-weight: 900; text-align: center; margin-bottom: 20px; color: var(--text-dark);">O que você quer fazer agora?</h2>
+                    
+                    <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 10px; color: var(--text-dark);">Adicione produtos em oferta</h3>
+                    <div class="carousel-container">
+                        ${ofertasHtml}
+                    </div>
+
+                    <h3 style="font-size: 16px; font-weight: 800; margin-top: 15px; margin-bottom: 10px; color: var(--text-dark);">Encontre produtos</h3>
+                    <div style="position: relative; margin-bottom: 10px; flex-shrink: 0;">
+                        <input type="text" id="post-basket-search" class="topbar-search" style="width: 100%; border: 1px solid var(--border-light); background: #fff;" placeholder="Ex: Arroz, Feijão, Sabão..." oninput="handlePostBasketSearch()">
+                        <div class="clear-search-btn" id="pb-clear-btn" onclick="clearPostBasketSearch()" style="top: 50%; transform: translateY(-50%);"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div>
+                    </div>
+                    
+                    <div id="post-basket-search-results" class="carousel-container" style="display: none;"></div>
+
+                    <div style="margin-top: 25px; flex-shrink: 0;">
+                        <button class="btn-send" onclick="sendOrder(this)">Enviar meu pedido no whatsapp</button>
+                    </div>
                 </div>`;
             
-            $('vip-list-container').style.display = 'block'; 
-            let scrollArea = document.querySelector('#basketDetailModal .modal-scroll-area');
-            if(scrollArea) scrollArea.scrollTo({top: 0, behavior: 'smooth'});
+            $('vip-list-container').style.display = 'flex'; 
+            $('vip-list-container').style.flex = '1';
             
-            lazyLoadImages(); 
+            let scrollArea = document.querySelector('#basketDetailModal .modal-scroll-area');
+            if(scrollArea) {
+                scrollArea.scrollTo({top: 0, behavior: 'smooth'});
+                // Bloqueamos a rolagem geral da tela e usamos flex para manter tudo num único viewport
+                scrollArea.style.paddingBottom = '20px';
+                scrollArea.style.overflow = 'hidden'; 
+                scrollArea.style.display = 'flex';
+                scrollArea.style.flexDirection = 'column';
+            }
         }
 
-        // ==========================================
-        // LISTA E ENVIO PARA WHATSAPP
-        // ==========================================
         window.openCheckout = function() {
             if (STATE.cartOrder.length === 0) return alert("Sua lista está vazia!");
             renderCheckoutItems(); updateTotals(); $('checkout-drawer').scrollTop = 0; 
@@ -1431,18 +1288,33 @@ const BASKETS = [
             if (count > 0) { 
                 let txt = count > 99 ? '99+' : count;
                 badges.forEach(b => { b.style.display = 'block'; b.innerText = txt; });
-                if(bottomTotal) {
-                    bottomTotal.style.display = 'block';
-                    bottomTotal.innerText = fmt(finalTotal);
-                }
+                if(bottomTotal) { bottomTotal.style.display = 'block'; bottomTotal.innerText = fmt(finalTotal); }
             } else { 
                 badges.forEach(b => { b.style.display = 'none'; });
                 if(bottomTotal) bottomTotal.style.display = 'none';
             }
         }
 
-       window.sendOrder = async function() {
-            const btn = $('btn-send-order'); if (btn.disabled) return;
+       // Função Modificada para aceitar disparo via botão dinâmico da nova tela
+       window.sendOrder = async function(btnOverride) {
+            const btn = btnOverride || $('btn-send-order'); 
+            if (!btnOverride && btn.disabled) return;
+            
+            // Re-valida o pedido mínimo no momento do clique direto (caso o carrinho mude externamente)
+            let totalBrutoValidar = 0; let tempAtacado = 0;
+            Object.entries(STATE.cart).forEach(([cartId, q]) => {
+                const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
+                if(p) {
+                    totalBrutoValidar += p.price * q;
+                    if(!String(cartId).startsWith('fee_cesta') && q >= 3) tempAtacado += (p.price * 0.05) * q;
+                }
+            });
+            let checkFinal = totalBrutoValidar - tempAtacado;
+            if(checkFinal < MIN_ORDER) {
+                alert(`O pedido mínimo é ${fmt(MIN_ORDER)}. Faltam ${fmt(MIN_ORDER - checkFinal)}.`);
+                if(btnOverride) btnOverride.innerHTML = "Enviar meu pedido no whatsapp";
+                return;
+            }
             
             btn.innerHTML = "Processando...";
             const orderId = String(Date.now()).slice(-6); 
@@ -1451,19 +1323,13 @@ const BASKETS = [
             let totalTaxasExtras = 0;
             let pedidoItens = [];
 
-            // Percorre o carrinho para somar valores e montar a lista de texto
             Object.entries(STATE.cart).forEach(([cartId, q]) => { 
                 const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
                 if (p) { 
                     totalBruto += p.price * q; 
                     if (!String(cartId).startsWith('fee_cesta')) {
                         itemsTxt += `${q}x ${p.name}\n`; 
-                        pedidoItens.push({
-                            sku: String(p.codigo || p.id),
-                            nome: p.name,
-                            qtd: q,
-                            price: p.price
-                        });
+                        pedidoItens.push({ sku: String(p.codigo || p.id), nome: p.name, qtd: q, price: p.price });
                     } else { 
                         totalTaxasExtras += (p.price * q);
                     } 
@@ -1473,7 +1339,6 @@ const BASKETS = [
             let totalDescontoFormatado = STATE.atacadoDiscount;
             let final = totalBruto - totalDescontoFormatado;
 
-            // --- NOVA REGRA DO RODAPÉ (CESTAS) ---
             let basketInfo = "";
             let hasBasket = Object.keys(STATE.basketCustomizations).length > 0;
             
@@ -1481,13 +1346,11 @@ const BASKETS = [
                 basketInfo = "\n------------------------------";
                 Object.keys(STATE.basketCustomizations).forEach(bId => {
                     let diff = STATE.basketCustomizations[bId];
-                    // Regra: Se mudou algo = ALTERADA, se não = SEM ALTERAÇÃO
                     let statusLabel = diff.changed ? "ALTERADA" : "SEM ALTERAÇÃO";
                     basketInfo += `\nCesta ${diff.name} ${statusLabel}`;
                 });
             }
 
-            // Envio de dados para o Webhook (Make.com) - Mantendo sua integração
             const makePayload = {
                 pedido: {
                     id: orderId,
@@ -1511,7 +1374,6 @@ const BASKETS = [
             let descontosTxt = "";
             if (STATE.atacadoDiscount > 0) descontosTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
 
-            // --- MONTAGEM DA MENSAGEM FINAL ---
             const msg = `*PEDIDO #${orderId}*
 ------------------------------
 *ITENS SELECIONADOS*
@@ -1523,7 +1385,6 @@ Este é o meu pedido. Quais informações você precisa?`;
 
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             
-            // Limpa o carrinho após o envio
             STATE.cart = {}; 
             STATE.cartOrder = []; 
             STATE.basketCustomizations = {}; 
@@ -1534,54 +1395,27 @@ Este é o meu pedido. Quais informações você precisa?`;
             closeCheckout();
             
             setTimeout(() => { 
-                btn.innerHTML = `<svg class="svg-icon-fill" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg> Enviar para o WhatsApp`; 
+                btn.innerHTML = "Enviar para o WhatsApp"; 
             }, 3000);
         };
 
-        // ==========================================
-        // DADOS, INICIALIZAÇÃO E ANTI-CACHE AGRESSIVO
-        // ==========================================
-        
         function forcarLimpezaDeCacheClient() {
             const chavesProtegidas = ['da_user']; 
             const todasAsChaves = Object.keys(localStorage);
-            
-            todasAsChaves.forEach(chave => {
-                if (!chavesProtegidas.includes(chave)) {
-                    localStorage.removeItem(chave);
-                }
-            });
-            console.log("Limpeza de cache agressiva concluída. Apenas dados do usuário mantidos.");
+            todasAsChaves.forEach(chave => { if (!chavesProtegidas.includes(chave)) localStorage.removeItem(chave); });
         }
-
         forcarLimpezaDeCacheClient();
 
-        function loadCart() { 
-            STATE.cart = {}; 
-            STATE.cartOrder = []; 
-            STATE.basketCustomizations = {}; 
-        }
-        
+        function loadCart() { STATE.cart = {}; STATE.cartOrder = []; STATE.basketCustomizations = {}; }
         function saveCart() {}
 
     async function fetchWithCache(url) {
         try { 
             let separador = url.includes('?') ? '&' : '?';
             let urlSemCache = url + separador + 'nocache=' + Date.now();
-            
-            let res = await fetch(urlSemCache, {
-                cache: 'no-store',
-                headers: {
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache'
-                }
-            }).then(r => r.json()); 
-            
+            let res = await fetch(urlSemCache, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } }).then(r => r.json()); 
             return res; 
-        } catch (e) { 
-            console.error("Erro ao buscar ficheiro sem cache:", e);
-            return []; 
-        }
+        } catch (e) { console.error("Erro ao buscar ficheiro sem cache:", e); return []; }
     }
 
     function aplicarDescontos(products) {
@@ -1589,22 +1423,18 @@ Este é o meu pedido. Quais informações você precisa?`;
         let eligibleForRandom = [];
         
         products.forEach(p => {
-            p.discountPercent = 0; 
-            p.oldPrice = p.price;
-            
+            p.discountPercent = 0; p.oldPrice = p.price;
             if (p.vencimento) {
                 let partes = p.vencimento.split('/'); 
                 if(partes.length === 3) {
                     let vDate = new Date(partes[2], partes[1] - 1, partes[0]); 
                     let daysToExpiry = (vDate - now) / (1000 * 60 * 60 * 24);
-                    
                     if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 20; 
                     else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 15; 
                     else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 10;
                     else if (daysToExpiry > 90 && daysToExpiry <= 120) p.discountPercent = 5;
                 }
             }
-            
             if (p.discountPercent === 0) eligibleForRandom.push(p);
         });
         
@@ -1612,38 +1442,27 @@ Este é o meu pedido. Quais informações você precisa?`;
         let domingoDaSemana = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diaDaSemana);
         let currentSeed = domingoDaSemana.getTime(); 
         
-        function seededRandom(seed) { 
-            let x = Math.sin(seed++) * 10000; 
-            return x - Math.floor(x); 
-        }
+        function seededRandom(seed) { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
         
         eligibleForRandom.sort((a, b) => { 
             let idNumA = parseInt(a.id.replace(/\D/g, '')) || (a.name ? a.name.charCodeAt(0) : 0); 
             let idNumB = parseInt(b.id.replace(/\D/g, '')) || (b.name ? b.name.charCodeAt(0) : 0); 
-            
-            let randA = seededRandom(currentSeed + idNumA); 
-            let randB = seededRandom(currentSeed + idNumB); 
-            
-            return randA - randB; 
+            return seededRandom(currentSeed + idNumA) - seededRandom(currentSeed + idNumB); 
         });
         
         let r15 = 5, r10 = 5, r5 = 100; 
-        
         eligibleForRandom.forEach(p => { 
             if (r15 > 0) { p.discountPercent = 15; r15--; } 
             else if (r10 > 0) { p.discountPercent = 10; r10--; } 
             else if (r5 > 0) { p.discountPercent = 5; r5--; } 
         });
         
-        products.forEach(p => { 
-            if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); 
-        });
+        products.forEach(p => { if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); });
     }
 
     async function init() {
         try {
             const r2 = await fetchWithCache('/site/produtos.json?v=2');
-            
             if (r2 && r2.length > 0) {
                 STATE.prods = r2.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => {
                     let baseName = p.nome ? formatName(p.nome.trim()) : "Produto"; 
