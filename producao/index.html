@@ -1552,11 +1552,17 @@ async function processarBaixaPedidoTexto() {
         const linhaLimpa = linha.trim();
         const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
 
-        if(match) {
+       if(match) {
             const qtd = parseInt(match[1]);
-            const nomeProcurado = match[2].trim().toLowerCase();
+            
+            // 1. Passamos o nome colado pelo nosso filtro de limpeza
+            const nomeProcuradoNormalizado = limparTexto(match[2]);
 
-            const p = products.find(prod => (prod.nome || "").toLowerCase() === nomeProcurado);
+            // 2. Comparamos com o nome do banco de dados também filtrado
+            const p = products.find(prod => {
+                const nomeBancoNormalizado = limparTexto(prod.nome);
+                return nomeBancoNormalizado === nomeProcuradoNormalizado;
+            });
 
             if(p) {
                 p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
