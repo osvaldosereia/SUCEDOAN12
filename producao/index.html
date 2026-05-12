@@ -1511,74 +1511,65 @@
         }
 
         // ==========================================================
-// BAIXAR PEDIDO POR TEXTO (ATUALIZADO)
+// BAIXAR PEDIDO POR TEXTO COM AUTO-SYNC PARA GITHUB
 // ==========================================================
-function processarBaixaPedidoTexto() {
-    // 1. Captura o texto que foi colado na caixa de texto
+async function processarBaixaPedidoTexto() {
+    // 1. Obtém o texto do pedido
     const texto = document.getElementById('order-text-input').value;
-    
-    if(!texto) {
-        return alert("Cole o texto do pedido primeiro.");
-    }
+    if(!texto) return alert("Por favor, cole o texto do pedido primeiro.");
 
-    // Divide o texto em um array, onde cada linha é um item
     const linhas = texto.split('\n'); 
     let encontrados = 0; 
     let falhas = [];
 
-    // 2. Analisa cada linha individualmente
+    // 2. Processa cada linha do pedido
     linhas.forEach(linha => {
-        // Limpa espaços em branco no início e fim da linha
         const linhaLimpa = linha.trim();
+        // Regex para capturar "1x Nome do Produto" ou "1 Nome do Produto"
+        const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
 
-        // Expressão Regular (Regex) explicada:
-        // ^(\d+)  -> Começa com um ou mais números (guarda a quantidade)
-        // \s*x\s+ -> Seguido da letra 'x' (com ou sem espaços antes/depois)
-        // (.*)$   -> Captura todo o resto até o final da linha (guarda o nome)
-        const match = linhaLimpa.match(/^(\d+)\s*x\s+(.*)$/i);
-
-        // Se a linha casar com o padrão "1x Produto", entra no IF
         if(match) {
-            const qtd = parseInt(match[1]); // Extrai a quantidade
-            const nomeProcurado = match[2].trim().toLowerCase(); // Extrai e limpa o nome
+            const qtd = parseInt(match[1]);
+            const nomeProcurado = match[2].trim().toLowerCase();
 
-            // 3. Busca no banco de dados (products) pelo nome exato em minúsculas
+            // Procura o produto pelo nome exato (ignorando maiúsculas/minúsculas)
             const p = products.find(prod => (prod.nome || "").toLowerCase() === nomeProcurado);
 
             if(p) {
-                // Se encontrar, abate o estoque. O Math.max(0, ...) impede que o estoque fique negativo
+                // Abate o stock (mínimo zero)
                 p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
                 p.last_update = Date.now(); 
                 encontrados++; 
             } else {
-                // Se não encontrar, guarda na lista de falhas para avisar o utilizador depois
-                falhas.push(`${qtd}x ${match[2].trim()}`); 
+                falhas.push(match[2].trim()); 
             }
         }
     });
 
-    // 4. Exibe o resultado e salva os dados
+    // 3. Finalização e Sincronização
     if(encontrados > 0) {
-        saveDataLocally(); 
-        renderGrid(ultimoTermoPesquisa); // Atualiza os cartões na tela
+        // Guarda localmente primeiro
+        await saveDataLocally(); 
         
-        // Monta a mensagem de sucesso e junta com os erros, se houverem
-        let mensagem = `✅ Sucesso! ${encontrados} itens tiveram o estoque abatido.\n`;
+        // Atualiza a visualização no ecrã
+        renderGrid(ultimoTermoPesquisa);
+
+        // --- NOVIDADE: SINCRONIZAÇÃO AUTOMÁTICA ---
+        // Envia a atualização para a fila do GitHub (produtos.json)
+        salvarProdutosJSON(); 
+        // -------------------------------------------
+
+        let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nSincronização com GitHub iniciada (veja a fila no topo).`;
         if(falhas.length > 0) {
-            mensagem += `\n⚠️ Atenção: Os seguintes itens NÃO foram encontrados (verifique se o nome está idêntico ao sistema):\n- ` + falhas.join('\n- ');
+            msg += `\n\n⚠️ Itens não encontrados:\n- ` + falhas.join('\n- ');
         }
-        
-        alert(mensagem);
+        alert(msg);
+
+        // Fecha o menu lateral e limpa o campo
         closeSidebar('pedidos-sidebar'); 
         document.getElementById('order-text-input').value = "";
-        
     } else {
-        // Se nenhum item deu certo, mostra os motivos
-        if(falhas.length > 0) {
-            alert(`❌ Nenhum produto abatido. Verifique se os nomes batem exatamente com o sistema.\n\nFalhas:\n- ` + falhas.join('\n- '));
-        } else {
-            alert("❌ O texto colado não possui nenhum item no formato '1x Nome do Produto'.");
-        }
+        alert("❌ Nenhum produto encontrado. Verifique se os nomes estão idênticos ao sistema.");
     }
 }
 
