@@ -163,7 +163,6 @@
         let filtroAtivo = { tipo: null, valor: null };
         let advancedFilters = { cat: '', sub: '', subsub: '', marca: '', ncm: '', stock: '', validade: '', tag: '' };
         
-        // VARIÁVEL GLOBAL ADICIONADA PARA PERSISTÊNCIA DE PESQUISA
         let ultimoTermoPesquisa = "";
         
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
@@ -590,8 +589,13 @@
         }
 
         function processQueueLoop() {
-            if (syncQueue.length === 0) { isSyncing = false; renderQueueStatus(); return; }
-            startQueueCountdown(50);
+            if (syncQueue.length === 0) { 
+                isSyncing = false; 
+                renderQueueStatus(); 
+                return; 
+            }
+            // Alterado de 50 para 90 segundos conforme instrução
+            startQueueCountdown(90);
         }
 
         async function enqueueTask(taskName, taskFn) {
@@ -837,7 +841,6 @@
 
             [marcasDoSistema, tagsDoSistema].forEach(lista => lista.sort((a, b) => a.localeCompare(b)));
 
-            // LER DO COFRE FORTE AO INICIAR
             const cfg = await localforage.getItem(CONFIG_KEY) || {}; 
             if(cfg.token) { 
                 document.getElementById('cfg-token').value = cfg.token; 
@@ -1356,7 +1359,7 @@
             mostrarAlerta("Credenciais guardadas com segurança!", "sucesso");
             closeSidebar('config-sidebar'); 
         }
-        // ====== CRUD DE CATEGORIAS, SUBS E SUB-SUBS ======
+        
         window.renderizarSidebarCategorias = function() {
             const container = document.getElementById('lista-categorias-container'); if(!container) return;
             container.innerHTML = "";
@@ -1666,13 +1669,13 @@
       }
 
         // ==========================================================
-        // LIMPEZA INTELIGENTE DE IMAGENS DO GITHUB
+        // LIMPEZA INTELIGENTE DE IMAGENS DO GITHUB (AJUSTADO PARA FILA)
         // ==========================================================
         async function executarLimpezaImagens() {
-            if(!confirm("AVISO: O sistema vai ler as pastas de imagens no GitHub e apagar todos os ficheiros que não estejam vinculados ao teu produtos.json atual. Queres continuar?")) return;
+            if(!confirm("AVISO: O sistema vai ler as pastas de imagens no GitHub e colocar na fila a exclusão dos ficheiros órfãos. Queres continuar?")) return;
             
             const cfg = await GitHubAPI.getConfig(); if(!cfg) return;
-            mostrarAlerta("Iniciando varredura no GitHub. Por favor, aguarde...", "aviso");
+            mostrarAlerta("Lendo o GitHub para criar a fila de limpeza. Aguarde...", "aviso");
             
             try {
                 const imagensEmUso = new Set(products.map(p => {
@@ -1684,7 +1687,7 @@
                 let pastas = ["site/img/produtos"];
                 for(let i = 2; i <= 10; i++) pastas.push(`site/img/produtos_${i}`);
 
-                let apagadas = 0;
+                let imagensParaApagar = 0;
                 
                 for(const pasta of pastas) {
                     try {
@@ -1692,60 +1695,55 @@
                         if(Array.isArray(files)) {
                             for(const file of files) {
                                 if(!imagensEmUso.has(file.name)) {
-                                    await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${file.path}`, {
-                                        method: 'DELETE',
-                                        headers: GitHubAPI.getHeaders(cfg),
-                                        body: JSON.stringify({ message: `PIM Sync: Removendo imagem órfã ${file.name}`, sha: file.sha })
+                                    // Adicionado à fila global de 90s
+                                    enqueueTask(`Apagar Imagem: ${file.name}`, async () => {
+                                        await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${file.path}`, {
+                                            method: 'DELETE',
+                                            headers: GitHubAPI.getHeaders(cfg),
+                                            body: JSON.stringify({ message: `PIM Sync: Removendo imagem órfã ${file.name}`, sha: file.sha })
+                                        });
                                     });
-                                    apagadas++;
+                                    imagensParaApagar++;
                                 }
                             }
                         }
                     } catch(e) { } 
                 }
                 
-                mostrarAlerta(`✅ Limpeza concluída! ${apagadas} imagens não utilizadas foram apagadas.`, "sucesso");
+                if (imagensParaApagar > 0) {
+                    mostrarAlerta(`✅ Análise concluída! ${imagensParaApagar} imagens foram para a fila de exclusão.`, "sucesso");
+                } else {
+                    mostrarAlerta("Não foram encontradas imagens órfãs para limpar.", "sucesso");
+                }
             } catch(e) {
                 console.error(e);
-                mostrarAlerta("❌ Ocorreu um erro durante a limpeza.", "erro");
+                mostrarAlerta("❌ Ocorreu um erro durante a leitura.", "erro");
             }
         }
         
-        // ==========================================================
-        // A NOVA FUNÇÃO CORRIGIDA DE SINCRONIZAÇÃO
-        // ==========================================================
         async function fetchFromGithub() {
             try {
                 mostrarAlerta("Sincronizando com a nuvem...", "aviso");
-                
                 const cfg = await GitHubAPI.getConfig(); if (!cfg) return;
-                
                 const fileData = await GitHubAPI.getFileData('site/produtos.json');
-                
                 if (!fileData || !fileData.content) {
                     return alert("Arquivo produtos.json não encontrado ou vazio na nuvem.");
                 }
-                
                 const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
                 const parsedData = JSON.parse(decodedStr);
-                
                 if (parsedData && Array.isArray(parsedData)) {
                     if(products.length > 0) { 
                         if(!confirm("Substituir a base local pela da nuvem? Isso vai recalcular todas as categorias baseadas no arquivo.")) return; 
                     }
-                    
                     products = parsedData;
-                    
                     categoriasDoSistema = [];
                     marcasDoSistema = [];
                     tagsDoSistema = [];
                     await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema);
                     await localforage.setItem(MARCAS_KEY, marcasDoSistema);
                     await localforage.setItem(TAGS_KEY, tagsDoSistema);
-                    
                     await saveDataLocally(); 
                     await loadData(); 
-                    
                     mostrarAlerta("✅ Atualização concluída com sucesso!", "sucesso"); 
                     closeSidebar('config-sidebar');
                 } else { 
@@ -1823,19 +1821,12 @@
         };
 
         // ==========================================================
-        // MÓDULO DE EXPORTAÇÃO BLING V3 (59 COLUNAS)
+        // MÓDULO DE EXPORTAÇÃO BLING V3 (AJUSTADO PARA FILA)
         // ==========================================================
         function mapearProdutoParaBling(p) {
             let localizacaoStr = "";
             if(p.gondola || p.prateleira) {
                 localizacaoStr = `Gôndola: ${p.gondola || '-'} | Prateleira: ${p.prateleira || '-'}`;
-            }
-
-            let urlImagemBling = "";
-            if (p.url_imagem && typeof p.url_imagem === 'string' && p.url_imagem.includes('../')) {
-                urlImagemBling = p.url_imagem.split('?')[0].replace("../", "https://donaantonia.com.br/");
-            } else if (p.url_imagem && typeof p.url_imagem === 'string' && p.url_imagem.startsWith('http')) {
-                urlImagemBling = p.url_imagem.split('?')[0];
             }
 
            return {
@@ -1902,28 +1893,30 @@
         }
 
         async function downloadCSVBling(dados, filename) {
-            mostrarAlerta("A guardar no GitHub...", "aviso");
-            
             const csv = Papa.unparse(dados, { delimiter: ";" });
             const csvComBom = "\ufeff" + csv;
 
-            try {
-                await GitHubAPI.saveFile(`site/exportacoes/${filename}`, csvComBom, `Exportação: ${filename}`);
-                mostrarAlerta(`✅ Arquivo ${filename} salvo no GitHub!`, "sucesso");
-            } catch (erro) {
-                console.error("Erro ao salvar no GitHub:", erro);
-                mostrarAlerta("❌ Erro ao salvar exportação na nuvem.", "erro");
-                
-                const blob = new Blob([csvComBom], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = "BACKUP_" + filename;
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
+            // Enviar para a fila de sincronização em vez de salvar diretamente
+            enqueueTask(`Exportação CSV: ${filename}`, async () => {
+                try {
+                    await GitHubAPI.saveFile(`site/exportacoes/${filename}`, csvComBom, `Exportação: ${filename}`);
+                } catch (erro) {
+                    console.error("Erro ao salvar no GitHub:", erro);
+                    // Download direto como fallback caso a API falhe drasticamente
+                    const blob = new Blob([csvComBom], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = "BACKUP_" + filename;
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    throw erro;
+                }
+            });
+            
+            mostrarAlerta(`⏳ Arquivo ${filename} na fila! Aguarde os 90s.`, "aviso");
         }
 
         window.exportarProdutoBling = async function(sku) {
@@ -1935,24 +1928,19 @@
         window.exportarTudoBling = async function() {
             if(!confirm("Exportar todo o banco de dados (Bling CSV)? O sistema dividirá automaticamente em arquivos de até 900 produtos se necessário.")) return;
             if(products.length === 0) return alert("Banco vazio.");
-            
             const mappedList = products.map(p => mapearProdutoParaBling(p));
             const chunkSize = 900; 
-
             if (mappedList.length <= chunkSize) {
                 await downloadCSVBling(mappedList, "Bling_Banco_Completo.csv");
             } 
             else {
                 const totalParts = Math.ceil(mappedList.length / chunkSize);
                 mostrarAlerta(`A exportar ${totalParts} ficheiros... Por favor, aguarde.`, 'aviso');
-
                 for (let i = 0; i < totalParts; i++) {
                     const chunk = mappedList.slice(i * chunkSize, (i + 1) * chunkSize);
                     const filename = `Bling_Banco_Completo_Parte_${i + 1}.csv`;
-                    
                     await downloadCSVBling(chunk, filename);
                 }
-                setTimeout(() => mostrarAlerta("✅ Todas as partes foram enviadas!", "sucesso"), 3000);
             }
         };
 
@@ -1978,17 +1966,13 @@
             const container = document.getElementById('lista-exportacoes-github');
             container.innerHTML = '<div style="text-align:center; padding:20px;"><i data-lucide="loader" class="spin-icon"></i><br>Buscando arquivos...</div>';
             lucide.createIcons();
-            
             try {
                 const files = await GitHubAPI.getFileData('site/exportacoes');
-                
                 if (!files || !Array.isArray(files)) {
                     container.innerHTML = '<p style="text-align:center; font-size:11px; color:var(--text-secondary); padding:20px;">Nenhum arquivo encontrado em site/exportacoes/</p>';
                     return;
                 }
-
                 files.reverse();
-
                 container.innerHTML = files.map(file => {
                     if(file.type === 'dir') return ''; 
                     return `
@@ -2003,7 +1987,6 @@
                     </div>
                     `;
                 }).join('');
-                
                 lucide.createIcons();
             } catch (e) {
                 container.innerHTML = '<p style="color:var(--danger); font-size:11px; text-align:center; padding:20px;">Erro ao carregar lista.<br>Certifique-se que a pasta "site/exportacoes" existe no GitHub.</p>';
@@ -2011,92 +1994,52 @@
         }
 
         // ==========================================================
-        // LEITURA DO CSV DO BLING - ATUALIZAR/ADICIONAR (UPSERT)
+        // LEITURA DO CSV DO BLING
         // ==========================================================
         document.getElementById('csv-file-atualizar').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-            
             mostrarAlerta("Analisando planilha e atualizando produtos...", "aviso");
-            
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
                 complete: async function(results) {
                     const linhas = results.data;
-                    const timestamp = Date.now();
-                    
-                    let atualizados = 0;
-                    let adicionados = 0;
-                    
+                    let atualizados = 0; let adicionados = 0;
                     linhas.forEach((linha, idx) => {
                         let eanBling = (linha["GTIN/EAN"] || linha["EAN"] || linha["GTIN"] || "").toString().trim();
                         let idBling = (linha["ID"] || "").toString().trim();
                         let skuBling = (linha["Código"] || linha["Codigo"] || "").toString().trim();
                         let nome = linha["Descrição"] || linha["Descricao"] || "Produto Importado";
-                        let precoStr = linha["Preço"] || linha["Preco"] || "0";
+                        let precoStr = linha["Preço"] || "0";
                         let preco = parseFloat(precoStr.toString().replace(',','.')) || 0;
-                        let custoStr = linha["Preço de custo"] || linha["Preco de custo"] || "0";
+                        let custoStr = linha["Preço de custo"] || "0";
                         let custo = parseFloat(custoStr.toString().replace(',','.')) || 0;
                         let estoqueStr = linha["Estoque"] || "0";
                         let estoque = parseFloat(estoqueStr.toString().replace(',','.')) || 0;
                         let ncm = linha["NCM"] || "";
                         let marca = linha["Marca"] || "";
-                        
                         let produtoExistente = null;
-                        
-                        if (eanBling !== "") {
-                            produtoExistente = products.find(p => p.gtin === eanBling);
-                        }
-                        
-                        if (!produtoExistente && skuBling !== "") {
-                            produtoExistente = products.find(p => p.codigo === skuBling);
-                        }
-                        
+                        if (eanBling !== "") produtoExistente = products.find(p => p.gtin === eanBling);
+                        if (!produtoExistente && skuBling !== "") produtoExistente = products.find(p => p.codigo === skuBling);
                         if (produtoExistente) {
-                            produtoExistente.nome = nome;
-                            produtoExistente.preco = preco;
-                            produtoExistente.preco_custo = custo;
-                            produtoExistente.estoque = estoque;
-                            
-                            if (ncm) produtoExistente.ncm = ncm;
-                            if (marca) produtoExistente.marca = marca;
-                            if (eanBling && !produtoExistente.gtin) produtoExistente.gtin = eanBling;
-                            
-                            produtoExistente.last_update = Date.now();
-                            atualizados++;
+                            produtoExistente.nome = nome; produtoExistente.preco = preco; produtoExistente.preco_custo = custo; produtoExistente.estoque = estoque;
+                            if (ncm) produtoExistente.ncm = ncm; if (marca) produtoExistente.marca = marca; if (eanBling && !produtoExistente.gtin) produtoExistente.gtin = eanBling;
+                            produtoExistente.last_update = Date.now(); atualizados++;
                         } else {
                             let novoIdBling = idBling || (Date.now().toString() + idx.toString() + Math.floor(Math.random() * 10000).toString());
                             let novoSkuBling = skuBling || (Date.now().toString().slice(-6) + idx.toString().padStart(4, '0') + Math.floor(Math.random() * 1000).toString());
-
                             products.unshift({
-                                id: novoIdBling,
-                                codigo: novoSkuBling,
-                                gtin: eanBling,
-                                nome: nome,
-                                preco: preco,
-                                preco_custo: custo,
-                                situacao: 'A',
-                                estoque: estoque,
-                                ncm: ncm,
-                                marca: marca,
-                                descricao: "",
-                                last_update: Date.now()
-                            });
-                            adicionados++;
+                                id: novoIdBling, codigo: novoSkuBling, gtin: eanBling, nome: nome, preco: preco, preco_custo: custo, situacao: 'A', estoque: estoque, ncm: ncm, marca: marca, descricao: "", last_update: Date.now()
+                            }); adicionados++;
                         }
                     });
-                    
-                    await saveDataLocally();
-                    await loadData(); 
-                    renderGrid(ultimoTermoPesquisa);
-                    
-                    mostrarAlerta(`✅ Concluído! ${adicionados} produtos criados e ${atualizados} atualizados.`, "sucesso");
+                    await saveDataLocally(); await loadData(); renderGrid(ultimoTermoPesquisa);
+                    mostrarAlerta(`✅ Concluído! ${adicionados} criados e ${atualizados} atualizados.`, "sucesso");
                     document.getElementById('csv-file-atualizar').value = "";
                 }
             });
         });
-        
     </script>
 </body>
 </html>
