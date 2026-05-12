@@ -885,10 +885,11 @@ const BASKETS = [
             results.forEach(p => html += renderCardHTML(p)); html += '</div></div>'; $('vitrine').innerHTML = html; lazyLoadImages();
         }
 
-        // LÓGICA DE BUSCA DO FLUXO VIP
+       // LÓGICA DE BUSCA DO FLUXO VIP
         window.handlePostBasketSearch = function() {
             let val = $('post-basket-search').value;
             $('pb-clear-btn').style.display = val.length > 0 ? 'flex' : 'none';
+            
             if(val.length >= 2) {
                 let terms = norm(val).split(' ').filter(t => t.trim().length > 0);
                 let results = STATE.prods.filter(p => {
@@ -896,14 +897,30 @@ const BASKETS = [
                     let textoBusca = norm(p.name + " " + p.categoria + " " + p.subcategoria);
                     return terms.every(term => textoBusca.includes(term));
                 });
+                
                 let html = '';
-                results.slice(0, 10).forEach(p => html += renderMiniCardHTML(p));
-                if(results.length === 0) html = '<div style="padding:10px; font-size:13px; color:var(--text-light); font-weight: 600;">Nenhum produto encontrado.</div>';
-                $('post-basket-search-results').innerHTML = html;
-                $('post-basket-search-results').style.display = 'flex';
+                // AJUSTE 1: Passando 'true' para o card ficar grande idêntico ao primeiro carrossel
+                results.slice(0, 15).forEach(p => html += renderMiniCardHTML(p, true));
+                
+                if(results.length === 0) {
+                    html = '<div style="padding:10px; font-size:14px; color:var(--text-light); font-weight: 600; width: 100%; text-align: center;">Nenhum produto encontrado.</div>';
+                }
+                
+                let resultContainer = $('post-basket-search-results');
+                resultContainer.innerHTML = html;
+                resultContainer.style.display = 'flex';
+                
+                // AJUSTE 2: Adiciona a barra de rolagem visível para ficar igual ao das ofertas
+                resultContainer.classList.add('carousel-container-visible-scroll');
+                
+                // AJUSTE 3: Dispara o carregamento das fotos (Lazy Load) para os itens recém-pesquisados
+                lazyLoadImages();
+                
             } else {
-                $('post-basket-search-results').innerHTML = '';
-                $('post-basket-search-results').style.display = 'none';
+                let resultContainer = $('post-basket-search-results');
+                resultContainer.innerHTML = '';
+                resultContainer.style.display = 'none';
+                resultContainer.classList.remove('carousel-container-visible-scroll');
             }
         };
 
