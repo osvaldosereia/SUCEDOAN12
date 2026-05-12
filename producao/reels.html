@@ -78,7 +78,6 @@
 
         .product-card { background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5%; text-align: center; width: 100%; height: 100%; overflow: hidden; position: relative; }
         
-        /* Uso da tag <img> com max-height para evitar achatamento e garantir alta resolução */
         .product-card img { 
             max-width: 100%; height: auto; object-fit: contain; 
             margin-bottom: 5%; 
@@ -86,7 +85,6 @@
             position: relative; z-index: 1; 
         }
         
-        /* Fonte do preço ajustada para font-weight: 700 */
         .product-card .price { font-weight: 700; color: #000; letter-spacing: -1px; line-height: 1; margin-bottom: 2%; transform: translateY(var(--price-y)); position: relative; z-index: 2; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
         .product-card .name { color: var(--text-dim); font-weight: 700; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; transform: translateY(var(--name-y)); position: relative; z-index: 2; text-shadow: 0 0 10px rgba(255,255,255,0.8);}
 
@@ -409,12 +407,74 @@
             document.getElementById('dynamic-styles').innerHTML = styleString;
         }
 
+        // --- LÓGICA DE VALORES E DESCONTOS DO SITE ---
+        function aplicarDescontos(products) {
+            let now = new Date(); 
+            let eligibleForRandom = [];
+            
+            products.forEach(p => {
+                p.discountPercent = 0; 
+                p.oldPrice = p.price;
+                
+                if (p.vencimento) {
+                    let partes = String(p.vencimento).split('/'); 
+                    if(partes.length === 3) {
+                        let vDate = new Date(partes[2], partes[1] - 1, partes[0]); 
+                        let daysToExpiry = (vDate - now) / (1000 * 60 * 60 * 24);
+                        if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 20; 
+                        else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 15; 
+                        else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 10;
+                        else if (daysToExpiry > 90 && daysToExpiry <= 120) p.discountPercent = 5;
+                    }
+                }
+                if (p.discountPercent === 0) eligibleForRandom.push(p);
+            });
+            
+            let diaDaSemana = now.getDay();
+            let domingoDaSemana = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diaDaSemana);
+            let currentSeed = domingoDaSemana.getTime(); 
+            
+            function seededRandom(seed) { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
+            
+            eligibleForRandom.sort((a, b) => { 
+                let idNumA = parseInt(String(a.id).replace(/\D/g, '')) || (a.nome ? a.nome.charCodeAt(0) : 0); 
+                let idNumB = parseInt(String(b.id).replace(/\D/g, '')) || (b.nome ? b.nome.charCodeAt(0) : 0); 
+                return seededRandom(currentSeed + idNumA) - seededRandom(currentSeed + idNumB); 
+            });
+            
+            let r15 = 5, r10 = 5, r5 = 100; 
+            eligibleForRandom.forEach(p => { 
+                if (r15 > 0) { p.discountPercent = 15; r15--; } 
+                else if (r10 > 0) { p.discountPercent = 10; r10--; } 
+                else if (r5 > 0) { p.discountPercent = 5; r5--; } 
+            });
+            
+            products.forEach(p => { 
+                if (p.discountPercent > 0) {
+                    p.price = p.oldPrice * (1 - p.discountPercent / 100); 
+                }
+                p.preco_formatado = Number(p.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            });
+        }
+
         async function loadData() {
             try {
                 const data = await localforage.getItem(STORAGE_KEY);
                 const cats = await localforage.getItem(CAT_KEY);
                 
-                if(data) allProducts = data.filter(p => p.situacao !== 'I');
+                if(data) {
+                    allProducts = data.filter(p => p.situacao !== 'I');
+                    
+                    allProducts.forEach(p => {
+                        p.id = String(p.codigo || p.id);
+                        // Aplica a margem de 5% do site original
+                        p.price = parseFloat(p.preco || 0) * 1.05; 
+                        p.vencimento = p.validade || p.vencimento || null;
+                    });
+
+                    aplicarDescontos(allProducts);
+                }
+                
                 if(cats) {
                     const catContainer = document.getElementById('cfg-cat-container');
                     catContainer.innerHTML = '';
@@ -633,11 +693,10 @@
                     const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x600/f4f4f5/a1a1aa?text=SEM+FOTO';
                     if (!imageUrlsToPreload.includes(imgUrl)) imageUrlsToPreload.push(imgUrl);
                     
-                    // Voltámos à tag img com crossorigin (evita erros ao desenhar a foto em alta resolução)
                     gridHtml += `
                         <div class="product-card">
                             <img src="${imgUrl}" crossorigin="anonymous">
-                            <div class="price">R$ ${parseFloat(p.preco||0).toFixed(2).replace('.', ',')}</div>
+                            <div class="price">${p.preco_formatado || "R$ 0,00"}</div>
                             <div class="name">${p.nome}</div>
                         </div>`;
                 });
