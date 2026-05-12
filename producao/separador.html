@@ -38,17 +38,14 @@
         .order-date { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 600;}
         .badge { background: #fef08a; color: #854d0e; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; display: inline-block; }
 
-        /* Card do Produto - AJUSTADO */
         .item-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 25px; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.05);}
         .item-card.separado { opacity: 0.5; border-color: var(--success); }
         .item-card.separado .item-img { filter: grayscale(100%); }
         
-        /* Foto mais alta conforme solicitado */
         .item-img { width: 100%; height: 400px; object-fit: contain; background: #fafafa; border-bottom: 1px solid var(--border); }
         .item-info { padding: 15px; }
         .item-title { font-size: 18px; font-weight: 900; margin: 0 0 15px 0; line-height: 1.2; }
         
-        /* Estilo do EAN Grande */
         .ean-display { background: #f1f5f9; color: var(--text); padding: 12px; border-radius: 8px; font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 15px; border: 1px dashed #cbd5e1; letter-spacing: 2px; }
 
         .qty-highlight { background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; font-size: 32px; font-weight: 900; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: -1px; }
@@ -61,6 +58,9 @@
         #config-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; }
         .modal-content input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter'; font-weight: 600;}
+        
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -146,22 +146,40 @@
             buscarPedidos();
         }
 
+        // Função para gerar URL que ignora o cache do GitHub
+        function obterUrlSemCache(caminho) {
+            const timestamp = new Date().getTime();
+            return `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${caminho}?t=${timestamp}`;
+        }
+
         async function buscarPedidos() {
-            document.getElementById('lista-pedidos').innerHTML = '<div style="text-align:center; padding: 20px;"><i data-lucide="loader" class="spin"></i> Buscando...</div>';
+            document.getElementById('lista-pedidos').innerHTML = '<div style="text-align:center; padding: 20px;"><i data-lucide="loader" class="spin"></i> Buscando versão atualizada...</div>';
             lucide.createIcons();
             idsSelecionados.clear();
             atualizarBarraAcoes();
 
             try {
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/pedidoseparar.json`;
-                const res = await fetch(url, { headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" }, cache: "no-store" });
-                if (res.status === 404) { document.getElementById('lista-pedidos').innerHTML = 'Vazio.'; todosOsPedidos = []; return; }
+                const url = obterUrlSemCache('site/pedidoseparar.json');
+                const res = await fetch(url, { 
+                    headers: { 
+                        "Authorization": `Bearer ${cfg.token}`, 
+                        "Accept": "application/vnd.github.v3+json" 
+                    }, 
+                    cache: "no-store" 
+                });
+                
+                if (res.status === 404) { 
+                    document.getElementById('lista-pedidos').innerHTML = 'Arquivo não encontrado no GitHub.'; 
+                    todosOsPedidos = []; 
+                    return; 
+                }
+                
                 const data = await res.json();
                 fileSha = data.sha;
                 todosOsPedidos = JSON.parse(decodeBase64(data.content));
                 renderizarListaPedidos();
             } catch (err) {
-                document.getElementById('lista-pedidos').innerHTML = `<p style="color:red;">Erro: ${err.message}</p>`;
+                document.getElementById('lista-pedidos').innerHTML = `<p style="color:red;">Erro na conexão: ${err.message}</p>`;
             }
         }
 
@@ -199,7 +217,7 @@
                 </div>`;
             }).join('');
 
-            document.getElementById('lista-pedidos').innerHTML = html || 'Nenhum pedido.';
+            document.getElementById('lista-pedidos').innerHTML = html || 'Nenhum pedido encontrado.';
             lucide.createIcons();
         }
 
@@ -239,14 +257,14 @@
             document.getElementById('view-separacao').style.display = 'block';
             document.getElementById('titulo-pedido-ativo').innerText = `Separando #${todosOsPedidos[pedidoAtivo].id}`;
             renderizarItensDoPedido();
-            window.scrollTo(0, 0); // Só rola pro topo ao abrir o pedido
+            window.scrollTo(0, 0);
         }
 
         function voltarParaPedidos() {
             pedidoAtivo = null;
             document.getElementById('view-separacao').style.display = 'none';
             document.getElementById('view-pedidos').style.display = 'block';
-            renderizarListaPedidos();
+            buscarPedidos(); // Recarrega ao voltar para garantir que novos pedidos apareçam
         }
 
         function formatarImagem(url) {
@@ -289,33 +307,88 @@
             }).join('');
             document.getElementById('lista-itens').innerHTML = html;
             lucide.createIcons();
-            // REMOVIDO window.scrollTo(0, 0) para evitar o pulo ao topo ao clicar em separado
         }
 
         async function confirmarSeparacao(itemIndex) {
             const item = todosOsPedidos[pedidoAtivo].itens[itemIndex];
             item.status = 'separado';
             const todosSeparados = todosOsPedidos[pedidoAtivo].itens.every(i => i.status === 'separado');
+            
             if(todosSeparados) {
                 todosOsPedidos[pedidoAtivo].status = 'concluido';
-                salvarNoGitHub(true, "Pedido concluído");
+                await salvarNoGitHub(true, `Pedido #${todosOsPedidos[pedidoAtivo].id} concluído`);
             } else {
-                renderizarItensDoPedido(); // Atualiza a tela sem rolar
-                salvarNoGitHub(false, "Item separado");
+                renderizarItensDoPedido(); 
+                await salvarNoGitHub(false, `Item ${item.nome} separado no pedido #${todosOsPedidos[pedidoAtivo].id}`);
             }
         }
 
         async function salvarNoGitHub(pedidoCompleto = false, mensagem = "Atualização") {
             try {
-                const body = { message: mensagem, content: encodeBase64(JSON.stringify(todosOsPedidos, null, 2)), sha: fileSha };
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/pedidoseparar.json`;
-                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json", "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if (res.ok) {
-                    const data = await res.json();
-                    fileSha = data.content.sha; 
-                    if(pedidoCompleto) { alert("🎉 Pedido concluído!"); voltarParaPedidos(); }
+                // Sincronização Inteligente: Primeiro busca o estado atual do arquivo para pegar o SHA mais novo
+                const urlGet = obterUrlSemCache('site/pedidoseparar.json');
+                const resGet = await fetch(urlGet, { 
+                    headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" },
+                    cache: "no-store"
+                });
+
+                let pedidosNoServidor = [];
+                let shaAtualizado = fileSha;
+
+                if (resGet.ok) {
+                    const dataGet = await resGet.json();
+                    shaAtualizado = dataGet.sha; // Pega o SHA que realmente está no servidor agora
+                    pedidosNoServidor = JSON.parse(decodeBase64(dataGet.content));
                 }
-            } catch (e) { console.error(e); }
+
+                // Se houver um pedido sendo editado, vamos garantir que a nossa alteração 
+                // seja aplicada sobre os dados mais novos (caso tenha entrado pedido novo nesse meio tempo)
+                if (pedidoAtivo !== null) {
+                    const meuPedidoAtualizado = todosOsPedidos[pedidoAtivo];
+                    const indexNoServidor = pedidosNoServidor.findIndex(p => p.id === meuPedidoAtualizado.id);
+                    
+                    if (indexNoServidor !== -1) {
+                        pedidosNoServidor[indexNoServidor] = meuPedidoAtualizado;
+                    } else {
+                        // Se o pedido não existir mais no servidor, adicionamos ele
+                        pedidosNoServidor.push(meuPedidoAtualizado);
+                    }
+                    todosOsPedidos = pedidosNoServidor;
+                }
+
+                // Agora salvamos os dados mesclados
+                const body = { 
+                    message: mensagem, 
+                    content: encodeBase64(JSON.stringify(todosOsPedidos, null, 2)), 
+                    sha: shaAtualizado 
+                };
+
+                const urlPut = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/pedidoseparar.json`;
+                const resPut = await fetch(urlPut, { 
+                    method: 'PUT', 
+                    headers: { 
+                        "Authorization": `Bearer ${cfg.token}`, 
+                        "Accept": "application/vnd.github.v3+json", 
+                        "Content-Type": "application/json" 
+                    }, 
+                    body: JSON.stringify(body) 
+                });
+
+                if (resPut.ok) {
+                    const dataPut = await resPut.json();
+                    fileSha = dataPut.content.sha; // Atualiza o SHA local para a próxima operação
+                    if(pedidoCompleto) { 
+                        alert("🎉 Pedido concluído!"); 
+                        voltarParaPedidos(); 
+                    }
+                } else {
+                    const erro = await resPut.json();
+                    alert("Erro ao salvar no GitHub: " + erro.message);
+                }
+            } catch (e) { 
+                console.error(e); 
+                alert("Erro crítico de rede ao tentar sincronizar.");
+            }
         }
     </script>
 </body>
