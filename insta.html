@@ -128,10 +128,7 @@
 
     // --- CARREGAMENTO INICIAL DE CONFIGS ---
     function initConfigs() {
-        // CORREÇÃO AQUI: Limpa o token corrompido caso ele esteja no Cache do seu navegador
-        let tokenSalvo = localStorage.getItem('da_gh_token') || '';
-        GITHUB.token = tokenSalvo.replace(/[^\x20-\x7E]/g, '').trim();
-        
+        GITHUB.token = localStorage.getItem('da_gh_token') || '';
         GITHUB.owner = localStorage.getItem('da_gh_user') || '';
         GITHUB.repo = localStorage.getItem('da_gh_repo') || '';
 
@@ -145,10 +142,7 @@
     }
 
     function saveGitHubConfig() {
-        // CORREÇÃO AQUI: Limpa o token de caracteres invisíveis antes de salvar
-        let tokenDigitado = document.getElementById('ghToken').value;
-        const t = tokenDigitado.replace(/[^\x20-\x7E]/g, '').trim();
-        
+        const t = document.getElementById('ghToken').value.trim();
         const u = document.getElementById('ghUser').value.trim();
         const r = document.getElementById('ghRepo').value.trim();
 
@@ -157,15 +151,11 @@
         localStorage.setItem('da_gh_repo', r);
 
         GITHUB.token = t; GITHUB.owner = u; GITHUB.repo = r;
-        
-        // Devolve o token limpo para a tela
-        document.getElementById('ghToken').value = t;
-
         showToast("Configurações Salvas Localmente!");
         syncFromGitHub();
     }
 
-    // --- COMUNICAÇÃO GITHUB (Restaurada para o seu código original) ---
+    // --- COMUNICAÇÃO GITHUB ---
     const utf8_to_b64 = str => window.btoa(unescape(encodeURIComponent(str)));
     const b64_to_utf8 = str => decodeURIComponent(escape(window.atob(str)));
 
