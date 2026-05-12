@@ -142,16 +142,32 @@
     }
 
     function saveGitHubConfig() {
-        const t = document.getElementById('ghToken').value.trim();
-        const u = document.getElementById('ghUser').value.trim();
-        const r = document.getElementById('ghRepo').value.trim();
+        // 1. Pegamos os valores dos campos
+        let t = document.getElementById('ghToken').value.trim();
+        let u = document.getElementById('ghUser').value.trim();
+        let r = document.getElementById('ghRepo').value.trim();
 
+        // 2. O GRANDE TRUQUE: Expressão Regular para limpar o Token.
+        // Isso remove qualquer caractere invisível, acentos ou símbolos inválidos,
+        // mantendo apenas letras, números e símbolos básicos (ASCII).
+        t = t.replace(/[^\x20-\x7E]/g, '');
+
+        // 3. Salvamos no armazenamento local do navegador
         localStorage.setItem('da_gh_token', t);
         localStorage.setItem('da_gh_user', u);
         localStorage.setItem('da_gh_repo', r);
 
-        GITHUB.token = t; GITHUB.owner = u; GITHUB.repo = r;
+        // 4. Atualizamos o estado do sistema
+        GITHUB.token = t; 
+        GITHUB.owner = u; 
+        GITHUB.repo = r;
+        
+        // 5. Devolvemos o valor limpo para o campo (assim você vê se algo sumiu)
+        document.getElementById('ghToken').value = t;
+
         showToast("Configurações Salvas Localmente!");
+        
+        // 6. Tentamos conectar novamente
         syncFromGitHub();
     }
 
