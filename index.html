@@ -406,15 +406,15 @@
 const ORDEM_CATEGORIAS = ['mercearia basica', 'cafe da manha', 'macarrao e molhos', 'temperos', 'sucos e refris', 'bebidas', 'frios', 'congelados', 'hortifruti', 'padaria', 'carnes', 'limpeza', 'lavanderia', 'beleza', 'higiene', 'sabonete', 'shampoo', 'cabelo'];
         
 const BASKETS = [
-  { "id": "cesta1", "nome": "Economica Bonini", "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x P434", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
-  { "id": "cesta2", "nome": "Mini Bonini", "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta3", "nome": "Mini Koblenz", "imagem": "img/CESTA-MINI-KOBLENZ.webp", "produtos": ["1x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta4", "nome": "Pequena Bonini", "imagem": "img/CESTA-PEQUENA-BONINI.webp", "produtos": ["2x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta5", "nome": "Pequena Koblenz", "imagem": "img/CESTA-PEQUENA-KOBLENZ.webp", "produtos": ["2x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta6", "nome": "Média Koblenz", "imagem": "img/CESTA-MEDIA-KOBLENZ.webp", "produtos": ["3x P500", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta7", "nome": "Média Bonini", "imagem": "img/CESTA-MEDIA-BONINI.webp", "produtos": ["3x P0026", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta8", "nome": "Grande Koblenz", "imagem": "img/CESTA-GRANDE-KOBLENZ.webp", "produtos": ["4x P500", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta9", "nome": "Grande Bonini", "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] }
+  { "id": "cesta1", "nome": "Economica Bonini", "preco": 170.00, "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x P434", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
+  { "id": "cesta2", "nome": "Mini Bonini", "preco": 150.00, "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta3", "nome": "Mini Koblenz", "preco": 150.00, "imagem": "img/CESTA-MINI-KOBLENZ.webp", "produtos": ["1x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta4", "nome": "Pequena Bonini", "preco": 200.00, "imagem": "img/CESTA-PEQUENA-BONINI.webp", "produtos": ["2x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta5", "nome": "Pequena Koblenz", "preco": 200.00, "imagem": "img/CESTA-PEQUENA-KOBLENZ.webp", "produtos": ["2x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta6", "nome": "Média Koblenz", "preco": 300.00, "imagem": "img/CESTA-MEDIA-KOBLENZ.webp", "produtos": ["3x P500", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta7", "nome": "Média Bonini", "preco": 300.00, "imagem": "img/CESTA-MEDIA-BONINI.webp", "produtos": ["3x P0026", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta8", "nome": "Grande Koblenz", "preco": 450.00, "imagem": "img/CESTA-GRANDE-KOBLENZ.webp", "produtos": ["4x P500", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+  { "id": "cesta9", "nome": "Grande Bonini", "preco": 450.00, "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] }
 ];
 
         const MIN_ORDER = 85; 
@@ -432,8 +432,10 @@ const BASKETS = [
             return words.map((w, index) => (w.length >= 4 || index === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' '); 
         }
 
-        function getBasketDynamicPrice(basket) {
+       function getBasketDynamicPrice(basket) {
             let valorPadraoCesta = 0;
+            
+            // 1. Calcula quanto custam todos os produtos REAIS da cesta original
             if(STATE.prods.length > 0) {
                 basket.produtos.forEach(str => {
                     let p = str.split("x ");
@@ -445,20 +447,21 @@ const BASKETS = [
                     }
                 });
             }
-            let nomeCesta = basket.nome.toLowerCase();
-            let multiplicador = 1.15; 
-            if (nomeCesta.includes("economica") || nomeCesta.includes("econômica")) multiplicador = 1.10; 
-            else if (nomeCesta.includes("mini")) multiplicador = 1.08; 
-            else if (nomeCesta.includes("pequena")) multiplicador = 1.10; 
-            else if (nomeCesta.includes("media") || nomeCesta.includes("média")) multiplicador = 1.22; 
-            else if (nomeCesta.includes("grande")) multiplicador = 1.23; 
             
-            let valorComTaxa = valorPadraoCesta * multiplicador;
-            let valorFinalArredondado = Math.ceil(valorComTaxa);
+            // 2. O valor final da cesta agora é o PREÇO FIXO definido no HTML.
+            // (Caso você esqueça de colocar o preço no HTML, ele usa o valor real dos produtos como segurança)
+            let valorFinalDefinido = basket.preco || valorPadraoCesta;
             
-            return { valorPadrao: valorPadraoCesta, valorFinal: valorFinalArredondado, taxaExtra: valorFinalArredondado - valorPadraoCesta };
+            // 3. A taxa oculta é a diferença exata entre o seu Preço Fixo e o Custo dos Produtos Originais.
+            // Essa taxa vai congelar e não mudará mais, não importa se o cliente alterar a cesta depois!
+            let taxaExtra = valorFinalDefinido - valorPadraoCesta;
+            
+            return { 
+                valorPadrao: valorPadraoCesta, 
+                valorFinal: valorFinalDefinido, 
+                taxaExtra: taxaExtra 
+            };
         }
-
        function calculateBasketPrices(basketId) {
             const basket = BASKETS.find(b => b.id === basketId);
             if(!basket) return { original: 0, final: 0, atacado: 0 };
