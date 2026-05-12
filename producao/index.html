@@ -84,7 +84,7 @@
         #editor-sidebar { z-index: 1011; width: 420px; border-left: 1px solid var(--border); }
         #config-sidebar { z-index: 1012; width: 380px; }
         #menu-sidebar { z-index: 1014; width: 300px; }
-        #categorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar, #pedidos-sidebar { z-index: 1015; width: 450px; }
+        #categorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar, #pedidos-sidebar, #exportacoes-sidebar { z-index: 1015; width: 450px; }
         
         .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 14px; font-weight: 900; }
@@ -262,6 +262,7 @@
                 <button class="nav-btn primary menu-sidebar-btn" onclick="createNewProduct(); closeSidebar('menu-sidebar');"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="cloud" size="14"></i> DEFINIÇÕES E GITHUB</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('pedidos-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO</button>
+                <button class="nav-btn menu-sidebar-btn" onclick="abrirGerenciadorExportacoes()"><i data-lucide="folder-open" size="14"></i> ARQUIVOS EXPORTADOS (NUVEM)</button>
             </div>
             <div class="form-section" style="margin-top: 15px;">
                 <div class="section-title">Gestão de Seletores</div>
@@ -280,6 +281,19 @@
         <div class="sidebar-body" id="lista-categorias-container" style="gap:10px;"></div>
         <div class="sidebar-footer">
             <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovaCategoria()"><i data-lucide="plus" size="14"></i> NOVA CATEGORIA PRINCIPAL</button>
+        </div>
+    </div>
+
+    <div class="sidebar" id="exportacoes-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Arquivos no GitHub</div>
+            <button class="btn-icon" onclick="closeSidebar('exportacoes-sidebar')"><i data-lucide="x" size="16"></i></button>
+        </div>
+        <div class="sidebar-body" id="lista-exportacoes-github">
+            <p style="text-align:center; font-size:12px; color:var(--text-secondary);">Clique em atualizar para ver os arquivos.</p>
+        </div>
+        <div class="sidebar-footer">
+            <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="listarArquivosExportados()"><i data-lucide="refresh-cw" size="14"></i> ATUALIZAR LISTA</button>
         </div>
     </div>
     
@@ -1525,138 +1539,131 @@
         }
 
       // ==========================================================
-// BAIXAR PEDIDO POR TEXTO E EXPORTAR PARA BLING + SEPARAÇÃO
-// ==========================================================
-async function processarBaixaPedidoTexto() {
-    const texto = document.getElementById('order-text-input').value;
-    if(!texto) return alert("Por favor, cole o texto do pedido primeiro.");
+      // BAIXAR PEDIDO POR TEXTO E EXPORTAR PARA BLING E SEPARAÇÃO
+      // ==========================================================
+      async function processarBaixaPedidoTexto() {
+          const texto = document.getElementById('order-text-input').value;
+          if(!texto) return alert("Por favor, cole o texto do pedido primeiro.");
 
-    const matchPedido = texto.match(/PEDIDO\s*#?(\d+)/i);
-    const numeroPedido = matchPedido ? matchPedido[1] : Date.now().toString().slice(-6);
-    const nomeComprador = "PEDIDO " + numeroPedido;
-    
-    const hoje = new Date();
-    const dataAtual = String(hoje.getDate()).padStart(2, '0') + '/' + String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
+          const matchPedido = texto.match(/PEDIDO\s*#?(\d+)/i);
+          const numeroPedido = matchPedido ? matchPedido[1] : Date.now().toString().slice(-6);
+          const nomeComprador = "PEDIDO " + numeroPedido;
+          
+          const hoje = new Date();
+          const dataAtual = String(hoje.getDate()).padStart(2, '0') + '/' + String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
 
-    const linhas = texto.split('\n'); 
-    let encontrados = 0; 
-    let falhas = [];
-    
-    let itensPedidoBling = [];
-    let totalPedidoCalc = 0;
-    
-    // NOVIDADE: Array para guardar os itens para o separador.html
-    let itensParaSeparacao = [];
+          const linhas = texto.split('\n'); 
+          let encontrados = 0; 
+          let falhas = [];
+          
+          let itensPedidoBling = [];
+          let totalPedidoCalc = 0;
+          
+          let itensParaSeparacao = [];
 
-    linhas.forEach(linha => {
-        const linhaLimpa = linha.trim();
-        const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
+          linhas.forEach(linha => {
+              const linhaLimpa = linha.trim();
+              const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
 
-       if(match) {
-            const qtd = parseInt(match[1]);
-            
-            // 1. Passamos o nome colado pelo nosso filtro de limpeza
-            const nomeProcuradoNormalizado = limparTexto(match[2]);
+             if(match) {
+                  const qtd = parseInt(match[1]);
+                  
+                  const nomeProcuradoNormalizado = limparTexto(match[2]);
 
-            // 2. Comparamos com o nome do banco de dados também filtrado
-            const p = products.find(prod => {
-                const nomeBancoNormalizado = limparTexto(prod.nome);
-                return nomeBancoNormalizado === nomeProcuradoNormalizado;
-            });
+                  const p = products.find(prod => {
+                      const nomeBancoNormalizado = limparTexto(prod.nome);
+                      return nomeBancoNormalizado === nomeProcuradoNormalizado;
+                  });
 
-            if(p) {
-                p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
-                p.last_update = Date.now(); 
-                encontrados++; 
-                
-                const valorUn = parseFloat(p.preco) || 0;
-                const valorTotalItem = valorUn * qtd;
-                totalPedidoCalc += valorTotalItem; 
+                  if(p) {
+                      p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
+                      p.last_update = Date.now(); 
+                      encontrados++; 
+                      
+                      const valorUn = parseFloat(p.preco) || 0;
+                      const valorTotalItem = valorUn * qtd;
+                      totalPedidoCalc += valorTotalItem; 
 
-                itensPedidoBling.push({
-                    "Número pedido": numeroPedido,
-                    "Nome Comprador": nomeComprador,
-                    "Data": dataAtual,
-                    "Produto": p.nome,
-                    "SKU": p.codigo,
-                    "Un": "UN",
-                    "Quantidade": qtd,
-                    "Valor Unitário": valorUn.toFixed(2).replace('.', ','),
-                    "Valor Total": valorTotalItem.toFixed(2).replace('.', ','),
-                    "Total Pedido": "", 
-                    "Valor Frete Pedido": "0,00",
-                    "Valor Desconto Pedido": "0,00",
-                    "Outras despesas": "0,00",
-                    "Tipo Frete": "R",
-                    "Observações": "Pedido importado via Sucedoan PIM",
-                    "Qtd Parcela": "1",
-                    "Data Prevista": dataAtual
-                });
+                      itensPedidoBling.push({
+                          "Número pedido": numeroPedido,
+                          "Nome Comprador": nomeComprador,
+                          "Data": dataAtual,
+                          "Produto": p.nome,
+                          "SKU": p.codigo,
+                          "Un": "UN",
+                          "Quantidade": qtd,
+                          "Valor Unitário": valorUn.toFixed(2).replace('.', ','),
+                          "Valor Total": valorTotalItem.toFixed(2).replace('.', ','),
+                          "Total Pedido": "", 
+                          "Valor Frete Pedido": "0,00",
+                          "Valor Desconto Pedido": "0,00",
+                          "Outras despesas": "0,00",
+                          "Tipo Frete": "R",
+                          "Observações": "Pedido importado via Sucedoan PIM",
+                          "Qtd Parcela": "1",
+                          "Data Prevista": dataAtual
+                      });
 
-                // NOVIDADE: Adicionar produto à lista de separação
-                itensParaSeparacao.push({
-                    id_produto: p.codigo,
-                    nome: p.nome,
-                    quantidade: qtd,
-                    url_imagem: p.url_imagem || "",
-                    gtin: p.gtin || "", // Vamos usar isto para a validação
-                    gondola: p.gondola || "Z-Sem Gôndola", // 'Z' para ir para o fim da lista se não tiver gôndola
-                    prateleira: p.prateleira || "-",
-                    status: "pendente" // pendente ou separado
-                });
+                      itensParaSeparacao.push({
+                          id_produto: p.codigo,
+                          nome: p.nome,
+                          quantidade: qtd,
+                          url_imagem: p.url_imagem || "",
+                          gtin: p.gtin || "", 
+                          gondola: p.gondola || "Z-Sem Gôndola",
+                          prateleira: p.prateleira || "-",
+                          status: "pendente" 
+                      });
 
-            } else {
-                falhas.push(match[2].trim()); 
-            }
-        }
-    });
+                  } else {
+                      falhas.push(match[2].trim()); 
+                  }
+              }
+          });
 
-    if(encontrados > 0) {
-        await saveDataLocally(); 
-        renderGrid(ultimoTermoPesquisa);
-        salvarProdutosJSON(); // Sincroniza PIM com GitHub
+          if(encontrados > 0) {
+              await saveDataLocally(); 
+              renderGrid(ultimoTermoPesquisa);
+              salvarProdutosJSON(); 
 
-        const totalPedidoFormatado = totalPedidoCalc.toFixed(2).replace('.', ',');
-        itensPedidoBling.forEach(item => item["Total Pedido"] = totalPedidoFormatado);
+              const totalPedidoFormatado = totalPedidoCalc.toFixed(2).replace('.', ',');
+              itensPedidoBling.forEach(item => item["Total Pedido"] = totalPedidoFormatado);
 
-        downloadCSVBling(itensPedidoBling, `Bling_Pedido_Venda_${numeroPedido}.csv`);
+              await downloadCSVBling(itensPedidoBling, `Bling_Pedido_Venda_${numeroPedido}.csv`);
 
-        // NOVIDADE: Enviar o pedido para o pedidoseparar.json no GitHub
-        enqueueTask(`Lista de Separação #${numeroPedido}`, async () => {
-            const novoPedido = {
-                id: numeroPedido,
-                data: new Date().toISOString(),
-                status: "pendente",
-                itens: itensParaSeparacao
-            };
+              enqueueTask(`Lista de Separação #${numeroPedido}`, async () => {
+                  const novoPedido = {
+                      id: numeroPedido,
+                      data: new Date().toISOString(),
+                      status: "pendente",
+                      itens: itensParaSeparacao
+                  };
 
-            let pedidosSeparacao = [];
-            try {
-                // Tenta ler o ficheiro existente
-                const fileData = await GitHubAPI.getFileData('site/pedidoseparar.json');
-                if (fileData && fileData.content) {
-                    const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
-                    pedidosSeparacao = JSON.parse(decodedStr);
-                }
-            } catch (e) {
-                console.log("Arquivo pedidoseparar.json ainda não existe. Será criado um novo.");
-            }
+                  let pedidosSeparacao = [];
+                  try {
+                      const fileData = await GitHubAPI.getFileData('site/pedidoseparar.json');
+                      if (fileData && fileData.content) {
+                          const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
+                          pedidosSeparacao = JSON.parse(decodedStr);
+                      }
+                  } catch (e) {
+                      console.log("Arquivo pedidoseparar.json ainda não existe. Será criado um novo.");
+                  }
 
-            // Adiciona o novo pedido à lista e salva
-            pedidosSeparacao.push(novoPedido);
-            await GitHubAPI.saveFile('site/pedidoseparar.json', pedidosSeparacao, `Adicionado Pedido #${numeroPedido} para separação`);
-        });
+                  pedidosSeparacao.push(novoPedido);
+                  await GitHubAPI.saveFile('site/pedidoseparar.json', pedidosSeparacao, `Adicionado Pedido #${numeroPedido} para separação`);
+              });
 
-        let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nPlanilha do Bling descarregada!\nPedido enviado para a equipa de separação.`;
-        if(falhas.length > 0) msg += `\n\n⚠️ Itens não encontrados (Não exportados):\n- ` + falhas.join('\n- ');
-        alert(msg);
+              let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nPlanilha do Bling guardada no GitHub!\nPedido enviado para a equipa de separação.`;
+              if(falhas.length > 0) msg += `\n\n⚠️ Itens não encontrados (Não exportados):\n- ` + falhas.join('\n- ');
+              alert(msg);
 
-        closeSidebar('pedidos-sidebar'); 
-        document.getElementById('order-text-input').value = "";
-    } else {
-        alert("❌ Nenhum produto encontrado.");
-    }
-}
+              closeSidebar('pedidos-sidebar'); 
+              document.getElementById('order-text-input').value = "";
+          } else {
+              alert("❌ Nenhum produto encontrado.");
+          }
+      }
 
         // ==========================================================
         // LIMPEZA INTELIGENTE DE IMAGENS DO GITHUB
@@ -1768,7 +1775,7 @@ async function processarBaixaPedidoTexto() {
             return url;
         }
 
-        function gerarCSVMetaCompleto() {
+        async function gerarCSVMetaCompleto() {
             if(products.length === 0) return alert("Banco vazio.");
             const ativos = products.filter(p => p.situacao !== 'I');
             const metaCatalog = ativos.map(p => ({
@@ -1782,7 +1789,7 @@ async function processarBaixaPedidoTexto() {
                 "image_link": formatarURLImagem(p.url_imagem),
                 "brand": p.marca || "Marca"
             }));
-            downloadCSVBling(metaCatalog, "Catalogo_Meta_Completo.csv");
+            await downloadCSVBling(metaCatalog, "Catalogo_Meta_Completo.csv");
             fecharModalExportacaoMeta();
         }
 
@@ -1790,7 +1797,7 @@ async function processarBaixaPedidoTexto() {
             gerarCSVMetaCompleto(); 
         }
 
-        window.exportarCatalogoGeral = function() {
+        window.exportarCatalogoGeral = async function() {
             const ativos = products.filter(p => p.situacao !== 'I');
             ativos.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
             
@@ -1812,7 +1819,7 @@ async function processarBaixaPedidoTexto() {
                     "LINK DA IMAGEM": formatarURLImagem(p.url_imagem)
                 };
             });
-            downloadCSVBling(catalogo, "Catalogo_Geral.csv");
+            await downloadCSVBling(catalogo, "Catalogo_Geral.csv");
         };
 
         // ==========================================================
@@ -1832,7 +1839,7 @@ async function processarBaixaPedidoTexto() {
             }
 
            return {
-                "ID": "", // CÓDIGO CORRIGIDO: Coluna enviada em branco força o Bling a atualizar o produto baseando-se no Código (SKU)
+                "ID": "", 
                 "Código": p.codigo || "",
                 "Descrição": p.nome || "",
                 "Unidade": "UN",
@@ -1894,27 +1901,38 @@ async function processarBaixaPedidoTexto() {
             };
         }
 
-        function downloadCSVBling(dados, filename) {
+        async function downloadCSVBling(dados, filename) {
+            mostrarAlerta("A guardar no GitHub...", "aviso");
+            
             const csv = Papa.unparse(dados, { delimiter: ";" });
-            const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", filename);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            mostrarAlerta("Planilha gerada com sucesso!");
+            const csvComBom = "\ufeff" + csv;
+
+            try {
+                await GitHubAPI.saveFile(`site/exportacoes/${filename}`, csvComBom, `Exportação: ${filename}`);
+                mostrarAlerta(`✅ Arquivo ${filename} salvo no GitHub!`, "sucesso");
+            } catch (erro) {
+                console.error("Erro ao salvar no GitHub:", erro);
+                mostrarAlerta("❌ Erro ao salvar exportação na nuvem.", "erro");
+                
+                const blob = new Blob([csvComBom], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "BACKUP_" + filename;
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
         }
 
-        window.exportarProdutoBling = function(sku) {
+        window.exportarProdutoBling = async function(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return alert("Produto não encontrado.");
-            downloadCSVBling([mapearProdutoParaBling(p)], `Bling_Produto_${sku}.csv`);
+            await downloadCSVBling([mapearProdutoParaBling(p)], `Bling_Produto_${sku}.csv`);
         };
 
-      window.exportarTudoBling = async function() {
+        window.exportarTudoBling = async function() {
             if(!confirm("Exportar todo o banco de dados (Bling CSV)? O sistema dividirá automaticamente em arquivos de até 900 produtos se necessário.")) return;
             if(products.length === 0) return alert("Banco vazio.");
             
@@ -1922,7 +1940,7 @@ async function processarBaixaPedidoTexto() {
             const chunkSize = 900; 
 
             if (mappedList.length <= chunkSize) {
-                downloadCSVBling(mappedList, "Bling_Banco_Completo.csv");
+                await downloadCSVBling(mappedList, "Bling_Banco_Completo.csv");
             } 
             else {
                 const totalParts = Math.ceil(mappedList.length / chunkSize);
@@ -1932,22 +1950,65 @@ async function processarBaixaPedidoTexto() {
                     const chunk = mappedList.slice(i * chunkSize, (i + 1) * chunkSize);
                     const filename = `Bling_Banco_Completo_Parte_${i + 1}.csv`;
                     
-                    await new Promise(resolve => setTimeout(() => {
-                        downloadCSVBling(chunk, filename);
-                        resolve();
-                    }, i === 0 ? 0 : 800)); 
+                    await downloadCSVBling(chunk, filename);
                 }
+                setTimeout(() => mostrarAlerta("✅ Todas as partes foram enviadas!", "sucesso"), 3000);
             }
         };
 
-        window.exportarCategoriaBling = function() {
+        window.exportarCategoriaBling = async function() {
             const cat = document.getElementById('flt-cat').value;
             if(!cat) return alert("Selecione uma categoria principal no filtro primeiro.");
             const list = products.filter(p => p.categoria === cat);
             if(list.length === 0) return alert("Nenhum produto encontrado nesta categoria.");
             const mappedList = list.map(p => mapearProdutoParaBling(p));
-            downloadCSVBling(mappedList, `Bling_Categoria_${cat}.csv`);
+            await downloadCSVBling(mappedList, `Bling_Categoria_${cat}.csv`);
         };
+
+        // ==========================================================
+        // GERENCIADOR DE EXPORTAÇÕES (GITHUB)
+        // ==========================================================
+        async function abrirGerenciadorExportacoes() {
+            closeSidebar('menu-sidebar');
+            openSidebar('exportacoes-sidebar');
+            listarArquivosExportados();
+        }
+
+        async function listarArquivosExportados() {
+            const container = document.getElementById('lista-exportacoes-github');
+            container.innerHTML = '<div style="text-align:center; padding:20px;"><i data-lucide="loader" class="spin-icon"></i><br>Buscando arquivos...</div>';
+            lucide.createIcons();
+            
+            try {
+                const files = await GitHubAPI.getFileData('site/exportacoes');
+                
+                if (!files || !Array.isArray(files)) {
+                    container.innerHTML = '<p style="text-align:center; font-size:11px; color:var(--text-secondary); padding:20px;">Nenhum arquivo encontrado em site/exportacoes/</p>';
+                    return;
+                }
+
+                files.reverse();
+
+                container.innerHTML = files.map(file => {
+                    if(file.type === 'dir') return ''; 
+                    return `
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; margin-bottom:8px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow);">
+                        <div style="overflow: hidden; flex-grow: 1; margin-right: 10px;">
+                            <strong style="font-size:11px; display: block; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; color: var(--accent);">${file.name}</strong>
+                            <span style="font-size:9px; color:var(--text-secondary);">Tamanho: ${(file.size / 1024).toFixed(1)} KB</span>
+                        </div>
+                        <button class="btn-icon" onclick="window.open('${file.download_url}', '_blank')" title="Descarregar para o PC">
+                            <i data-lucide="download" size="14"></i>
+                        </button>
+                    </div>
+                    `;
+                }).join('');
+                
+                lucide.createIcons();
+            } catch (e) {
+                container.innerHTML = '<p style="color:var(--danger); font-size:11px; text-align:center; padding:20px;">Erro ao carregar lista.<br>Certifique-se que a pasta "site/exportacoes" existe no GitHub.</p>';
+            }
+        }
 
         // ==========================================================
         // LEITURA DO CSV DO BLING - ATUALIZAR/ADICIONAR (UPSERT)
