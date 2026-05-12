@@ -899,8 +899,8 @@ const BASKETS = [
                 });
                 
                 let html = '';
-                // AJUSTE 1: Passando 'true' para o card ficar grande idêntico ao primeiro carrossel
-                results.slice(0, 25).forEach(p => html += renderMiniCardHTML(p, true));
+                // Passando 'true' para o card ficar grande idêntico ao primeiro carrossel
+                results.slice(0, 15).forEach(p => html += renderMiniCardHTML(p, true));
                 
                 if(results.length === 0) {
                     html = '<div style="padding:10px; font-size:14px; color:var(--text-light); font-weight: 600; width: 100%; text-align: center;">Nenhum produto encontrado.</div>';
@@ -910,10 +910,13 @@ const BASKETS = [
                 resultContainer.innerHTML = html;
                 resultContainer.style.display = 'flex';
                 
-                // AJUSTE 2: Adiciona a barra de rolagem visível para ficar igual ao das ofertas
+                // AJUSTE NOVO AQUI: Força o carrossel a voltar para o começo (esquerda)
+                resultContainer.scrollLeft = 0;
+                
+                // Adiciona a barra de rolagem visível para ficar igual ao das ofertas
                 resultContainer.classList.add('carousel-container-visible-scroll');
                 
-                // AJUSTE 3: Dispara o carregamento das fotos (Lazy Load) para os itens recém-pesquisados
+                // Dispara o carregamento das fotos (Lazy Load) para os itens recém-pesquisados
                 lazyLoadImages();
                 
             } else {
@@ -923,7 +926,7 @@ const BASKETS = [
                 resultContainer.classList.remove('carousel-container-visible-scroll');
             }
         };
-
+        
         window.clearPostBasketSearch = function() {
             $('post-basket-search').value = '';
             $('pb-clear-btn').style.display = 'none';
