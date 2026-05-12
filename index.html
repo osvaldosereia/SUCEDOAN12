@@ -94,13 +94,14 @@
         .qty-btn:active { background: #f1f5f9; }
         .qty-display { font-weight: 900; font-size: 15px; flex: 1; text-align: center; color: var(--text-dark); }
 
-        /* =========================================
+       /* =========================================
            CARROSSEL E MINI CARDS (NOVO FLUXO VIP)
         ========================================= */
-        .carousel-container { display: flex; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; gap: 12px; padding-bottom: 5px; flex-shrink: 0; scroll-snap-type: x mandatory; }
+        .vip-container { padding: 20px 15px; width: 100%; max-width: 100vw; overflow-x: hidden; }
+        .carousel-container { display: flex; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; gap: 12px; padding: 5px 2px 15px 2px; width: 100%; }
         .carousel-container::-webkit-scrollbar { display: none; }
-        .carousel-card { flex: 0 0 140px; scroll-snap-align: start; display: flex; flex-direction: column; border: 1px solid var(--border-light); border-radius: 12px; padding: 12px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
-
+        .carousel-card { flex: 0 0 140px; display: flex; flex-direction: column; border: 1px solid var(--border-light); border-radius: 12px; padding: 12px; background: #fff; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+        
         /* =========================================
            NOVAS CLASSES DIDÁTICAS PARA AS CESTAS
         ========================================= */
@@ -1160,7 +1161,7 @@ const BASKETS = [
             }
         };
 
-        // NOVO FLUXO VIP DE COMPRA DIRETAMENTE NA MESMA TELA
+       // NOVO FLUXO VIP DE COMPRA DIRETAMENTE NA MESMA TELA
         function renderPostBasketView() {
             let ofertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0)
                                      .sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 10);
@@ -1169,38 +1170,37 @@ const BASKETS = [
             ofertas.forEach(p => ofertasHtml += renderMiniCardHTML(p));
 
             $('vip-list-container').innerHTML = `
-                <div style="display: flex; flex-direction: column; flex: 1; padding: 10px 0;">
-                    <h2 style="font-size: 22px; font-weight: 900; text-align: center; margin-bottom: 20px; color: var(--text-dark);">O que você quer fazer agora?</h2>
+                <div class="vip-container">
+                    <h2 style="font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 25px; color: var(--text-dark); line-height: 1.2;">O que deseja fazer agora?</h2>
                     
-                    <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 10px; color: var(--text-dark);">Adicione produtos em oferta</h3>
+                    <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 12px; color: var(--text-dark);">Adicione produtos em ofertas:</h3>
                     <div class="carousel-container">
                         ${ofertasHtml}
                     </div>
 
-                    <h3 style="font-size: 16px; font-weight: 800; margin-top: 15px; margin-bottom: 10px; color: var(--text-dark);">Encontre produtos</h3>
-                    <div style="position: relative; margin-bottom: 10px; flex-shrink: 0;">
-                        <input type="text" id="post-basket-search" class="topbar-search" style="width: 100%; border: 1px solid var(--border-light); background: #fff;" placeholder="Ex: Arroz, Feijão, Sabão..." oninput="handlePostBasketSearch()">
-                        <div class="clear-search-btn" id="pb-clear-btn" onclick="clearPostBasketSearch()" style="top: 50%; transform: translateY(-50%);"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div>
+                    <div style="margin-top: 30px; margin-bottom: 15px;">
+                        <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 12px; color: var(--text-dark);">Encontre produtos</h3>
+                        <div style="position: relative; width: 100%;">
+                            <input type="text" id="post-basket-search" class="topbar-search" style="width: 100%; border: 1px solid var(--border-light); background: #fff;" placeholder="Ex: Arroz, Feijão..." oninput="handlePostBasketSearch()">
+                            <div class="clear-search-btn" id="pb-clear-btn" onclick="clearPostBasketSearch()" style="top: 50%; transform: translateY(-50%);"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div>
+                        </div>
                     </div>
                     
-                    <div id="post-basket-search-results" class="carousel-container" style="display: none;"></div>
+                    <div id="post-basket-search-results" class="carousel-container" style="display: none; margin-bottom: 20px;"></div>
 
-                    <div style="margin-top: 25px; flex-shrink: 0;">
-                        <button class="btn-send" onclick="sendOrder(this)">Enviar meu pedido no whatsapp</button>
+                    <div style="margin-top: 35px; padding-bottom: 30px;">
+                        <button class="btn-send" onclick="sendOrder(this)">Enviar pedido no whatsapp</button>
                     </div>
                 </div>`;
             
-            $('vip-list-container').style.display = 'flex'; 
-            $('vip-list-container').style.flex = '1';
+            $('vip-list-container').style.display = 'block'; 
             
             let scrollArea = document.querySelector('#basketDetailModal .modal-scroll-area');
             if(scrollArea) {
                 scrollArea.scrollTo({top: 0, behavior: 'smooth'});
-                // Bloqueamos a rolagem geral da tela e usamos flex para manter tudo num único viewport
-                scrollArea.style.paddingBottom = '20px';
-                scrollArea.style.overflow = 'hidden'; 
-                scrollArea.style.display = 'flex';
-                scrollArea.style.flexDirection = 'column';
+                // Devolvemos o comportamento padrão de rolagem para não quebrar a tela
+                scrollArea.style.overflowY = 'auto'; 
+                scrollArea.style.display = 'block';
             }
         }
 
