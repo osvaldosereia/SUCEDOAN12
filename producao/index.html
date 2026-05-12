@@ -1524,20 +1524,17 @@
             await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
         }
 
-       // ==========================================================
-// BAIXAR PEDIDO POR TEXTO E EXPORTAR PARA BLING
+      // ==========================================================
+// BAIXAR PEDIDO POR TEXTO E EXPORTAR PARA BLING + SEPARAÇÃO
 // ==========================================================
 async function processarBaixaPedidoTexto() {
     const texto = document.getElementById('order-text-input').value;
     if(!texto) return alert("Por favor, cole o texto do pedido primeiro.");
 
-    // 1. Extração do Número do Pedido e Criação de Dados do Cliente
-    // Procura por "PEDIDO" seguido opcionalmente de "#" e captura os números
     const matchPedido = texto.match(/PEDIDO\s*#?(\d+)/i);
     const numeroPedido = matchPedido ? matchPedido[1] : Date.now().toString().slice(-6);
     const nomeComprador = "PEDIDO " + numeroPedido;
     
-    // Formata a data de hoje para o padrão Brasileiro (DD/MM/YYYY) exigido pelo Bling
     const hoje = new Date();
     const dataAtual = String(hoje.getDate()).padStart(2, '0') + '/' + String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
 
@@ -1545,11 +1542,12 @@ async function processarBaixaPedidoTexto() {
     let encontrados = 0; 
     let falhas = [];
     
-    // Variáveis para guardar os dados para o Excel do Bling
     let itensPedidoBling = [];
     let totalPedidoCalc = 0;
+    
+    // NOVIDADE: Array para guardar os itens para o separador.html
+    let itensParaSeparacao = [];
 
-    // 2. Processamento Linha a Linha
     linhas.forEach(linha => {
         const linhaLimpa = linha.trim();
         const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
@@ -1558,95 +1556,99 @@ async function processarBaixaPedidoTexto() {
             const qtd = parseInt(match[1]);
             const nomeProcurado = match[2].trim().toLowerCase();
 
-            // Busca o produto no banco de dados local
             const p = products.find(prod => (prod.nome || "").toLowerCase() === nomeProcurado);
 
             if(p) {
-                // Abate o stock
                 p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
                 p.last_update = Date.now(); 
                 encontrados++; 
                 
-                // 3. Cálculos Financeiros para o Bling
                 const valorUn = parseFloat(p.preco) || 0;
                 const valorTotalItem = valorUn * qtd;
-                totalPedidoCalc += valorTotalItem; // Soma ao total geral do pedido
+                totalPedidoCalc += valorTotalItem; 
 
-                // Prepara a linha do produto no formato EXATO do CSV do Bling
                 itensPedidoBling.push({
                     "Número pedido": numeroPedido,
                     "Nome Comprador": nomeComprador,
                     "Data": dataAtual,
-                    "CPF/CNPJ Comprador": "",
-                    "Endereço Comprador": "",
-                    "Bairro Comprador": "",
-                    "Número Comprador": "",
-                    "Complemento Comprador": "",
-                    "CEP Comprador": "",
-                    "Cidade Comprador": "",
-                    "UF Comprador": "",
-                    "Telefone Comprador": "",
-                    "Celular Comprador": "",
-                    "E-mail Comprador": "",
                     "Produto": p.nome,
                     "SKU": p.codigo,
                     "Un": "UN",
                     "Quantidade": qtd,
-                    "Valor Unitário": valorUn.toFixed(2).replace('.', ','), // Formato brasileiro de moeda
+                    "Valor Unitário": valorUn.toFixed(2).replace('.', ','),
                     "Valor Total": valorTotalItem.toFixed(2).replace('.', ','),
-                    "Total Pedido": "", // Vamos preencher isto no final, quando tivermos a soma de tudo!
+                    "Total Pedido": "", 
                     "Valor Frete Pedido": "0,00",
                     "Valor Desconto Pedido": "0,00",
                     "Outras despesas": "0,00",
-                    "Nome Entrega": "",
-                    "Endereço Entrega": "",
-                    "Número Entrega": "",
-                    "Complemento Entrega": "",
-                    "Cidade Entrega": "",
-                    "UF Entrega": "",
-                    "CEP Entrega": "",
-                    "Bairro Entrega": "",
-                    "Transportadora": "",
-                    "Serviço": "",
-                    "Tipo Frete": "R", // R = Por Conta do Remetente (Padrão)
+                    "Tipo Frete": "R",
                     "Observações": "Pedido importado via Sucedoan PIM",
                     "Qtd Parcela": "1",
-                    "Data Prevista": dataAtual,
-                    "Vendedor": "",
-                    "Forma Pagamento": "",
-                    "ID Forma Pagamento": ""
+                    "Data Prevista": dataAtual
                 });
+
+                // NOVIDADE: Adicionar produto à lista de separação
+                itensParaSeparacao.push({
+                    id_produto: p.codigo,
+                    nome: p.nome,
+                    quantidade: qtd,
+                    url_imagem: p.url_imagem || "",
+                    gtin: p.gtin || "", // Vamos usar isto para a validação
+                    gondola: p.gondola || "Z-Sem Gôndola", // 'Z' para ir para o fim da lista se não tiver gôndola
+                    prateleira: p.prateleira || "-",
+                    status: "pendente" // pendente ou separado
+                });
+
             } else {
                 falhas.push(match[2].trim()); 
             }
         }
     });
 
-    // 4. Finalização e Exportação
     if(encontrados > 0) {
         await saveDataLocally(); 
         renderGrid(ultimoTermoPesquisa);
-        salvarProdutosJSON(); // Sincroniza com o GitHub
+        salvarProdutosJSON(); // Sincroniza PIM com GitHub
 
-        // Antes de exportar, preenchemos o valor "Total Pedido" em todas as linhas
         const totalPedidoFormatado = totalPedidoCalc.toFixed(2).replace('.', ',');
-        itensPedidoBling.forEach(item => {
-            item["Total Pedido"] = totalPedidoFormatado;
-        });
+        itensPedidoBling.forEach(item => item["Total Pedido"] = totalPedidoFormatado);
 
-        // 5. Aciona o descarregamento do ficheiro CSV
         downloadCSVBling(itensPedidoBling, `Bling_Pedido_Venda_${numeroPedido}.csv`);
 
-        let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nPlanilha de Venda Bling descarregada!\nSincronização com GitHub iniciada.`;
-        if(falhas.length > 0) {
-            msg += `\n\n⚠️ Itens não encontrados no sistema (Não exportados para o Bling):\n- ` + falhas.join('\n- ');
-        }
+        // NOVIDADE: Enviar o pedido para o pedidoseparar.json no GitHub
+        enqueueTask(`Lista de Separação #${numeroPedido}`, async () => {
+            const novoPedido = {
+                id: numeroPedido,
+                data: new Date().toISOString(),
+                status: "pendente",
+                itens: itensParaSeparacao
+            };
+
+            let pedidosSeparacao = [];
+            try {
+                // Tenta ler o ficheiro existente
+                const fileData = await GitHubAPI.getFileData('site/pedidoseparar.json');
+                if (fileData && fileData.content) {
+                    const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
+                    pedidosSeparacao = JSON.parse(decodedStr);
+                }
+            } catch (e) {
+                console.log("Arquivo pedidoseparar.json ainda não existe. Será criado um novo.");
+            }
+
+            // Adiciona o novo pedido à lista e salva
+            pedidosSeparacao.push(novoPedido);
+            await GitHubAPI.saveFile('site/pedidoseparar.json', pedidosSeparacao, `Adicionado Pedido #${numeroPedido} para separação`);
+        });
+
+        let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nPlanilha do Bling descarregada!\nPedido enviado para a equipa de separação.`;
+        if(falhas.length > 0) msg += `\n\n⚠️ Itens não encontrados (Não exportados):\n- ` + falhas.join('\n- ');
         alert(msg);
 
         closeSidebar('pedidos-sidebar'); 
         document.getElementById('order-text-input').value = "";
     } else {
-        alert("❌ Nenhum produto encontrado. Verifique se os nomes estão idênticos ao sistema.");
+        alert("❌ Nenhum produto encontrado.");
     }
 }
 
