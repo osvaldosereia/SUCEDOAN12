@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Prompts - Dona Antônia</title>
+    <title>Gerenciador de Prompts - Dona Antônia (Super Compact)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        /* Variáveis de cor para manter o padrão visual */
         :root {
             --primary: #000000;
             --success: #10b981;
@@ -21,60 +20,44 @@
         body { background-color: var(--bg); color: #0f172a; padding: 20px; padding-bottom: 60px; }
         .container { max-width: 1200px; margin: 0 auto; }
 
-        /* CABEÇALHO */
         .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
         .header h1 { font-weight: 900; font-size: 26px; border-left: 5px solid var(--accent); padding-left: 15px; }
 
-        /* CONFIGURAÇÕES GITHUB */
         .config-box { background: var(--config-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; }
         .config-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
         .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
         .config-grid input { padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
 
-        /* ÁREA DE CRIAÇÃO DE PROMPTS */
         .prompt-box { background: white; padding: 25px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .prompt-box h2 { font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--primary); }
         
         .form-grid { display: grid; grid-template-columns: 200px 1fr; gap: 20px; }
         @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
 
-        /* Preview da Imagem no Formulário */
         .img-upload-box { border: 2px dashed var(--border); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 4/5; cursor: pointer; overflow: hidden; position: relative; background: #fcfcfc; }
         .img-upload-box:hover { border-color: var(--accent); }
         .img-upload-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none; }
-        .img-upload-text { font-size: 12px; color: #64748b; text-align: center; padding: 10px; font-weight: 600; }
+        .img-upload-text { font-size: 11px; color: #64748b; text-align: center; padding: 10px; font-weight: 600; }
 
         .input-group { display: flex; flex-direction: column; gap: 12px; }
         .input-group input, .input-group textarea { padding: 14px; border: 1px solid var(--border); border-radius: 10px; width: 100%; font-size: 14px; outline-color: var(--accent); background: #fcfcfc; }
         .input-group textarea { height: 150px; resize: vertical; line-height: 1.5; }
 
         .form-footer { display: flex; align-items: center; gap: 15px; margin-top: 20px; justify-content: flex-end; }
-        
-        /* BOTÕES */
         .btn-main { padding: 14px 28px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
         .btn-sec { padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
         .btn-cancel { padding: 14px 20px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; display: none; }
-        .btn-sml { background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; text-transform: uppercase; }
 
-        /* GRADE DE PROMPTS SALVOS */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; margin-top: 20px; }
         .card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 15px; display: flex; flex-direction: column; transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1); }
-        
-        /* Imagem de amostra do card na proporção 4:5 */
         .card-img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 10px; margin-bottom: 15px; background: #f1f5f9; }
-        
-        .card-title { font-weight: 800; font-size: 16px; margin-bottom: 8px; color: var(--primary); }
-        .card-desc { font-size: 12px; color: #64748b; margin-bottom: 15px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
-        
-        .card-actions { display: grid; grid-template-columns: 1fr; gap: 10px; background: #f8fafc; padding: 12px; border-radius: 12px; }
-        .btn-copy { background: var(--success); color: white; padding: 10px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 12px; }
-        
+        .card-title { font-weight: 800; font-size: 16px; margin-bottom: 8px; }
+        .card-desc { font-size: 12px; color: #64748b; margin-bottom: 15px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .card-actions { display: grid; gap: 10px; }
+        .btn-copy { background: var(--success); color: white; padding: 10px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px; }
         .card-footer { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
-        .btn-edit { color: var(--accent); }
-        .btn-del { color: var(--danger); }
+        .btn-sml { background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; }
 
-        /* TOAST (Notificações) */
         #toast { visibility: hidden; background: #0f172a; color: white; border-radius: 50px; padding: 16px 40px; position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; z-index: 5000; }
         #toast.show { visibility: visible; animation: fadeInUp 0.4s forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
@@ -90,281 +73,226 @@
     <div class="config-box">
         <h3>⚙️ Configurações de Nuvem (GitHub)</h3>
         <div class="config-grid">
-            <input type="password" id="ghToken" placeholder="GitHub Personal Token">
-            <input type="text" id="ghUser" placeholder="Usuário GitHub">
-            <input type="text" id="ghRepo" placeholder="Nome do Repositório">
-            <button class="btn-sec" onclick="saveGitHubConfig()">Conectar e Salvar</button>
+            <input type="password" id="ghToken" placeholder="GitHub Token">
+            <input type="text" id="ghUser" placeholder="Usuário">
+            <input type="text" id="ghRepo" placeholder="Repositório">
+            <button class="btn-sec" onclick="saveGitHubConfig()">Conectar</button>
         </div>
     </div>
 
     <div class="prompt-box">
         <h2 id="formTitle">Novo Prompt</h2>
-        
         <div class="form-grid">
             <div>
                 <input type="file" id="pImageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
                 <div class="img-upload-box" onclick="document.getElementById('pImageInput').click()">
-                    <span class="img-upload-text">📸 Clique para adicionar uma imagem de amostra (4:5)</span>
+                    <span class="img-upload-text">📸 Clique para Foto (4:5)<br><small id="sizeInfo">Max 200KB</small></span>
                     <img id="pImgPreview" src="" alt="Preview">
                 </div>
             </div>
-
             <div class="input-group">
-                <input type="text" id="pName" placeholder="Título do Prompt (Ex: Post de Promoção Relâmpago)">
-                <textarea id="pText" placeholder="Escreva o comando detalhado aqui..."></textarea>
+                <input type="text" id="pName" placeholder="Título do Prompt">
+                <textarea id="pText" placeholder="Comando do prompt..."></textarea>
             </div>
         </div>
-
         <div class="form-footer">
-            <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar Edição</button>
-            <button class="btn-main" id="btnSave" onclick="savePrompt()">💾 Salvar Prompt</button>
+            <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar</button>
+            <button class="btn-main" id="btnSave" onclick="savePrompt()">💾 Salvar Prompt Compactado</button>
         </div>
     </div>
 
-    <div class="grid" id="gridUI">
-        </div>
+    <div class="grid" id="gridUI"></div>
 </div>
 
 <div id="toast">Pronto!</div>
 
 <script>
-    // --- ESTADO DO APLICATIVO ---
     const GITHUB = {
         token: localStorage.getItem('da_gh_token') || '',
         owner: localStorage.getItem('da_gh_user') || '',
         repo: localStorage.getItem('da_gh_repo') || '',
-        path: 'prompts.json', // O arquivo onde tudo será salvo
-        sha: '' // Necessário para atualizar o arquivo no GitHub
+        path: 'prompts.json',
+        sha: ''
     };
 
-    const STATE = { 
-        prompts: [], // Lista que guardará nossos prompts
-        editingIdx: -1, // Saber se estamos editando (-1 = não)
-        currentImageBase64: "" // Guarda a imagem atual convertida
-    };
+    const STATE = { prompts: [], editingIdx: -1, currentImageBase64: "" };
 
-    // Preenche os campos de config ao carregar
     document.getElementById('ghToken').value = GITHUB.token;
     document.getElementById('ghUser').value = GITHUB.owner;
     document.getElementById('ghRepo').value = GITHUB.repo;
 
-    // --- FUNÇÕES DE CONFIGURAÇÃO ---
     function saveGitHubConfig() {
-        const token = document.getElementById('ghToken').value.trim();
-        const user = document.getElementById('ghUser').value.trim();
-        const repo = document.getElementById('ghRepo').value.trim();
-
-        localStorage.setItem('da_gh_token', token);
-        localStorage.setItem('da_gh_user', user);
-        localStorage.setItem('da_gh_repo', repo);
-
-        GITHUB.token = token; GITHUB.owner = user; GITHUB.repo = repo;
-        showToast("Conectado! Sincronizando...");
-        syncFromGitHub(); 
+        GITHUB.token = document.getElementById('ghToken').value.trim();
+        GITHUB.owner = document.getElementById('ghUser').value.trim();
+        GITHUB.repo = document.getElementById('ghRepo').value.trim();
+        localStorage.setItem('da_gh_token', GITHUB.token);
+        localStorage.setItem('da_gh_user', GITHUB.owner);
+        localStorage.setItem('da_gh_repo', GITHUB.repo);
+        showToast("Conectado!");
+        syncFromGitHub();
     }
 
-    // --- CONEXÃO COM GITHUB ---
-    // Funções para codificar texto para o GitHub entender
     const utf8_to_b64 = str => window.btoa(unescape(encodeURIComponent(str)));
     const b64_to_utf8 = str => decodeURIComponent(escape(window.atob(str)));
 
-    // Puxa os dados da nuvem
     async function syncFromGitHub() {
         if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) return;
         try {
             const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
             const res = await fetch(url, { headers: { 'Authorization': `token ${GITHUB.token}` } });
-            
             if(res.status === 404) { STATE.prompts = []; render(); return; }
-            if(!res.ok) throw new Error();
-
             const data = await res.json();
             GITHUB.sha = data.sha;
             STATE.prompts = JSON.parse(b64_to_utf8(data.content));
             render();
-            showToast("Prompts carregados!");
-        } catch (e) { showToast("Erro ao conectar com GitHub."); }
+        } catch (e) { console.error(e); }
     }
 
-    // Envia os dados para a nuvem
     async function syncToGitHub() {
-        if(!GITHUB.token) return showToast("Configure o GitHub primeiro!");
-        showToast("Salvando na nuvem...");
+        if(!GITHUB.token) return showToast("Configure o GitHub!");
         try {
             const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
             const body = {
-                message: "Atualização de Prompts",
+                message: "Update Prompts",
                 content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2))
             };
             if(GITHUB.sha) body.sha = GITHUB.sha;
-
             const res = await fetch(url, {
                 method: 'PUT',
                 headers: { 'Authorization': `token ${GITHUB.token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
             const data = await res.json();
-            GITHUB.sha = data.content.sha; // Atualiza a chave de segurança
-            showToast("Salvo com sucesso!");
+            GITHUB.sha = data.content.sha;
+            showToast("Salvo na Nuvem!");
         } catch (e) { showToast("Erro ao salvar."); }
     }
 
-    // --- LÓGICA DE IMAGEM ---
-    // Converte a imagem escolhida para texto (Base64) e comprime um pouco
+    // --- LÓGICA DE SUPER COMPRESSÃO ---
+    // Esta função converte a imagem e reduz a qualidade até ela ficar menor que 200KB
     function handleImageSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
 
+        showToast("Compactando...");
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
-                // Criar um canvas para redimensionar (evita travar o GitHub com imagens de 10MB)
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Força proporção 4:5 (ex: 400x500 px)
-                canvas.width = 400; 
-                canvas.height = 500;
+                // Redimensiona o tamanho máximo para manter leve
+                canvas.width = 800; 
+                canvas.height = 1000;
                 
-                // Desenha a imagem cortando o excesso
                 const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
                 const x = (canvas.width / scale - img.width) / 2;
                 const y = (canvas.height / scale - img.height) / 2;
-                
                 ctx.drawImage(img, x, y, img.width, img.height, 0, 0, img.width * scale, img.height * scale);
 
-                // Salva o resultado
-                STATE.currentImageBase64 = canvas.toDataURL('image/jpeg', 0.7); // Qualidade 70%
-                
-                // Mostra no formulário
+                let quality = 0.9;
+                let base64 = "";
+                const MAX_BYTE_SIZE = 200 * 1024; // Limite de 200KB
+
+                // Loop para reduzir a qualidade até atingir o limite
+                do {
+                    base64 = canvas.toDataURL('image/jpeg', quality);
+                    const sizeInBytes = (base64.length * (3/4));
+                    if (sizeInBytes <= MAX_BYTE_SIZE || quality <= 0.1) break;
+                    quality -= 0.1; 
+                } while (quality > 0.1);
+
+                STATE.currentImageBase64 = base64;
                 const preview = document.getElementById('pImgPreview');
-                preview.src = STATE.currentImageBase64;
+                preview.src = base64;
                 preview.style.display = 'block';
+                
+                const finalSizeKB = Math.round((base64.length * (3/4)) / 1024);
+                document.getElementById('sizeInfo').innerText = `Tamanho: ${finalSizeKB}KB (OK!)`;
+                showToast(`Imagem pronta: ${finalSizeKB}KB`);
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
-    // --- LÓGICA DE PROMPTS ---
     async function savePrompt() {
         const name = document.getElementById('pName').value.trim();
         const text = document.getElementById('pText').value.trim();
-        
-        if(!name || !text) {
-            showToast("Preencha o título e o texto!");
-            return;
-        }
+        if(!name || !text) return showToast("Preencha tudo!");
 
-        const promptData = { 
-            name: name, 
-            text: text, 
-            image: STATE.currentImageBase64 // Aqui a imagem é salva junto!
-        };
-
-        if(STATE.editingIdx > -1) {
-            STATE.prompts[STATE.editingIdx] = promptData; // Atualiza
-        } else {
-            STATE.prompts.push(promptData); // Cria novo
-        }
+        const promptData = { name, text, image: STATE.currentImageBase64 };
+        if(STATE.editingIdx > -1) STATE.prompts[STATE.editingIdx] = promptData;
+        else STATE.prompts.push(promptData);
 
         cancelEdit();
         render();
         await syncToGitHub();
     }
 
-    async function deletePrompt(idx) {
-        if(confirm('Tem certeza que deseja apagar este prompt?')) {
-            STATE.prompts.splice(idx, 1);
-            render();
-            await syncToGitHub();
-        }
-    }
-
-    function startEdit(idx) {
-        STATE.editingIdx = idx;
-        const p = STATE.prompts[idx];
-        
-        document.getElementById('pName').value = p.name;
-        document.getElementById('pText').value = p.text;
-        
-        // Carrega a imagem se existir
-        STATE.currentImageBase64 = p.image || "";
-        const preview = document.getElementById('pImgPreview');
-        if(p.image) {
-            preview.src = p.image;
-            preview.style.display = 'block';
-        } else {
-            preview.style.display = 'none';
-        }
-
-        document.getElementById('formTitle').innerText = "Editar Prompt";
-        document.getElementById('btnSave').innerHTML = "💾 Atualizar Prompt";
-        document.getElementById('btnCancel').style.display = "block";
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function cancelEdit() {
-        STATE.editingIdx = -1;
-        document.getElementById('pName').value = ""; 
-        document.getElementById('pText').value = "";
-        
-        STATE.currentImageBase64 = "";
-        document.getElementById('pImgPreview').style.display = "none";
-        document.getElementById('pImageInput').value = "";
-
-        document.getElementById('formTitle').innerText = "Novo Prompt";
-        document.getElementById('btnSave').innerHTML = "💾 Salvar Prompt";
-        document.getElementById('btnCancel').style.display = "none";
-    }
-
-    function copyPromptText(idx) {
-        const text = STATE.prompts[idx].text;
-        navigator.clipboard.writeText(text);
-        showToast("Prompt copiado!");
-    }
-
-    // --- RENDERIZAR NA TELA ---
     function render() {
         const gridUI = document.getElementById('gridUI');
-        
-        if(STATE.prompts.length === 0) {
-            gridUI.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:#64748b;">Nenhum prompt salvo ainda. Crie o seu primeiro acima!</p>`;
-            return;
-        }
-
         gridUI.innerHTML = STATE.prompts.map((p, i) => `
             <div class="card">
-                <img src="${p.image || 'data:image/gif;base64,R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=='}" class="card-img" alt="Amostra">
-                
+                <img src="${p.image || ''}" class="card-img">
                 <div class="card-title">${p.name}</div>
                 <div class="card-desc">${p.text}</div>
-                
                 <div class="card-actions">
                     <button class="btn-copy" onclick="copyPromptText(${i})">📋 Copiar Prompt</button>
                 </div>
-
                 <div class="card-footer">
-                    <button class="btn-sml btn-edit" onclick="startEdit(${i})">✏️ Editar</button>
-                    <button class="btn-sml btn-del" onclick="deletePrompt(${i})">🗑️ Excluir</button>
+                    <button class="btn-sml" style="color:var(--accent)" onclick="startEdit(${i})">✏️ Editar</button>
+                    <button class="btn-sml" style="color:var(--danger)" onclick="deletePrompt(${i})">🗑️ Apagar</button>
                 </div>
             </div>
         `).join('');
     }
 
-    // Utilitário para mensagens rápidas
-    function showToast(m) { 
-        const t = document.getElementById('toast'); 
-        t.innerText = m; 
-        t.className = "show"; 
-        setTimeout(() => t.className = "", 3000); 
+    function copyPromptText(i) {
+        navigator.clipboard.writeText(STATE.prompts[i].text);
+        showToast("Copiado!");
     }
 
-    // --- INICIALIZAÇÃO ---
-    document.addEventListener('DOMContentLoaded', () => {
-        syncFromGitHub();
-    });
+    function startEdit(idx) {
+        STATE.editingIdx = idx;
+        const p = STATE.prompts[idx];
+        document.getElementById('pName').value = p.name;
+        document.getElementById('pText').value = p.text;
+        STATE.currentImageBase64 = p.image || "";
+        const preview = document.getElementById('pImgPreview');
+        preview.src = p.image;
+        preview.style.display = p.image ? 'block' : 'none';
+        document.getElementById('btnCancel').style.display = "block";
+        window.scrollTo(0,0);
+    }
+
+    function cancelEdit() {
+        STATE.editingIdx = -1;
+        document.getElementById('pName').value = "";
+        document.getElementById('pText').value = "";
+        STATE.currentImageBase64 = "";
+        document.getElementById('pImgPreview').style.display = "none";
+        document.getElementById('btnCancel').style.display = "none";
+        document.getElementById('sizeInfo').innerText = "Max 200KB";
+    }
+
+    async function deletePrompt(i) {
+        if(confirm("Apagar?")) {
+            STATE.prompts.splice(i, 1);
+            render();
+            await syncToGitHub();
+        }
+    }
+
+    function showToast(m) {
+        const t = document.getElementById('toast');
+        t.innerText = m;
+        t.className = "show";
+        setTimeout(() => t.className = "", 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', syncFromGitHub);
 </script>
 </body>
 </html>
