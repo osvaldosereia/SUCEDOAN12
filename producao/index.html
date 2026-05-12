@@ -462,8 +462,8 @@
         // GESTOR DE COMUNICAÇÃO COM GITHUB
         // ==========================================================
         const GitHubAPI = {
-            getConfig: function() {
-                const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            getConfig: async function() {
+                const cfg = await localforage.getItem(CONFIG_KEY);
                 if (!cfg || !cfg.token || !cfg.user || !cfg.repo) {
                     alert("Atenção: Configure as credenciais da API na aba 'Definições' primeiro!");
                     return null;
@@ -496,7 +496,7 @@
             },
 
             getFileData: async function(path) {
-                const cfg = this.getConfig();
+                const cfg = await this.getConfig();
                 if (!cfg) throw new Error("Credenciais ausentes");
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
                 const res = await fetch(url, { headers: this.getHeaders(cfg), cache: "no-store" });
@@ -505,7 +505,7 @@
                 return await res.json();
             },
             saveFile: async function(path, content, message, isBase64Ready = false) {
-                const cfg = this.getConfig();
+                const cfg = await this.getConfig();
                 if (!cfg) throw new Error("Credenciais ausentes");
                 let sha = null;
                 try { const existingFile = await this.getFileData(path); if (existingFile) sha = existingFile.sha; } catch(e) {}
@@ -823,7 +823,13 @@
 
             [marcasDoSistema, tagsDoSistema].forEach(lista => lista.sort((a, b) => a.localeCompare(b)));
 
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
+            // LER DO COFRE FORTE AO INICIAR
+            const cfg = await localforage.getItem(CONFIG_KEY) || {}; 
+            if(cfg.token) { 
+                document.getElementById('cfg-token').value = cfg.token; 
+                document.getElementById('cfg-user').value = cfg.user; 
+                document.getElementById('cfg-repo').value = cfg.repo; 
+            }
             renderGrid(ultimoTermoPesquisa);
         }
         
@@ -1326,8 +1332,16 @@
             imageQueue.push({ sku: sku, base64data: base64data }); updateImageBadge(); closeSidebar('editor-sidebar'); renderGrid(ultimoTermoPesquisa, true);
         }
 
-        function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
-
+        async function saveConfig() { 
+            const cfg = { 
+                token: document.getElementById('cfg-token').value, 
+                user: document.getElementById('cfg-user').value, 
+                repo: document.getElementById('cfg-repo').value 
+            }; 
+            await localforage.setItem(CONFIG_KEY, cfg); 
+            mostrarAlerta("Credenciais guardadas com segurança!", "sucesso");
+            closeSidebar('config-sidebar'); 
+        }
         // ====== CRUD DE CATEGORIAS, SUBS E SUB-SUBS ======
         window.renderizarSidebarCategorias = function() {
             const container = document.getElementById('lista-categorias-container'); if(!container) return;
@@ -1511,67 +1525,67 @@
         }
 
         // ==========================================================
-// BAIXAR PEDIDO POR TEXTO COM AUTO-SYNC PARA GITHUB
-// ==========================================================
-async function processarBaixaPedidoTexto() {
-    // 1. Obtém o texto do pedido
-    const texto = document.getElementById('order-text-input').value;
-    if(!texto) return alert("Por favor, cole o texto do pedido primeiro.");
+        // BAIXAR PEDIDO POR TEXTO COM AUTO-SYNC PARA GITHUB
+        // ==========================================================
+        async function processarBaixaPedidoTexto() {
+            // 1. Obtém o texto do pedido
+            const texto = document.getElementById('order-text-input').value;
+            if(!texto) return alert("Por favor, cole o texto do pedido primeiro.");
 
-    const linhas = texto.split('\n'); 
-    let encontrados = 0; 
-    let falhas = [];
+            const linhas = texto.split('\n'); 
+            let encontrados = 0; 
+            let falhas = [];
 
-    // 2. Processa cada linha do pedido
-    linhas.forEach(linha => {
-        const linhaLimpa = linha.trim();
-        // Regex para capturar "1x Nome do Produto" ou "1 Nome do Produto"
-        const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
+            // 2. Processa cada linha do pedido
+            linhas.forEach(linha => {
+                const linhaLimpa = linha.trim();
+                // Regex para capturar "1x Nome do Produto" ou "1 Nome do Produto"
+                const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
 
-        if(match) {
-            const qtd = parseInt(match[1]);
-            const nomeProcurado = match[2].trim().toLowerCase();
+                if(match) {
+                    const qtd = parseInt(match[1]);
+                    const nomeProcurado = match[2].trim().toLowerCase();
 
-            // Procura o produto pelo nome exato (ignorando maiúsculas/minúsculas)
-            const p = products.find(prod => (prod.nome || "").toLowerCase() === nomeProcurado);
+                    // Procura o produto pelo nome exato (ignorando maiúsculas/minúsculas)
+                    const p = products.find(prod => (prod.nome || "").toLowerCase() === nomeProcurado);
 
-            if(p) {
-                // Abate o stock (mínimo zero)
-                p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
-                p.last_update = Date.now(); 
-                encontrados++; 
+                    if(p) {
+                        // Abate o stock (mínimo zero)
+                        p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
+                        p.last_update = Date.now(); 
+                        encontrados++; 
+                    } else {
+                        falhas.push(match[2].trim()); 
+                    }
+                }
+            });
+
+            // 3. Finalização e Sincronização
+            if(encontrados > 0) {
+                // Guarda localmente primeiro
+                await saveDataLocally(); 
+                
+                // Atualiza a visualização no ecrã
+                renderGrid(ultimoTermoPesquisa);
+
+                // --- NOVIDADE: SINCRONIZAÇÃO AUTOMÁTICA ---
+                // Envia a atualização para a fila do GitHub (produtos.json)
+                salvarProdutosJSON(); 
+                // -------------------------------------------
+
+                let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nSincronização com GitHub iniciada (veja a fila no topo).`;
+                if(falhas.length > 0) {
+                    msg += `\n\n⚠️ Itens não encontrados:\n- ` + falhas.join('\n- ');
+                }
+                alert(msg);
+
+                // Fecha o menu lateral e limpa o campo
+                closeSidebar('pedidos-sidebar'); 
+                document.getElementById('order-text-input').value = "";
             } else {
-                falhas.push(match[2].trim()); 
+                alert("❌ Nenhum produto encontrado. Verifique se os nomes estão idênticos ao sistema.");
             }
         }
-    });
-
-    // 3. Finalização e Sincronização
-    if(encontrados > 0) {
-        // Guarda localmente primeiro
-        await saveDataLocally(); 
-        
-        // Atualiza a visualização no ecrã
-        renderGrid(ultimoTermoPesquisa);
-
-        // --- NOVIDADE: SINCRONIZAÇÃO AUTOMÁTICA ---
-        // Envia a atualização para a fila do GitHub (produtos.json)
-        salvarProdutosJSON(); 
-        // -------------------------------------------
-
-        let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nSincronização com GitHub iniciada (veja a fila no topo).`;
-        if(falhas.length > 0) {
-            msg += `\n\n⚠️ Itens não encontrados:\n- ` + falhas.join('\n- ');
-        }
-        alert(msg);
-
-        // Fecha o menu lateral e limpa o campo
-        closeSidebar('pedidos-sidebar'); 
-        document.getElementById('order-text-input').value = "";
-    } else {
-        alert("❌ Nenhum produto encontrado. Verifique se os nomes estão idênticos ao sistema.");
-    }
-}
 
         // ==========================================================
         // LIMPEZA INTELIGENTE DE IMAGENS DO GITHUB
@@ -1579,7 +1593,7 @@ async function processarBaixaPedidoTexto() {
         async function executarLimpezaImagens() {
             if(!confirm("AVISO: O sistema vai ler as pastas de imagens no GitHub e apagar todos os ficheiros que não estejam vinculados ao teu produtos.json atual. Queres continuar?")) return;
             
-            const cfg = GitHubAPI.getConfig(); if(!cfg) return;
+            const cfg = await GitHubAPI.getConfig(); if(!cfg) return;
             mostrarAlerta("Iniciando varredura no GitHub. Por favor, aguarde...", "aviso");
             
             try {
@@ -1626,7 +1640,7 @@ async function processarBaixaPedidoTexto() {
             try {
                 mostrarAlerta("Sincronizando com a nuvem...", "aviso");
                 
-                const cfg = GitHubAPI.getConfig(); if (!cfg) return;
+                const cfg = await GitHubAPI.getConfig(); if (!cfg) return;
                 
                 const fileData = await GitHubAPI.getFileData('site/produtos.json');
                 
