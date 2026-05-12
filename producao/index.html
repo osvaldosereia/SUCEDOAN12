@@ -668,14 +668,21 @@
         
         async function uploadImagens() {
             if (imageQueue.length === 0) return alert("Não existem imagens na fila.");
-            const queueCopy = [...imageQueue]; imageQueue = []; updateImageBadge();
+            
+            const queueCopy = [...imageQueue]; 
+            imageQueue = []; 
+            updateImageBadge();
+            
             mostrarAlerta("Enviando imagens para a fila...", "aviso");
+            
             queueCopy.forEach(img => {
                 enqueueTask(`Imagem ${img.sku}`, async () => {
                     const pastaDestinoGithub = await getPastaUploadAtiva();
                     const pastaDestinoLocal = "../" + pastaDestinoGithub; 
                     const fileName = `${img.sku}.webp`; 
+                    
                     await GitHubAPI.saveFile(`${pastaDestinoGithub}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName}`, true);
+                    
                     const pRef = products.find(x => x.codigo === img.sku); 
                     if(pRef) { 
                         pRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`; 
@@ -683,6 +690,12 @@
                         await saveDataLocally(); 
                     }
                 });
+            });
+
+            // Sincronização automática do JSON na nuvem após o upload das imagens
+            enqueueTask("Sincronizar JSON (Pós-Imagens)", async () => {
+                const vitrine = sanitizeProductsForExport(products);
+                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Sincronizando links das novas imagens`);
             });
         }
 
@@ -697,7 +710,10 @@
             document.getElementById('img-full').src = src;
             document.getElementById('modal-foto-full').classList.remove('hidden');
         }
-        function fecharFotoTelaCheia() { document.getElementById('modal-foto-full').classList.add('hidden'); }
+        
+        function fecharFotoTelaCheia() { 
+            document.getElementById('modal-foto-full').classList.add('hidden'); 
+        }
 
         // ==========================================================
         // PIM CORE E LOCALIZAÇÃO (UI & EVENTOS)
