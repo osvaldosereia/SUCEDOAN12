@@ -1956,6 +1956,40 @@
         // ==========================================================
         // GERENCIADOR DE EXPORTAÇÕES (GITHUB)
         // ==========================================================
+        
+        // Função para forçar o download de ficheiros do GitHub em vez de abrir no navegador
+        window.forcarDownloadGithub = async function(url, nomeArquivo) {
+            try {
+                mostrarAlerta("A preparar o download...", "aviso");
+                
+                // Puxa o conteúdo do ficheiro diretamente
+                const resposta = await fetch(url);
+                if (!resposta.ok) throw new Error("Erro na rede");
+                
+                // Transforma o conteúdo num "pacote" (blob) e cria um link temporário
+                const blob = await resposta.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                
+                // Simula um clique num botão de download
+                const link = document.createElement("a");
+                link.href = blobUrl;
+                link.download = nomeArquivo;
+                document.body.appendChild(link);
+                link.click();
+                
+                // Limpa a memória após o download
+                document.body.removeChild(link);
+                URL.revokeObjectURL(blobUrl);
+                
+                mostrarAlerta("Download concluído!", "sucesso");
+            } catch (erro) {
+                console.error("Erro no download:", erro);
+                // Plano B: se a nossa função falhar por algum motivo, abre no separador como fazia antes
+                alert("Ocorreu um erro no download direto. O ficheiro vai abrir num novo separador.");
+                window.open(url, '_blank'); 
+            }
+        };
+
         async function abrirGerenciadorExportacoes() {
             closeSidebar('menu-sidebar');
             openSidebar('exportacoes-sidebar');
@@ -1981,7 +2015,7 @@
                             <strong style="font-size:11px; display: block; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; color: var(--accent);">${file.name}</strong>
                             <span style="font-size:9px; color:var(--text-secondary);">Tamanho: ${(file.size / 1024).toFixed(1)} KB</span>
                         </div>
-                        <button class="btn-icon" onclick="window.open('${file.download_url}', '_blank')" title="Descarregar para o PC">
+                        <button class="btn-icon" onclick="forcarDownloadGithub('${file.download_url}', '${file.name}')" title="Descarregar para o PC">
                             <i data-lucide="download" size="14"></i>
                         </button>
                     </div>
