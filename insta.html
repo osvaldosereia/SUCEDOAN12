@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Studio: Gerador de Prompts 9:16</title>
+    <title>Master Studio: Gerador de Prompts</title>
     <style>
+        /* Estilos CSS - Design Visual First limpo e direto */
         :root {
             --primary: #2b2b2b;
             --accent: #ff0055;
             --bg: #f4f4f9;
             --card-bg: #ffffff;
-            --text: #333333;
+            --text: #333;
             --border: #e0e0e0;
+            --success: #2ed573;
         }
 
         body {
@@ -28,62 +30,46 @@
             max-width: 1000px;
             width: 100%;
             background: var(--card-bg);
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            padding: 25px;
         }
 
         h1 {
             text-align: center;
             color: var(--primary);
             text-transform: uppercase;
-            letter-spacing: 2px;
-            font-size: 28px;
-            margin-bottom: 5px;
-        }
-
-        p.subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
+            font-size: 24px;
+            margin-bottom: 25px;
         }
 
         .grid-layout {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 15px;
+            margin-bottom: 25px;
         }
 
         .category-group {
             background: #fafafa;
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 20px;
-        }
-
-        .category-group h3 {
-            margin-top: 0;
-            font-size: 16px;
-            color: var(--primary);
-            border-bottom: 2px solid var(--accent);
-            padding-bottom: 8px;
-            margin-bottom: 15px;
+            padding: 15px;
         }
 
         label {
             display: block;
-            font-weight: 500;
-            margin-bottom: 6px;
-            font-size: 13px;
-            color: #555;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #666;
         }
 
         select {
             width: 100%;
             padding: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             border: 1px solid var(--border);
             border-radius: 4px;
             background-color: #fff;
@@ -98,177 +84,203 @@
 
         .btn-generate {
             width: 100%;
-            padding: 18px;
-            background-color: var(--accent);
+            padding: 15px;
+            background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 18px;
+            border-radius: 6px;
+            font-size: 16px;
             font-weight: bold;
             text-transform: uppercase;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255, 0, 85, 0.3);
+            transition: background 0.3s ease;
         }
 
         .btn-generate:hover {
-            background-color: #d40047;
-            transform: translateY(-2px);
+            background-color: #000;
         }
 
         .result-section {
-            margin-top: 30px;
-            border-top: 2px dashed var(--border);
-            padding-top: 20px;
+            margin-top: 25px;
         }
 
         textarea {
             width: 100%;
-            height: 200px;
+            height: 180px;
             padding: 15px;
-            border: 2px solid #333;
-            border-radius: 8px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
             background-color: #fff;
             font-family: monospace;
             font-size: 14px;
-            line-height: 1.6;
+            line-height: 1.5;
             resize: vertical;
             box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+
+        .btn-copy {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--success);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-copy:hover {
+            background-color: #26b360;
         }
     </style>
 </head>
 <body>
 
     <div class="studio-container">
-        <h1>Master Studio 2.0</h1>
-        <p class="subtitle">Direção de Arte & Fotografia Publicitária de Alto Padrão</p>
+        <h1>Master Studio</h1>
 
         <div class="grid-layout">
             
-            <!-- Departamento de Composição -->
+            <!-- Grupo 1: Básico -->
             <div class="category-group">
-                <h3>1. Composição e Ação</h3>
-                
+                <label>Formato da Imagem</label>
+                <select id="formato">
+                    <option value="9:16">9:16 (Vertical/Reels)</option>
+                    <option value="4:5">4:5 (Retrato/Feed)</option>
+                    <option value="1:1">1:1 (Quadrado)</option>
+                </select>
+
                 <label>Quantidade de Produtos</label>
                 <select id="qtd">
-                    <option value="o único produto em destaque absoluto no centro da cena">1 Produto (Destaque Hero)</option>
-                    <option value="2 produtos dispostos de forma dinâmica e interativa">2 Produtos</option>
-                    <option value="uma composição harmônica de 3 produtos">3 Produtos</option>
-                    <option value="uma rica variedade de 5 a 8 produtos organizados cenograficamente">5 a 8 Produtos (Catálogo)</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
                 </select>
 
-                <label>Ação / Disposição</label>
-                <select id="acao">
-                    <option value="flutuando em gravidade zero com elegância">Flutuando (Gravidade Zero)</option>
-                    <option value="apoiado sobre pódios geométricos minimalistas">Em pódios geométricos</option>
-                    <option value="segurado firmemente por mãos de modelo com unhas esmaltadas em tom pastel">Segurado por modelo (Unhas Pastel)</option>
-                    <option value="transbordando de uma cesta de compras aramada moderna">Dentro de cesta de mercado moderna</option>
-                    <option value="sendo capturado em um splash dinâmico, em pleno ar">Ação de Splash/Queda livre</option>
-                </select>
-            </div>
-
-            <!-- Departamento de Cenografia -->
-            <div class="category-group">
-                <h3>2. Cenografia e Ambiente</h3>
-                
-                <label>Background (Fundo)</label>
-                <select id="fundo">
-                    <option value="fundo de estúdio infinito com gradiente pop de cores candy e vibrantes">Gradiente Pop Candy</option>
-                    <option value="ambiente de supermercado retro-futurista levemente desfocado (bokeh)">Supermercado Retro-Futurista</option>
-                    <option value="painel de acrílico translúcido iluminado por trás">Acrílico Translúcido Iluminado</option>
-                    <option value="textura de parede de azulejos metrô (subway tiles) brancos e limpos">Azulejos Metrô Brancos</option>
-                    <option value="cenário de natureza irreal com folhas de palmeira em tons pastel">Natureza Pastel Irreal</option>
-                </select>
-
-                <label>Adereços e Física (Props)</label>
-                <select id="props">
-                    <option value="com gotas de condensação hiper-realistas e pequenas nuvens de fumaça gelada">Condensação e Fumaça fria</option>
-                    <option value="cercado por blocos acrílicos transparentes e fitas metálicas flutuando">Blocos Acrílicos e Fitas</option>
-                    <option value="com respingos dramáticos de água cristalina congelados no ar">Respingos de Água (High Speed)</option>
-                    <option value="acompanhado por frutas frescas e ingredientes explodindo suavemente ao redor">Ingredientes Explodindo</option>
-                    <option value="sem adereços físicos, mantendo o ambiente ultra-minimalista e limpo">Minimalista (Sem adereços)</option>
+                <label>Estilo Visual</label>
+                <select id="estilo">
+                    <option value="Candy Clean">Candy Clean</option>
+                    <option value="Candy Pop">Candy Pop</option>
+                    <option value="Natureza">Natureza</option>
+                    <option value="Cidade">Cidade</option>
+                    <option value="Loja">Loja</option>
                 </select>
             </div>
 
-            <!-- Departamento de Luz e Câmera -->
-            <div class="category-group">
-                <h3>3. Fotografia e Iluminação</h3>
-                
-                <label>Estilo de Iluminação</label>
-                <select id="luz">
-                    <option value="iluminação de estúdio volumétrica com rim light (luz de recorte) marcante para destacar silhuetas">Estúdio Volumétrica + Rim Light</option>
-                    <option value="luz dura e sombras projetadas nítidas (hard shadows) simulando sol de meio-dia da Califórnia">Luz Dura (Sol do Meio-dia)</option>
-                    <option value="iluminação neon cibernética suave em tons de magenta e cyan refletindo nas superfícies">Neon Suave (Magenta/Cyan)</option>
-                    <option value="luz frontal de flash direto estilo editorial de moda anos 90, altíssimo contraste">Flash Frontal Direto (Anos 90)</option>
+            <!-- Grupo 2: Ação e Cena -->
+            <div class="category-group" style="grid-column: span 2;">
+                <label>Cena / Ação Principal</label>
+                <select id="cena">
+                    <option value="Produto Flutuando ao centro grande">Produto Flutuando ao centro grande</option>
+                    <option value="Uma mão segurando">Uma mão segurando</option>
+                    <option value="Duas mãos segurando">Duas mãos segurando</option>
+                    <option value="pessoa desfocada ao fundo segurando com braço estendido">Pessoa desfocada ao fundo segurando com braço estendido</option>
+                    <option value="pessoa segurando o produto na altura do peito">Pessoa segurando o produto na altura do peito</option>
+                    <option value="pessoa segurando com os braços pra cima e olhando pra cima mostrando o produto pra cima">Pessoa segurando com os braços pra cima e olhando pra cima</option>
+                    <option value="produto dentro do carrinho de compras">Produto dentro do carrinho de compras</option>
+                    <option value="produto dentro da cesta plástica de compra">Produto dentro da cesta plástica de compra</option>
+                    <option value="produto em mesa ou bancada ou base">Produto em mesa ou bancada ou base</option>
+                    <option value="produto encostado em parede ou alguma coisa">Produto encostado em parede ou alguma coisa</option>
+                    <option value="produto no centro com fundo cheio de escritos relacionados ao produto">Produto no centro com fundo cheio de escritos relacionados ao produto</option>
+                    <option value="produto ao centro com anotações sobre o produto ao redor feitas de forma aleatória manuscrita">Produto ao centro com anotações sobre o produto ao redor feitas de forma aleatória manuscrita</option>
                 </select>
+            </div>
 
-                <label>Lente e Ângulo de Câmera</label>
+            <!-- Grupo 3: Fotografia -->
+            <div class="category-group">
+                <label>Posição da Câmera</label>
                 <select id="camera">
-                    <option value="fotografado com lente macro 100mm, foco cravado no produto e fundo com desfoque amanteigado (bokeh)">Macro 100mm (Foco Extremo)</option>
-                    <option value="ângulo levemente de baixo para cima (low angle) com lente 35mm para dar imponência ao produto">Low Angle 35mm (Imponente)</option>
-                    <option value="visão isométrica frontal, planificada e milimetricamente alinhada">Isométrica Frontal</option>
+                    <option value="Ângulo frontal direto, perfeitamente alinhado (Eye-level)">Frontal Direto</option>
+                    <option value="Ângulo de baixo para cima (Low Angle), dando sensação de grandeza">De baixo para cima (Low Angle)</option>
+                    <option value="Ângulo de cima para baixo (High Angle), mostrando o produto de cima">De cima para baixo (High Angle)</option>
+                    <option value="Plano detalhe macro (Close-up extremo), focando intensamente nas texturas">Macro / Close-up</option>
+                    <option value="Visão isométrica, perspectiva geométrica e organizada">Isométrica</option>
+                    <option value="Visão Top-Down (Plano Zenital), câmera exatamente a 90 graus apontando para o chão">Top-Down (Zenital)</option>
                 </select>
             </div>
 
-            <!-- Departamento de Intervenção Artística -->
+            <!-- Grupo 4: Luz -->
             <div class="category-group">
-                <h3>4. Direção de Arte (Mixed Media)</h3>
-                
-                <label>Recursos Gráficos Adicionais</label>
-                <select id="grafico">
-                    <option value="A imagem finaliza com estilo Mixed Media: inserções de rabiscos estilo cartoon vintage e tipografia pop-art sobrepondo sutilmente a fotografia realista.">Mixed Media: Rabiscos Cartoon</option>
-                    <option value="Apresenta elementos de interface digital flutuante (UI design) e grades holográficas ao redor do produto real.">Tech/Cyber: Interface Digital</option>
-                    <option value="Apresenta texturas sutis de papel de revista rasgado e pontos de retícula (halftone) nas bordas, mesclando foto com colagem analógica.">Colagem: Papel Rasgado e Retícula</option>
-                    <option value="Fotografia pura e limpa, sem interferências gráficas adicionais.">Nenhuma (Fotografia Pura)</option>
+                <label>Iluminação</label>
+                <select id="luz">
+                    <option value="Luz de estúdio suave e difusa (Softbox), sem sombras duras">Estúdio Suave (Softbox)</option>
+                    <option value="Luz natural do meio-dia, com sombras duras e marcadas">Sol do Meio-dia (Sombras Duras)</option>
+                    <option value="Golden hour, luz de fim de tarde, tons quentes e alongados">Golden Hour (Fim de Tarde)</option>
+                    <option value="Iluminação de estúdio dramática de alto contraste (Chiaroscuro)">Estúdio Dramático (Alto Contraste)</option>
+                    <option value="Iluminação com flash frontal direto estourado, estilo fotográfico de moda anos 90">Flash Frontal Direto (Estilo Anos 90)</option>
+                    <option value="Iluminação neon moderna e vibrante com reflexos coloridos">Neon Cibernético (Reflexos coloridos)</option>
                 </select>
             </div>
-
         </div>
 
-        <button class="btn-generate" onclick="gerarPromptStudio()">Gerar Prompt Profissional</button>
+        <button class="btn-generate" onclick="gerarPromptStudio()">Gerar Prompt</button>
 
         <div class="result-section">
-            <label style="color: var(--accent); font-weight: bold; font-size: 16px; margin-bottom: 10px;">SEU PROMPT DE ALTO PADRÃO:</label>
-            <textarea id="resultado" readonly>Selecione suas escolhas artísticas e clique no botão acima para montar a cena.</textarea>
+            <textarea id="resultado" readonly>Seu prompt aparecerá aqui...</textarea>
+            <button class="btn-copy" onclick="copiarPrompt()">
+                📋 Copiar Prompt
+            </button>
         </div>
     </div>
 
     <script>
-        /**
-         * Função que recolhe todos os elementos de arte selecionados
-         * e constrói o prompt final com regras inquebráveis de qualidade.
-         */
+        // Função para montar o texto baseado nas seleções
         function gerarPromptStudio() {
-            // 1. Coleta das Variáveis do UI
+            // 1. Capturar os valores selecionados no HTML
+            const formato = document.getElementById('formato').value;
             const qtd = document.getElementById('qtd').value;
-            const acao = document.getElementById('acao').value;
-            const fundo = document.getElementById('fundo').value;
-            const props = document.getElementById('props').value;
-            const luz = document.getElementById('luz').value;
+            const estilo = document.getElementById('estilo').value;
+            const cena = document.getElementById('cena').value;
             const camera = document.getElementById('camera').value;
-            const grafico = document.getElementById('grafico').value;
+            const luz = document.getElementById('luz').value;
 
-            // 2. Base Estrutural e Formato
-            const setupBase = "Crie uma fotografia publicitária de nível internacional (award-winning commercial photography) no formato vertical de proporção 9:16 (adequado para Stories e Reels).";
+            // 2. Base da instrução
+            const base = `Crie uma fotografia publicitária fotorrealista de alto padrão. Formato/Proporção da imagem: ${formato}.`;
 
-            // 3. Montagem da Cena
-            const direcaoCena = `A cena apresenta ${qtd}, que está/estão ${acao}. O ambiente possui um ${fundo}. A composição é enriquecida ${props}.`;
+            // 3. Montar o cenário e estilo
+            const descricao = `Quantidade de produtos na imagem: ${qtd}. Estilo visual geral: ${estilo}. Ação/Cena: ${cena}.`;
 
-            // 4. Direção de Fotografia e Iluminação
-            const direcaoFoto = `Direção de fotografia: ${camera}. O esquema de luz utiliza ${luz}. Cores extremamente ricas, vibrantes e calibradas para e-commerce de alto impacto. Renderização em 8k, Octane Render ou Unreal Engine 5 aesthetic, hiper-detalhado, texturas de materiais (vidro, plástico, metal, líquidos) perfeitamente fotorrealistas.`;
+            // 4. Detalhes de câmera e luz
+            const fotografia = `Posição da câmera: ${camera}. Iluminação: ${luz}. Renderização em 8k, hiper-detalhado.`;
 
-            // 5. Intervenção Artística (Se houver)
-            const estiloArte = grafico;
+            // 5. Regra crítica para o produto
+            const regraOuro = `[ATENÇÃO - INSTRUÇÃO CRÍTICA]: A imagem anexada é a referência absoluta. Você DEVE usar a imagem do produto anexado exatamente como ela é. A embalagem, o rótulo original e a proporção física exata do produto DEVEM ser estritamente preservados e mantidos INALTERADOS. Integre este exato produto na cena iluminando-o adequadamente de forma fotorrealista.`;
 
-            // 6. A REGRA DE OURO (Restrição Crítica do Produto Original)
-            const regraOuro = `
-[ATENÇÃO - INSTRUÇÃO CRÍTICA]: A imagem anexada é a referência absoluta do produto. Você DEVE usar a imagem do produto anexado. A embalagem, o rótulo original, as cores da marca, as fontes e a proporção física exata do produto anexado DEVEM ser estritamente preservados e mantidos INALTERADOS. O produto não pode sofrer mutações, deformações ou alterações de design. A inteligência artificial deve integrar este exato produto na cena iluminando-o adequadamente de acordo com o cenário escolhido, de forma perfeitamente perfeita e indistinguível da realidade.`;
-
-            // 7. Concatenação Final
-            const promptFinal = `${setupBase}\n\n${direcaoCena}\n\n${direcaoFoto}\n\n${estiloArte}\n${regraOuro}`;
-
-            // 8. Inserção no Textarea
+            // 6. Juntar tudo e exibir
+            const promptFinal = `${base}\n\n${descricao}\n\n${fotografia}\n\n${regraOuro}`;
             document.getElementById('resultado').value = promptFinal;
+        }
+
+        // Função para copiar o texto gerado para a área de transferência
+        function copiarPrompt() {
+            const textarea = document.getElementById('resultado');
+            
+            // Verifica se há texto gerado para copiar
+            if(textarea.value === "" || textarea.value === "Seu prompt aparecerá aqui...") {
+                alert("Por favor, gere um prompt primeiro!");
+                return;
+            }
+
+            // Seleciona e copia o texto (suporte para computadores e mobile)
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); 
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                alert("Prompt copiado com sucesso!");
+            }).catch(err => {
+                alert("Erro ao copiar. Selecione o texto manualmente.");
+            });
         }
     </script>
 </body>
