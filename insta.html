@@ -26,6 +26,9 @@
 
         .config-box { background: var(--config-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; }
         .config-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        
+        #syncStatus { font-size: 13px; padding: 6px 12px; border-radius: 20px; background: #fff; font-weight: 700; border: 1px solid var(--border); }
+        
         .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px; }
         .config-grid input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-weight: 600; }
         .config-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -46,7 +49,6 @@
         .input-group input[type="text"], .input-group textarea { padding: 14px; border: 1px solid var(--border); border-radius: 10px; width: 100%; font-size: 14px; outline-color: var(--accent); background: #fcfcfc; font-weight: 600; }
         .input-group textarea { height: 180px; resize: vertical; line-height: 1.6; font-size: 13px; background: #f8fafc; font-weight: 400; }
 
-        /* Estilos do Gerador Mega-Atualizado */
         .generator-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; background: #fcfcfc; padding: 18px; border-radius: 12px; border: 1px solid var(--border); }
         .gen-item { display: flex; flex-direction: column; gap: 6px; }
         .gen-item.full-width { grid-column: 1 / -1; }
@@ -83,7 +85,10 @@
 <div class="container">
     <div class="header">
         <h1>Banco de Prompts - Dona Antônia</h1>
-        <button class="btn-success" onclick="carregarPrompts()">🔄 Carregar Prompts da Nuvem</button>
+        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+            <span id="syncStatus" style="color: #64748b;">Nuvem inativa</span>
+            <button class="btn-success" onclick="carregarPrompts()">🔄 Baixar Prompts do GitHub</button>
+        </div>
     </div>
 
     <div class="config-box">
@@ -98,7 +103,7 @@
         </div>
         <div class="config-actions">
             <button class="btn-save-cred" onclick="salvarCredenciaisLocal()">💾 Gravar no Aparelho</button>
-            <button class="btn-sec" onclick="testConnection()">🌐 Testar Conexão</button>
+            <button class="btn-sec" onclick="carregarPrompts()">🔄 Baixar Prompts do GitHub</button>
         </div>
     </div>
 
@@ -164,7 +169,7 @@
                     </div>
 
                     <div class="gen-item full-width">
-                        <label>Cenário e Composição da Cena (22 Variantes Premium)</label>
+                        <label>Cenário e Composição da Cena</label>
                         <select id="genAmbiente" onchange="gerarTextoPrompt()">
                             <option value="Dentro de uma cesta colorida de supermercado, cercado de forma orgânica por outros itens de mercearia premium (Lifestyle)">1. Cesta de Compras Lifestyle</option>
                             <option value="Mão estendida em primeira pessoa segurando o produto no centro da tela, com o braço e o fundo urbano sofrendo um forte desfoque (POV)">2. POV Mão Estendida com Fundo Desfocado</option>
@@ -218,7 +223,7 @@
         </div>
         <div class="form-footer">
             <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar Edição</button>
-            <button class="btn-main" id="btnSave" onclick="savePrompt()">💾 Salvar na Nuvem</button>
+            <button class="btn-main" id="btnSave" onclick="savePrompt()">💾 Salvar na Lista</button>
         </div>
     </div>
 
@@ -228,7 +233,7 @@
 <div id="toast">Pronto!</div>
 
 <script>
-    // SISTEMA ROBUSTO DE CREDENCIAIS
+    // SISTEMA DE CREDENCIAIS
     function carregarCredenciaisLocais() {
         const t = localStorage.getItem('da_gh_token') || '';
         const u = localStorage.getItem('da_gh_user') || '';
@@ -253,8 +258,16 @@
     let GITHUB = carregarCredenciaisLocais();
     const STATE = { prompts: [], editingIdx: -1, currentImageBase64: "" };
     let dadosCarregadosComSucesso = false; 
+    let imagensPendentesNaFila = 0; // Trava de segurança para não fechar a página
 
-    // Botão explícito para salvar no celular permanentemente
+    // Impede o usuário de fechar a aba se o cronômetro de 60s estiver rodando
+    window.addEventListener('beforeunload', function (e) {
+        if (imagensPendentesNaFila > 0) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
     function salvarCredenciaisLocal() {
         const token = document.getElementById('ghToken').value.trim();
         const user = document.getElementById('ghUser').value.trim();
@@ -268,14 +281,8 @@
         localStorage.setItem('da_gh_user', user);
         localStorage.setItem('da_gh_repo', repo);
 
-        GITHUB = carregarCredenciaisLocais(); // Recarrega o objeto interno
+        GITHUB = carregarCredenciaisLocais(); 
         showToast("💾 Credenciais blindadas no celular com sucesso!");
-    }
-
-    function testConnection() {
-        salvarCredenciaisLocal(); // Força salvar antes de testar
-        if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) return;
-        syncFromGitHub(true);
     }
 
     function carregarPrompts() {
@@ -285,9 +292,8 @@
         syncFromGitHub(true);
     }
 
-    // GERADOR DE PROMPT MEGA-ATUALIZADO
+    // GERADOR DE PROMPT
     function gerarTextoPrompt() {
-        // Trava para não sobrescrever edições manuais se estiver editando um item antigo
         if(STATE.editingIdx > -1 && document.getElementById('pText').value.trim() !== '') return;
 
         const qtdValor = document.getElementById('genQtd').value;
@@ -298,19 +304,8 @@
         const iluminacao = document.getElementById('genIlum').value;
         const integracao = document.getElementById('genIntegracao').value;
 
-        let textoProduto = "";
-        let pluralEles = "";
-        
-        if(qtdValor === "1") {
-            textoProduto = "o produto anexado";
-            pluralEles = "dele";
-        } else if (qtdValor === "multiplos") {
-            textoProduto = "múltiplas unidades do produto anexado espalhadas";
-            pluralEles = "deles";
-        } else {
-            textoProduto = `exatamente ${qtdValor} unidades do produto anexado`;
-            pluralEles = "deles";
-        }
+        let textoProduto = qtdValor === "1" ? "o produto anexado" : (qtdValor === "multiplos" ? "múltiplas unidades do produto anexado espalhadas" : `exatamente ${qtdValor} unidades do produto anexado`);
+        let pluralEles = "deles";
 
         const comando = `Gere uma imagem publicitária Pop de Altíssima Conversão no formato ${formato}, adotando uma direção de arte calcada na estética: ${estetica}. 
 
@@ -329,36 +324,32 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
         gerarTextoPrompt();
     }
 
-    // FUNÇÕES DE NUVEM GITHUB (REST API)
+    // FUNÇÕES DO GITHUB 
     const utf8_to_b64 = str => window.btoa(unescape(encodeURIComponent(str)));
     const b64_to_utf8 = str => decodeURIComponent(escape(window.atob(str)));
 
     async function syncFromGitHub(isManualTest = false) {
         if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) return;
-        
-        if(isManualTest) showToast("Carregando banco de dados da Nuvem...");
+        if(isManualTest) showToast("Buscando dados no GitHub...");
 
         try {
             const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
             const res = await fetch(url, { 
-                headers: { 
-                    'Authorization': `Bearer ${GITHUB.token}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Cache-Control': 'no-cache'
-                } 
+                headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' } 
             });
             
+            if (res.status === 401) throw new Error("Token inválido ou expirado.");
+            if (res.status === 403) throw new Error("Permissão negada no GitHub.");
             if(res.status === 404) { 
-                STATE.prompts = []; 
-                GITHUB.sha = ''; 
-                dadosCarregadosComSucesso = true; 
-                render(); 
-                if(isManualTest) showToast("Nenhum JSON antigo encontrado. Um novo será criado ao salvar.");
+                STATE.prompts = []; GITHUB.sha = ''; dadosCarregadosComSucesso = true; render(); 
+                if(isManualTest) showToast("✅ Conectado! JSON será criado no primeiro salvamento.");
+                document.getElementById('syncStatus').innerText = "✅ Nuvem Conectada";
+                document.getElementById('syncStatus').style.color = "var(--success)";
                 return; 
             }
 
             const responseText = await res.text();
-            if(!res.ok) throw new Error(JSON.parse(responseText).message || "Erro da API do Github");
+            if(!res.ok) throw new Error(JSON.parse(responseText).message || "Erro de servidor.");
 
             const data = JSON.parse(responseText);
             GITHUB.sha = data.sha;
@@ -372,34 +363,37 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
 
             dadosCarregadosComSucesso = true; 
             render();
-            if(isManualTest) showToast("Prompts sincronizados com sucesso!");
+            if(isManualTest) showToast("✅ Prompts importados com sucesso!");
+            
+            document.getElementById('syncStatus').innerText = "✅ Sincronizado";
+            document.getElementById('syncStatus').style.color = "var(--success)";
 
         } catch (e) { 
-            console.error("Erro no GitHub:", e);
-            showToast("Erro ao carregar: " + (e.message === "Unexpected end of JSON input" ? "Arquivo corrompido no repositório." : e.message)); 
+            console.error(e);
+            dadosCarregadosComSucesso = false; 
+            showToast("Erro: " + e.message); 
+            document.getElementById('syncStatus').innerText = "❌ Falha na Nuvem";
+            document.getElementById('syncStatus').style.color = "var(--danger)";
         }
     }
 
     async function syncToGitHub() {
-        if(!GITHUB.token) return showToast("Grave suas credenciais do GitHub antes de salvar!");
-        if(!dadosCarregadosComSucesso) return showToast("⚠️ Aguarde a sincronização inicial antes de salvar novos dados!");
+        if(!GITHUB.token || !dadosCarregadosComSucesso) return;
         
-        showToast("Escrevendo JSON definitivo na Nuvem...");
         try {
+            // Remove a imagem Base64 temporária antes de gerar o JSON, para ele continuar levinho (só com a URL)
+            const promptsToSave = STATE.prompts.map(p => ({ name: p.name, text: p.text, image: p.image }));
+
             const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
             const body = {
-                message: "Atualizando Prompts (Dona Antônia Generator)",
-                content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2))
+                message: "Atualizando Prompts via Gerenciador",
+                content: utf8_to_b64(JSON.stringify(promptsToSave, null, 2))
             };
-            
             if(GITHUB.sha) body.sha = GITHUB.sha;
 
             const res = await fetch(url, {
                 method: 'PUT',
-                headers: { 
-                    'Authorization': `Bearer ${GITHUB.token}`, 
-                    'Content-Type': 'application/json' 
-                },
+                headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
 
@@ -407,40 +401,14 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
 
             const data = await res.json();
             GITHUB.sha = data.content.sha;
-            showToast("🚀 Banco de dados salvo com sucesso!");
+            
+            document.getElementById('syncStatus').innerText = "✅ JSON Sincronizado";
+            document.getElementById('syncStatus').style.color = "var(--success)";
         } catch (e) { 
             console.error(e);
-            showToast("Falha crítica ao salvar: " + e.message); 
+            document.getElementById('syncStatus').innerText = "❌ Erro ao salvar JSON";
+            document.getElementById('syncStatus').style.color = "var(--danger)";
         }
-    }
-
-    async function uploadImageToGitHub(base64String) {
-        const pureBase64 = base64String.split(',')[1];
-        const filename = `img_${Date.now()}.jpg`;
-        const imagePath = `prom10/${filename}`; 
-        
-        const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${imagePath}`;
-        
-        const body = {
-            message: `Upload de Referencia Visual: ${filename}`,
-            content: pureBase64
-        };
-
-        const res = await fetch(url, {
-            method: 'PUT',
-            headers: { 
-                'Authorization': `Bearer ${GITHUB.token}`, 
-                'Content-Type': 'application/json' 
-            },
-            body: JSON.stringify(body)
-        });
-
-        if(!res.ok) {
-            throw new Error("Falha ao subir a imagem para a pasta prom10 no repositório.");
-        }
-
-        const data = await res.json();
-        return data.content.download_url; 
     }
 
     // PROCESSAMENTO DE IMAGEM
@@ -448,17 +416,14 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
         const file = event.target.files[0];
         if (!file) return;
 
-        showToast("Limpando e Compactando imagem base...");
+        showToast("Compactando imagem base...");
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                
-                canvas.width = 400; 
-                canvas.height = 500;
-                
+                canvas.width = 400; canvas.height = 500;
                 const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
                 const x = (canvas.width / scale - img.width) / 2;
                 const y = (canvas.height / scale - img.height) / 2;
@@ -466,12 +431,9 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
 
                 let quality = 0.9;
                 let base64 = "";
-                const MAX_BYTE_SIZE = 50 * 1024; // 50KB Limite super estrito
-
                 do {
                     base64 = canvas.toDataURL('image/jpeg', quality);
-                    const sizeInBytes = (base64.length * (3/4));
-                    if (sizeInBytes <= MAX_BYTE_SIZE || quality <= 0.1) break;
+                    if ((base64.length * (3/4)) <= 51200 || quality <= 0.1) break;
                     quality -= 0.1; 
                 } while (quality > 0.1);
 
@@ -479,44 +441,59 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
                 const preview = document.getElementById('pImgPreview');
                 preview.src = base64;
                 preview.style.display = 'block';
-                
-                const finalSizeKB = Math.round((base64.length * (3/4)) / 1024);
-                document.getElementById('sizeInfo').innerText = `Otimizada: ${finalSizeKB}KB`;
-                showToast(`Pronta para nuvem: ${finalSizeKB}KB`);
+                document.getElementById('sizeInfo').innerText = `Otimizada: ${Math.round((base64.length * (3/4)) / 1024)}KB`;
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
+    // SALVAR PROMPT (LÓGICA DOS 60 SEGUNDOS)
     async function savePrompt() {
         const name = document.getElementById('pName').value.trim();
         const text = document.getElementById('pText').value.trim();
-        if(!name || !text) return showToast("⚠️ É obrigatório preencher Título e gerar o Comando!");
+        if(!name || !text) return showToast("⚠️ Preencha o Título e gere o Comando!");
 
         const btnSave = document.getElementById('btnSave');
         btnSave.disabled = true;
 
         try {
-            let imageUrl = STATE.currentImageBase64;
+            let tempBase64Data = null;
+            let filename = `img_${Date.now()}.jpg`;
+            let finalImageUrl = STATE.currentImageBase64;
             
-            // Se for imagem nova que não subiu ainda
-            if (imageUrl && imageUrl.startsWith('data:image')) {
-                showToast("Fazendo upload da foto para o GitHub...");
-                imageUrl = await uploadImageToGitHub(imageUrl); 
+            // Se for uma imagem nova, marcamos para subir depois de 60s
+            if (finalImageUrl && finalImageUrl.startsWith('data:image')) {
+                tempBase64Data = finalImageUrl;
+                finalImageUrl = "aguardando_upload"; // Placeholder que será trocado no JSON depois
             }
 
-            const promptData = { name, text, image: imageUrl };
+            // O tempBase64Data garante que a imagem aparece na sua tela INSTANTANEAMENTE
+            const promptData = { name, text, image: finalImageUrl, tempBase64: tempBase64Data };
             
             if(STATE.editingIdx > -1) {
                 STATE.prompts[STATE.editingIdx] = promptData;
             } else {
-                STATE.prompts.unshift(promptData); // Adiciona no início da lista
+                STATE.prompts.unshift(promptData);
             }
 
             cancelEdit();
-            render();
+            render(); 
+            
+            // ETAPA 1: Envia o Prompt (JSON) na MESMA hora!
+            showToast("💾 Prompt salvo! Imagem subirá em 60s...");
+            document.getElementById('syncStatus').innerText = "🔄 Enviando JSON...";
             await syncToGitHub();
+
+            // ETAPA 2: Aciona o cronômetro de 60s para a imagem
+            if (tempBase64Data) {
+                imagensPendentesNaFila++;
+                document.getElementById('syncStatus').innerText = `⏳ Imagem na fila (60s)... Não feche.`;
+                
+                setTimeout(async () => {
+                    await processarUploadDeImagem(tempBase64Data, filename, promptData);
+                }, 60000); // 60 segundos
+            }
             
         } catch (error) {
             console.error(error);
@@ -526,11 +503,56 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
         }
     }
 
+    // ETAPA 3: A função que sobe a imagem e atualiza o JSON após 60s
+    async function processarUploadDeImagem(base64Data, filename, promptRef) {
+        try {
+            document.getElementById('syncStatus').innerText = "🔄 Fazendo upload da imagem...";
+            const pureBase64 = base64Data.split(',')[1];
+            const imagePath = `prom10/${filename}`; 
+            
+            const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${imagePath}`;
+            const body = { message: `Upload Visual: ${filename}`, content: pureBase64 };
+
+            const res = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if(!res.ok) throw new Error("Falha no envio da imagem.");
+            
+            const data = await res.json();
+            
+            // Atualiza o objeto com o link final verdadeiro gerado pelo GitHub
+            promptRef.image = data.content.download_url;
+            delete promptRef.tempBase64; // Limpa a memória
+            
+            // Re-salva o JSON secretamente só para atualizar a URL da imagem
+            await syncToGitHub(); 
+            
+            showToast("🖼️ Imagem e JSON 100% sincronizados!");
+            render();
+            
+        } catch (e) {
+            console.error(e);
+            showToast("❌ Erro ao subir imagem: " + e.message);
+        } finally {
+            imagensPendentesNaFila--;
+            if(imagensPendentesNaFila === 0) {
+                document.getElementById('syncStatus').innerText = "✅ Tudo Sincronizado";
+                document.getElementById('syncStatus').style.color = "var(--success)";
+            }
+        }
+    }
+
     function render() {
         const gridUI = document.getElementById('gridUI');
-        gridUI.innerHTML = STATE.prompts.map((p, i) => `
+        gridUI.innerHTML = STATE.prompts.map((p, i) => {
+            // Se tiver a imagem temporária (ainda nos 60s), mostra ela, se não, mostra o link do GitHub
+            const displayImg = p.tempBase64 ? p.tempBase64 : p.image;
+            return `
             <div class="card">
-                <img src="${p.image || ''}" class="card-img" onerror="this.style.display='none'">
+                <img src="${displayImg || ''}" class="card-img" onerror="this.style.display='none'" onload="this.style.display='block'">
                 <div class="card-title">${p.name}</div>
                 <div class="card-desc" title="${p.text}">${p.text}</div>
                 <div class="card-actions">
@@ -541,7 +563,7 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
                     <button class="btn-sml" style="color:var(--danger)" onclick="deletePrompt(${i})">🗑️ Excluir</button>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     }
 
     function copyPromptText(i) {
@@ -554,10 +576,11 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
         const p = STATE.prompts[idx];
         document.getElementById('pName').value = p.name;
         document.getElementById('pText').value = p.text;
-        STATE.currentImageBase64 = p.image || "";
+        STATE.currentImageBase64 = p.tempBase64 || p.image || ""; // Prioriza a base64 se estiver pendente
+        
         const preview = document.getElementById('pImgPreview');
-        preview.src = p.image;
-        preview.style.display = p.image ? 'block' : 'none';
+        preview.src = STATE.currentImageBase64;
+        preview.style.display = STATE.currentImageBase64 ? 'block' : 'none';
         document.getElementById('btnCancel').style.display = "block";
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -565,18 +588,19 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
     function cancelEdit() {
         STATE.editingIdx = -1;
         document.getElementById('pName').value = "";
-        gerarTextoPrompt(); // Restaura o prompt base das caixas de seleção
+        gerarTextoPrompt(); 
         STATE.currentImageBase64 = "";
         document.getElementById('pImgPreview').style.display = "none";
         document.getElementById('btnCancel').style.display = "none";
         document.getElementById('sizeInfo').innerText = "Max 50KB";
-        document.getElementById('pImageInput').value = ""; // Limpa input de arquivo
+        document.getElementById('pImageInput').value = "";
     }
 
     async function deletePrompt(i) {
         if(confirm("ALERTA: Deseja apagar este prompt permanentemente do banco?")) {
             STATE.prompts.splice(i, 1);
             render();
+            document.getElementById('syncStatus').innerText = "🔄 Sincronizando exclusão...";
             await syncToGitHub();
         }
     }
@@ -588,7 +612,6 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
         setTimeout(() => t.className = "", 3500);
     }
 
-    // Gatilho inicial ao abrir a página
     document.addEventListener('DOMContentLoaded', () => {
         if(GITHUB.token) {
             syncFromGitHub(false);
