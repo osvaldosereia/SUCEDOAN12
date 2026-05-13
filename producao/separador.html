@@ -1,395 +1,47 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/000000/FFFFFF?text=Sucedoan">
+    
     <title>Sucedoan - Separação de Pedidos</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #f4f4f5; --card: #ffffff; --text: #0f172a; --text-muted: #64748b;
-            --primary: #000000; --success: #10b981; --danger: #ef4444; --border: #e4e4e7;
-        }
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding-bottom: 20px;}
-        
-        header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
-        .brand { font-weight: 900; font-size: 18px; display: flex; align-items: center; gap: 8px; }
-        
-        .container { padding: 20px; max-width: 800px; margin: 0 auto; }
-        
-        button { font-family: 'Inter', sans-serif; border: none; border-radius: 8px; cursor: pointer; font-weight: 800; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
-        .btn-config { background: transparent; color: white; padding: 8px; }
-        .btn-action { background: var(--primary); color: white; padding: 12px; width: 100%; font-size: 14px; }
-        .btn-success { background: var(--success); color: white; padding: 12px; width: 100%; font-size: 14px; }
-        .btn-danger { background: var(--danger); color: white; padding: 10px 15px; font-size: 13px; }
+    
+    ```
 
-        #acao-selecao { display: none; background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 15px; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        
-        .order-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.02); position: relative; }
-        .order-card:active { transform: scale(0.99); }
-        .order-card.concluido { opacity: 0.7; border-color: var(--success); background: #ecfdf5; }
-        
-        .checkbox-container { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
-        .checkbox-container input { width: 20px; height: 20px; cursor: pointer; }
+---
 
-        .order-content { flex: 1; display: flex; justify-content: space-between; align-items: center; }
-        .order-id { font-size: 18px; font-weight: 900; }
-        .order-date { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 600;}
-        .badge { background: #fef08a; color: #854d0e; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; display: inline-block; }
+### Passo 2: Criar as funções de Backup (Cookies)
+Vamos adicionar funções para gravar e ler cookies no JavaScript. 
 
-        .item-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 25px; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.05);}
-        .item-card.separado { opacity: 0.5; border-color: var(--success); }
-        .item-card.separado .item-img { filter: grayscale(100%); }
-        
-        .item-img { width: 100%; height: 400px; object-fit: contain; background: #fafafa; border-bottom: 1px solid var(--border); }
-        .item-info { padding: 15px; }
-        .item-title { font-size: 18px; font-weight: 900; margin: 0 0 15px 0; line-height: 1.2; }
-        
-        .ean-display { background: #f1f5f9; color: var(--text); padding: 12px; border-radius: 8px; font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 15px; border: 1px dashed #cbd5e1; letter-spacing: 2px; }
+**O que fazer:** Encontra o início da tua secção `<script>` e adiciona as funções de manipulação de cookies logo a seguir à função de base64.
 
-        .qty-highlight { background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; font-size: 32px; font-weight: 900; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: -1px; }
-
-        .item-meta { display: flex; justify-content: space-between; background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e2e8f0; }
-        .meta-box { text-align: center; flex: 1; }
-        .meta-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 800; }
-        .meta-value { font-size: 18px; font-weight: 900; color: var(--primary); }
-
-        #config-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; }
-        .modal-content input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter'; font-weight: 600;}
-        
-        .spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    </style>
-</head>
-<body>
-
-    <header>
-        <div class="brand"><i data-lucide="package-check"></i> Separação</div>
-        <div style="display:flex; gap:10px;">
-            <button class="btn-config" onclick="buscarPedidos()"><i data-lucide="refresh-cw"></i></button>
-            <button class="btn-config" onclick="abrirConfig()"><i data-lucide="settings"></i></button>
-        </div>
-    </header>
-
-    <div class="container" id="view-pedidos">
-        <div id="acao-selecao">
-            <span id="txt-selecionados" style="font-weight: 800; font-size: 14px;">0 selecionados</span>
-            <button class="btn-danger" onclick="excluirSelecionados()"><i data-lucide="trash-2"></i> Excluir do GitHub</button>
-        </div>
-
-        <h2 style="font-weight: 900; font-size: 16px; color: var(--text-muted); margin-bottom: 15px;">LISTA DE PEDIDOS</h2>
-        <div id="lista-pedidos">Carregando pedidos...</div>
-    </div>
-
-    <div class="container" id="view-separacao" style="display: none;">
-        <button style="background: transparent; color: var(--text-muted); font-size: 14px; margin-bottom: 15px; padding:0;" onclick="voltarParaPedidos()">
-            <i data-lucide="arrow-left"></i> Voltar aos Pedidos
-        </button>
-        <h2 id="titulo-pedido-ativo" style="font-weight: 900; font-size: 24px; margin-top: 0;">Pedido #...</h2>
-        <div id="lista-itens"></div>
-    </div>
-
-    <div id="config-modal">
-        <div class="modal-content">
-            <h3 style="margin:0; font-weight:900;">Credenciais GitHub</h3>
-            <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Insira os mesmos dados do Sucedoan PIM.</p>
-            <input type="text" id="cfg-user" placeholder="Usuário GitHub">
-            <input type="text" id="cfg-repo" placeholder="Repositório">
-            <input type="password" id="cfg-token" placeholder="Token de Acesso (ghp_...)">
-            <button class="btn-action" onclick="salvarConfig()" style="margin-top: 10px;">Salvar e Recarregar</button>
-            <button class="btn-action" onclick="fecharConfig()" style="background: var(--border); color: var(--text);">Cancelar</button>
-        </div>
-    </div>
-
+```javascript
     <script>
         function encodeBase64(str) { return btoa(new TextEncoder().encode(str).reduce((d, b) => d + String.fromCharCode(b), '')); }
         function decodeBase64(b64) { return new TextDecoder('utf-8').decode(Uint8Array.from(atob(b64.replace(/\s/g, '')), c => c.charCodeAt(0))); }
 
-        let cfg = null;
-        let fileSha = null;
-        let todosOsPedidos = [];
-        let pedidoAtivo = null;
-        let idsSelecionados = new Set();
-
-        window.onload = () => {
-            lucide.createIcons();
-            carregarConfig();
-        };
-
-        function carregarConfig() {
-            try {
-                const configSalva = localStorage.getItem('separador_config');
-                cfg = configSalva ? JSON.parse(configSalva) : null;
-            } catch (erro) { console.error(erro); cfg = null; }
-            if (!cfg || !cfg.token) { abrirConfig(); } else { buscarPedidos(); }
+        // --- NOVAS FUNÇÕES DE BACKUP DE CREDENCIAIS ---
+        function salvarCookie(nome, valor, dias) {
+            let data = new Date();
+            data.setTime(data.getTime() + (dias * 24 * 60 * 60 * 1000));
+            let expiracao = "expires=" + data.toUTCString();
+            document.cookie = nome + "=" + valor + ";" + expiracao + ";path=/";
         }
 
-        function abrirConfig() {
-            document.getElementById('cfg-user').value = cfg ? cfg.user : '';
-            document.getElementById('cfg-repo').value = cfg ? cfg.repo : '';
-            document.getElementById('cfg-token').value = cfg ? cfg.token : '';
-            document.getElementById('config-modal').style.display = 'flex';
-        }
-
-        function fecharConfig() { document.getElementById('config-modal').style.display = 'none'; }
-
-        function salvarConfig() {
-            const user = document.getElementById('cfg-user').value.trim();
-            const repo = document.getElementById('cfg-repo').value.trim();
-            const token = document.getElementById('cfg-token').value.trim();
-            if (!user || !repo || !token) { alert("Preencha tudo!"); return; }
-            cfg = { user, repo, token };
-            localStorage.setItem('separador_config', JSON.stringify(cfg));
-            fecharConfig(); 
-            buscarPedidos();
-        }
-
-        // Função para gerar URL que ignora o cache do GitHub
-        function obterUrlSemCache(caminho) {
-            const timestamp = new Date().getTime();
-            return `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${caminho}?t=${timestamp}`;
-        }
-
-        async function buscarPedidos() {
-            document.getElementById('lista-pedidos').innerHTML = '<div style="text-align:center; padding: 20px;"><i data-lucide="loader" class="spin"></i> Buscando versão atualizada...</div>';
-            lucide.createIcons();
-            idsSelecionados.clear();
-            atualizarBarraAcoes();
-
-            try {
-                const url = obterUrlSemCache('site/pedidoseparar.json');
-                const res = await fetch(url, { 
-                    headers: { 
-                        "Authorization": `Bearer ${cfg.token}`, 
-                        "Accept": "application/vnd.github.v3+json" 
-                    }, 
-                    cache: "no-store" 
-                });
-                
-                if (res.status === 404) { 
-                    document.getElementById('lista-pedidos').innerHTML = 'Arquivo não encontrado no GitHub.'; 
-                    todosOsPedidos = []; 
-                    return; 
-                }
-                
-                const data = await res.json();
-                fileSha = data.sha;
-                todosOsPedidos = JSON.parse(decodeBase64(data.content));
-                renderizarListaPedidos();
-            } catch (err) {
-                document.getElementById('lista-pedidos').innerHTML = `<p style="color:red;">Erro na conexão: ${err.message}</p>`;
+        function lerCookie(nome) {
+            let nomeEq = nome + "=";
+            let cookies = document.cookie.split(';');
+            for(let i = 0; i < cookies.length; i++) {
+                let c = cookies[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nomeEq) == 0) return c.substring(nomeEq.length, c.length);
             }
+            return null;
         }
-
-        function renderizarListaPedidos() {
-            const ordenados = [...todosOsPedidos].sort((a, b) => {
-                if (a.status === b.status) return new Date(b.data) - new Date(a.data);
-                return a.status === 'pendente' ? -1 : 1;
-            });
-
-            const html = ordenados.map((pedido) => {
-                const totalSkus = pedido.itens.length;
-                const totalUnidades = pedido.itens.reduce((soma, i) => soma + i.quantidade, 0);
-                const isConcluido = pedido.status === 'concluido';
-                const dataObj = new Date(pedido.data);
-                const dataFormatada = dataObj.toLocaleDateString('pt-BR') + ' ' + dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                const realIndex = todosOsPedidos.findIndex(p => p.id === pedido.id);
-
-                return `
-                <div class="order-card ${isConcluido ? 'concluido' : ''}" onclick="cliqueCard(event, ${realIndex})">
-                    <div class="checkbox-container">
-                        <input type="checkbox" ${idsSelecionados.has(pedido.id) ? 'checked' : ''} onchange="toggleSelecao(event, '${pedido.id}')">
-                    </div>
-                    <div class="order-content">
-                        <div>
-                            <div class="order-id">Pedido #${pedido.id}</div>
-                            <div class="order-date"><i data-lucide="calendar" size="12"></i> ${dataFormatada}</div>
-                            <div style="font-size: 11px; font-weight: 800; color: var(--text); margin-top: 4px;">
-                                ${totalSkus} Itens (${totalUnidades} Peças)
-                            </div>
-                        </div>
-                        <div class="badge" style="background: ${isConcluido ? '#d1fae5' : '#fef08a'}; color: ${isConcluido ? '#065f46' : '#854d0e'};">
-                            ${isConcluido ? 'SEPARADO' : 'PENDENTE'}
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
-
-            document.getElementById('lista-pedidos').innerHTML = html || 'Nenhum pedido encontrado.';
-            lucide.createIcons();
-        }
-
-        function cliqueCard(event, index) {
-            if (event.target.tagName === 'INPUT') return;
-            abrirPedido(index);
-        }
-
-        function toggleSelecao(event, id) {
-            if (event.target.checked) idsSelecionados.add(id);
-            else idsSelecionados.delete(id);
-            atualizarBarraAcoes();
-        }
-
-        function atualizarBarraAcoes() {
-            const barra = document.getElementById('acao-selecao');
-            const txt = document.getElementById('txt-selecionados');
-            if (idsSelecionados.size > 0) {
-                barra.style.display = 'flex';
-                txt.innerText = `${idsSelecionados.size} pedido(s) selecionado(s)`;
-            } else {
-                barra.style.display = 'none';
-            }
-        }
-
-        async function excluirSelecionados() {
-            if (!confirm(`Tens a certeza que desejas excluir ${idsSelecionados.size} pedido(s)?`)) return;
-            todosOsPedidos = todosOsPedidos.filter(p => !idsSelecionados.has(p.id));
-            idsSelecionados.clear();
-            await salvarNoGitHub(false, "Pedidos excluídos");
-            buscarPedidos();
-        }
-
-        function abrirPedido(index) {
-            pedidoAtivo = index;
-            document.getElementById('view-pedidos').style.display = 'none';
-            document.getElementById('view-separacao').style.display = 'block';
-            document.getElementById('titulo-pedido-ativo').innerText = `Separando #${todosOsPedidos[pedidoAtivo].id}`;
-            renderizarItensDoPedido();
-            window.scrollTo(0, 0);
-        }
-
-        function voltarParaPedidos() {
-            pedidoAtivo = null;
-            document.getElementById('view-separacao').style.display = 'none';
-            document.getElementById('view-pedidos').style.display = 'block';
-            buscarPedidos(); // Recarrega ao voltar para garantir que novos pedidos apareçam
-        }
-
-        function formatarImagem(url) {
-            if(!url) return 'https://placehold.co/400x400/f4f4f5/a1a1aa?text=SEM+FOTO';
-            if(url.includes('../')) return url.replace('../', 'https://donaantonia.com.br/');
-            return url;
-        }
-
-        function renderizarItensDoPedido() {
-            const pedido = todosOsPedidos[pedidoAtivo];
-            pedido.itens.sort((a, b) => {
-                if (a.gondola === b.gondola) return String(a.prateleira).localeCompare(String(b.prateleira));
-                return String(a.gondola).localeCompare(String(b.gondola));
-            });
-
-            const html = pedido.itens.map((item, idx) => {
-                const isSeparado = item.status === 'separado';
-                let areaControle = !isSeparado ? 
-                    `<button class="btn-action" onclick="confirmarSeparacao(${idx})"><i data-lucide="check"></i> Marcar como Separado</button>` :
-                    `<button class="btn-success" disabled><i data-lucide="check-circle"></i> Separado</button>`;
-
-                return `
-                <div class="item-card ${isSeparado ? 'separado' : ''}">
-                    <img src="${formatarImagem(item.url_imagem)}" class="item-img" onerror="this.src='https://placehold.co/400x400/f4f4f5/ef4444?text=ERRO'">
-                    
-                    <div class="item-info">
-                        <div class="qty-highlight">${item.quantidade} UN</div>
-                        
-                        <div class="ean-display">${item.gtin || 'SEM EAN REGISTADO'}</div>
-                        
-                        <h3 class="item-title">${item.nome}</h3>
-                        
-                        <div class="item-meta">
-                            <div class="meta-box" style="border-right: 1px solid var(--border);"><div class="meta-label">Gôndola</div><div class="meta-value">${item.gondola}</div></div>
-                            <div class="meta-box"><div class="meta-label">Prateleira</div><div class="meta-value">${item.prateleira}</div></div>
-                        </div>
-                        ${areaControle}
-                    </div>
-                </div>`;
-            }).join('');
-            document.getElementById('lista-itens').innerHTML = html;
-            lucide.createIcons();
-        }
-
-        async function confirmarSeparacao(itemIndex) {
-            const item = todosOsPedidos[pedidoAtivo].itens[itemIndex];
-            item.status = 'separado';
-            const todosSeparados = todosOsPedidos[pedidoAtivo].itens.every(i => i.status === 'separado');
-            
-            if(todosSeparados) {
-                todosOsPedidos[pedidoAtivo].status = 'concluido';
-                await salvarNoGitHub(true, `Pedido #${todosOsPedidos[pedidoAtivo].id} concluído`);
-            } else {
-                renderizarItensDoPedido(); 
-                await salvarNoGitHub(false, `Item ${item.nome} separado no pedido #${todosOsPedidos[pedidoAtivo].id}`);
-            }
-        }
-
-        async function salvarNoGitHub(pedidoCompleto = false, mensagem = "Atualização") {
-            try {
-                // Sincronização Inteligente: Primeiro busca o estado atual do arquivo para pegar o SHA mais novo
-                const urlGet = obterUrlSemCache('site/pedidoseparar.json');
-                const resGet = await fetch(urlGet, { 
-                    headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" },
-                    cache: "no-store"
-                });
-
-                let pedidosNoServidor = [];
-                let shaAtualizado = fileSha;
-
-                if (resGet.ok) {
-                    const dataGet = await resGet.json();
-                    shaAtualizado = dataGet.sha; // Pega o SHA que realmente está no servidor agora
-                    pedidosNoServidor = JSON.parse(decodeBase64(dataGet.content));
-                }
-
-                // Se houver um pedido sendo editado, vamos garantir que a nossa alteração 
-                // seja aplicada sobre os dados mais novos (caso tenha entrado pedido novo nesse meio tempo)
-                if (pedidoAtivo !== null) {
-                    const meuPedidoAtualizado = todosOsPedidos[pedidoAtivo];
-                    const indexNoServidor = pedidosNoServidor.findIndex(p => p.id === meuPedidoAtualizado.id);
-                    
-                    if (indexNoServidor !== -1) {
-                        pedidosNoServidor[indexNoServidor] = meuPedidoAtualizado;
-                    } else {
-                        // Se o pedido não existir mais no servidor, adicionamos ele
-                        pedidosNoServidor.push(meuPedidoAtualizado);
-                    }
-                    todosOsPedidos = pedidosNoServidor;
-                }
-
-                // Agora salvamos os dados mesclados
-                const body = { 
-                    message: mensagem, 
-                    content: encodeBase64(JSON.stringify(todosOsPedidos, null, 2)), 
-                    sha: shaAtualizado 
-                };
-
-                const urlPut = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/pedidoseparar.json`;
-                const resPut = await fetch(urlPut, { 
-                    method: 'PUT', 
-                    headers: { 
-                        "Authorization": `Bearer ${cfg.token}`, 
-                        "Accept": "application/vnd.github.v3+json", 
-                        "Content-Type": "application/json" 
-                    }, 
-                    body: JSON.stringify(body) 
-                });
-
-                if (resPut.ok) {
-                    const dataPut = await resPut.json();
-                    fileSha = dataPut.content.sha; // Atualiza o SHA local para a próxima operação
-                    if(pedidoCompleto) { 
-                        alert("🎉 Pedido concluído!"); 
-                        voltarParaPedidos(); 
-                    }
-                } else {
-                    const erro = await resPut.json();
-                    alert("Erro ao salvar no GitHub: " + erro.message);
-                }
-            } catch (e) { 
-                console.error(e); 
-                alert("Erro crítico de rede ao tentar sincronizar.");
-            }
-        }
-    </script>
-</body>
-</html>
+        // ----------------------------------------------
