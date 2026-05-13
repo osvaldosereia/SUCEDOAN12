@@ -94,17 +94,19 @@
         .qty-btn:active { background: #f1f5f9; }
         .qty-display { font-weight: 900; font-size: 15px; flex: 1; text-align: center; color: var(--text-dark); }
 
-        /* =========================================
+       /* =========================================
            NOVO CATÁLOGO RÁPIDO (3 Colunas)
         ========================================= */
         .grid-catalogo {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 0 4px;
+            display: grid; grid-template-columns: repeat(3, 1fr); padding: 0; background: #fff;
         }
         .card-catalogo {
-            background: #fff; border: 1px solid var(--border-light); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; align-items: center; position: relative;
+            background: #fff; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; position: relative;
+            border-bottom: 1px solid var(--border-light); border-right: 1px solid var(--border-light); border-radius: 0;
         }
+        .card-catalogo:nth-child(3n) { border-right: none; /* Tira a linha direita do último card da fileira */ }
         .card-catalogo img {
-            width: 100%; height: 80px; object-fit: contain; margin-bottom: 6px;
+            width: 100%; height: 110px; object-fit: contain; margin-bottom: 12px;
         }
         .card-catalogo-price {
             font-size: 13px; font-weight: 900; color: var(--text-dark);
@@ -835,13 +837,17 @@ const BASKETS = [
             
             let sortedCats = Array.from(categoriasSet).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b));
 
-            let chipsHtml = `<div class="chip-cat active" id="chip-Todos" onclick="changeCatalogoCategory('Todos')">Todos</div>`;
+            // PASSO NOVO: Recupera a categoria que estava antes, em vez de forçar o 'Todos'
+            let activeCat = STATE.activeCatalogoCat || 'Todos';
+
+            let chipsHtml = `<div class="chip-cat ${activeCat === 'Todos' ? 'active' : ''}" id="chip-Todos" onclick="changeCatalogoCategory('Todos')">Todos</div>`;
             sortedCats.forEach(c => {
-                chipsHtml += `<div class="chip-cat" id="chip-${getFriendlySlug(c)}" onclick="changeCatalogoCategory('${c}')">${c}</div>`;
+                chipsHtml += `<div class="chip-cat ${activeCat === c ? 'active' : ''}" id="chip-${getFriendlySlug(c)}" onclick="changeCatalogoCategory('${c}')">${c}</div>`;
             });
 
+            // Ajustei também o topo para ser fundo branco '#fff' e combinar perfeitamente com a grade branca.
             let html = `
-            <div style="position: sticky; top: -15px; background: var(--bg-body); z-index: 100; margin: -15px 0 0 0; padding-top: 15px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
+            <div style="position: sticky; top: -15px; background: #fff; z-index: 100; margin: -15px 0 0 0; padding-top: 15px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
                 <div style="display: flex; align-items: center; padding: 0 15px 10px 15px;">
                     <div onclick="window.history.back()" style="cursor: pointer; margin-right: 15px; display: flex; align-items: center; padding: 5px;">
                         <svg class="svg-icon" viewBox="0 0 24 24" style="width: 24px; height: 24px;"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -852,12 +858,20 @@ const BASKETS = [
                     ${chipsHtml}
                 </div>
             </div>
-            <div id="catalogo-grid-container" class="grid-catalogo" style="margin: 10px 0;"></div>
+            <div id="catalogo-grid-container" class="grid-catalogo" style="margin: 0;"></div>
             `;
             
             $('vitrine').innerHTML = html;
-            STATE.activeCatalogoCat = 'Todos';
-            renderCatalogoGrid('Todos');
+            
+            // Mantém a categoria no estado da aplicação
+            STATE.activeCatalogoCat = activeCat;
+            renderCatalogoGrid(activeCat);
+
+            // Garante que a barra de chips role para ficar visível onde o botão selecionado está
+            requestAnimationFrame(() => {
+                let activeChip = document.querySelector('.chip-cat.active');
+                if (activeChip) activeChip.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+            });
         }
 
         window.changeCatalogoCategory = function(cat) {
