@@ -26,7 +26,6 @@
         .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
         .header h1 { font-weight: 900; font-size: 26px; border-left: 5px solid var(--accent); padding-left: 15px; }
 
-        /* PAINEL DE TRANSMISSÃO (NOVO) */
         .sync-panel { background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #334155; }
         .sync-panel h4 { color: white; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 15px; }
         .sync-badges { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -34,7 +33,7 @@
         .badge.green { background: var(--success); color: white; }
         .badge.red { background: var(--danger); color: white; }
         .badge.yellow { background: var(--warning); color: black; }
-        .terminal-log { background: var(--terminal-bg); color: var(--terminal-text); font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 12px; border-radius: 8px; height: 100px; overflow-y: auto; line-height: 1.5; }
+        .terminal-log { background: var(--terminal-bg); color: var(--terminal-text); font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 12px; border-radius: 8px; height: 120px; overflow-y: auto; line-height: 1.5; }
         .terminal-log div { border-bottom: 1px solid #1e293b; padding-bottom: 4px; margin-bottom: 4px; }
         .terminal-log .time { color: #64748b; margin-right: 8px; }
         .terminal-log .err { color: #ef4444; }
@@ -42,7 +41,6 @@
 
         .config-box { background: var(--config-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; }
         .config-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-        
         .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px; }
         .config-grid input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-weight: 600; }
         .config-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -50,7 +48,6 @@
 
         .prompt-box { background: white; padding: 25px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .prompt-box h2 { font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--primary); }
-        
         .form-grid { display: grid; grid-template-columns: 200px 1fr; gap: 20px; }
         @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
 
@@ -67,28 +64,24 @@
         .gen-item { display: flex; flex-direction: column; gap: 6px; }
         .gen-item.full-width { grid-column: 1 / -1; }
         .gen-item label { font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
-        .gen-item select, .gen-item input[type="number"] { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline-color: var(--accent); background: white; cursor: pointer; font-weight: 600; color: #0f172a; }
+        .gen-item select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline-color: var(--accent); background: white; cursor: pointer; font-weight: 600; }
 
         .form-footer { display: flex; align-items: center; gap: 15px; margin-top: 20px; justify-content: flex-end; }
         .btn-main { padding: 14px 28px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
-        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .btn-main:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-main:disabled { background: #94a3b8; cursor: not-allowed; }
         .btn-sec { padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
         .btn-success { background: var(--success); padding: 12px 24px; color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; }
         .btn-cancel { padding: 14px 20px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; display: none; }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; margin-top: 20px; }
         .card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 15px; display: flex; flex-direction: column; transition: 0.3s; }
-        .card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.05); transform: translateY(-3px); }
         .card-img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 10px; margin-bottom: 15px; background: #f1f5f9; }
         .card-title { font-weight: 800; font-size: 16px; margin-bottom: 8px; }
         .card-desc { font-size: 12px; color: #64748b; margin-bottom: 15px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }
         .card-actions { display: grid; gap: 10px; }
-        .btn-copy { background: var(--success); color: white; padding: 10px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px; transition: 0.2s; }
-        .btn-copy:hover { filter: brightness(1.1); }
+        .btn-copy { background: var(--success); color: white; padding: 10px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px; }
         .card-footer { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
         .btn-sml { background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; }
-
     </style>
 </head>
 <body>
@@ -107,15 +100,12 @@
             <span class="badge" id="badgeTimer" style="display:none;">⏱️ Tempo: 0s</span>
         </div>
         <div class="terminal-log" id="terminalLog">
-            <div><span class="time">[Sistema]</span> Aguardando inicialização...</div>
+            <div><span class="time">[Sistema]</span> Aguardando credenciais...</div>
         </div>
     </div>
 
     <div class="config-box">
-        <h3>
-            <span>⚙️ Credenciais GitHub (Salvas no Celular)</span>
-            <span id="credStatus" style="font-size: 12px; color: var(--danger); font-weight: 600;">Não salvas localmente</span>
-        </h3>
+        <h3><span>⚙️ Credenciais GitHub</span></h3>
         <div class="config-grid">
             <input type="password" id="ghToken" placeholder="GitHub Token (ghp_...)">
             <input type="text" id="ghUser" placeholder="Usuário do GitHub">
@@ -139,98 +129,36 @@
             </div>
             
             <div class="input-group">
-                <input type="text" id="pName" placeholder="Título da Campanha / Identificação do Anúncio">
-                
+                <input type="text" id="pName" placeholder="Título da Campanha">
                 <div class="generator-grid">
-                    
-                    <div class="gen-item">
-                        <label>Formato do Anúncio</label>
+                    <div class="gen-item"><label>Formato</label>
                         <select id="genFormato" onchange="gerarTextoPrompt()">
-                            <option value="Vertical Padrão (4:5)">Instagram Feed Vertical (4:5)</option>
-                            <option value="Vertical Tela Cheia (9:16)">Reels / Stories / TikTok (9:16)</option>
-                            <option value="Quadrado (1:1)">Carrossel / Grid (1:1)</option>
-                            <option value="Horizontal (16:9)">Banner Web / YouTube (16:9)</option>
+                            <option value="Vertical Padrão (4:5)">Instagram Feed (4:5)</option>
+                            <option value="Vertical Tela Cheia (9:16)">Reels/Stories (9:16)</option>
+                            <option value="Quadrado (1:1)">Carrossel (1:1)</option>
                         </select>
                     </div>
-
-                    <div class="gen-item">
-                        <label>Vibe / Estética Geral</label>
+                    <div class="gen-item"><label>Vibe</label>
                         <select id="genEstetica" onchange="gerarTextoPrompt()">
-                            <option value="Pop Art Candy Monocromático (Cenário, luzes e adereços exatamente na mesma cor pastel vibrante do produto, criando uma imersão de marca)">Candy Monocromático (Imersão de Cor)</option>
-                            <option value="Minimalismo Color Block (Fundo de estúdio totalmente liso em uma cor saturada que cria contraste vibrante e moderno com o produto)">Minimalismo Color Block (Contraste Liso)</option>
-                            <option value="Neon Pastel Cyber-Chic (Estética noturna suave com letreiros neon ou luzes de tubo em tons de algodão doce e azul piscina)">Neon Pastel Cyber-Chic</option>
-                            <option value="Glossy High-End (Superfícies altamente polidas, chão de espelho d'água, texturas de gloss labial e plástico translúcido)">Glossy High-End (Brilho e Reflexo)</option>
-                            <option value="Surrealismo Pop Lúdico (Escalas exageradas, elementos flutuantes ou distorções divertidas mantendo a limpeza visual)">Surrealismo Pop Lúdico</option>
-                            <option value="Geometria Perfeita Bauhaus (Composição matemática usando apenas esferas, cubos e cilindros lisos como adereços no cenário)">Geometria Limpa Bauhaus</option>
+                            <option value="Pop Art Candy Monocromático">Candy Monocromático</option>
+                            <option value="Minimalismo Color Block">Minimalismo Color Block</option>
+                            <option value="Neon Pastel Cyber-Chic">Neon Pastel</option>
+                            <option value="Glossy High-End">Glossy High-End</option>
                         </select>
                     </div>
-
-                    <div class="gen-item">
-                        <label>Qtd. de Produtos</label>
-                        <select id="genQtd" onchange="gerarTextoPrompt()">
-                            <option value="1">1 Produto (Herói solitário)</option>
-                            <option value="2">2 Produtos (Dupla / Equilíbrio)</option>
-                            <option value="3">3 Produtos (Composição em triângulo)</option>
-                            <option value="multiplos">Múltiplos Produtos (Padrão Repetitivo Pop)</option>
-                        </select>
-                    </div>
-
-                    <div class="gen-item">
-                        <label>Lente e Ângulo</label>
+                    <div class="gen-item"><label>Ângulo</label>
                         <select id="genAngulo" onchange="gerarTextoPrompt()">
-                            <option value="Frontal Direto (Eye-Level) capturado com Lente 85mm para proporções perfeitas e isolamento de fundo luxuoso">Frontal Hero (Lente 85mm)</option>
-                            <option value="Plongée (45° de cima para baixo) capturado com Lente 50mm, visão editorial clássica de revista">Plongée Editorial (45° - Lente 50mm)</option>
-                            <option value="Flat Lay (Aéreo 90° perfeito) com Lente 35mm, organização milimétrica no estilo knolling moderno">Flat Lay Aéreo (90° - Lente 35mm)</option>
-                            <option value="Contra-plongée (De baixo para cima) capturado com Lente Grande Angular 24mm para conferir imponência e distorção dinâmica pop">Contra-plongée Imponente (Lente 24mm)</option>
-                            <option value="Macro Extremo com Lente 100mm f/2.8, focando microscopicamente na textura e brilho, com profundidade de campo super rasa">Macro Detalhe (Lente 100mm f/2.8)</option>
+                            <option value="Frontal Direto (Eye-Level) - 85mm">Frontal Hero (85mm)</option>
+                            <option value="Plongée (45°) - 50mm">Plongée Editorial</option>
+                            <option value="Flat Lay (90°) - 35mm">Flat Lay Aéreo</option>
                         </select>
                     </div>
-
-                    <div class="gen-item full-width">
-                        <label>Cenário e Composição da Cena</label>
-                        <select id="genAmbiente" onchange="gerarTextoPrompt()">
-                            <option value="Posicionado sobre um pódio cilíndrico de acrílico translúcido, em um fundo infinito (cyc wall) impecável">1. Pódio de Acrílico em Fundo Infinito</option>
-                            <option value="Flutuando suavemente em um céu degradê azul-piscina e lilás, rodeado por nuvens estilizadas tipo algodão doce">2. Nuvens de Algodão Doce e Céu Degradê</option>
-                            <option value="Mergulhado parcialmente num líquido denso, espesso e brilhante (lembrando gloss labial ou tinta acrílica pastel)">3. Mergulhado em Líquido Brilhante/Gloss</option>
-                            <option value="Cercado perfeitamente por adereços geométricos (esferas e cubos) pintados em cores complementares vibrantes">4. Rodeado por Formas Geométricas Lisas</option>
-                            <option value="Em um equilíbrio impossível e surreal sobre uma torre de pequenos blocos de resina colorida translúcida">5. Equilíbrio Surreal sobre Blocos de Resina</option>
-                            <option value="No centro de uma piscina vazia e limpa, pintada com uma cor sólida vibrante e moderna, gerando sombras arquitetônicas">6. Fundo de Piscina Vazia Monocromática</option>
-                            <option value="Disposto simetricamente sobre uma mesa de vidro temperado grosso, iluminada por baixo com cores neon pastéis">7. Mesa de Vidro Iluminada por Neon Base</option>
-                            <option value="Emergindo de uma duna de areia fina e perfeitamente lisa, tingida artificialmente em tom rosa bebê ou lavanda">8. Dunas de Areia Tingida Pastel</option>
-                            <option value="Apoiado sobre uma almofada inflável plástica transparente, com estética futurista dos anos 2000 (Y2K brilhante)">9. Almofada Inflável Plástica (Y2K)</option>
-                            <option value="Enquadrado através de um recorte circular perfeito num painel de papel colorido brilhante">10. Espiando por Recorte Circular Perfeito</option>
-                            <option value="Repousando sobre uma cama de ingredientes visuais hiper-realistas e frescos, todos na mesma cor do produto">11. Cama de Ingredientes Monocromáticos</option>
-                            <option value="Dentro de uma mini geladeira retrô premium de porta aberta, com prateleiras de vidro limpas e luz interna estilizada">12. Mini Geladeira Retrô Premium</option>
-                        </select>
-                    </div>
-
-                    <div class="gen-item">
-                        <label>Design de Iluminação</label>
-                        <select id="genIlum" onchange="gerarTextoPrompt()">
-                            <option value="Softbox Ultra-Difuso de Estúdio (Luz suave, ampla e perfeitamente equilibrada, eliminando sombras duras e realçando a limpeza das cores Candy)">Softbox Difuso (Sem sombras duras)</option>
-                            <option value="Hard Light Direcional Estilo Verão (Flash direto imitando a luz do sol do meio-dia, criando sombras duras, nítidas e geométricas de alto contraste)">Hard Light Verão (Sombras Nítidas)</option>
-                            <option value="Color Gels Dicróicos (Duas fontes de luz rebatidas nas laterais usando cores vibrantes, ex: ciano de um lado e magenta do outro, criando gradientes no brilho)">Color Gels (Gradientes Dicróicos)</option>
-                            <option value="Rim Light e Fundo Escuro Pastel (O ambiente é ligeiramente mais escuro, com um contorno de luz brilhante definindo a silhueta do produto)">Rim Light (Contorno Brilhante)</option>
-                        </select>
-                    </div>
-
-                    <div class="gen-item">
-                        <label>Acabamento e Integração</label>
-                        <select id="genIntegracao" onchange="gerarTextoPrompt()">
-                            <option value="Cálculo avançado de Ambient Occlusion, gerando micro-sombras de contato que ancoram o produto de forma hiper-realista à superfície">Ambient Occlusion (Ancoragem Física)</option>
-                            <option value="Efeito de Reflexos Cáusticos (Caustics), onde a luz atravessa materiais ou líquidos no cenário, projetando padrões de luz brilhantes e realistas no chão">Reflexos Cáusticos (Luz através de vidro/líquido)</option>
-                            <option value="Sombras Projetadas Coloridas (Color Cast), onde a sombra do produto absorve sutilmente o tom vibrante do fundo, fugindo do preto opaco">Sombras Coloridas e Luminosas</option>
-                            <option value="Profundidade de Campo Cinematográfica (Bokeh), mantendo o produto incrivelmente nítido enquanto desfoqueia suavemente adereços em primeiro e segundo plano">Desfoque Cinematográfico (Bokeh)</option>
-                        </select>
-                    </div>
-
                 </div>
-
-                <textarea id="pText" placeholder="O super-prompt da agência será gerado aqui..."></textarea>
+                <textarea id="pText" placeholder="O prompt será gerado aqui..."></textarea>
             </div>
         </div>
         <div class="form-footer">
-            <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar Edição</button>
+            <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar</button>
             <button class="btn-main" id="btnSave" onclick="savePrompt()">💾 Iniciar Upload</button>
         </div>
     </div>
@@ -239,439 +167,221 @@
 </div>
 
 <script>
-    // -----------------------------------------
-    // 1. SISTEMA DIDÁTICO DE LOGS E TIMERS
-    // -----------------------------------------
-    let itensNaFila = 0;
-    let timerUpload = 0;
-    let cronometroInterval;
+    // Configurações Globais
+    let GITHUB = { token: '', owner: '', repo: '', path: 'prom10.json', sha: '' };
+    const STATE = { prompts: [], editingIdx: -1, currentImageBase64: "" };
+    let cronometroInterval, timerUpload = 0, itensNaFila = 0;
 
-    function formatTime() {
-        const now = new Date();
-        return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-    }
-
+    // Utilitários de Interface
     function logTerminal(msg, tipo = 'normal') {
         const terminal = document.getElementById('terminalLog');
-        const colorClass = tipo === 'erro' ? 'err' : (tipo === 'sucesso' ? 'ok' : '');
-        terminal.innerHTML += `<div><span class="time">[${formatTime()}]</span> <span class="${colorClass}">${msg}</span></div>`;
-        terminal.scrollTop = terminal.scrollHeight; // Rola pro final
+        const color = tipo === 'erro' ? 'err' : (tipo === 'sucesso' ? 'ok' : '');
+        const time = new Date().toLocaleTimeString();
+        terminal.innerHTML += `<div><span class="time">[${time}]</span> <span class="${color}">${msg}</span></div>`;
+        terminal.scrollTop = terminal.scrollHeight;
     }
 
-    function atualizarFila(quantidade) {
-        itensNaFila += quantidade;
-        document.getElementById('badgeFila').innerText = `📦 Fila de Envio: ${itensNaFila}`;
-        if(itensNaFila > 0) {
-            document.getElementById('badgeFila').className = "badge yellow";
-        } else {
-            document.getElementById('badgeFila').className = "badge";
-        }
+    function atualizarFila(n) {
+        itensNaFila += n;
+        document.getElementById('badgeFila').innerText = `📦 Fila: ${itensNaFila}`;
+        document.getElementById('badgeFila').className = itensNaFila > 0 ? "badge yellow" : "badge";
     }
 
-    function iniciarCronometro() {
-        timerUpload = 0;
-        document.getElementById('badgeTimer').style.display = "flex";
-        document.getElementById('badgeTimer').innerText = `⏱️ Tempo: 0s`;
-        clearInterval(cronometroInterval);
-        cronometroInterval = setInterval(() => {
-            timerUpload++;
-            document.getElementById('badgeTimer').innerText = `⏱️ Tempo: ${timerUpload}s`;
-        }, 1000);
-    }
-
-    function pararCronometro() {
-        clearInterval(cronometroInterval);
-        document.getElementById('badgeTimer').style.display = "none";
-    }
-
-    // -----------------------------------------
-    // 2. CREDENCIAIS E TESTE DE CONEXÃO RIGOROSO
-    // -----------------------------------------
-    function carregarCredenciaisLocais() {
-        const t = localStorage.getItem('da_gh_token') || '';
-        const u = localStorage.getItem('da_gh_user') || '';
-        const r = localStorage.getItem('da_gh_repo') || '';
-
-        document.getElementById('ghToken').value = t;
-        document.getElementById('ghUser').value = u;
-        document.getElementById('ghRepo').value = r;
-
-        const status = document.getElementById('credStatus');
-        if(t && u && r) {
-            status.innerText = "✅ Salvas e Blindadas no Aparelho";
-            status.style.color = "var(--success)";
-            return { token: t, owner: u, repo: r, path: 'prom10.json', sha: '' };
-        } else {
-            status.innerText = "⚠️ Não salvas localmente";
-            status.style.color = "var(--danger)";
-            return { token: '', owner: '', repo: '', path: 'prom10.json', sha: '' };
-        }
-    }
-
-    let GITHUB = carregarCredenciaisLocais();
-    const STATE = { prompts: [], editingIdx: -1, currentImageBase64: "" };
-    let dadosCarregadosComSucesso = false; 
-
+    // Gerenciamento de Credenciais
     function salvarCredenciaisLocal() {
-        const token = document.getElementById('ghToken').value.trim();
-        const user = document.getElementById('ghUser').value.trim();
-        const repo = document.getElementById('ghRepo').value.trim();
-
-        if(!token || !user || !repo) {
-            logTerminal("Preencha todos os campos do GitHub.", "erro");
-            return;
-        }
-
-        localStorage.setItem('da_gh_token', token);
-        localStorage.setItem('da_gh_user', user);
-        localStorage.setItem('da_gh_repo', repo);
-
-        GITHUB = carregarCredenciaisLocais(); 
-        logTerminal("Credenciais salvas no armazenamento local do navegador.", "sucesso");
+        const t = document.getElementById('ghToken').value.trim();
+        const u = document.getElementById('ghUser').value.trim();
+        const r = document.getElementById('ghRepo').value.trim();
+        if(!t || !u || !r) return logTerminal("Erro: Preencha todos os campos.", "erro");
+        
+        localStorage.setItem('da_gh_token', t);
+        localStorage.setItem('da_gh_user', u);
+        localStorage.setItem('da_gh_repo', r);
+        carregarConfig();
+        logTerminal("Credenciais gravadas!", "sucesso");
         testarConexaoRapida();
     }
 
+    function carregarConfig() {
+        GITHUB.token = localStorage.getItem('da_gh_token') || '';
+        GITHUB.owner = localStorage.getItem('da_gh_user') || '';
+        GITHUB.repo = localStorage.getItem('da_gh_repo') || '';
+        document.getElementById('ghToken').value = GITHUB.token;
+        document.getElementById('ghUser').value = GITHUB.owner;
+        document.getElementById('ghRepo').value = GITHUB.repo;
+    }
+
+    // Comunicação GitHub
+    async function fetchGitHub(url, options = {}) {
+        const headers = { 
+            'Authorization': `Bearer ${GITHUB.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Cache-Control': 'no-cache'
+        };
+        return fetch(url, { ...options, headers: { ...headers, ...options.headers } });
+    }
+
     async function testarConexaoRapida() {
-        logTerminal("Iniciando Handshake (Teste de Conexão) com o GitHub...");
         const badge = document.getElementById('badgeConn');
-        
-        if(!GITHUB.token) {
-            logTerminal("Falha: Faltam credenciais.", "erro");
-            badge.className = "badge red"; badge.innerText = "🔴 Falha";
-            return false;
-        }
-
+        if(!GITHUB.token) return false;
         try {
-            // Tenta acessar os detalhes do repositório para ver se o Token tem permissão
-            const res = await fetch(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}`, {
-                headers: { 'Authorization': `Bearer ${GITHUB.token}` }
-            });
-
-            if(res.status === 401) throw new Error("Token Inválido ou Expirado.");
-            if(res.status === 404) throw new Error("Repositório ou Usuário não encontrado.");
-            if(!res.ok) throw new Error(`Erro desconhecido do GitHub: ${res.status}`);
-
-            logTerminal("Handshake Aceito! Token válido e permissões OK.", "sucesso");
+            const res = await fetchGitHub(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}`);
+            if(!res.ok) throw new Error(res.status);
             badge.className = "badge green"; badge.innerText = "🟢 Conectado";
             return true;
         } catch(e) {
-            logTerminal(`Erro de Conexão: ${e.message}`, "erro");
-            badge.className = "badge red"; badge.innerText = "🔴 Sem Acesso";
+            badge.className = "badge red"; badge.innerText = "🔴 Erro " + e.message;
             return false;
         }
     }
 
-    // -----------------------------------------
-    // 3. GERADOR DE PROMPT E IMAGEM
-    // -----------------------------------------
-    function gerarTextoPrompt() {
-        if(STATE.editingIdx > -1 && document.getElementById('pText').value.trim() !== '') return;
-        const qtdValor = document.getElementById('genQtd').value;
-        const formato = document.getElementById('genFormato').value;
-        const estetica = document.getElementById('genEstetica').value;
-        const angulo = document.getElementById('genAngulo').value;
-        const ambiente = document.getElementById('genAmbiente').value;
-        const iluminacao = document.getElementById('genIlum').value;
-        const integracao = document.getElementById('genIntegracao').value;
-
-        let textoProduto = qtdValor === "1" ? "o produto anexado" : (qtdValor === "multiplos" ? "múltiplas unidades do produto anexado compondo um padrão visual" : `exatamente ${qtdValor} unidades do produto anexado`);
-        let pluralEles = "deles";
-
-        const comando = `Atue como um Fotógrafo Publicitário e Diretor de Arte de classe mundial. Crie uma imagem de campanha High-End no formato ${formato}, adotando uma estética Pop, Candy e Minimalista.
-
-Direção Criativa e Vibe: ${estetica}.
-Lente e Ângulo: Câmera posicionada em um ângulo ${angulo}.
-Cenário e Composição: ${ambiente}. Integre perfeitamente ${textoProduto} como a estrela absoluta e central da narrativa visual.
-Design de Iluminação: ${iluminacao}.
-Acabamento e Renderização: Para garantir aspecto de fotografia real de estúdio e fugir da colagem amadora, aplique rigorosamente ${integracao}. As cores devem ser puras, atraentes e modernas.
-
-DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência fornecida(s) como objeto 100% inalterável. É ESTRITAMENTE PROIBIDO modificar o formato da embalagem, o logotipo, os textos do rótulo ou o design original. O papel da IA é construir o cenário deslumbrante, a luz rica e os fenômenos ópticos ao redor ${pluralEles}, mantendo a volumetria e textura originais intactas.`;
-
-        document.getElementById('pText').value = comando;
-    }
-    
-    function handleImageSelect(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        logTerminal(`Compactando imagem: ${file.name}...`);
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = 400; canvas.height = 500;
-                const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
-                const x = (canvas.width / scale - img.width) / 2;
-                const y = (canvas.height / scale - img.height) / 2;
-                ctx.drawImage(img, x, y, img.width, img.height, 0, 0, img.width * scale, img.height * scale);
-
-                let quality = 0.9; let base64 = "";
-                do {
-                    base64 = canvas.toDataURL('image/jpeg', quality);
-                    if ((base64.length * (3/4)) <= 51200 || quality <= 0.1) break;
-                    quality -= 0.1; 
-                } while (quality > 0.1);
-
-                STATE.currentImageBase64 = base64;
-                const preview = document.getElementById('pImgPreview');
-                preview.src = base64;
-                preview.style.display = 'block';
-                document.getElementById('sizeInfo').innerText = `Otimizada: ${Math.round((base64.length * (3/4)) / 1024)}KB`;
-                logTerminal(`Imagem compactada com sucesso. Pronta para envio.`, "sucesso");
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-
-    // -----------------------------------------
-    // 4. FUNÇÕES NÚCLEO: GITHUB E UPLOAD SEGURO
-    // -----------------------------------------
-    const utf8_to_b64 = str => window.btoa(unescape(encodeURIComponent(str)));
-    const b64_to_utf8 = str => decodeURIComponent(escape(window.atob(str)));
-
-    async function carregarPrompts() {
-        logTerminal("Buscando dados no servidor GitHub...");
-        const isConectado = await testarConexaoRapida();
-        if(!isConectado) return;
-
+    async function atualizarSHALocal() {
         try {
-            const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
-            const res = await fetch(url, { 
-                headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' } 
-            });
-            
-            if(res.status === 404) { 
-                STATE.prompts = []; GITHUB.sha = ''; dadosCarregadosComSucesso = true; render(); 
-                logTerminal("Arquivo prom10.json não existe ainda. Ele será criado no primeiro salvamento.", "sucesso");
-                return; 
+            const res = await fetchGitHub(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`);
+            if(res.ok) {
+                const data = await res.json();
+                GITHUB.sha = data.sha;
+                return data.sha;
             }
-            if(!res.ok) throw new Error(`Erro na leitura do JSON: ${res.status}`);
+        } catch(e) { logTerminal("Erro ao sincronizar SHA.", "erro"); }
+        return null;
+    }
 
+    // Fluxo de Negócio
+    async function carregarPrompts() {
+        logTerminal("Buscando dados no GitHub...");
+        try {
+            const res = await fetchGitHub(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`);
+            if(res.status === 404) {
+                logTerminal("Arquivo novo. Será criado no primeiro salvamento.");
+                return;
+            }
             const data = await res.json();
             GITHUB.sha = data.sha;
-            
-            if (data.content) {
-                const decodificado = b64_to_utf8(data.content).trim();
-                if(decodificado) STATE.prompts = JSON.parse(decodificado);
-            }
-            dadosCarregadosComSucesso = true; 
+            STATE.prompts = JSON.parse(decodeURIComponent(escape(atob(data.content))));
             render();
-            logTerminal("Banco de Prompts importado perfeitamente!", "sucesso");
-
-        } catch (e) { 
-            logTerminal(e.message, "erro");
-            dadosCarregadosComSucesso = false; 
-        }
+            logTerminal("Dados carregados!", "sucesso");
+        } catch(e) { logTerminal("Falha ao carregar: " + e.message, "erro"); }
     }
 
     async function savePrompt() {
         const name = document.getElementById('pName').value.trim();
         const text = document.getElementById('pText').value.trim();
-        
-        if(!name || !text) {
-            logTerminal("Operação cancelada: Título ou Comando vazios.", "erro");
-            return;
-        }
+        if(!name || !text) return logTerminal("Erro: Título ou Prompt vazios.", "erro");
 
-        // PASSO 1: O Handshake Rigoroso (Se não passar, nem tenta)
-        const isConectado = await testarConexaoRapida();
-        if(!isConectado) {
-            logTerminal("Upload cancelado devido a falha na conexão.", "erro");
-            return;
-        }
-
-        const btnSave = document.getElementById('btnSave');
-        btnSave.disabled = true;
-        btnSave.innerHTML = "⏳ Transmitindo dados...";
-        iniciarCronometro();
+        const btn = document.getElementById('btnSave');
+        btn.disabled = true; btn.innerText = "⏳ Enviando...";
+        atualizarFila(1);
 
         try {
-            let finalImageUrl = STATE.currentImageBase64;
-            
-            // PASSO 2: Upload da Imagem
-            if (finalImageUrl && finalImageUrl.startsWith('data:image')) {
-                atualizarFila(1);
-                logTerminal("Iniciando upload da foto para a pasta prom10_images...");
-                
-                const pureBase64 = finalImageUrl.split(',')[1];
-                const filename = `img_${Date.now()}.jpg`;
-                const imagePath = `prom10_images/${filename}`; 
-                
-                const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${imagePath}`;
-                const body = { message: `Upload Visual Criativo: ${filename}`, content: pureBase64 };
-
-                const res = await fetch(url, {
+            let finalImg = STATE.currentImageBase64;
+            // 1. Upload Imagem se necessário
+            if(finalImg.startsWith('data:image')) {
+                logTerminal("Subindo imagem...");
+                const imgName = `img_${Date.now()}.jpg`;
+                const imgRes = await fetchGitHub(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/prom10_images/${imgName}`, {
                     method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
+                    body: JSON.stringify({ message: "img", content: finalImg.split(',')[1] })
                 });
-
-                if(!res.ok) throw new Error(`O GitHub rejeitou o upload da imagem. Erro ${res.status}`);
-                
-                const data = await res.json();
-                finalImageUrl = data.content.download_url; 
-                logTerminal("Upload da foto concluído. Link direto gerado.", "sucesso");
-                atualizarFila(-1);
+                if(imgRes.ok) finalImg = (await imgRes.json()).content.download_url;
             }
 
-            // PASSO 3: Atualizar lista na Memória
-            const promptData = { name, text, image: finalImageUrl };
-            if(STATE.editingIdx > -1) {
-                STATE.prompts[STATE.editingIdx] = promptData;
-            } else {
-                STATE.prompts.unshift(promptData);
-            }
+            // 2. Atualizar JSON (Com Retry para Erro 422)
+            const promptObj = { name, text, image: finalImg };
+            if(STATE.editingIdx > -1) STATE.prompts[STATE.editingIdx] = promptObj;
+            else STATE.prompts.unshift(promptObj);
 
-            // PASSO 4: Upload do Arquivo JSON Inteiro
-            atualizarFila(1);
-            logTerminal("Sincronizando JSON com o novo briefing...");
-            
-            const jsonUrl = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
-            
-            // Pega o SHA de segurança mais atual antes de sobrescrever
-            try {
-                const resSha = await fetch(jsonUrl, { headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Cache-Control': 'no-cache' } });
-                if (resSha.ok) {
-                    const dataSha = await resSha.json();
-                    GITHUB.sha = dataSha.sha;
-                }
-            } catch(e) { }
+            logTerminal("Sincronizando Banco de Dados...");
+            await atualizarSHALocal(); // Garante o SHA mais novo
 
             const jsonBody = {
-                message: `Atualizando Prompts via Gerenciador: ${name}`,
-                content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2))
+                message: "update",
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(STATE.prompts, null, 2)))),
+                sha: GITHUB.sha
             };
-            if(GITHUB.sha) jsonBody.sha = GITHUB.sha;
 
-            const resJson = await fetch(jsonUrl, {
+            const res = await fetchGitHub(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`, {
                 method: 'PUT',
-                headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(jsonBody)
             });
 
-            if(!resJson.ok) throw new Error(`O GitHub rejeitou o salvamento do arquivo JSON. Erro ${resJson.status}`);
-
-            const dataJson = await resJson.json();
-            GITHUB.sha = dataJson.content.sha; 
-            
-            logTerminal("Banco de dados JSON sincronizado com sucesso!", "sucesso");
-            atualizarFila(-1);
-            
-            // PASSO 5: Limpeza
-            cancelEdit();
-            render(); 
-            logTerminal("✨ Ciclo de Sincronização finalizado sem erros.", "sucesso");
-            
-        } catch (error) {
-            logTerminal(`FALHA CRÍTICA: ${error.message}`, "erro");
-            atualizarFila(-itensNaFila); // zera a fila por erro
-        } finally {
-            btnSave.disabled = false;
-            btnSave.innerHTML = "💾 Iniciar Upload";
-            pararCronometro();
-        }
-    }
-
-    async function deletePrompt(i) {
-        if(confirm("Deseja apagar este conceito permanentemente?")) {
-            STATE.prompts.splice(i, 1);
-            render();
-            logTerminal("Sincronizando exclusão com o servidor...");
-            
-            // Reutiliza o loop de upload de JSON
-            atualizarFila(1);
-            iniciarCronometro();
-            
-            try {
-                const jsonUrl = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
-                const resSha = await fetch(jsonUrl, { headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Cache-Control': 'no-cache' } });
-                if (resSha.ok) GITHUB.sha = (await resSha.json()).sha;
-
-                const jsonBody = {
-                    message: "Removendo arquivo do estúdio",
-                    content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2)),
-                    sha: GITHUB.sha
-                };
-
-                await fetch(jsonUrl, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(jsonBody)
+            if(res.status === 422) {
+                logTerminal("Conflito de versão detectado. Tentando correção automática...", "erro");
+                await atualizarSHALocal();
+                jsonBody.sha = GITHUB.sha;
+                const retryRes = await fetchGitHub(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`, {
+                    method: 'PUT', body: JSON.stringify(jsonBody)
                 });
+                if(!retryRes.ok) throw new Error("Falha na segunda tentativa.");
+            } else if(!res.ok) throw new Error(res.status);
 
-                logTerminal("Exclusão refletida no GitHub com sucesso.", "sucesso");
-            } catch(e) {
-                logTerminal(`Erro ao apagar no GitHub: ${e.message}`, "erro");
-            } finally {
-                atualizarFila(-1);
-                pararCronometro();
-            }
+            logTerminal("Sucesso absoluto!", "sucesso");
+            cancelEdit(); render();
+        } catch(e) {
+            logTerminal("FALHA: Erro " + e.message, "erro");
+        } finally {
+            btn.disabled = false; btn.innerText = "💾 Iniciar Upload";
+            atualizarFila(-1);
         }
     }
 
-    // -----------------------------------------
-    // 5. RENDERIZAÇÃO DE TELA E INTERFACE
-    // -----------------------------------------
+    // UI e Helpers
+    function handleImageSelect(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 400; canvas.height = 500;
+                canvas.getContext('2d').drawImage(img, 0, 0, 400, 500);
+                STATE.currentImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById('pImgPreview').src = STATE.currentImageBase64;
+                document.getElementById('pImgPreview').style.display = 'block';
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
     function render() {
-        const gridUI = document.getElementById('gridUI');
-        gridUI.innerHTML = STATE.prompts.map((p, i) => `
+        const grid = document.getElementById('gridUI');
+        grid.innerHTML = STATE.prompts.map((p, i) => `
             <div class="card">
-                <img src="${p.image || ''}" class="card-img" onerror="this.style.display='none'" onload="this.style.display='block'">
+                <img src="${p.image}" class="card-img">
                 <div class="card-title">${p.name}</div>
-                <div class="card-desc" title="${p.text}">${p.text}</div>
+                <div class="card-desc">${p.text}</div>
                 <div class="card-actions">
-                    <button class="btn-copy" onclick="copyPromptText(${i})">📋 Copiar Prompt IA</button>
+                    <button class="btn-copy" onclick="copyText(${i})">📋 Copiar Prompt</button>
                 </div>
                 <div class="card-footer">
                     <button class="btn-sml" style="color:var(--accent)" onclick="startEdit(${i})">✏️ Editar</button>
-                    <button class="btn-sml" style="color:var(--danger)" onclick="deletePrompt(${i})">🗑️ Excluir</button>
+                    <button class="btn-sml" style="color:var(--danger)" onclick="deletePrompt(${i})">🗑️ Apagar</button>
                 </div>
             </div>
         `).join('');
     }
 
-    function copyPromptText(i) {
+    function copyText(i) {
         navigator.clipboard.writeText(STATE.prompts[i].text);
-        logTerminal(`Prompt '${STATE.prompts[i].name}' copiado para a área de transferência.`, "sucesso");
-    }
-
-    function startEdit(idx) {
-        STATE.editingIdx = idx;
-        const p = STATE.prompts[idx];
-        document.getElementById('pName').value = p.name;
-        document.getElementById('pText').value = p.text;
-        STATE.currentImageBase64 = p.image || ""; 
-        
-        const preview = document.getElementById('pImgPreview');
-        preview.src = STATE.currentImageBase64;
-        preview.style.display = STATE.currentImageBase64 ? 'block' : 'none';
-        document.getElementById('btnCancel').style.display = "block";
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        logTerminal("Prompt copiado!");
     }
 
     function cancelEdit() {
         STATE.editingIdx = -1;
         document.getElementById('pName').value = "";
-        gerarTextoPrompt(); 
+        document.getElementById('pImgPreview').style.display = 'none';
         STATE.currentImageBase64 = "";
-        document.getElementById('pImgPreview').style.display = "none";
-        document.getElementById('btnCancel').style.display = "none";
-        document.getElementById('sizeInfo').innerText = "Max 50KB";
-        document.getElementById('pImageInput').value = "";
     }
 
-    window.onload = function() {
-        carregarCredenciaisLocais();
-        gerarTextoPrompt();
-        if(GITHUB.token) {
-            testarConexaoRapida().then(isOk => {
-                if(isOk) carregarPrompts();
-            });
-        }
+    function gerarTextoPrompt() {
+        const f = document.getElementById('genFormato').value;
+        const e = document.getElementById('genEstetica').value;
+        const a = document.getElementById('genAngulo').value;
+        document.getElementById('pText').value = `Fotografia Publicitária High-End, Formato ${f}, Estética ${e}, Ângulo ${a}. Preservar embalagem original.`;
     }
+
+    window.onload = () => { carregarConfig(); testarConexaoRapida().then(ok => { if(ok) carregarPrompts(); }); };
 </script>
 </body>
 </html>
