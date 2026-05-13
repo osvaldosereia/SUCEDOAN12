@@ -1514,11 +1514,10 @@ const BASKETS = [
             }
         }
 
-      window.sendOrder = async function(btnOverride) {
+     window.sendOrder = async function(btnOverride) {
             const btn = btnOverride || $('btn-send-order'); 
             if (!btnOverride && btn.disabled) return;
             
-            // Removida a trava de valor mínimo, permitindo o envio sempre!
             btn.innerHTML = "Processando...";
             const orderId = String(Date.now()).slice(-6); 
             let itemsTxt = ""; 
@@ -1554,30 +1553,35 @@ const BASKETS = [
                 });
             }
 
-            const makePayload = {
-                pedido: {
-                    id: orderId,
-                    itens: pedidoItens,
-                    total: final,
-                    desconto: totalDescontoFormatado,
-                    observacoes: hasBasket ? "Pedido com Cesta" : "Pedido Comum"
-                }
-            };
-
-            try {
-                await fetch('https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(makePayload)
-                });
-            } catch (err) {
-                console.error("Erro na integração:", err);
-            }
-
             let descontosTxt = "";
             if (STATE.atacadoDiscount > 0) descontosTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
 
-            const msg = `*PEDIDO #${orderId}*
+            let msg = "";
+
+            // LÓGICA CONDICIONAL: Novo Pedido vs Adicionar ao Existente
+            if (final >= MIN_ORDER) {
+                // PEDIDO NOVO: Chama a integração (Make) e gera texto padrão
+                const makePayload = {
+                    pedido: {
+                        id: orderId,
+                        itens: pedidoItens,
+                        total: final,
+                        desconto: totalDescontoFormatado,
+                        observacoes: hasBasket ? "Pedido com Cesta" : "Pedido Comum"
+                    }
+                };
+
+                try {
+                    await fetch('https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(makePayload)
+                    });
+                } catch (err) {
+                    console.error("Erro na integração:", err);
+                }
+
+                msg = `*PEDIDO #${orderId}*
 ------------------------------
 *ITENS SELECIONADOS*
 ${itemsTxt}
@@ -1585,6 +1589,20 @@ ${itemsTxt}
 💰 *TOTAL:* ${fmt(final)}${basketInfo}
 
 Este é o meu pedido. Quais informações você precisa?`;
+
+            } else {
+                // ADICIONAR AO PEDIDO: Ignora a integração e gera texto de acréscimo
+                msg = `*ADICIONAR AO PEDIDO ANTERIOR*
+------------------------------
+Olá! Gostaria de adicionar os itens abaixo ao pedido que fiz anteriormente:
+
+*ITENS ADICIONAIS*
+${itemsTxt}
+*RESUMO DE VALORES*${descontosTxt}
+💰 *TOTAL DO ACRÉSCIMO:* ${fmt(final)}${basketInfo}
+
+Por favor, podem incluir na minha entrega?`;
+            }
 
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             
