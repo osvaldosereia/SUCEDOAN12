@@ -522,12 +522,23 @@ const BASKETS = [
             setTimeout(() => toast.classList.remove('show'), 3000);
         };
 
-        function handleRoute() {
+       function handleRoute() {
             let hash = window.location.hash || '#/';
             const vitrine = $('vitrine');
 
             if(STATE.currentRoute) STATE.scrollMap[STATE.currentRoute] = vitrine.scrollTop;
             STATE.currentRoute = hash;
+
+            // NOVA LÓGICA: Oculta a barra do topo no catálogo ou na página de produto
+            if (hash === '#/catalogo' || hash.startsWith('#/produto/')) {
+                $('header-main').style.display = 'none';
+                vitrine.style.top = '0';
+                vitrine.style.height = '100dvh';
+            } else {
+                $('header-main').style.display = 'flex';
+                vitrine.style.top = ''; // Volta pro padrão do CSS
+                vitrine.style.height = ''; // Volta pro padrão do CSS
+            }
 
             if($('basketDetailModal').classList.contains('active')) $('basketDetailModal').classList.remove('active');
             if($('checkout-drawer').classList.contains('open')) $('checkout-drawer').classList.remove('open');
@@ -886,6 +897,9 @@ const BASKETS = [
             }
             
             renderCatalogoGrid(cat);
+
+            // NOVA LÓGICA: Rola a grade inteira para o começo com animação suave
+            $('vitrine').scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         window.renderCatalogoGrid = function(cat) {
@@ -904,6 +918,10 @@ const BASKETS = [
                 
                 let esgotadoTag = (p.stock <= 0) ? `<div style="position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.85); color: #fff; padding: 2px 4px; border-radius: 4px; font-weight: 900; font-size: 9px; z-index: 10;">ESGOTADO</div>` : '';
 
+                // NOVA LÓGICA: Pegando a embalagem e formatando de forma leve e discreta
+                let embalagem = p.embalagem || extractVolume(p.name);
+                let embalagemHtml = embalagem ? `<div style="font-size: 11px; color: #475569; font-weight: 500; margin-bottom: 2px;">${embalagem}</div>` : '';
+
                 gridHtml += `
                 <div class="card-catalogo">
                     ${esgotadoTag}
@@ -911,7 +929,10 @@ const BASKETS = [
                         <img data-src="${p.img}" src="${placeholderImg}" class="lazy-img" onerror="this.src='${errorImgFallback}'">
                     </div>
                     <div class="card-catalogo-bottom">
-                        <div class="card-catalogo-price">${fmt(p.price)}</div>
+                        <div style="display: flex; flex-direction: column;">
+                            ${embalagemHtml}
+                            <div class="card-catalogo-price">${fmt(p.price)}</div>
+                        </div>
                         <div id="catalogo-action-${p.id}">${controlsHtml}</div>
                     </div>
                 </div>`;
