@@ -49,13 +49,21 @@
 
         .order-day-group { margin-bottom: 15px; }
         .order-day-title { font-size: 12px; font-weight: 800; color: var(--text-secondary); background: #f1f5f9; padding: 6px 12px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
-        .order-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+        .order-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 10px; background: #fafafa; }
+        .order-header-row { display: flex; justify-content: space-between; align-items: center; }
         .order-info { display: flex; flex-direction: column; gap: 4px; }
         .order-id { font-size: 13px; font-weight: 900; color: var(--accent); }
         .order-meta { font-size: 10px; color: var(--text-secondary); font-weight: 600; }
-        .status-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+        .status-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; width: fit-content; }
         .status-pendente { background: #fef08a; color: #854d0e; border: 1px solid #fde047; }
         .status-concluido { background: #bbf7d0; color: #166534; border: 1px solid #86efac; }
+
+        /* Estilo para produtos não encontrados */
+        .falhas-container { margin-top: 5px; border-top: 1px dashed #fca5a5; padding-top: 10px; }
+        .falhas-titulo { font-size: 10px; font-weight: 800; color: var(--danger); display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
+        .falha-card { background: #fee2e2; border: 1px solid #fca5a5; padding: 8px; border-radius: 6px; margin-bottom: 4px; display: flex; justify-content: space-between; font-size: 11px; align-items: center; }
+        .falha-nome { color: #991b1b; font-weight: 700; }
+        .falha-qtd { color: white; background: #ef4444; font-weight: 900; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
 
         #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 10px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .alerta-erro { background-color: var(--danger); } .alerta-sucesso { background-color: var(--success); } .alerta-aviso { background-color: var(--warning); color: #000; }
@@ -85,6 +93,7 @@
         const CATEGORIAS_KEY = 'sucedoan_categorias'; 
         const MARCAS_KEY = 'sucedoan_marcas';
         const TAGS_KEY = 'sucedoan_tags_globais'; 
+        const QUEUE_KEY = 'sucedoan_fila_sincronizacao'; // Nova chave para guardar a fila
         
         let products = [];
         let tagsDoSistema = [];
@@ -195,7 +204,7 @@
         };
 
         // ==========================================================
-        // SISTEMA DE FILA 
+        // SISTEMA DE FILA PERSISTENTE (Para continuar se a aba fechar)
         // ==========================================================
         let syncQueue = [];
         let isSyncing = false;
@@ -213,35 +222,87 @@
             } else { el.style.display = 'none'; }
         }
 
+        // Função para guardar a fila no localforage
+        async function saveQueueLocally() {
+            await localforage.setItem(QUEUE_KEY, syncQueue);
+        }
+
+        // Adiciona um item à fila como "Dados" em vez de Função
+        async function enqueueDataTask(taskName, taskType, payload) {
+            syncQueue.push({ id: Date.now(), name: taskName, type: taskType, payload: payload });
+            await saveQueueLocally();
+            
+            // Se não estiver a sincronizar nada, arranca IMEDIATAMENTE (sem timer de espera)
+            if (!isSyncing) {
+                executeNextInQueue();
+            } else {
+                renderQueueStatus();
+            }
+        }
+
         function startQueueCountdown(duration) {
             if (countdownInterval) clearInterval(countdownInterval);
-            countdownTimer = duration; isSyncing = true; renderQueueStatus();
+            countdownTimer = duration; 
+            isSyncing = true; 
+            renderQueueStatus();
             countdownInterval = setInterval(() => {
                 countdownTimer--; renderQueueStatus();
-                if (countdownTimer <= 0) { clearInterval(countdownInterval); executeNextInQueue(); }
+                if (countdownTimer <= 0) { 
+                    clearInterval(countdownInterval); 
+                    executeNextInQueue(); 
+                }
             }, 1000);
         }
 
+        // Executa o item da fila interpretando os dados gravados
         async function executeNextInQueue() {
             if (syncQueue.length === 0) { isSyncing = false; renderQueueStatus(); return; }
-            const task = syncQueue.shift(); isSyncing = true; countdownTimer = 0; renderQueueStatus();
-            try { await task.fn(); mostrarAlerta(`✅ ${task.name} processado!`, 'sucesso'); } 
-            catch (e) { console.error(e); mostrarAlerta(`❌ Erro em ${task.name}`, 'erro'); }
-            processQueueLoop();
-        }
+            
+            isSyncing = true; 
+            countdownTimer = 0; 
+            renderQueueStatus();
+            
+            const task = syncQueue[0]; // Pega o primeiro item, mas não o apaga já
+            
+            try {
+                if (task.type === 'BLING_CSV') {
+                    await GitHubAPI.saveFile(`site/exportacoes/${task.payload.filename}`, task.payload.content, task.payload.message);
+                } 
+                else if (task.type === 'SEPARACAO_JSON') {
+                    let pedidosSeparacao = [];
+                    try {
+                        const fileData = await GitHubAPI.getFileData('site/pedidoseparar.json');
+                        if (fileData && fileData.content) pedidosSeparacao = JSON.parse(GitHubAPI.decodeBase64toUTF8(fileData.content));
+                    } catch (e) {} // Arquivo novo
+                    pedidosSeparacao.push(task.payload.novoPedido);
+                    await GitHubAPI.saveFile('site/pedidoseparar.json', pedidosSeparacao, task.payload.message);
+                }
+                else if (task.type === 'PRODUTOS_JSON') {
+                    await GitHubAPI.saveFile(`site/produtos.json`, task.payload.vitrine, task.payload.message);
+                }
 
-        function processQueueLoop() {
-            if (syncQueue.length === 0) { isSyncing = false; renderQueueStatus(); return; }
-            startQueueCountdown(90); // Respeitando a regra de 90 segundos do sistema original
-        }
+                mostrarAlerta(`✅ ${task.name} processado!`, 'sucesso');
+                syncQueue.shift(); // Remove da fila APENAS se deu sucesso
+                await saveQueueLocally(); // Guarda a fila limpa no sistema
 
-        async function enqueueTask(taskName, taskFn) {
-            syncQueue.push({ name: taskName, fn: taskFn });
-            if (!isSyncing) processQueueLoop(); else renderQueueStatus();
+                // Se houver mais itens, espera 60 segundos antes de enviar
+                if (syncQueue.length > 0) {
+                    startQueueCountdown(60);
+                } else {
+                    isSyncing = false;
+                    renderQueueStatus();
+                }
+
+            } catch (e) {
+                console.error(e);
+                mostrarAlerta(`❌ Erro em ${task.name}. Tentando novamente...`, 'erro');
+                // Se falhou, continua na fila e tenta novamente após 60s
+                startQueueCountdown(60); 
+            }
         }
 
         // ==========================================================
-        // INICIALIZAÇÃO
+        // INICIALIZAÇÃO E RETOMA DA FILA
         // ==========================================================
         window.onload = async function() { 
             lucide.createIcons(); 
@@ -256,6 +317,17 @@
                 document.getElementById('cfg-user').value = cfg.user; 
                 document.getElementById('cfg-repo').value = cfg.repo; 
             }
+
+            // Tentar recuperar fila se a página foi fechada antes de acabar
+            try { 
+                const savedQueue = await localforage.getItem(QUEUE_KEY); 
+                if(savedQueue && Array.isArray(savedQueue) && savedQueue.length > 0) {
+                    syncQueue = savedQueue;
+                    mostrarAlerta(`Retomando envio de ${syncQueue.length} itens pendentes.`, 'aviso');
+                    executeNextInQueue(); // Dispara o que ficou parado
+                }
+            } catch (err) {}
+
             carregarHistoricoPedidos();
         };
 
@@ -287,9 +359,10 @@
         }
 
         function salvarProdutosJSON() {
-            enqueueTask("Base de Produtos (produtos.json)", async () => {
-                const vitrine = sanitizeProductsForExport(products);
-                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Estoque abatido via Gestor de Pedidos`);
+            const vitrine = sanitizeProductsForExport(products);
+            enqueueDataTask("Base de Produtos", "PRODUTOS_JSON", {
+                vitrine: vitrine,
+                message: "PIM: Estoque abatido via Gestor de Pedidos"
             });
         }
 
@@ -306,7 +379,7 @@
 
             const linhas = texto.split('\n'); 
             let encontrados = 0; 
-            let falhas = [];
+            let falhas = []; // Agora guarda objetos com nome e quantidade
             let itensPedidoBling = [];
             let totalPedidoCalc = 0;
             let itensParaSeparacao = [];
@@ -361,7 +434,8 @@
                             status: "pendente" 
                         });
                     } else {
-                        falhas.push(match[2].trim()); 
+                        // Guarda como objeto para conseguirmos mostrar os Cards
+                        falhas.push({ nome: match[2].trim(), quantidade: qtd }); 
                     }
                 }
             });
@@ -370,49 +444,41 @@
                 // 1. Salvar no banco local (compartilhado com o PIM)
                 await localforage.setItem(STORAGE_KEY, products);
 
-                // 2. Formatar e enviar CSV do Bling para a fila
+                // 2. Formatar e enviar CSV do Bling para a fila persistente
                 const totalPedidoFormatado = totalPedidoCalc.toFixed(2).replace('.', ',');
                 itensPedidoBling.forEach(item => item["Total Pedido"] = totalPedidoFormatado);
-                
                 const filenameBling = `Bling_Pedido_Venda_${numeroPedido}.csv`;
                 const csv = Papa.unparse(itensPedidoBling, { delimiter: ";" });
                 const csvComBom = "\ufeff" + csv;
                 
-                enqueueTask(`Bling CSV #${numeroPedido}`, async () => {
-                    await GitHubAPI.saveFile(`site/exportacoes/${filenameBling}`, csvComBom, `Exportação Pedido: ${filenameBling}`);
+                enqueueDataTask(`Bling CSV #${numeroPedido}`, "BLING_CSV", {
+                    filename: filenameBling,
+                    content: csvComBom,
+                    message: `Exportação Pedido: ${filenameBling}`
                 });
 
-                // 3. Adicionar na lista de separação e enviar para a fila
-                enqueueTask(`Lista de Separação #${numeroPedido}`, async () => {
-                    const novoPedido = {
-                        id: numeroPedido,
-                        data: new Date().toISOString(),
-                        status: "pendente",
-                        itens: itensParaSeparacao
-                    };
-                    let pedidosSeparacao = [];
-                    try {
-                        const fileData = await GitHubAPI.getFileData('site/pedidoseparar.json');
-                        if (fileData && fileData.content) {
-                            const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
-                            pedidosSeparacao = JSON.parse(decodedStr);
-                        }
-                    } catch (e) { console.log("Arquivo pedidoseparar.json será criado."); }
-                    
-                    pedidosSeparacao.push(novoPedido);
-                    await GitHubAPI.saveFile('site/pedidoseparar.json', pedidosSeparacao, `Adicionado Pedido #${numeroPedido} para separação`);
+                // 3. Adicionar na lista de separação (incluindo falhas)
+                const novoPedido = {
+                    id: numeroPedido,
+                    data: new Date().toISOString(),
+                    status: "pendente",
+                    itens: itensParaSeparacao,
+                    itensNaoEncontrados: falhas // <-- Guarda as falhas no arquivo JSON
+                };
+
+                enqueueDataTask(`Lista de Separação #${numeroPedido}`, "SEPARACAO_JSON", {
+                    novoPedido: novoPedido,
+                    message: `Adicionado Pedido #${numeroPedido} para separação`
                 });
 
                 // 4. Enviar atualização do produtos.json para a fila
                 salvarProdutosJSON(); 
 
-                let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nPedido e CSV enviados para a fila do GitHub.`;
-                if(falhas.length > 0) msg += `\n\n⚠️ Itens não encontrados (Verifique os nomes):\n- ` + falhas.join('\n- ');
-                mostrarAlerta(msg, "sucesso");
+                let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nEnviando para o GitHub em segundo plano.`;
+                if(falhas.length > 0) msg += `\n\n⚠️ ${falhas.length} iten(s) não encontrado(s).`;
+                mostrarAlerta(msg, falhas.length > 0 ? "aviso" : "sucesso");
 
                 document.getElementById('order-text-input').value = "";
-                
-                // Recarregar histórico após um tempo para dar tempo de pelo menos um task ir
                 setTimeout(carregarHistoricoPedidos, 2000);
             } else {
                 mostrarAlerta("❌ Nenhum produto reconhecido no texto.", "erro");
@@ -420,33 +486,21 @@
         }
 
         // ==========================================================
-        // EXIBIÇÃO DO HISTÓRICO DE PEDIDOS
+        // EXIBIÇÃO DO HISTÓRICO DE PEDIDOS E CARDS DE FALHAS
         // ==========================================================
         window.forcarDownloadGithub = async function(nomeArquivo) {
             try {
                 mostrarAlerta("A preparar o download do Bling...", "aviso");
                 const cfg = await GitHubAPI.getConfig(); if(!cfg) return;
-                
-                // Buscar o arquivo na pasta exportacoes
                 const url = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/site/exportacoes/${nomeArquivo}`;
-                
                 const resposta = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
                 if (!resposta.ok) throw new Error("Arquivo não encontrado ou erro na rede");
-                
                 const blob = await resposta.blob();
                 const blobUrl = URL.createObjectURL(blob);
-                
-                const link = document.createElement("a");
-                link.href = blobUrl;
-                link.download = nomeArquivo;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(blobUrl);
-                
+                const link = document.createElement("a"); link.href = blobUrl; link.download = nomeArquivo;
+                document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(blobUrl);
                 mostrarAlerta("Download concluído!", "sucesso");
             } catch (erro) {
-                console.error("Erro no download:", erro);
                 mostrarAlerta("O ficheiro CSV ainda não foi gerado ou ocorreu um erro.", "erro");
             }
         };
@@ -466,7 +520,6 @@
                 const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
                 const pedidos = JSON.parse(decodedStr);
                 
-                // Agrupar por data (dia)
                 const pedidosAgrupados = {};
                 pedidos.forEach(p => {
                     const dataObj = new Date(p.data);
@@ -476,22 +529,12 @@
                 });
                 
                 container.innerHTML = "";
-                
-                // Ordenar datas da mais recente para a mais antiga
-                const datasOrdenadas = Object.keys(pedidosAgrupados).sort((a, b) => {
-                    return b.split('/').reverse().join('') - a.split('/').reverse().join('');
-                });
+                const datasOrdenadas = Object.keys(pedidosAgrupados).sort((a, b) => b.split('/').reverse().join('') - a.split('/').reverse().join(''));
                 
                 datasOrdenadas.forEach(data => {
-                    let htmlData = `
-                        <div class="order-day-group">
-                            <div class="order-day-title">
-                                <span><i data-lucide="calendar" size="12" style="margin-right:4px; vertical-align:middle;"></i> ${data}</span>
-                                <span>${pedidosAgrupados[data].length} Pedido(s)</span>
-                            </div>
-                    `;
+                    let htmlData = `<div class="order-day-group">
+                        <div class="order-day-title"><span><i data-lucide="calendar" size="12" style="margin-right:4px; vertical-align:middle;"></i> ${data}</span><span>${pedidosAgrupados[data].length} Pedido(s)</span></div>`;
                     
-                    // Ordenar pedidos dentro do dia (mais recentes primeiro)
                     const pedidosDia = pedidosAgrupados[data].sort((a, b) => new Date(b.data) - new Date(a.data));
                     
                     pedidosDia.forEach(pedido => {
@@ -499,16 +542,35 @@
                         const statusClass = pedido.status === 'pendente' ? 'status-pendente' : 'status-concluido';
                         const statusText = pedido.status === 'pendente' ? 'EM SEPARAÇÃO' : 'CONCLUÍDO';
                         
+                        // Lógica para montar os "Cards" de produtos não encontrados
+                        let htmlFalhas = "";
+                        if (pedido.itensNaoEncontrados && pedido.itensNaoEncontrados.length > 0) {
+                            htmlFalhas += `<div class="falhas-container">`;
+                            htmlFalhas += `<div class="falhas-titulo"><i data-lucide="alert-triangle" size="12"></i> PRODUTOS NÃO ENCONTRADOS</div>`;
+                            pedido.itensNaoEncontrados.forEach(f => {
+                                htmlFalhas += `
+                                    <div class="falha-card">
+                                        <span class="falha-nome">${f.nome}</span>
+                                        <span class="falha-qtd">${f.quantidade}x</span>
+                                    </div>
+                                `;
+                            });
+                            htmlFalhas += `</div>`;
+                        }
+
                         htmlData += `
                             <div class="order-card">
-                                <div class="order-info">
-                                    <span class="order-id">PEDIDO #${pedido.id}</span>
-                                    <span class="order-meta">${qtdItens} volumes totais | ${new Date(pedido.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
-                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                <div class="order-header-row">
+                                    <div class="order-info">
+                                        <span class="order-id">PEDIDO #${pedido.id}</span>
+                                        <span class="order-meta">${qtdItens} volumes encontrados | ${new Date(pedido.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
+                                        <span class="status-badge ${statusClass}">${statusText}</span>
+                                    </div>
+                                    <button class="nav-btn bling-btn" style="height:36px; padding:0 15px;" onclick="forcarDownloadGithub('Bling_Pedido_Venda_${pedido.id}.csv')" title="Baixar CSV para importar no Bling">
+                                        <i data-lucide="download" size="14"></i> CSV BLING
+                                    </button>
                                 </div>
-                                <button class="nav-btn bling-btn" style="height:36px; padding:0 15px;" onclick="forcarDownloadGithub('Bling_Pedido_Venda_${pedido.id}.csv')" title="Baixar CSV para importar no Bling">
-                                    <i data-lucide="download" size="14"></i> CSV BLING
-                                </button>
+                                ${htmlFalhas}
                             </div>
                         `;
                     });
@@ -516,7 +578,6 @@
                     htmlData += `</div>`;
                     container.innerHTML += htmlData;
                 });
-                
                 lucide.createIcons();
             } catch (e) {
                 container.innerHTML = '<p style="color:var(--danger); font-size:12px; text-align:center; padding:20px;">Erro ao carregar histórico.<br>Certifique-se que o arquivo "site/pedidoseparar.json" existe.</p>';
