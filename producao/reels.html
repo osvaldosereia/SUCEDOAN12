@@ -18,6 +18,7 @@
             --text-main: #1d1d1f; --text-dim: #86868b;
             --price-scale: 1; --name-scale: 1; --img-scale: 1;
             --price-y: 0px; --name-y: 0px; --img-y: 0px;
+            --footer-y: 0px; 
             --footer-logo-size: 3vh; 
             --footer-l1-size: 1.2vh; --footer-l1-color: #000000;
             --footer-l2-size: 1vh;   --footer-l2-color: #86868b;
@@ -97,7 +98,7 @@
         .grid-3x5 .product-card img { max-height: 40%; } .grid-3x5 .product-card .price { font-size: calc(clamp(10px, 1.8vh, 20px) * var(--price-scale)); } .grid-3x5 .product-card .name { font-size: calc(clamp(7px, 0.9vh, 12px) * var(--name-scale)); }
 
         /* --- RODAPÉ --- */
-        #reels-footer { height: 5%; width: 100%; margin-bottom: 3%; background: transparent; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; z-index: 100; position: relative; padding: 0 10px; }
+        #reels-footer { height: 5%; width: 100%; margin-bottom: 3%; background: transparent; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; z-index: 100; position: relative; padding: 0 10px; transform: translateY(var(--footer-y)); }
         #reels-footer img { height: var(--footer-logo-size); width: var(--footer-logo-size); border-radius: 50%; object-fit: cover; flex-shrink: 0; display: none; }
         #reels-footer .text-container { display: flex; flex-direction: column; justify-content: center; }
         #reels-footer .line1 { font-size: var(--footer-l1-size); color: var(--footer-l1-color); font-weight: 900; line-height: 1.1; }
@@ -198,6 +199,17 @@
                     <input type="checkbox" id="cfg-hide-price" style="width:auto; margin:0;" onchange="updateDynamicStyles()"> Ocultar Valores
                 </label>
             </div>
+
+            <div class="grid-2" style="margin-top: 10px; border-top: 1px dashed #d2d2d7; padding-top: 10px;">
+                <div>
+                    <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Maior Lado Exp. (px)</span>
+                    <input type="number" id="cfg-export-px" value="1080" step="10" min="500">
+                </div>
+                <div>
+                    <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Tam. Máx Exp. (KB)</span>
+                    <input type="number" id="cfg-export-kb" value="30" step="5" min="10">
+                </div>
+            </div>
         </div>
 
         <div class="section">
@@ -264,6 +276,9 @@
             </div>
             <span style="font-size:9px;">Tamanho L2: <span id="lbl-footer-l2">1.0</span>vh</span>
             <input type="range" id="cfg-footer-l2-size" min="0.5" max="3" step="0.1" value="1.0" oninput="updateFooterVisuals()">
+
+            <span style="font-size:9px; display:block; margin-top:10px;">Posição Rodapé Inteiro (Y): <span id="lbl-footer-y">0</span>px</span>
+            <input type="range" id="cfg-footer-y" min="-300" max="300" value="0" oninput="updateFooterVisuals()">
         </div>
 
         <div class="section">
@@ -330,7 +345,7 @@
         let totalElapsedMs = 0;
         let isManualMode = false;
         
-        let footerData = { logo: '', l1Text: '', l1Color: '#000000', l1Size: '1.2', l2Text: '', l2Color: '#86868b', l2Size: '1.0', logoSize: '3' };
+        let footerData = { logo: '', l1Text: '', l1Color: '#000000', l1Size: '1.2', l2Text: '', l2Color: '#86868b', l2Size: '1.0', logoSize: '3', posY: '0' };
         let userPresets = {}; 
 
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
@@ -467,7 +482,6 @@
                     
                     allProducts.forEach(p => {
                         p.id = String(p.codigo || p.id);
-                        // Aplica a margem de 5% do site original
                         p.price = parseFloat(p.preco || 0) * 1.05; 
                         p.vencimento = p.validade || p.vencimento || null;
                     });
@@ -504,6 +518,7 @@
             document.getElementById('cfg-footer-l2-color').value = footerData.l2Color || '#86868b';
             document.getElementById('cfg-footer-l2-size').value = footerData.l2Size || '1.0';
             document.getElementById('cfg-footer-logo-size').value = footerData.logoSize || '3';
+            document.getElementById('cfg-footer-y').value = footerData.posY || '0'; 
         }
 
         function saveFooterConfig() { localStorage.setItem(FOOTER_KEY, JSON.stringify(footerData)); }
@@ -516,17 +531,21 @@
             footerData.l2Color = document.getElementById('cfg-footer-l2-color').value;
             footerData.l2Size = document.getElementById('cfg-footer-l2-size').value;
             footerData.logoSize = document.getElementById('cfg-footer-logo-size').value;
+            footerData.posY = document.getElementById('cfg-footer-y').value; 
+
             saveFooterConfig();
 
             document.getElementById('lbl-footer-l1').innerText = footerData.l1Size;
             document.getElementById('lbl-footer-l2').innerText = footerData.l2Size;
             document.getElementById('lbl-footer-logo').innerText = footerData.logoSize;
+            document.getElementById('lbl-footer-y').innerText = footerData.posY; 
 
             document.documentElement.style.setProperty('--footer-l1-size', `${footerData.l1Size}vh`);
             document.documentElement.style.setProperty('--footer-l1-color', footerData.l1Color);
             document.documentElement.style.setProperty('--footer-l2-size', `${footerData.l2Size}vh`);
             document.documentElement.style.setProperty('--footer-l2-color', footerData.l2Color);
             document.documentElement.style.setProperty('--footer-logo-size', `${footerData.logoSize}vh`);
+            document.documentElement.style.setProperty('--footer-y', `${footerData.posY}px`); 
 
             document.getElementById('view-footer-l1').innerText = footerData.l1Text;
             document.getElementById('view-footer-l2').innerText = footerData.l2Text;
@@ -568,6 +587,8 @@
                 playMode: document.getElementById('cfg-play-mode').value,
                 hideName: document.getElementById('cfg-hide-name').checked,
                 hidePrice: document.getElementById('cfg-hide-price').checked,
+                exportPx: document.getElementById('cfg-export-px').value,
+                exportKb: document.getElementById('cfg-export-kb').value,
                 fontPrice: document.getElementById('cfg-font-price').value,
                 posPrice: document.getElementById('cfg-pos-price').value,
                 fontName: document.getElementById('cfg-font-name').value,
@@ -602,6 +623,9 @@
             
             document.getElementById('cfg-hide-name').checked = config.hideName || false;
             document.getElementById('cfg-hide-price').checked = config.hidePrice || false;
+            
+            document.getElementById('cfg-export-px').value = config.exportPx || '1080';
+            document.getElementById('cfg-export-kb').value = config.exportKb || '30';
             
             document.getElementById('cfg-font-price').value = config.fontPrice || '100';
             document.getElementById('cfg-pos-price').value = config.posPrice || '0';
@@ -674,6 +698,12 @@
                 const matchesName = keywords.length === 0 || keywords.some(kw => nomeProduto.includes(kw));
                 const matchesCat = selectedCats.length === 0 || selectedCats.includes(p.categoria);
                 return matchesName && matchesCat;
+            });
+
+            filtered.sort((a, b) => {
+                const catA = a.categoria || "";
+                const catB = b.categoria || "";
+                return catA.localeCompare(catB);
             });
 
             if (filtered.length === 0) return;
@@ -824,11 +854,17 @@
         async function downloadWebP(index = currentSceneIndex, isBatch = false) {
             if(!isBatch) document.body.classList.remove('show-ui'); 
             
+            // Lemos as configurações definidas pelo usuário
+            const maxPx = parseInt(document.getElementById('cfg-export-px').value) || 1080;
+            const maxKb = parseInt(document.getElementById('cfg-export-kb').value) || 30;
+            const maxBytes = maxKb * 1024; // Convertendo para bytes
+
             const container = document.getElementById('reels-container');
             const rect = container.getBoundingClientRect();
             
-            const smallerSide = Math.min(rect.width, rect.height);
-            const captureScale = 1200 / smallerSide;
+            // Calculamos a escala baseada no *maior lado* do container
+            const largerSide = Math.max(rect.width, rect.height);
+            const captureScale = maxPx / largerSide;
 
             const canvas = await html2canvas(container, { 
                 scale: captureScale, 
@@ -836,11 +872,12 @@
                 backgroundColor: "#ffffff"
             });
             
-            let quality = 0.9;
+            let quality = 0.8; 
             let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
             
-            while (blob.size > 51200 && quality > 0.1) {
-                quality -= 0.1;
+            // Loop para achar a qualidade que respeita o tamanho máximo em bytes
+            while (blob.size > maxBytes && quality > 0.05) {
+                quality -= 0.05;
                 blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
             }
 
