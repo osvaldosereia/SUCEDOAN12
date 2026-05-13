@@ -58,7 +58,7 @@
         .card-footer { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
         .btn-sml { background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; }
 
-        #toast { visibility: hidden; background: #0f172a; color: white; border-radius: 50px; padding: 16px 40px; position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; z-index: 5000; }
+        #toast { visibility: hidden; background: #0f172a; color: white; border-radius: 50px; padding: 16px 40px; position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; z-index: 5000; text-align: center; }
         #toast.show { visibility: visible; animation: fadeInUp 0.4s forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
     </style>
@@ -73,10 +73,10 @@
     <div class="config-box">
         <h3>⚙️ Configurações de Nuvem (GitHub)</h3>
         <div class="config-grid">
-            <input type="password" id="ghToken" placeholder="GitHub Token">
-            <input type="text" id="ghUser" placeholder="Usuário">
-            <input type="text" id="ghRepo" placeholder="Repositório">
-            <button class="btn-sec" onclick="saveGitHubConfig()">Conectar</button>
+            <input type="password" id="ghToken" placeholder="GitHub Token" oninput="autoSaveConfig()">
+            <input type="text" id="ghUser" placeholder="Usuário" oninput="autoSaveConfig()">
+            <input type="text" id="ghRepo" placeholder="Repositório" oninput="autoSaveConfig()">
+            <button class="btn-sec" onclick="testConnection()">Conectar / Testar</button>
         </div>
     </div>
 
@@ -97,7 +97,7 @@
         </div>
         <div class="form-footer">
             <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar</button>
-            <button class="btn-main" id="btnSave" onclick="savePrompt()">💾 Salvar Prompt Compactado</button>
+            <button class="btn-main" id="btnSave" onclick="savePrompt()">💾 Salvar Prompt</button>
         </div>
     </div>
 
@@ -107,69 +107,129 @@
 <div id="toast">Pronto!</div>
 
 <script>
+    // 1. Variáveis de Estado da Aplicação
     const GITHUB = {
         token: localStorage.getItem('da_gh_token') || '',
         owner: localStorage.getItem('da_gh_user') || '',
         repo: localStorage.getItem('da_gh_repo') || '',
         path: 'prompts.json',
-        sha: ''
+        sha: '' // SHA é a "impressão digital" do arquivo no GitHub. Precisamos dela para atualizar o arquivo.
     };
 
     const STATE = { prompts: [], editingIdx: -1, currentImageBase64: "" };
 
+    // 2. Preenchendo os campos ao carregar a página
     document.getElementById('ghToken').value = GITHUB.token;
     document.getElementById('ghUser').value = GITHUB.owner;
     document.getElementById('ghRepo').value = GITHUB.repo;
 
-    function saveGitHubConfig() {
+    // 3. Sistema de Auto-save das Credenciais (Robusto)
+    function autoSaveConfig() {
         GITHUB.token = document.getElementById('ghToken').value.trim();
         GITHUB.owner = document.getElementById('ghUser').value.trim();
         GITHUB.repo = document.getElementById('ghRepo').value.trim();
+        
         localStorage.setItem('da_gh_token', GITHUB.token);
         localStorage.setItem('da_gh_user', GITHUB.owner);
         localStorage.setItem('da_gh_repo', GITHUB.repo);
-        showToast("Conectado!");
-        syncFromGitHub();
+    }
+
+    // 4. Teste de conexão manual pelo botão
+    function testConnection() {
+        autoSaveConfig();
+        if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) {
+            return showToast("Preencha todos os campos do GitHub!");
+        }
+        syncFromGitHub(true);
     }
 
     const utf8_to_b64 = str => window.btoa(unescape(encodeURIComponent(str)));
     const b64_to_utf8 = str => decodeURIComponent(escape(window.atob(str)));
 
-    async function syncFromGitHub() {
+    // 5. Baixar dados do GitHub (Tratando erros de forma robusta)
+    async function syncFromGitHub(isManualTest = false) {
         if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) return;
+        
+        if(isManualTest) showToast("Conectando...");
+
         try {
             const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
-            const res = await fetch(url, { headers: { 'Authorization': `token ${GITHUB.token}` } });
-            if(res.status === 404) { STATE.prompts = []; render(); return; }
+            const res = await fetch(url, { 
+                headers: { 
+                    'Authorization': `Bearer ${GITHUB.token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                } 
+            });
+            
+            // Se for 404, o arquivo não existe AINDA. Isso é normal em repositórios novos.
+            if(res.status === 404) { 
+                STATE.prompts = []; 
+                GITHUB.sha = ''; // Limpamos o SHA para o GitHub saber que é um arquivo novo
+                render(); 
+                if(isManualTest) showToast("Conectado! Arquivo JSON será criado no primeiro salvamento.");
+                return; 
+            }
+
+            // Se der outro erro (ex: token inválido, repositório não existe)
+            if(!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || "Erro desconhecido");
+            }
+
+            // Se deu tudo certo
             const data = await res.json();
             GITHUB.sha = data.sha;
             STATE.prompts = JSON.parse(b64_to_utf8(data.content));
             render();
-        } catch (e) { console.error(e); }
+            if(isManualTest) showToast("Conectado e dados carregados!");
+
+        } catch (e) { 
+            console.error("Erro no GitHub:", e);
+            showToast("Erro de Conexão: " + e.message); 
+        }
     }
 
+    // 6. Enviar dados para o GitHub (Criando ou Atualizando)
     async function syncToGitHub() {
-        if(!GITHUB.token) return showToast("Configure o GitHub!");
+        if(!GITHUB.token) return showToast("Configure o GitHub antes de salvar!");
+        
+        showToast("Salvando na Nuvem...");
         try {
             const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
             const body = {
-                message: "Update Prompts",
+                message: "Atualizando Prompts",
                 content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2))
             };
-            if(GITHUB.sha) body.sha = GITHUB.sha;
+            
+            // Se o arquivo já existir, mandamos a "impressão digital" (SHA) para o GitHub permitir a substituição
+            if(GITHUB.sha) {
+                body.sha = GITHUB.sha;
+            }
+
             const res = await fetch(url, {
                 method: 'PUT',
-                headers: { 'Authorization': `token ${GITHUB.token}`, 'Content-Type': 'application/json' },
+                headers: { 
+                    'Authorization': `Bearer ${GITHUB.token}`, 
+                    'Content-Type': 'application/json' 
+                },
                 body: JSON.stringify(body)
             });
+
+            if(!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message);
+            }
+
             const data = await res.json();
-            GITHUB.sha = data.content.sha;
-            showToast("Salvo na Nuvem!");
-        } catch (e) { showToast("Erro ao salvar."); }
+            GITHUB.sha = data.content.sha; // Atualizamos o SHA para o próximo salvamento
+            showToast("Salvo na Nuvem com sucesso!");
+        } catch (e) { 
+            console.error(e);
+            showToast("Falha ao salvar: " + e.message); 
+        }
     }
 
-    // --- LÓGICA DE SUPER COMPRESSÃO ---
-    // Esta função converte a imagem e reduz a qualidade até ela ficar menor que 200KB
+    // 7. Lógica de Super Compressão de Imagens
     function handleImageSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -182,7 +242,6 @@
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Redimensiona o tamanho máximo para manter leve
                 canvas.width = 800; 
                 canvas.height = 1000;
                 
@@ -193,9 +252,8 @@
 
                 let quality = 0.9;
                 let base64 = "";
-                const MAX_BYTE_SIZE = 200 * 1024; // Limite de 200KB
+                const MAX_BYTE_SIZE = 200 * 1024; // 200KB
 
-                // Loop para reduzir a qualidade até atingir o limite
                 do {
                     base64 = canvas.toDataURL('image/jpeg', quality);
                     const sizeInBytes = (base64.length * (3/4));
@@ -217,10 +275,11 @@
         reader.readAsDataURL(file);
     }
 
+    // 8. Salvar o Prompt no estado local e chamar a sincronização
     async function savePrompt() {
         const name = document.getElementById('pName').value.trim();
         const text = document.getElementById('pText').value.trim();
-        if(!name || !text) return showToast("Preencha tudo!");
+        if(!name || !text) return showToast("Preencha título e comando!");
 
         const promptData = { name, text, image: STATE.currentImageBase64 };
         if(STATE.editingIdx > -1) STATE.prompts[STATE.editingIdx] = promptData;
@@ -231,11 +290,12 @@
         await syncToGitHub();
     }
 
+    // 9. Renderizar (Mostrar) os Prompts na tela
     function render() {
         const gridUI = document.getElementById('gridUI');
         gridUI.innerHTML = STATE.prompts.map((p, i) => `
             <div class="card">
-                <img src="${p.image || ''}" class="card-img">
+                <img src="${p.image || ''}" class="card-img" onerror="this.style.display='none'">
                 <div class="card-title">${p.name}</div>
                 <div class="card-desc">${p.text}</div>
                 <div class="card-actions">
@@ -249,6 +309,7 @@
         `).join('');
     }
 
+    // Utilitários de interface
     function copyPromptText(i) {
         navigator.clipboard.writeText(STATE.prompts[i].text);
         showToast("Copiado!");
@@ -278,7 +339,7 @@
     }
 
     async function deletePrompt(i) {
-        if(confirm("Apagar?")) {
+        if(confirm("Tem certeza que deseja apagar?")) {
             STATE.prompts.splice(i, 1);
             render();
             await syncToGitHub();
@@ -292,7 +353,8 @@
         setTimeout(() => t.className = "", 3000);
     }
 
-    document.addEventListener('DOMContentLoaded', syncFromGitHub);
+    // Iniciar automaticamente ao abrir a página
+    document.addEventListener('DOMContentLoaded', () => syncFromGitHub(false));
 </script>
 </body>
 </html>
