@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Prompts - Dona Antônia (Super Compact)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <title>Gerenciador de Prompts - Estúdio Criativo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #000000;
@@ -12,22 +12,36 @@
             --danger: #ef4444;
             --bg: #f8fafc;
             --border: #e2e8f0;
-            --accent: #ec4899; /* Mudado para um tom de rosa pop para combinar com a nova vibe */
+            --accent: #ec4899; 
             --config-bg: #f1f5f9;
             --warning: #f59e0b;
+            --terminal-bg: #0f172a;
+            --terminal-text: #38bdf8;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg); color: #0f172a; padding: 20px; padding-bottom: 60px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg); color: #0f172a; padding: 20px; padding-bottom: 60px; font-family: 'Inter', sans-serif; }
         .container { max-width: 1200px; margin: 0 auto; }
 
         .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
         .header h1 { font-weight: 900; font-size: 26px; border-left: 5px solid var(--accent); padding-left: 15px; }
 
+        /* PAINEL DE TRANSMISSÃO (NOVO) */
+        .sync-panel { background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #334155; }
+        .sync-panel h4 { color: white; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 15px; }
+        .sync-badges { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; background: #334155; color: white; display: flex; align-items: center; gap: 6px; }
+        .badge.green { background: var(--success); color: white; }
+        .badge.red { background: var(--danger); color: white; }
+        .badge.yellow { background: var(--warning); color: black; }
+        .terminal-log { background: var(--terminal-bg); color: var(--terminal-text); font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 12px; border-radius: 8px; height: 100px; overflow-y: auto; line-height: 1.5; }
+        .terminal-log div { border-bottom: 1px solid #1e293b; padding-bottom: 4px; margin-bottom: 4px; }
+        .terminal-log .time { color: #64748b; margin-right: 8px; }
+        .terminal-log .err { color: #ef4444; }
+        .terminal-log .ok { color: #10b981; }
+
         .config-box { background: var(--config-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; }
         .config-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-        
-        #syncStatus { font-size: 13px; padding: 6px 12px; border-radius: 20px; background: #fff; font-weight: 700; border: 1px solid var(--border); }
         
         .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px; }
         .config-grid input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-weight: 600; }
@@ -75,9 +89,6 @@
         .card-footer { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
         .btn-sml { background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; }
 
-        #toast { visibility: hidden; background: #0f172a; color: white; border-radius: 50px; padding: 16px 40px; position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; z-index: 5000; text-align: center; }
-        #toast.show { visibility: visible; animation: fadeInUp 0.4s forwards; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
     </style>
 </head>
 <body>
@@ -85,9 +96,18 @@
 <div class="container">
     <div class="header">
         <h1>Banco de Prompts - Dona Antônia (Pop High-End)</h1>
-        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-            <span id="syncStatus" style="color: #64748b;">Nuvem inativa</span>
-            <button class="btn-success" onclick="carregarPrompts()">🔄 Baixar Prompts do GitHub</button>
+        <button class="btn-success" onclick="carregarPrompts()">🔄 Baixar Prompts do GitHub</button>
+    </div>
+
+    <div class="sync-panel">
+        <h4>📡 Monitor de Transmissão GitHub</h4>
+        <div class="sync-badges">
+            <span class="badge" id="badgeConn">⚪ Conexão: Pendente</span>
+            <span class="badge" id="badgeFila">📦 Fila de Envio: 0</span>
+            <span class="badge" id="badgeTimer" style="display:none;">⏱️ Tempo: 0s</span>
+        </div>
+        <div class="terminal-log" id="terminalLog">
+            <div><span class="time">[Sistema]</span> Aguardando inicialização...</div>
         </div>
     </div>
 
@@ -103,7 +123,7 @@
         </div>
         <div class="config-actions">
             <button class="btn-save-cred" onclick="salvarCredenciaisLocal()">💾 Gravar no Aparelho</button>
-            <button class="btn-sec" onclick="carregarPrompts()">🔄 Baixar Prompts do GitHub</button>
+            <button class="btn-sec" onclick="testarConexaoRapida()">⚡ Testar Conexão</button>
         </div>
     </div>
 
@@ -211,17 +231,62 @@
         </div>
         <div class="form-footer">
             <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar Edição</button>
-            <button class="btn-main" id="btnSave" onclick="savePrompt()">💾 Salvar na Lista</button>
+            <button class="btn-main" id="btnSave" onclick="savePrompt()">💾 Iniciar Upload</button>
         </div>
     </div>
 
     <div class="grid" id="gridUI"></div>
 </div>
 
-<div id="toast">Pronto!</div>
-
 <script>
-    // SISTEMA DE CREDENCIAIS
+    // -----------------------------------------
+    // 1. SISTEMA DIDÁTICO DE LOGS E TIMERS
+    // -----------------------------------------
+    let itensNaFila = 0;
+    let timerUpload = 0;
+    let cronometroInterval;
+
+    function formatTime() {
+        const now = new Date();
+        return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+    }
+
+    function logTerminal(msg, tipo = 'normal') {
+        const terminal = document.getElementById('terminalLog');
+        const colorClass = tipo === 'erro' ? 'err' : (tipo === 'sucesso' ? 'ok' : '');
+        terminal.innerHTML += `<div><span class="time">[${formatTime()}]</span> <span class="${colorClass}">${msg}</span></div>`;
+        terminal.scrollTop = terminal.scrollHeight; // Rola pro final
+    }
+
+    function atualizarFila(quantidade) {
+        itensNaFila += quantidade;
+        document.getElementById('badgeFila').innerText = `📦 Fila de Envio: ${itensNaFila}`;
+        if(itensNaFila > 0) {
+            document.getElementById('badgeFila').className = "badge yellow";
+        } else {
+            document.getElementById('badgeFila').className = "badge";
+        }
+    }
+
+    function iniciarCronometro() {
+        timerUpload = 0;
+        document.getElementById('badgeTimer').style.display = "flex";
+        document.getElementById('badgeTimer').innerText = `⏱️ Tempo: 0s`;
+        clearInterval(cronometroInterval);
+        cronometroInterval = setInterval(() => {
+            timerUpload++;
+            document.getElementById('badgeTimer').innerText = `⏱️ Tempo: ${timerUpload}s`;
+        }, 1000);
+    }
+
+    function pararCronometro() {
+        clearInterval(cronometroInterval);
+        document.getElementById('badgeTimer').style.display = "none";
+    }
+
+    // -----------------------------------------
+    // 2. CREDENCIAIS E TESTE DE CONEXÃO RIGOROSO
+    // -----------------------------------------
     function carregarCredenciaisLocais() {
         const t = localStorage.getItem('da_gh_token') || '';
         const u = localStorage.getItem('da_gh_user') || '';
@@ -253,7 +318,8 @@
         const repo = document.getElementById('ghRepo').value.trim();
 
         if(!token || !user || !repo) {
-            return showToast("Preencha todos os campos antes de salvar no aparelho!");
+            logTerminal("Preencha todos os campos do GitHub.", "erro");
+            return;
         }
 
         localStorage.setItem('da_gh_token', token);
@@ -261,20 +327,45 @@
         localStorage.setItem('da_gh_repo', repo);
 
         GITHUB = carregarCredenciaisLocais(); 
-        showToast("💾 Credenciais blindadas no celular com sucesso!");
+        logTerminal("Credenciais salvas no armazenamento local do navegador.", "sucesso");
+        testarConexaoRapida();
     }
 
-    function carregarPrompts() {
-        if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) {
-            return showToast("Você precisa gravar as configurações do GitHub primeiro!");
+    async function testarConexaoRapida() {
+        logTerminal("Iniciando Handshake (Teste de Conexão) com o GitHub...");
+        const badge = document.getElementById('badgeConn');
+        
+        if(!GITHUB.token) {
+            logTerminal("Falha: Faltam credenciais.", "erro");
+            badge.className = "badge red"; badge.innerText = "🔴 Falha";
+            return false;
         }
-        syncFromGitHub(true);
+
+        try {
+            // Tenta acessar os detalhes do repositório para ver se o Token tem permissão
+            const res = await fetch(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}`, {
+                headers: { 'Authorization': `Bearer ${GITHUB.token}` }
+            });
+
+            if(res.status === 401) throw new Error("Token Inválido ou Expirado.");
+            if(res.status === 404) throw new Error("Repositório ou Usuário não encontrado.");
+            if(!res.ok) throw new Error(`Erro desconhecido do GitHub: ${res.status}`);
+
+            logTerminal("Handshake Aceito! Token válido e permissões OK.", "sucesso");
+            badge.className = "badge green"; badge.innerText = "🟢 Conectado";
+            return true;
+        } catch(e) {
+            logTerminal(`Erro de Conexão: ${e.message}`, "erro");
+            badge.className = "badge red"; badge.innerText = "🔴 Sem Acesso";
+            return false;
+        }
     }
 
-    // GERADOR DE PROMPT COM A NOVA DIREÇÃO DE ARTE
+    // -----------------------------------------
+    // 3. GERADOR DE PROMPT E IMAGEM
+    // -----------------------------------------
     function gerarTextoPrompt() {
         if(STATE.editingIdx > -1 && document.getElementById('pText').value.trim() !== '') return;
-
         const qtdValor = document.getElementById('genQtd').value;
         const formato = document.getElementById('genFormato').value;
         const estetica = document.getElementById('genEstetica').value;
@@ -299,113 +390,11 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
         document.getElementById('pText').value = comando;
     }
     
-    window.onload = function() {
-        carregarCredenciaisLocais();
-        gerarTextoPrompt();
-    }
-
-    // FUNÇÕES DO GITHUB 
-    const utf8_to_b64 = str => window.btoa(unescape(encodeURIComponent(str)));
-    const b64_to_utf8 = str => decodeURIComponent(escape(window.atob(str)));
-
-    async function syncFromGitHub(isManualTest = false) {
-        if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) return;
-        if(isManualTest) showToast("Buscando dados no GitHub...");
-
-        try {
-            const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
-            const res = await fetch(url, { 
-                headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' } 
-            });
-            
-            if (res.status === 401) throw new Error("Token inválido ou expirado.");
-            if (res.status === 403) throw new Error("Permissão negada no GitHub.");
-            if(res.status === 404) { 
-                STATE.prompts = []; GITHUB.sha = ''; dadosCarregadosComSucesso = true; render(); 
-                if(isManualTest) showToast("✅ Conectado! JSON será criado no primeiro salvamento.");
-                document.getElementById('syncStatus').innerText = "✅ Nuvem Conectada";
-                document.getElementById('syncStatus').style.color = "var(--success)";
-                return; 
-            }
-
-            const responseText = await res.text();
-            if(!res.ok) throw new Error(JSON.parse(responseText).message || "Erro de servidor.");
-
-            const data = JSON.parse(responseText);
-            GITHUB.sha = data.sha;
-            
-            if (data.content) {
-                const decodificado = b64_to_utf8(data.content).trim();
-                if(decodificado) STATE.prompts = JSON.parse(decodificado);
-            } else {
-                STATE.prompts = [];
-            }
-
-            dadosCarregadosComSucesso = true; 
-            render();
-            if(isManualTest) showToast("✅ Prompts importados com sucesso!");
-            
-            document.getElementById('syncStatus').innerText = "✅ Sincronizado";
-            document.getElementById('syncStatus').style.color = "var(--success)";
-
-        } catch (e) { 
-            console.error(e);
-            dadosCarregadosComSucesso = false; 
-            showToast("Erro: " + e.message); 
-            document.getElementById('syncStatus').innerText = "❌ Falha na Nuvem";
-            document.getElementById('syncStatus').style.color = "var(--danger)";
-        }
-    }
-
-    async function syncToGitHub() {
-        if(!GITHUB.token || !dadosCarregadosComSucesso) return;
-        
-        try {
-            const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
-            
-            // Passo de Segurança: Buscar o SHA mais recente do JSON antes de salvar para evitar conflitos
-            try {
-                const resSha = await fetch(url, { headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Cache-Control': 'no-cache' } });
-                if (resSha.ok) {
-                    const dataSha = await resSha.json();
-                    GITHUB.sha = dataSha.sha;
-                }
-            } catch(e) { console.log("Arquivo novo, não possui SHA ainda."); }
-
-            // Prepara os dados para salvar
-            const body = {
-                message: "Atualizando Prompts via Gerenciador de Direção de Arte",
-                content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2))
-            };
-            if(GITHUB.sha) body.sha = GITHUB.sha;
-
-            const res = await fetch(url, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-
-            if(!res.ok) throw new Error((await res.json()).message);
-
-            const data = await res.json();
-            GITHUB.sha = data.content.sha; // Atualiza o SHA localmente após salvar
-            
-            document.getElementById('syncStatus').innerText = "✅ JSON Sincronizado";
-            document.getElementById('syncStatus').style.color = "var(--success)";
-        } catch (e) { 
-            console.error(e);
-            document.getElementById('syncStatus').innerText = "❌ Erro ao salvar JSON";
-            document.getElementById('syncStatus').style.color = "var(--danger)";
-            throw e; // Repassa o erro para o botão parar de carregar
-        }
-    }
-
-    // PROCESSAMENTO DE IMAGEM
     function handleImageSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        showToast("Compactando imagem base...");
+        logTerminal(`Compactando imagem: ${file.name}...`);
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
@@ -418,8 +407,7 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
                 const y = (canvas.height / scale - img.height) / 2;
                 ctx.drawImage(img, x, y, img.width, img.height, 0, 0, img.width * scale, img.height * scale);
 
-                let quality = 0.9;
-                let base64 = "";
+                let quality = 0.9; let base64 = "";
                 do {
                     base64 = canvas.toDataURL('image/jpeg', quality);
                     if ((base64.length * (3/4)) <= 51200 || quality <= 0.1) break;
@@ -431,30 +419,83 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
                 preview.src = base64;
                 preview.style.display = 'block';
                 document.getElementById('sizeInfo').innerText = `Otimizada: ${Math.round((base64.length * (3/4)) / 1024)}KB`;
+                logTerminal(`Imagem compactada com sucesso. Pronta para envio.`, "sucesso");
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
-    // FLUXO DE SALVAMENTO ATÔMICO E SEGURO
+    // -----------------------------------------
+    // 4. FUNÇÕES NÚCLEO: GITHUB E UPLOAD SEGURO
+    // -----------------------------------------
+    const utf8_to_b64 = str => window.btoa(unescape(encodeURIComponent(str)));
+    const b64_to_utf8 = str => decodeURIComponent(escape(window.atob(str)));
+
+    async function carregarPrompts() {
+        logTerminal("Buscando dados no servidor GitHub...");
+        const isConectado = await testarConexaoRapida();
+        if(!isConectado) return;
+
+        try {
+            const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
+            const res = await fetch(url, { 
+                headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' } 
+            });
+            
+            if(res.status === 404) { 
+                STATE.prompts = []; GITHUB.sha = ''; dadosCarregadosComSucesso = true; render(); 
+                logTerminal("Arquivo prom10.json não existe ainda. Ele será criado no primeiro salvamento.", "sucesso");
+                return; 
+            }
+            if(!res.ok) throw new Error(`Erro na leitura do JSON: ${res.status}`);
+
+            const data = await res.json();
+            GITHUB.sha = data.sha;
+            
+            if (data.content) {
+                const decodificado = b64_to_utf8(data.content).trim();
+                if(decodificado) STATE.prompts = JSON.parse(decodificado);
+            }
+            dadosCarregadosComSucesso = true; 
+            render();
+            logTerminal("Banco de Prompts importado perfeitamente!", "sucesso");
+
+        } catch (e) { 
+            logTerminal(e.message, "erro");
+            dadosCarregadosComSucesso = false; 
+        }
+    }
+
     async function savePrompt() {
         const name = document.getElementById('pName').value.trim();
         const text = document.getElementById('pText').value.trim();
-        if(!name || !text) return showToast("⚠️ Preencha o Título e gere o Comando!");
+        
+        if(!name || !text) {
+            logTerminal("Operação cancelada: Título ou Comando vazios.", "erro");
+            return;
+        }
+
+        // PASSO 1: O Handshake Rigoroso (Se não passar, nem tenta)
+        const isConectado = await testarConexaoRapida();
+        if(!isConectado) {
+            logTerminal("Upload cancelado devido a falha na conexão.", "erro");
+            return;
+        }
 
         const btnSave = document.getElementById('btnSave');
         btnSave.disabled = true;
-        btnSave.innerHTML = "⏳ Renderizando dados... Aguarde";
+        btnSave.innerHTML = "⏳ Transmitindo dados...";
+        iniciarCronometro();
 
         try {
             let finalImageUrl = STATE.currentImageBase64;
             
-            // ETAPA 1: Se for uma nova imagem selecionada (Base64), envia ela primeiro pro GitHub
+            // PASSO 2: Upload da Imagem
             if (finalImageUrl && finalImageUrl.startsWith('data:image')) {
-                document.getElementById('syncStatus').innerText = "⬆️ Fazendo upload da imagem pro estúdio na nuvem...";
-                document.getElementById('syncStatus').style.color = "#f59e0b"; // Amarelo warning
-
+                atualizarFila(1);
+                logTerminal("Iniciando upload da foto para a pasta prom10_images...");
+                
                 const pureBase64 = finalImageUrl.split(',')[1];
                 const filename = `img_${Date.now()}.jpg`;
                 const imagePath = `prom10_images/${filename}`; 
@@ -468,40 +509,112 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
                     body: JSON.stringify(body)
                 });
 
-                if(!res.ok) throw new Error("Falha no envio da imagem para o GitHub.");
+                if(!res.ok) throw new Error(`O GitHub rejeitou o upload da imagem. Erro ${res.status}`);
                 
                 const data = await res.json();
                 finalImageUrl = data.content.download_url; 
+                logTerminal("Upload da foto concluído. Link direto gerado.", "sucesso");
+                atualizarFila(-1);
             }
 
-            // ETAPA 2: Cria ou Atualiza o Prompt na lista local
+            // PASSO 3: Atualizar lista na Memória
             const promptData = { name, text, image: finalImageUrl };
-            
             if(STATE.editingIdx > -1) {
                 STATE.prompts[STATE.editingIdx] = promptData;
             } else {
                 STATE.prompts.unshift(promptData);
             }
 
-            // ETAPA 3: Salva o arquivo JSON atualizado
-            document.getElementById('syncStatus').innerText = "🔄 Salvando briefing no banco de dados...";
-            await syncToGitHub();
+            // PASSO 4: Upload do Arquivo JSON Inteiro
+            atualizarFila(1);
+            logTerminal("Sincronizando JSON com o novo briefing...");
+            
+            const jsonUrl = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
+            
+            // Pega o SHA de segurança mais atual antes de sobrescrever
+            try {
+                const resSha = await fetch(jsonUrl, { headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Cache-Control': 'no-cache' } });
+                if (resSha.ok) {
+                    const dataSha = await resSha.json();
+                    GITHUB.sha = dataSha.sha;
+                }
+            } catch(e) { }
 
-            // ETAPA 4: Limpa o formulário e atualiza a tela
+            const jsonBody = {
+                message: `Atualizando Prompts via Gerenciador: ${name}`,
+                content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2))
+            };
+            if(GITHUB.sha) jsonBody.sha = GITHUB.sha;
+
+            const resJson = await fetch(jsonUrl, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(jsonBody)
+            });
+
+            if(!resJson.ok) throw new Error(`O GitHub rejeitou o salvamento do arquivo JSON. Erro ${resJson.status}`);
+
+            const dataJson = await resJson.json();
+            GITHUB.sha = dataJson.content.sha; 
+            
+            logTerminal("Banco de dados JSON sincronizado com sucesso!", "sucesso");
+            atualizarFila(-1);
+            
+            // PASSO 5: Limpeza
             cancelEdit();
             render(); 
-            showToast("✅ Direção de Arte salva com sucesso!");
+            logTerminal("✨ Ciclo de Sincronização finalizado sem erros.", "sucesso");
             
         } catch (error) {
-            console.error(error);
-            showToast("❌ Erro: " + error.message);
+            logTerminal(`FALHA CRÍTICA: ${error.message}`, "erro");
+            atualizarFila(-itensNaFila); // zera a fila por erro
         } finally {
-            // Reativa o botão
             btnSave.disabled = false;
-            btnSave.innerHTML = "💾 Salvar na Lista";
+            btnSave.innerHTML = "💾 Iniciar Upload";
+            pararCronometro();
         }
     }
 
+    async function deletePrompt(i) {
+        if(confirm("Deseja apagar este conceito permanentemente?")) {
+            STATE.prompts.splice(i, 1);
+            render();
+            logTerminal("Sincronizando exclusão com o servidor...");
+            
+            // Reutiliza o loop de upload de JSON
+            atualizarFila(1);
+            iniciarCronometro();
+            
+            try {
+                const jsonUrl = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
+                const resSha = await fetch(jsonUrl, { headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Cache-Control': 'no-cache' } });
+                if (resSha.ok) GITHUB.sha = (await resSha.json()).sha;
+
+                const jsonBody = {
+                    message: "Removendo arquivo do estúdio",
+                    content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2)),
+                    sha: GITHUB.sha
+                };
+
+                await fetch(jsonUrl, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jsonBody)
+                });
+
+                logTerminal("Exclusão refletida no GitHub com sucesso.", "sucesso");
+            } catch(e) {
+                logTerminal(`Erro ao apagar no GitHub: ${e.message}`, "erro");
+            } finally {
+                atualizarFila(-1);
+                pararCronometro();
+            }
+        }
+    }
+
+    // -----------------------------------------
+    // 5. RENDERIZAÇÃO DE TELA E INTERFACE
+    // -----------------------------------------
     function render() {
         const gridUI = document.getElementById('gridUI');
         gridUI.innerHTML = STATE.prompts.map((p, i) => `
@@ -522,7 +635,7 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
 
     function copyPromptText(i) {
         navigator.clipboard.writeText(STATE.prompts[i].text);
-        showToast("✅ Prompt Copiado! Leve para a sua IA geradora de imagens.");
+        logTerminal(`Prompt '${STATE.prompts[i].name}' copiado para a área de transferência.`, "sucesso");
     }
 
     function startEdit(idx) {
@@ -550,27 +663,15 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
         document.getElementById('pImageInput').value = "";
     }
 
-    async function deletePrompt(i) {
-        if(confirm("ALERTA DO DIRETOR: Deseja apagar este conceito permanentemente do banco?")) {
-            STATE.prompts.splice(i, 1);
-            render();
-            document.getElementById('syncStatus').innerText = "🔄 Removendo arquivo do estúdio...";
-            await syncToGitHub();
-        }
-    }
-
-    function showToast(m) {
-        const t = document.getElementById('toast');
-        t.innerText = m;
-        t.className = "show";
-        setTimeout(() => t.className = "", 3500);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
+    window.onload = function() {
+        carregarCredenciaisLocais();
+        gerarTextoPrompt();
         if(GITHUB.token) {
-            syncFromGitHub(false);
+            testarConexaoRapida().then(isOk => {
+                if(isOk) carregarPrompts();
+            });
         }
-    });
+    }
 </script>
 </body>
 </html>
