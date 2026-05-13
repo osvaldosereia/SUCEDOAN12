@@ -12,7 +12,7 @@
             --danger: #ef4444;
             --bg: #f8fafc;
             --border: #e2e8f0;
-            --accent: #6366f1;
+            --accent: #ec4899; /* Mudado para um tom de rosa pop para combinar com a nova vibe */
             --config-bg: #f1f5f9;
             --warning: #f59e0b;
         }
@@ -47,7 +47,7 @@
 
         .input-group { display: flex; flex-direction: column; gap: 12px; }
         .input-group input[type="text"], .input-group textarea { padding: 14px; border: 1px solid var(--border); border-radius: 10px; width: 100%; font-size: 14px; outline-color: var(--accent); background: #fcfcfc; font-weight: 600; }
-        .input-group textarea { height: 180px; resize: vertical; line-height: 1.6; font-size: 13px; background: #f8fafc; font-weight: 400; }
+        .input-group textarea { height: 200px; resize: vertical; line-height: 1.6; font-size: 13px; background: #f8fafc; font-weight: 400; }
 
         .generator-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; background: #fcfcfc; padding: 18px; border-radius: 12px; border: 1px solid var(--border); }
         .gen-item { display: flex; flex-direction: column; gap: 6px; }
@@ -68,7 +68,7 @@
         .card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.05); transform: translateY(-3px); }
         .card-img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 10px; margin-bottom: 15px; background: #f1f5f9; }
         .card-title { font-weight: 800; font-size: 16px; margin-bottom: 8px; }
-        .card-desc { font-size: 12px; color: #64748b; margin-bottom: 15px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }
+        .card-desc { font-size: 12px; color: #64748b; margin-bottom: 15px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }
         .card-actions { display: grid; gap: 10px; }
         .btn-copy { background: var(--success); color: white; padding: 10px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px; transition: 0.2s; }
         .btn-copy:hover { filter: brightness(1.1); }
@@ -84,7 +84,7 @@
 
 <div class="container">
     <div class="header">
-        <h1>Banco de Prompts - Dona Antônia</h1>
+        <h1>Banco de Prompts - Dona Antônia (Pop High-End)</h1>
         <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
             <span id="syncStatus" style="color: #64748b;">Nuvem inativa</span>
             <button class="btn-success" onclick="carregarPrompts()">🔄 Baixar Prompts do GitHub</button>
@@ -108,7 +108,7 @@
     </div>
 
     <div class="prompt-box">
-        <h2 id="formTitle">Gerador de Novo Prompt Criativo</h2>
+        <h2 id="formTitle">Gerador de Direção de Arte Criativa</h2>
         <div class="form-grid">
             <div>
                 <input type="file" id="pImageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
@@ -136,13 +136,12 @@
                     <div class="gen-item">
                         <label>Vibe / Estética Geral</label>
                         <select id="genEstetica" onchange="gerarTextoPrompt()">
-                            <option value="Color Coordination (Tudo no cenário combina perfeitamente com a paleta do produto)">Color Coordination (Monocromático Pop)</option>
-                            <option value="Lifestyle Casual Autêntico (Estética orgânica, sensação de UGC e foto real do dia a dia)">Lifestyle Autêntico (UGC Style)</option>
-                            <option value="Maximalismo Pop (Cores ultra vibrantes, elementos superdimensionados e divertidos)">Maximalismo Pop</option>
-                            <option value="Minimalismo High-End (Cenário vazio, elegante, limpo, foco absoluto no requinte)">Minimalismo High-End (Luxo)</option>
-                            <option value="Mixed Media (Mescla de fotografia ultrarrealista com doodles, balões de quadrinhos e adesivos 2D)">Mixed Media 2D/3D (Doodles/Stickers)</option>
-                            <option value="Retrô Nostalgia Anos 90/Y2K (Cores saturadas, texturas vintage e estética de câmera analógica)">Nostalgia Y2K / Anos 90</option>
-                            <option value="Cyberpunk Neon (Cores escuras contrastando com brilhos neon vívidos e luzes de LED)">Noturno Neon / Cyberpunk</option>
+                            <option value="Pop Art Candy Monocromático (Cenário, luzes e adereços exatamente na mesma cor pastel vibrante do produto, criando uma imersão de marca)">Candy Monocromático (Imersão de Cor)</option>
+                            <option value="Minimalismo Color Block (Fundo de estúdio totalmente liso em uma cor saturada que cria contraste vibrante e moderno com o produto)">Minimalismo Color Block (Contraste Liso)</option>
+                            <option value="Neon Pastel Cyber-Chic (Estética noturna suave com letreiros neon ou luzes de tubo em tons de algodão doce e azul piscina)">Neon Pastel Cyber-Chic</option>
+                            <option value="Glossy High-End (Superfícies altamente polidas, chão de espelho d'água, texturas de gloss labial e plástico translúcido)">Glossy High-End (Brilho e Reflexo)</option>
+                            <option value="Surrealismo Pop Lúdico (Escalas exageradas, elementos flutuantes ou distorções divertidas mantendo a limpeza visual)">Surrealismo Pop Lúdico</option>
+                            <option value="Geometria Perfeita Bauhaus (Composição matemática usando apenas esferas, cubos e cilindros lisos como adereços no cenário)">Geometria Limpa Bauhaus</option>
                         </select>
                     </div>
 
@@ -150,75 +149,64 @@
                         <label>Qtd. de Produtos</label>
                         <select id="genQtd" onchange="gerarTextoPrompt()">
                             <option value="1">1 Produto (Herói solitário)</option>
-                            <option value="2">2 Produtos (Dupla / Comparação)</option>
+                            <option value="2">2 Produtos (Dupla / Equilíbrio)</option>
                             <option value="3">3 Produtos (Composição em triângulo)</option>
-                            <option value="multiplos">Múltiplos Produtos (Espalhados / Estocados)</option>
+                            <option value="multiplos">Múltiplos Produtos (Padrão Repetitivo Pop)</option>
                         </select>
                     </div>
 
                     <div class="gen-item">
-                        <label>Posição da Câmera / Ângulo</label>
+                        <label>Lente e Ângulo</label>
                         <select id="genAngulo" onchange="gerarTextoPrompt()">
-                            <option value="Frontal Direto (Eye-Level) para destaque imediato do rótulo">Frontal Direto</option>
-                            <option value="Plongée (Ângulo de 45° de cima para baixo)">Plongée (45° de cima)</option>
-                            <option value="Flat Lay (Vista 100% de cima, visão de pássaro)">Flat Lay (Vista Superior Exata)</option>
-                            <option value="Contra-plongée (De baixo para cima, conferindo poder e imponência ao produto)">Contra-plongée (Imponente)</option>
-                            <option value="Macro / Close-up extremo, focando intensamente nos detalhes da embalagem">Macro (Close-up Extremo)</option>
-                            <option value="Lente Grande Angular (Fish-eye sutil) para distorção moderna e dinâmica">Grande Angular (Dinâmico)</option>
+                            <option value="Frontal Direto (Eye-Level) capturado com Lente 85mm para proporções perfeitas e isolamento de fundo luxuoso">Frontal Hero (Lente 85mm)</option>
+                            <option value="Plongée (45° de cima para baixo) capturado com Lente 50mm, visão editorial clássica de revista">Plongée Editorial (45° - Lente 50mm)</option>
+                            <option value="Flat Lay (Aéreo 90° perfeito) com Lente 35mm, organização milimétrica no estilo knolling moderno">Flat Lay Aéreo (90° - Lente 35mm)</option>
+                            <option value="Contra-plongée (De baixo para cima) capturado com Lente Grande Angular 24mm para conferir imponência e distorção dinâmica pop">Contra-plongée Imponente (Lente 24mm)</option>
+                            <option value="Macro Extremo com Lente 100mm f/2.8, focando microscopicamente na textura e brilho, com profundidade de campo super rasa">Macro Detalhe (Lente 100mm f/2.8)</option>
                         </select>
                     </div>
 
                     <div class="gen-item full-width">
                         <label>Cenário e Composição da Cena</label>
                         <select id="genAmbiente" onchange="gerarTextoPrompt()">
-                            <option value="Dentro de uma cesta colorida de supermercado, cercado de forma orgânica por outros itens de mercearia premium (Lifestyle)">1. Cesta de Compras Lifestyle</option>
-                            <option value="Mão estendida em primeira pessoa segurando o produto no centro da tela, com o braço e o fundo urbano sofrendo um forte desfoque (POV)">2. POV Mão Estendida com Fundo Desfocado</option>
-                            <option value="Produto posicionado de forma inusitada saindo parcialmente do bolso de trás de uma calça jeans vestida por um modelo (Moda/Dia a dia)">3. Produto no Bolso da Calça Jeans</option>
-                            <option value="Uma modelo (com rosto parcialmente coberto ou desfocado) espiando de forma curiosa ou gulosa por trás dos produtos">4. Personagem Espiando por trás do Produto</option>
-                            <option value="Cenário de toalha xadrez estendida na grama com frutas frescas e sol de piquenique, produto em destaque">5. Piquenique de Verão (Cottagecore)</option>
-                            <option value="Visão de dentro de uma geladeira aberta: o produto é banhado pela luz interna enquanto uma mão entra no quadro para pegá-lo">6. Visão de Dentro da Geladeira Aberta</option>
-                            <option value="Produto descansando sobre uma densa e macia cama de texturas visuais (frutas fatiadas, pétalas, folhas frescas ou gotas d'água)">7. Cama de Ingredientes / Texturas</option>
-                            <option value="Cenário formado inteiramente por tipografias gigantes e palavras 3D no chão e nas paredes">8. Quarto de Tipografia 3D</option>
-                            <option value="Fundo de estúdio monocromático com color block geométrico em cores pastel contrastantes">9. Color Block Geométrico Estúdio</option>
-                            <option value="Produto equilibrado magicamente e de forma surreal sobre uma pilha impossível de pedras polidas ou formas geométricas">10. Equilíbrio Surreal / Impossível</option>
-                            <option value="Produtos amontoados desorganizadamente num carrinho de compras de arame, visão lateral com corredor borrado ao fundo">11. Carrinho de Compras de Arame</option>
-                            <option value="Uma pessoa segurando o produto de forma a esconder propositalmente parte do próprio rosto, em clima divertido e descolado">12. Pessoa Escondendo o Rosto com o Produto</option>
-                            <option value="Produto flutuando levemente acima do chão em um cenário de céu com nuvens estilizadas rosa e azul pastel">13. Flutuando no Céu Pastel Surrealista</option>
-                            <option value="Produtos descansando sobre pódios de acrílico translúcido com reflexos de água no chão">14. Pódios de Acrílico com Reflexos de Água</option>
-                            <option value="Corredor de loja de conveniência noturna iluminada por letreiros neon, estética urbana e acelerada">15. Corredor Noturno de Loja Neon</option>
-                            <option value="Produto afundado até a metade numa piscina de bolinhas plásticas coloridas ou granulados gigantes de açúcar">16. Piscina de Bolinhas / Granulados Gigantes</option>
-                            <option value="Produto centralizado num grid perfeito, cercado milimetricamente por ingredientes crus e frescos simétricos">17. Flat Lay Geométrico de Ingredientes</option>
-                            <option value="Produtos enfileirados como uma escada, onde o cenário inteiro compartilha a mesmíssima cor exata da embalagem">18. Escadaria Monocromática Absoluta</option>
-                            <option value="Reflexo nítido e perfeito do produto nas lentes espelhadas dos óculos de sol usados por um(a) modelo moderno(a)">19. Refletido em Óculos de Sol</option>
-                            <option value="Produto congelado no ar enquanto é violentamente envolvido por um splash (respingo) dinâmico de água ou líquido vibrante">20. Splash de Água Dinâmico Congelado no Ar</option>
-                            <option value="Vista superior do interior de uma bolsa feminina chique aberta, revelando o produto como um item essencial entre chaves e carteira">21. Interior de Bolsa Chique Aberta</option>
-                            <option value="Cena noturna de mesa de bar ou festa, flash forte no produto, cercado por copos suados e luzes de festa desfocadas ao fundo">22. Mesa de Festa Noturna com Flash Direto</option>
+                            <option value="Posicionado sobre um pódio cilíndrico de acrílico translúcido, em um fundo infinito (cyc wall) impecável">1. Pódio de Acrílico em Fundo Infinito</option>
+                            <option value="Flutuando suavemente em um céu degradê azul-piscina e lilás, rodeado por nuvens estilizadas tipo algodão doce">2. Nuvens de Algodão Doce e Céu Degradê</option>
+                            <option value="Mergulhado parcialmente num líquido denso, espesso e brilhante (lembrando gloss labial ou tinta acrílica pastel)">3. Mergulhado em Líquido Brilhante/Gloss</option>
+                            <option value="Cercado perfeitamente por adereços geométricos (esferas e cubos) pintados em cores complementares vibrantes">4. Rodeado por Formas Geométricas Lisas</option>
+                            <option value="Em um equilíbrio impossível e surreal sobre uma torre de pequenos blocos de resina colorida translúcida">5. Equilíbrio Surreal sobre Blocos de Resina</option>
+                            <option value="No centro de uma piscina vazia e limpa, pintada com uma cor sólida vibrante e moderna, gerando sombras arquitetônicas">6. Fundo de Piscina Vazia Monocromática</option>
+                            <option value="Disposto simetricamente sobre uma mesa de vidro temperado grosso, iluminada por baixo com cores neon pastéis">7. Mesa de Vidro Iluminada por Neon Base</option>
+                            <option value="Emergindo de uma duna de areia fina e perfeitamente lisa, tingida artificialmente em tom rosa bebê ou lavanda">8. Dunas de Areia Tingida Pastel</option>
+                            <option value="Apoiado sobre uma almofada inflável plástica transparente, com estética futurista dos anos 2000 (Y2K brilhante)">9. Almofada Inflável Plástica (Y2K)</option>
+                            <option value="Enquadrado através de um recorte circular perfeito num painel de papel colorido brilhante">10. Espiando por Recorte Circular Perfeito</option>
+                            <option value="Repousando sobre uma cama de ingredientes visuais hiper-realistas e frescos, todos na mesma cor do produto">11. Cama de Ingredientes Monocromáticos</option>
+                            <option value="Dentro de uma mini geladeira retrô premium de porta aberta, com prateleiras de vidro limpas e luz interna estilizada">12. Mini Geladeira Retrô Premium</option>
                         </select>
                     </div>
 
                     <div class="gen-item">
-                        <label>Iluminação e Sombra</label>
+                        <label>Design de Iluminação</label>
                         <select id="genIlum" onchange="gerarTextoPrompt()">
-                            <option value="Direct Flash / Flash Frontal (luz dura e crua típica de câmeras compactas, gerando uma sombra forte e preta logo atrás do objeto, estética Geração Z)">Direct Flash (Sombra Marcada Geração Z)</option>
-                            <option value="Hard Light Diurna (Luz do sol forte criando sombras duras, geométricas e alto contraste)">Hard Light (Sol Forte / Verão)</option>
-                            <option value="Studio Softbox (Iluminação difusa de estúdio premium, sem sombras duras, limpa e uniforme cobrindo todo o produto)">Softbox Difuso (Estúdio Limpo)</option>
-                            <option value="Golden Hour Mágica (Tons laranjas, quentes e dourados com sombras incrivelmente longas e aconchegantes)">Golden Hour (Pôr do Sol Aconchegante)</option>
-                            <option value="Color Gels (Duas ou mais fontes de luz de cores vibrantes rebatendo nas bordas do produto)">Color Gels (Luzes Coloridas Duplas)</option>
+                            <option value="Softbox Ultra-Difuso de Estúdio (Luz suave, ampla e perfeitamente equilibrada, eliminando sombras duras e realçando a limpeza das cores Candy)">Softbox Difuso (Sem sombras duras)</option>
+                            <option value="Hard Light Direcional Estilo Verão (Flash direto imitando a luz do sol do meio-dia, criando sombras duras, nítidas e geométricas de alto contraste)">Hard Light Verão (Sombras Nítidas)</option>
+                            <option value="Color Gels Dicróicos (Duas fontes de luz rebatidas nas laterais usando cores vibrantes, ex: ciano de um lado e magenta do outro, criando gradientes no brilho)">Color Gels (Gradientes Dicróicos)</option>
+                            <option value="Rim Light e Fundo Escuro Pastel (O ambiente é ligeiramente mais escuro, com um contorno de luz brilhante definindo a silhueta do produto)">Rim Light (Contorno Brilhante)</option>
                         </select>
                     </div>
 
                     <div class="gen-item">
-                        <label>Integração Realista (Anti-Montagem)</label>
+                        <label>Acabamento e Integração</label>
                         <select id="genIntegracao" onchange="gerarTextoPrompt()">
-                            <option value="Profundidade de campo dinâmica (Bokeh cinematográfico), garantindo nitidez absurda no produto e desfoque suave no fundo e primeiro plano">Desfoque Fundo/Frente (Bokeh)</option>
-                            <option value="Cálculo rigoroso de sombras projetadas conectando fisicamente o produto ao chão, e micro-reflexos de contato na superfície">Sombras Físicas e Reflexo de Contato</option>
-                            <option value="Ambient Occlusion pesado, luz rebatendo na embalagem e texturas táteis extremamente detalhadas">Luz Rebatida e Texturas Táteis</option>
+                            <option value="Cálculo avançado de Ambient Occlusion, gerando micro-sombras de contato que ancoram o produto de forma hiper-realista à superfície">Ambient Occlusion (Ancoragem Física)</option>
+                            <option value="Efeito de Reflexos Cáusticos (Caustics), onde a luz atravessa materiais ou líquidos no cenário, projetando padrões de luz brilhantes e realistas no chão">Reflexos Cáusticos (Luz através de vidro/líquido)</option>
+                            <option value="Sombras Projetadas Coloridas (Color Cast), onde a sombra do produto absorve sutilmente o tom vibrante do fundo, fugindo do preto opaco">Sombras Coloridas e Luminosas</option>
+                            <option value="Profundidade de Campo Cinematográfica (Bokeh), mantendo o produto incrivelmente nítido enquanto desfoqueia suavemente adereços em primeiro e segundo plano">Desfoque Cinematográfico (Bokeh)</option>
                         </select>
                     </div>
 
                 </div>
 
-                <textarea id="pText" placeholder="Seu super-prompt será gerado aqui. Você pode adicionar ou apagar informações livremente antes de salvar..."></textarea>
+                <textarea id="pText" placeholder="O super-prompt da agência será gerado aqui..."></textarea>
             </div>
         </div>
         <div class="form-footer">
@@ -258,15 +246,6 @@
     let GITHUB = carregarCredenciaisLocais();
     const STATE = { prompts: [], editingIdx: -1, currentImageBase64: "" };
     let dadosCarregadosComSucesso = false; 
-    let imagensPendentesNaFila = 0; // Trava de segurança para não fechar a página
-
-    // Impede o usuário de fechar a aba se o cronômetro de 60s estiver rodando
-    window.addEventListener('beforeunload', function (e) {
-        if (imagensPendentesNaFila > 0) {
-            e.preventDefault();
-            e.returnValue = '';
-        }
-    });
 
     function salvarCredenciaisLocal() {
         const token = document.getElementById('ghToken').value.trim();
@@ -292,7 +271,7 @@
         syncFromGitHub(true);
     }
 
-    // GERADOR DE PROMPT
+    // GERADOR DE PROMPT COM A NOVA DIREÇÃO DE ARTE
     function gerarTextoPrompt() {
         if(STATE.editingIdx > -1 && document.getElementById('pText').value.trim() !== '') return;
 
@@ -304,17 +283,18 @@
         const iluminacao = document.getElementById('genIlum').value;
         const integracao = document.getElementById('genIntegracao').value;
 
-        let textoProduto = qtdValor === "1" ? "o produto anexado" : (qtdValor === "multiplos" ? "múltiplas unidades do produto anexado espalhadas" : `exatamente ${qtdValor} unidades do produto anexado`);
+        let textoProduto = qtdValor === "1" ? "o produto anexado" : (qtdValor === "multiplos" ? "múltiplas unidades do produto anexado compondo um padrão visual" : `exatamente ${qtdValor} unidades do produto anexado`);
         let pluralEles = "deles";
 
-        const comando = `Gere uma imagem publicitária Pop de Altíssima Conversão no formato ${formato}, adotando uma direção de arte calcada na estética: ${estetica}. 
+        const comando = `Atue como um Fotógrafo Publicitário e Diretor de Arte de classe mundial. Crie uma imagem de campanha High-End no formato ${formato}, adotando uma estética Pop, Candy e Minimalista.
 
-Posicionamento e Lente: Enquadre a foto num ângulo ${angulo}.
-Composição Principal da Cena: ${ambiente}. Certifique-se de integrar perfeitamente ${textoProduto} no centro desta narrativa visual.
-Design de Luz: A iluminação da foto deve seguir rigorosamente a técnica de ${iluminacao}.
-Acabamento Realista: Para afastar qualquer aspecto de colagem amadora, aplique ${integracao}.
+Direção Criativa e Vibe: ${estetica}.
+Lente e Ângulo: Câmera posicionada em um ângulo ${angulo}.
+Cenário e Composição: ${ambiente}. Integre perfeitamente ${textoProduto} como a estrela absoluta e central da narrativa visual.
+Design de Iluminação: ${iluminacao}.
+Acabamento e Renderização: Para garantir aspecto de fotografia real de estúdio e fugir da colagem amadora, aplique rigorosamente ${integracao}. As cores devem ser puras, atraentes e modernas.
 
-DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência fornecida(s) como objeto 100% inalterável. É ESTRITAMENTE PROIBIDO por lei publicitária modificar o formato da embalagem, o logotipo, os textos do rótulo ou o design de marca original. O foco total da Inteligência Artificial deve ser orquestrar o cenário, os modelos humanos (se houver), a luz e os acessórios ambientando realisticamente o entorno ${pluralEles}.`;
+DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência fornecida(s) como objeto 100% inalterável. É ESTRITAMENTE PROIBIDO modificar o formato da embalagem, o logotipo, os textos do rótulo ou o design original. O papel da IA é construir o cenário deslumbrante, a luz rica e os fenômenos ópticos ao redor ${pluralEles}, mantendo a volumetria e textura originais intactas.`;
 
         document.getElementById('pText').value = comando;
     }
@@ -381,13 +361,21 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
         if(!GITHUB.token || !dadosCarregadosComSucesso) return;
         
         try {
-            // Remove a imagem Base64 temporária antes de gerar o JSON, para ele continuar levinho (só com a URL)
-            const promptsToSave = STATE.prompts.map(p => ({ name: p.name, text: p.text, image: p.image }));
-
             const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
+            
+            // Passo de Segurança: Buscar o SHA mais recente do JSON antes de salvar para evitar conflitos
+            try {
+                const resSha = await fetch(url, { headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Cache-Control': 'no-cache' } });
+                if (resSha.ok) {
+                    const dataSha = await resSha.json();
+                    GITHUB.sha = dataSha.sha;
+                }
+            } catch(e) { console.log("Arquivo novo, não possui SHA ainda."); }
+
+            // Prepara os dados para salvar
             const body = {
-                message: "Atualizando Prompts via Gerenciador",
-                content: utf8_to_b64(JSON.stringify(promptsToSave, null, 2))
+                message: "Atualizando Prompts via Gerenciador de Direção de Arte",
+                content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2))
             };
             if(GITHUB.sha) body.sha = GITHUB.sha;
 
@@ -400,7 +388,7 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
             if(!res.ok) throw new Error((await res.json()).message);
 
             const data = await res.json();
-            GITHUB.sha = data.content.sha;
+            GITHUB.sha = data.content.sha; // Atualiza o SHA localmente após salvar
             
             document.getElementById('syncStatus').innerText = "✅ JSON Sincronizado";
             document.getElementById('syncStatus').style.color = "var(--success)";
@@ -408,6 +396,7 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
             console.error(e);
             document.getElementById('syncStatus').innerText = "❌ Erro ao salvar JSON";
             document.getElementById('syncStatus').style.color = "var(--danger)";
+            throw e; // Repassa o erro para o botão parar de carregar
         }
     }
 
@@ -448,7 +437,7 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
         reader.readAsDataURL(file);
     }
 
-    // SALVAR PROMPT (LÓGICA DOS 60 SEGUNDOS)
+    // FLUXO DE SALVAMENTO ATÔMICO E SEGURO
     async function savePrompt() {
         const name = document.getElementById('pName').value.trim();
         const text = document.getElementById('pText').value.trim();
@@ -456,20 +445,37 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
 
         const btnSave = document.getElementById('btnSave');
         btnSave.disabled = true;
+        btnSave.innerHTML = "⏳ Renderizando dados... Aguarde";
 
         try {
-            let tempBase64Data = null;
-            let filename = `img_${Date.now()}.jpg`;
             let finalImageUrl = STATE.currentImageBase64;
             
-            // Se for uma imagem nova, marcamos para subir depois de 60s
+            // ETAPA 1: Se for uma nova imagem selecionada (Base64), envia ela primeiro pro GitHub
             if (finalImageUrl && finalImageUrl.startsWith('data:image')) {
-                tempBase64Data = finalImageUrl;
-                finalImageUrl = "aguardando_upload"; // Placeholder que será trocado no JSON depois
+                document.getElementById('syncStatus').innerText = "⬆️ Fazendo upload da imagem pro estúdio na nuvem...";
+                document.getElementById('syncStatus').style.color = "#f59e0b"; // Amarelo warning
+
+                const pureBase64 = finalImageUrl.split(',')[1];
+                const filename = `img_${Date.now()}.jpg`;
+                const imagePath = `prom10_images/${filename}`; 
+                
+                const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${imagePath}`;
+                const body = { message: `Upload Visual Criativo: ${filename}`, content: pureBase64 };
+
+                const res = await fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if(!res.ok) throw new Error("Falha no envio da imagem para o GitHub.");
+                
+                const data = await res.json();
+                finalImageUrl = data.content.download_url; 
             }
 
-            // O tempBase64Data garante que a imagem aparece na sua tela INSTANTANEAMENTE
-            const promptData = { name, text, image: finalImageUrl, tempBase64: tempBase64Data };
+            // ETAPA 2: Cria ou Atualiza o Prompt na lista local
+            const promptData = { name, text, image: finalImageUrl };
             
             if(STATE.editingIdx > -1) {
                 STATE.prompts[STATE.editingIdx] = promptData;
@@ -477,82 +483,30 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
                 STATE.prompts.unshift(promptData);
             }
 
-            cancelEdit();
-            render(); 
-            
-            // ETAPA 1: Envia o Prompt (JSON) na MESMA hora!
-            showToast("💾 Prompt salvo! Imagem subirá em 60s...");
-            document.getElementById('syncStatus').innerText = "🔄 Enviando JSON...";
+            // ETAPA 3: Salva o arquivo JSON atualizado
+            document.getElementById('syncStatus').innerText = "🔄 Salvando briefing no banco de dados...";
             await syncToGitHub();
 
-            // ETAPA 2: Aciona o cronômetro de 60s para a imagem
-            if (tempBase64Data) {
-                imagensPendentesNaFila++;
-                document.getElementById('syncStatus').innerText = `⏳ Imagem na fila (60s)... Não feche.`;
-                
-                setTimeout(async () => {
-                    await processarUploadDeImagem(tempBase64Data, filename, promptData);
-                }, 60000); // 60 segundos
-            }
+            // ETAPA 4: Limpa o formulário e atualiza a tela
+            cancelEdit();
+            render(); 
+            showToast("✅ Direção de Arte salva com sucesso!");
             
         } catch (error) {
             console.error(error);
-            showToast("Erro Crítico: " + error.message);
+            showToast("❌ Erro: " + error.message);
         } finally {
+            // Reativa o botão
             btnSave.disabled = false;
-        }
-    }
-
-    // ETAPA 3: A função que sobe a imagem e atualiza o JSON após 60s
-    async function processarUploadDeImagem(base64Data, filename, promptRef) {
-        try {
-            document.getElementById('syncStatus').innerText = "🔄 Fazendo upload da imagem...";
-            const pureBase64 = base64Data.split(',')[1];
-            const imagePath = `prom10/${filename}`; 
-            
-            const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${imagePath}`;
-            const body = { message: `Upload Visual: ${filename}`, content: pureBase64 };
-
-            const res = await fetch(url, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${GITHUB.token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-
-            if(!res.ok) throw new Error("Falha no envio da imagem.");
-            
-            const data = await res.json();
-            
-            // Atualiza o objeto com o link final verdadeiro gerado pelo GitHub
-            promptRef.image = data.content.download_url;
-            delete promptRef.tempBase64; // Limpa a memória
-            
-            // Re-salva o JSON secretamente só para atualizar a URL da imagem
-            await syncToGitHub(); 
-            
-            showToast("🖼️ Imagem e JSON 100% sincronizados!");
-            render();
-            
-        } catch (e) {
-            console.error(e);
-            showToast("❌ Erro ao subir imagem: " + e.message);
-        } finally {
-            imagensPendentesNaFila--;
-            if(imagensPendentesNaFila === 0) {
-                document.getElementById('syncStatus').innerText = "✅ Tudo Sincronizado";
-                document.getElementById('syncStatus').style.color = "var(--success)";
-            }
+            btnSave.innerHTML = "💾 Salvar na Lista";
         }
     }
 
     function render() {
         const gridUI = document.getElementById('gridUI');
-        gridUI.innerHTML = STATE.prompts.map((p, i) => {
-            // Se tiver a imagem temporária (ainda nos 60s), mostra ela, se não, mostra o link do GitHub
-            const displayImg = p.tempBase64 ? p.tempBase64 : p.image;
-            return `
+        gridUI.innerHTML = STATE.prompts.map((p, i) => `
             <div class="card">
-                <img src="${displayImg || ''}" class="card-img" onerror="this.style.display='none'" onload="this.style.display='block'">
+                <img src="${p.image || ''}" class="card-img" onerror="this.style.display='none'" onload="this.style.display='block'">
                 <div class="card-title">${p.name}</div>
                 <div class="card-desc" title="${p.text}">${p.text}</div>
                 <div class="card-actions">
@@ -563,12 +517,12 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
                     <button class="btn-sml" style="color:var(--danger)" onclick="deletePrompt(${i})">🗑️ Excluir</button>
                 </div>
             </div>
-        `}).join('');
+        `).join('');
     }
 
     function copyPromptText(i) {
         navigator.clipboard.writeText(STATE.prompts[i].text);
-        showToast("✅ Prompt Copiado e pronto para a IA!");
+        showToast("✅ Prompt Copiado! Leve para a sua IA geradora de imagens.");
     }
 
     function startEdit(idx) {
@@ -576,7 +530,7 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
         const p = STATE.prompts[idx];
         document.getElementById('pName').value = p.name;
         document.getElementById('pText').value = p.text;
-        STATE.currentImageBase64 = p.tempBase64 || p.image || ""; // Prioriza a base64 se estiver pendente
+        STATE.currentImageBase64 = p.image || ""; 
         
         const preview = document.getElementById('pImgPreview');
         preview.src = STATE.currentImageBase64;
@@ -597,10 +551,10 @@ DIRETRIZ DE PRESERVAÇÃO ABSOLUTA: Utilize a(s) imagem(ns) de referência forne
     }
 
     async function deletePrompt(i) {
-        if(confirm("ALERTA: Deseja apagar este prompt permanentemente do banco?")) {
+        if(confirm("ALERTA DO DIRETOR: Deseja apagar este conceito permanentemente do banco?")) {
             STATE.prompts.splice(i, 1);
             render();
-            document.getElementById('syncStatus').innerText = "🔄 Sincronizando exclusão...";
+            document.getElementById('syncStatus').innerText = "🔄 Removendo arquivo do estúdio...";
             await syncToGitHub();
         }
     }
