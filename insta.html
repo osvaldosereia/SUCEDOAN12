@@ -3,88 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Prompts Publicitários 9:16</title>
+    <title>Master Studio: Gerador de Prompts 9:16</title>
     <style>
-        /* Estilos CSS para uma interface limpa e moderna */
+        :root {
+            --primary: #2b2b2b;
+            --accent: #ff0055;
+            --bg: #f4f4f9;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --border: #e0e0e0;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             margin: 0;
             padding: 20px;
             display: flex;
             justify-content: center;
-            align-items: center;
-            min-height: 100vh;
         }
-        .container {
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-            padding: 30px;
-            max-width: 500px;
+
+        .studio-container {
+            max-width: 1000px;
             width: 100%;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 30px;
         }
+
         h1 {
             text-align: center;
-            color: #ff4757;
-            font-size: 24px;
-            margin-bottom: 20px;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 28px;
+            margin-bottom: 5px;
         }
-        .form-group {
+
+        p.subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .category-group {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .category-group h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--primary);
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 8px;
             margin-bottom: 15px;
         }
+
         label {
             display: block;
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #555;
         }
+
         select {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            font-size: 16px;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
             background-color: #fff;
-            appearance: none; /* Remove o estilo padrão do sistema operacional */
+            font-size: 14px;
+            cursor: pointer;
         }
+
         select:focus {
             outline: none;
-            border-color: #ff4757;
-            box-shadow: 0 0 0 2px rgba(255, 71, 87, 0.25);
+            border-color: var(--accent);
         }
-        button {
+
+        .btn-generate {
             width: 100%;
-            padding: 15px;
-            background-color: #ff4757;
+            padding: 18px;
+            background-color: var(--accent);
             color: white;
             border: none;
-            border-radius: 6px;
-            font-size: 16px;
+            border-radius: 8px;
+            font-size: 18px;
             font-weight: bold;
+            text-transform: uppercase;
             cursor: pointer;
-            transition: background-color 0.3s ease;
-            margin-top: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 0, 85, 0.3);
         }
-        button:hover {
-            background-color: #ff6b81;
+
+        .btn-generate:hover {
+            background-color: #d40047;
+            transform: translateY(-2px);
         }
-        .result-box {
-            margin-top: 25px;
+
+        .result-section {
+            margin-top: 30px;
+            border-top: 2px dashed var(--border);
+            padding-top: 20px;
         }
-        .result-box label {
-            color: #2ed573;
-        }
+
         textarea {
             width: 100%;
-            height: 150px;
+            height: 200px;
             padding: 15px;
-            border: 2px dashed #2ed573;
-            border-radius: 6px;
-            background-color: #f1fef4;
+            border: 2px solid #333;
+            border-radius: 8px;
+            background-color: #fff;
+            font-family: monospace;
             font-size: 14px;
-            line-height: 1.5;
+            line-height: 1.6;
             resize: vertical;
             box-sizing: border-box;
         }
@@ -92,82 +139,135 @@
 </head>
 <body>
 
-    <div class="container">
-        <h1>Gerador de Prompts Criativos</h1>
-        
-        <div class="form-group">
-            <label for="qtdProdutos">Quantidade de Produtos em destaque:</label>
-            <select id="qtdProdutos">
-                <option value="1 produto centralizado">1 produto</option>
-                <option value="2 produtos lado a lado">2 produtos</option>
-                <option value="3 produtos organizados de forma criativa">3 produtos</option>
-                <option value="4 produtos em composição harmônica">4 produtos</option>
-                <option value="uma variedade de 5 a 8 produtos misturados">5 a 8 produtos</option>
-            </select>
+    <div class="studio-container">
+        <h1>Master Studio 2.0</h1>
+        <p class="subtitle">Direção de Arte & Fotografia Publicitária de Alto Padrão</p>
+
+        <div class="grid-layout">
+            
+            <!-- Departamento de Composição -->
+            <div class="category-group">
+                <h3>1. Composição e Ação</h3>
+                
+                <label>Quantidade de Produtos</label>
+                <select id="qtd">
+                    <option value="o único produto em destaque absoluto no centro da cena">1 Produto (Destaque Hero)</option>
+                    <option value="2 produtos dispostos de forma dinâmica e interativa">2 Produtos</option>
+                    <option value="uma composição harmônica de 3 produtos">3 Produtos</option>
+                    <option value="uma rica variedade de 5 a 8 produtos organizados cenograficamente">5 a 8 Produtos (Catálogo)</option>
+                </select>
+
+                <label>Ação / Disposição</label>
+                <select id="acao">
+                    <option value="flutuando em gravidade zero com elegância">Flutuando (Gravidade Zero)</option>
+                    <option value="apoiado sobre pódios geométricos minimalistas">Em pódios geométricos</option>
+                    <option value="segurado firmemente por mãos de modelo com unhas esmaltadas em tom pastel">Segurado por modelo (Unhas Pastel)</option>
+                    <option value="transbordando de uma cesta de compras aramada moderna">Dentro de cesta de mercado moderna</option>
+                    <option value="sendo capturado em um splash dinâmico, em pleno ar">Ação de Splash/Queda livre</option>
+                </select>
+            </div>
+
+            <!-- Departamento de Cenografia -->
+            <div class="category-group">
+                <h3>2. Cenografia e Ambiente</h3>
+                
+                <label>Background (Fundo)</label>
+                <select id="fundo">
+                    <option value="fundo de estúdio infinito com gradiente pop de cores candy e vibrantes">Gradiente Pop Candy</option>
+                    <option value="ambiente de supermercado retro-futurista levemente desfocado (bokeh)">Supermercado Retro-Futurista</option>
+                    <option value="painel de acrílico translúcido iluminado por trás">Acrílico Translúcido Iluminado</option>
+                    <option value="textura de parede de azulejos metrô (subway tiles) brancos e limpos">Azulejos Metrô Brancos</option>
+                    <option value="cenário de natureza irreal com folhas de palmeira em tons pastel">Natureza Pastel Irreal</option>
+                </select>
+
+                <label>Adereços e Física (Props)</label>
+                <select id="props">
+                    <option value="com gotas de condensação hiper-realistas e pequenas nuvens de fumaça gelada">Condensação e Fumaça fria</option>
+                    <option value="cercado por blocos acrílicos transparentes e fitas metálicas flutuando">Blocos Acrílicos e Fitas</option>
+                    <option value="com respingos dramáticos de água cristalina congelados no ar">Respingos de Água (High Speed)</option>
+                    <option value="acompanhado por frutas frescas e ingredientes explodindo suavemente ao redor">Ingredientes Explodindo</option>
+                    <option value="sem adereços físicos, mantendo o ambiente ultra-minimalista e limpo">Minimalista (Sem adereços)</option>
+                </select>
+            </div>
+
+            <!-- Departamento de Luz e Câmera -->
+            <div class="category-group">
+                <h3>3. Fotografia e Iluminação</h3>
+                
+                <label>Estilo de Iluminação</label>
+                <select id="luz">
+                    <option value="iluminação de estúdio volumétrica com rim light (luz de recorte) marcante para destacar silhuetas">Estúdio Volumétrica + Rim Light</option>
+                    <option value="luz dura e sombras projetadas nítidas (hard shadows) simulando sol de meio-dia da Califórnia">Luz Dura (Sol do Meio-dia)</option>
+                    <option value="iluminação neon cibernética suave em tons de magenta e cyan refletindo nas superfícies">Neon Suave (Magenta/Cyan)</option>
+                    <option value="luz frontal de flash direto estilo editorial de moda anos 90, altíssimo contraste">Flash Frontal Direto (Anos 90)</option>
+                </select>
+
+                <label>Lente e Ângulo de Câmera</label>
+                <select id="camera">
+                    <option value="fotografado com lente macro 100mm, foco cravado no produto e fundo com desfoque amanteigado (bokeh)">Macro 100mm (Foco Extremo)</option>
+                    <option value="ângulo levemente de baixo para cima (low angle) com lente 35mm para dar imponência ao produto">Low Angle 35mm (Imponente)</option>
+                    <option value="visão isométrica frontal, planificada e milimetricamente alinhada">Isométrica Frontal</option>
+                </select>
+            </div>
+
+            <!-- Departamento de Intervenção Artística -->
+            <div class="category-group">
+                <h3>4. Direção de Arte (Mixed Media)</h3>
+                
+                <label>Recursos Gráficos Adicionais</label>
+                <select id="grafico">
+                    <option value="A imagem finaliza com estilo Mixed Media: inserções de rabiscos estilo cartoon vintage e tipografia pop-art sobrepondo sutilmente a fotografia realista.">Mixed Media: Rabiscos Cartoon</option>
+                    <option value="Apresenta elementos de interface digital flutuante (UI design) e grades holográficas ao redor do produto real.">Tech/Cyber: Interface Digital</option>
+                    <option value="Apresenta texturas sutis de papel de revista rasgado e pontos de retícula (halftone) nas bordas, mesclando foto com colagem analógica.">Colagem: Papel Rasgado e Retícula</option>
+                    <option value="Fotografia pura e limpa, sem interferências gráficas adicionais.">Nenhuma (Fotografia Pura)</option>
+                </select>
+            </div>
+
         </div>
 
-        <div class="form-group">
-            <label for="acao">Ação e Interação Humana:</label>
-            <select id="acao">
-                <option value="segurado por uma mão feminina com unhas pintadas">Uma mão segurando</option>
-                <option value="segurados por duas mãos femininas">Duas mãos segurando</option>
-                <option value="dentro de uma cesta de supermercado colorida de plástico segurada por uma pessoa">Na cesta de supermercado</option>
-                <option value="sendo retirados de dentro de uma caixa de papelão kraft por uma pessoa">Saindo da caixa de papelão</option>
-                <option value="sendo levemente abertos por mãos cuidadosas">Produto sendo aberto</option>
-            </select>
-        </div>
+        <button class="btn-generate" onclick="gerarPromptStudio()">Gerar Prompt Profissional</button>
 
-        <div class="form-group">
-            <label for="fundo">Estilo do Cenário/Fundo:</label>
-            <select id="fundo">
-                <option value="fundo sólido em cor rosa pastel candy">Sólido Rosa Pastel</option>
-                <option value="fundo sólido em cor azul vibrante pop">Sólido Azul Vibrante</option>
-                <option value="céu azul limpo e ensolarado ao ar livre">Céu Azul Limpo (Externo)</option>
-                <option value="fundo de azulejos quadrados lilás estilo banheiro minimalista">Azulejos Lilás</option>
-                <option value="fundo com padrões geométricos retro pop-art e bolinhas">Padrões Geométricos Pop</option>
-                <option value="fundo com duas cores contrastantes divididas na diagonal">Duas cores (Diagonal)</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="luz">Iluminação e Fotografia:</label>
-            <select id="luz">
-                <option value="luz solar dura, com sombras bem marcadas e contraste alto">Luz de Sol Dura (Sombras marcadas)</option>
-                <option value="iluminação de estúdio suave, brilhante e uniforme">Luz de Estúdio Suave</option>
-                <option value="iluminação com flash frontal forte estilo fotografia de moda dos anos 90">Flash Frontal Forte (Estilo 90s)</option>
-            </select>
-        </div>
-
-        <button onclick="gerarPrompt()">Gerar Prompt Mágico</button>
-
-        <div class="result-box">
-            <label for="resultado">Seu Prompt Finalizado:</label>
-            <textarea id="resultado" readonly>Configure as opções acima e clique em "Gerar Prompt".</textarea>
+        <div class="result-section">
+            <label style="color: var(--accent); font-weight: bold; font-size: 16px; margin-bottom: 10px;">SEU PROMPT DE ALTO PADRÃO:</label>
+            <textarea id="resultado" readonly>Selecione suas escolhas artísticas e clique no botão acima para montar a cena.</textarea>
         </div>
     </div>
 
     <script>
-        // Função principal chamada quando o botão é clicado
-        function gerarPrompt() {
-            // 1. Capturar os valores selecionados pelo usuário em cada menu suspenso
-            const qtd = document.getElementById('qtdProdutos').value;
+        /**
+         * Função que recolhe todos os elementos de arte selecionados
+         * e constrói o prompt final com regras inquebráveis de qualidade.
+         */
+        function gerarPromptStudio() {
+            // 1. Coleta das Variáveis do UI
+            const qtd = document.getElementById('qtd').value;
             const acao = document.getElementById('acao').value;
             const fundo = document.getElementById('fundo').value;
+            const props = document.getElementById('props').value;
             const luz = document.getElementById('luz').value;
+            const camera = document.getElementById('camera').value;
+            const grafico = document.getElementById('grafico').value;
 
-            // 2. Definir a estrutura base do prompt, incluindo o estilo da sua marca
-            const introducao = "Fotografia publicitária ultrarrealista, estilo Mixed Media, combinando hiper-realismo com elementos de direção de arte pop, candy e minimalista. Proporção vertical 9:16.";
-            
-            // 3. Montar a frase principal combinando as variáveis capturadas
-            const descricaoPrincipal = `A imagem deve focar em ${qtd}, que estão sendo ${acao}. O cenário possui um ${fundo}.`;
-            
-            // 4. Adicionar detalhes técnicos de fotografia
-            const detalhesTecnicos = `Iluminação: ${luz}. Cores extremamente vibrantes, alta resolução, 8k, textura nítida, comercial de alto padrão para Instagram Reels. A embalagem do produto deve estar em branco (mockup) para posterior inserção da marca.`;
+            // 2. Base Estrutural e Formato
+            const setupBase = "Crie uma fotografia publicitária de nível internacional (award-winning commercial photography) no formato vertical de proporção 9:16 (adequado para Stories e Reels).";
 
-            // 5. Juntar todas as partes para formar o prompt final
-            const promptFinal = `${introducao} ${descricaoPrincipal} ${detalhesTecnicos}`;
+            // 3. Montagem da Cena
+            const direcaoCena = `A cena apresenta ${qtd}, que está/estão ${acao}. O ambiente possui um ${fundo}. A composição é enriquecida ${props}.`;
 
-            // 6. Enviar o texto final para a caixa de texto (textarea) para o usuário copiar
+            // 4. Direção de Fotografia e Iluminação
+            const direcaoFoto = `Direção de fotografia: ${camera}. O esquema de luz utiliza ${luz}. Cores extremamente ricas, vibrantes e calibradas para e-commerce de alto impacto. Renderização em 8k, Octane Render ou Unreal Engine 5 aesthetic, hiper-detalhado, texturas de materiais (vidro, plástico, metal, líquidos) perfeitamente fotorrealistas.`;
+
+            // 5. Intervenção Artística (Se houver)
+            const estiloArte = grafico;
+
+            // 6. A REGRA DE OURO (Restrição Crítica do Produto Original)
+            const regraOuro = `
+[ATENÇÃO - INSTRUÇÃO CRÍTICA]: A imagem anexada é a referência absoluta do produto. Você DEVE usar a imagem do produto anexado. A embalagem, o rótulo original, as cores da marca, as fontes e a proporção física exata do produto anexado DEVEM ser estritamente preservados e mantidos INALTERADOS. O produto não pode sofrer mutações, deformações ou alterações de design. A inteligência artificial deve integrar este exato produto na cena iluminando-o adequadamente de acordo com o cenário escolhido, de forma perfeitamente perfeita e indistinguível da realidade.`;
+
+            // 7. Concatenação Final
+            const promptFinal = `${setupBase}\n\n${direcaoCena}\n\n${direcaoFoto}\n\n${estiloArte}\n${regraOuro}`;
+
+            // 8. Inserção no Textarea
             document.getElementById('resultado').value = promptFinal;
         }
     </script>
