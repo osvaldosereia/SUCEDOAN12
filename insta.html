@@ -66,7 +66,7 @@
             color: #666;
         }
 
-        select {
+        select, input[type="text"] {
             width: 100%;
             padding: 10px;
             margin-bottom: 10px;
@@ -74,10 +74,15 @@
             border-radius: 4px;
             background-color: #fff;
             font-size: 14px;
+            box-sizing: border-box;
             cursor: pointer;
         }
 
-        select:focus {
+        input[type="text"] {
+            cursor: text;
+        }
+
+        select:focus, input[type="text"]:focus {
             outline: none;
             border-color: var(--accent);
         }
@@ -106,7 +111,7 @@
 
         textarea {
             width: 100%;
-            height: 180px;
+            height: 220px;
             padding: 15px;
             border: 2px solid var(--border);
             border-radius: 6px;
@@ -171,11 +176,18 @@
 
                 <label>Estilo Visual</label>
                 <select id="estilo">
+                    <!-- Estilos Originais -->
                     <option value="Candy Clean">Candy Clean</option>
                     <option value="Candy Pop">Candy Pop</option>
                     <option value="Natureza">Natureza</option>
                     <option value="Cidade">Cidade</option>
                     <option value="Loja">Loja</option>
+                    <!-- Estilos Novos -->
+                    <option value="Cyberpunk Futurista">Cyberpunk Futurista</option>
+                    <option value="Minimalismo Escandinavo">Minimalismo Escandinavo</option>
+                    <option value="Vintage Retrô Anos 80">Vintage Retrô Anos 80</option>
+                    <option value="Surrealismo Pop">Surrealismo Pop</option>
+                    <option value="Editorial de Alta Costura">Editorial de Moda / Alta Costura</option>
                 </select>
             </div>
 
@@ -183,6 +195,7 @@
             <div class="category-group" style="grid-column: span 2;">
                 <label>Cena / Ação Principal</label>
                 <select id="cena">
+                    <!-- Cenas Originais -->
                     <option value="Produto Flutuando ao centro grande">Produto Flutuando ao centro grande</option>
                     <option value="Uma mão segurando">Uma mão segurando</option>
                     <option value="Duas mãos segurando">Duas mãos segurando</option>
@@ -195,6 +208,13 @@
                     <option value="produto encostado em parede ou alguma coisa">Produto encostado em parede ou alguma coisa</option>
                     <option value="produto no centro com fundo cheio de escritos relacionados ao produto">Produto no centro com fundo cheio de escritos relacionados ao produto</option>
                     <option value="produto ao centro com anotações sobre o produto ao redor feitas de forma aleatória manuscrita">Produto ao centro com anotações sobre o produto ao redor feitas de forma aleatória manuscrita</option>
+                    <!-- Cenas Novas -->
+                    <option value="produto imerso em água cristalina com bolhas de ar subindo">Produto imerso em água cristalina com bolhas</option>
+                    <option value="produto em um pódio de pedra natural texturizada">Produto em um pódio de pedra natural</option>
+                    <option value="produto quebrando a barreira do som com rastro de movimento (motion blur)">Produto em velocidade com rastro de movimento</option>
+                    <option value="produto rodeado por elementos 3D geométricos flutuantes">Produto rodeado por geometria 3D flutuante</option>
+                    <option value="produto emergindo de uma nuvem de fumaça colorida espessa">Produto emergindo de fumaça colorida</option>
+                    <option value="produto levitando sobre uma base magnética futurista iluminada">Produto levitando em base magnética</option>
                 </select>
             </div>
 
@@ -202,12 +222,18 @@
             <div class="category-group">
                 <label>Posição da Câmera</label>
                 <select id="camera">
+                    <!-- Câmeras Originais -->
                     <option value="Ângulo frontal direto, perfeitamente alinhado (Eye-level)">Frontal Direto</option>
                     <option value="Ângulo de baixo para cima (Low Angle), dando sensação de grandeza">De baixo para cima (Low Angle)</option>
                     <option value="Ângulo de cima para baixo (High Angle), mostrando o produto de cima">De cima para baixo (High Angle)</option>
                     <option value="Plano detalhe macro (Close-up extremo), focando intensamente nas texturas">Macro / Close-up</option>
                     <option value="Visão isométrica, perspectiva geométrica e organizada">Isométrica</option>
                     <option value="Visão Top-Down (Plano Zenital), câmera exatamente a 90 graus apontando para o chão">Top-Down (Zenital)</option>
+                    <!-- Câmeras Novas -->
+                    <option value="Lente ultra grande angular (Fisheye), distorcendo as bordas de forma criativa">Lente Olho de Peixe (Fisheye)</option>
+                    <option value="Plano holandês (Dutch Angle), câmera levemente inclinada para gerar dinamismo">Plano Holandês (Câmera Inclinada)</option>
+                    <option value="Câmera em movimento rápido acompanhando o produto (Pan shot)">Câmera em movimento (Pan Shot)</option>
+                    <option value="Câmera com profundidade de campo extrema (Depth of Field), fundo completamente borrado em bokeh">Profundidade de Campo Extrema (Bokeh)</option>
                 </select>
             </div>
 
@@ -215,14 +241,38 @@
             <div class="category-group">
                 <label>Iluminação</label>
                 <select id="luz">
+                    <!-- Luzes Originais -->
                     <option value="Luz de estúdio suave e difusa (Softbox), sem sombras duras">Estúdio Suave (Softbox)</option>
                     <option value="Luz natural do meio-dia, com sombras duras e marcadas">Sol do Meio-dia (Sombras Duras)</option>
                     <option value="Golden hour, luz de fim de tarde, tons quentes e alongados">Golden Hour (Fim de Tarde)</option>
                     <option value="Iluminação de estúdio dramática de alto contraste (Chiaroscuro)">Estúdio Dramático (Alto Contraste)</option>
                     <option value="Iluminação com flash frontal direto estourado, estilo fotográfico de moda anos 90">Flash Frontal Direto (Estilo Anos 90)</option>
                     <option value="Iluminação neon moderna e vibrante com reflexos coloridos">Neon Cibernético (Reflexos coloridos)</option>
+                    <!-- Luzes Novas -->
+                    <option value="Iluminação com gelatina de cor vermelha de um lado e azul do outro (Bicolor)">Iluminação Bicolor (Vermelho e Azul)</option>
+                    <option value="Luz de palco com feixes volumétricos visíveis (God Rays) incidindo sobre o produto">Feixes de Luz Volumétricos (God Rays)</option>
+                    <option value="Iluminação de anel circular (Ring Light) refletindo perfeitamente no produto">Ring Light (Círculo de Luz)</option>
+                    <option value="Luz subaquática cáustica, com reflexos de água ondulando sobre o produto">Luz Subaquática (Reflexos Cáusticos)</option>
+                    <option value="Luz de projeção de janela, criando sombras de persianas cortando o cenário">Sombras de Persiana (Window Blinds)</option>
                 </select>
             </div>
+
+            <!-- Grupo 5: Mixed Media e Preço -->
+            <div class="category-group" style="grid-column: span 2;">
+                <label>Balão de Preço (Deixe em branco se não quiser)</label>
+                <input type="text" id="preco" placeholder="Ex: R$ 49,90">
+
+                <label>Recursos Digitais / Efeitos Extras</label>
+                <select id="efeitos">
+                    <option value="Nenhum efeito extra, fotografia pura.">Nenhum (Fotografia Pura)</option>
+                    <option value="Rabiscos em neon brilhante contornando dinamicamente o formato do produto.">Rabiscos em Neon Contornando</option>
+                    <option value="Partículas de poeira mágica brilhante flutuando pelo ar.">Poeira Mágica Brilhante</option>
+                    <option value="Efeito de Glitch Art sutil e interferência digital Cyberpunk nas bordas.">Glitch Art / Cyberpunk</option>
+                    <option value="Filtro fotográfico vintage de câmera VHS com leve ruído e data no canto.">Filtro VHS Vintage</option>
+                    <option value="Formas geométricas sólidas em cores vibrantes flutuando no fundo como colagem.">Colagem 3D Geométrica</option>
+                </select>
+            </div>
+
         </div>
 
         <button class="btn-generate" onclick="gerarPromptStudio()">Gerar Prompt</button>
@@ -236,44 +286,51 @@
     </div>
 
     <script>
-        // Função para montar o texto baseado nas seleções
+        // Função educativa para entender os passos de programação:
+        // Passo 1: Esta função é acionada ao clicar no botão "Gerar Prompt".
         function gerarPromptStudio() {
-            // 1. Capturar os valores selecionados no HTML
+            
+            // Passo 2: Capturamos os valores de todos os campos selecionados e digitados.
             const formato = document.getElementById('formato').value;
             const qtd = document.getElementById('qtd').value;
             const estilo = document.getElementById('estilo').value;
             const cena = document.getElementById('cena').value;
             const camera = document.getElementById('camera').value;
             const luz = document.getElementById('luz').value;
+            const efeitos = document.getElementById('efeitos').value;
+            const preco = document.getElementById('preco').value;
 
-            // 2. Base da instrução
+            // Passo 3: Criamos as frases base do nosso prompt de fotografia de alto padrão.
             const base = `Crie uma fotografia publicitária fotorrealista de alto padrão. Formato/Proporção da imagem: ${formato}.`;
-
-            // 3. Montar o cenário e estilo
             const descricao = `Quantidade de produtos na imagem: ${qtd}. Estilo visual geral: ${estilo}. Ação/Cena: ${cena}.`;
+            const fotografia = `Posição da câmera: ${camera}. Iluminação: ${luz}. Efeitos adicionais da cena: ${efeitos}. Renderização em 8k, hiper-detalhado.`;
 
-            // 4. Detalhes de câmera e luz
-            const fotografia = `Posição da câmera: ${camera}. Iluminação: ${luz}. Renderização em 8k, hiper-detalhado.`;
+            // Passo 4: Lógica do Preço. 
+            // Se o usuário digitou algo no campo 'preco', criamos uma string com a instrução do balão à mão.
+            let instrucaoPreco = "";
+            if (preco.trim() !== "") {
+                instrucaoPreco = `[MIXED MEDIA - PREÇO]: Adicione um elemento artístico sobrepondo a foto. Desenhe um balão de fala ou balão de preço flutuando próximo ao produto. O balão deve ter um estilo desenhado à mão livre (doodle/sketch feito a caneta ou pincel). Dentro deste balão desenhado à mão, escreva com clareza o texto exato: "${preco}".`;
+            }
 
-            // 5. Regra crítica para o produto
+            // Passo 5: A regra inquebrável para manter o seu produto idêntico à imagem anexada.
             const regraOuro = `[ATENÇÃO - INSTRUÇÃO CRÍTICA]: A imagem anexada é a referência absoluta. Você DEVE usar a imagem do produto anexado exatamente como ela é. A embalagem, o rótulo original e a proporção física exata do produto DEVEM ser estritamente preservados e mantidos INALTERADOS. Integre este exato produto na cena iluminando-o adequadamente de forma fotorrealista.`;
 
-            // 6. Juntar tudo e exibir
-            const promptFinal = `${base}\n\n${descricao}\n\n${fotografia}\n\n${regraOuro}`;
-            document.getElementById('resultado').value = promptFinal;
+            // Passo 6: Juntamos todas as partes (concatenamos) usando quebras de linha (\n\n).
+            const promptFinal = `${base}\n\n${descricao}\n\n${fotografia}\n\n${instrucaoPreco}\n\n${regraOuro}`;
+            
+            // Passo 7: Inserimos o texto final na caixa de texto da tela.
+            document.getElementById('resultado').value = promptFinal.trim();
         }
 
-        // Função para copiar o texto gerado para a área de transferência
+        // Função para copiar o texto para a área de transferência do sistema operacional.
         function copiarPrompt() {
             const textarea = document.getElementById('resultado');
             
-            // Verifica se há texto gerado para copiar
             if(textarea.value === "" || textarea.value === "Seu prompt aparecerá aqui...") {
                 alert("Por favor, gere um prompt primeiro!");
                 return;
             }
 
-            // Seleciona e copia o texto (suporte para computadores e mobile)
             textarea.select();
             textarea.setSelectionRange(0, 99999); 
             navigator.clipboard.writeText(textarea.value).then(() => {
