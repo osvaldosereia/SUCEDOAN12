@@ -86,7 +86,7 @@
             <div>
                 <input type="file" id="pImageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
                 <div class="img-upload-box" onclick="document.getElementById('pImageInput').click()">
-                    <span class="img-upload-text">📸 Clique para Foto (4:5)<br><small id="sizeInfo">Max 200KB</small></span>
+                    <span class="img-upload-text">📸 Clique para Foto (4:5)<br><small id="sizeInfo">Max 50KB</small></span>
                     <img id="pImgPreview" src="" alt="Preview">
                 </div>
             </div>
@@ -107,11 +107,12 @@
 <div id="toast">Pronto!</div>
 
 <script>
+    // Configurações do LocalStorage e novo nome de arquivo
     const GITHUB = {
         token: localStorage.getItem('da_gh_token') || '',
         owner: localStorage.getItem('da_gh_user') || '',
         repo: localStorage.getItem('da_gh_repo') || '',
-        path: 'prompts.json',
+        path: 'prom10.json', // Nome do arquivo alterado conforme solicitado
         sha: ''
     };
 
@@ -121,6 +122,7 @@
     document.getElementById('ghUser').value = GITHUB.owner;
     document.getElementById('ghRepo').value = GITHUB.repo;
 
+    // Esta função garante que as chaves fiquem salvas no navegador
     function autoSaveConfig() {
         GITHUB.token = document.getElementById('ghToken').value.trim();
         GITHUB.owner = document.getElementById('ghUser').value.trim();
@@ -142,7 +144,6 @@
     const utf8_to_b64 = str => window.btoa(unescape(encodeURIComponent(str)));
     const b64_to_utf8 = str => decodeURIComponent(escape(window.atob(str)));
 
-    // A FUNÇÃO CORRIGIDA ESTÁ AQUI
     async function syncFromGitHub(isManualTest = false) {
         if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) return;
         
@@ -165,30 +166,24 @@
                 return; 
             }
 
-            // NOVA PROTEÇÃO: Lê a resposta como texto bruto primeiro
             const responseText = await res.text();
 
             if(!res.ok) {
-                // Tenta ver se o erro que o GitHub enviou tem um formato legível
                 let errorMessage = "Erro desconhecido da API";
                 try {
                     const errorObj = JSON.parse(responseText);
                     errorMessage = errorObj.message || errorMessage;
                 } catch(e) {
-                    // Se não for JSON, mostra o texto bruto ou o status
                     errorMessage = responseText || res.statusText;
                 }
                 throw new Error(errorMessage);
             }
 
-            // Transforma o texto de sucesso em objeto JSON
             const data = JSON.parse(responseText);
             GITHUB.sha = data.sha;
             
-            // NOVA PROTEÇÃO: Verifica se o arquivo não está totalmente vazio
             if (data.content) {
                 const decodificado = b64_to_utf8(data.content).trim();
-                // Se o texto decodificado não estiver vazio, faz o parse. Senão, inicia array vazio.
                 STATE.prompts = decodificado ? JSON.parse(decodificado) : [];
             } else {
                 STATE.prompts = [];
@@ -199,7 +194,6 @@
 
         } catch (e) { 
             console.error("Erro no GitHub:", e);
-            // Mensagem simplificada para facilitar a leitura na tela
             showToast("Erro: " + (e.message === "Unexpected end of JSON input" ? "Arquivo no GitHub está corrompido/vazio." : e.message)); 
         }
     }
@@ -246,7 +240,7 @@
         const file = event.target.files[0];
         if (!file) return;
 
-        showToast("Compactando...");
+        showToast("Compactando para max 50KB...");
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
@@ -254,8 +248,9 @@
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                canvas.width = 800; 
-                canvas.height = 1000;
+                // Resolução reduzida para gerar um código Base64 mais curto
+                canvas.width = 400; 
+                canvas.height = 500;
                 
                 const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
                 const x = (canvas.width / scale - img.width) / 2;
@@ -264,7 +259,8 @@
 
                 let quality = 0.9;
                 let base64 = "";
-                const MAX_BYTE_SIZE = 200 * 1024;
+                // Limite alterado para 50KB
+                const MAX_BYTE_SIZE = 50 * 1024;
 
                 do {
                     base64 = canvas.toDataURL('image/jpeg', quality);
@@ -344,7 +340,7 @@
         STATE.currentImageBase64 = "";
         document.getElementById('pImgPreview').style.display = "none";
         document.getElementById('btnCancel').style.display = "none";
-        document.getElementById('sizeInfo').innerText = "Max 200KB";
+        document.getElementById('sizeInfo').innerText = "Max 50KB";
     }
 
     async function deletePrompt(i) {
