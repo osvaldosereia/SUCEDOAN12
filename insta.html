@@ -20,7 +20,7 @@
         body { background-color: var(--bg); color: #0f172a; padding: 20px; padding-bottom: 60px; }
         .container { max-width: 1200px; margin: 0 auto; }
 
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
         .header h1 { font-weight: 900; font-size: 26px; border-left: 5px solid var(--accent); padding-left: 15px; }
 
         .config-box { background: var(--config-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; }
@@ -46,6 +46,7 @@
         .form-footer { display: flex; align-items: center; gap: 15px; margin-top: 20px; justify-content: flex-end; }
         .btn-main { padding: 14px 28px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
         .btn-sec { padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
+        .btn-success { background: var(--success); padding: 12px 24px; color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; }
         .btn-cancel { padding: 14px 20px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; display: none; }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; margin-top: 20px; }
@@ -68,6 +69,7 @@
 <div class="container">
     <div class="header">
         <h1>Banco de Prompts - Dona Antônia</h1>
+        <button class="btn-success" onclick="carregarPrompts()">🔄 Carregar Prompts</button>
     </div>
 
     <div class="config-box">
@@ -107,22 +109,23 @@
 <div id="toast">Pronto!</div>
 
 <script>
-    // Configurações do LocalStorage e novo nome de arquivo
     const GITHUB = {
         token: localStorage.getItem('da_gh_token') || '',
         owner: localStorage.getItem('da_gh_user') || '',
         repo: localStorage.getItem('da_gh_repo') || '',
-        path: 'prom10.json', // Nome do arquivo alterado conforme solicitado
+        path: 'prom10.json', 
         sha: ''
     };
 
     const STATE = { prompts: [], editingIdx: -1, currentImageBase64: "" };
+    
+    // VARIÁVEL DE SEGURANÇA: Só permite salvar no GitHub se os dados foram lidos com sucesso
+    let dadosCarregadosComSucesso = false; 
 
     document.getElementById('ghToken').value = GITHUB.token;
     document.getElementById('ghUser').value = GITHUB.owner;
     document.getElementById('ghRepo').value = GITHUB.repo;
 
-    // Esta função garante que as chaves fiquem salvas no navegador
     function autoSaveConfig() {
         GITHUB.token = document.getElementById('ghToken').value.trim();
         GITHUB.owner = document.getElementById('ghUser').value.trim();
@@ -141,13 +144,21 @@
         syncFromGitHub(true);
     }
 
+    // Função para o novo botão global
+    function carregarPrompts() {
+        if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) {
+            return showToast("Preencha as configurações do GitHub primeiro!");
+        }
+        syncFromGitHub(true);
+    }
+
     const utf8_to_b64 = str => window.btoa(unescape(encodeURIComponent(str)));
     const b64_to_utf8 = str => decodeURIComponent(escape(window.atob(str)));
 
     async function syncFromGitHub(isManualTest = false) {
         if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) return;
         
-        if(isManualTest) showToast("Conectando...");
+        if(isManualTest) showToast("Carregando da Nuvem...");
 
         try {
             const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
@@ -159,10 +170,12 @@
             });
             
             if(res.status === 404) { 
+                // Arquivo não existe no GitHub (primeiro uso), então é seguro começar com uma lista vazia
                 STATE.prompts = []; 
                 GITHUB.sha = ''; 
+                dadosCarregadosComSucesso = true; // Libera o salvamento
                 render(); 
-                if(isManualTest) showToast("Conectado! Arquivo JSON será criado no primeiro salvamento.");
+                if(isManualTest) showToast("Nenhum arquivo encontrado. Um novo será criado ao salvar.");
                 return; 
             }
 
@@ -184,28 +197,38 @@
             
             if (data.content) {
                 const decodificado = b64_to_utf8(data.content).trim();
-                STATE.prompts = decodificado ? JSON.parse(decodificado) : [];
+                // Apenas sobrescreve se conseguir decodificar com sucesso
+                if(decodificado) {
+                    STATE.prompts = JSON.parse(decodificado);
+                }
             } else {
                 STATE.prompts = [];
             }
 
+            dadosCarregadosComSucesso = true; // Carregamento com sucesso! Libera o salvamento.
             render();
-            if(isManualTest) showToast("Conectado e dados carregados!");
+            if(isManualTest) showToast("Prompts carregados com sucesso!");
 
         } catch (e) { 
             console.error("Erro no GitHub:", e);
-            showToast("Erro: " + (e.message === "Unexpected end of JSON input" ? "Arquivo no GitHub está corrompido/vazio." : e.message)); 
+            // IMPORTANTE: Aqui não estamos mais apagando (STATE.prompts = []) em caso de erro!
+            showToast("Erro ao carregar: " + (e.message === "Unexpected end of JSON input" ? "Arquivo corrompido." : e.message)); 
         }
     }
 
     async function syncToGitHub() {
         if(!GITHUB.token) return showToast("Configure o GitHub antes de salvar!");
         
+        // TRAVA DE SEGURANÇA: Se não carregou direito, impede de salvar para não apagar a nuvem
+        if(!dadosCarregadosComSucesso) {
+            return showToast("⚠️ Aguarde o carregamento dos dados da nuvem antes de salvar!");
+        }
+        
         showToast("Salvando na Nuvem...");
         try {
             const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
             const body = {
-                message: "Atualizando Prompts",
+                message: "Atualizando Prompts via App",
                 content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2))
             };
             
@@ -248,7 +271,6 @@
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Resolução reduzida para gerar um código Base64 mais curto
                 canvas.width = 400; 
                 canvas.height = 500;
                 
@@ -259,7 +281,6 @@
 
                 let quality = 0.9;
                 let base64 = "";
-                // Limite alterado para 50KB
                 const MAX_BYTE_SIZE = 50 * 1024;
 
                 do {
@@ -343,8 +364,9 @@
         document.getElementById('sizeInfo').innerText = "Max 50KB";
     }
 
+    // A única forma de apagar um prompt agora é explicitamente clicando no botão que chama esta função
     async function deletePrompt(i) {
-        if(confirm("Tem certeza que deseja apagar?")) {
+        if(confirm("Tem certeza que deseja apagar este prompt?")) {
             STATE.prompts.splice(i, 1);
             render();
             await syncToGitHub();
@@ -358,6 +380,7 @@
         setTimeout(() => t.className = "", 3000);
     }
 
+    // Tenta carregar automaticamente ao abrir a página
     document.addEventListener('DOMContentLoaded', () => syncFromGitHub(false));
 </script>
 </body>
