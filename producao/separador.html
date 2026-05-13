@@ -17,13 +17,48 @@
             --bg: #f4f4f5; --card: #ffffff; --text: #0f172a; --text-muted: #64748b;
             --primary: #000000; --success: #10b981; --danger: #ef4444; --border: #e4e4e7;
         }
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding-bottom: 20px;}
+        
+        /* Ajuste no html/body para o layout elástico funcionar na tela toda */
+        html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
         
         header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
         .brand { font-weight: 900; font-size: 18px; display: flex; align-items: center; gap: 8px; }
         
-        .container { padding: 20px; max-width: 800px; margin: 0 auto; }
+        .container { padding: 20px; max-width: 800px; margin: 0 auto; width: 100%; box-sizing: border-box; }
         
+        #view-pedidos { flex: 1; overflow-y: auto; }
+
+        /* Nova estrutura para a visualização de separação com tela cheia */
+        #view-separacao {
+            display: none; /* Alterado via JS para flex */
+            flex-direction: column;
+            position: fixed;
+            top: 60px; /* Aproximadamente a altura do cabeçalho */
+            left: 0; right: 0; bottom: 0;
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--bg);
+            z-index: 5;
+            padding: 0; 
+        }
+
+        .separacao-header {
+            padding: 20px;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        #lista-itens {
+            flex: 1;
+            overflow-y: auto;
+            scroll-snap-type: y mandatory; /* Efeito elástico vertical */
+            padding: 20px;
+            scroll-behavior: smooth;
+            padding-bottom: 50px;
+        }
+
         button { font-family: 'Inter', sans-serif; border: none; border-radius: 8px; cursor: pointer; font-weight: 800; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .btn-config { background: transparent; color: white; padding: 8px; }
         .btn-action { background: var(--primary); color: white; padding: 12px; width: 100%; font-size: 14px; }
@@ -44,12 +79,35 @@
         .order-date { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 600;}
         .badge { background: #fef08a; color: #854d0e; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; display: inline-block; }
 
-        .item-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 25px; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.05);}
+        /* Ajustes no item-card para ocupar a tela e forçar o snap */
+        .item-card { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            border-radius: 12px; 
+            overflow: hidden; 
+            margin-bottom: 30px; 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            scroll-snap-align: center; /* Para perfeitamente no meio da tela */
+            scroll-snap-stop: always;
+            height: 80vh; /* Ocupa 80% da altura da tela */
+        }
         .item-card.separado { opacity: 0.5; border-color: var(--success); }
         .item-card.separado .item-img { filter: grayscale(100%); }
         
-        .item-img { width: 100%; height: 400px; object-fit: contain; background: #fafafa; border-bottom: 1px solid var(--border); }
-        .item-info { padding: 15px; }
+        .item-img { 
+            flex: 1; /* Pede para a imagem ocupar todo o espaço restante */
+            width: 100%; 
+            object-fit: contain; /* Mostra a imagem inteira sem cortar, a maior possível */
+            background: #fafafa; 
+            border-bottom: 1px solid var(--border); 
+            min-height: 0; /* Essencial para flexbox não quebrar o layout */
+        }
+        .item-info { 
+            flex-shrink: 0; /* Impede que a parte das informações encolha */
+            padding: 15px; 
+        }
         .item-title { font-size: 18px; font-weight: 900; margin: 0 0 15px 0; line-height: 1.2; }
         
         .ean-display { background: #f1f5f9; color: var(--text); padding: 12px; border-radius: 8px; font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 15px; border: 1px dashed #cbd5e1; letter-spacing: 2px; }
@@ -85,15 +143,16 @@
             <button class="btn-danger" onclick="excluirSelecionados()"><i data-lucide="trash-2"></i> Excluir do GitHub</button>
         </div>
 
-        <h2 style="font-weight: 900; font-size: 16px; color: var(--text-muted); margin-bottom: 15px;">LISTA DE PEDIDOS</h2>
         <div id="lista-pedidos">Carregando pedidos...</div>
     </div>
 
-    <div class="container" id="view-separacao" style="display: none;">
-        <button style="background: transparent; color: var(--text-muted); font-size: 14px; margin-bottom: 15px; padding:0;" onclick="voltarParaPedidos()">
-            <i data-lucide="arrow-left"></i> Voltar aos Pedidos
-        </button>
-        <h2 id="titulo-pedido-ativo" style="font-weight: 900; font-size: 24px; margin-top: 0;">Pedido #...</h2>
+    <div id="view-separacao">
+        <div class="separacao-header">
+            <button style="background: transparent; color: var(--text-muted); font-size: 14px; margin-bottom: 15px; padding:0;" onclick="voltarParaPedidos()">
+                <i data-lucide="arrow-left"></i> Voltar aos Pedidos
+            </button>
+            <h2 id="titulo-pedido-ativo" style="font-weight: 900; font-size: 24px; margin-top: 0;">Pedido #...</h2>
+        </div>
         <div id="lista-itens"></div>
     </div>
 
@@ -114,7 +173,6 @@
         function decodeBase64(b64) { return new TextDecoder('utf-8').decode(Uint8Array.from(atob(b64.replace(/\s/g, '')), c => c.charCodeAt(0))); }
 
         // --- INÍCIO: NOVAS FUNÇÕES DE BACKUP DE CREDENCIAIS ---
-        // Função para gravar os dados num "Cookie" de longa duração
         function salvarCookie(nome, valor, dias) {
             let data = new Date();
             data.setTime(data.getTime() + (dias * 24 * 60 * 60 * 1000));
@@ -122,7 +180,6 @@
             document.cookie = nome + "=" + valor + ";" + expiracao + ";path=/";
         }
 
-        // Função para ler os dados do "Cookie"
         function lerCookie(nome) {
             let nomeEq = nome + "=";
             let cookies = document.cookie.split(';');
@@ -146,21 +203,15 @@
             carregarConfig();
         };
 
-        // Função de carregamento atualizada e mais robusta
         function carregarConfig() {
             try {
-                // 1. Tenta buscar no localStorage primeiro
                 let configSalva = localStorage.getItem('separador_config');
-                
-                // 2. Se o telemóvel apagou o localStorage, tenta buscar no Cookie de backup
                 if (!configSalva) {
                     configSalva = lerCookie('separador_config_bkp');
-                    // Se achou no cookie, restaura logo no localStorage para a próxima vez
                     if (configSalva) {
                         localStorage.setItem('separador_config', configSalva);
                     }
                 }
-
                 cfg = configSalva ? JSON.parse(configSalva) : null;
             } catch (erro) { 
                 console.error("Erro ao carregar dados:", erro); 
@@ -179,7 +230,6 @@
 
         function fecharConfig() { document.getElementById('config-modal').style.display = 'none'; }
 
-        // Função de salvamento atualizada para salvar nos dois locais
         function salvarConfig() {
             const user = document.getElementById('cfg-user').value.trim();
             const repo = document.getElementById('cfg-repo').value.trim();
@@ -189,17 +239,13 @@
             cfg = { user, repo, token };
             const configString = JSON.stringify(cfg);
             
-            // 1. Salva no localStorage normal
             localStorage.setItem('separador_config', configString);
-            
-            // 2. Salva no Cookie de Backup com validade de 1 ANO (365 dias)
             salvarCookie('separador_config_bkp', configString, 365);
             
             fecharConfig(); 
             buscarPedidos();
         }
 
-        // Função para gerar URL que ignora o cache do GitHub
         function obterUrlSemCache(caminho) {
             const timestamp = new Date().getTime();
             return `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${caminho}?t=${timestamp}`;
@@ -230,6 +276,34 @@
                 const data = await res.json();
                 fileSha = data.sha;
                 todosOsPedidos = JSON.parse(decodeBase64(data.content));
+
+                // --- Lógica de Exclusão Automática de Pedidos Antigos ---
+                const dataAtual = new Date();
+                dataAtual.setHours(0,0,0,0);
+                
+                let pedidosParaManter = [];
+                let houveExclusao = false;
+
+                todosOsPedidos.forEach(pedido => {
+                    const dataPedido = new Date(pedido.data);
+                    dataPedido.setHours(0,0,0,0);
+                    
+                    const diffTempo = dataAtual.getTime() - dataPedido.getTime();
+                    const diffDias = Math.floor(diffTempo / (1000 * 3600 * 24));
+
+                    // Tudo o que tem mais de 2 dias é apagado automaticamente
+                    if (diffDias > 2) {
+                        houveExclusao = true;
+                    } else {
+                        pedidosParaManter.push(pedido);
+                    }
+                });
+
+                if (houveExclusao) {
+                    todosOsPedidos = pedidosParaManter;
+                    salvarNoGitHub(false, "Limpeza automática: Excluídos pedidos com mais de 2 dias");
+                }
+
                 renderizarListaPedidos();
             } catch (err) {
                 document.getElementById('lista-pedidos').innerHTML = `<p style="color:red;">Erro na conexão: ${err.message}</p>`;
@@ -242,35 +316,69 @@
                 return a.status === 'pendente' ? -1 : 1;
             });
 
-            const html = ordenados.map((pedido) => {
-                const totalSkus = pedido.itens.length;
-                const totalUnidades = pedido.itens.reduce((soma, i) => soma + i.quantidade, 0);
-                const isConcluido = pedido.status === 'concluido';
+            // --- Lógica de Agrupamento por Datas ---
+            const grupos = {};
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+
+            ordenados.forEach(pedido => {
                 const dataObj = new Date(pedido.data);
-                const dataFormatada = dataObj.toLocaleDateString('pt-BR') + ' ' + dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                const realIndex = todosOsPedidos.findIndex(p => p.id === pedido.id);
+                const dataSemHora = new Date(dataObj.getFullYear(), dataObj.getMonth(), dataObj.getDate());
+                
+                const diffTempo = hoje.getTime() - dataSemHora.getTime();
+                const diffDias = Math.floor(diffTempo / (1000 * 3600 * 24));
+                
+                const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                const dia = dataObj.getDate();
+                const mes = meses[dataObj.getMonth()];
+                
+                let nomeGrupo = `${dia} de ${mes}`;
+                if (diffDias === 0) nomeGrupo = `Hoje, ${dia} de ${mes}`;
+                else if (diffDias === 1) nomeGrupo = `Ontem, ${dia} de ${mes}`;
+                
+                if (!grupos[nomeGrupo]) grupos[nomeGrupo] = [];
+                grupos[nomeGrupo].push(pedido);
+            });
 
-                return `
-                <div class="order-card ${isConcluido ? 'concluido' : ''}" onclick="cliqueCard(event, ${realIndex})">
-                    <div class="checkbox-container">
-                        <input type="checkbox" ${idsSelecionados.has(pedido.id) ? 'checked' : ''} onchange="toggleSelecao(event, '${pedido.id}')">
-                    </div>
-                    <div class="order-content">
-                        <div>
-                            <div class="order-id">Pedido #${pedido.id}</div>
-                            <div class="order-date"><i data-lucide="calendar" size="12"></i> ${dataFormatada}</div>
-                            <div style="font-size: 11px; font-weight: 800; color: var(--text); margin-top: 4px;">
-                                ${totalSkus} Itens (${totalUnidades} Peças)
+            let html = '';
+            
+            if (Object.keys(grupos).length === 0) {
+                html = 'Nenhum pedido encontrado.';
+            } else {
+                for (const [grupo, pedidos] of Object.entries(grupos)) {
+                    html += `<h3 style="margin-top: 25px; margin-bottom: 10px; font-weight: 900; font-size: 14px; color: var(--text-muted); text-transform: uppercase;"><i data-lucide="calendar" size="14" style="vertical-align: middle;"></i> ${grupo}</h3>`;
+                    
+                    html += pedidos.map((pedido) => {
+                        const totalSkus = pedido.itens.length;
+                        const totalUnidades = pedido.itens.reduce((soma, i) => soma + i.quantidade, 0);
+                        const isConcluido = pedido.status === 'concluido';
+                        const dataObj = new Date(pedido.data);
+                        const horaFormatada = dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                        const realIndex = todosOsPedidos.findIndex(p => p.id === pedido.id);
+
+                        return `
+                        <div class="order-card ${isConcluido ? 'concluido' : ''}" onclick="cliqueCard(event, ${realIndex})">
+                            <div class="checkbox-container">
+                                <input type="checkbox" ${idsSelecionados.has(pedido.id) ? 'checked' : ''} onchange="toggleSelecao(event, '${pedido.id}')">
                             </div>
-                        </div>
-                        <div class="badge" style="background: ${isConcluido ? '#d1fae5' : '#fef08a'}; color: ${isConcluido ? '#065f46' : '#854d0e'};">
-                            ${isConcluido ? 'SEPARADO' : 'PENDENTE'}
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
+                            <div class="order-content">
+                                <div>
+                                    <div class="order-id">Pedido #${pedido.id}</div>
+                                    <div class="order-date"><i data-lucide="clock" size="12"></i> ${horaFormatada}</div>
+                                    <div style="font-size: 11px; font-weight: 800; color: var(--text); margin-top: 4px;">
+                                        ${totalSkus} Itens (${totalUnidades} Peças)
+                                    </div>
+                                </div>
+                                <div class="badge" style="background: ${isConcluido ? '#d1fae5' : '#fef08a'}; color: ${isConcluido ? '#065f46' : '#854d0e'};">
+                                    ${isConcluido ? 'SEPARADO' : 'PENDENTE'}
+                                </div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            }
 
-            document.getElementById('lista-pedidos').innerHTML = html || 'Nenhum pedido encontrado.';
+            document.getElementById('lista-pedidos').innerHTML = html;
             lucide.createIcons();
         }
 
@@ -307,7 +415,8 @@
         function abrirPedido(index) {
             pedidoAtivo = index;
             document.getElementById('view-pedidos').style.display = 'none';
-            document.getElementById('view-separacao').style.display = 'block';
+            // Agora usa flex para organizar os conteúdos na tela com css snap
+            document.getElementById('view-separacao').style.display = 'flex';
             document.getElementById('titulo-pedido-ativo').innerText = `Separando #${todosOsPedidos[pedidoAtivo].id}`;
             renderizarItensDoPedido();
             window.scrollTo(0, 0);
@@ -317,7 +426,7 @@
             pedidoAtivo = null;
             document.getElementById('view-separacao').style.display = 'none';
             document.getElementById('view-pedidos').style.display = 'block';
-            buscarPedidos(); // Recarrega ao voltar para garantir que novos pedidos apareçam
+            buscarPedidos(); 
         }
 
         function formatarImagem(url) {
@@ -378,7 +487,6 @@
 
         async function salvarNoGitHub(pedidoCompleto = false, mensagem = "Atualização") {
             try {
-                // Sincronização Inteligente: Primeiro busca o estado atual do arquivo para pegar o SHA mais novo
                 const urlGet = obterUrlSemCache('site/pedidoseparar.json');
                 const resGet = await fetch(urlGet, { 
                     headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" },
@@ -390,12 +498,10 @@
 
                 if (resGet.ok) {
                     const dataGet = await resGet.json();
-                    shaAtualizado = dataGet.sha; // Pega o SHA que realmente está no servidor agora
+                    shaAtualizado = dataGet.sha; 
                     pedidosNoServidor = JSON.parse(decodeBase64(dataGet.content));
                 }
 
-                // Se houver um pedido sendo editado, vamos garantir que a nossa alteração 
-                // seja aplicada sobre os dados mais novos (caso tenha entrado pedido novo nesse meio tempo)
                 if (pedidoAtivo !== null) {
                     const meuPedidoAtualizado = todosOsPedidos[pedidoAtivo];
                     const indexNoServidor = pedidosNoServidor.findIndex(p => p.id === meuPedidoAtualizado.id);
@@ -403,13 +509,11 @@
                     if (indexNoServidor !== -1) {
                         pedidosNoServidor[indexNoServidor] = meuPedidoAtualizado;
                     } else {
-                        // Se o pedido não existir mais no servidor, adicionamos ele
                         pedidosNoServidor.push(meuPedidoAtualizado);
                     }
                     todosOsPedidos = pedidosNoServidor;
                 }
 
-                // Agora salvamos os dados mesclados
                 const body = { 
                     message: mensagem, 
                     content: encodeBase64(JSON.stringify(todosOsPedidos, null, 2)), 
@@ -429,7 +533,7 @@
 
                 if (resPut.ok) {
                     const dataPut = await resPut.json();
-                    fileSha = dataPut.content.sha; // Atualiza o SHA local para a próxima operação
+                    fileSha = dataPut.content.sha; 
                     if(pedidoCompleto) { 
                         alert("🎉 Pedido concluído!"); 
                         voltarParaPedidos(); 
