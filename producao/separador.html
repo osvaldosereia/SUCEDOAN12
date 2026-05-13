@@ -18,7 +18,6 @@
             --primary: #000000; --success: #10b981; --danger: #ef4444; --border: #e4e4e7;
         }
         
-        /* Ajuste no html/body para o layout elástico funcionar na tela toda */
         html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
         
@@ -27,14 +26,13 @@
         
         .container { padding: 20px; max-width: 800px; margin: 0 auto; width: 100%; box-sizing: border-box; }
         
-        #view-pedidos { flex: 1; overflow-y: auto; }
+        #view-pedidos { flex: 1; overflow-y: auto; padding-bottom: 30px; }
 
-        /* Nova estrutura para a visualização de separação com tela cheia */
         #view-separacao {
-            display: none; /* Alterado via JS para flex */
+            display: none; 
             flex-direction: column;
             position: fixed;
-            top: 60px; /* Aproximadamente a altura do cabeçalho */
+            top: 60px; 
             left: 0; right: 0; bottom: 0;
             max-width: 800px;
             margin: 0 auto;
@@ -53,7 +51,7 @@
         #lista-itens {
             flex: 1;
             overflow-y: auto;
-            scroll-snap-type: y mandatory; /* Efeito elástico vertical */
+            scroll-snap-type: y mandatory; 
             padding: 20px;
             scroll-behavior: smooth;
             padding-bottom: 50px;
@@ -67,51 +65,49 @@
 
         #acao-selecao { display: none; background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 15px; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
-        .order-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.02); position: relative; }
+        /* Modificação no Card do Pedido para caber mais dados e botões */
+        .order-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.04); position: relative; }
         .order-card:active { transform: scale(0.99); }
-        .order-card.concluido { opacity: 0.7; border-color: var(--success); background: #ecfdf5; }
+        .order-card.concluido { opacity: 0.8; border-color: var(--success); background: #ecfdf5; }
         
-        .checkbox-container { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
+        .order-header-row { display: flex; align-items: flex-start; gap: 12px; width: 100%; }
+        
+        .checkbox-container { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-top: 2px;}
         .checkbox-container input { width: 20px; height: 20px; cursor: pointer; }
 
-        .order-content { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+        .order-content { flex: 1; display: flex; justify-content: space-between; align-items: flex-start; }
         .order-id { font-size: 18px; font-weight: 900; }
         .order-date { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 600;}
-        .badge { background: #fef08a; color: #854d0e; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; display: inline-block; }
+        .badge { background: #fef08a; color: #854d0e; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; display: inline-block; white-space: nowrap; }
 
-        /* Ajustes no item-card para ocupar a tela e forçar o snap */
-        .item-card { 
-            background: var(--card); 
-            border: 1px solid var(--border); 
-            border-radius: 12px; 
-            overflow: hidden; 
-            margin-bottom: 30px; 
-            display: flex; 
-            flex-direction: column; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            scroll-snap-align: center; /* Para perfeitamente no meio da tela */
-            scroll-snap-stop: always;
-            height: 80vh; /* Ocupa 80% da altura da tela */
-        }
+        .client-info-box { background: #f8fafc; padding: 10px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #e2e8f0; width: 100%; box-sizing: border-box;}
+        .client-info-box p { margin: 3px 0; display: flex; align-items: center; gap: 5px; color: var(--text-muted); font-weight: 600; }
+        .client-info-box .client-name { font-weight: 800; color: var(--text); font-size: 13px; margin-bottom: 6px; }
+
+        .order-actions { display: flex; gap: 8px; width: 100%; margin-top: 5px; }
+
+        /* Sidebar Entregador */
+        #overlay-lateral { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 90; backdrop-filter: blur(2px); }
+        #sidebar-entregador { position: fixed; top: 0; right: -100%; width: 85%; max-width: 400px; height: 100%; background: var(--bg); z-index: 100; transition: right 0.3s ease; display: flex; flex-direction: column; box-shadow: -4px 0 20px rgba(0,0,0,0.15); }
+        #sidebar-entregador.open { right: 0; }
+        .sidebar-header { background: var(--primary); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 20px; background: var(--bg); }
+        
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; margin-bottom: 25px; }
+        .action-btn-square { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-size: 11px; font-weight: 800; color: var(--text); cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.02); text-decoration: none; text-align: center;}
+        
+        /* Area de Impressão (Oculta na tela) */
+        #print-area { display: none; }
+
+        .item-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 30px; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.05); scroll-snap-align: center; scroll-snap-stop: always; height: 80vh; }
         .item-card.separado { opacity: 0.5; border-color: var(--success); }
         .item-card.separado .item-img { filter: grayscale(100%); }
         
-        .item-img { 
-            flex: 1; /* Pede para a imagem ocupar todo o espaço restante */
-            width: 100%; 
-            object-fit: contain; /* Mostra a imagem inteira sem cortar, a maior possível */
-            background: #fafafa; 
-            border-bottom: 1px solid var(--border); 
-            min-height: 0; /* Essencial para flexbox não quebrar o layout */
-        }
-        .item-info { 
-            flex-shrink: 0; /* Impede que a parte das informações encolha */
-            padding: 15px; 
-        }
+        .item-img { flex: 1; width: 100%; object-fit: contain; background: #fafafa; border-bottom: 1px solid var(--border); min-height: 0; }
+        .item-info { flex-shrink: 0; padding: 15px; }
         .item-title { font-size: 18px; font-weight: 900; margin: 0 0 15px 0; line-height: 1.2; }
         
         .ean-display { background: #f1f5f9; color: var(--text); padding: 12px; border-radius: 8px; font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 15px; border: 1px dashed #cbd5e1; letter-spacing: 2px; }
-
         .qty-highlight { background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; font-size: 32px; font-weight: 900; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: -1px; }
 
         .item-meta { display: flex; justify-content: space-between; background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e2e8f0; }
@@ -119,12 +115,42 @@
         .meta-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 800; }
         .meta-value { font-size: 18px; font-weight: 900; color: var(--primary); }
 
-        #config-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+        #config-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; }
         .modal-content input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter'; font-weight: 600;}
         
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* Estilos de Impressão Térmica 100x150mm */
+        @media print {
+            body * { visibility: hidden; }
+            html, body { height: auto; background: white; margin: 0; padding: 0; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { 
+                display: block !important; 
+                position: absolute; 
+                left: 0; top: 0; 
+                width: 100mm; 
+                min-height: 150mm; 
+                background: white; 
+                color: black; 
+                font-family: 'Inter', sans-serif; 
+                padding: 4mm; 
+                box-sizing: border-box;
+            }
+            @page { size: 100mm 150mm; margin: 0; }
+            
+            /* Ajustes visuais específicos para a etiqueta */
+            .print-title { font-size: 26px; font-weight: 900; text-align: center; margin: 0 0 5px 0; border: 3px solid black; padding: 10px; }
+            .print-barcode { font-size: 20px; font-weight: bold; text-align: center; margin-bottom: 15px; font-family: monospace; letter-spacing: 2px;}
+            .print-section { border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
+            .print-label { font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+            .print-value { font-size: 16px; font-weight: 900; margin: 0 0 8px 0; }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            .print-table th { text-align: left; font-size: 12px; border-bottom: 2px solid black; padding: 5px 0; }
+            .print-table td { font-size: 13px; padding: 6px 0; border-bottom: 1px solid #ccc; font-weight: 600;}
+        }
     </style>
 </head>
 <body>
@@ -140,9 +166,8 @@
     <div class="container" id="view-pedidos">
         <div id="acao-selecao">
             <span id="txt-selecionados" style="font-weight: 800; font-size: 14px;">0 selecionados</span>
-            <button class="btn-danger" onclick="excluirSelecionados()"><i data-lucide="trash-2"></i> Excluir do GitHub</button>
+            <button class="btn-danger" onclick="excluirSelecionados()"><i data-lucide="trash-2"></i> Excluir</button>
         </div>
-
         <div id="lista-pedidos">Carregando pedidos...</div>
     </div>
 
@@ -154,6 +179,16 @@
             <h2 id="titulo-pedido-ativo" style="font-weight: 900; font-size: 24px; margin-top: 0;">Pedido #...</h2>
         </div>
         <div id="lista-itens"></div>
+    </div>
+
+    <div id="overlay-lateral" onclick="fecharEntregador()"></div>
+    <div id="sidebar-entregador">
+        <div class="sidebar-header">
+            <h3 style="margin:0; font-weight:900; font-size:18px; display:flex; align-items:center; gap:8px;"><i data-lucide="truck"></i> Info Entrega</h3>
+            <button onclick="fecharEntregador()" style="background:none; color:white; padding:5px;"><i data-lucide="x"></i></button>
+        </div>
+        <div class="sidebar-content" id="entregador-content">
+            </div>
     </div>
 
     <div id="config-modal">
@@ -168,11 +203,12 @@
         </div>
     </div>
 
+    <div id="print-area"></div>
+
     <script>
         function encodeBase64(str) { return btoa(new TextEncoder().encode(str).reduce((d, b) => d + String.fromCharCode(b), '')); }
         function decodeBase64(b64) { return new TextDecoder('utf-8').decode(Uint8Array.from(atob(b64.replace(/\s/g, '')), c => c.charCodeAt(0))); }
 
-        // --- INÍCIO: NOVAS FUNÇÕES DE BACKUP DE CREDENCIAIS ---
         function salvarCookie(nome, valor, dias) {
             let data = new Date();
             data.setTime(data.getTime() + (dias * 24 * 60 * 60 * 1000));
@@ -190,7 +226,6 @@
             }
             return null;
         }
-        // --- FIM: NOVAS FUNÇÕES DE BACKUP ---
 
         let cfg = null;
         let fileSha = null;
@@ -208,16 +243,10 @@
                 let configSalva = localStorage.getItem('separador_config');
                 if (!configSalva) {
                     configSalva = lerCookie('separador_config_bkp');
-                    if (configSalva) {
-                        localStorage.setItem('separador_config', configSalva);
-                    }
+                    if (configSalva) { localStorage.setItem('separador_config', configSalva); }
                 }
                 cfg = configSalva ? JSON.parse(configSalva) : null;
-            } catch (erro) { 
-                console.error("Erro ao carregar dados:", erro); 
-                cfg = null; 
-            }
-            
+            } catch (erro) { cfg = null; }
             if (!cfg || !cfg.token) { abrirConfig(); } else { buscarPedidos(); }
         }
 
@@ -235,13 +264,10 @@
             const repo = document.getElementById('cfg-repo').value.trim();
             const token = document.getElementById('cfg-token').value.trim();
             if (!user || !repo || !token) { alert("Preencha tudo!"); return; }
-            
             cfg = { user, repo, token };
             const configString = JSON.stringify(cfg);
-            
             localStorage.setItem('separador_config', configString);
             salvarCookie('separador_config_bkp', configString, 365);
-            
             fecharConfig(); 
             buscarPedidos();
         }
@@ -253,55 +279,34 @@
 
         async function buscarPedidos() {
             document.getElementById('lista-pedidos').innerHTML = '<div style="text-align:center; padding: 20px;"><i data-lucide="loader" class="spin"></i> Buscando versão atualizada...</div>';
-            lucide.createIcons();
             idsSelecionados.clear();
             atualizarBarraAcoes();
 
             try {
                 const url = obterUrlSemCache('site/pedidoseparar.json');
-                const res = await fetch(url, { 
-                    headers: { 
-                        "Authorization": `Bearer ${cfg.token}`, 
-                        "Accept": "application/vnd.github.v3+json" 
-                    }, 
-                    cache: "no-store" 
-                });
+                const res = await fetch(url, { headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" }, cache: "no-store" });
                 
-                if (res.status === 404) { 
-                    document.getElementById('lista-pedidos').innerHTML = 'Arquivo não encontrado no GitHub.'; 
-                    todosOsPedidos = []; 
-                    return; 
-                }
+                if (res.status === 404) { document.getElementById('lista-pedidos').innerHTML = 'Nenhum pedido encontrado.'; todosOsPedidos = []; return; }
                 
                 const data = await res.json();
                 fileSha = data.sha;
                 todosOsPedidos = JSON.parse(decodeBase64(data.content));
 
-                // --- Lógica de Exclusão Automática de Pedidos Antigos ---
                 const dataAtual = new Date();
                 dataAtual.setHours(0,0,0,0);
-                
                 let pedidosParaManter = [];
                 let houveExclusao = false;
 
                 todosOsPedidos.forEach(pedido => {
                     const dataPedido = new Date(pedido.data);
                     dataPedido.setHours(0,0,0,0);
-                    
-                    const diffTempo = dataAtual.getTime() - dataPedido.getTime();
-                    const diffDias = Math.floor(diffTempo / (1000 * 3600 * 24));
-
-                    // Tudo o que tem mais de 2 dias é apagado automaticamente
-                    if (diffDias > 2) {
-                        houveExclusao = true;
-                    } else {
-                        pedidosParaManter.push(pedido);
-                    }
+                    const diffDias = Math.floor((dataAtual.getTime() - dataPedido.getTime()) / (1000 * 3600 * 24));
+                    if (diffDias > 2) { houveExclusao = true; } else { pedidosParaManter.push(pedido); }
                 });
 
                 if (houveExclusao) {
                     todosOsPedidos = pedidosParaManter;
-                    salvarNoGitHub(false, "Limpeza automática: Excluídos pedidos com mais de 2 dias");
+                    salvarNoGitHub(false, "Limpeza automática: Excluídos pedidos > 2 dias");
                 }
 
                 renderizarListaPedidos();
@@ -316,7 +321,6 @@
                 return a.status === 'pendente' ? -1 : 1;
             });
 
-            // --- Lógica de Agrupamento por Datas ---
             const grupos = {};
             const hoje = new Date();
             hoje.setHours(0,0,0,0);
@@ -324,24 +328,18 @@
             ordenados.forEach(pedido => {
                 const dataObj = new Date(pedido.data);
                 const dataSemHora = new Date(dataObj.getFullYear(), dataObj.getMonth(), dataObj.getDate());
+                const diffDias = Math.floor((hoje.getTime() - dataSemHora.getTime()) / (1000 * 3600 * 24));
+                const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
                 
-                const diffTempo = hoje.getTime() - dataSemHora.getTime();
-                const diffDias = Math.floor(diffTempo / (1000 * 3600 * 24));
-                
-                const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-                const dia = dataObj.getDate();
-                const mes = meses[dataObj.getMonth()];
-                
-                let nomeGrupo = `${dia} de ${mes}`;
-                if (diffDias === 0) nomeGrupo = `Hoje, ${dia} de ${mes}`;
-                else if (diffDias === 1) nomeGrupo = `Ontem, ${dia} de ${mes}`;
+                let nomeGrupo = `${dataObj.getDate()} de ${meses[dataObj.getMonth()]}`;
+                if (diffDias === 0) nomeGrupo = `Hoje`;
+                else if (diffDias === 1) nomeGrupo = `Ontem`;
                 
                 if (!grupos[nomeGrupo]) grupos[nomeGrupo] = [];
                 grupos[nomeGrupo].push(pedido);
             });
 
             let html = '';
-            
             if (Object.keys(grupos).length === 0) {
                 html = 'Nenhum pedido encontrado.';
             } else {
@@ -352,60 +350,80 @@
                         const totalSkus = pedido.itens.length;
                         const totalUnidades = pedido.itens.reduce((soma, i) => soma + i.quantidade, 0);
                         const isConcluido = pedido.status === 'concluido';
-                        const dataObj = new Date(pedido.data);
-                        const horaFormatada = dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                        const horaFormatada = new Date(pedido.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
                         const realIndex = todosOsPedidos.findIndex(p => p.id === pedido.id);
+
+                        // Dados do Cliente (Tratando dados do JSON)
+                        const nomeCli = pedido.cliente_nome || pedido.nome_cliente || 'Cliente Padrão';
+                        const codCli = pedido.cliente_codigo || pedido.codigo_cliente || 'N/A';
+                        const telCli = pedido.cliente_telefone || pedido.telefone_cliente || 'Sem telefone';
+                        const cidCli = pedido.cliente_cidade || pedido.cidade_cliente || 'Cidade ND';
+                        const rotaCli = pedido.cliente_rota || pedido.rota_cliente || 'Rota ND';
 
                         return `
                         <div class="order-card ${isConcluido ? 'concluido' : ''}" onclick="cliqueCard(event, ${realIndex})">
-                            <div class="checkbox-container">
-                                <input type="checkbox" ${idsSelecionados.has(pedido.id) ? 'checked' : ''} onchange="toggleSelecao(event, '${pedido.id}')">
-                            </div>
-                            <div class="order-content">
-                                <div>
-                                    <div class="order-id">Pedido #${pedido.id}</div>
-                                    <div class="order-date"><i data-lucide="clock" size="12"></i> ${horaFormatada}</div>
-                                    <div style="font-size: 11px; font-weight: 800; color: var(--text); margin-top: 4px;">
-                                        ${totalSkus} Itens (${totalUnidades} Peças)
+                            <div class="order-header-row">
+                                <div class="checkbox-container">
+                                    <input type="checkbox" ${idsSelecionados.has(pedido.id) ? 'checked' : ''} onchange="toggleSelecao(event, '${pedido.id}')">
+                                </div>
+                                <div class="order-content">
+                                    <div>
+                                        <div class="order-id">Pedido #${pedido.id}</div>
+                                        <div class="order-date"><i data-lucide="clock" size="12"></i> ${horaFormatada} - ${totalSkus} Itens (${totalUnidades} Peças)</div>
+                                    </div>
+                                    <div class="badge" style="background: ${isConcluido ? '#d1fae5' : '#fef08a'}; color: ${isConcluido ? '#065f46' : '#854d0e'};">
+                                        ${isConcluido ? 'SEPARADO' : 'PENDENTE'}
                                     </div>
                                 </div>
-                                <div class="badge" style="background: ${isConcluido ? '#d1fae5' : '#fef08a'}; color: ${isConcluido ? '#065f46' : '#854d0e'};">
-                                    ${isConcluido ? 'SEPARADO' : 'PENDENTE'}
+                            </div>
+                            
+                            <div class="client-info-box">
+                                <p class="client-name"><i data-lucide="user" size="14"></i> ${nomeCli} <span style="color:var(--text-muted); font-weight:600;">(Cód: ${codCli})</span></p>
+                                <div style="display: flex; justify-content: space-between; gap: 10px;">
+                                    <p style="margin:0;"><i data-lucide="phone" size="12"></i> ${telCli}</p>
+                                    <p style="margin:0;"><i data-lucide="map-pin" size="12"></i> ${cidCli} - ${rotaCli}</p>
                                 </div>
+                            </div>
+
+                            <div class="order-actions">
+                                <button class="btn-config" style="background: #e2e8f0; color: #0f172a; flex: 1; font-size: 12px; padding: 10px;" onclick="imprimirPedido(event, ${realIndex})">
+                                    <i data-lucide="printer" size="14"></i> Etiqueta
+                                </button>
+                                <button class="btn-config" style="background: #25D366; color: white; flex: 1; font-size: 12px; padding: 10px;" onclick="compartilharWhatsApp(event, ${realIndex})">
+                                    <i data-lucide="share-2" size="14"></i> Zap
+                                </button>
+                                <button class="btn-config" style="background: var(--primary); color: white; flex: 1; font-size: 12px; padding: 10px;" onclick="abrirEntregador(event, ${realIndex})">
+                                    <i data-lucide="truck" size="14"></i> Entregador
+                                </button>
                             </div>
                         </div>`;
                     }).join('');
                 }
             }
-
             document.getElementById('lista-pedidos').innerHTML = html;
             lucide.createIcons();
         }
 
         function cliqueCard(event, index) {
-            if (event.target.tagName === 'INPUT') return;
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'BUTTON' || event.target.closest('.order-actions')) return;
             abrirPedido(index);
         }
 
         function toggleSelecao(event, id) {
-            if (event.target.checked) idsSelecionados.add(id);
-            else idsSelecionados.delete(id);
+            if (event.target.checked) idsSelecionados.add(id); else idsSelecionados.delete(id);
             atualizarBarraAcoes();
         }
 
         function atualizarBarraAcoes() {
             const barra = document.getElementById('acao-selecao');
-            const txt = document.getElementById('txt-selecionados');
             if (idsSelecionados.size > 0) {
                 barra.style.display = 'flex';
-                txt.innerText = `${idsSelecionados.size} pedido(s) selecionado(s)`;
-            } else {
-                barra.style.display = 'none';
-            }
+                document.getElementById('txt-selecionados').innerText = `${idsSelecionados.size} selecionado(s)`;
+            } else { barra.style.display = 'none'; }
         }
 
         async function excluirSelecionados() {
-            if (!confirm(`Tens a certeza que desejas excluir ${idsSelecionados.size} pedido(s)?`)) return;
+            if (!confirm(`Excluir ${idsSelecionados.size} pedido(s)?`)) return;
             todosOsPedidos = todosOsPedidos.filter(p => !idsSelecionados.has(p.id));
             idsSelecionados.clear();
             await salvarNoGitHub(false, "Pedidos excluídos");
@@ -415,7 +433,6 @@
         function abrirPedido(index) {
             pedidoAtivo = index;
             document.getElementById('view-pedidos').style.display = 'none';
-            // Agora usa flex para organizar os conteúdos na tela com css snap
             document.getElementById('view-separacao').style.display = 'flex';
             document.getElementById('titulo-pedido-ativo').innerText = `Separando #${todosOsPedidos[pedidoAtivo].id}`;
             renderizarItensDoPedido();
@@ -451,14 +468,10 @@
                 return `
                 <div class="item-card ${isSeparado ? 'separado' : ''}">
                     <img src="${formatarImagem(item.url_imagem)}" class="item-img" onerror="this.src='https://placehold.co/400x400/f4f4f5/ef4444?text=ERRO'">
-                    
                     <div class="item-info">
                         <div class="qty-highlight">${item.quantidade} UN</div>
-                        
-                        <div class="ean-display">${item.gtin || 'SEM EAN REGISTADO'}</div>
-                        
+                        <div class="ean-display">${item.gtin || 'SEM EAN'}</div>
                         <h3 class="item-title">${item.nome}</h3>
-                        
                         <div class="item-meta">
                             <div class="meta-box" style="border-right: 1px solid var(--border);"><div class="meta-label">Gôndola</div><div class="meta-value">${item.gondola}</div></div>
                             <div class="meta-box"><div class="meta-label">Prateleira</div><div class="meta-value">${item.prateleira}</div></div>
@@ -474,27 +487,19 @@
         async function confirmarSeparacao(itemIndex) {
             const item = todosOsPedidos[pedidoAtivo].itens[itemIndex];
             item.status = 'separado';
-            const todosSeparados = todosOsPedidos[pedidoAtivo].itens.every(i => i.status === 'separado');
-            
-            if(todosSeparados) {
+            if(todosOsPedidos[pedidoAtivo].itens.every(i => i.status === 'separado')) {
                 todosOsPedidos[pedidoAtivo].status = 'concluido';
                 await salvarNoGitHub(true, `Pedido #${todosOsPedidos[pedidoAtivo].id} concluído`);
             } else {
                 renderizarItensDoPedido(); 
-                await salvarNoGitHub(false, `Item ${item.nome} separado no pedido #${todosOsPedidos[pedidoAtivo].id}`);
+                await salvarNoGitHub(false, `Item separado`);
             }
         }
 
         async function salvarNoGitHub(pedidoCompleto = false, mensagem = "Atualização") {
             try {
-                const urlGet = obterUrlSemCache('site/pedidoseparar.json');
-                const resGet = await fetch(urlGet, { 
-                    headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" },
-                    cache: "no-store"
-                });
-
-                let pedidosNoServidor = [];
-                let shaAtualizado = fileSha;
+                const resGet = await fetch(obterUrlSemCache('site/pedidoseparar.json'), { headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" }, cache: "no-store"});
+                let pedidosNoServidor = []; let shaAtualizado = fileSha;
 
                 if (resGet.ok) {
                     const dataGet = await resGet.json();
@@ -503,49 +508,144 @@
                 }
 
                 if (pedidoAtivo !== null) {
-                    const meuPedidoAtualizado = todosOsPedidos[pedidoAtivo];
-                    const indexNoServidor = pedidosNoServidor.findIndex(p => p.id === meuPedidoAtualizado.id);
-                    
-                    if (indexNoServidor !== -1) {
-                        pedidosNoServidor[indexNoServidor] = meuPedidoAtualizado;
-                    } else {
-                        pedidosNoServidor.push(meuPedidoAtualizado);
-                    }
+                    const meuPedido = todosOsPedidos[pedidoAtivo];
+                    const idx = pedidosNoServidor.findIndex(p => p.id === meuPedido.id);
+                    if (idx !== -1) pedidosNoServidor[idx] = meuPedido; else pedidosNoServidor.push(meuPedido);
                     todosOsPedidos = pedidosNoServidor;
                 }
 
-                const body = { 
-                    message: mensagem, 
-                    content: encodeBase64(JSON.stringify(todosOsPedidos, null, 2)), 
-                    sha: shaAtualizado 
-                };
-
-                const urlPut = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/pedidoseparar.json`;
-                const resPut = await fetch(urlPut, { 
-                    method: 'PUT', 
-                    headers: { 
-                        "Authorization": `Bearer ${cfg.token}`, 
-                        "Accept": "application/vnd.github.v3+json", 
-                        "Content-Type": "application/json" 
-                    }, 
-                    body: JSON.stringify(body) 
+                const resPut = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/pedidoseparar.json`, { 
+                    method: 'PUT', headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json", "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ message: mensagem, content: encodeBase64(JSON.stringify(todosOsPedidos, null, 2)), sha: shaAtualizado }) 
                 });
 
                 if (resPut.ok) {
                     const dataPut = await resPut.json();
                     fileSha = dataPut.content.sha; 
-                    if(pedidoCompleto) { 
-                        alert("🎉 Pedido concluído!"); 
-                        voltarParaPedidos(); 
-                    }
+                    if(pedidoCompleto) { alert("🎉 Pedido concluído!"); voltarParaPedidos(); }
                 } else {
-                    const erro = await resPut.json();
-                    alert("Erro ao salvar no GitHub: " + erro.message);
+                    const erro = await resPut.json(); alert("Erro GitHub: " + erro.message);
                 }
-            } catch (e) { 
-                console.error(e); 
-                alert("Erro crítico de rede ao tentar sincronizar.");
-            }
+            } catch (e) { console.error(e); alert("Erro crítico de sincronização."); }
+        }
+
+        // --- NOVAS FUNÇÕES: ENTREGADOR, WHATSAPP, IMPRESSÃO ---
+
+        function abrirEntregador(event, index) {
+            event.stopPropagation();
+            const p = todosOsPedidos[index];
+            const nomeCli = p.cliente_nome || p.nome_cliente || 'Cliente Padrão';
+            const codCli = p.cliente_codigo || p.codigo_cliente || '';
+            const telCli = p.cliente_telefone || p.telefone_cliente || '';
+            const cidCli = p.cliente_cidade || p.cidade_cliente || 'N/A';
+            const rotaCli = p.cliente_rota || p.rota_cliente || 'N/A';
+
+            // Links para ações rápidas
+            const linkTel = telCli ? `tel:${telCli.replace(/\D/g, '')}` : '#';
+            const linkWa = telCli ? `https://wa.me/55${telCli.replace(/\D/g, '')}` : '#';
+            // Busca no Maps pelo código do cliente na cidade
+            const linkMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(codCli + ' ' + cidCli)}`;
+
+            let htmlItens = p.itens.map(i => `<li style="padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;"><span style="font-weight:900; color:var(--primary);">${i.quantidade}x</span> ${i.nome}</li>`).join('');
+
+            document.getElementById('entregador-content').innerHTML = `
+                <div style="text-align:center; margin-bottom: 20px;">
+                    <div class="badge" style="background:#e2e8f0; color:#0f172a; font-size:14px; margin-bottom:10px;">PEDIDO #${p.id}</div>
+                    <h2 style="margin:0; font-weight:900; font-size:22px;">${nomeCli}</h2>
+                    <p style="margin:5px 0 0 0; color:var(--text-muted); font-size:13px; font-weight:600;">Cód. Cliente: ${codCli}</p>
+                </div>
+
+                <div class="client-info-box" style="background:var(--card); border: 1px solid var(--border);">
+                    <p><i data-lucide="map-pin" size="14"></i> <b>Cidade:</b> ${cidCli}</p>
+                    <p><i data-lucide="route" size="14"></i> <b>Rota:</b> ${rotaCli}</p>
+                    <p><i data-lucide="phone" size="14"></i> <b>Telefone:</b> ${telCli}</p>
+                </div>
+
+                <div class="action-grid">
+                    <a href="${linkTel}" class="action-btn-square">
+                        <i data-lucide="phone-call" size="24" style="color:#2563eb;"></i> Ligar Normal
+                    </a>
+                    <a href="${linkWa}" target="_blank" class="action-btn-square">
+                        <i data-lucide="message-circle" size="24" style="color:#16a34a;"></i> WhatsApp
+                    </a>
+                    <a href="${linkMaps}" target="_blank" class="action-btn-square">
+                        <i data-lucide="map" size="24" style="color:#ea4335;"></i> Google Maps
+                    </a>
+                </div>
+
+                <h4 style="margin:0 0 10px 0; font-weight:900; border-bottom: 2px solid var(--primary); padding-bottom:5px;">Lista do Pedido (${p.itens.length} itens)</h4>
+                <ul style="list-style:none; padding:0; margin:0;">
+                    ${htmlItens}
+                </ul>
+            `;
+            
+            document.getElementById('overlay-lateral').style.display = 'block';
+            setTimeout(() => { document.getElementById('sidebar-entregador').classList.add('open'); }, 10);
+            lucide.createIcons();
+        }
+
+        function fecharEntregador() {
+            document.getElementById('sidebar-entregador').classList.remove('open');
+            setTimeout(() => { document.getElementById('overlay-lateral').style.display = 'none'; }, 300);
+        }
+
+        function compartilharWhatsApp(event, index) {
+            event.stopPropagation();
+            const p = todosOsPedidos[index];
+            const nomeCli = p.cliente_nome || p.nome_cliente || 'Cliente Padrão';
+            const codCli = p.cliente_codigo || p.codigo_cliente || 'N/A';
+            const cidCli = p.cliente_cidade || p.cidade_cliente || 'N/A';
+            const rotaCli = p.cliente_rota || p.rota_cliente || 'N/A';
+
+            let msg = `*🚚 PEDIDO #${p.id}*\n\n`;
+            msg += `*👤 Cliente:* ${nomeCli} (Cód: ${codCli})\n`;
+            msg += `*📍 Rota:* ${cidCli} - ${rotaCli}\n\n`;
+            msg += `*📦 ITENS DO PEDIDO:*\n`;
+            p.itens.forEach(i => { msg += `▪ ${i.quantidade}x ${i.nome}\n`; });
+
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function imprimirPedido(event, index) {
+            event.stopPropagation();
+            const p = todosOsPedidos[index];
+            const area = document.getElementById('print-area');
+            
+            const nomeCli = p.cliente_nome || p.nome_cliente || 'Não Informado';
+            const codCli = p.cliente_codigo || p.codigo_cliente || 'N/A';
+            const telCli = p.cliente_telefone || p.telefone_cliente || 'N/A';
+            const cidCli = p.cliente_cidade || p.cidade_cliente || 'N/A';
+            const rotaCli = p.cliente_rota || p.rota_cliente || 'N/A';
+            const dataPed = new Date(p.data).toLocaleString('pt-BR');
+
+            let linhas = p.itens.map(i => `<tr><td>${i.quantidade}x</td><td>${i.nome}</td></tr>`).join('');
+
+            area.innerHTML = `
+                <div class="print-title">PEDIDO #${p.id}</div>
+                <div class="print-barcode">*${p.id}*</div>
+                
+                <div class="print-section">
+                    <div class="print-label">Cliente / Código</div>
+                    <div class="print-value">${nomeCli} (#${codCli})</div>
+                    
+                    <div class="print-label">Telefone</div>
+                    <div class="print-value">${telCli}</div>
+                    
+                    <div class="print-label">Cidade / Rota</div>
+                    <div class="print-value">${cidCli} - ${rotaCli}</div>
+                    
+                    <div class="print-label">Data do Pedido</div>
+                    <div style="font-size:12px; font-weight:bold;">${dataPed}</div>
+                </div>
+
+                <div class="print-label" style="font-size:13px;">Lista de Produtos</div>
+                <table class="print-table">
+                    <thead><tr><th style="width:40px;">Qtd</th><th>Produto</th></tr></thead>
+                    <tbody>${linhas}</tbody>
+                </table>
+            `;
+            
+            window.print();
         }
     </script>
 </body>
