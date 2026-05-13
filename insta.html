@@ -40,8 +40,14 @@
         .img-upload-text { font-size: 11px; color: #64748b; text-align: center; padding: 10px; font-weight: 600; }
 
         .input-group { display: flex; flex-direction: column; gap: 12px; }
-        .input-group input, .input-group textarea { padding: 14px; border: 1px solid var(--border); border-radius: 10px; width: 100%; font-size: 14px; outline-color: var(--accent); background: #fcfcfc; }
-        .input-group textarea { height: 150px; resize: vertical; line-height: 1.5; }
+        .input-group input[type="text"], .input-group textarea { padding: 14px; border: 1px solid var(--border); border-radius: 10px; width: 100%; font-size: 14px; outline-color: var(--accent); background: #fcfcfc; }
+        .input-group textarea { height: 120px; resize: vertical; line-height: 1.5; font-size: 13px; background: #f8fafc; }
+
+        /* Estilos do Gerador */
+        .generator-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; background: #fcfcfc; padding: 15px; border-radius: 10px; border: 1px solid var(--border); }
+        .gen-item { display: flex; flex-direction: column; gap: 5px; }
+        .gen-item label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .gen-item select, .gen-item input[type="number"] { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; outline-color: var(--accent); background: white; cursor: pointer; }
 
         .form-footer { display: flex; align-items: center; gap: 15px; margin-top: 20px; justify-content: flex-end; }
         .btn-main { padding: 14px 28px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
@@ -84,22 +90,87 @@
     </div>
 
     <div class="prompt-box">
-        <h2 id="formTitle">Novo Prompt</h2>
+        <h2 id="formTitle">Gerador de Novo Prompt</h2>
         <div class="form-grid">
             <div>
                 <input type="file" id="pImageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
                 <div class="img-upload-box" onclick="document.getElementById('pImageInput').click()">
-                    <span class="img-upload-text">📸 Clique para Foto (4:5)<br><small id="sizeInfo">Max 50KB</small></span>
+                    <span class="img-upload-text">📸 Imagem de Referência<br><small id="sizeInfo">Max 50KB</small></span>
                     <img id="pImgPreview" src="" alt="Preview">
                 </div>
             </div>
+            
             <div class="input-group">
-                <input type="text" id="pName" placeholder="Título do Prompt">
-                <textarea id="pText" placeholder="Comando do prompt..."></textarea>
+                <input type="text" id="pName" placeholder="Título da Campanha / Produto">
+                
+                <div class="generator-grid">
+                    <div class="gen-item">
+                        <label>Qtd. de Produtos</label>
+                        <input type="number" id="genQtd" value="1" min="1" onchange="gerarTextoPrompt()">
+                    </div>
+                    <div class="gen-item">
+                        <label>Formato / Aspecto</label>
+                        <select id="genFormato" onchange="gerarTextoPrompt()">
+                            <option value="Vertical Padrão (4:5)">Vertical Padrão (4:5)</option>
+                            <option value="Vertical Tela Cheia (9:16)">Vertical Tela Cheia (9:16)</option>
+                            <option value="Quadrado (1:1)">Quadrado (1:1)</option>
+                            <option value="Horizontal (16:9)">Horizontal (16:9)</option>
+                        </select>
+                    </div>
+                    <div class="gen-item">
+                        <label>Ângulo</label>
+                        <select id="genAngulo" onchange="gerarTextoPrompt()">
+                            <option value="Frontal Direto (Eye-Level)">Frontal Direto</option>
+                            <option value="Plongée (45 graus de cima)">Plongée (45° de cima)</option>
+                            <option value="Flat Lay (90 graus de cima)">Flat Lay (Vista Superior)</option>
+                            <option value="Contra-plongée (De baixo para cima)">Contra-plongée</option>
+                            <option value="Macro / Close-up Extremo">Macro / Close-up</option>
+                        </select>
+                    </div>
+                    <div class="gen-item">
+                        <label>Iluminação</label>
+                        <select id="genIlum" onchange="gerarTextoPrompt()">
+                            <option value="Studio Softbox (Difusa e limpa)">Studio Softbox</option>
+                            <option value="Hard Light (Sombras marcadas e contraste alto)">Hard Light (Luz Dura)</option>
+                            <option value="Golden Hour (Tons quentes e dourados)">Golden Hour</option>
+                            <option value="Spotlight (Foco dramático no produto)">Spotlight</option>
+                            <option value="Cinematográfica / Volumétrica (Luz entre fumaça)">Cinematográfica</option>
+                        </select>
+                    </div>
+                    <div class="gen-item">
+                        <label>Estética</label>
+                        <select id="genEstetica" onchange="gerarTextoPrompt()">
+                            <option value="Minimalista e Clean">Minimalista / Clean</option>
+                            <option value="Lifestyle Urbano Premium">Lifestyle Urbano</option>
+                            <option value="Monocromático (Baseado na embalagem)">Monocromático</option>
+                            <option value="Surrealismo Publicitário 3D">Surrealismo Publicitário</option>
+                            <option value="Mixed Media (Foto + Elementos Manuais)">Mixed Media</option>
+                        </select>
+                    </div>
+                    <div class="gen-item">
+                        <label>Ambientação</label>
+                        <select id="genAmbiente" onchange="gerarTextoPrompt()">
+                            <option value="Fundo Infinito com cor neutra ou degradê">Fundo Infinito Colorido</option>
+                            <option value="Pódios de materiais nobres como mármore ou cimento">Pódios e Pedestais</option>
+                            <option value="Cercado por ingredientes e matérias-primas flutuando ou na base">Ingredientes da Fórmula</option>
+                            <option value="Ambiente de consumo real e sofisticado">Ambiente de Uso Real</option>
+                        </select>
+                    </div>
+                    <div class="gen-item" style="grid-column: span 2;">
+                        <label>Técnicas de Integração</label>
+                        <select id="genIntegracao" onchange="gerarTextoPrompt()">
+                            <option value="Sombras projetadas alinhadas com a luz principal e reflexo de contato na superfície">Sombras + Reflexo de Contato</option>
+                            <option value="Profundidade de campo (Bokeh) com o fundo naturalmente desfocado">Fundo Desfocado (Bokeh)</option>
+                            <option value="A iluminação do cenário rebatendo sutilmente nas bordas do produto">Luz Rebatida na Embalagem</option>
+                        </select>
+                    </div>
+                </div>
+
+                <textarea id="pText" placeholder="O prompt será gerado aqui automaticamente. Você também pode editar livremente..."></textarea>
             </div>
         </div>
         <div class="form-footer">
-            <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar</button>
+            <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar Edição</button>
             <button class="btn-main" id="btnSave" onclick="savePrompt()">💾 Salvar Prompt</button>
         </div>
     </div>
@@ -148,6 +219,36 @@
             return showToast("Preencha as configurações do GitHub primeiro!");
         }
         syncFromGitHub(true);
+    }
+
+    // NOVA FUNÇÃO: Gerador de Prompt baseado nas seleções
+    function gerarTextoPrompt() {
+        // Só gera se não estiver editando um antigo (para não apagar uma edição manual)
+        // Se quiser forçar a geração, comente a linha abaixo.
+        if(STATE.editingIdx > -1 && document.getElementById('pText').value.trim() !== '') return;
+
+        const qtd = document.getElementById('genQtd').value || "1";
+        const formato = document.getElementById('genFormato').value;
+        const angulo = document.getElementById('genAngulo').value;
+        const iluminacao = document.getElementById('genIlum').value;
+        const estetica = document.getElementById('genEstetica').value;
+        const ambiente = document.getElementById('genAmbiente').value;
+        const integracao = document.getElementById('genIntegracao').value;
+
+        const pluralProd = qtd > 1 ? "Os produtos anexados" : "O produto anexado";
+        const pluralEles = qtd > 1 ? "deles" : "dele";
+        const pluralElesMaiusculo = qtd > 1 ? "DELES" : "DELE";
+
+        const comando = `Gere uma imagem publicitária no formato ${formato}. ${pluralProd} será posicionado num ângulo ${angulo}. A iluminação será ${iluminacao}. A direção de arte deve seguir o estilo ${estetica}, ambientado em: ${ambiente}. Para garantir extremo realismo de montagem na cena, aplique a seguinte técnica de integração: ${integracao}. 
+
+DIRETRIZ ABSOLUTA: Utilize a(s) imagem(ns) do(s) ${qtd} produto(s) anexado(s) como base inalterável. É ESTRITAMENTE PROIBIDO modificar o rótulo, o formato da embalagem, a tipografia ou o design original. O foco do motor de geração deve ser exclusivamente na construção do cenário, da iluminação e da ambiência ao redor ${pluralEles}.`;
+
+        document.getElementById('pText').value = comando;
+    }
+    
+    // Dispara a primeira geração vazia caso o usuário queira já ver a estrutura
+    window.onload = function() {
+        gerarTextoPrompt();
     }
 
     const utf8_to_b64 = str => window.btoa(unescape(encodeURIComponent(str)));
@@ -233,12 +334,8 @@
         }
     }
 
-    // NOVA ETAPA: Função exclusiva para enviar a imagem como arquivo para a pasta prom10/
     async function uploadImageToGitHub(base64String) {
-        // Remove a parte "data:image/jpeg;base64," para enviar apenas o código puro da imagem
         const pureBase64 = base64String.split(',')[1];
-        
-        // Cria um nome de arquivo único baseado na data e hora atual
         const filename = `img_${Date.now()}.jpg`;
         const imagePath = `prom10/${filename}`; 
         
@@ -263,7 +360,6 @@
         }
 
         const data = await res.json();
-        // Retorna o link direto (download_url) criado pelo GitHub
         return data.content.download_url; 
     }
 
@@ -312,23 +408,20 @@
         reader.readAsDataURL(file);
     }
 
-    // Função de salvar alterada para lidar com o upload de arquivo real
     async function savePrompt() {
         const name = document.getElementById('pName').value.trim();
         const text = document.getElementById('pText').value.trim();
         if(!name || !text) return showToast("Preencha título e comando!");
 
-        // Desabilita o botão para evitar cliques duplos enquanto salva
         const btnSave = document.getElementById('btnSave');
         btnSave.disabled = true;
 
         try {
             let imageUrl = STATE.currentImageBase64;
             
-            // Verifica se a imagem é nova (código base64 começa com data:image)
             if (imageUrl && imageUrl.startsWith('data:image')) {
                 showToast("Enviando imagem para a pasta prom10...");
-                imageUrl = await uploadImageToGitHub(imageUrl); // Pega o link curto gerado
+                imageUrl = await uploadImageToGitHub(imageUrl); 
             }
 
             const promptData = { name, text, image: imageUrl };
@@ -344,7 +437,6 @@
             console.error(error);
             showToast("Erro: " + error.message);
         } finally {
-            // Reabilita o botão independente de sucesso ou falha
             btnSave.disabled = false;
         }
     }
@@ -388,7 +480,7 @@
     function cancelEdit() {
         STATE.editingIdx = -1;
         document.getElementById('pName').value = "";
-        document.getElementById('pText').value = "";
+        gerarTextoPrompt(); // Reseta o texto com as configs atuais do gerador
         STATE.currentImageBase64 = "";
         document.getElementById('pImgPreview').style.display = "none";
         document.getElementById('btnCancel').style.display = "none";
