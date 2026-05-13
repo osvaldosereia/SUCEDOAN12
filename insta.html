@@ -45,6 +45,7 @@
 
         .form-footer { display: flex; align-items: center; gap: 15px; margin-top: 20px; justify-content: flex-end; }
         .btn-main { padding: 14px 28px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .btn-main:disabled { background: #94a3b8; cursor: not-allowed; }
         .btn-sec { padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
         .btn-success { background: var(--success); padding: 12px 24px; color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; }
         .btn-cancel { padding: 14px 20px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; display: none; }
@@ -118,8 +119,6 @@
     };
 
     const STATE = { prompts: [], editingIdx: -1, currentImageBase64: "" };
-    
-    // VARIÁVEL DE SEGURANÇA: Só permite salvar no GitHub se os dados foram lidos com sucesso
     let dadosCarregadosComSucesso = false; 
 
     document.getElementById('ghToken').value = GITHUB.token;
@@ -144,7 +143,6 @@
         syncFromGitHub(true);
     }
 
-    // Função para o novo botão global
     function carregarPrompts() {
         if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) {
             return showToast("Preencha as configurações do GitHub primeiro!");
@@ -170,61 +168,42 @@
             });
             
             if(res.status === 404) { 
-                // Arquivo não existe no GitHub (primeiro uso), então é seguro começar com uma lista vazia
                 STATE.prompts = []; 
                 GITHUB.sha = ''; 
-                dadosCarregadosComSucesso = true; // Libera o salvamento
+                dadosCarregadosComSucesso = true; 
                 render(); 
                 if(isManualTest) showToast("Nenhum arquivo encontrado. Um novo será criado ao salvar.");
                 return; 
             }
 
             const responseText = await res.text();
-
-            if(!res.ok) {
-                let errorMessage = "Erro desconhecido da API";
-                try {
-                    const errorObj = JSON.parse(responseText);
-                    errorMessage = errorObj.message || errorMessage;
-                } catch(e) {
-                    errorMessage = responseText || res.statusText;
-                }
-                throw new Error(errorMessage);
-            }
+            if(!res.ok) throw new Error(JSON.parse(responseText).message || "Erro da API");
 
             const data = JSON.parse(responseText);
             GITHUB.sha = data.sha;
             
             if (data.content) {
                 const decodificado = b64_to_utf8(data.content).trim();
-                // Apenas sobrescreve se conseguir decodificar com sucesso
-                if(decodificado) {
-                    STATE.prompts = JSON.parse(decodificado);
-                }
+                if(decodificado) STATE.prompts = JSON.parse(decodificado);
             } else {
                 STATE.prompts = [];
             }
 
-            dadosCarregadosComSucesso = true; // Carregamento com sucesso! Libera o salvamento.
+            dadosCarregadosComSucesso = true; 
             render();
             if(isManualTest) showToast("Prompts carregados com sucesso!");
 
         } catch (e) { 
             console.error("Erro no GitHub:", e);
-            // IMPORTANTE: Aqui não estamos mais apagando (STATE.prompts = []) em caso de erro!
             showToast("Erro ao carregar: " + (e.message === "Unexpected end of JSON input" ? "Arquivo corrompido." : e.message)); 
         }
     }
 
     async function syncToGitHub() {
         if(!GITHUB.token) return showToast("Configure o GitHub antes de salvar!");
+        if(!dadosCarregadosComSucesso) return showToast("⚠️ Aguarde o carregamento antes de salvar!");
         
-        // TRAVA DE SEGURANÇA: Se não carregou direito, impede de salvar para não apagar a nuvem
-        if(!dadosCarregadosComSucesso) {
-            return showToast("⚠️ Aguarde o carregamento dos dados da nuvem antes de salvar!");
-        }
-        
-        showToast("Salvando na Nuvem...");
+        showToast("Salvando JSON na Nuvem...");
         try {
             const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`;
             const body = {
@@ -232,9 +211,7 @@
                 content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2))
             };
             
-            if(GITHUB.sha) {
-                body.sha = GITHUB.sha;
-            }
+            if(GITHUB.sha) body.sha = GITHUB.sha;
 
             const res = await fetch(url, {
                 method: 'PUT',
@@ -245,25 +222,56 @@
                 body: JSON.stringify(body)
             });
 
-            if(!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message);
-            }
+            if(!res.ok) throw new Error((await res.json()).message);
 
             const data = await res.json();
             GITHUB.sha = data.content.sha;
-            showToast("Salvo na Nuvem com sucesso!");
+            showToast("Tudo salvo com sucesso!");
         } catch (e) { 
             console.error(e);
             showToast("Falha ao salvar: " + e.message); 
         }
     }
 
+    // NOVA ETAPA: Função exclusiva para enviar a imagem como arquivo para a pasta prom10/
+    async function uploadImageToGitHub(base64String) {
+        // Remove a parte "data:image/jpeg;base64," para enviar apenas o código puro da imagem
+        const pureBase64 = base64String.split(',')[1];
+        
+        // Cria um nome de arquivo único baseado na data e hora atual
+        const filename = `img_${Date.now()}.jpg`;
+        const imagePath = `prom10/${filename}`; 
+        
+        const url = `https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${imagePath}`;
+        
+        const body = {
+            message: `Upload de imagem: ${filename}`,
+            content: pureBase64
+        };
+
+        const res = await fetch(url, {
+            method: 'PUT',
+            headers: { 
+                'Authorization': `Bearer ${GITHUB.token}`, 
+                'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify(body)
+        });
+
+        if(!res.ok) {
+            throw new Error("Falha ao enviar imagem para a pasta prom10");
+        }
+
+        const data = await res.json();
+        // Retorna o link direto (download_url) criado pelo GitHub
+        return data.content.download_url; 
+    }
+
     function handleImageSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        showToast("Compactando para max 50KB...");
+        showToast("Compactando imagem...");
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
@@ -296,26 +304,49 @@
                 preview.style.display = 'block';
                 
                 const finalSizeKB = Math.round((base64.length * (3/4)) / 1024);
-                document.getElementById('sizeInfo').innerText = `Tamanho: ${finalSizeKB}KB (OK!)`;
-                showToast(`Imagem pronta: ${finalSizeKB}KB`);
+                document.getElementById('sizeInfo').innerText = `Pronto: ${finalSizeKB}KB`;
+                showToast(`Imagem pronta para envio: ${finalSizeKB}KB`);
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
+    // Função de salvar alterada para lidar com o upload de arquivo real
     async function savePrompt() {
         const name = document.getElementById('pName').value.trim();
         const text = document.getElementById('pText').value.trim();
         if(!name || !text) return showToast("Preencha título e comando!");
 
-        const promptData = { name, text, image: STATE.currentImageBase64 };
-        if(STATE.editingIdx > -1) STATE.prompts[STATE.editingIdx] = promptData;
-        else STATE.prompts.push(promptData);
+        // Desabilita o botão para evitar cliques duplos enquanto salva
+        const btnSave = document.getElementById('btnSave');
+        btnSave.disabled = true;
 
-        cancelEdit();
-        render();
-        await syncToGitHub();
+        try {
+            let imageUrl = STATE.currentImageBase64;
+            
+            // Verifica se a imagem é nova (código base64 começa com data:image)
+            if (imageUrl && imageUrl.startsWith('data:image')) {
+                showToast("Enviando imagem para a pasta prom10...");
+                imageUrl = await uploadImageToGitHub(imageUrl); // Pega o link curto gerado
+            }
+
+            const promptData = { name, text, image: imageUrl };
+            
+            if(STATE.editingIdx > -1) STATE.prompts[STATE.editingIdx] = promptData;
+            else STATE.prompts.push(promptData);
+
+            cancelEdit();
+            render();
+            await syncToGitHub();
+            
+        } catch (error) {
+            console.error(error);
+            showToast("Erro: " + error.message);
+        } finally {
+            // Reabilita o botão independente de sucesso ou falha
+            btnSave.disabled = false;
+        }
     }
 
     function render() {
@@ -364,7 +395,6 @@
         document.getElementById('sizeInfo').innerText = "Max 50KB";
     }
 
-    // A única forma de apagar um prompt agora é explicitamente clicando no botão que chama esta função
     async function deletePrompt(i) {
         if(confirm("Tem certeza que deseja apagar este prompt?")) {
             STATE.prompts.splice(i, 1);
@@ -380,7 +410,6 @@
         setTimeout(() => t.className = "", 3000);
     }
 
-    // Tenta carregar automaticamente ao abrir a página
     document.addEventListener('DOMContentLoaded', () => syncFromGitHub(false));
 </script>
 </body>
