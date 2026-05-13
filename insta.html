@@ -3,331 +3,261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Studio: Gerador de Prompts</title>
+    <title>Gerador de Prompts: Simplificado</title>
     <style>
-        /* Estilos CSS - Design Visual First limpo e direto */
+        /* Estética Classic Google (Material Design) e Mobile First - Visual First */
         :root {
-            --primary: #2b2b2b;
-            --accent: #ff0055;
-            --bg: #f4f4f9;
-            --card-bg: #ffffff;
-            --text: #333;
-            --border: #e0e0e0;
-            --success: #2ed573;
+            --google-blue: #1a73e8;
+            --google-blue-hover: #174ea6;
+            --google-green: #1e8e3e;
+            --google-green-hover: #188038;
+            --background: #f8f9fa;
+            --surface: #ffffff;
+            --border: #dadce0;
+            --text-main: #202124;
+            --text-sec: #5f6368;
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 16px;
             display: flex;
             justify-content: center;
         }
 
-        .studio-container {
-            max-width: 1000px;
+        .container {
+            max-width: 800px; /* Reduzido para ficar mais compacto */
             width: 100%;
-            background: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-            padding: 25px;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            box-sizing: border-box;
         }
 
         h1 {
             text-align: center;
-            color: var(--primary);
-            text-transform: uppercase;
-            font-size: 24px;
-            margin-bottom: 25px;
+            color: var(--text-main);
+            font-size: 22px;
+            font-weight: 400;
+            margin-top: 0;
+            margin-bottom: 24px;
         }
 
+        /* Mobile First: 1 Coluna por padrão */
         .grid-layout {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
         }
 
-        .category-group {
-            background: #fafafa;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 15px;
+        /* Desktop: 2 Colunas para telas maiores */
+        @media (min-width: 768px) {
+            .grid-layout {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .span-2 {
+                grid-column: span 2;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
         }
 
         label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 12px;
-            text-transform: uppercase;
-            color: #666;
+            font-size: 13px;
+            color: var(--text-sec);
+            margin-bottom: 6px;
+            font-weight: 500;
         }
 
-        select, input[type="text"] {
+        /* Estilo de inputs padrão Google */
+        select, textarea {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
+            padding: 12px;
             border: 1px solid var(--border);
             border-radius: 4px;
-            background-color: #fff;
-            font-size: 14px;
+            background-color: var(--surface);
+            color: var(--text-main);
+            font-size: 16px; 
             box-sizing: border-box;
+            transition: border-color 0.2s;
             cursor: pointer;
         }
 
-        input[type="text"] {
-            cursor: text;
-        }
-
-        select:focus, input[type="text"]:focus {
+        select:focus, textarea:focus {
             outline: none;
-            border-color: var(--accent);
-        }
-
-        .btn-generate {
-            width: 100%;
-            padding: 15px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .btn-generate:hover {
-            background-color: #000;
-        }
-
-        .result-section {
-            margin-top: 25px;
+            border: 2px solid var(--google-blue);
+            padding: 11px;
         }
 
         textarea {
-            width: 100%;
-            height: 220px;
-            padding: 15px;
-            border: 2px solid var(--border);
-            border-radius: 6px;
-            background-color: #fff;
-            font-family: monospace;
-            font-size: 14px;
-            line-height: 1.5;
+            height: 180px;
             resize: vertical;
-            box-sizing: border-box;
-            margin-bottom: 10px;
+            line-height: 1.5;
+            margin-bottom: 16px;
+            cursor: text;
         }
 
-        .btn-copy {
-            width: 100%;
-            padding: 12px;
-            background-color: var(--success);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            display: flex;
+        /* Botões padrão Google */
+        button {
+            display: inline-flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
+            width: 100%;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.25px;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+            height: 48px;
         }
 
-        .btn-copy:hover {
-            background-color: #26b360;
+        .btn-primary {
+            background-color: var(--google-blue);
+            color: white;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--google-blue-hover);
+            box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+        }
+
+        .btn-success {
+            background-color: var(--google-green);
+            color: white;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3);
+        }
+
+        .btn-success:hover {
+            background-color: var(--google-green-hover);
+            box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+        }
+
+        .result-container {
+            border-top: 1px solid var(--border);
+            padding-top: 24px;
+            margin-top: 24px;
         }
     </style>
 </head>
 <body>
 
-    <div class="studio-container">
-        <h1>Master Studio</h1>
+    <div class="container">
+        <h1>Estúdio Rápido</h1>
 
         <div class="grid-layout">
             
-            <!-- Grupo 1: Básico -->
-            <div class="category-group">
-                <label>Formato da Imagem</label>
-                <select id="formato">
-                    <option value="9:16">9:16 (Vertical/Reels)</option>
-                    <option value="4:5">4:5 (Retrato/Feed)</option>
-                    <option value="1:1">1:1 (Quadrado)</option>
-                </select>
-
+            <div class="form-group">
                 <label>Quantidade de Produtos</label>
                 <select id="qtd">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                </select>
-
-                <label>Estilo Visual</label>
-                <select id="estilo">
-                    <!-- Estilos Originais -->
-                    <option value="Candy Clean">Candy Clean</option>
-                    <option value="Candy Pop">Candy Pop</option>
-                    <option value="Natureza">Natureza</option>
-                    <option value="Cidade">Cidade</option>
-                    <option value="Loja">Loja</option>
-                    <!-- Estilos Novos -->
-                    <option value="Cyberpunk Futurista">Cyberpunk Futurista</option>
-                    <option value="Minimalismo Escandinavo">Minimalismo Escandinavo</option>
-                    <option value="Vintage Retrô Anos 80">Vintage Retrô Anos 80</option>
-                    <option value="Surrealismo Pop">Surrealismo Pop</option>
-                    <option value="Editorial de Alta Costura">Editorial de Moda / Alta Costura</option>
+                    <option value="1 produto">1 produto</option>
+                    <option value="2 produtos">2 produtos</option>
+                    <option value="3 produtos">3 produtos</option>
+                    <option value="4 produtos">4 produtos</option>
+                    <option value="5 produtos">5 produtos</option>
+                    <option value="6 produtos">6 produtos</option>
+                    <option value="7 produtos">7 produtos</option>
+                    <option value="8 produtos">8 produtos</option>
                 </select>
             </div>
 
-            <!-- Grupo 2: Ação e Cena -->
-            <div class="category-group" style="grid-column: span 2;">
-                <label>Cena / Ação Principal</label>
+            <div class="form-group">
+                <label>Cor do Fundo Liso</label>
+                <select id="fundo">
+                    <option value="fundo liso em cor Rosa Candy">Rosa Candy (Liso)</option>
+                    <option value="fundo liso em cor Azul Claro">Azul Claro (Liso)</option>
+                    <option value="fundo liso em cor Amarelo Pastel">Amarelo Pastel (Liso)</option>
+                    <option value="fundo liso em cor Lilás">Lilás (Liso)</option>
+                    <option value="fundo liso Branco">Branco (Liso)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Foco / Distância</label>
+                <select id="foco">
+                    <option value="foco total e absoluto no produto em primeiro plano">Foco total no produto</option>
+                    <option value="câmera a uma distância de 50cm do produto">Distância de 50cm</option>
+                    <option value="câmera a uma distância de 1 metro do produto">Distância de 1 metro</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Acessórios / Extras</label>
+                <select id="acessorios">
+                    <option value="sem nenhum acessório adicional, cena completamente limpa">Nenhum</option>
+                    <option value="com anotações manuscritas flutuantes sobre as características do produto">Com anotações sobre o produto</option>
+                    <option value="com elementos naturais ou ingredientes diretamente relacionados ao produto">Elementos relacionados ao produto</option>
+                    <option value="com a presença de até 3 personagens interagindo sutilmente na cena">Até 3 personagens</option>
+                </select>
+            </div>
+
+            <div class="form-group span-2">
+                <label>Cena Principal</label>
                 <select id="cena">
-                    <!-- Cenas Originais -->
-                    <option value="Produto Flutuando ao centro grande">Produto Flutuando ao centro grande</option>
-                    <option value="Uma mão segurando">Uma mão segurando</option>
-                    <option value="Duas mãos segurando">Duas mãos segurando</option>
-                    <option value="pessoa desfocada ao fundo segurando com braço estendido">Pessoa desfocada ao fundo segurando com braço estendido</option>
-                    <option value="pessoa segurando o produto na altura do peito">Pessoa segurando o produto na altura do peito</option>
-                    <option value="pessoa segurando com os braços pra cima e olhando pra cima mostrando o produto pra cima">Pessoa segurando com os braços pra cima e olhando pra cima</option>
-                    <option value="produto dentro do carrinho de compras">Produto dentro do carrinho de compras</option>
-                    <option value="produto dentro da cesta plástica de compra">Produto dentro da cesta plástica de compra</option>
-                    <option value="produto em mesa ou bancada ou base">Produto em mesa ou bancada ou base</option>
-                    <option value="produto encostado em parede ou alguma coisa">Produto encostado em parede ou alguma coisa</option>
-                    <option value="produto no centro com fundo cheio de escritos relacionados ao produto">Produto no centro com fundo cheio de escritos relacionados ao produto</option>
-                    <option value="produto ao centro com anotações sobre o produto ao redor feitas de forma aleatória manuscrita">Produto ao centro com anotações sobre o produto ao redor feitas de forma aleatória manuscrita</option>
-                    <!-- Cenas Novas -->
-                    <option value="produto imerso em água cristalina com bolhas de ar subindo">Produto imerso em água cristalina com bolhas</option>
-                    <option value="produto em um pódio de pedra natural texturizada">Produto em um pódio de pedra natural</option>
-                    <option value="produto quebrando a barreira do som com rastro de movimento (motion blur)">Produto em velocidade com rastro de movimento</option>
-                    <option value="produto rodeado por elementos 3D geométricos flutuantes">Produto rodeado por geometria 3D flutuante</option>
-                    <option value="produto emergindo de uma nuvem de fumaça colorida espessa">Produto emergindo de fumaça colorida</option>
-                    <option value="produto levitando sobre uma base magnética futurista iluminada">Produto levitando em base magnética</option>
-                </select>
-            </div>
-
-            <!-- Grupo 3: Fotografia -->
-            <div class="category-group">
-                <label>Posição da Câmera</label>
-                <select id="camera">
-                    <!-- Câmeras Originais -->
-                    <option value="Ângulo frontal direto, perfeitamente alinhado (Eye-level)">Frontal Direto</option>
-                    <option value="Ângulo de baixo para cima (Low Angle), dando sensação de grandeza">De baixo para cima (Low Angle)</option>
-                    <option value="Ângulo de cima para baixo (High Angle), mostrando o produto de cima">De cima para baixo (High Angle)</option>
-                    <option value="Plano detalhe macro (Close-up extremo), focando intensamente nas texturas">Macro / Close-up</option>
-                    <option value="Visão isométrica, perspectiva geométrica e organizada">Isométrica</option>
-                    <option value="Visão Top-Down (Plano Zenital), câmera exatamente a 90 graus apontando para o chão">Top-Down (Zenital)</option>
-                    <!-- Câmeras Novas -->
-                    <option value="Lente ultra grande angular (Fisheye), distorcendo as bordas de forma criativa">Lente Olho de Peixe (Fisheye)</option>
-                    <option value="Plano holandês (Dutch Angle), câmera levemente inclinada para gerar dinamismo">Plano Holandês (Câmera Inclinada)</option>
-                    <option value="Câmera em movimento rápido acompanhando o produto (Pan shot)">Câmera em movimento (Pan Shot)</option>
-                    <option value="Câmera com profundidade de campo extrema (Depth of Field), fundo completamente borrado em bokeh">Profundidade de Campo Extrema (Bokeh)</option>
-                </select>
-            </div>
-
-            <!-- Grupo 4: Luz -->
-            <div class="category-group">
-                <label>Iluminação</label>
-                <select id="luz">
-                    <!-- Luzes Originais -->
-                    <option value="Luz de estúdio suave e difusa (Softbox), sem sombras duras">Estúdio Suave (Softbox)</option>
-                    <option value="Luz natural do meio-dia, com sombras duras e marcadas">Sol do Meio-dia (Sombras Duras)</option>
-                    <option value="Golden hour, luz de fim de tarde, tons quentes e alongados">Golden Hour (Fim de Tarde)</option>
-                    <option value="Iluminação de estúdio dramática de alto contraste (Chiaroscuro)">Estúdio Dramático (Alto Contraste)</option>
-                    <option value="Iluminação com flash frontal direto estourado, estilo fotográfico de moda anos 90">Flash Frontal Direto (Estilo Anos 90)</option>
-                    <option value="Iluminação neon moderna e vibrante com reflexos coloridos">Neon Cibernético (Reflexos coloridos)</option>
-                    <!-- Luzes Novas -->
-                    <option value="Iluminação com gelatina de cor vermelha de um lado e azul do outro (Bicolor)">Iluminação Bicolor (Vermelho e Azul)</option>
-                    <option value="Luz de palco com feixes volumétricos visíveis (God Rays) incidindo sobre o produto">Feixes de Luz Volumétricos (God Rays)</option>
-                    <option value="Iluminação de anel circular (Ring Light) refletindo perfeitamente no produto">Ring Light (Círculo de Luz)</option>
-                    <option value="Luz subaquática cáustica, com reflexos de água ondulando sobre o produto">Luz Subaquática (Reflexos Cáusticos)</option>
-                    <option value="Luz de projeção de janela, criando sombras de persianas cortando o cenário">Sombras de Persiana (Window Blinds)</option>
-                </select>
-            </div>
-
-            <!-- Grupo 5: Mixed Media e Preço -->
-            <div class="category-group" style="grid-column: span 2;">
-                <label>Balão de Preço (Deixe em branco se não quiser)</label>
-                <input type="text" id="preco" placeholder="Ex: R$ 49,90">
-
-                <label>Recursos Digitais / Efeitos Extras</label>
-                <select id="efeitos">
-                    <option value="Nenhum efeito extra, fotografia pura.">Nenhum (Fotografia Pura)</option>
-                    <option value="Rabiscos em neon brilhante contornando dinamicamente o formato do produto.">Rabiscos em Neon Contornando</option>
-                    <option value="Partículas de poeira mágica brilhante flutuando pelo ar.">Poeira Mágica Brilhante</option>
-                    <option value="Efeito de Glitch Art sutil e interferência digital Cyberpunk nas bordas.">Glitch Art / Cyberpunk</option>
-                    <option value="Filtro fotográfico vintage de câmera VHS com leve ruído e data no canto.">Filtro VHS Vintage</option>
-                    <option value="Formas geométricas sólidas em cores vibrantes flutuando no fundo como colagem.">Colagem 3D Geométrica</option>
+                    <option value="uma mão segurando o produto em destaque">Mão segurando</option>
+                    <option value="uma pessoa segurando o produto à frente, garantindo foco total no produto">Pessoa segurando à frente (foco total no produto)</option>
+                    <option value="o produto centralizado e grande, com o fundo liso preenchido por anotações manuscritas com informações da embalagem">Produto ao centro grande (fundo com anotações)</option>
+                    <option value="o produto acomodado dentro de um carrinho de compras moderno">Produto no carrinho de compras</option>
+                    <option value="o produto acomodado dentro de uma cesta de compras de plástico">Produto na cesta de compras</option>
                 </select>
             </div>
 
         </div>
 
-        <button class="btn-generate" onclick="gerarPromptStudio()">Gerar Prompt</button>
+        <button class="btn-primary" onclick="gerarPromptSimplificado()">Gerar Prompt</button>
 
-        <div class="result-section">
-            <textarea id="resultado" readonly>Seu prompt aparecerá aqui...</textarea>
-            <button class="btn-copy" onclick="copiarPrompt()">
-                📋 Copiar Prompt
-            </button>
+        <div class="result-container">
+            <textarea id="resultado" readonly>Seu prompt simplificado aparecerá aqui...</textarea>
+            <button class="btn-success" onclick="copiarPrompt()">📋 Copiar Prompt</button>
         </div>
     </div>
 
     <script>
-        // Função educativa para entender os passos de programação:
-        // Passo 1: Esta função é acionada ao clicar no botão "Gerar Prompt".
-        function gerarPromptStudio() {
+        // Passo 1: Esta função central recolhe as escolhas e monta o texto
+        function gerarPromptSimplificado() {
             
-            // Passo 2: Capturamos os valores de todos os campos selecionados e digitados.
-            const formato = document.getElementById('formato').value;
+            // Capturando os valores dos campos visíveis
             const qtd = document.getElementById('qtd').value;
-            const estilo = document.getElementById('estilo').value;
+            const fundo = document.getElementById('fundo').value;
+            const foco = document.getElementById('foco').value;
+            const acessorios = document.getElementById('acessorios').value;
             const cena = document.getElementById('cena').value;
-            const camera = document.getElementById('camera').value;
-            const luz = document.getElementById('luz').value;
-            const efeitos = document.getElementById('efeitos').value;
-            const preco = document.getElementById('preco').value;
 
-            // Passo 3: Criamos as frases base do nosso prompt de fotografia de alto padrão.
-            const base = `Crie uma fotografia publicitária fotorrealista de alto padrão. Formato/Proporção da imagem: ${formato}.`;
-            const descricao = `Quantidade de produtos na imagem: ${qtd}. Estilo visual geral: ${estilo}. Ação/Cena: ${cena}.`;
-            const fotografia = `Posição da câmera: ${camera}. Iluminação: ${luz}. Efeitos adicionais da cena: ${efeitos}. Renderização em 8k, hiper-detalhado.`;
-
-            // Passo 4: Lógica do Preço. 
-            // Se o usuário digitou algo no campo 'preco', criamos uma string com a instrução do balão à mão.
-            let instrucaoPreco = "";
-            if (preco.trim() !== "") {
-                instrucaoPreco = `[MIXED MEDIA - PREÇO]: Adicione um elemento artístico sobrepondo a foto. Desenhe um balão de fala ou balão de preço flutuando próximo ao produto. O balão deve ter um estilo desenhado à mão livre (doodle/sketch feito a caneta ou pincel). Dentro deste balão desenhado à mão, escreva com clareza o texto exato: "${preco}".`;
-            }
-
-            // Passo 5: A regra inquebrável para manter o seu produto idêntico à imagem anexada.
-            const regraOuro = `[ATENÇÃO - INSTRUÇÃO CRÍTICA]: A imagem anexada é a referência absoluta. Você DEVE usar a imagem do produto anexado exatamente como ela é. A embalagem, o rótulo original e a proporção física exata do produto DEVEM ser estritamente preservados e mantidos INALTERADOS. Integre este exato produto na cena iluminando-o adequadamente de forma fotorrealista.`;
-
-            // Passo 6: Juntamos todas as partes (concatenamos) usando quebras de linha (\n\n).
-            const promptFinal = `${base}\n\n${descricao}\n\n${fotografia}\n\n${instrucaoPreco}\n\n${regraOuro}`;
+            // Variáveis Fixas Ocultas (As regras que você definiu como padrão)
+            const informacoesPadrao = "A imagem deve ter formato vertical 9:16. O estilo de direção de arte é Candy Pop clean e minimalista. Devem ser usados todos os recursos modernos de renderização para deixar a imagem ultra realista, com altíssima resolução e nitidez. Sempre use a melhor iluminação de estúdio para a cena, destacando as texturas.";
             
-            // Passo 7: Inserimos o texto final na caixa de texto da tela.
-            document.getElementById('resultado').value = promptFinal.trim();
+            // Montando a descrição da cena com as escolhas do usuário
+            const descricaoCena = `Crie uma cena exibindo ${qtd}. O enquadramento possui ${foco}. A ação principal mostra ${cena}. O ambiente tem um ${fundo} e a composição conta com a seguinte adição: ${acessorios}.`;
+
+            // A Regra Inquebrável da Embalagem
+            const regraEmbalagem = "[ATENÇÃO - REGRA CRÍTICA]: A imagem anexada é a referência absoluta. A embalagem, o rótulo original e a proporção física exata do produto DEVEM ser estritamente respeitadas e NÃO DEVEM ser alteradas de forma alguma. A IA deve focar em criar a cena ao redor, integrando o produto perfeitamente.";
+
+            // Unindo todas as partes para o prompt final
+            const promptFinal = `${informacoesPadrao}\n\n${descricaoCena}\n\n${regraEmbalagem}`;
+            
+            // Inserindo na caixa de texto
+            document.getElementById('resultado').value = promptFinal;
         }
 
-        // Função para copiar o texto para a área de transferência do sistema operacional.
+        // Passo 2: Função para copiar o texto com um clique
         function copiarPrompt() {
             const textarea = document.getElementById('resultado');
             
-            if(textarea.value === "" || textarea.value === "Seu prompt aparecerá aqui...") {
-                alert("Por favor, gere um prompt primeiro!");
+            if(textarea.value === "" || textarea.value.includes("aparecerá aqui")) {
+                alert("Por favor, clique em 'Gerar Prompt' primeiro!");
                 return;
             }
 
