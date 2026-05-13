@@ -3,385 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Prompts - Estúdio Criativo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>Estúdio Dona Antônia - Conexão Blindada</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #000000;
-            --success: #10b981;
-            --danger: #ef4444;
-            --bg: #f8fafc;
-            --border: #e2e8f0;
-            --accent: #ec4899; 
-            --config-bg: #f1f5f9;
-            --warning: #f59e0b;
-            --terminal-bg: #0f172a;
-            --terminal-text: #38bdf8;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: var(--bg); color: #0f172a; padding: 20px; padding-bottom: 60px; font-family: 'Inter', sans-serif; }
-        .container { max-width: 1200px; margin: 0 auto; }
-
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
-        .header h1 { font-weight: 900; font-size: 26px; border-left: 5px solid var(--accent); padding-left: 15px; }
-
-        .sync-panel { background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #334155; }
-        .sync-panel h4 { color: white; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 15px; }
-        .sync-badges { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-        .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; background: #334155; color: white; display: flex; align-items: center; gap: 6px; }
-        .badge.green { background: var(--success); color: white; }
-        .badge.red { background: var(--danger); color: white; }
-        .badge.yellow { background: var(--warning); color: black; }
-        .terminal-log { background: var(--terminal-bg); color: var(--terminal-text); font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 12px; border-radius: 8px; height: 120px; overflow-y: auto; line-height: 1.5; }
-        .terminal-log div { border-bottom: 1px solid #1e293b; padding-bottom: 4px; margin-bottom: 4px; }
-        .terminal-log .time { color: #64748b; margin-right: 8px; }
-        .terminal-log .err { color: #ef4444; }
-        .terminal-log .ok { color: #10b981; }
-
-        .config-box { background: var(--config-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; }
-        .config-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-        .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px; }
-        .config-grid input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-weight: 600; }
-        .config-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-        .btn-save-cred { background: var(--primary); color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 13px; }
-
-        .prompt-box { background: white; padding: 25px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .prompt-box h2 { font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--primary); }
-        .form-grid { display: grid; grid-template-columns: 200px 1fr; gap: 20px; }
-        @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
-
-        .img-upload-box { border: 2px dashed var(--border); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 4/5; cursor: pointer; overflow: hidden; position: relative; background: #fcfcfc; transition: 0.2s; }
-        .img-upload-box:hover { border-color: var(--accent); background: #f1f5f9; }
-        .img-upload-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none; }
-        .img-upload-text { font-size: 11px; color: #64748b; text-align: center; padding: 10px; font-weight: 600; }
-
-        .input-group { display: flex; flex-direction: column; gap: 12px; }
-        .input-group input[type="text"], .input-group textarea { padding: 14px; border: 1px solid var(--border); border-radius: 10px; width: 100%; font-size: 14px; outline-color: var(--accent); background: #fcfcfc; font-weight: 600; }
-        .input-group textarea { height: 200px; resize: vertical; line-height: 1.6; font-size: 13px; background: #f8fafc; font-weight: 400; }
-
-        .generator-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; background: #fcfcfc; padding: 18px; border-radius: 12px; border: 1px solid var(--border); }
-        .gen-item { display: flex; flex-direction: column; gap: 6px; }
-        .gen-item.full-width { grid-column: 1 / -1; }
-        .gen-item label { font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
-        .gen-item select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline-color: var(--accent); background: white; cursor: pointer; font-weight: 600; }
-
-        .form-footer { display: flex; align-items: center; gap: 15px; margin-top: 20px; justify-content: flex-end; }
-        .btn-main { padding: 14px 28px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        :root { --primary: #000; --accent: #ec4899; --success: #10b981; --danger: #ef4444; --bg: #f8fafc; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg); padding: 20px; }
+        .panel { background: #1e293b; color: #38bdf8; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #334155; }
+        .terminal { background: #000; padding: 10px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; height: 180px; overflow-y: auto; color: #adbac7; line-height: 1.4; border: 1px solid #334155; }
+        .terminal .err { color: #f85149; font-weight: bold; }
+        .terminal .ok { color: #3fb950; font-weight: bold; }
+        .config-box { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 5px; background: #fcfcfc; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-main { background: var(--primary); color: #fff; width: 100%; font-size: 16px; margin-top: 15px; }
         .btn-main:disabled { background: #94a3b8; cursor: not-allowed; }
-        .btn-sec { padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
-        .btn-success { background: var(--success); padding: 12px 24px; color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; }
-        .btn-cancel { padding: 14px 20px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; display: none; }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; margin-top: 20px; }
-        .card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 15px; display: flex; flex-direction: column; transition: 0.3s; }
-        .card-img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 10px; margin-bottom: 15px; background: #f1f5f9; }
-        .card-title { font-weight: 800; font-size: 16px; margin-bottom: 8px; }
-        .card-desc { font-size: 12px; color: #64748b; margin-bottom: 15px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }
-        .card-actions { display: grid; gap: 10px; }
-        .btn-copy { background: var(--success); color: white; padding: 10px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px; }
-        .card-footer { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
-        .btn-sml { background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; }
+        #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
+        .card { background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgb(0 0 0 / 0.05); }
+        .card img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; background: #f1f5f9; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1>Banco de Prompts - Dona Antônia (Pop High-End)</h1>
-        <button class="btn-success" onclick="carregarPrompts()">🔄 Baixar Prompts do GitHub</button>
-    </div>
-
-    <div class="sync-panel">
-        <h4>📡 Monitor de Transmissão GitHub</h4>
-        <div class="sync-badges">
-            <span class="badge" id="badgeConn">⚪ Conexão: Pendente</span>
-            <span class="badge" id="badgeFila">📦 Fila de Envio: 0</span>
-            <span class="badge" id="badgeTimer" style="display:none;">⏱️ Tempo: 0s</span>
-        </div>
-        <div class="terminal-log" id="terminalLog">
-            <div><span class="time">[Sistema]</span> Aguardando credenciais...</div>
-        </div>
+    <div class="panel">
+        <h3 style="color:white; margin-bottom:10px;">📡 Console de Sincronização (Motor PIM v2)</h3>
+        <div class="terminal" id="term">Aguardando inicialização do sistema...</div>
     </div>
 
     <div class="config-box">
-        <h3><span>⚙️ Credenciais GitHub</span></h3>
+        <h4>🔑 Credenciais do Repositório</h4>
         <div class="config-grid">
-            <input type="password" id="ghToken" placeholder="GitHub Token (ghp_...)">
-            <input type="text" id="ghUser" placeholder="Usuário do GitHub">
-            <input type="text" id="ghRepo" placeholder="Nome do Repositório">
+            <input type="password" id="ghToken" placeholder="GitHub Token">
+            <input type="text" id="ghUser" placeholder="Usuário GitHub">
+            <input type="text" id="ghRepo" placeholder="Repositório">
         </div>
-        <div class="config-actions">
-            <button class="btn-save-cred" onclick="salvarCredenciaisLocal()">💾 Gravar no Aparelho</button>
-            <button class="btn-sec" onclick="testarConexaoRapida()">⚡ Testar Conexão</button>
-        </div>
+        <button class="btn" style="background:#6366f1; color:white; margin-top:10px;" onclick="salvarConfig()">💾 Guardar e Validar Acesso</button>
     </div>
 
-    <div class="prompt-box">
-        <h2 id="formTitle">Gerador de Direção de Arte Criativa</h2>
-        <div class="form-grid">
-            <div>
-                <input type="file" id="pImageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
-                <div class="img-upload-box" onclick="document.getElementById('pImageInput').click()">
-                    <span class="img-upload-text">📸 Foto do Produto<br><small id="sizeInfo">Max 50KB</small></span>
-                    <img id="pImgPreview" src="" alt="Preview">
-                </div>
-            </div>
-            
-            <div class="input-group">
-                <input type="text" id="pName" placeholder="Título da Campanha">
-                <div class="generator-grid">
-                    <div class="gen-item"><label>Formato</label>
-                        <select id="genFormato" onchange="gerarTextoPrompt()">
-                            <option value="Vertical Padrão (4:5)">Instagram Feed (4:5)</option>
-                            <option value="Vertical Tela Cheia (9:16)">Reels/Stories (9:16)</option>
-                            <option value="Quadrado (1:1)">Carrossel (1:1)</option>
-                        </select>
-                    </div>
-                    <div class="gen-item"><label>Vibe</label>
-                        <select id="genEstetica" onchange="gerarTextoPrompt()">
-                            <option value="Pop Art Candy Monocromático">Candy Monocromático</option>
-                            <option value="Minimalismo Color Block">Minimalismo Color Block</option>
-                            <option value="Neon Pastel Cyber-Chic">Neon Pastel</option>
-                            <option value="Glossy High-End">Glossy High-End</option>
-                        </select>
-                    </div>
-                    <div class="gen-item"><label>Ângulo</label>
-                        <select id="genAngulo" onchange="gerarTextoPrompt()">
-                            <option value="Frontal Direto (Eye-Level) - 85mm">Frontal Hero (85mm)</option>
-                            <option value="Plongée (45°) - 50mm">Plongée Editorial</option>
-                            <option value="Flat Lay (90°) - 35mm">Flat Lay Aéreo</option>
-                        </select>
-                    </div>
-                </div>
-                <textarea id="pText" placeholder="O prompt será gerado aqui..."></textarea>
-            </div>
+    <div class="config-box">
+        <h4>📝 Gerador de Anúncio</h4>
+        <input type="text" id="pName" placeholder="Nome da Campanha (Ex: Verão 2024)">
+        <div style="margin-top:10px;">
+            <label style="font-size: 12px; font-weight: bold; color: #64748b;">Anexar Foto de Referência:</label>
+            <input type="file" id="pFile" accept="image/*" onchange="processarImagem(this)">
         </div>
-        <div class="form-footer">
-            <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar</button>
-            <button class="btn-main" id="btnSave" onclick="savePrompt()">💾 Iniciar Upload</button>
-        </div>
+        <img id="pImg" style="width:120px; height:120px; object-fit:cover; display:none; margin:15px 0; border-radius:8px; border: 2px solid #e2e8f0;">
+        <textarea id="pText" rows="5" placeholder="Descreva o prompt ou use os seletores..."></textarea>
+        <button class="btn btn-main" id="btnS" onclick="executarFluxoUpload()">🚀 SINCRONIZAR COM GITHUB</button>
     </div>
 
-    <div class="grid" id="gridUI"></div>
-</div>
+    <div id="grid"></div>
 
 <script>
-    // Configurações Globais
-    let GITHUB = { token: '', owner: '', repo: '', path: 'prom10.json', sha: '' };
-    const STATE = { prompts: [], editingIdx: -1, currentImageBase64: "" };
-    let cronometroInterval, timerUpload = 0, itensNaFila = 0;
+    let CONFIG = { token: '', user: '', repo: '', path: 'prompts.json', sha: '' };
+    let promptList = [];
+    let base64Temp = "";
 
-    // Utilitários de Interface
-    function logTerminal(msg, tipo = 'normal') {
-        const terminal = document.getElementById('terminalLog');
-        const color = tipo === 'erro' ? 'err' : (tipo === 'sucesso' ? 'ok' : '');
-        const time = new Date().toLocaleTimeString();
-        terminal.innerHTML += `<div><span class="time">[${time}]</span> <span class="${color}">${msg}</span></div>`;
-        terminal.scrollTop = terminal.scrollHeight;
-    }
-
-    function atualizarFila(n) {
-        itensNaFila += n;
-        document.getElementById('badgeFila').innerText = `📦 Fila: ${itensNaFila}`;
-        document.getElementById('badgeFila').className = itensNaFila > 0 ? "badge yellow" : "badge";
-    }
-
-    // Gerenciamento de Credenciais
-    function salvarCredenciaisLocal() {
-        const t = document.getElementById('ghToken').value.trim();
-        const u = document.getElementById('ghUser').value.trim();
-        const r = document.getElementById('ghRepo').value.trim();
-        if(!t || !u || !r) return logTerminal("Erro: Preencha todos os campos.", "erro");
-        
-        localStorage.setItem('da_gh_token', t);
-        localStorage.setItem('da_gh_user', u);
-        localStorage.setItem('da_gh_repo', r);
-        carregarConfig();
-        logTerminal("Credenciais gravadas!", "sucesso");
-        testarConexaoRapida();
-    }
-
-    function carregarConfig() {
-        GITHUB.token = localStorage.getItem('da_gh_token') || '';
-        GITHUB.owner = localStorage.getItem('da_gh_user') || '';
-        GITHUB.repo = localStorage.getItem('da_gh_repo') || '';
-        document.getElementById('ghToken').value = GITHUB.token;
-        document.getElementById('ghUser').value = GITHUB.owner;
-        document.getElementById('ghRepo').value = GITHUB.repo;
-    }
-
-    // Comunicação GitHub
-    async function fetchGitHub(url, options = {}) {
-        const headers = { 
-            'Authorization': `Bearer ${GITHUB.token}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'Cache-Control': 'no-cache'
-        };
-        return fetch(url, { ...options, headers: { ...headers, ...options.headers } });
-    }
-
-    async function testarConexaoRapida() {
-        const badge = document.getElementById('badgeConn');
-        if(!GITHUB.token) return false;
-        try {
-            const res = await fetchGitHub(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}`);
-            if(!res.ok) throw new Error(res.status);
-            badge.className = "badge green"; badge.innerText = "🟢 Conectado";
-            return true;
-        } catch(e) {
-            badge.className = "badge red"; badge.innerText = "🔴 Erro " + e.message;
-            return false;
+    // LÓGICA DE CODIFICAÇÃO DO SISTEMA PIM (A Prova de Erros 422)
+    const GitHubCodec = {
+        encode: function(str) {
+            const bytes = new TextEncoder().encode(str);
+            let binString = '';
+            for (let i = 0; i < bytes.length; i++) { binString += String.fromCharCode(bytes[i]); }
+            return btoa(binString);
+        },
+        decode: function(base64) {
+            const binString = atob(base64.replace(/\s/g, ''));
+            const bytes = new Uint8Array(binString.length);
+            for (let i = 0; i < binString.length; i++) { bytes[i] = binString.charCodeAt(i); }
+            return new TextDecoder('utf-8').decode(bytes);
         }
+    };
+
+    function log(msg, type = '') {
+        const t = document.getElementById('term');
+        t.innerHTML += `<div class="${type === 'err' ? 'err' : (type === 'ok' ? 'ok' : '')}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        t.scrollTop = t.scrollHeight;
     }
 
-    async function atualizarSHALocal() {
-        try {
-            const res = await fetchGitHub(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`);
-            if(res.ok) {
-                const data = await res.json();
-                GITHUB.sha = data.sha;
-                return data.sha;
-            }
-        } catch(e) { logTerminal("Erro ao sincronizar SHA.", "erro"); }
-        return null;
+    function salvarConfig() {
+        CONFIG.token = document.getElementById('ghToken').value.trim();
+        CONFIG.user = document.getElementById('ghUser').value.trim();
+        CONFIG.repo = document.getElementById('ghRepo').value.trim();
+        localStorage.setItem('dona_antonia_config', JSON.stringify(CONFIG));
+        log("Configurações salvas localmente. Testando conexão...", "ok");
+        validarConexao();
     }
 
-    // Fluxo de Negócio
-    async function carregarPrompts() {
-        logTerminal("Buscando dados no GitHub...");
+    async function validarConexao() {
         try {
-            const res = await fetchGitHub(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`);
-            if(res.status === 404) {
-                logTerminal("Arquivo novo. Será criado no primeiro salvamento.");
-                return;
-            }
-            const data = await res.json();
-            GITHUB.sha = data.sha;
-            STATE.prompts = JSON.parse(decodeURIComponent(escape(atob(data.content))));
-            render();
-            logTerminal("Dados carregados!", "sucesso");
-        } catch(e) { logTerminal("Falha ao carregar: " + e.message, "erro"); }
-    }
-
-    async function savePrompt() {
-        const name = document.getElementById('pName').value.trim();
-        const text = document.getElementById('pText').value.trim();
-        if(!name || !text) return logTerminal("Erro: Título ou Prompt vazios.", "erro");
-
-        const btn = document.getElementById('btnSave');
-        btn.disabled = true; btn.innerText = "⏳ Enviando...";
-        atualizarFila(1);
-
-        try {
-            let finalImg = STATE.currentImageBase64;
-            // 1. Upload Imagem se necessário
-            if(finalImg.startsWith('data:image')) {
-                logTerminal("Subindo imagem...");
-                const imgName = `img_${Date.now()}.jpg`;
-                const imgRes = await fetchGitHub(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/prom10_images/${imgName}`, {
-                    method: 'PUT',
-                    body: JSON.stringify({ message: "img", content: finalImg.split(',')[1] })
-                });
-                if(imgRes.ok) finalImg = (await imgRes.json()).content.download_url;
-            }
-
-            // 2. Atualizar JSON (Com Retry para Erro 422)
-            const promptObj = { name, text, image: finalImg };
-            if(STATE.editingIdx > -1) STATE.prompts[STATE.editingIdx] = promptObj;
-            else STATE.prompts.unshift(promptObj);
-
-            logTerminal("Sincronizando Banco de Dados...");
-            await atualizarSHALocal(); // Garante o SHA mais novo
-
-            const jsonBody = {
-                message: "update",
-                content: btoa(unescape(encodeURIComponent(JSON.stringify(STATE.prompts, null, 2)))),
-                sha: GITHUB.sha
-            };
-
-            const res = await fetchGitHub(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`, {
-                method: 'PUT',
-                body: JSON.stringify(jsonBody)
+            const r = await fetch(`https://api.github.com/repos/${CONFIG.user}/${CONFIG.repo}`, {
+                headers: { 
+                    'Authorization': `Bearer ${CONFIG.token}`,
+                    'X-GitHub-Api-Version': '2022-11-28'
+                }
             });
-
-            if(res.status === 422) {
-                logTerminal("Conflito de versão detectado. Tentando correção automática...", "erro");
-                await atualizarSHALocal();
-                jsonBody.sha = GITHUB.sha;
-                const retryRes = await fetchGitHub(`https://api.github.com/repos/${GITHUB.owner}/${GITHUB.repo}/contents/${GITHUB.path}`, {
-                    method: 'PUT', body: JSON.stringify(jsonBody)
-                });
-                if(!retryRes.ok) throw new Error("Falha na segunda tentativa.");
-            } else if(!res.ok) throw new Error(res.status);
-
-            logTerminal("Sucesso absoluto!", "sucesso");
-            cancelEdit(); render();
-        } catch(e) {
-            logTerminal("FALHA: Erro " + e.message, "erro");
-        } finally {
-            btn.disabled = false; btn.innerText = "💾 Iniciar Upload";
-            atualizarFila(-1);
-        }
+            if(r.ok) { 
+                log("Conexão estabelecida com sucesso!", "ok"); 
+                puxarDadosNuvem(); 
+            } else { 
+                log(`Falha na conexão (Erro ${r.status}). Verifique o Token e o nome do Repositório.`, "err"); 
+            }
+        } catch(e) { log("Erro de rede: " + e.message, "err"); }
     }
 
-    // UI e Helpers
-    function handleImageSelect(e) {
-        const file = e.target.files[0];
+    async function puxarDadosNuvem() {
+        try {
+            const r = await fetch(`https://api.github.com/repos/${CONFIG.user}/${CONFIG.repo}/contents/${CONFIG.path}`, {
+                headers: { 'Authorization': `Bearer ${CONFIG.token}`, 'Cache-Control': 'no-store' }
+            });
+            if(r.ok) {
+                const d = await r.json();
+                CONFIG.sha = d.sha;
+                promptList = JSON.parse(GitHubCodec.decode(d.content));
+                renderizarCards();
+                log("Banco de dados sincronizado com a nuvem.", "ok");
+            }
+        } catch(e) { log("Aviso: Arquivo de banco de dados ainda não existe na nuvem."); }
+    }
+
+    function processarImagem(input) {
+        const file = input.files[0];
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = (e) => {
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                canvas.width = 400; canvas.height = 500;
-                canvas.getContext('2d').drawImage(img, 0, 0, 400, 500);
-                STATE.currentImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                document.getElementById('pImgPreview').src = STATE.currentImageBase64;
-                document.getElementById('pImgPreview').style.display = 'block';
+                canvas.width = 500; canvas.height = 500;
+                canvas.getContext('2d').drawImage(img, 0, 0, 500, 500);
+                base64Temp = canvas.toDataURL('image/webp', 0.8);
+                document.getElementById('pImg').src = base64Temp;
+                document.getElementById('pImg').style.display = "block";
+                log("Imagem processada e otimizada (WebP).");
             };
-            img.src = event.target.result;
+            img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
-    function render() {
-        const grid = document.getElementById('gridUI');
-        grid.innerHTML = STATE.prompts.map((p, i) => `
+    async function executarFluxoUpload() {
+        const name = document.getElementById('pName').value;
+        const text = document.getElementById('pText').value;
+        if(!name || !text) return log("Erro: Preencha o nome e o prompt.", "err");
+
+        const btn = document.getElementById('btnS');
+        btn.disabled = true;
+        log("🚀 Iniciando ciclo de upload...");
+
+        try {
+            let urlFinalImagem = "";
+
+            // 1. Upload da Imagem para pasta 'img_prompts/'
+            if(base64Temp) {
+                log("Enviando mídia para o repositório...");
+                const fileName = `prompt_${Date.now()}.webp`;
+                const rImg = await fetch(`https://api.github.com/repos/${CONFIG.user}/${CONFIG.repo}/contents/img_prompts/${fileName}`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${CONFIG.token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: `Upload Imagem: ${name}`, 
+                        content: base64Temp.split(',')[1] 
+                    })
+                });
+                if(!rImg.ok) throw new Error("Erro no upload da imagem.");
+                const dImg = await rImg.json();
+                urlFinalImagem = dImg.content.download_url;
+                log("Mídia salva com sucesso!", "ok");
+            }
+
+            // 2. Atualizar o JSON (Pega o SHA mais recente para evitar Erro 422)
+            log("Obtendo última versão do banco de dados...");
+            await puxarDadosNuvem(); 
+
+            promptList.unshift({ name, text, image: urlFinalImagem, date: new Date().toLocaleDateString() });
+
+            log("Enviando atualização do banco de dados...");
+            const rJson = await fetch(`https://api.github.com/repos/${CONFIG.user}/${CONFIG.repo}/contents/${CONFIG.path}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${CONFIG.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: `Novo Prompt: ${name}`,
+                    content: GitHubCodec.encode(JSON.stringify(promptList, null, 2)),
+                    sha: CONFIG.sha
+                })
+            });
+
+            if(rJson.ok) {
+                log("TUDO OK! Dados sincronizados com o GitHub.", "ok");
+                document.getElementById('pName').value = "";
+                document.getElementById('pText').value = "";
+                document.getElementById('pImg').style.display = "none";
+                base64Temp = "";
+                renderizarCards();
+            } else {
+                const errorInfo = await rJson.json();
+                log(`Erro 422/Rejeição: ${errorInfo.message}`, "err");
+            }
+
+        } catch(e) {
+            log("FALHA CRÍTICA: " + e.message, "err");
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function renderizarCards() {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = promptList.map(p => `
             <div class="card">
-                <img src="${p.image}" class="card-img">
-                <div class="card-title">${p.name}</div>
-                <div class="card-desc">${p.text}</div>
-                <div class="card-actions">
-                    <button class="btn-copy" onclick="copyText(${i})">📋 Copiar Prompt</button>
-                </div>
-                <div class="card-footer">
-                    <button class="btn-sml" style="color:var(--accent)" onclick="startEdit(${i})">✏️ Editar</button>
-                    <button class="btn-sml" style="color:var(--danger)" onclick="deletePrompt(${i})">🗑️ Apagar</button>
-                </div>
+                ${p.image ? `<img src="${p.image}">` : '<div style="height:200px; background:#f1f5f9; border-radius:8px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; color:#94a3b8;">Sem imagem</div>'}
+                <strong>${p.name}</strong>
+                <p style="font-size:11px; color:#64748b; margin: 5px 0;">Data: ${p.date || '---'}</p>
+                <p style="font-size:12px; color:#1e293b; background:#f8fafc; padding:8px; border-radius:5px; border:1px solid #e2e8f0;">${p.text}</p>
+                <button class="btn" style="width:100%; margin-top:10px; font-size:12px; background:#f1f5f9;" onclick="navigator.clipboard.writeText('${p.text.replace(/'/g, "\\'")}'); log('Prompt copiado!')">📋 Copiar Prompt</button>
             </div>
         `).join('');
     }
 
-    function copyText(i) {
-        navigator.clipboard.writeText(STATE.prompts[i].text);
-        logTerminal("Prompt copiado!");
-    }
-
-    function cancelEdit() {
-        STATE.editingIdx = -1;
-        document.getElementById('pName').value = "";
-        document.getElementById('pImgPreview').style.display = 'none';
-        STATE.currentImageBase64 = "";
-    }
-
-    function gerarTextoPrompt() {
-        const f = document.getElementById('genFormato').value;
-        const e = document.getElementById('genEstetica').value;
-        const a = document.getElementById('genAngulo').value;
-        document.getElementById('pText').value = `Fotografia Publicitária High-End, Formato ${f}, Estética ${e}, Ângulo ${a}. Preservar embalagem original.`;
-    }
-
-    window.onload = () => { carregarConfig(); testarConexaoRapida().then(ok => { if(ok) carregarPrompts(); }); };
+    window.onload = () => {
+        const saved = localStorage.getItem('dona_antonia_config');
+        if(saved) {
+            CONFIG = JSON.parse(saved);
+            document.getElementById('ghToken').value = CONFIG.token;
+            document.getElementById('ghUser').value = CONFIG.user;
+            document.getElementById('ghRepo').value = CONFIG.repo;
+            validarConexao();
+        }
+    };
 </script>
 </body>
 </html>
