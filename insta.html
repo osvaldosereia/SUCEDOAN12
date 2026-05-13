@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Prompts: Simplificado</title>
+    <title>Estúdio Rápido: Gerador de Prompts</title>
     <style>
-        /* Estética Classic Google (Material Design) e Mobile First - Visual First */
+        /* Estética Classic Google (Material Design) e Mobile First */
         :root {
             --google-blue: #1a73e8;
             --google-blue-hover: #174ea6;
@@ -29,7 +29,7 @@
         }
 
         .container {
-            max-width: 800px; /* Reduzido para ficar mais compacto */
+            max-width: 800px;
             width: 100%;
             background: var(--surface);
             border-radius: 8px;
@@ -47,7 +47,6 @@
             margin-bottom: 24px;
         }
 
-        /* Mobile First: 1 Coluna por padrão */
         .grid-layout {
             display: grid;
             grid-template-columns: 1fr;
@@ -55,7 +54,6 @@
             margin-bottom: 24px;
         }
 
-        /* Desktop: 2 Colunas para telas maiores */
         @media (min-width: 768px) {
             .grid-layout {
                 grid-template-columns: repeat(2, 1fr);
@@ -75,9 +73,9 @@
             color: var(--text-sec);
             margin-bottom: 6px;
             font-weight: 500;
+            text-transform: uppercase;
         }
 
-        /* Estilo de inputs padrão Google */
         select, textarea {
             width: 100%;
             padding: 12px;
@@ -105,7 +103,6 @@
             cursor: text;
         }
 
-        /* Botões padrão Google */
         button {
             display: inline-flex;
             justify-content: center;
@@ -132,18 +129,16 @@
 
         .btn-primary:hover {
             background-color: var(--google-blue-hover);
-            box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
         }
 
         .btn-success {
             background-color: var(--google-green);
             color: white;
-            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3);
+            margin-top: 10px;
         }
 
         .btn-success:hover {
             background-color: var(--google-green-hover);
-            box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
         }
 
         .result-container {
@@ -151,12 +146,51 @@
             padding-top: 24px;
             margin-top: 24px;
         }
+
+        /* Estilos para o Multiseletor de Elementos (Checkboxes transformados em botões visuais) */
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        @media (min-width: 480px) {
+            .checkbox-group {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background-color: var(--surface);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .checkbox-item:hover {
+            background-color: #f1f3f4;
+        }
+
+        /* Esconde o quadradinho padrão do checkbox */
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--google-blue); /* Pinta o checkbox de azul no Google Chrome/Edge */
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Estúdio Rápido</h1>
+        <h1>Estúdio Rápido 4.0</h1>
 
         <div class="grid-layout">
             
@@ -175,44 +209,75 @@
             </div>
 
             <div class="form-group">
-                <label>Cor do Fundo Liso</label>
-                <select id="fundo">
-                    <option value="fundo liso em cor Rosa Candy">Rosa Candy (Liso)</option>
-                    <option value="fundo liso em cor Azul Claro">Azul Claro (Liso)</option>
-                    <option value="fundo liso em cor Amarelo Pastel">Amarelo Pastel (Liso)</option>
-                    <option value="fundo liso em cor Lilás">Lilás (Liso)</option>
-                    <option value="fundo liso Branco">Branco (Liso)</option>
+                <label>Cor Principal (Tom Candy)</label>
+                <select id="corFundo">
+                    <!-- Cores originais -->
+                    <option value="Rosa Candy">Rosa Candy</option>
+                    <option value="Azul Claro">Azul Claro</option>
+                    <option value="Amarelo Pastel">Amarelo Pastel</option>
+                    <option value="Lilás">Lilás</option>
+                    <!-- 5 novas variações Candy solicitadas -->
+                    <option value="Verde Menta (Mint Green)">Verde Menta</option>
+                    <option value="Pêssego Suave (Peach)">Pêssego Suave</option>
+                    <option value="Lavanda Claro (Soft Lavender)">Lavanda Claro</option>
+                    <option value="Azul Turquesa Pastel">Azul Turquesa Pastel</option>
+                    <option value="Amarelo Manteiga (Butter Yellow)">Amarelo Manteiga</option>
+                    <!-- Neutro -->
+                    <option value="Branco">Branco</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label>Foco / Distância</label>
+                <label>Estilo do Fundo</label>
+                <select id="estiloFundo">
+                    <option value="fundo totalmente liso e uniforme">Liso</option>
+                    <option value="fundo com pattern (padrão geométrico) tom sobre tom muito discreto">Pattern Tom sobre Tom Discreto</option>
+                    <option value="fundo preenchido com elementos desfocados relacionados ao produto">Elementos relacionados ao produto</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Posição da Câmera</label>
+                <select id="camera">
+                    <option value="câmera posicionada exatamente de frente para o produto (Eye-level)">De frente</option>
+                    <option value="câmera posicionada a 45º de baixo para cima (Low Angle), dando imponência">45º de baixo pra cima</option>
+                    <option value="câmera posicionada a 35º de cima para baixo (High Angle)">35º de cima pra baixo</option>
+                    <option value="câmera posicionada a 90º de cima para baixo, visão totalmente aérea (Top-Down/Zenital)">90º de cima pra baixo (Aérea)</option>
+                    <option value="câmera posicionada com ângulo de 25º para a lateral, mostrando perspectiva geométrica">25º pra lateral</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Foco e Distância</label>
                 <select id="foco">
-                    <option value="foco total e absoluto no produto em primeiro plano">Foco total no produto</option>
-                    <option value="câmera a uma distância de 50cm do produto">Distância de 50cm</option>
-                    <option value="câmera a uma distância de 1 metro do produto">Distância de 1 metro</option>
+                    <option value="com super foco extremo no produto, destacando os mínimos detalhes">Super foco no produto</option>
+                    <option value="focado nitidamente no produto, com leve desfoque no fundo">Focado no produto</option>
+                    <option value="com a câmera a 1 metro de distância do produto">1 metro de distância</option>
+                    <option value="com a câmera a 2 metros de distância do produto, mostrando mais do ambiente">2 metros de distância</option>
                 </select>
             </div>
 
-            <div class="form-group">
-                <label>Acessórios / Extras</label>
-                <select id="acessorios">
-                    <option value="sem nenhum acessório adicional, cena completamente limpa">Nenhum</option>
-                    <option value="com anotações manuscritas flutuantes sobre as características do produto">Com anotações sobre o produto</option>
-                    <option value="com elementos naturais ou ingredientes diretamente relacionados ao produto">Elementos relacionados ao produto</option>
-                    <option value="com a presença de até 3 personagens interagindo sutilmente na cena">Até 3 personagens</option>
-                </select>
-            </div>
-
+            <!-- Novo Multiseletor de Elementos da Cena -->
             <div class="form-group span-2">
-                <label>Cena Principal</label>
-                <select id="cena">
-                    <option value="uma mão segurando o produto em destaque">Mão segurando</option>
-                    <option value="uma pessoa segurando o produto à frente, garantindo foco total no produto">Pessoa segurando à frente (foco total no produto)</option>
-                    <option value="o produto centralizado e grande, com o fundo liso preenchido por anotações manuscritas com informações da embalagem">Produto ao centro grande (fundo com anotações)</option>
-                    <option value="o produto acomodado dentro de um carrinho de compras moderno">Produto no carrinho de compras</option>
-                    <option value="o produto acomodado dentro de uma cesta de compras de plástico">Produto na cesta de compras</option>
-                </select>
+                <label>Elementos da Cena (Selecione quantos desejar)</label>
+                <div class="checkbox-group" id="elementos-container">
+                    <label class="checkbox-item">
+                        <input type="checkbox" value="presença de 1 ou 2 personagens interagindo na cena">
+                        Personagem 1 ou 2
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" value="anotações manuscritas flutuantes sobre as características do produto">
+                        Anotações sobre o produto
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" value="presença de elementos, texturas ou ingredientes diretamente relacionados ao produto">
+                        Elementos relacionados ao produto
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" value="uma etiqueta de preço desenhada no estilo doodle anexada na cena">
+                        Etiqueta de preço
+                    </label>
+                </div>
             </div>
 
         </div>
@@ -226,33 +291,49 @@
     </div>
 
     <script>
-        // Passo 1: Esta função central recolhe as escolhas e monta o texto
+        // Passo 1: Esta função principal captura os dados e monta a lógica do texto.
         function gerarPromptSimplificado() {
             
-            // Capturando os valores dos campos visíveis
+            // 1. Capturando os valores dos campos de seleção simples (dropdowns)
             const qtd = document.getElementById('qtd').value;
-            const fundo = document.getElementById('fundo').value;
+            const corFundo = document.getElementById('corFundo').value;
+            const estiloFundo = document.getElementById('estiloFundo').value;
+            const camera = document.getElementById('camera').value;
             const foco = document.getElementById('foco').value;
-            const acessorios = document.getElementById('acessorios').value;
-            const cena = document.getElementById('cena').value;
 
-            // Variáveis Fixas Ocultas (As regras que você definiu como padrão)
+            // 2. Lógica do Multiseletor de Elementos
+            // Aqui buscamos todos os checkboxes que o usuário marcou (checked)
+            const checkboxes = document.querySelectorAll('#elementos-container input[type="checkbox"]:checked');
+            let arrayElementos = [];
+            
+            // Passamos por cada checkbox marcado e guardamos o valor dele no nosso Array
+            checkboxes.forEach(function(checkbox) {
+                arrayElementos.push(checkbox.value);
+            });
+
+            // Se o usuário selecionou algo, juntamos as frases com vírgula. Se não, definimos como "cenário limpo".
+            let textoElementos = "";
+            if (arrayElementos.length > 0) {
+                textoElementos = "A composição visual deve incluir: " + arrayElementos.join(", ") + ".";
+            } else {
+                textoElementos = "A composição visual deve ser limpa, sem elementos adicionais soltos na cena.";
+            }
+
+            // 3. Variáveis Fixas (As regras padrão que não mudam)
             const informacoesPadrao = "A imagem deve ter formato vertical 9:16. O estilo de direção de arte é Candy Pop clean e minimalista. Devem ser usados todos os recursos modernos de renderização para deixar a imagem ultra realista, com altíssima resolução e nitidez. Sempre use a melhor iluminação de estúdio para a cena, destacando as texturas.";
             
-            // Montando a descrição da cena com as escolhas do usuário
-            const descricaoCena = `Crie uma cena exibindo ${qtd}. O enquadramento possui ${foco}. A ação principal mostra ${cena}. O ambiente tem um ${fundo} e a composição conta com a seguinte adição: ${acessorios}.`;
+            // 4. Montando a descrição com as escolhas do usuário
+            const descricaoCena = `Crie uma cena exibindo ${qtd}. O cenário apresenta cor predominante ${corFundo} com ${estiloFundo}. Perspectiva fotográfica: ${camera}, ${foco}. ${textoElementos}`;
 
-            // A Regra Inquebrável da Embalagem
-            const regraEmbalagem = "[ATENÇÃO - REGRA CRÍTICA]: A imagem anexada é a referência absoluta. A embalagem, o rótulo original e a proporção física exata do produto DEVEM ser estritamente respeitadas e NÃO DEVEM ser alteradas de forma alguma. A IA deve focar em criar a cena ao redor, integrando o produto perfeitamente.";
+            // 5. A Regra Inquebrável da Embalagem (A instrução crítica para a IA)
+            const regraEmbalagem = "[ATENÇÃO - REGRA CRÍTICA]: A embalagem, o rótulo e a proporção do produto anexado DEVEM ser respeitadas integralmente e NÃO DEVEM ser alteradas. A IA deve focar em criar a fotografia e a composição ao redor, integrando o produto perfeitamente com iluminação realista.";
 
-            // Unindo todas as partes para o prompt final
+            // 6. Unindo todas as partes e enviando para a tela
             const promptFinal = `${informacoesPadrao}\n\n${descricaoCena}\n\n${regraEmbalagem}`;
-            
-            // Inserindo na caixa de texto
             document.getElementById('resultado').value = promptFinal;
         }
 
-        // Passo 2: Função para copiar o texto com um clique
+        // Passo 2: Função para copiar o texto com segurança usando a API do navegador
         function copiarPrompt() {
             const textarea = document.getElementById('resultado');
             
