@@ -34,35 +34,38 @@
         .form-grid { display: grid; grid-template-columns: 200px 1fr; gap: 20px; }
         @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
 
-        .img-upload-box { border: 2px dashed var(--border); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 4/5; cursor: pointer; overflow: hidden; position: relative; background: #fcfcfc; }
-        .img-upload-box:hover { border-color: var(--accent); }
+        .img-upload-box { border: 2px dashed var(--border); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 4/5; cursor: pointer; overflow: hidden; position: relative; background: #fcfcfc; transition: 0.2s; }
+        .img-upload-box:hover { border-color: var(--accent); background: #f1f5f9; }
         .img-upload-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none; }
         .img-upload-text { font-size: 11px; color: #64748b; text-align: center; padding: 10px; font-weight: 600; }
 
         .input-group { display: flex; flex-direction: column; gap: 12px; }
-        .input-group input[type="text"], .input-group textarea { padding: 14px; border: 1px solid var(--border); border-radius: 10px; width: 100%; font-size: 14px; outline-color: var(--accent); background: #fcfcfc; }
-        .input-group textarea { height: 120px; resize: vertical; line-height: 1.5; font-size: 13px; background: #f8fafc; }
+        .input-group input[type="text"], .input-group textarea { padding: 14px; border: 1px solid var(--border); border-radius: 10px; width: 100%; font-size: 14px; outline-color: var(--accent); background: #fcfcfc; font-weight: 600; }
+        .input-group textarea { height: 160px; resize: vertical; line-height: 1.6; font-size: 13px; background: #f8fafc; font-weight: 400; }
 
-        /* Estilos do Gerador */
-        .generator-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; background: #fcfcfc; padding: 15px; border-radius: 10px; border: 1px solid var(--border); }
-        .gen-item { display: flex; flex-direction: column; gap: 5px; }
-        .gen-item label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-        .gen-item select, .gen-item input[type="number"] { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; outline-color: var(--accent); background: white; cursor: pointer; }
+        /* Estilos do Gerador Atualizado */
+        .generator-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; background: #fcfcfc; padding: 18px; border-radius: 12px; border: 1px solid var(--border); }
+        .gen-item { display: flex; flex-direction: column; gap: 6px; }
+        .gen-item label { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+        .gen-item select, .gen-item input[type="number"] { padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; outline-color: var(--accent); background: white; cursor: pointer; font-weight: 600; color: #0f172a; }
 
         .form-footer { display: flex; align-items: center; gap: 15px; margin-top: 20px; justify-content: flex-end; }
         .btn-main { padding: 14px 28px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
-        .btn-main:disabled { background: #94a3b8; cursor: not-allowed; }
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-main:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
         .btn-sec { padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
         .btn-success { background: var(--success); padding: 12px 24px; color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; }
         .btn-cancel { padding: 14px 20px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; display: none; }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; margin-top: 20px; }
         .card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 15px; display: flex; flex-direction: column; transition: 0.3s; }
+        .card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.05); transform: translateY(-3px); }
         .card-img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 10px; margin-bottom: 15px; background: #f1f5f9; }
         .card-title { font-weight: 800; font-size: 16px; margin-bottom: 8px; }
-        .card-desc { font-size: 12px; color: #64748b; margin-bottom: 15px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .card-desc { font-size: 12px; color: #64748b; margin-bottom: 15px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }
         .card-actions { display: grid; gap: 10px; }
-        .btn-copy { background: var(--success); color: white; padding: 10px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px; }
+        .btn-copy { background: var(--success); color: white; padding: 10px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .btn-copy:hover { filter: brightness(1.1); }
         .card-footer { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
         .btn-sml { background: none; border: none; font-size: 12px; font-weight: 800; cursor: pointer; }
 
@@ -105,63 +108,62 @@
                 
                 <div class="generator-grid">
                     <div class="gen-item">
-                        <label>Qtd. de Produtos</label>
+                        <label>Qtd. Produtos</label>
                         <input type="number" id="genQtd" value="1" min="1" onchange="gerarTextoPrompt()">
                     </div>
                     <div class="gen-item">
-                        <label>Formato / Aspecto</label>
+                        <label>Formato</label>
                         <select id="genFormato" onchange="gerarTextoPrompt()">
-                            <option value="Vertical Padrão (4:5)">Vertical Padrão (4:5)</option>
-                            <option value="Vertical Tela Cheia (9:16)">Vertical Tela Cheia (9:16)</option>
+                            <option value="Vertical Padrão (4:5)">Vertical (4:5)</option>
+                            <option value="Vertical Tela Cheia (9:16)">Reels/Stories (9:16)</option>
                             <option value="Quadrado (1:1)">Quadrado (1:1)</option>
                             <option value="Horizontal (16:9)">Horizontal (16:9)</option>
                         </select>
                     </div>
                     <div class="gen-item">
-                        <label>Ângulo</label>
-                        <select id="genAngulo" onchange="gerarTextoPrompt()">
-                            <option value="Frontal Direto (Eye-Level)">Frontal Direto</option>
-                            <option value="Plongée (45 graus de cima)">Plongée (45° de cima)</option>
-                            <option value="Flat Lay (90 graus de cima)">Flat Lay (Vista Superior)</option>
-                            <option value="Contra-plongée (De baixo para cima)">Contra-plongée</option>
-                            <option value="Macro / Close-up Extremo">Macro / Close-up</option>
+                        <label>Estética / Vibe</label>
+                        <select id="genEstetica" onchange="gerarTextoPrompt()">
+                            <option value="Color Coordination (Roupas, unhas e cenário na mesma paleta do produto)">Color Coordination (Monocromático Pop)</option>
+                            <option value="Lifestyle Casual (Sensação de dia a dia orgânico e cool)">Lifestyle Casual / UGC</option>
+                            <option value="Minimalista e Clean">Estúdio Minimalista</option>
+                            <option value="Mixed Media (Foto + Elementos Manuais/Adesivos)">Mixed Media 2D/3D</option>
+                        </select>
+                    </div>
+                    <div class="gen-item">
+                        <label>Interação Humana</label>
+                        <select id="genInteracao" onchange="gerarTextoPrompt()">
+                            <option value="Uma ou duas mãos bem cuidadas segurando o produto em destaque na frente da câmera">Mãos segurando (Padrão)</option>
+                            <option value="O produto posicionado de forma inusitada no bolso de trás de uma calça jeans (lifestyle)">Produto no bolso da calça</option>
+                            <option value="Uma pessoa segurando o produto cobrindo parte do próprio rosto, em clima descontraído">Cobrindo o rosto (Descontraído)</option>
+                            <option value="Uma pessoa olhando/espiando gulosamente por trás de uma fileira do produto">Espiando por trás do produto</option>
+                            <option value="Sem interação humana, foco estrito no produto e cenário">Sem modelo (Apenas Produto)</option>
+                        </select>
+                    </div>
+                    <div class="gen-item">
+                        <label>Ambientação (Cenário)</label>
+                        <select id="genAmbiente" onchange="gerarTextoPrompt()">
+                            <option value="Dentro de uma cesta de compras ou carrinho de supermercado colorido com outros itens descolados">Cesta/Carrinho de Compras</option>
+                            <option value="Corredor de supermercado moderno, com as prateleiras ao fundo em forte desfoque (Bokeh)">Corredor de Supermercado (Desfocado)</option>
+                            <option value="O produto deitado sobre uma cama densa de texturas (frutas cortadas, pétalas ou ingredientes suculentos)">Cama de Frutas/Ingredientes</option>
+                            <option value="Fundo sólido vibrante e contrastante, textura lisa de estúdio">Fundo Sólido Vibrante</option>
+                            <option value="Cenário de tipografias e palavras 3D formando paredes e chão">Tipografia 3D ao fundo</option>
                         </select>
                     </div>
                     <div class="gen-item">
                         <label>Iluminação</label>
                         <select id="genIlum" onchange="gerarTextoPrompt()">
-                            <option value="Studio Softbox (Difusa e limpa)">Studio Softbox</option>
-                            <option value="Hard Light (Sombras marcadas e contraste alto)">Hard Light (Luz Dura)</option>
-                            <option value="Golden Hour (Tons quentes e dourados)">Golden Hour</option>
-                            <option value="Spotlight (Foco dramático no produto)">Spotlight</option>
-                            <option value="Cinematográfica / Volumétrica (Luz entre fumaça)">Cinematográfica</option>
+                            <option value="Direct Flash / Flash Frontal (estética trendy com sombra dura e definida logo atrás do produto)">Direct Flash (Flash Frontal/Trendy)</option>
+                            <option value="Hard Light (Sombras duras e diagonais, alto contraste)">Hard Light (Luz de Sol Forte)</option>
+                            <option value="Studio Softbox (Luz difusa, limpa e uniforme, sem sombras marcadas)">Studio Softbox (Luz Limpa)</option>
+                            <option value="Golden Hour (Tons quentes com sombras longas e orgânicas)">Golden Hour (Fim de tarde)</option>
                         </select>
                     </div>
-                    <div class="gen-item">
-                        <label>Estética</label>
-                        <select id="genEstetica" onchange="gerarTextoPrompt()">
-                            <option value="Minimalista e Clean">Minimalista / Clean</option>
-                            <option value="Lifestyle Urbano Premium">Lifestyle Urbano</option>
-                            <option value="Monocromático (Baseado na embalagem)">Monocromático</option>
-                            <option value="Surrealismo Publicitário 3D">Surrealismo Publicitário</option>
-                            <option value="Mixed Media (Foto + Elementos Manuais)">Mixed Media</option>
-                        </select>
-                    </div>
-                    <div class="gen-item">
-                        <label>Ambientação</label>
-                        <select id="genAmbiente" onchange="gerarTextoPrompt()">
-                            <option value="Fundo Infinito com cor neutra ou degradê">Fundo Infinito Colorido</option>
-                            <option value="Pódios de materiais nobres como mármore ou cimento">Pódios e Pedestais</option>
-                            <option value="Cercado por ingredientes e matérias-primas flutuando ou na base">Ingredientes da Fórmula</option>
-                            <option value="Ambiente de consumo real e sofisticado">Ambiente de Uso Real</option>
-                        </select>
-                    </div>
-                    <div class="gen-item" style="grid-column: span 2;">
-                        <label>Técnicas de Integração</label>
+                    <div class="gen-item" style="grid-column: span 3;">
+                        <label>Técnicas de Composição e Integração</label>
                         <select id="genIntegracao" onchange="gerarTextoPrompt()">
-                            <option value="Sombras projetadas alinhadas com a luz principal e reflexo de contato na superfície">Sombras + Reflexo de Contato</option>
-                            <option value="Profundidade de campo (Bokeh) com o fundo naturalmente desfocado">Fundo Desfocado (Bokeh)</option>
-                            <option value="A iluminação do cenário rebatendo sutilmente nas bordas do produto">Luz Rebatida na Embalagem</option>
+                            <option value="Profundidade de campo dinâmica (Bokeh), mantendo o produto perfeitamente nítido e o fundo/elementos secundários desfocados">Foco no Produto + Fundo Desfocado (POV)</option>
+                            <option value="Enquadramento Flat Lay (visto 100% de cima), organizando elementos e produto de forma geométrica ou preenchendo o quadro">Flat Lay (Vista Superior)</option>
+                            <option value="Sombras projetadas realistas que conectam o produto fisicamente ao cenário e aos outros objetos ao redor">Sombra Projetada + Reflexo de Contato (Estúdio)</option>
                         </select>
                     </div>
                 </div>
@@ -221,32 +223,33 @@
         syncFromGitHub(true);
     }
 
-    // NOVA FUNÇÃO: Gerador de Prompt baseado nas seleções
+    // Gerador de Prompt Versão Ultimate (Lifestyle + Flash + Cestas)
     function gerarTextoPrompt() {
-        // Só gera se não estiver editando um antigo (para não apagar uma edição manual)
-        // Se quiser forçar a geração, comente a linha abaixo.
         if(STATE.editingIdx > -1 && document.getElementById('pText').value.trim() !== '') return;
 
         const qtd = document.getElementById('genQtd').value || "1";
         const formato = document.getElementById('genFormato').value;
-        const angulo = document.getElementById('genAngulo').value;
-        const iluminacao = document.getElementById('genIlum').value;
         const estetica = document.getElementById('genEstetica').value;
+        const interacao = document.getElementById('genInteracao').value;
         const ambiente = document.getElementById('genAmbiente').value;
+        const iluminacao = document.getElementById('genIlum').value;
         const integracao = document.getElementById('genIntegracao').value;
 
-        const pluralProd = qtd > 1 ? "Os produtos anexados" : "O produto anexado";
+        const pluralProd = qtd > 1 ? "os produtos anexados" : "o produto anexado";
         const pluralEles = qtd > 1 ? "deles" : "dele";
-        const pluralElesMaiusculo = qtd > 1 ? "DELES" : "DELE";
 
-        const comando = `Gere uma imagem publicitária no formato ${formato}. ${pluralProd} será posicionado num ângulo ${angulo}. A iluminação será ${iluminacao}. A direção de arte deve seguir o estilo ${estetica}, ambientado em: ${ambiente}. Para garantir extremo realismo de montagem na cena, aplique a seguinte técnica de integração: ${integracao}. 
+        const comando = `Gere uma imagem fotográfica de alta conversão no formato ${formato}, seguindo uma estética ${estetica}. 
 
-DIRETRIZ ABSOLUTA: Utilize a(s) imagem(ns) do(s) ${qtd} produto(s) anexado(s) como base inalterável. É ESTRITAMENTE PROIBIDO modificar o rótulo, o formato da embalagem, a tipografia ou o design original. O foco do motor de geração deve ser exclusivamente na construção do cenário, da iluminação e da ambiência ao redor ${pluralEles}.`;
+Dinâmica da cena: ${interacao}. 
+O ambiente ou contexto onde ${pluralProd} se encontra(m) é: ${ambiente}. 
+A iluminação deve ser rigorosamente no estilo ${iluminacao}. 
+Para garantir um acabamento profissional e coeso, aplique a seguinte técnica de composição: ${integracao}.
+
+DIRETRIZ ABSOLUTA: Utilize a(s) imagem(ns) de referência como base inalterável. É ESTRITAMENTE PROIBIDO modificar o rótulo, o formato da embalagem, a tipografia ou o design original. A inteligência artificial deve atuar apenas na criação do entorno (mãos, roupas, cenário, luz e elementos extras) interagindo de forma realista com ${pluralEles}.`;
 
         document.getElementById('pText').value = comando;
     }
     
-    // Dispara a primeira geração vazia caso o usuário queira já ver a estrutura
     window.onload = function() {
         gerarTextoPrompt();
     }
@@ -420,7 +423,7 @@ DIRETRIZ ABSOLUTA: Utilize a(s) imagem(ns) do(s) ${qtd} produto(s) anexado(s) co
             let imageUrl = STATE.currentImageBase64;
             
             if (imageUrl && imageUrl.startsWith('data:image')) {
-                showToast("Enviando imagem para a pasta prom10...");
+                showToast("Enviando imagem para a nuvem...");
                 imageUrl = await uploadImageToGitHub(imageUrl); 
             }
 
@@ -474,13 +477,13 @@ DIRETRIZ ABSOLUTA: Utilize a(s) imagem(ns) do(s) ${qtd} produto(s) anexado(s) co
         preview.src = p.image;
         preview.style.display = p.image ? 'block' : 'none';
         document.getElementById('btnCancel').style.display = "block";
-        window.scrollTo(0,0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function cancelEdit() {
         STATE.editingIdx = -1;
         document.getElementById('pName').value = "";
-        gerarTextoPrompt(); // Reseta o texto com as configs atuais do gerador
+        gerarTextoPrompt(); 
         STATE.currentImageBase64 = "";
         document.getElementById('pImgPreview').style.display = "none";
         document.getElementById('btnCancel').style.display = "none";
