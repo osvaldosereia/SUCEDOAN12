@@ -107,23 +107,20 @@
 <div id="toast">Pronto!</div>
 
 <script>
-    // 1. Variáveis de Estado da Aplicação
     const GITHUB = {
         token: localStorage.getItem('da_gh_token') || '',
         owner: localStorage.getItem('da_gh_user') || '',
         repo: localStorage.getItem('da_gh_repo') || '',
         path: 'prompts.json',
-        sha: '' // SHA é a "impressão digital" do arquivo no GitHub. Precisamos dela para atualizar o arquivo.
+        sha: ''
     };
 
     const STATE = { prompts: [], editingIdx: -1, currentImageBase64: "" };
 
-    // 2. Preenchendo os campos ao carregar a página
     document.getElementById('ghToken').value = GITHUB.token;
     document.getElementById('ghUser').value = GITHUB.owner;
     document.getElementById('ghRepo').value = GITHUB.repo;
 
-    // 3. Sistema de Auto-save das Credenciais (Robusto)
     function autoSaveConfig() {
         GITHUB.token = document.getElementById('ghToken').value.trim();
         GITHUB.owner = document.getElementById('ghUser').value.trim();
@@ -134,7 +131,6 @@
         localStorage.setItem('da_gh_repo', GITHUB.repo);
     }
 
-    // 4. Teste de conexão manual pelo botão
     function testConnection() {
         autoSaveConfig();
         if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) {
@@ -146,7 +142,7 @@
     const utf8_to_b64 = str => window.btoa(unescape(encodeURIComponent(str)));
     const b64_to_utf8 = str => decodeURIComponent(escape(window.atob(str)));
 
-    // 5. Baixar dados do GitHub (Tratando erros de forma robusta)
+    // A FUNÇÃO CORRIGIDA ESTÁ AQUI
     async function syncFromGitHub(isManualTest = false) {
         if(!GITHUB.token || !GITHUB.owner || !GITHUB.repo) return;
         
@@ -161,35 +157,53 @@
                 } 
             });
             
-            // Se for 404, o arquivo não existe AINDA. Isso é normal em repositórios novos.
             if(res.status === 404) { 
                 STATE.prompts = []; 
-                GITHUB.sha = ''; // Limpamos o SHA para o GitHub saber que é um arquivo novo
+                GITHUB.sha = ''; 
                 render(); 
                 if(isManualTest) showToast("Conectado! Arquivo JSON será criado no primeiro salvamento.");
                 return; 
             }
 
-            // Se der outro erro (ex: token inválido, repositório não existe)
+            // NOVA PROTEÇÃO: Lê a resposta como texto bruto primeiro
+            const responseText = await res.text();
+
             if(!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || "Erro desconhecido");
+                // Tenta ver se o erro que o GitHub enviou tem um formato legível
+                let errorMessage = "Erro desconhecido da API";
+                try {
+                    const errorObj = JSON.parse(responseText);
+                    errorMessage = errorObj.message || errorMessage;
+                } catch(e) {
+                    // Se não for JSON, mostra o texto bruto ou o status
+                    errorMessage = responseText || res.statusText;
+                }
+                throw new Error(errorMessage);
             }
 
-            // Se deu tudo certo
-            const data = await res.json();
+            // Transforma o texto de sucesso em objeto JSON
+            const data = JSON.parse(responseText);
             GITHUB.sha = data.sha;
-            STATE.prompts = JSON.parse(b64_to_utf8(data.content));
+            
+            // NOVA PROTEÇÃO: Verifica se o arquivo não está totalmente vazio
+            if (data.content) {
+                const decodificado = b64_to_utf8(data.content).trim();
+                // Se o texto decodificado não estiver vazio, faz o parse. Senão, inicia array vazio.
+                STATE.prompts = decodificado ? JSON.parse(decodificado) : [];
+            } else {
+                STATE.prompts = [];
+            }
+
             render();
             if(isManualTest) showToast("Conectado e dados carregados!");
 
         } catch (e) { 
             console.error("Erro no GitHub:", e);
-            showToast("Erro de Conexão: " + e.message); 
+            // Mensagem simplificada para facilitar a leitura na tela
+            showToast("Erro: " + (e.message === "Unexpected end of JSON input" ? "Arquivo no GitHub está corrompido/vazio." : e.message)); 
         }
     }
 
-    // 6. Enviar dados para o GitHub (Criando ou Atualizando)
     async function syncToGitHub() {
         if(!GITHUB.token) return showToast("Configure o GitHub antes de salvar!");
         
@@ -201,7 +215,6 @@
                 content: utf8_to_b64(JSON.stringify(STATE.prompts, null, 2))
             };
             
-            // Se o arquivo já existir, mandamos a "impressão digital" (SHA) para o GitHub permitir a substituição
             if(GITHUB.sha) {
                 body.sha = GITHUB.sha;
             }
@@ -221,7 +234,7 @@
             }
 
             const data = await res.json();
-            GITHUB.sha = data.content.sha; // Atualizamos o SHA para o próximo salvamento
+            GITHUB.sha = data.content.sha;
             showToast("Salvo na Nuvem com sucesso!");
         } catch (e) { 
             console.error(e);
@@ -229,7 +242,6 @@
         }
     }
 
-    // 7. Lógica de Super Compressão de Imagens
     function handleImageSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -252,7 +264,7 @@
 
                 let quality = 0.9;
                 let base64 = "";
-                const MAX_BYTE_SIZE = 200 * 1024; // 200KB
+                const MAX_BYTE_SIZE = 200 * 1024;
 
                 do {
                     base64 = canvas.toDataURL('image/jpeg', quality);
@@ -275,7 +287,6 @@
         reader.readAsDataURL(file);
     }
 
-    // 8. Salvar o Prompt no estado local e chamar a sincronização
     async function savePrompt() {
         const name = document.getElementById('pName').value.trim();
         const text = document.getElementById('pText').value.trim();
@@ -290,7 +301,6 @@
         await syncToGitHub();
     }
 
-    // 9. Renderizar (Mostrar) os Prompts na tela
     function render() {
         const gridUI = document.getElementById('gridUI');
         gridUI.innerHTML = STATE.prompts.map((p, i) => `
@@ -309,7 +319,6 @@
         `).join('');
     }
 
-    // Utilitários de interface
     function copyPromptText(i) {
         navigator.clipboard.writeText(STATE.prompts[i].text);
         showToast("Copiado!");
@@ -353,7 +362,6 @@
         setTimeout(() => t.className = "", 3000);
     }
 
-    // Iniciar automaticamente ao abrir a página
     document.addEventListener('DOMContentLoaded', () => syncFromGitHub(false));
 </script>
 </body>
