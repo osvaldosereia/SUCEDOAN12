@@ -3,2093 +3,555 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sucedoan PIM Administrativo</title>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/000000/FFFFFF?text=Sucedoan">
+    <title>Sucedoan - Separação de Pedidos</title>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        /* =========================================================
-           UTILITÁRIOS GERAIS E CORREÇÕES CRÍTICAS
-           ========================================================= */
-        * { box-sizing: border-box; }
-        .hidden { display: none !important; }
-
-        /* =========================================================
-           CSS DO PIM (BASE)
-           ========================================================= */
         :root {
-            --bg-body: #f4f4f5; --bg-card: #ffffff; --text-primary: #0f172a; --text-secondary: #64748b;
-            --accent: #000000; --accent-hover: #27272a; --success: #10b981; --warning: #f59e0b;
-            --danger: #ef4444; --border: #e4e4e7; --radius: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.04);
+            --bg: #f4f4f5; --card: #ffffff; --text: #0f172a; --text-muted: #64748b;
+            --primary: #000000; --success: #10b981; --danger: #ef4444; --border: #e4e4e7;
         }
         
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; -webkit-font-smoothing: antialiased; }
+        /* Ajuste no html/body para o layout elástico funcionar na tela toda */
+        html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
         
-        .app-screen { display: none; flex-direction: column; height: 100vh; width: 100%; overflow: hidden; }
-        .app-screen.active { display: flex; }
+        header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
+        .brand { font-weight: 900; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+        
+        .container { padding: 20px; max-width: 800px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+        
+        #view-pedidos { flex: 1; overflow-y: auto; }
 
-        header { background: #ffffff; min-height: 54px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--border); gap: 15px; z-index: 10; }
-        .brand { font-weight: 900; font-size: 16px; letter-spacing: -0.5px; margin-right: auto; display: flex; align-items: center; gap: 8px; }
-        
-        #queue-status { display:none; align-items:center; gap:6px; font-size:11px; font-weight:800; background:#fffbeb; color:#b45309; padding:6px 12px; border-radius:20px; border:1px solid #fde68a; }
-        
-        .toolbar { padding: 12px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
-        .toolbar-group { display: flex; gap: 8px; align-items: center; }
-        
-        .search-container { position: relative; width: 280px; max-width: 100%; }
-        .search-input { width: 100%; background: #ffffff; border: 1px solid var(--border); padding: 10px 10px 10px 36px; border-radius: 8px; font-size: 12px; font-weight: 600; outline: none; box-shadow: var(--shadow); transition: 0.2s; min-height: 40px; box-sizing: border-box; }
-        .search-input:focus { border-color: var(--accent); }
-        .search-icon { position: absolute; left: 12px; top: 11px; color: #a1a1aa; }
-        
-        .nav-btn { background: #ffffff; border: 1px solid var(--border); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; font-size: 11px; box-shadow: var(--shadow); min-height: 36px; box-sizing: border-box;}
-        .nav-btn:hover:not(:disabled) { background: #f4f4f5; }
-        .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
-        .nav-btn.primary:hover:not(:disabled) { background: var(--accent-hover); }
-        .nav-btn.warning { background: var(--warning); color: white; border-color: var(--warning); }
-        .nav-btn.sync-btn { background: #eff6ff; color: #1e3a8a; border-color: #bfdbfe; }
-        .nav-btn.sync-btn:hover:not(:disabled) { background: #dbeafe; }
-        .nav-btn.success-btn { background: var(--success); color: white; border-color: var(--success); }
-        .nav-btn.success-btn:hover:not(:disabled) { background: #059669; }
-        .nav-btn.bling-btn { background: #e6fffa; color: #047857; border-color: #b9fbc0; }
-        .nav-btn.bling-btn:hover { background: #b9fbc0; }
-        .nav-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .spin-icon { animation: spin 2s linear infinite; }
-
-        #active-filter-banner { display: none; align-items: center; justify-content: space-between; background: #e0f2fe; border: 1px solid #bae6fd; padding: 10px 20px; color: #0369a1; font-weight: 800; font-size: 12px; }
-
-        .main-content { flex-grow: 1; overflow-y: auto; padding: 0 20px 40px 20px; }
-        .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 15px; align-items: start;}
-        
-        .product-card { background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; padding: 15px; gap: 12px; transition: box-shadow 0.2s, transform 0.2s; }
-        .product-card:hover { box-shadow: 0 10px 20px rgba(0,0,0,0.06); border-color: #d4d4d8; }
-        .product-card.inactive { opacity: 0.5; filter: grayscale(1); }
-        
-        .card-mini-input { padding: 6px 8px; font-size: 11px; min-height: 32px; border-radius: 6px; background: #fafafa; border: 1px solid #e4e4e7; width: 100%; box-sizing: border-box; }
-        .card-mini-input:focus { background: #ffffff; border-color: var(--accent); outline: none; }
-        select.card-mini-input { cursor: pointer; text-overflow: ellipsis; appearance: auto; }
-        
-        .card-grid-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .field-group { display: flex; flex-direction: column; gap: 2px; }
-        .field-group label { font-size: 9px; color: var(--text-secondary); font-weight: 800; text-transform: uppercase;}
-
-        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 1000; display: none; opacity: 0; transition: 0.3s; }
-        .sidebar { position: fixed; top: 0; right: 0; max-width: 100%; height: 100vh; background: #ffffff; box-shadow: -10px 0 40px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; z-index: 1005; }
-        .sidebar.open { transform: translateX(0); }
-        
-        #editor-sidebar { z-index: 1011; width: 420px; border-left: 1px solid var(--border); }
-        #config-sidebar { z-index: 1012; width: 380px; }
-        #menu-sidebar { z-index: 1014; width: 300px; }
-        #categorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar, #pedidos-sidebar, #exportacoes-sidebar { z-index: 1015; width: 450px; }
-        
-        .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
-        .sidebar-title { font-size: 14px; font-weight: 900; }
-        .btn-icon { background: #f4f4f5; border: 1px solid var(--border); cursor: pointer; color: var(--text-primary); display: flex; justify-content: center; align-items: center; width: 36px; height: 36px; border-radius: 6px; transition: 0.2s; flex-shrink: 0; }
-        .btn-icon:hover { background: var(--accent); color: white; border-color: var(--accent); }
-        
-        .sidebar-body { padding: 20px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 20px; }
-        .sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; background: #ffffff; }
-
-        .form-section { display: flex; flex-direction: column; gap: 12px; }
-        .section-title { font-size: 10px; font-weight: 900; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
-        
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .form-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-        .form-group.full { grid-column: span 2; }
-        .form-label { font-size: 10px; font-weight: 800; color: var(--text-primary); }
-        .input-wrapper { display: flex; gap: 6px; align-items: stretch; width: 100%; box-sizing: border-box; }
-        
-        .form-input { width: 100%; max-width: 100%; flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 600; background: #fafafa; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; box-sizing: border-box; }
-        .form-input:focus { border-color: var(--accent); background: #ffffff; }
-        select.form-input { appearance: auto; cursor: pointer; }
-        
-        .btn-smart { background: #ffffff; border: 1px solid var(--border); border-radius: 6px; width: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-secondary); transition: 0.2s; flex-shrink: 0; min-height: 36px;}
-        .btn-smart:hover { background: #f4f4f5; border-color: var(--accent); color: var(--accent); }
-
-        canvas { background: #fafafa; width: 100%; aspect-ratio: 1; display: block; cursor: grab; border-bottom: 1px solid var(--border); }
-        .editor-controls { padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .slider-group { display: flex; align-items: center; gap: 12px; }
-        .slider-group label { width: 16px; color: var(--text-secondary); display: flex; justify-content: center;}
-        input[type=range] { flex-grow: 1; accent-color: var(--accent); }
-
-        #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 10px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .alerta-erro { background-color: var(--danger); } .alerta-sucesso { background-color: var(--success); } .alerta-aviso { background-color: var(--warning); color: #000; }
-
-        .mobile-only { display: none !important; }
-
-        @media (max-width: 1200px) { .card-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 768px) {
-            .desktop-only { display: none !important; }
-            .mobile-only { display: flex !important; }
-            header { padding: 10px 15px; flex-wrap: nowrap; justify-content: space-between; }
-            .toolbar { padding: 10px 15px; flex-wrap: nowrap; }
-            .toolbar-group { width: 100%; justify-content: space-between; }
-            .search-container { width: 100%; flex-grow: 1; }
-            .search-input { width: 100%; }
-            .main-content { padding: 10px; }
-            .card-grid { grid-template-columns: 1fr; gap: 10px; }
-            .menu-sidebar-btn { width: 100%; height: 42px; margin-bottom: 8px; justify-content: flex-start; font-size: 12px; }
+        /* Nova estrutura para a visualização de separação com tela cheia */
+        #view-separacao {
+            display: none; /* Alterado via JS para flex */
+            flex-direction: column;
+            position: fixed;
+            top: 0; /* Atualizado para 0 pois o cabeçalho principal será escondido */
+            left: 0; right: 0; bottom: 0;
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--bg);
+            z-index: 20; /* Elevado para garantir que cubra a tela */
+            padding: 0; 
         }
 
-        /* =========================================================
-           CSS DO EDITOR DE TEXTO RICO (NOVIDADE)
-           ========================================================= */
-        .rich-text-editor { min-height: 80px; max-height: 200px; overflow-y: auto; background: #fafafa; border: 1px solid var(--border); border-radius: 0 0 6px 6px; padding: 8px; font-size: 12px; font-weight: normal; color: var(--text-primary); }
-        .rich-text-editor:focus { background: #ffffff; border-color: var(--accent); outline: none; }
-        .rich-text-editor a { color: #0284c7; text-decoration: underline; cursor: pointer; }
-        .rich-text-editor ul { margin: 4px 0; padding-left: 20px; }
-        .rich-text-toolbar { display: flex; gap: 4px; padding: 4px; background: #e4e4e7; border: 1px solid var(--border); border-bottom: none; border-radius: 6px 6px 0 0; }
-        .editor-btn { background: #fff; border: 1px solid #d4d4d8; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; padding: 4px 8px; display: flex; align-items: center; justify-content: center; color: var(--text-primary); transition: 0.2s;}
-        .editor-btn:hover { background: #f4f4f5; border-color: var(--accent); }
-        .desc-chip { display: inline-block; background: var(--accent); color: white !important; padding: 2px 8px; border-radius: 12px; font-size: 10px; text-decoration: none !important; margin: 2px; font-weight: 600; cursor: pointer;}
+        .separacao-header {
+            padding: 10px 20px; /* Mais estreita */
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #lista-itens {
+            flex: 1;
+            overflow-y: auto;
+            scroll-snap-type: y mandatory; /* Efeito elástico vertical */
+            padding: 20px;
+            scroll-behavior: smooth;
+            padding-bottom: 50px;
+        }
+
+        button { font-family: 'Inter', sans-serif; border: none; border-radius: 8px; cursor: pointer; font-weight: 800; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-config { background: transparent; color: white; padding: 8px; }
+        .btn-action { background: var(--primary); color: white; padding: 12px; width: 100%; font-size: 14px; }
+        .btn-success { background: var(--success); color: white; padding: 12px; width: 100%; font-size: 14px; }
+        .btn-danger { background: var(--danger); color: white; padding: 10px 15px; font-size: 13px; }
+
+        #acao-selecao { display: none; background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 15px; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        
+        .order-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.02); position: relative; }
+        .order-card:active { transform: scale(0.99); }
+        .order-card.concluido { opacity: 0.7; border-color: var(--success); background: #ecfdf5; }
+        
+        .checkbox-container { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
+        .checkbox-container input { width: 20px; height: 20px; cursor: pointer; }
+
+        .order-content { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+        .order-id { font-size: 18px; font-weight: 900; }
+        .order-date { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 600;}
+        .badge { background: #fef08a; color: #854d0e; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; display: inline-block; }
+
+        /* Ajustes no item-card para ocupar a tela e forçar o snap */
+        .item-card { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            border-radius: 12px; 
+            overflow: hidden; 
+            margin-bottom: 30px; 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            scroll-snap-align: center; /* Para perfeitamente no meio da tela */
+            scroll-snap-stop: always;
+            height: 80vh; /* Ocupa 80% da altura da tela */
+        }
+        .item-card.separado { opacity: 0.5; border-color: var(--success); }
+        .item-card.separado .item-img { filter: grayscale(100%); }
+        
+        .item-img { 
+            flex: 1; /* Pede para a imagem ocupar todo o espaço restante */
+            width: 100%; 
+            object-fit: contain; /* Mostra a imagem inteira sem cortar, a maior possível */
+            background: #fafafa; 
+            border-bottom: 1px solid var(--border); 
+            min-height: 0; /* Essencial para flexbox não quebrar o layout */
+        }
+        .item-info { 
+            flex-shrink: 0; /* Impede que a parte das informações encolha */
+            padding: 15px; 
+        }
+        .item-title { font-size: 18px; font-weight: 900; margin: 0 0 15px 0; line-height: 1.2; }
+        
+        .ean-display { background: #f1f5f9; color: var(--text); padding: 12px; border-radius: 8px; font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 15px; border: 1px dashed #cbd5e1; letter-spacing: 2px; }
+
+        .qty-highlight { background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; font-size: 32px; font-weight: 900; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: -1px; }
+
+        .item-meta { display: flex; justify-content: space-between; background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e2e8f0; }
+        .meta-box { text-align: center; flex: 1; }
+        .meta-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 800; }
+        .meta-value { font-size: 18px; font-weight: 900; color: var(--primary); }
+
+        #config-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; }
+        .modal-content input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter'; font-weight: 600;}
+        
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
-<body id="body-app">
+<body>
 
-    <script>
-        const STORAGE_KEY = 'sucedoan_pim_v37'; 
-        const CONFIG_KEY = 'sucedoan_config';
-        const CATEGORIAS_KEY = 'sucedoan_categorias'; 
-        const MARCAS_KEY = 'sucedoan_marcas';
-        const TAGS_KEY = 'sucedoan_tags_globais'; 
-        
-        let categoriasDoSistema = []; 
-        let marcasDoSistema = [];
-        let tagsDoSistema = []; 
-        let filtroAtivo = { tipo: null, valor: null };
-        let advancedFilters = { cat: '', sub: '', subsub: '', marca: '', ncm: '', stock: '', validade: '', tag: '' };
-        
-        let ultimoTermoPesquisa = "";
-        
-        localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
-    </script>
-
-    <div id="alerta-customizado">Mensagem</div>
-
-    <div id="modal-foto-full" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; padding:15px; box-sizing:border-box;">
-        <div style="flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-            <img id="img-full" src="" style="max-width:100%; max-height:100%; object-fit:contain;">
+    <header>
+        <div class="brand"><i data-lucide="package-check"></i> Separação</div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-config" onclick="buscarPedidos()"><i data-lucide="refresh-cw"></i></button>
+            <button class="btn-config" onclick="abrirConfig()"><i data-lucide="settings"></i></button>
         </div>
-        <button class="nav-btn" style="padding:25px; font-size:22px; margin-top:15px; font-weight:900; background: var(--danger); color: white;" onclick="fecharFotoTelaCheia()">❌ FECHAR FOTO</button>
+    </header>
+
+    <div class="container" id="view-pedidos">
+        <div id="acao-selecao">
+            <span id="txt-selecionados" style="font-weight: 800; font-size: 14px;">0 selecionados</span>
+            <button class="btn-danger" onclick="excluirSelecionados()"><i data-lucide="trash-2"></i> Excluir do GitHub</button>
+        </div>
+
+        <div id="lista-pedidos">Carregando pedidos...</div>
     </div>
 
-    <div id="pim-screen" class="app-screen active">
-        <header>
-            <div class="brand"><i data-lucide="boxes" size="20"></i> SUCEDOAN PIM</div>
-            <div id="queue-status"></div>
-            
-            <button class="nav-btn desktop-only success-btn" onclick="openSidebar('pedidos-sidebar')"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO</button>
-            <button class="nav-btn desktop-only" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DADOS DA NUVEM</button>
-            
-            <button class="btn-icon mobile-only" onclick="openSidebar('menu-sidebar')"><i data-lucide="menu" size="20"></i></button>
-        </header>
-
-        <div class="toolbar">
-            <div class="toolbar-group" style="flex-grow: 1;">
-                <div class="search-container">
-                    <i data-lucide="search" class="search-icon"></i>
-                    <input type="text" class="search-input" id="search-input" placeholder="Procurar por SKU, Nome ou EAN...">
-                </div>
-                <button class="nav-btn" style="color: #0284c7; border-color: #bae6fd; background: #e0f2fe;" onclick="openSidebar('filtros-sidebar'); renderizarFiltrosAvancados();">
-                    <i data-lucide="filter" size="14"></i> FILTROS
-                </button>
-                <button class="nav-btn desktop-only" id="btn-24h" onclick="toggleFilter24h()" title="Mostrar produtos adicionados/editados nas últimas 24h">
-                    <i data-lucide="clock" size="14"></i> ÚLTIMAS 24H
-                </button>
-            </div>
-            
-            <div class="toolbar-group desktop-only">
-                <button class="nav-btn sync-btn" onclick="openSidebar('menu-sidebar')" title="Gerir Listas">
-                    <i data-lucide="list" size="14"></i> GERIR LISTAS DE SELETORES
-                </button>
-                <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
-            </div>
-        </div>
-
-        <div id="active-filter-banner">
-            <span>Filtro Ativo: <span id="filter-text-display" style="text-transform: capitalize;"></span></span>
-            <button class="nav-btn" style="height: 28px; border-color: #0284c7; color: #0284c7;" onclick="limparFiltroGrid()"><i data-lucide="x" size="12"></i> LIMPAR FILTRO</button>
-        </div>
-        
-        <div class="main-content" id="main-content-pim">
-            <div class="card-grid" id="product-grid"></div>
-            <div id="load-more-container" style="text-align: center; margin-top: 30px; margin-bottom: 20px; display: none;">
-                <button class="nav-btn primary" style="padding: 12px 30px; font-size: 14px; margin: 0 auto; min-width: 250px; justify-content: center;" onclick="carregarMaisCards()">
-                    <i data-lucide="chevron-down" size="18"></i> VER MAIS 3 PRODUTOS
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeAllSidebars()"></div>
-
-    <div id="modal-meta-export" class="sidebar-overlay" style="display:none; align-items:center; justify-content:center; z-index: 10000; opacity:1;">
-        <div style="background: white; padding: 20px; border-radius: 12px; width: 95%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
-            <h3 style="margin: 0; font-size: 16px; color: var(--accent);">Exportar Catálogo Meta</h3>
-            
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <button class="nav-btn primary" style="justify-content:center; height: 44px;" onclick="gerarCSVMetaCompleto()">
-                    <i data-lucide="database" size="16"></i> EXPORTAR TUDO (ÚNICO ARQUIVO)
-                </button>
-                <div style="display: flex; gap: 8px;">
-                    <button class="nav-btn success-btn" style="flex:1; justify-content:center; height: 40px;" onclick="gerarCSVMetaFila('categoria')">
-                        <i data-lucide="folder-output" size="14"></i> TODAS AS CATEGORIAS
-                    </button>
-                    <button class="nav-btn success-btn" style="flex:1; justify-content:center; height: 40px;" onclick="gerarCSVMetaFila('marca')">
-                        <i data-lucide="tags" size="14"></i> TODAS AS MARCAS
-                    </button>
-                </div>
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="nav-btn" style="flex:1; justify-content:center; height:40px;" onclick="fecharModalExportacaoMeta()">FECHAR MÓDULO</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="sidebar" id="menu-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Menu Administrativo</div>
-            <button class="btn-icon" onclick="closeSidebar('menu-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body">
-            <div class="form-section">
-                <div class="section-title">Ações</div>
-                <button class="nav-btn primary menu-sidebar-btn" onclick="createNewProduct(); closeSidebar('menu-sidebar');"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="cloud" size="14"></i> DEFINIÇÕES E GITHUB</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('pedidos-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="abrirGerenciadorExportacoes()"><i data-lucide="folder-open" size="14"></i> ARQUIVOS EXPORTADOS (NUVEM)</button>
-            </div>
-            <div class="form-section" style="margin-top: 15px;">
-                <div class="section-title">Gestão de Seletores</div>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('categorias-sidebar'); renderizarSidebarCategorias(); closeSidebar('menu-sidebar');"><i data-lucide="folder-tree" size="14"></i> CATEGORIAS E SUBS</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('marcas-sidebar'); renderizarCRUD(marcasDoSistema, 'marcas-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="tag" size="14"></i> MARCAS</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('tags-sidebar'); renderizarCRUD(tagsDoSistema, 'tags-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="hash" size="14"></i> TAGS GLOBAIS</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="sidebar" id="categorias-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Gestão de Categorias e Subs</div>
-            <button class="btn-icon" onclick="closeSidebar('categorias-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body" id="lista-categorias-container" style="gap:10px;"></div>
-        <div class="sidebar-footer">
-            <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovaCategoria()"><i data-lucide="plus" size="14"></i> NOVA CATEGORIA PRINCIPAL</button>
-        </div>
-    </div>
-
-    <div class="sidebar" id="exportacoes-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Arquivos no GitHub</div>
-            <button class="btn-icon" onclick="closeSidebar('exportacoes-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body" id="lista-exportacoes-github">
-            <p style="text-align:center; font-size:12px; color:var(--text-secondary);">Clique em atualizar para ver os arquivos.</p>
-        </div>
-        <div class="sidebar-footer">
-            <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="listarArquivosExportados()"><i data-lucide="refresh-cw" size="14"></i> ATUALIZAR LISTA</button>
-        </div>
-    </div>
-    
-    <div class="sidebar" id="marcas-sidebar"><div class="sidebar-header"><div class="sidebar-title">Gestão de Marcas</div><button class="btn-icon" onclick="closeSidebar('marcas-sidebar')"><i data-lucide="x" size="16"></i></button></div><div class="sidebar-body" id="lista-marcas-sidebar"></div><div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovoItem(marcasDoSistema, MARCAS_KEY, 'marcas-sidebar')"><i data-lucide="plus" size="14"></i> NOVA MARCA</button></div></div>
-    
-    <div class="sidebar" id="tags-sidebar"><div class="sidebar-header"><div class="sidebar-title">Gestão de Tags Globais</div><button class="btn-icon" onclick="closeSidebar('tags-sidebar')"><i data-lucide="x" size="16"></i></button></div><div class="sidebar-body" id="lista-tags-sidebar"></div><div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovoItem(tagsDoSistema, TAGS_KEY, 'tags-sidebar')"><i data-lucide="plus" size="14"></i> NOVA TAG GLOBAL</button></div></div>
-    
-    <div class="sidebar" id="pedidos-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Baixar Pedido por Texto</div>
-            <button class="btn-icon" onclick="closeSidebar('pedidos-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body">
-            <div class="form-section">
-                <div class="section-title">Texto do Pedido</div>
-                <p style="font-size: 11px; color: var(--text-secondary);">Cole o texto do pedido abaixo. O sistema abaterá o estoque.</p>
-                <textarea id="order-text-input" class="form-input" style="height: 300px; font-family: monospace; font-size: 12px;"></textarea>
-            </div>
-        </div>
-        <div class="sidebar-footer">
-            <button class="nav-btn success-btn" style="width:100%; height:44px; justify-content:center;" onclick="processarBaixaPedidoTexto()">ABATER ESTOQUE</button>
-        </div>
-    </div>
-
-    <div class="sidebar" id="filtros-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Filtros Avançados</div>
-            <button class="btn-icon" onclick="closeSidebar('filtros-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body">
-            <div class="form-section">
-                <div class="form-group"><label class="form-label">Categoria</label><select class="form-input" id="flt-cat" onchange="atualizarSubcatsFiltro(this.value)"></select></div>
-                <div class="form-group"><label class="form-label">Subcategoria</label><select class="form-input" id="flt-sub" onchange="atualizarSubSubcatsFiltro(document.getElementById('flt-cat').value, this.value)"><option value="">Todas as Subcategorias</option></select></div>
-                <div class="form-group"><label class="form-label">Sub-subcategoria</label><select class="form-input" id="flt-subsub"><option value="">Todas as Sub-subcategorias</option></select></div>
-                <div class="form-group"><label class="form-label">Marca</label><select class="form-input" id="flt-marca"></select></div>
-                <div class="form-group"><label class="form-label">Tag Global</label><select class="form-input" id="flt-tag"></select></div>
-                <div class="form-group"><label class="form-label">Estoque</label>
-                    <select class="form-input" id="flt-stock">
-                        <option value="">Todos</option><option value="zero">Estoque = 0</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-        <div class="sidebar-footer" style="flex-direction: column; gap: 8px;">
-            <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="aplicarFiltrosAvancados()">APLICAR FILTROS</button>
-            <button class="nav-btn bling-btn" style="width:100%; height:44px; justify-content:center;" onclick="exportarCategoriaBling()">
-                <i data-lucide="download" size="14"></i> EXPORTAR ESTA CATEGORIA (BLING)
+    <div id="view-separacao">
+        <div class="separacao-header">
+            <button style="background: transparent; color: var(--text-muted); padding: 0; display: flex; align-items: center;" onclick="voltarParaPedidos()">
+                <i data-lucide="arrow-left"></i>
             </button>
+            <h2 id="titulo-pedido-ativo" style="font-weight: 900; font-size: 18px; margin: 0;">Pedido #...</h2>
         </div>
+        <div id="lista-itens"></div>
     </div>
 
-    <div class="sidebar" id="editor-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Ajuste de Imagem (1 por Produto)</div>
-            <button class="btn-icon" onclick="closeSidebar('editor-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div style="flex-grow: 1; overflow-y: auto;">
-            <canvas id="imageCanvas" width="420" height="420"></canvas>
-            <div class="editor-controls">
-                <div class="slider-group"><label title="Zoom"><i data-lucide="zoom-in" size="14"></i></label><input type="range" id="zoomRange" min="0.1" max="3" step="0.01" value="1"></div>
-                <div class="slider-group"><label title="Brilho"><i data-lucide="sun" size="14"></i></label><input type="range" id="brightnessRange" min="0.1" max="2" step="0.05" value="1"></div>
-                <div class="slider-group"><label title="Nitidez"><i data-lucide="focus" size="14"></i></label><input type="range" id="sharpenRange" min="0" max="5" step="0.1" value="0"></div>
-                <div style="font-size:10px; text-align:center; color:var(--text-secondary); margin-top:5px;">Dica: Ctrl+V para colar uma foto da internet</div>
-            </div>
-        </div>
-        <div class="sidebar-footer">
-            <input type="file" id="fileInput" style="display:none" accept="image/*">
-            <button class="nav-btn" style="flex:1; height:44px;" onclick="document.getElementById('fileInput').click()"><i data-lucide="folder-search" size="14"></i> PC</button>
-            <button class="nav-btn primary" style="flex:2; height:44px;" onclick="saveImageToQueue()"><i data-lucide="save" size="14"></i> APLICAR FOTO</button>
-        </div>
-    </div>
-
-    <div class="sidebar" id="config-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Configuração & Dados</div>
-            <button class="btn-icon" onclick="closeSidebar('config-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body" style="gap:16px;">
-            <div class="form-section">
-                <div class="section-title">Salvar e Sincronizar</div>
-                <button class="nav-btn sync-btn" style="height:40px; justify-content:center; margin-bottom: 8px;" onclick="salvarProdutosJSON()">
-                    <i data-lucide="database" size="14"></i> 1. SALVAR JSON NO GITHUB
-                </button>
-                <button class="nav-btn" style="height:40px; justify-content:center;" onclick="uploadImagens()">
-                    <i data-lucide="image-up" size="14"></i> 2. ENVIAR IMAGENS DA FILA <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px; margin-left:4px;">(0)</span>
-                </button>
-                <button class="nav-btn" style="height:40px; justify-content:center; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="fetchFromGithub()">
-                    <i data-lucide="cloud-download" size="14"></i> 3. ATUALIZAR LOCAL DA NUVEM
-                </button>
-            </div>
-
-            <div class="form-section" style="margin-top:10px;">
-                <div class="section-title">Exportação Bling ERP</div>
-                <button class="nav-btn bling-btn" style="height:44px; justify-content:center; font-weight: 900;" onclick="exportarTudoBling()">
-                    <i data-lucide="file-spreadsheet" size="18"></i> EXPORTAR BANCO COMPLETO (BLING CSV)
-                </button>
-                <p style="font-size: 9px; color: var(--text-secondary); text-align: center; margin: 0;">Gera arquivo compatível com 59 colunas do Bling.</p>
-            </div>
-
-            <div class="form-section" style="margin-top:10px;">
-                <div class="section-title">Integração Externa</div>
-                
-                <input type="file" id="csv-file-substituir" accept=".csv" style="display:none">
-                <button class="nav-btn" style="height:40px; justify-content:center; color: var(--danger); border-color: #fecaca;" onclick="document.getElementById('csv-file-substituir').click()">IMPORTAR CSV (SUBSTITUIR TUDO)</button>
-                
-                <input type="file" id="csv-file-atualizar" accept=".csv" style="display:none">
-                <button class="nav-btn success-btn" style="height:40px; justify-content:center; margin-top:5px;" onclick="document.getElementById('csv-file-atualizar').click()">
-                    <i data-lucide="upload-cloud" size="14"></i> IMPORTAR (ATUALIZAR / ADICIONAR)
-                </button>
-                
-                <button class="nav-btn primary" style="height:40px; justify-content:center; margin-top:5px;" onclick="abrirModalExportacaoMeta()">EXPORTAR CATÁLOGO META</button>
-                <button class="nav-btn success-btn" style="height:40px; justify-content:center; margin-top:5px;" onclick="exportarCatalogoGeral()">EXPORTAR CATÁLOGO GERAL</button>
-            </div>
-            <div class="form-section" style="margin-top:10px; border-top: 1px dashed var(--border); padding-top: 15px;">
-                <div class="section-title">Credenciais GitHub</div>
-                <div class="form-group"><label class="form-label">Token</label><input type="password" id="cfg-token" class="form-input"></div>
-                <div class="form-group"><label class="form-label">Utilizador</label><input type="text" id="cfg-user" class="form-input"></div>
-                <div class="form-group"><label class="form-label">Repositório</label><input type="text" id="cfg-repo" class="form-input"></div>
-                <button class="nav-btn primary" style="height:44px; justify-content:center; margin-top:5px;" onclick="saveConfig()">GUARDAR CREDENCIAIS</button>
-            </div>
-
-            <div class="form-section" style="margin-top:15px;">
-                <div class="section-title">Ações de Manutenção</div>
-                <button class="nav-btn" style="width:100%; height:44px; justify-content:center; color:var(--warning); border-color:#fde68a; margin-top: 10px;" onclick="executarLimpezaImagens()">
-                    <i data-lucide="trash-2" size="14"></i> 8. LIMPEZA INTELIGENTE (APAGAR FOTOS SEM USO DO GITHUB)
-                </button>
-            </div>
-        </div>
-        <div class="sidebar-footer">
-            <button class="nav-btn" style="width:100%; height:44px; justify-content:center; color:var(--danger); border-color:#fecaca;" onclick="limparSistema()"><i data-lucide="trash-2" size="14"></i> APAGAR BASE DE DADOS LOCAL</button>
+    <div id="config-modal">
+        <div class="modal-content">
+            <h3 style="margin:0; font-weight:900;">Credenciais GitHub</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Insira os mesmos dados do Sucedoan PIM.</p>
+            <input type="text" id="cfg-user" placeholder="Usuário GitHub">
+            <input type="text" id="cfg-repo" placeholder="Repositório">
+            <input type="password" id="cfg-token" placeholder="Token de Acesso (ghp_...)">
+            <button class="btn-action" onclick="salvarConfig()" style="margin-top: 10px;">Salvar e Recarregar</button>
+            <button class="btn-action" onclick="fecharConfig()" style="background: var(--border); color: var(--text);">Cancelar</button>
         </div>
     </div>
 
     <script>
-        // ==========================================================
-        // VARIÁVEIS GLOBAIS DO PIM
-        // ==========================================================
-        let products = [];
-        let currentEditingSku = null;
-        let imageQueue = [];
+        function encodeBase64(str) { return btoa(new TextEncoder().encode(str).reduce((d, b) => d + String.fromCharCode(b), '')); }
+        function decodeBase64(b64) { return new TextDecoder('utf-8').decode(Uint8Array.from(atob(b64.replace(/\s/g, '')), c => c.charCodeAt(0))); }
 
-        // Variáveis de Paginação
-        let produtosFiltrados = [];
-        let itemsCarregados = 0;
-        const ITENS_POR_PAGINA = 3; 
-
-        // ==========================================================
-        // FUNÇÕES GERAIS E OPÇÕES
-        // ==========================================================
-        function limparTexto(texto) {
-            if (!texto) return "";
-            return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
+        // --- INÍCIO: NOVAS FUNÇÕES DE BACKUP DE CREDENCIAIS ---
+        function salvarCookie(nome, valor, dias) {
+            let data = new Date();
+            data.setTime(data.getTime() + (dias * 24 * 60 * 60 * 1000));
+            let expiracao = "expires=" + data.toUTCString();
+            document.cookie = nome + "=" + valor + ";" + expiracao + ";path=/";
         }
 
-        // Funções de Pesquisa no Google
-        window.searchGoogleNCM = function(nome) { 
-            if(!nome) return; 
-            window.open(`https://www.google.com/search?q=NCM+${encodeURIComponent(nome)}`, '_blank'); 
-        }
-        window.searchGoogleHD = function(nome) { 
-            if(!nome) return; 
-            window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nome)}&tbs=isz:l`, '_blank'); 
-        }
-        window.searchGoogleShopping = function(nome) { 
-            if(!nome) return; 
-            window.open(`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(nome)}`, '_blank'); 
-        }
-
-        window.searchYoutube = function(nome) { 
-            if(!nome) return; 
-            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(nome)}`, '_blank'); 
-        }
-
-        window.searchGoogleInfo = function(nome) { 
-            if(!nome) return; 
-            window.open(`https://www.google.com/search?q=${encodeURIComponent(nome + " pesquise em sites especializados e traga um breve review sobre o produto. Inclua as informações mais relevantes para exclarecer duvidas e convencer o cliente a comprar o produto. Retire os links e valores da resposta.")}`, '_blank'); 
-        }
-
-        // ==========================================================
-        // GESTOR DE COMUNICAÇÃO COM GITHUB
-        // ==========================================================
-        const GitHubAPI = {
-            getConfig: async function() {
-                const cfg = await localforage.getItem(CONFIG_KEY);
-                if (!cfg || !cfg.token || !cfg.user || !cfg.repo) {
-                    alert("Atenção: Configure as credenciais da API na aba 'Definições' primeiro!");
-                    return null;
-                }
-                return cfg;
-            },
-            getHeaders: function(cfg) {
-                return { "Authorization": `Bearer ${cfg.token}`, "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" };
-            },
-            
-            encodeUTF8toBase64: function(str) {
-                const bytes = new TextEncoder().encode(str);
-                let binString = '';
-                const chunkSize = 8192;
-                for (let i = 0; i < bytes.length; i += chunkSize) {
-                    const chunk = bytes.subarray(i, i + chunkSize);
-                    binString += String.fromCharCode.apply(null, chunk);
-                }
-                return btoa(binString);
-            },
-            
-            decodeBase64toUTF8: function(base64) {
-                const cleanBase64 = base64.replace(/\s/g, ''); 
-                const binString = atob(cleanBase64);
-                const bytes = new Uint8Array(binString.length);
-                for (let i = 0; i < binString.length; i++) {
-                    bytes[i] = binString.charCodeAt(i);
-                }
-                return new TextDecoder('utf-8').decode(bytes); 
-            },
-
-            getFileData: async function(path) {
-                const cfg = await this.getConfig();
-                if (!cfg) throw new Error("Credenciais ausentes");
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                const res = await fetch(url, { headers: this.getHeaders(cfg), cache: "no-store" });
-                if (res.status === 404) return null; 
-                if (!res.ok) throw new Error(`Falha ao ler ${path}`);
-                return await res.json();
-            },
-            saveFile: async function(path, content, message, isBase64Ready = false) {
-                const cfg = await this.getConfig();
-                if (!cfg) throw new Error("Credenciais ausentes");
-                let sha = null;
-                try { const existingFile = await this.getFileData(path); if (existingFile) sha = existingFile.sha; } catch(e) {}
-                
-                let finalBase64 = content;
-                if (!isBase64Ready) {
-                    const contentStr = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
-                    finalBase64 = this.encodeUTF8toBase64(contentStr); 
-                }
-                
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                const body = { message: message, content: finalBase64 };
-                if (sha) body.sha = sha;
-                
-                const res = await fetch(url, { method: 'PUT', headers: this.getHeaders(cfg), body: JSON.stringify(body) });
-                if (!res.ok) { const errorData = await res.json(); throw new Error(`Erro do GitHub: ${errorData.message}`); }
-                return await res.json();
+        function lerCookie(nome) {
+            let nomeEq = nome + "=";
+            let cookies = document.cookie.split(';');
+            for(let i = 0; i < cookies.length; i++) {
+                let c = cookies[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nomeEq) == 0) return c.substring(nomeEq.length, c.length);
             }
+            return null;
+        }
+        // --- FIM: NOVAS FUNÇÕES DE BACKUP ---
+
+        let cfg = null;
+        let fileSha = null;
+        let todosOsPedidos = [];
+        let pedidoAtivo = null;
+        let idsSelecionados = new Set();
+
+        window.onload = () => {
+            lucide.createIcons();
+            carregarConfig();
         };
 
-        // ==========================================================
-        // SISTEMA DE FILA E SALVAMENTO OTIMIZADO
-        // ==========================================================
-        let syncQueue = [];
-        let isSyncing = false;
-        let countdownTimer = 0;
-        let countdownInterval = null;
-
-        function renderQueueStatus() {
-            const el = document.getElementById('queue-status');
-            if (!el) return;
-            if (isSyncing && countdownTimer > 0) {
-                el.style.display = 'flex';
-                el.innerHTML = `<i data-lucide="loader" size="14"></i> <span>Espera <b>${countdownTimer}s</b></span>`;
-                lucide.createIcons();
-            } else if (isSyncing && countdownTimer === 0) {
-                el.style.display = 'flex';
-                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>Enviando Nuvem...</span>`;
-                lucide.createIcons();
-            } else if (syncQueue.length > 0) {
-                el.style.display = 'flex';
-                el.innerHTML = `<i data-lucide="list" size="14"></i> <span>Fila: ${syncQueue.length}</span>`;
-                lucide.createIcons();
-            } else {
-                el.style.display = 'none';
-            }
-        }
-
-        function startQueueCountdown(duration) {
-            if (countdownInterval) clearInterval(countdownInterval);
-            countdownTimer = duration;
-            isSyncing = true;
-            renderQueueStatus();
-            countdownInterval = setInterval(() => {
-                countdownTimer--;
-                renderQueueStatus();
-                if (countdownTimer <= 0) { clearInterval(countdownInterval); executeNextInQueue(); }
-            }, 1000);
-        }
-
-        async function executeNextInQueue() {
-            if (syncQueue.length === 0) { isSyncing = false; renderQueueStatus(); return; }
-            const task = syncQueue.shift();
-            isSyncing = true; countdownTimer = 0; renderQueueStatus();
-            try { await task.fn(); mostrarAlerta(`✅ ${task.name} processado!`, 'sucesso'); } 
-            catch (e) { mostrarAlerta(`❌ Erro em ${task.name}`, 'erro'); }
-            processQueueLoop();
-        }
-
-        function processQueueLoop() {
-            if (syncQueue.length === 0) { 
-                isSyncing = false; 
-                renderQueueStatus(); 
-                return; 
-            }
-            // Alterado de 50 para 90 segundos conforme instrução
-            startQueueCountdown(90);
-        }
-
-        async function enqueueTask(taskName, taskFn) {
-            await saveDataLocally(); 
-            syncQueue.push({ name: taskName, fn: taskFn });
-            if (!isSyncing) processQueueLoop();
-            else { renderQueueStatus(); }
-        }
-
-       function sanitizeProductsForExport(prods) {
-            const camposPermitidos = [
-                'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
-                'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
-                'subcategoria', 'subsubcategoria', 'marca', 'embalagem', 'tag_global', 
-                'link_youtube', 'last_update', 'url_imagem', 'gondola', 'prateleira', 'localizacao', 'descricao'
-            ];
-            return prods.map(p => {
-                let cleanP = {};
-                camposPermitidos.forEach(campo => {
-                    if (p[campo] !== undefined && p[campo] !== null) {
-                        cleanP[campo] = p[campo];
-                        if (campo === 'url_imagem' && typeof p[campo] === 'string' && p[campo].startsWith('data:image')) cleanP[campo] = "";
-                        else if (campo === 'url_imagem' && typeof p[campo] === 'string') cleanP[campo] = p[campo].split('?')[0]; 
+        function carregarConfig() {
+            try {
+                let configSalva = localStorage.getItem('separador_config');
+                if (!configSalva) {
+                    configSalva = lerCookie('separador_config_bkp');
+                    if (configSalva) {
+                        localStorage.setItem('separador_config', configSalva);
                     }
-                });
+                }
+                cfg = configSalva ? JSON.parse(configSalva) : null;
+            } catch (erro) { 
+                console.error("Erro ao carregar dados:", erro); 
+                cfg = null; 
+            }
+            
+            if (!cfg || !cfg.token) { abrirConfig(); } else { buscarPedidos(); }
+        }
 
-                if (Array.isArray(cleanP.tag_global)) {
-                    cleanP.tag_global = cleanP.tag_global.filter(t => tagsDoSistema.includes(t));
+        function abrirConfig() {
+            document.getElementById('cfg-user').value = cfg ? cfg.user : '';
+            document.getElementById('cfg-repo').value = cfg ? cfg.repo : '';
+            document.getElementById('cfg-token').value = cfg ? cfg.token : '';
+            document.getElementById('config-modal').style.display = 'flex';
+        }
+
+        function fecharConfig() { document.getElementById('config-modal').style.display = 'none'; }
+
+        function salvarConfig() {
+            const user = document.getElementById('cfg-user').value.trim();
+            const repo = document.getElementById('cfg-repo').value.trim();
+            const token = document.getElementById('cfg-token').value.trim();
+            if (!user || !repo || !token) { alert("Preencha tudo!"); return; }
+            
+            cfg = { user, repo, token };
+            const configString = JSON.stringify(cfg);
+            
+            localStorage.setItem('separador_config', configString);
+            salvarCookie('separador_config_bkp', configString, 365);
+            
+            fecharConfig(); 
+            buscarPedidos();
+        }
+
+        function obterUrlSemCache(caminho) {
+            const timestamp = new Date().getTime();
+            return `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${caminho}?t=${timestamp}`;
+        }
+
+        async function buscarPedidos() {
+            document.getElementById('lista-pedidos').innerHTML = '<div style="text-align:center; padding: 20px;"><i data-lucide="loader" class="spin"></i> Buscando versão atualizada...</div>';
+            lucide.createIcons();
+            idsSelecionados.clear();
+            atualizarBarraAcoes();
+
+            try {
+                const url = obterUrlSemCache('site/pedidoseparar.json');
+                const res = await fetch(url, { 
+                    headers: { 
+                        "Authorization": `Bearer ${cfg.token}`, 
+                        "Accept": "application/vnd.github.v3+json" 
+                    }, 
+                    cache: "no-store" 
+                });
+                
+                if (res.status === 404) { 
+                    document.getElementById('lista-pedidos').innerHTML = 'Arquivo não encontrado no GitHub.'; 
+                    todosOsPedidos = []; 
+                    return; 
                 }
                 
-                if (cleanP.categoria && !categoriasDoSistema.find(c => c.nome === cleanP.categoria)) {
-                    cleanP.categoria = ""; cleanP.subcategoria = ""; cleanP.subsubcategoria = "";
-                } else if (cleanP.categoria && cleanP.subcategoria) {
-                    const catObj = categoriasDoSistema.find(c => c.nome === cleanP.categoria);
-                    const subObj = catObj ? catObj.subcategorias.find(s => s.nome === cleanP.subcategoria) : null;
-                    if (!subObj) {
-                        cleanP.subcategoria = ""; cleanP.subsubcategoria = "";
-                    } else if (cleanP.subsubcategoria && !subObj.subsubcategorias.includes(cleanP.subsubcategoria)) {
-                        cleanP.subsubcategoria = "";
-                    }
-                }
+                const data = await res.json();
+                fileSha = data.sha;
+                todosOsPedidos = JSON.parse(decodeBase64(data.content));
 
-                if (cleanP.marca && !marcasDoSistema.includes(cleanP.marca)) {
-                    cleanP.marca = "";
-                }
-
-                return cleanP;
-            });
-        }
-
-        function salvarProdutosJSON() {
-            enqueueTask("Produtos.json", async () => {
-                const vitrine = sanitizeProductsForExport(products);
-                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização de Produtos`);
-            });
-        }
-
-        async function getPastaUploadAtiva() {
-            let limit = 990; let folderIndex = 1;
-            while (true) {
-                let folderName = folderIndex === 1 ? "site/img/produtos" : `site/img/produtos_${folderIndex}`;
-                try {
-                    const files = await GitHubAPI.getFileData(folderName);
-                    if (!files) return folderName;
-                    if (Array.isArray(files) && files.length < limit) return folderName;
-                } catch (e) { return folderName; }
-                folderIndex++;
-            }
-        }
-        
-        async function uploadImagens() {
-            if (imageQueue.length === 0) return alert("Não existem imagens na fila.");
-            
-            const queueCopy = [...imageQueue]; 
-            imageQueue = []; 
-            updateImageBadge();
-            
-            mostrarAlerta("Enviando imagens para a fila...", "aviso");
-            
-            queueCopy.forEach(img => {
-                enqueueTask(`Imagem ${img.sku}`, async () => {
-                    const pastaDestinoGithub = await getPastaUploadAtiva();
-                    const pastaDestinoLocal = "../" + pastaDestinoGithub; 
-                    const fileName = `${img.sku}.webp`; 
-                    
-                    await GitHubAPI.saveFile(`${pastaDestinoGithub}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName}`, true);
-                    
-                    const pRef = products.find(x => x.codigo === img.sku); 
-                    if(pRef) { 
-                        pRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`; 
-                        pRef.last_update = Date.now(); 
-                        await saveDataLocally(); 
-                    }
-                });
-            });
-
-            // Sincronização automática do JSON na nuvem após o upload das imagens
-            enqueueTask("Sincronizar JSON (Pós-Imagens)", async () => {
-                const vitrine = sanitizeProductsForExport(products);
-                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Sincronizando links das novas imagens`);
-            });
-        }
-
-        function mostrarAlerta(msg, tipo = 'sucesso') { 
-            let a = document.getElementById('alerta-customizado'); a.innerText = msg; a.className = ''; 
-            if(tipo === 'erro') a.classList.add('alerta-erro'); else if(tipo === 'aviso') a.classList.add('alerta-aviso'); else a.classList.add('alerta-sucesso'); 
-            a.style.display = 'block'; setTimeout(() => a.style.display = 'none', 3000); 
-        }
-
-        function abrirModalFoto(src) {
-            if(!src || src.includes("SEM+FOTO") || src === 'caminho_invalido') return;
-            document.getElementById('img-full').src = src;
-            document.getElementById('modal-foto-full').classList.remove('hidden');
-        }
-        
-        function fecharFotoTelaCheia() { 
-            document.getElementById('modal-foto-full').classList.add('hidden'); 
-        }
-
-        // ==========================================================
-        // PIM CORE E LOCALIZAÇÃO (UI & EVENTOS)
-        // ==========================================================
-        let isFilter24hActive = false;
-        function toggleFilter24h() { 
-            isFilter24hActive = !isFilter24hActive; 
-            const btn = document.getElementById('btn-24h'); 
-            if(isFilter24hActive) btn.classList.add('primary'); else btn.classList.remove('primary'); 
-            renderGrid(ultimoTermoPesquisa); 
-        }
-        
-        function openSidebar(id) { 
-            document.getElementById('sidebar-overlay').style.display = 'block'; 
-            setTimeout(() => { document.getElementById('sidebar-overlay').style.opacity = '1'; document.getElementById(id).classList.add('open'); }, 10); 
-        }
-        
-        function closeSidebar(id) { 
-            document.getElementById(id).classList.remove('open'); 
-            setTimeout(() => { 
-                const openSidebars = document.querySelectorAll('.sidebar.open'); 
-                if(openSidebars.length === 0) { 
-                    document.getElementById('sidebar-overlay').style.opacity = '0'; 
-                    setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); 
-                    renderGrid(ultimoTermoPesquisa, true);
-                } 
-            }, 50); 
-        }
-        
-        function closeAllSidebars() { 
-            document.querySelectorAll('.sidebar').forEach(el => el.classList.remove('open')); 
-            document.getElementById('sidebar-overlay').style.opacity = '0'; 
-            setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); 
-            renderGrid(ultimoTermoPesquisa, true); 
-        }
-
-        window.onload = async function() { 
-            lucide.createIcons(); 
-            await loadData(); 
-            document.getElementById('search-input').addEventListener('input', debounce((e) => {
-                if(e.target.value.trim() !== "") { filtroAtivo = { tipo: null, valor: null }; document.getElementById('active-filter-banner').style.display = 'none'; }
-                renderGrid(e.target.value);
-            }, 300)); 
-            setupEditorEvents(); 
-        };
-        
-        function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
-
-        async function loadData() {
-            try { const saved = await localforage.getItem(STORAGE_KEY); if(saved && Array.isArray(saved)) products = saved; } catch (err) {}
-            try { 
-                const c = await localforage.getItem(CATEGORIAS_KEY); 
-                if(c && Array.isArray(c)) {
-                    if(c.length > 0 && typeof c[0] === 'string') { categoriasDoSistema = []; } 
-                    else { categoriasDoSistema = c; }
-                } 
-            } catch (err) {}
-            try { const m = await localforage.getItem(MARCAS_KEY); if(m && Array.isArray(m)) marcasDoSistema = m; } catch (err) {}
-            try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {} 
-            
-            let idsExistentes = new Set();
-            let skusExistentes = new Set();
-            let precisaSalvarCat = false, precisaSalvarMarca = false, precisaSalvarTag = false;
-            let precisaSalvarProd = false;
-
-            products.forEach((p, index) => {
-                if (!p.id || idsExistentes.has(p.id)) {
-                    p.id = Date.now().toString() + index.toString() + Math.floor(Math.random() * 10000).toString();
-                    p.last_update = Date.now();
-                    precisaSalvarProd = true;
-                }
-                idsExistentes.add(p.id);
-
-                if (!p.codigo || skusExistentes.has(p.codigo)) {
-                    p.codigo = Date.now().toString().slice(-6) + index.toString().padStart(4, '0') + Math.floor(Math.random() * 1000).toString();
-                    p.last_update = Date.now();
-                    precisaSalvarProd = true;
-                }
-                skusExistentes.add(p.codigo);
-
-                if (p.marca) p.marca = String(p.marca).toUpperCase().trim();
-                if (p.marca && !marcasDoSistema.includes(p.marca)) { marcasDoSistema.push(p.marca); precisaSalvarMarca = true; }
+                // --- Lógica de Exclusão Automática de Pedidos Antigos ---
+                const dataAtual = new Date();
+                dataAtual.setHours(0,0,0,0);
                 
-                if (p.tag_global && Array.isArray(p.tag_global)) {
-                    p.tag_global.forEach(t => {
-                        if (t) {
-                            let tUp = String(t).toUpperCase().trim();
-                            if(!tagsDoSistema.includes(tUp)) { tagsDoSistema.push(tUp); precisaSalvarTag = true; }
-                        }
-                    });
+                let pedidosParaManter = [];
+                let houveExclusao = false;
+
+                todosOsPedidos.forEach(pedido => {
+                    const dataPedido = new Date(pedido.data);
+                    dataPedido.setHours(0,0,0,0);
+                    
+                    const diffTempo = dataAtual.getTime() - dataPedido.getTime();
+                    const diffDias = Math.floor(diffTempo / (1000 * 3600 * 24));
+
+                    // Tudo o que tem mais de 2 dias é apagado automaticamente
+                    if (diffDias > 2) {
+                        houveExclusao = true;
+                    } else {
+                        pedidosParaManter.push(pedido);
+                    }
+                });
+
+                if (houveExclusao) {
+                    todosOsPedidos = pedidosParaManter;
+                    salvarNoGitHub(false, "Limpeza automática: Excluídos pedidos com mais de 2 dias");
                 }
+
+                renderizarListaPedidos();
+            } catch (err) {
+                document.getElementById('lista-pedidos').innerHTML = `<p style="color:red;">Erro na conexão: ${err.message}</p>`;
+            }
+        }
+
+        function renderizarListaPedidos() {
+            const ordenados = [...todosOsPedidos].sort((a, b) => {
+                if (a.status === b.status) return new Date(b.data) - new Date(a.data);
+                return a.status === 'pendente' ? -1 : 1;
+            });
+
+            // --- Lógica de Agrupamento por Datas ---
+            const grupos = {};
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+
+            ordenados.forEach(pedido => {
+                const dataObj = new Date(pedido.data);
+                const dataSemHora = new Date(dataObj.getFullYear(), dataObj.getMonth(), dataObj.getDate());
                 
-                if (p.categoria) {
-                    p.categoria = String(p.categoria).toUpperCase().trim();
-                    
-                    let catObj = categoriasDoSistema.find(c => c && c.nome === p.categoria);
-                    if (!catObj) {
-                        catObj = { nome: p.categoria, subcategorias: [] };
-                        categoriasDoSistema.push(catObj);
-                        precisaSalvarCat = true;
-                    }
-                    
-                    if (p.subcategoria) {
-                        p.subcategoria = String(p.subcategoria).toUpperCase().trim();
-                        
-                        let subObj = catObj.subcategorias.find(s => s && s.nome === p.subcategoria);
-                        if (!subObj) {
-                            subObj = { nome: p.subcategoria, subsubcategorias: [] };
-                            catObj.subcategorias.push(subObj);
-                            precisaSalvarCat = true;
-                        }
-                        
-                        if (p.subsubcategoria) {
-                            p.subsubcategoria = String(p.subsubcategoria).toUpperCase().trim();
-                            
-                            if (!subObj.subsubcategorias.includes(p.subsubcategoria)) {
-                                subObj.subsubcategorias.push(p.subsubcategoria);
-                                precisaSalvarCat = true;
-                            }
-                        }
-                    }
-                }
+                const diffTempo = hoje.getTime() - dataSemHora.getTime();
+                const diffDias = Math.floor(diffTempo / (1000 * 3600 * 24));
+                
+                const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                const dia = dataObj.getDate();
+                const mes = meses[dataObj.getMonth()];
+                
+                let nomeGrupo = `${dia} de ${mes}`;
+                if (diffDias === 0) nomeGrupo = `Hoje, ${dia} de ${mes}`;
+                else if (diffDias === 1) nomeGrupo = `Ontem, ${dia} de ${mes}`;
+                
+                if (!grupos[nomeGrupo]) grupos[nomeGrupo] = [];
+                grupos[nomeGrupo].push(pedido);
             });
-
-            if (precisaSalvarMarca) await localforage.setItem(MARCAS_KEY, marcasDoSistema);
-            if (precisaSalvarTag) await localforage.setItem(TAGS_KEY, tagsDoSistema);
-            if (precisaSalvarCat) await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema);
-            if (precisaSalvarProd) await saveDataLocally(); 
-
-            if(categoriasDoSistema.length > 0) {
-                categoriasDoSistema.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
-                categoriasDoSistema.forEach(c => {
-                    if(c.subcategorias) {
-                        c.subcategorias.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
-                        c.subcategorias.forEach(s => {
-                            if(s.subsubcategorias) s.subsubcategorias.sort((a,b) => a.localeCompare(b));
-                        });
-                    }
-                });
-            }
-
-            [marcasDoSistema, tagsDoSistema].forEach(lista => lista.sort((a, b) => a.localeCompare(b)));
-
-            const cfg = await localforage.getItem(CONFIG_KEY) || {}; 
-            if(cfg.token) { 
-                document.getElementById('cfg-token').value = cfg.token; 
-                document.getElementById('cfg-user').value = cfg.user; 
-                document.getElementById('cfg-repo').value = cfg.repo; 
-            }
-            renderGrid(ultimoTermoPesquisa);
-        }
-        
-        function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
-        
-        async function saveDataLocally() { 
-            try { await localforage.setItem(STORAGE_KEY, products); } catch (err) {} 
-        }
-
-        // ==========================================================
-        // GERAÇÃO DE OPÇÕES DE SELECTS E FUNÇÕES AUXILIARES EDITOR
-        // ==========================================================
-        window.addLink = function(sku) {
-            const url = prompt("Insira a URL do link:");
-            if(url) {
-                const editor = document.getElementById(`desc-${sku}`);
-                editor.focus();
-                document.execCommand('createLink', false, url);
-                updateField(sku, 'descricao', editor.innerHTML);
-            }
-        }
-        
-        window.addChip = function(sku) {
-            const texto = prompt("Texto do Chip (Ex: Ver Manual):");
-            if(!texto) return;
-            const url = prompt("URL de Destino do Chip:");
-            if(url) {
-                const editor = document.getElementById(`desc-${sku}`);
-                editor.focus();
-                const chipHtml = `&nbsp;<a href="${url}" class="desc-chip" target="_blank">${texto}</a>&nbsp;`;
-                document.execCommand('insertHTML', false, chipHtml);
-                updateField(sku, 'descricao', editor.innerHTML);
-            }
-        }
-
-        function gerarOptions(lista, selecionado, textoPadrao) {
-            let html = `<option value="">${textoPadrao}</option>`;
-            lista.forEach(item => {
-                let sel = (item === selecionado) ? 'selected' : '';
-                html += `<option value="${item}" ${sel}>${item}</option>`;
-            });
-            return html;
-        }
-
-        function gerarOptionsCategorias(selecionado) {
-            let html = `<option value="">Sel. Categoria</option>`;
-            categoriasDoSistema.forEach(c => {
-                let sel = (c.nome === selecionado) ? 'selected' : '';
-                html += `<option value="${c.nome}" ${sel}>${c.nome}</option>`;
-            });
-            return html;
-        }
-
-        function gerarOptionsSubcategorias(catNome, selecionado) {
-            let html = `<option value="">Sel. Subcategoria</option>`;
-            if (!catNome) return html;
-            const catObj = categoriasDoSistema.find(c => c.nome === catNome);
-            if (catObj && catObj.subcategorias) {
-                catObj.subcategorias.forEach(sub => {
-                    let sel = (sub.nome === selecionado) ? 'selected' : '';
-                    html += `<option value="${sub.nome}" ${sel}>${sub.nome}</option>`;
-                });
-            }
-            return html;
-        }
-
-        function gerarOptionsSubSubcategorias(catNome, subNome, selecionado) {
-            let html = `<option value="">Sel. Sub-subcategoria</option>`;
-            if (!catNome || !subNome) return html;
-            const catObj = categoriasDoSistema.find(c => c.nome === catNome);
-            if (catObj && catObj.subcategorias) {
-                const subObj = catObj.subcategorias.find(s => s.nome === subNome);
-                if (subObj && subObj.subsubcategorias) {
-                    subObj.subsubcategorias.forEach(ss => {
-                        let sel = (ss === selecionado) ? 'selected' : '';
-                        html += `<option value="${ss}" ${sel}>${ss}</option>`;
-                    });
-                }
-            }
-            return html;
-        }
-
-        window.mudarCategoriaDoProduto = async function(sku, novaCategoria) { 
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            p.categoria = novaCategoria;
-            p.subcategoria = ''; 
-            p.subsubcategoria = '';
-            p.last_update = Date.now();
-            await saveDataLocally();
-            const subSelect = document.getElementById(`subcat-${sku}`);
-            const subsubSelect = document.getElementById(`subsubcat-${sku}`);
-            if(subSelect) subSelect.innerHTML = gerarOptionsSubcategorias(novaCategoria, '');
-            if(subsubSelect) subsubSelect.innerHTML = gerarOptionsSubSubcategorias(novaCategoria, '', '');
-            renderGrid(ultimoTermoPesquisa, true);
-        }
-
-        window.mudarSubcategoriaDoProduto = async function(sku, novaSubcategoria) { 
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            p.subcategoria = novaSubcategoria;
-            p.subsubcategoria = ''; 
-            p.last_update = Date.now();
-            await saveDataLocally();
-            const subsubSelect = document.getElementById(`subsubcat-${sku}`);
-            if(subsubSelect) subsubSelect.innerHTML = gerarOptionsSubSubcategorias(p.categoria, novaSubcategoria, '');
-            renderGrid(ultimoTermoPesquisa, true);
-        }
-
-        window.atualizarSubcatsFiltro = function(catNome) {
-            document.getElementById('flt-sub').innerHTML = gerarOptionsSubcategorias(catNome, '') || `<option value="">Todas as Subcategorias</option>`;
-            document.getElementById('flt-subsub').innerHTML = `<option value="">Todas as Sub-subcategorias</option>`;
-        }
-        
-        window.atualizarSubSubcatsFiltro = function(catNome, subNome) {
-            document.getElementById('flt-subsub').innerHTML = gerarOptionsSubSubcategorias(catNome, subNome, '') || `<option value="">Todas as Sub-subcategorias</option>`;
-        }
-
-        function gerarCheckboxes(lista, selecionados, sku, campo) {
-            let selecoes = [];
-            if (Array.isArray(selecionados)) {
-                selecoes = selecionados;
-            } else if (selecionados && typeof selecionados === 'string') {
-                selecoes = selecionados.split(',').map(s => s.trim());
-            }
 
             let html = '';
-            lista.forEach(item => {
-                let isChecked = selecoes.includes(item) ? 'checked' : '';
-                html += `
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; margin-bottom: 4px; cursor:pointer; font-weight: 600; text-transform:none; color: var(--text-primary);">
-                        <input type="checkbox" value="${item}" ${isChecked} onchange="toggleMultiSelect('${sku}', '${campo}', this.value, this.checked)" style="cursor:pointer;">
-                        ${item}
-                    </label>
-                `;
-            });
-            if(lista.length === 0) html = '<span style="font-size:9px; color:var(--text-secondary);">Nenhuma cadastrada</span>';
-            return html;
-        }
-
-        window.toggleMultiSelect = async function(sku, campo, valor, isChecked) {
-            const p = products.find(x => x.codigo === sku);
-            if(!p) return;
             
-            let atual = [];
-            if (Array.isArray(p[campo])) atual = p[campo];
-            else if (p[campo] && typeof p[campo] === 'string') atual = p[campo].split(',').map(s => s.trim());
-            
-            if (isChecked) {
-                if (!atual.includes(valor)) atual.push(valor);
+            if (Object.keys(grupos).length === 0) {
+                html = 'Nenhum pedido encontrado.';
             } else {
-                atual = atual.filter(v => v !== valor);
-            }
-            
-            p[campo] = atual;
-            p.last_update = Date.now();
-            await saveDataLocally();
-        }
-
-        // ==========================================================
-        // FILTROS AVANÇADOS E GLOBAIS
-        // ==========================================================
-        window.limparFiltroGrid = function() { filtroAtivo = { tipo: null, valor: null }; document.getElementById('active-filter-banner').style.display = 'none'; renderGrid(ultimoTermoPesquisa); }
-
-        function renderizarFiltrosAvancados() {
-            document.getElementById('flt-cat').innerHTML = gerarOptionsCategorias('');
-            document.getElementById('flt-sub').innerHTML = `<option value="">Todas as Subcategorias</option>`;
-            document.getElementById('flt-subsub').innerHTML = `<option value="">Todas as Sub-subcategorias</option>`;
-            document.getElementById('flt-marca').innerHTML = gerarOptions(marcasDoSistema, '', 'Todas as Marcas');
-            document.getElementById('flt-tag').innerHTML = gerarOptions(tagsDoSistema, '', 'Todas as Tags Globais');
-        }
-
-        window.aplicarFiltrosAvancados = function() {
-            advancedFilters.cat = document.getElementById('flt-cat').value;
-            advancedFilters.sub = document.getElementById('flt-sub').value;
-            advancedFilters.subsub = document.getElementById('flt-subsub').value;
-            advancedFilters.marca = document.getElementById('flt-marca').value;
-            advancedFilters.tag = document.getElementById('flt-tag').value;
-            advancedFilters.stock = document.getElementById('flt-stock').value;
-            
-            filtroAtivo = { tipo: 'avancado', valor: 'Filtros Combinados' };
-            document.getElementById('active-filter-banner').style.display = 'flex'; document.getElementById('filter-text-display').innerText = 'Filtros Avançados Ativos';
-            closeSidebar('filtros-sidebar'); renderGrid(ultimoTermoPesquisa);
-        }
-
-        // ==========================================================
-        // LAZY LOADING E CARTÃO DE PRODUTO "FRONTAL"
-        // ==========================================================
-        function renderGrid(searchTerm = null, keepLoaded = false) {
-            const gridContainer = document.getElementById('product-grid');
-            const mainContent = document.getElementById('main-content-pim');
-            
-            if (searchTerm === null && !keepLoaded) {
-                searchTerm = ultimoTermoPesquisa;
-            } else if (searchTerm !== null) {
-                ultimoTermoPesquisa = searchTerm;
-            } else {
-                searchTerm = ultimoTermoPesquisa;
-            }
-
-            const currentScroll = mainContent ? mainContent.scrollTop : 0;
-            const oldItemsCarregados = keepLoaded ? Math.max(itemsCarregados, ITENS_POR_PAGINA) : ITENS_POR_PAGINA;
-
-            let filtered = products;
-
-            if (filtroAtivo.tipo === 'avancado') {
-                filtered = filtered.filter(p => {
-                    if(advancedFilters.cat && p.categoria !== advancedFilters.cat) return false;
-                    if(advancedFilters.sub && p.subcategoria !== advancedFilters.sub) return false;
-                    if(advancedFilters.subsub && p.subsubcategoria !== advancedFilters.subsub) return false;
-                    if(advancedFilters.marca && p.marca !== advancedFilters.marca) return false;
+                for (const [grupo, pedidos] of Object.entries(grupos)) {
+                    html += `<h3 style="margin-top: 25px; margin-bottom: 10px; font-weight: 900; font-size: 14px; color: var(--text-muted); text-transform: uppercase;"><i data-lucide="calendar" size="14" style="vertical-align: middle;"></i> ${grupo}</h3>`;
                     
-                    if(advancedFilters.tag) {
-                        let pTags = Array.isArray(p.tag_global) ? p.tag_global : (p.tag_global ? p.tag_global.split(',').map(s=>s.trim()) : []);
-                        if(!pTags.includes(advancedFilters.tag)) return false;
-                    }
-                    
-                    if(advancedFilters.stock === 'zero' && parseFloat(p.estoque) !== 0) return false;
-                    return true;
-                });
-            }
-            
-            if(searchTerm) { 
-                const term = searchTerm.toLowerCase().trim(); 
-                filtered = filtered.filter(p => { const nome = (p.nome || "").toLowerCase(); const sku = (p.codigo || "").toLowerCase(); const ean = (p.gtin || "").toLowerCase(); return nome.includes(term) || sku.includes(term) || ean.includes(term); }); 
-            }
+                    html += pedidos.map((pedido) => {
+                        const totalSkus = pedido.itens.length;
+                        const totalUnidades = pedido.itens.reduce((soma, i) => soma + i.quantidade, 0);
+                        const isConcluido = pedido.status === 'concluido';
+                        const dataObj = new Date(pedido.data);
+                        const horaFormatada = dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                        const realIndex = todosOsPedidos.findIndex(p => p.id === pedido.id);
 
-            if(isFilter24hActive) { const oneDay = 24 * 60 * 60 * 1000; const now = Date.now(); filtered = filtered.filter(p => { const time = p.last_update || p.id || 0; return (now - time) <= oneDay; }); }
-            
-            produtosFiltrados = filtered; gridContainer.innerHTML = ""; itemsCarregados = 0; 
-
-            if (produtosFiltrados.length === 0) { 
-                gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><h3 style="margin:0;">Nenhum produto encontrado</h3></div>`; 
-                document.getElementById('load-more-container').style.display = 'none';
-                return; 
-            }
-
-            carregarMaisCards(oldItemsCarregados);
-            if (keepLoaded && mainContent) { requestAnimationFrame(() => { requestAnimationFrame(() => { mainContent.scrollTop = currentScroll; }); }); }
-        }
-
-        window.carregarMaisCards = function(quantidade = ITENS_POR_PAGINA) {
-            const gridContainer = document.getElementById('product-grid');
-            if (itemsCarregados >= produtosFiltrados.length) {
-                document.getElementById('load-more-container').style.display = 'none';
-                return;
-            }
-
-            const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantidade);
-            
-            nextBatch.forEach(p => {
-                const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`;
-                
-                const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
-                const safeNameForInput = (p.nome || '').replace(/"/g, '&quot;');
-                const safeNomeGoogle = (p.nome || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                
-                let custo = parseFloat(p.preco_custo) || 0;
-                let venda = parseFloat(p.preco) || 0;
-                let markup = custo > 0 ? (((venda - custo) / custo) * 100).toFixed(1) : 0;
-
-                card.innerHTML = `
-                    <div style="display: flex; gap: 15px; align-items: stretch;">
-                        <div style="width: 100px; display: flex; flex-direction: column; gap: 8px;">
-                            <div style="width:100px; height:100px; cursor:pointer; border-radius: 6px; border: 1px solid var(--border); overflow:hidden;" onclick="openCanvasSidebar('${p.codigo}')" title="Clique para editar Foto">
-                                <img src="${imgUrl}" style="object-fit: contain; width: 100%; height: 100%;" onerror="this.src='https://placehold.co/100x100/f4f4f5/ef4444?text=ERRO'">
+                        return `
+                        <div class="order-card ${isConcluido ? 'concluido' : ''}" onclick="cliqueCard(event, ${realIndex})">
+                            <div class="checkbox-container">
+                                <input type="checkbox" ${idsSelecionados.has(pedido.id) ? 'checked' : ''} onchange="toggleSelecao(event, '${pedido.id}')">
                             </div>
-                            <button class="nav-btn bling-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="exportarProdutoBling('${p.codigo}')"><i data-lucide="download" size="12"></i> EXP. BLING</button>
-                            
-                            <button class="nav-btn warning" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="duplicarProduto('${p.codigo}')"><i data-lucide="copy" size="12"></i> DUPLICAR</button>
-                            
-                            <button class="nav-btn ${p.situacao === 'I' ? '' : 'primary'}" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="toggleStatus('${p.codigo}')"><i data-lucide="power" size="12"></i> ${p.situacao === 'I' ? 'INATIVO' : 'ATIVO'}</button>
-                            <button class="nav-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px; color:var(--danger); border-color:#fecaca;" onclick="deleteProduct('${p.codigo}')"><i data-lucide="trash-2" size="12"></i> APAGAR</button>
-                        </div>
-                        
-                        <div style="flex-grow:1; display:flex; flex-direction:column; gap:8px;">
-                            <div class="field-group">
-                                <label>Nome do Produto</label>
-                                <input type="text" class="form-input card-mini-input" style="font-weight:900; font-size:12px;" value="${safeNameForInput}" onchange="updateField('${p.codigo}', 'nome', this.value)">
-                                <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
-                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleNCM('${safeNomeGoogle}')" title="Buscar NCM no Google"><i data-lucide="search" size="12"></i> NCM</button>
-                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleHD('${safeNomeGoogle}')" title="Buscar Foto em Alta Resolução"><i data-lucide="image" size="12"></i> FOTO HD</button>
-                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleShopping('${safeNomeGoogle}')" title="Buscar Preço no Google Shopping"><i data-lucide="shopping-cart" size="12"></i> PREÇO</button>
-                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px; color: #ef4444; border-color: #fecaca;" onclick="searchYoutube('${safeNomeGoogle}')" title="Buscar Vídeo no YouTube"><i data-lucide="youtube" size="12"></i> VÍDEO</button>
-                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px; color: #0284c7; border-color: #bae6fd; background: #e0f2fe;" onclick="searchGoogleInfo('${safeNomeGoogle}')" title="Buscar informações, avaliações e especificações"><i data-lucide="info" size="12"></i> INFO</button>
-                                </div>
-                            </div>
-                            <div class="field-group">
-                                <label>Link do YouTube</label>
-                                <input type="text" class="form-input card-mini-input" placeholder="Cole o link do vídeo aqui..." value="${p.link_youtube || ''}" onchange="updateField('${p.codigo}', 'link_youtube', this.value)">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card-grid-fields">
-                        <div class="field-group"><label>Categoria</label>
-                            <select class="form-input card-mini-input" onchange="mudarCategoriaDoProduto('${p.codigo}', this.value)">${gerarOptionsCategorias(p.categoria)}</select></div>
-                        <div class="field-group"><label>Subcategoria</label>
-                            <select class="form-input card-mini-input" id="subcat-${p.codigo}" onchange="mudarSubcategoriaDoProduto('${p.codigo}', this.value)">${gerarOptionsSubcategorias(p.categoria, p.subcategoria)}</select></div>
-                        <div class="field-group"><label>Sub-subcategoria</label>
-                            <select class="form-input card-mini-input" id="subsubcat-${p.codigo}" onchange="updateField('${p.codigo}', 'subsubcategoria', this.value)">${gerarOptionsSubSubcategorias(p.categoria, p.subcategoria, p.subsubcategoria)}</select></div>
-                        
-                        <div class="field-group"><label>Tags Globais</label>
-                            <div class="form-input card-mini-input" style="height: 65px; overflow-y: auto; padding: 6px; background: #fafafa;">
-                                ${gerarCheckboxes(tagsDoSistema, p.tag_global, p.codigo, 'tag_global')}
-                            </div>
-                        </div>
-                        
-                        <div class="field-group"><label>Marca</label>
-                            <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'marca', this.value)">${gerarOptions(marcasDoSistema, p.marca, 'Sel. Marca')}</select></div>
-
-                        <div class="field-group"><label>SKU (Código Automático)</label>
-                            <input type="text" class="form-input card-mini-input" value="${p.codigo || ''}" readonly style="background: #e4e4e7; cursor: not-allowed; color: var(--text-secondary);" title="Código gerado automaticamente"></div>
-                            
-                        <div class="field-group"><label>EAN / GTIN</label>
-                            <input type="text" class="form-input card-mini-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
-                        
-                        <div class="field-group"><label>NCM</label>
-                            <input type="text" class="form-input card-mini-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)"></div>
-                        <div class="field-group"><label>Embalagem (Ex: 100ml)</label>
-                            <input type="text" class="form-input card-mini-input" value="${p.embalagem || ''}" onchange="updateField('${p.codigo}', 'embalagem', this.value)"></div>
-
-                        <div class="field-group"><label>Gôndola</label>
-                            <input type="text" class="form-input card-mini-input" value="${p.gondola || ''}" onchange="updateField('${p.codigo}', 'gondola', this.value)"></div>
-                        <div class="field-group"><label>Prateleira</label>
-                            <input type="text" class="form-input card-mini-input" value="${p.prateleira || ''}" onchange="updateField('${p.codigo}', 'prateleira', this.value)"></div>
-
-                        <div class="field-group"><label>Custo (R$)</label>
-                            <input type="number" step="0.01" class="form-input card-mini-input" value="${p.preco_custo || 0}" onchange="updateField('${p.codigo}', 'preco_custo', this.value)"></div>
-                        <div class="field-group">
-                            <label style="display:flex; justify-content:space-between;">Venda (R$) <span style="color:var(--success);">Markup: ${markup}%</span></label>
-                            <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--success); font-weight:800;" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)">
-                        </div>
-
-                        <div class="field-group"><label>Validade</label>
-                            <input type="date" class="form-input card-mini-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : (p.validade || '')}" onchange="let d=this.value.split('-'); updateField('${p.codigo}', 'validade', d[2]+'/'+d[1]+'/'+d[0])"></div>
-                        <div class="field-group"><label>Estoque (Qtde)</label>
-                            <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 0; margin-top: 5px;">
-                        <label style="font-size: 9px; color: var(--text-secondary); font-weight: 800; text-transform: uppercase; margin-bottom: 4px;">Descrição Detalhada</label>
-                        <div class="rich-text-toolbar">
-                            <button type="button" class="editor-btn" onclick="document.execCommand('bold', false, null)" title="Negrito"><b>B</b></button>
-                            <button type="button" class="editor-btn" onclick="document.execCommand('insertUnorderedList', false, null)" title="Lista Indentada"><i data-lucide="list" size="10" style="margin-right:2px;"></i> Lista</button>
-                            <button type="button" class="editor-btn" onclick="addLink('${p.codigo}')" title="Adicionar Link"><i data-lucide="link" size="10" style="margin-right:2px;"></i> Link</button>
-                            <button type="button" class="editor-btn" onclick="addChip('${p.codigo}')" title="Adicionar Chip Linkado"><i data-lucide="tag" size="10" style="margin-right:2px;"></i> Chip</button>
-                        </div>
-                        <div class="rich-text-editor" id="desc-${p.codigo}" contenteditable="true" onblur="updateField('${p.codigo}', 'descricao', this.innerHTML)">${p.descricao || ''}</div>
-                    </div>
-                `;
-                gridContainer.appendChild(card);
-                itemsCarregados++;
-            }); 
-            lucide.createIcons();
-            
-            if (itemsCarregados >= produtosFiltrados.length) {
-                document.getElementById('load-more-container').style.display = 'none';
-            } else {
-                document.getElementById('load-more-container').style.display = 'block';
-            }
-        }
-
-        async function updateField(sku, field, value) { 
-            const p = products.find(x => x.codigo === sku); if(!p) return; let finalVal = value; 
-            if(field === 'validade' && typeof value === 'string' && value.includes('-')) { const partes = value.split('-'); if(partes[0].length === 4) finalVal = `${partes[2]}/${partes[1]}/${partes[0]}`; } 
-            else if(['preco','estoque','preco_custo'].includes(field)) { finalVal = parseFloat(value.toString().replace(',','.')) || 0; }
-            p[field] = finalVal; p.last_update = Date.now(); await saveDataLocally(); 
-            
-            renderGrid(ultimoTermoPesquisa, true); 
-        }
-        
-        window.duplicarProduto = async function(sku) {
-            const p = products.find(x => x.codigo === sku);
-            if (!p) return;
-
-            const timestamp = Date.now();
-            
-            const uniqueId = timestamp.toString() + Math.floor(Math.random() * 100000).toString();
-            const novoSku = timestamp.toString().slice(-6) + Math.floor(Math.random() * 1000).toString().padStart(4, '0');
-
-            const novoProduto = {
-                ...p,
-                id: uniqueId,
-                codigo: novoSku,
-                url_imagem: "", 
-                last_update: timestamp
-            };
-
-            products.unshift(novoProduto);
-            await saveDataLocally();
-            renderGrid(ultimoTermoPesquisa);
-            window.scrollTo(0, 0); 
-            mostrarAlerta("Produto duplicado com sucesso!", "sucesso");
-        };
-
-        async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); renderGrid(ultimoTermoPesquisa, true); }
-        async function deleteProduct(sku) { if(!confirm(`Apagar produto permanentemente?`)) return; products = products.filter(p => p.codigo !== sku); await saveDataLocally(); renderGrid(ultimoTermoPesquisa); }
-        
-        async function createNewProduct() { 
-            const timestamp = Date.now(); 
-            
-            const uniqueId = timestamp.toString() + Math.floor(Math.random() * 100000).toString();
-            const sku = timestamp.toString().slice(-6) + Math.floor(Math.random() * 1000).toString().padStart(4, '0'); 
-            
-            products.unshift({ 
-                id: uniqueId, 
-                codigo: sku, 
-                nome: "", 
-                preco: 0, 
-                preco_custo: 0, 
-                situacao: 'A', 
-                estoque: 0, 
-                descricao: "", 
-                last_update: timestamp 
-            }); 
-            await saveDataLocally(); 
-            renderGrid(ultimoTermoPesquisa); 
-            window.scrollTo(0, 0); 
-        }
-
-        // ==========================================================
-        // EDITOR DE CANVAS (NITIDEZ INCLUÍDA)
-        // ==========================================================
-        const canvas = document.getElementById('imageCanvas'); const ctx = canvas.getContext('2d'); let loadedImage = null; let imgOffsetX = 0; let imgOffsetY = 0; let isDragging = false; let startDragX = 0; let startDragY = 0;
-
-        window.openCanvasSidebar = function(sku) {
-            currentEditingSku = sku;
-            const p = products.find(x => x.codigo === sku); if(!p) return; imgOffsetX = 0; imgOffsetY = 0; 
-            document.getElementById('zoomRange').value = 1; document.getElementById('brightnessRange').value = 1; document.getElementById('sharpenRange').value = 0;
-            const img = new Image(); img.crossOrigin = "Anonymous"; img.src = p.url_imagem || ""; 
-            img.onload = () => { loadedImage = img; drawCanvas(); openSidebar('editor-sidebar'); }; img.onerror = () => { loadedImage = null; drawCanvas(); openSidebar('editor-sidebar'); };
-        }
-
-        function drawCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if(loadedImage) { 
-                const zoom = parseFloat(document.getElementById('zoomRange').value); 
-                const bright = parseFloat(document.getElementById('brightnessRange').value);
-                const sharpen = parseFloat(document.getElementById('sharpenRange').value);
-
-                const ratio = Math.min(canvas.width / loadedImage.width, canvas.height / loadedImage.height) * zoom; 
-                const w = loadedImage.width * ratio, h = loadedImage.height * ratio; 
-                const posX = ((canvas.width - w) / 2) + imgOffsetX; 
-                const posY = ((canvas.height - h) / 2) + imgOffsetY; 
-                
-                ctx.filter = `brightness(${bright})`; 
-                ctx.drawImage(loadedImage, posX, posY, w, h); 
-                ctx.filter = 'none';
-
-                if (sharpen > 0) {
-                    applySharpenKernel(ctx, canvas.width, canvas.height, sharpen);
-                }
-
-            } else { 
-                ctx.font = "600 13px Inter"; ctx.fillStyle = "#a1a1aa"; ctx.textAlign = "center"; 
-                ctx.fillText("Cole foto (Ctrl+V) ou busque no PC", canvas.width/2, canvas.height/2); 
-            }
-        }
-
-        function applySharpenKernel(context, width, height, amount) {
-            if (amount <= 0) return;
-            const imgData = context.getImageData(0, 0, width, height);
-            const data = imgData.data;
-            const tempData = new Uint8ClampedArray(data);
-            
-            const a = amount;
-            const mid = 1 + 4 * a;
-
-            for (let y = 1; y < height - 1; y++) {
-                for (let x = 1; x < width - 1; x++) {
-                    const i = (y * width + x) * 4;
-                    for (let c = 0; c < 3; c++) { 
-                        const val =
-                            -a * tempData[i - width * 4 + c] +    
-                            -a * tempData[i - 4 + c] +            
-                            mid * tempData[i + c] +               
-                            -a * tempData[i + 4 + c] +            
-                            -a * tempData[i + width * 4 + c];     
-                        data[i + c] = val;
-                    }
-                }
-            }
-            context.putImageData(imgData, 0, 0);
-        }
-
-        function setupEditorEvents() {
-            ['zoomRange','brightnessRange','sharpenRange'].forEach(id => { document.getElementById(id).addEventListener('input', drawCanvas); });
-            document.getElementById('fileInput').addEventListener('change', (e) => { if(e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onload = (evt) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = evt.target.result; }; reader.readAsDataURL(e.target.files[0]); } });
-            window.addEventListener('paste', e => { 
-                const isEditorOpen = document.getElementById('editor-sidebar').classList.contains('open'); if(!isEditorOpen) return;
-                const items = (e.clipboardData || e.originalEvent.clipboardData).items; 
-                for (let index in items) { const item = items[index]; if (item.kind === 'file' && item.type.includes('image/')) { const blob = item.getAsFile(); const reader = new FileReader(); reader.onload = (event) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = event.target.result; }; reader.readAsDataURL(blob); } } 
-            });
-            canvas.addEventListener('mousedown', (e) => { isDragging = true; startDragX = e.offsetX - imgOffsetX; startDragY = e.offsetY - imgOffsetY; }); canvas.addEventListener('mousemove', (e) => { if (!isDragging) return; imgOffsetX = e.offsetX - startDragX; imgOffsetY = e.offsetY - startDragY; drawCanvas(); }); canvas.addEventListener('mouseup', () => { isDragging = false; }); canvas.addEventListener('mouseleave', () => { isDragging = false; });
-        }
-
-        async function saveImageToQueue() {
-            if(!currentEditingSku) return; const sku = currentEditingSku; const base64full = canvas.toDataURL('image/webp', 0.9); const base64data = base64full.split(',')[1];
-            const p = products.find(x => x.codigo === sku); 
-            p.url_imagem = base64full; p.last_update = Date.now(); await saveDataLocally(); 
-            imageQueue.push({ sku: sku, base64data: base64data }); updateImageBadge(); closeSidebar('editor-sidebar'); renderGrid(ultimoTermoPesquisa, true);
-        }
-
-        async function saveConfig() { 
-            const cfg = { 
-                token: document.getElementById('cfg-token').value, 
-                user: document.getElementById('cfg-user').value, 
-                repo: document.getElementById('cfg-repo').value 
-            }; 
-            await localforage.setItem(CONFIG_KEY, cfg); 
-            mostrarAlerta("Credenciais guardadas com segurança!", "sucesso");
-            closeSidebar('config-sidebar'); 
-        }
-        
-        window.renderizarSidebarCategorias = function() {
-            const container = document.getElementById('lista-categorias-container'); if(!container) return;
-            container.innerHTML = "";
-            
-            categoriasDoSistema.sort((a, b) => a.nome.localeCompare(b.nome));
-            categoriasDoSistema.forEach(c => {
-                if(c.subcategorias) {
-                    c.subcategorias.sort((a, b) => a.nome.localeCompare(b.nome));
-                    c.subcategorias.forEach(s => {
-                        if(s.subsubcategorias) s.subsubcategorias.sort((a,b) => a.localeCompare(b));
-                    });
-                }
-            });
-
-            categoriasDoSistema.forEach((cat, cIndex) => {
-                let subsHtml = '';
-                if (cat.subcategorias && cat.subcategorias.length > 0) {
-                    cat.subcategorias.forEach((sub, sIndex) => {
-                        let subsubsHtml = '';
-                        if (sub.subsubcategorias && sub.subsubcategorias.length > 0) {
-                            sub.subsubcategorias.forEach((ssub, ssIndex) => {
-                                subsubsHtml += `<div style="display:flex; justify-content:space-between; align-items:center; padding: 4px 8px; background:#f1f5f9; border-radius:4px; margin-top:4px; margin-left: 20px; border:1px solid var(--border); font-size:10px;">
-                                    <span>${ssub}</span>
-                                    <div style="display:flex; gap:4px;">
-                                        <button class="btn-smart" style="height:20px; width:20px;" onclick="editarSubSubcategoria(${cIndex}, ${sIndex}, ${ssIndex})"><i data-lucide="edit-2" size="8"></i></button>
-                                        <button class="btn-smart" style="height:20px; width:20px; color:var(--danger); border-color:#fecaca;" onclick="removerSubSubcategoria(${cIndex}, ${sIndex}, ${ssIndex})"><i data-lucide="trash-2" size="8"></i></button>
+                            <div class="order-content">
+                                <div>
+                                    <div class="order-id">Pedido #${pedido.id}</div>
+                                    <div class="order-date"><i data-lucide="clock" size="12"></i> ${horaFormatada}</div>
+                                    <div style="font-size: 11px; font-weight: 800; color: var(--text); margin-top: 4px;">
+                                        ${totalSkus} Itens (${totalUnidades} Peças)
                                     </div>
-                                </div>`;
-                            });
-                        }
-
-                        subsHtml += `<div style="padding: 6px 10px; background:#f8fafc; border-radius:6px; margin-top:4px; margin-left: 15px; border:1px solid var(--border); font-size:11px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <strong>${sub.nome}</strong>
-                                <div style="display:flex; gap:4px;">
-                                    <button class="nav-btn success-btn" style="height:24px; font-size:9px; padding:0 6px;" onclick="criarNovaSubSubcategoria(${cIndex}, ${sIndex})" title="Nova Sub-subcategoria"><i data-lucide="plus" size="10"></i> SUB-SUB</button>
-                                    <button class="btn-smart" style="height:24px; width:24px;" onclick="editarSubcategoria(${cIndex}, ${sIndex})"><i data-lucide="edit-2" size="10"></i></button>
-                                    <button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removerSubcategoria(${cIndex}, ${sIndex})"><i data-lucide="trash-2" size="10"></i></button>
+                                </div>
+                                <div class="badge" style="background: ${isConcluido ? '#d1fae5' : '#fef08a'}; color: ${isConcluido ? '#065f46' : '#854d0e'};">
+                                    ${isConcluido ? 'SEPARADO' : 'PENDENTE'}
                                 </div>
                             </div>
-                            ${subsubsHtml}
                         </div>`;
-                    });
+                    }).join('');
                 }
-
-                container.innerHTML += `<div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; margin-bottom:8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: ${subsHtml ? '8px' : '0'};">
-                        <strong style="color:var(--accent); font-size:13px; flex-grow:1;">${cat.nome}</strong>
-                        <div style="display:flex; gap:6px;">
-                            <button class="nav-btn success-btn" style="height:28px; font-size:10px; padding:0 8px;" onclick="criarNovaSubcategoria(${cIndex})"><i data-lucide="plus" size="12"></i> SUB</button>
-                            <button class="btn-smart" style="height:28px; width:28px;" onclick="editarCategoria(${cIndex})"><i data-lucide="edit-2" size="12"></i></button>
-                            <button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerCategoria(${cIndex})"><i data-lucide="trash-2" size="12"></i></button>
-                        </div>
-                    </div>
-                    ${subsHtml}
-                </div>`;
-            }); lucide.createIcons();
-        }
-
-        window.criarNovaCategoria = async function() { 
-            const nome = prompt("Nova Categoria:"); if (!nome) return; const nm = nome.toUpperCase().trim(); 
-            if(categoriasDoSistema.find(c => c.nome === nm)) return alert("Já existe!"); 
-            categoriasDoSistema.push({ nome: nm, subcategorias: [] }); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); 
-            renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true); 
-        }
-        window.editarCategoria = async function(cIndex) { 
-            const novoNome = prompt("Renomear categoria para:", categoriasDoSistema[cIndex].nome); if (!novoNome) return; 
-            const old = categoriasDoSistema[cIndex].nome; const nm = novoNome.toUpperCase().trim(); categoriasDoSistema[cIndex].nome = nm; 
-            products.forEach(p => { if(p.categoria === old) p.categoria = nm; }); 
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); 
-            renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true); 
-        }
-        window.removerCategoria = async function(cIndex) { 
-            if (!confirm(`Apagar a categoria "${categoriasDoSistema[cIndex].nome}" e todos os seus níveis?`)) return; 
-            const old = categoriasDoSistema[cIndex].nome; categoriasDoSistema.splice(cIndex, 1); 
-            products.forEach(p => { if(p.categoria === old) { p.categoria = ""; p.subcategoria = ""; p.subsubcategoria = ""; } }); 
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); 
-            renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true); 
-        }
-
-        window.criarNovaSubcategoria = async function(cIndex) {
-            const nome = prompt(`Nova Subcategoria para ${categoriasDoSistema[cIndex].nome}:`); if (!nome) return;
-            const nm = nome.toUpperCase().trim(); 
-            if (!categoriasDoSistema[cIndex].subcategorias) categoriasDoSistema[cIndex].subcategorias = [];
-            if (categoriasDoSistema[cIndex].subcategorias.find(s => s.nome === nm)) return alert("Já existe nesta categoria!");
-            categoriasDoSistema[cIndex].subcategorias.push({ nome: nm, subsubcategorias: [] }); 
-            await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias();
-        }
-        window.editarSubcategoria = async function(cIndex, sIndex) {
-            const old = categoriasDoSistema[cIndex].subcategorias[sIndex].nome; const novoNome = prompt("Renomear subcategoria para:", old); if (!novoNome) return;
-            const nm = novoNome.toUpperCase().trim(); categoriasDoSistema[cIndex].subcategorias[sIndex].nome = nm; const catName = categoriasDoSistema[cIndex].nome;
-            products.forEach(p => { if(p.categoria === catName && p.subcategoria === old) p.subcategoria = nm; });
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
-        }
-        window.removerSubcategoria = async function(cIndex, sIndex) {
-            const old = categoriasDoSistema[cIndex].subcategorias[sIndex].nome; if (!confirm(`Apagar a subcategoria "${old}" e seus níveis?`)) return;
-            const catName = categoriasDoSistema[cIndex].nome; categoriasDoSistema[cIndex].subcategorias.splice(sIndex, 1);
-            products.forEach(p => { if(p.categoria === catName && p.subcategoria === old) { p.subcategoria = ""; p.subsubcategoria = ""; }});
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
-        }
-
-        window.criarNovaSubSubcategoria = async function(cIndex, sIndex) {
-            const pai = categoriasDoSistema[cIndex].subcategorias[sIndex];
-            const nome = prompt(`Nova Sub-subcategoria para ${pai.nome}:`); if (!nome) return;
-            const nm = nome.toUpperCase().trim(); 
-            if (!pai.subsubcategorias) pai.subsubcategorias = [];
-            if (pai.subsubcategorias.includes(nm)) return alert("Já existe nesta subcategoria!");
-            pai.subsubcategorias.push(nm); 
-            await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias();
-        }
-        window.editarSubSubcategoria = async function(cIndex, sIndex, ssIndex) {
-            const pai = categoriasDoSistema[cIndex].subcategorias[sIndex];
-            const old = pai.subsubcategorias[ssIndex]; const novoNome = prompt("Renomear sub-subcategoria para:", old); if (!novoNome) return;
-            const nm = novoNome.toUpperCase().trim(); pai.subsubcategorias[ssIndex] = nm; 
-            const catName = categoriasDoSistema[cIndex].nome; const subName = pai.nome;
-            products.forEach(p => { if(p.categoria === catName && p.subcategoria === subName && p.subsubcategoria === old) p.subsubcategoria = nm; });
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
-        }
-        window.removerSubSubcategoria = async function(cIndex, sIndex, ssIndex) {
-            const pai = categoriasDoSistema[cIndex].subcategorias[sIndex];
-            const old = pai.subsubcategorias[ssIndex]; if (!confirm(`Apagar a sub-subcategoria "${old}"?`)) return;
-            const catName = categoriasDoSistema[cIndex].nome; const subName = pai.nome;
-            pai.subsubcategorias.splice(ssIndex, 1);
-            products.forEach(p => { if(p.categoria === catName && p.subcategoria === subName && p.subsubcategoria === old) p.subsubcategoria = ""; });
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
-        }
-
-        // ==========================================================
-        // SISTEMA GENÉRICO DE CRUD PARA SELETORES RESTANTES
-        // ==========================================================
-        window.renderizarCRUD = function(lista, containerId) {
-            const container = document.getElementById(`lista-${containerId}`); container.innerHTML = "";
-            lista.sort((a, b) => a.localeCompare(b));
-            lista.forEach((item, index) => {
-                container.innerHTML += `<div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; margin-bottom:8px;"><div style="display: flex; justify-content: space-between; align-items: center;"><strong style="color:var(--accent); font-size:13px; flex-grow:1;">${item}</strong><div style="display:flex; gap:6px;"><button class="btn-smart" style="height:28px; width:28px;" onclick="editarItem('${containerId}', ${index})"><i data-lucide="edit-2" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerItem('${containerId}', ${index})"><i data-lucide="trash-2" size="12"></i></button></div></div></div>`;
-            }); lucide.createIcons();
-        }
-
-        function getListaByKey(sidebarId) {
-            if(sidebarId.includes('marcas')) return { arr: marcasDoSistema, key: MARCAS_KEY, prop: 'marca' };
-            if(sidebarId.includes('tags')) return { arr: tagsDoSistema, key: TAGS_KEY, prop: 'tag_global' };
-        }
-
-        window.criarNovoItem = async function(lista, storageKey, sidebarId) { 
-            const nome = prompt("Nome do novo item:"); if (!nome || nome.trim() === "") return; 
-            const nm = nome.toUpperCase().trim(); if(lista.includes(nm)) return alert("Já existe!"); 
-            lista.push(nm); await localforage.setItem(storageKey, lista); renderizarCRUD(lista, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
-        }
-
-      window.editarItem = async function(sidebarId, index) { 
-            const obj = getListaByKey(sidebarId); const novoNome = prompt("Renomear:", obj.arr[index]); 
-            if (!novoNome || novoNome.trim() === "") return; 
-            const old = obj.arr[index]; const nm = novoNome.toUpperCase().trim(); obj.arr[index] = nm; 
-            
-            products.forEach(p => { 
-                if (Array.isArray(p[obj.prop])) {
-                    let idx = p[obj.prop].indexOf(old);
-                    if (idx > -1) p[obj.prop][idx] = nm; 
-                } else if (p[obj.prop] === old) {
-                    p[obj.prop] = nm; 
-                }
-            }); 
-            
-            await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
-        }
-
-        window.removerItem = async function(sidebarId, index) { 
-            const obj = getListaByKey(sidebarId); if (!confirm(`Apagar "${obj.arr[index]}"?`)) return; 
-            const old = obj.arr[index]; obj.arr.splice(index, 1); 
-            
-            products.forEach(p => { 
-                if (Array.isArray(p[obj.prop])) {
-                    p[obj.prop] = p[obj.prop].filter(t => t !== old); 
-                } else if (p[obj.prop] === old) {
-                    p[obj.prop] = ""; 
-                }
-            }); 
-            
-            await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
-        }
-
-      // ==========================================================
-      // BAIXAR PEDIDO POR TEXTO E EXPORTAR PARA BLING E SEPARAÇÃO
-      // ==========================================================
-      async function processarBaixaPedidoTexto() {
-          const texto = document.getElementById('order-text-input').value;
-          if(!texto) return alert("Por favor, cole o texto do pedido primeiro.");
-
-          const matchPedido = texto.match(/PEDIDO\s*#?(\d+)/i);
-          const numeroPedido = matchPedido ? matchPedido[1] : Date.now().toString().slice(-6);
-          const nomeComprador = "PEDIDO " + numeroPedido;
-          
-          const hoje = new Date();
-          const dataAtual = String(hoje.getDate()).padStart(2, '0') + '/' + String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
-
-          const linhas = texto.split('\n'); 
-          let encontrados = 0; 
-          let falhas = [];
-          
-          let itensPedidoBling = [];
-          let totalPedidoCalc = 0;
-          
-          let itensParaSeparacao = [];
-
-          linhas.forEach(linha => {
-              const linhaLimpa = linha.trim();
-              const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
-
-             if(match) {
-                  const qtd = parseInt(match[1]);
-                  
-                  const nomeProcuradoNormalizado = limparTexto(match[2]);
-
-                  const p = products.find(prod => {
-                      const nomeBancoNormalizado = limparTexto(prod.nome);
-                      return nomeBancoNormalizado === nomeProcuradoNormalizado;
-                  });
-
-                  if(p) {
-                      p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
-                      p.last_update = Date.now(); 
-                      encontrados++; 
-                      
-                      const valorUn = parseFloat(p.preco) || 0;
-                      const valorTotalItem = valorUn * qtd;
-                      totalPedidoCalc += valorTotalItem; 
-
-                      itensPedidoBling.push({
-                          "Número pedido": numeroPedido,
-                          "Nome Comprador": nomeComprador,
-                          "Data": dataAtual,
-                          "Produto": p.nome,
-                          "SKU": p.codigo,
-                          "Un": "UN",
-                          "Quantidade": qtd,
-                          "Valor Unitário": valorUn.toFixed(2).replace('.', ','),
-                          "Valor Total": valorTotalItem.toFixed(2).replace('.', ','),
-                          "Total Pedido": "", 
-                          "Valor Frete Pedido": "0,00",
-                          "Valor Desconto Pedido": "0,00",
-                          "Outras despesas": "0,00",
-                          "Tipo Frete": "R",
-                          "Observações": "Pedido importado via Sucedoan PIM",
-                          "Qtd Parcela": "1",
-                          "Data Prevista": dataAtual
-                      });
-
-                      itensParaSeparacao.push({
-                          id_produto: p.codigo,
-                          nome: p.nome,
-                          quantidade: qtd,
-                          url_imagem: p.url_imagem || "",
-                          gtin: p.gtin || "", 
-                          gondola: p.gondola || "Z-Sem Gôndola",
-                          prateleira: p.prateleira || "-",
-                          status: "pendente" 
-                      });
-
-                  } else {
-                      falhas.push(match[2].trim()); 
-                  }
-              }
-          });
-
-          if(encontrados > 0) {
-              await saveDataLocally(); 
-              renderGrid(ultimoTermoPesquisa);
-              salvarProdutosJSON(); 
-
-              const totalPedidoFormatado = totalPedidoCalc.toFixed(2).replace('.', ',');
-              itensPedidoBling.forEach(item => item["Total Pedido"] = totalPedidoFormatado);
-
-              await downloadCSVBling(itensPedidoBling, `Bling_Pedido_Venda_${numeroPedido}.csv`);
-
-              enqueueTask(`Lista de Separação #${numeroPedido}`, async () => {
-                  const novoPedido = {
-                      id: numeroPedido,
-                      data: new Date().toISOString(),
-                      status: "pendente",
-                      itens: itensParaSeparacao
-                  };
-
-                  let pedidosSeparacao = [];
-                  try {
-                      const fileData = await GitHubAPI.getFileData('site/pedidoseparar.json');
-                      if (fileData && fileData.content) {
-                          const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
-                          pedidosSeparacao = JSON.parse(decodedStr);
-                      }
-                  } catch (e) {
-                      console.log("Arquivo pedidoseparar.json ainda não existe. Será criado um novo.");
-                  }
-
-                  pedidosSeparacao.push(novoPedido);
-                  await GitHubAPI.saveFile('site/pedidoseparar.json', pedidosSeparacao, `Adicionado Pedido #${numeroPedido} para separação`);
-              });
-
-              let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nPlanilha do Bling guardada no GitHub!\nPedido enviado para a equipa de separação.`;
-              if(falhas.length > 0) msg += `\n\n⚠️ Itens não encontrados (Não exportados):\n- ` + falhas.join('\n- ');
-              alert(msg);
-
-              closeSidebar('pedidos-sidebar'); 
-              document.getElementById('order-text-input').value = "";
-          } else {
-              alert("❌ Nenhum produto encontrado.");
-          }
-      }
-
-        // ==========================================================
-        // LIMPEZA INTELIGENTE DE IMAGENS DO GITHUB (AJUSTADO PARA FILA)
-        // ==========================================================
-        async function executarLimpezaImagens() {
-            if(!confirm("AVISO: O sistema vai ler as pastas de imagens no GitHub e colocar na fila a exclusão dos ficheiros órfãos. Queres continuar?")) return;
-            
-            const cfg = await GitHubAPI.getConfig(); if(!cfg) return;
-            mostrarAlerta("Lendo o GitHub para criar a fila de limpeza. Aguarde...", "aviso");
-            
-            try {
-                const imagensEmUso = new Set(products.map(p => {
-                    if(!p.url_imagem) return null;
-                    const partes = p.url_imagem.split('?')[0].split('/');
-                    return partes[partes.length-1]; 
-                }).filter(x => x));
-
-                let pastas = ["site/img/produtos"];
-                for(let i = 2; i <= 10; i++) pastas.push(`site/img/produtos_${i}`);
-
-                let imagensParaApagar = 0;
-                
-                for(const pasta of pastas) {
-                    try {
-                        const files = await GitHubAPI.getFileData(pasta);
-                        if(Array.isArray(files)) {
-                            for(const file of files) {
-                                if(!imagensEmUso.has(file.name)) {
-                                    // Adicionado à fila global de 90s
-                                    enqueueTask(`Apagar Imagem: ${file.name}`, async () => {
-                                        await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${file.path}`, {
-                                            method: 'DELETE',
-                                            headers: GitHubAPI.getHeaders(cfg),
-                                            body: JSON.stringify({ message: `PIM Sync: Removendo imagem órfã ${file.name}`, sha: file.sha })
-                                        });
-                                    });
-                                    imagensParaApagar++;
-                                }
-                            }
-                        }
-                    } catch(e) { } 
-                }
-                
-                if (imagensParaApagar > 0) {
-                    mostrarAlerta(`✅ Análise concluída! ${imagensParaApagar} imagens foram para a fila de exclusão.`, "sucesso");
-                } else {
-                    mostrarAlerta("Não foram encontradas imagens órfãs para limpar.", "sucesso");
-                }
-            } catch(e) {
-                console.error(e);
-                mostrarAlerta("❌ Ocorreu um erro durante a leitura.", "erro");
             }
+
+            document.getElementById('lista-pedidos').innerHTML = html;
+            lucide.createIcons();
         }
-        
-        async function fetchFromGithub() {
-            try {
-                mostrarAlerta("Sincronizando com a nuvem...", "aviso");
-                const cfg = await GitHubAPI.getConfig(); if (!cfg) return;
-                const fileData = await GitHubAPI.getFileData('site/produtos.json');
-                if (!fileData || !fileData.content) {
-                    return alert("Arquivo produtos.json não encontrado ou vazio na nuvem.");
-                }
-                const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
-                const parsedData = JSON.parse(decodedStr);
-                if (parsedData && Array.isArray(parsedData)) {
-                    if(products.length > 0) { 
-                        if(!confirm("Substituir a base local pela da nuvem? Isso vai recalcular todas as categorias baseadas no arquivo.")) return; 
-                    }
-                    products = parsedData;
-                    categoriasDoSistema = [];
-                    marcasDoSistema = [];
-                    tagsDoSistema = [];
-                    await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema);
-                    await localforage.setItem(MARCAS_KEY, marcasDoSistema);
-                    await localforage.setItem(TAGS_KEY, tagsDoSistema);
-                    await saveDataLocally(); 
-                    await loadData(); 
-                    mostrarAlerta("✅ Atualização concluída com sucesso!", "sucesso"); 
-                    closeSidebar('config-sidebar');
-                } else { 
-                    alert("Formato inesperado. O arquivo na nuvem não é válido."); 
-                }
-            } catch(e) { 
-                console.error("Erro na nuvem:", e);
-                alert("Erro ao puxar da nuvem: " + e.message); 
+
+        function cliqueCard(event, index) {
+            if (event.target.tagName === 'INPUT') return;
+            abrirPedido(index);
+        }
+
+        function toggleSelecao(event, id) {
+            if (event.target.checked) idsSelecionados.add(id);
+            else idsSelecionados.delete(id);
+            atualizarBarraAcoes();
+        }
+
+        function atualizarBarraAcoes() {
+            const barra = document.getElementById('acao-selecao');
+            const txt = document.getElementById('txt-selecionados');
+            if (idsSelecionados.size > 0) {
+                barra.style.display = 'flex';
+                txt.innerText = `${idsSelecionados.size} pedido(s) selecionado(s)`;
+            } else {
+                barra.style.display = 'none';
             }
         }
 
-        async function limparSistema() { if(confirm("Apagar base local? (Nuvem NÃO afetada)")) { await localforage.clear(); location.reload(); } }
+        async function excluirSelecionados() {
+            if (!confirm(`Tens a certeza que desejas excluir ${idsSelecionados.size} pedido(s)?`)) return;
+            todosOsPedidos = todosOsPedidos.filter(p => !idsSelecionados.has(p.id));
+            idsSelecionados.clear();
+            await salvarNoGitHub(false, "Pedidos excluídos");
+            buscarPedidos();
+        }
 
-        // ==========================================================
-        // MÓDULO DE EXPORTAÇÃO META E CATÁLOGO GERAL
-        // ==========================================================
-        function abrirModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display = 'flex'; }
-        function fecharModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display = 'none'; }
-        
-        function formatarURLImagem(url) {
-            if (!url) return "";
-            if (typeof url === 'string' && url.includes('../')) {
-                return url.split('?')[0].replace("../", "https://donaantonia.com.br/");
-            } else if (typeof url === 'string' && url.startsWith('http')) {
-                return url.split('?')[0];
-            }
+        function abrirPedido(index) {
+            pedidoAtivo = index;
+            document.querySelector('header').style.display = 'none';
+            document.getElementById('view-pedidos').style.display = 'none';
+            // Agora usa flex para organizar os conteúdos na tela com css snap
+            document.getElementById('view-separacao').style.display = 'flex';
+            document.getElementById('titulo-pedido-ativo').innerText = `Pedido #${todosOsPedidos[pedidoAtivo].id}`;
+            renderizarItensDoPedido();
+            window.scrollTo(0, 0);
+        }
+
+        function voltarParaPedidos() {
+            pedidoAtivo = null;
+            document.querySelector('header').style.display = 'flex';
+            document.getElementById('view-separacao').style.display = 'none';
+            document.getElementById('view-pedidos').style.display = 'block';
+            buscarPedidos(); 
+        }
+
+        function formatarImagem(url) {
+            if(!url) return 'https://placehold.co/400x400/f4f4f5/a1a1aa?text=SEM+FOTO';
+            if(url.includes('../')) return url.replace('../', 'https://donaantonia.com.br/');
             return url;
         }
 
-        async function gerarCSVMetaCompleto() {
-            if(products.length === 0) return alert("Banco vazio.");
-            const ativos = products.filter(p => p.situacao !== 'I');
-            const metaCatalog = ativos.map(p => ({
-                "id": p.codigo,
-                "title": p.nome || "",
-                "description": p.nome + (p.embalagem ? " - " + p.embalagem : ""),
-                "availability": p.estoque > 0 ? "in stock" : "out of stock",
-                "condition": "new",
-                "price": p.preco ? p.preco + " BRL" : "0.00 BRL",
-                "link": "https://donaantonia.com.br/produto/" + p.codigo,
-                "image_link": formatarURLImagem(p.url_imagem),
-                "brand": p.marca || "Marca"
-            }));
-            await downloadCSVBling(metaCatalog, "Catalogo_Meta_Completo.csv");
-            fecharModalExportacaoMeta();
-        }
-
-        function gerarCSVMetaFila(tipoFiltro) {
-            gerarCSVMetaCompleto(); 
-        }
-
-        window.exportarCatalogoGeral = async function() {
-            const ativos = products.filter(p => p.situacao !== 'I');
-            ativos.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
-            
-            const catalogo = ativos.map(p => {
-                let tags = p.tag_global || "";
-                if (Array.isArray(tags)) tags = tags.join(", ");
-
-                return {
-                    "NOME": p.nome || "",
-                    "DESCRIÇÃO": p.nome || "",
-                    "MARCA": p.marca || "",
-                    "VALOR": p.preco || 0,
-                    "ESTOQUE": p.estoque || 0,
-                    "CATEGORIA": p.categoria || "",
-                    "SUBCATEGORIA": p.subcategoria || "",
-                    "SUBSUB CATEGORIA": p.subsubcategoria || "",
-                    "TAG GLOBAL": tags,
-                    "EMBALAGEM": p.embalagem || "",
-                    "LINK DA IMAGEM": formatarURLImagem(p.url_imagem)
-                };
+        function renderizarItensDoPedido() {
+            const pedido = todosOsPedidos[pedidoAtivo];
+            pedido.itens.sort((a, b) => {
+                if (a.gondola === b.gondola) return String(a.prateleira).localeCompare(String(b.prateleira));
+                return String(a.gondola).localeCompare(String(b.gondola));
             });
-            await downloadCSVBling(catalogo, "Catalogo_Geral.csv");
-        };
 
-        // ==========================================================
-        // MÓDULO DE EXPORTAÇÃO BLING V3 (AJUSTADO PARA FILA)
-        // ==========================================================
-        function mapearProdutoParaBling(p) {
-            let localizacaoStr = "";
-            if(p.gondola || p.prateleira) {
-                localizacaoStr = `Gôndola: ${p.gondola || '-'} | Prateleira: ${p.prateleira || '-'}`;
-            }
+            const html = pedido.itens.map((item, idx) => {
+                const isSeparado = item.status === 'separado';
+                let areaControle = !isSeparado ? 
+                    `<button class="btn-action" onclick="confirmarSeparacao(${idx})"><i data-lucide="check"></i> Marcar como Separado</button>` :
+                    `<button class="btn-success" disabled><i data-lucide="check-circle"></i> Separado</button>`;
 
-           return {
-                "ID": "", 
-                "Código": p.codigo || "",
-                "Descrição": p.nome || "",
-                "Unidade": "UN",
-                "NCM": p.ncm || "",
-                "Origem": "0",
-                "Preço": p.preco || 0,
-                "Valor IPI fixo": "",
-                "Observações": "",
-                "Situação": p.situacao === 'I' ? 'Inativo' : 'Ativo',
-                "Estoque": p.estoque || 0,
-                "Preço de custo": p.preco_custo || 0,
-                "Cód no fornecedor": "",
-                "Fornecedor": "",
-                "Localização": localizacaoStr,
-                "Estoque maximo": "",
-                "Estoque minimo": "",
-                "Peso líquido (Kg)": "",
-                "Peso bruto (Kg)": "",
-                "GTIN/EAN": p.gtin || "",
-                "GTIN/EAN da embalagem": "",
-                "Largura do Produto": "",
-                "Altura do Produto": "",
-                "Profundidade do produto": "",
-                "Data Validade": p.validade || "",
-                "Descrição do Produto no Fornecedor": "",
-                "Descrição Complementar": p.descricao || "", 
-                "Itens p/ caixa": "",
-                "Produto Variação": "",
-                "Tipo Produção": "",
-                "Classe de enquadramento do IPI": "",
-                "Código da lista de serviços": "",
-                "Tipo do item": "",
-                "Grupo de Tags/Tags": "",
-                "Tributos": "",
-                "Código Pai": "",
-                "Código Integração": "",
-                "Grupo de produtos": "",
-                "Marca": p.marca || "",
-                "CEST": "",
-                "Volumes": "",
-                "Descrição Curta": "",
-                "Cross-Docking": "",
-                "URL Imagens Externas": p.url_imagem ? p.url_imagem.split('?')[0].replace("../", "https://donaantonia.com.br/") : "",
-                "Link Externo": "",
-                "Meses Garantia no Fornecedor": "",
-                "Clonar dados do pai": "",
-                "Condição do produto": "NOVO",
-                "Frete Grátis": "",
-                "Número FCI": "",
-                "Vídeo": p.link_youtube || "",
-                "Departamento": "",
-                "Unidade de medida": "",
-                "Preço de compra": "",
-                "Valor base ICMS ST para retenção": "",
-                "Valor ICMS ST para retenção": "",
-                "Valor ICMS próprio do substituto": "",
-                "Categoria do produto": "",
-                "Informações Adicionais": ""
-            };
-        }
-
-        async function downloadCSVBling(dados, filename) {
-            const csv = Papa.unparse(dados, { delimiter: ";" });
-            const csvComBom = "\ufeff" + csv;
-
-            // Enviar para a fila de sincronização em vez de salvar diretamente
-            enqueueTask(`Exportação CSV: ${filename}`, async () => {
-                try {
-                    await GitHubAPI.saveFile(`site/exportacoes/${filename}`, csvComBom, `Exportação: ${filename}`);
-                } catch (erro) {
-                    console.error("Erro ao salvar no GitHub:", erro);
-                    // Download direto como fallback caso a API falhe drasticamente
-                    const blob = new Blob([csvComBom], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement("a");
-                    link.href = url;
-                    link.download = "BACKUP_" + filename;
-                    link.style.visibility = 'hidden';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    throw erro;
-                }
-            });
-            
-            mostrarAlerta(`⏳ Arquivo ${filename} na fila! Aguarde os 90s.`, "aviso");
-        }
-
-        window.exportarProdutoBling = async function(sku) {
-            const p = products.find(x => x.codigo === sku);
-            if(!p) return alert("Produto não encontrado.");
-            await downloadCSVBling([mapearProdutoParaBling(p)], `Bling_Produto_${sku}.csv`);
-        };
-
-        window.exportarTudoBling = async function() {
-            if(!confirm("Exportar todo o banco de dados (Bling CSV)? O sistema dividirá automaticamente em arquivos de até 900 produtos se necessário.")) return;
-            if(products.length === 0) return alert("Banco vazio.");
-            const mappedList = products.map(p => mapearProdutoParaBling(p));
-            const chunkSize = 900; 
-            if (mappedList.length <= chunkSize) {
-                await downloadCSVBling(mappedList, "Bling_Banco_Completo.csv");
-            } 
-            else {
-                const totalParts = Math.ceil(mappedList.length / chunkSize);
-                mostrarAlerta(`A exportar ${totalParts} ficheiros... Por favor, aguarde.`, 'aviso');
-                for (let i = 0; i < totalParts; i++) {
-                    const chunk = mappedList.slice(i * chunkSize, (i + 1) * chunkSize);
-                    const filename = `Bling_Banco_Completo_Parte_${i + 1}.csv`;
-                    await downloadCSVBling(chunk, filename);
-                }
-            }
-        };
-
-        window.exportarCategoriaBling = async function() {
-            const cat = document.getElementById('flt-cat').value;
-            if(!cat) return alert("Selecione uma categoria principal no filtro primeiro.");
-            const list = products.filter(p => p.categoria === cat);
-            if(list.length === 0) return alert("Nenhum produto encontrado nesta categoria.");
-            const mappedList = list.map(p => mapearProdutoParaBling(p));
-            await downloadCSVBling(mappedList, `Bling_Categoria_${cat}.csv`);
-        };
-
-        // ==========================================================
-        // GERENCIADOR DE EXPORTAÇÕES (GITHUB)
-        // ==========================================================
-        
-        // Função para forçar o download de ficheiros do GitHub em vez de abrir no navegador
-        window.forcarDownloadGithub = async function(url, nomeArquivo) {
-            try {
-                mostrarAlerta("A preparar o download...", "aviso");
-                
-                // Puxa o conteúdo do ficheiro diretamente
-                const resposta = await fetch(url);
-                if (!resposta.ok) throw new Error("Erro na rede");
-                
-                // Transforma o conteúdo num "pacote" (blob) e cria um link temporário
-                const blob = await resposta.blob();
-                const blobUrl = URL.createObjectURL(blob);
-                
-                // Simula um clique num botão de download
-                const link = document.createElement("a");
-                link.href = blobUrl;
-                link.download = nomeArquivo;
-                document.body.appendChild(link);
-                link.click();
-                
-                // Limpa a memória após o download
-                document.body.removeChild(link);
-                URL.revokeObjectURL(blobUrl);
-                
-                mostrarAlerta("Download concluído!", "sucesso");
-            } catch (erro) {
-                console.error("Erro no download:", erro);
-                // Plano B: se a nossa função falhar por algum motivo, abre no separador como fazia antes
-                alert("Ocorreu um erro no download direto. O ficheiro vai abrir num novo separador.");
-                window.open(url, '_blank'); 
-            }
-        };
-
-        async function abrirGerenciadorExportacoes() {
-            closeSidebar('menu-sidebar');
-            openSidebar('exportacoes-sidebar');
-            listarArquivosExportados();
-        }
-
-        async function listarArquivosExportados() {
-            const container = document.getElementById('lista-exportacoes-github');
-            container.innerHTML = '<div style="text-align:center; padding:20px;"><i data-lucide="loader" class="spin-icon"></i><br>Buscando arquivos...</div>';
-            lucide.createIcons();
-            try {
-                const files = await GitHubAPI.getFileData('site/exportacoes');
-                if (!files || !Array.isArray(files)) {
-                    container.innerHTML = '<p style="text-align:center; font-size:11px; color:var(--text-secondary); padding:20px;">Nenhum arquivo encontrado em site/exportacoes/</p>';
-                    return;
-                }
-                files.reverse();
-                container.innerHTML = files.map(file => {
-                    if(file.type === 'dir') return ''; 
-                    return `
-                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; margin-bottom:8px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow);">
-                        <div style="overflow: hidden; flex-grow: 1; margin-right: 10px;">
-                            <strong style="font-size:11px; display: block; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; color: var(--accent);">${file.name}</strong>
-                            <span style="font-size:9px; color:var(--text-secondary);">Tamanho: ${(file.size / 1024).toFixed(1)} KB</span>
+                return `
+                <div class="item-card ${isSeparado ? 'separado' : ''}">
+                    <img src="${formatarImagem(item.url_imagem)}" class="item-img" onerror="this.src='https://placehold.co/400x400/f4f4f5/ef4444?text=ERRO'">
+                    
+                    <div class="item-info">
+                        <div class="qty-highlight">${item.quantidade} UN</div>
+                        
+                        <div class="ean-display">${item.gtin || 'SEM EAN REGISTADO'}</div>
+                        
+                        <h3 class="item-title">${item.nome}</h3>
+                        
+                        <div class="item-meta">
+                            <div class="meta-box" style="border-right: 1px solid var(--border);"><div class="meta-label">Gôndola</div><div class="meta-value">${item.gondola}</div></div>
+                            <div class="meta-box"><div class="meta-label">Prateleira</div><div class="meta-value">${item.prateleira}</div></div>
                         </div>
-                        <button class="btn-icon" onclick="forcarDownloadGithub('${file.download_url}', '${file.name}')" title="Descarregar para o PC">
-                            <i data-lucide="download" size="14"></i>
-                        </button>
+                        ${areaControle}
                     </div>
-                    `;
-                }).join('');
-                lucide.createIcons();
-            } catch (e) {
-                container.innerHTML = '<p style="color:var(--danger); font-size:11px; text-align:center; padding:20px;">Erro ao carregar lista.<br>Certifique-se que a pasta "site/exportacoes" existe no GitHub.</p>';
+                </div>`;
+            }).join('');
+            document.getElementById('lista-itens').innerHTML = html;
+            lucide.createIcons();
+        }
+
+        async function confirmarSeparacao(itemIndex) {
+            const item = todosOsPedidos[pedidoAtivo].itens[itemIndex];
+            item.status = 'separado';
+            const todosSeparados = todosOsPedidos[pedidoAtivo].itens.every(i => i.status === 'separado');
+            
+            if(todosSeparados) {
+                todosOsPedidos[pedidoAtivo].status = 'concluido';
+                await salvarNoGitHub(true, `Pedido #${todosOsPedidos[pedidoAtivo].id} concluído`);
+            } else {
+                renderizarItensDoPedido(); 
+                await salvarNoGitHub(false, `Item ${item.nome} separado no pedido #${todosOsPedidos[pedidoAtivo].id}`);
             }
         }
 
-        // ==========================================================
-        // LEITURA DO CSV DO BLING
-        // ==========================================================
-        document.getElementById('csv-file-atualizar').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            mostrarAlerta("Analisando planilha e atualizando produtos...", "aviso");
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                complete: async function(results) {
-                    const linhas = results.data;
-                    let atualizados = 0; let adicionados = 0;
-                    linhas.forEach((linha, idx) => {
-                        let eanBling = (linha["GTIN/EAN"] || linha["EAN"] || linha["GTIN"] || "").toString().trim();
-                        let idBling = (linha["ID"] || "").toString().trim();
-                        let skuBling = (linha["Código"] || linha["Codigo"] || "").toString().trim();
-                        let nome = linha["Descrição"] || linha["Descricao"] || "Produto Importado";
-                        let precoStr = linha["Preço"] || "0";
-                        let preco = parseFloat(precoStr.toString().replace(',','.')) || 0;
-                        let custoStr = linha["Preço de custo"] || "0";
-                        let custo = parseFloat(custoStr.toString().replace(',','.')) || 0;
-                        let estoqueStr = linha["Estoque"] || "0";
-                        let estoque = parseFloat(estoqueStr.toString().replace(',','.')) || 0;
-                        let ncm = linha["NCM"] || "";
-                        let marca = linha["Marca"] || "";
-                        let produtoExistente = null;
-                        if (eanBling !== "") produtoExistente = products.find(p => p.gtin === eanBling);
-                        if (!produtoExistente && skuBling !== "") produtoExistente = products.find(p => p.codigo === skuBling);
-                        if (produtoExistente) {
-                            produtoExistente.nome = nome; produtoExistente.preco = preco; produtoExistente.preco_custo = custo; produtoExistente.estoque = estoque;
-                            if (ncm) produtoExistente.ncm = ncm; if (marca) produtoExistente.marca = marca; if (eanBling && !produtoExistente.gtin) produtoExistente.gtin = eanBling;
-                            produtoExistente.last_update = Date.now(); atualizados++;
-                        } else {
-                            let novoIdBling = idBling || (Date.now().toString() + idx.toString() + Math.floor(Math.random() * 10000).toString());
-                            let novoSkuBling = skuBling || (Date.now().toString().slice(-6) + idx.toString().padStart(4, '0') + Math.floor(Math.random() * 1000).toString());
-                            products.unshift({
-                                id: novoIdBling, codigo: novoSkuBling, gtin: eanBling, nome: nome, preco: preco, preco_custo: custo, situacao: 'A', estoque: estoque, ncm: ncm, marca: marca, descricao: "", last_update: Date.now()
-                            }); adicionados++;
-                        }
-                    });
-                    await saveDataLocally(); await loadData(); renderGrid(ultimoTermoPesquisa);
-                    mostrarAlerta(`✅ Concluído! ${adicionados} criados e ${atualizados} atualizados.`, "sucesso");
-                    document.getElementById('csv-file-atualizar').value = "";
+        async function salvarNoGitHub(pedidoCompleto = false, mensagem = "Atualização") {
+            try {
+                const urlGet = obterUrlSemCache('site/pedidoseparar.json');
+                const resGet = await fetch(urlGet, { 
+                    headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" },
+                    cache: "no-store"
+                });
+
+                let pedidosNoServidor = [];
+                let shaAtualizado = fileSha;
+
+                if (resGet.ok) {
+                    const dataGet = await resGet.json();
+                    shaAtualizado = dataGet.sha; 
+                    pedidosNoServidor = JSON.parse(decodeBase64(dataGet.content));
                 }
-            });
-        });
+
+                if (pedidoAtivo !== null) {
+                    const meuPedidoAtualizado = todosOsPedidos[pedidoAtivo];
+                    const indexNoServidor = pedidosNoServidor.findIndex(p => p.id === meuPedidoAtualizado.id);
+                    
+                    if (indexNoServidor !== -1) {
+                        pedidosNoServidor[indexNoServidor] = meuPedidoAtualizado;
+                    } else {
+                        pedidosNoServidor.push(meuPedidoAtualizado);
+                    }
+                    todosOsPedidos = pedidosNoServidor;
+                }
+
+                const body = { 
+                    message: mensagem, 
+                    content: encodeBase64(JSON.stringify(todosOsPedidos, null, 2)), 
+                    sha: shaAtualizado 
+                };
+
+                const urlPut = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/pedidoseparar.json`;
+                const resPut = await fetch(urlPut, { 
+                    method: 'PUT', 
+                    headers: { 
+                        "Authorization": `Bearer ${cfg.token}`, 
+                        "Accept": "application/vnd.github.v3+json", 
+                        "Content-Type": "application/json" 
+                    }, 
+                    body: JSON.stringify(body) 
+                });
+
+                if (resPut.ok) {
+                    const dataPut = await resPut.json();
+                    fileSha = dataPut.content.sha; 
+                    if(pedidoCompleto) { 
+                        alert("🎉 Pedido concluído!"); 
+                        voltarParaPedidos(); 
+                    }
+                } else {
+                    const erro = await resPut.json();
+                    alert("Erro ao salvar no GitHub: " + erro.message);
+                }
+            } catch (e) { 
+                console.error(e); 
+                alert("Erro crítico de rede ao tentar sincronizar.");
+            }
+        }
     </script>
 </body>
 </html>
