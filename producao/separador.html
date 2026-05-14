@@ -11,6 +11,7 @@
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/000000/FFFFFF?text=Sucedoan">
     <title>Sucedoan - Separação de Pedidos</title>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -65,10 +66,10 @@
 
         #acao-selecao { display: none; background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 15px; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
-        /* Modificação no Card do Pedido para caber mais dados e botões */
         .order-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.04); position: relative; }
         .order-card:active { transform: scale(0.99); }
         .order-card.concluido { opacity: 0.8; border-color: var(--success); background: #ecfdf5; }
+        .sortable-ghost { opacity: 0.4; background: #fef08a; border: 2px dashed #ca8a04; } /* Estilo ao arrastar */
         
         .order-header-row { display: flex; align-items: flex-start; gap: 12px; width: 100%; }
         
@@ -96,7 +97,6 @@
         .action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; margin-bottom: 25px; }
         .action-btn-square { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-size: 11px; font-weight: 800; color: var(--text); cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.02); text-decoration: none; text-align: center;}
         
-        /* Area de Impressão (Oculta na tela) */
         #print-area { display: none; }
 
         .item-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 30px; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.05); scroll-snap-align: center; scroll-snap-stop: always; height: 80vh; }
@@ -115,33 +115,19 @@
         .meta-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 800; }
         .meta-value { font-size: 18px; font-weight: 900; color: var(--primary); }
 
-        #config-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+        .modal-base { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; }
         .modal-content input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter'; font-weight: 600;}
         
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        /* Estilos de Impressão Térmica 100x150mm */
         @media print {
             body * { visibility: hidden; }
             html, body { height: auto; background: white; margin: 0; padding: 0; }
             #print-area, #print-area * { visibility: visible; }
-            #print-area { 
-                display: block !important; 
-                position: absolute; 
-                left: 0; top: 0; 
-                width: 100mm; 
-                min-height: 150mm; 
-                background: white; 
-                color: black; 
-                font-family: 'Inter', sans-serif; 
-                padding: 4mm; 
-                box-sizing: border-box;
-            }
+            #print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100mm; min-height: 150mm; background: white; color: black; font-family: 'Inter', sans-serif; padding: 4mm; box-sizing: border-box; }
             @page { size: 100mm 150mm; margin: 0; }
-            
-            /* Ajustes visuais específicos para a etiqueta */
             .print-title { font-size: 26px; font-weight: 900; text-align: center; margin: 0 0 5px 0; border: 3px solid black; padding: 10px; }
             .print-barcode { font-size: 20px; font-weight: bold; text-align: center; margin-bottom: 15px; font-family: monospace; letter-spacing: 2px;}
             .print-section { border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
@@ -158,6 +144,9 @@
     <header>
         <div class="brand"><i data-lucide="package-check"></i> Separação</div>
         <div style="display:flex; gap:10px;">
+            <button class="btn-config" style="background: var(--success); font-size: 12px; padding: 5px 10px;" onclick="salvarOrdemPedidos()">
+                <i data-lucide="save" size="14"></i> Salvar Rota
+            </button>
             <button class="btn-config" onclick="buscarPedidos()"><i data-lucide="refresh-cw"></i></button>
             <button class="btn-config" onclick="abrirConfig()"><i data-lucide="settings"></i></button>
         </div>
@@ -169,6 +158,22 @@
             <button class="btn-danger" onclick="excluirSelecionados()"><i data-lucide="trash-2"></i> Excluir</button>
         </div>
         <div id="lista-pedidos">Carregando pedidos...</div>
+    </div>
+
+    <div id="modal-separador" class="modal-base">
+        <div class="modal-content">
+            <h3 style="margin:0; font-weight:900;">Quem está separando?</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Selecione o seu nome para iniciar a separação.</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                <button class="btn-action" style="background: #1e293b;" onclick="definirSeparador('Kely')">Kely</button>
+                <button class="btn-action" style="background: #1e293b;" onclick="definirSeparador('Claudenil')">Claudenil</button>
+                <button class="btn-action" style="background: #1e293b;" onclick="definirSeparador('Jose')">Jose</button>
+                <button class="btn-action" style="background: #1e293b;" onclick="definirSeparador('André')">André</button>
+                <button class="btn-action" style="background: #1e293b;" onclick="definirSeparador('Jovenil')">Jovenil</button>
+                <button class="btn-action" style="background: #1e293b;" onclick="definirSeparador('Osvaldo')">Osvaldo</button>
+            </div>
+            <button class="btn-action" onclick="fecharModalSeparador()" style="background: var(--border); color: var(--text); margin-top: 10px;">Cancelar</button>
+        </div>
     </div>
 
     <div id="view-separacao">
@@ -187,11 +192,10 @@
             <h3 style="margin:0; font-weight:900; font-size:18px; display:flex; align-items:center; gap:8px;"><i data-lucide="truck"></i> Info Entrega</h3>
             <button onclick="fecharEntregador()" style="background:none; color:white; padding:5px;"><i data-lucide="x"></i></button>
         </div>
-        <div class="sidebar-content" id="entregador-content">
-            </div>
+        <div class="sidebar-content" id="entregador-content"></div>
     </div>
 
-    <div id="config-modal">
+    <div id="config-modal" class="modal-base">
         <div class="modal-content">
             <h3 style="margin:0; font-weight:900;">Credenciais GitHub</h3>
             <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Insira os mesmos dados do Sucedoan PIM.</p>
@@ -231,6 +235,7 @@
         let fileSha = null;
         let todosOsPedidos = [];
         let pedidoAtivo = null;
+        let pedidoAguardandoSeparador = null; // Guarda o índice temporariamente
         let idsSelecionados = new Set();
 
         window.onload = () => {
@@ -316,12 +321,13 @@
         }
 
         function renderizarListaPedidos() {
-            const ordenados = [...todosOsPedidos].sort((a, b) => {
-                if (a.status === b.status) return new Date(b.data) - new Date(a.data);
-                return a.status === 'pendente' ? -1 : 1;
-            });
+            // Preservar a ordem da Array (que pode ter sido reordenada manualmente)
+            // Apenas movemos os concluídos para o fim.
+            const pendentes = todosOsPedidos.filter(p => p.status !== 'concluido');
+            const concluidos = todosOsPedidos.filter(p => p.status === 'concluido');
+            const ordenados = [...pendentes, ...concluidos];
 
-            const grupos = {};
+            const grupos = [];
             const hoje = new Date();
             hoje.setHours(0,0,0,0);
 
@@ -335,25 +341,30 @@
                 if (diffDias === 0) nomeGrupo = `Hoje`;
                 else if (diffDias === 1) nomeGrupo = `Ontem`;
                 
-                if (!grupos[nomeGrupo]) grupos[nomeGrupo] = [];
-                grupos[nomeGrupo].push(pedido);
+                let grupo = grupos.find(g => g.nome === nomeGrupo);
+                if (!grupo) {
+                    grupo = { nome: nomeGrupo, pedidos: [] };
+                    grupos.push(grupo);
+                }
+                grupo.pedidos.push(pedido);
             });
 
             let html = '';
-            if (Object.keys(grupos).length === 0) {
+            if (grupos.length === 0) {
                 html = 'Nenhum pedido encontrado.';
             } else {
-                for (const [grupo, pedidos] of Object.entries(grupos)) {
-                    html += `<h3 style="margin-top: 25px; margin-bottom: 10px; font-weight: 900; font-size: 14px; color: var(--text-muted); text-transform: uppercase;"><i data-lucide="calendar" size="14" style="vertical-align: middle;"></i> ${grupo}</h3>`;
+                grupos.forEach(grupo => {
+                    html += `<h3 style="margin-top: 25px; margin-bottom: 10px; font-weight: 900; font-size: 14px; color: var(--text-muted); text-transform: uppercase;"><i data-lucide="calendar" size="14" style="vertical-align: middle;"></i> ${grupo.nome}</h3>`;
                     
-                    html += pedidos.map((pedido) => {
+                    html += `<div class="sortable-group">`; // Container para o Drag and Drop
+                    
+                    html += grupo.pedidos.map((pedido) => {
                         const totalSkus = pedido.itens.length;
                         const totalUnidades = pedido.itens.reduce((soma, i) => soma + i.quantidade, 0);
                         const isConcluido = pedido.status === 'concluido';
                         const horaFormatada = new Date(pedido.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
                         const realIndex = todosOsPedidos.findIndex(p => p.id === pedido.id);
 
-                        // Dados do Cliente (Tratando dados do JSON)
                         const nomeCli = pedido.cliente_nome || pedido.nome_cliente || 'Cliente Padrão';
                         const codCli = pedido.cliente_codigo || pedido.codigo_cliente || 'N/A';
                         const telCli = pedido.cliente_telefone || pedido.telefone_cliente || 'Sem telefone';
@@ -361,7 +372,7 @@
                         const rotaCli = pedido.cliente_rota || pedido.rota_cliente || 'Rota ND';
 
                         return `
-                        <div class="order-card ${isConcluido ? 'concluido' : ''}" onclick="cliqueCard(event, ${realIndex})">
+                        <div class="order-card ${isConcluido ? 'concluido' : ''}" data-id="${pedido.id}" onclick="cliqueCard(event, ${realIndex})">
                             <div class="order-header-row">
                                 <div class="checkbox-container">
                                     <input type="checkbox" ${idsSelecionados.has(pedido.id) ? 'checked' : ''} onchange="toggleSelecao(event, '${pedido.id}')">
@@ -370,6 +381,9 @@
                                     <div>
                                         <div class="order-id">Pedido #${pedido.id}</div>
                                         <div class="order-date"><i data-lucide="clock" size="12"></i> ${horaFormatada} - ${totalSkus} Itens (${totalUnidades} Peças)</div>
+                                        <div style="font-size:10px; font-weight:800; color:var(--text-muted); margin-top:6px;">
+                                            <i data-lucide="user" size="10"></i> Separador: <span style="color:var(--text);">${pedido.separador || 'Aguardando...'}</span>
+                                        </div>
                                     </div>
                                     <div class="badge" style="background: ${isConcluido ? '#d1fae5' : '#fef08a'}; color: ${isConcluido ? '#065f46' : '#854d0e'};">
                                         ${isConcluido ? 'SEPARADO' : 'PENDENTE'}
@@ -398,10 +412,45 @@
                             </div>
                         </div>`;
                     }).join('');
-                }
+                    
+                    html += `</div>`; // Fecha sortable-group
+                });
             }
             document.getElementById('lista-pedidos').innerHTML = html;
             lucide.createIcons();
+
+            // Ativa o Drag and Drop para reordenação
+            document.querySelectorAll('.sortable-group').forEach(el => {
+                new Sortable(el, {
+                    animation: 150,
+                    delay: 100, // Previne arrastar sem querer ao rolar a tela no celular
+                    delayOnTouchOnly: true
+                });
+            });
+        }
+
+        // --- SALVAR ORDEM (ROTA) ---
+        async function salvarOrdemPedidos() {
+            const documentCards = Array.from(document.querySelectorAll('.order-card'));
+            if (documentCards.length === 0) { alert("Nenhum pedido para reordenar."); return; }
+
+            const orderMap = new Map();
+            todosOsPedidos.forEach(p => orderMap.set(p.id, p));
+
+            let novaLista = [];
+            documentCards.forEach(card => {
+                const id = card.dataset.id;
+                if (orderMap.has(id)) {
+                    novaLista.push(orderMap.get(id));
+                    orderMap.delete(id);
+                }
+            });
+
+            // Se houver pedidos que não estavam na tela, coloca-os no final
+            orderMap.forEach(p => novaLista.push(p));
+
+            todosOsPedidos = novaLista;
+            await salvarNoGitHub(false, "Nova rota de pedidos atualizada manualmente");
         }
 
         function cliqueCard(event, index) {
@@ -430,7 +479,36 @@
             buscarPedidos();
         }
 
+        // --- ABRIR PEDIDO E ATRIBUIR SEPARADOR ---
         function abrirPedido(index) {
+            const pedido = todosOsPedidos[index];
+            if (!pedido.separador) {
+                pedidoAguardandoSeparador = index;
+                document.getElementById('modal-separador').style.display = 'flex';
+                return;
+            }
+            executarAberturaPedido(index);
+        }
+
+        async function definirSeparador(nome) {
+            if (pedidoAguardandoSeparador === null) return;
+            const index = pedidoAguardandoSeparador;
+            todosOsPedidos[index].separador = nome;
+            
+            fecharModalSeparador();
+            pedidoAtivo = index; 
+            
+            // Salva no github imediatamente para travar o pedido para este separador
+            await salvarNoGitHub(false, `Pedido #${todosOsPedidos[index].id} sendo separado por ${nome}`);
+            executarAberturaPedido(index);
+        }
+
+        function fecharModalSeparador() {
+            document.getElementById('modal-separador').style.display = 'none';
+            pedidoAguardandoSeparador = null;
+        }
+
+        function executarAberturaPedido(index) {
             pedidoAtivo = index;
             document.getElementById('view-pedidos').style.display = 'none';
             document.getElementById('view-separacao').style.display = 'flex';
@@ -459,7 +537,14 @@
                 return String(a.gondola).localeCompare(String(b.gondola));
             });
 
-            const html = pedido.itens.map((item, idx) => {
+            // Adiciona o Botão Mestre de Separar Todos no topo da lista
+            let html = `
+                <button class="btn-success" style="margin-bottom: 20px; font-size: 15px; padding: 15px;" onclick="separarTodosDeUmaVez()">
+                    <i data-lucide="check-square"></i> MARCAR TODOS COMO SEPARADO
+                </button>
+            `;
+
+            html += pedido.itens.map((item, idx) => {
                 const isSeparado = item.status === 'separado';
                 let areaControle = !isSeparado ? 
                     `<button class="btn-action" onclick="confirmarSeparacao(${idx})"><i data-lucide="check"></i> Marcar como Separado</button>` :
@@ -482,6 +567,18 @@
             }).join('');
             document.getElementById('lista-itens').innerHTML = html;
             lucide.createIcons();
+        }
+
+        // --- FUNÇÃO SEPARAR TODOS COM SENHA ---
+        async function separarTodosDeUmaVez() {
+            const senha = prompt("Atenção: Apenas gerentes. Digite a senha para baixar tudo:");
+            if (senha === "0904") {
+                todosOsPedidos[pedidoAtivo].itens.forEach(i => i.status = 'separado');
+                todosOsPedidos[pedidoAtivo].status = 'concluido';
+                await salvarNoGitHub(true, `Pedido #${todosOsPedidos[pedidoAtivo].id} concluído em LOTE por ${todosOsPedidos[pedidoAtivo].separador}`);
+            } else if (senha !== null) {
+                alert("Senha incorreta!");
+            }
         }
 
         async function confirmarSeparacao(itemIndex) {
@@ -522,14 +619,19 @@
                 if (resPut.ok) {
                     const dataPut = await resPut.json();
                     fileSha = dataPut.content.sha; 
-                    if(pedidoCompleto) { alert("🎉 Pedido concluído!"); voltarParaPedidos(); }
+                    if(pedidoCompleto) { 
+                        alert("🎉 Pedido concluído!"); 
+                        voltarParaPedidos(); 
+                    } else if (mensagem === "Nova rota de pedidos atualizada manualmente") {
+                        alert("Ordem salva com sucesso!");
+                    }
                 } else {
                     const erro = await resPut.json(); alert("Erro GitHub: " + erro.message);
                 }
             } catch (e) { console.error(e); alert("Erro crítico de sincronização."); }
         }
 
-        // --- NOVAS FUNÇÕES: ENTREGADOR, WHATSAPP, IMPRESSÃO ---
+        // --- FUNÇÕES: ENTREGADOR, WHATSAPP, IMPRESSÃO ---
 
         function abrirEntregador(event, index) {
             event.stopPropagation();
@@ -540,10 +642,8 @@
             const cidCli = p.cliente_cidade || p.cidade_cliente || 'N/A';
             const rotaCli = p.cliente_rota || p.rota_cliente || 'N/A';
 
-            // Links para ações rápidas
             const linkTel = telCli ? `tel:${telCli.replace(/\D/g, '')}` : '#';
             const linkWa = telCli ? `https://wa.me/55${telCli.replace(/\D/g, '')}` : '#';
-            // Busca no Maps pelo código do cliente na cidade
             const linkMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(codCli + ' ' + cidCli)}`;
 
             let htmlItens = p.itens.map(i => `<li style="padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;"><span style="font-weight:900; color:var(--primary);">${i.quantidade}x</span> ${i.nome}</li>`).join('');
