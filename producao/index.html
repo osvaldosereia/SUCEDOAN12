@@ -471,8 +471,8 @@
             window.open(`https://www.google.com/search?q=${encodeURIComponent(nome + " pesquise em sites especializados e traga um breve review sobre o produto. Inclua as informações mais relevantes para exclarecer duvidas e convencer o cliente a comprar o produto. Retire os links e valores da resposta.")}`, '_blank'); 
         }
 
-        // ==========================================================
-        // GESTOR DE COMUNICAÇÃO COM GITHUB
+       // ==========================================================
+        // GESTOR DE COMUNICAÇÃO COM GITHUB (CORRIGIDO)
         // ==========================================================
         const GitHubAPI = {
             getConfig: async function() {
@@ -483,18 +483,22 @@
                 }
                 return cfg;
             },
+            
             getHeaders: function(cfg) {
-                return { "Authorization": `Bearer ${cfg.token}`, "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" };
+                return { 
+                    "Authorization": `Bearer ${cfg.token}`, 
+                    "X-GitHub-Api-Version": "2022-11-28", 
+                    "Content-Type": "application/json",
+                    "Accept": "application/vnd.github.v3+json" // Garante compatibilidade
+                };
             },
             
+            // MÉTODO ATUALIZADO: Mais seguro para textos grandes (evita erro de memória)
             encodeUTF8toBase64: function(str) {
                 const bytes = new TextEncoder().encode(str);
-                let binString = '';
-                const chunkSize = 8192;
-                for (let i = 0; i < bytes.length; i += chunkSize) {
-                    const chunk = bytes.subarray(i, i + chunkSize);
-                    binString += String.fromCharCode.apply(null, chunk);
-                }
+                const binString = Array.from(bytes, (byte) =>
+                    String.fromCodePoint(byte)
+                ).join("");
                 return btoa(binString);
             },
             
@@ -511,17 +515,34 @@
             getFileData: async function(path) {
                 const cfg = await this.getConfig();
                 if (!cfg) throw new Error("Credenciais ausentes");
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+                // Adicionado um timestamp à URL para evitar cache forçado do navegador
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`;
+                
                 const res = await fetch(url, { headers: this.getHeaders(cfg), cache: "no-store" });
                 if (res.status === 404) return null; 
-                if (!res.ok) throw new Error(`Falha ao ler ${path}`);
+                if (!res.ok) {
+                    const errorMsg = await res.text();
+                    throw new Error(`Falha ao ler ${path}: ${res.status} - ${errorMsg}`);
+                }
                 return await res.json();
             },
+            
             saveFile: async function(path, content, message, isBase64Ready = false) {
                 const cfg = await this.getConfig();
                 if (!cfg) throw new Error("Credenciais ausentes");
+                
                 let sha = null;
-                try { const existingFile = await this.getFileData(path); if (existingFile) sha = existingFile.sha; } catch(e) {}
+                
+                // MÉTODO ATUALIZADO: Captura de erro aprimorada para o SHA
+                try { 
+                    const existingFile = await this.getFileData(path); 
+                    // Garante que pegamos o SHA apenas se for um arquivo e não uma pasta
+                    if (existingFile && !Array.isArray(existingFile)) {
+                        sha = existingFile.sha; 
+                    }
+                } catch(e) {
+                    console.warn(`Aviso ao tentar obter SHA de ${path}. Se o arquivo não existir, será criado um novo. Erro interno:`, e);
+                }
                 
                 let finalBase64 = content;
                 if (!isBase64Ready) {
@@ -531,14 +552,25 @@
                 
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
                 const body = { message: message, content: finalBase64 };
+                
                 if (sha) body.sha = sha;
                 
-                const res = await fetch(url, { method: 'PUT', headers: this.getHeaders(cfg), body: JSON.stringify(body) });
-                if (!res.ok) { const errorData = await res.json(); throw new Error(`Erro do GitHub: ${errorData.message}`); }
-                return await res.json();
+                try {
+                    const res = await fetch(url, { method: 'PUT', headers: this.getHeaders(cfg), body: JSON.stringify(body) });
+                    
+                    if (!res.ok) { 
+                        const errorData = await res.json(); 
+                        throw new Error(errorData.message || "Erro desconhecido ao salvar no GitHub."); 
+                    }
+                    return await res.json();
+                } catch (error) {
+                    console.error("Erro CRÍTICO no GitHub:", error);
+                    // Exibe um alerta visual para o utilizador entender exatamente por que falhou
+                    mostrarAlerta(`Erro ao salvar no GitHub: ${error.message}`, "erro");
+                    throw error;
+                }
             }
         };
-
         // ==========================================================
         // SISTEMA DE FILA E SALVAMENTO OTIMIZADO
         // ==========================================================
