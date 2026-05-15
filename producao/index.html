@@ -1272,7 +1272,7 @@
                         </div>
 
                         <div class="field-group"><label>Validade</label>
-                            <input type="date" class="form-input card-mini-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : (p.validade || '')}" onchange="updateField('${p.codigo}', 'validade', this.value)"></div>
+                            <input type="date" class="form-input card-mini-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : (p.validade || '')}" onblur="updateField('${p.codigo}', 'validade', this.value)"></div>
                             <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
                     </div>
 
