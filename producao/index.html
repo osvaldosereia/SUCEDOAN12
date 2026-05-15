@@ -471,8 +471,8 @@
             window.open(`https://www.google.com/search?q=${encodeURIComponent(nome + " pesquise em sites especializados e traga um breve review sobre o produto. Inclua as informações mais relevantes para exclarecer duvidas e convencer o cliente a comprar o produto. Retire os links e valores da resposta.")}`, '_blank'); 
         }
 
-       // ==========================================================
-        // GESTOR DE COMUNICAÇÃO COM GITHUB (VERSÃO BLINDADA)
+      // ==========================================================
+        // GESTOR DE COMUNICAÇÃO COM GITHUB E FILA (ENVIO DIRETO E SEGURO)
         // ==========================================================
         const GitHubAPI = {
             getConfig: async function() {
@@ -481,12 +481,8 @@
                     alert("Atenção: Configure as credenciais da API na aba 'Definições' primeiro!");
                     return null;
                 }
-                // LIMPEZA CRÍTICA: Remove espaços vazios invisíveis que quebram as URLs
-                return {
-                    token: cfg.token.trim(),
-                    user: cfg.user.trim(),
-                    repo: cfg.repo.trim()
-                };
+                // Limpa espaços em branco acidentais
+                return { token: cfg.token.trim(), user: cfg.user.trim(), repo: cfg.repo.trim() };
             },
             
             getHeaders: function(cfg) {
@@ -500,42 +496,44 @@
             
             encodeUTF8toBase64: function(str) {
                 const bytes = new TextEncoder().encode(str);
-                const binString = Array.from(bytes, (byte) =>
-                    String.fromCodePoint(byte)
-                ).join("");
-                return btoa(binString);
+                return btoa(Array.from(bytes, (byte) => String.fromCodePoint(byte)).join(""));
             },
             
             decodeBase64toUTF8: function(base64) {
                 const cleanBase64 = base64.replace(/\s/g, ''); 
                 const binString = atob(cleanBase64);
                 const bytes = new Uint8Array(binString.length);
-                for (let i = 0; i < binString.length; i++) {
-                    bytes[i] = binString.charCodeAt(i);
-                }
+                for (let i = 0; i < binString.length; i++) { bytes[i] = binString.charCodeAt(i); }
                 return new TextDecoder('utf-8').decode(bytes); 
+            },
+
+            // Função genérica de Fetch com limite de tempo (Timeout de 15 segundos)
+            fetchWithTimeout: async function(url, options) {
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), 15000); // 15 segundos limite
+                try {
+                    const response = await fetch(url, { ...options, signal: controller.signal });
+                    clearTimeout(id);
+                    return response;
+                } catch (error) {
+                    clearTimeout(id);
+                    throw error;
+                }
             },
 
             getFileData: async function(path) {
                 const cfg = await this.getConfig();
                 if (!cfg) throw new Error("Credenciais ausentes");
-                
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`;
                 
                 try {
-                    const res = await fetch(url, { headers: this.getHeaders(cfg), cache: "no-store" });
+                    const res = await this.fetchWithTimeout(url, { headers: this.getHeaders(cfg), cache: "no-store" });
                     if (res.status === 404) return null; 
-                    if (!res.ok) {
-                        const errorMsg = await res.text();
-                        throw new Error(`O GitHub recusou o pedido (${res.status}): ${errorMsg}`);
-                    }
+                    if (!res.ok) throw new Error(`O GitHub recusou o pedido (${res.status})`);
                     return await res.json();
                 } catch (error) {
-                    // Detetor de bloqueio de rede (Antivírus/Firewall)
-                    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
-                        mostrarAlerta("❌ Bloqueio de Rede! O seu Antivírus, Firewall ou Operadora está a bloquear o acesso à API do GitHub.", "erro");
-                        console.error("BLOQUEIO DE REDE:", error);
-                        throw new Error("Conexão com a Internet / GitHub bloqueada.");
+                    if (error.name === 'AbortError' || error.message.includes('Failed to fetch')) {
+                        throw new Error("Bloqueio de Rede: O computador não conseguiu chegar ao GitHub.");
                     }
                     throw error;
                 }
@@ -548,12 +546,8 @@
                 let sha = null;
                 try { 
                     const existingFile = await this.getFileData(path); 
-                    if (existingFile && !Array.isArray(existingFile)) {
-                        sha = existingFile.sha; 
-                    }
-                } catch(e) {
-                    console.warn(`Tentativa de ler SHA falhou (Normal se o arquivo for novo):`, e);
-                }
+                    if (existingFile && !Array.isArray(existingFile)) sha = existingFile.sha; 
+                } catch(e) { console.warn("Lendo arquivo novo ou rede bloqueada."); }
                 
                 let finalBase64 = content;
                 if (!isBase64Ready) {
@@ -566,39 +560,26 @@
                 if (sha) body.sha = sha;
                 
                 try {
-                    const res = await fetch(url, { method: 'PUT', headers: this.getHeaders(cfg), body: JSON.stringify(body) });
-                    if (!res.ok) { 
-                        const errorData = await res.json(); 
-                        throw new Error(errorData.message || "O GitHub recusou a gravação do ficheiro."); 
-                    }
+                    const res = await this.fetchWithTimeout(url, { method: 'PUT', headers: this.getHeaders(cfg), body: JSON.stringify(body) });
+                    if (!res.ok) throw new Error("O GitHub recusou a gravação do ficheiro."); 
                     return await res.json();
                 } catch (error) {
-                    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
-                        mostrarAlerta("❌ Bloqueio de Rede! Não foi possível enviar para o GitHub devido a um bloqueio na sua Internet ou Antivírus.", "erro");
-                    } else {
-                        mostrarAlerta(`Erro no GitHub: ${error.message}`, "erro");
-                    }
-                    console.error("ERRO GRAVE:", error);
+                    console.error("ERRO GRAVE DE COMUNICAÇÃO:", error);
                     throw error;
                 }
             }
         };
+
         // ==========================================================
-        // SISTEMA DE FILA E SALVAMENTO OTIMIZADO
+        // SISTEMA DE FILA (ENVIO IMEDIATO SEM TIMER)
         // ==========================================================
         let syncQueue = [];
         let isSyncing = false;
-        let countdownTimer = 0;
-        let countdownInterval = null;
 
         function renderQueueStatus() {
             const el = document.getElementById('queue-status');
             if (!el) return;
-            if (isSyncing && countdownTimer > 0) {
-                el.style.display = 'flex';
-                el.innerHTML = `<i data-lucide="loader" size="14"></i> <span>Espera <b>${countdownTimer}s</b></span>`;
-                lucide.createIcons();
-            } else if (isSyncing && countdownTimer === 0) {
+            if (isSyncing) {
                 el.style.display = 'flex';
                 el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>Enviando Nuvem...</span>`;
                 lucide.createIcons();
@@ -611,38 +592,40 @@
             }
         }
 
-        function startQueueCountdown(duration) {
-            if (countdownInterval) clearInterval(countdownInterval);
-            countdownTimer = duration;
-            isSyncing = true;
-            renderQueueStatus();
-            countdownInterval = setInterval(() => {
-                countdownTimer--;
-                renderQueueStatus();
-                if (countdownTimer <= 0) { clearInterval(countdownInterval); executeNextInQueue(); }
-            }, 1000);
-        }
-
+        // Esta função processa o item e chama o próximo automaticamente
         async function executeNextInQueue() {
-            if (syncQueue.length === 0) { isSyncing = false; renderQueueStatus(); return; }
-            const task = syncQueue.shift();
-            isSyncing = true; countdownTimer = 0; renderQueueStatus();
-            try { await task.fn(); mostrarAlerta(`✅ ${task.name} processado!`, 'sucesso'); } 
-            catch (e) { mostrarAlerta(`❌ Erro em ${task.name}`, 'erro'); }
-            processQueueLoop();
-        }
-
-        function processQueueLoop() {
             if (syncQueue.length === 0) { 
                 isSyncing = false; 
                 renderQueueStatus(); 
                 return; 
             }
-            // Alterado de 50 para 90 segundos conforme instrução
-            startQueueCountdown(30);
+            
+            isSyncing = true; 
+            renderQueueStatus();
+            
+            const task = syncQueue.shift();
+            
+            try { 
+                await task.fn(); 
+                mostrarAlerta(`✅ Salvo na nuvem!`, 'sucesso'); 
+            } catch (e) { 
+                mostrarAlerta(`❌ Erro de rede. Tente novamente mais tarde.`, 'erro'); 
+            }
+            
+            // Pausa minúscula de meio segundo só para o navegador não travar, e tenta o próximo
+            setTimeout(() => { executeNextInQueue(); }, 500);
         }
 
         async function enqueueTask(taskName, taskFn) {
+            await saveDataLocally(); 
+            syncQueue.push({ name: taskName, fn: taskFn });
+            
+            if (!isSyncing) {
+                executeNextInQueue();
+            } else {
+                renderQueueStatus();
+            }
+        }        async function enqueueTask(taskName, taskFn) {
             await saveDataLocally(); 
             syncQueue.push({ name: taskName, fn: taskFn });
             if (!isSyncing) processQueueLoop();
