@@ -472,7 +472,7 @@
         }
 
        // ==========================================================
-        // GESTOR DE COMUNICAÇÃO COM GITHUB (CORRIGIDO)
+        // GESTOR DE COMUNICAÇÃO COM GITHUB (VERSÃO BLINDADA)
         // ==========================================================
         const GitHubAPI = {
             getConfig: async function() {
@@ -481,7 +481,12 @@
                     alert("Atenção: Configure as credenciais da API na aba 'Definições' primeiro!");
                     return null;
                 }
-                return cfg;
+                // LIMPEZA CRÍTICA: Remove espaços vazios invisíveis que quebram as URLs
+                return {
+                    token: cfg.token.trim(),
+                    user: cfg.user.trim(),
+                    repo: cfg.repo.trim()
+                };
             },
             
             getHeaders: function(cfg) {
@@ -489,11 +494,10 @@
                     "Authorization": `Bearer ${cfg.token}`, 
                     "X-GitHub-Api-Version": "2022-11-28", 
                     "Content-Type": "application/json",
-                    "Accept": "application/vnd.github.v3+json" // Garante compatibilidade
+                    "Accept": "application/vnd.github.v3+json"
                 };
             },
             
-            // MÉTODO ATUALIZADO: Mais seguro para textos grandes (evita erro de memória)
             encodeUTF8toBase64: function(str) {
                 const bytes = new TextEncoder().encode(str);
                 const binString = Array.from(bytes, (byte) =>
@@ -515,16 +519,26 @@
             getFileData: async function(path) {
                 const cfg = await this.getConfig();
                 if (!cfg) throw new Error("Credenciais ausentes");
-                // Adicionado um timestamp à URL para evitar cache forçado do navegador
+                
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`;
                 
-                const res = await fetch(url, { headers: this.getHeaders(cfg), cache: "no-store" });
-                if (res.status === 404) return null; 
-                if (!res.ok) {
-                    const errorMsg = await res.text();
-                    throw new Error(`Falha ao ler ${path}: ${res.status} - ${errorMsg}`);
+                try {
+                    const res = await fetch(url, { headers: this.getHeaders(cfg), cache: "no-store" });
+                    if (res.status === 404) return null; 
+                    if (!res.ok) {
+                        const errorMsg = await res.text();
+                        throw new Error(`O GitHub recusou o pedido (${res.status}): ${errorMsg}`);
+                    }
+                    return await res.json();
+                } catch (error) {
+                    // Detetor de bloqueio de rede (Antivírus/Firewall)
+                    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+                        mostrarAlerta("❌ Bloqueio de Rede! O seu Antivírus, Firewall ou Operadora está a bloquear o acesso à API do GitHub.", "erro");
+                        console.error("BLOQUEIO DE REDE:", error);
+                        throw new Error("Conexão com a Internet / GitHub bloqueada.");
+                    }
+                    throw error;
                 }
-                return await res.json();
             },
             
             saveFile: async function(path, content, message, isBase64Ready = false) {
@@ -532,16 +546,13 @@
                 if (!cfg) throw new Error("Credenciais ausentes");
                 
                 let sha = null;
-                
-                // MÉTODO ATUALIZADO: Captura de erro aprimorada para o SHA
                 try { 
                     const existingFile = await this.getFileData(path); 
-                    // Garante que pegamos o SHA apenas se for um arquivo e não uma pasta
                     if (existingFile && !Array.isArray(existingFile)) {
                         sha = existingFile.sha; 
                     }
                 } catch(e) {
-                    console.warn(`Aviso ao tentar obter SHA de ${path}. Se o arquivo não existir, será criado um novo. Erro interno:`, e);
+                    console.warn(`Tentativa de ler SHA falhou (Normal se o arquivo for novo):`, e);
                 }
                 
                 let finalBase64 = content;
@@ -552,21 +563,22 @@
                 
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
                 const body = { message: message, content: finalBase64 };
-                
                 if (sha) body.sha = sha;
                 
                 try {
                     const res = await fetch(url, { method: 'PUT', headers: this.getHeaders(cfg), body: JSON.stringify(body) });
-                    
                     if (!res.ok) { 
                         const errorData = await res.json(); 
-                        throw new Error(errorData.message || "Erro desconhecido ao salvar no GitHub."); 
+                        throw new Error(errorData.message || "O GitHub recusou a gravação do ficheiro."); 
                     }
                     return await res.json();
                 } catch (error) {
-                    console.error("Erro CRÍTICO no GitHub:", error);
-                    // Exibe um alerta visual para o utilizador entender exatamente por que falhou
-                    mostrarAlerta(`Erro ao salvar no GitHub: ${error.message}`, "erro");
+                    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+                        mostrarAlerta("❌ Bloqueio de Rede! Não foi possível enviar para o GitHub devido a um bloqueio na sua Internet ou Antivírus.", "erro");
+                    } else {
+                        mostrarAlerta(`Erro no GitHub: ${error.message}`, "erro");
+                    }
+                    console.error("ERRO GRAVE:", error);
                     throw error;
                 }
             }
