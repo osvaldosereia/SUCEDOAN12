@@ -567,6 +567,29 @@
                     console.error("ERRO GRAVE DE COMUNICAÇÃO:", error);
                     throw error;
                 }
+            },
+
+            /**
+             * Verifica se existe alguma Action/Workflow a correr no GitHub.
+             * Retorna true (ocupado) ou false (livre).
+             */
+            checkWorkflowStatus: async function() {
+                const cfg = await this.getConfig();
+                if (!cfg) return false; // Sem credenciais, deixa a fila seguir para mostrar o erro padrão
+                
+                // Pede ao GitHub a lista de processos que estão "in_progress" (em andamento)
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/actions/runs?status=in_progress`;
+                
+                try {
+                    const res = await this.fetchWithTimeout(url, { headers: this.getHeaders(cfg), cache: "no-store" });
+                    if (!res.ok) return false;
+                    
+                    const data = await res.json();
+                    // Se total_count for maior que 0, significa que o GitHub está ocupado
+                    return data.total_count > 0; 
+                } catch (error) {
+                    return false; // Se a rede falhar na verificação, deixa a fila tentar executar
+                }
             }
         };
 
@@ -592,7 +615,7 @@
         }
     }
 
-    // Esta função processa o item e chama o próximo automaticamente
+    // Esta função processa o item e chama o próximo automaticamente, respeitando o GitHub
     async function executeNextInQueue() {
         if (syncQueue.length === 0) { 
             isSyncing = false; 
@@ -601,8 +624,28 @@
         }
         
         isSyncing = true; 
+        
+        // NOVIDADE: O Semáforo! Pergunta ao GitHub se ele está livre
+        const isGithubBusy = await GitHubAPI.checkWorkflowStatus();
+        
+        if (isGithubBusy) {
+            // Se estiver ocupado, avisa o usuário e aguarda
+            const el = document.getElementById('queue-status');
+            if (el) {
+                el.style.display = 'flex';
+                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>GitHub Ocupado. Aguardando...</span>`;
+                lucide.createIcons();
+            }
+            
+            // Pausa a fila e tenta verificar de novo após 10 segundos (10000 milissegundos)
+            setTimeout(() => { executeNextInQueue(); }, 10000);
+            return; // Interrompe a execução atual para não enviar o arquivo
+        }
+        
+        // Se o GitHub estiver livre, mostra o status normal e continua
         renderQueueStatus();
         
+        // Retira o primeiro item da fila para processar
         const task = syncQueue.shift();
         
         try { 
@@ -612,7 +655,7 @@
             mostrarAlerta(`❌ Erro de rede. Tente novamente mais tarde.`, 'erro'); 
         }
         
-        // Pausa minúscula de meio segundo só para o navegador não travar, e tenta o próximo
+        // Pausa minúscula de meio segundo e tenta enviar o próximo
         setTimeout(() => { executeNextInQueue(); }, 500);
     }
 
