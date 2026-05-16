@@ -2005,58 +2005,54 @@
             };
         }
 
-        async function downloadCSVBling(dados, filename) {
-            const csv = Papa.unparse(dados, { delimiter: ";" });
-            const csvComBom = "\ufeff" + csv;
+       async function downloadCSVBling(dados, filename) {
+        const csv = Papa.unparse(dados, { delimiter: ";" });
+        const csvComBom = "\ufeff" + csv;
 
-            // Enviar para a fila de sincronização em vez de salvar diretamente
-            enqueueTask(`Exportação CSV: ${filename}`, async () => {
-                try {
-                    await GitHubAPI.saveFile(`site/exportacoes/${filename}`, csvComBom, `Exportação: ${filename}`);
-                } catch (erro) {
-                    console.error("Erro ao salvar no GitHub:", erro);
-                    // Download direto como fallback caso a API falhe drasticamente
-                    const blob = new Blob([csvComBom], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement("a");
-                    link.href = url;
-                    link.download = "BACKUP_" + filename;
-                    link.style.visibility = 'hidden';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    throw erro;
-                }
-            });
-            
-mostrarAlerta(`⏳ Arquivo ${filename} na fila para envio imediato!`, "aviso");
-        }
+        // 1. Cria o arquivo na memória do navegador (Blob)
+        const blob = new Blob([csvComBom], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        // 2. Cria um link invisível e clica nele automaticamente para baixar
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename; // Nome limpo, sem o "BACKUP_"
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        
+        // 3. Remove o link e limpa a memória do navegador
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
 
-        window.exportarProdutoBling = async function(sku) {
-            const p = products.find(x => x.codigo === sku);
-            if(!p) return alert("Produto não encontrado.");
-            await downloadCSVBling([mapearProdutoParaBling(p)], `Bling_Produto_${sku}.csv`);
-        };
+        // 4. Mostra o alerta de sucesso para o utilizador
+        mostrarAlerta(`✅ Ficheiro ${filename} descarregado com sucesso!`, "sucesso");
+    }
 
-        window.exportarTudoBling = async function() {
-            if(!confirm("Exportar todo o banco de dados (Bling CSV)? O sistema dividirá automaticamente em arquivos de até 900 produtos se necessário.")) return;
-            if(products.length === 0) return alert("Banco vazio.");
-            const mappedList = products.map(p => mapearProdutoParaBling(p));
-            const chunkSize = 900; 
-            if (mappedList.length <= chunkSize) {
-                await downloadCSVBling(mappedList, "Bling_Banco_Completo.csv");
-            } 
-            else {
-                const totalParts = Math.ceil(mappedList.length / chunkSize);
-                mostrarAlerta(`A exportar ${totalParts} ficheiros... Por favor, aguarde.`, 'aviso');
-                for (let i = 0; i < totalParts; i++) {
-                    const chunk = mappedList.slice(i * chunkSize, (i + 1) * chunkSize);
-                    const filename = `Bling_Banco_Completo_Parte_${i + 1}.csv`;
-                    await downloadCSVBling(chunk, filename);
-                }
+    window.exportarProdutoBling = async function(sku) {
+        const p = products.find(x => x.codigo === sku);
+        if(!p) return alert("Produto não encontrado.");
+        await downloadCSVBling([mapearProdutoParaBling(p)], `Bling_Produto_${sku}.csv`);
+    };
+
+    window.exportarTudoBling = async function() {
+        if(!confirm("Exportar todo o banco de dados (Bling CSV)? O sistema dividirá automaticamente em arquivos de até 900 produtos se necessário.")) return;
+        if(products.length === 0) return alert("Banco vazio.");
+        const mappedList = products.map(p => mapearProdutoParaBling(p));
+        const chunkSize = 900; 
+        if (mappedList.length <= chunkSize) {
+            await downloadCSVBling(mappedList, "Bling_Banco_Completo.csv");
+        } 
+        else {
+            const totalParts = Math.ceil(mappedList.length / chunkSize);
+            mostrarAlerta(`A exportar ${totalParts} ficheiros... Por favor, aguarde.`, 'aviso');
+            for (let i = 0; i < totalParts; i++) {
+                const chunk = mappedList.slice(i * chunkSize, (i + 1) * chunkSize);
+                const filename = `Bling_Banco_Completo_Parte_${i + 1}.csv`;
+                await downloadCSVBling(chunk, filename);
             }
-        };
-
+        }
+    };
         window.exportarCategoriaBling = async function() {
             const cat = document.getElementById('flt-cat').value;
             if(!cat) return alert("Selecione uma categoria principal no filtro primeiro.");
