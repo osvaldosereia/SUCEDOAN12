@@ -727,6 +727,34 @@
             const vitrine = sanitizeProductsForExport(products);
             await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização de Produtos`);
         });
+
+        enqueueTask("Produtos.csv (Meta)", async () => {
+            // Atraso exato de 60 segundos entre os dois envios
+            await new Promise(resolve => setTimeout(resolve, 60000));
+            
+            const vitrine = sanitizeProductsForExport(products);
+            
+            // Mapeia os produtos para as colunas exatas exigidas pela Meta
+            const csvData = vitrine.map(p => {
+                return {
+                    id: p.id || p.codigo || "",
+                    title: p.nome || "",
+                    description: p.descricao || p.nome || "",
+                    availability: "in stock",
+                    condition: "new",
+                    price: `${p.preco || "0.00"} BRL`,
+                    link: `https://donaantonia.com.br/produto/${p.id || p.codigo || ""}`,
+                    image_link: p.url_imagem || "",
+                    brand: p.marca || "Dona Antônia"
+                };
+            });
+            
+            // Utiliza o PapaParse (já presente no seu sistema) usando o separador padrão de ponto e vírgula
+            const csvText = Papa.unparse(csvData, { delimiter: ";" });
+            
+            // Salva o CSV na mesma pasta do GitHub de forma estática
+            await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Atualização de Catálogo Meta CSV`);
+        });
     }
 
     async function getPastaUploadAtiva() {
@@ -767,6 +795,7 @@
                 }
             });
         });
+    }
 
         // Sincronização automática do JSON na nuvem após o upload das imagens
         enqueueTask("Sincronizar JSON (Pós-Imagens)", async () => {
