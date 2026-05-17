@@ -1335,7 +1335,7 @@ const BASKETS = [
             }
         };
 
-        window.addBasketToCart = function() {
+       window.addBasketToCart = function() {
             if (!window.currentBasketId) return; 
             const basket = BASKETS.find(b => b.id === window.currentBasketId); 
             if (!basket) return;
@@ -1355,13 +1355,26 @@ const BASKETS = [
             let hasChanges = false; 
             let addedCount = 0;
 
+            // 1. REGRA INFALÍVEL: Verifica se algum produto original foi completamente excluído ou reduzido
+            Object.keys(origItemsMap).forEach(pid => {
+                let origQty = origItemsMap[pid];
+                let currentItem = currentBasketItems.find(item => (item.pObj.codigo || item.pObj.id) === pid);
+                let currentQty = currentItem ? currentItem.qty : 0;
+                
+                if (currentQty < origQty) { 
+                    hasChanges = true; 
+                }
+            });
+
+            // 2. Verifica se algo foi adicionado e atualiza o carrinho
             currentBasketItems.forEach(item => { 
                 let pid = item.pObj.codigo || item.pObj.id; 
                 let origQty = origItemsMap[pid] || 0; 
                 let currentQty = item.qty;
                 
-                if (currentQty < origQty) { basketDiff.removed.push(`${origQty - currentQty}x ${item.pObj.name}`); hasChanges = true; } 
-                else if (currentQty > origQty) { basketDiff.added.push(`${currentQty - origQty}x ${item.pObj.name}`); hasChanges = true; }
+                if (currentQty > origQty) { 
+                    hasChanges = true; 
+                }
                 
                 if (currentQty > 0) { 
                     let currentInCart = STATE.cart[item.pObj.id] || 0; 
@@ -1566,7 +1579,7 @@ const BASKETS = [
             }
         }
 
-     window.sendOrder = async function(btnOverride) {
+    window.sendOrder = async function(btnOverride) {
             const btn = btnOverride || $('btn-send-order'); 
             if (!btnOverride && btn.disabled) return;
             
@@ -1600,7 +1613,8 @@ const BASKETS = [
                 basketInfo = "\n------------------------------";
                 Object.keys(STATE.basketCustomizations).forEach(bId => {
                     let diff = STATE.basketCustomizations[bId];
-                    let statusLabel = diff.changed ? "ALTERADA" : "SEM ALTERAÇÃO";
+                    // Aqui definimos a regra exata pedida: ALTERADA ou PADRÃO
+                    let statusLabel = diff.changed ? "ALTERADA" : "PADRÃO";
                     basketInfo += `\nCesta ${diff.name} ${statusLabel}`;
                 });
             }
@@ -1633,14 +1647,15 @@ const BASKETS = [
                     console.error("Erro na integração:", err);
                 }
 
+                // O texto exato da mensagem nova com as tuas regras
                 msg = `*PEDIDO #${orderId}*
 ------------------------------
 *ITENS SELECIONADOS*
 ${itemsTxt}
 *RESUMO DE VALORES*${descontosTxt}
 💰 *TOTAL:* ${fmt(final)}${basketInfo}
-
-Este é o meu pedido. Quais informações você precisa?`;
+------------------------------
+Olá, esse é o meu pedido. Quais informações preciso enviar? Voce tem algum link do site com as ofertas?`;
 
             } else {
                 // ADICIONAR AO PEDIDO: Ignora a integração e gera texto de acréscimo
@@ -1652,7 +1667,7 @@ Olá! Gostaria de adicionar os itens abaixo ao pedido que fiz anteriormente:
 ${itemsTxt}
 *RESUMO DE VALORES*${descontosTxt}
 💰 *TOTAL DO ACRÉSCIMO:* ${fmt(final)}${basketInfo}
-
+------------------------------
 Por favor, podem incluir na minha entrega?`;
             }
 
