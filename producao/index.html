@@ -722,7 +722,7 @@
         });
     }
 
-   function salvarProdutosJSON() {
+  function salvarProdutosJSON() {
         enqueueTask("Produtos.json", async () => {
             const vitrine = sanitizeProductsForExport(products);
             await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização de Produtos`);
@@ -744,14 +744,28 @@
                     urlFoto = urlFoto.split('?')[0];
                 }
 
+                // Criação do SLUG: Transforma o nome em um link amigável (sem acento, minúsculo, traços)
+                let slug = "";
+                if (p.nome) {
+                    slug = p.nome.toString().normalize('NFD') // Remove acentos
+                                 .replace(/[\u0300-\u036f]/g, '')
+                                 .toLowerCase() // Tudo minúsculo
+                                 .trim()
+                                 .replace(/[^a-z0-9 -]/g, '') // Remove caracteres especiais
+                                 .replace(/\s+/g, '-') // Troca espaços por traços
+                                 .replace(/-+/g, '-'); // Remove traços duplicados
+                } else {
+                    slug = p.codigo || "";
+                }
+
                 return {
-                    id: p.codigo || "", // Ajustado para usar apenas o SKU (código)
+                    id: p.codigo || "",
                     title: p.nome || "",
                     description: p.descricao || p.nome || "",
                     availability: "in stock",
                     condition: "new",
                     price: `${p.preco || "0.00"} BRL`,
-                    link: `https://donaantonia.com.br/produto/${p.codigo || ""}`, // Ajustado para montar a URL apenas com o SKU
+                    link: `https://donaantonia.com.br/#/produto/${slug}`, // Link construído com Hash Routing e Slug
                     image_link: urlFoto,
                     brand: p.marca || "Dona Antônia"
                 };
