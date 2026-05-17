@@ -722,7 +722,7 @@
         });
     }
 
-    function salvarProdutosJSON() {
+   function salvarProdutosJSON() {
         enqueueTask("Produtos.json", async () => {
             const vitrine = sanitizeProductsForExport(products);
             await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização de Produtos`);
@@ -745,13 +745,13 @@
                 }
 
                 return {
-                    id: p.id || p.codigo || "",
+                    id: p.codigo || "", // Ajustado para usar apenas o SKU (código)
                     title: p.nome || "",
                     description: p.descricao || p.nome || "",
                     availability: "in stock",
                     condition: "new",
                     price: `${p.preco || "0.00"} BRL`,
-                    link: `https://donaantonia.com.br/produto/${p.id || p.codigo || ""}`,
+                    link: `https://donaantonia.com.br/produto/${p.codigo || ""}`, // Ajustado para montar a URL apenas com o SKU
                     image_link: urlFoto,
                     brand: p.marca || "Dona Antônia"
                 };
