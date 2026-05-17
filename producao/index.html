@@ -736,18 +736,25 @@
         };
     }
 
-    function salvarProdutosJSON() {
+   function salvarProdutosJSON() {
         enqueueTask("Produtos.json", async () => {
             const vitrine = sanitizeProductsForExport(products);
             await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização de Produtos`);
         });
 
-        enqueueTask("Produtos.csv (Meta)", async () => {
+        enqueueTask("Produtos.csv e JSON (Meta)", async () => {
             await new Promise(resolve => setTimeout(resolve, 60000));
             const vitrine = sanitizeProductsForExport(products);
+            
+            // Aqui temos os dados mapeados exatamente para a estrutura da Meta
             const csvData = vitrine.map(p => mapearProdutoParaMeta(p));
+            
+            // 1. Converte para CSV e salva no GitHub
             const csvText = Papa.unparse(csvData, { delimiter: ";" });
             await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Atualização de Catálogo Meta CSV (Correções aplicadas)`);
+            
+            // 2. NOVIDADE: Pega na mesma estrutura exata (csvData) e salva como JSON
+            await GitHubAPI.saveFile(`site/produtos_meta.json`, csvData, `PIM: Atualização de Catálogo Meta JSON`);
         });
     }
 
