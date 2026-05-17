@@ -736,6 +736,14 @@
             
             // Mapeia os produtos para as colunas exatas exigidas pela Meta
             const csvData = vitrine.map(p => {
+                // Formatação correta da URL da imagem interceptando o caminho relativo
+                let urlFoto = p.url_imagem || "";
+                if (typeof urlFoto === 'string' && urlFoto.includes('../')) {
+                    urlFoto = urlFoto.split('?')[0].replace("../", "https://donaantonia.com.br/");
+                } else if (typeof urlFoto === 'string' && urlFoto.startsWith('http')) {
+                    urlFoto = urlFoto.split('?')[0];
+                }
+
                 return {
                     id: p.id || p.codigo || "",
                     title: p.nome || "",
@@ -744,7 +752,7 @@
                     condition: "new",
                     price: `${p.preco || "0.00"} BRL`,
                     link: `https://donaantonia.com.br/produto/${p.id || p.codigo || ""}`,
-                    image_link: p.url_imagem || "",
+                    image_link: urlFoto,
                     brand: p.marca || "Dona Antônia"
                 };
             });
@@ -753,7 +761,7 @@
             const csvText = Papa.unparse(csvData, { delimiter: ";" });
             
             // Salva o CSV na mesma pasta do GitHub de forma estática
-            await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Atualização de Catálogo Meta CSV`);
+            await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Atualização de Catálogo Meta CSV (Links Corrigidos)`);
         });
     }
 
