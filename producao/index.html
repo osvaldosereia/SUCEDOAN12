@@ -471,7 +471,7 @@
             window.open(`https://www.google.com/search?q=${encodeURIComponent(nome + " pesquise em sites especializados e traga um breve review sobre o produto. Inclua as informações mais relevantes para exclarecer duvidas e convencer o cliente a comprar o produto. Retire os links e valores da resposta.")}`, '_blank'); 
         }
 
-      // ==========================================================
+        // ==========================================================
         // GESTOR DE COMUNICAÇÃO COM GITHUB E FILA (ENVIO DIRETO E SEGURO)
         // ==========================================================
         const GitHubAPI = {
@@ -481,7 +481,6 @@
                     alert("Atenção: Configure as credenciais da API na aba 'Definições' primeiro!");
                     return null;
                 }
-                // Limpa espaços em branco acidentais
                 return { token: cfg.token.trim(), user: cfg.user.trim(), repo: cfg.repo.trim() };
             },
             
@@ -507,10 +506,9 @@
                 return new TextDecoder('utf-8').decode(bytes); 
             },
 
-            // Função genérica de Fetch com limite de tempo (Timeout de 15 segundos)
             fetchWithTimeout: async function(url, options) {
                 const controller = new AbortController();
-                const id = setTimeout(() => controller.abort(), 15000); // 15 segundos limite
+                const id = setTimeout(() => controller.abort(), 15000);
                 try {
                     const response = await fetch(url, { ...options, signal: controller.signal });
                     clearTimeout(id);
@@ -569,15 +567,10 @@
                 }
             },
 
-            /**
-             * Verifica se existe alguma Action/Workflow a correr no GitHub.
-             * Retorna true (ocupado) ou false (livre).
-             */
             checkWorkflowStatus: async function() {
                 const cfg = await this.getConfig();
-                if (!cfg) return false; // Sem credenciais, deixa a fila seguir para mostrar o erro padrão
+                if (!cfg) return false; 
                 
-                // Pede ao GitHub a lista de processos que estão "in_progress" (em andamento)
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/actions/runs?status=in_progress`;
                 
                 try {
@@ -585,10 +578,9 @@
                     if (!res.ok) return false;
                     
                     const data = await res.json();
-                    // Se total_count for maior que 0, significa que o GitHub está ocupado
                     return data.total_count > 0; 
                 } catch (error) {
-                    return false; // Se a rede falhar na verificação, deixa a fila tentar executar
+                    return false; 
                 }
             }
         };
@@ -615,7 +607,6 @@
         }
     }
 
-    // Esta função processa o item e chama o próximo automaticamente, respeitando o GitHub
     async function executeNextInQueue() {
         if (syncQueue.length === 0) { 
             isSyncing = false; 
@@ -625,27 +616,21 @@
         
         isSyncing = true; 
         
-        // NOVIDADE: O Semáforo! Pergunta ao GitHub se ele está livre
         const isGithubBusy = await GitHubAPI.checkWorkflowStatus();
         
         if (isGithubBusy) {
-            // Se estiver ocupado, avisa o usuário e aguarda
             const el = document.getElementById('queue-status');
             if (el) {
                 el.style.display = 'flex';
                 el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>GitHub Ocupado. Aguardando...</span>`;
                 lucide.createIcons();
             }
-            
-            // Pausa a fila e tenta verificar de novo após 10 segundos (10000 milissegundos)
             setTimeout(() => { executeNextInQueue(); }, 10000);
-            return; // Interrompe a execução atual para não enviar o arquivo
+            return; 
         }
         
-        // Se o GitHub estiver livre, mostra o status normal e continua
         renderQueueStatus();
         
-        // Retira o primeiro item da fila para processar
         const task = syncQueue.shift();
         
         try { 
@@ -655,28 +640,15 @@
             mostrarAlerta(`❌ Erro de rede. Tente novamente mais tarde.`, 'erro'); 
         }
         
-        // Pausa minúscula de meio segundo e tenta enviar o próximo
         setTimeout(() => { executeNextInQueue(); }, 500);
     }
 
-    /**
-     * Adiciona uma nova tarefa de comunicação com a nuvem (GitHub) na fila.
-     * Utiliza-se a fila para organizar os envios e evitar bloqueios por excesso de requisições simultâneas.
-     * * @param {string} taskName - O nome visual da tarefa.
-     * @param {function} taskFn - A função assíncrona que executa o trabalho real.
-     */
     async function enqueueTask(taskName, taskFn) {
-        // Passo 1: Guarda uma cópia de segurança local antes de iniciar o envio
         await saveDataLocally(); 
-        
-        // Passo 2: Insere a nova tarefa na nossa lista de espera
         syncQueue.push({ name: taskName, fn: taskFn });
-        
-        // Passo 3: Avalia se o sistema já está a enviar algo. Se estiver livre, inicia o processo.
         if (!isSyncing) {
             executeNextInQueue();
         } else {
-            // Se já estiver ocupado, apenas atualiza o ícone de aviso no ecrã
             renderQueueStatus();
         }
     }
@@ -722,60 +694,60 @@
         });
     }
 
-  function salvarProdutosJSON() {
+    // ==========================================================
+    // INTEGRAÇÃO META ADS - MAPEAMENTO CENTRALIZADO
+    // ==========================================================
+    function mapearProdutoParaMeta(p) {
+        let urlFoto = p.url_imagem || "";
+        if (typeof urlFoto === 'string' && urlFoto.includes('../')) {
+            urlFoto = urlFoto.split('?')[0].replace("../", "https://donaantonia.com.br/");
+        } else if (typeof urlFoto === 'string' && urlFoto.startsWith('http')) {
+            urlFoto = urlFoto.split('?')[0];
+        }
+
+        let slug = "";
+        if (p.nome) {
+            slug = p.nome.toString().normalize('NFD')
+                         .replace(/[\u0300-\u036f]/g, '')
+                         .toLowerCase()
+                         .trim()
+                         .replace(/[^a-z0-9 -]/g, '')
+                         .replace(/\s+/g, '-')
+                         .replace(/-+/g, '-')
+                         .replace(/^-+|-+$/g, '');
+        } else {
+            slug = p.codigo || "";
+        }
+
+        let estoqueNum = parseFloat(p.estoque) || 0;
+        let disponibilidade = estoqueNum > 0 ? "in stock" : "out of stock";
+        let descricaoLimpa = p.nome + (p.embalagem ? " - " + p.embalagem : "");
+
+        return {
+            "id": p.codigo || "",
+            "title": p.nome || "",
+            "description": descricaoLimpa,
+            "availability": disponibilidade,
+            "condition": "new",
+            "price": `${p.preco || "0.00"} BRL`,
+            "link": `https://donaantonia.com.br/#/produto/${slug}`,
+            "image_link": urlFoto,
+            "brand": p.marca || "Dona Antônia"
+        };
+    }
+
+    function salvarProdutosJSON() {
         enqueueTask("Produtos.json", async () => {
             const vitrine = sanitizeProductsForExport(products);
             await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização de Produtos`);
         });
 
         enqueueTask("Produtos.csv (Meta)", async () => {
-            // Atraso exato de 60 segundos entre os dois envios
             await new Promise(resolve => setTimeout(resolve, 60000));
-            
             const vitrine = sanitizeProductsForExport(products);
-            
-            // Mapeia os produtos para as colunas exatas exigidas pela Meta
-            const csvData = vitrine.map(p => {
-                // Formatação correta da URL da imagem interceptando o caminho relativo
-                let urlFoto = p.url_imagem || "";
-                if (typeof urlFoto === 'string' && urlFoto.includes('../')) {
-                    urlFoto = urlFoto.split('?')[0].replace("../", "https://donaantonia.com.br/");
-                } else if (typeof urlFoto === 'string' && urlFoto.startsWith('http')) {
-                    urlFoto = urlFoto.split('?')[0];
-                }
-
-                // Criação do SLUG: Transforma o nome em um link amigável (sem acento, minúsculo, traços)
-                let slug = "";
-                if (p.nome) {
-                    slug = p.nome.toString().normalize('NFD') // Remove acentos
-                                 .replace(/[\u0300-\u036f]/g, '')
-                                 .toLowerCase() // Tudo minúsculo
-                                 .trim()
-                                 .replace(/[^a-z0-9 -]/g, '') // Remove caracteres especiais
-                                 .replace(/\s+/g, '-') // Troca espaços por traços
-                                 .replace(/-+/g, '-'); // Remove traços duplicados
-                } else {
-                    slug = p.codigo || "";
-                }
-
-                return {
-                    id: p.codigo || "",
-                    title: p.nome || "",
-                    description: p.descricao || p.nome || "",
-                    availability: "in stock",
-                    condition: "new",
-                    price: `${p.preco || "0.00"} BRL`,
-                    link: `https://donaantonia.com.br/#/produto/${slug}`, // Link construído com Hash Routing e Slug
-                    image_link: urlFoto,
-                    brand: p.marca || "Dona Antônia"
-                };
-            });
-            
-            // Utiliza o PapaParse (já presente no seu sistema) usando o separador padrão de ponto e vírgula
+            const csvData = vitrine.map(p => mapearProdutoParaMeta(p));
             const csvText = Papa.unparse(csvData, { delimiter: ";" });
-            
-            // Salva o CSV na mesma pasta do GitHub de forma estática
-            await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Atualização de Catálogo Meta CSV (Links Corrigidos)`);
+            await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Atualização de Catálogo Meta CSV (Correções aplicadas)`);
         });
     }
 
@@ -818,7 +790,6 @@
             });
         });
 
-        // Sincronização automática do JSON na nuvem após o upload das imagens
         enqueueTask("Sincronizar JSON (Pós-Imagens)", async () => {
             const vitrine = sanitizeProductsForExport(products);
             await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Sincronizando links das novas imagens`);
@@ -1926,30 +1897,10 @@
         function abrirModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display = 'flex'; }
         function fecharModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display = 'none'; }
         
-        function formatarURLImagem(url) {
-            if (!url) return "";
-            if (typeof url === 'string' && url.includes('../')) {
-                return url.split('?')[0].replace("../", "https://donaantonia.com.br/");
-            } else if (typeof url === 'string' && url.startsWith('http')) {
-                return url.split('?')[0];
-            }
-            return url;
-        }
-
         async function gerarCSVMetaCompleto() {
             if(products.length === 0) return alert("Banco vazio.");
             const ativos = products.filter(p => p.situacao !== 'I');
-            const metaCatalog = ativos.map(p => ({
-                "id": p.codigo,
-                "title": p.nome || "",
-                "description": p.nome + (p.embalagem ? " - " + p.embalagem : ""),
-                "availability": p.estoque > 0 ? "in stock" : "out of stock",
-                "condition": "new",
-                "price": p.preco ? p.preco + " BRL" : "0.00 BRL",
-                "link": "https://donaantonia.com.br/produto/" + p.codigo,
-                "image_link": formatarURLImagem(p.url_imagem),
-                "brand": p.marca || "Marca"
-            }));
+            const metaCatalog = ativos.map(p => mapearProdutoParaMeta(p));
             await downloadCSVBling(metaCatalog, "Catalogo_Meta_Completo.csv");
             fecharModalExportacaoMeta();
         }
@@ -1977,7 +1928,7 @@
                     "SUBSUB CATEGORIA": p.subsubcategoria || "",
                     "TAG GLOBAL": tags,
                     "EMBALAGEM": p.embalagem || "",
-                    "LINK DA IMAGEM": formatarURLImagem(p.url_imagem)
+                    "LINK DA IMAGEM": (p.url_imagem && typeof p.url_imagem === 'string' && p.url_imagem.includes('../')) ? p.url_imagem.split('?')[0].replace("../", "https://donaantonia.com.br/") : (p.url_imagem ? p.url_imagem.split('?')[0] : "")
                 };
             });
             await downloadCSVBling(catalogo, "Catalogo_Geral.csv");
@@ -2059,23 +2010,19 @@
         const csv = Papa.unparse(dados, { delimiter: ";" });
         const csvComBom = "\ufeff" + csv;
 
-        // 1. Cria o arquivo na memória do navegador (Blob)
         const blob = new Blob([csvComBom], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         
-        // 2. Cria um link invisível e clica nele automaticamente para baixar
         const link = document.createElement("a");
         link.href = url;
-        link.download = filename; // Nome limpo, sem o "BACKUP_"
+        link.download = filename; 
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
         
-        // 3. Remove o link e limpa a memória do navegador
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
-        // 4. Mostra o alerta de sucesso para o utilizador
         mostrarAlerta(`✅ Ficheiro ${filename} descarregado com sucesso!`, "sucesso");
     }
 
@@ -2116,34 +2063,28 @@
         // GERENCIADOR DE EXPORTAÇÕES (GITHUB)
         // ==========================================================
         
-        // Função para forçar o download de ficheiros do GitHub em vez de abrir no navegador
         window.forcarDownloadGithub = async function(url, nomeArquivo) {
             try {
                 mostrarAlerta("A preparar o download...", "aviso");
                 
-                // Puxa o conteúdo do ficheiro diretamente
                 const resposta = await fetch(url);
                 if (!resposta.ok) throw new Error("Erro na rede");
                 
-                // Transforma o conteúdo num "pacote" (blob) e cria um link temporário
                 const blob = await resposta.blob();
                 const blobUrl = URL.createObjectURL(blob);
                 
-                // Simula um clique num botão de download
                 const link = document.createElement("a");
                 link.href = blobUrl;
                 link.download = nomeArquivo;
                 document.body.appendChild(link);
                 link.click();
                 
-                // Limpa a memória após o download
                 document.body.removeChild(link);
                 URL.revokeObjectURL(blobUrl);
                 
                 mostrarAlerta("Download concluído!", "sucesso");
             } catch (erro) {
                 console.error("Erro no download:", erro);
-                // Plano B: se a nossa função falhar por algum motivo, abre no separador como fazia antes
                 alert("Ocorreu um erro no download direto. O ficheiro vai abrir num novo separador.");
                 window.open(url, '_blank'); 
             }
