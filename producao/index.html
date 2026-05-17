@@ -746,15 +746,23 @@
             await new Promise(resolve => setTimeout(resolve, 60000));
             const vitrine = sanitizeProductsForExport(products);
             
-            // Aqui temos os dados mapeados exatamente para a estrutura da Meta
+            // Mapeia os dados para a estrutura exigida pela Meta
             const csvData = vitrine.map(p => mapearProdutoParaMeta(p));
             
             // 1. Converte para CSV e salva no GitHub
             const csvText = Papa.unparse(csvData, { delimiter: ";" });
             await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Atualização de Catálogo Meta CSV (Correções aplicadas)`);
             
-            // 2. NOVIDADE: Pega na mesma estrutura exata (csvData) e salva como JSON
-            await GitHubAPI.saveFile(`site/produtos_meta.json`, csvData, `PIM: Atualização de Catálogo Meta JSON`);
+            // =================================================================
+            // AJUSTE DE FORMATAÇÃO DO JSON:
+            // Criamos um objeto estruturado com a chave "lista_produtos"
+            // =================================================================
+            const jsonFinal = {
+                "lista_produtos": csvData
+            };
+            
+            // 2. Salva o novo objeto estruturado como JSON no GitHub
+            await GitHubAPI.saveFile(`site/produtos_meta.json`, jsonFinal, `PIM: Atualização de Catálogo Meta JSON (Formato com chave raiz)`);
         });
     }
 
