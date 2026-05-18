@@ -585,7 +585,7 @@
             }
         };
 
-    // ==========================================================
+   // ==========================================================
     // SISTEMA DE FILA (ENVIO IMEDIATO SEM TIMER)
     // ==========================================================
     let syncQueue = [];
@@ -596,7 +596,7 @@
         if (!el) return;
         if (isSyncing) {
             el.style.display = 'flex';
-            el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>Enviando Nuvem...</span>`;
+            el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>A sincronizar com a Nuvem...</span>`;
             lucide.createIcons();
         } else if (syncQueue.length > 0) {
             el.style.display = 'flex';
@@ -608,29 +608,35 @@
     }
 
     async function executeNextInQueue() {
+        // Se a fila estiver vazia, desliga o motor e limpa o aviso na tela
         if (syncQueue.length === 0) { 
             isSyncing = false; 
             renderQueueStatus(); 
             return; 
         }
         
-        isSyncing = true; 
+        isSyncing = true; // Avisa que o sistema está em execução
         
+        // 1. Verifica SEMPRE se o GitHub está livre antes de processar o envio
         const isGithubBusy = await GitHubAPI.checkWorkflowStatus();
         
         if (isGithubBusy) {
             const el = document.getElementById('queue-status');
             if (el) {
                 el.style.display = 'flex';
-                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>GitHub Ocupado. Aguardando...</span>`;
+                // Informa o utilizador sobre a pausa de 30 segundos
+                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>GitHub Ocupado. Aguardando 30s...</span>`;
                 lucide.createIcons();
             }
-            setTimeout(() => { executeNextInQueue(); }, 10000);
+            // Aguarda 30 segundos (30000 ms) e tenta verificar novamente. 
+            // O item continua na fila porque o 'shift()' ainda não foi executado!
+            setTimeout(() => { executeNextInQueue(); }, 30000);
             return; 
         }
         
         renderQueueStatus();
         
+        // 2. O GitHub está livre. Retira a primeira tarefa da fila para ser enviada.
         const task = syncQueue.shift();
         
         try { 
@@ -640,16 +646,21 @@
             mostrarAlerta(`❌ Erro de rede. Tente novamente mais tarde.`, 'erro'); 
         }
         
+        // 3. Pausa de segurança de 0.5s entre envios normais
         setTimeout(() => { executeNextInQueue(); }, 500);
     }
 
     async function enqueueTask(taskName, taskFn) {
         await saveDataLocally(); 
+        
+        // A tarefa entra SEMPRE na fila primeiro
         syncQueue.push({ name: taskName, fn: taskFn });
+        
+        // Se o sistema não estiver a processar nada, damos o "arranque"
         if (!isSyncing) {
             executeNextInQueue();
         } else {
-            renderQueueStatus();
+            renderQueueStatus(); // Se já estiver a processar, apenas atualiza o contador na tela
         }
     }
 
