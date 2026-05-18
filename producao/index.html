@@ -571,14 +571,22 @@
                 const cfg = await this.getConfig();
                 if (!cfg) return false; 
                 
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/actions/runs?status=in_progress`;
+                // Agora verificamos tanto os processos "em andamento" quanto os "na fila"
+                const urlInProgress = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/actions/runs?status=in_progress`;
+                const urlQueued = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/actions/runs?status=queued`;
                 
                 try {
-                    const res = await this.fetchWithTimeout(url, { headers: this.getHeaders(cfg), cache: "no-store" });
-                    if (!res.ok) return false;
+                    // Fazemos as duas perguntas ao mesmo tempo
+                    const [resInProg, resQueued] = await Promise.all([
+                        this.fetchWithTimeout(urlInProgress, { headers: this.getHeaders(cfg), cache: "no-store" }),
+                        this.fetchWithTimeout(urlQueued, { headers: this.getHeaders(cfg), cache: "no-store" })
+                    ]);
                     
-                    const data = await res.json();
-                    return data.total_count > 0; 
+                    let count = 0;
+                    if (resInProg.ok) { const data = await resInProg.json(); count += data.total_count; }
+                    if (resQueued.ok) { const data = await resQueued.json(); count += data.total_count; }
+                    
+                    return count > 0; // Se houver algo na fila ou a correr, devolve verdadeiro (Ocupado)
                 } catch (error) {
                     return false; 
                 }
@@ -647,7 +655,7 @@
         }
         
         // 3. Pausa de segurança de 0.5s entre envios normais
-        setTimeout(() => { executeNextInQueue(); }, 500);
+        setTimeout(() => { executeNextInQueue(); }, 8000);
     }
 
     async function enqueueTask(taskName, taskFn) {
