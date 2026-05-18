@@ -1711,8 +1711,24 @@ Por favor, podem incluir na minha entrega?`;
         let eligibleForRandom = [];
         
         products.forEach(p => {
-            p.discountPercent = 0; p.oldPrice = p.price;
-            if (p.vencimento) {
+            p.discountPercent = 0; 
+            p.oldPrice = p.price;
+            p.hasExplicitOffer = false; // Marcador para saber se é uma oferta do JSON
+
+            // 1. NOVA LÓGICA: Verifica se existe oferta no JSON e se está dentro da validade
+            if (p.preco_oferta && p.validade_oferta) {
+                let validadeOferta = new Date(p.validade_oferta);
+                // Confirma se a oferta não expirou e se é menor que o preço original
+                if (validadeOferta >= now && p.preco_oferta < p.oldPrice) {
+                    p.hasExplicitOffer = true;
+                    p.price = p.preco_oferta; // Define o novo preço
+                    // Calcula a percentagem exata para aparecer a etiqueta vermelha
+                    p.discountPercent = Math.round(((p.oldPrice - p.preco_oferta) / p.oldPrice) * 100);
+                }
+            }
+            
+            // 2. LÓGICA ANTIGA (Vencimento): Só aplica se o produto não tiver uma oferta explícita
+            if (!p.hasExplicitOffer && p.vencimento) {
                 let partes = p.vencimento.split('/'); 
                 if(partes.length === 3) {
                     let vDate = new Date(partes[2], partes[1] - 1, partes[0]); 
@@ -1723,6 +1739,8 @@ Por favor, podem incluir na minha entrega?`;
                     else if (daysToExpiry > 90 && daysToExpiry <= 120) p.discountPercent = 5;
                 }
             }
+            
+            // 3. SEPARAÇÃO PARA OFERTAS ALEATÓRIAS (Mantemos para encher a loja de ofertas)
             if (p.discountPercent === 0) eligibleForRandom.push(p);
         });
         
@@ -1745,7 +1763,12 @@ Por favor, podem incluir na minha entrega?`;
             else if (r5 > 0) { p.discountPercent = 5; r5--; } 
         });
         
-        products.forEach(p => { if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); });
+        // 4. ATUALIZAÇÃO DOS PREÇOS (Exceto os que já vieram definidos do JSON)
+        products.forEach(p => { 
+            if (!p.hasExplicitOffer && p.discountPercent > 0) {
+                p.price = p.oldPrice * (1 - p.discountPercent / 100); 
+            }
+        });
     }
 
     async function init() {
@@ -1760,7 +1783,10 @@ Por favor, podem incluir na minha entrega?`;
                         img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
                         categoria: p.categoria || "Outros", subcategoria: p.subcategoria || "", 
                         vencimento: p.validade || p.vencimento || null, embalagem: p.embalagem || extractVolume(p.nome),
-                        marca: p.marca || "", descricao: p.descricao || "", gtin: p.gtin || ""
+                        marca: p.marca || "", descricao: p.descricao || "", gtin: p.gtin || "",
+                        // Adicionamos a leitura dos novos dados
+                        preco_oferta: p.preco_oferta ? parseFloat(p.preco_oferta) : null,
+                        validade_oferta: p.validade_oferta || null
                     };
                 });
                 aplicarDescontos(STATE.prods);
