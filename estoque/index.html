@@ -11,20 +11,22 @@
         body { font-family: 'Inter', sans-serif; background: #fafafa; margin: 0; padding: 0; color: #000; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
         .header-area { padding: 5px; background: white; border-bottom: 1px solid #ddd; }
-        #reader { width: 100%; height: 150px; overflow: hidden; margin: 0 auto 5px; }
+        /* Câmera aumentada para leitura melhor */
+        #reader { width: 100%; height: 250px; overflow: hidden; margin: 0 auto 5px; }
         
-        .content-area { flex: 1; overflow-y: hidden; padding: 10px; }
+        .content-area { flex: 1; display: flex; flex-direction: column; padding: 10px; overflow: hidden; }
         
-        /* Layout em grade para economizar espaço */
-        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        /* Grid de campos com mais altura */
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .form-group { display: flex; flex-direction: column; }
-        .label { font-size: 8px; color: #666; text-transform: uppercase; font-weight: 800; margin-bottom: 1px; }
-        input { font-size: 14px; width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .label { font-size: 9px; color: #666; text-transform: uppercase; font-weight: 800; margin-bottom: 2px; }
+        /* Inputs mais altos para facilitar o toque */
+        input { font-size: 16px; width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         
-        .bottom-bar { position: fixed; bottom: 0; width: 100%; height: 50px; background: #fff; border-top: 1px solid #ddd; display: flex; align-items: center; justify-content: space-around; z-index: 10; }
-        .btn-icon { background: none; border: none; font-size: 22px; padding: 10px; cursor: pointer; }
+        .bottom-bar { position: fixed; bottom: 0; width: 100%; height: 55px; background: #fff; border-top: 1px solid #ddd; display: flex; align-items: center; justify-content: space-around; z-index: 10; }
+        .btn-icon { background: none; border: none; font-size: 24px; padding: 10px; cursor: pointer; }
         
-        #config-panel { display: none; padding: 10px; background: #f0f0f0; border-bottom: 1px solid #ddd; font-size: 12px; }
+        #config-panel { display: none; padding: 10px; background: #f0f0f0; border-bottom: 1px solid #ddd; font-size: 12px; position: absolute; top: 0; left: 0; right: 0; z-index: 20; }
     </style>
 </head>
 <body>
@@ -32,8 +34,8 @@
 <div class="header-area">
     <div id="reader"></div>
     <div style="display:flex; gap:5px;">
-        <input type="text" id="search" placeholder="Código..." style="flex:1;">
-        <button onclick="buscar()" style="padding: 0 15px; background:#000; color:#fff; border:none; border-radius:6px; font-weight:bold;">OK</button>
+        <input type="text" id="search" placeholder="Código ou Nome..." style="flex:1; padding: 8px;">
+        <button onclick="buscar()" style="padding: 0 15px; background:#000; color:#fff; border:none; border-radius:6px; font-weight:bold;">BUSCAR</button>
     </div>
 </div>
 
@@ -41,12 +43,12 @@
     <input type="text" id="cfg-user" placeholder="Usuário GitHub" style="margin-bottom:4px;">
     <input type="text" id="cfg-repo" placeholder="Repositório" style="margin-bottom:4px;">
     <input type="password" id="cfg-token" placeholder="Token" style="margin-bottom:4px;">
-    <button onclick="saveConfig()" style="width:100%; border:none; background:#000; color:#fff; border-radius:4px;">SALVAR</button>
-    <button onclick="syncData()" style="width:100%; border:none; background:#22c55e; color:#fff; border-radius:4px; margin-top:4px;">SINCRONIZAR</button>
+    <button onclick="saveConfig()" style="width:100%; padding:10px; border:none; background:#000; color:#fff; border-radius:4px;">SALVAR CREDENCIAIS</button>
+    <button onclick="syncData()" style="width:100%; padding:10px; border:none; background:#22c55e; color:#fff; border-radius:4px; margin-top:4px;">SINCRONIZAR DADOS</button>
 </div>
 
 <div class="content-area">
-    <h3 id="display-nome" style="margin:0 0 8px 0; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Aguardando leitura...</h3>
+    <h3 id="display-nome" style="margin:0 0 10px 0; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:800;">Aguardando leitura...</h3>
     
     <div class="row">
         <div class="form-group"><div class="label">ESTOQUE</div><input type="number" id="val-estoque" onchange="updateCurrent('estoque', this.value)"></div>
@@ -79,7 +81,8 @@
     
     async function startScanner() {
         try {
-            await html5QrCode.start({ facingMode: "environment" }, { fps: 5, qrbox: 120 }, (decodedText) => {
+            // Aumentado o qrbox para 200 para melhor detecção de EAN
+            await html5QrCode.start({ facingMode: "environment" }, { fps: 5, qrbox: 200 }, (decodedText) => {
                 document.getElementById('search').value = decodedText;
                 buscar();
             });
