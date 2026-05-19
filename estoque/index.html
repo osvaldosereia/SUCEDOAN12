@@ -11,17 +11,24 @@
         body { font-family: 'Inter', sans-serif; background: #fafafa; margin: 0; padding: 0; color: #000; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
         .header-area { padding: 5px; background: white; border-bottom: 1px solid #ddd; }
-        /* Câmera aumentada para leitura melhor */
-        #reader { width: 100%; height: 250px; overflow: hidden; margin: 0 auto 5px; }
+        /* Câmera com 200px (reduzida em 50px) */
+        #reader { width: 100%; height: 200px; overflow: hidden; margin: 0 auto 5px; }
         
         .content-area { flex: 1; display: flex; flex-direction: column; padding: 10px; overflow: hidden; }
         
-        /* Grid de campos com mais altura */
         .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .form-group { display: flex; flex-direction: column; }
-        .label { font-size: 9px; color: #666; text-transform: uppercase; font-weight: 800; margin-bottom: 2px; }
-        /* Inputs mais altos para facilitar o toque */
-        input { font-size: 16px; width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .label { font-size: 10px; color: #444; text-transform: uppercase; font-weight: 800; margin-bottom: 2px; }
+        
+        input { 
+            font-size: 16px; 
+            width: 100%; 
+            padding: 10px; 
+            height: 50px; /* Altura do campo */
+            border: 1px solid #bbb; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+        }
         
         .bottom-bar { position: fixed; bottom: 0; width: 100%; height: 55px; background: #fff; border-top: 1px solid #ddd; display: flex; align-items: center; justify-content: space-around; z-index: 10; }
         .btn-icon { background: none; border: none; font-size: 24px; padding: 10px; cursor: pointer; }
@@ -34,7 +41,7 @@
 <div class="header-area">
     <div id="reader"></div>
     <div style="display:flex; gap:5px;">
-        <input type="text" id="search" placeholder="Código ou Nome..." style="flex:1; padding: 8px;">
+        <input type="text" id="search" placeholder="Código ou Nome..." style="flex:1; height: 40px !important;">
         <button onclick="buscar()" style="padding: 0 15px; background:#000; color:#fff; border:none; border-radius:6px; font-weight:bold;">BUSCAR</button>
     </div>
 </div>
@@ -81,8 +88,8 @@
     
     async function startScanner() {
         try {
-            // Aumentado o qrbox para 200 para melhor detecção de EAN
-            await html5QrCode.start({ facingMode: "environment" }, { fps: 5, qrbox: 200 }, (decodedText) => {
+            // Ajustado qrbox para 180 para caber bem no container de 200px
+            await html5QrCode.start({ facingMode: "environment" }, { fps: 5, qrbox: 180 }, (decodedText) => {
                 document.getElementById('search').value = decodedText;
                 buscar();
             });
