@@ -3,159 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Estoque Mobile</title>
+    <title>Estoque Rápido</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    
     <style>
-        :root { --bg: #f4f4f5; --card: #ffffff; --primary: #000000; --accent: #10b981; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px; }
-        .product-card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e4e4e7; }
-        
-        .field-group { margin-bottom: 8px; }
-        .field-group label { display: block; font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 2px; }
-        .input-mobile { width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        
-        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .btn { padding: 12px; border-radius: 8px; border: none; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-ver { background: #e0f2fe; color: #0369a1; }
-        
-        /* Modal Foto */
-        #modal-foto { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        #modal-foto img { max-width: 100%; max-height: 80vh; border-radius: 8px; }
+        body { font-family: 'Inter', sans-serif; background: #fafafa; margin: 0; padding: 10px; color: #000; }
+        .card { background: white; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+        .input-box { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: 800; background: #000; color: #fff; margin-bottom: 5px; }
+        .product-card { background: #fff; border: 1px solid #eee; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+        .label { font-size: 9px; color: #666; text-transform: uppercase; font-weight: 800; }
+        input { font-size: 14px; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .modal { display: none; position: fixed; inset: 0; background: #000; z-index: 99; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h3 style="margin:0">Gestão de Estoque</h3>
-    <button class="btn" onclick="syncData()" style="background:#000; color:#fff;"><i data-lucide="refresh-cw" size="16"></i></button>
+<div class="card">
+    <input type="text" id="search" class="input-box" placeholder="Nome, EAN ou SKU...">
+    <button class="btn" onclick="buscar()">BUSCAR</button>
+    <button class="btn" style="background:#444;" onclick="toggleConfig()">CONFIGURAÇÕES</button>
 </div>
 
-<input type="text" id="search" class="input-mobile" placeholder="Buscar SKU, EAN ou Nome..." style="margin-bottom: 15px;">
+<div id="config-panel" class="card" style="display:none;">
+    <input type="text" id="cfg-user" class="input-box" placeholder="Usuário GitHub">
+    <input type="text" id="cfg-repo" class="input-box" placeholder="Repositório">
+    <input type="password" id="cfg-token" class="input-box" placeholder="Token GitHub">
+    <button class="btn" style="background:#555;" onclick="saveConfig()">SALVAR CREDENCIAIS</button>
+    <button class="btn" style="background:#22c55e;" onclick="syncData()">SINCRONIZAR COM NUVEM</button>
+</div>
 
-<div id="estoque-list"></div>
+<div id="list"></div>
 
-<div id="modal-foto" onclick="closeImage()">
-    <img id="img-ampliada" src="" alt="Produto">
-    <button class="btn" style="margin-top:20px;">FECHAR</button>
+<div id="modal-foto" class="modal" onclick="this.style.display='none'">
+    <img id="img-ampliada" style="max-width:95%; max-height:80%; border-radius:8px;">
+    <button class="btn" style="width: 200px; margin-top: 20px;">FECHAR</button>
 </div>
 
 <script>
-    const STORAGE_KEY = 'sucedoan_pim_v37';
     let products = [];
     let remoteSha = null;
 
-    async function loadData() {
-        products = await localforage.getItem(STORAGE_KEY) || [];
-        renderEstoque();
+    async function buscar() {
+        const termo = document.getElementById('search').value.toLowerCase();
+        const list = document.getElementById('list');
+        list.innerHTML = ""; // Limpa a lista antes de renderizar
+        
+        // Performance: Limitar resultados a 20 para o celular não travar
+        const resultados = products.filter(p => 
+            p.nome?.toLowerCase().includes(termo) || 
+            p.gtin?.includes(termo) || 
+            p.codigo?.includes(termo)
+        ).slice(0, 20);
+
+        if(resultados.length === 0) list.innerHTML = "<p style='text-align:center;'>Nenhum produto.</p>";
+
+        resultados.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.innerHTML = `
+                <div style="font-weight:800; margin-bottom:8px;">${p.nome}</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
+                    <div><div class="label">ESTOQUE</div><input type="number" value="${p.estoque || 0}" onchange="updateProd('${p.codigo}', 'estoque', this.value)"></div>
+                    <div><div class="label">VALIDADE</div><input type="date" value="${formatDate(p.validade)}" onchange="updateProd('${p.codigo}', 'validade', this.value)"></div>
+                    <div><div class="label">EAN</div><input type="text" value="${p.gtin || ''}" onchange="updateProd('${p.codigo}', 'gtin', this.value)"></div>
+                    <div><div class="label">EMBALAGEM</div><input type="text" value="${p.embalagem || ''}" onchange="updateProd('${p.codigo}', 'embalagem', this.value)"></div>
+                    <div><div class="label">GÔNDOLA</div><input type="text" value="${p.gondola || ''}" onchange="updateProd('${p.codigo}', 'gondola', this.value)"></div>
+                    <div><div class="label">PRATELEIRA</div><input type="text" value="${p.prateleira || ''}" onchange="updateProd('${p.codigo}', 'prateleira', this.value)"></div>
+                </div>
+                <button class="btn" style="background:#e0f2fe; color:#0369a1; margin-top:10px;" onclick="verFoto('${p.url_imagem}')">VER FOTO</button>
+                <button class="btn" style="background:#10b981; margin-top:5px;" onclick="salvarItem('${p.codigo}')">SALVAR ITEM</button>
+            `;
+            list.appendChild(card);
+        });
     }
 
-    function renderEstoque(filter = "") {
-        const list = document.getElementById('estoque-list');
-        const filtered = products.filter(p => 
-            p.nome?.toLowerCase().includes(filter.toLowerCase()) || 
-            p.gtin?.includes(filter) || 
-            p.codigo?.includes(filter)
-        );
-
-        list.innerHTML = filtered.map(p => `
-            <div class="product-card">
-                <div style="font-weight: 800; margin-bottom: 10px;">${p.nome}</div>
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="field-group"><label>Estoque</label><input type="number" class="input-mobile" value="${p.estoque || 0}" onchange="updateProd('${p.codigo}', 'estoque', this.value)"></div>
-                    <div class="field-group"><label>Validade</label><input type="date" class="input-mobile" value="${formatDateForInput(p.validade)}" onchange="updateProd('${p.codigo}', 'validade', this.value)"></div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="field-group"><label>EAN (GTIN)</label><input type="text" class="input-mobile" value="${p.gtin || ''}" onchange="updateProd('${p.codigo}', 'gtin', this.value)"></div>
-                    <div class="field-group"><label>Embalagem</label><input type="text" class="input-mobile" value="${p.embalagem || ''}" onchange="updateProd('${p.codigo}', 'embalagem', this.value)"></div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="field-group"><label>Gôndola</label><input type="text" class="input-mobile" value="${p.gondola || ''}" onchange="updateProd('${p.codigo}', 'gondola', this.value)"></div>
-                    <div class="field-group"><label>Prateleira</label><input type="text" class="input-mobile" value="${p.prateleira || ''}" onchange="updateProd('${p.codigo}', 'prateleira', this.value)"></div>
-                </div>
-
-                <div class="actions">
-                    <button class="btn btn-ver" onclick="openImage('${p.url_imagem}')"><i data-lucide="image" size="16"></i> VER FOTO</button>
-                    <button class="btn" onclick="saveIndividual('${p.codigo}')" style="background:#eee;"><i data-lucide="save" size="16"></i> SALVAR</button>
-                </div>
-            </div>
-        `).join('');
-        lucide.createIcons();
+    // Funções auxiliares
+    function formatDate(d) {
+        if (!d || !d.includes('/')) return '';
+        const p = d.split('/');
+        return `${p[2]}-${p[1]}-${p[0]}`;
     }
 
-    function formatDateForInput(dateStr) {
-        if (!dateStr || !dateStr.includes('/')) return '';
-        const parts = dateStr.split('/');
-        return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    }
-
-    function updateProd(sku, field, val) {
+    function updateProd(sku, f, v) {
         const p = products.find(x => x.codigo === sku);
         if(p) {
-            if(field === 'validade') {
-                const d = val.split('-');
-                p.validade = `${d[2]}/${d[1]}/${d[0]}`;
-            } else { p[field] = val; }
-            p.last_update = Date.now();
+            if(f === 'validade') { const d = v.split('-'); p.validade = `${d[2]}/${d[1]}/${d[0]}`; }
+            else p[f] = v;
         }
     }
 
-    // Modal Imagem
-    function openImage(url) {
-        if(!url) return alert("Sem foto disponível");
-        const cleanUrl = url.replace("../", "https://donaantonia.com.br/");
-        document.getElementById('img-ampliada').src = cleanUrl;
+    function verFoto(url) {
+        if(!url) return alert("Sem foto");
+        document.getElementById('img-ampliada').src = url.replace("../", "https://donaantonia.com.br/");
         document.getElementById('modal-foto').style.display = 'flex';
     }
-    
-    function closeImage() { document.getElementById('modal-foto').style.display = 'none'; }
 
-    // Sincronização (Mesma lógica de segurança)
-    async function syncData() {
-        const cfg = await localforage.getItem('sucedoan_config');
-        if (!cfg) return alert("Configure as credenciais.");
-        
-        const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`;
-        const res = await fetch(url, { headers: { "Authorization": `Bearer ${cfg.token}` } });
-        const data = await res.json();
-        remoteSha = data.sha;
-        products = JSON.parse(atob(data.content));
-        await localforage.setItem(STORAGE_KEY, products);
-        renderEstoque();
-        alert("Sincronizado com sucesso!");
+    function toggleConfig() {
+        const p = document.getElementById('config-panel');
+        p.style.display = p.style.display === 'none' ? 'block' : 'none';
     }
 
-    async function saveDataToGithub() {
-        const cfg = await localforage.getItem('sucedoan_config');
-        const checkRes = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { 
-            headers: { "Authorization": `Bearer ${cfg.token}` } 
-        });
-        const currentData = await checkRes.json();
-
-        if (remoteSha && currentData.sha !== remoteSha) {
-            return alert("⚠️ CONFLITO: Alguém alterou os dados enquanto você editava. Clique em SINCRONIZAR.");
+    async function salvarItem(sku) {
+        const p = products.find(x => x.codigo === sku);
+        if(p) {
+            await localforage.setItem('sucedoan_pim_v37', products);
+            alert("Item salvo localmente!");
         }
-
-        const contentStr = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
-        await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json`, {
-            method: 'PUT',
-            headers: { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ message: "Update via Estoque Mobile", content: contentStr, sha: currentData.sha })
-        });
-        alert("Alterações salvas!");
     }
 
-    document.getElementById('search').addEventListener('input', (e) => renderEstoque(e.target.value));
-    
-    window.onload = loadData;
+    // Lógica de Sincronização e Carga
+    window.onload = async () => {
+        products = await localforage.getItem('sucedoan_pim_v37') || [];
+        const cfg = await localforage.getItem('sucedoan_config');
+        if(cfg) {
+            document.getElementById('cfg-user').value = cfg.user;
+            document.getElementById('cfg-repo').value = cfg.repo;
+            document.getElementById('cfg-token').value = cfg.token;
+        }
+    };
 </script>
 </body>
 </html>
