@@ -11,8 +11,25 @@
         body { font-family: 'Inter', sans-serif; background: #fafafa; margin: 0; padding: 0; color: #000; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
         .header-area { padding: 5px; background: white; border-bottom: 1px solid #ddd; }
-        /* Câmera com 200px (reduzida em 50px) */
-        #reader { width: 100%; height: 200px; overflow: hidden; margin: 0 auto 5px; }
+        
+        /* Câmera centralizada e ajustada */
+        #reader { 
+            width: 100%; 
+            height: 200px; 
+            margin: 0 auto 5px; 
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+        #reader video {
+            object-fit: cover !important;
+            width: 100% !important;
+            height: 100% !important;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
         
         .content-area { flex: 1; display: flex; flex-direction: column; padding: 10px; overflow: hidden; }
         
@@ -24,7 +41,7 @@
             font-size: 16px; 
             width: 100%; 
             padding: 10px; 
-            height: 30px; /* Altura do campo */
+            height: 50px; 
             border: 1px solid #bbb; 
             border-radius: 8px; 
             box-sizing: border-box; 
@@ -88,7 +105,6 @@
     
     async function startScanner() {
         try {
-            // Ajustado qrbox para 180 para caber bem no container de 200px
             await html5QrCode.start({ facingMode: "environment" }, { fps: 5, qrbox: 180 }, (decodedText) => {
                 document.getElementById('search').value = decodedText;
                 buscar();
@@ -143,7 +159,11 @@
         if(!cfg) return alert("Configure as credenciais");
         const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { headers: { "Authorization": `Bearer ${cfg.token}` } });
         const data = await res.json();
-        products = JSON.parse(atob(data.content));
+        
+        // CORREÇÃO DOS ACENTOS: Decodificando o Base64 para UTF-8 corretamente
+        const decodedString = decodeURIComponent(escape(atob(data.content)));
+        products = JSON.parse(decodedString);
+        
         await localforage.setItem('sucedoan_pim_v37', products);
         alert("Sincronizado!");
     }
@@ -153,7 +173,10 @@
         if(!cfg) return alert("Configure as credenciais");
         const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { headers: { "Authorization": `Bearer ${cfg.token}` } });
         const currentData = await res.json();
+        
+        // Codificação UTF-8 mantida
         const contentStr = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
+        
         await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json`, {
             method: 'PUT',
             headers: { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" },
