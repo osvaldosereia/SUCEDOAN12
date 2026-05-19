@@ -8,108 +8,129 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --bg-body: #f4f4f5; --accent: #000000; --text-primary: #0f172a; --border: #e4e4e7; --danger: #ef4444; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-body); margin: 0; padding: 20px; }
+        :root { --bg-body: #f4f4f5; --accent: #000000; --text-primary: #0f172a; --border: #e4e4e7; --danger: #ef4444; --success: #10b981; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-body); margin: 0; padding: 20px; color: var(--text-primary); }
         .container { max-width: 900px; margin: 0 auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
-        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; }
-        .search-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
-        .grid-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); align-items: center; }
-        .btn { padding: 10px 15px; border-radius: 6px; cursor: pointer; border: none; font-weight: 800; display: flex; align-items: center; gap: 5px; }
-        .btn-primary { background: var(--accent); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        #reader { width: 100%; max-width: 400px; display: none; }
+        .card { background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .search-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+        .grid-row { display: grid; grid-template-columns: 2fr 1fr 1fr 60px; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); align-items: center; }
+        .btn { padding: 10px 15px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); font-weight: 800; display: flex; align-items: center; gap: 5px; background: white; }
+        .btn-primary { background: var(--accent); color: white; border: none; }
+        .btn-danger { background: var(--danger); color: white; border: none; }
+        #reader { width: 100%; max-width: 400px; display: none; margin: 0 auto 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <div class="card" id="config-section">
+        <h3>Configurações de Acesso</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <input type="text" id="cfg-user" class="search-input" placeholder="Usuário GitHub">
+            <input type="text" id="cfg-repo" class="search-input" placeholder="Repositório">
+            <input type="password" id="cfg-token" class="search-input" placeholder="Token GitHub">
+        </div>
+        <button class="btn btn-primary" onclick="saveConfig()">SALVAR CREDENCIAIS</button>
+    </div>
+
     <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2>Estoque e Validade</h2>
+            <h2>Gestão de Estoque e Validade</h2>
             <button class="btn" onclick="window.location.href='index.html'">Voltar ao PIM</button>
         </div>
 
         <div class="toolbar">
             <input type="text" id="search" class="search-input" placeholder="Buscar por Nome, SKU ou EAN...">
-            <button class="btn" onclick="toggleScanner()"><i data-lucide="camera"></i> SCANNER</button>
-            <button class="btn btn-primary" onclick="syncData()"><i data-lucide="refresh-cw"></i> SINCRONIZAR</button>
-            <button class="btn btn-primary" onclick="saveDataToGithub()"><i data-lucide="save"></i> SALVAR TUDO</button>
+            <button class="btn" onclick="toggleScanner()"><i data-lucide="camera" size="16"></i> SCANNER</button>
+            <button class="btn btn-primary" onclick="syncData()"><i data-lucide="refresh-cw" size="16"></i> SINCRONIZAR (PUXAR)</button>
+            <button class="btn btn-primary" style="background: var(--success);" onclick="saveDataToGithub()"><i data-lucide="save" size="16"></i> SALVAR NA NUVEM</button>
         </div>
 
         <div id="reader"></div>
 
         <div id="estoque-list">
             <div class="grid-row" style="font-weight: 800; font-size: 11px;">
-                <div>Produto</div><div>Estoque</div><div>Validade</div><div>Ação</div>
+                <div>Produto</div><div>Estoque</div><div>Validade</div><div>Status</div>
             </div>
-            </div>
+        </div>
     </div>
 </div>
 
 <script>
     const STORAGE_KEY = 'sucedoan_pim_v37';
     let products = [];
-    let remoteSha = null; // Trava de concorrência
+    let remoteSha = null;
 
-    // ==========================================
-    // LÓGICA DE CONEXÃO (GitHubAPI Simplificada)
-    // ==========================================
-    async function getApiConfig() {
-        const cfg = await localforage.getItem('sucedoan_config');
-        if (!cfg) throw new Error("Configuração ausente.");
-        return cfg;
+    // --- Configuração ---
+    async function saveConfig() {
+        const config = {
+            user: document.getElementById('cfg-user').value.trim(),
+            repo: document.getElementById('cfg-repo').value.trim(),
+            token: document.getElementById('cfg-token').value.trim()
+        };
+        await localforage.setItem('sucedoan_config', config);
+        alert("Credenciais salvas!");
     }
 
+    async function loadConfig() {
+        const saved = await localforage.getItem('sucedoan_config');
+        if (saved) {
+            document.getElementById('cfg-user').value = saved.user || '';
+            document.getElementById('cfg-repo').value = saved.repo || '';
+            document.getElementById('cfg-token').value = saved.token || '';
+        }
+    }
+
+    // --- Sincronização e Concorrência ---
     async function syncData() {
-        const cfg = await getApiConfig();
-        const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`;
+        const cfg = await localforage.getItem('sucedoan_config');
+        if (!cfg) return alert("Configure as credenciais primeiro!");
         
         try {
+            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`;
             const res = await fetch(url, { headers: { "Authorization": `Bearer ${cfg.token}` } });
-            const data = await res.json();
+            if(!res.ok) throw new Error("Erro ao acessar GitHub");
             
-            // Armazena o SHA para garantir que sabemos qual versão estamos editando
-            remoteSha = data.sha; 
+            const data = await res.json();
+            remoteSha = data.sha; // Trava de concorrência definida aqui
             
             const content = JSON.parse(atob(data.content));
             products = content;
             await localforage.setItem(STORAGE_KEY, products);
             renderEstoque();
-            alert("Dados sincronizados com a nuvem!");
-        } catch (e) { alert("Erro ao sincronizar: " + e.message); }
+            alert("Dados atualizados com sucesso!");
+        } catch (e) { alert("Erro de sincronização: " + e.message); }
     }
 
     async function saveDataToGithub() {
-        const cfg = await getApiConfig();
-        
-        // Verificação de Conflito (O "Senior Move")
-        const checkUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`;
-        const res = await fetch(checkUrl, { headers: { "Authorization": `Bearer ${cfg.token}` } });
-        const currentData = await res.json();
+        const cfg = await localforage.getItem('sucedoan_config');
+        // Verificação de segurança antes do salvamento
+        const checkRes = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { 
+            headers: { "Authorization": `Bearer ${cfg.token}` } 
+        });
+        const currentData = await checkRes.json();
 
         if (remoteSha && currentData.sha !== remoteSha) {
-            alert("⚠️ CONFLITO DETECTADO: Alguém alterou os dados enquanto você editava. Por favor, clique em SINCRONIZAR novamente.");
-            return;
+            return alert("⚠️ CONFLITO: Alguém alterou os dados enquanto você editava. Clique em SINCRONIZAR antes de salvar.");
         }
 
-        // Se passar, salva
         const contentStr = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
-        const payload = { message: "Estoque Atualizado via Estoque.html", content: contentStr, sha: currentData.sha };
+        const payload = { message: "Estoque/Validade via Estoque.html", content: contentStr, sha: currentData.sha };
         
-        await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json`, {
+        const putRes = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json`, {
             method: 'PUT',
             headers: { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
         
-        alert("Salvo com sucesso!");
+        if(putRes.ok) alert("Alterações salvas na nuvem!");
+        else alert("Erro ao salvar.");
     }
 
-    // ==========================================
-    // LÓGICA DE UI E SCANNER
-    // ==========================================
+    // --- UI e Lógica ---
     function renderEstoque(filter = "") {
         const list = document.getElementById('estoque-list');
         const filtered = products.filter(p => 
@@ -118,13 +139,13 @@
             p.codigo?.includes(filter)
         );
 
-        list.innerHTML = `<div class="grid-row" style="font-weight: 800; font-size: 11px;"><div>Produto</div><div>Estoque</div><div>Validade</div><div>Ação</div></div>` 
+        list.innerHTML = `<div class="grid-row" style="font-weight: 800; font-size: 11px;"><div>Produto</div><div>Estoque</div><div>Validade</div><div>Status</div></div>` 
             + filtered.map(p => `
             <div class="grid-row">
                 <div style="font-size: 12px; font-weight: 600;">${p.nome}</div>
                 <input type="number" value="${p.estoque || 0}" onchange="updateProd('${p.codigo}', 'estoque', this.value)" style="padding:5px;">
                 <input type="date" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : ''}" onchange="updateProd('${p.codigo}', 'validade', this.value)" style="padding:5px;">
-                <button class="btn btn-danger" onclick="deleteProd('${p.codigo}')"><i data-lucide="trash-2" size="14"></i></button>
+                <div style="font-size:10px;">${p.situacao || 'A'}</div>
             </div>
         `).join('');
         lucide.createIcons();
@@ -147,15 +168,14 @@
     function toggleScanner() {
         const scannerDiv = document.getElementById('reader');
         if(scannerDiv.style.display === 'block') {
-            html5QrCode.stop();
-            scannerDiv.style.display = 'none';
+            html5QrCode.stop(); scannerDiv.style.display = 'none';
         } else {
             scannerDiv.style.display = 'block';
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
                 document.getElementById('search').value = decodedText;
                 renderEstoque(decodedText);
-                toggleScanner(); // Fecha
+                toggleScanner();
             });
         }
     }
@@ -164,6 +184,7 @@
 
     window.onload = async () => {
         products = await localforage.getItem(STORAGE_KEY) || [];
+        await loadConfig();
         renderEstoque();
         lucide.createIcons();
     };
