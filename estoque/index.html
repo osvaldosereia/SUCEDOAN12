@@ -10,61 +10,58 @@
     <style>
         body { font-family: 'Inter', sans-serif; background: #fafafa; margin: 0; padding: 0; color: #000; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Cabeçalho Fixo */
-        .header-area { padding: 10px; background: white; border-bottom: 1px solid #ddd; }
-        #reader { width: 100%; max-width: 300px; margin: 0 auto 10px; }
+        .header-area { padding: 5px; background: white; border-bottom: 1px solid #ddd; }
+        #reader { width: 100%; height: 150px; overflow: hidden; margin: 0 auto 5px; }
         
-        /* Área de Conteúdo (Formulário) */
-        .content-area { flex: 1; overflow-y: auto; padding: 10px 10px 80px 10px; }
+        .content-area { flex: 1; overflow-y: hidden; padding: 10px; }
         
-        /* Campos de Entrada */
-        .form-group { margin-bottom: 8px; }
-        .label { font-size: 9px; color: #666; text-transform: uppercase; font-weight: 800; margin-bottom: 2px; }
-        input { font-size: 16px; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        /* Layout em grade para economizar espaço */
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        .form-group { display: flex; flex-direction: column; }
+        .label { font-size: 8px; color: #666; text-transform: uppercase; font-weight: 800; margin-bottom: 1px; }
+        input { font-size: 14px; width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         
-        /* Barra de Botões Inferior */
-        .bottom-bar { position: fixed; bottom: 0; width: 100%; height: 60px; background: #fff; border-top: 1px solid #ddd; display: flex; align-items: center; justify-content: space-around; z-index: 10; }
-        .btn-icon { background: none; border: none; font-size: 24px; padding: 10px; cursor: pointer; }
+        .bottom-bar { position: fixed; bottom: 0; width: 100%; height: 50px; background: #fff; border-top: 1px solid #ddd; display: flex; align-items: center; justify-content: space-around; z-index: 10; }
+        .btn-icon { background: none; border: none; font-size: 22px; padding: 10px; cursor: pointer; }
         
-        /* Config Panel */
-        #config-panel { display: none; padding: 10px; border-bottom: 1px solid #ddd; background: #f0f0f0; }
+        #config-panel { display: none; padding: 10px; background: #f0f0f0; border-bottom: 1px solid #ddd; font-size: 12px; }
     </style>
 </head>
 <body>
 
-<!-- Cabeçalho (Scanner) -->
 <div class="header-area">
     <div id="reader"></div>
     <div style="display:flex; gap:5px;">
-        <input type="text" id="search" placeholder="Nome, EAN ou SKU..." style="flex:1;">
+        <input type="text" id="search" placeholder="Código..." style="flex:1;">
         <button onclick="buscar()" style="padding: 0 15px; background:#000; color:#fff; border:none; border-radius:6px; font-weight:bold;">OK</button>
     </div>
 </div>
 
-<!-- Configurações -->
 <div id="config-panel">
-    <input type="text" id="cfg-user" class="form-group" placeholder="Usuário GitHub">
-    <input type="text" id="cfg-repo" class="form-group" placeholder="Repositório">
-    <input type="password" id="cfg-token" class="form-group" placeholder="Token GitHub">
-    <button class="btn" style="width:100%; padding:10px; border:none; border-radius:6px; background:#000; color:#fff;" onclick="saveConfig()">SALVAR CREDENCIAIS</button>
-    <button class="btn" style="width:100%; padding:10px; border:none; border-radius:6px; background:#22c55e; color:#fff; margin-top:5px;" onclick="syncData()">SINCRONIZAR (BAIXAR)</button>
+    <input type="text" id="cfg-user" placeholder="Usuário GitHub" style="margin-bottom:4px;">
+    <input type="text" id="cfg-repo" placeholder="Repositório" style="margin-bottom:4px;">
+    <input type="password" id="cfg-token" placeholder="Token" style="margin-bottom:4px;">
+    <button onclick="saveConfig()" style="width:100%; border:none; background:#000; color:#fff; border-radius:4px;">SALVAR</button>
+    <button onclick="syncData()" style="width:100%; border:none; background:#22c55e; color:#fff; border-radius:4px; margin-top:4px;">SINCRONIZAR</button>
 </div>
 
-<!-- Área do Produto -->
 <div class="content-area">
-    <div id="product-view">
-        <h3 id="display-nome" style="margin:0 0 10px 0; font-size:16px; border-bottom: 1px solid #eee; padding-bottom:5px;">Aguardando leitura...</h3>
-        
+    <h3 id="display-nome" style="margin:0 0 8px 0; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Aguardando leitura...</h3>
+    
+    <div class="row">
         <div class="form-group"><div class="label">ESTOQUE</div><input type="number" id="val-estoque" onchange="updateCurrent('estoque', this.value)"></div>
         <div class="form-group"><div class="label">VALIDADE</div><input type="date" id="val-validade" onchange="updateCurrent('validade', this.value)"></div>
+    </div>
+    <div class="row">
         <div class="form-group"><div class="label">EAN</div><input type="text" id="val-gtin" onchange="updateCurrent('gtin', this.value)"></div>
         <div class="form-group"><div class="label">EMBALAGEM</div><input type="text" id="val-embalagem" onchange="updateCurrent('embalagem', this.value)"></div>
+    </div>
+    <div class="row">
         <div class="form-group"><div class="label">GÔNDOLA</div><input type="text" id="val-gondola" onchange="updateCurrent('gondola', this.value)"></div>
         <div class="form-group"><div class="label">PRATELEIRA</div><input type="text" id="val-prateleira" onchange="updateCurrent('prateleira', this.value)"></div>
     </div>
 </div>
 
-<!-- Barra de Ações Fixa (Botões) -->
 <div class="bottom-bar">
     <button class="btn-icon" onclick="toggleConfig()">⚙️</button>
     <button class="btn-icon" onclick="verFoto()">📷</button>
@@ -82,7 +79,7 @@
     
     async function startScanner() {
         try {
-            await html5QrCode.start({ facingMode: "environment" }, { fps: 5, qrbox: 200 }, (decodedText) => {
+            await html5QrCode.start({ facingMode: "environment" }, { fps: 5, qrbox: 120 }, (decodedText) => {
                 document.getElementById('search').value = decodedText;
                 buscar();
             });
@@ -96,12 +93,7 @@
 
     function buscar() {
         const termo = document.getElementById('search').value.toLowerCase();
-        const p = products.find(x => 
-            x.nome?.toLowerCase().includes(termo) || 
-            x.gtin?.includes(termo) || 
-            x.codigo?.includes(termo)
-        );
-
+        const p = products.find(x => x.nome?.toLowerCase().includes(termo) || x.gtin?.includes(termo) || x.codigo?.includes(termo));
         if(p) {
             currentProd = p;
             document.getElementById('display-nome').innerText = p.nome;
@@ -111,9 +103,7 @@
             document.getElementById('val-embalagem').value = p.embalagem || '';
             document.getElementById('val-gondola').value = p.gondola || '';
             document.getElementById('val-prateleira').value = p.prateleira || '';
-        } else {
-            alert("Produto não encontrado.");
-        }
+        } else { alert("Produto não encontrado."); }
     }
 
     function updateCurrent(field, value) {
@@ -121,9 +111,7 @@
         if(field === 'validade') {
             const d = value.split('-');
             currentProd.validade = `${d[2]}/${d[1]}/${d[0]}`;
-        } else {
-            currentProd[field] = value;
-        }
+        } else { currentProd[field] = value; }
         currentProd.last_update = Date.now();
         localforage.setItem('sucedoan_pim_v37', products);
     }
@@ -135,14 +123,14 @@
     }
 
     function verFoto() {
-        if(!currentProd || !currentProd.url_imagem) return alert("Selecione um produto primeiro");
+        if(!currentProd || !currentProd.url_imagem) return alert("Selecione um produto");
         document.getElementById('img-ampliada').src = currentProd.url_imagem.replace("../", "https://donaantonia.com.br/");
         document.getElementById('modal-foto').style.display = 'flex';
     }
 
     async function syncData() {
         const cfg = await localforage.getItem('sucedoan_config');
-        if(!cfg) return alert("Configure as credenciais primeiro");
+        if(!cfg) return alert("Configure as credenciais");
         const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { headers: { "Authorization": `Bearer ${cfg.token}` } });
         const data = await res.json();
         products = JSON.parse(atob(data.content));
@@ -152,7 +140,7 @@
 
     async function saveDataToGithub() {
         const cfg = await localforage.getItem('sucedoan_config');
-        if(!cfg) return alert("Configure as credenciais primeiro");
+        if(!cfg) return alert("Configure as credenciais");
         const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { headers: { "Authorization": `Bearer ${cfg.token}` } });
         const currentData = await res.json();
         const contentStr = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
@@ -161,7 +149,7 @@
             headers: { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" },
             body: JSON.stringify({ message: "Update mobile", content: contentStr, sha: currentData.sha })
         });
-        alert("Salvo na nuvem!");
+        alert("Salvo!");
     }
 
     async function saveConfig() {
