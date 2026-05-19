@@ -2,61 +2,47 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan - Estoque e Validade</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Estoque Mobile</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        :root { --bg-body: #f4f4f5; --accent: #000000; --text-primary: #0f172a; --border: #e4e4e7; --danger: #ef4444; --success: #10b981; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-body); margin: 0; padding: 20px; color: var(--text-primary); }
-        .container { max-width: 900px; margin: 0 auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .search-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
-        .grid-row { display: grid; grid-template-columns: 2fr 1fr 1fr 60px; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); align-items: center; }
-        .btn { padding: 10px 15px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); font-weight: 800; display: flex; align-items: center; gap: 5px; background: white; }
-        .btn-primary { background: var(--accent); color: white; border: none; }
-        .btn-danger { background: var(--danger); color: white; border: none; }
-        #reader { width: 100%; max-width: 400px; display: none; margin: 0 auto 20px; }
+        :root { --bg: #f4f4f5; --card: #ffffff; --primary: #000000; --accent: #10b981; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px; }
+        .product-card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e4e4e7; }
+        
+        .field-group { margin-bottom: 8px; }
+        .field-group label { display: block; font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 2px; }
+        .input-mobile { width: 100%; padding: 10px; border: 1px solid #e4e4e7; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .btn { padding: 12px; border-radius: 8px; border: none; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-ver { background: #e0f2fe; color: #0369a1; }
+        
+        /* Modal Foto */
+        #modal-foto { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        #modal-foto img { max-width: 100%; max-height: 80vh; border-radius: 8px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="card" id="config-section">
-        <h3>Configurações de Acesso</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-            <input type="text" id="cfg-user" class="search-input" placeholder="Usuário GitHub">
-            <input type="text" id="cfg-repo" class="search-input" placeholder="Repositório">
-            <input type="password" id="cfg-token" class="search-input" placeholder="Token GitHub">
-        </div>
-        <button class="btn btn-primary" onclick="saveConfig()">SALVAR CREDENCIAIS</button>
-    </div>
+<div class="header">
+    <h3 style="margin:0">Gestão de Estoque</h3>
+    <button class="btn" onclick="syncData()" style="background:#000; color:#fff;"><i data-lucide="refresh-cw" size="16"></i></button>
+</div>
 
-    <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2>Gestão de Estoque e Validade</h2>
-            <button class="btn" onclick="window.location.href='index.html'">Voltar ao PIM</button>
-        </div>
+<input type="text" id="search" class="input-mobile" placeholder="Buscar SKU, EAN ou Nome..." style="margin-bottom: 15px;">
 
-        <div class="toolbar">
-            <input type="text" id="search" class="search-input" placeholder="Buscar por Nome, SKU ou EAN...">
-            <button class="btn" onclick="toggleScanner()"><i data-lucide="camera" size="16"></i> SCANNER</button>
-            <button class="btn btn-primary" onclick="syncData()"><i data-lucide="refresh-cw" size="16"></i> SINCRONIZAR (PUXAR)</button>
-            <button class="btn btn-primary" style="background: var(--success);" onclick="saveDataToGithub()"><i data-lucide="save" size="16"></i> SALVAR NA NUVEM</button>
-        </div>
+<div id="estoque-list"></div>
 
-        <div id="reader"></div>
-
-        <div id="estoque-list">
-            <div class="grid-row" style="font-weight: 800; font-size: 11px;">
-                <div>Produto</div><div>Estoque</div><div>Validade</div><div>Status</div>
-            </div>
-        </div>
-    </div>
+<div id="modal-foto" onclick="closeImage()">
+    <img id="img-ampliada" src="" alt="Produto">
+    <button class="btn" style="margin-top:20px;">FECHAR</button>
 </div>
 
 <script>
@@ -64,73 +50,11 @@
     let products = [];
     let remoteSha = null;
 
-    // --- Configuração ---
-    async function saveConfig() {
-        const config = {
-            user: document.getElementById('cfg-user').value.trim(),
-            repo: document.getElementById('cfg-repo').value.trim(),
-            token: document.getElementById('cfg-token').value.trim()
-        };
-        await localforage.setItem('sucedoan_config', config);
-        alert("Credenciais salvas!");
+    async function loadData() {
+        products = await localforage.getItem(STORAGE_KEY) || [];
+        renderEstoque();
     }
 
-    async function loadConfig() {
-        const saved = await localforage.getItem('sucedoan_config');
-        if (saved) {
-            document.getElementById('cfg-user').value = saved.user || '';
-            document.getElementById('cfg-repo').value = saved.repo || '';
-            document.getElementById('cfg-token').value = saved.token || '';
-        }
-    }
-
-    // --- Sincronização e Concorrência ---
-    async function syncData() {
-        const cfg = await localforage.getItem('sucedoan_config');
-        if (!cfg) return alert("Configure as credenciais primeiro!");
-        
-        try {
-            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`;
-            const res = await fetch(url, { headers: { "Authorization": `Bearer ${cfg.token}` } });
-            if(!res.ok) throw new Error("Erro ao acessar GitHub");
-            
-            const data = await res.json();
-            remoteSha = data.sha; // Trava de concorrência definida aqui
-            
-            const content = JSON.parse(atob(data.content));
-            products = content;
-            await localforage.setItem(STORAGE_KEY, products);
-            renderEstoque();
-            alert("Dados atualizados com sucesso!");
-        } catch (e) { alert("Erro de sincronização: " + e.message); }
-    }
-
-    async function saveDataToGithub() {
-        const cfg = await localforage.getItem('sucedoan_config');
-        // Verificação de segurança antes do salvamento
-        const checkRes = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { 
-            headers: { "Authorization": `Bearer ${cfg.token}` } 
-        });
-        const currentData = await checkRes.json();
-
-        if (remoteSha && currentData.sha !== remoteSha) {
-            return alert("⚠️ CONFLITO: Alguém alterou os dados enquanto você editava. Clique em SINCRONIZAR antes de salvar.");
-        }
-
-        const contentStr = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
-        const payload = { message: "Estoque/Validade via Estoque.html", content: contentStr, sha: currentData.sha };
-        
-        const putRes = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json`, {
-            method: 'PUT',
-            headers: { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-        
-        if(putRes.ok) alert("Alterações salvas na nuvem!");
-        else alert("Erro ao salvar.");
-    }
-
-    // --- UI e Lógica ---
     function renderEstoque(filter = "") {
         const list = document.getElementById('estoque-list');
         const filtered = products.filter(p => 
@@ -139,55 +63,99 @@
             p.codigo?.includes(filter)
         );
 
-        list.innerHTML = `<div class="grid-row" style="font-weight: 800; font-size: 11px;"><div>Produto</div><div>Estoque</div><div>Validade</div><div>Status</div></div>` 
-            + filtered.map(p => `
-            <div class="grid-row">
-                <div style="font-size: 12px; font-weight: 600;">${p.nome}</div>
-                <input type="number" value="${p.estoque || 0}" onchange="updateProd('${p.codigo}', 'estoque', this.value)" style="padding:5px;">
-                <input type="date" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : ''}" onchange="updateProd('${p.codigo}', 'validade', this.value)" style="padding:5px;">
-                <div style="font-size:10px;">${p.situacao || 'A'}</div>
+        list.innerHTML = filtered.map(p => `
+            <div class="product-card">
+                <div style="font-weight: 800; margin-bottom: 10px;">${p.nome}</div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="field-group"><label>Estoque</label><input type="number" class="input-mobile" value="${p.estoque || 0}" onchange="updateProd('${p.codigo}', 'estoque', this.value)"></div>
+                    <div class="field-group"><label>Validade</label><input type="date" class="input-mobile" value="${formatDateForInput(p.validade)}" onchange="updateProd('${p.codigo}', 'validade', this.value)"></div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="field-group"><label>EAN (GTIN)</label><input type="text" class="input-mobile" value="${p.gtin || ''}" onchange="updateProd('${p.codigo}', 'gtin', this.value)"></div>
+                    <div class="field-group"><label>Embalagem</label><input type="text" class="input-mobile" value="${p.embalagem || ''}" onchange="updateProd('${p.codigo}', 'embalagem', this.value)"></div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="field-group"><label>Gôndola</label><input type="text" class="input-mobile" value="${p.gondola || ''}" onchange="updateProd('${p.codigo}', 'gondola', this.value)"></div>
+                    <div class="field-group"><label>Prateleira</label><input type="text" class="input-mobile" value="${p.prateleira || ''}" onchange="updateProd('${p.codigo}', 'prateleira', this.value)"></div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-ver" onclick="openImage('${p.url_imagem}')"><i data-lucide="image" size="16"></i> VER FOTO</button>
+                    <button class="btn" onclick="saveIndividual('${p.codigo}')" style="background:#eee;"><i data-lucide="save" size="16"></i> SALVAR</button>
+                </div>
             </div>
         `).join('');
         lucide.createIcons();
     }
 
+    function formatDateForInput(dateStr) {
+        if (!dateStr || !dateStr.includes('/')) return '';
+        const parts = dateStr.split('/');
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+
     function updateProd(sku, field, val) {
         const p = products.find(x => x.codigo === sku);
         if(p) {
-            if(field === 'validade' && val.includes('-')) {
+            if(field === 'validade') {
                 const d = val.split('-');
                 p.validade = `${d[2]}/${d[1]}/${d[0]}`;
             } else { p[field] = val; }
             p.last_update = Date.now();
-            localforage.setItem(STORAGE_KEY, products);
         }
     }
 
-    // Scanner
-    let html5QrCode;
-    function toggleScanner() {
-        const scannerDiv = document.getElementById('reader');
-        if(scannerDiv.style.display === 'block') {
-            html5QrCode.stop(); scannerDiv.style.display = 'none';
-        } else {
-            scannerDiv.style.display = 'block';
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
-                document.getElementById('search').value = decodedText;
-                renderEstoque(decodedText);
-                toggleScanner();
-            });
+    // Modal Imagem
+    function openImage(url) {
+        if(!url) return alert("Sem foto disponível");
+        const cleanUrl = url.replace("../", "https://donaantonia.com.br/");
+        document.getElementById('img-ampliada').src = cleanUrl;
+        document.getElementById('modal-foto').style.display = 'flex';
+    }
+    
+    function closeImage() { document.getElementById('modal-foto').style.display = 'none'; }
+
+    // Sincronização (Mesma lógica de segurança)
+    async function syncData() {
+        const cfg = await localforage.getItem('sucedoan_config');
+        if (!cfg) return alert("Configure as credenciais.");
+        
+        const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`;
+        const res = await fetch(url, { headers: { "Authorization": `Bearer ${cfg.token}` } });
+        const data = await res.json();
+        remoteSha = data.sha;
+        products = JSON.parse(atob(data.content));
+        await localforage.setItem(STORAGE_KEY, products);
+        renderEstoque();
+        alert("Sincronizado com sucesso!");
+    }
+
+    async function saveDataToGithub() {
+        const cfg = await localforage.getItem('sucedoan_config');
+        const checkRes = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { 
+            headers: { "Authorization": `Bearer ${cfg.token}` } 
+        });
+        const currentData = await checkRes.json();
+
+        if (remoteSha && currentData.sha !== remoteSha) {
+            return alert("⚠️ CONFLITO: Alguém alterou os dados enquanto você editava. Clique em SINCRONIZAR.");
         }
+
+        const contentStr = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
+        await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json`, {
+            method: 'PUT',
+            headers: { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ message: "Update via Estoque Mobile", content: contentStr, sha: currentData.sha })
+        });
+        alert("Alterações salvas!");
     }
 
     document.getElementById('search').addEventListener('input', (e) => renderEstoque(e.target.value));
-
-    window.onload = async () => {
-        products = await localforage.getItem(STORAGE_KEY) || [];
-        await loadConfig();
-        renderEstoque();
-        lucide.createIcons();
-    };
+    
+    window.onload = loadData;
 </script>
 </body>
 </html>
