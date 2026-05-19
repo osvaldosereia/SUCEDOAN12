@@ -3,96 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan - Gestão de Estoque</title>
+    <title>Sucedoan - Estoque e Validade</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg-body: #f4f4f5; --accent: #000000; --text-primary: #0f172a; --border: #e4e4e7; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-body); padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
-        .product-row { display: grid; grid-template-columns: 2fr 1fr 1fr 100px; gap: 10px; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); }
-        .form-input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; width: 100%; }
-        .btn { padding: 10px 20px; border-radius: 6px; cursor: pointer; border: none; font-weight: 800; }
+        :root { --bg-body: #f4f4f5; --accent: #000000; --text-primary: #0f172a; --border: #e4e4e7; --danger: #ef4444; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-body); margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
+        .grid-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; padding: 10px; border-bottom: 1px solid var(--border); align-items: center; }
+        .btn { padding: 10px 15px; border-radius: 6px; cursor: pointer; border: none; font-weight: 800; display: flex; align-items: center; gap: 5px; }
         .btn-primary { background: var(--accent); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        #reader { width: 100%; max-width: 400px; display: none; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>Gestão de Estoque e Validade</h2>
-        <div id="estoque-list">
-            </div>
-        <div style="margin-top: 20px; display: flex; gap: 10px;">
-            <button class="btn btn-primary" onclick="syncAndSave()">SALVAR NA NUVEM (JSON + META)</button>
-            <button class="btn" onclick="window.location.href='index.html'">VOLTAR AO PIM</button>
+<div class="container">
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2>Estoque e Validade</h2>
+            <button class="btn" onclick="window.location.href='index.html'">Voltar ao PIM</button>
         </div>
+
+        <div class="toolbar">
+            <input type="text" id="search" class="search-input" placeholder="Buscar por Nome, SKU ou EAN...">
+            <button class="btn" onclick="toggleScanner()"><i data-lucide="camera"></i> SCANNER</button>
+            <button class="btn btn-primary" onclick="syncData()"><i data-lucide="refresh-cw"></i> SINCRONIZAR</button>
+            <button class="btn btn-primary" onclick="saveDataToGithub()"><i data-lucide="save"></i> SALVAR TUDO</button>
+        </div>
+
+        <div id="reader"></div>
+
+        <div id="estoque-list">
+            <div class="grid-row" style="font-weight: 800; font-size: 11px;">
+                <div>Produto</div><div>Estoque</div><div>Validade</div><div>Ação</div>
+            </div>
+            </div>
     </div>
+</div>
 
-    <script>
-        const STORAGE_KEY = 'sucedoan_pim_v37';
-        // Inclua aqui as funções GitHubAPI do seu index.html ou importe via arquivo separado
-        // Para simplificar, assumo que estas funções estão disponíveis globalmente ou injetadas.
+<script>
+    const STORAGE_KEY = 'sucedoan_pim_v37';
+    let products = [];
+    let remoteSha = null; // Trava de concorrência
+
+    // ==========================================
+    // LÓGICA DE CONEXÃO (GitHubAPI Simplificada)
+    // ==========================================
+    async function getApiConfig() {
+        const cfg = await localforage.getItem('sucedoan_config');
+        if (!cfg) throw new Error("Configuração ausente.");
+        return cfg;
+    }
+
+    async function syncData() {
+        const cfg = await getApiConfig();
+        const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`;
         
-        let products = [];
-
-        window.onload = async () => {
-            products = await localforage.getItem(STORAGE_KEY) || [];
+        try {
+            const res = await fetch(url, { headers: { "Authorization": `Bearer ${cfg.token}` } });
+            const data = await res.json();
+            
+            // Armazena o SHA para garantir que sabemos qual versão estamos editando
+            remoteSha = data.sha; 
+            
+            const content = JSON.parse(atob(data.content));
+            products = content;
+            await localforage.setItem(STORAGE_KEY, products);
             renderEstoque();
-            lucide.createIcons();
-        };
+            alert("Dados sincronizados com a nuvem!");
+        } catch (e) { alert("Erro ao sincronizar: " + e.message); }
+    }
 
-        function renderEstoque() {
-            const list = document.getElementById('estoque-list');
-            list.innerHTML = `
-                <div class="product-row" style="font-weight: 800; font-size: 11px;">
-                    <div>Produto</div><div>Estoque</div><div>Validade</div><div>Status</div>
-                </div>
-            `;
-            products.forEach(p => {
-                list.innerHTML += `
-                    <div class="product-row">
-                        <div style="font-size: 12px; font-weight: 600;">${p.nome}</div>
-                        <input type="number" class="form-input" value="${p.estoque || 0}" onchange="updateProd('${p.codigo}', 'estoque', this.value)">
-                        <input type="date" class="form-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : ''}" onchange="updateProd('${p.codigo}', 'validade', this.value)">
-                        <span style="font-size:10px;">${p.situacao}</span>
-                    </div>
-                `;
+    async function saveDataToGithub() {
+        const cfg = await getApiConfig();
+        
+        // Verificação de Conflito (O "Senior Move")
+        const checkUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`;
+        const res = await fetch(checkUrl, { headers: { "Authorization": `Bearer ${cfg.token}` } });
+        const currentData = await res.json();
+
+        if (remoteSha && currentData.sha !== remoteSha) {
+            alert("⚠️ CONFLITO DETECTADO: Alguém alterou os dados enquanto você editava. Por favor, clique em SINCRONIZAR novamente.");
+            return;
+        }
+
+        // Se passar, salva
+        const contentStr = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
+        const payload = { message: "Estoque Atualizado via Estoque.html", content: contentStr, sha: currentData.sha };
+        
+        await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json`, {
+            method: 'PUT',
+            headers: { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        
+        alert("Salvo com sucesso!");
+    }
+
+    // ==========================================
+    // LÓGICA DE UI E SCANNER
+    // ==========================================
+    function renderEstoque(filter = "") {
+        const list = document.getElementById('estoque-list');
+        const filtered = products.filter(p => 
+            p.nome?.toLowerCase().includes(filter.toLowerCase()) || 
+            p.gtin?.includes(filter) || 
+            p.codigo?.includes(filter)
+        );
+
+        list.innerHTML = `<div class="grid-row" style="font-weight: 800; font-size: 11px;"><div>Produto</div><div>Estoque</div><div>Validade</div><div>Ação</div></div>` 
+            + filtered.map(p => `
+            <div class="grid-row">
+                <div style="font-size: 12px; font-weight: 600;">${p.nome}</div>
+                <input type="number" value="${p.estoque || 0}" onchange="updateProd('${p.codigo}', 'estoque', this.value)" style="padding:5px;">
+                <input type="date" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : ''}" onchange="updateProd('${p.codigo}', 'validade', this.value)" style="padding:5px;">
+                <button class="btn btn-danger" onclick="deleteProd('${p.codigo}')"><i data-lucide="trash-2" size="14"></i></button>
+            </div>
+        `).join('');
+        lucide.createIcons();
+    }
+
+    function updateProd(sku, field, val) {
+        const p = products.find(x => x.codigo === sku);
+        if(p) {
+            if(field === 'validade' && val.includes('-')) {
+                const d = val.split('-');
+                p.validade = `${d[2]}/${d[1]}/${d[0]}`;
+            } else { p[field] = val; }
+            p.last_update = Date.now();
+            localforage.setItem(STORAGE_KEY, products);
+        }
+    }
+
+    // Scanner
+    let html5QrCode;
+    function toggleScanner() {
+        const scannerDiv = document.getElementById('reader');
+        if(scannerDiv.style.display === 'block') {
+            html5QrCode.stop();
+            scannerDiv.style.display = 'none';
+        } else {
+            scannerDiv.style.display = 'block';
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
+                document.getElementById('search').value = decodedText;
+                renderEstoque(decodedText);
+                toggleScanner(); // Fecha
             });
         }
+    }
 
-        async function updateProd(sku, field, val) {
-            const p = products.find(x => x.codigo === sku);
-            if(p) {
-                if(field === 'validade' && val.includes('-')) {
-                    const d = val.split('-');
-                    p.validade = `${d[2]}/${d[1]}/${d[0]}`;
-                } else {
-                    p[field] = val;
-                }
-                p.last_update = Date.now();
-                await localforage.setItem(STORAGE_KEY, products);
-            }
-        }
+    document.getElementById('search').addEventListener('input', (e) => renderEstoque(e.target.value));
 
-        // SOLUÇÃO PARA O CONFLITO DE DADOS
-        async function syncAndSave() {
-            if(!confirm("Atenção: Isso buscará a versão mais recente da nuvem antes de salvar para evitar sobrescrever dados de outros usuários. Continuar?")) return;
-            
-            try {
-                // 1. Re-buscar a versão atual do GitHub para ter o SHA mais recente
-                // Isso força o sistema a saber o que está na nuvem AGORA antes de salvar
-                const fileData = await GitHubAPI.getFileData('site/produtos.json');
-                
-                // 2. Agora salvamos. Como chamamos getFileData agora, o SHA está fresco.
-                // Reutilizando sua lógica de saveFile existente (que usa o sha interno)
-                await salvarProdutosJSON(); // Função herdada do seu sistema que usa a fila
-                
-                alert("Sincronização iniciada. A fila de salvamento foi processada com a referência mais recente da nuvem.");
-            } catch(e) {
-                alert("Erro crítico: Não foi possível sincronizar com o GitHub. Tente novamente mais tarde.");
-            }
-        }
-    </script>
+    window.onload = async () => {
+        products = await localforage.getItem(STORAGE_KEY) || [];
+        renderEstoque();
+        lucide.createIcons();
+    };
+</script>
 </body>
 </html>
