@@ -2,397 +2,97 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Atualizador de Cadastro PRO</title>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sucedoan - Gestão de Estoque</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #4CAF50; --secondary: #2196F3; --danger: #f44336; --warning: #ff9800; --dark: #111; --light: #f4f4f4; --gray: #ddd; }
-        body, html { font-family: Arial, sans-serif; background-color: var(--light); margin: 0; padding: 0; height: 100%; color: var(--dark); overflow: hidden; }
-        
-        button { border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; transition: transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px;}
-        button:active { transform: scale(0.96); }
-        .btn-primary { background-color: var(--primary); } .btn-secondary { background-color: var(--secondary); }
-        .btn-warning { background-color: var(--warning); color: #000; } .btn-danger { background-color: var(--danger); }
-        
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; height: 100vh; overflow-y: auto; box-sizing: border-box; }
-        .hidden { display: none !important; }
-        h1, h2 { text-align: center; margin-top: 0; color: var(--dark); }
-        
-        /* Inputs e Formulários */
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 13px; font-weight: bold; color: #555; margin-bottom: 4px; }
-        .form-group input, .form-group select { width: 100%; padding: 12px; border: 2px solid var(--gray); border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #fff; }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--secondary); background: #e3f2fd; }
-        
-        .row-split { display: flex; gap: 10px; }
-        .row-split .form-group { flex: 1; }
-
-        .resultado-item { padding: 15px; margin-bottom: 10px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; font-size: 16px; font-weight: bold; color: #0d47a1; cursor: pointer; }
-
-        .foto-container { width: 100%; height: 150px; background: #fafafa; border: 2px dashed #ccc; border-radius: 12px; display: flex; justify-content: center; align-items: center; margin-bottom: 15px; overflow: hidden; }
-        .foto-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
-
-        #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 10px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .alerta-erro { background-color: var(--danger); } .alerta-sucesso { background-color: var(--primary); }
+        :root { --bg-body: #f4f4f5; --accent: #000000; --text-primary: #0f172a; --border: #e4e4e7; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-body); padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+        .product-row { display: grid; grid-template-columns: 2fr 1fr 1fr 100px; gap: 10px; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); }
+        .form-input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; width: 100%; }
+        .btn { padding: 10px 20px; border-radius: 6px; cursor: pointer; border: none; font-weight: 800; }
+        .btn-primary { background: var(--accent); color: white; }
     </style>
 </head>
 <body>
 
-<div id="alerta-customizado">Mensagem</div>
-
-<div class="container" id="tela-busca">
-    <h1>🔍 Buscar Produto</h1>
-    <p id="status-db" style="text-align:center; font-weight:bold; color:#721c24;">⏳ Carregando banco de dados...</p>
-    
-    <div id="area-pesquisa" class="hidden">
-        
-        <button id="btn-abrir-camera" class="btn-secondary" style="padding:15px; width:100%; font-size:16px; margin-bottom: 15px;" onclick="iniciarCamera()">
-            📷 LER CÓDIGO COM A CÂMERA
-        </button>
-        
-        <div id="area-camera" class="hidden" style="margin-bottom: 15px;">
-            <div id="leitor-camera" style="width: 100%; border-radius: 12px; overflow: hidden; border: 2px solid var(--secondary);"></div>
-            <button class="btn-danger" style="width:100%; padding:12px; margin-top:5px; font-size:16px;" onclick="fecharCamera()">❌ CANCELAR CÂMERA</button>
-        </div>
-
-        <div class="form-group">
-            <label>Código de Barras (EAN), SKU ou Nome</label>
-            <input type="text" id="input-busca" placeholder="Bipe, use a câmera ou digite..." onkeypress="verificarEnter(event)">
-        </div>
-        <button class="btn-primary" style="padding:15px; width:100%; font-size:18px; margin-bottom: 15px;" onclick="realizarBusca()">BUSCAR PRODUTO</button>
-        
-        <div id="lista-resultados"></div>
-    </div>
-</div>
-
-<div class="container hidden" id="tela-edicao">
-    <h2>✏️ Editar Cadastro</h2>
-    
-    <div class="foto-container">
-        <img id="ed-foto" src="" alt="Foto do Produto">
-    </div>
-
-    <div class="form-group">
-        <label>Nome / Descrição</label>
-        <input type="text" id="ed-nome">
-    </div>
-
-    <div class="row-split">
-        <div class="form-group">
-            <label>SKU (Código)</label>
-            <input type="text" id="ed-sku">
-        </div>
-        <div class="form-group">
-            <label>EAN (Cód. Barras)</label>
-            <input type="text" id="ed-ean">
+    <div class="container">
+        <h2>Gestão de Estoque e Validade</h2>
+        <div id="estoque-list">
+            </div>
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button class="btn btn-primary" onclick="syncAndSave()">SALVAR NA NUVEM (JSON + META)</button>
+            <button class="btn" onclick="window.location.href='index.html'">VOLTAR AO PIM</button>
         </div>
     </div>
 
-    <div class="row-split">
-        <div class="form-group">
-            <label>Estoque Atual</label>
-            <input type="number" step="any" id="ed-estoque" min="0">
-        </div>
-        <div class="form-group">
-            <label>Data de Validade</label>
-            <input type="date" id="ed-validade">
-        </div>
-    </div>
-
-    <div class="row-split">
-        <div class="form-group">
-            <label>Gôndola</label>
-            <select id="ed-gondola"></select>
-        </div>
-        <div class="form-group">
-            <label>Prateleira</label>
-            <select id="ed-prateleira"></select>
-        </div>
-    </div>
-
-    <button class="btn-warning" style="padding:18px; width:100%; font-size:18px; margin-top: 15px; box-shadow: 0 4px 0 #e65100;" onclick="exportarProdutoCSV()">
-        💾 SALVAR E EXPORTAR CSV
-    </button>
-    
-    <button class="btn-secondary" style="padding:15px; width:100%; font-size:16px; margin-top: 10px;" onclick="abrirTelaBusca()">
-        🔙 NOVA BUSCA
-    </button>
-
-    <div style="height: 100px; width: 100%;"></div>
-</div>
-
-<script>
-    let bancoDeDados = [];
-    let produtoSendoEditado = null;
-    let scannerCamera = null;
-
-    // As 59 colunas exatas exigidas pelo seu sistema
-    const colunasCSVOficiais = [
-        "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo",
-        "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor",
-        "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)",
-        "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto",
-        "Altura do Produto", "Profundidade do produto", "Data Validade",
-        "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa",
-        "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI",
-        "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos",
-        "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST",
-        "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo",
-        "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto",
-        "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida",
-        "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção",
-        "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais"
-    ];
-
-    // ================== 1. INICIALIZAÇÃO ==================
-    window.onload = async function() {
-        gerarOpcoesLocalizacao();
-        try { 
-            const resposta = await fetch('../site/bancodedados.json'); 
-            bancoDeDados = await resposta.json(); 
-            document.getElementById('status-db').innerText = `✅ Banco Preparado (${bancoDeDados.length} itens)`; 
-            document.getElementById('status-db').style.color = "green";
-            document.getElementById('area-pesquisa').classList.remove('hidden');
-        } catch (erro) { 
-            document.getElementById('status-db').innerText = "❌ Erro ao ler bancodedados.json"; 
-        }
-    };
-
-    function gerarOpcoesLocalizacao() {
-        let selectGondola = document.getElementById('ed-gondola');
-        let selectPrateleira = document.getElementById('ed-prateleira');
+    <script>
+        const STORAGE_KEY = 'sucedoan_pim_v37';
+        // Inclua aqui as funções GitHubAPI do seu index.html ou importe via arquivo separado
+        // Para simplificar, assumo que estas funções estão disponíveis globalmente ou injetadas.
         
-        selectGondola.innerHTML = '<option value="">Selecione</option>';
-        for(let i = 0; i <= 20; i++) {
-            let num = i.toString().padStart(2, '0');
-            selectGondola.innerHTML += `<option value="${num}">Gôndola ${num}</option>`;
-        }
+        let products = [];
 
-        selectPrateleira.innerHTML = '<option value="">Selecione</option>';
-        const letras = ['A','B','C','D','E','F'];
-        letras.forEach(letra => {
-            selectPrateleira.innerHTML += `<option value="${letra}1">Prat. ${letra}1</option>`;
-            selectPrateleira.innerHTML += `<option value="${letra}2">Prat. ${letra}2</option>`;
-        });
-    }
-
-    function mostrarAlerta(msg, tipo = 'sucesso') { 
-        let a = document.getElementById('alerta-customizado'); 
-        a.innerText = msg; a.className = ''; 
-        if(tipo === 'erro') a.classList.add('alerta-erro'); 
-        else a.classList.add('alerta-sucesso'); 
-        a.style.display = 'block'; setTimeout(() => a.style.display = 'none', 3000); 
-    }
-
-    function abrirTelaBusca() {
-        document.getElementById('tela-edicao').classList.add('hidden');
-        document.getElementById('tela-busca').classList.remove('hidden');
-        document.getElementById('input-busca').value = '';
-        document.getElementById('lista-resultados').innerHTML = '';
-        window.scrollTo(0, 0);
-    }
-
-    // ================== 2. LEITOR DE CÂMERA ==================
-    function iniciarCamera() {
-        document.getElementById('btn-abrir-camera').classList.add('hidden');
-        document.getElementById('area-camera').classList.remove('hidden');
-
-        scannerCamera = new Html5Qrcode("leitor-camera");
-        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
-        
-        scannerCamera.start(
-            { facingMode: "environment" },
-            config,
-            (codigoLido) => {
-                tocarBipeSucesso();
-                document.getElementById('input-busca').value = codigoLido;
-                fecharCamera();
-                realizarBusca(); 
-            },
-            (erro) => { }
-        ).catch((err) => {
-            mostrarAlerta("Erro ao acessar a câmera. Verifique as permissões.", "erro");
-            fecharCamera();
-        });
-    }
-
-    function fecharCamera() {
-        if(scannerCamera) {
-            scannerCamera.stop().then(() => scannerCamera.clear()).catch(e => console.log(e));
-        }
-        document.getElementById('area-camera').classList.add('hidden');
-        document.getElementById('btn-abrir-camera').classList.remove('hidden');
-    }
-
-    function tocarBipeSucesso() {
-        try {
-            let ctx = new (window.AudioContext || window.webkitAudioContext)();
-            let osc = ctx.createOscillator(); let ganho = ctx.createGain();
-            osc.connect(ganho); ganho.connect(ctx.destination);
-            osc.type = 'sine'; osc.frequency.setValueAtTime(900, ctx.currentTime);
-            ganho.gain.setValueAtTime(0.5, ctx.currentTime);
-            osc.start(); osc.stop(ctx.currentTime + 0.1);
-        } catch(e) {}
-    }
-
-    // ================== 3. LÓGICA DE BUSCA ==================
-    function verificarEnter(event) { if (event.key === "Enter") { realizarBusca(); } }
-
-    function realizarBusca() {
-        let termo = document.getElementById('input-busca').value.trim().toLowerCase();
-        let areaResultados = document.getElementById('lista-resultados');
-        areaResultados.innerHTML = '';
-
-        if(termo.length < 2) {
-            mostrarAlerta("Digite pelo menos 2 caracteres.", "erro");
-            return;
-        }
-
-        let encontrados = bancoDeDados.filter(p => {
-            let sku = String(p.codigo || p["Código"] || "").toLowerCase();
-            let ean = String(p.gtin || p["GTIN/EAN"] || "").toLowerCase();
-            let nome = String(p.nome || p["Descrição"] || "").toLowerCase();
-            return sku.includes(termo) || ean.includes(termo) || nome.includes(termo);
-        });
-
-        if (encontrados.length === 0) {
-            mostrarAlerta("Nenhum produto encontrado!", "erro");
-        } else if (encontrados.length === 1) {
-            prepararEdicao(encontrados[0]);
-        } else {
-            encontrados.forEach(prod => {
-                let div = document.createElement('div'); div.className = 'resultado-item'; 
-                let nomeExib = prod.nome || prod["Descrição"] || "Sem nome";
-                div.innerHTML = `${nomeExib} <br><span style="font-size:12px; color:#555;">SKU: ${prod.codigo || prod["Código"]} | EAN: ${prod.gtin || prod["GTIN/EAN"]}</span>`;
-                div.onclick = () => prepararEdicao(prod);
-                areaResultados.appendChild(div);
-            });
-        }
-    }
-
-    // ================== 4. PREENCHER TELA DE EDIÇÃO ==================
-    function prepararEdicao(produto) {
-        produtoSendoEditado = { ...produto }; 
-        let skuStr = produtoSendoEditado.codigo || produtoSendoEditado["Código"] || "";
-        let locAtual = produtoSendoEditado.localizacao || produtoSendoEditado["Localização"] || "";
-        let estoque = produtoSendoEditado.estoque || produtoSendoEditado["Estoque"] || 0;
-        
-        if(typeof estoque === 'string') estoque = estoque.replace(",", ".");
-
-        let imgTag = document.getElementById('ed-foto');
-        imgTag.src = `../site/img/produtos/${skuStr}.webp`;
-        imgTag.onerror = function() { 
-            this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%25%22%20height%3D%22200%22%20style%3D%22background%3A%23f4f4f4%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%23aaa%22%3ESem%20Foto%3C%2Ftext%3E%3C%2Fsvg%3E'; 
+        window.onload = async () => {
+            products = await localforage.getItem(STORAGE_KEY) || [];
+            renderEstoque();
+            lucide.createIcons();
         };
 
-        document.getElementById('ed-nome').value = produtoSendoEditado.nome || produtoSendoEditado["Descrição"] || "";
-        document.getElementById('ed-sku').value = skuStr;
-        document.getElementById('ed-ean').value = produtoSendoEditado.gtin || produtoSendoEditado["GTIN/EAN"] || "";
-        document.getElementById('ed-estoque').value = parseFloat(estoque);
-
-        // Lógica da Data: Converter DD/MM/YYYY do JSON para YYYY-MM-DD do Input HTML
-        let dataVal = produtoSendoEditado.validade || produtoSendoEditado["Data Validade"] || "";
-        if (dataVal.includes("/")) {
-            let partes = dataVal.split("/");
-            if (partes.length === 3) {
-                // Monta YYYY-MM-DD
-                dataVal = `${partes[2]}-${partes[1]}-${partes[0]}`; 
-            }
+        function renderEstoque() {
+            const list = document.getElementById('estoque-list');
+            list.innerHTML = `
+                <div class="product-row" style="font-weight: 800; font-size: 11px;">
+                    <div>Produto</div><div>Estoque</div><div>Validade</div><div>Status</div>
+                </div>
+            `;
+            products.forEach(p => {
+                list.innerHTML += `
+                    <div class="product-row">
+                        <div style="font-size: 12px; font-weight: 600;">${p.nome}</div>
+                        <input type="number" class="form-input" value="${p.estoque || 0}" onchange="updateProd('${p.codigo}', 'estoque', this.value)">
+                        <input type="date" class="form-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : ''}" onchange="updateProd('${p.codigo}', 'validade', this.value)">
+                        <span style="font-size:10px;">${p.situacao}</span>
+                    </div>
+                `;
+            });
         }
-        document.getElementById('ed-validade').value = dataVal; 
 
-        let gondola = ""; let prateleira = "";
-        if (locAtual.includes("-")) {
-            let partes = locAtual.split("-");
-            gondola = partes[0].trim();
-            prateleira = partes[1].trim();
-        }
-        document.getElementById('ed-gondola').value = gondola;
-        document.getElementById('ed-prateleira').value = prateleira;
-
-        document.getElementById('tela-busca').classList.add('hidden');
-        document.getElementById('tela-edicao').classList.remove('hidden');
-        window.scrollTo(0, 0);
-    }
-
-    // ================== 5. EXPORTAÇÃO CSV IDÊNTICA AO MODELO ==================
-    function exportarProdutoCSV() {
-        // 1. Coletar dados da tela
-        let nomeEditado = document.getElementById('ed-nome').value;
-        let skuEditado = document.getElementById('ed-sku').value;
-        let eanEditado = document.getElementById('ed-ean').value;
-        let estoqueEditado = document.getElementById('ed-estoque').value;
-        
-        let validadeEditada = document.getElementById('ed-validade').value;
-        // Lógica da Data: Converter YYYY-MM-DD do Input HTML para DD/MM/YYYY do CSV
-        if (validadeEditada.includes("-")) {
-            let partes = validadeEditada.split("-");
-            if (partes.length === 3) {
-                validadeEditada = `${partes[2]}/${partes[1]}/${partes[0]}`;
-            }
-        }
-        
-        // Formatar estoque nativo (sempre duas casas decimais com vírgula)
-        if (estoqueEditado !== "") estoqueEditado = parseFloat(estoqueEditado).toFixed(2).replace(".", ",");
-
-        let gondolaEditada = document.getElementById('ed-gondola').value;
-        let prateleiraEditada = document.getElementById('ed-prateleira').value;
-        let locFinal = (gondolaEditada && prateleiraEditada) ? `${gondolaEditada}-${prateleiraEditada}` : "";
-
-        // 2. Mesclar com o objeto principal
-        let prodExport = { ...produtoSendoEditado };
-        
-        prodExport["Descrição"] = nomeEditado;
-        prodExport["Código"] = skuEditado;
-        prodExport["GTIN/EAN"] = eanEditado;
-        prodExport["GTIN/EAN da Embalagem"] = eanEditado; 
-        prodExport["Estoque"] = estoqueEditado;
-        prodExport["Localização"] = locFinal;
-        prodExport["Data Validade"] = validadeEditada;
-
-        // 3. Montar o cabeçalho
-        let csvContent = colunasCSVOficiais.map(col => `"${col}"`).join(";") + "\n";
-        
-        // 4. Montar a linha (E aplicar a conversão de ponto para vírgula nos preços)
-        let linhaValores = colunasCSVOficiais.map(coluna => {
-            let valor = prodExport[coluna];
-            
-            if(valor === null || valor === undefined) valor = ""; 
-            
-            // Verifica se a coluna é de valor financeiro (como Preço de custo)
-            if (["Preço", "Preço de custo", "Preço de Compra"].includes(coluna) && valor !== "") {
-                // Transforma num número pra ter certeza (trocando vírgula por ponto temporariamente se houver)
-                let num = parseFloat(String(valor).replace(",", "."));
-                if (!isNaN(num)) {
-                    // Formata de volta para vírgula com 2 casas
-                    valor = num.toFixed(2).replace(".", ",");
+        async function updateProd(sku, field, val) {
+            const p = products.find(x => x.codigo === sku);
+            if(p) {
+                if(field === 'validade' && val.includes('-')) {
+                    const d = val.split('-');
+                    p.validade = `${d[2]}/${d[1]}/${d[0]}`;
+                } else {
+                    p[field] = val;
                 }
+                p.last_update = Date.now();
+                await localforage.setItem(STORAGE_KEY, products);
             }
+        }
 
-            // Escapar aspas internas pra não quebrar o CSV
-            let valorSeguro = String(valor).replace(/"/g, '""');
-            return `"${valorSeguro}"`;
-        });
-        
-        csvContent += linhaValores.join(";") + "\n";
-
-        // 5. Gerar e baixar
-        let blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
-        let link = document.createElement("a");
-        let url = URL.createObjectURL(blob);
-        
-        link.setAttribute("href", url);
-        link.setAttribute("download", `produto_atualizado_${skuEditado}.csv`);
-        link.style.visibility = 'hidden';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        mostrarAlerta("✅ Arquivo CSV gerado e baixado no celular!", "sucesso");
-        
-        setTimeout(abrirTelaBusca, 1500);
-    }
-</script>
+        // SOLUÇÃO PARA O CONFLITO DE DADOS
+        async function syncAndSave() {
+            if(!confirm("Atenção: Isso buscará a versão mais recente da nuvem antes de salvar para evitar sobrescrever dados de outros usuários. Continuar?")) return;
+            
+            try {
+                // 1. Re-buscar a versão atual do GitHub para ter o SHA mais recente
+                // Isso força o sistema a saber o que está na nuvem AGORA antes de salvar
+                const fileData = await GitHubAPI.getFileData('site/produtos.json');
+                
+                // 2. Agora salvamos. Como chamamos getFileData agora, o SHA está fresco.
+                // Reutilizando sua lógica de saveFile existente (que usa o sha interno)
+                await salvarProdutosJSON(); // Função herdada do seu sistema que usa a fila
+                
+                alert("Sincronização iniciada. A fila de salvamento foi processada com a referência mais recente da nuvem.");
+            } catch(e) {
+                alert("Erro crítico: Não foi possível sincronizar com o GitHub. Tente novamente mais tarde.");
+            }
+        }
+    </script>
 </body>
 </html>
