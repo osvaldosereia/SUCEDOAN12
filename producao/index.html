@@ -821,15 +821,16 @@
         }
 
         function salvarProdutosJSON() {
-            enqueueTask("Produtos.json", async () => {
-                mostrarAlerta("A verificar atualizações de outros computadores...", "aviso");
-                
-                const produtosMesclados = await smartMergeWithRemote(products);
-                const vitrine = sanitizeProductsForExport(produtosMesclados);
-                
-                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Inteligente (Fusão de Concorrência)`);
-                renderGrid(ultimoTermoPesquisa, true);
-            });
+        enqueueTask("Produtos.json", async () => {
+            mostrarAlerta("A verificar atualizações de outros computadores...", "aviso");
+            
+            // Aqui entra a inteligência de fusão antes de salvar!
+            const produtosMesclados = await smartMergeWithRemote(products);
+            const vitrine = sanitizeProductsForExport(produtosMesclados);
+            
+            await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Inteligente (Fusão de Concorrência)`);
+            renderGrid(ultimoTermoPesquisa, true);
+        });
 
             enqueueTask("Produtos.csv e JSON (Meta)", async () => {
                 await new Promise(resolve => setTimeout(resolve, 60000));
@@ -1303,7 +1304,6 @@
                 return;
             }
 
-            // CORREÇÃO 1: Utilizando a variável "quantidade" escrita corretamente
             const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantidade);
             
             nextBatch.forEach(p => {
