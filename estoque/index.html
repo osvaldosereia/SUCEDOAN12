@@ -104,10 +104,37 @@
     const html5QrCode = new Html5Qrcode("reader");
     
     // ---------------------------------------------------------
-    // FUNÇÕES MODERNAS E DEFINITIVAS PARA UTF-8 E BASE64
+    // FUNÇÕES DE AUTO-REPARO DE TEXTOS QUEBRADOS
     // ---------------------------------------------------------
     
-    // Converte Texto para Base64 usando o codificador nativo do sistema
+    function fixBrokenText(text) {
+        if (!text || typeof text !== 'string') return text;
+        try {
+            // Se conseguir decodificar, significa que estava quebrado e agora arrumou.
+            return decodeURIComponent(escape(text));
+        } catch (e) {
+            // Se der erro, significa que o texto JÁ ESTAVA CERTO e não precisava mexer.
+            return text; 
+        }
+    }
+
+    function autoFixDatabase(dataArray) {
+        return dataArray.map(item => {
+            const newItem = { ...item };
+            // Varre todas as informações do produto procurando textos para consertar
+            for (let key in newItem) {
+                if (typeof newItem[key] === 'string') {
+                    newItem[key] = fixBrokenText(newItem[key]);
+                }
+            }
+            return newItem;
+        });
+    }
+
+    // ---------------------------------------------------------
+    // FUNÇÕES MODERNAS PARA UTF-8 E BASE64
+    // ---------------------------------------------------------
+    
     function utf8ToBase64(str) {
         const bytes = new TextEncoder().encode(str);
         let binary = '';
@@ -117,7 +144,6 @@
         return btoa(binary);
     }
 
-    // Converte Base64 para Texto usando o decodificador nativo do sistema
     function base64ToUtf8(base64) {
         const binary = atob(base64);
         const bytes = new Uint8Array(binary.length);
@@ -189,14 +215,15 @@
         });
         const data = await res.json();
         
-        // Uso da função nativa para decodificar
         const decodedString = base64ToUtf8(data.content);
-        products = JSON.parse(decodedString);
+        let rawProducts = JSON.parse(decodedString);
+        
+        // A MÁGICA ACONTECE AQUI: O sistema passa um "pente fino" limpando a sujeira!
+        products = autoFixDatabase(rawProducts);
         
         await localforage.setItem('sucedoan_pim_v37', products);
-        alert("Sincronizado!");
+        alert("Sincronizado e Auto-Reparado!");
         
-        // Atualiza a tela se um produto já estiver na tela
         if(currentProd) buscar(); 
     }
 
@@ -209,7 +236,6 @@
         });
         const currentData = await res.json();
         
-        // Uso da função nativa para codificar
         const jsonString = JSON.stringify(products, null, 2);
         const contentStr = utf8ToBase64(jsonString);
         
