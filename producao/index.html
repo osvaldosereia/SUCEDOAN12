@@ -98,7 +98,7 @@
         .section-title { font-size: 10px; font-weight: 900; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
         
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .form-grid .form-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
         .form-group.full { grid-column: span 2; }
         .form-label { font-size: 10px; font-weight: 800; color: var(--text-primary); }
         .input-wrapper { display: flex; gap: 6px; align-items: stretch; width: 100%; box-sizing: border-box; }
@@ -253,7 +253,7 @@
 
     <div class="sidebar" id="menu-sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-title">Menu Administrative</div>
+            <div class="sidebar-title">Menu Administrativo</div>
             <button class="btn-icon" onclick="closeSidebar('menu-sidebar')"><i data-lucide="x" size="16"></i></button>
         </div>
         <div class="sidebar-body">
@@ -1303,7 +1303,8 @@
                 return;
             }
 
-            const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantity);
+            // CORREÇÃO 1: Utilizando a variável "quantidade" escrita corretamente
+            const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantidade);
             
             nextBatch.forEach(p => {
                 const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`;
@@ -1395,6 +1396,7 @@
 
                         <div class="field-group"><label>Validade</label>
                             <input type="date" class="form-input card-mini-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : (p.validade || '')}" onblur="updateField('${p.codigo}', 'validade', this.value)"></div>
+                        
                         <div class="field-group"><label style="color:var(--accent); font-weight:900;">Estoque</label>
                             <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
                     </div>
