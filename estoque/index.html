@@ -104,19 +104,29 @@
     const html5QrCode = new Html5Qrcode("reader");
     
     // ---------------------------------------------------------
-    // FUNÇÕES DE CORREÇÃO DE ACENTUAÇÃO (UTF-8 E BASE64)
+    // FUNÇÕES MODERNAS E DEFINITIVAS PARA UTF-8 E BASE64
     // ---------------------------------------------------------
+    
+    // Converte Texto para Base64 usando o codificador nativo do sistema
     function utf8ToBase64(str) {
-        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
-            return String.fromCharCode('0x' + p1);
-        }));
+        const bytes = new TextEncoder().encode(str);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
     }
 
-    function base64ToUtf8(str) {
-        return decodeURIComponent(atob(str).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
+    // Converte Base64 para Texto usando o decodificador nativo do sistema
+    function base64ToUtf8(base64) {
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return new TextDecoder().decode(bytes);
     }
+    
     // ---------------------------------------------------------
 
     async function startScanner() {
@@ -173,24 +183,33 @@
     async function syncData() {
         const cfg = await localforage.getItem('sucedoan_config');
         if(!cfg) return alert("Configure as credenciais");
-        const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { headers: { "Authorization": `Bearer ${cfg.token}` } });
+        
+        const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { 
+            headers: { "Authorization": `Bearer ${cfg.token}` } 
+        });
         const data = await res.json();
         
-        // Usando a nova função segura para traduzir do Base64
+        // Uso da função nativa para decodificar
         const decodedString = base64ToUtf8(data.content);
         products = JSON.parse(decodedString);
         
         await localforage.setItem('sucedoan_pim_v37', products);
         alert("Sincronizado!");
+        
+        // Atualiza a tela se um produto já estiver na tela
+        if(currentProd) buscar(); 
     }
 
     async function saveDataToGithub() {
         const cfg = await localforage.getItem('sucedoan_config');
         if(!cfg) return alert("Configure as credenciais");
-        const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { headers: { "Authorization": `Bearer ${cfg.token}` } });
+        
+        const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { 
+            headers: { "Authorization": `Bearer ${cfg.token}` } 
+        });
         const currentData = await res.json();
         
-        // Usando a nova função segura para converter em Base64
+        // Uso da função nativa para codificar
         const jsonString = JSON.stringify(products, null, 2);
         const contentStr = utf8ToBase64(jsonString);
         
