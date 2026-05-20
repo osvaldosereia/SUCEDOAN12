@@ -98,7 +98,7 @@
         .section-title { font-size: 10px; font-weight: 900; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
         
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .form-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        .form-grid .form-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
         .form-group.full { grid-column: span 2; }
         .form-label { font-size: 10px; font-weight: 800; color: var(--text-primary); }
         .input-wrapper { display: flex; gap: 6px; align-items: stretch; width: 100%; box-sizing: border-box; }
@@ -136,7 +136,7 @@
         }
 
         /* =========================================================
-           CSS DO EDITOR DE TEXTO RICO (NOVIDADE)
+           CSS DO EDITOR DE TEXTO RICO
            ========================================================= */
         .rich-text-editor { min-height: 80px; max-height: 200px; overflow-y: auto; background: #fafafa; border: 1px solid var(--border); border-radius: 0 0 6px 6px; padding: 8px; font-size: 12px; font-weight: normal; color: var(--text-primary); }
         .rich-text-editor:focus { background: #ffffff; border-color: var(--accent); outline: none; }
@@ -156,6 +156,7 @@
         const CATEGORIAS_KEY = 'sucedoan_categorias'; 
         const MARCAS_KEY = 'sucedoan_marcas';
         const TAGS_KEY = 'sucedoan_tags_globais'; 
+        const LAST_SYNC_KEY = 'sucedoan_last_sync';
         
         let categoriasDoSistema = []; 
         let marcasDoSistema = [];
@@ -252,7 +253,7 @@
 
     <div class="sidebar" id="menu-sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-title">Menu Administrativo</div>
+            <div class="sidebar-title">Menu Administrative</div>
             <button class="btn-icon" onclick="closeSidebar('menu-sidebar')"><i data-lucide="x" size="16"></i></button>
         </div>
         <div class="sidebar-body">
@@ -571,12 +572,10 @@
                 const cfg = await this.getConfig();
                 if (!cfg) return false; 
                 
-                // Agora verificamos tanto os processos "em andamento" quanto os "na fila"
                 const urlInProgress = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/actions/runs?status=in_progress`;
                 const urlQueued = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/actions/runs?status=queued`;
                 
                 try {
-                    // Fazemos as duas perguntas ao mesmo tempo
                     const [resInProg, resQueued] = await Promise.all([
                         this.fetchWithTimeout(urlInProgress, { headers: this.getHeaders(cfg), cache: "no-store" }),
                         this.fetchWithTimeout(urlQueued, { headers: this.getHeaders(cfg), cache: "no-store" })
@@ -586,277 +585,329 @@
                     if (resInProg.ok) { const data = await resInProg.json(); count += data.total_count; }
                     if (resQueued.ok) { const data = await resQueued.json(); count += data.total_count; }
                     
-                    return count > 0; // Se houver algo na fila ou a correr, devolve verdadeiro (Ocupado)
+                    return count > 0; 
                 } catch (error) {
                     return false; 
                 }
             }
         };
 
-   // ==========================================================
-    // SISTEMA DE FILA (ENVIO IMEDIATO SEM TIMER)
-    // ==========================================================
-    let syncQueue = [];
-    let isSyncing = false;
+        // ==========================================================
+        // SISTEMA DE FILA (ENVIO IMEDIATO SEM TIMER)
+        // ==========================================================
+        let syncQueue = [];
+        let isSyncing = false;
 
-    function renderQueueStatus() {
-        const el = document.getElementById('queue-status');
-        if (!el) return;
-        if (isSyncing) {
-            el.style.display = 'flex';
-            el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>A sincronizar com a Nuvem...</span>`;
-            lucide.createIcons();
-        } else if (syncQueue.length > 0) {
-            el.style.display = 'flex';
-            el.innerHTML = `<i data-lucide="list" size="14"></i> <span>Fila: ${syncQueue.length}</span>`;
-            lucide.createIcons();
-        } else {
-            el.style.display = 'none';
-        }
-    }
-
-    async function executeNextInQueue() {
-        // Se a fila estiver vazia, desliga o motor e limpa o aviso na tela
-        if (syncQueue.length === 0) { 
-            isSyncing = false; 
-            renderQueueStatus(); 
-            return; 
-        }
-        
-        isSyncing = true; // Avisa que o sistema está em execução
-        
-        // 1. Verifica SEMPRE se o GitHub está livre antes de processar o envio
-        const isGithubBusy = await GitHubAPI.checkWorkflowStatus();
-        
-        if (isGithubBusy) {
+        function renderQueueStatus() {
             const el = document.getElementById('queue-status');
-            if (el) {
+            if (!el) return;
+            if (isSyncing) {
                 el.style.display = 'flex';
-                // Informa o utilizador sobre a pausa de 30 segundos
-                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>GitHub Ocupado. Aguardando 30s...</span>`;
+                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>A sincronizar com a Nuvem...</span>`;
                 lucide.createIcons();
+            } else if (syncQueue.length > 0) {
+                el.style.display = 'flex';
+                el.innerHTML = `<i data-lucide="list" size="14"></i> <span>Fila: ${syncQueue.length}</span>`;
+                lucide.createIcons();
+            } else {
+                el.style.display = 'none';
             }
-            // Aguarda 30 segundos (30000 ms) e tenta verificar novamente. 
-            // O item continua na fila porque o 'shift()' ainda não foi executado!
-            setTimeout(() => { executeNextInQueue(); }, 30000);
-            return; 
         }
-        
-        renderQueueStatus();
-        
-        // 2. O GitHub está livre. Retira a primeira tarefa da fila para ser enviada.
-        const task = syncQueue.shift();
-        
-        try { 
-            await task.fn(); 
-            mostrarAlerta(`✅ Salvo na nuvem!`, 'sucesso'); 
-        } catch (e) { 
-            mostrarAlerta(`❌ Erro de rede. Tente novamente mais tarde.`, 'erro'); 
-        }
-        
-        // 3. Pausa de segurança de 0.5s entre envios normais
-        setTimeout(() => { executeNextInQueue(); }, 8000);
-    }
 
-    async function enqueueTask(taskName, taskFn) {
-        await saveDataLocally(); 
-        
-        // A tarefa entra SEMPRE na fila primeiro
-        syncQueue.push({ name: taskName, fn: taskFn });
-        
-        // Se o sistema não estiver a processar nada, damos o "arranque"
-        if (!isSyncing) {
-            executeNextInQueue();
-        } else {
-            renderQueueStatus(); // Se já estiver a processar, apenas atualiza o contador na tela
-        }
-    }
-
-    function sanitizeProductsForExport(prods) {
-        const camposPermitidos = [
-            'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
-            'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
-            'subcategoria', 'subsubcategoria', 'marca', 'embalagem', 'tag_global', 
-            'link_youtube', 'last_update', 'url_imagem', 'gondola', 'prateleira', 'localizacao', 'descricao',
-            'preco_oferta', 'validade_oferta'
-        ];
-        return prods.map(p => {
-            let cleanP = {};
-            camposPermitidos.forEach(campo => {
-                if (p[campo] !== undefined && p[campo] !== null) {
-                    cleanP[campo] = p[campo];
-                    if (campo === 'url_imagem' && typeof p[campo] === 'string' && p[campo].startsWith('data:image')) cleanP[campo] = "";
-                    else if (campo === 'url_imagem' && typeof p[campo] === 'string') cleanP[campo] = p[campo].split('?')[0]; 
+        async function executeNextInQueue() {
+            if (syncQueue.length === 0) { 
+                isSyncing = false; 
+                renderQueueStatus(); 
+                return; 
+            }
+            
+            isSyncing = true; 
+            
+            const isGithubBusy = await GitHubAPI.checkWorkflowStatus();
+            
+            if (isGithubBusy) {
+                const el = document.getElementById('queue-status');
+                if (el) {
+                    el.style.display = 'flex';
+                    el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>GitHub Ocupado. Aguardando 30s...</span>`;
+                    lucide.createIcons();
                 }
+                setTimeout(() => { executeNextInQueue(); }, 30000);
+                return; 
+            }
+            
+            renderQueueStatus();
+            
+            const task = syncQueue.shift();
+            
+            try { 
+                await task.fn(); 
+                mostrarAlerta(`✅ Salvo na nuvem!`, 'sucesso'); 
+            } catch (e) { 
+                mostrarAlerta(`❌ Erro de rede. Tente novamente mais tarde.`, 'erro'); 
+            }
+            
+            setTimeout(() => { executeNextInQueue(); }, 8000);
+        }
+
+        async function enqueueTask(taskName, taskFn) {
+            await saveDataLocally(); 
+            
+            syncQueue.push({ name: taskName, fn: taskFn });
+            
+            if (!isSyncing) {
+                executeNextInQueue();
+            } else {
+                renderQueueStatus(); 
+            }
+        }
+
+        function sanitizeProductsForExport(prods) {
+            const camposPermitidos = [
+                'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
+                'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
+                'subcategoria', 'subsubcategoria', 'marca', 'embalagem', 'tag_global', 
+                'link_youtube', 'last_update', 'url_imagem', 'gondola', 'prateleira', 'localizacao', 'descricao',
+                'preco_oferta', 'validade_oferta'
+            ];
+            return prods.map(p => {
+                let cleanP = {};
+                camposPermitidos.forEach(campo => {
+                    if (p[campo] !== undefined && p[campo] !== null) {
+                        cleanP[campo] = p[campo];
+                        if (campo === 'url_imagem' && typeof p[campo] === 'string' && p[campo].startsWith('data:image')) cleanP[campo] = "";
+                        else if (campo === 'url_imagem' && typeof p[campo] === 'string') cleanP[campo] = p[campo].split('?')[0]; 
+                    }
+                });
+
+                if (Array.isArray(cleanP.tag_global)) {
+                    cleanP.tag_global = cleanP.tag_global.filter(t => tagsDoSistema.includes(t));
+                }
+                
+                if (cleanP.categoria && !categoriasDoSistema.find(c => c.nome === cleanP.categoria)) {
+                    cleanP.categoria = ""; cleanP.subcategoria = ""; cleanP.subsubcategoria = "";
+                } else if (cleanP.categoria && cleanP.subcategoria) {
+                    const catObj = categoriasDoSistema.find(c => c.nome === cleanP.categoria);
+                    const subObj = catObj ? catObj.subcategorias.find(s => s.nome === cleanP.subcategoria) : null;
+                    if (!subObj) {
+                        cleanP.subcategoria = ""; cleanP.subsubcategoria = "";
+                    } else if (cleanP.subsubcategoria && !subObj.subsubcategorias.includes(cleanP.subsubcategoria)) {
+                        cleanP.subsubcategoria = "";
+                    }
+                }
+
+                if (cleanP.marca && !marcasDoSistema.includes(cleanP.marca)) {
+                    cleanP.marca = "";
+                }
+
+                return cleanP;
             });
-
-            if (Array.isArray(cleanP.tag_global)) {
-                cleanP.tag_global = cleanP.tag_global.filter(t => tagsDoSistema.includes(t));
-            }
-            
-            if (cleanP.categoria && !categoriasDoSistema.find(c => c.nome === cleanP.categoria)) {
-                cleanP.categoria = ""; cleanP.subcategoria = ""; cleanP.subsubcategoria = "";
-            } else if (cleanP.categoria && cleanP.subcategoria) {
-                const catObj = categoriasDoSistema.find(c => c.nome === cleanP.categoria);
-                const subObj = catObj ? catObj.subcategorias.find(s => s.nome === cleanP.subcategoria) : null;
-                if (!subObj) {
-                    cleanP.subcategoria = ""; cleanP.subsubcategoria = "";
-                } else if (cleanP.subsubcategoria && !subObj.subsubcategorias.includes(cleanP.subsubcategoria)) {
-                    cleanP.subsubcategoria = "";
-                }
-            }
-
-            if (cleanP.marca && !marcasDoSistema.includes(cleanP.marca)) {
-                cleanP.marca = "";
-            }
-
-            return cleanP;
-        });
-    }
-
-    // ==========================================================
-    // INTEGRAÇÃO META ADS - MAPEAMENTO CENTRALIZADO
-    // ==========================================================
-    function mapearProdutoParaMeta(p) {
-        let urlFoto = p.url_imagem || "";
-        if (typeof urlFoto === 'string' && urlFoto.includes('../')) {
-            urlFoto = urlFoto.split('?')[0].replace("../", "https://donaantonia.com.br/");
-        } else if (typeof urlFoto === 'string' && urlFoto.startsWith('http')) {
-            urlFoto = urlFoto.split('?')[0];
         }
 
-        let slug = "";
-        if (p.nome) {
-            slug = p.nome.toString().normalize('NFD')
-                         .replace(/[\u0300-\u036f]/g, '')
-                         .toLowerCase()
-                         .trim()
-                         .replace(/[^a-z0-9 -]/g, '')
-                         .replace(/\s+/g, '-')
-                         .replace(/-+/g, '-')
-                         .replace(/^-+|-+$/g, '');
-        } else {
-            slug = p.codigo || "";
-        }
-
-        let estoqueNum = parseFloat(p.estoque) || 0;
-        let disponibilidade = estoqueNum > 0 ? "in stock" : "out of stock";
-        let descricaoLimpa = p.nome + (p.embalagem ? " - " + p.embalagem : "");
-
-        let objMeta = {
-            "id": p.codigo || "",
-            "title": p.nome || "",
-            "description": descricaoLimpa,
-            "availability": disponibilidade,
-            "condition": "new",
-            "price": `${p.preco || "0.00"} BRL`,
-            "link": `https://donaantonia.com.br/#/produto/${slug}`,
-            "image_link": urlFoto,
-            "brand": p.marca || "Dona Antônia"
-        };
-
-        if (p.preco_oferta && parseFloat(p.preco_oferta) > 0) {
-            objMeta["sale_price"] = `${parseFloat(p.preco_oferta).toFixed(2)} BRL`;
-            if (p.validade_oferta) {
-                let hoje = new Date();
-                let inicioOferta = new Date(hoje.getTime() - (hoje.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-                objMeta["sale_price_effective_date"] = `${inicioOferta}-03:00/${p.validade_oferta}-03:00`;
+        // ==========================================================
+        // INTEGRAÇÃO META ADS - MAPEAMENTO CENTRALIZADO
+        // ==========================================================
+        function mapearProdutoParaMeta(p) {
+            let urlFoto = p.url_imagem || "";
+            if (typeof urlFoto === 'string' && urlFoto.includes('../')) {
+                urlFoto = urlFoto.split('?')[0].replace("../", "https://donaantonia.com.br/");
+            } else if (typeof urlFoto === 'string' && urlFoto.startsWith('http')) {
+                urlFoto = urlFoto.split('?')[0];
             }
-        }
 
-        return objMeta;
-    }
+            let slug = "";
+            if (p.nome) {
+                slug = p.nome.toString().normalize('NFD')
+                             .replace(/[\u0300-\u036f]/g, '')
+                             .toLowerCase()
+                             .trim()
+                             .replace(/[^a-z0-9 -]/g, '')
+                             .replace(/\s+/g, '-')
+                             .replace(/-+/g, '-')
+                             .replace(/^-+|-$`g, '');
+            } else {
+                slug = p.codigo || "";
+            }
 
-   function salvarProdutosJSON() {
-        enqueueTask("Produtos.json", async () => {
-            const vitrine = sanitizeProductsForExport(products);
-            await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização de Produtos`);
-        });
+            let estoqueNum = parseFloat(p.estoque) || 0;
+            let disponibilidade = estoqueNum > 0 ? "in stock" : "out of stock";
+            let descricaoLimpa = p.nome + (p.embalagem ? " - " + p.embalagem : "");
 
-        enqueueTask("Produtos.csv e JSON (Meta)", async () => {
-            await new Promise(resolve => setTimeout(resolve, 60000));
-            const vitrine = sanitizeProductsForExport(products);
-            
-            // Mapeia os dados para a estrutura exigida pela Meta
-            const csvData = vitrine.map(p => mapearProdutoParaMeta(p));
-            
-            // 1. Converte para CSV e salva no GitHub
-            const csvText = Papa.unparse(csvData, { delimiter: ";" });
-            await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Atualização de Catálogo Meta CSV (Correções aplicadas)`);
-            
-            // =================================================================
-            // AJUSTE DE FORMATAÇÃO DO JSON:
-            // Criamos um objeto estruturado com a chave "lista_produtos"
-            // =================================================================
-            const jsonFinal = {
-                "lista_produtos": csvData
+            let objMeta = {
+                "id": p.codigo || "",
+                "title": p.nome || "",
+                "description": descricaoLimpa,
+                "availability": disponibilidade,
+                "condition": "new",
+                "price": `${p.preco || "0.00"} BRL`,
+                "link": `https://donaantonia.com.br/#/produto/${slug}`,
+                "image_link": urlFoto,
+                "brand": p.marca || "Dona Antônia"
             };
-            
-            // 2. Salva o novo objeto estruturado como JSON no GitHub
-            await GitHubAPI.saveFile(`site/produtos_meta.json`, jsonFinal, `PIM: Atualização de Catálogo Meta JSON (Formato com chave raiz)`);
-        });
-    }
 
-    async function getPastaUploadAtiva() {
-        let limit = 990; let folderIndex = 1;
-        while (true) {
-            let folderName = folderIndex === 1 ? "site/img/produtos" : `site/img/produtos_${folderIndex}`;
-            try {
-                const files = await GitHubAPI.getFileData(folderName);
-                if (!files) return folderName;
-                if (Array.isArray(files) && files.length < limit) return folderName;
-            } catch (e) { return folderName; }
-            folderIndex++;
-        }
-    }
-    
-    async function uploadImagens() {
-        if (imageQueue.length === 0) return alert("Não existem imagens na fila.");
-        
-        const queueCopy = [...imageQueue]; 
-        imageQueue = []; 
-        updateImageBadge();
-        
-        mostrarAlerta("Enviando imagens para a fila...", "aviso");
-        
-        queueCopy.forEach(img => {
-            enqueueTask(`Imagem ${img.sku}`, async () => {
-                const pastaDestinoGithub = await getPastaUploadAtiva();
-                const pastaDestinoLocal = "../" + pastaDestinoGithub; 
-                const fileName = `${img.sku}.webp`; 
-                
-                await GitHubAPI.saveFile(`${pastaDestinoGithub}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName}`, true);
-                
-                const pRef = products.find(x => x.codigo === img.sku); 
-                if(pRef) { 
-                    pRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`; 
-                    pRef.last_update = Date.now(); 
-                    await saveDataLocally(); 
+            if (p.preco_oferta && parseFloat(p.preco_oferta) > 0) {
+                objMeta["sale_price"] = `${parseFloat(p.preco_oferta).toFixed(2)} BRL`;
+                if (p.validade_oferta) {
+                    let hoje = new Date();
+                    let inicioOferta = new Date(hoje.getTime() - (hoje.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+                    objMeta["sale_price_effective_date"] = `${inicioOferta}-03:00/${p.validade_oferta}-03:00`;
                 }
+            }
+
+            return objMeta;
+        }
+
+        // ==========================================================
+        // INTELIGÊNCIA DE FUSÃO TRIDIRECIONAL (CONCORRÊNCIA)
+        // ==========================================================
+        async function smartMergeWithRemote(localProducts) {
+            let lastSyncTime = await localforage.getItem(LAST_SYNC_KEY) || 0;
+            
+            try {
+                const fileData = await GitHubAPI.getFileData('site/produtos.json');
+                if (!fileData || !fileData.content) {
+                    await localforage.setItem(LAST_SYNC_KEY, Date.now());
+                    return localProducts;
+                }
+                
+                const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
+                const remoteProducts = JSON.parse(decodedStr);
+                
+                if (!Array.isArray(remoteProducts)) return localProducts;
+                
+                const localMap = new Map(localProducts.map(p => [p.codigo, p]));
+                const remoteMap = new Map(remoteProducts.map(p => [p.codigo, p]));
+                const finalProductsMap = new Map();
+                
+                for (let [sku, localProd] of localMap) {
+                    const remoteProd = remoteMap.get(sku);
+                    if (remoteProd) {
+                        const localTime = localProd.last_update || 0;
+                        const remoteTime = remoteProd.last_update || 0;
+                        
+                        if (remoteTime > localTime) {
+                            finalProductsMap.set(sku, remoteProd);
+                        } else {
+                            finalProductsMap.set(sku, localProd);
+                        }
+                    } else {
+                        const localTime = localProd.last_update || 0;
+                        if (localTime > lastSyncTime) {
+                            finalProductsMap.set(sku, localProd);
+                        }
+                    }
+                }
+                
+                for (let [sku, remoteProd] of remoteMap) {
+                    if (!localMap.has(sku)) {
+                        const remoteTime = remoteProd.last_update || 0;
+                        if (remoteTime > lastSyncTime) {
+                            finalProductsMap.set(sku, remoteProd);
+                        }
+                    }
+                }
+                
+                const mergedList = Array.from(finalProductsMap.values());
+                
+                products = mergedList;
+                await localforage.setItem(STORAGE_KEY, products);
+                await localforage.setItem(LAST_SYNC_KEY, Date.now());
+                
+                return mergedList;
+            } catch (error) {
+                console.error("Erro na fusão de dados:", error);
+                throw new Error("Falha de segurança: Não foi possível mesclar com a nuvem de forma segura. " + error.message);
+            }
+        }
+
+        function salvarProdutosJSON() {
+            enqueueTask("Produtos.json", async () => {
+                mostrarAlerta("A verificar atualizações de outros computadores...", "aviso");
+                
+                const produtosMesclados = await smartMergeWithRemote(products);
+                const vitrine = sanitizeProductsForExport(produtosMesclados);
+                
+                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Inteligente (Fusão de Concorrência)`);
+                renderGrid(ultimoTermoPesquisa, true);
             });
-        });
 
-        enqueueTask("Sincronizar JSON (Pós-Imagens)", async () => {
-            const vitrine = sanitizeProductsForExport(products);
-            await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Sincronizando links das novas imagens`);
-        });
-    }
+            enqueueTask("Produtos.csv e JSON (Meta)", async () => {
+                await new Promise(resolve => setTimeout(resolve, 60000));
+                const vitrine = sanitizeProductsForExport(products);
+                
+                const csvData = vitrine.map(p => mapearProdutoParaMeta(p));
+                
+                const csvText = Papa.unparse(csvData, { delimiter: ";" });
+                await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Atualização de Catálogo Meta CSV (Correções aplicadas)`);
+                
+                const jsonFinal = {
+                    "lista_produtos": csvData
+                };
+                
+                await GitHubAPI.saveFile(`site/produtos_meta.json`, jsonFinal, `PIM: Atualização de Catálogo Meta JSON (Formato com chave raiz)`);
+            });
+        }
 
-    function mostrarAlerta(msg, tipo = 'sucesso') { 
-        let a = document.getElementById('alerta-customizado'); a.innerText = msg; a.className = ''; 
-        if(tipo === 'erro') a.classList.add('alerta-erro'); else if(tipo === 'aviso') a.classList.add('alerta-aviso'); else a.classList.add('alerta-sucesso'); 
-        a.style.display = 'block'; setTimeout(() => a.style.display = 'none', 3000); 
-    }
+        async function getPastaUploadAtiva() {
+            let limit = 990; let folderIndex = 1;
+            while (true) {
+                let folderName = folderIndex === 1 ? "site/img/produtos" : `site/img/produtos_${folderIndex}`;
+                try {
+                    const files = await GitHubAPI.getFileData(folderName);
+                    if (!files) return folderName;
+                    if (Array.isArray(files) && files.length < limit) return folderName;
+                } catch (e) { return folderName; }
+                folderIndex++;
+            }
+        }
+        
+        async function uploadImagens() {
+            if (imageQueue.length === 0) return alert("Não existem imagens na fila.");
+            
+            const queueCopy = [...imageQueue]; 
+            imageQueue = []; 
+            updateImageBadge();
+            
+            mostrarAlerta("Enviando imagens para a fila...", "aviso");
+            
+            queueCopy.forEach(img => {
+                enqueueTask(`Imagem ${img.sku}`, async () => {
+                    const pastaDestinoGithub = await getPastaUploadAtiva();
+                    const pastaDestinoLocal = "../" + pastaDestinoGithub; 
+                    const fileName = `${img.sku}.webp`; 
+                    
+                    await GitHubAPI.saveFile(`${pastaDestinoGithub}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName}`, true);
+                    
+                    const pRef = products.find(x => x.codigo === img.sku); 
+                    if(pRef) { 
+                        pRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`; 
+                        pRef.last_update = Date.now(); 
+                        await saveDataLocally(); 
+                    }
+                });
+            });
 
-    function abrirModalFoto(src) {
-        if(!src || src.includes("SEM+FOTO") || src === 'caminho_invalido') return;
-        document.getElementById('img-full').src = src;
-        document.getElementById('modal-foto-full').classList.remove('hidden');
-    }
-    
-    function fecharFotoTelaCheia() { 
-        document.getElementById('modal-foto-full').classList.add('hidden'); 
-    }
+            enqueueTask("Sincronizar JSON (Pós-Imagens)", async () => {
+                const vitrine = sanitizeProductsForExport(products);
+                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Sincronizando links das novas imagens`);
+            });
+        }
+
+        function mostrarAlerta(msg, tipo = 'sucesso') { 
+            let a = document.getElementById('alerta-customizado'); a.innerText = msg; a.className = ''; 
+            if(tipo === 'erro') a.classList.add('alerta-erro'); else if(tipo === 'aviso') a.classList.add('alerta-aviso'); else a.classList.add('alerta-sucesso'); 
+            a.style.display = 'block'; setTimeout(() => a.style.display = 'none', 3000); 
+        }
+
+        function abrirModalFoto(src) {
+            if(!src || src.includes("SEM+FOTO") || src === 'caminho_invalido') return;
+            document.getElementById('img-full').src = src;
+            document.getElementById('modal-foto-full').classList.remove('hidden');
+        }
+        
+        function fecharFotoTelaCheia() { 
+            document.getElementById('modal-foto-full').classList.add('hidden'); 
+        }
 
         // ==========================================================
         // PIM CORE E LOCALIZAÇÃO (UI & EVENTOS)
@@ -1252,7 +1303,7 @@
                 return;
             }
 
-            const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantidade);
+            const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantity);
             
             nextBatch.forEach(p => {
                 const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`;
@@ -1344,6 +1395,7 @@
 
                         <div class="field-group"><label>Validade</label>
                             <input type="date" class="form-input card-mini-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : (p.validade || '')}" onblur="updateField('${p.codigo}', 'validade', this.value)"></div>
+                        <div class="field-group"><label style="color:var(--accent); font-weight:900;">Estoque</label>
                             <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
                     </div>
 
@@ -1376,20 +1428,16 @@
             
             let finalVal = value; 
             
-            // Tratamento seguro para a data de validade
             if(field === 'validade') { 
                 if (typeof value === 'string' && value.includes('-')) {
                     const partes = value.split('-'); 
-                    // Só grava a data se o ano tiver 4 dígitos preenchidos
                     if(partes[0].length === 4) {
                         finalVal = `${partes[2]}/${partes[1]}/${partes[0]}`; 
                     }
                 } else {
-                    // Limpa a data se for inválida ou apagada, evitando "undefined"
                     finalVal = ""; 
                 }
             } 
-            // Tratamento para números
             else if(['preco','estoque','preco_custo', 'preco_oferta'].includes(field)) { 
                 if (field === 'preco_oferta' && (value === "" || value === null)) {
                     finalVal = ""; 
@@ -1397,7 +1445,6 @@
                     finalVal = parseFloat(value.toString().replace(',','.')) || 0; 
                 }
             }
-            // Tratamento para o campo datetime-local da oferta
             else if(field === 'validade_oferta') {
                 finalVal = value;
             }
@@ -1701,7 +1748,7 @@
             lista.push(nm); await localforage.setItem(storageKey, lista); renderizarCRUD(lista, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
         }
 
-      window.editarItem = async function(sidebarId, index) { 
+        window.editarItem = async function(sidebarId, index) { 
             const obj = getListaByKey(sidebarId); const novoNome = prompt("Renomear:", obj.arr[index]); 
             if (!novoNome || novoNome.trim() === "") return; 
             const old = obj.arr[index]; const nm = novoNome.toUpperCase().trim(); obj.arr[index] = nm; 
@@ -1733,132 +1780,132 @@
             await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
         }
 
-      // ==========================================================
-      // BAIXAR PEDIDO POR TEXTO E EXPORTAR PARA BLING E SEPARAÇÃO
-      // ==========================================================
-      async function processarBaixaPedidoTexto() {
-          const texto = document.getElementById('order-text-input').value;
-          if(!texto) return alert("Por favor, cole o texto do pedido primeiro.");
+        // ==========================================================
+        // BAIXAR PEDIDO POR TEXTO E EXPORTAR PARA BLING E SEPARAÇÃO
+        // ==========================================================
+        async function processarBaixaPedidoTexto() {
+            const texto = document.getElementById('order-text-input').value;
+            if(!texto) return alert("Por favor, cole o texto do pedido primeiro.");
 
-          const matchPedido = texto.match(/PEDIDO\s*#?(\d+)/i);
-          const numeroPedido = matchPedido ? matchPedido[1] : Date.now().toString().slice(-6);
-          const nomeComprador = "PEDIDO " + numeroPedido;
-          
-          const hoje = new Date();
-          const dataAtual = String(hoje.getDate()).padStart(2, '0') + '/' + String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
+            const matchPedido = texto.match(/PEDIDO\s*#?(\d+)/i);
+            const numeroPedido = matchPedido ? matchPedido[1] : Date.now().toString().slice(-6);
+            const nomeComprador = "PEDIDO " + numeroPedido;
+            
+            const hoje = new Date();
+            const dataAtual = String(hoje.getDate()).padStart(2, '0') + '/' + String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
 
-          const linhas = texto.split('\n'); 
-          let encontrados = 0; 
-          let falhas = [];
-          
-          let itensPedidoBling = [];
-          let totalPedidoCalc = 0;
-          
-          let itensParaSeparacao = [];
+            const linhas = texto.split('\n'); 
+            let encontrados = 0; 
+            let falhas = [];
+            
+            let itensPedidoBling = [];
+            let totalPedidoCalc = 0;
+            
+            let itensParaSeparacao = [];
 
-          linhas.forEach(linha => {
-              const linhaLimpa = linha.trim();
-              const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
+            linhas.forEach(linha => {
+                const linhaLimpa = linha.trim();
+                const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
 
-             if(match) {
-                  const qtd = parseInt(match[1]);
-                  
-                  const nomeProcuradoNormalizado = limparTexto(match[2]);
+                if(match) {
+                    const qtd = parseInt(match[1]);
+                    
+                    const nomeProcuradoNormalizado = limparTexto(match[2]);
 
-                  const p = products.find(prod => {
-                      const nomeBancoNormalizado = limparTexto(prod.nome);
-                      return nomeBancoNormalizado === nomeProcuradoNormalizado;
-                  });
+                    const p = products.find(prod => {
+                        const nomeBancoNormalizado = limparTexto(prod.nome);
+                        return nomeBancoNormalizado === nomeProcuradoNormalizado;
+                    });
 
-                  if(p) {
-                      p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
-                      p.last_update = Date.now(); 
-                      encontrados++; 
-                      
-                      const valorUn = parseFloat(p.preco) || 0;
-                      const valorTotalItem = valorUn * qtd;
-                      totalPedidoCalc += valorTotalItem; 
+                    if(p) {
+                        p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
+                        p.last_update = Date.now(); 
+                        encontrados++; 
+                        
+                        const valorUn = parseFloat(p.preco) || 0;
+                        const valorTotalItem = valorUn * qtd;
+                        totalPedidoCalc += valorTotalItem; 
 
-                      itensPedidoBling.push({
-                          "Número pedido": numeroPedido,
-                          "Nome Comprador": nomeComprador,
-                          "Data": dataAtual,
-                          "Produto": p.nome,
-                          "SKU": p.codigo,
-                          "Un": "UN",
-                          "Quantidade": qtd,
-                          "Valor Unitário": valorUn.toFixed(2).replace('.', ','),
-                          "Valor Total": valorTotalItem.toFixed(2).replace('.', ','),
-                          "Total Pedido": "", 
-                          "Valor Frete Pedido": "0,00",
-                          "Valor Desconto Pedido": "0,00",
-                          "Outras despesas": "0,00",
-                          "Tipo Frete": "R",
-                          "Observações": "Pedido importado via Sucedoan PIM",
-                          "Qtd Parcela": "1",
-                          "Data Prevista": dataAtual
-                      });
+                        itensPedidoBling.push({
+                            "Número pedido": numeroPedido,
+                            "Nome Comprador": nomeComprador,
+                            "Data": dataAtual,
+                            "Produto": p.nome,
+                            "SKU": p.codigo,
+                            "Un": "UN",
+                            "Quantidade": qtd,
+                            "Valor Unitário": valorUn.toFixed(2).replace('.', ','),
+                            "Valor Total": valorTotalItem.toFixed(2).replace('.', ','),
+                            "Total Pedido": "", 
+                            "Valor Frete Pedido": "0,00",
+                            "Valor Desconto Pedido": "0,00",
+                            "Outras despesas": "0,00",
+                            "Tipo Frete": "R",
+                            "Observações": "Pedido importado via Sucedoan PIM",
+                            "Qtd Parcela": "1",
+                            "Data Prevista": dataAtual
+                        });
 
-                      itensParaSeparacao.push({
-                          id_produto: p.codigo,
-                          nome: p.nome,
-                          quantidade: qtd,
-                          url_imagem: p.url_imagem || "",
-                          gtin: p.gtin || "", 
-                          gondola: p.gondola || "Z-Sem Gôndola",
-                          prateleira: p.prateleira || "-",
-                          status: "pendente" 
-                      });
+                        itensParaSeparacao.push({
+                            id_produto: p.codigo,
+                            nome: p.nome,
+                            quantidade: qtd,
+                            url_imagem: p.url_imagem || "",
+                            gtin: p.gtin || "", 
+                            gondola: p.gondola || "Z-Sem Gôndola",
+                            prateleira: p.prateleira || "-",
+                            status: "pendente" 
+                        });
 
-                  } else {
-                      falhas.push(match[2].trim()); 
-                  }
-              }
-          });
+                    } else {
+                        falhas.push(match[2].trim()); 
+                    }
+                }
+            });
 
-          if(encontrados > 0) {
-              await saveDataLocally(); 
-              renderGrid(ultimoTermoPesquisa);
-              salvarProdutosJSON(); 
+            if(encontrados > 0) {
+                await saveDataLocally(); 
+                renderGrid(ultimoTermoPesquisa);
+                salvarProdutosJSON(); 
 
-              const totalPedidoFormatado = totalPedidoCalc.toFixed(2).replace('.', ',');
-              itensPedidoBling.forEach(item => item["Total Pedido"] = totalPedidoFormatado);
+                const totalPedidoFormatado = totalPedidoCalc.toFixed(2).replace('.', ',');
+                itensPedidoBling.forEach(item => item["Total Pedido"] = totalPedidoFormatado);
 
-              await downloadCSVBling(itensPedidoBling, `Bling_Pedido_Venda_${numeroPedido}.csv`);
+                await downloadCSVBling(itensPedidoBling, `Bling_Pedido_Venda_${numeroPedido}.csv`);
 
-              enqueueTask(`Lista de Separação #${numeroPedido}`, async () => {
-                  const novoPedido = {
-                      id: numeroPedido,
-                      data: new Date().toISOString(),
-                      status: "pendente",
-                      itens: itensParaSeparacao
-                  };
+                enqueueTask(`Lista de Separação #${numeroPedido}`, async () => {
+                    const novoPedido = {
+                        id: numeroPedido,
+                        data: new Date().toISOString(),
+                        status: "pendente",
+                        itens: itensParaSeparacao
+                    };
 
-                  let pedidosSeparacao = [];
-                  try {
-                      const fileData = await GitHubAPI.getFileData('site/pedidoseparar.json');
-                      if (fileData && fileData.content) {
-                          const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
-                          pedidosSeparacao = JSON.parse(decodedStr);
-                      }
-                  } catch (e) {
-                      console.log("Arquivo pedidoseparar.json ainda não existe. Será criado um novo.");
-                  }
+                    let pedidosSeparacao = [];
+                    try {
+                        const fileData = await GitHubAPI.getFileData('site/pedidoseparar.json');
+                        if (fileData && fileData.content) {
+                            const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
+                            pedidosSeparacao = JSON.parse(decodedStr);
+                        }
+                    } catch (e) {
+                        console.log("Arquivo pedidoseparar.json ainda não existe. Será criado um novo.");
+                    }
 
-                  pedidosSeparacao.push(novoPedido);
-                  await GitHubAPI.saveFile('site/pedidoseparar.json', pedidosSeparacao, `Adicionado Pedido #${numeroPedido} para separação`);
-              });
+                    pedidosSeparacao.push(novoPedido);
+                    await GitHubAPI.saveFile('site/pedidoseparar.json', pedidosSeparacao, `Adicionado Pedido #${numeroPedido} para separação`);
+                });
 
-              let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nPlanilha do Bling guardada no GitHub!\nPedido enviado para a equipa de separação.`;
-              if(falhas.length > 0) msg += `\n\n⚠️ Itens não encontrados (Não exportados):\n- ` + falhas.join('\n- ');
-              alert(msg);
+                let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nPlanilha do Bling guardada no GitHub!\nPedido enviado para a equipa de separação.`;
+                if(falhas.length > 0) msg += `\n\n⚠️ Itens não encontrados (Não exportados):\n- ` + falhas.join('\n- ');
+                alert(msg);
 
-              closeSidebar('pedidos-sidebar'); 
-              document.getElementById('order-text-input').value = "";
-          } else {
-              alert("❌ Nenhum produto encontrado.");
-          }
-      }
+                closeSidebar('pedidos-sidebar'); 
+                document.getElementById('order-text-input').value = "";
+            } else {
+                alert("❌ Nenhum produto encontrado.");
+            }
+        }
 
         // ==========================================================
         // LIMPEZA INTELIGENTE DE IMAGENS DO GITHUB (AJUSTADO PARA FILA)
@@ -1887,7 +1934,6 @@
                         if(Array.isArray(files)) {
                             for(const file of files) {
                                 if(!imagensEmUso.has(file.name)) {
-                                    // Adicionado à fila global de 90s
                                     enqueueTask(`Apagar Imagem: ${file.name}`, async () => {
                                         await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${file.path}`, {
                                             method: 'DELETE',
@@ -1928,6 +1974,10 @@
                         if(!confirm("Substituir a base local pela da nuvem? Isso vai recalcular todas as categorias baseadas no arquivo.")) return; 
                     }
                     products = parsedData;
+                    
+                    // Sincroniza e atualiza o marcador de concorrência local
+                    await localforage.setItem(LAST_SYNC_KEY, Date.now());
+
                     categoriasDoSistema = [];
                     marcasDoSistema = [];
                     tagsDoSistema = [];
@@ -2064,50 +2114,51 @@
             };
         }
 
-       async function downloadCSVBling(dados, filename) {
-        const csv = Papa.unparse(dados, { delimiter: ";" });
-        const csvComBom = "\ufeff" + csv;
+        async function downloadCSVBling(dados, filename) {
+            const csv = Papa.unparse(dados, { delimiter: ";" });
+            const csvComBom = "\ufeff" + csv;
 
-        const blob = new Blob([csvComBom], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = filename; 
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+            const blob = new Blob([csvComBom], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename; 
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
 
-        mostrarAlerta(`✅ Ficheiro ${filename} descarregado com sucesso!`, "sucesso");
-    }
-
-    window.exportarProdutoBling = async function(sku) {
-        const p = products.find(x => x.codigo === sku);
-        if(!p) return alert("Produto não encontrado.");
-        await downloadCSVBling([mapearProdutoParaBling(p)], `Bling_Produto_${sku}.csv`);
-    };
-
-    window.exportarTudoBling = async function() {
-        if(!confirm("Exportar todo o banco de dados (Bling CSV)? O sistema dividirá automaticamente em arquivos de até 900 produtos se necessário.")) return;
-        if(products.length === 0) return alert("Banco vazio.");
-        const mappedList = products.map(p => mapearProdutoParaBling(p));
-        const chunkSize = 900; 
-        if (mappedList.length <= chunkSize) {
-            await downloadCSVBling(mappedList, "Bling_Banco_Completo.csv");
-        } 
-        else {
-            const totalParts = Math.ceil(mappedList.length / chunkSize);
-            mostrarAlerta(`A exportar ${totalParts} ficheiros... Por favor, aguarde.`, 'aviso');
-            for (let i = 0; i < totalParts; i++) {
-                const chunk = mappedList.slice(i * chunkSize, (i + 1) * chunkSize);
-                const filename = `Bling_Banco_Completo_Parte_${i + 1}.csv`;
-                await downloadCSVBling(chunk, filename);
-            }
+            mostrarAlerta(`✅ Ficheiro ${filename} descarregado com sucesso!`, "sucesso");
         }
-    };
+
+        window.exportarProdutoBling = async function(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return alert("Produto não encontrado.");
+            await downloadCSVBling([mapearProdutoParaBling(p)], `Bling_Produto_${sku}.csv`);
+        };
+
+        window.exportarTudoBling = async function() {
+            if(!confirm("Exportar todo o banco de dados (Bling CSV)? O sistema dividirá automaticamente em arquivos de até 900 produtos se necessário.")) return;
+            if(products.length === 0) return alert("Banco vazio.");
+            const mappedList = products.map(p => mapearProdutoParaBling(p));
+            const chunkSize = 900; 
+            if (mappedList.length <= chunkSize) {
+                await downloadCSVBling(mappedList, "Bling_Banco_Completo.csv");
+            } 
+            else {
+                const totalParts = Math.ceil(mappedList.length / chunkSize);
+                mostrarAlerta(`A exportar ${totalParts} ficheiros... Por favor, aguarde.`, 'aviso');
+                for (let i = 0; i < totalParts; i++) {
+                    const chunk = mappedList.slice(i * chunkSize, (i + 1) * chunkSize);
+                    const filename = `Bling_Banco_Completo_Parte_${i + 1}.csv`;
+                    await downloadCSVBling(chunk, filename);
+                }
+            }
+        };
+
         window.exportarCategoriaBling = async function() {
             const cat = document.getElementById('flt-cat').value;
             if(!cat) return alert("Selecione uma categoria principal no filtro primeiro.");
