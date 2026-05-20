@@ -110,10 +110,8 @@
     function fixBrokenText(text) {
         if (!text || typeof text !== 'string') return text;
         try {
-            // Se conseguir decodificar, significa que estava quebrado e agora arrumou.
             return decodeURIComponent(escape(text));
         } catch (e) {
-            // Se der erro, significa que o texto JÁ ESTAVA CERTO e não precisava mexer.
             return text; 
         }
     }
@@ -121,7 +119,6 @@
     function autoFixDatabase(dataArray) {
         return dataArray.map(item => {
             const newItem = { ...item };
-            // Varre todas as informações do produto procurando textos para consertar
             for (let key in newItem) {
                 if (typeof newItem[key] === 'string') {
                     newItem[key] = fixBrokenText(newItem[key]);
@@ -153,6 +150,79 @@
         return new TextDecoder().decode(bytes);
     }
     
+    // ---------------------------------------------------------
+    // INTELIGÊNCIA DE FUSÃO TRIDIRECIONAL (CONCORRÊNCIA)
+    // ---------------------------------------------------------
+    async function smartMergeWithRemote(localProducts) {
+        const LAST_SYNC_KEY = 'sucedoan_last_sync';
+        let lastSyncTime = await localforage.getItem(LAST_SYNC_KEY) || 0;
+        
+        const cfg = await localforage.getItem('sucedoan_config');
+        if(!cfg) throw new Error("Credenciais não configuradas");
+
+        try {
+            // 1. Descarrega o arquivo atual da nuvem
+            const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { 
+                headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" } 
+            });
+            
+            if (!res.ok) {
+                if (res.status === 404) {
+                    await localforage.setItem(LAST_SYNC_KEY, Date.now());
+                    return { mergedList: localProducts, sha: null };
+                }
+                throw new Error("Erro ao aceder ao GitHub.");
+            }
+
+            const data = await res.json();
+            const decodedString = base64ToUtf8(data.content);
+            const rawProducts = JSON.parse(decodedString);
+            
+            // Corrige os textos (Auto-Reparo) da base remota
+            const remoteProducts = autoFixDatabase(rawProducts);
+            
+            if (!Array.isArray(remoteProducts)) return { mergedList: localProducts, sha: data.sha };
+            
+            const localMap = new Map(localProducts.map(p => [p.codigo, p]));
+            const remoteMap = new Map(remoteProducts.map(p => [p.codigo, p]));
+            const finalProductsMap = new Map();
+            
+            // 2. Compara local vs remoto
+            for (let [sku, localProd] of localMap) {
+                const remoteProd = remoteMap.get(sku);
+                if (remoteProd) {
+                    const localTime = localProd.last_update || 0;
+                    const remoteTime = remoteProd.last_update || 0;
+                    // Vence quem editou mais recentemente
+                    if (remoteTime > localTime) finalProductsMap.set(sku, remoteProd);
+                    else finalProductsMap.set(sku, localProd);
+                } else {
+                    const localTime = localProd.last_update || 0;
+                    if (localTime > lastSyncTime) finalProductsMap.set(sku, localProd);
+                }
+            }
+            
+            // 3. Adiciona os remotos que não estão no local
+            for (let [sku, remoteProd] of remoteMap) {
+                if (!localMap.has(sku)) {
+                    const remoteTime = remoteProd.last_update || 0;
+                    if (remoteTime > lastSyncTime) finalProductsMap.set(sku, remoteProd);
+                }
+            }
+            
+            const mergedList = Array.from(finalProductsMap.values());
+            
+            // 4. Atualiza a memória e o marcador local
+            products = mergedList;
+            await localforage.setItem('sucedoan_pim_v37', products);
+            await localforage.setItem(LAST_SYNC_KEY, Date.now());
+            
+            return { mergedList, sha: data.sha };
+        } catch (error) {
+            console.error("Erro na fusão:", error);
+            throw new Error("Falha de fusão: Não foi possível juntar os dados com a nuvem.");
+        }
+    }
     // ---------------------------------------------------------
 
     async function startScanner() {
@@ -222,6 +292,10 @@
         products = autoFixDatabase(rawProducts);
         
         await localforage.setItem('sucedoan_pim_v37', products);
+        
+        // NOVIDADE: Regista o momento da sincronização para não sobrescrever o trabalho dos outros
+        await localforage.setItem('sucedoan_last_sync', Date.now());
+
         alert("Sincronizado e Auto-Reparado!");
         
         if(currentProd) buscar(); 
@@ -231,20 +305,39 @@
         const cfg = await localforage.getItem('sucedoan_config');
         if(!cfg) return alert("Configure as credenciais");
         
-        const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { 
-            headers: { "Authorization": `Bearer ${cfg.token}` } 
-        });
-        const currentData = await res.json();
-        
-        const jsonString = JSON.stringify(products, null, 2);
-        const contentStr = utf8ToBase64(jsonString);
-        
-        await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json`, {
-            method: 'PUT',
-            headers: { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ message: "Update mobile", content: contentStr, sha: currentData.sha })
-        });
-        alert("Salvo!");
+        try {
+            alert("A juntar dados com a nuvem. Aguarde...");
+            
+            // Aplica a Inteligência de Concorrência antes de gravar
+            const { mergedList, sha } = await smartMergeWithRemote(products);
+            
+            const jsonString = JSON.stringify(mergedList, null, 2);
+            const contentStr = utf8ToBase64(jsonString);
+            
+            // Corpo da requisição com o `sha` extraído da fusão
+            const bodyData = { 
+                message: "Update Mobile (Estoque Rápido - Fusão Inteligente)", 
+                content: contentStr 
+            };
+            if (sha) bodyData.sha = sha;
+
+            const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json`, {
+                method: 'PUT',
+                headers: { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" },
+                body: JSON.stringify(bodyData)
+            });
+            
+            if (res.ok) {
+                alert("Salvo com segurança!");
+                if(currentProd) buscar(); 
+            } else {
+                throw new Error("O GitHub rejeitou o ficheiro.");
+            }
+            
+        } catch (error) {
+            console.error(error);
+            alert("Falha ao salvar: " + error.message);
+        }
     }
 
     async function saveConfig() {
