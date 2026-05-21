@@ -6,6 +6,7 @@
     <title>Estoque Rápido</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background: #fafafa; margin: 0; padding: 0; color: #000; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -149,81 +150,142 @@
         }
         return new TextDecoder().decode(bytes);
     }
-    
-    // ---------------------------------------------------------
-    // INTELIGÊNCIA DE FUSÃO TRIDIRECIONAL (CONCORRÊNCIA)
-    // ---------------------------------------------------------
-    async function smartMergeWithRemote(localProducts) {
-        const LAST_SYNC_KEY = 'sucedoan_last_sync';
-        let lastSyncTime = await localforage.getItem(LAST_SYNC_KEY) || 0;
-        
-        const cfg = await localforage.getItem('sucedoan_config');
-        if(!cfg) throw new Error("Credenciais não configuradas");
 
+    // ---------------------------------------------------------
+    // INTEGRAÇÃO META ADS - MAPEAMENTO (VERSÃO MOBILE)
+    // ---------------------------------------------------------
+    function mapearProdutoParaMeta(p) {
+        let urlFoto = p.url_imagem || "";
+        if (typeof urlFoto === 'string' && urlFoto.includes('../')) {
+            urlFoto = urlFoto.split('?')[0].replace("../", "https://donaantonia.com.br/");
+        } else if (typeof urlFoto === 'string' && urlFoto.startsWith('http')) {
+            urlFoto = urlFoto.split('?')[0];
+        }
+
+        let slug = p.nome ? p.nome.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '') : (p.codigo || "");
+        
+        let estoqueNum = parseFloat(p.estoque) || 0;
+        let disponibilidade = estoqueNum > 0 ? "in stock" : "out of stock";
+        let descricaoLimpa = p.nome + (p.embalagem ? " - " + p.embalagem : "");
+
+        let objMeta = {
+            "id": p.codigo || "",
+            "title": p.nome || "",
+            "description": descricaoLimpa,
+            "availability": disponibilidade,
+            "condition": "new",
+            "price": `${p.preco || "0.00"} BRL`,
+            "link": `https://donaantonia.com.br/#/produto/${slug}`,
+            "image_link": urlFoto,
+            "brand": p.marca || "Dona Antônia"
+        };
+
+        if (p.preco_oferta && parseFloat(p.preco_oferta) > 0) {
+            objMeta["sale_price"] = `${parseFloat(p.preco_oferta).toFixed(2)} BRL`;
+            if (p.validade_oferta) objMeta["sale_price_effective_date"] = `${p.validade_oferta}-03:00/${p.validade_oferta}-03:00`;
+        }
+        return objMeta;
+    }
+
+    // ---------------------------------------------------------
+    // FUNÇÃO AUXILIAR PARA SALVAR ARQUIVOS EXTRAS NO GITHUB
+    // ---------------------------------------------------------
+    async function saveGenericFileGithub(cfg, path, contentBase64, message) {
+        let sha = null;
         try {
-            // 1. Descarrega o arquivo atual da nuvem
-            const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { 
-                headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" } 
+            const resGet = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`, { headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" } });
+            if (resGet.ok) {
+                const data = await resGet.json();
+                sha = data.sha;
+            }
+        } catch(e) {}
+
+        let bodyData = { message: message, content: contentBase64 };
+        if (sha) bodyData.sha = sha;
+
+        await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`, {
+            method: 'PUT', headers: { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(bodyData)
+        });
+    }
+
+    // ---------------------------------------------------------
+    // SALVAMENTO COM MERGE SEGURO E ATUALIZAÇÃO META
+    // ---------------------------------------------------------
+    async function saveDataToGithub() {
+        const cfg = await localforage.getItem('sucedoan_config');
+        if(!cfg) return alert("Configure as credenciais primeiro!");
+        
+        try {
+            alert("Sincronizando de forma segura com a Nuvem e Meta Ads...");
+            
+            // 1. Baixa o arquivo atual da nuvem
+            let produtosNuvem = [];
+            let shaPrincipal = null;
+            try {
+                const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { 
+                    headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" } 
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    shaPrincipal = data.sha;
+                    const decodedStr = base64ToUtf8(data.content);
+                    produtosNuvem = JSON.parse(decodedStr);
+                }
+            } catch (e) {
+                console.warn("Criando nova base ou erro de leitura.");
+            }
+
+            // 2. Inteligência de Fusão (Merge) baseada em Timestamp
+            let localMap = new Map(products.map(p => [p.codigo, p]));
+            
+            if (Array.isArray(produtosNuvem) && produtosNuvem.length > 0) {
+                produtosNuvem.forEach(pNuvem => {
+                    const pLocal = localMap.get(pNuvem.codigo);
+                    if (pLocal) {
+                        const timeLocal = pLocal.last_update || 0;
+                        const timeNuvem = pNuvem.last_update || 0;
+                        if (timeNuvem > timeLocal) {
+                            const index = products.findIndex(x => x.codigo === pNuvem.codigo);
+                            if (index !== -1) products[index] = { ...products[index], ...pNuvem };
+                        }
+                        localMap.delete(pNuvem.codigo);
+                    } else {
+                        products.unshift(pNuvem);
+                    }
+                });
+            }
+
+            // Atualiza a memória do celular com os dados unidos
+            await localforage.setItem('sucedoan_pim_v37', products);
+            if(currentProd) buscar(); 
+            
+            // 3. Salva a Base Principal (produtos.json)
+            const headersBase = { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" };
+            let bodyData = { message: "Estoque Rápido: Atualização com Merge Seguro", content: utf8ToBase64(JSON.stringify(products, null, 2)) };
+            if (shaPrincipal) bodyData.sha = shaPrincipal;
+
+            let resMain = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json`, {
+                method: 'PUT', headers: headersBase, body: JSON.stringify(bodyData)
             });
             
-            if (!res.ok) {
-                if (res.status === 404) {
-                    await localforage.setItem(LAST_SYNC_KEY, Date.now());
-                    return { mergedList: localProducts, sha: null };
-                }
-                throw new Error("Erro ao aceder ao GitHub.");
-            }
+            if (!resMain.ok) throw new Error("Erro ao salvar produtos.json na nuvem.");
 
-            const data = await res.json();
-            const decodedString = base64ToUtf8(data.content);
-            const rawProducts = JSON.parse(decodedString);
+            // 4. Gera e Salva o Catálogo do Meta Ads (CSV e JSON)
+            const metaCatalog = products.filter(p => p.situacao !== 'I').map(p => mapearProdutoParaMeta(p));
             
-            // Corrige os textos (Auto-Reparo) da base remota
-            const remoteProducts = autoFixDatabase(rawProducts);
-            
-            if (!Array.isArray(remoteProducts)) return { mergedList: localProducts, sha: data.sha };
-            
-            const localMap = new Map(localProducts.map(p => [p.codigo, p]));
-            const remoteMap = new Map(remoteProducts.map(p => [p.codigo, p]));
-            const finalProductsMap = new Map();
-            
-            // 2. Compara local vs remoto
-            for (let [sku, localProd] of localMap) {
-                const remoteProd = remoteMap.get(sku);
-                if (remoteProd) {
-                    const localTime = localProd.last_update || 0;
-                    const remoteTime = remoteProd.last_update || 0;
-                    // Vence quem editou mais recentemente
-                    if (remoteTime > localTime) finalProductsMap.set(sku, remoteProd);
-                    else finalProductsMap.set(sku, localProd);
-                } else {
-                    const localTime = localProd.last_update || 0;
-                    if (localTime > lastSyncTime) finalProductsMap.set(sku, localProd);
-                }
-            }
-            
-            // 3. Adiciona os remotos que não estão no local
-            for (let [sku, remoteProd] of remoteMap) {
-                if (!localMap.has(sku)) {
-                    const remoteTime = remoteProd.last_update || 0;
-                    if (remoteTime > lastSyncTime) finalProductsMap.set(sku, remoteProd);
-                }
-            }
-            
-            const mergedList = Array.from(finalProductsMap.values());
-            
-            // 4. Atualiza a memória e o marcador local
-            products = mergedList;
-            await localforage.setItem('sucedoan_pim_v37', products);
-            await localforage.setItem(LAST_SYNC_KEY, Date.now());
-            
-            return { mergedList, sha: data.sha };
+            const csvText = Papa.unparse(metaCatalog, { delimiter: ";" });
+            await saveGenericFileGithub(cfg, 'site/produtos.csv', utf8ToBase64(csvText), "Estoque Rápido: Atualização Meta CSV");
+
+            const metaJsonFinal = { "lista_produtos": metaCatalog };
+            await saveGenericFileGithub(cfg, 'site/produtos_meta.json', utf8ToBase64(JSON.stringify(metaJsonFinal, null, 2)), "Estoque Rápido: Atualização Meta JSON");
+
+            alert("✅ Tudo Salvo! Estoque e Catálogo do Meta Ads atualizados.");
+
         } catch (error) {
-            console.error("Erro na fusão:", error);
-            throw new Error("Falha de fusão: Não foi possível juntar os dados com a nuvem.");
+            console.error(error);
+            alert("Falha ao salvar: " + error.message);
         }
     }
-    // ---------------------------------------------------------
 
     async function startScanner() {
         try {
@@ -299,45 +361,6 @@
         alert("Sincronizado e Auto-Reparado!");
         
         if(currentProd) buscar(); 
-    }
-
-    async function saveDataToGithub() {
-        const cfg = await localforage.getItem('sucedoan_config');
-        if(!cfg) return alert("Configure as credenciais");
-        
-        try {
-            alert("A juntar dados com a nuvem. Aguarde...");
-            
-            // Aplica a Inteligência de Concorrência antes de gravar
-            const { mergedList, sha } = await smartMergeWithRemote(products);
-            
-            const jsonString = JSON.stringify(mergedList, null, 2);
-            const contentStr = utf8ToBase64(jsonString);
-            
-            // Corpo da requisição com o `sha` extraído da fusão
-            const bodyData = { 
-                message: "Update Mobile (Estoque Rápido - Fusão Inteligente)", 
-                content: contentStr 
-            };
-            if (sha) bodyData.sha = sha;
-
-            const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json`, {
-                method: 'PUT',
-                headers: { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" },
-                body: JSON.stringify(bodyData)
-            });
-            
-            if (res.ok) {
-                alert("Salvo com segurança!");
-                if(currentProd) buscar(); 
-            } else {
-                throw new Error("O GitHub rejeitou o ficheiro.");
-            }
-            
-        } catch (error) {
-            console.error(error);
-            alert("Falha ao salvar: " + error.message);
-        }
     }
 
     async function saveConfig() {
