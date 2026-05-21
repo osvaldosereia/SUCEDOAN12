@@ -678,7 +678,7 @@
             'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
             'subcategoria', 'subsubcategoria', 'marca', 'embalagem', 'tag_global', 
             'link_youtube', 'last_update', 'url_imagem', 'gondola', 'prateleira', 'localizacao', 'descricao',
-            'preco_oferta', 'validade_oferta'
+            'preco_oferta', 'validade_oferta', 'combo_id', 'validade_combo'
         ];
         return prods.map(p => {
             let cleanP = {};
@@ -967,73 +967,77 @@
         // ==========================================================
         async function processarInteligenciaDeOfertas(skuEspecifico = null) {
             let houveMudanca = false;
-            
-            // Pega a data de hoje e zera as horas para o cálculo ser exato
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0); 
 
-            // Função auxiliar para formatar a data da oferta para o padrão do HTML (YYYY-MM-DDTHH:MM)
             const formatarFimOferta = (dataString) => {
                 if(!dataString || !dataString.includes('/')) return "";
                 const partes = dataString.split('/');
                 if(partes.length !== 3) return "";
-                // Define o fim da oferta para o último minuto do dia do vencimento
                 return `${partes[2]}-${partes[1]}-${partes[0]}T23:59`; 
             };
 
-            // Se receber um SKU, analisa só ele. Se não, analisa todos.
             const itensParaAnalisar = skuEspecifico ? products.filter(p => p.codigo === skuEspecifico) : products;
 
             itensParaAnalisar.forEach(p => {
                 if (p.situacao === 'I') return; // Ignora inativos
-                if (!p.validade || !p.validade.includes('/') || !p.preco) return; // Precisa ter validade e preço
-
-                // Converte a validade (DD/MM/AAAA) para Data de verdade
-                const partesData = p.validade.split('/');
-                const dataValidade = new Date(partesData[2], partesData[1] - 1, partesData[0]);
-
-                // Calcula a diferença em dias
-                const diffTempo = dataValidade.getTime() - hoje.getTime();
-                const diasRestantes = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
+                if (!p.preco) return; // Precisa ter preço base
 
                 let novoPrecoOferta = "";
                 let novaValidadeOferta = "";
                 let novoEstoque = parseFloat(p.estoque) || 0;
 
                 const precoOriginal = parseFloat(p.preco) || 0;
-                const precoCusto = parseFloat(p.preco_custo) || 0; // Trava de segurança para não ter prejuízo
+                const precoCusto = parseFloat(p.preco_custo) || 0;
 
-                // Regras de Negócio
-                if (diasRestantes <= 0) {
-                    // Venceu: Zera o estoque e limpa a oferta
-                    novoEstoque = 0;
-                    novoPrecoOferta = "";
-                    novaValidadeOferta = "";
-                } else if (diasRestantes <= 30) {
-                    // 25% de desconto
-                    let calculado = precoOriginal * 0.75;
-                    novoPrecoOferta = Math.max(calculado, precoCusto); // Garante que a oferta não é menor que o custo
-                    novaValidadeOferta = formatarFimOferta(p.validade);
-                } else if (diasRestantes <= 60) {
-                    // 15% de desconto
-                    let calculado = precoOriginal * 0.85;
-                    novoPrecoOferta = Math.max(calculado, precoCusto);
-                    novaValidadeOferta = formatarFimOferta(p.validade);
-                } else if (diasRestantes <= 90) {
-                    // 10% de desconto
-                    let calculado = precoOriginal * 0.90;
-                    novoPrecoOferta = Math.max(calculado, precoCusto);
-                    novaValidadeOferta = formatarFimOferta(p.validade);
-                } else {
-                    // Mais de 90 dias: Sem oferta
-                    novoPrecoOferta = "";
-                    novaValidadeOferta = "";
+                let temOfertaPorValidade = false;
+
+                // Regra 1: Inteligência de Validade (Vencimento Curto)
+                if (p.validade && p.validade.includes('/')) {
+                    const partesData = p.validade.split('/');
+                    const dataValidade = new Date(partesData[2], partesData[1] - 1, partesData[0]);
+                    const diffTempo = dataValidade.getTime() - hoje.getTime();
+                    const diasRestantes = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
+
+                    if (diasRestantes <= 0) {
+                        novoEstoque = 0;
+                        novoPrecoOferta = "";
+                        novaValidadeOferta = "";
+                        temOfertaPorValidade = true;
+                    } else if (diasRestantes <= 30) {
+                        let calculado = precoOriginal * 0.75;
+                        novoPrecoOferta = Math.max(calculado, precoCusto);
+                        novaValidadeOferta = formatarFimOferta(p.validade);
+                        temOfertaPorValidade = true;
+                    } else if (diasRestantes <= 60) {
+                        let calculado = precoOriginal * 0.85;
+                        novoPrecoOferta = Math.max(calculado, precoCusto);
+                        novaValidadeOferta = formatarFimOferta(p.validade);
+                        temOfertaPorValidade = true;
+                    } else if (diasRestantes <= 90) {
+                        let calculado = precoOriginal * 0.90;
+                        novoPrecoOferta = Math.max(calculado, precoCusto);
+                        novaValidadeOferta = formatarFimOferta(p.validade);
+                        temOfertaPorValidade = true;
+                    }
                 }
 
-                // Ajuste de formatação para comparar
+                // Regra 2: Kits Promocionais / Combos (Se não houver oferta por validade ativa)
+                if (!temOfertaPorValidade) {
+                    if (p.combo_id && p.combo_id.trim() !== "" && p.validade_combo) {
+                        const dataFimCombo = new Date(p.validade_combo);
+                        
+                        // Se o combo ainda não expirou
+                        if (hoje < dataFimCombo) {
+                            let calculado = precoOriginal * 0.90; // 10% de Desconto
+                            novoPrecoOferta = Math.max(calculado, precoCusto); // Proteção de custo
+                            novaValidadeOferta = p.validade_combo; // Herda o fim do combo
+                        }
+                    }
+                }
+
                 if (novoPrecoOferta !== "") novoPrecoOferta = parseFloat(novoPrecoOferta.toFixed(2));
 
-                // Verifica se algo mudou para evitar salvar coisas repetidas
                 const ofertaAntiga = p.preco_oferta === "" || p.preco_oferta === null ? "" : parseFloat(p.preco_oferta);
                 const estoqueAntigo = parseFloat(p.estoque) || 0;
 
@@ -1046,15 +1050,12 @@
                 }
             });
 
-            // Se algo mudou, salva no banco local
             if (houveMudanca) {
                 await saveDataLocally();
-                
-                // Se foi uma varredura geral (ao abrir o site), coloca na fila para salvar no GitHub
                 if (!skuEspecifico) {
                     enqueueTask("Sincronizar Ofertas Automáticas", async () => {
                         const vitrine = sanitizeProductsForExport(products);
-                        await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Automática de Ofertas e Vencimentos`);
+                        await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Automática de Ofertas e Combos`);
                     });
                 }
             }
@@ -1495,15 +1496,34 @@
                             <label style="display:flex; justify-content:space-between;">Venda (R$) <span style="color:var(--success);">Markup: ${markup}%</span></label>
                             <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--success); font-weight:800;" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)">
                         </div>
-                        <div class="field-group"><label>Oferta (R$)</label>
-                            <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--warning); font-weight:800;" placeholder="Sem oferta" value="${p.preco_oferta || ''}" onchange="updateField('${p.codigo}', 'preco_oferta', this.value)"></div>
-                        <div class="field-group"><label title="Se vazio, a oferta não tem fim">Fim da Oferta</label>
-                            <input type="datetime-local" class="form-input card-mini-input" value="${p.validade_oferta || ''}" onchange="updateField('${p.codigo}', 'validade_oferta', this.value)"></div>
+                       <div class="field-group">
+    <label>Oferta (R$)</label>
+    <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--warning); font-weight:800;" placeholder="Sem oferta" value="${p.preco_oferta || ''}" onchange="updateField('${p.codigo}', 'preco_oferta', this.value)">
+</div>
 
-                        <div class="field-group"><label>Validade</label>
-                            <input type="date" class="form-input card-mini-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : (p.validade || '')}" onblur="updateField('${p.codigo}', 'validade', this.value)"></div>
-                            <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
-                    </div>
+<div class="field-group">
+    <label title="Se vazio, a oferta não tem fim">Fim da Oferta</label>
+    <input type="datetime-local" class="form-input card-mini-input" value="${p.validade_oferta || ''}" onchange="updateField('${p.codigo}', 'validade_oferta', this.value)">
+</div>
+
+<div class="field-group">
+    <label style="color:#0284c7;">ID do Combo (Ex: KIT_VERAO)</label>
+    <input type="text" class="form-input card-mini-input" placeholder="Sem combo" value="${p.combo_id || ''}" onchange="updateField('${p.codigo}', 'combo_id', this.value)">
+</div>
+
+<div class="field-group">
+    <label style="color:#0284c7;">Data Fim do Combo</label>
+    <input type="datetime-local" class="form-input card-mini-input" value="${p.validade_combo || ''}" onchange="updateField('${p.codigo}', 'validade_combo', this.value)">
+</div>
+<div class="field-group">
+    <label>Validade</label>
+    <input type="date" class="form-input card-mini-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : (p.validade || '')}" onblur="updateField('${p.codigo}', 'validade', this.value)">
+</div>
+
+<div class="field-group">
+    <label>Estoque</label>
+    <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)">
+</div>
 
                     <div style="display: flex; flex-direction: column; gap: 0; margin-top: 5px;">
                         <label style="font-size: 9px; color: var(--text-secondary); font-weight: 800; text-transform: uppercase; margin-bottom: 4px;">Descrição Detalhada</label>
@@ -1564,8 +1584,8 @@
             p.last_update = Date.now(); 
             await saveDataLocally(); 
             
-            // Se o campo alterado for gatilho de oferta, recalcula só para este produto
-            if (field === 'validade' || field === 'preco' || field === 'preco_custo') {
+            // Se o campo alterado for gatilho de oferta ou combo, recalcula para este produto
+            if (field === 'validade' || field === 'preco' || field === 'preco_custo' || field === 'combo_id' || field === 'validade_combo') {
                 await processarInteligenciaDeOfertas(sku);
             }
             
