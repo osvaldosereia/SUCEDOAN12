@@ -25,7 +25,7 @@
             --success: #10b981; 
             --danger: #ef4444;
             --border-light: #e2e8f0;
-            --h-top: 130px; /* Aumentado para 130px para acomodar a logo e a busca juntas */
+            --h-top: 130px;
             --header-total: var(--h-top);
             --whatsapp: #25D366;
         }
@@ -109,7 +109,7 @@
             background: #fff; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; position: relative;
             border-bottom: 1px solid var(--border-light); border-right: 1px solid var(--border-light); border-radius: 0;
         }
-        .card-catalogo:nth-child(3n) { border-right: none; /* Tira a linha direita do último card da fileira */ }
+        .card-catalogo:nth-child(3n) { border-right: none; }
         .card-catalogo img {
             width: 100%; height: 110px; object-fit: contain; margin-bottom: 12px;
         }
@@ -142,7 +142,7 @@
         }
 
         /* =========================================
-           CARROSSEL E MINI CARDS (NOVO FLUXO VIP)
+           CARROSSEL E MINI CARDS
         ========================================= */
         .vip-container { padding: 20px 15px; width: 100%; max-width: 100vw; overflow-x: hidden; }
         .carousel-container { display: flex; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; gap: 12px; padding: 5px 2px 15px 2px; width: 100%; }
@@ -161,7 +161,7 @@
         .search-chip:active { background: #e2e8f0; border-color: #cbd5e1; color: var(--text-dark); }
         
         /* =========================================
-           NOVAS CLASSES DIDÁTICAS PARA AS CESTAS
+           CLASSES DIDÁTICAS PARA AS CESTAS
         ========================================= */
         .basket-action-row { display: flex; flex-wrap: nowrap; flex-direction: row; align-items: center; justify-content: center; gap: 6px; margin-top: 15px; width: 100%; border-top: 1px dashed var(--border-light); padding-top: 15px; }
 
@@ -211,7 +211,7 @@
         .prod-sticky-bottom { position: fixed; bottom: max(65px, calc(65px + env(safe-area-inset-bottom))); left: 0; width: 100%; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); padding: 15px 20px; display: flex; gap: 15px; border-top: 1px solid var(--border-light); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); }
 
         /* =========================================
-           5. MODAIS E LISTA (CHECKOUT SIMPLIFICADO)
+           5. MODAIS E LISTA
         ========================================= */
         .full-screen-detail { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: var(--bg-body); z-index: 2450; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1); }
         .full-screen-detail.active { transform: translateX(0); }
@@ -290,7 +290,7 @@
         .desktop-nav-item .svg-icon { width: 1.5em; height: 1.5em; }
 
        @media (min-width: 768px) {
-            :root { --h-top: 80px; } /* No computador, a altura volta a ser menor pois fica tudo na mesma linha */
+            :root { --h-top: 80px; }
             
             .mobile-hide { display: flex !important; }
             .desktop-hide { display: none !important; }
@@ -428,7 +428,7 @@
                 <div id="basket-summary-container" style="background: #ffffff; padding: 20px; border-radius: 16px; margin-top: 25px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
                     <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 18px; margin-bottom: 15px; color: var(--text-dark);"><span>Total (<span id="basket-total-items">0</span> itens)</span><span id="basket-total-price">R$ 0,00</span></div>
                     <div id="basket-diff-container" style="display: none; margin-bottom: 15px; font-size: 13px; color: var(--text-light); background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px dashed var(--border-light);"></div>
-                    <button class="btn-send" onclick="addBasketToCart()" style="background: var(--text-dark); box-shadow: none;">Adicionar Cesta à Lista</button>
+                    <button class="btn-send" onclick="addBasketToCart()" style="background: var(--text-dark); box-shadow: none;">Adicionar à Lista</button>
                 </div>
                 <div id="vip-list-container" style="display: none;"></div>
             </div>
@@ -481,20 +481,21 @@
         };
 
         let currentBasketItems = [];
+        let dynamicCombos = [];
 
-const ORDEM_CATEGORIAS = ['mercearia basica', 'cafe da manha', 'macarrao e molhos', 'temperos', 'sucos e refris', 'bebidas', 'frios', 'congelados', 'hortifruti', 'padaria', 'carnes', 'limpeza', 'lavanderia', 'beleza', 'higiene', 'sabonete', 'shampoo', 'cabelo'];
+        const ORDEM_CATEGORIAS = ['mercearia basica', 'cafe da manha', 'macarrao e molhos', 'temperos', 'sucos e refris', 'bebidas', 'frios', 'congelados', 'hortifruti', 'padaria', 'carnes', 'limpeza', 'lavanderia', 'beleza', 'higiene', 'sabonete', 'shampoo', 'cabelo'];
         
-const BASKETS = [
-  { "id": "cesta1", "nome": "Economica Bonini", "preco": 92.00, "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x P434", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
-  { "id": "cesta2", "nome": "Mini Bonini", "preco": 178.00, "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 3339160025", "1x 16109433", "1x P0144"] },
-  { "id": "cesta3", "nome": "Mini Koblenz", "preco": 182.00, "imagem": "img/CESTA-MINI-KOBLENZ.webp", "produtos": ["1x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 3339160025", "1x 16109433", "1x P0144"] },
-  { "id": "cesta4", "nome": "Pequena Bonini", "preco": 230.00, "imagem": "img/CESTA-PEQUENA-BONINI.webp", "produtos": ["2x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "2x 3339160025", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta5", "nome": "Pequena Koblenz", "preco": 240.00, "imagem": "img/CESTA-PEQUENA-KOBLENZ.webp", "produtos": ["2x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "2x 3339160025", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta6", "nome": "Média Koblenz", "preco": 350.00, "imagem": "img/CESTA-MEDIA-KOBLENZ.webp", "produtos": ["3x P500", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "2x 3339160025", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta7", "nome": "Média Bonini", "preco": 340.00, "imagem": "img/CESTA-MEDIA-BONINI.webp", "produtos": ["3x P0026", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "2x 3339160025", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta8", "nome": "Grande Koblenz", "preco": 420.00, "imagem": "img/CESTA-GRANDE-KOBLENZ.webp", "produtos": ["4x P500", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "2x 3339160025", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
-  { "id": "cesta9", "nome": "Grande Bonini", "preco": 405.00, "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "2x 3339160025", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] }
-];
+        const BASKETS = [
+          { "id": "cesta1", "nome": "Economica Bonini", "preco": 92.00, "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x P434", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
+          { "id": "cesta2", "nome": "Mini Bonini", "preco": 178.00, "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 3339160025", "1x 16109433", "1x P0144"] },
+          { "id": "cesta3", "nome": "Mini Koblenz", "preco": 182.00, "imagem": "img/CESTA-MINI-KOBLENZ.webp", "produtos": ["1x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 3339160025", "1x 16109433", "1x P0144"] },
+          { "id": "cesta4", "nome": "Pequena Bonini", "preco": 230.00, "imagem": "img/CESTA-PEQUENA-BONINI.webp", "produtos": ["2x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "2x 3339160025", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+          { "id": "cesta5", "nome": "Pequena Koblenz", "preco": 240.00, "imagem": "img/CESTA-PEQUENA-KOBLENZ.webp", "produtos": ["2x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "2x 3339160025", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+          { "id": "cesta6", "nome": "Média Koblenz", "preco": 350.00, "imagem": "img/CESTA-MEDIA-KOBLENZ.webp", "produtos": ["3x P500", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "2x 3339160025", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+          { "id": "cesta7", "nome": "Média Bonini", "preco": 340.00, "imagem": "img/CESTA-MEDIA-BONINI.webp", "produtos": ["3x P0026", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "2x 3339160025", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+          { "id": "cesta8", "nome": "Grande Koblenz", "preco": 420.00, "imagem": "img/CESTA-GRANDE-KOBLENZ.webp", "produtos": ["4x P500", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "2x 3339160025", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] },
+          { "id": "cesta9", "nome": "Grande Bonini", "preco": 405.00, "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "2x 3339160025", "1x P0015", "1x P447", "1x 16109433", "1x P0144"] }
+        ];
 
         const MIN_ORDER = 85; 
 
@@ -529,10 +530,16 @@ const BASKETS = [
             return { valorPadrao: valorPadraoCesta, valorFinal: valorFinalDefinido, taxaExtra: taxaExtra };
         }
        function calculateBasketPrices(basketId) {
-            const basket = BASKETS.find(b => b.id === basketId);
+            const basket = BASKETS.find(b => b.id === basketId) || dynamicCombos.find(c => c.id === basketId);
             if(!basket) return { original: 0, final: 0, atacado: 0 };
+            
             let dyn = getBasketDynamicPrice(basket);
             let original = dyn.valorFinal; 
+            
+            if (basket.isCombo) {
+                return { original: basket.precoOriginal, final: dyn.valorPadrao, atacado: 0 };
+            }
+
             let atacado = 0;
             if(STATE.prods.length > 0) {
                 basket.produtos.forEach(str => {
@@ -568,15 +575,14 @@ const BASKETS = [
             if(STATE.currentRoute) STATE.scrollMap[STATE.currentRoute] = vitrine.scrollTop;
             STATE.currentRoute = hash;
 
-            // NOVA LÓGICA: Oculta a barra do topo no catálogo ou na página de produto
             if (hash === '#/catalogo' || hash.startsWith('#/produto/')) {
                 $('header-main').style.display = 'none';
                 vitrine.style.top = '0';
                 vitrine.style.height = '100dvh';
             } else {
                 $('header-main').style.display = 'flex';
-                vitrine.style.top = ''; // Volta pro padrão do CSS
-                vitrine.style.height = ''; // Volta pro padrão do CSS
+                vitrine.style.top = ''; 
+                vitrine.style.height = ''; 
             }
 
             if($('basketDetailModal').classList.contains('active')) $('basketDetailModal').classList.remove('active');
@@ -592,6 +598,7 @@ const BASKETS = [
 
             if (hash === '#/' || hash === '') { renderInicio(); document.title = "Dona Antônia - Supermercado e Cestas"; } 
             else if (hash === '#/cestas') { renderCestas(); document.title = "Cestas Básicas - Dona Antônia"; } 
+            else if (hash === '#/combos') { renderCombos(); document.title = "Kits Promocionais - Dona Antônia"; } 
             else if (hash === '#/ofertas') { renderDepartamentoCompleto('Ofertas'); } 
             else if (hash === '#/informacoes') { renderInformacoes(); document.title = "Informações - Dona Antônia"; } 
             else if (hash === '#/mercado') { renderInicio(); document.title = "Mercado Completo - Dona Antônia"; } 
@@ -617,7 +624,6 @@ const BASKETS = [
         };
         window.clearSearch = function() { $('app-search-input').value = ''; $('clear-search-btn').style.display = 'none'; STATE.searchQuery = ''; window.history.back(); };
 
-        // Card Render Padrão
         function renderCardHTML(prod, isBasketItem = false, index = null) {
             let q = isBasketItem ? prod.basketQty : (STATE.cart[prod.id] || 0);
             
@@ -751,11 +757,9 @@ const BASKETS = [
             STATE.prods.forEach(p => { 
                 let q = STATE.cart[p.id] || 0; 
                 
-                // Atualiza Lista Padrão
                 let els = document.querySelectorAll('#action-card-' + p.id); 
                 els.forEach(el => { el.innerHTML = q === 0 ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${p.id}', event)">${iconPlus}</div>` : `<div class="qty-controls"><button class="qty-btn" onclick="updateCartItem('${p.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display">${q}</span><button class="qty-btn" onclick="updateCartItem('${p.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`; }); 
                 
-                // Atualiza Mini Cards
                 let miniEls = document.querySelectorAll('#mini-action-' + p.id);
                 miniEls.forEach(el => {
                     el.innerHTML = q === 0 
@@ -763,7 +767,6 @@ const BASKETS = [
                         : `<div class="qty-controls" style="width: 70px; height: 28px; margin-left: auto;"><button class="qty-btn" style="width: 20px; font-weight:900;" onclick="updateCartItem('${p.id}', -1); event.stopPropagation();">-</button><span class="qty-display" style="font-size: 13px;">${q}</span><button class="qty-btn" style="width: 20px; font-weight:900;" onclick="updateCartItem('${p.id}', 1); event.stopPropagation();">+</button></div>`;
                 });
 
-                // Atualiza Grade Catálogo Rápido
                 let catEls = document.querySelectorAll('#catalogo-action-' + p.id);
                 catEls.forEach(el => {
                     el.innerHTML = q === 0 
@@ -849,7 +852,16 @@ const BASKETS = [
                         <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
                     </a>`;
 
-            // Botão Novo: Catálogo Rápido
+            htmlMercado += `<a href="#/combos" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
+                        <div style="display:flex; align-items:center; gap:14px;">
+                            <div style="width: 38px; height: 38px; border-radius: 10px; background: #fdf2f8; display:flex; align-items:center; justify-content:center; color: #db2777;">
+                                <svg class="svg-icon" style="width: 1.2em; height: 1.2em;" viewBox="0 0 24 24"><path d="M20 12v10H4V12M22 7H2v5h20V7zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"></path></svg>
+                            </div>
+                            <span style="font-size: 16px; font-weight: 900; color: #db2777;">KITS PROMOCIONAIS</span>
+                        </div>
+                        <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
+                    </a>`;
+
             htmlMercado += `<a href="#/catalogo" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
                         <div style="display:flex; align-items:center; gap:14px;">
                             <div style="width: 38px; height: 38px; border-radius: 10px; background: #eff6ff; display:flex; align-items:center; justify-content:center; color: #3b82f6;">
@@ -877,9 +889,6 @@ const BASKETS = [
             lazyLoadImages();
         }
 
-        // ==========================================
-        // NOVO MÓDULO: CATÁLOGO RÁPIDO
-        // ==========================================
         window.renderCatalogoRapido = function() {
             document.title = "Catálogo Rápido - Dona Antônia";
             let categoriasSet = new Set();
@@ -887,7 +896,6 @@ const BASKETS = [
             
             let sortedCats = Array.from(categoriasSet).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b));
 
-            // PASSO NOVO: Recupera a categoria que estava antes, em vez de forçar o 'Todos'
             let activeCat = STATE.activeCatalogoCat || 'Todos';
 
             let chipsHtml = `<div class="chip-cat ${activeCat === 'Todos' ? 'active' : ''}" id="chip-Todos" onclick="changeCatalogoCategory('Todos')">Todos</div>`;
@@ -895,7 +903,6 @@ const BASKETS = [
                 chipsHtml += `<div class="chip-cat ${activeCat === c ? 'active' : ''}" id="chip-${getFriendlySlug(c)}" onclick="changeCatalogoCategory('${c}')">${c}</div>`;
             });
 
-            // Ajustei também o topo para ser fundo branco '#fff' e combinar perfeitamente com a grade branca.
             let html = `
             <div style="position: sticky; top: -15px; background: #fff; z-index: 100; margin: -15px 0 0 0; padding-top: 15px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
                 <div style="display: flex; align-items: center; padding: 0 15px 10px 15px;">
@@ -913,11 +920,9 @@ const BASKETS = [
             
             $('vitrine').innerHTML = html;
             
-            // Mantém a categoria no estado da aplicação
             STATE.activeCatalogoCat = activeCat;
             renderCatalogoGrid(activeCat);
 
-            // Garante que a barra de chips role para ficar visível onde o botão selecionado está
             requestAnimationFrame(() => {
                 let activeChip = document.querySelector('.chip-cat.active');
                 if (activeChip) activeChip.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
@@ -936,8 +941,6 @@ const BASKETS = [
             }
             
             renderCatalogoGrid(cat);
-
-            // NOVA LÓGICA: Rola a grade inteira para o começo com animação suave
             $('vitrine').scrollTo({ top: 0, behavior: 'smooth' });
         };
 
@@ -956,8 +959,6 @@ const BASKETS = [
                     : `<div class="mini-qty-controls"><button class="mini-qty-btn" onclick="updateCartItem('${p.id}', -1); event.stopPropagation();">-</button><span class="mini-qty-display">${q}</span><button class="mini-qty-btn" onclick="updateCartItem('${p.id}', 1); event.stopPropagation();">+</button></div>`;
                 
                 let esgotadoTag = (p.stock <= 0) ? `<div style="position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.85); color: #fff; padding: 2px 4px; border-radius: 4px; font-weight: 900; font-size: 9px; z-index: 10;">ESGOTADO</div>` : '';
-
-                // NOVA LÓGICA: Pegando a embalagem e formatando de forma leve e discreta
                 let embalagem = p.embalagem || extractVolume(p.name);
                 let embalagemHtml = embalagem ? `<div style="font-size: 11px; color: #475569; font-weight: 500; margin-bottom: 2px;">${embalagem}</div>` : '';
 
@@ -984,7 +985,6 @@ const BASKETS = [
             $('catalogo-grid-container').innerHTML = gridHtml;
             lazyLoadImages();
         }
-        // ==========================================
 
         function renderCestas() {
             let html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.location.hash='#/'" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Cestas Básicas</div><div class="products-grid">`;
@@ -1008,6 +1008,39 @@ const BASKETS = [
                         </div>
                         <div class="card-action-area" style="width: 100%;">
                             <div class="btn-quick-add-list" style="width: 100%; height: 46px; border-radius: 12px; font-size: 15px; font-weight: 900; color: #fff; background: var(--text-dark);">Ver Cesta</div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            html += '</div></div>';
+            $('vitrine').innerHTML = html;
+        }
+
+        function renderCombos() {
+            let html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.location.hash='#/'" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Kits Promocionais</div><div class="products-grid">`;
+            
+            if (dynamicCombos.length === 0) {
+                html += `<div style="padding: 40px; text-align: center; color: var(--text-light); grid-column: 1/-1;">Nenhum kit promocional ativo no momento.</div>`;
+            }
+
+            dynamicCombos.forEach(combo => {
+                let displayPrice = combo.preco;
+                let crossedPrice = combo.precoOriginal > combo.preco ? combo.precoOriginal : null;
+                let oldPriceHtml = crossedPrice ? `<div class="old-price" style="font-size: 14px; margin-bottom: 2px;">${fmt(crossedPrice)}</div>` : '';
+                
+                html += `
+                <div class="product-card-list" onclick="openBasketDetail('${combo.id}')" style="flex-direction: column; padding: 20px; align-items: flex-start;">
+                    <div style="width: 100%; height: 220px; border-radius: 16px; overflow: hidden; margin-bottom: 16px; background: #f8fafc; flex-shrink: 0; display:flex; align-items:center; justify-content:center; border: 1px solid var(--border-light);">
+                        <img src="${combo.imagem}" style="width: 100%; height: 100%; object-fit: contain; padding: 10px;" alt="${combo.nome}" onerror="this.src='../img/logoantonia5.png'">
+                    </div>
+                    <div class="product-details" style="width: 100%; padding: 0;">
+                        <div class="product-name-list" style="font-size: 20px; font-weight: 900; margin-bottom: 8px; color: var(--text-dark);">${combo.nome}</div>
+                        <div class="price-container" style="margin-bottom: 16px;">
+                            ${oldPriceHtml}
+                            <div class="tag-preco-list" style="color: var(--danger); font-size: 24px;">${fmt(displayPrice)}</div>
+                        </div>
+                        <div class="card-action-area" style="width: 100%;">
+                            <div class="btn-quick-add-list" style="width: 100%; height: 46px; border-radius: 12px; font-size: 15px; font-weight: 900; color: #fff; background: var(--text-dark);">Ver Kit</div>
                         </div>
                     </div>
                 </div>`;
@@ -1145,7 +1178,8 @@ const BASKETS = [
         }
 
         window.openBasketDetail = function(basketId) {
-            const basket = BASKETS.find(b => b.id === basketId); if (!basket) return;
+            const basket = BASKETS.find(b => b.id === basketId) || dynamicCombos.find(c => c.id === basketId); 
+            if (!basket) return;
             window.currentBasketId = basketId;
             
             $('basketModalTopInfo').style.display = 'block';
@@ -1160,7 +1194,8 @@ const BASKETS = [
             $('basketModalImg').src = basket.imagem; $('basketModalTitle').innerText = basket.nome;
             
             let prices = calculateBasketPrices(basketId);
-            let crossedPrice = prices.atacado > 0 ? prices.original : null;
+            let crossedPrice = prices.atacado > 0 ? prices.original : (basket.isCombo && prices.original > prices.final ? prices.original : null);
+            
             $('basketModalPrice').innerHTML = crossedPrice 
                 ? `<span style="text-decoration: line-through; font-size: 16px; color: #94a3b8; margin-right: 10px;">De: ${fmt(crossedPrice)}</span> Por: ${fmt(prices.final)}` 
                 : "Valor: " + fmt(prices.final);
@@ -1190,17 +1225,17 @@ const BASKETS = [
                     totalItemsCount += item.qty; 
                     item.pObj.basketQty = item.qty;
                     valorSomaDosItensAtuais += (item.qty * item.pObj.price);
-                    if (item.qty >= 3) {
+                    if (item.qty >= 3 && !window.currentBasketId.startsWith('combo_')) {
                         totalAtacadoItemsAtuais += (item.pObj.price * 0.05) * item.qty;
                     }
                     html += renderCardHTML(item.pObj, true, index);
                 });
                 container.innerHTML = html; 
                 
-                const basket = BASKETS.find(b => b.id === window.currentBasketId);
+                const basket = BASKETS.find(b => b.id === window.currentBasketId) || dynamicCombos.find(c => c.id === window.currentBasketId);
                 
                 let dyn = getBasketDynamicPrice(basket);
-                let diferencaFixa = dyn.taxaExtra; 
+                let diferencaFixa = basket.isCombo ? 0 : dyn.taxaExtra; 
                 
                 let precoDinamicoAtual = Math.ceil(valorSomaDosItensAtuais + diferencaFixa - totalAtacadoItemsAtuais);
                 let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
@@ -1236,7 +1271,7 @@ const BASKETS = [
                 let diffContainer = $('basket-diff-container');
                 if(diffContainer) {
                     if(diffAdded.length > 0 || diffRemoved.length > 0) {
-                        let diffHtml = '<div style="font-weight: 800; margin-bottom: 8px; color: var(--text-dark);">Alterações feitas na cesta:</div>';
+                        let diffHtml = '<div style="font-weight: 800; margin-bottom: 8px; color: var(--text-dark);">Alterações feitas:</div>';
                         if(diffAdded.length > 0) diffHtml += '<div style="color: var(--success); margin-bottom: 6px;"><strong>+ Adicionados:</strong><br>' + diffAdded.map(x => `+ ${x}`).join('<br>') + '</div>';
                         if(diffRemoved.length > 0) diffHtml += '<div style="color: var(--danger);"><strong>- Retirados:</strong><br>' + diffRemoved.map(x => `- ${x}`).join('<br>') + '</div>';
                         diffContainer.innerHTML = diffHtml; diffContainer.style.display = 'block';
@@ -1254,7 +1289,7 @@ const BASKETS = [
             let itemNome = currentBasketItems[index].pObj.name;
             currentBasketItems.splice(index, 1);
             renderBasketItemsList();
-            showToast("O item " + itemNome + " foi retirado da cesta.");
+            showToast("O item " + itemNome + " foi retirado.");
         };
 
        window.openSwapModal = function(index) {
@@ -1337,7 +1372,7 @@ const BASKETS = [
 
        window.addBasketToCart = function() {
             if (!window.currentBasketId) return; 
-            const basket = BASKETS.find(b => b.id === window.currentBasketId); 
+            const basket = BASKETS.find(b => b.id === window.currentBasketId) || dynamicCombos.find(c => c.id === window.currentBasketId); 
             if (!basket) return;
             
             let origItemsMap = {}; 
@@ -1349,13 +1384,12 @@ const BASKETS = [
             });
 
             let dyn = getBasketDynamicPrice(basket);
-            let diferencaFixa = dyn.taxaExtra;
+            let diferencaFixa = basket.isCombo ? 0 : dyn.taxaExtra;
 
             let basketDiff = { id: basket.id, name: basket.nome, removed: [], added: [] }; 
             let hasChanges = false; 
             let addedCount = 0;
 
-            // 1. REGRA INFALÍVEL: Verifica se algum produto original foi completamente excluído ou reduzido
             Object.keys(origItemsMap).forEach(pid => {
                 let origQty = origItemsMap[pid];
                 let currentItem = currentBasketItems.find(item => (item.pObj.codigo || item.pObj.id) === pid);
@@ -1366,7 +1400,6 @@ const BASKETS = [
                 }
             });
 
-            // 2. Verifica se algo foi adicionado e atualiza o carrinho
             currentBasketItems.forEach(item => { 
                 let pid = item.pObj.codigo || item.pObj.id; 
                 let origQty = origItemsMap[pid] || 0; 
@@ -1537,13 +1570,11 @@ const BASKETS = [
             let btn = $('btn-send-order'); 
             let warningMsg = $('min-order-warning');
             
-            // O botão fica sempre ativo e verde agora
             btn.disabled = false; 
             btn.innerHTML = `<svg class="svg-icon-fill" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg> Enviar para o WhatsApp`; 
             btn.style.background = 'var(--whatsapp)'; 
             btn.style.boxShadow = '0 4px 15px rgba(37, 211, 102, 0.3)'; 
             
-            // Exibe a mensagem caso o total seja menor que MIN_ORDER
             if (finalTotal < MIN_ORDER) { 
                 if(warningMsg) warningMsg.style.display = 'block'; 
             } else { 
@@ -1558,18 +1589,15 @@ const BASKETS = [
                 let txt = count > 99 ? '99+' : count;
                 badges.forEach(b => { b.style.display = 'block'; b.innerText = txt; });
                 
-                // Atualiza o valor e ativa o novo botão da barra inferior
                 if (bottomSendTotal) bottomSendTotal.innerText = fmt(finalTotal);
                 if (bottomSendBtn) {
                     bottomSendBtn.disabled = false;
-                    // Se o valor for menor que o pedido mínimo, muda para laranja, senão fica verde (WhatsApp)
                     bottomSendBtn.style.background = finalTotal < MIN_ORDER ? '#f59e0b' : 'var(--whatsapp)';
                     bottomSendBtn.style.boxShadow = finalTotal < MIN_ORDER ? '0 4px 12px rgba(245, 158, 11, 0.3)' : '0 4px 12px rgba(37, 211, 102, 0.3)';
                 }
             } else { 
                 badges.forEach(b => { b.style.display = 'none'; });
                 
-                // Desativa e zera o botão da barra inferior
                 if (bottomSendTotal) bottomSendTotal.innerText = 'R$ 0,00';
                 if (bottomSendBtn) {
                     bottomSendBtn.disabled = true;
@@ -1613,9 +1641,8 @@ const BASKETS = [
                 basketInfo = "\n------------------------------";
                 Object.keys(STATE.basketCustomizations).forEach(bId => {
                     let diff = STATE.basketCustomizations[bId];
-                    // Aqui definimos a regra exata pedida: ALTERADA ou PADRÃO
                     let statusLabel = diff.changed ? "ALTERADA" : "PADRÃO";
-                    basketInfo += `\nCesta ${diff.name} ${statusLabel}`;
+                    basketInfo += `\nCesta/Kit ${diff.name} ${statusLabel}`;
                 });
             }
 
@@ -1624,16 +1651,14 @@ const BASKETS = [
 
             let msg = "";
 
-            // LÓGICA CONDICIONAL: Novo Pedido vs Adicionar ao Existente
             if (final >= MIN_ORDER) {
-                // PEDIDO NOVO: Chama a integração (Make) e gera texto padrão
                 const makePayload = {
                     pedido: {
                         id: orderId,
                         itens: pedidoItens,
                         total: final,
                         desconto: totalDescontoFormatado,
-                        observacoes: hasBasket ? "Pedido com Cesta" : "Pedido Comum"
+                        observacoes: hasBasket ? "Pedido com Cesta/Kit" : "Pedido Comum"
                     }
                 };
 
@@ -1647,7 +1672,6 @@ const BASKETS = [
                     console.error("Erro na integração:", err);
                 }
 
-                // O texto exato da mensagem nova com as tuas regras
                 msg = `*PEDIDO #${orderId}*
 ------------------------------
 *ITENS SELECIONADOS*
@@ -1658,7 +1682,6 @@ ${itemsTxt}
 Olá, esse é o meu pedido. Quais informações preciso enviar? Voce tem algum link do site com as ofertas?`;
 
             } else {
-                // ADICIONAR AO PEDIDO: Ignora a integração e gera texto de acréscimo
                 msg = `*ADICIONAR AO PEDIDO ANTERIOR*
 ------------------------------
 Olá! Gostaria de adicionar os itens abaixo ao pedido que fiz anteriormente:
@@ -1713,35 +1736,18 @@ Por favor, podem incluir na minha entrega?`;
         products.forEach(p => {
             p.discountPercent = 0; 
             p.oldPrice = p.price;
-            p.hasExplicitOffer = false; // Marcador para saber se é uma oferta do JSON
+            p.hasExplicitOffer = false;
 
-            // 1. NOVA LÓGICA: Verifica se existe oferta no JSON e se está dentro da validade
             if (p.preco_oferta && p.validade_oferta) {
                 let validadeOferta = new Date(p.validade_oferta);
-                // Confirma se a oferta não expirou e se é menor que o preço original
                 if (validadeOferta >= now && p.preco_oferta < p.oldPrice) {
                     p.hasExplicitOffer = true;
-                    p.price = p.preco_oferta; // Define o novo preço
-                    // Calcula a percentagem exata para aparecer a etiqueta vermelha
+                    p.price = p.preco_oferta; 
                     p.discountPercent = Math.round(((p.oldPrice - p.preco_oferta) / p.oldPrice) * 100);
                 }
             }
             
-            // 2. LÓGICA ANTIGA (Vencimento): Só aplica se o produto não tiver uma oferta explícita
-            if (!p.hasExplicitOffer && p.vencimento) {
-                let partes = p.vencimento.split('/'); 
-                if(partes.length === 3) {
-                    let vDate = new Date(partes[2], partes[1] - 1, partes[0]); 
-                    let daysToExpiry = (vDate - now) / (1000 * 60 * 60 * 24);
-                    if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 20; 
-                    else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 15; 
-                    else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 10;
-                    else if (daysToExpiry > 90 && daysToExpiry <= 120) p.discountPercent = 5;
-                }
-            }
-            
-            // 3. SEPARAÇÃO PARA OFERTAS ALEATÓRIAS (Mantemos para encher a loja de ofertas)
-            if (p.discountPercent === 0) eligibleForRandom.push(p);
+            if (p.discountPercent === 0 && p.categoria !== 'Cestas') eligibleForRandom.push(p);
         });
         
         let diaDaSemana = now.getDay();
@@ -1763,11 +1769,52 @@ Por favor, podem incluir na minha entrega?`;
             else if (r5 > 0) { p.discountPercent = 5; r5--; } 
         });
         
-        // 4. ATUALIZAÇÃO DOS PREÇOS (Exceto os que já vieram definidos do JSON)
         products.forEach(p => { 
             if (!p.hasExplicitOffer && p.discountPercent > 0) {
                 p.price = p.oldPrice * (1 - p.discountPercent / 100); 
             }
+        });
+    }
+
+    window.generateCombosFromProducts = function() {
+        dynamicCombos = [];
+        let comboMap = {};
+        let now = new Date();
+        
+        STATE.prods.forEach(p => {
+            if (p.combo_id && p.validade_combo) {
+                let validadeCombo = new Date(p.validade_combo);
+                if (validadeCombo >= now) {
+                    if (!comboMap[p.combo_id]) comboMap[p.combo_id] = [];
+                    comboMap[p.combo_id].push(p);
+                }
+            }
+        });
+        
+        Object.keys(comboMap).forEach(comboId => {
+            let items = comboMap[comboId];
+            let precoTotal = 0;
+            let precoOriginalTotal = 0;
+            let produtosArr = [];
+            
+            items.forEach(p => {
+                precoTotal += p.price;
+                precoOriginalTotal += p.oldPrice; 
+                produtosArr.push(`1x ${p.codigo || p.id}`);
+            });
+            
+            let comboName = comboId.replace(/_/g, ' ').replace(/-/g, ' ');
+            comboName = formatName(comboName);
+            
+            dynamicCombos.push({
+                id: "combo_" + comboId,
+                nome: comboName,
+                preco: precoTotal,
+                precoOriginal: precoOriginalTotal,
+                imagem: items[0].img,
+                produtos: produtosArr,
+                isCombo: true
+            });
         });
     }
 
@@ -1784,12 +1831,14 @@ Por favor, podem incluir na minha entrega?`;
                         categoria: p.categoria || "Outros", subcategoria: p.subcategoria || "", 
                         vencimento: p.validade || p.vencimento || null, embalagem: p.embalagem || extractVolume(p.nome),
                         marca: p.marca || "", descricao: p.descricao || "", gtin: p.gtin || "",
-                        // Adicionamos a leitura dos novos dados
                         preco_oferta: p.preco_oferta ? parseFloat(p.preco_oferta) : null,
-                        validade_oferta: p.validade_oferta || null
+                        validade_oferta: p.validade_oferta || null,
+                        combo_id: p.combo_id || null,
+                        validade_combo: p.validade_combo || null
                     };
                 });
                 aplicarDescontos(STATE.prods);
+                generateCombosFromProducts();
             }
             loadCart(); updateTotals(); handleRoute();
         } catch (e) { console.error("Erro na inicialização:", e); }
