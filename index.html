@@ -1776,7 +1776,7 @@ Por favor, podem incluir na minha entrega?`;
         });
     }
 
-    window.generateCombosFromProducts = function() {
+   window.generateCombosFromProducts = function() {
         dynamicCombos = [];
         let comboMap = {};
         let now = new Date();
@@ -1811,7 +1811,9 @@ Por favor, podem incluir na minha entrega?`;
                 nome: comboName,
                 preco: precoTotal,
                 precoOriginal: precoOriginalTotal,
-                imagem: items[0].img,
+                // AQUI FOI FEITA A ALTERAÇÃO: 
+                // O sistema agora procura uma imagem com o nome exato do ID do combo (ex: Kit_Heinz.webp)
+                imagem: `/site/img/produtos/${comboId}.webp`, 
                 produtos: produtosArr,
                 isCombo: true
             });
