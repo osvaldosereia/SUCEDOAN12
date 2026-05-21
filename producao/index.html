@@ -768,13 +768,70 @@
     }
 
    function salvarProdutosJSON() {
-        enqueueTask("Produtos.json", async () => {
+        enqueueTask("Merge Seguro e Salvar Produtos.json", async () => {
+            mostrarAlerta("Verificando atualizações de outras máquinas...", "aviso");
+            
+            let produtosNuvem = [];
+            try {
+                // 1. Baixa o estado atual do GitHub antes de enviar
+                const fileData = await GitHubAPI.getFileData('site/produtos.json');
+                if (fileData && fileData.content) {
+                    const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
+                    produtosNuvem = JSON.parse(decodedStr);
+                }
+            } catch (e) {
+                console.warn("Nenhum arquivo anterior encontrado na nuvem ou erro de leitura. Criando nova base.");
+            }
+
+            let localMap = new Map(products.map(p => [p.codigo, p]));
+            let houveMudancaExterna = false;
+
+            // 2. Compara a Nuvem com o Local item por item
+            if (Array.isArray(produtosNuvem) && produtosNuvem.length > 0) {
+                produtosNuvem.forEach(pNuvem => {
+                    const pLocal = localMap.get(pNuvem.codigo);
+                    
+                    if (pLocal) {
+                        // O produto existe em ambas as máquinas. Validação pelo timestamp (last_update)
+                        const timeLocal = pLocal.last_update || 0;
+                        const timeNuvem = pNuvem.last_update || 0;
+                        
+                        if (timeNuvem > timeLocal) {
+                            // A nuvem tem uma versão mais recente (Outra máquina atualizou e salvou antes)
+                            const index = products.findIndex(x => x.codigo === pNuvem.codigo);
+                            if (index !== -1) {
+                                // Atualizamos a memória local com os dados da nuvem
+                                products[index] = { ...products[index], ...pNuvem };
+                                houveMudancaExterna = true;
+                            }
+                        }
+                        // Remove do map pois já foi analisado
+                        localMap.delete(pNuvem.codigo);
+                    } else {
+                        // O produto existe na nuvem mas não no local (Foi criado por outra máquina)
+                        products.unshift(pNuvem);
+                        houveMudancaExterna = true;
+                    }
+                });
+            }
+
+            // 3. Se a nuvem trouxe novidades (alterações de outras máquinas), salvamos localmente e atualizamos a tela
+            if (houveMudancaExterna) {
+                await saveDataLocally();
+                renderGrid(ultimoTermoPesquisa, true);
+                mostrarAlerta("Dados de outras máquinas foram integrados com sucesso!", "sucesso");
+            }
+
+            // 4. Agora que o array 'products' está perfeitamente fundido (Local + Nuvem), enviamos o arquivo final
             const vitrine = sanitizeProductsForExport(products);
-            await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização de Produtos`);
+            await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização com Merge Seguro de Produtos`);
         });
 
-        enqueueTask("Produtos.csv e JSON (Meta)", async () => {
+        enqueueTask("Gerar Produtos.csv e JSON (Meta)", async () => {
+            // Pausa de segurança de 60s
             await new Promise(resolve => setTimeout(resolve, 60000));
+            
+            // O array 'products' aqui JÁ ESTÁ FUNDIDO pela tarefa anterior. É 100% seguro gerar o Meta agora.
             const vitrine = sanitizeProductsForExport(products);
             
             // Mapeia os dados para a estrutura exigida pela Meta
