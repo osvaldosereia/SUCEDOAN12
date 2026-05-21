@@ -979,76 +979,63 @@
 
             const itensParaAnalisar = skuEspecifico ? products.filter(p => p.codigo === skuEspecifico) : products;
 
-            itensParaAnalisar.forEach(p => {
-                if (p.situacao === 'I') return; // Ignora inativos
-                if (!p.preco) return; // Precisa ter preço base
+          itensParaAnalisar.forEach(p => {
+    if (p.situacao === 'I') return;
+    if (!p.preco) return;
 
-                let novoPrecoOferta = "";
-                let novaValidadeOferta = "";
-                let novoEstoque = parseFloat(p.estoque) || 0;
+    // --- NOVA LÓGICA DE PRIORIDADE ---
+    // 1. Verificamos se já existe um valor de oferta definido manualmente
+    const temOfertaManual = p.preco_oferta !== "" && p.preco_oferta !== null && p.preco_oferta !== undefined;
 
-                const precoOriginal = parseFloat(p.preco) || 0;
-                const precoCusto = parseFloat(p.preco_custo) || 0;
+    let novoPrecoOferta = p.preco_oferta; // Começa assumindo o que já existe
+    let novaValidadeOferta = p.validade_oferta;
+    let novoEstoque = parseFloat(p.estoque) || 0;
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
 
-                let temOfertaPorValidade = false;
+    // 2. Regra de Segurança: Se a validade do produto expirou, a oferta cai e o estoque zera
+    if (p.validade && p.validade.includes('/')) {
+        const partesData = p.validade.split('/');
+        const dataValidade = new Date(partesData[2], partesData[1] - 1, partesData[0]);
+        if (dataValidade < hoje) {
+            novoEstoque = 0;
+            novoPrecoOferta = "";
+            novaValidadeOferta = "";
+        }
+    }
 
-                // Regra 1: Inteligência de Validade (Vencimento Curto)
-                if (p.validade && p.validade.includes('/')) {
-                    const partesData = p.validade.split('/');
-                    const dataValidade = new Date(partesData[2], partesData[1] - 1, partesData[0]);
-                    const diffTempo = dataValidade.getTime() - hoje.getTime();
-                    const diasRestantes = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
+    // 3. Cálculo automático SÓ SE não houver oferta manual (e se a validade não tiver expirado)
+    if (!temOfertaManual && novoEstoque > 0 && p.validade && p.validade.includes('/')) {
+        const partesData = p.validade.split('/');
+        const dataValidade = new Date(partesData[2], partesData[1] - 1, partesData[0]);
+        const diasRestantes = Math.ceil((dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        const precoOriginal = parseFloat(p.preco) || 0;
+        const precoCusto = parseFloat(p.preco_custo) || 0;
 
-                    if (diasRestantes <= 0) {
-                        novoEstoque = 0;
-                        novoPrecoOferta = "";
-                        novaValidadeOferta = "";
-                        temOfertaPorValidade = true;
-                    } else if (diasRestantes <= 30) {
-                        let calculado = precoOriginal * 0.75;
-                        novoPrecoOferta = Math.max(calculado, precoCusto);
-                        novaValidadeOferta = formatarFimOferta(p.validade);
-                        temOfertaPorValidade = true;
-                    } else if (diasRestantes <= 60) {
-                        let calculado = precoOriginal * 0.85;
-                        novoPrecoOferta = Math.max(calculado, precoCusto);
-                        novaValidadeOferta = formatarFimOferta(p.validade);
-                        temOfertaPorValidade = true;
-                    } else if (diasRestantes <= 90) {
-                        let calculado = precoOriginal * 0.90;
-                        novoPrecoOferta = Math.max(calculado, precoCusto);
-                        novaValidadeOferta = formatarFimOferta(p.validade);
-                        temOfertaPorValidade = true;
-                    }
-                }
+        if (diasRestantes <= 30) {
+            novoPrecoOferta = Math.max(precoOriginal * 0.75, precoCusto);
+            novaValidadeOferta = formatarFimOferta(p.validade);
+        } else if (diasRestantes <= 60) {
+            novoPrecoOferta = Math.max(precoOriginal * 0.85, precoCusto);
+            novaValidadeOferta = formatarFimOferta(p.validade);
+        } else if (diasRestantes <= 90) {
+            novoPrecoOferta = Math.max(precoOriginal * 0.90, precoCusto);
+            novaValidadeOferta = formatarFimOferta(p.validade);
+        }
+    }
+    // --- FIM DA NOVA LÓGICA ---
 
-                // Regra 2: Kits Promocionais / Combos (Se não houver oferta por validade ativa)
-                if (!temOfertaPorValidade) {
-                    if (p.combo_id && p.combo_id.trim() !== "" && p.validade_combo) {
-                        const dataFimCombo = new Date(p.validade_combo);
-                        
-                        // Se o combo ainda não expirou
-                        if (hoje < dataFimCombo) {
-                            let calculado = precoOriginal * 0.90; // 10% de Desconto
-                            novoPrecoOferta = Math.max(calculado, precoCusto); // Proteção de custo
-                            novaValidadeOferta = p.validade_combo; // Herda o fim do combo
-                        }
-                    }
-                }
-
-                if (novoPrecoOferta !== "") novoPrecoOferta = parseFloat(novoPrecoOferta.toFixed(2));
-
-                const ofertaAntiga = p.preco_oferta === "" || p.preco_oferta === null ? "" : parseFloat(p.preco_oferta);
-                const estoqueAntigo = parseFloat(p.estoque) || 0;
-
-                if (estoqueAntigo !== novoEstoque || ofertaAntiga !== novoPrecoOferta || p.validade_oferta !== novaValidadeOferta) {
-                    p.estoque = novoEstoque;
-                    p.preco_oferta = novoPrecoOferta;
-                    p.validade_oferta = novaValidadeOferta;
-                    p.last_update = Date.now();
-                    houveMudanca = true;
-                }
-            });
+    // Aplicação das mudanças
+    if (novoPrecoOferta !== "") novoPrecoOferta = parseFloat(parseFloat(novoPrecoOferta).toFixed(2));
+    
+    if (parseFloat(p.estoque) !== novoEstoque || parseFloat(p.preco_oferta || 0) !== (novoPrecoOferta || 0) || p.validade_oferta !== novaValidadeOferta) {
+        p.estoque = novoEstoque;
+        p.preco_oferta = novoPrecoOferta;
+        p.validade_oferta = novaValidadeOferta;
+        p.last_update = Date.now();
+        houveMudanca = true;
+    }
+});
 
             if (houveMudanca) {
                 await saveDataLocally();
