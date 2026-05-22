@@ -728,16 +728,36 @@
             return text.toString().replace(/<\/?[^>]+(>|$)/g, "");
         }
 
-        function salvarProdutosJSON() {
-            // 1. Salva a base de dados principal no Firebase (À prova de falhas)
+        async function salvarProdutosJSON() {
+            mostrarAlerta("Lendo dados do armazenamento local...", "aviso");
+
+            // 1. Força a leitura do Local Storage para garantir que enviamos a versão mais recente
+            try {
+                const dadosLocais = await localforage.getItem(STORAGE_KEY);
+                if (dadosLocais && Array.isArray(dadosLocais)) {
+                    products = dadosLocais; // Atualiza a variável com o que está no disco
+                }
+            } catch (e) {
+                console.error("Erro ao ler o armazenamento local:", e);
+            }
+
+            // 2. Salva a base de dados principal no Firebase (À prova de falhas)
             enqueueTask("Salvar Produtos no Firebase", async () => {
                 mostrarAlerta("Salvando alterações no Firebase...", "aviso");
                 const vitrine = sanitizeProductsForExport(products);
                 await FirebaseAPI.salvarProdutos(vitrine);
-                mostrarAlerta("Dados salvos e sincronizados com sucesso!", "sucesso");
+                mostrarAlerta("Dados salvos no Firebase com sucesso!", "sucesso");
             });
 
-            // 2. Gera os catálogos da Meta Ads no GitHub (Para os anúncios)
+            // 3. NOVO: Salva o arquivo JSON principal no GitHub
+            enqueueTask("Salvar JSON Principal no GitHub", async () => {
+                mostrarAlerta("Enviando base principal para o GitHub...", "aviso");
+                const vitrine = sanitizeProductsForExport(products);
+                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Banco de Dados Principal`);
+                mostrarAlerta("Sincronização com o GitHub concluída!", "sucesso");
+            });
+
+            // 4. Gera os catálogos da Meta Ads no GitHub (Para os anúncios)
             enqueueTask("Gerar Catálogo Meta Ads (GitHub)", async () => {
                 const vitrine = sanitizeProductsForExport(products);
                 const csvData = vitrine.map(p => mapearProdutoParaMeta(p));
