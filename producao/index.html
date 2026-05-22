@@ -958,10 +958,16 @@
                         novoPrecoOferta = Math.max(precoOriginal * 0.75, precoCusto);
                         novaValidadeOferta = formatarFimOferta(p.validade);
                     } else if (diasRestantes <= 60) {
-                        novoPrecoOferta = Math.max(precoOriginal * 0.85, precoCusto);
+                        novoPrecoOferta = Math.max(precoOriginal * 0.80, precoCusto);
                         novaValidadeOferta = formatarFimOferta(p.validade);
                     } else if (diasRestantes <= 90) {
+                        novoPrecoOferta = Math.max(precoOriginal * 0.85, precoCusto);
+                        novaValidadeOferta = formatarFimOferta(p.validade);
+                        } else if (diasRestantes <= 120) {
                         novoPrecoOferta = Math.max(precoOriginal * 0.90, precoCusto);
+                        novaValidadeOferta = formatarFimOferta(p.validade);
+                        } else if (diasRestantes <= 150) {
+                        novoPrecoOferta = Math.max(precoOriginal * 0.95, precoCusto);
                         novaValidadeOferta = formatarFimOferta(p.validade);
                     }
                 }
