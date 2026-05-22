@@ -2,157 +2,209 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Estoque Rápido</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Inter', sans-serif; background: #fafafa; margin: 0; padding: 0; color: #000; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        /* =========================================================
+           1. RESET E ESTRUTURA BASE (Sem Rolagem)
+           ========================================================= */
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #f4f4f5; 
+            margin: 0; padding: 0; color: #0f172a; 
+            height: 100dvh; /* dvh adapta-se à barra do navegador mobile */
+            display: flex; flex-direction: column; 
+            overflow: hidden; /* Proíbe a rolagem estritamente */
+        }
         
-        .header-area { padding: 5px; background: white; border-bottom: 1px solid #ddd; }
-        
-        /* Câmera centralizada e ajustada */
+        /* =========================================================
+           2. CABEÇALHO E CÂMERA
+           ========================================================= */
+        .header-area { 
+            flex: 0 0 auto; padding: 8px; background: white; 
+            border-bottom: 1px solid #e2e8f0; 
+        }
         #reader { 
-            width: 100%; 
-            height: 200px; 
-            margin: 0 auto 5px; 
-            background: #000;
-            position: relative;
-            overflow: hidden;
+            width: 100%; height: 25dvh; min-height: 100px; 
+            margin: 0 auto 8px; background: #000;
+            position: relative; overflow: hidden; border-radius: 8px;
         }
         #reader video {
-            object-fit: cover !important;
-            width: 100% !important;
-            height: 100% !important;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            object-fit: cover !important; width: 100% !important; height: 100% !important;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
         }
         
-        .content-area { flex: 1; display: flex; flex-direction: column; padding: 10px; overflow: hidden; }
-        
-        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .search-row { display: flex; gap: 6px; height: 36px; }
+        .search-row input { 
+            flex: 1; border-radius: 8px; border: 1px solid #cbd5e1; 
+            padding: 0 10px; font-size: 14px; outline: none;
+        }
+        .search-row input:focus { border-color: #0f172a; }
+        .search-row button { 
+            padding: 0 16px; background: #0f172a; color: #fff; 
+            border: none; border-radius: 8px; font-weight: 800; font-size: 12px;
+        }
+
+        /* =========================================================
+           3. ÁREA DE DADOS DO PRODUTO (Compacta)
+           ========================================================= */
+        .content-area { 
+            flex: 1 1 auto; display: flex; flex-direction: column; 
+            padding: 10px; overflow: hidden; justify-content: space-evenly; 
+        }
+        .prod-title { 
+            font-size: 15px; font-weight: 800; text-align: center; 
+            color: #0f172a; margin: 0; white-space: nowrap; 
+            overflow: hidden; text-overflow: ellipsis; 
+        }
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .form-group { display: flex; flex-direction: column; }
-        .label { font-size: 10px; color: #444; text-transform: uppercase; font-weight: 800; margin-bottom: 2px; }
+        .label { font-size: 9px; color: #64748b; font-weight: 800; margin-bottom: 2px; text-transform: uppercase; }
+        .form-group input { 
+            height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; 
+            font-size: 14px; font-weight: 600; padding: 0 8px; 
+            background: #fff; outline: none;
+        }
+        .form-group input:focus { border-color: #3b82f6; background: #eff6ff; }
         
-        input { 
-            font-size: 16px; 
-            width: 100%; 
-            padding: 10px; 
-            height: 30px; 
-            border: 1px solid #bbb; 
-            border-radius: 8px; 
-            box-sizing: border-box; 
+        /* Destaque para o input de estoque */
+        #val-estoque { color: #2563eb; font-weight: 900; font-size: 16px; text-align: center;}
+
+        /* =========================================================
+           4. BARRA INFERIOR
+           ========================================================= */
+        .bottom-bar { 
+            flex: 0 0 54px; background: #fff; border-top: 1px solid #e2e8f0; 
+            display: flex; align-items: center; justify-content: space-around; z-index: 10; 
+        }
+        .btn-icon { 
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 50%;
+            font-size: 20px; width: 40px; height: 40px; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-icon.primary { background: #22c55e; border-color: #16a34a; color: white; }
+
+        /* =========================================================
+           5. PAINEIS E MODAIS SOBREPOSTOS
+           ========================================================= */
+        .overlay-panel { 
+            display: none; position: fixed; inset: 0; background: #f8fafc; 
+            z-index: 50; padding: 20px; flex-direction: column; gap: 10px;
+        }
+        .overlay-panel h3 { margin: 0 0 10px 0; font-size: 16px; }
+        .overlay-panel input { 
+            height: 40px; border-radius: 8px; border: 1px solid #cbd5e1; 
+            padding: 0 10px; font-size: 14px; margin-bottom: 5px;
+        }
+        .overlay-panel button { 
+            height: 44px; border: none; border-radius: 8px; 
+            font-weight: 800; font-size: 14px; cursor: pointer;
         }
         
-        .bottom-bar { position: fixed; bottom: 0; width: 100%; height: 55px; background: #fff; border-top: 1px solid #ddd; display: flex; align-items: center; justify-content: space-around; z-index: 10; }
-        .btn-icon { background: none; border: none; font-size: 24px; padding: 10px; cursor: pointer; }
-        
-        #config-panel { display: none; padding: 10px; background: #f0f0f0; border-bottom: 1px solid #ddd; font-size: 12px; position: absolute; top: 0; left: 0; right: 0; z-index: 20; }
+        #modal-foto { 
+            display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); 
+            z-index:99; align-items:center; justify-content:center; 
+        }
     </style>
 </head>
 <body>
 
 <div class="header-area">
     <div id="reader"></div>
-    <div style="display:flex; gap:5px;">
-        <input type="text" id="search" placeholder="Código ou Nome..." style="flex:1; height: 40px !important;">
-        <button onclick="buscar()" style="padding: 0 15px; background:#000; color:#fff; border:none; border-radius:6px; font-weight:bold;">BUSCAR</button>
+    <div class="search-row">
+        <input type="text" id="search" placeholder="Código ou Nome...">
+        <button onclick="buscar()">BUSCAR</button>
     </div>
-</div>
-
-<div id="config-panel">
-    <input type="text" id="cfg-user" placeholder="Usuário GitHub" style="margin-bottom:4px;">
-    <input type="text" id="cfg-repo" placeholder="Repositório" style="margin-bottom:4px;">
-    <input type="password" id="cfg-token" placeholder="Token" style="margin-bottom:4px;">
-    <button onclick="saveConfig()" style="width:100%; padding:10px; border:none; background:#000; color:#fff; border-radius:4px;">SALVAR CREDENCIAIS</button>
-    <button onclick="syncData()" style="width:100%; padding:10px; border:none; background:#22c55e; color:#fff; border-radius:4px; margin-top:4px;">SINCRONIZAR DADOS</button>
 </div>
 
 <div class="content-area">
-    <h3 id="display-nome" style="margin:0 0 10px 0; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:800;">Aguardando leitura...</h3>
+    <h3 class="prod-title" id="display-nome">Aguardando leitura...</h3>
     
-    <div class="row">
+    <div class="grid-inputs">
         <div class="form-group"><div class="label">ESTOQUE</div><input type="number" id="val-estoque" onchange="updateCurrent('estoque', this.value)"></div>
         <div class="form-group"><div class="label">VALIDADE</div><input type="date" id="val-validade" onchange="updateCurrent('validade', this.value)"></div>
-    </div>
-    <div class="row">
         <div class="form-group"><div class="label">EAN</div><input type="text" id="val-gtin" onchange="updateCurrent('gtin', this.value)"></div>
         <div class="form-group"><div class="label">EMBALAGEM</div><input type="text" id="val-embalagem" onchange="updateCurrent('embalagem', this.value)"></div>
-    </div>
-    <div class="row">
         <div class="form-group"><div class="label">GÔNDOLA</div><input type="text" id="val-gondola" onchange="updateCurrent('gondola', this.value)"></div>
         <div class="form-group"><div class="label">PRATELEIRA</div><input type="text" id="val-prateleira" onchange="updateCurrent('prateleira', this.value)"></div>
     </div>
 </div>
 
 <div class="bottom-bar">
-    <button class="btn-icon" onclick="toggleConfig()">⚙️</button>
-    <button class="btn-icon" onclick="verFoto()">📷</button>
-    <button class="btn-icon" onclick="saveDataToGithub()">💾</button>
+    <button class="btn-icon" onclick="toggleConfig()" title="Configurações">⚙️</button>
+    <button class="btn-icon" onclick="verFoto()" title="Ver Foto">📷</button>
+    <button class="btn-icon primary" onclick="saveDataToFirebase()" title="Sincronizar com Nuvem">💾</button>
 </div>
 
-<div id="modal-foto" style="display:none; position:fixed; inset:0; background:#000; z-index:99; align-items:center; justify-content:center;" onclick="this.style.display='none'">
-    <img id="img-ampliada" style="max-width:95%; border-radius:8px;">
+<div id="config-panel" class="overlay-panel">
+    <h3>Configurações de Sincronização</h3>
+    <input type="text" id="cfg-user" placeholder="Usuário GitHub">
+    <input type="text" id="cfg-repo" placeholder="Repositório GitHub">
+    <input type="password" id="cfg-token" placeholder="Token GitHub">
+    
+    <button onclick="saveConfig()" style="background:#0f172a; color:#fff; margin-top:10px;">💾 SALVAR CREDENCIAIS</button>
+    <button onclick="syncData()" style="background:#2563eb; color:#fff;">🔄 PUXAR DADOS DA NUVEM</button>
+    <button onclick="toggleConfig()" style="background:#ef4444; color:#fff; margin-top: 20px;">❌ FECHAR</button>
+    
+    <p style="font-size: 10px; color: #64748b; text-align: center; margin-top: auto;">O sistema utiliza o Firebase como banco principal, garantindo proteção contra perda de dados através do Merge Inteligente.</p>
+</div>
+
+<div id="modal-foto" onclick="this.style.display='none'">
+    <img id="img-ampliada" style="max-width:95%; max-height: 90vh; border-radius:8px; object-fit: contain;">
 </div>
 
 <script>
+    // URL DO SEU FIREBASE (Centralizado aqui)
+    const FIREBASE_URL = "https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json";
+
     let products = [];
     let currentProd = null;
     const html5QrCode = new Html5Qrcode("reader");
     
     // ---------------------------------------------------------
-    // FUNÇÕES DE AUTO-REPARO DE TEXTOS QUEBRADOS
+    // FUNÇÕES DE AUTO-REPARO DE TEXTOS
     // ---------------------------------------------------------
-    
     function fixBrokenText(text) {
         if (!text || typeof text !== 'string') return text;
-        try {
-            return decodeURIComponent(escape(text));
-        } catch (e) {
-            return text; 
-        }
+        try { return decodeURIComponent(escape(text)); } catch (e) { return text; }
     }
 
     function autoFixDatabase(dataArray) {
         return dataArray.map(item => {
             const newItem = { ...item };
             for (let key in newItem) {
-                if (typeof newItem[key] === 'string') {
-                    newItem[key] = fixBrokenText(newItem[key]);
-                }
+                if (typeof newItem[key] === 'string') newItem[key] = fixBrokenText(newItem[key]);
             }
             return newItem;
         });
     }
 
     // ---------------------------------------------------------
-    // FUNÇÕES MODERNAS PARA UTF-8 E BASE64
+    // FUNÇÕES MODERNAS PARA UTF-8 E BASE64 (GitHub)
     // ---------------------------------------------------------
-    
     function utf8ToBase64(str) {
         const bytes = new TextEncoder().encode(str);
         let binary = '';
-        for (let i = 0; i < bytes.byteLength; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
         return btoa(binary);
     }
 
     function base64ToUtf8(base64) {
         const binary = atob(base64);
         const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
-        }
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
         return new TextDecoder().decode(bytes);
     }
 
     // ---------------------------------------------------------
-    // INTEGRAÇÃO META ADS - MAPEAMENTO (VERSÃO MOBILE)
+    // MAPEAMENTO META ADS E GITHUB
     // ---------------------------------------------------------
     function mapearProdutoParaMeta(p) {
         let urlFoto = p.url_imagem || "";
@@ -169,15 +221,9 @@
         let descricaoLimpa = p.nome + (p.embalagem ? " - " + p.embalagem : "");
 
         let objMeta = {
-            "id": p.codigo || "",
-            "title": p.nome || "",
-            "description": descricaoLimpa,
-            "availability": disponibilidade,
-            "condition": "new",
-            "price": `${p.preco || "0.00"} BRL`,
-            "link": `https://donaantonia.com.br/#/produto/${slug}`,
-            "image_link": urlFoto,
-            "brand": p.marca || "Dona Antônia"
+            "id": p.codigo || "", "title": p.nome || "", "description": descricaoLimpa,
+            "availability": disponibilidade, "condition": "new", "price": `${p.preco || "0.00"} BRL`,
+            "link": `https://donaantonia.com.br/#/produto/${slug}`, "image_link": urlFoto, "brand": p.marca || "Dona Antônia"
         };
 
         if (p.preco_oferta && parseFloat(p.preco_oferta) > 0) {
@@ -187,17 +233,11 @@
         return objMeta;
     }
 
-    // ---------------------------------------------------------
-    // FUNÇÃO AUXILIAR PARA SALVAR ARQUIVOS EXTRAS NO GITHUB
-    // ---------------------------------------------------------
     async function saveGenericFileGithub(cfg, path, contentBase64, message) {
         let sha = null;
         try {
             const resGet = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`, { headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" } });
-            if (resGet.ok) {
-                const data = await resGet.json();
-                sha = data.sha;
-            }
+            if (resGet.ok) { const data = await resGet.json(); sha = data.sha; }
         } catch(e) {}
 
         let bodyData = { message: message, content: contentBase64 };
@@ -209,33 +249,22 @@
     }
 
     // ---------------------------------------------------------
-    // SALVAMENTO COM MERGE SEGURO E ATUALIZAÇÃO META
+    // LÓGICA PRINCIPAL: MERGE COM FIREBASE E ATUALIZAÇÃO META
     // ---------------------------------------------------------
-    async function saveDataToGithub() {
+    async function saveDataToFirebase() {
         const cfg = await localforage.getItem('sucedoan_config');
-        if(!cfg) return alert("Configure as credenciais primeiro!");
         
         try {
-            alert("Sincronizando de forma segura com a Nuvem e Meta Ads...");
+            alert("Sincronizando de forma segura com o Firebase...");
             
-            // 1. Baixa o arquivo atual da nuvem
+            // 1. Baixa o arquivo atual do Firebase (Garantindo que não usa cache)
             let produtosNuvem = [];
-            let shaPrincipal = null;
             try {
-                const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { 
-                    headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" } 
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    shaPrincipal = data.sha;
-                    const decodedStr = base64ToUtf8(data.content);
-                    produtosNuvem = JSON.parse(decodedStr);
-                }
-            } catch (e) {
-                console.warn("Criando nova base ou erro de leitura.");
-            }
+                const res = await fetch(FIREBASE_URL + '?nocache=' + Date.now());
+                if (res.ok) produtosNuvem = await res.json();
+            } catch (e) { console.warn("Criando nova base ou erro de leitura no Firebase."); }
 
-            // 2. Inteligência de Fusão (Merge) baseada em Timestamp
+            // 2. Inteligência de Fusão (Merge) baseada em Timestamp (Protege edições concorrentes)
             let localMap = new Map(products.map(p => [p.codigo, p]));
             
             if (Array.isArray(produtosNuvem) && produtosNuvem.length > 0) {
@@ -244,49 +273,78 @@
                     if (pLocal) {
                         const timeLocal = pLocal.last_update || 0;
                         const timeNuvem = pNuvem.last_update || 0;
+                        // O Firebase tem uma edição mais nova? Mantém a do Firebase!
                         if (timeNuvem > timeLocal) {
                             const index = products.findIndex(x => x.codigo === pNuvem.codigo);
                             if (index !== -1) products[index] = { ...products[index], ...pNuvem };
                         }
                         localMap.delete(pNuvem.codigo);
                     } else {
+                        // Produto novo no Firebase que não estava no celular
                         products.unshift(pNuvem);
                     }
                 });
             }
 
-            // Atualiza a memória do celular com os dados unidos
+            // Atualiza a memória do celular com os dados fundidos
             await localforage.setItem('sucedoan_pim_v37', products);
             if(currentProd) buscar(); 
             
-            // 3. Salva a Base Principal (produtos.json)
-            const headersBase = { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" };
-            let bodyData = { message: "Estoque Rápido: Atualização com Merge Seguro", content: utf8ToBase64(JSON.stringify(products, null, 2)) };
-            if (shaPrincipal) bodyData.sha = shaPrincipal;
-
-            let resMain = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json`, {
-                method: 'PUT', headers: headersBase, body: JSON.stringify(bodyData)
+            // 3. Salva a Base Principal atualizada de volta no Firebase
+            const resMain = await fetch(FIREBASE_URL, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(products)
             });
             
-            if (!resMain.ok) throw new Error("Erro ao salvar produtos.json na nuvem.");
+            if (!resMain.ok) throw new Error("Erro ao guardar no Firebase.");
 
-            // 4. Gera e Salva o Catálogo do Meta Ads (CSV e JSON)
-            const metaCatalog = products.filter(p => p.situacao !== 'I').map(p => mapearProdutoParaMeta(p));
-            
-            const csvText = Papa.unparse(metaCatalog, { delimiter: ";" });
-            await saveGenericFileGithub(cfg, 'site/produtos.csv', utf8ToBase64(csvText), "Estoque Rápido: Atualização Meta CSV");
+            // 4. Gera e Salva o Catálogo da Meta (CSV e JSON) no GitHub silenciosamente
+            if (cfg && cfg.token) {
+                const metaCatalog = products.filter(p => p.situacao !== 'I').map(p => mapearProdutoParaMeta(p));
+                const csvText = Papa.unparse(metaCatalog, { delimiter: ";" });
+                await saveGenericFileGithub(cfg, 'site/produtos.csv', utf8ToBase64(csvText), "Estoque Rápido: Atualização Meta CSV");
 
-            const metaJsonFinal = { "lista_produtos": metaCatalog };
-            await saveGenericFileGithub(cfg, 'site/produtos_meta.json', utf8ToBase64(JSON.stringify(metaJsonFinal, null, 2)), "Estoque Rápido: Atualização Meta JSON");
+                const metaJsonFinal = { "lista_produtos": metaCatalog };
+                await saveGenericFileGithub(cfg, 'site/produtos_meta.json', utf8ToBase64(JSON.stringify(metaJsonFinal, null, 2)), "Estoque Rápido: Atualização Meta JSON");
 
-            alert("✅ Tudo Salvo! Estoque e Catálogo do Meta Ads atualizados.");
+                alert("✅ Tudo Salvo! Estoque (Firebase) e Catálogo da Meta (GitHub) atualizados.");
+            } else {
+                alert("✅ Estoque guardado no Firebase!\n(Ficheiros da Meta ignorados pois não há credenciais do GitHub configuradas)");
+            }
 
         } catch (error) {
             console.error(error);
-            alert("Falha ao salvar: " + error.message);
+            alert("Falha ao guardar: " + error.message);
         }
     }
 
+    async function syncData() {
+        try {
+            const res = await fetch(FIREBASE_URL + '?nocache=' + Date.now());
+            if (!res.ok) throw new Error("Falha na comunicação com o Firebase");
+            
+            let rawProducts = await res.json();
+            
+            if (rawProducts && Array.isArray(rawProducts)) {
+                // Auto-reparo garantido ao puxar os dados
+                products = autoFixDatabase(rawProducts);
+                await localforage.setItem('sucedoan_pim_v37', products);
+                await localforage.setItem('sucedoan_last_sync', Date.now());
+
+                alert("Sincronizado do Firebase com sucesso!");
+                toggleConfig(); // Fecha o painel após sucesso
+                if(currentProd) buscar(); 
+            } else {
+                alert("A base de dados do Firebase está vazia.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao sincronizar: " + error.message);
+        }
+    }
+
+    // ---------------------------------------------------------
+    // LÓGICA DE UI E CÂMERA
+    // ---------------------------------------------------------
     async function startScanner() {
         try {
             await html5QrCode.start({ facingMode: "environment" }, { fps: 5, qrbox: 180 }, (decodedText) => {
@@ -298,7 +356,7 @@
 
     function toggleConfig() {
         const p = document.getElementById('config-panel');
-        p.style.display = p.style.display === 'block' ? 'none' : 'block';
+        p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
     }
 
     function buscar() {
@@ -313,6 +371,9 @@
             document.getElementById('val-embalagem').value = p.embalagem || '';
             document.getElementById('val-gondola').value = p.gondola || '';
             document.getElementById('val-prateleira').value = p.prateleira || '';
+            
+            // Após buscar, remove o foco do teclado virtual (melhora a usabilidade em celulares)
+            document.getElementById('search').blur();
         } else { alert("Produto não encontrado."); }
     }
 
@@ -322,7 +383,9 @@
             const d = value.split('-');
             currentProd.validade = `${d[2]}/${d[1]}/${d[0]}`;
         } else { currentProd[field] = value; }
+        
         currentProd.last_update = Date.now();
+        // Salva localmente a cada edição
         localforage.setItem('sucedoan_pim_v37', products);
     }
 
@@ -333,39 +396,18 @@
     }
 
     function verFoto() {
-        if(!currentProd || !currentProd.url_imagem) return alert("Selecione um produto");
+        if(!currentProd || !currentProd.url_imagem) return alert("Selecione um produto com foto.");
         document.getElementById('img-ampliada').src = currentProd.url_imagem.replace("../", "https://donaantonia.com.br/");
         document.getElementById('modal-foto').style.display = 'flex';
     }
 
-    async function syncData() {
-        const cfg = await localforage.getItem('sucedoan_config');
-        if(!cfg) return alert("Configure as credenciais");
-        
-        const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { 
-            headers: { "Authorization": `Bearer ${cfg.token}` } 
-        });
-        const data = await res.json();
-        
-        const decodedString = base64ToUtf8(data.content);
-        let rawProducts = JSON.parse(decodedString);
-        
-        // A MÁGICA ACONTECE AQUI: O sistema passa um "pente fino" limpando a sujeira!
-        products = autoFixDatabase(rawProducts);
-        
-        await localforage.setItem('sucedoan_pim_v37', products);
-        
-        // NOVIDADE: Regista o momento da sincronização para não sobrescrever o trabalho dos outros
-        await localforage.setItem('sucedoan_last_sync', Date.now());
-
-        alert("Sincronizado e Auto-Reparado!");
-        
-        if(currentProd) buscar(); 
-    }
-
     async function saveConfig() {
-        await localforage.setItem('sucedoan_config', { user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value, token: document.getElementById('cfg-token').value });
-        alert("Credenciais salvas");
+        await localforage.setItem('sucedoan_config', { 
+            user: document.getElementById('cfg-user').value, 
+            repo: document.getElementById('cfg-repo').value, 
+            token: document.getElementById('cfg-token').value 
+        });
+        alert("Credenciais do GitHub salvas com sucesso.");
     }
 
     window.onload = async () => {
