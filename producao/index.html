@@ -136,7 +136,7 @@
         }
 
         /* =========================================================
-           CSS DO EDITOR DE TEXTO RICO (NOVIDADE)
+           CSS DO EDITOR DE TEXTO RICO
            ========================================================= */
         .rich-text-editor { min-height: 80px; max-height: 200px; overflow-y: auto; background: #fafafa; border: 1px solid var(--border); border-radius: 0 0 6px 6px; padding: 8px; font-size: 12px; font-weight: normal; color: var(--text-primary); }
         .rich-text-editor:focus { background: #ffffff; border-color: var(--accent); outline: none; }
@@ -497,9 +497,9 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(dados)
                     });
-                    if (!res.ok) throw new Error("Erro ao gravar no Firebase");
+                    if (!res.ok) throw new Error("Erro ao gravar no Firebase: " + res.statusText);
                 } catch (error) {
-                    console.error("ERRO GRAVE DE COMUNICAÇÃO:", error);
+                    console.error("ERRO GRAVE DE COMUNICAÇÃO FIREBASE:", error);
                     throw error;
                 }
             }
@@ -553,13 +553,14 @@
                 const body = { message: message, content: finalBase64 };
                 if (sha) body.sha = sha;
                 
-                await fetch(url, { method: 'PUT', headers: this.getHeaders(cfg), body: JSON.stringify(body) });
+                const res = await fetch(url, { method: 'PUT', headers: this.getHeaders(cfg), body: JSON.stringify(body) });
+                if (!res.ok) throw new Error(`Erro Github ${res.status}`);
             },
             checkWorkflowStatus: async function() { return false; } 
         };
 
         // ==========================================================
-        // SISTEMA DE FILA (ENVIO IMEDIATO SEM TIMER)
+        // SISTEMA DE FILA INTELIGENTE (DEDUPLICAÇÃO DE TAREFAS)
         // ==========================================================
         let syncQueue = [];
         let isSyncing = false;
@@ -608,17 +609,27 @@
             
             try { 
                 await task.fn(); 
-                mostrarAlerta(`✅ Salvo na nuvem!`, 'sucesso'); 
+                mostrarAlerta(`✅ Salvo na nuvem: ${task.name}`, 'sucesso'); 
             } catch (e) { 
-                mostrarAlerta(`❌ Erro de rede. Tente novamente mais tarde.`, 'erro'); 
+                console.error(`Erro na tarefa ${task.name}:`, e);
+                mostrarAlerta(`❌ Erro em ${task.name}. Tente novamente.`, 'erro'); 
             }
             
             setTimeout(() => { executeNextInQueue(); }, 8000);
         }
 
-        async function enqueueTask(taskName, taskFn) {
+        // NOVO PARÂMETRO 'allowDuplicate' PARA EVITAR ACÚMULO DE ENVIOS JSON NO GITHUB E FIREBASE
+        async function enqueueTask(taskName, taskFn, allowDuplicate = true) {
             await saveDataLocally(); 
             
+            if (!allowDuplicate) {
+                // Se não permite duplicados, limpa da fila a tarefa anterior com o mesmo nome que ainda não foi executada
+                const existingTaskIndex = syncQueue.findIndex(t => t.name === taskName);
+                if (existingTaskIndex !== -1) {
+                    syncQueue.splice(existingTaskIndex, 1);
+                }
+            }
+
             syncQueue.push({ name: taskName, fn: taskFn });
             
             if (!isSyncing) {
@@ -729,47 +740,40 @@
         }
 
         async function salvarProdutosJSON() {
-            mostrarAlerta("Lendo dados do armazenamento local...", "aviso");
+            mostrarAlerta("Preparando dados para a nuvem...", "aviso");
 
-            // 1. Força a leitura do Local Storage para garantir que enviamos a versão mais recente
             try {
                 const dadosLocais = await localforage.getItem(STORAGE_KEY);
                 if (dadosLocais && Array.isArray(dadosLocais)) {
-                    products = dadosLocais; // Atualiza a variável com o que está no disco
+                    products = dadosLocais; 
                 }
             } catch (e) {
                 console.error("Erro ao ler o armazenamento local:", e);
             }
 
-            // 2. Salva a base de dados principal no Firebase (À prova de falhas)
+            // 1. Firebase Principal (O 'false' garante que não haverá acumulo na fila)
             enqueueTask("Salvar Produtos no Firebase", async () => {
-                mostrarAlerta("Salvando alterações no Firebase...", "aviso");
                 const vitrine = sanitizeProductsForExport(products);
                 await FirebaseAPI.salvarProdutos(vitrine);
-                mostrarAlerta("Dados salvos no Firebase com sucesso!", "sucesso");
-            });
+            }, false);
 
-            // 3. NOVO: Salva o arquivo JSON principal no GitHub
-            enqueueTask("Salvar JSON Principal no GitHub", async () => {
-                mostrarAlerta("Enviando base principal para o GitHub...", "aviso");
+            // 2. Backup Principal no GitHub
+            enqueueTask("Salvar JSON Backup no GitHub", async () => {
                 const vitrine = sanitizeProductsForExport(products);
-                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Banco de Dados Principal`);
-                mostrarAlerta("Sincronização com o GitHub concluída!", "sucesso");
-            });
+                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Banco de Dados Backup`);
+            }, false);
 
-            // 4. Gera os catálogos da Meta Ads no GitHub (Para os anúncios)
-            enqueueTask("Gerar Catálogo Meta Ads (GitHub)", async () => {
+            // 3. Catálogo Meta (CSV e JSON no mesmo bloco de tarefa para eficiência)
+            enqueueTask("Salvar Catálogo Meta (GitHub)", async () => {
                 const vitrine = sanitizeProductsForExport(products);
                 const csvData = vitrine.map(p => mapearProdutoParaMeta(p));
                 
-                // Converte para CSV e salva no GitHub
                 const csvText = Papa.unparse(csvData, { delimiter: ";" });
-                await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Concorrência unificada CSV`);
+                await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Meta Ads CSV Atualizado`);
                 
-                // Salva a versão JSON para a Meta no GitHub
                 const jsonFinal = { "lista_produtos": csvData };
-                await GitHubAPI.saveFile(`site/produtos_meta.json`, jsonFinal, `PIM: Concorrência unificada JSON`);
-            });
+                await GitHubAPI.saveFile(`site/produtos_meta.json`, jsonFinal, `PIM: Meta Ads JSON Atualizado`);
+            }, false);
         }
 
         async function getPastaUploadAtiva() {
@@ -808,12 +812,11 @@
                         pRef.last_update = Date.now(); 
                         await saveDataLocally(); 
                     }
-                });
+                }, true); // Imagens podem entrar livremente na fila
             });
 
-            enqueueTask("Sincronizar JSON (Pós-Imagens)", async () => {
-                salvarProdutosJSON();
-            });
+            // Re-aciona o fluxo de salvar JSON sem acumular
+            salvarProdutosJSON();
         }
 
         function mostrarAlerta(msg, tipo = 'sucesso') { 
@@ -852,7 +855,6 @@
             }
 
             try {
-                // Força trava visual para evitar cliques duplos
                 mostrarAlerta("Lendo banco de dados local para injeção forçada...", "aviso");
                 
                 const dadosLocais = await localforage.getItem(STORAGE_KEY);
@@ -862,16 +864,10 @@
                 }
 
                 products = dadosLocais;
-                mostrarAlerta("Conectando e injetando no Firebase...", "aviso");
                 
-                // Sobrescreve o Firebase de forma limpa
-                const vitrine = sanitizeProductsForExport(products);
-                await FirebaseAPI.salvarProdutos(vitrine);
-                
-                // Dispara sincronização para atualizar os arquivos satélites do GitHub
+                // Sobrescreve o Firebase e aciona re-sincronização do GitHub
                 salvarProdutosJSON();
                 
-                mostrarAlerta("✅ Base de dados reestabelecida na Nuvem com sucesso!", "sucesso");
             } catch (error) {
                 console.error("Erro no upload forçado:", error);
                 alert("Erro ao restaurar a nuvem: " + error.message);
@@ -1949,7 +1945,7 @@ const linhaLimpa = linha.trim();
                   }
 
                   pedidosSeparacao.push(novoPedido);
-                  await GitHubAPI.saveFile('site/pedidoseparar.json', pedidosSeparacao, `Adicionado Pedido #${numeroPedido} para separação`);
+                  await GitHubAPI.saveFile('site/pedidoseparar.json', pedidosSeparacao, `Adicionado Pedido #${numeroPedido} para separação`, true); // Aceitar redundância na fila de separação
               });
 
               let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nPlanilha do Bling guardada no GitHub!\nPedido enviado para a equipa de separação.`;
@@ -1990,14 +1986,13 @@ const linhaLimpa = linha.trim();
                         if(Array.isArray(files)) {
                             for(const file of files) {
                                 if(!imagensEmUso.has(file.name)) {
-                                    // Adicionado à fila global de 90s
                                     enqueueTask(`Apagar Imagem: ${file.name}`, async () => {
                                         await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${file.path}`, {
                                             method: 'DELETE',
                                             headers: GitHubAPI.getHeaders(cfg),
                                             body: JSON.stringify({ message: `PIM Sync: Removendo imagem órfã ${file.name}`, sha: file.sha })
                                         });
-                                    });
+                                    }, true);
                                     imagensParaApagar++;
                                 }
                             }
@@ -2020,29 +2015,21 @@ const linhaLimpa = linha.trim();
             try {
                 mostrarAlerta("Sincronizando com o Firebase...", "aviso");
                 
-                // 1. Vai buscar os dados diretos ao Firebase
                 const parsedData = await FirebaseAPI.lerProdutos();
                 
                 if (parsedData && Array.isArray(parsedData)) {
-                    // Atualiza a memória global
                     products = parsedData;
                     
-                    // 2. Limpa as listas auxiliares (Categorias/Marcas/Tags)
-                    // Como os dados novos chegaram, vamos forçar a reconstrução das listas
                     categoriasDoSistema = [];
                     marcasDoSistema = [];
                     tagsDoSistema = [];
                     
-                    // Limpa o localForage dessas listas
                     await localforage.setItem(CATEGORIAS_KEY, []);
                     await localforage.setItem(MARCAS_KEY, []);
                     await localforage.setItem(TAGS_KEY, []);
                     
-                    // Salva os produtos frescos no localForage
                     await saveDataLocally(); 
                     
-                    // 3. Re-processa as ofertas e desenha a tela
-                    // Não chamamos loadData() aqui para evitar recarregar configurações desnecessariamente
                     await processarInteligenciaDeOfertas(null, true);
                     renderGrid(ultimoTermoPesquisa);
                     
@@ -2103,7 +2090,7 @@ const linhaLimpa = linha.trim();
         };
 
         // ==========================================================
-        // MÓDULO DE EXPORTAÇÃO BLING V3 (AJUSTADO PARA FILA)
+        // MÓDULO DE EXPORTAÇÃO BLING V3
         // ==========================================================
         function mapearProdutoParaBling(p) {
             let localizacaoStr = "";
