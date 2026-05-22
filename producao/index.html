@@ -382,6 +382,9 @@
                 <button class="nav-btn" style="height:40px; justify-content:center; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="fetchFromGithub()">
                     <i data-lucide="cloud-download" size="14"></i> 3. ATUALIZAR LOCAL DA NUVEM
                 </button>
+                <button class="nav-btn" style="height:40px; justify-content:center; color: #ef4444; border-color: #fecaca; margin-top: 10px;" onclick="forcarUploadLocalParaFirebase()">
+                    <i data-lucide="upload" size="14"></i> 4. FORÇAR UPLOAD LOCAL -> FIREBASE
+                </button>
             </div>
 
             <div class="form-section" style="margin-top:10px;">
@@ -699,7 +702,7 @@
             let objMeta = {
                 "id": p.codigo || "",
                 "title": p.nome || "",
-                "description": descricaoLimpa,
+                "description": AntiXSS(descricaoLimpa),
                 "availability": disponibilidade,
                 "condition": "new",
                 "price": `${p.preco || "0.00"} BRL`,
@@ -720,6 +723,11 @@
             return objMeta;
         }
 
+        function AntiXSS(text) {
+            if(!text) return "";
+            return text.toString().replace(/<\/?[^>]+(>|$)/g, "");
+        }
+
         function salvarProdutosJSON() {
             // 1. Salva a base de dados principal no Firebase (À prova de falhas)
             enqueueTask("Salvar Produtos no Firebase", async () => {
@@ -736,11 +744,11 @@
                 
                 // Converte para CSV e salva no GitHub
                 const csvText = Papa.unparse(csvData, { delimiter: ";" });
-                await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Atualização de Catálogo Meta CSV`);
+                await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Concorrência unificada CSV`);
                 
                 // Salva a versão JSON para a Meta no GitHub
                 const jsonFinal = { "lista_produtos": csvData };
-                await GitHubAPI.saveFile(`site/produtos_meta.json`, jsonFinal, `PIM: Atualização de Catálogo Meta JSON`);
+                await GitHubAPI.saveFile(`site/produtos_meta.json`, jsonFinal, `PIM: Concorrência unificada JSON`);
             });
         }
 
@@ -815,6 +823,41 @@
             renderGrid(ultimoTermoPesquisa); 
         }
         
+        // ==========================================================
+        // FUNÇÃO DE EMERGÊNCIA: FORÇAR UPLOAD LOCAL PARA FIREBASE
+        // ==========================================================
+        async function forcarUploadLocalParaFirebase() {
+            if (!confirm("AVISO: Isto vai SOBRESCREVER os dados do Firebase e do GitHub com o que está guardado AQUI neste computador. Tem a certeza absoluta?")) {
+                return;
+            }
+
+            try {
+                // Força trava visual para evitar cliques duplos
+                mostrarAlerta("Lendo banco de dados local para injeção forçada...", "aviso");
+                
+                const dadosLocais = await localforage.getItem(STORAGE_KEY);
+                if (!dadosLocais || !Array.isArray(dadosLocais)) {
+                    alert("Erro fatal: Nenhum dado foi localizado na memória do navegador.");
+                    return;
+                }
+
+                products = dadosLocais;
+                mostrarAlerta("Conectando e injetando no Firebase...", "aviso");
+                
+                // Sobrescreve o Firebase de forma limpa
+                const vitrine = sanitizeProductsForExport(products);
+                await FirebaseAPI.salvarProdutos(vitrine);
+                
+                // Dispara sincronização para atualizar os arquivos satélites do GitHub
+                salvarProdutosJSON();
+                
+                mostrarAlerta("✅ Base de dados reestabelecida na Nuvem com sucesso!", "sucesso");
+            } catch (error) {
+                console.error("Erro no upload forçado:", error);
+                alert("Erro ao restaurar a nuvem: " + error.message);
+            }
+        }
+
         function openSidebar(id) { 
             document.getElementById('sidebar-overlay').style.display = 'block'; 
             setTimeout(() => { document.getElementById('sidebar-overlay').style.opacity = '1'; document.getElementById(id).classList.add('open'); }, 10); 
@@ -1095,7 +1138,7 @@
             return html;
         }
 
-        function gerarOptionsSubSubcategorias(catNome, subNome, selecionado) {
+        function gerarOptionsSubSundategorias(catNome, subNome, selecionado) {
             let html = `<option value="">Sel. Sub-subcategoria</option>`;
             if (!catNome || !subNome) return html;
             const catObj = categoriasDoSistema.find(c => c.nome === catNome);
@@ -1121,7 +1164,7 @@
             const subSelect = document.getElementById(`subcat-${sku}`);
             const subsubSelect = document.getElementById(`subsubcat-${sku}`);
             if(subSelect) subSelect.innerHTML = gerarOptionsSubcategorias(novaCategoria, '');
-            if(subsubSelect) subsubSelect.innerHTML = gerarOptionsSubSubcategorias(novaCategoria, '', '');
+            if(subsubSelect) subsubSelect.innerHTML = gerarOptionsSubSundategorias(novaCategoria, '', '');
             renderGrid(ultimoTermoPesquisa, true);
         }
 
@@ -1132,7 +1175,7 @@
             p.last_update = Date.now();
             await saveDataLocally();
             const subsubSelect = document.getElementById(`subsubcat-${sku}`);
-            if(subsubSelect) subsubSelect.innerHTML = gerarOptionsSubSubcategorias(p.categoria, novaSubcategoria, '');
+            if(subsubSelect) subsubSelect.innerHTML = gerarOptionsSubSundategorias(p.categoria, novaSubcategoria, '');
             renderGrid(ultimoTermoPesquisa, true);
         }
 
@@ -1142,7 +1185,7 @@
         }
         
         window.atualizarSubSubcatsFiltro = function(catNome, subNome) {
-            document.getElementById('flt-subsub').innerHTML = gerarOptionsSubSubcategorias(catNome, subNome, '') || `<option value="">Todas as Sub-subcategorias</option>`;
+            document.getElementById('flt-subsub').innerHTML = gerarOptionsSubSundategorias(catNome, subNome, '') || `<option value="">Todas as Sub-subcategorias</option>`;
         }
 
         function gerarCheckboxes(lista, selecionados, sku, campo) {
@@ -1275,7 +1318,7 @@
                 return;
             }
 
-            const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantidade);
+            const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantity = ITENS_POR_PAGINA);
             
             nextBatch.forEach(p => {
                 const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`;
@@ -1327,7 +1370,7 @@
                         <div class="field-group"><label>Subcategoria</label>
                             <select class="form-input card-mini-input" id="subcat-${p.codigo}" onchange="mudarSubcategoriaDoProduto('${p.codigo}', this.value)">${gerarOptionsSubcategorias(p.categoria, p.subcategoria)}</select></div>
                         <div class="field-group"><label>Sub-subcategoria</label>
-                            <select class="form-input card-mini-input" id="subsubcat-${p.codigo}" onchange="updateField('${p.codigo}', 'subsubcategoria', this.value)">${gerarOptionsSubSubcategorias(p.categoria, p.subcategoria, p.subsubcategoria)}</select></div>
+                            <select class="form-input card-mini-input" id="subsubcat-${p.codigo}" onchange="updateField('${p.codigo}', 'subsubcategoria', this.value)">${gerarOptionsSubSundategorias(p.categoria, p.subcategoria, p.subsubcategoria)}</select></div>
                         
                         <div class="field-group"><label>Tags Globais</label>
                             <div class="form-input card-mini-input" style="height: 65px; overflow-y: auto; padding: 6px; background: #fafafa;">
@@ -1798,7 +1841,7 @@
           let itensParaSeparacao = [];
 
           linhas.forEach(linha => {
-              const linhaLimpa = linha.trim();
+              const linhaLimpa = inline = linha.trim();
               const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
 
              if(match) {
@@ -1954,7 +1997,7 @@
             }
         }
         
-        async function fetchFromGithub() {
+        async function fetchFromGithub() { 
             try {
                 mostrarAlerta("Sincronizando com o Firebase...", "aviso");
                 
@@ -1962,20 +2005,29 @@
                 const parsedData = await FirebaseAPI.lerProdutos();
                 
                 if (parsedData && Array.isArray(parsedData)) {
+                    // Atualiza a memória global
                     products = parsedData;
                     
-                    // 2. Limpa as categorias e recria com os dados novos
+                    // 2. Limpa as listas auxiliares (Categorias/Marcas/Tags)
+                    // Como os dados novos chegaram, vamos forçar a reconstrução das listas
                     categoriasDoSistema = [];
                     marcasDoSistema = [];
                     tagsDoSistema = [];
-                    await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema);
-                    await localforage.setItem(MARCAS_KEY, marcasDoSistema);
-                    await localforage.setItem(TAGS_KEY, tagsDoSistema);
                     
+                    // Limpa o localForage dessas listas
+                    await localforage.setItem(CATEGORIAS_KEY, []);
+                    await localforage.setItem(MARCAS_KEY, []);
+                    await localforage.setItem(TAGS_KEY, []);
+                    
+                    // Salva os produtos frescos no localForage
                     await saveDataLocally(); 
-                    await loadData(); 
                     
-                    mostrarAlerta("✅ Atualização concluída com sucesso!", "sucesso"); 
+                    // 3. Re-processa as ofertas e desenha a tela
+                    // Não chamamos loadData() aqui para evitar recarregar configurações desnecessariamente
+                    await processarInteligenciaDeOfertas(null, true);
+                    renderGrid(ultimoTermoPesquisa);
+                    
+                    mostrarAlerta("✅ Sincronização concluída com sucesso!", "sucesso"); 
                     closeSidebar('config-sidebar');
                 } else { 
                     alert("A base de dados do Firebase está vazia ou o formato está incorreto."); 
@@ -2241,7 +2293,7 @@
                         let eanBling = (linha["GTIN/EAN"] || linha["EAN"] || linha["GTIN"] || "").toString().trim();
                         let idBling = (linha["ID"] || "").toString().trim();
                         let skuBling = (linha["Código"] || linha["Codigo"] || "").toString().trim();
-                        let nome = linha["Descrição"] || linha["Descricao"] || "Produto Importado";
+                        let nome = inline = linha["Descrição"] || linha["Descricao"] || "Produto Importado";
                         let precoStr = linha["Preço"] || "0";
                         let preco = parseFloat(precoStr.toString().replace(',','.')) || 0;
                         let custoStr = linha["Preço de custo"] || "0";
