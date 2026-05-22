@@ -1318,8 +1318,7 @@
                 return;
             }
 
-            const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantity = ITENS_POR_PAGINA);
-            
+const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantidade);            
             nextBatch.forEach(p => {
                 const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`;
                 
@@ -1841,7 +1840,7 @@
           let itensParaSeparacao = [];
 
           linhas.forEach(linha => {
-              const linhaLimpa = inline = linha.trim();
+const linhaLimpa = linha.trim();
               const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
 
              if(match) {
@@ -2293,7 +2292,7 @@
                         let eanBling = (linha["GTIN/EAN"] || linha["EAN"] || linha["GTIN"] || "").toString().trim();
                         let idBling = (linha["ID"] || "").toString().trim();
                         let skuBling = (linha["Código"] || linha["Codigo"] || "").toString().trim();
-                        let nome = inline = linha["Descrição"] || linha["Descricao"] || "Produto Importado";
+let nome = linha["Descrição"] || linha["Descricao"] || "Produto Importado";
                         let precoStr = linha["Preço"] || "0";
                         let preco = parseFloat(precoStr.toString().replace(',','.')) || 0;
                         let custoStr = linha["Preço de custo"] || "0";
