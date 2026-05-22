@@ -1820,9 +1820,11 @@ Por favor, podem incluir na minha entrega?`;
         });
     }
 
-    async function init() {
+   async function init() {
         try {
-            const r2 = await fetchWithCache('/site/produtos.json?v=2');
+            // Alterado: Agora puxa diretamente do Firebase em vez do produtos.json local
+            const r2 = await fetchWithCache('https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json');
+            
             if (r2 && r2.length > 0) {
                 STATE.prods = r2.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => {
                     let baseName = p.nome ? formatName(p.nome.trim()) : "Produto"; 
