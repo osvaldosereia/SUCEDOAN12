@@ -280,6 +280,15 @@
         .bottom-send-btn:active:not(:disabled) { transform: scale(0.96); box-shadow: 0 2px 6px rgba(37, 211, 102, 0.2); }
         .bottom-send-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; color: #f8fafc; }
 
+        /* =========================================
+           ESTILOS DO FORMULÁRIO DE CHECKOUT
+        ========================================= */
+        .chk-input { width: 100%; height: 48px; border: 1px solid var(--border-light); border-radius: 12px; padding: 0 16px; font-family: 'Inter', sans-serif; font-size: 14.5px; outline: none; margin-bottom: 12px; background: #f8fafc; transition: 0.3s; }
+        .chk-input:focus { background: #ffffff; border-color: var(--primary); }
+        select.chk-input { appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23131313%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 16px top 50%; background-size: 12px auto; }
+        .radio-label { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--border-light); border-radius: 12px; margin-bottom: 10px; cursor: pointer; font-size: 14px; font-weight: 600; background: #f8fafc; transition: 0.2s; }
+        .radio-label:has(input:checked) { border-color: var(--primary); background: #ffffff; box-shadow: 0 0 0 1px var(--primary); }
+        .radio-label input[type="radio"] { accent-color: var(--primary); width: 18px; height: 18px; }
 
         /* =========================================
            7. ADAPTAÇÃO DESKTOP (Responsivo)
@@ -455,9 +464,39 @@
             
             <div class="chk-section" id="chk-items-list" style="padding: 10px 20px;"></div>
 
+            <div class="chk-section">
+                <div class="chk-title" style="font-size: 16px;">📅 Agendamento da Entrega</div>
+                <div id="agendamento-options-container">
+                    </div>
+            </div>
+
+            <div class="chk-section">
+                <div class="chk-title" style="font-size: 16px;">👤 Dados e Entrega</div>
+                <input type="text" id="chk-nome" class="chk-input" placeholder="Nome Completo*">
+                <input type="tel" id="chk-cpf" class="chk-input" placeholder="CPF">
+                
+                <input type="text" id="chk-bairro" class="chk-input" placeholder="Bairro*">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="chk-rua" class="chk-input" placeholder="Rua*" style="flex: 2;">
+                    <input type="text" id="chk-quadra" class="chk-input" placeholder="Quadra" style="flex: 1;">
+                    <input type="text" id="chk-casa" class="chk-input" placeholder="Nº Casa*" style="flex: 1;">
+                </div>
+                <input type="text" id="chk-frente" class="chk-input" placeholder="Como é a frente da casa? (Cor do portão, muro...)*">
+
+                <div class="chk-title" style="font-size: 16px; margin-top: 15px;">💳 Forma de Pagamento*</div>
+                <select id="chk-pagamento" class="chk-input">
+                    <option value="">Selecione...</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Pix">Pix</option>
+                    <option value="Cartão">Cartão (Débito/Crédito na entrega)</option>
+                    <option value="Link de Pagamento">Link de Pagamento</option>
+                </select>
+            </div>
+
             <div class="chk-inline-summary">
                 <div class="summary-row"><span>Subtotal dos Produtos</span><span id="sum-sub">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-atacado-row"><span>Desconto Atacado (Volume)</span><span id="sum-atacado-desc">R$ 0,00</span></div>
+                <div class="summary-row" style="color: var(--success); display: none;" id="sum-agendamento-row"><span>Desconto de Agendamento</span><span id="sum-agendamento-desc">R$ 0,00</span></div>
                 <div class="summary-row total"><span>Total Estimado</span><span id="sum-total">R$ 0,00</span></div>
             </div>
             
@@ -477,7 +516,7 @@
         const STATE = {
             prods: [], cart: {}, cartOrder: [],
             searchQuery: '', scrollMap: {}, basketCustomizations: {}, currentRoute: '#/',
-            atacadoDiscount: 0, activeCatalogoCat: 'Todos'
+            atacadoDiscount: 0, agendamentoDiscount: 0, activeCatalogoCat: 'Todos'
         };
 
         let currentBasketItems = [];
@@ -1480,7 +1519,7 @@
                     <div id="post-basket-search-results" class="carousel-container" style="display: none; margin-bottom: 20px;"></div>
 
                     <div style="margin-top: 35px; padding-bottom: 30px;">
-                        <button class="btn-send" onclick="sendOrder(this)">Enviar pedido no whatsapp</button>
+                        <button class="btn-send" onclick="openCheckout()">Ir para o carrinho</button>
                     </div>
                 </div>`;
             
@@ -1502,9 +1541,33 @@
             handlePostBasketSearch();
         };
 
+        window.renderAgendamentoOptions = function() {
+            let dataAtual = new Date();
+            let cuiabaTime = new Date(dataAtual.toLocaleString("en-US", {timeZone: "America/Cuiaba"}));
+            let hora = cuiabaTime.getHours();
+            
+            let html = '';
+            let isHojeDisabled = hora >= 10;
+            
+            if (!isHojeDisabled) {
+                html += `<label class="radio-label"><input type="radio" name="agendamento" value="Hoje" data-discount="0" onchange="updateTotals()" checked> Hoje (Sem desconto)</label>`;
+            } else {
+                html += `<label class="radio-label" style="opacity: 0.5; cursor: not-allowed;"><input type="radio" name="agendamento" disabled> Hoje (Disponível apenas até as 10h)</label>`;
+            }
+            
+            html += `<label class="radio-label"><input type="radio" name="agendamento" value="Amanhã" data-discount="3" onchange="updateTotals()" ${isHojeDisabled ? 'checked' : ''}> Amanhã (Desconto de R$ 3,00)</label>`;
+            
+            html += `<label class="radio-label"><input type="radio" name="agendamento" value="Depois de amanhã" data-discount="5" onchange="updateTotals()"> Depois de amanhã (Desconto de R$ 5,00)</label>`;
+            
+            $('agendamento-options-container').innerHTML = html;
+        }
+
         window.openCheckout = function() {
             if (STATE.cartOrder.length === 0) return alert("Sua lista está vazia!");
-            renderCheckoutItems(); updateTotals(); $('checkout-drawer').scrollTop = 0; 
+            renderCheckoutItems(); 
+            renderAgendamentoOptions();
+            updateTotals(); 
+            $('checkout-drawer').scrollTop = 0; 
             
             $('overlay').classList.add('open');
             $('overlay').onclick = () => { closeCheckout(); closeBasketDetail(); closeSwapModal(); };
@@ -1563,15 +1626,24 @@
             STATE.atacadoDiscount = atacadoTotal;
             $('sum-atacado-desc').innerText = `- ${fmt(atacadoTotal)}`; 
             $('sum-atacado-row').style.display = atacadoTotal > 0 ? 'flex' : 'none';
+
+            let agendamentoDiscount = 0;
+            let selectedAgendamento = document.querySelector('input[name="agendamento"]:checked');
+            if (selectedAgendamento) {
+                agendamentoDiscount = parseFloat(selectedAgendamento.getAttribute('data-discount')) || 0;
+            }
+            STATE.agendamentoDiscount = agendamentoDiscount;
             
-            let finalTotal = sumBase - STATE.atacadoDiscount; 
+            $('sum-agendamento-desc').innerText = `- ${fmt(agendamentoDiscount)}`;
+            $('sum-agendamento-row').style.display = agendamentoDiscount > 0 ? 'flex' : 'none';
+            
+            let finalTotal = sumBase - STATE.atacadoDiscount - STATE.agendamentoDiscount; 
             $('sum-total').innerText = fmt(finalTotal);
             
             let btn = $('btn-send-order'); 
             let warningMsg = $('min-order-warning');
             
             btn.disabled = false; 
-            btn.innerHTML = `<svg class="svg-icon-fill" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg> Enviar para o WhatsApp`; 
             btn.style.background = 'var(--whatsapp)'; 
             btn.style.boxShadow = '0 4px 15px rgba(37, 211, 102, 0.3)'; 
             
@@ -1581,7 +1653,7 @@
                 if(warningMsg) warningMsg.style.display = 'none'; 
             }
             
-          let badges = document.querySelectorAll('.cart-badge');
+            let badges = document.querySelectorAll('.cart-badge');
             let bottomSendTotal = $('bottom-send-total');
             let bottomSendBtn = $('bottom-send-btn');
             
@@ -1607,9 +1679,26 @@
             }
         }
 
-    window.sendOrder = async function(btnOverride) {
+        window.sendOrder = async function(btnOverride) {
             const btn = btnOverride || $('btn-send-order'); 
             if (!btnOverride && btn.disabled) return;
+
+            let nome = $('chk-nome').value.trim();
+            let cpf = $('chk-cpf').value.trim();
+            let bairro = $('chk-bairro').value.trim();
+            let rua = $('chk-rua').value.trim();
+            let quadra = $('chk-quadra').value.trim();
+            let casa = $('chk-casa').value.trim();
+            let frente = $('chk-frente').value.trim();
+            let pag = $('chk-pagamento').value;
+            
+            let agendamentoObj = document.querySelector('input[name="agendamento"]:checked');
+            let dataAgendamento = agendamentoObj ? agendamentoObj.value : "Não selecionado";
+
+            if(!nome || !bairro || !rua || !casa || !frente || !pag) {
+                alert("⚠️ Por favor, preencha todos os campos obrigatórios (*) do cadastro e forma de pagamento.");
+                return;
+            }
             
             btn.innerHTML = "Processando...";
             const orderId = String(Date.now()).slice(-6); 
@@ -1631,8 +1720,7 @@
                 } 
             });
 
-            let totalDescontoFormatado = STATE.atacadoDiscount;
-            let final = totalBruto - totalDescontoFormatado;
+            let final = totalBruto - STATE.atacadoDiscount - STATE.agendamentoDiscount;
 
             let basketInfo = "";
             let hasBasket = Object.keys(STATE.basketCustomizations).length > 0;
@@ -1648,6 +1736,15 @@
 
             let descontosTxt = "";
             if (STATE.atacadoDiscount > 0) descontosTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
+            if (STATE.agendamentoDiscount > 0) descontosTxt += `\n📅 DESCONTO AGENDAMENTO (${dataAgendamento}): -${fmt(STATE.agendamentoDiscount)}`;
+
+            let dadosCliente = `
+*👤 DADOS DO CLIENTE E ENTREGA*
+Nome: ${nome} ${cpf ? `\nCPF: ${cpf}` : ''}
+Endereço: Bairro ${bairro}, Rua ${rua}, Quadra ${quadra || 'S/N'}, Casa ${casa}
+Detalhes: ${frente}
+📅 *Agendamento:* ${dataAgendamento}
+💳 *Pagamento:* ${pag}`;
 
             let msg = "";
 
@@ -1657,8 +1754,9 @@
                         id: orderId,
                         itens: pedidoItens,
                         total: final,
-                        desconto: totalDescontoFormatado,
-                        observacoes: hasBasket ? "Pedido com Cesta/Kit" : "Pedido Comum"
+                        desconto: STATE.atacadoDiscount + STATE.agendamentoDiscount,
+                        observacoes: hasBasket ? "Pedido com Cesta/Kit" : "Pedido Comum",
+                        cliente: { nome, cpf, bairro, rua, quadra, casa, frente, pagamento: pag, agendamento: dataAgendamento }
                     }
                 };
 
@@ -1678,8 +1776,9 @@
 ${itemsTxt}
 *RESUMO DE VALORES*${descontosTxt}
 💰 *TOTAL:* ${fmt(final)}${basketInfo}
+------------------------------${dadosCliente}
 ------------------------------
-Olá, esse é o meu pedido. Quais informações preciso enviar? Voce tem algum link do site com as ofertas?`;
+Olá, esse é o meu pedido.`;
 
             } else {
                 msg = `*ADICIONAR AO PEDIDO ANTERIOR*
@@ -1690,19 +1789,15 @@ Olá! Gostaria de adicionar os itens abaixo ao pedido que fiz anteriormente:
 ${itemsTxt}
 *RESUMO DE VALORES*${descontosTxt}
 💰 *TOTAL DO ACRÉSCIMO:* ${fmt(final)}${basketInfo}
+------------------------------${dadosCliente}
 ------------------------------
 Por favor, podem incluir na minha entrega?`;
             }
 
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             
-            STATE.cart = {}; 
-            STATE.cartOrder = []; 
-            STATE.basketCustomizations = {}; 
-            
             saveCart(); 
             updateTotals(); 
-            renderCheckoutItems(); 
             closeCheckout();
             
             setTimeout(() => { 
@@ -1811,8 +1906,6 @@ Por favor, podem incluir na minha entrega?`;
                 nome: comboName,
                 preco: precoTotal,
                 precoOriginal: precoOriginalTotal,
-                // AQUI FOI FEITA A ALTERAÇÃO: 
-                // O sistema agora procura uma imagem com o nome exato do ID do combo (ex: Kit_Heinz.webp)
                 imagem: `/site/img/produtos/${comboId}.webp`, 
                 produtos: produtosArr,
                 isCombo: true
@@ -1822,7 +1915,6 @@ Por favor, podem incluir na minha entrega?`;
 
    async function init() {
         try {
-            // Alterado: Agora puxa diretamente do Firebase em vez do produtos.json local
             const r2 = await fetchWithCache('https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json');
             
             if (r2 && r2.length > 0) {
