@@ -478,32 +478,80 @@
         // GESTOR DE COMUNICAÇÃO FIREBASE (SUBSTITUI O GITHUB)
         // ==========================================================
         const FirebaseAPI = {
-            baseURL: "https://cedar-chemist-310801-default-rtdb.firebaseio.com/",
+    baseURL: "https://cedar-chemist-310801-default-rtdb.firebaseio.com/",
 
-            lerProdutos: async function() {
-                try {
-                    const res = await fetch(this.baseURL + "produtos.json");
-                    return await res.json();
-                } catch (e) {
-                    console.error("Erro ao ler Firebase:", e);
-                    return null;
-                }
-            },
+    gerarChaveProduto: function(produto) {
+        return String(
+            produto.id ||
+            produto.codigo ||
+            produto.gtin ||
+            Date.now() + Math.floor(Math.random() * 100000)
+        );
+    },
 
-            salvarProdutos: async function(dados) {
-                try {
-                    const res = await fetch(this.baseURL + "produtos.json", {
-                        method: 'PUT', // O 'PUT' substitui os dados de forma limpa e segura
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(dados)
-                    });
-                    if (!res.ok) throw new Error("Erro ao gravar no Firebase: " + res.statusText);
-                } catch (error) {
-                    console.error("ERRO GRAVE DE COMUNICAÇÃO FIREBASE:", error);
-                    throw error;
-                }
-            }
-        };
+    arrayParaObjetoPorId: function(lista) {
+        const obj = {};
+
+        if (!Array.isArray(lista)) return obj;
+
+        lista.forEach(produto => {
+            const chave = this.gerarChaveProduto(produto);
+
+            obj[chave] = {
+                ...produto,
+                id: String(produto.id || chave)
+            };
+        });
+
+        return obj;
+    },
+
+    objetoPorIdParaArray: function(dados) {
+        if (!dados) return [];
+
+        if (Array.isArray(dados)) {
+            return dados.filter(Boolean);
+        }
+
+        return Object.entries(dados).map(([firebaseKey, produto]) => ({
+            ...produto,
+            firebaseKey: firebaseKey,
+            id: String(produto.id || firebaseKey)
+        }));
+    },
+
+    lerProdutos: async function() {
+        try {
+            const res = await fetch(this.baseURL + "produtos.json?nocache=" + Date.now(), {
+                cache: "no-store"
+            });
+
+            const dados = await res.json();
+
+            return this.objetoPorIdParaArray(dados);
+        } catch (e) {
+            console.error("Erro ao ler Firebase:", e);
+            return [];
+        }
+    },
+
+    salvarProdutos: async function(dados) {
+        try {
+            const dadosPorId = this.arrayParaObjetoPorId(dados);
+
+            const res = await fetch(this.baseURL + "produtos.json", {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dadosPorId)
+            });
+
+            if (!res.ok) throw new Error("Erro ao gravar no Firebase: " + res.statusText);
+        } catch (error) {
+            console.error("ERRO GRAVE DE COMUNICAÇÃO FIREBASE:", error);
+            throw error;
+        }
+    }
+};
 
         // ==========================================================
         // GESTOR DE ARQUIVOS GITHUB (APENAS PARA IMAGENS E CSV)
@@ -740,41 +788,48 @@
         }
 
         async function salvarProdutosJSON() {
-            mostrarAlerta("Preparando dados para a nuvem...", "aviso");
+    mostrarAlerta("Preparando dados para a nuvem...", "aviso");
 
-            try {
-                const dadosLocais = await localforage.getItem(STORAGE_KEY);
-                if (dadosLocais && Array.isArray(dadosLocais)) {
-                    products = dadosLocais; 
-                }
-            } catch (e) {
-                console.error("Erro ao ler o armazenamento local:", e);
-            }
-
-            // 1. Firebase Principal (O 'false' garante que não haverá acumulo na fila)
-            enqueueTask("Salvar Produtos no Firebase", async () => {
-                const vitrine = sanitizeProductsForExport(products);
-                await FirebaseAPI.salvarProdutos(vitrine);
-            }, false);
-
-            // 2. Backup Principal no GitHub
-            enqueueTask("Salvar JSON Backup no GitHub", async () => {
-                const vitrine = sanitizeProductsForExport(products);
-                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Banco de Dados Backup`);
-            }, false);
-
-            // 3. Catálogo Meta (CSV e JSON no mesmo bloco de tarefa para eficiência)
-            enqueueTask("Salvar Catálogo Meta (GitHub)", async () => {
-                const vitrine = sanitizeProductsForExport(products);
-                const csvData = vitrine.map(p => mapearProdutoParaMeta(p));
-                
-                const csvText = Papa.unparse(csvData, { delimiter: ";" });
-                await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Meta Ads CSV Atualizado`);
-                
-                const jsonFinal = { "lista_produtos": csvData };
-                await GitHubAPI.saveFile(`site/produtos_meta.json`, jsonFinal, `PIM: Meta Ads JSON Atualizado`);
-            }, false);
+    try {
+        const dadosLocais = await localforage.getItem(STORAGE_KEY);
+        if (dadosLocais && Array.isArray(dadosLocais)) {
+            products = dadosLocais; 
         }
+    } catch (e) {
+        console.error("Erro ao ler o armazenamento local:", e);
+    }
+
+    // 1. Firebase Principal no novo formato:
+    // produtos → id_do_produto → dados do produto
+    enqueueTask("Salvar Produtos no Firebase", async () => {
+        const vitrine = sanitizeProductsForExport(products);
+        await FirebaseAPI.salvarProdutos(vitrine);
+    }, false);
+
+    // 2. Backup Principal no GitHub também no novo formato por ID
+    enqueueTask("Salvar JSON Backup no GitHub", async () => {
+        const vitrine = sanitizeProductsForExport(products);
+        const vitrinePorId = FirebaseAPI.arrayParaObjetoPorId(vitrine);
+
+        await GitHubAPI.saveFile(
+            `site/produtos.json`,
+            vitrinePorId,
+            `PIM: Atualização Banco de Dados Backup por ID`
+        );
+    }, false);
+
+    // 3. Catálogo Meta continua como array, porque CSV precisa de lista
+    enqueueTask("Salvar Catálogo Meta (GitHub)", async () => {
+        const vitrine = sanitizeProductsForExport(products);
+        const csvData = vitrine.map(p => mapearProdutoParaMeta(p));
+        
+        const csvText = Papa.unparse(csvData, { delimiter: ";" });
+        await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Meta Ads CSV Atualizado`);
+        
+        const jsonFinal = { "lista_produtos": csvData };
+        await GitHubAPI.saveFile(`site/produtos_meta.json`, jsonFinal, `PIM: Meta Ads JSON Atualizado`);
+    }, false);
+}
 
         async function getPastaUploadAtiva() {
             let limit = 990; let folderIndex = 1;
@@ -2018,37 +2073,37 @@ const linhaLimpa = linha.trim();
         }
         
         async function fetchFromGithub() { 
-            try {
-                mostrarAlerta("Sincronizando com o Firebase...", "aviso");
-                
-                const parsedData = await FirebaseAPI.lerProdutos();
-                
-                if (parsedData && Array.isArray(parsedData)) {
-                    products = parsedData;
-                    
-                    categoriasDoSistema = [];
-                    marcasDoSistema = [];
-                    tagsDoSistema = [];
-                    
-                    await localforage.setItem(CATEGORIAS_KEY, []);
-                    await localforage.setItem(MARCAS_KEY, []);
-                    await localforage.setItem(TAGS_KEY, []);
-                    
-                    await saveDataLocally(); 
-                    
-                    await processarInteligenciaDeOfertas(null, true);
-                    renderGrid(ultimoTermoPesquisa);
-                    
-                    mostrarAlerta("✅ Sincronização concluída com sucesso!", "sucesso"); 
-                    closeSidebar('config-sidebar');
-                } else { 
-                    alert("A base de dados do Firebase está vazia ou o formato está incorreto."); 
-                }
-            } catch(e) { 
-                console.error("Erro na nuvem:", e);
-                alert("Erro ao puxar da nuvem: " + e.message); 
-            }
+    try {
+        mostrarAlerta("Sincronizando com o Firebase...", "aviso");
+        
+        const parsedData = await FirebaseAPI.lerProdutos();
+        
+        if (parsedData && Array.isArray(parsedData) && parsedData.length > 0) {
+            products = parsedData;
+            
+            categoriasDoSistema = [];
+            marcasDoSistema = [];
+            tagsDoSistema = [];
+            
+            await localforage.setItem(CATEGORIAS_KEY, []);
+            await localforage.setItem(MARCAS_KEY, []);
+            await localforage.setItem(TAGS_KEY, []);
+            
+            await saveDataLocally(); 
+            
+            await processarInteligenciaDeOfertas(null, true);
+            renderGrid(ultimoTermoPesquisa);
+            
+            mostrarAlerta("✅ Sincronização concluída com sucesso!", "sucesso"); 
+            closeSidebar('config-sidebar');
+        } else { 
+            alert("A base de dados do Firebase está vazia ou o formato está incorreto."); 
         }
+    } catch(e) { 
+        console.error("Erro na nuvem:", e);
+        alert("Erro ao puxar da nuvem: " + e.message); 
+    }
+}
 
         async function limparSistema() { if(confirm("Apagar base local? (Nuvem NÃO afetada)")) { await localforage.clear(); location.reload(); } }
 
