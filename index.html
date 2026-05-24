@@ -812,6 +812,192 @@
             }
         }
 
+
+
+        /* =========================================
+           AJUSTE CLEAN PROFISSIONAL DA TOPBAR E HIERARQUIA
+        ========================================= */
+        :root {
+            --compact-header-height: 58px;
+        }
+
+        .header-main {
+            height: max(var(--h-top), calc(var(--h-top) + env(safe-area-inset-top)));
+            padding: max(14px, env(safe-area-inset-top)) 15px 14px 15px;
+            transition: none;
+            box-shadow: 0 2px 14px rgba(15, 23, 42, 0.045);
+        }
+
+        .header-home-content {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .header-home-top-row,
+        .header-search-row {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .brand-link { min-width: 0; }
+        .header-logo { height: 46px; max-width: 178px; filter: none; }
+        .brand-copy strong { font-size: 13px; }
+        .brand-copy span { font-size: 10.5px; }
+
+        .header-info-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 9px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border-light);
+            background: #ffffff;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+        }
+        .header-info-link .svg-icon { width: 17px; height: 17px; color: #64748b; }
+
+        .topbar-search {
+            height: 46px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: none;
+            background: #f8fafc;
+        }
+        .topbar-search:focus { box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06); }
+
+        .header-mobile-shortcuts,
+        .top-shortcut-chip,
+        .header-delivery-badge { display: none !important; }
+
+        .compact-route-header {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .compact-route-main {
+            display: flex;
+            align-items: center;
+            min-height: 42px;
+            gap: 10px;
+        }
+
+        .compact-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            height: 34px;
+            padding: 0 9px;
+            border-radius: 999px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            color: #475569;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 750;
+            cursor: pointer;
+        }
+        .compact-back-btn .svg-icon { width: 16px; height: 16px; }
+
+        .compact-title {
+            font-size: 15px;
+            font-weight: 850;
+            color: var(--text-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            letter-spacing: -0.02em;
+        }
+
+        .compact-chips-row {
+            display: none;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 3px 0 9px 0;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .compact-chips-row::-webkit-scrollbar { display: none; }
+        .compact-chips-row:not(:empty) { display: flex; }
+
+        .route-compact .header-main {
+            height: max(var(--compact-header-height), calc(var(--compact-header-height) + env(safe-area-inset-top)));
+            padding: env(safe-area-inset-top) 14px 0 14px;
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
+        .route-compact .header-home-content { display: none; }
+        .route-compact .compact-route-header { display: block; }
+        .route-compact .main-container {
+            top: calc(var(--compact-header-height) + env(safe-area-inset-top));
+            height: calc(100dvh - var(--compact-header-height) - env(safe-area-inset-top));
+            padding-top: 0;
+        }
+
+        .route-home .compact-route-header { display: none; }
+        .route-home .header-home-content { display: flex; }
+        body.topbar-hidden .header-main,
+        body.topbar-hidden .main-container,
+        body.topbar-hidden .ver-tudo-header { transform: none; opacity: 1; pointer-events: auto; }
+
+        .app-bottom-bar {
+            height: max(74px, calc(74px + env(safe-area-inset-bottom)));
+            padding: 6px 12px env(safe-area-inset-bottom) 12px;
+            box-shadow: 0 -6px 22px rgba(15, 23, 42, 0.07);
+        }
+        .bottom-nav-group { gap: 8px; align-items: center; }
+        .app-nav-item { width: 52px; min-height: 50px; border-radius: 14px; }
+        .nav-shop-raised { transform: none; width: 52px; min-height: 50px; color: var(--text-light) !important; background: transparent; box-shadow: none; border: none; }
+        .nav-shop-raised .svg-icon { color: #8b5cf6 !important; width: 1.45em; height: 1.45em; }
+        .nav-shop-raised span { color: inherit !important; font-size: 9.5px; }
+
+        .products-grid { gap: 12px; }
+        .product-name-list { font-size: 13.5px; line-height: 1.28; }
+        .tag-preco-list { font-size: 16px; }
+        .prod-page-title { font-size: 20px; line-height: 1.28; }
+        .prod-page-price { font-size: 28px; }
+        .prod-page-desc-title { font-size: 16px; }
+        .subcat-title { font-size: 13px; padding: 18px 16px 9px 16px; letter-spacing: 0.06em; }
+        .info-banner-home { font-size: 12.5px; }
+        .oferta-chip, .chip-cat {
+            padding: 7px 13px;
+            font-size: 12px;
+            font-weight: 800;
+            box-shadow: none;
+        }
+
+        @media (min-width: 768px) {
+            :root { --h-top: 78px; }
+            .header-main { padding: 0 30px; }
+            .header-home-content { flex-direction: row; align-items: center; gap: 28px; }
+            .header-home-top-row { width: auto; flex-shrink: 0; }
+            .header-search-row { flex: 1; }
+            .header-logo { height: 44px; }
+            .brand-copy { display: flex; }
+            .header-info-link { padding: 9px 13px; }
+            .main-container { padding-top: 24px; }
+            .route-compact .header-main { padding-left: 30px; padding-right: 30px; }
+            .route-compact .main-container { padding-top: 0; }
+            .product-card-list .product-name-list { font-size: 14px; }
+            .prod-page-title { font-size: 21px; }
+            .prod-page-price { font-size: 30px; }
+        }
+
     </style>
 </head>
 <body>
@@ -832,12 +1018,7 @@
                 <span>Ofertas</span>
             </a>
 
-            <a href="#/informacoes" class="app-nav-item nav-shop-raised" id="nav-informacoes">
-                <svg class="svg-icon" style="color: #8b5cf6;" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span>Loja</span>
-            </a>
-
-            <div class="app-nav-item" onclick="openCheckout()">
+            <div class="app-nav-item" onclick="openCheckout()" id="nav-lista">
                 <svg class="svg-icon" style="color: #10b981;" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                 <span>Lista</span>
                 <span class="cart-badge" id="bottom-cart-count">0</span>
@@ -854,8 +1035,8 @@
     </div>
     
     <div class="header-main" id="header-main">
-        <div class="header-inner">
-            <div class="header-top-row">
+        <div class="header-home-content">
+            <div class="header-home-top-row">
                 <a href="#/" class="brand-link" aria-label="Ir para a página inicial">
                     <img src="../img/logoantonia5.png" alt="Dona Antônia" class="header-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y5ZmFmYiIvPjwvc3ZnPg=='">
                     <span class="brand-copy">
@@ -864,41 +1045,40 @@
                     </span>
                 </a>
 
-                <a href="#/informacoes" class="header-delivery-badge" aria-label="Informações sobre entrega grátis">
-                    <span class="header-delivery-icon">
-                        <svg class="svg-icon" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M3 7h11v10H3z"></path><path d="M14 10h4l3 3v4h-7z"></path><path d="M7 17a2 2 0 104 0"></path><path d="M17 17a2 2 0 104 0"></path></svg>
-                    </span>
-                    <span class="header-delivery-text">
-                        <small>Entrega grátis</small>
-                        <strong>Cuiabá e VG</strong>
-                    </span>
+                <a href="#/informacoes" class="header-info-link" aria-label="Informações da loja">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Informações</span>
                 </a>
             </div>
 
-            <div class="header-action-row">
+            <div class="header-search-row">
                 <div class="search-container">
                     <div class="search-icon-pos"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
-                    <input type="text" id="app-search-input" class="topbar-search" placeholder="Buscar produto, marca ou categoria" oninput="handleSearchInput()">
+                    <input type="text" id="app-search-input" class="topbar-search" placeholder="Buscar produto" oninput="handleSearchInput()">
                     <div class="clear-search-btn" id="clear-search-btn" onclick="clearSearch()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div>
                 </div>
 
                 <div class="desktop-nav mobile-hide">
                     <a href="#/mercado" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l1.5 12h15L21 9M3 9h18M3 9L4.5 3h15L21 9"></path></svg> Mercado</a>
                     <a href="#/ofertas" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg> Ofertas</a>
-                    <a href="#/informacoes" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Loja</a>
+                    <a href="#/informacoes" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Informações</a>
                     <div class="desktop-nav-item" onclick="openCheckout()">
                         <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg> Sua Lista
                         <span class="cart-badge" id="top-cart-count" style="position:absolute; top:-8px; right:-12px;">0</span>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="header-mobile-shortcuts desktop-hide">
-                <a href="#/ofertas" class="top-shortcut-chip highlight">🔥 Ofertas</a>
-                <a href="#/mercado" class="top-shortcut-chip">🛒 Mercado</a>
-                <a href="#/cestas" class="top-shortcut-chip">📦 Cestas</a>
-                <a href="#/informacoes" class="top-shortcut-chip success">🚚 Entrega grátis</a>
+        <div class="compact-route-header" aria-label="Navegação da página atual">
+            <div class="compact-route-main">
+                <button type="button" class="compact-back-btn" onclick="goBackSmart()" aria-label="Voltar">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    <span>Voltar</span>
+                </button>
+                <div class="compact-title" id="compact-route-title">Página</div>
             </div>
+            <div class="compact-chips-row" id="compact-route-chips"></div>
         </div>
     </div>
 
@@ -1111,51 +1291,80 @@
         };
 
 
-        let lastTopbarScroll = 0;
-        let topbarAutoHideBound = false;
-
-        function routePermiteTopbarInteligente() {
+        function goBackSmart() {
             const hash = window.location.hash || '#/';
-            if (hash === '#/catalogo') return false;
-            if (hash.startsWith('#/produto/')) return false;
-            if (hash === '#/buscar') return false;
-            return true;
+            if (hash === '#/' || hash === '') return;
+            if (window.history.length > 1) window.history.back();
+            else window.location.hash = '#/';
         }
 
-        function setTopbarHidden(hidden) {
-            const header = $('header-main');
-            if (!header) return;
-            if (!routePermiteTopbarInteligente()) {
-                document.body.classList.remove('topbar-hidden');
-                return;
-            }
-            document.body.classList.toggle('topbar-hidden', !!hidden);
+        function getRouteTitle(hash) {
+            if (hash === '#/' || hash === '') return 'Início';
+            if (hash === '#/ofertas') return 'Ofertas';
+            if (hash === '#/informacoes') return 'Informações';
+            if (hash === '#/mercado') return 'Mercado';
+            if (hash === '#/catalogo') return 'Catálogo rápido';
+            if (hash === '#/cestas') return 'Cestas básicas';
+            if (hash === '#/combos') return 'Kits promocionais';
+            if (hash === '#/buscar') return STATE.searchQuery ? `Busca: ${STATE.searchQuery}` : 'Busca';
+            if (hash.startsWith('#/departamento/')) return decodeHash(hash.split('/')[2] || 'Departamento');
+            if (hash.startsWith('#/produto/')) return 'Produto';
+            return 'Dona Antônia';
         }
 
-        function setupTopbarAutoHide() {
+        function getCatalogoChipsHtml() {
+            let categoriasSet = new Set();
+            STATE.prods.forEach(p => { if (p.categoria && p.categoria !== 'Cestas') categoriasSet.add(p.categoria); });
+            let sortedCats = Array.from(categoriasSet).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b));
+            let activeCat = STATE.activeCatalogoCat || 'Todos';
+            let html = `<div class="chip-cat ${activeCat === 'Todos' ? 'active' : ''}" id="chip-Todos" onclick="changeCatalogoCategory('Todos')">Todos</div>`;
+            sortedCats.forEach(c => {
+                html += `<div class="chip-cat ${activeCat === c ? 'active' : ''}" id="chip-${getFriendlySlug(c)}" onclick="changeCatalogoCategory('${c.replace(/'/g, "\\'")}')">${c}</div>`;
+            });
+            return html;
+        }
+
+        function getDepartamentoChipsHtml(cat) {
+            const subs = Array.from(new Set(
+                STATE.prods
+                    .filter(p => p.categoria === cat && p.subcategoria)
+                    .map(p => p.subcategoria)
+            )).sort((a, b) => a.localeCompare(b));
+            if (subs.length <= 1) return '';
+            return subs.map(sub => `<div class="chip-cat" onclick="scrollRouteAnchor('subcat-${getFriendlySlug(sub)}')">${sub}</div>`).join('');
+        }
+
+        function scrollRouteAnchor(id) {
+            const alvo = document.getElementById(id);
             const vitrine = $('vitrine');
-            if (!vitrine || topbarAutoHideBound) return;
-            topbarAutoHideBound = true;
+            if (!alvo || !vitrine) return;
+            const topo = alvo.offsetTop - 8;
+            vitrine.scrollTo({ top: Math.max(topo, 0), behavior: 'smooth' });
+        }
 
-            vitrine.addEventListener('scroll', () => {
-                if (!routePermiteTopbarInteligente()) {
-                    setTopbarHidden(false);
-                    return;
-                }
+        function getRouteChipsHtml(hash) {
+            if (hash === '#/ofertas') {
+                return DISCOUNT_GROUPS.map(pct => `<div class="oferta-chip" onclick="scrollRouteAnchor('oferta-${pct}')">${pct}% OFF</div>`).join('');
+            }
+            if (hash === '#/catalogo') return getCatalogoChipsHtml();
+            if (hash.startsWith('#/departamento/')) return getDepartamentoChipsHtml(decodeHash(hash.split('/')[2] || ''));
+            return '';
+        }
 
-                const atual = Math.max(vitrine.scrollTop || 0, 0);
-                const diferenca = atual - lastTopbarScroll;
+        function atualizarTopbarDaRota(hash) {
+            const compactTitle = $('compact-route-title');
+            const compactChips = $('compact-route-chips');
+            const isHome = hash === '#/' || hash === '';
 
-                if (atual < 45) {
-                    setTopbarHidden(false);
-                } else if (diferenca > 9) {
-                    setTopbarHidden(true);
-                } else if (diferenca < -9) {
-                    setTopbarHidden(false);
-                }
+            document.body.classList.toggle('route-home', isHome);
+            document.body.classList.toggle('route-compact', !isHome);
+            document.body.classList.remove('topbar-hidden');
 
-                lastTopbarScroll = atual;
-            }, { passive: true });
+            if (compactTitle) compactTitle.textContent = getRouteTitle(hash);
+            if (compactChips) {
+                compactChips.innerHTML = isHome ? '' : getRouteChipsHtml(hash);
+                document.documentElement.style.setProperty('--compact-header-height', compactChips.innerHTML.trim() ? '94px' : '58px');
+            }
         }
 
        function handleRoute() {
@@ -1165,20 +1374,10 @@
             if(STATE.currentRoute) STATE.scrollMap[STATE.currentRoute] = vitrine.scrollTop;
             STATE.currentRoute = hash;
 
-            if (hash === '#/catalogo' || hash.startsWith('#/produto/')) {
-                document.body.classList.remove('topbar-hidden');
-                $('header-main').style.display = 'none';
-                vitrine.style.top = '0';
-                vitrine.style.height = '100dvh';
-            } else {
-                $('header-main').style.display = 'flex';
-                vitrine.style.top = ''; 
-                vitrine.style.height = '';
-
-                if ((vitrine.scrollTop || 0) < 45) {
-                    document.body.classList.remove('topbar-hidden');
-                }
-            }
+            $('header-main').style.display = 'flex';
+            vitrine.style.top = '';
+            vitrine.style.height = '';
+            atualizarTopbarDaRota(hash);
 
             if($('basketDetailModal').classList.contains('active')) $('basketDetailModal').classList.remove('active');
             if($('checkout-drawer').classList.contains('open')) $('checkout-drawer').classList.remove('open');
@@ -1188,8 +1387,7 @@
             document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active'));
             if(hash === '#/' || hash === '') { if($('nav-inicio')) $('nav-inicio').classList.add('active'); }
             else if(hash === '#/ofertas') { if($('nav-ofertas')) $('nav-ofertas').classList.add('active'); }
-            else if(hash === '#/informacoes') { if($('nav-informacoes')) $('nav-informacoes').classList.add('active'); }
-            else if(hash === '#/mercado' || hash.startsWith('#/departamento/') || hash === '#/catalogo') { if($('nav-mercado')) $('nav-mercado').classList.add('active'); }
+            else if(hash === '#/mercado' || hash.startsWith('#/departamento/') || hash === '#/catalogo') { if($('nav-inicio')) $('nav-inicio').classList.add('active'); }
 
             if (hash === '#/' || hash === '') { renderInicio(); document.title = "Dona Antônia - Supermercado e Cestas"; } 
             else if (hash === '#/cestas') { renderCestas(); document.title = "Cestas Básicas - Dona Antônia"; } 
@@ -1487,57 +1685,30 @@
 
         window.renderCatalogoRapido = function() {
             document.title = "Catálogo Rápido - Dona Antônia";
-            let categoriasSet = new Set();
-            STATE.prods.forEach(p => { if(p.categoria && p.categoria !== 'Cestas') categoriasSet.add(p.categoria); });
-            
-            let sortedCats = Array.from(categoriasSet).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b));
-
             let activeCat = STATE.activeCatalogoCat || 'Todos';
-
-            let chipsHtml = `<div class="chip-cat ${activeCat === 'Todos' ? 'active' : ''}" id="chip-Todos" onclick="changeCatalogoCategory('Todos')">Todos</div>`;
-            sortedCats.forEach(c => {
-                chipsHtml += `<div class="chip-cat ${activeCat === c ? 'active' : ''}" id="chip-${getFriendlySlug(c)}" onclick="changeCatalogoCategory('${c}')">${c}</div>`;
-            });
-
-            let html = `
-            <div style="position: sticky; top: -15px; background: #fff; z-index: 100; margin: -15px 0 0 0; padding-top: 15px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
-                <div style="display: flex; align-items: center; padding: 0 15px 10px 15px;">
-                    <div onclick="window.history.back()" style="cursor: pointer; margin-right: 15px; display: flex; align-items: center; padding: 5px;">
-                        <svg class="svg-icon" viewBox="0 0 24 24" style="width: 24px; height: 24px;"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    </div>
-                    <h2 style="font-size: 18px; font-weight: 900; margin: 0; color: var(--text-dark);">Catálogo Rápido</h2>
-                </div>
-                <div class="chips-wrapper" style="padding: 0 15px 10px 15px; display: flex; gap: 8px; overflow-x: auto;">
-                    ${chipsHtml}
-                </div>
-            </div>
-            <div id="catalogo-grid-container" class="grid-catalogo" style="margin: 0;"></div>
-            `;
-            
-            $('vitrine').innerHTML = html;
-            
             STATE.activeCatalogoCat = activeCat;
+            atualizarTopbarDaRota(window.location.hash || '#/catalogo');
+            let html = `<div id="catalogo-grid-container" class="grid-catalogo" style="margin: 0;"></div>`;
+            $('vitrine').innerHTML = html;
             renderCatalogoGrid(activeCat);
 
             requestAnimationFrame(() => {
-                let activeChip = document.querySelector('.chip-cat.active');
+                let activeChip = document.querySelector('.compact-chips-row .chip-cat.active');
                 if (activeChip) activeChip.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
             });
         }
 
         window.changeCatalogoCategory = function(cat) {
             STATE.activeCatalogoCat = cat;
-            document.querySelectorAll('.chip-cat').forEach(el => el.classList.remove('active'));
-            
-            let targetId = cat === 'Todos' ? 'chip-Todos' : `chip-${getFriendlySlug(cat)}`;
-            let activeChip = document.getElementById(targetId);
-            if(activeChip) {
-                activeChip.classList.add('active');
-                activeChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            }
-            
+            atualizarTopbarDaRota(window.location.hash || '#/catalogo');
             renderCatalogoGrid(cat);
             $('vitrine').scrollTo({ top: 0, behavior: 'smooth' });
+
+            requestAnimationFrame(() => {
+                let targetId = cat === 'Todos' ? 'chip-Todos' : `chip-${getFriendlySlug(cat)}`;
+                let activeChip = document.getElementById(targetId);
+                if (activeChip) activeChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            });
         };
 
         window.renderCatalogoGrid = function(cat) {
@@ -1588,7 +1759,7 @@
         }
 
         function renderCestas() {
-            let html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.location.hash='#/'" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Cestas Básicas</div><div class="products-grid">`;
+            let html = `<div style="padding: 0;"><div class="products-grid">`;
             
             BASKETS.forEach(basket => {
                 let prices = calculateBasketPrices(basket.id);
@@ -1618,7 +1789,7 @@
         }
 
         function renderCombos() {
-            let html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.location.hash='#/'" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Kits Promocionais</div><div class="products-grid">`;
+            let html = `<div style="padding: 0;"><div class="products-grid">`;
             
             if (dynamicCombos.length === 0) {
                 html += `<div style="padding: 40px; text-align: center; color: var(--text-light); grid-column: 1/-1;">Nenhum kit promocional ativo no momento.</div>`;
@@ -1658,15 +1829,7 @@
                     .filter(p => p.categoria !== 'Cestas' && Number(p.discountPercent || 0) > 0)
                     .sort((a,b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || a.name.localeCompare(b.name));
 
-                let chipsHtml = DISCOUNT_GROUPS.map(pct => `<div class="oferta-chip" onclick="document.getElementById('oferta-${pct}')?.scrollIntoView({behavior:'smooth', block:'start'});">${pct}% OFF</div>`).join('');
-
-                html = `<div style="padding: 15px 0 0 0;">
-                    <div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Ofertas</div>
-                    <div style="position: sticky; top: 42px; background: #fff; z-index: 90; padding: 12px 15px; border-bottom: 1px solid var(--border-light);">
-                        <div class="chips-wrapper" style="display: flex; gap: 8px; overflow-x: auto;">
-                            ${chipsHtml}
-                        </div>
-                    </div>`;
+                html = `<div style="padding: 0;">`;
 
                 DISCOUNT_GROUPS.forEach(pct => {
                     let grupo = todasOfertas.filter(p => Number(p.discountPercent || 0) === pct);
@@ -1686,10 +1849,10 @@
                 let groups = {};
                 results.forEach(p => { let s = p.subcategoria || 'Geral'; if(!groups[s]) groups[s] = []; groups[s].push(p); });
                 
-                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.location.hash='#/'" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${cat}</div>`;
+                html = `<div style="padding: 0;">`;
                 Object.keys(groups).sort().forEach(g => {
                     let subName = g === 'Geral' ? `Diversos (${cat})` : g;
-                    html += `<h3 class="subcat-title">${subName}</h3><div class="products-grid">`;
+                    html += `<h3 class="subcat-title" id="subcat-${getFriendlySlug(g)}">${subName}</h3><div class="products-grid">`;
                     groups[g].forEach(p => html += renderCardHTML(p));
                     html += `</div>`;
                 });
@@ -1715,6 +1878,8 @@
             let prod = STATE.prods.find(p => String(p.slug) === String(id));
             if(!prod) { $('vitrine').innerHTML = '<div style="padding:40px; text-align:center;">Produto não encontrado.</div>'; return; }
             document.title = `${prod.name} - Dona Antônia`;
+            const compactTitleEl = $('compact-route-title');
+            if (compactTitleEl) compactTitleEl.textContent = prod.name;
             let q = STATE.cart[prod.id] || 0;
             let discountBadge = (prod.discountPercent > 0) ? `<span style="color: var(--danger); font-size: 16px; margin-right: 6px; font-weight: 900;">-${prod.discountPercent}%</span>` : '';
             let oldPriceHtml = (prod.discountPercent > 0) ? `<div class="prod-page-oldprice" style="display:inline-block; text-decoration: line-through; color: var(--text-light); margin-bottom: 4px;">De: ${fmt(prod.oldPrice)}</div>` : '';
@@ -1737,7 +1902,6 @@
             let relacionadosHtml = relacionados.length > 0 ? `<div class="related-products-box"><h3 class="subcat-title" style="margin:0;">Produtos relacionados</h3><div id="related-products-grid" class="grid-catalogo" style="margin:0;"></div></div>` : '';
             
             let html = `<div class="prod-page-container">
-                            <div class="ver-tudo-header" style="margin:-15px 0 0 0; box-shadow:none; border:none; width: 100%;" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Detalhes</div>
                             <div class="prod-page-img-box"><img src="${prod.img}" class="prod-page-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'"></div>
                             <div class="prod-page-info">
                                 <div class="prod-page-marca">${prod.marca || prod.categoria}</div>
@@ -1760,12 +1924,18 @@
         }
 
         function renderSearch() {
+            atualizarTopbarDaRota(window.location.hash || '#/buscar');
             let terms = STATE.searchQuery.split(' ').filter(t => t.trim().length > 0); 
             let results = STATE.prods.filter(p => { let textoBusca = norm(p.name + " " + p.categoria + " " + p.subcategoria); return terms.every(term => textoBusca.includes(term)); });
-            let header = `<div class="ver-tudo-header" style="margin: -15px 0 0 0;" onclick="window.location.hash='#/'"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${STATE.searchQuery ? `Resultados para "${STATE.searchQuery}"` : 'Busca'}</div>`;
-            if(results.length === 0) { $('vitrine').innerHTML = `<div style="padding: 15px 0;">${header}<div style="padding: 40px; text-align: center; font-weight:600; color:var(--text-light); background:var(--bg-card); margin: 20px;">Ops, não achamos "${STATE.searchQuery}".</div></div>`; return; }
-            let html = `<div style="padding: 15px 0;">${header}<div class="products-grid">`;
-            results.forEach(p => html += renderCardHTML(p)); html += '</div></div>'; $('vitrine').innerHTML = html; lazyLoadImages();
+            if(results.length === 0) {
+                $('vitrine').innerHTML = `<div style="padding: 24px 20px; text-align: center; font-weight:600; color:var(--text-light); background:var(--bg-card);">Ops, não achamos "${STATE.searchQuery}".</div>`;
+                return;
+            }
+            let html = `<div style="padding: 0;"><div class="products-grid">`;
+            results.forEach(p => html += renderCardHTML(p));
+            html += '</div></div>';
+            $('vitrine').innerHTML = html;
+            lazyLoadImages();
         }
 
         window.handlePostBasketSearch = function() {
@@ -2585,7 +2755,7 @@ Por favor, podem incluir na minha entrega?`;
             aplicarDescontos(STATE.prods);
             generateCombosFromProducts();
         }
-        loadCart(); updateTotals(); setupTopbarAutoHide(); handleRoute();
+        loadCart(); updateTotals(); handleRoute();
     } catch (e) { console.error("Erro na inicialização:", e); }
 }
         
