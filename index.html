@@ -2311,25 +2311,239 @@
             handlePostBasketSearch();
         };
 
+        function getAgoraCuiaba() {
+            const partes = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Cuiaba',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).formatToParts(new Date());
+
+            const mapa = {};
+            partes.forEach(p => {
+                mapa[p.type] = p.value;
+            });
+
+            let hora = Number(mapa.hour);
+            if (hora === 24) hora = 0;
+
+            return new Date(
+                Number(mapa.year),
+                Number(mapa.month) - 1,
+                Number(mapa.day),
+                hora,
+                Number(mapa.minute),
+                Number(mapa.second)
+            );
+        }
+
+        function adicionarDias(data, dias) {
+            const novaData = new Date(data);
+            novaData.setDate(novaData.getDate() + dias);
+            novaData.setHours(0, 0, 0, 0);
+            return novaData;
+        }
+
+        function formatarDataEntrega(data) {
+    const diasSemana = [
+        'Domingo',
+        'Segunda',
+        'Terça',
+        'Quarta',
+        'Quinta',
+        'Sexta',
+        'Sábado'
+    ];
+
+    const meses = [
+        'Janeiro',
+        'Fevereiro',
+        'Março',
+        'Abril',
+        'Maio',
+        'Junho',
+        'Julho',
+        'Agosto',
+        'Setembro',
+        'Outubro',
+        'Novembro',
+        'Dezembro'
+    ];
+
+    const diaSemana = diasSemana[data.getDay()];
+    const diaMes = data.getDate();
+    const mes = meses[data.getMonth()];
+
+    return `${diaSemana}, dia ${diaMes} de ${mes}.`;
+}
+
+        function formatarDataValor(data) {
+            return data.toLocaleDateString('pt-BR');
+        }
+
+        function mesmoDia(dataA, dataB) {
+            return (
+                dataA.getFullYear() === dataB.getFullYear() &&
+                dataA.getMonth() === dataB.getMonth() &&
+                dataA.getDate() === dataB.getDate()
+            );
+        }
+
+       function getLabelAgendamento(data, hojeCuiaba) {
+    return formatarDataEntrega(data);
+}
+
+        function calcularSubtotalCarrinho() {
+            let subtotal = 0;
+
+            Object.entries(STATE.cart).forEach(([id, q]) => {
+                const p = STATE.prods.find(x => String(x.id) === String(id));
+                if (p) subtotal += p.price * q;
+            });
+
+            return subtotal;
+        }
+
+        function calcularDescontoAtacadoAtual() {
+            let atacadoTotal = 0;
+
+            Object.entries(STATE.cart).forEach(([id, q]) => {
+                const p = STATE.prods.find(x => String(x.id) === String(id));
+                if (p && !String(id).startsWith('fee_cesta') && q >= 3) {
+                    atacadoTotal += (p.price * 0.05) * q;
+                }
+            });
+
+            return atacadoTotal;
+        }
+
+        function calcularTotalPreviewSabado() {
+            const subtotal = calcularSubtotalCarrinho();
+            const descontoAtacado = calcularDescontoAtacadoAtual();
+            const baseParaSabado = Math.max(subtotal - descontoAtacado, 0);
+            const descontoSabado = baseParaSabado * 0.03;
+            const totalSabado = baseParaSabado - descontoSabado;
+
+            return {
+                subtotal,
+                descontoAtacado,
+                descontoSabado,
+                totalSabado
+            };
+        }
+
+        function atualizarPreviewSabadoAgendamento() {
+            const el = $('sabado-preview-total');
+            if (!el) return;
+
+            const preview = calcularTotalPreviewSabado();
+            el.innerText = fmt(preview.totalSabado);
+        }
+
         window.renderAgendamentoOptions = function() {
-            let dataAtual = new Date();
-            let cuiabaTime = new Date(dataAtual.toLocaleString("en-US", {timeZone: "America/Cuiaba"}));
-            let hora = cuiabaTime.getHours();
-            
-            let html = '';
-            let isHojeDisabled = hora >= 10;
-            
-            if (!isHojeDisabled) {
-                html += `<label class="radio-label"><input type="radio" name="agendamento" value="Hoje" data-discount="0" onchange="updateTotals()" checked> Hoje (Sem desconto)</label>`;
-            } else {
-                html += `<label class="radio-label" style="opacity: 0.5; cursor: not-allowed;"><input type="radio" name="agendamento" disabled> Hoje (Disponível apenas até as 10h)</label>`;
+            const container = $('agendamento-options-container');
+            if (!container) return;
+
+            const agoraCuiaba = getAgoraCuiaba();
+            const hojeCuiaba = new Date(agoraCuiaba);
+            hojeCuiaba.setHours(0, 0, 0, 0);
+
+            const horaAtual = agoraCuiaba.getHours();
+            const minutoAtual = agoraCuiaba.getMinutes();
+            const pedidoAteAsDez = horaAtual < 10 || (horaAtual === 10 && minutoAtual === 0);
+
+            let primeiraDataDisponivel = pedidoAteAsDez
+                ? adicionarDias(hojeCuiaba, 0)
+                : adicionarDias(hojeCuiaba, 1);
+
+            // Domingo não fazemos entrega. Se a primeira data cair em domingo, pula para segunda.
+            if (primeiraDataDisponivel.getDay() === 0) {
+                primeiraDataDisponivel = adicionarDias(primeiraDataDisponivel, 1);
             }
-            
-            html += `<label class="radio-label"><input type="radio" name="agendamento" value="Amanhã" data-discount="3" onchange="updateTotals()" ${isHojeDisabled ? 'checked' : ''}> Amanhã (Desconto de R$ 3,00)</label>`;
-            
-            html += `<label class="radio-label"><input type="radio" name="agendamento" value="Depois de amanhã" data-discount="5" onchange="updateTotals()"> Depois de amanhã (Desconto de R$ 5,00)</label>`;
-            
-            $('agendamento-options-container').innerHTML = html;
+
+            let sabadoDaSemana = adicionarDias(hojeCuiaba, 6 - hojeCuiaba.getDay());
+
+            // Se a primeira data disponível já passou do sábado desta semana, monta a agenda da próxima semana.
+            if (primeiraDataDisponivel > sabadoDaSemana) {
+                sabadoDaSemana = adicionarDias(primeiraDataDisponivel, 6 - primeiraDataDisponivel.getDay());
+            }
+
+            let datasDisponiveis = [];
+            let cursor = new Date(primeiraDataDisponivel);
+
+            while (cursor <= sabadoDaSemana) {
+                if (cursor.getDay() !== 0) {
+                    datasDisponiveis.push(new Date(cursor));
+                }
+                cursor = adicionarDias(cursor, 1);
+            }
+
+            // Segurança: se não sobrar nenhum dia, começa na próxima segunda e lista até sábado.
+            if (datasDisponiveis.length === 0) {
+                let proximaSegunda = adicionarDias(hojeCuiaba, 1);
+
+                while (proximaSegunda.getDay() !== 1) {
+                    proximaSegunda = adicionarDias(proximaSegunda, 1);
+                }
+
+                const proximoSabado = adicionarDias(proximaSegunda, 5);
+                cursor = new Date(proximaSegunda);
+
+                while (cursor <= proximoSabado) {
+                    datasDisponiveis.push(new Date(cursor));
+                    cursor = adicionarDias(cursor, 1);
+                }
+            }
+
+            const previewSabado = calcularTotalPreviewSabado();
+            const avisoHorario = pedidoAteAsDez
+                ? 'Pedidos feitos até 10h podem ser agendados para hoje, conforme disponibilidade da rota.'
+                : 'Pedidos feitos após 10h são agendados a partir do próximo dia útil de entrega.';
+
+            let html = `
+                <div style="font-size: 12.5px; color: var(--text-light); font-weight: 700; line-height: 1.4; margin-bottom: 12px; background: #f8fafc; border: 1px solid var(--border-light); border-radius: 12px; padding: 12px;">
+                    ${avisoHorario}<br>
+                    Domingo não temos entrega.
+                </div>
+            `;
+
+            datasDisponiveis.forEach((data, index) => {
+                const isSabado = data.getDay() === 6;
+                const labelData = getLabelAgendamento(data, hojeCuiaba);
+const valorData = labelData;
+
+                const textoExtra = isSabado
+                    ? `
+                        <div style="font-size: 12px; color: var(--success); font-weight: 900; margin-top: 4px;">
+                            Agende para sábado e pague somente <span id="sabado-preview-total">${fmt(previewSabado.totalSabado)}</span>
+                        </div>
+                    `
+                    : '';
+
+                html += `
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            name="agendamento"
+                            value="${valorData}"
+                            data-is-sabado="${isSabado ? '1' : '0'}"
+                            data-discount-percent="${isSabado ? '3' : '0'}"
+                            onchange="updateTotals()"
+                            ${index === 0 ? 'checked' : ''}
+                        >
+                        <div style="display: flex; flex-direction: column; line-height: 1.25;">
+<span>${labelData}</span>
+${textoExtra}
+                        </div>
+                    </label>
+                `;
+            });
+
+            container.innerHTML = html;
         }
 
         window.openCheckout = function() {
@@ -2400,9 +2614,16 @@
             let agendamentoDiscount = 0;
             let selectedAgendamento = document.querySelector('input[name="agendamento"]:checked');
             if (selectedAgendamento) {
-                agendamentoDiscount = parseFloat(selectedAgendamento.getAttribute('data-discount')) || 0;
+                const isSabado = selectedAgendamento.getAttribute('data-is-sabado') === '1';
+                const discountPercent = parseFloat(selectedAgendamento.getAttribute('data-discount-percent')) || 0;
+
+                if (isSabado && discountPercent > 0) {
+                    const baseParaDescontoAgendamento = Math.max(sumBase - STATE.atacadoDiscount, 0);
+                    agendamentoDiscount = baseParaDescontoAgendamento * (discountPercent / 100);
+                }
             }
             STATE.agendamentoDiscount = agendamentoDiscount;
+            atualizarPreviewSabadoAgendamento();
             
             $('sum-agendamento-desc').innerText = `- ${fmt(agendamentoDiscount)}`;
             $('sum-agendamento-row').style.display = agendamentoDiscount > 0 ? 'flex' : 'none';
@@ -2488,6 +2709,13 @@
             });
         });
 
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.name === 'agendamento') {
+                const box = $('agendamento-options-container');
+                if (box) box.classList.remove('checkout-required-error');
+            }
+        });
+
         window.sendOrder = async function(btnOverride) {
             const btn = btnOverride || $('btn-send-order'); 
             if (!btnOverride && btn.disabled) return;
@@ -2502,10 +2730,11 @@
             let pag = $('chk-pagamento').value;
             
             let agendamentoObj = document.querySelector('input[name="agendamento"]:checked');
-            let dataAgendamento = agendamentoObj ? agendamentoObj.value : "Não selecionado";
+            let dataAgendamento = agendamentoObj ? agendamentoObj.value : "";
 
             limparErrosCheckout();
             const camposObrigatorios = [
+                { id: 'agendamento-options-container', label: 'Data de agendamento', customValidate: () => !!dataAgendamento },
                 { id: 'chk-nome', label: 'Nome completo' },
                 { id: 'chk-bairro', label: 'Bairro' },
                 { id: 'chk-rua', label: 'Rua' },
@@ -2514,6 +2743,10 @@
                 { id: 'chk-pagamento', label: 'Forma de pagamento' }
             ];
             const faltantes = camposObrigatorios.filter(campo => {
+                if (typeof campo.customValidate === 'function') {
+                    return !campo.customValidate();
+                }
+
                 const el = $(campo.id);
                 return !el || !String(el.value || '').trim();
             });
