@@ -480,14 +480,15 @@
         const FirebaseAPI = {
     baseURL: "https://cedar-chemist-310801-default-rtdb.firebaseio.com/",
 
-    gerarChaveProduto: function(produto) {
-        return String(
-            produto.id ||
-            produto.codigo ||
-            produto.gtin ||
-            Date.now() + Math.floor(Math.random() * 100000)
-        );
-    },
+   gerarChaveProduto: function(produto) {
+    return String(
+        produto.firebaseKey ||
+        produto.id ||
+        produto.codigo ||
+        produto.gtin ||
+        Date.now() + Math.floor(Math.random() * 100000)
+    );
+},
 
     arrayParaObjetoPorId: function(lista) {
         const obj = {};
@@ -535,22 +536,41 @@
         }
     },
 
-    salvarProdutos: async function(dados) {
-        try {
-            const dadosPorId = this.arrayParaObjetoPorId(dados);
+     salvarProdutos: async function(dados) {
+    try {
+        if (!Array.isArray(dados)) {
+            throw new Error("Dados inválidos: esperado um array de produtos.");
+        }
 
-            const res = await fetch(this.baseURL + "produtos.json", {
-                method: 'PUT',
+        let total = 0;
+
+        for (const produto of dados) {
+            const chave = this.gerarChaveProduto(produto);
+
+            const produtoLimpo = { ...produto };
+            delete produtoLimpo.firebaseKey;
+            produtoLimpo.id = String(produtoLimpo.id || chave);
+
+            const res = await fetch(this.baseURL + "produtos/" + chave + ".json", {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dadosPorId)
+                body: JSON.stringify(produtoLimpo)
             });
 
-            if (!res.ok) throw new Error("Erro ao gravar no Firebase: " + res.statusText);
-        } catch (error) {
-            console.error("ERRO GRAVE DE COMUNICAÇÃO FIREBASE:", error);
-            throw error;
+            if (!res.ok) {
+                throw new Error("Erro ao gravar produto " + chave + ": " + res.statusText);
+            }
+
+            total++;
         }
+
+        console.log("Produtos atualizados no Firebase via PATCH:", total);
+
+    } catch (error) {
+        console.error("ERRO GRAVE DE COMUNICAÇÃO FIREBASE:", error);
+        throw error;
     }
+}
 };
 
         // ==========================================================
@@ -688,46 +708,40 @@
         }
 
         function sanitizeProductsForExport(prods) {
-            const camposPermitidos = [
-                'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
-                'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
-                'subcategoria', 'subsubcategoria', 'marca', 'embalagem', 'tag_global', 
-                'link_youtube', 'last_update', 'url_imagem', 'gondola', 'prateleira', 'localizacao', 'descricao',
-                'preco_oferta', 'validade_oferta', 'combo_id', 'validade_combo'
-            ];
-            return prods.map(p => {
-                let cleanP = {};
-                camposPermitidos.forEach(campo => {
-                    if (p[campo] !== undefined && p[campo] !== null) {
-                        cleanP[campo] = p[campo];
-                        if (campo === 'url_imagem' && typeof p[campo] === 'string' && p[campo].startsWith('data:image')) cleanP[campo] = "";
-                        else if (campo === 'url_imagem' && typeof p[campo] === 'string') cleanP[campo] = p[campo].split('?')[0]; 
-                    }
-                });
+    const camposPermitidos = [
+        'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
+        'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
+        'subcategoria', 'subsubcategoria', 'marca', 'embalagem', 'tag_global', 
+        'link_youtube', 'last_update', 'url_imagem', 'gondola', 'prateleira', 'localizacao',
+        'descricao', 'descricao_status', 'descricao_atualizada_em',
+        'preco_oferta', 'validade_oferta', 'combo_id', 'validade_combo'
+    ];
 
-                if (Array.isArray(cleanP.tag_global)) {
-                    cleanP.tag_global = cleanP.tag_global.filter(t => tagsDoSistema.includes(t));
-                }
-                
-                if (cleanP.categoria && !categoriasDoSistema.find(c => c.nome === cleanP.categoria)) {
-                    cleanP.categoria = ""; cleanP.subcategoria = ""; cleanP.subsubcategoria = "";
-                } else if (cleanP.categoria && cleanP.subcategoria) {
-                    const catObj = categoriasDoSistema.find(c => c.nome === cleanP.categoria);
-                    const subObj = catObj ? catObj.subcategorias.find(s => s.nome === cleanP.subcategoria) : null;
-                    if (!subObj) {
-                        cleanP.subcategoria = ""; cleanP.subsubcategoria = "";
-                    } else if (cleanP.subsubcategoria && !subObj.subsubcategorias.includes(cleanP.subsubcategoria)) {
-                        cleanP.subsubcategoria = "";
-                    }
-                }
+    return prods.map(p => {
+        let cleanP = {};
 
-                if (cleanP.marca && !marcasDoSistema.includes(cleanP.marca)) {
-                    cleanP.marca = "";
-                }
+        camposPermitidos.forEach(campo => {
+            if (p[campo] !== undefined && p[campo] !== null) {
+                cleanP[campo] = p[campo];
 
-                return cleanP;
-            });
-        }
+                if (
+                    campo === 'url_imagem' &&
+                    typeof p[campo] === 'string' &&
+                    p[campo].startsWith('data:image')
+                ) {
+                    cleanP[campo] = "";
+                } else if (
+                    campo === 'url_imagem' &&
+                    typeof p[campo] === 'string'
+                ) {
+                    cleanP[campo] = p[campo].split('?')[0];
+                }
+            }
+        });
+
+        return cleanP;
+    });
+}
 
         // ==========================================================
         // INTEGRAÇÃO META ADS - MAPEAMENTO CENTRALIZADO
