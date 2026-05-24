@@ -979,86 +979,117 @@
         
         function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
 
-        // ==========================================================
-        // INTELIGÊNCIA AUTÓNOMA DE OFERTAS POR VALIDADE
-        // ==========================================================
-        async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync = false) {
-            let houveMudanca = false;
-            const hoje = new Date();
-            hoje.setHours(0, 0, 0, 0); 
+       // ==========================================================
+// INTELIGÊNCIA AUTÓNOMA DE OFERTAS POR VALIDADE
+// ==========================================================
+async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync = false) {
+    let houveMudanca = false;
 
-            const formatarFimOferta = (dataString) => {
-                if(!dataString || !dataString.includes('/')) return "";
-                const partes = dataString.split('/');
-                if(partes.length !== 3) return "";
-                return `${partes[2]}-${partes[1]}-${partes[0]}T23:59`; 
-            };
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
 
-            const itensParaAnalisar = skuEspecifico ? products.filter(p => p.codigo === skuEspecifico) : products;
+    const formatarFimOferta = (dataString) => {
+        if (!dataString || !dataString.includes('/')) return "";
 
-            itensParaAnalisar.forEach(p => {
-                if (p.situacao === 'I') return;
-                if (!p.preco) return;
+        const partes = dataString.split('/');
+        if (partes.length !== 3) return "";
 
-                const temOfertaManual = p.preco_oferta !== "" && p.preco_oferta !== null && p.preco_oferta !== undefined;
+        return `${partes[2]}-${partes[1]}-${partes[0]}T23:59`;
+    };
 
-                let novoPrecoOferta = p.preco_oferta; 
-                let novaValidadeOferta = p.validade_oferta;
-                let novoEstoque = parseFloat(p.estoque) || 0;
+    const itensParaAnalisar = skuEspecifico
+        ? products.filter(p => p.codigo === skuEspecifico)
+        : products;
 
-                if (p.validade && p.validade.includes('/')) {
-                    const partesData = p.validade.split('/');
-                    const dataValidade = new Date(partesData[2], partesData[1] - 1, partesData[0]);
-                    if (dataValidade < hoje) {
-                        novoEstoque = 0;
-                        novoPrecoOferta = "";
-                        novaValidadeOferta = "";
-                    }
+    itensParaAnalisar.forEach(p => {
+        if (p.situacao === 'I') return;
+        if (!p.preco) return;
+
+        const temOfertaManual =
+            p.preco_oferta !== "" &&
+            p.preco_oferta !== null &&
+            p.preco_oferta !== undefined;
+
+        let novoPrecoOferta = p.preco_oferta;
+        let novaValidadeOferta = p.validade_oferta;
+        let novoEstoque = parseFloat(p.estoque) || 0;
+
+        if (p.validade && p.validade.includes('/')) {
+            const partesData = p.validade.split('/');
+            const dataValidade = new Date(partesData[2], partesData[1] - 1, partesData[0]);
+            dataValidade.setHours(0, 0, 0, 0);
+
+            const diasRestantes = Math.ceil(
+                (dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)
+            );
+
+            const precoOriginal = parseFloat(p.preco) || 0;
+            const precoCusto = parseFloat(p.preco_custo) || 0;
+
+            // Produto vencido: zera estoque e remove oferta
+            if (diasRestantes < 1) {
+                novoEstoque = 0;
+                novoPrecoOferta = "";
+                novaValidadeOferta = "";
+            }
+
+            // Oferta automática somente se não houver oferta manual
+            if (!temOfertaManual && novoEstoque > 0 && diasRestantes >= 1 && diasRestantes <= 180) {
+                let percentualDesconto = 0;
+
+                if (diasRestantes >= 121 && diasRestantes <= 180) {
+                    percentualDesconto = 0.05; // 5%
+                } else if (diasRestantes >= 91 && diasRestantes <= 120) {
+                    percentualDesconto = 0.10; // 10%
+                } else if (diasRestantes >= 61 && diasRestantes <= 90) {
+                    percentualDesconto = 0.20; // 20%
+                } else if (diasRestantes >= 31 && diasRestantes <= 60) {
+                    percentualDesconto = 0.30; // 30%
+                } else if (diasRestantes >= 1 && diasRestantes <= 30) {
+                    percentualDesconto = 0.40; // 40%
                 }
 
-                if (!temOfertaManual && novoEstoque > 0 && p.validade && p.validade.includes('/')) {
-                    const partesData = p.validade.split('/');
-                    const dataValidade = new Date(partesData[2], partesData[1] - 1, partesData[0]);
-                    const diasRestantes = Math.ceil((dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-                    const precoOriginal = parseFloat(p.preco) || 0;
-                    const precoCusto = parseFloat(p.preco_custo) || 0;
+                if (percentualDesconto > 0) {
+                    const precoComDesconto = precoOriginal * (1 - percentualDesconto);
 
-                    if (diasRestantes <= 30) {
-                        novoPrecoOferta = Math.max(precoOriginal * 0.75, precoCusto);
-                        novaValidadeOferta = formatarFimOferta(p.validade);
-                    } else if (diasRestantes <= 60) {
-                        novoPrecoOferta = Math.max(precoOriginal * 0.80, precoCusto);
-                        novaValidadeOferta = formatarFimOferta(p.validade);
-                    } else if (diasRestantes <= 90) {
-                        novoPrecoOferta = Math.max(precoOriginal * 0.85, precoCusto);
-                        novaValidadeOferta = formatarFimOferta(p.validade);
-                        } else if (diasRestantes <= 120) {
-                        novoPrecoOferta = Math.max(precoOriginal * 0.90, precoCusto);
-                        novaValidadeOferta = formatarFimOferta(p.validade);
-                        } else if (diasRestantes <= 150) {
-                        novoPrecoOferta = Math.max(precoOriginal * 0.95, precoCusto);
-                        novaValidadeOferta = formatarFimOferta(p.validade);
-                    }
-                }
-
-                if (novoPrecoOferta !== "") novoPrecoOferta = parseFloat(parseFloat(novoPrecoOferta).toFixed(2));
-                
-                if (parseFloat(p.estoque) !== novoEstoque || parseFloat(p.preco_oferta || 0) !== (novoPrecoOferta || 0) || p.validade_oferta !== novaValidadeOferta) {
-                    p.estoque = novoEstoque;
-                    p.preco_oferta = novoPrecoOferta;
-                    p.validade_oferta = novaValidadeOferta;
-                    p.last_update = Date.now();
-                    houveMudanca = true;
-                }
-            });
-
-            if (houveMudanca) {
-                await saveDataLocally();
-                if (!skuEspecifico && !preventSync) {
-                    salvarProdutosJSON();
+                    // Nunca deixa a oferta abaixo do custo
+                    novoPrecoOferta = Math.max(precoComDesconto, precoCusto);
+                    novaValidadeOferta = formatarFimOferta(p.validade);
                 }
             }
+
+            // Se estiver acima de 180 dias e não tiver oferta manual, remove oferta automática antiga
+            if (!temOfertaManual && diasRestantes > 180) {
+                novoPrecoOferta = "";
+                novaValidadeOferta = "";
+            }
         }
+
+        if (novoPrecoOferta !== "") {
+            novoPrecoOferta = parseFloat(parseFloat(novoPrecoOferta).toFixed(2));
+        }
+
+        if (
+            parseFloat(p.estoque) !== novoEstoque ||
+            parseFloat(p.preco_oferta || 0) !== (novoPrecoOferta || 0) ||
+            p.validade_oferta !== novaValidadeOferta
+        ) {
+            p.estoque = novoEstoque;
+            p.preco_oferta = novoPrecoOferta;
+            p.validade_oferta = novaValidadeOferta;
+            p.last_update = Date.now();
+            houveMudanca = true;
+        }
+    });
+
+    if (houveMudanca) {
+        await saveDataLocally();
+
+        if (!skuEspecifico && !preventSync) {
+            salvarProdutosJSON();
+        }
+    }
+}
         
         async function loadData() {
             try { const saved = await localforage.getItem(STORAGE_KEY); if(saved && Array.isArray(saved)) products = saved; } catch (err) {}
