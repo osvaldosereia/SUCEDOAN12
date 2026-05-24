@@ -418,6 +418,400 @@
             .prod-page-desc-box { width: 100%; border-top: 1px solid var(--border-light); padding: 40px; border-bottom: none; margin-top: 0; }
             .prod-sticky-bottom { position: relative; bottom: auto; background: transparent; padding: 0; box-shadow: none; border-top: none; margin-top: 30px; width: 100%; z-index: 1;}
         }
+    
+
+        /* =========================================
+           TOPBAR PROFISSIONAL + NAVEGAÇÃO PREMIUM
+        ========================================= */
+        :root { --h-top: 154px; }
+
+        .header-main {
+            background:
+                radial-gradient(circle at top left, rgba(16, 185, 129, 0.10), transparent 32%),
+                linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.94) 100%);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+            box-shadow: 0 10px 32px rgba(15, 23, 42, 0.07);
+            transition: transform 0.28s ease, opacity 0.28s ease;
+            will-change: transform;
+            padding-left: 14px;
+            padding-right: 14px;
+        }
+
+        .header-inner {
+            width: 100%;
+            max-width: 1180px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+
+        .header-top-row {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .brand-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            text-decoration: none;
+            color: var(--text-dark);
+        }
+
+        .header-logo {
+            height: 46px;
+            max-width: 185px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.08));
+        }
+
+        .brand-copy {
+            display: none;
+            flex-direction: column;
+            line-height: 1.05;
+        }
+
+        .brand-copy strong {
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            color: var(--text-dark);
+        }
+
+        .brand-copy span {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-light);
+            margin-top: 3px;
+        }
+
+        .header-delivery-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 999px;
+            text-decoration: none;
+            color: #065f46;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.10);
+            flex-shrink: 0;
+        }
+
+        .header-delivery-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #10b981;
+            color: #ffffff;
+        }
+
+        .header-delivery-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.05;
+        }
+
+        .header-delivery-text small {
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.75;
+        }
+
+        .header-delivery-text strong {
+            font-size: 11px;
+            font-weight: 900;
+            margin-top: 2px;
+            white-space: nowrap;
+        }
+
+        .header-action-row {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-container {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .topbar-search {
+            height: 50px;
+            border-radius: 18px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 7px 18px rgba(15, 23, 42, 0.06);
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .topbar-search::placeholder {
+            color: #94a3b8;
+            font-weight: 700;
+        }
+
+        .topbar-search:focus {
+            border-color: #111827;
+            box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08), 0 10px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .search-icon-pos {
+            left: 16px;
+            color: #64748b;
+        }
+
+        .clear-search-btn {
+            right: 14px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #f1f5f9;
+        }
+
+        .header-mobile-shortcuts {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 0 1px 1px 1px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .header-mobile-shortcuts::-webkit-scrollbar { display: none; }
+
+        .top-shortcut-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+            color: #0f172a;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 900;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+        }
+
+        .top-shortcut-chip.highlight {
+            color: #b91c1c;
+            background: #fff1f2;
+            border-color: #fecdd3;
+        }
+
+        .top-shortcut-chip.success {
+            color: #047857;
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+        }
+
+        body.topbar-hidden .header-main {
+            transform: translateY(-115%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        body.topbar-hidden .main-container {
+            top: 0;
+            height: 100dvh;
+            padding-top: 12px;
+        }
+
+        body.topbar-hidden .ver-tudo-header {
+            top: 0;
+        }
+
+        /* =========================================
+           BARRA INFERIOR PREMIUM + BOTÃO LOJA ELEVADO
+        ========================================= */
+        .app-bottom-bar {
+            height: max(82px, calc(82px + env(safe-area-inset-bottom)));
+            padding: 8px 12px env(safe-area-inset-bottom) 12px;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-top: 1px solid rgba(226, 232, 240, 0.95);
+            box-shadow: 0 -12px 32px rgba(15, 23, 42, 0.09);
+            gap: 8px;
+        }
+
+        .bottom-nav-group {
+            gap: 8px;
+            align-items: flex-end;
+            min-width: 0;
+        }
+
+        .app-nav-item {
+            width: 46px;
+            min-height: 54px;
+            border-radius: 16px;
+            transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+        }
+
+        .app-nav-item .svg-icon {
+            width: 1.45em;
+            height: 1.45em;
+        }
+
+        .app-nav-item span {
+            font-size: 9.5px;
+            letter-spacing: -0.02em;
+        }
+
+        .app-nav-item.active {
+            background: #f8fafc;
+            color: var(--text-dark);
+        }
+
+        .app-nav-item:active {
+            transform: scale(0.94);
+        }
+
+        .nav-shop-raised {
+            transform: translateY(-15px);
+            width: 58px;
+            min-height: 70px;
+            color: #ffffff !important;
+            border-radius: 22px;
+            background: linear-gradient(180deg, #111827 0%, #020617 100%);
+            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.24);
+            border: 1px solid rgba(255,255,255,0.65);
+        }
+
+        .nav-shop-raised .svg-icon {
+            color: #ffffff !important;
+            width: 1.65em;
+            height: 1.65em;
+        }
+
+        .nav-shop-raised span {
+            color: #ffffff !important;
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .nav-shop-raised.active {
+            background: linear-gradient(180deg, #10b981 0%, #047857 100%);
+            box-shadow: 0 12px 28px rgba(16, 185, 129, 0.34);
+        }
+
+        .nav-shop-raised:active {
+            transform: translateY(-15px) scale(0.94);
+        }
+
+        .bottom-send-btn {
+            min-width: 132px;
+            height: 50px;
+            border-radius: 18px;
+            padding: 0 13px 0 14px;
+            background: linear-gradient(135deg, #25D366 0%, #16a34a 100%);
+            box-shadow: 0 10px 22px rgba(37, 211, 102, 0.28);
+        }
+
+        .bottom-send-btn:disabled {
+            background: #cbd5e1;
+            box-shadow: none;
+        }
+
+        .cart-badge {
+            top: 0px;
+            right: 0px;
+        }
+
+        /* =========================================
+           DESKTOP PREMIUM
+        ========================================= */
+        @media (min-width: 768px) {
+            :root { --h-top: 86px; }
+
+            .header-main {
+                padding: 0 30px;
+            }
+
+            .header-inner {
+                max-width: 1200px;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                gap: 22px;
+            }
+
+            .header-top-row {
+                width: auto;
+                flex-shrink: 0;
+                gap: 14px;
+            }
+
+            .brand-copy {
+                display: flex;
+            }
+
+            .header-logo {
+                height: 48px;
+                max-width: 190px;
+            }
+
+            .header-action-row {
+                flex: 1;
+                justify-content: flex-end;
+                gap: 20px;
+            }
+
+            .search-container {
+                max-width: 440px;
+                margin: 0;
+            }
+
+            .desktop-nav {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .desktop-nav-item {
+                padding: 10px 12px;
+                border-radius: 14px;
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+                font-size: 13px;
+                white-space: nowrap;
+            }
+
+            .desktop-nav-item:hover {
+                opacity: 1;
+                background: #f8fafc;
+                transform: translateY(-1px);
+            }
+
+            .header-delivery-badge {
+                padding: 8px 12px;
+            }
+
+            .header-mobile-shortcuts {
+                display: none !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -438,7 +832,7 @@
                 <span>Ofertas</span>
             </a>
 
-            <a href="#/informacoes" class="app-nav-item" id="nav-informacoes">
+            <a href="#/informacoes" class="app-nav-item nav-shop-raised" id="nav-informacoes">
                 <svg class="svg-icon" style="color: #8b5cf6;" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <span>Loja</span>
             </a>
@@ -461,28 +855,50 @@
     
     <div class="header-main" id="header-main">
         <div class="header-inner">
-            
             <div class="header-top-row">
-                <a href="#/" style="display:flex; align-items:center; text-decoration:none;">
+                <a href="#/" class="brand-link" aria-label="Ir para a página inicial">
                     <img src="../img/logoantonia5.png" alt="Dona Antônia" class="header-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y5ZmFmYiIvPjwvc3ZnPg=='">
+                    <span class="brand-copy">
+                        <strong>Dona Antônia</strong>
+                        <span>Supermercado e cestas</span>
+                    </span>
+                </a>
+
+                <a href="#/informacoes" class="header-delivery-badge" aria-label="Informações sobre entrega grátis">
+                    <span class="header-delivery-icon">
+                        <svg class="svg-icon" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M3 7h11v10H3z"></path><path d="M14 10h4l3 3v4h-7z"></path><path d="M7 17a2 2 0 104 0"></path><path d="M17 17a2 2 0 104 0"></path></svg>
+                    </span>
+                    <span class="header-delivery-text">
+                        <small>Entrega grátis</small>
+                        <strong>Cuiabá e VG</strong>
+                    </span>
                 </a>
             </div>
-            
-            <div class="search-container">
-                <div class="search-icon-pos"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
-                <input type="text" id="app-search-input" class="topbar-search" placeholder="O que você precisa?" oninput="handleSearchInput()">
-                <div class="clear-search-btn" id="clear-search-btn" onclick="clearSearch()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div>
-            </div>
 
-            <div class="desktop-nav mobile-hide">
-                <a href="#/mercado" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l1.5 12h15L21 9M3 9h18M3 9L4.5 3h15L21 9"></path></svg> Mercado</a>
-                <a href="#/ofertas" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg> Ofertas</a>
-                <div class="desktop-nav-item" onclick="openCheckout()">
-                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg> Sua Lista
-                    <span class="cart-badge" id="top-cart-count" style="position:absolute; top:-8px; right:-12px;">0</span>
+            <div class="header-action-row">
+                <div class="search-container">
+                    <div class="search-icon-pos"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
+                    <input type="text" id="app-search-input" class="topbar-search" placeholder="Buscar produto, marca ou categoria" oninput="handleSearchInput()">
+                    <div class="clear-search-btn" id="clear-search-btn" onclick="clearSearch()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div>
+                </div>
+
+                <div class="desktop-nav mobile-hide">
+                    <a href="#/mercado" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l1.5 12h15L21 9M3 9h18M3 9L4.5 3h15L21 9"></path></svg> Mercado</a>
+                    <a href="#/ofertas" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg> Ofertas</a>
+                    <a href="#/informacoes" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Loja</a>
+                    <div class="desktop-nav-item" onclick="openCheckout()">
+                        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg> Sua Lista
+                        <span class="cart-badge" id="top-cart-count" style="position:absolute; top:-8px; right:-12px;">0</span>
+                    </div>
                 </div>
             </div>
 
+            <div class="header-mobile-shortcuts desktop-hide">
+                <a href="#/ofertas" class="top-shortcut-chip highlight">🔥 Ofertas</a>
+                <a href="#/mercado" class="top-shortcut-chip">🛒 Mercado</a>
+                <a href="#/cestas" class="top-shortcut-chip">📦 Cestas</a>
+                <a href="#/informacoes" class="top-shortcut-chip success">🚚 Entrega grátis</a>
+            </div>
         </div>
     </div>
 
@@ -694,6 +1110,54 @@
             setTimeout(() => toast.classList.remove('show'), 3000);
         };
 
+
+        let lastTopbarScroll = 0;
+        let topbarAutoHideBound = false;
+
+        function routePermiteTopbarInteligente() {
+            const hash = window.location.hash || '#/';
+            if (hash === '#/catalogo') return false;
+            if (hash.startsWith('#/produto/')) return false;
+            if (hash === '#/buscar') return false;
+            return true;
+        }
+
+        function setTopbarHidden(hidden) {
+            const header = $('header-main');
+            if (!header) return;
+            if (!routePermiteTopbarInteligente()) {
+                document.body.classList.remove('topbar-hidden');
+                return;
+            }
+            document.body.classList.toggle('topbar-hidden', !!hidden);
+        }
+
+        function setupTopbarAutoHide() {
+            const vitrine = $('vitrine');
+            if (!vitrine || topbarAutoHideBound) return;
+            topbarAutoHideBound = true;
+
+            vitrine.addEventListener('scroll', () => {
+                if (!routePermiteTopbarInteligente()) {
+                    setTopbarHidden(false);
+                    return;
+                }
+
+                const atual = Math.max(vitrine.scrollTop || 0, 0);
+                const diferenca = atual - lastTopbarScroll;
+
+                if (atual < 45) {
+                    setTopbarHidden(false);
+                } else if (diferenca > 9) {
+                    setTopbarHidden(true);
+                } else if (diferenca < -9) {
+                    setTopbarHidden(false);
+                }
+
+                lastTopbarScroll = atual;
+            }, { passive: true });
+        }
+
        function handleRoute() {
             let hash = window.location.hash || '#/';
             const vitrine = $('vitrine');
@@ -702,13 +1166,18 @@
             STATE.currentRoute = hash;
 
             if (hash === '#/catalogo' || hash.startsWith('#/produto/')) {
+                document.body.classList.remove('topbar-hidden');
                 $('header-main').style.display = 'none';
                 vitrine.style.top = '0';
                 vitrine.style.height = '100dvh';
             } else {
                 $('header-main').style.display = 'flex';
                 vitrine.style.top = ''; 
-                vitrine.style.height = ''; 
+                vitrine.style.height = '';
+
+                if ((vitrine.scrollTop || 0) < 45) {
+                    document.body.classList.remove('topbar-hidden');
+                }
             }
 
             if($('basketDetailModal').classList.contains('active')) $('basketDetailModal').classList.remove('active');
@@ -2116,7 +2585,7 @@ Por favor, podem incluir na minha entrega?`;
             aplicarDescontos(STATE.prods);
             generateCombosFromProducts();
         }
-        loadCart(); updateTotals(); handleRoute();
+        loadCart(); updateTotals(); setupTopbarAutoHide(); handleRoute();
     } catch (e) { console.error("Erro na inicialização:", e); }
 }
         
