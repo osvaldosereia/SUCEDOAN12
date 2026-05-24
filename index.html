@@ -1713,7 +1713,13 @@
                     totalBruto += p.price * q; 
                     if (!String(cartId).startsWith('fee_cesta')) {
                         itemsTxt += `${q}x ${p.name}\n`; 
-                        pedidoItens.push({ sku: String(p.codigo || p.id), nome: p.name, qtd: q, price: p.price });
+                        pedidoItens.push({
+  firebaseKey: String(p.firebaseKey || ""),
+  sku: String(p.codigo || p.id),
+  nome: p.name,
+  qtd: q,
+  price: p.price
+});
                     } else { 
                         totalTaxasExtras += (p.price * q);
                     } 
