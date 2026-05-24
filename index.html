@@ -1913,32 +1913,49 @@ Por favor, podem incluir na minha entrega?`;
         });
     }
 
-   async function init() {
-        try {
-            const r2 = await fetchWithCache('https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json');
-            
-            if (r2 && r2.length > 0) {
-                STATE.prods = r2.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => {
-                    let baseName = p.nome ? formatName(p.nome.trim()) : "Produto"; 
-                    return { 
-                        id: String(p.codigo || p.id), codigo: String(p.codigo || ""), name: baseName, slug: getFriendlySlug(baseName),
-                        price: parseFloat(p.preco) * 1.00, stock: parseInt(p.estoque) || 0, 
-                        img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
-                        categoria: p.categoria || "Outros", subcategoria: p.subcategoria || "", 
-                        vencimento: p.validade || p.vencimento || null, embalagem: p.embalagem || extractVolume(p.nome),
-                        marca: p.marca || "", descricao: p.descricao || "", gtin: p.gtin || "",
-                        preco_oferta: p.preco_oferta ? parseFloat(p.preco_oferta) : null,
-                        validade_oferta: p.validade_oferta || null,
-                        combo_id: p.combo_id || null,
-                        validade_combo: p.validade_combo || null
-                    };
-                });
-                aplicarDescontos(STATE.prods);
-                generateCombosFromProducts();
-            }
-            loadCart(); updateTotals(); handleRoute();
-        } catch (e) { console.error("Erro na inicialização:", e); }
-    }
+  async function init() {
+    try {
+        const r2 = await fetchWithCache('https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json');
+        
+        // O Firebase agora retorna um objeto no formato:
+        // { "id_do_produto": { dados_do_produto }, "outro_id": { dados_do_produto } }
+        // Por isso convertemos o objeto em array antes de filtrar e mapear.
+        const produtosArray = r2 ? Object.entries(r2).map(([firebaseKey, produto]) => ({
+            ...produto,
+            firebaseKey: firebaseKey
+        })) : [];
+
+        if (produtosArray.length > 0) {
+            STATE.prods = produtosArray.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => {
+                let baseName = p.nome ? formatName(p.nome.trim()) : "Produto"; 
+                return { 
+                    id: String(p.codigo || p.id),
+                    firebaseKey: String(p.firebaseKey || p.id || p.codigo || ""),
+                    codigo: String(p.codigo || ""),
+                    name: baseName,
+                    slug: getFriendlySlug(baseName),
+                    price: parseFloat(p.preco) * 1.00,
+                    stock: parseInt(p.estoque) || 0, 
+                    img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
+                    categoria: p.categoria || "Outros",
+                    subcategoria: p.subcategoria || "", 
+                    vencimento: p.validade || p.vencimento || null,
+                    embalagem: p.embalagem || extractVolume(p.nome),
+                    marca: p.marca || "",
+                    descricao: p.descricao || "",
+                    gtin: p.gtin || "",
+                    preco_oferta: p.preco_oferta ? parseFloat(p.preco_oferta) : null,
+                    validade_oferta: p.validade_oferta || null,
+                    combo_id: p.combo_id || null,
+                    validade_combo: p.validade_combo || null
+                };
+            });
+            aplicarDescontos(STATE.prods);
+            generateCombosFromProducts();
+        }
+        loadCart(); updateTotals(); handleRoute();
+    } catch (e) { console.error("Erro na inicialização:", e); }
+}
         
     document.addEventListener('DOMContentLoaded', init);
     </script>
