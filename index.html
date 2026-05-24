@@ -2155,13 +2155,18 @@
         };
 
         window.renderCatalogoGrid = function(cat) {
-            let filteredProds = STATE.prods.filter(p => {
-                if (p.categoria === 'Cestas') return false;
-                if (cat === 'Todos') return true;
-                return p.categoria === cat;
-            });
-            renderCatalogoGridInto('catalogo-grid-container', filteredProds);
-        };
+    let filteredProds = STATE.prods.filter(p => {
+        if (p.categoria === 'Cestas') return false;
+        if (cat === 'Todos') return true;
+        return p.categoria === cat;
+    });
+
+    if (cat === 'Todos') {
+        filteredProds = filteredProds.slice(0, 60);
+    }
+
+    renderCatalogoGridInto('catalogo-grid-container', filteredProds);
+};
 
         function renderCatalogoGridInto(containerId, listaProdutos) {
             let gridHtml = '';
@@ -2384,7 +2389,7 @@
                 return;
             }
             let html = `<div style="padding: 0;"><div class="products-grid">`;
-            results.forEach(p => html += renderCardHTML(p));
+results.forEach(p => html += renderCardHTML(p));
             html += '</div></div>';
             $('vitrine').innerHTML = html;
             updateCollectionSeo('Busca', results);
@@ -2433,11 +2438,51 @@
             $('post-basket-search-results').style.display = 'none';
         };
 
-        function lazyLoadImages() {
-            const images = document.querySelectorAll('.lazy-img');
-            const observer = new IntersectionObserver((entries, obs) => { entries.forEach(entry => { if (entry.isIntersecting) { const img = entry.target; img.src = img.getAttribute('data-src'); img.classList.remove('lazy-img'); obs.unobserve(img); } }); }, { root: null, rootMargin: '300px' });
-            images.forEach(img => observer.observe(img));
+       let imageObserver = null;
+
+function lazyLoadImages() {
+    const images = document.querySelectorAll('.lazy-img');
+
+    if (!images.length) return;
+
+    if (!('IntersectionObserver' in window)) {
+        images.forEach(img => {
+            const src = img.getAttribute('data-src');
+            if (src) img.src = src;
+            img.classList.remove('lazy-img');
+        });
+        return;
+    }
+
+    if (!imageObserver) {
+        imageObserver = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+
+                const img = entry.target;
+                const src = img.getAttribute('data-src');
+
+                if (src && img.src !== src) {
+                    img.src = src;
+                }
+
+                img.classList.remove('lazy-img');
+                obs.unobserve(img);
+            });
+        }, {
+            root: null,
+            rootMargin: '250px 0px',
+            threshold: 0.01
+        });
+    }
+
+    images.forEach(img => {
+        if (!img.dataset.observed) {
+            img.dataset.observed = '1';
+            imageObserver.observe(img);
         }
+    });
+}
 
         window.openBasketDetail = function(basketId) {
             const basket = BASKETS.find(b => b.id === basketId) || dynamicCombos.find(c => c.id === basketId); 
@@ -3418,17 +3463,24 @@ Por favor, podem incluir na minha entrega?`;
             catch (e) { return SITE_BASE_URL + '/'; }
         }
 
-        function setNamedMeta(selector, attrName, value) {
-            if (!value) return;
-            let el = document.querySelector(selector);
-            if (!el) {
-                el = document.createElement('meta');
-                const match = selector.match(/\[(name|property)="([^"]+)"\]/);
-                if (match) el.setAttribute(match[1], match[2]);
-                document.head.appendChild(el);
-            }
-            el.setAttribute(attrName, value);
+       function setNamedMetaSEO(selector, attrName, value) {
+    if (!value) return;
+
+    let el = document.querySelector(selector);
+
+    if (!el) {
+        el = document.createElement('meta');
+        const match = selector.match(/\[(name|property)="([^"]+)"\]/);
+
+        if (match) {
+            el.setAttribute(match[1], match[2]);
         }
+
+        document.head.appendChild(el);
+    }
+
+    el.setAttribute(attrName, value);
+}
 
         function setCanonicalSEO(url) {
             let link = document.querySelector('link[rel="canonical"]');
