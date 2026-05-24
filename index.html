@@ -2213,7 +2213,7 @@
                 html += `
                 <div class="product-card-list" onclick="openBasketDetail('${basket.id}')" style="flex-direction: column; padding: 20px; align-items: flex-start;">
                     <div style="width: 100%; height: 220px; border-radius: 16px; overflow: hidden; margin-bottom: 16px; background: #f8fafc; flex-shrink: 0;">
-                        <img src="${basket.imagem}" style="width: 100%; height: 100%; object-fit: cover;" alt="${basket.nome}" onerror="this.src='../img/logoantonia5.png'">
+                        <img src="${basket.imagem}" style="width: 100%; height: 100%; object-fit: cover;" alt="${basket.nome}" onerror="this.src='img/logoantonia5.png'"'">
                     </div>
                     <div class="product-details" style="width: 100%; padding: 0;">
                         <div class="product-name-list" style="font-size: 20px; font-weight: 900; margin-bottom: 8px; color: var(--text-dark);">${basket.nome}</div>
@@ -2246,7 +2246,7 @@
                 html += `
                 <div class="product-card-list" onclick="openBasketDetail('${combo.id}')" style="flex-direction: column; padding: 20px; align-items: flex-start;">
                     <div style="width: 100%; aspect-ratio: 4 / 5; border-radius: 16px; overflow: hidden; margin-bottom: 16px; background: #f8fafc; flex-shrink: 0; display:flex; align-items:center; justify-content:center; border: 1px solid var(--border-light);">
-                        <img src="${combo.imagem}" style="width: 100%; height: 100%; object-fit: cover;" alt="${combo.nome}" onerror="this.src='../img/logoantonia5.png'">
+                        <img src="${combo.imagem}" style="width: 100%; height: 100%; object-fit: cover;" alt="${combo.nome}" onerror="this.src='img/logoantonia5.png'"'">
                     </div>
                     <div class="product-details" style="width: 100%; padding: 0;">
                         <div class="product-name-list" style="font-size: 20px; font-weight: 900; margin-bottom: 8px; color: var(--text-dark);">${combo.nome}</div>
@@ -3610,7 +3610,58 @@ Por favor, podem incluir na minha entrega?`;
 
             setStructuredDataSEO(baseGraphSEO([productSchema, breadcrumbSchema]));
         }
+function normalizarImagemProduto(p) {
+    const placeholderProduto = "img/logoantonia5.png";
 
+    const valorImagem =
+        p.url_imagem ||
+        p.imagem ||
+        p.image ||
+        p.img ||
+        p.foto ||
+        p.foto_url ||
+        p.urlImagem ||
+        p.imagem_url ||
+        "";
+
+    if (valorImagem && typeof valorImagem === "string") {
+        const img = valorImagem.trim();
+
+        if (
+            img.startsWith("http://") ||
+            img.startsWith("https://") ||
+            img.startsWith("data:")
+        ) {
+            return img;
+        }
+
+        if (img.startsWith("../")) {
+            return img;
+        }
+
+        if (img.startsWith("./")) {
+            return img.replace("./", "");
+        }
+
+        if (img.startsWith("/site/")) {
+            return img.replace("/site/", "");
+        }
+
+        if (img.startsWith("/")) {
+            return img.substring(1);
+        }
+
+        return img;
+    }
+
+    const codigoProduto = String(p.codigo || p.id || p.firebaseKey || "").trim();
+
+    if (!codigoProduto) {
+        return placeholderProduto;
+    }
+
+    return `img/produtos/${codigoProduto}.webp`;
+}
 
   async function init() {
     try {
@@ -3637,7 +3688,7 @@ Por favor, podem incluir na minha entrega?`;
                     slug: getFriendlySlug(baseName),
                     price: Number(String(p.preco || 0).replace(',', '.')) * 1.00,
                     stock: parseInt(p.estoque) || 0, 
-                    img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
+img: normalizarImagemProduto(p),
                     categoria: p.categoria || "Outros",
                     subcategoria: p.subcategoria || "", 
                     vencimento: p.validade || p.vencimento || null,
