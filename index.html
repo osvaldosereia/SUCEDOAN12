@@ -5,15 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dona Antônia - Supermercado e Cestas</title>
     
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <meta name="description" id="meta-description" content="Supermercado online e cestas básicas com entrega em Cuiabá e Várzea Grande.">
+    <meta name="description" id="meta-description" content="Supermercado online, cestas básicas, ofertas e entrega grátis em Cuiabá e Várzea Grande.">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="format-detection" content="telephone=yes">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Dona Antônia">
+    <meta property="og:title" content="Dona Antônia - Supermercado e Cestas">
+    <meta property="og:description" content="Supermercado online, cestas básicas, ofertas e entrega grátis em Cuiabá e Várzea Grande.">
+    <meta property="og:url" content="https://www.donaantonia.com.br/">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="https://www.donaantonia.com.br/">
     <link rel="icon" href="data:,">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&display=swap" rel="stylesheet">
     
     <style>
         :root {
@@ -998,6 +1001,401 @@
             .prod-page-price { font-size: 30px; }
         }
 
+
+        /* =========================================
+           CAMADA FINAL 2026: E-COMMERCE APP CLEAN
+           Visual aplicado sem alterar regras de carrinho, checkout e Firebase.
+        ========================================= */
+        :root {
+            --bg-body: #f6f7f5;
+            --bg-soft: #f8faf7;
+            --bg-card: #ffffff;
+            --text-dark: #101828;
+            --text-light: #667085;
+            --muted: #98a2b3;
+            --primary: #0f172a;
+            --primary-soft: #f1f5f9;
+            --brand: #14532d;
+            --brand-2: #16a34a;
+            --success: #16a34a;
+            --danger: #e11d48;
+            --warning: #f59e0b;
+            --border-light: #e5e7eb;
+            --border-strong: #d0d5dd;
+            --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+            --shadow-soft: 0 12px 34px rgba(16, 24, 40, 0.08);
+            --radius-card: 20px;
+            --radius-control: 14px;
+            --h-top: 138px;
+            --header-total: var(--h-top);
+            --whatsapp: #22c55e;
+        }
+
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(20, 83, 45, 0.08), transparent 30%),
+                linear-gradient(180deg, #ffffff 0%, var(--bg-body) 36%, var(--bg-body) 100%);
+            color: var(--text-dark);
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        button, input, select, textarea { font: inherit; }
+        a, button, .product-card-list, .carousel-card, .card-catalogo, .chip-cat, .oferta-chip { touch-action: manipulation; }
+        img { image-rendering: auto; }
+        .svg-icon { stroke-width: 2.35; }
+
+        .header-main {
+            background: rgba(255, 255, 255, 0.92);
+            border-bottom: 1px solid rgba(229, 231, 235, 0.88);
+            box-shadow: 0 8px 28px rgba(16, 24, 40, 0.07);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+        }
+
+        .header-home-content { gap: 12px; }
+        .header-logo { height: 42px; max-width: 168px; }
+        .brand-copy strong { font-weight: 900; letter-spacing: -0.035em; }
+        .brand-copy span { color: var(--text-light); font-weight: 700; }
+
+        .header-info-link,
+        .desktop-nav-item {
+            border-color: rgba(208, 213, 221, 0.9);
+            background: rgba(255,255,255,0.86);
+            color: var(--text-dark);
+            box-shadow: none;
+            font-weight: 800;
+        }
+
+        .header-info-link:active,
+        .desktop-nav-item:active { transform: scale(0.98); }
+
+        .topbar-search {
+            height: 48px;
+            border-radius: 999px;
+            background: #ffffff;
+            border: 1px solid rgba(208, 213, 221, 0.95);
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+            font-size: 15px;
+            font-weight: 650;
+            padding-left: 46px;
+        }
+
+        .topbar-search:focus {
+            border-color: #14532d;
+            box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.10);
+        }
+
+        .main-container {
+            background: transparent;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .info-banner-home {
+            background: linear-gradient(135deg, #ecfdf3 0%, #f0fdf4 100%);
+            color: #14532d;
+            border: 1px solid #bbf7d0;
+            border-radius: 18px;
+            box-shadow: none;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            padding: 12px 0;
+            background: transparent !important;
+        }
+
+        .products-grid .product-card-list,
+        .carousel-card,
+        .card-catalogo,
+        .chk-section,
+        .prod-page-container,
+        .related-products-box {
+            border: 1px solid rgba(229, 231, 235, 0.95);
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
+        }
+
+        .products-grid .product-card-list {
+            min-width: 0;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+            padding: 10px;
+            border-radius: var(--radius-card);
+            background: var(--bg-card);
+            border-bottom: 1px solid rgba(229, 231, 235, 0.95);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+            content-visibility: auto;
+            contain-intrinsic-size: 246px;
+        }
+
+        .products-grid .product-card-list:active { transform: scale(0.985); }
+
+        .products-grid .product-card-list .img-wrapper {
+            width: 100%;
+            height: 132px;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #eef2f7;
+            overflow: hidden;
+        }
+
+        .products-grid .product-icon-list {
+            padding: 8px;
+            object-fit: contain;
+        }
+
+        .products-grid .product-details {
+            padding: 0 2px 2px 2px;
+            min-height: 118px;
+        }
+
+        .embalagem-tag-text,
+        .discount-line-tag {
+            font-size: 10.5px;
+            letter-spacing: 0.035em;
+        }
+
+        .products-grid .product-name-list {
+            min-height: 38px;
+            font-size: 13.6px;
+            line-height: 1.35;
+            font-weight: 750;
+            letter-spacing: -0.015em;
+            color: #1f2937;
+            -webkit-line-clamp: 2;
+        }
+
+        .products-grid .card-bottom-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+
+        .products-grid .price-container { min-height: 54px; }
+        .old-price { color: #98a2b3; font-size: 11px; }
+        .tag-preco-list {
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: -0.035em;
+            color: #0f172a;
+        }
+
+        .products-grid .card-action-area { width: 100%; }
+        .products-grid .btn-quick-add-list,
+        .products-grid .qty-controls {
+            width: 100%;
+            height: 40px;
+            border-radius: 999px;
+        }
+
+        .btn-quick-add-list,
+        .add-btn-cat,
+        .qty-controls,
+        .mini-qty-controls,
+        .cart-qty-ctrl {
+            border-color: rgba(208, 213, 221, 0.95);
+            background: #ffffff;
+        }
+
+        .products-grid .btn-quick-add-list {
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+            box-shadow: 0 7px 18px rgba(15, 23, 42, 0.16);
+        }
+
+        .products-grid .btn-quick-add-list::after {
+            content: "Adicionar";
+            font-size: 13px;
+            font-weight: 900;
+            margin-left: 6px;
+        }
+
+        .qty-btn, .mini-qty-btn, .cart-qty-btn { color: #0f172a; }
+        .qty-display, .mini-qty-display, .cart-qty-val { font-weight: 900; }
+
+        .grid-catalogo {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            padding: 12px;
+            background: transparent;
+        }
+
+        .card-catalogo {
+            border-radius: var(--radius-card);
+            border-right: 1px solid rgba(229, 231, 235, 0.95) !important;
+            border-bottom: 1px solid rgba(229, 231, 235, 0.95);
+            padding: 10px;
+            overflow: hidden;
+            content-visibility: auto;
+            contain-intrinsic-size: 210px;
+        }
+
+        .card-catalogo img {
+            height: 118px;
+            padding: 8px;
+            border-radius: 16px;
+            background: #f8fafc;
+            border: 1px solid #eef2f7;
+        }
+
+        .card-catalogo-price { font-size: 17px; letter-spacing: -0.035em; }
+        .add-btn-cat {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+        }
+
+        .subcat-title {
+            position: sticky;
+            top: 0;
+            z-index: 12;
+            padding: 16px 12px 10px 12px;
+            background: rgba(246, 247, 245, 0.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 0;
+            color: #344054;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.075em;
+        }
+
+        .chip-cat, .oferta-chip, .search-chip {
+            border-radius: 999px;
+            background: #ffffff;
+            border-color: #e5e7eb;
+            color: #344054;
+            font-weight: 850;
+        }
+
+        .chip-cat.active {
+            background: #0f172a;
+            border-color: #0f172a;
+            color: #ffffff;
+        }
+
+        .carousel-container { gap: 10px; }
+        .carousel-card {
+            border-radius: var(--radius-card);
+            padding: 10px;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
+        }
+
+        .prod-page-img-box {
+            border-bottom: 0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        }
+
+        .prod-page-info,
+        .prod-page-desc-box,
+        .related-products-box {
+            border-radius: 20px;
+            margin: 12px;
+            border: 1px solid rgba(229, 231, 235, 0.95);
+        }
+
+        .prod-page-marca {
+            background: #ecfdf3;
+            color: #14532d;
+            border-radius: 999px;
+            font-size: 11px;
+        }
+
+        .prod-page-title {
+            font-size: 22px;
+            line-height: 1.22;
+            letter-spacing: -0.04em;
+        }
+
+        .prod-page-price { color: #0f172a; letter-spacing: -0.055em; }
+        .prod-sticky-bottom { background: rgba(255,255,255,0.94); }
+
+        .chk-header {
+            background: rgba(255,255,255,0.94);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-bottom-color: rgba(229, 231, 235, 0.92);
+        }
+
+        .chk-section, .chk-inline-summary {
+            border-radius: 22px;
+            background: #ffffff;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
+        }
+
+        .chk-input {
+            height: 50px;
+            border-radius: 14px;
+            background: #ffffff;
+            border-color: #d0d5dd;
+        }
+
+        .chk-input:focus {
+            border-color: #14532d;
+            box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.10);
+        }
+
+        .btn-send,
+        .bottom-send-btn {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            box-shadow: 0 10px 24px rgba(34, 197, 94, 0.24);
+        }
+
+        .app-bottom-bar {
+            background: rgba(255,255,255,0.94);
+            box-shadow: 0 -10px 30px rgba(16, 24, 40, 0.08);
+        }
+
+        .app-nav-item.active {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        #toast-msg {
+            border-radius: 999px;
+            box-shadow: 0 18px 34px rgba(22, 163, 74, 0.24);
+        }
+
+        @media (min-width: 480px) and (max-width: 767px) {
+            .products-grid, .grid-catalogo { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+
+        @media (min-width: 768px) {
+            :root { --h-top: 78px; }
+            .main-container { padding-left: 0; padding-right: 0; }
+            .products-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; padding: 0; }
+            .products-grid .product-card-list { padding: 14px; border-radius: 22px; }
+            .products-grid .product-card-list:hover {
+                transform: translateY(-3px);
+                border-color: #d0d5dd;
+                box-shadow: var(--shadow-card);
+            }
+            .products-grid .product-card-list .img-wrapper { height: 150px; }
+            .products-grid .product-details { min-height: 128px; }
+            .grid-catalogo { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; padding: 0; }
+            .card-catalogo img { height: 145px; }
+            .subcat-title { top: 0; padding-left: 0; padding-right: 0; }
+            .prod-page-info,
+            .prod-page-desc-box,
+            .related-products-box { margin: 0; border-radius: 0; border: 0; }
+            .prod-page-container { border-radius: 28px; }
+            .prod-page-title { font-size: 28px; }
+            .prod-page-price { font-size: 36px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+        }
+
     </style>
 </head>
 <body>
@@ -1038,7 +1436,7 @@
         <div class="header-home-content">
             <div class="header-home-top-row">
                 <a href="#/" class="brand-link" aria-label="Ir para a página inicial">
-                    <img src="../img/logoantonia5.png" alt="Dona Antônia" class="header-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y5ZmFmYiIvPjwvc3ZnPg=='">
+                    <img src="../img/logoantonia5.png" alt="Dona Antônia" class="header-logo" width="190" height="48" decoding="async" fetchpriority="high" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y5ZmFmYiIvPjwvc3ZnPg=='">
                     <span class="brand-copy">
                         <strong>Dona Antônia</strong>
                         <span>Supermercado e cestas</span>
@@ -1224,6 +1622,50 @@
             return '';
         }
         function getFriendlySlug(text) { return text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-'); }
+
+        function normalizeProductRouteValue(value) {
+            return decodeHash(String(value || ''))
+                .split('?')[0]
+                .split('#')[0]
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim()
+                .replace(/\s+/g, '-')
+                .replace(/[^\w\-]+/g, '')
+                .replace(/\-\-+/g, '-');
+        }
+
+        function getProductRouteKey(prod) {
+            const slug = getFriendlySlug(prod.slug || prod.name || prod.id || prod.codigo || 'produto');
+            const code = String(prod.codigo || prod.id || prod.firebaseKey || '').trim();
+            return code ? `${encodeURIComponent(code)}-${slug}` : slug;
+        }
+
+        function findProductByRouteParam(routeParam) {
+            const raw = decodeHash(String(routeParam || '')).split('?')[0].split('#')[0].trim();
+            const normalized = normalizeProductRouteValue(raw);
+            if (!normalized) return null;
+
+            return (STATE.prods || []).find(p => {
+                const slug = normalizeProductRouteValue(p.slug || p.name);
+                const id = normalizeProductRouteValue(p.id);
+                const codigo = normalizeProductRouteValue(p.codigo);
+                const firebaseKey = normalizeProductRouteValue(p.firebaseKey);
+                const routeKey = normalizeProductRouteValue(getProductRouteKey(p));
+
+                return normalized === slug ||
+                    normalized === id ||
+                    normalized === codigo ||
+                    normalized === firebaseKey ||
+                    normalized === routeKey ||
+                    (codigo && normalized === `${codigo}-${slug}`) ||
+                    (id && normalized === `${id}-${slug}`) ||
+                    (firebaseKey && normalized === `${firebaseKey}-${slug}`) ||
+                    (slug && normalized.endsWith(`-${slug}`));
+            }) || null;
+        }
+
         function extractVolume(name) { let match = name.match(/(?:\d+(?:,\d+)?\s*(?:kg|g|ml|l|litros|litro|unidades|unidade|un|rolos|folhas))/i); return match ? match[0] : ''; }
         function encodeHash(str) { return encodeURIComponent(str).replace(/%20/g, '+'); }
         function decodeHash(str) { return decodeURIComponent(str.replace(/\+/g, '%20')); }
@@ -1431,7 +1873,7 @@
             let tagEmbalagem = getDiscountLineHtml(prod, embalagem);
 
             let atacadoTag = (!isBasketItem) ? `<div style="font-size: 12px; color: #047857; font-weight: 600; margin-top: 6px; line-height: 1.3;">A partir de 3un:<br>pague ${fmt(prod.price * 0.95)}/un</div>` : '';
-            let onClickAction = isBasketItem ? "" : `onclick="window.location.hash='#/produto/${prod.slug}'"`;
+            let onClickAction = isBasketItem ? "" : `onclick="window.location.hash='#/produto/${getProductRouteKey(prod)}'"`;
 
             let controlsHtml = '';
             let cardContent = '';
@@ -1449,7 +1891,7 @@
                     ${esgotadoTag}
                     <div style="display: flex; gap: 16px; width: 100%;">
                         <div class="img-wrapper" style="width: 100px; height: 100px; border-radius: 12px; overflow: hidden; background: #fff; border: 1px solid var(--border-light); flex-shrink: 0;">
-                            <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'" style="width: 100%; height: 100%; object-fit: cover;">
+                            <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" loading="lazy" decoding="async" alt="${prod.name}" onerror="this.src='${errorImgFallback}'" style="width: 100%; height: 100%; object-fit: cover;">
                         </div>
                         <div class="product-details" style="padding: 0; align-items: flex-start; justify-content: flex-start; text-align: left; flex: 1;">
                             ${tagEmbalagem}
@@ -1478,7 +1920,7 @@
                 cardContent = `
                     ${esgotadoTag}
                     <div class="img-wrapper">
-                        <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'">
+                        <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" loading="lazy" decoding="async" alt="${prod.name}" onerror="this.src='${errorImgFallback}'">
                     </div>
                     <div class="product-details">
                         <div>
@@ -1516,10 +1958,10 @@
             let cardClass = isLarge ? "carousel-card carousel-card-large" : "carousel-card";
 
             return `
-            <div class="${cardClass}" onclick="window.location.hash='#/produto/${prod.slug}'" style="cursor:pointer;">
+            <div class="${cardClass}" onclick="window.location.hash='#/produto/${getProductRouteKey(prod)}'" style="cursor:pointer;">
                 ${esgotadoTag}
                 <div style="height: 100px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
-                    <img data-src="${prod.img}" src="${placeholderImg}" class="lazy-img" onerror="this.src='${errorImgFallback}'" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    <img data-src="${prod.img}" src="${placeholderImg}" class="lazy-img" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                 </div>
                 <div style="font-size: 13.5px; font-weight: 600; line-height: 1.2; height: 2.4em; overflow: hidden; margin-bottom: 4px; color: var(--text-dark);">${prod.name}</div>
                 <div style="display: flex; flex-direction: column; margin-top: auto;">
@@ -1680,6 +2122,7 @@
             htmlMercado += '</div>'; 
             
             vitrine.innerHTML = htmlMercado; 
+            updateHomeSeo();
             lazyLoadImages();
         }
 
@@ -1736,8 +2179,8 @@
                 gridHtml += `
                 <div class="card-catalogo">
                     ${esgotadoTag}
-                    <div style="width: 100%; display: flex; justify-content: center; cursor: pointer;" onclick="window.location.hash='#/produto/${p.slug}'">
-                        <img data-src="${p.img}" src="${placeholderImg}" class="lazy-img" onerror="this.src='${errorImgFallback}'">
+                    <div style="width: 100%; display: flex; justify-content: center; cursor: pointer;" onclick="window.location.hash='#/produto/${getProductRouteKey(p)}'">
+                        <img data-src="${p.img}" src="${placeholderImg}" class="lazy-img" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'">
                     </div>
                     <div class="card-catalogo-bottom">
                         <div style="display: flex; flex-direction: column; min-width: 0; padding-right: 4px;">
@@ -1823,11 +2266,13 @@
 
         function renderDepartamentoCompleto(cat) {
             let html = '';
+            let seoProducts = [];
             if (cat === 'Ofertas' || cat === 'Ofertas do Dia') {
                 document.title = `Ofertas - Dona Antônia`;
                 let todasOfertas = STATE.prods
                     .filter(p => p.categoria !== 'Cestas' && Number(p.discountPercent || 0) > 0)
                     .sort((a,b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || a.name.localeCompare(b.name));
+                seoProducts = todasOfertas;
 
                 html = `<div style="padding: 0;">`;
 
@@ -1845,6 +2290,7 @@
                 }
             } else {
                 let results = STATE.prods.filter(p => p.categoria === cat).sort((a,b) => (b.discountPercent >= 25 ? b.discountPercent : 0) - (a.discountPercent >= 25 ? a.discountPercent : 0) || a.name.localeCompare(b.name));
+                seoProducts = results;
                 document.title = `${cat} - Dona Antônia`;
                 let groups = {};
                 results.forEach(p => { let s = p.subcategoria || 'Geral'; if(!groups[s]) groups[s] = []; groups[s].push(p); });
@@ -1858,6 +2304,7 @@
                 });
             }
             html += '</div>'; $('vitrine').innerHTML = html;
+            updateCollectionSeo(cat === 'Ofertas do Dia' ? 'Ofertas' : cat, seoProducts);
 
             if (cat === 'Ofertas' || cat === 'Ofertas do Dia') {
                 DISCOUNT_GROUPS.forEach(pct => {
@@ -1875,8 +2322,12 @@
         }
 
         function renderProductPage(id) {
-            let prod = STATE.prods.find(p => String(p.slug) === String(id));
-            if(!prod) { $('vitrine').innerHTML = '<div style="padding:40px; text-align:center;">Produto não encontrado.</div>'; return; }
+            let prod = findProductByRouteParam(id);
+            if(!prod) {
+                $('vitrine').innerHTML = `<div style="padding:40px 20px; text-align:center;"><strong>Produto não encontrado.</strong><br><span style="display:block;margin-top:8px;color:var(--text-light);font-weight:600;">Esse item pode ter saído do estoque ou o link antigo não corresponde mais ao cadastro.</span><a href="#/" style="display:inline-flex;margin-top:18px;padding:12px 16px;border-radius:12px;background:var(--text-dark);color:#fff;text-decoration:none;font-weight:900;">Voltar para a loja</a></div>`;
+                updateHomeSeo();
+                return;
+            }
             document.title = `${prod.name} - Dona Antônia`;
             const compactTitleEl = $('compact-route-title');
             if (compactTitleEl) compactTitleEl.textContent = prod.name;
@@ -1902,7 +2353,7 @@
             let relacionadosHtml = relacionados.length > 0 ? `<div class="related-products-box"><h3 class="subcat-title" style="margin:0;">Produtos relacionados</h3><div id="related-products-grid" class="grid-catalogo" style="margin:0;"></div></div>` : '';
             
             let html = `<div class="prod-page-container">
-                            <div class="prod-page-img-box"><img src="${prod.img}" class="prod-page-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'"></div>
+                            <div class="prod-page-img-box"><img src="${prod.img}" class="prod-page-img" loading="eager" decoding="async" fetchpriority="high" alt="${prod.name}" onerror="this.src='${errorImgFallback}'"></div>
                             <div class="prod-page-info">
                                 <div class="prod-page-marca">${prod.marca || prod.categoria}</div>
                                 ${embalagemTag}
@@ -1920,6 +2371,7 @@
                             ${relacionadosHtml}
                         </div>`;
             $('vitrine').innerHTML = html;
+            updateProductSeo(prod);
             if (relacionados.length > 0) renderCatalogoGridInto('related-products-grid', relacionados);
         }
 
@@ -1935,6 +2387,7 @@
             results.forEach(p => html += renderCardHTML(p));
             html += '</div></div>';
             $('vitrine').innerHTML = html;
+            updateCollectionSeo('Busca', results);
             lazyLoadImages();
         }
 
@@ -2948,6 +3401,217 @@ Por favor, podem incluir na minha entrega?`;
         });
     }
 
+
+        /* =========================================
+           SEO E GOOGLE: JSON-LD DINÂMICO PARA E-COMMERCE
+        ========================================= */
+        const SITE_BASE_URL = 'https://www.donaantonia.com.br';
+
+        function escapeTextSEO(value) {
+            const div = document.createElement('div');
+            div.innerHTML = String(value || '');
+            return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
+        }
+
+        function absoluteSiteUrl(path) {
+            try { return new URL(path || '/', SITE_BASE_URL + '/').href; }
+            catch (e) { return SITE_BASE_URL + '/'; }
+        }
+
+        function setNamedMeta(selector, attrName, value) {
+            if (!value) return;
+            let el = document.querySelector(selector);
+            if (!el) {
+                el = document.createElement('meta');
+                const match = selector.match(/\[(name|property)="([^"]+)"\]/);
+                if (match) el.setAttribute(match[1], match[2]);
+                document.head.appendChild(el);
+            }
+            el.setAttribute(attrName, value);
+        }
+
+        function setCanonicalSEO(url) {
+            let link = document.querySelector('link[rel="canonical"]');
+            if (!link) {
+                link = document.createElement('link');
+                link.setAttribute('rel', 'canonical');
+                document.head.appendChild(link);
+            }
+            link.setAttribute('href', url || SITE_BASE_URL + '/');
+        }
+
+        function setStructuredDataSEO(payload) {
+            let script = document.getElementById('jsonld-dynamic-ecommerce');
+            if (!script) {
+                script = document.createElement('script');
+                script.type = 'application/ld+json';
+                script.id = 'jsonld-dynamic-ecommerce';
+                document.head.appendChild(script);
+            }
+            script.textContent = JSON.stringify(payload).replace(/<\//g, '<\\/');
+        }
+
+        function getProductUrlSEO(prod) {
+            return `${SITE_BASE_URL}/#/produto/${getProductRouteKey(prod)}`;
+        }
+
+        function getProductImageSEO(prod) {
+            return absoluteSiteUrl(prod.img || '/img/logoantonia5.png');
+        }
+
+        function baseGraphSEO(extraItems = []) {
+            return {
+                '@context': 'https://schema.org',
+                '@graph': [
+                    {
+                        '@type': 'Organization',
+                        '@id': `${SITE_BASE_URL}/#organization`,
+                        name: 'Dona Antônia',
+                        url: SITE_BASE_URL + '/',
+                        logo: absoluteSiteUrl('/img/logoantonia5.png'),
+                        sameAs: []
+                    },
+                    {
+                        '@type': 'WebSite',
+                        '@id': `${SITE_BASE_URL}/#website`,
+                        url: SITE_BASE_URL + '/',
+                        name: 'Dona Antônia',
+                        publisher: { '@id': `${SITE_BASE_URL}/#organization` },
+                        potentialAction: {
+                            '@type': 'SearchAction',
+                            target: `${SITE_BASE_URL}/#/buscar?q={search_term_string}`,
+                            'query-input': 'required name=search_term_string'
+                        }
+                    },
+                    {
+                        '@type': 'LocalBusiness',
+                        '@id': `${SITE_BASE_URL}/#localbusiness`,
+                        name: 'Super Cestas Básicas Dona Antônia',
+                        image: absoluteSiteUrl('/img/logoantonia5.png'),
+                        url: SITE_BASE_URL + '/',
+                        telephone: '+55 65 99815-0975',
+                        priceRange: '$$',
+                        address: {
+                            '@type': 'PostalAddress',
+                            streetAddress: 'R. Trinta, 105 - Jardim Nossa Sra. Aparecida',
+                            addressLocality: 'Cuiabá',
+                            addressRegion: 'MT',
+                            postalCode: '78090-660',
+                            addressCountry: 'BR'
+                        },
+                        areaServed: ['Cuiabá', 'Várzea Grande']
+                    },
+                    ...extraItems
+                ]
+            };
+        }
+
+        function updatePageMetaSEO(title, description, url) {
+            document.title = title;
+            setNamedMetaSEO('meta[property="og:type"]', 'content', 'website');
+            setNamedMetaSEO('meta[name="description"]', 'content', description);
+            setNamedMetaSEO('meta[property="og:title"]', 'content', title);
+            setNamedMetaSEO('meta[property="og:description"]', 'content', description);
+            setNamedMetaSEO('meta[property="og:url"]', 'content', url);
+            setCanonicalSEO(url);
+        }
+
+        function updateHomeSeo() {
+            const url = SITE_BASE_URL + '/';
+            updatePageMetaSEO(
+                'Dona Antônia - Supermercado online e cestas básicas',
+                'Compre cestas básicas, mercado e ofertas online com entrega grátis em Cuiabá e Várzea Grande.',
+                url
+            );
+            const produtos = (STATE.prods || []).filter(p => p.categoria !== 'Cestas').slice(0, 24);
+            const itemList = {
+                '@type': 'ItemList',
+                '@id': `${url}#produtos`,
+                name: 'Produtos em destaque Dona Antônia',
+                itemListElement: produtos.map((prod, index) => ({
+                    '@type': 'ListItem',
+                    position: index + 1,
+                    url: getProductUrlSEO(prod),
+                    name: prod.name
+                }))
+            };
+            setStructuredDataSEO(baseGraphSEO([itemList]));
+        }
+
+        function updateCollectionSeo(cat, produtos) {
+            const safeCat = cat || 'Produtos';
+            const url = safeCat === 'Ofertas' ? `${SITE_BASE_URL}/#/ofertas` : `${SITE_BASE_URL}/#/departamento/${encodeURIComponent(safeCat)}`;
+            updatePageMetaSEO(
+                `${safeCat} - Dona Antônia`,
+                `Veja ${safeCat.toLowerCase()} disponíveis na Dona Antônia com entrega em Cuiabá e Várzea Grande.`,
+                url
+            );
+            const itemList = {
+                '@type': 'ItemList',
+                '@id': `${url}#lista-produtos`,
+                name: `${safeCat} - Dona Antônia`,
+                itemListElement: (produtos || []).slice(0, 48).map((prod, index) => ({
+                    '@type': 'ListItem',
+                    position: index + 1,
+                    url: getProductUrlSEO(prod),
+                    name: prod.name
+                }))
+            };
+            setStructuredDataSEO(baseGraphSEO([itemList]));
+        }
+
+        function updateProductSeo(prod) {
+            if (!prod) return;
+            const url = getProductUrlSEO(prod);
+            const desc = escapeTextSEO(prod.descricao) || `${prod.name} disponível na Dona Antônia com entrega em Cuiabá e Várzea Grande.`;
+            updatePageMetaSEO(`${prod.name} - Dona Antônia`, desc.slice(0, 158), url);
+            setNamedMetaSEO('meta[property="og:type"]', 'content', 'product');
+            setNamedMetaSEO('meta[property="og:image"]', 'content', getProductImageSEO(prod));
+            setNamedMetaSEO('meta[property="product:price:amount"]', 'content', String(Number(prod.price || 0).toFixed(2)));
+            setNamedMetaSEO('meta[property="product:price:currency"]', 'content', 'BRL');
+
+            const identifiers = {};
+            const gtin = String(prod.gtin || '').replace(/\D/g, '');
+            if (gtin.length === 8) identifiers.gtin8 = gtin;
+            if (gtin.length === 12) identifiers.gtin12 = gtin;
+            if (gtin.length === 13) identifiers.gtin13 = gtin;
+            if (gtin.length === 14) identifiers.gtin14 = gtin;
+
+            const productSchema = {
+                '@type': 'Product',
+                '@id': `${url}#product`,
+                name: prod.name,
+                image: [getProductImageSEO(prod)],
+                description: desc,
+                sku: prod.codigo || prod.id,
+                brand: { '@type': 'Brand', name: prod.marca || 'Dona Antônia' },
+                category: [prod.categoria, prod.subcategoria].filter(Boolean).join(' > '),
+                ...identifiers,
+                offers: {
+                    '@type': 'Offer',
+                    url: url,
+                    priceCurrency: 'BRL',
+                    price: Number(prod.price || 0).toFixed(2),
+                    availability: Number(prod.stock || 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                    itemCondition: 'https://schema.org/NewCondition',
+                    seller: { '@id': `${SITE_BASE_URL}/#organization` }
+                }
+            };
+
+            const breadcrumbSchema = {
+                '@type': 'BreadcrumbList',
+                '@id': `${url}#breadcrumb`,
+                itemListElement: [
+                    { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_BASE_URL + '/' },
+                    { '@type': 'ListItem', position: 2, name: prod.categoria || 'Produtos', item: `${SITE_BASE_URL}/#/departamento/${encodeURIComponent(prod.categoria || 'Produtos')}` },
+                    { '@type': 'ListItem', position: 3, name: prod.name, item: url }
+                ]
+            };
+
+            setStructuredDataSEO(baseGraphSEO([productSchema, breadcrumbSchema]));
+        }
+
+
   async function init() {
     try {
         const r2 = await fetchWithCache('https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json');
@@ -2955,10 +3619,12 @@ Por favor, podem incluir na minha entrega?`;
         // O Firebase agora retorna um objeto no formato:
         // { "id_do_produto": { dados_do_produto }, "outro_id": { dados_do_produto } }
         // Por isso convertemos o objeto em array antes de filtrar e mapear.
-        const produtosArray = r2 ? Object.entries(r2).map(([firebaseKey, produto]) => ({
-            ...produto,
-            firebaseKey: firebaseKey
-        })) : [];
+        const produtosArray = Array.isArray(r2)
+            ? r2.filter(Boolean).map((produto, index) => ({ ...produto, firebaseKey: produto.firebaseKey || produto.id || produto.codigo || String(index) }))
+            : (r2 ? Object.entries(r2).map(([firebaseKey, produto]) => ({
+                ...produto,
+                firebaseKey: firebaseKey
+            })) : []);
 
         if (produtosArray.length > 0) {
             STATE.prods = produtosArray.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => {
@@ -2969,7 +3635,7 @@ Por favor, podem incluir na minha entrega?`;
                     codigo: String(p.codigo || ""),
                     name: baseName,
                     slug: getFriendlySlug(baseName),
-                    price: parseFloat(p.preco) * 1.00,
+                    price: Number(String(p.preco || 0).replace(',', '.')) * 1.00,
                     stock: parseInt(p.estoque) || 0, 
                     img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
                     categoria: p.categoria || "Outros",
@@ -2979,7 +3645,7 @@ Por favor, podem incluir na minha entrega?`;
                     marca: p.marca || "",
                     descricao: p.descricao || "",
                     gtin: p.gtin || "",
-                    preco_oferta: p.preco_oferta ? parseFloat(p.preco_oferta) : null,
+                    preco_oferta: p.preco_oferta ? Number(String(p.preco_oferta).replace(',', '.')) : null,
                     validade_oferta: p.validade_oferta || null,
                     combo_id: p.combo_id || null,
                     validade_combo: p.validade_combo || null
