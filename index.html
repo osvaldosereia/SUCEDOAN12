@@ -1421,6 +1421,90 @@
         }
         #basketModalImg { object-fit: contain !important; background: #f8fafc !important; padding: 6px !important; }
 
+
+
+        /* =========================================
+           AJUSTES PONTUAIS MOBILE - 25/05/2026
+           Cards horizontais padronizados, cesta e chips corrigidos.
+        ========================================= */
+        .product-card-list.basket-item-card,
+        #basket-items-container .product-card-list.basket-item-card {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+            overflow: visible !important;
+        }
+        .basket-item-card .basket-item-main {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+        .basket-item-card .basket-item-actions {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+            width: 100% !important;
+            margin-top: 2px !important;
+        }
+        .basket-item-card .basket-item-actions .btn-didatico {
+            width: 100% !important;
+            min-width: 0 !important;
+            min-height: 40px !important;
+            padding: 9px 8px !important;
+            white-space: normal !important;
+            text-align: center !important;
+            line-height: 1.12 !important;
+        }
+        .basket-item-card .qty-controls-didatic {
+            width: 100% !important;
+            margin-top: 8px !important;
+        }
+        .post-basket-offers-list {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            margin-bottom: 12px !important;
+        }
+        .post-basket-offers-list .product-card-list {
+            margin: 0 !important;
+        }
+        .btn-ver-ofertas-pos-cesta {
+            width: 100%;
+            min-height: 44px;
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            background: #ffffff;
+            color: var(--text-dark);
+            font-weight: 850;
+            font-size: 13.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            margin-top: 4px;
+        }
+        .grid-catalogo .product-card-list,
+        #catalogo-grid-container .product-card-list,
+        [id^="oferta-grid-"] .product-card-list {
+            flex-direction: row !important;
+        }
+        .grid-catalogo .product-name-list,
+        #catalogo-grid-container .product-name-list,
+        [id^="oferta-grid-"] .product-name-list {
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+        }
+        @media (max-width: 430px) {
+            .basket-item-card .basket-item-main { gap: 10px !important; }
+            .basket-item-card .btn-didatico { font-size: 11px !important; }
+        }
+
     </style>
 </head>
 <body>
@@ -1816,7 +1900,8 @@
             const alvo = document.getElementById(id);
             const vitrine = $('vitrine');
             if (!alvo || !vitrine) return;
-            const topo = alvo.offsetTop - 8;
+            const compactHeader = document.body.classList.contains('route-compact') ? 54 : 16;
+            const topo = alvo.offsetTop - compactHeader;
             vitrine.scrollTo({ top: Math.max(topo, 0), behavior: 'smooth' });
         }
 
@@ -1901,6 +1986,7 @@
             let isOutOfStock = prod.stock <= 0 && !isBasketItem;
             let esgotadoTag = isOutOfStock ? `<div style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.85); color: #fff; padding: 4px 8px; border-radius: 6px; font-weight: 900; font-size: 10px; z-index: 10;">ESGOTADO</div>` : '';
             let baseClass = isOutOfStock ? 'product-card-list esgotado' : 'product-card-list';
+            if (isBasketItem) baseClass += ' basket-item-card';
             
             let discountBadge = '';
             let oldPriceHtml = (prod.discountPercent > 0 && !isBasketItem) ? `<span class="old-price">${fmt(prod.oldPrice)}</span>` : '';
@@ -1925,7 +2011,7 @@
 
                 cardContent = `
                     ${esgotadoTag}
-                    <div style="display: flex; gap: 16px; width: 100%;">
+                    <div class="basket-item-main">
                         <div class="img-wrapper" style="width: 100px; height: 100px; border-radius: 12px; overflow: hidden; background: #fff; border: 1px solid var(--border-light); flex-shrink: 0;">
                             <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" loading="lazy" decoding="async" alt="${prod.name}" onerror="this.src='${errorImgFallback}'" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;">
                         </div>
@@ -1937,7 +2023,7 @@
                         </div>
                     </div>
                     
-                    <div style="display: flex; gap: 10px; width: 100%; margin-top: 15px;">
+                    <div class="basket-item-actions">
                         <button class="btn-didatico btn-didatico-remover" style="flex: 1;" onclick="removeBasketItem(${index}); event.stopPropagation();">
                             <svg class="svg-icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             Excluir Produto
@@ -1976,7 +2062,7 @@
             }
 
             return `
-                <div class="${baseClass}" ${onClickAction} style="${isBasketItem ? 'flex-direction: column;' : ''}">
+                <div class="${baseClass}" ${onClickAction}>
                     ${cardContent}
                 </div>`;
         }
@@ -2167,7 +2253,7 @@
             let activeCat = STATE.activeCatalogoCat || 'Todos';
             STATE.activeCatalogoCat = activeCat;
             atualizarTopbarDaRota(window.location.hash || '#/catalogo');
-            let html = `<div id="catalogo-grid-container" class="grid-catalogo" style="margin: 0;"></div>`;
+            let html = `<div id="catalogo-grid-container" class="products-grid" style="margin: 0;"></div>`;
             $('vitrine').innerHTML = html;
             renderCatalogoGrid(activeCat);
 
@@ -2181,7 +2267,7 @@
             STATE.activeCatalogoCat = cat;
             atualizarTopbarDaRota(window.location.hash || '#/catalogo');
             renderCatalogoGrid(cat);
-            $('vitrine').scrollTo({ top: 0, behavior: 'smooth' });
+            $('vitrine').scrollTo({ top: 14, behavior: 'smooth' });
 
             requestAnimationFrame(() => {
                 let targetId = cat === 'Todos' ? 'chip-Todos' : `chip-${getFriendlySlug(cat)}`;
@@ -2207,38 +2293,13 @@
         function renderCatalogoGridInto(containerId, listaProdutos) {
             let gridHtml = '';
             listaProdutos.forEach(p => {
-                let q = STATE.cart[p.id] || 0;
-                let controlsHtml = q === 0 
-                    ? `<div class="add-btn-cat" onclick="quickAddToCart('${p.id}', event)"><svg class="svg-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg></div>`
-                    : `<div class="mini-qty-controls"><button class="mini-qty-btn" onclick="updateCartItem('${p.id}', -1); event.stopPropagation();">-</button><span class="mini-qty-display">${q}</span><button class="mini-qty-btn" onclick="updateCartItem('${p.id}', 1); event.stopPropagation();">+</button></div>`;
-                
-                let esgotadoTag = (p.stock <= 0) ? `<div style="position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.85); color: #fff; padding: 2px 4px; border-radius: 4px; font-weight: 900; font-size: 9px; z-index: 10;">ESGOTADO</div>` : '';
-                let embalagem = p.embalagem || extractVolume(p.name);
-                let embalagemHtml = getDiscountLineHtml(p, embalagem);
-                let oldPriceHtml = (p.discountPercent > 0) ? `<div style="font-size: 10px; color: var(--text-light); text-decoration: line-through; font-weight: 700; margin-bottom: 1px;">${fmt(p.oldPrice)}</div>` : '';
-
-                gridHtml += `
-                <div class="card-catalogo">
-                    ${esgotadoTag}
-                    <div style="width: 100%; display: flex; justify-content: center; cursor: pointer;" onclick="window.location.hash='#/produto/${getProductRouteKey(p)}'">
-                        <img data-src="${p.img}" src="${placeholderImg}" class="lazy-img" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'">
-                    </div>
-                    <div class="card-catalogo-bottom">
-                        <div style="display: flex; flex-direction: column; min-width: 0; padding-right: 4px;">
-                            ${embalagemHtml}
-                            ${oldPriceHtml}
-                            <div class="card-catalogo-price">${fmt(p.price)}</div>
-                        </div>
-                        <div id="catalogo-action-${p.id}">${controlsHtml}</div>
-                    </div>
-                </div>`;
+                gridHtml += renderCardHTML(p);
             });
-            
             if(listaProdutos.length === 0) {
-                gridHtml = `<div style="grid-column: span 3; text-align: center; padding: 40px 20px; color: var(--text-light); font-weight: 600;">Nenhum produto encontrado nesta categoria.</div>`;
+                gridHtml = `<div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: var(--text-light); font-weight: 600; background:#fff; border-radius:16px;">Nenhum produto encontrado nesta categoria.</div>`;
             }
-
-            $(containerId).innerHTML = gridHtml;
+            const container = $(containerId);
+            if (container) container.innerHTML = gridHtml;
             lazyLoadImages();
         }
 
@@ -2324,9 +2385,7 @@
                 DISCOUNT_GROUPS.forEach(pct => {
                     let grupo = todasOfertas.filter(p => Number(p.discountPercent || 0) === pct);
                     if (grupo.length > 0) {
-                        html += `<h3 class="subcat-title" id="oferta-${pct}">${pct}% de desconto</h3><div class="grid-catalogo" style="margin: 0;">`;
-                        html += `<div id="oferta-grid-${pct}" style="display: contents;"></div>`;
-                        html += `</div>`;
+                        html += `<h3 class="subcat-title" id="oferta-${pct}">${pct}% de desconto</h3><div id="oferta-grid-${pct}" class="products-grid" style="margin: 0;"></div>`;
                     }
                 });
 
@@ -2798,19 +2857,20 @@ function lazyLoadImages() {
                                      .sort((a,b) => b.discountPercent - a.discountPercent);
             
             let ofertasHtml = '';
-            ofertas.forEach(p => ofertasHtml += renderMiniCardHTML(p, true));
+            ofertas.slice(0, 4).forEach(p => ofertasHtml += renderCardHTML(p));
 
             let chipsWords = ['Amendoim', 'Balde', 'Bolacha', 'Chinelo', 'Colher', 'Condicionador', 'Copo', 'Creme', 'Desodorante', 'Escova', 'Hidratante', 'Leite', 'Molho', 'Pano', 'Petisco', 'Ração', 'Shampoo', 'Tempero', 'Vassoura'];
             let chipsHtml = chipsWords.map(word => `<div class="search-chip" onclick="fillPostBasketSearch('${word}')">${word}</div>`).join('');
 
             $('vip-list-container').innerHTML = `
                 <div class="vip-container">
-                    <h2 style="font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 25px; color: var(--text-dark); line-height: 1.2;">O que deseja fazer agora?</h2>
+                    <h2 id="post-basket-title" style="font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 25px; color: var(--text-dark); line-height: 1.2;">O que deseja fazer agora?</h2>
                     
                     <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 12px; color: var(--text-dark);">Adicione produtos em ofertas:</h3>
-                    <div class="carousel-container carousel-container-visible-scroll">
+                    <div class="post-basket-offers-list">
                         ${ofertasHtml}
                     </div>
+                    <a href="#/ofertas" class="btn-ver-ofertas-pos-cesta" onclick="closeBasketDetail();">Ver todas as ofertas</a>
 
                     <div style="margin-top: 30px; margin-bottom: 5px;">
                         <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 12px; color: var(--text-dark);">Encontre produtos</h3>
@@ -2835,9 +2895,13 @@ function lazyLoadImages() {
             
             let scrollArea = document.querySelector('#basketDetailModal .modal-scroll-area');
             if(scrollArea) {
-                scrollArea.scrollTo({top: 0, behavior: 'smooth'});
                 scrollArea.style.overflowY = 'auto'; 
                 scrollArea.style.display = 'block';
+                requestAnimationFrame(() => {
+                    const title = $('post-basket-title');
+                    const titleTop = title ? Math.max(title.offsetTop - 8, 0) : 0;
+                    scrollArea.scrollTo({top: titleTop, behavior: 'smooth'});
+                });
             }
 
             lazyLoadImages();
