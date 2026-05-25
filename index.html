@@ -1535,8 +1535,20 @@
             <div class="chk-section">
                 <div class="chk-title" style="font-size: 16px;">👤 Dados e Entrega</div>
                 <input type="text" id="chk-nome" class="chk-input" placeholder="Nome Completo*">
-                <input type="tel" id="chk-cpf" class="chk-input" placeholder="CPF">
-                
+<input 
+    type="tel" 
+    id="chk-cpf" 
+    class="chk-input" 
+    placeholder="CPF*" 
+    maxlength="14"
+    inputmode="numeric"
+    autocomplete="off"
+>                
+                <select id="chk-cidade" class="chk-input">
+    <option value="">Cidade*</option>
+    <option value="Cuiabá">Cuiabá</option>
+    <option value="Várzea Grande">Várzea Grande</option>
+</select>
                 <input type="text" id="chk-bairro" class="chk-input" placeholder="Bairro*">
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="chk-rua" class="chk-input" placeholder="Rua*" style="flex: 2;">
@@ -3197,9 +3209,39 @@ ${textoExtra}
                 setTimeout(() => primeiroCampo.focus(), 350);
             }
         }
+function limparCPF(valor) {
+    return String(valor || '').replace(/\D/g, '').slice(0, 11);
+}
 
-        ['chk-nome', 'chk-bairro', 'chk-rua', 'chk-casa', 'chk-frente', 'chk-pagamento'].forEach(id => {
-            document.addEventListener('input', function(e) {
+function formatarCPF(valor) {
+    let cpf = limparCPF(valor);
+
+    if (cpf.length > 9) {
+        return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, "$1.$2.$3-$4");
+    }
+
+    if (cpf.length > 6) {
+        return cpf.replace(/(\d{3})(\d{3})(\d{1,3})/, "$1.$2.$3");
+    }
+
+    if (cpf.length > 3) {
+        return cpf.replace(/(\d{3})(\d{1,3})/, "$1.$2");
+    }
+
+    return cpf;
+}
+
+document.addEventListener('input', function(e) {
+    if (e.target && e.target.id === 'chk-cpf') {
+        e.target.value = formatarCPF(e.target.value);
+
+        if (limparCPF(e.target.value).length === 11) {
+            e.target.classList.remove('checkout-required-error');
+        }
+    }
+});
+['chk-nome', 'chk-cpf', 'chk-cidade', 'chk-bairro', 'chk-rua', 'chk-casa', 'chk-frente', 'chk-pagamento'].forEach(id => {
+    document.addEventListener('input', function(e) {
                 if (e.target && e.target.id === id && String(e.target.value || '').trim()) e.target.classList.remove('checkout-required-error');
             });
             document.addEventListener('change', function(e) {
@@ -3218,28 +3260,33 @@ ${textoExtra}
             const btn = btnOverride || $('btn-send-order'); 
             if (!btnOverride && btn.disabled) return;
 
-            let nome = $('chk-nome').value.trim();
-            let cpf = $('chk-cpf').value.trim();
-            let bairro = $('chk-bairro').value.trim();
-            let rua = $('chk-rua').value.trim();
-            let quadra = $('chk-quadra').value.trim();
-            let casa = $('chk-casa').value.trim();
-            let frente = $('chk-frente').value.trim();
-            let pag = $('chk-pagamento').value;
+           let nome = $('chk-nome').value.trim();
+let cpfFormatado = $('chk-cpf').value.trim();
+let cpf = limparCPF(cpfFormatado);
+let cidade = $('chk-cidade').value.trim();
+let uf = 'MT';
+let bairro = $('chk-bairro').value.trim();
+let rua = $('chk-rua').value.trim();
+let quadra = $('chk-quadra').value.trim();
+let casa = $('chk-casa').value.trim();
+let frente = $('chk-frente').value.trim();
+let pag = $('chk-pagamento').value;
             
             let agendamentoObj = document.querySelector('input[name="agendamento"]:checked');
             let dataAgendamento = agendamentoObj ? agendamentoObj.value : "";
 
-            limparErrosCheckout();
-            const camposObrigatorios = [
-                { id: 'agendamento-options-container', label: 'Data de agendamento', customValidate: () => !!dataAgendamento },
-                { id: 'chk-nome', label: 'Nome completo' },
-                { id: 'chk-bairro', label: 'Bairro' },
-                { id: 'chk-rua', label: 'Rua' },
-                { id: 'chk-casa', label: 'Nº da casa' },
-                { id: 'chk-frente', label: 'Como é a frente da casa' },
-                { id: 'chk-pagamento', label: 'Forma de pagamento' }
-            ];
+           const camposObrigatorios = [
+    { id: 'agendamento-options-container', label: 'Data de agendamento', customValidate: () => !!dataAgendamento },
+    { id: 'chk-nome', label: 'Nome completo' },
+    { id: 'chk-cpf', label: 'CPF válido com 11 números', customValidate: () => cpf.length === 11 },
+    { id: 'chk-cidade', label: 'Cidade' },
+    { id: 'chk-bairro', label: 'Bairro' },
+    { id: 'chk-rua', label: 'Rua' },
+    { id: 'chk-casa', label: 'Nº da casa' },
+    { id: 'chk-frente', label: 'Como é a frente da casa' },
+    { id: 'chk-pagamento', label: 'Forma de pagamento' }
+];
+            
             const faltantes = camposObrigatorios.filter(campo => {
                 if (typeof campo.customValidate === 'function') {
                     return !campo.customValidate();
@@ -3300,8 +3347,8 @@ ${textoExtra}
 
             let dadosCliente = `
 *👤 DADOS DO CLIENTE E ENTREGA*
-Nome: ${nome} ${cpf ? `\nCPF: ${cpf}` : ''}
-Endereço: Bairro ${bairro}, Rua ${rua}, Quadra ${quadra || 'S/N'}, Casa ${casa}
+Nome: ${nome} ${cpf ? `\nCPF: ${formatarCPF(cpf)}` : ''}
+Endereço: ${cidade}/${uf}, Bairro ${bairro}, Rua ${rua}, Quadra ${quadra || 'S/N'}, Casa ${casa}
 Detalhes: ${frente}
 📅 *Agendamento:* ${dataAgendamento}
 💳 *Pagamento:* ${pag}`;
@@ -3316,7 +3363,19 @@ Detalhes: ${frente}
                         total: final,
                         desconto: STATE.atacadoDiscount + STATE.agendamentoDiscount,
                         observacoes: hasBasket ? "Pedido com Cesta/Kit" : "Pedido Comum",
-                        cliente: { nome, cpf, bairro, rua, quadra, casa, frente, pagamento: pag, agendamento: dataAgendamento }
+cliente: { 
+    nome, 
+    cpf, 
+    cidade,
+    uf,
+    bairro, 
+    rua, 
+    quadra, 
+    casa, 
+    frente, 
+    pagamento: pag, 
+    agendamento: dataAgendamento 
+}
                     }
                 };
 
