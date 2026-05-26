@@ -419,6 +419,9 @@
 
             <div class="form-section" style="margin-top:15px;">
                 <div class="section-title">Ações de Manutenção</div>
+                <button class="nav-btn warning" style="width:100%; height:44px; justify-content:center; margin-top: 10px;" onclick="destravarSincronizacao()">
+                    <i data-lucide="refresh-cw-off" size="14"></i> DESTRAVAR SINCRONIZAÇÃO
+                </button>
                 <button class="nav-btn" style="width:100%; height:44px; justify-content:center; color:var(--warning); border-color:#fde68a; margin-top: 10px;" onclick="executarLimpezaImagens()">
                     <i data-lucide="trash-2" size="14"></i> 8. LIMPEZA INTELIGENTE (APAGAR FOTOS SEM USO DO GITHUB)
                 </button>
@@ -475,103 +478,129 @@
         }
 
         // ==========================================================
+        // REDE PROFISSIONAL: TIMEOUT, ABORT E ECONOMIA DE REQUISIÇÕES
+        // ==========================================================
+        async function fetchComTimeout(url, options = {}, timeoutMs = 30000, label = "Requisição") {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+            try {
+                const finalOptions = {
+                    ...options,
+                    signal: controller.signal
+                };
+
+                return await fetch(url, finalOptions);
+            } catch (error) {
+                if (error.name === "AbortError") {
+                    throw new Error(label + " excedeu o tempo limite de " + Math.round(timeoutMs / 1000) + "s");
+                }
+                throw error;
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
+        async function executarComTimeout(fn, timeoutMs = 45000, label = "Operação") {
+            return Promise.race([
+                fn(),
+                new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error(label + " excedeu o tempo limite de " + Math.round(timeoutMs / 1000) + "s")), timeoutMs);
+                })
+            ]);
+        }
+
+        // ==========================================================
         // GESTOR DE COMUNICAÇÃO FIREBASE (SUBSTITUI O GITHUB)
         // ==========================================================
         const FirebaseAPI = {
-    baseURL: "https://cedar-chemist-310801-default-rtdb.firebaseio.com/",
+            baseURL: "https://cedar-chemist-310801-default-rtdb.firebaseio.com/",
 
-   gerarChaveProduto: function(produto) {
-    return String(
-        produto.firebaseKey ||
-        produto.id ||
-        produto.codigo ||
-        produto.gtin ||
-        Date.now() + Math.floor(Math.random() * 100000)
-    );
-},
+            gerarChaveProduto: function(produto) {
+                return String(
+                    produto.firebaseKey ||
+                    produto.id ||
+                    produto.codigo ||
+                    produto.gtin ||
+                    Date.now() + Math.floor(Math.random() * 100000)
+                );
+            },
 
-    arrayParaObjetoPorId: function(lista) {
-        const obj = {};
+            arrayParaObjetoPorId: function(lista) {
+                const obj = {};
+                if (!Array.isArray(lista)) return obj;
 
-        if (!Array.isArray(lista)) return obj;
+                lista.forEach(produto => {
+                    const chave = this.gerarChaveProduto(produto);
+                    const produtoLimpo = { ...produto };
+                    delete produtoLimpo.firebaseKey;
+                    produtoLimpo.id = String(produtoLimpo.id || chave);
+                    obj[chave] = produtoLimpo;
+                });
 
-        lista.forEach(produto => {
-            const chave = this.gerarChaveProduto(produto);
+                return obj;
+            },
 
-            obj[chave] = {
-                ...produto,
-                id: String(produto.id || chave)
-            };
-        });
+            objetoPorIdParaArray: function(dados) {
+                if (!dados) return [];
 
-        return obj;
-    },
+                if (Array.isArray(dados)) {
+                    return dados.filter(Boolean);
+                }
 
-    objetoPorIdParaArray: function(dados) {
-        if (!dados) return [];
+                return Object.entries(dados).map(([firebaseKey, produto]) => ({
+                    ...produto,
+                    firebaseKey: firebaseKey,
+                    id: String(produto.id || firebaseKey)
+                }));
+            },
 
-        if (Array.isArray(dados)) {
-            return dados.filter(Boolean);
-        }
+            lerProdutos: async function() {
+                try {
+                    const res = await fetchComTimeout(this.baseURL + "produtos.json?nocache=" + Date.now(), {
+                        cache: "no-store"
+                    }, 30000, "Leitura Firebase");
 
-        return Object.entries(dados).map(([firebaseKey, produto]) => ({
-            ...produto,
-            firebaseKey: firebaseKey,
-            id: String(produto.id || firebaseKey)
-        }));
-    },
+                    if (!res.ok) {
+                        throw new Error("Firebase retornou HTTP " + res.status);
+                    }
 
-    lerProdutos: async function() {
-        try {
-            const res = await fetch(this.baseURL + "produtos.json?nocache=" + Date.now(), {
-                cache: "no-store"
-            });
+                    const dados = await res.json();
+                    return this.objetoPorIdParaArray(dados);
+                } catch (e) {
+                    console.error("Erro ao ler Firebase:", e);
+                    return [];
+                }
+            },
 
-            const dados = await res.json();
+            salvarProdutos: async function(dados) {
+                try {
+                    if (!Array.isArray(dados)) {
+                        throw new Error("Dados inválidos: esperado um array de produtos.");
+                    }
 
-            return this.objetoPorIdParaArray(dados);
-        } catch (e) {
-            console.error("Erro ao ler Firebase:", e);
-            return [];
-        }
-    },
+                    const produtosPorId = this.arrayParaObjetoPorId(dados);
 
-     salvarProdutos: async function(dados) {
-    try {
-        if (!Array.isArray(dados)) {
-            throw new Error("Dados inválidos: esperado um array de produtos.");
-        }
+                    // Economia e consistência:
+                    // 1 única requisição substitui o banco /produtos inteiro pelo estado local sanitizado.
+                    // Isso evita centenas de PATCHs e também remove do Firebase produtos apagados localmente.
+                    const res = await fetchComTimeout(this.baseURL + "produtos.json", {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(produtosPorId)
+                    }, 45000, "Salvar produtos no Firebase");
 
-        let total = 0;
+                    if (!res.ok) {
+                        throw new Error("Erro ao gravar produtos no Firebase: HTTP " + res.status + " - " + res.statusText);
+                    }
 
-        for (const produto of dados) {
-            const chave = this.gerarChaveProduto(produto);
-
-            const produtoLimpo = { ...produto };
-            delete produtoLimpo.firebaseKey;
-            produtoLimpo.id = String(produtoLimpo.id || chave);
-
-            const res = await fetch(this.baseURL + "produtos/" + chave + ".json", {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(produtoLimpo)
-            });
-
-            if (!res.ok) {
-                throw new Error("Erro ao gravar produto " + chave + ": " + res.statusText);
+                    console.log("Produtos atualizados no Firebase em lote:", Object.keys(produtosPorId).length);
+                } catch (error) {
+                    console.error("ERRO GRAVE DE COMUNICAÇÃO FIREBASE:", error);
+                    throw error;
+                }
             }
-
-            total++;
-        }
-
-        console.log("Produtos atualizados no Firebase via PATCH:", total);
-
-    } catch (error) {
-        console.error("ERRO GRAVE DE COMUNICAÇÃO FIREBASE:", error);
-        throw error;
-    }
-}
-};
+        };
 
         // ==========================================================
         // GESTOR DE ARQUIVOS GITHUB (APENAS PARA IMAGENS E CSV)
@@ -603,8 +632,13 @@
             getFileData: async function(path) {
                 const cfg = await this.getConfig(); if (!cfg) return null;
                 try {
-                    const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`, { headers: this.getHeaders(cfg), cache: "no-store" });
-                    if (res.status === 404) return null; 
+                    const res = await fetchComTimeout(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`, {
+                        headers: this.getHeaders(cfg),
+                        cache: "no-store"
+                    }, 30000, "Buscar arquivo GitHub: " + path);
+
+                    if (res.status === 404) return null;
+                    if (!res.ok) throw new Error("Erro Github ao buscar " + path + ": HTTP " + res.status);
                     return await res.json();
                 } catch(e) { return null; }
             },
@@ -616,13 +650,25 @@
                     if (existingFile && !Array.isArray(existingFile)) sha = existingFile.sha; 
                 } catch(e) {}
                 
-                let finalBase64 = isBase64Ready ? content : this.encodeUTF8toBase64(typeof content === 'string' ? content : JSON.stringify(content, null, 2));
+                let finalBase64 = isBase64Ready ? content : this.encodeUTF8toBase64(typeof content === 'string' ? content : JSON.stringify(content));
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
                 const body = { message: message, content: finalBase64 };
                 if (sha) body.sha = sha;
                 
-                const res = await fetch(url, { method: 'PUT', headers: this.getHeaders(cfg), body: JSON.stringify(body) });
-                if (!res.ok) throw new Error(`Erro Github ${res.status}`);
+                const res = await fetchComTimeout(url, {
+                    method: 'PUT',
+                    headers: this.getHeaders(cfg),
+                    body: JSON.stringify(body)
+                }, 45000, "Salvar arquivo GitHub: " + path);
+
+                if (!res.ok) {
+                    let detalhe = "";
+                    try {
+                        const errJson = await res.json();
+                        detalhe = errJson && errJson.message ? " - " + errJson.message : "";
+                    } catch(e) {}
+                    throw new Error(`Erro Github ${res.status}${detalhe}`);
+                }
             },
             checkWorkflowStatus: async function() { return false; } 
         };
@@ -638,7 +684,8 @@
             if (!el) return;
             if (isSyncing) {
                 el.style.display = 'flex';
-                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>A sincronizar com a Nuvem...</span>`;
+                const proxima = syncQueue.length > 0 ? ` (${syncQueue.length} pendente${syncQueue.length > 1 ? 's' : ''})` : "";
+                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>A sincronizar com a Nuvem${proxima}...</span>`;
                 lucide.createIcons();
             } else if (syncQueue.length > 0) {
                 el.style.display = 'flex';
@@ -650,61 +697,89 @@
         }
 
         async function executeNextInQueue() {
-            if (syncQueue.length === 0) { 
-                isSyncing = false; 
-                renderQueueStatus(); 
-                return; 
+            if (syncQueue.length === 0) {
+                isSyncing = false;
+                renderQueueStatus();
+                return;
             }
-            
-            isSyncing = true; 
-            
-            const isGithubBusy = await GitHubAPI.checkWorkflowStatus();
-            
-            if (isGithubBusy) {
-                const el = document.getElementById('queue-status');
-                if (el) {
-                    el.style.display = 'flex';
-                    el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>GitHub Ocupado. Aguardando 30s...</span>`;
-                    lucide.createIcons();
-                }
-                setTimeout(() => { executeNextInQueue(); }, 30000);
-                return; 
+
+            if (isSyncing && executeNextInQueue._running) {
+                return;
             }
-            
+
+            isSyncing = true;
+            executeNextInQueue._running = true;
             renderQueueStatus();
-            
-            const task = syncQueue.shift();
-            
-            try { 
-                await task.fn(); 
-                mostrarAlerta(`✅ Salvo na nuvem: ${task.name}`, 'sucesso'); 
-            } catch (e) { 
-                console.error(`Erro na tarefa ${task.name}:`, e);
-                mostrarAlerta(`❌ Erro em ${task.name}. Tente novamente.`, 'erro'); 
+
+            try {
+                const isGithubBusy = await executarComTimeout(
+                    () => GitHubAPI.checkWorkflowStatus(),
+                    10000,
+                    "Verificação de status do GitHub"
+                );
+
+                if (isGithubBusy) {
+                    const el = document.getElementById('queue-status');
+                    if (el) {
+                        el.style.display = 'flex';
+                        el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>GitHub ocupado. Nova tentativa em 30s...</span>`;
+                        lucide.createIcons();
+                    }
+
+                    executeNextInQueue._running = false;
+                    setTimeout(() => { executeNextInQueue(); }, 30000);
+                    return;
+                }
+
+                const task = syncQueue.shift();
+                renderQueueStatus();
+
+                try {
+                    await executarComTimeout(task.fn, task.timeout || 60000, task.name);
+                    mostrarAlerta(`✅ Salvo na nuvem: ${task.name}`, 'sucesso');
+                } catch (e) {
+                    console.error(`Erro na tarefa ${task.name}:`, e);
+                    mostrarAlerta(`❌ Erro em ${task.name}: ${e.message}`, 'erro');
+                }
+
+            } finally {
+                executeNextInQueue._running = false;
+
+                if (syncQueue.length > 0) {
+                    setTimeout(() => { executeNextInQueue(); }, 1200);
+                } else {
+                    isSyncing = false;
+                    renderQueueStatus();
+                }
             }
-            
-            setTimeout(() => { executeNextInQueue(); }, 8000);
         }
 
-        // NOVO PARÂMETRO 'allowDuplicate' PARA EVITAR ACÚMULO DE ENVIOS JSON NO GITHUB E FIREBASE
-        async function enqueueTask(taskName, taskFn, allowDuplicate = true) {
-            await saveDataLocally(); 
-            
+        // Evita acúmulo de tarefas iguais na fila. Ideal para economia de dados e cliques repetidos.
+        async function enqueueTask(taskName, taskFn, allowDuplicate = true, timeoutMs = 60000) {
+            await saveDataLocally();
+
             if (!allowDuplicate) {
-                // Se não permite duplicados, limpa da fila a tarefa anterior com o mesmo nome que ainda não foi executada
                 const existingTaskIndex = syncQueue.findIndex(t => t.name === taskName);
                 if (existingTaskIndex !== -1) {
                     syncQueue.splice(existingTaskIndex, 1);
                 }
             }
 
-            syncQueue.push({ name: taskName, fn: taskFn });
-            
+            syncQueue.push({ name: taskName, fn: taskFn, timeout: timeoutMs });
+
             if (!isSyncing) {
                 executeNextInQueue();
             } else {
-                renderQueueStatus(); 
+                renderQueueStatus();
             }
+        }
+
+        function destravarSincronizacao() {
+            syncQueue = [];
+            isSyncing = false;
+            executeNextInQueue._running = false;
+            renderQueueStatus();
+            mostrarAlerta("Fila de sincronização limpa e destravada.", "aviso");
         }
 
         function sanitizeProductsForExport(prods) {
