@@ -140,7 +140,6 @@
 <div class="bottom-bar">
     <button class="btn-icon" onclick="toggleConfig()" title="Configurações">⚙️</button>
     <button class="btn-icon" onclick="verFoto()" title="Ver Foto">📷</button>
-    <button class="btn-icon primary" onclick="saveDataToFirebase()" title="Sincronizar com Nuvem">💾</button>
 </div>
 
 <div id="config-panel" class="overlay-panel">
@@ -149,11 +148,13 @@
     <input type="text" id="cfg-repo" placeholder="Repositório GitHub">
     <input type="password" id="cfg-token" placeholder="Token GitHub">
     
-    <button onclick="saveConfig()" style="background:#0f172a; color:#fff; margin-top:10px;">💾 SALVAR CREDENCIAIS</button>
-    <button onclick="syncData()" style="background:#2563eb; color:#fff;">🔄 PUXAR DADOS DA NUVEM</button>
+    <button onclick="saveDataToFirebase()" style="background:#22c55e; color:#fff; margin-top:10px;">☁️ SALVAR PRODUTO ATUAL NA NUVEM</button>
+    <button onclick="syncData({force:true})" style="background:#2563eb; color:#fff;">🔄 PUXAR DADOS DA NUVEM</button>
+    <button onclick="atualizarCatalogoMetaGithub()" style="background:#16a34a; color:#fff;">📦 ATUALIZAR CATÁLOGO META</button>
+    <button onclick="saveConfig()" style="background:#0f172a; color:#fff;">🔐 SALVAR CREDENCIAIS</button>
     <button onclick="toggleConfig()" style="background:#ef4444; color:#fff; margin-top: 20px;">❌ FECHAR</button>
     
-    <p style="font-size: 10px; color: #64748b; text-align: center; margin-top: auto;">O sistema utiliza o Firebase como banco principal, garantindo proteção contra perda de dados através do Merge Inteligente.</p>
+    <p style="font-size: 10px; color: #64748b; text-align: center; margin-top: auto;">O sistema puxa o Firebase uma vez por dia e salva apenas o produto editado, reduzindo consumo e risco de conflito.</p>
 </div>
 
 <div id="modal-foto" onclick="this.style.display='none'">
@@ -163,6 +164,9 @@
 <script>
     // URL DO SEU FIREBASE (Centralizado aqui)
     const FIREBASE_URL = "https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json";
+    const FIREBASE_PRODUTOS_BASE_URL = FIREBASE_URL.replace(/\.json$/, "");
+    const LOCAL_PRODUCTS_KEY = "sucedoan_pim_v37";
+    const LOCAL_LAST_SYNC_KEY = "sucedoan_last_sync";
 
     let products = [];
     let currentProd = null;
@@ -211,6 +215,37 @@
             firebaseKey: firebaseKey,
             id: String(produto.id || firebaseKey)
         }));
+    }
+
+    function getProdutoFirebaseKey(produto) {
+        return String(produto.firebaseKey || gerarChaveProduto(produto));
+    }
+
+    function getProdutoFirebaseUrl(produto) {
+        return `${FIREBASE_PRODUTOS_BASE_URL}/${encodeURIComponent(getProdutoFirebaseKey(produto))}.json`;
+    }
+
+    function dataLocalHoje() {
+        const agora = new Date();
+        const ano = agora.getFullYear();
+        const mes = String(agora.getMonth() + 1).padStart(2, "0");
+        const dia = String(agora.getDate()).padStart(2, "0");
+        return `${ano}-${mes}-${dia}`;
+    }
+
+    async function salvarLocalmente() {
+        await localforage.setItem(LOCAL_PRODUCTS_KEY, products);
+    }
+
+    function atualizarProdutoNoArray(produtoAtualizado) {
+        const chaveAtual = String(produtoAtualizado.codigo || produtoAtualizado.id || produtoAtualizado.firebaseKey);
+        const index = products.findIndex(p => String(p.codigo || p.id || p.firebaseKey) === chaveAtual);
+
+        if (index !== -1) {
+            products[index] = produtoAtualizado;
+        } else {
+            products.unshift(produtoAtualizado);
+        }
     }
     
     // ---------------------------------------------------------
@@ -297,100 +332,36 @@
     // LÓGICA PRINCIPAL: MERGE COM FIREBASE E ATUALIZAÇÃO META
     // ---------------------------------------------------------
     async function saveDataToFirebase() {
-        const cfg = await localforage.getItem('sucedoan_config');
-        
+        if (!currentProd) {
+            alert("Selecione ou escaneie um produto antes de salvar.");
+            return;
+        }
+
         try {
-            alert("Sincronizando de forma segura com o Firebase...");
-            
-            // 1. Baixa o banco atual do Firebase
-            let produtosNuvem = [];
-            try {
-                const res = await fetch(FIREBASE_URL + '?nocache=' + Date.now(), {
-                    cache: "no-store"
-                });
+            const firebaseKey = getProdutoFirebaseKey(currentProd);
+            currentProd.firebaseKey = firebaseKey;
+            currentProd.id = String(currentProd.id || firebaseKey);
+            currentProd.last_update = Date.now();
 
-                if (res.ok) {
-                    const dadosFirebase = await res.json();
-                    produtosNuvem = objetoPorIdParaArray(dadosFirebase);
-                }
-            } catch (e) {
-                console.warn("Criando nova base ou erro de leitura no Firebase.", e);
-            }
+            atualizarProdutoNoArray(currentProd);
+            await salvarLocalmente();
 
-            // 2. Merge inteligente baseado no código do produto
-            // Mantém a edição mais recente usando last_update
-            let localMap = new Map(products.map(p => [String(p.codigo || p.id), p]));
-            
-            if (Array.isArray(produtosNuvem) && produtosNuvem.length > 0) {
-                produtosNuvem.forEach(pNuvem => {
-                    const chaveNuvem = String(pNuvem.codigo || pNuvem.id);
-                    const pLocal = localMap.get(chaveNuvem);
+            // Salva somente o produto editado, sem baixar e reenviar a base inteira.
+            const produtoParaSalvar = {
+                ...currentProd,
+                id: String(currentProd.id || firebaseKey),
+                firebaseKey: firebaseKey
+            };
 
-                    if (pLocal) {
-                        const timeLocal = pLocal.last_update || 0;
-                        const timeNuvem = pNuvem.last_update || 0;
-
-                        // Se o Firebase tem alteração mais nova, mantém a versão da nuvem
-                        if (timeNuvem > timeLocal) {
-                            const index = products.findIndex(x => String(x.codigo || x.id) === chaveNuvem);
-                            if (index !== -1) {
-                                products[index] = { ...products[index], ...pNuvem };
-                            }
-                        }
-
-                        localMap.delete(chaveNuvem);
-                    } else {
-                        // Produto novo no Firebase que não estava no celular
-                        products.unshift(pNuvem);
-                    }
-                });
-            }
-
-            // 3. Salva localmente a base já fundida
-            await localforage.setItem('sucedoan_pim_v37', products);
-
-            if (currentProd) buscar(); 
-            
-            // 4. Converte array interno para objeto por ID antes de salvar no Firebase
-            const produtosPorId = arrayParaObjetoPorId(products);
-
-            const resMain = await fetch(FIREBASE_URL, {
-                method: 'PUT',
+            const resMain = await fetch(getProdutoFirebaseUrl(produtoParaSalvar), {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(produtosPorId)
+                body: JSON.stringify(produtoParaSalvar)
             });
             
-            if (!resMain.ok) throw new Error("Erro ao guardar no Firebase.");
+            if (!resMain.ok) throw new Error("Erro ao guardar o produto no Firebase.");
 
-            // 5. Gera e salva catálogo Meta no GitHub
-            // Continua como array, porque CSV precisa de lista
-            if (cfg && cfg.token) {
-                const metaCatalog = products
-                    .filter(p => p.situacao !== 'I')
-                    .map(p => mapearProdutoParaMeta(p));
-
-                const csvText = Papa.unparse(metaCatalog, { delimiter: ";" });
-
-                await saveGenericFileGithub(
-                    cfg,
-                    'site/produtos.csv',
-                    utf8ToBase64(csvText),
-                    "Estoque Rápido: Atualização Meta CSV"
-                );
-
-                const metaJsonFinal = { "lista_produtos": metaCatalog };
-
-                await saveGenericFileGithub(
-                    cfg,
-                    'site/produtos_meta.json',
-                    utf8ToBase64(JSON.stringify(metaJsonFinal, null, 2)),
-                    "Estoque Rápido: Atualização Meta JSON"
-                );
-
-                alert("✅ Tudo salvo! Estoque no Firebase e Catálogo da Meta no GitHub atualizados.");
-            } else {
-                alert("✅ Estoque guardado no Firebase!\nArquivos da Meta ignorados porque não há credenciais do GitHub configuradas.");
-            }
+            alert("✅ Produto atual salvo na nuvem sem reenviar a base inteira.");
 
         } catch (error) {
             console.error(error);
@@ -398,8 +369,61 @@
         }
     }
 
-    async function syncData() {
+    async function atualizarCatalogoMetaGithub() {
+        const cfg = await localforage.getItem('sucedoan_config');
+
+        if (!cfg || !cfg.token) {
+            alert("Configure as credenciais do GitHub antes de atualizar o catálogo da Meta.");
+            return;
+        }
+
         try {
+            const metaCatalog = products
+                .filter(p => p.situacao !== 'I')
+                .map(p => mapearProdutoParaMeta(p));
+
+            const csvText = Papa.unparse(metaCatalog, { delimiter: ";" });
+
+            await saveGenericFileGithub(
+                cfg,
+                'site/produtos.csv',
+                utf8ToBase64(csvText),
+                "Estoque Rápido: Atualização Meta CSV"
+            );
+
+            const metaJsonFinal = { "lista_produtos": metaCatalog };
+
+            await saveGenericFileGithub(
+                cfg,
+                'site/produtos_meta.json',
+                utf8ToBase64(JSON.stringify(metaJsonFinal, null, 2)),
+                "Estoque Rápido: Atualização Meta JSON"
+            );
+
+            alert("✅ Catálogo da Meta atualizado no GitHub.");
+        } catch (error) {
+            console.error(error);
+            alert("Falha ao atualizar GitHub: " + error.message);
+        }
+    }
+
+    async function syncData(options = {}) {
+        const force = !!options.force;
+        const silent = !!options.silent;
+        const closePanel = options.closePanel !== false;
+
+        try {
+            const hoje = dataLocalHoje();
+            const ultimaSync = await localforage.getItem(LOCAL_LAST_SYNC_KEY);
+            const dadosLocais = await localforage.getItem(LOCAL_PRODUCTS_KEY) || [];
+            const jaTemBaseLocal = Array.isArray(dadosLocais) && dadosLocais.length > 0;
+
+            // No carregamento automático, sincroniza apenas uma vez por dia.
+            if (!force && ultimaSync === hoje && jaTemBaseLocal) {
+                products = objetoPorIdParaArray(dadosLocais);
+                return;
+            }
+
             const res = await fetch(FIREBASE_URL + '?nocache=' + Date.now(), {
                 cache: "no-store"
             });
@@ -408,26 +432,25 @@
             
             const dadosFirebase = await res.json();
 
-            // Aceita tanto o formato antigo array quanto o novo formato por ID
+            // Aceita tanto o formato antigo array quanto o novo formato por ID.
             let rawProducts = objetoPorIdParaArray(dadosFirebase);
             
             if (rawProducts && Array.isArray(rawProducts) && rawProducts.length > 0) {
-                // Auto-reparo garantido ao puxar os dados
                 products = autoFixDatabase(rawProducts);
 
-                await localforage.setItem('sucedoan_pim_v37', products);
-                await localforage.setItem('sucedoan_last_sync', Date.now());
+                await salvarLocalmente();
+                await localforage.setItem(LOCAL_LAST_SYNC_KEY, hoje);
 
-                alert("Sincronizado do Firebase com sucesso!");
-                toggleConfig();
+                if (!silent) alert("Sincronizado do Firebase com sucesso!");
+                if (!silent && closePanel) toggleConfig();
 
                 if (currentProd) buscar(); 
             } else {
-                alert("A base de dados do Firebase está vazia.");
+                if (!silent) alert("A base de dados do Firebase está vazia.");
             }
         } catch (error) {
             console.error(error);
-            alert("Erro ao sincronizar: " + error.message);
+            if (!silent) alert("Erro ao sincronizar: " + error.message);
         }
     }
 
@@ -513,7 +536,7 @@
             products[index] = currentProd;
         }
 
-        localforage.setItem('sucedoan_pim_v37', products);
+        localforage.setItem(LOCAL_PRODUCTS_KEY, products);
     }
 
     function formatDate(d) {
@@ -538,14 +561,20 @@
     }
 
     window.onload = async () => {
-        const dadosLocais = await localforage.getItem('sucedoan_pim_v37') || [];
+        const dadosLocais = await localforage.getItem(LOCAL_PRODUCTS_KEY) || [];
         products = objetoPorIdParaArray(dadosLocais);
+
         const cfg = await localforage.getItem('sucedoan_config');
         if(cfg) {
             document.getElementById('cfg-user').value = cfg.user;
             document.getElementById('cfg-repo').value = cfg.repo;
             document.getElementById('cfg-token').value = cfg.token;
         }
+
+        // Ao abrir no aparelho, atualiza a base local pelo Firebase uma vez por dia.
+        // Se já sincronizou hoje, usa o cache local para abrir mais rápido e economizar Firebase.
+        await syncData({ silent: true, force: false, closePanel: false });
+
         startScanner();
     };
 </script>
