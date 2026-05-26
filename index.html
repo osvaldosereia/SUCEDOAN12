@@ -1558,12 +1558,18 @@
                 </a>
             </div>
 
-            <div class="header-search-row">
-                <div class="search-container">
+           <div class="header-search-row">
+                <form class="search-container" onsubmit="executeSearch(event)" action="javascript:void(0);">
                     <div class="search-icon-pos"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
-                    <input type="text" id="app-search-input" class="topbar-search" placeholder="Buscar produto" oninput="handleSearchInput()">
+                    
+                    <input type="search" id="app-search-input" class="topbar-search" placeholder="Buscar produto" style="padding-right: 85px;" oninput="toggleSearchButtons()">
+                    
+                    <button type="submit" id="submit-search-btn" style="position: absolute; right: 44px; background: var(--primary); color: #fff; border: none; border-radius: 50%; width: 30px; height: 30px; display: none; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s;">
+                        <svg class="svg-icon" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                    </button>
+
                     <div class="clear-search-btn" id="clear-search-btn" onclick="clearSearch()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div>
-                </div>
+                </form>
 
                 <div class="desktop-nav mobile-hide">
                     <a href="#/mercado" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l1.5 12h15L21 9M3 9h18M3 9L4.5 3h15L21 9"></path></svg> Mercado</a>
