@@ -2492,7 +2492,7 @@
         }
 
        // ==========================================
-        // CÓDIGO DE BUSCA PRINCIPAL ATUALIZADO
+        // CÓDIGO DE BUSCA PRINCIPAL CORRIGIDO
         // ==========================================
 
         /**
@@ -2503,7 +2503,7 @@
             const input = $('app-search-input');
             const clearBtn = $('clear-search-btn');
             
-            // Salva o que foi digitado (em letras minúsculas e sem acentos, via norm)
+            // Salva o que foi digitado exatamente como o usuário escreveu para podermos mostrar na tela depois
             STATE.searchQuery = input.value.trim();
 
             if (STATE.searchQuery.length > 0) {
@@ -2540,19 +2540,24 @@
         function renderSearch() {
             atualizarTopbarDaRota(window.location.hash || '#/buscar');
             
-            // Separa o que o usuário digitou em palavras soltas
-            let terms = STATE.searchQuery.split(' ').filter(t => t.trim().length > 0); 
+            // PASSO DE CORREÇÃO:
+            // Precisamos normalizar o que o usuário digitou (tirar acentos e maiúsculas)
+            // ANTES de separar as palavras. Assim a comparação não falha!
+            let termoNormalizado = norm(STATE.searchQuery);
+            
+            // Separa o termo normalizado em palavras soltas
+            let terms = termoNormalizado.split(' ').filter(t => t.trim().length > 0); 
             
             // Filtra os produtos
             let results = STATE.prods.filter(p => { 
-                // OBJETIVO: A busca deve ser feita SÓ no nome do produto.
+                // A busca é feita SÓ no nome do produto, que também é normalizado.
                 let textoBusca = norm(p.name); 
                 
                 // Verifica se TODAS as palavras digitadas estão no nome do produto
                 return terms.every(term => textoBusca.includes(term)); 
             });
             
-            // Mensagem caso não encontre nada
+            // Mensagem caso não encontre nada (aqui usamos o texto original guardado em STATE)
             if(results.length === 0) {
                 $('vitrine').innerHTML = `<div style="padding: 24px 20px; text-align: center; font-weight:600; color:var(--text-light); background:var(--bg-card);">Ops, não achamos "${STATE.searchQuery}".</div>`;
                 return;
