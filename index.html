@@ -2507,24 +2507,46 @@ results.forEach(p => html += renderCardHTML(p));
             lazyLoadImages();
         }
 
-        window.handlePostBasketSearch = function() {
-            let val = $('post-basket-search').value;
-            $('pb-clear-btn').style.display = val.length > 0 ? 'flex' : 'none';
-            
-            if(val.length >= 2) {
-                let terms = norm(val).split(' ').filter(t => t.trim().length > 0);
-                let results = STATE.prods.filter(p => {
-                    if (p.categoria === 'Cestas') return false;
-                    let textoBusca = norm(p.name + " " + p.categoria + " " + p.subcategoria);
-                    return terms.every(term => textoBusca.includes(term));
-                });
-                
-                let html = '';
-                results.slice(0, 15).forEach(p => html += renderMiniCardHTML(p, true));
-                
-                if(results.length === 0) {
-                    html = '<div style="padding:10px; font-size:14px; color:var(--text-light); font-weight: 600; width: 100%; text-align: center;">Nenhum produto encontrado.</div>';
-                }
+        let postBasketSearchTimeout;
+
+window.handlePostBasketSearch = function() {
+    const val = $('post-basket-search').value;
+
+    $('pb-clear-btn').style.display = val.length > 0 ? 'flex' : 'none';
+
+    clearTimeout(postBasketSearchTimeout);
+
+    postBasketSearchTimeout = setTimeout(() => {
+        const busca = norm($('post-basket-search').value).trim();
+
+        if (busca.length < 3) {
+            $('post-basket-results').innerHTML = '';
+            return;
+        }
+
+        let terms = busca.split(' ').filter(t => t.trim().length > 0);
+
+        let results = STATE.prods.filter(p => {
+            if (p.categoria === 'Cestas') return false;
+
+            let textoBusca = norm(p.name + " " + p.categoria + " " + p.subcategoria);
+            return terms.every(term => textoBusca.includes(term));
+        });
+
+        let html = '';
+
+        results.slice(0, 15).forEach(p => {
+            html += renderMiniCardHTML(p, true);
+        });
+
+        if (results.length === 0) {
+            html = '<div style="padding:10px; font-size:14px; color:var(--text-light); font-weight: 600; width: 100%; text-align: center;">Nenhum produto encontrado.</div>';
+        }
+
+        $('post-basket-results').innerHTML = html;
+
+    }, 900);
+};
                 
                 let resultContainer = $('post-basket-search-results');
                 resultContainer.innerHTML = html;
