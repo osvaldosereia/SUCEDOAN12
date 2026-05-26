@@ -1643,7 +1643,7 @@
 
             <div class="chk-section">
                 <div class="chk-title" style="font-size: 16px;">👤 Dados e Entrega</div>
-                <input type="text" id="chk-nome" class="chk-input" placeholder="Nome Completo*">
+                <input type="text" id="chk-nome" class="chk-input" placeholder="Nome Completo*" autocomplete="name">
 <input 
     type="tel" 
     id="chk-cpf" 
@@ -1652,7 +1652,32 @@
     maxlength="14"
     inputmode="numeric"
     autocomplete="off"
->                
+>
+                <input
+                    type="tel"
+                    id="chk-telefone"
+                    class="chk-input"
+                    placeholder="Telefone / WhatsApp*"
+                    maxlength="15"
+                    inputmode="numeric"
+                    autocomplete="tel"
+                >
+                <input
+                    type="email"
+                    id="chk-email"
+                    class="chk-input"
+                    placeholder="E-mail*"
+                    autocomplete="email"
+                >
+                <input
+                    type="tel"
+                    id="chk-cep"
+                    class="chk-input"
+                    placeholder="CEP*"
+                    maxlength="9"
+                    inputmode="numeric"
+                    autocomplete="postal-code"
+                >                
                 <select id="chk-cidade" class="chk-input">
     <option value="">Cidade*</option>
     <option value="Cuiabá">Cuiabá</option>
@@ -3152,6 +3177,7 @@ ${textoExtra}
             if (STATE.cartOrder.length === 0) return alert("Sua lista está vazia!");
             renderCheckoutItems(); 
             renderAgendamentoOptions();
+            preencherCheckoutSalvo();
             updateTotals(); 
             $('checkout-drawer').scrollTop = 0; 
             
@@ -3323,21 +3349,138 @@ function formatarCPF(valor) {
     return cpf;
 }
 
+const CHECKOUT_CLIENT_KEY = 'da_checkout_cliente_v1';
+
+function limparNumeros(valor, limite) {
+    const nums = String(valor || '').replace(/\D/g, '');
+    return typeof limite === 'number' ? nums.slice(0, limite) : nums;
+}
+
+function limparTelefone(valor) {
+    return limparNumeros(valor, 11);
+}
+
+function limparCEP(valor) {
+    return limparNumeros(valor, 8);
+}
+
+function formatarTelefone(valor) {
+    const tel = limparTelefone(valor);
+
+    if (tel.length > 10) {
+        return tel.replace(/(\d{2})(\d{5})(\d{1,4})/, "($1) $2-$3");
+    }
+
+    if (tel.length > 6) {
+        return tel.replace(/(\d{2})(\d{4})(\d{1,4})/, "($1) $2-$3");
+    }
+
+    if (tel.length > 2) {
+        return tel.replace(/(\d{2})(\d{1,5})/, "($1) $2");
+    }
+
+    return tel;
+}
+
+function formatarCEP(valor) {
+    const cep = limparCEP(valor);
+    if (cep.length > 5) return cep.replace(/(\d{5})(\d{1,3})/, "$1-$2");
+    return cep;
+}
+
+function emailValido(valor) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(valor || '').trim());
+}
+
+function salvarDadosClienteCheckout() {
+    const dados = {};
+    [
+        'chk-nome', 'chk-cpf', 'chk-telefone', 'chk-email', 'chk-cep',
+        'chk-cidade', 'chk-bairro', 'chk-rua', 'chk-quadra', 'chk-casa',
+        'chk-frente', 'chk-pagamento'
+    ].forEach(id => {
+        const el = $(id);
+        if (el) dados[id] = el.value || '';
+    });
+
+    try {
+        localStorage.setItem(CHECKOUT_CLIENT_KEY, JSON.stringify({ savedAt: Date.now(), dados }));
+    } catch (e) {}
+}
+
+function carregarDadosClienteCheckout() {
+    try {
+        const raw = localStorage.getItem(CHECKOUT_CLIENT_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && parsed.dados ? parsed.dados : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function preencherCheckoutSalvo() {
+    const dados = carregarDadosClienteCheckout();
+
+    Object.entries(dados).forEach(([id, value]) => {
+        const el = $(id);
+        if (el && !String(el.value || '').trim()) el.value = value || '';
+    });
+
+    const cpfEl = $('chk-cpf');
+    if (cpfEl) cpfEl.value = formatarCPF(cpfEl.value);
+
+    const telefoneEl = $('chk-telefone');
+    if (telefoneEl) telefoneEl.value = formatarTelefone(telefoneEl.value);
+
+    const cepEl = $('chk-cep');
+    if (cepEl) cepEl.value = formatarCEP(cepEl.value);
+}
+
 document.addEventListener('input', function(e) {
-    if (e.target && e.target.id === 'chk-cpf') {
+    if (!e.target) return;
+
+    if (e.target.id === 'chk-cpf') {
         e.target.value = formatarCPF(e.target.value);
 
         if (limparCPF(e.target.value).length === 11) {
             e.target.classList.remove('checkout-required-error');
         }
     }
+
+    if (e.target.id === 'chk-telefone') {
+        e.target.value = formatarTelefone(e.target.value);
+
+        if (limparTelefone(e.target.value).length >= 10) {
+            e.target.classList.remove('checkout-required-error');
+        }
+    }
+
+    if (e.target.id === 'chk-cep') {
+        e.target.value = formatarCEP(e.target.value);
+
+        if (limparCEP(e.target.value).length === 8) {
+            e.target.classList.remove('checkout-required-error');
+        }
+    }
+
+    if (e.target.id === 'chk-email' && emailValido(e.target.value)) {
+        e.target.classList.remove('checkout-required-error');
+    }
+
+    if (e.target.id && e.target.id.startsWith('chk-')) {
+        salvarDadosClienteCheckout();
+    }
 });
-['chk-nome', 'chk-cpf', 'chk-cidade', 'chk-bairro', 'chk-rua', 'chk-casa', 'chk-frente', 'chk-pagamento'].forEach(id => {
+['chk-nome', 'chk-cpf', 'chk-telefone', 'chk-email', 'chk-cep', 'chk-cidade', 'chk-bairro', 'chk-rua', 'chk-casa', 'chk-frente', 'chk-pagamento'].forEach(id => {
     document.addEventListener('input', function(e) {
                 if (e.target && e.target.id === id && String(e.target.value || '').trim()) e.target.classList.remove('checkout-required-error');
             });
             document.addEventListener('change', function(e) {
-                if (e.target && e.target.id === id && String(e.target.value || '').trim()) e.target.classList.remove('checkout-required-error');
+                if (e.target && e.target.id === id && String(e.target.value || '').trim()) {
+                    e.target.classList.remove('checkout-required-error');
+                    salvarDadosClienteCheckout();
+                }
             });
         });
 
@@ -3355,6 +3498,11 @@ document.addEventListener('input', function(e) {
            let nome = $('chk-nome').value.trim();
 let cpfFormatado = $('chk-cpf').value.trim();
 let cpf = limparCPF(cpfFormatado);
+let telefoneFormatado = $('chk-telefone').value.trim();
+let telefone = limparTelefone(telefoneFormatado);
+let email = $('chk-email').value.trim().toLowerCase();
+let cepFormatado = $('chk-cep').value.trim();
+let cep = limparCEP(cepFormatado);
 let cidade = $('chk-cidade').value.trim();
 let uf = 'MT';
 let bairro = $('chk-bairro').value.trim();
@@ -3371,6 +3519,9 @@ let pag = $('chk-pagamento').value;
     { id: 'agendamento-options-container', label: 'Data de agendamento', customValidate: () => !!dataAgendamento },
     { id: 'chk-nome', label: 'Nome completo' },
     { id: 'chk-cpf', label: 'CPF válido com 11 números', customValidate: () => cpf.length === 11 },
+    { id: 'chk-telefone', label: 'Telefone/WhatsApp válido', customValidate: () => telefone.length >= 10 },
+    { id: 'chk-email', label: 'E-mail válido', customValidate: () => emailValido(email) },
+    { id: 'chk-cep', label: 'CEP válido com 8 números', customValidate: () => cep.length === 8 },
     { id: 'chk-cidade', label: 'Cidade' },
     { id: 'chk-bairro', label: 'Bairro' },
     { id: 'chk-rua', label: 'Rua' },
@@ -3440,7 +3591,9 @@ let pag = $('chk-pagamento').value;
             let dadosCliente = `
 *👤 DADOS DO CLIENTE E ENTREGA*
 Nome: ${nome} ${cpf ? `\nCPF: ${formatarCPF(cpf)}` : ''}
-Endereço: ${cidade}/${uf}, Bairro ${bairro}, Rua ${rua}, Quadra ${quadra || 'S/N'}, Casa ${casa}
+Telefone/WhatsApp: ${formatarTelefone(telefone)}
+E-mail: ${email}
+Endereço: CEP ${formatarCEP(cep)}, ${cidade}/${uf}, Bairro ${bairro}, Rua ${rua}, Quadra ${quadra || 'S/N'}, Casa ${casa}
 Detalhes: ${frente}
 📅 *Agendamento:* ${dataAgendamento}
 💳 *Pagamento:* ${pag}`;
@@ -3458,12 +3611,20 @@ Detalhes: ${frente}
 cliente: { 
     nome, 
     cpf, 
+    telefone,
+    telefoneFormatado: formatarTelefone(telefone),
+    celular: telefone,
+    email,
+    cep,
+    cepFormatado: formatarCEP(cep),
     cidade,
     uf,
     bairro, 
     rua, 
     quadra, 
     casa, 
+    numero: casa,
+    complemento: quadra ? `Quadra ${quadra}. ${frente}` : frente,
     frente, 
     pagamento: pag, 
     agendamento: dataAgendamento 
@@ -3505,6 +3666,8 @@ ${itemsTxt}
 Por favor, podem incluir na minha entrega?`;
             }
 
+            salvarDadosClienteCheckout();
+
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             
             saveCart(); 
@@ -3517,7 +3680,7 @@ Por favor, podem incluir na minha entrega?`;
         };
 
         function forcarLimpezaDeCacheClient() {
-            const chavesProtegidas = ['da_user', 'da_produtos_cache_v4']; 
+            const chavesProtegidas = ['da_user', 'da_produtos_cache_v4', CHECKOUT_CLIENT_KEY]; 
             const todasAsChaves = Object.keys(localStorage);
             todasAsChaves.forEach(chave => { if (!chavesProtegidas.includes(chave)) localStorage.removeItem(chave); });
         }
