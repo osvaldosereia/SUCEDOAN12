@@ -3,488 +3,1172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#000000">
-    <link rel="apple-touch-icon" href="https://placehold.co/192x192/000000/FFFFFF?text=Sucedoan">
-    <title>Sucedoan - Separação de Pedidos</title>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#111827">
+    <title>Separação de Pedidos</title>
+
     <style>
         :root {
-            --bg: #f4f4f5; --card: #ffffff; --text: #0f172a; --text-muted: #64748b;
-            --primary: #000000; --success: #10b981; --danger: #ef4444; --border: #e4e4e7;
+            --bg: #f3f4f6;
+            --card: #ffffff;
+            --text: #111827;
+            --muted: #6b7280;
+            --line: #e5e7eb;
+            --dark: #111827;
+            --dark2: #1f2937;
+            --green: #059669;
+            --green2: #ecfdf5;
+            --red: #dc2626;
+            --red2: #fef2f2;
+            --yellow: #facc15;
+            --blue: #2563eb;
+            --radius: 12px;
         }
-        
-        html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
-        
-        header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
-        .brand { font-weight: 900; font-size: 18px; display: flex; align-items: center; gap: 8px; }
-        
-        .container { padding: 20px; max-width: 800px; margin: 0 auto; width: 100%; box-sizing: border-box; }
-        
-        #view-pedidos { flex: 1; overflow-y: auto; padding-bottom: 30px; }
 
-        #view-separacao {
-            display: none; 
-            flex-direction: column;
-            position: fixed;
-            top: 60px; 
-            left: 0; right: 0; bottom: 0;
-            max-width: 800px;
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeSpeed;
+        }
+
+        body {
+            overflow-x: hidden;
+            font-size: 14px;
+        }
+
+        button, input, textarea, select {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 14px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 10px;
+            min-height: 42px;
+            padding: 10px 12px;
+            font-weight: 800;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: var(--dark);
+            color: #fff;
+            padding: 10px;
+            border-bottom: 1px solid #000;
+        }
+
+        .topbar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand {
+            flex: 1;
+            font-size: 16px;
+            font-weight: 900;
+            line-height: 1.1;
+        }
+
+        .brand small {
+            display: block;
+            color: #d1d5db;
+            font-size: 10px;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        .top-btn {
+            background: #374151;
+            color: #fff;
+            min-width: 42px;
+            min-height: 38px;
+            padding: 8px 10px;
+            border: 1px solid rgba(255,255,255,.08);
+        }
+
+        .top-btn.green { background: var(--green); }
+        .top-btn.red { background: var(--red); }
+
+        .container {
+            width: 100%;
+            max-width: 720px;
             margin: 0 auto;
-            background: var(--bg);
-            z-index: 5;
-            padding: 0; 
+            padding: 10px;
+            padding-bottom: 80px;
         }
 
-        .separacao-header {
-            padding: 20px;
-            background: var(--bg);
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
+        .statusbar {
+            margin: 10px 0;
+            padding: 9px 10px;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-radius: 10px;
+            color: #9a3412;
+            font-size: 12px;
+            font-weight: 800;
+            display: none;
         }
 
-        #lista-itens {
+        .filters {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin: 10px 0;
+        }
+
+        .filter-btn {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--line);
+            font-size: 12px;
+            min-height: 38px;
+            padding: 8px 6px;
+        }
+
+        .filter-btn.active {
+            background: var(--dark);
+            color: #fff;
+            border-color: var(--dark);
+        }
+
+        .search-box {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 0 12px;
+            background: #fff;
+            color: var(--text);
+            outline: none;
+            font-weight: 700;
+        }
+
+        .section-title {
+            margin: 16px 2px 8px;
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .empty {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 18px;
+            text-align: center;
+            color: var(--muted);
+            font-weight: 800;
+        }
+
+        .order-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            margin-bottom: 10px;
+            padding: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.04);
+        }
+
+        .order-card.done {
+            background: var(--green2);
+            border-color: #a7f3d0;
+        }
+
+        .order-head {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+
+        .order-check {
+            width: 22px;
+            height: 22px;
+            margin-top: 2px;
+            flex: 0 0 auto;
+        }
+
+        .order-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .order-id {
+            font-size: 17px;
+            font-weight: 900;
+            line-height: 1.1;
+        }
+
+        .order-meta {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 4px;
+            line-height: 1.35;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 8px;
+            border-radius: 999px;
+            background: #fef9c3;
+            color: #854d0e;
+            font-size: 10px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .badge.done {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .client-box {
+            margin-top: 9px;
+            background: #f9fafb;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 9px;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .client-name {
+            font-size: 13px;
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .client-line {
+            color: var(--muted);
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .order-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-top: 9px;
+        }
+
+        .small-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .btn {
+            background: var(--dark);
+            color: #fff;
+        }
+
+        .btn.light {
+            background: #e5e7eb;
+            color: var(--text);
+        }
+
+        .btn.green {
+            background: var(--green);
+            color: #fff;
+        }
+
+        .btn.red {
+            background: var(--red);
+            color: #fff;
+        }
+
+        .btn.blue {
+            background: var(--blue);
+            color: #fff;
+        }
+
+        .btn.whats {
+            background: #16a34a;
+            color: #fff;
+        }
+
+        .btn.warn {
+            background: #f59e0b;
+            color: #111827;
+        }
+
+        .btn.small {
+            min-height: 36px;
+            font-size: 12px;
+            padding: 8px 6px;
+        }
+
+        .selectbar {
+            display: none;
+            position: sticky;
+            top: 58px;
+            z-index: 15;
+            margin-bottom: 10px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 8px;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.08);
+        }
+
+        .selectbar span {
+            flex: 1;
+            font-weight: 900;
+            font-size: 12px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .sep-header {
+            position: sticky;
+            top: 58px;
+            z-index: 12;
+            background: var(--bg);
+            padding: 10px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .sep-title {
+            font-size: 20px;
+            font-weight: 900;
+            margin: 8px 0 3px;
+        }
+
+        .sep-sub {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .item-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            margin: 10px 0;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,.04);
+        }
+
+        .item-card.done {
+            opacity: .72;
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .item-image-wrap {
+            width: 100%;
+            height: 170px;
+            background: #f9fafb;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .item-body {
+            padding: 10px;
+        }
+
+        .qty {
+            background: var(--red2);
+            color: #991b1b;
+            border: 2px solid #fecaca;
+            border-radius: 10px;
+            padding: 8px;
+            text-align: center;
+            font-size: 24px;
+            line-height: 1;
+            font-weight: 900;
+            margin-bottom: 9px;
+        }
+
+        .ean {
+            background: #f3f4f6;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            font-size: 17px;
+            font-weight: 900;
+            letter-spacing: .5px;
+            margin-bottom: 8px;
+            overflow-wrap: anywhere;
+        }
+
+        .item-name {
+            font-size: 16px;
+            font-weight: 900;
+            margin: 0 0 8px;
+            line-height: 1.25;
+        }
+
+        .loc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .loc-box {
+            border: 1px solid var(--line);
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .loc-label {
+            display: block;
+            color: var(--muted);
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 900;
+            margin-bottom: 2px;
+        }
+
+        .loc-value {
+            display: block;
+            font-size: 17px;
+            color: var(--dark);
+            font-weight: 900;
+            overflow-wrap: anywhere;
+        }
+
+        .notfound {
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #9a3412;
+            border-radius: var(--radius);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0,0,0,.72);
+            padding: 12px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.open {
+            display: flex;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 420px;
+            background: #fff;
+            border-radius: 14px;
+            padding: 14px;
+            max-height: 92vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            margin: 0 0 6px;
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .modal-text {
+            margin: 0 0 12px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .form-input {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 0 10px;
+            margin-bottom: 8px;
+            font-weight: 700;
+            outline: none;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .sheet {
+            position: fixed;
+            top: 0;
+            right: -105%;
+            width: 92%;
+            max-width: 420px;
+            height: 100%;
+            background: var(--bg);
+            z-index: 80;
+            transition: right .22s ease;
+            box-shadow: -6px 0 20px rgba(0,0,0,.22);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sheet.open {
+            right: 0;
+        }
+
+        .sheet-head {
+            background: var(--dark);
+            color: #fff;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sheet-head strong {
+            flex: 1;
+            font-size: 16px;
+            font-weight: 900;
+        }
+
+        .sheet-body {
             flex: 1;
             overflow-y: auto;
-            scroll-snap-type: y mandatory; 
-            padding: 20px;
-            scroll-behavior: smooth;
-            padding-bottom: 50px;
+            padding: 10px;
         }
 
-        button { font-family: 'Inter', sans-serif; border: none; border-radius: 8px; cursor: pointer; font-weight: 800; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
-        .btn-config { background: transparent; color: white; padding: 8px; }
-        .btn-action { background: var(--primary); color: white; padding: 12px; width: 100%; font-size: 14px; }
-        .btn-success { background: var(--success); color: white; padding: 12px; width: 100%; font-size: 14px; }
-        .btn-danger { background: var(--danger); color: white; padding: 10px 15px; font-size: 13px; }
+        .info-box {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 10px;
+            margin-bottom: 10px;
+        }
 
-        #acao-selecao { display: none; background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 15px; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        
-        .order-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.04); position: relative; }
-        .order-card:active { transform: scale(0.99); }
-        .order-card.concluido { opacity: 0.8; border-color: var(--success); background: #ecfdf5; }
-        .sortable-ghost { opacity: 0.4; background: #fef08a; border: 2px dashed #ca8a04; } /* Estilo ao arrastar */
-        
-        .order-header-row { display: flex; align-items: flex-start; gap: 12px; width: 100%; }
-        
-        .checkbox-container { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-top: 2px;}
-        .checkbox-container input { width: 20px; height: 20px; cursor: pointer; }
+        .info-box p {
+            margin: 5px 0;
+            font-size: 13px;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
 
-        .order-content { flex: 1; display: flex; justify-content: space-between; align-items: flex-start; }
-        .order-id { font-size: 18px; font-weight: 900; }
-        .order-date { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 600;}
-        .badge { background: #fef08a; color: #854d0e; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; display: inline-block; white-space: nowrap; }
+        .info-box b {
+            font-weight: 900;
+        }
 
-        .client-info-box { background: #f8fafc; padding: 10px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #e2e8f0; width: 100%; box-sizing: border-box;}
-        .client-info-box p { margin: 3px 0; display: flex; align-items: center; gap: 5px; color: var(--text-muted); font-weight: 600; }
-        .client-info-box .client-name { font-weight: 800; color: var(--text); font-size: 13px; margin-bottom: 6px; }
-
-        .order-actions { display: flex; gap: 8px; width: 100%; margin-top: 5px; }
-
-        /* Sidebar Entregador */
-        #overlay-lateral { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 90; backdrop-filter: blur(2px); }
-        #sidebar-entregador { position: fixed; top: 0; right: -100%; width: 85%; max-width: 400px; height: 100%; background: var(--bg); z-index: 100; transition: right 0.3s ease; display: flex; flex-direction: column; box-shadow: -4px 0 20px rgba(0,0,0,0.15); }
-        #sidebar-entregador.open { right: 0; }
-        .sidebar-header { background: var(--primary); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .sidebar-content { flex: 1; overflow-y: auto; padding: 20px; background: var(--bg); }
-        
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; margin-bottom: 25px; }
-        .action-btn-square { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-size: 11px; font-weight: 800; color: var(--text); cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.02); text-decoration: none; text-align: center;}
-        
         #print-area { display: none; }
 
-        .item-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 30px; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.05); scroll-snap-align: center; scroll-snap-stop: always; height: 80vh; }
-        .item-card.separado { opacity: 0.5; border-color: var(--success); }
-        .item-card.separado .item-img { filter: grayscale(100%); }
-        
-        .item-img { flex: 1; width: 100%; object-fit: contain; background: #fafafa; border-bottom: 1px solid var(--border); min-height: 0; }
-        .item-info { flex-shrink: 0; padding: 15px; }
-        .item-title { font-size: 18px; font-weight: 900; margin: 0 0 15px 0; line-height: 1.2; }
-        
-        .ean-display { background: #f1f5f9; color: var(--text); padding: 12px; border-radius: 8px; font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 15px; border: 1px dashed #cbd5e1; letter-spacing: 2px; }
-        .qty-highlight { background: #fee2e2; border: 2px solid #ef4444; color: #b91c1c; font-size: 32px; font-weight: 900; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: -1px; }
+        .spin {
+            display: inline-block;
+            animation: spin .9s linear infinite;
+        }
 
-        .item-meta { display: flex; justify-content: space-between; background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e2e8f0; }
-        .meta-box { text-align: center; flex: 1; }
-        .meta-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 800; }
-        .meta-value { font-size: 18px; font-weight: 900; color: var(--primary); }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
 
-        .modal-base { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; }
-        .modal-content input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter'; font-weight: 600;}
-        
-        .spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @media (max-width: 380px) {
+            body { font-size: 13px; }
+            .brand { font-size: 14px; }
+            .topbar { padding: 8px; }
+            .container { padding: 8px; padding-bottom: 70px; }
+            .order-id { font-size: 15px; }
+            .order-actions { grid-template-columns: 1fr; }
+            .small-actions { grid-template-columns: 1fr 1fr; }
+            .item-image-wrap { height: 135px; }
+            .qty { font-size: 21px; padding: 7px; }
+            .ean { font-size: 14px; }
+            .item-name { font-size: 15px; }
+            .loc-value { font-size: 15px; }
+            button { min-height: 40px; padding: 9px 8px; }
+            .grid-2 { grid-template-columns: 1fr; }
+        }
 
         @media print {
             body * { visibility: hidden; }
-            html, body { height: auto; background: white; margin: 0; padding: 0; }
+            html, body { background: white; height: auto; }
             #print-area, #print-area * { visibility: visible; }
-            #print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100mm; min-height: 150mm; background: white; color: black; font-family: 'Inter', sans-serif; padding: 4mm; box-sizing: border-box; }
+            #print-area {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100mm;
+                min-height: 150mm;
+                padding: 4mm;
+                background: white;
+                color: black;
+                font-family: Arial, Helvetica, sans-serif;
+            }
             @page { size: 100mm 150mm; margin: 0; }
-            .print-title { font-size: 26px; font-weight: 900; text-align: center; margin: 0 0 5px 0; border: 3px solid black; padding: 10px; }
-            .print-barcode { font-size: 20px; font-weight: bold; text-align: center; margin-bottom: 15px; font-family: monospace; letter-spacing: 2px;}
-            .print-section { border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
-            .print-label { font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
-            .print-value { font-size: 16px; font-weight: 900; margin: 0 0 8px 0; }
-            .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            .print-table th { text-align: left; font-size: 12px; border-bottom: 2px solid black; padding: 5px 0; }
-            .print-table td { font-size: 13px; padding: 6px 0; border-bottom: 1px solid #ccc; font-weight: 600;}
+            .p-title { font-size: 24px; font-weight: 900; text-align: center; border: 3px solid #000; padding: 8px; margin: 0 0 8px; }
+            .p-section { border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
+            .p-label { font-size: 10px; text-transform: uppercase; font-weight: 900; margin-top: 5px; }
+            .p-value { font-size: 14px; font-weight: 900; margin-bottom: 5px; overflow-wrap: anywhere; }
+            .p-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+            .p-table th { font-size: 11px; text-align: left; border-bottom: 2px solid #000; padding: 4px 0; }
+            .p-table td { font-size: 12px; border-bottom: 1px solid #bbb; padding: 5px 0; font-weight: 700; }
         }
     </style>
 </head>
 <body>
-
-    <header>
-        <div class="brand"><i data-lucide="package-check"></i> Separação</div>
-        <div style="display:flex; gap:10px;">
-            <button class="btn-config" style="background: var(--success); font-size: 12px; padding: 5px 10px;" onclick="salvarOrdemPedidos()">
-                <i data-lucide="save" size="14"></i> Salvar Rota
-            </button>
-            <button class="btn-config" onclick="buscarPedidos()"><i data-lucide="refresh-cw"></i></button>
-            <button class="btn-config" onclick="abrirConfig()"><i data-lucide="settings"></i></button>
+    <header class="topbar">
+        <div class="topbar-row">
+            <div class="brand">
+                📦 Separação
+                <small>Pedidos do arquivo site/pedidoseparar.json</small>
+            </div>
+            <button class="top-btn green" onclick="buscarPedidos()" title="Atualizar">↻</button>
+            <button class="top-btn" onclick="abrirConfig()" title="Configurar">⚙</button>
         </div>
     </header>
 
-    <div class="container" id="view-pedidos">
-        <div id="acao-selecao">
-            <span id="txt-selecionados" style="font-weight: 800; font-size: 14px;">0 selecionados</span>
-            <button class="btn-danger" onclick="excluirSelecionados()"><i data-lucide="trash-2"></i> Excluir</button>
-        </div>
-        <div id="lista-pedidos">Carregando pedidos...</div>
-    </div>
+    <main class="container">
+        <div id="statusbar" class="statusbar"></div>
 
-    <div id="modal-separador" class="modal-base">
-        <div class="modal-content">
-            <h3 style="margin:0; font-weight:900;">Quem está separando?</h3>
-            <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Selecione o seu nome para iniciar a separação.</p>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
-                <button class="btn-action" style="background: #1e293b;" onclick="definirSeparador('Kely')">Kely</button>
-                <button class="btn-action" style="background: #1e293b;" onclick="definirSeparador('Claudenil')">Claudenil</button>
-                <button class="btn-action" style="background: #1e293b;" onclick="definirSeparador('Jose')">Jose</button>
-                <button class="btn-action" style="background: #1e293b;" onclick="definirSeparador('André')">André</button>
-                <button class="btn-action" style="background: #1e293b;" onclick="definirSeparador('Jovenil')">Jovenil</button>
-                <button class="btn-action" style="background: #1e293b;" onclick="definirSeparador('Osvaldo')">Osvaldo</button>
+        <section id="screen-pedidos" class="screen active">
+            <input id="busca" class="search-box" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço..." oninput="renderizarListaPedidos()">
+
+            <div class="filters">
+                <button id="flt-todos" class="filter-btn active" onclick="definirFiltro('todos')">Todos</button>
+                <button id="flt-pendentes" class="filter-btn" onclick="definirFiltro('pendentes')">Pendentes</button>
+                <button id="flt-concluidos" class="filter-btn" onclick="definirFiltro('concluidos')">Concluídos</button>
             </div>
-            <button class="btn-action" onclick="fecharModalSeparador()" style="background: var(--border); color: var(--text); margin-top: 10px;">Cancelar</button>
+
+            <div id="selectbar" class="selectbar">
+                <span id="select-count">0 selecionado(s)</span>
+                <button class="btn red small" onclick="excluirSelecionados()">Excluir</button>
+                <button class="btn light small" onclick="limparSelecao()">Limpar</button>
+            </div>
+
+            <div id="lista-pedidos" class="lista-pedidos">
+                <div class="empty">Carregando pedidos...</div>
+            </div>
+        </section>
+
+        <section id="screen-separacao" class="screen">
+            <div class="sep-header">
+                <button class="btn light small" onclick="voltarParaPedidos()">← Voltar aos pedidos</button>
+                <div id="titulo-pedido-ativo" class="sep-title">Pedido</div>
+                <div id="sub-pedido-ativo" class="sep-sub"></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
+                    <button class="btn green small" onclick="separarTodosDeUmaVez()">✓ Marcar todos</button>
+                    <button class="btn blue small" onclick="abrirEntregador(null, pedidoAtivo)">Entrega</button>
+                </div>
+            </div>
+            <div id="lista-itens"></div>
+        </section>
+    </main>
+
+    <div id="modal-config" class="modal">
+        <div class="modal-card">
+            <h3 class="modal-title">Credenciais GitHub</h3>
+            <p class="modal-text">Use as mesmas credenciais do PIM. Elas ficam salvas somente neste aparelho.</p>
+            <input id="cfg-user" class="form-input" type="text" placeholder="Usuário GitHub">
+            <input id="cfg-repo" class="form-input" type="text" placeholder="Repositório">
+            <input id="cfg-token" class="form-input" type="password" placeholder="Token GitHub">
+            <div class="grid-2">
+                <button class="btn green" onclick="salvarConfig()">Salvar</button>
+                <button class="btn light" onclick="fecharConfig()">Cancelar</button>
+            </div>
         </div>
     </div>
 
-    <div id="view-separacao">
-        <div class="separacao-header">
-            <button style="background: transparent; color: var(--text-muted); font-size: 14px; margin-bottom: 15px; padding:0;" onclick="voltarParaPedidos()">
-                <i data-lucide="arrow-left"></i> Voltar aos Pedidos
-            </button>
-            <h2 id="titulo-pedido-ativo" style="font-weight: 900; font-size: 24px; margin-top: 0;">Pedido #...</h2>
+    <div id="modal-separador" class="modal">
+        <div class="modal-card">
+            <h3 class="modal-title">Quem está separando?</h3>
+            <p class="modal-text">Escolha o separador para travar o pedido com o nome da pessoa.</p>
+            <div class="grid-2">
+                <button class="btn" onclick="definirSeparador('Kely')">Kely</button>
+                <button class="btn" onclick="definirSeparador('Claudenil')">Claudenil</button>
+                <button class="btn" onclick="definirSeparador('Jose')">Jose</button>
+                <button class="btn" onclick="definirSeparador('André')">André</button>
+                <button class="btn" onclick="definirSeparador('Jovenil')">Jovenil</button>
+                <button class="btn" onclick="definirSeparador('Osvaldo')">Osvaldo</button>
+            </div>
+            <button class="btn light" style="width:100%; margin-top:8px;" onclick="fecharModalSeparador()">Cancelar</button>
         </div>
-        <div id="lista-itens"></div>
     </div>
 
-    <div id="overlay-lateral" onclick="fecharEntregador()"></div>
-    <div id="sidebar-entregador">
-        <div class="sidebar-header">
-            <h3 style="margin:0; font-weight:900; font-size:18px; display:flex; align-items:center; gap:8px;"><i data-lucide="truck"></i> Info Entrega</h3>
-            <button onclick="fecharEntregador()" style="background:none; color:white; padding:5px;"><i data-lucide="x"></i></button>
+    <div id="sheet-entrega" class="sheet">
+        <div class="sheet-head">
+            <strong>🚚 Dados da entrega</strong>
+            <button class="top-btn" onclick="fecharEntregador()">✕</button>
         </div>
-        <div class="sidebar-content" id="entregador-content"></div>
-    </div>
-
-    <div id="config-modal" class="modal-base">
-        <div class="modal-content">
-            <h3 style="margin:0; font-weight:900;">Credenciais GitHub</h3>
-            <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Insira os mesmos dados do Sucedoan PIM.</p>
-            <input type="text" id="cfg-user" placeholder="Usuário GitHub">
-            <input type="text" id="cfg-repo" placeholder="Repositório">
-            <input type="password" id="cfg-token" placeholder="Token de Acesso (ghp_...)">
-            <button class="btn-action" onclick="salvarConfig()" style="margin-top: 10px;">Salvar e Recarregar</button>
-            <button class="btn-action" onclick="fecharConfig()" style="background: var(--border); color: var(--text);">Cancelar</button>
-        </div>
+        <div id="entregador-content" class="sheet-body"></div>
     </div>
 
     <div id="print-area"></div>
 
     <script>
-        function encodeBase64(str) { return btoa(new TextEncoder().encode(str).reduce((d, b) => d + String.fromCharCode(b), '')); }
-        function decodeBase64(b64) { return new TextDecoder('utf-8').decode(Uint8Array.from(atob(b64.replace(/\s/g, '')), c => c.charCodeAt(0))); }
-
-        function salvarCookie(nome, valor, dias) {
-            let data = new Date();
-            data.setTime(data.getTime() + (dias * 24 * 60 * 60 * 1000));
-            let expiracao = "expires=" + data.toUTCString();
-            document.cookie = nome + "=" + valor + ";" + expiracao + ";path=/";
-        }
-
-        function lerCookie(nome) {
-            let nomeEq = nome + "=";
-            let cookies = document.cookie.split(';');
-            for(let i = 0; i < cookies.length; i++) {
-                let c = cookies[i];
-                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nomeEq) == 0) return c.substring(nomeEq.length, c.length);
-            }
-            return null;
-        }
+        const CAMINHO_PEDIDOS = 'site/pedidoseparar.json';
+        const CONFIG_STORAGE_KEY = 'separador_config_v2';
+        const COOKIE_CONFIG_KEY = 'separador_config_bkp_v2';
 
         let cfg = null;
         let fileSha = null;
         let todosOsPedidos = [];
         let pedidoAtivo = null;
-        let pedidoAguardandoSeparador = null; // Guarda o índice temporariamente
+        let pedidoAguardandoSeparador = null;
         let idsSelecionados = new Set();
+        let filtroAtual = 'todos';
+        let salvando = false;
 
-        window.onload = () => {
-            lucide.createIcons();
+        window.onload = function() {
             carregarConfig();
         };
 
-        function carregarConfig() {
-            try {
-                let configSalva = localStorage.getItem('separador_config');
-                if (!configSalva) {
-                    configSalva = lerCookie('separador_config_bkp');
-                    if (configSalva) { localStorage.setItem('separador_config', configSalva); }
-                }
-                cfg = configSalva ? JSON.parse(configSalva) : null;
-            } catch (erro) { cfg = null; }
-            if (!cfg || !cfg.token) { abrirConfig(); } else { buscarPedidos(); }
+        function encodeBase64Unicode(str) {
+            const bytes = new TextEncoder().encode(str);
+            let bin = '';
+            for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+            return btoa(bin);
+        }
+
+        function decodeBase64Unicode(b64) {
+            const clean = String(b64 || '').replace(/\s/g, '');
+            const bin = atob(clean);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            return new TextDecoder('utf-8').decode(bytes);
+        }
+
+        function salvarCookie(nome, valor, dias) {
+            const data = new Date();
+            data.setTime(data.getTime() + (dias * 24 * 60 * 60 * 1000));
+            document.cookie = nome + '=' + encodeURIComponent(valor) + ';expires=' + data.toUTCString() + ';path=/;SameSite=Lax';
+        }
+
+        function lerCookie(nome) {
+            const nomeEq = nome + '=';
+            const partes = document.cookie.split(';');
+            for (let i = 0; i < partes.length; i++) {
+                let c = partes[i].trim();
+                if (c.indexOf(nomeEq) === 0) return decodeURIComponent(c.substring(nomeEq.length));
+            }
+            return null;
+        }
+
+        function mostrarStatus(msg, tipo) {
+            const el = document.getElementById('statusbar');
+            if (!msg) {
+                el.style.display = 'none';
+                el.textContent = '';
+                return;
+            }
+            el.style.display = 'block';
+            el.textContent = msg;
+            if (tipo === 'erro') {
+                el.style.background = '#fef2f2';
+                el.style.borderColor = '#fecaca';
+                el.style.color = '#991b1b';
+            } else if (tipo === 'ok') {
+                el.style.background = '#ecfdf5';
+                el.style.borderColor = '#a7f3d0';
+                el.style.color = '#065f46';
+            } else {
+                el.style.background = '#fff7ed';
+                el.style.borderColor = '#fed7aa';
+                el.style.color = '#9a3412';
+            }
         }
 
         function abrirConfig() {
-            document.getElementById('cfg-user').value = cfg ? cfg.user : '';
-            document.getElementById('cfg-repo').value = cfg ? cfg.repo : '';
-            document.getElementById('cfg-token').value = cfg ? cfg.token : '';
-            document.getElementById('config-modal').style.display = 'flex';
+            document.getElementById('cfg-user').value = cfg && cfg.user ? cfg.user : '';
+            document.getElementById('cfg-repo').value = cfg && cfg.repo ? cfg.repo : '';
+            document.getElementById('cfg-token').value = cfg && cfg.token ? cfg.token : '';
+            document.getElementById('modal-config').classList.add('open');
         }
 
-        function fecharConfig() { document.getElementById('config-modal').style.display = 'none'; }
+        function fecharConfig() {
+            document.getElementById('modal-config').classList.remove('open');
+        }
+
+        function carregarConfig() {
+            try {
+                let raw = localStorage.getItem(CONFIG_STORAGE_KEY);
+                if (!raw) raw = lerCookie(COOKIE_CONFIG_KEY);
+                cfg = raw ? JSON.parse(raw) : null;
+            } catch (e) {
+                cfg = null;
+            }
+
+            if (!cfg || !cfg.user || !cfg.repo || !cfg.token) {
+                abrirConfig();
+                document.getElementById('lista-pedidos').innerHTML = '<div class="empty">Configure o GitHub para carregar os pedidos.</div>';
+            } else {
+                buscarPedidos();
+            }
+        }
 
         function salvarConfig() {
             const user = document.getElementById('cfg-user').value.trim();
             const repo = document.getElementById('cfg-repo').value.trim();
             const token = document.getElementById('cfg-token').value.trim();
-            if (!user || !repo || !token) { alert("Preencha tudo!"); return; }
+            if (!user || !repo || !token) {
+                alert('Preencha usuário, repositório e token.');
+                return;
+            }
             cfg = { user, repo, token };
-            const configString = JSON.stringify(cfg);
-            localStorage.setItem('separador_config', configString);
-            salvarCookie('separador_config_bkp', configString, 365);
-            fecharConfig(); 
+            const raw = JSON.stringify(cfg);
+            localStorage.setItem(CONFIG_STORAGE_KEY, raw);
+            salvarCookie(COOKIE_CONFIG_KEY, raw, 365);
+            fecharConfig();
             buscarPedidos();
         }
 
-        function obterUrlSemCache(caminho) {
-            const timestamp = new Date().getTime();
-            return `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${caminho}?t=${timestamp}`;
+        function githubHeaders() {
+            return {
+                'Authorization': 'Bearer ' + cfg.token,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            };
+        }
+
+        function githubUrl(caminho) {
+            return 'https://api.github.com/repos/' + encodeURIComponent(cfg.user) + '/' + encodeURIComponent(cfg.repo) + '/contents/' + caminho + '?t=' + Date.now();
+        }
+
+        async function fetchComTimeout(url, options, timeoutMs) {
+            const controller = new AbortController();
+            const timer = setTimeout(function() { controller.abort(); }, timeoutMs || 30000);
+            try {
+                const finalOptions = Object.assign({}, options || {}, { signal: controller.signal });
+                return await fetch(url, finalOptions);
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
+        function textoSeguro(v) {
+            return String(v === undefined || v === null ? '' : v);
+        }
+
+        function escaparHTML(v) {
+            return textoSeguro(v)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function obterDataPedido(pedido) {
+            return pedido.criado_em || pedido.data || pedido.data_pedido || new Date().toISOString();
+        }
+
+        function extrairCidadeDoEndereco(endereco) {
+            const t = textoSeguro(endereco);
+            if (!t) return 'Cidade ND';
+            if (/cuiab[aá]/i.test(t)) return 'Cuiabá';
+            if (/v[aá]rzea\s*grande/i.test(t)) return 'Várzea Grande';
+            const m = t.match(/,\s*([^,\/]+)\/[A-Z]{2}/i);
+            if (m && m[1]) return m[1].trim();
+            return 'Cidade ND';
+        }
+
+        function obterClientePedido(pedido) {
+            const cliente = pedido.cliente || {};
+            const entrega = pedido.entrega || {};
+            const pagamento = pedido.pagamento || {};
+
+            const endereco = entrega.endereco || cliente.endereco || pedido.endereco || pedido.cliente_endereco || '';
+            const agendamento = entrega.agendamento || cliente.agendamento || pedido.agendamento || '';
+
+            return {
+                nome: cliente.nome || pedido.cliente_nome || pedido.nome_cliente || 'Cliente não informado',
+                codigo: cliente.codigo || pedido.cliente_codigo || pedido.codigo_cliente || 'N/A',
+                telefone: cliente.telefone || pedido.cliente_telefone || pedido.telefone_cliente || 'Sem telefone',
+                email: cliente.email || pedido.cliente_email || pedido.email_cliente || '',
+                cpf: cliente.cpf || pedido.cliente_cpf || pedido.cpf_cliente || '',
+                endereco: endereco,
+                detalhes: entrega.detalhes || cliente.detalhes || pedido.detalhes || '',
+                agendamento: agendamento,
+                pagamento: pagamento.forma || cliente.pagamento || pedido.forma_pagamento || pedido.pagamento || '',
+                total: pagamento.total_texto || pedido.total_texto || pedido.total || '',
+                cidade: cliente.cidade || pedido.cliente_cidade || pedido.cidade_cliente || extrairCidadeDoEndereco(endereco),
+                rota: cliente.rota || pedido.cliente_rota || pedido.rota_cliente || agendamento || 'Rota ND'
+            };
+        }
+
+        function normalizarItemSeparacao(item) {
+            const qtd = parseInt(item.quantidade || item.qtd || item.qtde || 1, 10);
+            const ean = item.ean || item.gtin || item.codigo_barras || '';
+            return Object.assign({}, item, {
+                nome: item.nome || item.nome_produto || item.nome_digitado_no_pedido || 'Produto sem nome',
+                quantidade: isNaN(qtd) || qtd <= 0 ? 1 : qtd,
+                gtin: item.gtin || ean || '',
+                ean: ean || item.gtin || '',
+                url_imagem: item.url_imagem || item.imagem || item.foto || '',
+                gondola: item.gondola || item['gôndola'] || item.local_gondola || 'Z-Sem Gôndola',
+                prateleira: item.prateleira || item.local_prateleira || '-',
+                status: item.status || 'pendente'
+            });
+        }
+
+        function normalizarPedidoSeparacao(pedido) {
+            const data = obterDataPedido(pedido);
+            const id = String(pedido.id || pedido.numero_pedido || pedido.numero || Date.now());
+            const itens = Array.isArray(pedido.itens) ? pedido.itens.map(normalizarItemSeparacao) : [];
+            const itensNaoEncontrados = Array.isArray(pedido.itens_nao_encontrados) ? pedido.itens_nao_encontrados : [];
+
+            return Object.assign({}, pedido, {
+                id: id,
+                numero_pedido: String(pedido.numero_pedido || id),
+                data: data,
+                criado_em: pedido.criado_em || data,
+                status: pedido.status || 'pendente',
+                itens: itens,
+                itens_nao_encontrados: itensNaoEncontrados
+            });
         }
 
         async function buscarPedidos() {
-            document.getElementById('lista-pedidos').innerHTML = '<div style="text-align:center; padding: 20px;"><i data-lucide="loader" class="spin"></i> Buscando versão atualizada...</div>';
+            if (!cfg || !cfg.token) {
+                abrirConfig();
+                return;
+            }
+
+            mostrarStatus('Buscando pedidos atualizados...', 'aviso');
+            document.getElementById('lista-pedidos').innerHTML = '<div class="empty"><span class="spin">↻</span> Carregando pedidos...</div>';
             idsSelecionados.clear();
-            atualizarBarraAcoes();
+            atualizarBarraSelecao();
 
             try {
-                const url = obterUrlSemCache('site/pedidoseparar.json');
-                const res = await fetch(url, { headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" }, cache: "no-store" });
-                
-                if (res.status === 404) { document.getElementById('lista-pedidos').innerHTML = 'Nenhum pedido encontrado.'; todosOsPedidos = []; return; }
-                
-                const data = await res.json();
-                fileSha = data.sha;
-                todosOsPedidos = JSON.parse(decodeBase64(data.content));
+                const res = await fetchComTimeout(githubUrl(CAMINHO_PEDIDOS), {
+                    headers: githubHeaders(),
+                    cache: 'no-store'
+                }, 30000);
 
-                const dataAtual = new Date();
-                dataAtual.setHours(0,0,0,0);
-                let pedidosParaManter = [];
-                let houveExclusao = false;
-
-                todosOsPedidos.forEach(pedido => {
-                    const dataPedido = new Date(pedido.data);
-                    dataPedido.setHours(0,0,0,0);
-                    const diffDias = Math.floor((dataAtual.getTime() - dataPedido.getTime()) / (1000 * 3600 * 24));
-                    if (diffDias > 2) { houveExclusao = true; } else { pedidosParaManter.push(pedido); }
-                });
-
-                if (houveExclusao) {
-                    todosOsPedidos = pedidosParaManter;
-                    salvarNoGitHub(false, "Limpeza automática: Excluídos pedidos > 2 dias");
+                if (res.status === 404) {
+                    fileSha = null;
+                    todosOsPedidos = [];
+                    mostrarStatus('Arquivo pedidoseparar.json ainda não existe.', 'aviso');
+                    renderizarListaPedidos();
+                    return;
                 }
 
+                if (!res.ok) {
+                    let msg = 'HTTP ' + res.status;
+                    try {
+                        const erro = await res.json();
+                        if (erro && erro.message) msg += ' - ' + erro.message;
+                    } catch (e) {}
+                    throw new Error(msg);
+                }
+
+                const data = await res.json();
+                fileSha = data.sha;
+
+                let conteudo = [];
+                if (data.content) {
+                    conteudo = JSON.parse(decodeBase64Unicode(data.content));
+                }
+
+                todosOsPedidos = Array.isArray(conteudo) ? conteudo.map(normalizarPedidoSeparacao) : [];
+                mostrarStatus('Pedidos atualizados com sucesso. Total: ' + todosOsPedidos.length, 'ok');
+                setTimeout(function() { mostrarStatus(''); }, 2200);
                 renderizarListaPedidos();
             } catch (err) {
-                document.getElementById('lista-pedidos').innerHTML = `<p style="color:red;">Erro na conexão: ${err.message}</p>`;
+                console.error(err);
+                mostrarStatus('Erro ao buscar pedidos: ' + err.message, 'erro');
+                document.getElementById('lista-pedidos').innerHTML = '<div class="empty">Erro ao carregar. Confira internet, token e repositório.</div>';
             }
+        }
+
+        function definirFiltro(filtro) {
+            filtroAtual = filtro;
+            ['todos','pendentes','concluidos'].forEach(function(f) {
+                const el = document.getElementById('flt-' + f);
+                if (el) el.classList.toggle('active', f === filtro);
+            });
+            renderizarListaPedidos();
+        }
+
+        function pedidoCombinaBusca(pedido, termo) {
+            if (!termo) return true;
+            const c = obterClientePedido(pedido);
+            const alvo = [pedido.id, pedido.numero_pedido, c.nome, c.telefone, c.endereco, c.agendamento, c.pagamento].join(' ').toLowerCase();
+            return alvo.indexOf(termo.toLowerCase()) !== -1;
+        }
+
+        function pedidoCombinaFiltro(pedido) {
+            if (filtroAtual === 'pendentes') return pedido.status !== 'concluido';
+            if (filtroAtual === 'concluidos') return pedido.status === 'concluido';
+            return true;
         }
 
         function renderizarListaPedidos() {
-            // Preservar a ordem da Array (que pode ter sido reordenada manualmente)
-            // Apenas movemos os concluídos para o fim.
-            const pendentes = todosOsPedidos.filter(p => p.status !== 'concluido');
-            const concluidos = todosOsPedidos.filter(p => p.status === 'concluido');
-            const ordenados = [...pendentes, ...concluidos];
+            const el = document.getElementById('lista-pedidos');
+            const termo = document.getElementById('busca') ? document.getElementById('busca').value.trim() : '';
 
-            const grupos = [];
+            const pendentes = todosOsPedidos.filter(function(p) { return p.status !== 'concluido'; });
+            const concluidos = todosOsPedidos.filter(function(p) { return p.status === 'concluido'; });
+            const ordenados = pendentes.concat(concluidos).filter(function(p) {
+                return pedidoCombinaFiltro(p) && pedidoCombinaBusca(p, termo);
+            });
+
+            if (ordenados.length === 0) {
+                el.innerHTML = '<div class="empty">Nenhum pedido para mostrar.</div>';
+                return;
+            }
+
+            let html = '';
+            let ultimoGrupo = '';
             const hoje = new Date();
             hoje.setHours(0,0,0,0);
 
-            ordenados.forEach(pedido => {
-                const dataObj = new Date(pedido.data);
-                const dataSemHora = new Date(dataObj.getFullYear(), dataObj.getMonth(), dataObj.getDate());
-                const diffDias = Math.floor((hoje.getTime() - dataSemHora.getTime()) / (1000 * 3600 * 24));
-                const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-                
-                let nomeGrupo = `${dataObj.getDate()} de ${meses[dataObj.getMonth()]}`;
-                if (diffDias === 0) nomeGrupo = `Hoje`;
-                else if (diffDias === 1) nomeGrupo = `Ontem`;
-                
-                let grupo = grupos.find(g => g.nome === nomeGrupo);
-                if (!grupo) {
-                    grupo = { nome: nomeGrupo, pedidos: [] };
-                    grupos.push(grupo);
+            ordenados.forEach(function(pedido) {
+                const dataObj = new Date(obterDataPedido(pedido));
+                const dataValida = isNaN(dataObj.getTime()) ? new Date() : dataObj;
+                const dataSemHora = new Date(dataValida.getFullYear(), dataValida.getMonth(), dataValida.getDate());
+                const diff = Math.floor((hoje.getTime() - dataSemHora.getTime()) / 86400000);
+                const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+                let grupo = dataValida.getDate() + ' de ' + meses[dataValida.getMonth()];
+                if (diff === 0) grupo = 'Hoje';
+                if (diff === 1) grupo = 'Ontem';
+
+                if (grupo !== ultimoGrupo) {
+                    html += '<div class="section-title">' + escaparHTML(grupo) + '</div>';
+                    ultimoGrupo = grupo;
                 }
-                grupo.pedidos.push(pedido);
+
+                const indexReal = todosOsPedidos.findIndex(function(x) { return x.id === pedido.id; });
+                const cliente = obterClientePedido(pedido);
+                const itens = Array.isArray(pedido.itens) ? pedido.itens : [];
+                const totalSkus = itens.length;
+                const totalUn = itens.reduce(function(s, i) { return s + (parseInt(i.quantidade, 10) || 0); }, 0);
+                const separados = itens.filter(function(i) { return i.status === 'separado'; }).length;
+                const hora = dataValida.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const done = pedido.status === 'concluido';
+                const naoEncontrados = Array.isArray(pedido.itens_nao_encontrados) ? pedido.itens_nao_encontrados.length : 0;
+
+                html += `
+                <article class="order-card ${done ? 'done' : ''}">
+                    <div class="order-head">
+                        <input class="order-check" type="checkbox" ${idsSelecionados.has(pedido.id) ? 'checked' : ''} onchange="toggleSelecao('${escaparHTML(pedido.id)}', this.checked)">
+                        <div class="order-main" onclick="abrirPedido(${indexReal})">
+                            <div class="order-id">Pedido #${escaparHTML(pedido.id)}</div>
+                            <div class="order-meta">${escaparHTML(hora)} • ${totalSkus} itens • ${totalUn} peças • ${separados}/${totalSkus} separados</div>
+                            <div class="order-meta">Separador: <b>${escaparHTML(pedido.separador || 'Aguardando')}</b></div>
+                        </div>
+                        <span class="badge ${done ? 'done' : ''}">${done ? 'SEPARADO' : 'PENDENTE'}</span>
+                    </div>
+
+                    <div class="client-box" onclick="abrirPedido(${indexReal})">
+                        <div class="client-name">${escaparHTML(cliente.nome)}</div>
+                        <div class="client-line">☎ ${escaparHTML(cliente.telefone)}</div>
+                        <div class="client-line">📍 ${escaparHTML(cliente.endereco || cliente.cidade)}</div>
+                        <div class="client-line">📅 ${escaparHTML(cliente.agendamento || 'Sem agendamento')} ${cliente.total ? ' • ' + escaparHTML(cliente.total) : ''}</div>
+                        ${naoEncontrados > 0 ? '<div class="client-line" style="color:#b45309;">⚠ ' + naoEncontrados + ' item(ns) não encontrado(s) no banco</div>' : ''}
+                    </div>
+
+                    <div class="order-actions">
+                        <button class="btn light small" onclick="imprimirPedido(event, ${indexReal})">Etiqueta</button>
+                        <button class="btn whats small" onclick="compartilharWhatsApp(event, ${indexReal})">WhatsApp</button>
+                        <button class="btn blue small" onclick="abrirEntregador(event, ${indexReal})">Entrega</button>
+                    </div>
+
+                    <div class="small-actions">
+                        <button class="btn light small" onclick="moverPedido(${indexReal}, -1)">↑ Subir</button>
+                        <button class="btn light small" onclick="moverPedido(${indexReal}, 1)">↓ Descer</button>
+                    </div>
+                </article>`;
             });
 
-            let html = '';
-            if (grupos.length === 0) {
-                html = 'Nenhum pedido encontrado.';
-            } else {
-                grupos.forEach(grupo => {
-                    html += `<h3 style="margin-top: 25px; margin-bottom: 10px; font-weight: 900; font-size: 14px; color: var(--text-muted); text-transform: uppercase;"><i data-lucide="calendar" size="14" style="vertical-align: middle;"></i> ${grupo.nome}</h3>`;
-                    
-                    html += `<div class="sortable-group">`; // Container para o Drag and Drop
-                    
-                    html += grupo.pedidos.map((pedido) => {
-                        const totalSkus = pedido.itens.length;
-                        const totalUnidades = pedido.itens.reduce((soma, i) => soma + i.quantidade, 0);
-                        const isConcluido = pedido.status === 'concluido';
-                        const horaFormatada = new Date(pedido.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                        const realIndex = todosOsPedidos.findIndex(p => p.id === pedido.id);
-
-                        const nomeCli = pedido.cliente_nome || pedido.nome_cliente || 'Cliente Padrão';
-                        const codCli = pedido.cliente_codigo || pedido.codigo_cliente || 'N/A';
-                        const telCli = pedido.cliente_telefone || pedido.telefone_cliente || 'Sem telefone';
-                        const cidCli = pedido.cliente_cidade || pedido.cidade_cliente || 'Cidade ND';
-                        const rotaCli = pedido.cliente_rota || pedido.rota_cliente || 'Rota ND';
-
-                        return `
-                        <div class="order-card ${isConcluido ? 'concluido' : ''}" data-id="${pedido.id}" onclick="cliqueCard(event, ${realIndex})">
-                            <div class="order-header-row">
-                                <div class="checkbox-container">
-                                    <input type="checkbox" ${idsSelecionados.has(pedido.id) ? 'checked' : ''} onchange="toggleSelecao(event, '${pedido.id}')">
-                                </div>
-                                <div class="order-content">
-                                    <div>
-                                        <div class="order-id">Pedido #${pedido.id}</div>
-                                        <div class="order-date"><i data-lucide="clock" size="12"></i> ${horaFormatada} - ${totalSkus} Itens (${totalUnidades} Peças)</div>
-                                        <div style="font-size:10px; font-weight:800; color:var(--text-muted); margin-top:6px;">
-                                            <i data-lucide="user" size="10"></i> Separador: <span style="color:var(--text);">${pedido.separador || 'Aguardando...'}</span>
-                                        </div>
-                                    </div>
-                                    <div class="badge" style="background: ${isConcluido ? '#d1fae5' : '#fef08a'}; color: ${isConcluido ? '#065f46' : '#854d0e'};">
-                                        ${isConcluido ? 'SEPARADO' : 'PENDENTE'}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="client-info-box">
-                                <p class="client-name"><i data-lucide="user" size="14"></i> ${nomeCli} <span style="color:var(--text-muted); font-weight:600;">(Cód: ${codCli})</span></p>
-                                <div style="display: flex; justify-content: space-between; gap: 10px;">
-                                    <p style="margin:0;"><i data-lucide="phone" size="12"></i> ${telCli}</p>
-                                    <p style="margin:0;"><i data-lucide="map-pin" size="12"></i> ${cidCli} - ${rotaCli}</p>
-                                </div>
-                            </div>
-
-                            <div class="order-actions">
-                                <button class="btn-config" style="background: #e2e8f0; color: #0f172a; flex: 1; font-size: 12px; padding: 10px;" onclick="imprimirPedido(event, ${realIndex})">
-                                    <i data-lucide="printer" size="14"></i> Etiqueta
-                                </button>
-                                <button class="btn-config" style="background: #25D366; color: white; flex: 1; font-size: 12px; padding: 10px;" onclick="compartilharWhatsApp(event, ${realIndex})">
-                                    <i data-lucide="share-2" size="14"></i> Zap
-                                </button>
-                                <button class="btn-config" style="background: var(--primary); color: white; flex: 1; font-size: 12px; padding: 10px;" onclick="abrirEntregador(event, ${realIndex})">
-                                    <i data-lucide="truck" size="14"></i> Entregador
-                                </button>
-                            </div>
-                        </div>`;
-                    }).join('');
-                    
-                    html += `</div>`; // Fecha sortable-group
-                });
-            }
-            document.getElementById('lista-pedidos').innerHTML = html;
-            lucide.createIcons();
-
-            // Ativa o Drag and Drop para reordenação
-            document.querySelectorAll('.sortable-group').forEach(el => {
-                new Sortable(el, {
-                    animation: 150,
-                    delay: 100, // Previne arrastar sem querer ao rolar a tela no celular
-                    delayOnTouchOnly: true
-                });
-            });
+            el.innerHTML = html;
+            atualizarBarraSelecao();
         }
 
-        // --- SALVAR ORDEM (ROTA) ---
-        async function salvarOrdemPedidos() {
-            const documentCards = Array.from(document.querySelectorAll('.order-card'));
-            if (documentCards.length === 0) { alert("Nenhum pedido para reordenar."); return; }
-
-            const orderMap = new Map();
-            todosOsPedidos.forEach(p => orderMap.set(p.id, p));
-
-            let novaLista = [];
-            documentCards.forEach(card => {
-                const id = card.dataset.id;
-                if (orderMap.has(id)) {
-                    novaLista.push(orderMap.get(id));
-                    orderMap.delete(id);
-                }
-            });
-
-            // Se houver pedidos que não estavam na tela, coloca-os no final
-            orderMap.forEach(p => novaLista.push(p));
-
-            todosOsPedidos = novaLista;
-            await salvarNoGitHub(false, "Nova rota de pedidos atualizada manualmente");
+        function toggleSelecao(id, checked) {
+            if (checked) idsSelecionados.add(id);
+            else idsSelecionados.delete(id);
+            atualizarBarraSelecao();
         }
 
-        function cliqueCard(event, index) {
-            if (event.target.tagName === 'INPUT' || event.target.tagName === 'BUTTON' || event.target.closest('.order-actions')) return;
-            abrirPedido(index);
-        }
-
-        function toggleSelecao(event, id) {
-            if (event.target.checked) idsSelecionados.add(id); else idsSelecionados.delete(id);
-            atualizarBarraAcoes();
-        }
-
-        function atualizarBarraAcoes() {
-            const barra = document.getElementById('acao-selecao');
+        function atualizarBarraSelecao() {
+            const bar = document.getElementById('selectbar');
+            const count = document.getElementById('select-count');
             if (idsSelecionados.size > 0) {
-                barra.style.display = 'flex';
-                document.getElementById('txt-selecionados').innerText = `${idsSelecionados.size} selecionado(s)`;
-            } else { barra.style.display = 'none'; }
+                bar.style.display = 'flex';
+                count.textContent = idsSelecionados.size + ' selecionado(s)';
+            } else {
+                bar.style.display = 'none';
+                count.textContent = '0 selecionado(s)';
+            }
+        }
+
+        function limparSelecao() {
+            idsSelecionados.clear();
+            renderizarListaPedidos();
         }
 
         async function excluirSelecionados() {
-            if (!confirm(`Excluir ${idsSelecionados.size} pedido(s)?`)) return;
-            todosOsPedidos = todosOsPedidos.filter(p => !idsSelecionados.has(p.id));
+            if (idsSelecionados.size === 0) return;
+            if (!confirm('Excluir ' + idsSelecionados.size + ' pedido(s) do arquivo?')) return;
+            todosOsPedidos = todosOsPedidos.filter(function(p) { return !idsSelecionados.has(p.id); });
             idsSelecionados.clear();
-            await salvarNoGitHub(false, "Pedidos excluídos");
-            buscarPedidos();
+            await salvarNoGitHub(false, 'Pedidos excluídos pelo separador');
+            renderizarListaPedidos();
         }
 
-        // --- ABRIR PEDIDO E ATRIBUIR SEPARADOR ---
+        async function moverPedido(index, direcao) {
+            if (index < 0) return;
+            const novoIndex = index + direcao;
+            if (novoIndex < 0 || novoIndex >= todosOsPedidos.length) return;
+            const item = todosOsPedidos.splice(index, 1)[0];
+            todosOsPedidos.splice(novoIndex, 0, item);
+            renderizarListaPedidos();
+            await salvarNoGitHub(false, 'Rota reorganizada no separador');
+        }
+
         function abrirPedido(index) {
-            const pedido = todosOsPedidos[index];
-            if (!pedido.separador) {
+            if (index === null || index === undefined || index < 0 || !todosOsPedidos[index]) return;
+            if (!todosOsPedidos[index].separador) {
                 pedidoAguardandoSeparador = index;
-                document.getElementById('modal-separador').style.display = 'flex';
+                document.getElementById('modal-separador').classList.add('open');
                 return;
             }
             executarAberturaPedido(index);
@@ -494,257 +1178,314 @@
             if (pedidoAguardandoSeparador === null) return;
             const index = pedidoAguardandoSeparador;
             todosOsPedidos[index].separador = nome;
-            
-            fecharModalSeparador();
-            pedidoAtivo = index; 
-            
-            // Salva no github imediatamente para travar o pedido para este separador
-            await salvarNoGitHub(false, `Pedido #${todosOsPedidos[index].id} sendo separado por ${nome}`);
+            pedidoAguardandoSeparador = null;
+            document.getElementById('modal-separador').classList.remove('open');
+            await salvarNoGitHub(false, 'Pedido #' + todosOsPedidos[index].id + ' atribuído para ' + nome);
             executarAberturaPedido(index);
         }
 
         function fecharModalSeparador() {
-            document.getElementById('modal-separador').style.display = 'none';
             pedidoAguardandoSeparador = null;
+            document.getElementById('modal-separador').classList.remove('open');
         }
 
         function executarAberturaPedido(index) {
             pedidoAtivo = index;
-            document.getElementById('view-pedidos').style.display = 'none';
-            document.getElementById('view-separacao').style.display = 'flex';
-            document.getElementById('titulo-pedido-ativo').innerText = `Separando #${todosOsPedidos[pedidoAtivo].id}`;
+            document.getElementById('screen-pedidos').classList.remove('active');
+            document.getElementById('screen-separacao').classList.add('active');
+            const p = todosOsPedidos[index];
+            const c = obterClientePedido(p);
+            document.getElementById('titulo-pedido-ativo').textContent = 'Separando #' + p.id;
+            document.getElementById('sub-pedido-ativo').textContent = c.nome + ' • ' + c.telefone + ' • ' + (c.agendamento || 'sem agendamento');
             renderizarItensDoPedido();
             window.scrollTo(0, 0);
         }
 
         function voltarParaPedidos() {
             pedidoAtivo = null;
-            document.getElementById('view-separacao').style.display = 'none';
-            document.getElementById('view-pedidos').style.display = 'block';
-            buscarPedidos(); 
+            document.getElementById('screen-separacao').classList.remove('active');
+            document.getElementById('screen-pedidos').classList.add('active');
+            renderizarListaPedidos();
+            window.scrollTo(0, 0);
         }
 
         function formatarImagem(url) {
-            if(!url) return 'https://placehold.co/400x400/f4f4f5/a1a1aa?text=SEM+FOTO';
-            if(url.includes('../')) return url.replace('../', 'https://donaantonia.com.br/');
-            return url;
+            const u = textoSeguro(url).trim();
+            if (!u) return 'https://placehold.co/400x300/f4f4f5/6b7280?text=SEM+FOTO';
+            if (u.indexOf('../') === 0) return u.replace('../', 'https://donaantonia.com.br/');
+            return u;
         }
 
         function renderizarItensDoPedido() {
-            const pedido = todosOsPedidos[pedidoAtivo];
-            pedido.itens.sort((a, b) => {
-                if (a.gondola === b.gondola) return String(a.prateleira).localeCompare(String(b.prateleira));
-                return String(a.gondola).localeCompare(String(b.gondola));
+            const p = todosOsPedidos[pedidoAtivo];
+            if (!p) return;
+
+            p.itens = Array.isArray(p.itens) ? p.itens.map(normalizarItemSeparacao) : [];
+            p.itens.sort(function(a, b) {
+                const g = String(a.gondola || '').localeCompare(String(b.gondola || ''));
+                if (g !== 0) return g;
+                return String(a.prateleira || '').localeCompare(String(b.prateleira || ''));
             });
 
-            // Adiciona o Botão Mestre de Separar Todos no topo da lista
-            let html = `
-                <button class="btn-success" style="margin-bottom: 20px; font-size: 15px; padding: 15px;" onclick="separarTodosDeUmaVez()">
-                    <i data-lucide="check-square"></i> MARCAR TODOS COMO SEPARADO
-                </button>
-            `;
+            let html = '';
 
-            html += pedido.itens.map((item, idx) => {
-                const isSeparado = item.status === 'separado';
-                let areaControle = !isSeparado ? 
-                    `<button class="btn-action" onclick="confirmarSeparacao(${idx})"><i data-lucide="check"></i> Marcar como Separado</button>` :
-                    `<button class="btn-success" disabled><i data-lucide="check-circle"></i> Separado</button>`;
-
-                return `
-                <div class="item-card ${isSeparado ? 'separado' : ''}">
-                    <img src="${formatarImagem(item.url_imagem)}" class="item-img" onerror="this.src='https://placehold.co/400x400/f4f4f5/ef4444?text=ERRO'">
-                    <div class="item-info">
-                        <div class="qty-highlight">${item.quantidade} UN</div>
-                        <div class="ean-display">${item.gtin || 'SEM EAN'}</div>
-                        <h3 class="item-title">${item.nome}</h3>
-                        <div class="item-meta">
-                            <div class="meta-box" style="border-right: 1px solid var(--border);"><div class="meta-label">Gôndola</div><div class="meta-value">${item.gondola}</div></div>
-                            <div class="meta-box"><div class="meta-label">Prateleira</div><div class="meta-value">${item.prateleira}</div></div>
-                        </div>
-                        ${areaControle}
-                    </div>
-                </div>`;
-            }).join('');
-            document.getElementById('lista-itens').innerHTML = html;
-            lucide.createIcons();
-        }
-
-        // --- FUNÇÃO SEPARAR TODOS COM SENHA ---
-        async function separarTodosDeUmaVez() {
-            const senha = prompt("Atenção: Apenas gerentes. Digite a senha para baixar tudo:");
-            if (senha === "0904") {
-                todosOsPedidos[pedidoAtivo].itens.forEach(i => i.status = 'separado');
-                todosOsPedidos[pedidoAtivo].status = 'concluido';
-                await salvarNoGitHub(true, `Pedido #${todosOsPedidos[pedidoAtivo].id} concluído em LOTE por ${todosOsPedidos[pedidoAtivo].separador}`);
-            } else if (senha !== null) {
-                alert("Senha incorreta!");
+            if (Array.isArray(p.itens_nao_encontrados) && p.itens_nao_encontrados.length > 0) {
+                html += '<div class="notfound"><b>Itens não encontrados no banco:</b><br>';
+                html += p.itens_nao_encontrados.map(function(i) {
+                    return escaparHTML((i.quantidade || 1) + 'x ' + (i.nome_digitado_no_pedido || i.nome || 'Produto sem nome'));
+                }).join('<br>');
+                html += '</div>';
             }
+
+            if (p.itens.length === 0) {
+                html += '<div class="empty">Este pedido não possui itens encontrados para separar.</div>';
+                document.getElementById('lista-itens').innerHTML = html;
+                return;
+            }
+
+            html += p.itens.map(function(item, idx) {
+                const separado = item.status === 'separado';
+                return `
+                <article class="item-card ${separado ? 'done' : ''}">
+                    <div class="item-image-wrap">
+                        <img class="item-img" loading="lazy" src="${escaparHTML(formatarImagem(item.url_imagem))}" onerror="this.src='https://placehold.co/400x300/f4f4f5/dc2626?text=SEM+FOTO'" alt="${escaparHTML(item.nome)}">
+                    </div>
+                    <div class="item-body">
+                        <div class="qty">${escaparHTML(item.quantidade)} UNIDADE(S)</div>
+                        <div class="ean">${escaparHTML(item.ean || item.gtin || 'SEM EAN')}</div>
+                        <h3 class="item-name">${escaparHTML(item.nome)}</h3>
+                        <div class="loc-grid">
+                            <div class="loc-box"><span class="loc-label">Gôndola</span><span class="loc-value">${escaparHTML(item.gondola || 'Z-Sem Gôndola')}</span></div>
+                            <div class="loc-box"><span class="loc-label">Prateleira</span><span class="loc-value">${escaparHTML(item.prateleira || '-')}</span></div>
+                        </div>
+                        ${separado
+                            ? '<button class="btn green" style="width:100%;" disabled>✓ Separado</button>'
+                            : '<button class="btn" style="width:100%;" onclick="confirmarSeparacao(' + idx + ')">Marcar como separado</button>'}
+                    </div>
+                </article>`;
+            }).join('');
+
+            document.getElementById('lista-itens').innerHTML = html;
         }
 
         async function confirmarSeparacao(itemIndex) {
-            const item = todosOsPedidos[pedidoAtivo].itens[itemIndex];
-            item.status = 'separado';
-            if(todosOsPedidos[pedidoAtivo].itens.every(i => i.status === 'separado')) {
-                todosOsPedidos[pedidoAtivo].status = 'concluido';
-                await salvarNoGitHub(true, `Pedido #${todosOsPedidos[pedidoAtivo].id} concluído`);
+            const p = todosOsPedidos[pedidoAtivo];
+            if (!p || !p.itens[itemIndex]) return;
+            p.itens[itemIndex].status = 'separado';
+
+            if (p.itens.length > 0 && p.itens.every(function(i) { return i.status === 'separado'; })) {
+                p.status = 'concluido';
+                await salvarNoGitHub(true, 'Pedido #' + p.id + ' concluído');
             } else {
-                renderizarItensDoPedido(); 
-                await salvarNoGitHub(false, `Item separado`);
+                renderizarItensDoPedido();
+                await salvarNoGitHub(false, 'Item separado no pedido #' + p.id);
             }
         }
 
-        async function salvarNoGitHub(pedidoCompleto = false, mensagem = "Atualização") {
-            try {
-                const resGet = await fetch(obterUrlSemCache('site/pedidoseparar.json'), { headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" }, cache: "no-store"});
-                let pedidosNoServidor = []; let shaAtualizado = fileSha;
-
-                if (resGet.ok) {
-                    const dataGet = await resGet.json();
-                    shaAtualizado = dataGet.sha; 
-                    pedidosNoServidor = JSON.parse(decodeBase64(dataGet.content));
-                }
-
-                if (pedidoAtivo !== null) {
-                    const meuPedido = todosOsPedidos[pedidoAtivo];
-                    const idx = pedidosNoServidor.findIndex(p => p.id === meuPedido.id);
-                    if (idx !== -1) pedidosNoServidor[idx] = meuPedido; else pedidosNoServidor.push(meuPedido);
-                    todosOsPedidos = pedidosNoServidor;
-                }
-
-                const resPut = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/pedidoseparar.json`, { 
-                    method: 'PUT', headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json", "Content-Type": "application/json" }, 
-                    body: JSON.stringify({ message: mensagem, content: encodeBase64(JSON.stringify(todosOsPedidos, null, 2)), sha: shaAtualizado }) 
-                });
-
-                if (resPut.ok) {
-                    const dataPut = await resPut.json();
-                    fileSha = dataPut.content.sha; 
-                    if(pedidoCompleto) { 
-                        alert("🎉 Pedido concluído!"); 
-                        voltarParaPedidos(); 
-                    } else if (mensagem === "Nova rota de pedidos atualizada manualmente") {
-                        alert("Ordem salva com sucesso!");
-                    }
-                } else {
-                    const erro = await resPut.json(); alert("Erro GitHub: " + erro.message);
-                }
-            } catch (e) { console.error(e); alert("Erro crítico de sincronização."); }
+        async function separarTodosDeUmaVez() {
+            if (pedidoAtivo === null || !todosOsPedidos[pedidoAtivo]) return;
+            const senha = prompt('Digite a senha para marcar todos como separados:');
+            if (senha === null) return;
+            if (senha !== '0904') {
+                alert('Senha incorreta.');
+                return;
+            }
+            todosOsPedidos[pedidoAtivo].itens.forEach(function(i) { i.status = 'separado'; });
+            todosOsPedidos[pedidoAtivo].status = 'concluido';
+            await salvarNoGitHub(true, 'Pedido #' + todosOsPedidos[pedidoAtivo].id + ' concluído em lote');
         }
 
-        // --- FUNÇÕES: ENTREGADOR, WHATSAPP, IMPRESSÃO ---
+        async function salvarNoGitHub(pedidoCompleto, mensagem) {
+            if (salvando) {
+                mostrarStatus('Já existe uma gravação em andamento. Aguarde finalizar.', 'aviso');
+                return;
+            }
+            salvando = true;
+            mostrarStatus('Salvando no GitHub...', 'aviso');
+
+            try {
+                let shaAtual = fileSha;
+                let pedidosServidor = [];
+
+                const getRes = await fetchComTimeout(githubUrl(CAMINHO_PEDIDOS), {
+                    headers: githubHeaders(),
+                    cache: 'no-store'
+                }, 30000);
+
+                if (getRes.ok) {
+                    const dataGet = await getRes.json();
+                    shaAtual = dataGet.sha;
+                    fileSha = dataGet.sha;
+                    pedidosServidor = JSON.parse(decodeBase64Unicode(dataGet.content));
+                    if (!Array.isArray(pedidosServidor)) pedidosServidor = [];
+                    pedidosServidor = pedidosServidor.map(normalizarPedidoSeparacao);
+                } else if (getRes.status !== 404) {
+                    throw new Error('Erro ao ler versão atual: HTTP ' + getRes.status);
+                }
+
+                if (pedidoAtivo !== null && todosOsPedidos[pedidoAtivo]) {
+                    const meuPedido = todosOsPedidos[pedidoAtivo];
+                    const idx = pedidosServidor.findIndex(function(p) { return String(p.id) === String(meuPedido.id); });
+                    if (idx !== -1) pedidosServidor[idx] = meuPedido;
+                    else pedidosServidor.push(meuPedido);
+                    todosOsPedidos = pedidosServidor.map(normalizarPedidoSeparacao);
+                    pedidoAtivo = todosOsPedidos.findIndex(function(p) { return String(p.id) === String(meuPedido.id); });
+                } else {
+                    pedidosServidor = todosOsPedidos.map(normalizarPedidoSeparacao);
+                }
+
+                const body = {
+                    message: mensagem || 'Atualização do separador',
+                    content: encodeBase64Unicode(JSON.stringify(todosOsPedidos, null, 2))
+                };
+                if (shaAtual) body.sha = shaAtual;
+
+                const putUrl = 'https://api.github.com/repos/' + encodeURIComponent(cfg.user) + '/' + encodeURIComponent(cfg.repo) + '/contents/' + CAMINHO_PEDIDOS;
+                const putRes = await fetchComTimeout(putUrl, {
+                    method: 'PUT',
+                    headers: githubHeaders(),
+                    body: JSON.stringify(body)
+                }, 45000);
+
+                if (!putRes.ok) {
+                    let msg = 'HTTP ' + putRes.status;
+                    try {
+                        const erro = await putRes.json();
+                        if (erro && erro.message) msg += ' - ' + erro.message;
+                    } catch(e) {}
+                    throw new Error(msg);
+                }
+
+                const dataPut = await putRes.json();
+                fileSha = dataPut && dataPut.content ? dataPut.content.sha : fileSha;
+                mostrarStatus('Salvo com sucesso.', 'ok');
+                setTimeout(function() { mostrarStatus(''); }, 2000);
+
+                if (pedidoCompleto) {
+                    alert('🎉 Pedido concluído!');
+                    voltarParaPedidos();
+                } else if (pedidoAtivo !== null) {
+                    renderizarItensDoPedido();
+                } else {
+                    renderizarListaPedidos();
+                }
+            } catch (err) {
+                console.error(err);
+                mostrarStatus('Erro ao salvar: ' + err.message, 'erro');
+                alert('Erro ao salvar no GitHub: ' + err.message);
+            } finally {
+                salvando = false;
+            }
+        }
 
         function abrirEntregador(event, index) {
-            event.stopPropagation();
+            if (event && event.stopPropagation) event.stopPropagation();
+            if (index === null || index === undefined || index < 0) return;
             const p = todosOsPedidos[index];
-            const nomeCli = p.cliente_nome || p.nome_cliente || 'Cliente Padrão';
-            const codCli = p.cliente_codigo || p.codigo_cliente || '';
-            const telCli = p.cliente_telefone || p.telefone_cliente || '';
-            const cidCli = p.cliente_cidade || p.cidade_cliente || 'N/A';
-            const rotaCli = p.cliente_rota || p.rota_cliente || 'N/A';
+            if (!p) return;
+            const c = obterClientePedido(p);
+            const telLimpo = textoSeguro(c.telefone).replace(/\D/g, '');
+            const linkTel = telLimpo ? 'tel:' + telLimpo : '#';
+            const linkWa = telLimpo ? 'https://wa.me/55' + telLimpo : '#';
+            const mapa = c.endereco || (c.nome + ' ' + c.cidade);
+            const linkMaps = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(mapa);
 
-            const linkTel = telCli ? `tel:${telCli.replace(/\D/g, '')}` : '#';
-            const linkWa = telCli ? `https://wa.me/55${telCli.replace(/\D/g, '')}` : '#';
-            const linkMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(codCli + ' ' + cidCli)}`;
-
-            let htmlItens = p.itens.map(i => `<li style="padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;"><span style="font-weight:900; color:var(--primary);">${i.quantidade}x</span> ${i.nome}</li>`).join('');
+            const itens = Array.isArray(p.itens) ? p.itens : [];
+            const htmlItens = itens.map(function(i) {
+                return '<li style="padding:7px 0; border-bottom:1px solid var(--line); font-size:13px;"><b>' + escaparHTML(i.quantidade) + 'x</b> ' + escaparHTML(i.nome) + '</li>';
+            }).join('');
 
             document.getElementById('entregador-content').innerHTML = `
-                <div style="text-align:center; margin-bottom: 20px;">
-                    <div class="badge" style="background:#e2e8f0; color:#0f172a; font-size:14px; margin-bottom:10px;">PEDIDO #${p.id}</div>
-                    <h2 style="margin:0; font-weight:900; font-size:22px;">${nomeCli}</h2>
-                    <p style="margin:5px 0 0 0; color:var(--text-muted); font-size:13px; font-weight:600;">Cód. Cliente: ${codCli}</p>
+                <div class="info-box">
+                    <p style="font-size:18px; font-weight:900; margin-top:0;">Pedido #${escaparHTML(p.id)}</p>
+                    <p><b>Cliente:</b> ${escaparHTML(c.nome)}</p>
+                    <p><b>Telefone:</b> ${escaparHTML(c.telefone)}</p>
+                    <p><b>CPF:</b> ${escaparHTML(c.cpf || '-')}</p>
+                    <p><b>E-mail:</b> ${escaparHTML(c.email || '-')}</p>
+                    <p><b>Endereço:</b> ${escaparHTML(c.endereco || 'Não informado')}</p>
+                    <p><b>Detalhes:</b> ${escaparHTML(c.detalhes || '-')}</p>
+                    <p><b>Agendamento:</b> ${escaparHTML(c.agendamento || '-')}</p>
+                    <p><b>Pagamento:</b> ${escaparHTML(c.pagamento || '-')}</p>
+                    <p><b>Total:</b> ${escaparHTML(c.total || '-')}</p>
                 </div>
 
-                <div class="client-info-box" style="background:var(--card); border: 1px solid var(--border);">
-                    <p><i data-lucide="map-pin" size="14"></i> <b>Cidade:</b> ${cidCli}</p>
-                    <p><i data-lucide="route" size="14"></i> <b>Rota:</b> ${rotaCli}</p>
-                    <p><i data-lucide="phone" size="14"></i> <b>Telefone:</b> ${telCli}</p>
+                <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:10px;">
+                    <a class="btn blue" style="text-decoration:none; text-align:center;" href="${escaparHTML(linkTel)}">Ligar normal</a>
+                    <a class="btn whats" style="text-decoration:none; text-align:center;" target="_blank" href="${escaparHTML(linkWa)}">Chamar no WhatsApp</a>
+                    <a class="btn red" style="text-decoration:none; text-align:center;" target="_blank" href="${escaparHTML(linkMaps)}">Abrir no Google Maps</a>
                 </div>
 
-                <div class="action-grid">
-                    <a href="${linkTel}" class="action-btn-square">
-                        <i data-lucide="phone-call" size="24" style="color:#2563eb;"></i> Ligar Normal
-                    </a>
-                    <a href="${linkWa}" target="_blank" class="action-btn-square">
-                        <i data-lucide="message-circle" size="24" style="color:#16a34a;"></i> WhatsApp
-                    </a>
-                    <a href="${linkMaps}" target="_blank" class="action-btn-square">
-                        <i data-lucide="map" size="24" style="color:#ea4335;"></i> Google Maps
-                    </a>
+                <div class="info-box">
+                    <p style="font-weight:900; margin-top:0;">Itens do pedido</p>
+                    <ul style="list-style:none; padding:0; margin:0;">${htmlItens}</ul>
                 </div>
-
-                <h4 style="margin:0 0 10px 0; font-weight:900; border-bottom: 2px solid var(--primary); padding-bottom:5px;">Lista do Pedido (${p.itens.length} itens)</h4>
-                <ul style="list-style:none; padding:0; margin:0;">
-                    ${htmlItens}
-                </ul>
             `;
-            
-            document.getElementById('overlay-lateral').style.display = 'block';
-            setTimeout(() => { document.getElementById('sidebar-entregador').classList.add('open'); }, 10);
-            lucide.createIcons();
+            document.getElementById('sheet-entrega').classList.add('open');
         }
 
         function fecharEntregador() {
-            document.getElementById('sidebar-entregador').classList.remove('open');
-            setTimeout(() => { document.getElementById('overlay-lateral').style.display = 'none'; }, 300);
+            document.getElementById('sheet-entrega').classList.remove('open');
         }
 
         function compartilharWhatsApp(event, index) {
             event.stopPropagation();
             const p = todosOsPedidos[index];
-            const nomeCli = p.cliente_nome || p.nome_cliente || 'Cliente Padrão';
-            const codCli = p.cliente_codigo || p.codigo_cliente || 'N/A';
-            const cidCli = p.cliente_cidade || p.cidade_cliente || 'N/A';
-            const rotaCli = p.cliente_rota || p.rota_cliente || 'N/A';
-
-            let msg = `*🚚 PEDIDO #${p.id}*\n\n`;
-            msg += `*👤 Cliente:* ${nomeCli} (Cód: ${codCli})\n`;
-            msg += `*📍 Rota:* ${cidCli} - ${rotaCli}\n\n`;
-            msg += `*📦 ITENS DO PEDIDO:*\n`;
-            p.itens.forEach(i => { msg += `▪ ${i.quantidade}x ${i.nome}\n`; });
-
-            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+            const c = obterClientePedido(p);
+            let msg = '*🚚 PEDIDO #' + p.id + '*\n\n';
+            msg += '*👤 Cliente:* ' + c.nome + '\n';
+            msg += '*📞 Telefone:* ' + c.telefone + '\n';
+            msg += '*📍 Endereço:* ' + (c.endereco || 'Não informado') + '\n';
+            msg += '*📝 Detalhes:* ' + (c.detalhes || '-') + '\n';
+            msg += '*📅 Agendamento:* ' + (c.agendamento || '-') + '\n';
+            msg += '*💳 Pagamento:* ' + (c.pagamento || '-') + '\n';
+            msg += '*💰 Total:* ' + (c.total || '-') + '\n\n';
+            msg += '*📦 ITENS:*\n';
+            (p.itens || []).forEach(function(i) {
+                msg += '• ' + i.quantidade + 'x ' + i.nome + '\n';
+            });
+            if (Array.isArray(p.itens_nao_encontrados) && p.itens_nao_encontrados.length > 0) {
+                msg += '\n*⚠ Itens não encontrados:*\n';
+                p.itens_nao_encontrados.forEach(function(i) {
+                    msg += '• ' + (i.quantidade || 1) + 'x ' + (i.nome_digitado_no_pedido || i.nome || 'Produto') + '\n';
+                });
+            }
+            window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
         }
 
         function imprimirPedido(event, index) {
             event.stopPropagation();
             const p = todosOsPedidos[index];
-            const area = document.getElementById('print-area');
-            
-            const nomeCli = p.cliente_nome || p.nome_cliente || 'Não Informado';
-            const codCli = p.cliente_codigo || p.codigo_cliente || 'N/A';
-            const telCli = p.cliente_telefone || p.telefone_cliente || 'N/A';
-            const cidCli = p.cliente_cidade || p.cidade_cliente || 'N/A';
-            const rotaCli = p.cliente_rota || p.rota_cliente || 'N/A';
-            const dataPed = new Date(p.data).toLocaleString('pt-BR');
+            const c = obterClientePedido(p);
+            const data = new Date(obterDataPedido(p));
+            const dataTexto = isNaN(data.getTime()) ? '' : data.toLocaleString('pt-BR');
+            const linhas = (p.itens || []).map(function(i) {
+                return '<tr><td style="width:40px;">' + escaparHTML(i.quantidade) + 'x</td><td>' + escaparHTML(i.nome) + '</td></tr>';
+            }).join('');
 
-            let linhas = p.itens.map(i => `<tr><td>${i.quantidade}x</td><td>${i.nome}</td></tr>`).join('');
-
-            area.innerHTML = `
-                <div class="print-title">PEDIDO #${p.id}</div>
-                <div class="print-barcode">*${p.id}*</div>
-                
-                <div class="print-section">
-                    <div class="print-label">Cliente / Código</div>
-                    <div class="print-value">${nomeCli} (#${codCli})</div>
-                    
-                    <div class="print-label">Telefone</div>
-                    <div class="print-value">${telCli}</div>
-                    
-                    <div class="print-label">Cidade / Rota</div>
-                    <div class="print-value">${cidCli} - ${rotaCli}</div>
-                    
-                    <div class="print-label">Data do Pedido</div>
-                    <div style="font-size:12px; font-weight:bold;">${dataPed}</div>
+            document.getElementById('print-area').innerHTML = `
+                <div class="p-title">PEDIDO #${escaparHTML(p.id)}</div>
+                <div class="p-section">
+                    <div class="p-label">Cliente</div>
+                    <div class="p-value">${escaparHTML(c.nome)}</div>
+                    <div class="p-label">Telefone</div>
+                    <div class="p-value">${escaparHTML(c.telefone)}</div>
+                    <div class="p-label">Endereço</div>
+                    <div class="p-value" style="font-size:12px;">${escaparHTML(c.endereco || 'Não informado')}</div>
+                    <div class="p-label">Detalhes</div>
+                    <div class="p-value" style="font-size:12px;">${escaparHTML(c.detalhes || '-')}</div>
+                    <div class="p-label">Agendamento</div>
+                    <div class="p-value" style="font-size:12px;">${escaparHTML(c.agendamento || '-')}</div>
+                    <div class="p-label">Pagamento / Total</div>
+                    <div class="p-value" style="font-size:12px;">${escaparHTML(c.pagamento || '-')} • ${escaparHTML(c.total || '-')}</div>
+                    <div class="p-label">Data</div>
+                    <div class="p-value" style="font-size:11px;">${escaparHTML(dataTexto)}</div>
                 </div>
-
-                <div class="print-label" style="font-size:13px;">Lista de Produtos</div>
-                <table class="print-table">
-                    <thead><tr><th style="width:40px;">Qtd</th><th>Produto</th></tr></thead>
+                <div class="p-label">Produtos</div>
+                <table class="p-table">
+                    <thead><tr><th>Qtd</th><th>Produto</th></tr></thead>
                     <tbody>${linhas}</tbody>
                 </table>
             `;
-            
             window.print();
         }
     </script>
