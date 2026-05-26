@@ -1545,7 +1545,7 @@
         <div class="header-home-content">
             <div class="header-home-top-row">
                 <a href="#/" class="brand-link" aria-label="Ir para a página inicial">
-                    <img src="../img/logoantonia5.png" alt="Dona Antônia" class="header-logo" width="190" height="48" decoding="async" fetchpriority="high" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y5ZmFmYiIvPjwvc3ZnPg=='">
+                    <img src="img/logoantonia5.png" alt="Dona Antônia" class="header-logo" width="190" height="48" decoding="async" fetchpriority="high" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y5ZmFmYiIvPjwvc3ZnPg=='">
                     <span class="brand-copy">
                         <strong>Dona Antônia</strong>
                         <span>Supermercado e cestas</span>
@@ -1729,6 +1729,9 @@
 
         let currentBasketItems = [];
         let dynamicCombos = [];
+        
+        // CORREÇÃO: Declarando a variável globalmente para não travar o carregamento de imagens
+        let imageObserver;
 
         const ORDEM_CATEGORIAS = ['mercearia basica', 'cafe da manha', 'macarrao e molhos', 'temperos', 'sucos e refris', 'bebidas', 'frios', 'congelados', 'hortifruti', 'padaria', 'carnes', 'limpeza', 'lavanderia', 'beleza', 'higiene', 'sabonete', 'shampoo', 'cabelo'];
         
@@ -3839,7 +3842,8 @@ Por favor, podem incluir na minha entrega?`;
                 nome: comboName,
                 preco: precoTotal,
                 precoOriginal: precoOriginalTotal,
-                imagem: `/site/img/produtos/${comboId}.webp`, 
+                // CORREÇÃO: Caminho relativo correto, sem depender da pasta '/site/'
+                imagem: `img/produtos/${comboId}.webp`, 
                 produtos: produtosArr,
                 isCombo: true
             });
