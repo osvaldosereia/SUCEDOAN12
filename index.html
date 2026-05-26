@@ -1992,20 +1992,7 @@
         }
         window.addEventListener('hashchange', handleRoute);
 
-        let searchTimeout;
-        window.handleSearchInput = function() {
-            let inputVal = $('app-search-input').value; $('clear-search-btn').style.display = inputVal.length > 0 ? 'flex' : 'none';
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                let q = norm(inputVal).trim(); STATE.searchQuery = q;
-                if(q.length >= 2) { 
-                    if(window.location.hash !== '#/buscar') window.location.hash = '#/buscar'; else renderSearch();
-                } else { if(window.location.hash === '#/buscar') window.history.back(); }
-            }, 300);
-        };
-        window.clearSearch = function() { $('app-search-input').value = ''; $('clear-search-btn').style.display = 'none'; STATE.searchQuery = ''; window.history.back(); };
-
-        function renderCardHTML(prod, isBasketItem = false, index = null) {
+                function renderCardHTML(prod, isBasketItem = false, index = null) {
             let q = isBasketItem ? prod.basketQty : (STATE.cart[prod.id] || 0);
             
             let isOutOfStock = prod.stock <= 0 && !isBasketItem;
