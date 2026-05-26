@@ -2548,21 +2548,8 @@ window.handlePostBasketSearch = function() {
     }, 900);
 };
                 
-                let resultContainer = $('post-basket-search-results');
-                resultContainer.innerHTML = html;
-                resultContainer.style.display = 'flex';
-                resultContainer.scrollLeft = 0;
-                resultContainer.classList.add('carousel-container-visible-scroll');
-                
-                lazyLoadImages();
-                
-            } else {
-                let resultContainer = $('post-basket-search-results');
-                resultContainer.innerHTML = '';
-                resultContainer.style.display = 'none';
-                resultContainer.classList.remove('carousel-container-visible-scroll');
-            }
-        };
+            
+       
 
         window.clearPostBasketSearch = function() {
             $('post-basket-search').value = '';
