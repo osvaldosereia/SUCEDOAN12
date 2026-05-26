@@ -2491,114 +2491,84 @@
             if (relacionados.length > 0) renderCatalogoGridInto('related-products-grid', relacionados);
         }
 
+       // ==========================================
+        // CÓDIGO DE BUSCA PRINCIPAL ATUALIZADO
+        // ==========================================
+
+        /**
+         * Função chamada toda vez que o usuário digita algo no campo superior.
+         * Ela salva o termo digitado e muda a rota para a página de resultados.
+         */
+        window.handleSearchInput = function() {
+            const input = $('app-search-input');
+            const clearBtn = $('clear-search-btn');
+            
+            // Salva o que foi digitado (em letras minúsculas e sem acentos, via norm)
+            STATE.searchQuery = input.value.trim();
+
+            if (STATE.searchQuery.length > 0) {
+                clearBtn.style.display = 'flex'; // Mostra o botão de limpar (X)
+                
+                // Se ainda não estiver na página de busca, vai para ela
+                if (window.location.hash !== '#/buscar') {
+                    window.location.hash = '#/buscar';
+                } else {
+                    // Se já estiver, apenas atualiza os resultados na tela
+                    renderSearch();
+                }
+            } else {
+                clearBtn.style.display = 'none'; // Esconde o botão de limpar
+                // Se o campo ficar vazio, volta para a página inicial
+                if (window.location.hash === '#/buscar') {
+                    window.location.hash = '#/';
+                }
+            }
+        };
+
+        /**
+         * Função para limpar a busca ao clicar no ícone de "X"
+         */
+        window.clearSearch = function() {
+            const input = $('app-search-input');
+            input.value = ''; // Limpa o texto
+            window.handleSearchInput(); // Chama a função principal para processar o campo vazio
+        };
+
+        /**
+         * Função responsável por filtrar e exibir os produtos na tela
+         */
         function renderSearch() {
             atualizarTopbarDaRota(window.location.hash || '#/buscar');
+            
+            // Separa o que o usuário digitou em palavras soltas
             let terms = STATE.searchQuery.split(' ').filter(t => t.trim().length > 0); 
-            let results = STATE.prods.filter(p => { let textoBusca = norm(p.name + " " + p.categoria + " " + p.subcategoria); return terms.every(term => textoBusca.includes(term)); });
+            
+            // Filtra os produtos
+            let results = STATE.prods.filter(p => { 
+                // OBJETIVO: A busca deve ser feita SÓ no nome do produto.
+                let textoBusca = norm(p.name); 
+                
+                // Verifica se TODAS as palavras digitadas estão no nome do produto
+                return terms.every(term => textoBusca.includes(term)); 
+            });
+            
+            // Mensagem caso não encontre nada
             if(results.length === 0) {
                 $('vitrine').innerHTML = `<div style="padding: 24px 20px; text-align: center; font-weight:600; color:var(--text-light); background:var(--bg-card);">Ops, não achamos "${STATE.searchQuery}".</div>`;
                 return;
             }
+            
+            // Se encontrou, monta os cards dos produtos na tela
             let html = `<div style="padding: 0;"><div class="products-grid">`;
-results.forEach(p => html += renderCardHTML(p));
+            results.forEach(p => html += renderCardHTML(p));
             html += '</div></div>';
+            
             $('vitrine').innerHTML = html;
             updateCollectionSeo('Busca', results);
-            lazyLoadImages();
+            lazyLoadImages(); // Carrega as imagens de forma otimizada
         }
-let searchTimeout;
-
-window.handleSearchInput = function() {
-    const input = $('app-search-input');
-    const clearBtn = $('clear-search-btn');
-    if (!input) return;
-
-    const val = input.value.trim();
-
-    if (clearBtn) clearBtn.style.display = val.length > 0 ? 'flex' : 'none';
-
-    clearTimeout(searchTimeout);
-
-    searchTimeout = setTimeout(() => {
-        STATE.searchQuery = val;
-
-        if (val.length < 2) {
-            if (window.location.hash === '#/buscar') {
-                window.location.hash = '#/';
-            }
-            return;
-        }
-
-        if (window.location.hash !== '#/buscar') {
-            window.location.hash = '#/buscar';
-        } else {
-            renderSearch();
-        }
-    }, 350);
-};
-
-window.clearSearch = function() {
-    const input = $('app-search-input');
-    const clearBtn = $('clear-search-btn');
-
-    if (input) input.value = '';
-    if (clearBtn) clearBtn.style.display = 'none';
-
-    STATE.searchQuery = '';
-    window.location.hash = '#/';
-};
-        let postBasketSearchTimeout;
-
-window.handlePostBasketSearch = function() {
-    const val = $('post-basket-search').value;
-
-    $('pb-clear-btn').style.display = val.length > 0 ? 'flex' : 'none';
-
-    clearTimeout(postBasketSearchTimeout);
-
-    postBasketSearchTimeout = setTimeout(() => {
-        const busca = norm($('post-basket-search').value).trim();
-
-        if (busca.length < 3) {
-            $('post-basket-results').innerHTML = '';
-            return;
-        }
-
-        let terms = busca.split(' ').filter(t => t.trim().length > 0);
-
-        let results = STATE.prods.filter(p => {
-            if (p.categoria === 'Cestas') return false;
-
-            let textoBusca = norm(p.name + " " + p.categoria + " " + p.subcategoria);
-            return terms.every(term => textoBusca.includes(term));
-        });
-
-        let html = '';
-
-        results.slice(0, 15).forEach(p => {
-            html += renderMiniCardHTML(p, true);
-        });
-
-        if (results.length === 0) {
-            html = '<div style="padding:10px; font-size:14px; color:var(--text-light); font-weight: 600; width: 100%; text-align: center;">Nenhum produto encontrado.</div>';
-        }
-
-        $('post-basket-results').innerHTML = html;
-
-    }, 900);
-};
-                
-            
-       
-
-        window.clearPostBasketSearch = function() {
-            $('post-basket-search').value = '';
-            $('pb-clear-btn').style.display = 'none';
-            $('post-basket-search-results').innerHTML = '';
-            $('post-basket-search-results').style.display = 'none';
-        };
-
-       let imageObserver = null;
+        
+        // ==========================================
 
 function lazyLoadImages() {
     const images = document.querySelectorAll('.lazy-img');
