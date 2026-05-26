@@ -2014,131 +2014,249 @@ const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + qua
         }
 
       // ==========================================================
-      // BAIXAR PEDIDO POR TEXTO E EXPORTAR PARA BLING E SEPARAÇÃO
-      // ==========================================================
-      async function processarBaixaPedidoTexto() {
-          const texto = document.getElementById('order-text-input').value;
-          if(!texto) return alert("Por favor, cole o texto do pedido primeiro.");
+// COLAR PEDIDO E ENVIAR PARA PEDIDOSEPARAR.JSON
+// NÃO ABATE ESTOQUE
+// NÃO GERA CSV DO BLING
+// MODELO COMPATÍVEL COM PEDIDO VIA WHATSAPP/SITE
+// ==========================================================
+async function processarBaixaPedidoTexto() {
+    const textarea = document.getElementById('order-text-input');
+    const textoOriginal = textarea ? textarea.value : "";
 
-          const matchPedido = texto.match(/PEDIDO\s*#?(\d+)/i);
-          const numeroPedido = matchPedido ? matchPedido[1] : Date.now().toString().slice(-6);
-          const nomeComprador = "PEDIDO " + numeroPedido;
-          
-          const hoje = new Date();
-          const dataAtual = String(hoje.getDate()).padStart(2, '0') + '/' + String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
+    if (!textoOriginal || !textoOriginal.trim()) {
+        alert("Por favor, cole o texto do pedido primeiro.");
+        return;
+    }
 
-          const linhas = texto.split('\n'); 
-          let encontrados = 0; 
-          let falhas = [];
-          
-          let itensPedidoBling = [];
-          let totalPedidoCalc = 0;
-          
-          let itensParaSeparacao = [];
+    function limparMarcacaoPedido(txt) {
+        return String(txt || "")
+            .replace(/\*/g, "")
+            .replace(/\u00A0/g, " ")
+            .trim();
+    }
 
-          linhas.forEach(linha => {
-const linhaLimpa = linha.trim();
-              const match = linhaLimpa.match(/^(\d+)\s*x?\s+(.*)$/i);
+    function extrairCampoPedido(texto, rotulo) {
+        const regex = new RegExp("^" + rotulo + "\\s*:\\s*(.+)$", "im");
+        const match = texto.match(regex);
+        return match ? limparMarcacaoPedido(match[1]) : "";
+    }
 
-             if(match) {
-                  const qtd = parseInt(match[1]);
-                  
-                  const nomeProcuradoNormalizado = limparTexto(match[2]);
+    function extrairLinhaPorRegex(texto, regex) {
+        const match = texto.match(regex);
+        return match ? limparMarcacaoPedido(match[1]) : "";
+    }
 
-                  const p = products.find(prod => {
-                      const nomeBancoNormalizado = limparTexto(prod.nome);
-                      return nomeBancoNormalizado === nomeProcuradoNormalizado;
-                  });
+    const textoLimpo = limparMarcacaoPedido(textoOriginal);
 
-                  if(p) {
-                      p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
-                      p.last_update = Date.now(); 
-                      encontrados++; 
-                      
-                      const valorUn = parseFloat(p.preco) || 0;
-                      const valorTotalItem = valorUn * qtd;
-                      totalPedidoCalc += valorTotalItem; 
+    const numeroPedido = extrairLinhaPorRegex(
+        textoLimpo,
+        /PEDIDO\s*#?\s*(\d+)/i
+    ) || Date.now().toString().slice(-6);
 
-                      itensPedidoBling.push({
-                          "Número pedido": numeroPedido,
-                          "Nome Comprador": nomeComprador,
-                          "Data": dataAtual,
-                          "Produto": p.nome,
-                          "SKU": p.codigo,
-                          "Un": "UN",
-                          "Quantidade": qtd,
-                          "Valor Unitário": valorUn.toFixed(2).replace('.', ','),
-                          "Valor Total": valorTotalItem.toFixed(2).replace('.', ','),
-                          "Total Pedido": "", 
-                          "Valor Frete Pedido": "0,00",
-                          "Valor Desconto Pedido": "0,00",
-                          "Outras despesas": "0,00",
-                          "Tipo Frete": "R",
-                          "Observações": "Pedido importado via Sucedoan PIM",
-                          "Qtd Parcela": "1",
-                          "Data Prevista": dataAtual
-                      });
+    const totalPedido = extrairLinhaPorRegex(
+        textoLimpo,
+        /TOTAL\s*:\s*R\$\s*([0-9.,]+)/i
+    );
 
-                      itensParaSeparacao.push({
-                          id_produto: p.codigo,
-                          nome: p.nome,
-                          quantidade: qtd,
-                          url_imagem: p.url_imagem || "",
-                          gtin: p.gtin || "", 
-                          gondola: p.gondola || "Z-Sem Gôndola",
-                          prateleira: p.prateleira || "-",
-                          status: "pendente" 
-                      });
+    const dadosCliente = {
+        nome: extrairCampoPedido(textoLimpo, "Nome"),
+        cpf: extrairCampoPedido(textoLimpo, "CPF"),
+        telefone: extrairCampoPedido(textoLimpo, "Telefone\\/WhatsApp"),
+        email: extrairCampoPedido(textoLimpo, "E-mail"),
+        endereco: extrairCampoPedido(textoLimpo, "Endereço"),
+        detalhes: extrairCampoPedido(textoLimpo, "Detalhes"),
+        agendamento: extrairLinhaPorRegex(textoLimpo, /Agendamento\s*:\s*(.+)$/im),
+        pagamento: extrairLinhaPorRegex(textoLimpo, /Pagamento\s*:\s*(.+)$/im)
+    };
 
-                  } else {
-                      falhas.push(match[2].trim()); 
-                  }
-              }
-          });
+    const linhas = textoLimpo.split(/\r?\n/);
 
-          if(encontrados > 0) {
-              await saveDataLocally(); 
-              renderGrid(ultimoTermoPesquisa);
-              salvarProdutosJSON(); 
+    let dentroDosItens = false;
+    let encontrados = 0;
+    let falhas = [];
+    let itensParaSeparacao = [];
 
-              const totalPedidoFormatado = totalPedidoCalc.toFixed(2).replace('.', ',');
-              itensPedidoBling.forEach(item => item["Total Pedido"] = totalPedidoFormatado);
+    linhas.forEach(linha => {
+        const linhaLimpa = limparMarcacaoPedido(linha);
 
-              await downloadCSVBling(itensPedidoBling, `Bling_Pedido_Venda_${numeroPedido}.csv`);
+        if (!linhaLimpa || linhaLimpa.includes("----------------")) {
+            return;
+        }
 
-              enqueueTask(`Lista de Separação #${numeroPedido}`, async () => {
-                  const novoPedido = {
-                      id: numeroPedido,
-                      data: new Date().toISOString(),
-                      status: "pendente",
-                      itens: itensParaSeparacao
-                  };
+        if (/ITENS SELECIONADOS/i.test(linhaLimpa)) {
+            dentroDosItens = true;
+            return;
+        }
 
-                  let pedidosSeparacao = [];
-                  try {
-                      const fileData = await GitHubAPI.getFileData('site/pedidoseparar.json');
-                      if (fileData && fileData.content) {
-                          const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
-                          pedidosSeparacao = JSON.parse(decodedStr);
-                      }
-                  } catch (e) {
-                      console.log("Arquivo pedidoseparar.json ainda não existe. Será criado um novo.");
-                  }
+        if (/RESUMO DE VALORES/i.test(linhaLimpa)) {
+            dentroDosItens = false;
+            return;
+        }
 
-                  pedidosSeparacao.push(novoPedido);
-                  await GitHubAPI.saveFile('site/pedidoseparar.json', pedidosSeparacao, `Adicionado Pedido #${numeroPedido} para separação`, true); // Aceitar redundância na fila de separação
-              });
+        if (!dentroDosItens) {
+            return;
+        }
 
-              let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nPlanilha do Bling guardada no GitHub!\nPedido enviado para a equipa de separação.`;
-              if(falhas.length > 0) msg += `\n\n⚠️ Itens não encontrados (Não exportados):\n- ` + falhas.join('\n- ');
-              alert(msg);
+        // Aceita:
+        // 1x Arroz tio Alvino 5 kg
+        // 1 x Arroz tio Alvino 5 kg
+        // 1 Arroz tio Alvino 5 kg
+        const matchItem = linhaLimpa.match(/^(\d+)\s*x?\s+(.+)$/i);
 
-              closeSidebar('pedidos-sidebar'); 
-              document.getElementById('order-text-input').value = "";
-          } else {
-              alert("❌ Nenhum produto encontrado.");
-          }
-      }
+        if (!matchItem) {
+            return;
+        }
+
+        const quantidade = parseInt(matchItem[1], 10);
+        const nomeItemPedido = limparMarcacaoPedido(matchItem[2]);
+
+        if (!quantidade || quantidade <= 0 || !nomeItemPedido) {
+            return;
+        }
+
+        const nomeProcuradoNormalizado = limparTexto(nomeItemPedido);
+
+        let produtoEncontrado = products.find(prod => {
+            const nomeBancoNormalizado = limparTexto(prod.nome || "");
+            return nomeBancoNormalizado === nomeProcuradoNormalizado;
+        });
+
+        // Busca alternativa mais flexível:
+        // ajuda quando o pedido vem com pequenas diferenças de espaço, acento ou embalagem.
+        if (!produtoEncontrado) {
+            produtoEncontrado = products.find(prod => {
+                const nomeBancoNormalizado = limparTexto(prod.nome || "");
+                return (
+                    nomeBancoNormalizado.includes(nomeProcuradoNormalizado) ||
+                    nomeProcuradoNormalizado.includes(nomeBancoNormalizado)
+                );
+            });
+        }
+
+        if (produtoEncontrado) {
+            encontrados++;
+
+            itensParaSeparacao.push({
+                encontrado_no_banco: true,
+                id_produto: produtoEncontrado.id || "",
+                codigo: produtoEncontrado.codigo || "",
+                sku: produtoEncontrado.codigo || "",
+                nome: produtoEncontrado.nome || nomeItemPedido,
+                nome_digitado_no_pedido: nomeItemPedido,
+                quantidade: quantidade,
+                gtin: produtoEncontrado.gtin || "",
+                ean: produtoEncontrado.gtin || "",
+                url_imagem: produtoEncontrado.url_imagem || "",
+                gondola: produtoEncontrado.gondola || "Z-Sem Gôndola",
+                prateleira: produtoEncontrado.prateleira || "-",
+                localizacao: produtoEncontrado.localizacao || "",
+                categoria: produtoEncontrado.categoria || "",
+                subcategoria: produtoEncontrado.subcategoria || "",
+                subsubcategoria: produtoEncontrado.subsubcategoria || "",
+                marca: produtoEncontrado.marca || "",
+                embalagem: produtoEncontrado.embalagem || "",
+                status: "pendente"
+            });
+        } else {
+            falhas.push({
+                encontrado_no_banco: false,
+                nome_digitado_no_pedido: nomeItemPedido,
+                quantidade: quantidade,
+                status: "nao_encontrado"
+            });
+        }
+    });
+
+    if (itensParaSeparacao.length === 0 && falhas.length === 0) {
+        alert("❌ Nenhum item foi identificado no bloco *ITENS SELECIONADOS*.");
+        return;
+    }
+
+    try {
+        mostrarAlerta("Enviando pedido para separação...", "aviso");
+
+        await enqueueTask(`Lista de Separação #${numeroPedido}`, async () => {
+            const novoPedido = {
+                id: String(numeroPedido),
+                numero_pedido: String(numeroPedido),
+                origem: "pedido_colado_pim",
+                status: "pendente",
+                criado_em: new Date().toISOString(),
+
+                cliente: dadosCliente,
+
+                entrega: {
+                    endereco: dadosCliente.endereco,
+                    detalhes: dadosCliente.detalhes,
+                    agendamento: dadosCliente.agendamento
+                },
+
+                pagamento: {
+                    forma: dadosCliente.pagamento,
+                    total_texto: totalPedido ? "R$ " + totalPedido : "",
+                    total_numero: totalPedido
+                        ? parseFloat(totalPedido.replace(/\./g, "").replace(",", "."))
+                        : 0
+                },
+
+                resumo: {
+                    total_itens_lidos: itensParaSeparacao.length + falhas.length,
+                    total_itens_encontrados: itensParaSeparacao.length,
+                    total_itens_nao_encontrados: falhas.length
+                },
+
+                itens: itensParaSeparacao,
+                itens_nao_encontrados: falhas,
+
+                texto_original: textoOriginal
+            };
+
+            let pedidosSeparacao = [];
+
+            try {
+                const fileData = await GitHubAPI.getFileData('site/pedidoseparar.json');
+
+                if (fileData && fileData.content) {
+                    const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
+                    const dadosExistentes = JSON.parse(decodedStr);
+
+                    pedidosSeparacao = Array.isArray(dadosExistentes) ? dadosExistentes : [];
+                }
+            } catch (e) {
+                console.log("Arquivo pedidoseparar.json não encontrado ou inválido. Será criado um novo.");
+                pedidosSeparacao = [];
+            }
+
+            pedidosSeparacao.push(novoPedido);
+
+            await GitHubAPI.saveFile(
+                'site/pedidoseparar.json',
+                pedidosSeparacao,
+                `Adicionado Pedido #${numeroPedido} para separação`
+            );
+        }, true, 60000);
+
+        let msg = `✅ Pedido #${numeroPedido} enviado para separação.\n\n`;
+        msg += `Produtos encontrados: ${encontrados}\n`;
+        msg += `Itens não encontrados: ${falhas.length}\n\n`;
+        msg += `O estoque NÃO foi abatido.\n`;
+        msg += `CSV do Bling NÃO foi gerado.`;
+
+        if (falhas.length > 0) {
+            msg += `\n\n⚠️ Itens não encontrados:\n`;
+            msg += falhas.map(item => `- ${item.quantidade}x ${item.nome_digitado_no_pedido}`).join("\n");
+        }
+
+        alert(msg);
+
+        closeSidebar('pedidos-sidebar');
+        textarea.value = "";
+
+    } catch (error) {
+        console.error("Erro ao enviar pedido para separação:", error);
+        alert("❌ Erro ao enviar pedido para separação: " + error.message);
+    }
+}
 
         // ==========================================================
         // LIMPEZA INTELIGENTE DE IMAGENS DO GITHUB (AJUSTADO PARA FILA)
