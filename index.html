@@ -4634,17 +4634,48 @@ function normalizarImagemComboSite(combo) {
 }
 function converterComboNovoParaSite(combo) {
     const itens = Array.isArray(combo.itens) ? combo.itens : [];
+
+    const buscarProdutoDoItemCombo = function(item) {
+        const sku = String(item.sku || item.codigo || '').trim();
+        const firebaseKey = String(item.firebaseKey || item.firebase_key || '').trim();
+
+        return STATE.prods.find(p =>
+            String(p.codigo || '') === sku ||
+            String(p.id || '') === sku ||
+            String(p.firebaseKey || '') === sku ||
+            String(p.firebaseKey || '') === firebaseKey ||
+            String(p.codigo || '') === firebaseKey ||
+            String(p.id || '') === firebaseKey
+        );
+    };
+
     const produtosArr = itens.map(item => {
         const qtd = Math.max(1, Number(item.qtd || item.quantidade || 1));
         const sku = String(item.sku || item.codigo || '').trim();
         return `${qtd}x ${sku}`;
     }).filter(str => !str.endsWith('x '));
 
+    const produtosDetalhados = itens.map(item => {
+        const prod = buscarProdutoDoItemCombo(item);
+        return {
+            item,
+            prod,
+            nome: (prod && prod.name) || item.nome || item.descricao || '',
+            imagem: (prod && prod.img) || item.url_imagem || item.imagem || ''
+        };
+    });
+
     const somaAtual = produtosArr.reduce((total, str) => {
         const parts = str.split('x ');
         const qtd = Number(parts[0] || 1);
         const cod = (parts[1] || '').trim();
-        const prod = STATE.prods.find(p => String(p.codigo) === cod || String(p.id) === cod || String(p.firebaseKey) === cod);
+
+        const prod = STATE.prods.find(p =>
+            String(p.codigo || '') === cod ||
+            String(p.id || '') === cod ||
+            String(p.firebaseKey || '') === cod
+        );
+
         return total + (prod ? Number(prod.price || 0) * qtd : 0);
     }, 0);
 
@@ -4652,13 +4683,25 @@ function converterComboNovoParaSite(combo) {
     const precoCombo = Number(combo.preco_combo || combo.valor_combo || combo.valor || 0) || (somaAtual > 0 ? somaAtual * (1 - desconto / 100) : 0);
     const precoOriginal = Number(combo.soma_produtos || combo.precoOriginal || combo.valor_original || 0) || somaAtual || precoCombo;
 
+    const imagemFallback = normalizarImagemComboSite(combo);
+
+    const imagensProdutos = produtosDetalhados
+        .map(x => x.imagem)
+        .filter(Boolean)
+        .slice(0, 2);
+
+    while (imagensProdutos.length < 2) {
+        imagensProdutos.push(imagemFallback || errorImgFallback || 'img/logoantonia5.png');
+    }
+
     return {
         id: `combo_novo_${String(combo.id || combo.nome || Date.now()).replace(/[^\w-]+/g, '_')}`,
         comboSourceId: combo.id || '',
         nome: formatName(combo.nome || combo.titulo || 'Combo promocional'),
         preco: Math.max(0, Number(precoCombo.toFixed ? precoCombo.toFixed(2) : precoCombo)),
         precoOriginal: Math.max(precoOriginal, precoCombo),
-        imagem: normalizarImagemComboSite(combo),
+        imagem: imagemFallback,
+        imagensProdutos: imagensProdutos,
         produtos: produtosArr,
         isCombo: true,
         desconto_percentual: desconto || (precoOriginal > precoCombo ? Math.round(((precoOriginal - precoCombo) / precoOriginal) * 100) : 0),
@@ -4936,27 +4979,49 @@ renderCombos = function() {
     }
 
     combos.forEach(combo => {
-        let displayPrice = Number(combo.preco || 0);
-        let crossedPrice = Number(combo.precoOriginal || 0) > displayPrice ? Number(combo.precoOriginal || 0) : null;
-        let oldPriceHtml = crossedPrice ? `<div class="old-price" style="font-size: 14px; margin-bottom: 2px;">${fmt(crossedPrice)}</div>` : '';
-        let desconto = Number(combo.desconto_percentual || 0);
+        const displayPrice = Number(combo.preco || 0);
+        const crossedPrice = Number(combo.precoOriginal || 0) > displayPrice ? Number(combo.precoOriginal || 0) : null;
+        const desconto = Number(combo.desconto_percentual || 0);
+
+        const imagens = Array.isArray(combo.imagensProdutos) && combo.imagensProdutos.length
+            ? combo.imagensProdutos.slice(0, 2)
+            : [combo.imagem, combo.imagem];
+
+        const img1 = imagens[0] || combo.imagem || errorImgFallback;
+        const img2 = imagens[1] || combo.imagem || errorImgFallback;
+
+        const validadeTxt = combo.validade_combo
+            ? 'Oferta até ' + new Date(combo.validade_combo).toLocaleDateString('pt-BR')
+            : 'Oferta por tempo limitado';
 
         html += `
-        <div class="product-card-list combo-card-clean" onclick="openBasketDetail('${combo.id}')">
-            <div class="basket-img-box">
-                <img src="${escapeAttrDA(combo.imagem)}" alt="${escapeAttrDA(combo.nome)}" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'">
-                ${desconto > 0 ? `<div style="position:absolute;top:10px;left:10px;background:#fff1f2;color:#be123c;border:1px solid #fecdd3;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:950;">-${desconto}%</div>` : ''}
+        <div class="product-card-list combo-card-clean combo-card-duplo" onclick="openBasketDetail('${combo.id}')">
+            <div class="combo-duplo-topo">
+                ${desconto > 0 ? `<div class="combo-discount-badge">-${desconto}% NO COMBO</div>` : ''}
+
+                <div class="combo-prod-img-box">
+                    <img src="${escapeAttrDA(img1)}" alt="${escapeAttrDA(combo.nome)} produto 1" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'">
+                </div>
+
+                <div class="combo-plus-center">+</div>
+
+                <div class="combo-prod-img-box">
+                    <img src="${escapeAttrDA(img2)}" alt="${escapeAttrDA(combo.nome)} produto 2" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'">
+                </div>
             </div>
-            <div class="product-details">
-                <div class="embalagem-tag-text">COMBO PROMOCIONAL</div>
-                <div class="product-name-list">${combo.nome}</div>
-                <div class="combo-validade-mini">${combo.validade_combo ? 'Oferta até ' + new Date(combo.validade_combo).toLocaleDateString('pt-BR') : 'Oferta por tempo limitado'}</div>
-                <div class="card-bottom-row">
-                    <div class="price-container">
-                        ${oldPriceHtml}
-                        <div class="tag-preco-list">${fmt(displayPrice)}</div>
-                    </div>
-                    <div class="card-action-area"><div class="btn-quick-add-list">${iconPlus}</div></div>
+
+            <div class="combo-duplo-info">
+                <div class="combo-duplo-label">COMBO PROMOCIONAL</div>
+                <div class="combo-duplo-title">${combo.nome}</div>
+                <div class="combo-duplo-validade">${validadeTxt}</div>
+
+                <div class="combo-duplo-precos">
+                    ${crossedPrice ? `<div class="combo-duplo-preco-antigo">${fmt(crossedPrice)}</div>` : ''}
+                    <div class="combo-duplo-preco-novo">${fmt(displayPrice)}</div>
+                </div>
+
+                <div class="combo-duplo-btn">
+                    ${iconPlus} VER COMBO
                 </div>
             </div>
         </div>`;
@@ -5083,6 +5148,180 @@ async function init() {
 }
 
             document.addEventListener('DOMContentLoaded', init);
+   /* =========================================================
+   CARD NOVO DOS COMBOS - 2 PRODUTOS LADO A LADO
+   ========================================================= */
+
+.combo-card-clean.combo-card-duplo {
+    grid-column: 1 / -1;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 14px !important;
+    border-radius: 22px !important;
+    background:
+        radial-gradient(circle at top left, rgba(225, 29, 72, 0.10), transparent 34%),
+        linear-gradient(180deg, #ffffff 0%, #fff7f7 100%) !important;
+    border: 1px solid #fecdd3 !important;
+    box-shadow: 0 8px 24px rgba(225, 29, 72, 0.10) !important;
+    overflow: hidden;
+}
+
+.combo-duplo-topo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    position: relative;
+}
+
+.combo-prod-img-box {
+    flex: 1;
+    min-width: 0;
+    height: 145px;
+    border-radius: 18px;
+    background: #ffffff;
+    border: 1px solid #ffe4e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: inset 0 1px 8px rgba(15, 23, 42, 0.03);
+}
+
+.combo-prod-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 10px;
+}
+
+.combo-plus-center {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #e11d48;
+    color: #ffffff;
+    font-size: 25px;
+    font-weight: 950;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 38px;
+    box-shadow: 0 8px 18px rgba(225, 29, 72, 0.25);
+    border: 3px solid #ffffff;
+}
+
+.combo-discount-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: #e11d48;
+    color: #ffffff;
+    border-radius: 999px;
+    padding: 7px 11px;
+    font-size: 12px;
+    font-weight: 950;
+    box-shadow: 0 6px 16px rgba(225, 29, 72, 0.25);
+    z-index: 2;
+}
+
+.combo-duplo-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+}
+
+.combo-duplo-label {
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: 0.06em;
+    color: #be123c;
+    text-transform: uppercase;
+}
+
+.combo-duplo-title {
+    font-size: 16px;
+    font-weight: 950;
+    line-height: 1.25;
+    color: #0f172a;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 40px;
+}
+
+.combo-duplo-validade {
+    font-size: 12px;
+    font-weight: 800;
+    color: #64748b;
+}
+
+.combo-duplo-precos {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.combo-duplo-preco-antigo {
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: line-through;
+}
+
+.combo-duplo-preco-novo {
+    color: #e11d48;
+    font-size: 26px;
+    font-weight: 950;
+    letter-spacing: -0.05em;
+}
+
+.combo-duplo-btn {
+    width: 100%;
+    height: 50px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 950;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 10px 22px rgba(225, 29, 72, 0.24);
+    border: none;
+}
+
+.combo-duplo-btn:active {
+    transform: scale(0.97);
+}
+
+@media (min-width: 768px) {
+    .combo-card-clean.combo-card-duplo {
+        max-width: 720px;
+        margin: 0 auto;
+    }
+
+    .combo-prod-img-box {
+        height: 190px;
+    }
+
+    .combo-duplo-title {
+        font-size: 20px;
+        min-height: auto;
+    }
+
+    .combo-duplo-preco-novo {
+        font-size: 32px;
+    }
+}
     </script>
 </body>
 </html>
