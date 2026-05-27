@@ -500,9 +500,7 @@
                 <button class="nav-btn" style="height:40px; justify-content:center; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="fetchFromGithub()">
                     <i data-lucide="cloud-download" size="14"></i> 4. ATUALIZAR LOCAL DA NUVEM
                 </button>
-                <button class="nav-btn" style="height:40px; justify-content:center; color: #ef4444; border-color: #fecaca; margin-top: 10px;" onclick="forcarUploadLocalParaFirebase()">
-                    <i data-lucide="upload" size="14"></i> 6. FORÇAR UPLOAD LOCAL -> FIREBASE
-                </button>
+                
             </div>
 
             <div class="form-section" style="margin-top:10px;">
@@ -1769,32 +1767,13 @@ async function salvarProdutosJSON(opcoes = {}) {
             renderGrid(ultimoTermoPesquisa); 
         }
         
-        // ==========================================================
-        // FUNÇÃO DE EMERGÊNCIA: FORÇAR UPLOAD LOCAL PARA FIREBASE
-        // ==========================================================
-        async function forcarUploadLocalParaFirebase() {
-            if (!confirm("Modo seguro ativo: isto NÃO vai sobrescrever cegamente a nuvem. O sistema vai ler o Firebase primeiro, mesclar pelo last_update e salvar somente a base mais nova. Continuar?")) {
-                return;
-            }
-
-            try {
-                mostrarAlerta("Lendo cache local e mesclando com Firebase antes de salvar...", "aviso");
-                
-                const dadosLocais = await localforage.getItem(STORAGE_KEY);
-                if (!dadosLocais || !Array.isArray(dadosLocais)) {
-                    alert("Erro fatal: Nenhum dado foi localizado na memória do navegador.");
-                    return;
-                }
-
-                products = dadosLocais;
-                await salvarProdutosJSON({ automatico: false, motivo: "forçar upload seguro" });
-                
-            } catch (error) {
-                console.error("Erro no upload seguro:", error);
-                alert("Erro ao restaurar a nuvem: " + error.message);
-            }
-        }
-
+       async function forcarUploadLocalParaFirebase() {
+    mostrarAlerta(
+        "Função desativada por segurança. O Firebase é o banco oficial; o local é apenas cache.",
+        "aviso"
+    );
+    return;
+}
         function openSidebar(id) { 
             document.getElementById('sidebar-overlay').style.display = 'block'; 
             setTimeout(() => { document.getElementById('sidebar-overlay').style.opacity = '1'; document.getElementById(id).classList.add('open'); }, 10); 
@@ -2113,10 +2092,21 @@ if (p.combo_id !== undefined || p.validade_combo !== undefined) {
         
         function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
         
-        async function saveDataLocally(agendarSync = true, motivo = "alteração local") { 
-            try { await localforage.setItem(STORAGE_KEY, products); } catch (err) { console.error("Erro ao salvar cache local:", err); } 
-            if (agendarSync) agendarSincronizacaoProdutos(motivo);
-        }
+        async function saveDataLocally() {
+    // CACHE LOCAL APENAS PARA DESEMPENHO E EMERGÊNCIA VISUAL.
+    // Nunca usar este cache para sobrescrever o Firebase.
+    try {
+        const cache = {
+            origem: "firebase_cache",
+            atualizado_em: Date.now(),
+            produtos: Array.isArray(products) ? products : []
+        };
+
+        await localforage.setItem(STORAGE_KEY, cache);
+    } catch (err) {
+        console.warn("Não foi possível atualizar o cache local:", err);
+    }
+}
 
         async function saveCombosLocally() {
             try { await localforage.setItem(COMBOS_KEY, combosDoSistema); } catch (err) {}
