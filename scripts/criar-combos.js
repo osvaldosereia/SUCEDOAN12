@@ -12,13 +12,20 @@ function normalizarPreco(valor) {
   return parseFloat(String(valor).replace(",", ".")) || 0;
 }
 
-function slugify(texto) {
-  return String(texto || "combo")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+function embaralhar(lista) {
+  return [...lista].sort(() => Math.random() - 0.5);
+}
+
+function formatarValidade7Dias() {
+  const data = new Date();
+  data.setDate(data.getDate() + 7);
+  data.setHours(23, 59, 0, 0);
+
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}T23:59`;
 }
 
 async function carregarProdutos() {
@@ -30,7 +37,6 @@ async function carregarProdutos() {
   }
 
   const dados = await res.json();
-
   if (!dados) return [];
 
   if (Array.isArray(dados)) {
@@ -51,63 +57,79 @@ function criarCombos(produtos) {
     .filter(p => normalizarPreco(p.preco) > 0)
     .filter(p => normalizarPreco(p.estoque) > 0);
 
-  const porCategoria = {};
-
-  produtosValidos.forEach(p => {
-    const categoria = p.categoria || "Outros";
-    if (!porCategoria[categoria]) porCategoria[categoria] = [];
-    porCategoria[categoria].push(p);
-  });
-
+  const produtosMisturados = embaralhar(produtosValidos);
   const combos = [];
+  const usados = new Set();
 
-  Object.entries(porCategoria).forEach(([categoria, lista]) => {
-    const candidatos = lista
-      .sort((a, b) => normalizarPreco(b.estoque) - normalizarPreco(a.estoque))
-      .slice(0, 4);
+  for (let i = 0; i < produtosMisturados.length; i++) {
+    if (combos.length >= 5) break;
 
-    if (candidatos.length < 2) return;
+    const p1 = produtosMisturados[i];
+    const chave1 = String(p1.codigo || p1.id || p1.firebaseKey || "");
 
-    const soma = candidatos.reduce((acc, p) => acc + normalizarPreco(p.preco), 0);
-    const desconto = 10;
+    if (!chave1 || usados.has(chave1)) continue;
+
+    const candidatos = produtosMisturados.filter(p2 => {
+      const chave2 = String(p2.codigo || p2.id || p2.firebaseKey || "");
+      return (
+        chave2 &&
+        chave2 !== chave1 &&
+        !usados.has(chave2) &&
+        normalizarPreco(p2.preco) > 0
+      );
+    });
+
+    if (candidatos.length === 0) continue;
+
+    const p2 = candidatos[0];
+    const chave2 = String(p2.codigo || p2.id || p2.firebaseKey || "");
+
+    const desconto = [20, 25, 30][Math.floor(Math.random() * 3)];
+
+    const preco1 = normalizarPreco(p1.preco);
+    const preco2 = normalizarPreco(p2.preco);
+
+    const soma = preco1 + preco2;
     const precoCombo = soma * (1 - desconto / 100);
     const economia = soma - precoCombo;
 
-    const nome = "Combo " + categoria;
+    const agora = new Date();
 
     combos.push({
-      id: "combo-auto-" + slugify(categoria),
-      nome,
+      id: "COMBO-" + Date.now() + "-" + (combos.length + 1),
+      nome: "Combo " + (p1.nome || "Produto 1") + " + " + (p2.nome || "Produto 2"),
       ativo: true,
-      origem: "github_actions",
-      categoria,
+      motivo_desativacao: "",
       desconto_percentual: desconto,
       soma_produtos: Number(soma.toFixed(2)),
       preco_combo: Number(precoCombo.toFixed(2)),
       economia: Number(economia.toFixed(2)),
-      validade_combo: "",
-      url_imagem: "",
-      itens: candidatos.map(p => {
-        const preco = normalizarPreco(p.preco);
-        const precoComboUnit = preco * (1 - desconto / 100);
+      validade_combo: formatarValidade7Dias(),
+      url_imagem: p1.url_imagem || p2.url_imagem || "",
+      itens: [p1, p2].map(produto => {
+        const preco = normalizarPreco(produto.preco);
+        const precoComDesconto = preco * (1 - desconto / 100);
 
         return {
-          sku: p.codigo || p.id || p.firebaseKey || "",
-          firebaseKey: p.firebaseKey || "",
-          nome: p.nome || "",
+          sku: String(produto.codigo || produto.id || produto.firebaseKey || ""),
+          firebaseKey: String(produto.firebaseKey || produto.codigo || produto.id || ""),
+          nome: produto.nome || "",
           qtd: 1,
           preco_unitario_original: Number(preco.toFixed(2)),
-          preco_unitario_combo: Number(precoComboUnit.toFixed(2)),
+          preco_unitario_combo: Number(precoComDesconto.toFixed(2)),
           total_original: Number(preco.toFixed(2)),
-          total_combo: Number(precoComboUnit.toFixed(2))
+          total_combo: Number(precoComDesconto.toFixed(2))
         };
       }),
-      criado_em: new Date().toISOString(),
-      last_update: Date.now()
+      criado_em: agora.toISOString(),
+      last_update: agora.getTime()
     });
-  });
 
-  return combos.slice(0, 20);
+    usados.add(chave1);
+    usados.add(chave2);
+  }
+
+  return combos;
 }
 
 async function main() {
