@@ -2778,7 +2778,150 @@ function lazyLoadImages() {
         }
     });
 }
+function isComboAtualAberto() {
+    const basket = BASKETS.find(b => b.id === window.currentBasketId) || dynamicCombos.find(c => c.id === window.currentBasketId);
+    return !!(basket && basket.isCombo);
+}
 
+function getComboDiscountId(comboId) {
+    return 'desconto_combo_' + String(comboId || '').replace(/[^\w-]+/g, '_');
+}
+
+function getComboProdutoId(produto) {
+    return String(produto.id || produto.codigo || produto.firebaseKey || '');
+}
+
+function getEconomiaCombo(basket) {
+    if (!basket || !basket.isCombo) return 0;
+
+    const original = Number(basket.precoOriginal || 0);
+    const final = Number(basket.preco || 0);
+
+    if (original > final) {
+        return Number((original - final).toFixed(2));
+    }
+
+    const somaItens = currentBasketItems.reduce((total, item) => {
+        return total + ((Number(item.pObj.price || 0) || 0) * (Number(item.qty || 0) || 0));
+    }, 0);
+
+    if (somaItens > final) {
+        return Number((somaItens - final).toFixed(2));
+    }
+
+    return 0;
+}
+
+function criarProdutoDescontoCombo(basket, valorDesconto) {
+    const discountId = getComboDiscountId(basket.id);
+    let discountProd = STATE.prods.find(p => p.id === discountId);
+
+    const requisitos = currentBasketItems.map(item => ({
+        id: getComboProdutoId(item.pObj),
+        codigo: String(item.pObj.codigo || ''),
+        qtd: Number(item.qty || 0)
+    }));
+
+    if (!discountProd) {
+        discountProd = {
+            id: discountId,
+            codigo: discountId,
+            name: 'Desconto do combo: ' + basket.nome,
+            price: -Math.abs(valorDesconto),
+            oldPrice: -Math.abs(valorDesconto),
+            stock: 9999,
+            img: basket.imagem,
+            categoria: 'Descontos',
+            isComboDiscount: true,
+            comboId: basket.id,
+            comboNome: basket.nome,
+            comboRequirements: requisitos,
+            hiddenFromCatalog: true
+        };
+
+        STATE.prods.push(discountProd);
+    } else {
+        discountProd.name = 'Desconto do combo: ' + basket.nome;
+        discountProd.price = -Math.abs(valorDesconto);
+        discountProd.oldPrice = -Math.abs(valorDesconto);
+        discountProd.img = basket.imagem;
+        discountProd.isComboDiscount = true;
+        discountProd.comboId = basket.id;
+        discountProd.comboNome = basket.nome;
+        discountProd.comboRequirements = requisitos;
+        discountProd.hiddenFromCatalog = true;
+    }
+
+    return discountProd;
+}
+
+function carrinhoTemComboCompleto(discountProd) {
+    if (!discountProd || !discountProd.comboRequirements) return false;
+
+    const qtdDesconto = Number(STATE.cart[discountProd.id] || 0) || 0;
+    if (qtdDesconto <= 0) return false;
+
+    return discountProd.comboRequirements.every(req => {
+        const prod = STATE.prods.find(p =>
+            String(p.id || '') === String(req.id || '') ||
+            String(p.codigo || '') === String(req.codigo || '') ||
+            String(p.firebaseKey || '') === String(req.id || '')
+        );
+
+        if (!prod) return false;
+
+        const qtdNoCarrinho = Number(STATE.cart[prod.id] || 0) || 0;
+        const qtdNecessaria = Number(req.qtd || 0) * qtdDesconto;
+
+        return qtdNoCarrinho >= qtdNecessaria;
+    });
+}
+
+function cancelarDescontoComboSeQuebrou() {
+    let mudou = false;
+
+    STATE.prods
+        .filter(p => p.isComboDiscount)
+        .forEach(discountProd => {
+            const qtdDesconto = Number(STATE.cart[discountProd.id] || 0) || 0;
+            if (qtdDesconto <= 0) return;
+
+            if (!carrinhoTemComboCompleto(discountProd)) {
+                delete STATE.cart[discountProd.id];
+                STATE.cartOrder = STATE.cartOrder.filter(id => id !== discountProd.id);
+                mudou = true;
+            }
+        });
+
+    return mudou;
+}
+
+function renderComboItemAmarradoHTML(item) {
+    const p = item.pObj;
+    const qtd = Number(item.qty || 1);
+
+    return `
+        <div class="product-card-list combo-locked-item" style="cursor:default;">
+            <div class="img-wrapper">
+                <img src="${p.img || errorImgFallback}" class="product-icon-list" onerror="this.src='${errorImgFallback}'">
+            </div>
+            <div class="product-details">
+                <div>
+                    <div class="embalagem-tag-text">${qtd}x item do combo</div>
+                    <div class="product-name-list">${p.name || p.nome || ''}</div>
+                </div>
+                <div class="card-bottom-row">
+                    <div class="price-container">
+                        <div class="tag-preco-list">${fmt((Number(p.price || 0) || 0) * qtd)}</div>
+                    </div>
+                    <div style="font-size:11px;font-weight:900;color:#64748b;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:7px 10px;">
+                        Kit amarrado
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
         window.openBasketDetail = function(basketId) {
             const basket = BASKETS.find(b => b.id === basketId) || dynamicCombos.find(c => c.id === basketId); 
             if (!basket) return;
@@ -2813,41 +2956,69 @@ function lazyLoadImages() {
         };
 
         function renderBasketItemsList() {
-            let container = $('basket-items-container'); 
-            let totalItemsCount = 0;
-            
-            if(currentBasketItems.length === 0) { 
-                container.innerHTML = "<p style='color: #888; text-align:center; padding: 20px;'>A cesta está vazia.</p>"; 
-            } else {
-                let html = '';
-                let valorSomaDosItensAtuais = 0;
-                let totalAtacadoItemsAtuais = 0;
-                
-                currentBasketItems.forEach((item, index) => {
-                    totalItemsCount += item.qty; 
-                    item.pObj.basketQty = item.qty;
-                    valorSomaDosItensAtuais += (item.qty * item.pObj.price);
-                    if (item.qty >= 3 && !window.currentBasketId.startsWith('combo_')) {
-                        totalAtacadoItemsAtuais += (item.pObj.price * 0.05) * item.qty;
-                    }
-                    html += renderCardHTML(item.pObj, true, index);
-                });
-                container.innerHTML = html; 
-                
-                const basket = BASKETS.find(b => b.id === window.currentBasketId) || dynamicCombos.find(c => c.id === window.currentBasketId);
-                
-                let dyn = getBasketDynamicPrice(basket);
-                let diferencaFixa = basket.isCombo ? 0 : dyn.taxaExtra; 
-                
-                let precoDinamicoAtual = Math.ceil(valorSomaDosItensAtuais + diferencaFixa - totalAtacadoItemsAtuais);
-                let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
+    let container = $('basket-items-container'); 
+    let totalItemsCount = 0;
+    const basket = BASKETS.find(b => b.id === window.currentBasketId) || dynamicCombos.find(c => c.id === window.currentBasketId);
+    const isCombo = !!(basket && basket.isCombo);
+    
+    if (currentBasketItems.length === 0) { 
+        container.innerHTML = "<p style='color: #888; text-align:center; padding: 20px;'>A cesta está vazia.</p>"; 
+        $('basket-total-items').innerText = 0;
+        $('basket-total-price').innerText = 'R$ 0,00';
+        return;
+    }
 
-                $('basket-total-items').innerText = totalItemsCount; 
-                if (totalAtacadoItemsAtuais > 0) {
-                    $('basket-total-price').innerHTML = `<span style="text-decoration:line-through; font-size:14px; color:#94a3b8; margin-right:8px;">${fmt(precoSemAtacado)}</span> ${fmt(precoDinamicoAtual)}`;
-                } else {
-                    $('basket-total-price').innerText = basket ? fmt(precoDinamicoAtual) : 'R$ 0,00';
-                }
+    let html = '';
+    let valorSomaDosItensAtuais = 0;
+    let totalAtacadoItemsAtuais = 0;
+    
+    currentBasketItems.forEach((item, index) => {
+        totalItemsCount += item.qty; 
+        item.pObj.basketQty = item.qty;
+        valorSomaDosItensAtuais += (item.qty * item.pObj.price);
+
+        if (!isCombo && item.qty >= 3 && !window.currentBasketId.startsWith('combo_')) {
+            totalAtacadoItemsAtuais += (item.pObj.price * 0.05) * item.qty;
+        }
+
+        // Combo é amarrado: não mostra -, +, excluir nem trocar
+        if (isCombo) {
+            html += renderComboItemAmarradoHTML(item);
+        } else {
+            html += renderCardHTML(item.pObj, true, index);
+        }
+    });
+
+    container.innerHTML = html; 
+    
+    let dyn = getBasketDynamicPrice(basket);
+    let diferencaFixa = isCombo ? 0 : dyn.taxaExtra; 
+
+    let precoDinamicoAtual = Math.ceil(valorSomaDosItensAtuais + diferencaFixa - totalAtacadoItemsAtuais);
+    let precoSemAtacado = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
+
+    if (isCombo) {
+        const precoOriginal = Number(basket.precoOriginal || valorSomaDosItensAtuais || 0);
+        const precoCombo = Number(basket.preco || valorSomaDosItensAtuais || 0);
+        const economia = Math.max(0, precoOriginal - precoCombo);
+
+        $('basket-total-items').innerText = totalItemsCount; 
+        $('basket-total-price').innerHTML = `
+            ${precoOriginal > precoCombo ? `<span style="text-decoration:line-through;font-size:14px;color:#94a3b8;margin-right:8px;">${fmt(precoOriginal)}</span>` : ''}
+            ${fmt(precoCombo)}
+            ${economia > 0 ? `<div style="font-size:11px;color:#16a34a;font-weight:900;margin-top:3px;">Economia no combo: ${fmt(economia)}</div>` : ''}
+        `;
+        return;
+    }
+
+    $('basket-total-items').innerText = totalItemsCount; 
+
+    if (totalAtacadoItemsAtuais > 0) {
+        $('basket-total-price').innerHTML = `<span style="text-decoration:line-through; font-size:14px; color:#94a3b8; margin-right:8px;">${fmt(precoSemAtacado)}</span> ${fmt(precoDinamicoAtual)}`;
+    } else {
+        $('basket-total-price').innerText = basket ? fmt(precoDinamicoAtual) : 'R$ 0,00';
+    }
+}
                 
                 let origMap = {};
                 if(basket) {
@@ -2973,80 +3144,103 @@ function lazyLoadImages() {
         };
 
        window.addBasketToCart = function() {
-            if (!window.currentBasketId) return; 
-            const basket = BASKETS.find(b => b.id === window.currentBasketId) || dynamicCombos.find(c => c.id === window.currentBasketId); 
-            if (!basket) return;
-            
-            let origItemsMap = {}; 
-            basket.produtos.forEach(str => { 
-                let p = str.split("x "); 
-                if(p.length === 2) {
-                    let qtd = parseInt(p[0]); let cod = p[1].trim(); origItemsMap[cod] = qtd; 
-                }
-            });
+    if (!window.currentBasketId) return; 
 
-            let dyn = getBasketDynamicPrice(basket);
-            let diferencaFixa = basket.isCombo ? 0 : dyn.taxaExtra;
+    const basket = BASKETS.find(b => b.id === window.currentBasketId) || dynamicCombos.find(c => c.id === window.currentBasketId); 
+    if (!basket) return;
 
-            let basketDiff = { id: basket.id, name: basket.nome, removed: [], added: [] }; 
-            let hasChanges = false; 
-            let addedCount = 0;
+    const isCombo = !!basket.isCombo;
+    
+    let origItemsMap = {}; 
+    basket.produtos.forEach(str => { 
+        let p = str.split("x "); 
+        if (p.length === 2) {
+            let qtd = parseInt(p[0]); 
+            let cod = p[1].trim(); 
+            origItemsMap[cod] = qtd; 
+        }
+    });
 
-            Object.keys(origItemsMap).forEach(pid => {
-                let origQty = origItemsMap[pid];
-                let currentItem = currentBasketItems.find(item => (item.pObj.codigo || item.pObj.id) === pid);
-                let currentQty = currentItem ? currentItem.qty : 0;
-                
-                if (currentQty < origQty) { 
-                    hasChanges = true; 
-                }
-            });
+    let dyn = getBasketDynamicPrice(basket);
+    let diferencaFixa = isCombo ? 0 : dyn.taxaExtra;
 
-            currentBasketItems.forEach(item => { 
-                let pid = item.pObj.codigo || item.pObj.id; 
-                let origQty = origItemsMap[pid] || 0; 
-                let currentQty = item.qty;
-                
-                if (currentQty > origQty) { 
-                    hasChanges = true; 
-                }
-                
-                if (currentQty > 0) { 
-                    let currentInCart = STATE.cart[item.pObj.id] || 0; 
-                    if (currentInCart === 0) STATE.cartOrder.push(item.pObj.id); 
-                    STATE.cart[item.pObj.id] = currentInCart + currentQty; 
-                    addedCount++; 
-                } 
-            });
+    let basketDiff = { id: basket.id, name: basket.nome, removed: [], added: [] }; 
+    let hasChanges = false; 
+    let addedCount = 0;
 
-            basketDiff.changed = hasChanges;
-            STATE.basketCustomizations[basket.id] = basketDiff;
+    Object.keys(origItemsMap).forEach(pid => {
+        let origQty = origItemsMap[pid];
+        let currentItem = currentBasketItems.find(item => (item.pObj.codigo || item.pObj.id) === pid);
+        let currentQty = currentItem ? currentItem.qty : 0;
+        
+        if (currentQty < origQty) { 
+            hasChanges = true; 
+        }
+    });
 
-            if (addedCount > 0 && diferencaFixa > 0.01) { 
-                let feeId = 'fee_' + basket.id; 
-                let feeName = 'Taxa Oculta (' + basket.nome + ')'; 
-                let feeProd = STATE.prods.find(p => p.id === feeId); 
-                
-                if (!feeProd) { 
-                    feeProd = { id: feeId, codigo: feeId, name: feeName, price: diferencaFixa, stock: 9999, img: basket.imagem, categoria: 'Cestas' }; 
-                    STATE.prods.push(feeProd); 
-                } 
-                
-                let currentFee = STATE.cart[feeId] || 0; 
-                if (currentFee === 0) STATE.cartOrder.push(feeId); 
-                STATE.cart[feeId] = currentFee + 1; 
-            }
-            
-            if (addedCount > 0) { 
-                updateTotals(); 
-                saveCart(); 
-                $('basketModalTopInfo').style.display = 'none'; 
-                $('basket-items-header').style.display = 'none'; 
-                $('basket-items-container').style.display = 'none'; 
-                $('basket-summary-container').style.display = 'none'; 
-                renderPostBasketView(); 
-            }
-        };
+    currentBasketItems.forEach(item => { 
+        let pid = item.pObj.codigo || item.pObj.id; 
+        let origQty = origItemsMap[pid] || 0; 
+        let currentQty = item.qty;
+        
+        if (currentQty > origQty) { 
+            hasChanges = true; 
+        }
+        
+        if (currentQty > 0) { 
+            let currentInCart = STATE.cart[item.pObj.id] || 0; 
+            if (currentInCart === 0) STATE.cartOrder.push(item.pObj.id); 
+            STATE.cart[item.pObj.id] = currentInCart + currentQty; 
+            addedCount++; 
+        } 
+    });
+
+    basketDiff.changed = hasChanges;
+    STATE.basketCustomizations[basket.id] = basketDiff;
+
+    // Cesta normal mantém taxa fixa antiga
+    if (!isCombo && addedCount > 0 && diferencaFixa > 0.01) { 
+        let feeId = 'fee_' + basket.id; 
+        let feeName = 'Taxa Oculta (' + basket.nome + ')'; 
+        let feeProd = STATE.prods.find(p => p.id === feeId); 
+        
+        if (!feeProd) { 
+            feeProd = { id: feeId, codigo: feeId, name: feeName, price: diferencaFixa, stock: 9999, img: basket.imagem, categoria: 'Cestas' }; 
+            STATE.prods.push(feeProd); 
+        } 
+        
+        let currentFee = STATE.cart[feeId] || 0; 
+        if (currentFee === 0) STATE.cartOrder.push(feeId); 
+        STATE.cart[feeId] = currentFee + 1; 
+    }
+
+    // Combo: adiciona desconto no final do carrinho
+    if (isCombo && addedCount > 0) {
+        const economiaCombo = getEconomiaCombo(basket);
+
+        if (economiaCombo > 0.01) {
+            const discountProd = criarProdutoDescontoCombo(basket, economiaCombo);
+            const discountId = discountProd.id;
+
+            let currentDiscount = STATE.cart[discountId] || 0;
+            if (currentDiscount === 0) STATE.cartOrder.push(discountId);
+            STATE.cart[discountId] = currentDiscount + 1;
+        }
+    }
+    
+    if (addedCount > 0) { 
+        cancelarDescontoComboSeQuebrou();
+        updateTotals(); 
+        saveCart(); 
+
+        $('basketModalTopInfo').style.display = 'none'; 
+        $('basket-items-header').style.display = 'none'; 
+        $('basket-items-container').style.display = 'none'; 
+        $('basket-summary-container').style.display = 'none'; 
+
+        renderPostBasketView(); 
+    }
+};
 
         function renderPostBasketView() {
             let ofertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0)
@@ -4446,6 +4640,17 @@ function slugComboImagemSite(value) {
         .replace(/^-+|-+$/g, '') || 'combo';
 }
 
+function slugComboImagemSite(value) {
+    return String(value || 'combo')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'combo';
+}
+
 function normalizarImagemComboSite(combo) {
     const img = combo.url_imagem || combo.imagem || combo.capa || combo.image || '';
 
@@ -4460,6 +4665,7 @@ function normalizarImagemComboSite(combo) {
         clean = clean.replace(/^\.\/+/g, '');
         clean = clean.replace(/^\/+/g, '');
 
+        // O PIM pode salvar como site/img/combos/..., mas no site o correto é img/combos/...
         if (clean.startsWith('site/img/combos/')) {
             clean = clean.replace('site/img/combos/', 'img/combos/');
         }
@@ -4620,7 +4826,11 @@ renderInicio = function() {
         else vitrine.insertAdjacentHTML('afterbegin', banner);
     }
 };
-
+const updateTotalsOriginalComboDA = updateTotals;
+updateTotals = function() {
+    cancelarDescontoComboSeQuebrou();
+    return updateTotalsOriginalComboDA();
+};
 const calculateBasketPricesOriginalDA = calculateBasketPrices;
 calculateBasketPrices = function(basketId) {
     const basket = BASKETS.find(b => b.id === basketId) || dynamicCombos.find(c => c.id === basketId);
