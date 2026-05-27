@@ -1026,45 +1026,225 @@ let finalBase64 = isBase64Ready
             return text.toString().replace(/<\/?[^>]+(>|$)/g, "");
         }
 
-        async function salvarProdutosJSON() {
-    mostrarAlerta("Preparando dados para a nuvem...", "aviso");
+        // ==========================================================
+// SINCRONIZAÇÃO SEGURA ENTRE MÁQUINAS
+// Evita uma máquina antiga sobrescrever alterações feitas por outra.
+// Regra: antes de salvar, baixa Firebase, compara produto por produto
+// usando last_update e salva somente a versão mais recente de cada item.
+// ==========================================================
+
+function obterChaveSincronizacaoProduto(produto) {
+    if (!produto) return "";
+
+    return String(
+        produto.firebaseKey ||
+        produto.id ||
+        produto.codigo ||
+        produto.gtin ||
+        ""
+    ).trim();
+}
+
+function obterTodasChavesPossiveisProduto(produto) {
+    const chaves = [];
+
+    if (produto.firebaseKey) chaves.push(String(produto.firebaseKey).trim());
+    if (produto.id) chaves.push(String(produto.id).trim());
+    if (produto.codigo) chaves.push(String(produto.codigo).trim());
+    if (produto.gtin) chaves.push(String(produto.gtin).trim());
+
+    return [...new Set(chaves.filter(Boolean))];
+}
+
+function normalizarLastUpdateProduto(produto) {
+    const valor = Number(produto && produto.last_update);
+    return Number.isFinite(valor) && valor > 0 ? valor : 0;
+}
+
+function registrarProdutoNoIndice(indice, produto, origem) {
+    if (!produto) return;
+
+    const produtoLimpo = { ...produto };
+    const chaves = obterTodasChavesPossiveisProduto(produtoLimpo);
+    const chavePrincipal = obterChaveSincronizacaoProduto(produtoLimpo);
+
+    if (!chaves.length && chavePrincipal) chaves.push(chavePrincipal);
+    if (!chaves.length) return;
+
+    let registroExistente = null;
+
+    for (const chave of chaves) {
+        if (indice.has(chave)) {
+            registroExistente = indice.get(chave);
+            break;
+        }
+    }
+
+    if (!registroExistente) {
+        registroExistente = {
+            produto: produtoLimpo,
+            origem,
+            chaves: new Set(chaves)
+        };
+    } else {
+        const antigo = registroExistente.produto;
+        const antigoUpdate = normalizarLastUpdateProduto(antigo);
+        const novoUpdate = normalizarLastUpdateProduto(produtoLimpo);
+
+        // Regra principal:
+        // produto com last_update maior vence.
+        // Se empatar, prioriza LOCAL apenas para não perder o que acabou de ser editado na máquina atual.
+        if (novoUpdate > antigoUpdate || (novoUpdate === antigoUpdate && origem === "local")) {
+            registroExistente.produto = {
+                ...antigo,
+                ...produtoLimpo
+            };
+            registroExistente.origem = origem;
+        }
+    }
+
+    chaves.forEach(chave => {
+        registroExistente.chaves.add(chave);
+        indice.set(chave, registroExistente);
+    });
+}
+
+function mesclarProdutosLocalComNuvem(produtosLocais, produtosNuvem) {
+    const indice = new Map();
+
+    // Primeiro registra nuvem
+    if (Array.isArray(produtosNuvem)) {
+        produtosNuvem.forEach(produto => {
+            registrarProdutoNoIndice(indice, produto, "nuvem");
+        });
+    }
+
+    // Depois registra local.
+    // Se local for mais novo, vence.
+    // Se empatar, local vence.
+    if (Array.isArray(produtosLocais)) {
+        produtosLocais.forEach(produto => {
+            registrarProdutoNoIndice(indice, produto, "local");
+        });
+    }
+
+    const registrosUnicos = new Set(indice.values());
+    const resultado = [];
+
+    registrosUnicos.forEach(registro => {
+        const p = { ...registro.produto };
+
+        // Proteção para produto marcado como apagado.
+        // Só funciona se você também aplicar a função deleteProduct segura mais abaixo.
+        if (p._deleted === true) return;
+
+        if (!p.id) {
+            p.id = obterChaveSincronizacaoProduto(p) || String(Date.now() + Math.floor(Math.random() * 100000));
+        }
+
+        if (!p.codigo && p.id) {
+            p.codigo = String(p.id);
+        }
+
+        resultado.push(p);
+    });
+
+    resultado.sort((a, b) => {
+        const dataB = normalizarLastUpdateProduto(b);
+        const dataA = normalizarLastUpdateProduto(a);
+        return dataB - dataA;
+    });
+
+    return resultado;
+}
+
+async function lerProdutosFirebaseSeguro() {
+    const res = await fetchComTimeout(
+        FirebaseAPI.baseURL + "produtos.json?nocache=" + Date.now(),
+        { cache: "no-store" },
+        30000,
+        "Leitura segura do Firebase antes de salvar"
+    );
+
+    if (!res.ok) {
+        throw new Error("Não foi possível ler o Firebase antes de salvar. HTTP " + res.status);
+    }
+
+    const dados = await res.json();
+    return FirebaseAPI.objetoPorIdParaArray(dados);
+}
+
+async function salvarProdutosJSON() {
+    mostrarAlerta("Sincronizando com segurança: lendo nuvem antes de salvar...", "aviso");
+
+    let produtosLocais = [];
+    let combosLocais = [];
 
     try {
         const dadosLocais = await localforage.getItem(STORAGE_KEY);
         if (dadosLocais && Array.isArray(dadosLocais)) {
-            products = dadosLocais; 
+            produtosLocais = dadosLocais;
+        } else if (Array.isArray(products)) {
+            produtosLocais = products;
         }
-        const combosLocais = await localforage.getItem(COMBOS_KEY);
-        if (combosLocais && Array.isArray(combosLocais)) {
-            combosDoSistema = combosLocais;
+
+        const dadosCombos = await localforage.getItem(COMBOS_KEY);
+        if (dadosCombos && Array.isArray(dadosCombos)) {
+            combosLocais = dadosCombos;
+            combosDoSistema = dadosCombos;
         }
     } catch (e) {
-        console.error("Erro ao ler o armazenamento local:", e);
+        console.error("Erro ao ler armazenamento local:", e);
+        mostrarAlerta("Erro ao ler dados locais. Sincronização cancelada.", "erro");
+        return;
     }
 
-    // 1. Firebase Principal no novo formato:
-    // produtos → id_do_produto → dados do produto
+    let produtosNuvem = [];
+
+    try {
+        produtosNuvem = await lerProdutosFirebaseSeguro();
+    } catch (e) {
+        console.error("Erro ao ler Firebase antes de salvar:", e);
+        mostrarAlerta("Não foi possível conferir a nuvem. Salvamento cancelado para evitar perda de dados.", "erro");
+        return;
+    }
+
+    const produtosMesclados = mesclarProdutosLocalComNuvem(produtosLocais, produtosNuvem);
+
+    products = produtosMesclados;
+
+    try {
+        await localforage.setItem(STORAGE_KEY, products);
+    } catch (e) {
+        console.error("Erro ao atualizar base local mesclada:", e);
+    }
+
+    const vitrineFinal = sanitizeProductsForExport(products);
+
+    mostrarAlerta(
+        `Base mesclada com segurança: ${produtosLocais.length} local + ${produtosNuvem.length} nuvem = ${vitrineFinal.length} produtos.`,
+        "sucesso"
+    );
+
+    // 1. Firebase Principal
     enqueueTask("Salvar Produtos no Firebase", async () => {
-        const vitrine = sanitizeProductsForExport(products);
-        await FirebaseAPI.salvarProdutos(vitrine);
+        await FirebaseAPI.salvarProdutos(vitrineFinal);
     }, false);
 
-    // 2. Backup Principal no GitHub também no novo formato por ID
+    // 2. Backup Principal no GitHub
     enqueueTask("Salvar JSON Backup no GitHub", async () => {
-        const vitrine = sanitizeProductsForExport(products);
-        const vitrinePorId = FirebaseAPI.arrayParaObjetoPorId(vitrine);
+        const vitrinePorId = FirebaseAPI.arrayParaObjetoPorId(vitrineFinal);
 
         await GitHubAPI.saveFile(
             `site/produtos.json`,
             vitrinePorId,
-            `PIM: Atualização Banco de Dados Backup por ID`
+            `PIM: Atualização Banco de Dados Backup com Merge Seguro`
         );
     }, false);
 
-    // 3. Catálogo Meta continua como array, porque CSV precisa de lista
+    // 3. Catálogo Meta
     enqueueTask("Salvar Catálogo Meta (GitHub)", async () => {
-        const vitrine = sanitizeProductsForExport(products);
-        const csvData = vitrine.map(p => mapearProdutoParaMeta(p));
+        const csvData = vitrineFinal.map(p => mapearProdutoParaMeta(p));
 
         const csvText = Papa.unparse(csvData, { delimiter: ";" });
         await GitHubAPI.saveFile(`site/produtos.csv`, csvText, `PIM: Meta Ads CSV Atualizado`);
@@ -1073,10 +1253,10 @@ let finalBase64 = isBase64Ready
         await GitHubAPI.saveFile(`site/produtos_meta.json`, jsonFinal, `PIM: Meta Ads JSON Atualizado`);
     }, false);
 
-   // 4. Combos ficam separados dos produtos e salvam somente no GitHub
-enqueueTask("Salvar Combos no GitHub", async () => {
-    await salvarCombosNaNuvemAgora();
-}, false);
+    // 4. Combos
+    enqueueTask("Salvar Combos no GitHub", async () => {
+        await salvarCombosNaNuvemAgora();
+    }, false);
 }
 
         async function getPastaUploadAtiva(tipo = 'produto') {
@@ -2163,8 +2343,34 @@ const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + qua
         };
 
         async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); renderGrid(ultimoTermoPesquisa, true); }
-        async function deleteProduct(sku) { if(!confirm(`Apagar produto permanentemente?`)) return; products = products.filter(p => p.codigo !== sku); await saveDataLocally(); renderGrid(ultimoTermoPesquisa); }
-        
+async function deleteProduct(sku) {
+    if (!confirm(`Apagar produto permanentemente?`)) return;
+
+    const agora = Date.now();
+
+    products = products.map(p => {
+        if (p.codigo === sku) {
+            return {
+                ...p,
+                _deleted: true,
+                situacao: "I",
+                last_update: agora
+            };
+        }
+        return p;
+    });
+
+    await saveDataLocally();
+
+    products = products.filter(p => p.codigo !== sku);
+
+    renderGrid(ultimoTermoPesquisa);
+
+    mostrarAlerta(
+        "Produto marcado para exclusão. Clique em SALVAR JSON / SINCRONIZAR para remover da nuvem com segurança.",
+        "aviso"
+    );
+}        
         async function createNewProduct() { 
             const timestamp = Date.now(); 
             
