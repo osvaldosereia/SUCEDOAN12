@@ -1469,14 +1469,50 @@ async function salvarProdutoIndividualSeguro(produtoOriginal, tipo = "upsert") {
 
     const produto = prepararProdutoParaFirebase(produtoOriginal);
     const chave = FirebaseAPI.obterChaveProduto(produto);
+
     produtoOriginal.firebaseKey = chave;
     produtoOriginal.id = String(produtoOriginal.id || produto.id || chave);
 
     if (tipo === "delete" || produtoOriginal._deleted === true) {
+        const dataExclusao = normalizarLastUpdateProduto(produtoOriginal) || Date.now();
+
         const exclusoes = await FirebaseAPI.lerExclusoesProdutos();
-        registrarExclusaoProduto(exclusoes, produtoOriginal, normalizarLastUpdateProduto(produtoOriginal) || Date.now());
-        await FirebaseAPI.apagarProduto(chave);
+        registrarExclusaoProduto(exclusoes, produtoOriginal, dataExclusao);
+
+        const tombstone = {
+            ...produtoOriginal,
+            firebaseKey: chave,
+            id: String(produtoOriginal.id || chave),
+            codigo: String(produtoOriginal.codigo || chave),
+            _deleted: true,
+            situacao: "I",
+            last_update: dataExclusao,
+            deleted_at: dataExclusao
+        };
+
         await FirebaseAPI.salvarExclusoesProdutos(exclusoes);
+
+        try {
+            await FirebaseAPI.apagarProduto(chave);
+        } catch (erroDelete) {
+            console.warn("DELETE falhou. Gravando produto como excluído:", erroDelete);
+
+            const res = await fetchComTimeout(
+                FirebaseAPI.baseURL + "produtos/" + encodeURIComponent(chave) + ".json",
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(tombstone)
+                },
+                30000,
+                "Marcar produto como excluído no Firebase"
+            );
+
+            if (!res.ok) {
+                throw new Error("Não foi possível excluir nem marcar como excluído. HTTP " + res.status);
+            }
+        }
+
         return { status: "apagado", chave };
     }
 
