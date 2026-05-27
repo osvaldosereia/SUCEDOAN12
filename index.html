@@ -3020,41 +3020,7 @@ function renderComboItemAmarradoHTML(item) {
     }
 }
                 
-                let origMap = {};
-                if(basket) {
-                    basket.produtos.forEach(str => { 
-                        let p = str.split("x "); 
-                        if(p.length === 2) {
-                            let qtd = parseInt(p[0]);
-                            let cod = p[1].trim();
-                            origMap[cod] = qtd;
-                        }
-                    });
-                }
-
-                let diffAdded = []; let diffRemoved = [];
-                currentBasketItems.forEach(item => {
-                    let pid = item.pObj.codigo || item.pObj.id;
-                    let origQty = origMap[pid] || 0;
-                    let currentQty = item.qty;
-                    if(currentQty > origQty) diffAdded.push(`${currentQty - origQty}x ${item.pObj.name}`);
-                    else if(currentQty < origQty) diffRemoved.push(`${origQty - currentQty}x ${item.pObj.name}`);
-                });
-                
-                let diffContainer = $('basket-diff-container');
-                if(diffContainer) {
-                    if(diffAdded.length > 0 || diffRemoved.length > 0) {
-                        let diffHtml = '<div style="font-weight: 800; margin-bottom: 8px; color: var(--text-dark);">Alterações feitas:</div>';
-                        if(diffAdded.length > 0) diffHtml += '<div style="color: var(--success); margin-bottom: 6px;"><strong>+ Adicionados:</strong><br>' + diffAdded.map(x => `+ ${x}`).join('<br>') + '</div>';
-                        if(diffRemoved.length > 0) diffHtml += '<div style="color: var(--danger);"><strong>- Retirados:</strong><br>' + diffRemoved.map(x => `- ${x}`).join('<br>') + '</div>';
-                        diffContainer.innerHTML = diffHtml; diffContainer.style.display = 'block';
-                    } else {
-                        diffContainer.style.display = 'none'; diffContainer.innerHTML = '';
-                    }
-                }
-            }
-            lazyLoadImages();
-        }
+               
 
         window.updateBasketItemQty = function(index, delta) { let item = currentBasketItems[index]; if (!item) return; let newQty = item.qty + delta; if (newQty < 0) newQty = 0; if (newQty > item.pObj.stock) return alert("Estoque insuficiente."); item.qty = newQty; renderBasketItemsList(); };
         
