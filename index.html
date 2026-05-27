@@ -1505,6 +1505,36 @@
             .basket-item-card .btn-didatico { font-size: 11px !important; }
         }
 
+    
+/* =========================================================
+   AJUSTES PROFISSIONAIS 2026: COMBOS, OFERTAS, BUSCA DE SEÇÃO
+   ========================================================= */
+.compact-route-header{padding:8px 0 10px 0}
+.compact-route-main{min-height:58px!important;gap:10px!important}
+.compact-back-btn{height:46px!important;min-width:94px;padding:0 14px!important;border-radius:16px!important;color:#0f172a!important;font-size:14px!important;font-weight:900!important;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.compact-back-btn .svg-icon{width:20px!important;height:20px!important}
+.compact-title{flex:1;min-width:0;font-size:16px!important;font-weight:900!important}
+.section-search-container{position:relative;flex:0 1 260px;min-width:135px}
+.section-search-input{width:100%;height:44px;border:1px solid rgba(208,213,221,.95);background:#fff;border-radius:999px;padding:0 38px 0 38px;outline:none;font-size:13.5px;font-weight:700;color:var(--text-dark)}
+.section-search-input:focus{border-color:#14532d;box-shadow:0 0 0 4px rgba(22,163,74,.10)}
+.section-search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#64748b;display:flex}
+.section-search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;background:#f1f5f9;color:#64748b;display:none;align-items:center;justify-content:center;cursor:pointer}
+.route-compact .header-main{height:max(118px,calc(118px + env(safe-area-inset-top)))!important;padding:env(safe-area-inset-top) 14px 0 14px!important}
+.route-compact .main-container{top:calc(118px + env(safe-area-inset-top))!important;height:calc(100dvh - 118px - env(safe-area-inset-top))!important}
+.route-compact .compact-chips-row:not(:empty){display:flex;padding:0 0 10px 0}
+.route-compact .compact-chips-row:empty{display:none}
+.chip-cat,.oferta-chip{user-select:none}.chip-cat.active,.oferta-chip.active{background:#0f172a!important;color:#fff!important;border-color:#0f172a!important}
+.top-discounts-rail{margin:0 0 14px 0;padding:14px;border-radius:22px;background:radial-gradient(circle at top left,rgba(34,197,94,.22),transparent 36%),linear-gradient(135deg,#0f172a 0%,#14532d 100%);color:#fff;box-shadow:0 14px 34px rgba(15,23,42,.16);overflow:hidden}
+.top-discounts-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.top-discounts-head strong{font-size:15px;font-weight:950;letter-spacing:-.02em}.top-discounts-head span{font-size:11px;font-weight:850;opacity:.82;white-space:nowrap}
+.top-discounts-list{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(178px,1fr);gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}.top-discounts-list::-webkit-scrollbar{display:none}
+.top-discount-card{scroll-snap-align:start;min-height:118px;display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center;background:rgba(255,255,255,.96);color:#0f172a;border:1px solid rgba(255,255,255,.7);border-radius:18px;padding:10px;cursor:pointer;box-shadow:0 6px 18px rgba(15,23,42,.1)}
+.top-discount-card:active{transform:scale(.985)}.top-discount-imgbox{width:72px;height:72px;border-radius:16px;background:#f8fafc;border:1px solid #eef2f7;display:flex;align-items:center;justify-content:center;overflow:hidden}.top-discount-imgbox img{width:100%;height:100%;object-fit:contain;padding:6px}.top-discount-info{min-width:0}.top-discount-pill{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;background:#fff1f2;color:#be123c;border:1px solid #fecdd3;font-size:10px;font-weight:950;margin-bottom:5px}.top-discount-name{font-size:12.5px;font-weight:900;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.top-discount-price{font-size:15px;font-weight:950;margin-top:4px;letter-spacing:-.03em}.combo-validade-mini{font-size:10px;font-weight:800;color:var(--text-light);margin-top:3px}
+.img-wrapper,.basket-img-box,.prod-page-img-box,.cart-item-img,.card-catalogo img,.top-discount-imgbox{background:linear-gradient(135deg,rgba(255,255,255,.35),rgba(248,250,252,.16))!important}
+.product-icon-list,.card-catalogo img,.cart-item-img,.prod-page-img,.basket-img-box img,.top-discount-imgbox img{mix-blend-mode:multiply;filter:contrast(1.04) saturate(1.04)}
+.combo-card-clean .basket-img-box img,.basket-card-clean .basket-img-box img{mix-blend-mode:normal}
+@media(max-width:420px){.compact-route-main{display:grid!important;grid-template-columns:auto 1fr;grid-template-areas:"back title" "search search";row-gap:8px}.compact-back-btn{grid-area:back}.compact-title{grid-area:title}.section-search-container{grid-area:search;width:100%;flex-basis:auto}.route-compact .header-main{height:max(160px,calc(160px + env(safe-area-inset-top)))!important}.route-compact .main-container{top:calc(160px + env(safe-area-inset-top))!important;height:calc(100dvh - 160px - env(safe-area-inset-top))!important}}
+@media(min-width:768px){.route-compact .header-main{height:max(92px,calc(92px + env(safe-area-inset-top)))!important}.route-compact .main-container{top:calc(92px + env(safe-area-inset-top))!important;height:calc(100dvh - 92px - env(safe-area-inset-top))!important}.compact-route-header{padding:10px 0}.compact-route-main{min-height:58px!important}.section-search-container{flex-basis:320px}.top-discounts-list{grid-auto-columns:minmax(200px,1fr)}}
+
     </style>
 </head>
 <body>
@@ -1590,6 +1620,11 @@
                     <span>Voltar</span>
                 </button>
                 <div class="compact-title" id="compact-route-title">Página</div>
+                <div class="section-search-container" id="section-search-wrap">
+                    <div class="section-search-icon"><svg class="svg-icon" viewBox="0 0 24 24" style="width:17px;height:17px;"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
+                    <input type="search" id="section-search-input" class="section-search-input" placeholder="Buscar nesta seção" oninput="applySectionSearch(this.value)">
+                    <div class="section-search-clear" id="section-search-clear" onclick="clearSectionSearch()"><svg class="svg-icon" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M6 18L18 6M6 6l12 12"></path></svg></div>
+                </div>
             </div>
             <div class="compact-chips-row" id="compact-route-chips"></div>
         </div>
@@ -4161,7 +4196,570 @@ function normalizarImagemProduto(p) {
     }
 }
         
-    document.addEventListener('DOMContentLoaded', init);
+
+/* =========================================================
+   PATCH SITE: NOVA REGRA DE COMBOS + BANNER TOP DESCONTOS + FILTROS SEM ROLAGEM
+   ========================================================= */
+const COMBOS_FIREBASE_URL = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/combos.json';
+const COMBOS_CACHE_KEY = 'dona_antonia_combos_cache_v2';
+const COMBOS_CACHE_MAX_AGE = 1000 * 60 * 10;
+let rawCombosSistema = [];
+STATE.sectionSearchQuery = '';
+STATE.ofertaGrupoAtivo = 'Todos';
+STATE.departamentoSubAtivo = 'Todos';
+
+function escapeAttrDA(value) {
+    return String(value || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function textoBuscaNormalizadoDA(value) {
+    return norm(String(value || '')).replace(/\s+/g, ' ').trim();
+}
+function itemCombinaBuscaDA(item, query) {
+    const q = textoBuscaNormalizadoDA(query);
+    if (!q) return true;
+    const texto = textoBuscaNormalizadoDA(`${item.name || item.nome || ''} ${item.codigo || ''} ${item.id || ''} ${item.marca || ''} ${item.categoria || ''} ${item.subcategoria || ''}`);
+    return texto.includes(q);
+}
+function getSectionSearchQuery() {
+    return (STATE.sectionSearchQuery || '').trim();
+}
+function atualizarBuscaSecaoVisual() {
+    const input = $('section-search-input');
+    const clear = $('section-search-clear');
+    const wrap = $('section-search-wrap');
+    if (!input || !clear || !wrap) return;
+
+    const isHome = (window.location.hash || '#/') === '#/' || (window.location.hash || '') === '';
+    wrap.style.display = isHome ? 'none' : 'block';
+    input.value = STATE.sectionSearchQuery || '';
+    clear.style.display = input.value ? 'flex' : 'none';
+}
+window.applySectionSearch = function(value) {
+    STATE.sectionSearchQuery = String(value || '');
+    atualizarBuscaSecaoVisual();
+    renderCurrentSectionOnly();
+};
+window.clearSectionSearch = function() {
+    STATE.sectionSearchQuery = '';
+    atualizarBuscaSecaoVisual();
+    renderCurrentSectionOnly();
+};
+function renderCurrentSectionOnly() {
+    const hash = window.location.hash || '#/';
+    if (hash === '#/ofertas') renderDepartamentoCompleto('Ofertas');
+    else if (hash === '#/cestas') renderCestas();
+    else if (hash === '#/combos') renderCombos();
+    else if (hash === '#/catalogo') renderCatalogoGrid(STATE.activeCatalogoCat || 'Todos');
+    else if (hash.startsWith('#/departamento/')) renderDepartamentoCompleto(decodeHash(hash.split('/')[2] || ''));
+    else if (hash === '#/buscar') renderSearch();
+}
+
+function normalizarListaCombosSite(dados) {
+    if (!dados) return [];
+    let lista = [];
+    if (Array.isArray(dados)) {
+        lista = dados.filter(Boolean);
+    } else if (typeof dados === 'object') {
+        lista = Object.entries(dados).map(([id, combo]) => ({ ...(combo || {}), id: (combo && combo.id) || id }));
+    }
+    return lista.filter(Boolean);
+}
+function readComboCache() {
+    try {
+        const raw = localStorage.getItem(COMBOS_CACHE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch (e) {
+        return null;
+    }
+}
+function saveComboCache(data) {
+    try {
+        localStorage.setItem(COMBOS_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), data }));
+    } catch (e) {}
+}
+async function fetchCombosSistema() {
+    const res = await fetchWithCache(COMBOS_FIREBASE_URL, 5500);
+    return normalizarListaCombosSite(res);
+}
+function comboValidoPorEstoque(combo) {
+    const itens = Array.isArray(combo.itens) ? combo.itens : [];
+    if (!itens.length) return false;
+
+    return itens.every(item => {
+        const sku = String(item.sku || item.codigo || '').trim();
+        const qtd = Math.max(1, Number(item.qtd || item.quantidade || 1));
+        const prod = STATE.prods.find(p => String(p.codigo) === sku || String(p.id) === sku || String(p.firebaseKey) === sku);
+        return prod && Number(prod.stock || 0) >= qtd;
+    });
+}
+function comboDentroDaValidade(combo) {
+    const validade = combo.validade_combo || combo.validade || combo.fim_oferta || '';
+    if (!validade) return true;
+    const fim = new Date(validade);
+    if (isNaN(fim.getTime())) return true;
+    return fim.getTime() >= Date.now();
+}
+function normalizarImagemComboSite(combo) {
+    const img = combo.url_imagem || combo.imagem || combo.capa || combo.image || '';
+    if (img && typeof img === 'string') {
+        const clean = img.trim();
+        if (clean.startsWith('http') || clean.startsWith('data:')) return clean;
+        if (clean.startsWith('../')) return clean.replace('../', '');
+        if (clean.startsWith('/site/')) return clean.replace('/site/', '');
+        if (clean.startsWith('/')) return clean.substring(1);
+        return clean;
+    }
+    const id = String(combo.id || combo.nome || 'combo').replace(/[.#$/\[\]\s]+/g, '_');
+    return `img/combos/${id}.webp`;
+}
+function converterComboNovoParaSite(combo) {
+    const itens = Array.isArray(combo.itens) ? combo.itens : [];
+    const produtosArr = itens.map(item => {
+        const qtd = Math.max(1, Number(item.qtd || item.quantidade || 1));
+        const sku = String(item.sku || item.codigo || '').trim();
+        return `${qtd}x ${sku}`;
+    }).filter(str => !str.endsWith('x '));
+
+    const somaAtual = produtosArr.reduce((total, str) => {
+        const parts = str.split('x ');
+        const qtd = Number(parts[0] || 1);
+        const cod = (parts[1] || '').trim();
+        const prod = STATE.prods.find(p => String(p.codigo) === cod || String(p.id) === cod || String(p.firebaseKey) === cod);
+        return total + (prod ? Number(prod.price || 0) * qtd : 0);
+    }, 0);
+
+    const desconto = Number(combo.desconto_percentual || combo.desconto || 0);
+    const precoCombo = Number(combo.preco_combo || combo.valor_combo || combo.valor || 0) || (somaAtual > 0 ? somaAtual * (1 - desconto / 100) : 0);
+    const precoOriginal = Number(combo.soma_produtos || combo.precoOriginal || combo.valor_original || 0) || somaAtual || precoCombo;
+
+    return {
+        id: `combo_novo_${String(combo.id || combo.nome || Date.now()).replace(/[^\w-]+/g, '_')}`,
+        comboSourceId: combo.id || '',
+        nome: formatName(combo.nome || combo.titulo || 'Combo promocional'),
+        preco: Math.max(0, Number(precoCombo.toFixed ? precoCombo.toFixed(2) : precoCombo)),
+        precoOriginal: Math.max(precoOriginal, precoCombo),
+        imagem: normalizarImagemComboSite(combo),
+        produtos: produtosArr,
+        isCombo: true,
+        desconto_percentual: desconto || (precoOriginal > precoCombo ? Math.round(((precoOriginal - precoCombo) / precoOriginal) * 100) : 0),
+        validade_combo: combo.validade_combo || combo.validade || combo.fim_oferta || '',
+        itensDetalhados: itens
+    };
+}
+window.generateCombosFromProducts = function() {
+    dynamicCombos = [];
+
+    normalizarListaCombosSite(rawCombosSistema)
+        .filter(c => c && c.ativo !== false && comboDentroDaValidade(c) && comboValidoPorEstoque(c))
+        .forEach(c => dynamicCombos.push(converterComboNovoParaSite(c)));
+
+    if (dynamicCombos.length > 0) return;
+
+    let comboMap = {};
+    let now = new Date();
+    STATE.prods.forEach(p => {
+        if (p.combo_id && p.validade_combo) {
+            let validadeCombo = new Date(p.validade_combo);
+            if (validadeCombo >= now) {
+                if (!comboMap[p.combo_id]) comboMap[p.combo_id] = [];
+                comboMap[p.combo_id].push(p);
+            }
+        }
+    });
+    Object.keys(comboMap).forEach(comboId => {
+        let items = comboMap[comboId];
+        let precoTotal = 0;
+        let precoOriginalTotal = 0;
+        let produtosArr = [];
+        items.forEach(p => {
+            precoTotal += p.price;
+            precoOriginalTotal += p.oldPrice;
+            produtosArr.push(`1x ${p.codigo || p.id}`);
+        });
+        let comboName = formatName(comboId.replace(/_/g, ' ').replace(/-/g, ' '));
+        dynamicCombos.push({
+            id: 'combo_' + comboId,
+            nome: comboName,
+            preco: precoTotal,
+            precoOriginal: precoOriginalTotal,
+            imagem: `img/produtos/${comboId}.webp`,
+            produtos: produtosArr,
+            isCombo: true,
+            desconto_percentual: precoOriginalTotal > precoTotal ? Math.round(((precoOriginalTotal - precoTotal) / precoOriginalTotal) * 100) : 0
+        });
+    });
+};
+
+function getTopDiscountItems() {
+    const produtos = STATE.prods
+        .filter(p => p.categoria !== 'Cestas' && Number(p.discountPercent || 0) > 0 && Number(p.stock || 0) > 0)
+        .map(p => ({
+            type: 'produto',
+            id: p.id,
+            name: p.name,
+            img: p.img,
+            price: p.price,
+            oldPrice: p.oldPrice,
+            discount: Number(p.discountPercent || 0),
+            click: `window.location.hash='#/produto/${getProductRouteKey(p)}'`
+        }));
+
+    const combos = dynamicCombos
+        .filter(c => Number(c.desconto_percentual || 0) > 0)
+        .map(c => ({
+            type: 'combo',
+            id: c.id,
+            name: c.nome,
+            img: c.imagem,
+            price: c.preco,
+            oldPrice: c.precoOriginal,
+            discount: Number(c.desconto_percentual || 0),
+            click: `openBasketDetail('${c.id}')`
+        }));
+
+    return produtos.concat(combos)
+        .filter(item => item.discount > 0)
+        .sort((a,b) => b.discount - a.discount || (b.oldPrice - b.price) - (a.oldPrice - a.price))
+        .slice(0, 5);
+}
+function renderTopDiscountBanner() {
+    const itens = getTopDiscountItems();
+    if (!itens.length) return '';
+
+    return `<section class="top-discounts-rail" aria-label="Maiores descontos">
+        <div class="top-discounts-head">
+            <strong>Maiores descontos agora</strong>
+            <span>Produtos e combos</span>
+        </div>
+        <div class="top-discounts-list">
+            ${itens.map(item => `<article class="top-discount-card" onclick="${item.click}">
+                <div class="top-discount-imgbox">
+                    <img src="${escapeAttrDA(item.img)}" alt="${escapeAttrDA(item.name)}" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'">
+                </div>
+                <div class="top-discount-info">
+                    <div class="top-discount-pill">-${item.discount}% ${item.type === 'combo' ? 'NO COMBO' : 'OFF'}</div>
+                    <div class="top-discount-name">${item.name}</div>
+                    <div class="top-discount-price">${fmt(item.price)}</div>
+                    ${item.oldPrice > item.price ? `<div class="old-price">${fmt(item.oldPrice)}</div>` : ''}
+                </div>
+            </article>`).join('')}
+        </div>
+    </section>`;
+}
+
+const renderInicioOriginalDA = renderInicio;
+renderInicio = function() {
+    const vitrine = $('vitrine');
+    renderInicioOriginalDA();
+    const banner = renderTopDiscountBanner();
+    if (banner && vitrine) {
+        const firstWrap = vitrine.querySelector('div[style*="padding"]');
+        if (firstWrap) firstWrap.insertAdjacentHTML('afterbegin', banner);
+        else vitrine.insertAdjacentHTML('afterbegin', banner);
+    }
+};
+
+const calculateBasketPricesOriginalDA = calculateBasketPrices;
+calculateBasketPrices = function(basketId) {
+    const basket = BASKETS.find(b => b.id === basketId) || dynamicCombos.find(c => c.id === basketId);
+    if (basket && basket.isCombo) {
+        return {
+            original: Number(basket.precoOriginal || basket.preco || 0),
+            final: Number(basket.preco || 0),
+            atacado: 0
+        };
+    }
+    return calculateBasketPricesOriginalDA(basketId);
+};
+
+function filtrarListaPorBuscaSecao(lista) {
+    const q = getSectionSearchQuery();
+    if (!q) return lista;
+    return lista.filter(item => itemCombinaBuscaDA(item, q));
+}
+function getRouteChipsHtml(hash) {
+    if (hash === '#/ofertas') {
+        let html = `<div class="oferta-chip ${STATE.ofertaGrupoAtivo === 'Todos' ? 'active' : ''}" onclick="setOfertaGrupo('Todos')">Todas</div>`;
+        html += DISCOUNT_GROUPS.map(pct => `<div class="oferta-chip ${String(STATE.ofertaGrupoAtivo) === String(pct) ? 'active' : ''}" onclick="setOfertaGrupo('${pct}')">${pct}% OFF</div>`).join('');
+        return html;
+    }
+    if (hash === '#/catalogo') return getCatalogoChipsHtml();
+    if (hash.startsWith('#/departamento/')) return getDepartamentoChipsHtml(decodeHash(hash.split('/')[2] || ''));
+    return '';
+}
+function getDepartamentoChipsHtml(cat) {
+    const subs = Array.from(new Set(
+        STATE.prods
+            .filter(p => p.categoria === cat && p.subcategoria)
+            .map(p => p.subcategoria)
+    )).sort((a, b) => a.localeCompare(b));
+    if (subs.length <= 1) return '';
+    let html = `<div class="chip-cat ${STATE.departamentoSubAtivo === 'Todos' ? 'active' : ''}" onclick="setDepartamentoSub('Todos')">Tudo</div>`;
+    html += subs.map(sub => `<div class="chip-cat ${STATE.departamentoSubAtivo === sub ? 'active' : ''}" onclick="setDepartamentoSub('${sub.replace(/'/g, "\\'")}')">${sub}</div>`).join('');
+    return html;
+}
+window.setOfertaGrupo = function(valor) {
+    STATE.ofertaGrupoAtivo = valor;
+    atualizarTopbarDaRota('#/ofertas');
+    renderDepartamentoCompleto('Ofertas');
+    $('vitrine').scrollTo({ top: 0, behavior: 'auto' });
+};
+window.setDepartamentoSub = function(valor) {
+    STATE.departamentoSubAtivo = valor;
+    atualizarTopbarDaRota(window.location.hash || '#/');
+    const hash = window.location.hash || '#/';
+    if (hash.startsWith('#/departamento/')) renderDepartamentoCompleto(decodeHash(hash.split('/')[2] || ''));
+    $('vitrine').scrollTo({ top: 0, behavior: 'auto' });
+};
+function scrollRouteAnchor(id) {
+    if (String(id).startsWith('oferta-')) {
+        setOfertaGrupo(String(id).replace('oferta-', ''));
+        return;
+    }
+    if (String(id).startsWith('subcat-')) return;
+}
+
+const atualizarTopbarDaRotaOriginalDA = atualizarTopbarDaRota;
+atualizarTopbarDaRota = function(hash) {
+    atualizarTopbarDaRotaOriginalDA(hash);
+    atualizarBuscaSecaoVisual();
+};
+
+const handleRouteOriginalDA = handleRoute;
+handleRoute = function() {
+    const hash = window.location.hash || '#/';
+    if (!hash.startsWith('#/departamento/')) STATE.departamentoSubAtivo = 'Todos';
+    if (hash !== '#/ofertas') STATE.ofertaGrupoAtivo = 'Todos';
+    if (hash === '#/' || hash === '') STATE.sectionSearchQuery = '';
+    handleRouteOriginalDA();
+    atualizarBuscaSecaoVisual();
+};
+
+renderDepartamentoCompleto = function(cat) {
+    let html = '';
+    let seoProducts = [];
+    const busca = getSectionSearchQuery();
+
+    if (cat === 'Ofertas' || cat === 'Ofertas do Dia') {
+        document.title = `Ofertas - Dona Antônia`;
+
+        let todasOfertas = STATE.prods
+            .filter(p => p.categoria !== 'Cestas' && Number(p.discountPercent || 0) > 0)
+            .sort((a,b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || a.name.localeCompare(b.name));
+
+        if (STATE.ofertaGrupoAtivo !== 'Todos') {
+            todasOfertas = todasOfertas.filter(p => String(p.discountPercent) === String(STATE.ofertaGrupoAtivo));
+        }
+
+        todasOfertas = filtrarListaPorBuscaSecao(todasOfertas);
+        seoProducts = todasOfertas;
+
+        html = `<div style="padding: 0;">`;
+        if (STATE.ofertaGrupoAtivo === 'Todos') {
+            DISCOUNT_GROUPS.forEach(pct => {
+                let grupo = todasOfertas.filter(p => Number(p.discountPercent || 0) === pct);
+                if (grupo.length > 0) {
+                    html += `<h3 class="subcat-title">${pct}% de desconto</h3><div class="products-grid" style="margin: 0;">${grupo.map(p => renderCardHTML(p)).join('')}</div>`;
+                }
+            });
+        } else {
+            html += `<div class="products-grid" style="margin: 0;">${todasOfertas.map(p => renderCardHTML(p)).join('')}</div>`;
+        }
+        if (!todasOfertas.length) {
+            html += `<div style="padding:40px 20px;text-align:center;color:var(--text-light);font-weight:800;background:#fff;border-radius:18px;margin:10px;">Nenhuma oferta encontrada${busca ? ' para essa busca' : ''}.</div>`;
+        }
+        html += `</div>`;
+        $('vitrine').innerHTML = html;
+        updateCollectionSeo('Ofertas', seoProducts);
+        lazyLoadImages();
+        return;
+    }
+
+    document.title = `${cat} - Dona Antônia`;
+    let prodsCat = STATE.prods.filter(p => p.categoria === cat);
+    if (STATE.departamentoSubAtivo && STATE.departamentoSubAtivo !== 'Todos') {
+        prodsCat = prodsCat.filter(p => p.subcategoria === STATE.departamentoSubAtivo);
+    }
+    prodsCat = filtrarListaPorBuscaSecao(prodsCat);
+    seoProducts = prodsCat;
+
+    const subs = Array.from(new Set(prodsCat.map(p => p.subcategoria || 'Produtos'))).sort((a,b) => a.localeCompare(b));
+    html = `<div style="padding: 0;">`;
+
+    if (!prodsCat.length) {
+        html += `<div style="padding:40px 20px;text-align:center;color:var(--text-light);font-weight:800;background:#fff;border-radius:18px;margin:10px;">Nenhum produto encontrado${busca ? ' para essa busca' : ''}.</div>`;
+    } else {
+        subs.forEach(sub => {
+            let lista = prodsCat.filter(p => (p.subcategoria || 'Produtos') === sub);
+            if (lista.length) {
+                html += `<h3 class="subcat-title">${sub}</h3><div class="products-grid" style="margin: 0;">${lista.map(p => renderCardHTML(p)).join('')}</div>`;
+            }
+        });
+    }
+    html += `</div>`;
+    $('vitrine').innerHTML = html;
+    updateCollectionSeo(cat, seoProducts);
+    lazyLoadImages();
+};
+
+renderCombos = function() {
+    const busca = getSectionSearchQuery();
+    let combos = dynamicCombos.filter(c => itemCombinaBuscaDA({ name: c.nome, id: c.id }, busca));
+    let html = `<div style="padding: 0;"><div class="products-grid">`;
+
+    if (combos.length === 0) {
+        html += `<div style="padding: 40px; text-align: center; color: var(--text-light); grid-column: 1/-1; background:#fff; border-radius:18px; font-weight:800;">Nenhum combo promocional ativo${busca ? ' para essa busca' : ' no momento'}.</div>`;
+    }
+
+    combos.forEach(combo => {
+        let displayPrice = Number(combo.preco || 0);
+        let crossedPrice = Number(combo.precoOriginal || 0) > displayPrice ? Number(combo.precoOriginal || 0) : null;
+        let oldPriceHtml = crossedPrice ? `<div class="old-price" style="font-size: 14px; margin-bottom: 2px;">${fmt(crossedPrice)}</div>` : '';
+        let desconto = Number(combo.desconto_percentual || 0);
+
+        html += `
+        <div class="product-card-list combo-card-clean" onclick="openBasketDetail('${combo.id}')">
+            <div class="basket-img-box">
+                <img src="${escapeAttrDA(combo.imagem)}" alt="${escapeAttrDA(combo.nome)}" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'">
+                ${desconto > 0 ? `<div style="position:absolute;top:10px;left:10px;background:#fff1f2;color:#be123c;border:1px solid #fecdd3;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:950;">-${desconto}%</div>` : ''}
+            </div>
+            <div class="product-details">
+                <div class="embalagem-tag-text">COMBO PROMOCIONAL</div>
+                <div class="product-name-list">${combo.nome}</div>
+                <div class="combo-validade-mini">${combo.validade_combo ? 'Oferta até ' + new Date(combo.validade_combo).toLocaleDateString('pt-BR') : 'Oferta por tempo limitado'}</div>
+                <div class="card-bottom-row">
+                    <div class="price-container">
+                        ${oldPriceHtml}
+                        <div class="tag-preco-list">${fmt(displayPrice)}</div>
+                    </div>
+                    <div class="card-action-area"><div class="btn-quick-add-list">${iconPlus}</div></div>
+                </div>
+            </div>
+        </div>`;
+    });
+
+    html += `</div></div>`;
+    $('vitrine').innerHTML = html;
+    lazyLoadImages();
+};
+
+const renderCestasOriginalDA = renderCestas;
+renderCestas = function() {
+    const busca = getSectionSearchQuery();
+    if (!busca) return renderCestasOriginalDA();
+
+    let html = `<div style="padding: 0;"><div class="products-grid">`;
+    const filtradas = BASKETS.filter(b => itemCombinaBuscaDA({ name: b.nome, id: b.id }, busca));
+
+    if (!filtradas.length) {
+        html += `<div style="padding: 40px; text-align: center; color: var(--text-light); grid-column: 1/-1; background:#fff; border-radius:18px; font-weight:800;">Nenhuma cesta encontrada para essa busca.</div>`;
+    }
+
+    filtradas.forEach(basket => {
+        let prices = calculateBasketPrices(basket.id);
+        let crossedPrice = prices.atacado > 0 ? prices.original : null;
+        let oldPriceHtml = crossedPrice ? `<div class="old-price" style="font-size: 14px; margin-bottom: 2px;">${fmt(crossedPrice)}</div>` : '';
+        html += `
+        <div class="product-card-list basket-card-clean" onclick="openBasketDetail('${basket.id}')">
+            <div class="basket-img-box">
+                <img src="${basket.imagem}" alt="${basket.nome}" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'">
+            </div>
+            <div class="product-details">
+                <div class="embalagem-tag-text">CESTA BÁSICA</div>
+                <div class="product-name-list">${basket.nome}</div>
+                <div class="card-bottom-row">
+                    <div class="price-container">${oldPriceHtml}<div class="tag-preco-list">${fmt(prices.final)}</div></div>
+                    <div class="card-action-area"><div class="btn-quick-add-list">${iconPlus}</div></div>
+                </div>
+            </div>
+        </div>`;
+    });
+    html += `</div></div>`;
+    $('vitrine').innerHTML = html;
+    lazyLoadImages();
+};
+
+window.renderCatalogoGrid = function(cat) {
+    let filteredProds = STATE.prods.filter(p => {
+        if (p.categoria === 'Cestas') return false;
+        if (cat === 'Todos') return true;
+        return p.categoria === cat;
+    });
+
+    filteredProds = filtrarListaPorBuscaSecao(filteredProds);
+
+    if (cat === 'Todos' && !getSectionSearchQuery()) {
+        filteredProds = filteredProds.slice(0, 60);
+    }
+
+    renderCatalogoGridInto('catalogo-grid-container', filteredProds);
+};
+
+window.changeCatalogoCategory = function(cat) {
+    STATE.activeCatalogoCat = cat;
+    atualizarTopbarDaRota(window.location.hash || '#/catalogo');
+    renderCatalogoGrid(cat);
+    $('vitrine').scrollTo({ top: 0, behavior: 'auto' });
+};
+
+async function carregarCombosComCacheSite() {
+    const cache = readComboCache();
+    const hasFresh = cache && (Date.now() - Number(cache.savedAt || 0) < COMBOS_CACHE_MAX_AGE);
+    if (cache && cache.data) rawCombosSistema = normalizarListaCombosSite(cache.data);
+
+    try {
+        if (!hasFresh) {
+            const fresh = await fetchCombosSistema();
+            rawCombosSistema = fresh;
+            saveComboCache(fresh);
+        }
+    } catch (e) {
+        console.warn('Não foi possível atualizar combos agora:', e);
+    }
+}
+
+async function init() {
+    loadCart();
+    updateTotals();
+
+    const cache = readProductCache();
+    const hasFreshEnoughCache = cache && (Date.now() - Number(cache.savedAt || 0) < PRODUCT_CACHE_MAX_AGE);
+    let renderedFromCache = false;
+
+    if (cache && cache.data) {
+        await carregarCombosComCacheSite();
+        renderedFromCache = applyProductsAndRender(cache.data, true);
+    } else {
+        $('vitrine').innerHTML = `<div style="padding:28px 20px;text-align:center;color:var(--text-light);font-weight:700;">Carregando produtos...</div>`;
+    }
+
+    try {
+        if (!hasFreshEnoughCache) {
+            const [freshData] = await Promise.all([
+                fetchWithCache('https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json'),
+                carregarCombosComCacheSite()
+            ]);
+            if (applyProductsAndRender(freshData, true)) {
+                saveProductCache(freshData);
+            }
+        } else {
+            await carregarCombosComCacheSite();
+            if (cache && cache.data) {
+                applyProductsAndRender(cache.data, true);
+            } else if (!renderedFromCache) {
+                handleRoute();
+            }
+        }
+    } catch (e) {
+        console.error("Erro ao atualizar produtos:", e);
+        if (!renderedFromCache) {
+            $('vitrine').innerHTML = `<div style="padding:28px 20px;text-align:center;background:#fff;border-radius:18px;margin:10px;color:var(--text-light);font-weight:700;">Não foi possível carregar os produtos agora. Verifique a conexão e tente novamente.</div>`;
+        }
+    }
+}
+
+            document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
