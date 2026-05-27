@@ -2144,8 +2144,7 @@
             let tagEmbalagem = getDiscountLineHtml(prod, embalagem);
 
             let atacadoTag = (!isBasketItem) ? `<div style="font-size: 12px; color: #047857; font-weight: 600; margin-top: 6px; line-height: 1.3;">A partir de 3un:<br>pague ${fmt(prod.price * 0.95)}/un</div>` : '';
-            let onClickAction = isBasketItem ? "" : `onclick="window.location.hash='#/produto/${getProductRouteKey(prod)}'"`;
-
+let onClickAction = `onclick="window.location.hash='#/produto/${getProductRouteKey(prod)}'"`;
             let controlsHtml = '';
             let cardContent = '';
 
@@ -2162,8 +2161,8 @@
                     ${esgotadoTag}
                     <div class="basket-item-main">
                         <div class="img-wrapper" style="width: 100px; height: 100px; border-radius: 12px; overflow: hidden; background: #fff; border: 1px solid var(--border-light); flex-shrink: 0;">
-                            <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" loading="lazy" decoding="async" alt="${prod.name}" onerror="this.src='${errorImgFallback}'" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;">
-                        </div>
+<img src="${prod.img || errorImgFallback}" class="product-icon-list" loading="lazy" decoding="async" alt="${prod.name}" onerror="this.src='${errorImgFallback}'" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;">
+    </div>
                         <div class="product-details" style="padding: 0; align-items: flex-start; justify-content: flex-start; text-align: left; flex: 1;">
                             ${tagEmbalagem}
                             <div class="product-name-list" style="margin-bottom: 4px;">${prod.name}</div>
@@ -2899,11 +2898,19 @@ function cancelarDescontoComboSeQuebrou() {
 function renderComboItemAmarradoHTML(item) {
     const p = item.pObj;
     const qtd = Number(item.qty || 1);
+    const rotaProduto = getProductRouteKey(p);
 
     return `
-        <div class="product-card-list combo-locked-item" style="cursor:default;">
+        <div class="product-card-list combo-locked-item" 
+             onclick="window.location.hash='#/produto/${rotaProduto}'" 
+             style="cursor:pointer;">
             <div class="img-wrapper">
-                <img src="${p.img || errorImgFallback}" class="product-icon-list" onerror="this.src='${errorImgFallback}'">
+                <img src="${p.img || errorImgFallback}" 
+                     class="product-icon-list" 
+                     loading="lazy" 
+                     decoding="async" 
+                     alt="${p.name || p.nome || ''}" 
+                     onerror="this.src='${errorImgFallback}'">
             </div>
             <div class="product-details">
                 <div>
@@ -2989,8 +2996,11 @@ function renderComboItemAmarradoHTML(item) {
         }
     });
 
-    container.innerHTML = html; 
-    
+container.innerHTML = html;
+
+if (typeof lazyLoadImages === 'function') {
+    lazyLoadImages();
+}    
     let dyn = getBasketDynamicPrice(basket);
     let diferencaFixa = isCombo ? 0 : dyn.taxaExtra; 
 
