@@ -4606,19 +4606,8 @@ function slugComboImagemSite(value) {
         .replace(/^-+|-+$/g, '') || 'combo';
 }
 
-function slugComboImagemSite(value) {
-    return String(value || 'combo')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-+|-+$/g, '') || 'combo';
-}
-
 function normalizarImagemComboSite(combo) {
-    const img = combo.url_imagem || combo.imagem || combo.capa || combo.image || '';
+    let img = combo.url_imagem || combo.imagem || combo.capa || combo.image || '';
 
     if (img && typeof img === 'string') {
         let clean = img.trim();
@@ -4627,11 +4616,11 @@ function normalizarImagemComboSite(combo) {
             return clean;
         }
 
-        clean = clean.replace(/^(\.\.\/)+/g, '');
-        clean = clean.replace(/^\.\/+/g, '');
-        clean = clean.replace(/^\/+/g, '');
+        clean = clean
+            .replace(/^(\.\.\/)+/g, '')
+            .replace(/^\.\/+/g, '')
+            .replace(/^\/+/g, '');
 
-        // O PIM pode salvar como site/img/combos/..., mas no site o correto é img/combos/...
         if (clean.startsWith('site/img/combos/')) {
             clean = clean.replace('site/img/combos/', 'img/combos/');
         }
@@ -4640,11 +4629,11 @@ function normalizarImagemComboSite(combo) {
             clean = clean.replace('site/', '');
         }
 
-        return clean;
+        return clean.split('?')[0] + '?v=' + Date.now();
     }
 
     const nomeArquivo = slugComboImagemSite(combo.nome || combo.id);
-    return `img/combos/${nomeArquivo}.webp`;
+    return `img/combos/${nomeArquivo}.webp?v=${Date.now()}`;
 }
 function converterComboNovoParaSite(combo) {
     const itens = Array.isArray(combo.itens) ? combo.itens : [];
