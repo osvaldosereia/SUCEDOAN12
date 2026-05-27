@@ -1073,23 +1073,10 @@ let finalBase64 = isBase64Ready
         await GitHubAPI.saveFile(`site/produtos_meta.json`, jsonFinal, `PIM: Meta Ads JSON Atualizado`);
     }, false);
 
-    // 4. Combos ficam separados dos produtos para não interferir no Make nem no produtos.json
-    enqueueTask("Salvar Combos no Firebase e GitHub", async () => {
-        await processarStatusCombos();
-        const combosLimpos = sanitizeCombosForExport(combosDoSistema);
-        const combosPorId = {};
-        combosLimpos.forEach(c => { if (c.id) combosPorId[c.id] = c; });
-
-        const res = await fetchComTimeout(FirebaseAPI.baseURL + "combos.json", {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(combosPorId)
-        }, 30000, "Salvar combos no Firebase");
-
-        if (!res.ok) throw new Error("Erro ao salvar combos no Firebase: HTTP " + res.status);
-        await GitHubAPI.saveFile(`site/combos.json`, combosPorId, `PIM: Atualização de Combos`);
-    }, false);
-}
+   // 4. Combos ficam separados dos produtos para não interferir no Make nem no produtos.json
+enqueueTask("Salvar Combos no Firebase e GitHub", async () => {
+    await salvarCombosNaNuvemAgora();
+}, false);
 
         async function getPastaUploadAtiva(tipo = 'produto') {
             let limit = 990; let folderIndex = 1;
@@ -1125,14 +1112,20 @@ let finalBase64 = isBase64Ready
 
                     await GitHubAPI.saveFile(`${pastaDestinoGithub}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName}`, true);
 
-                    if (tipo === 'combo') {
-                        const cRef = combosDoSistema.find(x => x.id === chave);
-                        if (cRef) {
-                            cRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
-                            cRef.last_update = Date.now();
-                            await saveCombosLocally();
-                        }
-                    } else {
+                    if (tipo === "combo") {
+    const cRef = combosDoSistema.find(x => x.id === chave);
+    if (cRef) {
+        cRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
+        cRef.last_update = Date.now();
+
+        await saveCombosLocally();
+        await salvarCombosNaNuvemAgora();
+
+        renderizarComboAtual();
+        renderizarListaCombos();
+    }
+}
+                    else {
                         const pRef = products.find(x => x.codigo === chave); 
                         if(pRef) { 
                             pRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`; 
@@ -2685,21 +2678,26 @@ function renderizarItensCombo() {
 
 async function salvarCombosNaNuvemAgora() {
     await processarStatusCombos(false);
+    await saveCombosLocally();
 
     const combosLimpos = sanitizeCombosForExport(combosDoSistema);
     const combosPorId = {};
 
     combosLimpos.forEach(c => {
         if (!c.id) return;
-        combosPorId[normalizarIdFirebase(c.id)] = {
+
+        const idSeguro = normalizarIdFirebase(c.id);
+
+        combosPorId[idSeguro] = {
             ...c,
-            id: normalizarIdFirebase(c.id)
+            id: idSeguro,
+            last_update: c.last_update || Date.now()
         };
     });
 
     const res = await fetchComTimeout(FirebaseAPI.baseURL + "combos.json", {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(combosPorId)
     }, 30000, "Salvar combos no Firebase");
 
@@ -2707,43 +2705,63 @@ async function salvarCombosNaNuvemAgora() {
         throw new Error("Erro ao salvar combos no Firebase: HTTP " + res.status);
     }
 
-    await GitHubAPI.saveFile(
-        `site/combos.json`,
-        combosPorId,
-        `PIM: Atualização de Combos`
-    );
+    // GitHub fica como backup. Se falhar, o combo não deve deixar de ir para o Firebase.
+    try {
+        await GitHubAPI.saveFile(
+            "site/combos.json",
+            combosPorId,
+            "PIM: Atualização de Combos"
+        );
+    } catch (e) {
+        console.warn("Combo salvo no Firebase, mas falhou backup GitHub:", e);
+        mostrarAlerta("Combo salvo no Firebase. Backup GitHub falhou.", "aviso");
+    }
+
+    return combosPorId;
 }
 
 async function salvarComboAtual() {
     const c = getComboAtual();
     if (!c) return;
 
-    c.nome = document.getElementById('combo-nome').value.trim();
-    c.desconto_percentual = parseFloat(document.getElementById('combo-desconto').value) || 10;
-    c.validade_combo = document.getElementById('combo-validade').value || '';
+    c.nome = document.getElementById("combo-nome").value.trim();
+    c.desconto_percentual = parseFloat(document.getElementById("combo-desconto").value) || 10;
+    c.validade_combo = document.getElementById("combo-validade").value || "";
 
-    if (!c.nome) return alert('Informe o nome do combo.');
-    if (!c.itens || !c.itens.length) return alert('Adicione pelo menos um produto ao combo.');
-    if (!c.validade_combo) return alert('Informe a data final da oferta do combo.');
+    if (!c.nome) return alert("Informe o nome do combo.");
+    if (!c.itens || !c.itens.length) return alert("Adicione pelo menos um produto ao combo.");
+    if (!c.validade_combo) return alert("Informe a data final da oferta do combo.");
 
     recalcularCombo(c);
 
-    c.ativo = true;
-    c.motivo_desativacao = '';
+    const motivo = validarComboPodeAtivar(c);
+
+    if (motivo) {
+        c.ativo = false;
+        c.motivo_desativacao = motivo;
+    } else {
+        c.ativo = true;
+        c.motivo_desativacao = "";
+    }
+
     c.last_update = Date.now();
 
     await saveCombosLocally();
-    await processarStatusCombos();
 
     renderizarComboAtual();
     renderizarListaCombos();
 
     try {
         await salvarCombosNaNuvemAgora();
-        mostrarAlerta('Combo salvo e enviado para a nuvem.', 'sucesso');
+
+        if (c.ativo) {
+            mostrarAlerta("Combo salvo, ativado e enviado para a nuvem.", "sucesso");
+        } else {
+            mostrarAlerta("Combo salvo na nuvem, mas ficou inativo: " + c.motivo_desativacao, "aviso");
+        }
     } catch (e) {
         console.error(e);
-        mostrarAlerta('Combo salvo localmente, mas falhou ao enviar para a nuvem.', 'erro');
+        mostrarAlerta("Combo salvo localmente, mas falhou ao enviar para a nuvem: " + e.message, "erro");
     }
 }
 
@@ -2752,7 +2770,7 @@ async function editarCombo(idCodificado) {
     const existe = combosDoSistema.some(c => c.id === id);
 
     if (!existe) {
-        alert('Combo não encontrado para edição.');
+        alert("Combo não encontrado para edição.");
         return;
     }
 
@@ -2761,7 +2779,7 @@ async function editarCombo(idCodificado) {
     renderizarComboAtual();
     renderizarListaCombos();
 
-    const nomeInput = document.getElementById('combo-nome');
+    const nomeInput = document.getElementById("combo-nome");
     if (nomeInput) nomeInput.focus();
 }
 
@@ -2770,7 +2788,7 @@ async function alternarStatusCombo(idCodificado) {
     const c = combosDoSistema.find(x => x.id === id);
 
     if (!c) {
-        alert('Combo não encontrado.');
+        alert("Combo não encontrado.");
         return;
     }
 
@@ -2779,10 +2797,10 @@ async function alternarStatusCombo(idCodificado) {
         if (motivo) return alert(motivo);
 
         c.ativo = true;
-        c.motivo_desativacao = '';
+        c.motivo_desativacao = "";
     } else {
         c.ativo = false;
-        c.motivo_desativacao = 'Desativado manualmente';
+        c.motivo_desativacao = "Desativado manualmente";
     }
 
     c.last_update = Date.now();
@@ -2794,10 +2812,10 @@ async function alternarStatusCombo(idCodificado) {
 
     try {
         await salvarCombosNaNuvemAgora();
-        mostrarAlerta('Status do combo atualizado.', 'sucesso');
+        mostrarAlerta("Status do combo atualizado na nuvem.", "sucesso");
     } catch (e) {
         console.error(e);
-        mostrarAlerta('Status alterado localmente, mas falhou ao enviar para a nuvem.', 'erro');
+        mostrarAlerta("Status alterado localmente, mas falhou ao enviar para a nuvem: " + e.message, "erro");
     }
 }
 
@@ -2806,7 +2824,7 @@ async function excluirCombo(idCodificado) {
     const c = combosDoSistema.find(x => x.id === id);
 
     if (!c) {
-        alert('Combo não encontrado para excluir.');
+        alert("Combo não encontrado para excluir.");
         return;
     }
 
@@ -2829,40 +2847,48 @@ async function excluirCombo(idCodificado) {
 
     try {
         await salvarCombosNaNuvemAgora();
-        mostrarAlerta('Combo excluído da nuvem.', 'sucesso');
+        mostrarAlerta("Combo excluído da nuvem.", "sucesso");
     } catch (e) {
         console.error(e);
-        mostrarAlerta('Combo excluído localmente, mas falhou ao atualizar a nuvem.', 'erro');
+        mostrarAlerta("Combo excluído localmente, mas falhou ao atualizar a nuvem: " + e.message, "erro");
     }
 }
 
 function validarComboPodeAtivar(c) {
-    if (!c.nome) return 'Informe o nome do combo antes de ativar.';
-    if (!c.itens || !c.itens.length) return 'Adicione produtos ao combo antes de ativar.';
-    if (!c.validade_combo) return 'Informe a data final da oferta do combo.';
+    if (!c.nome) return "Informe o nome do combo antes de ativar.";
+    if (!c.itens || !c.itens.length) return "Adicione produtos ao combo antes de ativar.";
+    if (!c.validade_combo) return "Informe a data final do combo.";
 
     const fim = new Date(c.validade_combo);
     if (isNaN(fim.getTime()) || fim.getTime() < Date.now()) {
-        return 'A data final do combo já passou.';
+        return "A data final do combo já passou.";
     }
 
     for (const item of c.itens) {
-        const p = products.find(x => x.codigo === item.sku);
+        const skuItem = String(item.sku || item.codigo || "");
+        const firebaseItem = String(item.firebaseKey || "");
+
+        const p = products.find(x =>
+            String(x.codigo || "") === skuItem ||
+            String(x.id || "") === skuItem ||
+            String(x.firebaseKey || "") === firebaseItem ||
+            String(x.firebaseKey || "") === skuItem
+        );
 
         if (!p) {
-            return `Produto ${item.sku} não encontrado. Combo não pode ser ativado.`;
+            return `Produto ${skuItem || item.nome || "sem código"} não encontrado. Combo não pode ser ativado.`;
         }
 
         if ((parseFloat(p.estoque) || 0) < (parseFloat(item.qtd) || 1)) {
-            return `Produto sem estoque suficiente: ${p.nome || item.sku}`;
+            return `Produto sem estoque suficiente: ${p.nome || skuItem}`;
         }
 
-        if (p.situacao === 'I') {
-            return `Produto inativo: ${p.nome || item.sku}`;
+        if (p.situacao === "I") {
+            return `Produto inativo: ${p.nome || skuItem}`;
         }
     }
 
-    return '';
+    return "";
 }
 
 async function processarStatusCombos(salvarLocal = true) {
@@ -2879,6 +2905,12 @@ async function processarStatusCombos(salvarLocal = true) {
             c.last_update = Date.now();
             mudou = true;
         }
+
+        if (!motivo && c.motivo_desativacao && c.motivo_desativacao !== "Desativado manualmente") {
+            c.motivo_desativacao = "";
+            c.last_update = Date.now();
+            mudou = true;
+        }
     });
 
     if (mudou && salvarLocal) {
@@ -2887,7 +2919,7 @@ async function processarStatusCombos(salvarLocal = true) {
 }
 
 function renderizarListaCombos() {
-    const box = document.getElementById('lista-combos-criados');
+    const box = document.getElementById("lista-combos-criados");
     if (!box) return;
 
     if (!combosDoSistema.length) {
@@ -2898,33 +2930,33 @@ function renderizarListaCombos() {
     box.innerHTML = combosDoSistema.map(c => {
         recalcularCombo(c);
 
-        const img = c.url_imagem || 'https://placehold.co/120x120/f4f4f5/a1a1aa?text=COMBO';
+        const img = c.url_imagem || "https://placehold.co/120x120/f4f4f5/a1a1aa?text=COMBO";
         const idSeguro = comboIdAttr(c.id);
 
-        return `<div class="combo-card" style="${c.id === comboEditandoId ? 'border-color:#0284c7;' : ''}">
+        return `<div class="combo-card" style="${c.id === comboEditandoId ? "border-color:#0284c7;" : ""}">
             <img class="combo-cover" src="${img}" onclick="editarCombo('${idSeguro}')">
             <div style="flex:1; min-width:0;">
                 <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-                    <strong style="font-size:13px;">${escapeHTMLCombo(c.nome || 'Combo sem nome')}</strong>
+                    <strong style="font-size:13px;">${escapeHTMLCombo(c.nome || "Combo sem nome")}</strong>
                     ${c.ativo ? '<span class="mini-badge success">ATIVO</span>' : '<span class="mini-badge danger">INATIVO</span>'}
                 </div>
 
                 <small style="display:block;color:var(--text-secondary);font-weight:800;margin-top:4px;">
-                    ${(c.itens && c.itens.length) || 0} produto(s) • ${c.desconto_percentual || 0}% off • ${dinheiroBR(c.preco_combo)} • Fim: ${escapeHTMLCombo(c.validade_combo || 'sem data')}
+                    ${(c.itens && c.itens.length) || 0} produto(s) • ${c.desconto_percentual || 0}% off • ${dinheiroBR(c.preco_combo)} • Fim: ${escapeHTMLCombo(c.validade_combo || "sem data")}
                 </small>
 
-                ${c.combo_legado_id ? `<small style="display:block;color:#0369a1;font-weight:800;margin-top:4px;">Migrado do combo antigo: ${escapeHTMLCombo(c.combo_legado_id)}</small>` : ''}
+                ${c.combo_legado_id ? `<small style="display:block;color:#0369a1;font-weight:800;margin-top:4px;">Migrado do combo antigo: ${escapeHTMLCombo(c.combo_legado_id)}</small>` : ""}
 
-                ${c.motivo_desativacao ? `<small style="display:block;color:var(--danger);font-weight:800;margin-top:4px;">${escapeHTMLCombo(c.motivo_desativacao)}</small>` : ''}
+                ${c.motivo_desativacao ? `<small style="display:block;color:var(--danger);font-weight:800;margin-top:4px;">${escapeHTMLCombo(c.motivo_desativacao)}</small>` : ""}
 
                 <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
                     <button class="nav-btn" style="padding:6px 8px;font-size:10px;" onclick="editarCombo('${idSeguro}')">EDITAR</button>
-                    <button class="nav-btn ${c.ativo ? '' : 'primary'}" style="padding:6px 8px;font-size:10px;" onclick="alternarStatusCombo('${idSeguro}')">${c.ativo ? 'DESATIVAR' : 'ATIVAR'}</button>
+                    <button class="nav-btn ${c.ativo ? "" : "primary"}" style="padding:6px 8px;font-size:10px;" onclick="alternarStatusCombo('${idSeguro}')">${c.ativo ? "DESATIVAR" : "ATIVAR"}</button>
                     <button class="nav-btn" style="padding:6px 8px;font-size:10px;color:var(--danger);border-color:#fecaca;" onclick="excluirCombo('${idSeguro}')">EXCLUIR</button>
                 </div>
             </div>
         </div>`;
-    }).join('');
+    }).join("");
 
     lucide.createIcons();
 }
@@ -2933,8 +2965,9 @@ function abrirEditorImagemComboAtual() {
     const c = getComboAtual();
     if (!c) return;
 
-    openCanvasSidebar(c.id, 'combo');
+    openCanvasSidebar(c.id, "combo");
 }
+
 
         // ==========================================================
         // EDITOR DE CANVAS (NITIDEZ INCLUÍDA)
@@ -3040,20 +3073,61 @@ function abrirEditorImagemComboAtual() {
             const base64full = canvas.toDataURL('image/webp', 0.9); 
             const base64data = base64full.split(',')[1];
 
-            if (tipo === 'combo') {
-                const c = combosDoSistema.find(x => x.id === chave);
-                if (!c) return;
-                c.url_imagem = base64full;
-                c.last_update = Date.now();
-                await saveCombosLocally();
+           if (tipo === "combo") {
+    const c = combosDoSistema.find(x => x.id === chave);
+    if (!c) return;
 
-                imageQueue.push({ tipo: 'combo', id: chave, sku: chave, base64data: base64data }); 
-                updateImageBadge(); 
-                closeSidebar('editor-sidebar'); 
-                renderizarComboAtual();
-                renderizarListaCombos();
-                return;
-            }
+    c.url_imagem = base64full;
+    c.last_update = Date.now();
+
+    await saveCombosLocally();
+
+    closeSidebar("editor-sidebar");
+    renderizarComboAtual();
+    renderizarListaCombos();
+
+    try {
+        mostrarAlerta("Enviando capa do combo para a nuvem...", "aviso");
+
+        const pastaDestinoGithub = await getPastaUploadAtiva("combo");
+        const pastaDestinoLocal = "../" + pastaDestinoGithub;
+        const idSeguro = normalizarIdFirebase(chave);
+        const fileName = `combo_${idSeguro}.webp`;
+
+        await GitHubAPI.saveFile(
+            `${pastaDestinoGithub}/${fileName}`,
+            base64data,
+            `PIM Sync: Imagem ${fileName}`,
+            true
+        );
+
+        c.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
+        c.last_update = Date.now();
+
+        await saveCombosLocally();
+        await salvarCombosNaNuvemAgora();
+
+        renderizarComboAtual();
+        renderizarListaCombos();
+
+        mostrarAlerta("Capa do combo aplicada e enviada para a nuvem.", "sucesso");
+    } catch (e) {
+        console.error(e);
+
+        imageQueue.push({
+            tipo: "combo",
+            id: chave,
+            sku: chave,
+            base64data: base64data
+        });
+
+        updateImageBadge();
+
+        mostrarAlerta("A capa ficou salva localmente e entrou na fila de imagens.", "aviso");
+    }
+
+    return;
+}
 
             const p = products.find(x => x.codigo === chave); 
             if (!p) return;
