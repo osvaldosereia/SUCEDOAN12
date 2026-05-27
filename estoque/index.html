@@ -148,13 +148,13 @@
     <input type="text" id="cfg-repo" placeholder="Repositório GitHub">
     <input type="password" id="cfg-token" placeholder="Token GitHub">
     
-    <button onclick="saveDataToFirebase()" style="background:#22c55e; color:#fff; margin-top:10px;">☁️ SALVAR PRODUTO ATUAL NA NUVEM</button>
+    <button onclick="saveDataToFirebase()" style="background:#22c55e; color:#fff; margin-top:10px;">☁️ SALVAR ALTERAÇÕES NO FIREBASE</button>
     <button onclick="syncData({force:true})" style="background:#2563eb; color:#fff;">🔄 PUXAR DADOS DA NUVEM</button>
     <button onclick="atualizarCatalogoMetaGithub()" style="background:#16a34a; color:#fff;">📦 ATUALIZAR CATÁLOGO META</button>
     <button onclick="saveConfig()" style="background:#0f172a; color:#fff;">🔐 SALVAR CREDENCIAIS</button>
     <button onclick="toggleConfig()" style="background:#ef4444; color:#fff; margin-top: 20px;">❌ FECHAR</button>
     
-    <p style="font-size: 10px; color: #64748b; text-align: center; margin-top: auto;">O sistema puxa o Firebase uma vez por dia e salva apenas o produto editado, reduzindo consumo e risco de conflito.</p>
+    <p style="font-size: 10px; color: #64748b; text-align: center; margin-top: auto;">Firebase é o banco oficial. O cache local é apenas apoio de leitura; o salvamento envia somente os campos alterados com proteção contra conflito.</p>
 </div>
 
 <div id="modal-foto" onclick="this.style.display='none'">
@@ -169,23 +169,37 @@
     const LOCAL_LAST_SYNC_KEY = "sucedoan_last_sync";
 
     let products = [];
-let currentProd = null;
-let camposAlteradosProdutoAtual = {};
-const html5QrCode = new Html5Qrcode("reader");
+    let currentProd = null;
+    let camposAlteradosProdutoAtual = {};
+    let valoresOriginaisProdutoAtual = {};
+    let produtoSelecionadoEm = 0;
+    let sincronizacaoEmAndamento = false;
+    const CAMPOS_EDITAVEIS_ESTOQUE = ["estoque", "validade", "gtin", "embalagem", "gondola", "prateleira"];
+    const html5QrCode = new Html5Qrcode("reader");
 
     // ---------------------------------------------------------
     // CONVERSÃO DO NOVO FORMATO FIREBASE
     // Firebase novo: { "id_do_produto": { dados } }
     // Sistema interno: products = [ { dados }, { dados } ]
     // ---------------------------------------------------------
-    function gerarChaveProduto(produto) {
-        return String(
-            produto.id ||
-            produto.codigo ||
-            produto.gtin ||
-            Date.now() + Math.floor(Math.random() * 100000)
-        );
+function sanitizarChaveFirebase(chave) {
+        return String(chave || "")
+            .trim()
+            .replace(/[.#$\[\]\/]/g, "_");
     }
+
+    function gerarChaveProduto(produto) {
+        const chave = String(
+            (produto && produto.firebaseKey) ||
+            (produto && produto.id) ||
+            (produto && produto.codigo) ||
+            (produto && produto.gtin) ||
+            ""
+        ).trim();
+
+        return sanitizarChaveFirebase(chave || (Date.now() + "" + Math.floor(Math.random() * 100000)));
+    }
+
 
     function arrayParaObjetoPorId(lista) {
         const obj = {};
@@ -203,24 +217,36 @@ const html5QrCode = new Html5Qrcode("reader");
 
         return obj;
     }
-
-    function objetoPorIdParaArray(dados) {
+function objetoPorIdParaArray(dados) {
         if (!dados) return [];
 
+        // Cache local novo: { origem, atualizado_em, produtos: [...] }
+        if (dados && Array.isArray(dados.produtos)) {
+            return dados.produtos.filter(Boolean);
+        }
+
+        // Formato antigo: array direto.
         if (Array.isArray(dados)) {
             return dados.filter(Boolean);
         }
 
-        return Object.entries(dados).map(([firebaseKey, produto]) => ({
-            ...produto,
-            firebaseKey: firebaseKey,
-            id: String(produto.id || firebaseKey)
-        }));
+        // Formato correto do Firebase: { firebaseKey: { dados } }
+        if (typeof dados === "object") {
+            return Object.entries(dados).map(([firebaseKey, produto]) => ({
+                ...(produto || {}),
+                firebaseKey: String(firebaseKey),
+                id: String((produto && produto.id) || firebaseKey)
+            }));
+        }
+
+        return [];
+    }
+function getProdutoFirebaseKey(produto) {
+        const chave = gerarChaveProduto(produto);
+        if (!chave) throw new Error("Produto sem chave Firebase válida.");
+        return chave;
     }
 
-    function getProdutoFirebaseKey(produto) {
-        return String(produto.firebaseKey || gerarChaveProduto(produto));
-    }
 
     function getProdutoFirebaseUrl(produto) {
         return `${FIREBASE_PRODUTOS_BASE_URL}/${encodeURIComponent(getProdutoFirebaseKey(produto))}.json`;
@@ -233,10 +259,84 @@ const html5QrCode = new Html5Qrcode("reader");
         const dia = String(agora.getDate()).padStart(2, "0");
         return `${ano}-${mes}-${dia}`;
     }
-
-    async function salvarLocalmente() {
-        await localforage.setItem(LOCAL_PRODUCTS_KEY, products);
+async function salvarLocalmente() {
+        // CACHE LOCAL APENAS PARA ABRIR MAIS RÁPIDO E AJUDAR NA BUSCA.
+        // Nunca usar este cache para sobrescrever o Firebase.
+        const cache = {
+            origem: "firebase_cache_estoque_rapido",
+            atualizado_em: Date.now(),
+            produtos: Array.isArray(products) ? products : []
+        };
+        await localforage.setItem(LOCAL_PRODUCTS_KEY, cache);
     }
+
+    async function carregarCacheLocalProdutos() {
+        try {
+            const cache = await localforage.getItem(LOCAL_PRODUCTS_KEY);
+            return objetoPorIdParaArray(cache);
+        } catch (e) {
+            console.warn("Falha ao ler cache local:", e);
+            return [];
+        }
+    }
+
+    function normalizarValorCampo(valor, campo) {
+        if (valor === undefined || valor === null) return "";
+        if (campo === "estoque") return String(Number(valor || 0));
+        return String(valor).trim();
+    }
+
+    function valoresIguaisCampo(a, b, campo) {
+        return normalizarValorCampo(a, campo) === normalizarValorCampo(b, campo);
+    }
+
+    function capturarValoresEditaveis(produto) {
+        const snap = {};
+        CAMPOS_EDITAVEIS_ESTOQUE.forEach(campo => {
+            snap[campo] = produto ? produto[campo] : "";
+        });
+        return snap;
+    }
+
+    async function carregarProdutosFirebase() {
+        const res = await fetch(FIREBASE_URL + "?nocache=" + Date.now(), {
+            cache: "no-store"
+        });
+
+        if (!res.ok) {
+            throw new Error("Falha na comunicação com o Firebase: HTTP " + res.status);
+        }
+
+        const dadosFirebase = await res.json();
+        return autoFixDatabase(objetoPorIdParaArray(dadosFirebase));
+    }
+
+    async function lerProdutoFirebaseComEtag(produto) {
+        const url = getProdutoFirebaseUrl(produto) + "?nocache=" + Date.now();
+
+        const res = await fetch(url, {
+            method: "GET",
+            headers: { "X-Firebase-ETag": "true" },
+            cache: "no-store"
+        });
+
+        if (!res.ok) {
+            throw new Error("Erro ao ler produto individual no Firebase: HTTP " + res.status);
+        }
+
+        const etag = res.headers.get("ETag");
+        const dados = await res.json();
+
+        return {
+            etag,
+            produto: dados ? {
+                ...dados,
+                firebaseKey: getProdutoFirebaseKey(produto),
+                id: String(dados.id || getProdutoFirebaseKey(produto))
+            } : null
+        };
+    }
+
 
     function atualizarProdutoNoArray(produtoAtualizado) {
         const chaveAtual = String(produtoAtualizado.codigo || produtoAtualizado.id || produtoAtualizado.firebaseKey);
@@ -313,110 +413,186 @@ const html5QrCode = new Html5Qrcode("reader");
         }
         return objMeta;
     }
-
-    async function saveGenericFileGithub(cfg, path, contentBase64, message) {
+async function saveGenericFileGithub(cfg, path, contentBase64, message) {
         let sha = null;
         try {
-            const resGet = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`, { headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3+json" } });
-            if (resGet.ok) { const data = await resGet.json(); sha = data.sha; }
+            const resGet = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`, {
+                headers: {
+                    "Authorization": `Bearer ${cfg.token}`,
+                    "Accept": "application/vnd.github.v3+json"
+                },
+                cache: "no-store"
+            });
+            if (resGet.ok) {
+                const data = await resGet.json();
+                sha = data.sha;
+            }
         } catch(e) {}
 
         let bodyData = { message: message, content: contentBase64 };
         if (sha) bodyData.sha = sha;
 
-        await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`, {
-            method: 'PUT', headers: { "Authorization": `Bearer ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(bodyData)
-        });
-    }
-
-    async function saveDataToFirebase() {
-    if (!currentProd) {
-        alert("Selecione ou escaneie um produto antes de salvar.");
-        return;
-    }
-
-    if (!camposAlteradosProdutoAtual || Object.keys(camposAlteradosProdutoAtual).length === 0) {
-        alert("Nenhuma alteração foi feita neste produto.");
-        return;
-    }
-
-    try {
-        const firebaseKey = getProdutoFirebaseKey(currentProd);
-        currentProd.firebaseKey = firebaseKey;
-        currentProd.id = String(currentProd.id || firebaseKey);
-
-        const agora = Date.now();
-
-        // Primeiro lê a versão atual do Firebase.
-        // Assim o celular não trabalha em cima de uma versão cega/desatualizada.
-        const resGet = await fetch(getProdutoFirebaseUrl(currentProd) + "?nocache=" + Date.now(), {
-            cache: "no-store"
+        const resPut = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`, {
+            method: 'PUT',
+            headers: {
+                "Authorization": `Bearer ${cfg.token}`,
+                "Content-Type": "application/json",
+                "Accept": "application/vnd.github.v3+json"
+            },
+            body: JSON.stringify(bodyData)
         });
 
-        let produtoNuvem = null;
-
-        if (resGet.ok) {
-            produtoNuvem = await resGet.json();
+        if (!resPut.ok) {
+            let detalhe = "";
+            try {
+                const erro = await resPut.json();
+                detalhe = erro && erro.message ? " - " + erro.message : "";
+            } catch(e) {}
+            throw new Error("GitHub HTTP " + resPut.status + detalhe);
         }
-
-        if (!produtoNuvem) {
-            produtoNuvem = {};
-        }
-
-        // Monta um PATCH somente com os campos editados pelo funcionário.
-        // Isso preserva qualquer alteração feita pelo sistema principal.
-        const patchSeguro = {
-            ...camposAlteradosProdutoAtual,
-            id: String(currentProd.id || firebaseKey),
-            firebaseKey: firebaseKey,
-            codigo: currentProd.codigo || produtoNuvem.codigo || String(currentProd.id || firebaseKey),
-            last_update: agora,
-            last_update_estoque_rapido: agora
-        };
-
-        const resMain = await fetch(getProdutoFirebaseUrl(currentProd), {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(patchSeguro)
-        });
-
-        if (!resMain.ok) {
-            throw new Error("Erro ao guardar o produto no Firebase.");
-        }
-
-        // Atualiza o produto local mesclando nuvem + alterações do funcionário.
-        const produtoMesclado = {
-            ...produtoNuvem,
-            ...currentProd,
-            ...patchSeguro
-        };
-
-        currentProd = produtoMesclado;
-        atualizarProdutoNoArray(produtoMesclado);
-        await salvarLocalmente();
-
-        camposAlteradosProdutoAtual = {};
-
-        alert("✅ Produto salvo com segurança. Apenas os campos alterados foram enviados, sem apagar alterações do sistema principal.");
-
-    } catch (error) {
-        console.error(error);
-        alert("Falha ao guardar: " + error.message);
     }
-}
 
-    async function atualizarCatalogoMetaGithub() {
+async function saveDataToFirebase() {
+        if (!currentProd) {
+            alert("Selecione ou escaneie um produto antes de salvar.");
+            return;
+        }
+
+        if (!camposAlteradosProdutoAtual || Object.keys(camposAlteradosProdutoAtual).length === 0) {
+            alert("Nenhuma alteração foi feita neste produto.");
+            return;
+        }
+
+        try {
+            const firebaseKey = getProdutoFirebaseKey(currentProd);
+            currentProd.firebaseKey = firebaseKey;
+            currentProd.id = String(currentProd.id || firebaseKey);
+
+            // Lê somente o produto atual no Firebase e usa ETag para evitar escrita cega.
+            const leitura = await lerProdutoFirebaseComEtag(currentProd);
+            const produtoNuvem = leitura.produto;
+            const etag = leitura.etag;
+
+            if (!produtoNuvem) {
+                throw new Error("Produto não encontrado no Firebase. Puxe os dados da nuvem antes de salvar para evitar criar duplicado.");
+            }
+
+            // Proteção contra conflito:
+            // Se outro aparelho/sistema alterou o mesmo campo depois que este produto foi selecionado,
+            // o salvamento é cancelado e o funcionário deve recarregar.
+            const conflitos = [];
+            Object.keys(camposAlteradosProdutoAtual).forEach(campo => {
+                const valorNuvemAtual = produtoNuvem[campo];
+                const valorOriginalTela = valoresOriginaisProdutoAtual[campo];
+
+                if (!valoresIguaisCampo(valorNuvemAtual, valorOriginalTela, campo)) {
+                    conflitos.push({
+                        campo,
+                        nuvem: valorNuvemAtual,
+                        original: valorOriginalTela
+                    });
+                }
+            });
+
+            if (conflitos.length > 0) {
+                const lista = conflitos.map(c => `${c.campo}: Firebase="${c.nuvem ?? ""}" / Tela antiga="${c.original ?? ""}"`).join("\\n");
+                currentProd = produtoNuvem;
+                atualizarProdutoNoArray(produtoNuvem);
+                await salvarLocalmente();
+
+                // Atualiza a tela com a versão atual para o funcionário conferir.
+                document.getElementById("display-nome").innerText = produtoNuvem.nome || "Produto sem nome";
+                document.getElementById("val-estoque").value = produtoNuvem.estoque || 0;
+                document.getElementById("val-validade").value = formatDate(produtoNuvem.validade);
+                document.getElementById("val-gtin").value = produtoNuvem.gtin || "";
+                document.getElementById("val-embalagem").value = produtoNuvem.embalagem || "";
+                document.getElementById("val-gondola").value = produtoNuvem.gondola || "";
+                document.getElementById("val-prateleira").value = produtoNuvem.prateleira || "";
+
+                camposAlteradosProdutoAtual = {};
+                valoresOriginaisProdutoAtual = capturarValoresEditaveis(produtoNuvem);
+                produtoSelecionadoEm = Date.now();
+
+                throw new Error("Conflito detectado. Outro sistema alterou este mesmo campo antes do seu salvamento. Confira os dados atuais e altere novamente.\\n" + lista);
+            }
+
+            const agora = Date.now();
+
+            // Envia somente os campos realmente alterados.
+            const patchSeguro = {
+                ...camposAlteradosProdutoAtual,
+                id: String(currentProd.id || firebaseKey),
+                firebaseKey: firebaseKey,
+                codigo: currentProd.codigo || produtoNuvem.codigo || String(currentProd.id || firebaseKey),
+                last_update: agora,
+                last_update_estoque_rapido: agora
+            };
+
+            const headers = { "Content-Type": "application/json" };
+            if (etag) headers["If-Match"] = etag;
+
+            const resMain = await fetch(getProdutoFirebaseUrl(currentProd), {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify(patchSeguro)
+            });
+
+            if (resMain.status === 412) {
+                throw new Error("Conflito detectado no Firebase durante o salvamento. Puxe os dados da nuvem e tente novamente.");
+            }
+
+            if (!resMain.ok) {
+                throw new Error("Erro ao guardar o produto no Firebase: HTTP " + resMain.status);
+            }
+
+            const produtoMesclado = {
+                ...produtoNuvem,
+                ...patchSeguro,
+                firebaseKey: firebaseKey
+            };
+
+            currentProd = produtoMesclado;
+            atualizarProdutoNoArray(produtoMesclado);
+            await salvarLocalmente();
+
+            camposAlteradosProdutoAtual = {};
+            valoresOriginaisProdutoAtual = capturarValoresEditaveis(produtoMesclado);
+            produtoSelecionadoEm = Date.now();
+
+            alert("✅ Produto salvo com segurança no Firebase. Apenas os campos alterados foram enviados.");
+
+        } catch (error) {
+            console.error(error);
+            alert("Falha ao guardar: " + error.message);
+        }
+    }
+async function atualizarCatalogoMetaGithub() {
         const cfg = await localforage.getItem('sucedoan_config');
 
-        if (!cfg || !cfg.token) {
+        if (!cfg || !cfg.token || !cfg.user || !cfg.repo) {
             alert("Configure as credenciais do GitHub antes de atualizar o catálogo da Meta.");
             return;
         }
 
         try {
-            const metaCatalog = products
-                .filter(p => p.situacao !== 'I')
+            alert("Buscando produtos atualizados direto do Firebase para gerar a Meta...");
+
+            const produtosFirebase = await carregarProdutosFirebase();
+
+            if (!Array.isArray(produtosFirebase) || produtosFirebase.length === 0) {
+                throw new Error("Firebase retornou base vazia. Envio da Meta cancelado por segurança.");
+            }
+
+            products = produtosFirebase;
+            await salvarLocalmente();
+
+            const metaCatalog = produtosFirebase
+                .filter(p => p && p.situacao !== 'I')
                 .map(p => mapearProdutoParaMeta(p));
+
+            if (metaCatalog.length === 0) {
+                throw new Error("Nenhum produto ativo encontrado para gerar catálogo da Meta.");
+            }
 
             const csvText = Papa.unparse(metaCatalog, { delimiter: ";" });
 
@@ -424,7 +600,7 @@ const html5QrCode = new Html5Qrcode("reader");
                 cfg,
                 'site/produtos.csv',
                 utf8ToBase64(csvText),
-                "Estoque Rápido: Atualização Meta CSV"
+                "Estoque Rápido: Atualização Meta CSV puxada do Firebase"
             );
 
             const metaJsonFinal = { "lista_produtos": metaCatalog };
@@ -433,17 +609,71 @@ const html5QrCode = new Html5Qrcode("reader");
                 cfg,
                 'site/produtos_meta.json',
                 utf8ToBase64(JSON.stringify(metaJsonFinal, null, 2)),
-                "Estoque Rápido: Atualização Meta JSON"
+                "Estoque Rápido: Atualização Meta JSON puxada do Firebase"
             );
 
-            alert("✅ Catálogo da Meta atualizado no GitHub.");
+            alert("✅ Catálogo da Meta atualizado no GitHub com dados atuais do Firebase.");
         } catch (error) {
             console.error(error);
-            alert("Falha ao atualizar GitHub: " + error.message);
+            alert("Falha ao atualizar GitHub/Meta: " + error.message);
         }
     }
+async function syncData(options = {}) {
+        const force = !!options.force;
+        const silent = !!options.silent;
+        const closePanel = options.closePanel !== false;
 
-    async function syncData(options = {}) {
+        if (sincronizacaoEmAndamento) return;
+
+        sincronizacaoEmAndamento = true;
+
+        try {
+            // Firebase é o banco oficial.
+            // O cache local só ajuda a abrir rápido; a sincronização busca sempre a base real quando chamada.
+            const produtosFirebase = await carregarProdutosFirebase();
+
+            if (produtosFirebase && Array.isArray(produtosFirebase) && produtosFirebase.length > 0) {
+                products = produtosFirebase;
+
+                await salvarLocalmente();
+                await localforage.setItem(LOCAL_LAST_SYNC_KEY, Date.now());
+
+                if (!silent) alert("Sincronizado do Firebase com sucesso.");
+                if (!silent && closePanel) toggleConfig();
+
+                if (currentProd) {
+                    const chaveAtual = String(currentProd.firebaseKey || currentProd.id || currentProd.codigo || currentProd.gtin || "");
+                    const atualizado = products.find(p => {
+                        return String(p.firebaseKey || p.id || p.codigo || p.gtin || "") === chaveAtual ||
+                               String(p.codigo || "") === String(currentProd.codigo || "");
+                    });
+
+                    if (atualizado) {
+                        currentProd = atualizado;
+                        camposAlteradosProdutoAtual = {};
+                        valoresOriginaisProdutoAtual = capturarValoresEditaveis(atualizado);
+                        produtoSelecionadoEm = Date.now();
+
+                        document.getElementById('display-nome').innerText = atualizado.nome || "Produto sem nome";
+                        document.getElementById('val-estoque').value = atualizado.estoque || 0;
+                        document.getElementById('val-validade').value = formatDate(atualizado.validade);
+                        document.getElementById('val-gtin').value = atualizado.gtin || '';
+                        document.getElementById('val-embalagem').value = atualizado.embalagem || '';
+                        document.getElementById('val-gondola').value = atualizado.gondola || '';
+                        document.getElementById('val-prateleira').value = atualizado.prateleira || '';
+                    }
+                }
+            } else {
+                if (!silent) alert("A base de dados do Firebase está vazia.");
+            }
+        } catch (error) {
+            console.error(error);
+            if (!silent) alert("Erro ao sincronizar: " + error.message);
+        } finally {
+            sincronizacaoEmAndamento = false;
+        }
+    }
+) {
         const force = !!options.force;
         const silent = !!options.silent;
         const closePanel = options.closePanel !== false;
@@ -506,8 +736,29 @@ const html5QrCode = new Html5Qrcode("reader");
         const p = document.getElementById('config-panel');
         p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
     }
+function encontrarProdutoPorTermo(termo) {
+        const t = String(termo || '').toLowerCase().trim();
 
-    function buscar() {
+        if (!t) return null;
+
+        return products.find(x => {
+            const nome = String(x.nome || '').toLowerCase();
+            const gtin = String(x.gtin || '').toLowerCase().trim();
+            const codigo = String(x.codigo || '').toLowerCase().trim();
+            const id = String(x.id || '').toLowerCase().trim();
+            const firebaseKey = String(x.firebaseKey || '').toLowerCase().trim();
+
+            return (
+                nome.includes(t) ||
+                gtin === t ||
+                codigo === t ||
+                id === t ||
+                firebaseKey === t
+            );
+        }) || null;
+    }
+
+    async function buscar() {
         const termo = String(document.getElementById('search').value || '').toLowerCase().trim();
 
         if (!termo) {
@@ -515,23 +766,19 @@ const html5QrCode = new Html5Qrcode("reader");
             return;
         }
 
-        const p = products.find(x => {
-            const nome = String(x.nome || '').toLowerCase();
-            const gtin = String(x.gtin || '').toLowerCase().trim();
-            const codigo = String(x.codigo || '').toLowerCase().trim();
-            const id = String(x.id || '').toLowerCase().trim();
+        let p = encontrarProdutoPorTermo(termo);
 
-            return (
-                nome.includes(termo) ||
-                gtin.includes(termo) ||
-                codigo.includes(termo) ||
-                id.includes(termo)
-            );
-        });
+        // Se não achou no cache, puxa Firebase uma vez para evitar erro de cache antigo.
+        if (!p) {
+            await syncData({ silent: true, force: true, closePanel: false });
+            p = encontrarProdutoPorTermo(termo);
+        }
 
         if (p) {
-    currentProd = p;
-    camposAlteradosProdutoAtual = {};
+            currentProd = p;
+            camposAlteradosProdutoAtual = {};
+            valoresOriginaisProdutoAtual = capturarValoresEditaveis(p);
+            produtoSelecionadoEm = Date.now();
 
             document.getElementById('display-nome').innerText = p.nome || "Produto sem nome";
             document.getElementById('val-estoque').value = p.estoque || 0;
@@ -540,57 +787,65 @@ const html5QrCode = new Html5Qrcode("reader");
             document.getElementById('val-embalagem').value = p.embalagem || '';
             document.getElementById('val-gondola').value = p.gondola || '';
             document.getElementById('val-prateleira').value = p.prateleira || '';
-            
+
             document.getElementById('search').blur();
         } else {
-            alert("Produto não encontrado.");
+            alert("Produto não encontrado no Firebase/cache.");
         }
     }
+function updateCurrent(field, value) {
+        if (!currentProd) return;
 
-   function updateCurrent(field, value) {
-    if (!currentProd) return;
+        if (!CAMPOS_EDITAVEIS_ESTOQUE.includes(field)) {
+            alert("Campo não autorizado para edição neste módulo.");
+            return;
+        }
 
-    let valorFinal = value;
+        let valorFinal = value;
 
-    if (field === 'validade') {
-        if (value && value.includes('-')) {
-            const d = value.split('-');
-            valorFinal = `${d[2]}/${d[1]}/${d[0]}`;
-            currentProd.validade = valorFinal;
+        if (field === 'validade') {
+            if (value && value.includes('-')) {
+                const d = value.split('-');
+                valorFinal = `${d[2]}/${d[1]}/${d[0]}`;
+                currentProd.validade = valorFinal;
+            } else {
+                valorFinal = "";
+                currentProd.validade = "";
+            }
+        } else if (field === 'estoque') {
+            valorFinal = Number(value || 0);
+            currentProd[field] = valorFinal;
         } else {
-            valorFinal = "";
-            currentProd.validade = "";
+            currentProd[field] = valorFinal;
         }
-    } else if (field === 'estoque') {
-        valorFinal = Number(value || 0);
-        currentProd[field] = valorFinal;
-    } else {
-        currentProd[field] = valorFinal;
+
+        currentProd.last_update_local_cache = Date.now();
+
+        // Guarda somente o campo que o funcionário realmente alterou.
+        camposAlteradosProdutoAtual[field] = valorFinal;
+
+        atualizarProdutoNoArray(currentProd);
+
+        // Cache local apenas para manter a tela rápida e não perder a digitação se a internet oscilar.
+        salvarLocalmente().catch(e => console.warn("Falha ao atualizar cache local:", e));
+    }
+function formatDate(d) {
+        if (!d) return '';
+
+        const texto = String(d).trim();
+
+        // Já está no formato do input date.
+        if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto;
+
+        // Formato brasileiro salvo no banco.
+        if (texto.includes('/')) {
+            const p = texto.split('/');
+            if (p.length === 3) return `${p[2]}-${p[1]}-${p[0]}`;
+        }
+
+        return '';
     }
 
-    currentProd.last_update = Date.now();
-
-    // Guarda somente o campo que o funcionário realmente alterou.
-    // Isso evita sobrescrever dados novos feitos pelo sistema principal.
-    camposAlteradosProdutoAtual[field] = valorFinal;
-
-    const chaveAtual = String(currentProd.codigo || currentProd.id || currentProd.firebaseKey);
-    const index = products.findIndex(p => {
-        return String(p.codigo || p.id || p.firebaseKey) === chaveAtual;
-    });
-
-    if (index !== -1) {
-        products[index] = currentProd;
-    }
-
-    localforage.setItem(LOCAL_PRODUCTS_KEY, products);
-}
-
-    function formatDate(d) {
-        if (!d || !d.includes('/')) return '';
-        const p = d.split('/');
-        return `${p[2]}-${p[1]}-${p[0]}`;
-    }
 
     function verFoto() {
         if(!currentProd || !currentProd.url_imagem) return alert("Selecione um produto com foto.");
@@ -606,21 +861,20 @@ const html5QrCode = new Html5Qrcode("reader");
         });
         alert("Credenciais do GitHub salvas com sucesso.");
     }
-
-    window.onload = async () => {
-        const dadosLocais = await localforage.getItem(LOCAL_PRODUCTS_KEY) || [];
-        products = objetoPorIdParaArray(dadosLocais);
+window.onload = async () => {
+        const dadosLocais = await carregarCacheLocalProdutos();
+        products = dadosLocais;
 
         const cfg = await localforage.getItem('sucedoan_config');
         if(cfg) {
-            document.getElementById('cfg-user').value = cfg.user;
-            document.getElementById('cfg-repo').value = cfg.repo;
-            document.getElementById('cfg-token').value = cfg.token;
+            document.getElementById('cfg-user').value = cfg.user || "";
+            document.getElementById('cfg-repo').value = cfg.repo || "";
+            document.getElementById('cfg-token').value = cfg.token || "";
         }
 
-        // Ao abrir no aparelho, atualiza a base local pelo Firebase uma vez por dia.
-        // Se já sincronizou hoje, usa o cache local para abrir mais rápido e economizar Firebase.
-        await syncData({ silent: true, force: false, closePanel: false });
+        // Abre rápido com cache, mas em seguida busca o Firebase.
+        // Firebase é sempre a fonte oficial.
+        await syncData({ silent: true, force: true, closePanel: false });
 
         startScanner();
     };
