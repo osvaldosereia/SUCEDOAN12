@@ -216,10 +216,15 @@
 
         <div class="toolbar">
             <div class="toolbar-group" style="flex-grow: 1;">
-                <div class="search-container">
-                    <i data-lucide="search" class="search-icon"></i>
-                    <input type="text" class="search-input" id="search-input" placeholder="Procurar por SKU, Nome ou EAN...">
-                </div>
+               <div style="display:flex; gap:8px; align-items:center; flex:1; min-width:260px;">
+    <div class="search-container" style="width:100%;">
+        <i data-lucide="search" class="search-icon"></i>
+        <input type="text" class="search-input" id="search-input" placeholder="Procurar por SKU, Nome, EAN, marca ou categoria...">
+    </div>
+    <button class="nav-btn primary" id="btn-enviar-busca" style="height:40px; white-space:nowrap;" onclick="executarBuscaSistema(true)">
+        <i data-lucide="search-check" size="14"></i> BUSCAR
+    </button>
+</div>
                 <button class="nav-btn" style="color: #0284c7; border-color: #bae6fd; background: #e0f2fe;" onclick="openSidebar('filtros-sidebar'); renderizarFiltrosAvancados();">
                     <i data-lucide="filter" size="14"></i> FILTROS
                 </button>
@@ -487,67 +492,97 @@
             <div class="sidebar-title">Configuração & Dados</div>
             <button class="btn-icon" onclick="closeSidebar('config-sidebar')"><i data-lucide="x" size="16"></i></button>
         </div>
-        <div class="sidebar-body" style="gap:16px;">
-            <div class="form-section">
-                <div class="section-title">Firebase, Meta e Imagens</div>
-                <button class="nav-btn bling-btn" style="height:40px; justify-content:center; margin-bottom: 8px;" onclick="enviarMetaGithubManual()">
-                    <i data-lucide="send" size="14"></i> 1. ENVIAR META MANUAL: CSV + JSON
-                </button>
-                <button class="nav-btn" style="height:40px; justify-content:center;" onclick="uploadImagens()">
-                    <i data-lucide="image-up" size="14"></i> 2. ENVIAR IMAGENS DA FILA <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px; margin-left:4px;">(0)</span>
-                </button>
-                <button class="nav-btn" style="height:40px; justify-content:center; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="fetchFromGithub()">
-                    <i data-lucide="cloud-download" size="14"></i> 3. ATUALIZAR TELA PELO FIREBASE
-                </button>
-                <p style="font-size:9px; color:var(--text-secondary); margin:0; line-height:1.4; text-align:center;">
-                    Cada card tem botão SALVAR CARD: envia o produto ao Firebase e a foto nova/alterada ao GitHub. produtos.json desativado para evitar conflito.
-                </p>
-            </div>
+      <div class="sidebar-body" style="gap:16px;">
 
-            <div class="form-section" style="margin-top:10px;">
-                <div class="section-title">Exportação Bling ERP</div>
-                <button class="nav-btn bling-btn" style="height:44px; justify-content:center; font-weight: 900;" onclick="exportarTudoBling()">
-                    <i data-lucide="file-spreadsheet" size="18"></i> EXPORTAR BANCO COMPLETO (BLING CSV)
-                </button>
-                <p style="font-size: 9px; color: var(--text-secondary); text-align: center; margin: 0;">Gera arquivo compatível com 59 colunas do Bling.</p>
-            </div>
+    <div class="form-section">
+        <div class="section-title">Integração Externa</div>
 
-            <div class="form-section" style="margin-top:10px;">
-                <div class="section-title">Integração Externa</div>
-                
-                <input type="file" id="csv-file-substituir" accept=".csv" style="display:none">
-                <button class="nav-btn" style="height:40px; justify-content:center; color: var(--danger); border-color: #fecaca;" onclick="document.getElementById('csv-file-substituir').click()">IMPORTAR CSV (SUBSTITUIR TUDO)</button>
-                
-                <input type="file" id="csv-file-atualizar" accept=".csv" style="display:none">
-                <button class="nav-btn success-btn" style="height:40px; justify-content:center; margin-top:5px;" onclick="document.getElementById('csv-file-atualizar').click()">
-                    <i data-lucide="upload-cloud" size="14"></i> IMPORTAR (ATUALIZAR / ADICIONAR)
-                </button>
-                
-                <button class="nav-btn primary" style="height:40px; justify-content:center; margin-top:5px;" onclick="abrirModalExportacaoMeta()">EXPORTAR CATÁLOGO META</button>
-                <button class="nav-btn success-btn" style="height:40px; justify-content:center; margin-top:5px;" onclick="exportarCatalogoGeral()">EXPORTAR CATÁLOGO GERAL</button>
-            </div>
-            <div class="form-section" style="margin-top:10px; border-top: 1px dashed var(--border); padding-top: 15px;">
-                <div class="section-title">Credenciais GitHub</div>
-                <div class="form-group"><label class="form-label">Token</label><input type="password" id="cfg-token" class="form-input"></div>
-                <div class="form-group"><label class="form-label">Utilizador</label><input type="text" id="cfg-user" class="form-input"></div>
-                <div class="form-group"><label class="form-label">Repositório</label><input type="text" id="cfg-repo" class="form-input"></div>
-                <button class="nav-btn primary" style="height:44px; justify-content:center; margin-top:5px;" onclick="saveConfig()">GUARDAR CREDENCIAIS</button>
-            </div>
+        <input type="file" id="csv-file-atualizar" accept=".csv" style="display:none">
+        <button class="nav-btn success-btn" style="height:44px; justify-content:center; margin-top:5px; font-weight:900;" onclick="document.getElementById('csv-file-atualizar').click()">
+            <i data-lucide="upload-cloud" size="16"></i> IMPORTAR (ATUALIZAR / ADICIONAR)
+        </button>
 
-            <div class="form-section" style="margin-top:15px;">
-                <div class="section-title">Ações de Manutenção</div>
-                <button class="nav-btn warning" style="width:100%; height:44px; justify-content:center; margin-top: 10px;" onclick="destravarSincronizacao()">
-                    <i data-lucide="refresh-cw-off" size="14"></i> DESTRAVAR SINCRONIZAÇÃO
-                </button>
-                <button class="nav-btn" style="width:100%; height:44px; justify-content:center; color:var(--warning); border-color:#fde68a; margin-top: 10px;" onclick="executarLimpezaImagens()">
-                    <i data-lucide="trash-2" size="14"></i> 8. LIMPEZA INTELIGENTE (APAGAR FOTOS SEM USO DO GITHUB)
-                </button>
-            </div>
-        </div>
-        <div class="sidebar-footer">
-            <button class="nav-btn" style="width:100%; height:44px; justify-content:center; color:var(--danger); border-color:#fecaca;" onclick="limparSistema()"><i data-lucide="trash-2" size="14"></i> APAGAR BASE DE DADOS LOCAL</button>
-        </div>
+        <input type="file" id="csv-file-substituir" accept=".csv" style="display:none">
+        <button class="nav-btn" style="height:40px; justify-content:center; color: var(--danger); border-color: #fecaca; margin-top:5px;" onclick="document.getElementById('csv-file-substituir').click()">
+            IMPORTAR CSV (SUBSTITUIR TUDO)
+        </button>
+
+        <button class="nav-btn primary" style="height:40px; justify-content:center; margin-top:5px;" onclick="abrirModalExportacaoMeta()">
+            EXPORTAR CATÁLOGO META
+        </button>
+
+        <button class="nav-btn success-btn" style="height:40px; justify-content:center; margin-top:5px;" onclick="exportarCatalogoGeral()">
+            EXPORTAR CATÁLOGO GERAL
+        </button>
     </div>
+
+    <div class="form-section" style="margin-top:10px;">
+        <div class="section-title">Firebase</div>
+
+        <button class="nav-btn" style="height:44px; justify-content:center; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="fetchFromGithub()">
+            <i data-lucide="cloud-download" size="14"></i> ATUALIZAR TELA PELO FIREBASE
+        </button>
+
+        <p style="font-size:9px; color:var(--text-secondary); margin:0; line-height:1.4; text-align:center;">
+            O envio agora deve ser individual por produto. Use SALVAR CARD para enviar produto ao Firebase e a foto nova ao GitHub. Use ENVIAR FOTO no card quando quiser mandar somente a imagem pendente.
+        </p>
+    </div>
+
+    <div class="form-section" style="margin-top:10px;">
+        <div class="section-title">Exportação Bling ERP</div>
+
+        <button class="nav-btn bling-btn" style="height:44px; justify-content:center; font-weight:900;" onclick="exportarTudoBling()">
+            <i data-lucide="file-spreadsheet" size="18"></i> EXPORTAR BANCO COMPLETO (BLING CSV)
+        </button>
+
+        <p style="font-size:9px; color:var(--text-secondary); text-align:center; margin:0;">
+            Gera arquivo compatível com 59 colunas do Bling.
+        </p>
+    </div>
+
+    <div class="form-section" style="margin-top:10px; border-top: 1px dashed var(--border); padding-top: 15px;">
+        <div class="section-title">Credenciais GitHub</div>
+
+        <div class="form-group">
+            <label class="form-label">Token</label>
+            <input type="password" id="cfg-token" class="form-input">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Utilizador</label>
+            <input type="text" id="cfg-user" class="form-input">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Repositório</label>
+            <input type="text" id="cfg-repo" class="form-input">
+        </div>
+
+        <button class="nav-btn primary" style="height:44px; justify-content:center; margin-top:5px;" onclick="saveConfig()">
+            GUARDAR CREDENCIAIS
+        </button>
+    </div>
+
+    <div class="form-section" style="margin-top:15px;">
+        <div class="section-title">Ações de Manutenção</div>
+
+        <button class="nav-btn warning" style="width:100%; height:44px; justify-content:center; margin-top:10px;" onclick="destravarSincronizacao()">
+            <i data-lucide="refresh-cw-off" size="14"></i> DESTRAVAR SINCRONIZAÇÃO
+        </button>
+
+        <button class="nav-btn" style="width:100%; height:44px; justify-content:center; color:var(--warning); border-color:#fde68a; margin-top:10px;" onclick="executarLimpezaImagens()">
+            <i data-lucide="trash-2" size="14"></i> LIMPEZA INTELIGENTE: APAGAR FOTOS SEM USO DO GITHUB
+        </button>
+    </div>
+
+</div>
+
+<div class="sidebar-footer">
+    <button class="nav-btn" style="width:100%; height:44px; justify-content:center; color:var(--danger); border-color:#fecaca;" onclick="limparSistema()">
+        <i data-lucide="trash-2" size="14"></i> APAGAR BASE DE DADOS LOCAL
+    </button>
+</div>
+</div>
 
     <script>
         // ==========================================================
@@ -1500,13 +1535,14 @@ async function uploadImagemProdutoPendenteSeNecessario(produto) {
     if (!produto) return { enviada: false };
 
     const sku = produto.codigo;
-    let itemFila = null;
     let base64data = "";
 
     const idxFila = imageQueue.findIndex(img => (img.tipo || 'produto') === 'produto' && img.sku === sku);
+
     if (idxFila !== -1) {
-        itemFila = imageQueue[idxFila];
-        base64data = itemFila.base64data;
+        base64data = imageQueue[idxFila].base64data || "";
+    } else if (typeof produto.imagem_preview_local === 'string' && produto.imagem_preview_local.startsWith('data:image')) {
+        base64data = produto.imagem_preview_local.split(',')[1] || "";
     } else if (typeof produto.url_imagem === 'string' && produto.url_imagem.startsWith('data:image')) {
         base64data = produto.url_imagem.split(',')[1] || "";
     }
@@ -1527,17 +1563,74 @@ async function uploadImagemProdutoPendenteSeNecessario(produto) {
     );
 
     produto.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
+    delete produto.imagem_preview_local;
     produto.last_update = Date.now();
 
     if (idxFila !== -1) {
         imageQueue.splice(idxFila, 1);
         await localforage.setItem('imageQueue', imageQueue);
-        updateImageBadge();
     }
+
+    await saveDataLocally(false);
+    updateImageBadge();
 
     return { enviada: true, url: produto.url_imagem };
 }
+async function enviarImagemProdutoCardManual(sku) {
+    const produto = products.find(x => x.codigo === sku);
 
+    if (!produto) {
+        mostrarAlerta("Produto não encontrado para enviar imagem.", "erro");
+        return;
+    }
+
+    if (!produtoPossuiImagemPendente(sku)) {
+        mostrarAlerta("Este produto não tem imagem nova pendente.", "aviso");
+        return;
+    }
+
+    const botao = document.getElementById(`btn-enviar-foto-${sku}`);
+    const htmlOriginal = botao ? botao.innerHTML : "";
+
+    try {
+        if (botao) {
+            botao.disabled = true;
+            botao.innerHTML = `<i data-lucide="loader" class="spin-icon" size="12"></i> ENVIANDO`;
+            lucide.createIcons();
+        }
+
+        mostrarAlerta("Enviando imagem deste produto para o GitHub...", "aviso");
+
+        await uploadImagemProdutoPendenteSeNecessario(produto);
+
+        produto.last_update = Date.now();
+        await saveDataLocally(false);
+
+        const resultado = await salvarProdutoIndividualSeguro(produto, "upsert");
+
+        const chave = FirebaseAPI.sanitizarChave(produto.firebaseKey || produto.id || produto.codigo || produto.gtin);
+        if (chave) produtosPendentesSync.delete(chave);
+
+        await saveDataLocally(false);
+        renderQueueStatus();
+        renderGrid(ultimoTermoPesquisa, true);
+
+        if (resultado.status === "nuvem_mais_nova") {
+            mostrarAlerta("⚠️ Imagem enviada, mas o Firebase tinha uma versão mais nova do produto. Confira o card.", "aviso");
+        } else {
+            mostrarAlerta("✅ Imagem enviada ao GitHub e link salvo no Firebase.", "sucesso");
+        }
+    } catch (e) {
+        console.error("Erro ao enviar imagem do card:", e);
+        mostrarAlerta("❌ Erro ao enviar imagem: " + e.message, "erro");
+    } finally {
+        if (botao) {
+            botao.disabled = false;
+            botao.innerHTML = htmlOriginal;
+            lucide.createIcons();
+        }
+    }
+}
 async function salvarProdutoCardManual(sku) {
     const produto = products.find(x => x.codigo === sku);
     if (!produto) {
@@ -1830,31 +1923,73 @@ async function salvarProdutosJSON(opcoes = {}) {
             renderGrid(ultimoTermoPesquisa, true); 
         }
 
-        window.onload = async function() { 
+      async function executarBuscaSistema(forcarFirebase = false) {
+    const searchInput = document.getElementById('search-input');
+    const termo = searchInput ? (searchInput.value || "").trim() : "";
+
+    if (termo !== "") {
+        filtroAtivo = { tipo: null, valor: null };
+        const banner = document.getElementById('active-filter-banner');
+        if (banner) banner.style.display = 'none';
+    }
+
+    const botao = document.getElementById('btn-enviar-busca');
+    const htmlOriginal = botao ? botao.innerHTML : "";
+
+    try {
+        if (forcarFirebase) {
+            if (botao) {
+                botao.disabled = true;
+                botao.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> BUSCANDO`;
+                lucide.createIcons();
+            }
+
+            mostrarAlerta("Buscando produtos atualizados no Firebase...", "aviso");
+
+            const [dadosFirebase, exclusoesFirebase] = await Promise.all([
+                FirebaseAPI.lerProdutos(),
+                FirebaseAPI.lerExclusoesProdutos()
+            ]);
+
+            if (Array.isArray(dadosFirebase) && dadosFirebase.length > 0) {
+                products = dadosFirebase
+                    .filter(p => p && p._deleted !== true && obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p))
+                    .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
+
+                await saveDataLocally(false);
+            }
+        }
+
+        ultimoTermoPesquisa = termo;
+        renderGrid(termo);
+
+        if (termo) {
+            mostrarAlerta(`Busca concluída: ${produtosFiltrados.length} produto(s) encontrado(s).`, "sucesso");
+        }
+    } catch (e) {
+        console.error("Erro na busca:", e);
+        mostrarAlerta("Erro ao buscar no Firebase. Mostrando cache local: " + e.message, "erro");
+        renderGrid(termo);
+    } finally {
+        if (botao) {
+            botao.disabled = false;
+            botao.innerHTML = htmlOriginal;
+            lucide.createIcons();
+        }
+    }
+}
+
+window.onload = async function() { 
     lucide.createIcons(); 
     await loadData(); 
 
     const searchInput = document.getElementById('search-input');
 
     if (searchInput) {
-        const executarBusca = function() {
-            const termo = searchInput.value || "";
-
-            if (termo.trim() !== "") { 
-                filtroAtivo = { tipo: null, valor: null }; 
-                const banner = document.getElementById('active-filter-banner');
-                if (banner) banner.style.display = 'none';
-            }
-
-            renderGrid(termo);
-        };
-
-        searchInput.addEventListener('input', debounce(executarBusca, 250));
-
         searchInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                executarBusca();
+                executarBuscaSistema(true);
             }
 
             if (e.key === 'Escape') {
@@ -2564,7 +2699,15 @@ const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + qua
                 const pendenteNoCard = produtoEstaPendenteNoCard(p);
                 const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''} ${pendenteNoCard ? 'pending-save' : ''}`;
                 
-                const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
+const imgPreviewLocal = (typeof p.imagem_preview_local === 'string' && p.imagem_preview_local.startsWith('data:image'))
+    ? p.imagem_preview_local
+    : "";
+
+const imgUrl = imgPreviewLocal || ((p.url_imagem && p.url_imagem.length > 5)
+    ? p.url_imagem
+    : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO');
+
+const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                 const safeNameForInput = (p.nome || '').replace(/"/g, '&quot;');
                 const safeNomeGoogle = (p.nome || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 
@@ -2592,6 +2735,9 @@ const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + qua
                             <button id="btn-salvar-card-${p.codigo}" class="nav-btn save-card-btn ${pendenteNoCard ? 'pending' : 'saved'}" onclick="salvarProdutoCardManual('${p.codigo}')" title="Salva este produto no Firebase e envia a foto nova/alterada ao GitHub">
                                 <i data-lucide="save" size="12"></i> ${pendenteNoCard ? 'SALVAR CARD' : 'SALVO'}
                             </button>
+                            <button id="btn-enviar-foto-${p.codigo}" class="nav-btn save-card-btn ${temFotoPendenteCard ? 'pending' : 'saved'}" onclick="enviarImagemProdutoCardManual('${p.codigo}')" title="Envia somente a imagem pendente deste produto ao GitHub e atualiza o link no Firebase">
+    <i data-lucide="image-up" size="12"></i> ${temFotoPendenteCard ? 'ENVIAR FOTO' : 'FOTO OK'}
+</button>
                             <button class="nav-btn bling-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="exportarProdutoBling('${p.codigo}')"><i data-lucide="download" size="12"></i> EXP. BLING</button>
                             
                             <button class="nav-btn warning" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="duplicarProduto('${p.codigo}')"><i data-lucide="copy" size="12"></i> DUPLICAR</button>
@@ -3808,71 +3954,107 @@ function abrirEditorImagemComboAtual() {
             canvas.addEventListener('mousedown', (e) => { isDragging = true; startDragX = e.offsetX - imgOffsetX; startDragY = e.offsetY - imgOffsetY; }); canvas.addEventListener('mousemove', (e) => { if (!isDragging) return; imgOffsetX = e.offsetX - startDragX; imgOffsetY = e.offsetY - startDragY; drawCanvas(); }); canvas.addEventListener('mouseup', () => { isDragging = false; }); canvas.addEventListener('mouseleave', () => { isDragging = false; });
         }
 
-        async function saveImageToQueue() {
-            if(!currentEditingSku) return; 
-            const chave = currentEditingSku; 
-            const tipo = currentEditingImageType || 'produto';
-            const base64full = canvas.toDataURL('image/webp', 0.9); 
-            const base64data = base64full.split(',')[1];
+       async function saveImageToQueue() {
+    if(!currentEditingSku) return; 
 
-            if (tipo === 'combo') {
-                const c = combosDoSistema.find(x => x.id === chave);
-                if (!c) return;
+    const chave = currentEditingSku; 
+    const tipo = currentEditingImageType || 'produto';
+    const base64full = canvas.toDataURL('image/webp', 0.9); 
+    const base64data = base64full.split(',')[1];
 
-                const nomeDigitado = (document.getElementById('combo-nome')?.value || '').trim();
-                if (nomeDigitado) c.nome = nomeDigitado;
+    if (tipo === 'combo') {
+        const c = combosDoSistema.find(x => x.id === chave);
+        if (!c) return;
 
-                if (!c.nome) {
-                    alert('Informe o nome do combo antes de aplicar a capa. A imagem será salva com o nome do combo.');
-                    return;
-                }
+        const nomeDigitado = (document.getElementById('combo-nome')?.value || '').trim();
+        if (nomeDigitado) c.nome = nomeDigitado;
 
-                c.url_imagem = base64full;
-                c.last_update = Date.now();
-                await saveCombosLocally();
+        if (!c.nome) {
+            alert('Informe o nome do combo antes de aplicar a capa. A imagem será salva com o nome do combo.');
+            return;
+        }
 
-                closeSidebar('editor-sidebar');
-                renderizarComboAtual();
-                renderizarListaCombos();
+        c.url_imagem = base64full;
+        c.imagem_preview_local = base64full;
+        c.last_update = Date.now();
+        await saveCombosLocally();
 
-                try {
-                    mostrarAlerta('Enviando capa do combo para o GitHub...', 'aviso');
+        closeSidebar('editor-sidebar');
+        renderizarComboAtual();
+        renderizarListaCombos();
 
-                    const pastaDestinoGithub = await getPastaUploadAtiva('combo');
-                    const pastaDestinoLocal = '../' + pastaDestinoGithub;
-                    const fileName = getNomeArquivoImagemCombo(c);
+        try {
+            mostrarAlerta('Enviando capa do combo para o GitHub...', 'aviso');
 
-                    await GitHubAPI.saveFile(
-                        `${pastaDestinoGithub}/${fileName}`,
-                        base64data,
-                        `PIM Sync: Capa Combo ${fileName}`,
-                        true
-                    );
+            const pastaDestinoGithub = await getPastaUploadAtiva('combo');
+            const pastaDestinoLocal = '../' + pastaDestinoGithub;
+            const fileName = getNomeArquivoImagemCombo(c);
 
-                    c.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
-                    c.last_update = Date.now();
+            await GitHubAPI.saveFile(
+                `${pastaDestinoGithub}/${fileName}`,
+                base64data,
+                `PIM Sync: Capa Combo ${fileName}`,
+                true
+            );
 
-                    await saveCombosLocally();
-                    await salvarCombosNaNuvemAgora();
+            c.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
+            delete c.imagem_preview_local;
+            c.last_update = Date.now();
 
-                    renderizarComboAtual();
-                    renderizarListaCombos();
+            await saveCombosLocally();
+            await salvarCombosNaNuvemAgora();
 
-                    mostrarAlerta('Capa do combo aplicada, enviada e combo salvo no GitHub.', 'sucesso');
-                } catch (e) {
-                    console.error(e);
+            renderizarComboAtual();
+            renderizarListaCombos();
 
-                    imageQueue.push({
-                        tipo: 'combo',
-                        id: chave,
-                        sku: chave,
-                        nome: c.nome,
-                        base64data: base64data
-                    });
+            mostrarAlerta('Capa do combo aplicada, enviada e combo salvo no GitHub.', 'sucesso');
+        } catch (e) {
+            console.error(e);
 
-                    updateImageBadge();
-                    mostrarAlerta('A capa ficou salva localmente e entrou na fila de imagens: ' + e.message, 'aviso');
-                }
+            imageQueue = imageQueue.filter(img => !((img.tipo || 'produto') === 'combo' && img.id === chave));
+            imageQueue.push({
+                tipo: 'combo',
+                id: chave,
+                sku: chave,
+                nome: c.nome,
+                base64data: base64data,
+                base64full: base64full
+            });
+
+            await localforage.setItem('imageQueue', imageQueue);
+            updateImageBadge();
+            mostrarAlerta('A capa ficou salva localmente e entrou na fila de imagens: ' + e.message, 'aviso');
+        }
+
+        return;
+    }
+
+    const p = products.find(x => x.codigo === chave); 
+    if (!p) return;
+
+    p.imagem_preview_local = base64full;
+    p.url_imagem = base64full;
+    p.last_update = Date.now(); 
+
+    imageQueue = imageQueue.filter(img => !((img.tipo || 'produto') === 'produto' && img.sku === chave));
+    imageQueue.push({
+        tipo: 'produto',
+        sku: chave,
+        firebaseKey: p.firebaseKey || p.id || p.codigo,
+        base64data: base64data,
+        base64full: base64full
+    });
+
+    await localforage.setItem('imageQueue', imageQueue);
+    await saveDataLocally(false); 
+
+    marcarProdutoParaSincronizacao(p, "upsert");
+    updateImageBadge(); 
+    closeSidebar('editor-sidebar'); 
+    renderGrid(ultimoTermoPesquisa, true);
+
+    mostrarAlerta('Foto salva localmente e aplicada no card. Use ENVIAR FOTO ou SALVAR CARD para mandar ao GitHub/Firebase.', 'aviso');
+}
 
                 return;
             }
