@@ -764,7 +764,13 @@
                     if (existingFile && !Array.isArray(existingFile)) sha = existingFile.sha; 
                 } catch(e) {}
                 
-                let finalBase64 = isBase64Ready ? content : this.encodeUTF8toBase64(typeof content === 'string' ? content : JSON.stringify(content));
+let finalBase64 = isBase64Ready
+    ? content
+    : this.encodeUTF8toBase64(
+        typeof content === 'string'
+            ? content
+            : JSON.stringify(content, null, 2)
+      );
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
                 const body = { message: message, content: finalBase64 };
                 if (sha) body.sha = sha;
@@ -1396,12 +1402,11 @@ async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync 
                     delete p.estoque_historico;
                     precisaSalvarProd = true;
                 }
-                // Combos agora são administrados em módulo próprio, fora do cadastro do produto.
-                if (p.combo_id !== undefined || p.validade_combo !== undefined) {
-                    delete p.combo_id;
-                    delete p.validade_combo;
-                    precisaSalvarProd = true;
-                }
+               // Mantém combo_id e validade_combo localmente para permitir migração dos combos antigos.
+// Esses campos não entram mais no produtos.json porque sanitizeProductsForExport não exporta eles.
+if (p.combo_id !== undefined || p.validade_combo !== undefined) {
+    // Não apagar aqui. O módulo novo de combos vai migrar essas informações.
+}
                 if (!p.id || idsExistentes.has(p.id)) {
                     p.id = Date.now().toString() + index.toString() + Math.floor(Math.random() * 10000).toString();
                     p.last_update = Date.now();
@@ -2176,392 +2181,760 @@ const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + qua
         }
 
 
-        // ==========================================================
-        // MÓDULO PROFISSIONAL DE COMBOS PROMOCIONAIS
-        // ==========================================================
-        const DESCONTOS_COMBO = [10,15,20,30,35,40,45,50,55,60,65,70,75,80,85,90];
+       // ==========================================================
+// MÓDULO PROFISSIONAL DE COMBOS PROMOCIONAIS
+// ==========================================================
+const DESCONTOS_COMBO = [10,15,20,30,35,40,45,50,55,60,65,70,75,80,85,90];
 
-        function dinheiroBR(valor) {
-            return (parseFloat(valor) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        }
+function dinheiroBR(valor) {
+    return (parseFloat(valor) || 0).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    });
+}
 
-        function gerarIdCombo(nome = '') {
-            const base = (nome || 'COMBO')
-                .toString()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .toUpperCase()
-                .replace(/[^A-Z0-9]+/g, '_')
-                .replace(/^_+|_+$/g, '')
-                .slice(0, 28) || 'COMBO';
-            return `${base}_${Date.now().toString().slice(-6)}`;
-        }
+function escapeHTMLCombo(texto) {
+    return (texto || '').toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
-        function getComboAtual() {
-            if (!comboEditandoId) novoComboEmBranco(false);
-            return combosDoSistema.find(c => c.id === comboEditandoId);
-        }
+function gerarIdCombo(nome = '') {
+    const base = (nome || 'COMBO')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .slice(0, 28) || 'COMBO';
 
-        function abrirModuloCombos() {
-            prepararSelectDescontosCombo();
-            processarStatusCombos().then(() => {
-                if (!comboEditandoId) novoComboEmBranco(false);
-                renderizarComboAtual();
-                renderizarListaCombos();
-                openSidebar('combos-sidebar');
-                lucide.createIcons();
-            });
-        }
+    return `${base}_${Date.now().toString().slice(-8)}_${Math.floor(Math.random() * 9999)}`;
+}
 
-        function prepararSelectDescontosCombo() {
-            const sel = document.getElementById('combo-desconto');
-            if (!sel || sel.dataset.ready === '1') return;
-            sel.innerHTML = DESCONTOS_COMBO.map(d => `<option value="${d}">${d}% de desconto</option>`).join('');
-            sel.dataset.ready = '1';
-        }
+function normalizarIdFirebase(texto) {
+    return (texto || '')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .replace(/[.#$/\[\]]/g, '_')
+        .replace(/[^A-Z0-9_-]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .slice(0, 80) || gerarIdCombo('COMBO');
+}
 
-        function novoComboEmBranco(render = true) {
-            const id = gerarIdCombo('COMBO');
-            const novo = {
-                id,
-                nome: '',
-                ativo: false,
-                motivo_desativacao: 'Rascunho ainda não ativado',
+function comboIdAttr(id) {
+    return encodeURIComponent(String(id || ''));
+}
+
+function decodeComboId(idCodificado) {
+    try {
+        return decodeURIComponent(idCodificado || '');
+    } catch (e) {
+        return idCodificado || '';
+    }
+}
+
+function prepararSelectDescontosCombo() {
+    const sel = document.getElementById('combo-desconto');
+    if (!sel || sel.dataset.ready === '1') return;
+
+    sel.innerHTML = DESCONTOS_COMBO
+        .map(d => `<option value="${d}">${d}% de desconto</option>`)
+        .join('');
+
+    sel.dataset.ready = '1';
+}
+
+function normalizarListaCombosEntrada(dados) {
+    if (!dados) return [];
+
+    let lista = [];
+
+    if (Array.isArray(dados)) {
+        lista = dados.filter(Boolean);
+    } else if (typeof dados === 'object') {
+        lista = Object.entries(dados).map(([key, value]) => ({
+            ...(value || {}),
+            id: (value && value.id) ? value.id : key
+        }));
+    }
+
+    return lista.map(c => {
+        const idFinal = normalizarIdFirebase(c.id || c.nome || 'COMBO');
+
+        return {
+            id: idFinal,
+            combo_legado_id: c.combo_legado_id || c.id_original || c.combo_id || '',
+            nome: c.nome || c.name || c.titulo || c.combo_id || 'Combo sem nome',
+            ativo: !!c.ativo,
+            motivo_desativacao: c.motivo_desativacao || '',
+            desconto_percentual: parseFloat(c.desconto_percentual || c.desconto || 10) || 10,
+            soma_produtos: parseFloat(c.soma_produtos) || 0,
+            preco_combo: parseFloat(c.preco_combo || c.valor_combo || c.valor) || 0,
+            economia: parseFloat(c.economia) || 0,
+            validade_combo: c.validade_combo || c.validade || c.fim_oferta || '',
+            url_imagem: c.url_imagem || c.imagem || c.capa || '',
+            itens: Array.isArray(c.itens) ? c.itens.map(i => ({
+                sku: i.sku || i.codigo || '',
+                firebaseKey: i.firebaseKey || i.firebase_key || '',
+                nome: i.nome || i.descricao || '',
+                qtd: parseFloat(i.qtd || i.quantidade || 1) || 1,
+                preco_unitario_original: parseFloat(i.preco_unitario_original || i.preco || i.valor || 0) || 0,
+                preco_unitario_combo: parseFloat(i.preco_unitario_combo || 0) || 0,
+                total_original: parseFloat(i.total_original || 0) || 0,
+                total_combo: parseFloat(i.total_combo || 0) || 0
+            })) : [],
+            criado_em: c.criado_em || new Date().toISOString(),
+            last_update: c.last_update || Date.now()
+        };
+    });
+}
+
+async function carregarCombosDaNuvemSeExistir() {
+    try {
+        const res = await fetchComTimeout(
+            FirebaseAPI.baseURL + "combos.json?nocache=" + Date.now(),
+            { cache: "no-store" },
+            20000,
+            "Ler combos do Firebase"
+        );
+
+        if (!res.ok) return;
+
+        const dados = await res.json();
+        const combosNuvem = normalizarListaCombosEntrada(dados);
+
+        if (!combosNuvem.length) return;
+
+        const mapa = new Map();
+
+        combosNuvem.forEach(c => {
+            mapa.set(c.id, c);
+        });
+
+        combosDoSistema.forEach(c => {
+            const atual = mapa.get(c.id);
+            if (!atual || (parseFloat(c.last_update) || 0) >= (parseFloat(atual.last_update) || 0)) {
+                mapa.set(c.id, c);
+            }
+        });
+
+        combosDoSistema = Array.from(mapa.values());
+        await saveCombosLocally();
+
+    } catch (e) {
+        console.warn("Não foi possível carregar combos da nuvem agora:", e);
+    }
+}
+
+function migrarCombosAntigosDosProdutos() {
+    const grupos = {};
+
+    products.forEach(p => {
+        const comboAntigo = (p.combo_id || '').toString().trim();
+        if (!comboAntigo) return;
+
+        const idSeguro = normalizarIdFirebase("LEGADO_" + comboAntigo);
+
+        if (!grupos[idSeguro]) {
+            grupos[idSeguro] = {
+                id: idSeguro,
+                combo_legado_id: comboAntigo,
+                nome: comboAntigo,
+                ativo: true,
+                motivo_desativacao: '',
                 desconto_percentual: 10,
                 soma_produtos: 0,
                 preco_combo: 0,
                 economia: 0,
-                validade_combo: '',
+                validade_combo: p.validade_combo || '',
                 url_imagem: '',
                 itens: [],
                 criado_em: new Date().toISOString(),
                 last_update: Date.now()
             };
-            combosDoSistema.unshift(novo);
-            comboEditandoId = id;
-            saveCombosLocally();
-            if (render) {
-                renderizarComboAtual();
-                renderizarListaCombos();
-            }
         }
 
-        function renderizarComboAtual() {
-            prepararSelectDescontosCombo();
-            const c = getComboAtual();
-            if (!c) return;
-            document.getElementById('combo-nome').value = c.nome || '';
-            document.getElementById('combo-desconto').value = String(c.desconto_percentual || 10);
-            document.getElementById('combo-validade').value = c.validade_combo || '';
-            document.getElementById('combo-capa-preview').src = c.url_imagem || 'https://placehold.co/180x180/f4f4f5/a1a1aa?text=CAPA';
-            document.getElementById('combo-status-label').innerHTML = c.ativo ? '<span class="mini-badge success">ATIVO</span>' : '<span class="mini-badge danger">INATIVO</span>';
-            renderizarItensCombo();
-            recalcularComboEmTela(false);
+        grupos[idSeguro].itens.push(produtoResumoParaCombo(p, 1));
+
+        if (!grupos[idSeguro].validade_combo && p.validade_combo) {
+            grupos[idSeguro].validade_combo = p.validade_combo;
+        }
+    });
+
+    let migrou = false;
+
+    Object.values(grupos).forEach(comboMigrado => {
+        const jaExiste = combosDoSistema.some(c =>
+            c.id === comboMigrado.id ||
+            c.combo_legado_id === comboMigrado.combo_legado_id ||
+            c.nome === comboMigrado.nome
+        );
+
+        if (!jaExiste) {
+            recalcularCombo(comboMigrado);
+            combosDoSistema.push(comboMigrado);
+            migrou = true;
+        }
+    });
+
+    return migrou;
+}
+
+function getComboAtual() {
+    if (!comboEditandoId && combosDoSistema.length) {
+        comboEditandoId = combosDoSistema[0].id;
+    }
+
+    if (!comboEditandoId) {
+        novoComboEmBranco(false);
+    }
+
+    return combosDoSistema.find(c => c.id === comboEditandoId);
+}
+
+async function abrirModuloCombos() {
+    prepararSelectDescontosCombo();
+
+    await carregarCombosDaNuvemSeExistir();
+
+    const migrou = migrarCombosAntigosDosProdutos();
+    if (migrou) {
+        await saveCombosLocally();
+        mostrarAlerta("Combos antigos encontrados e migrados para o novo módulo.", "aviso");
+    }
+
+    await processarStatusCombos();
+
+    if (!comboEditandoId && combosDoSistema.length) {
+        comboEditandoId = combosDoSistema[0].id;
+    }
+
+    if (!comboEditandoId) {
+        novoComboEmBranco(false);
+    }
+
+    renderizarComboAtual();
+    renderizarListaCombos();
+    openSidebar('combos-sidebar');
+    lucide.createIcons();
+}
+
+function novoComboEmBranco(render = true) {
+    const id = gerarIdCombo('COMBO');
+
+    const novo = {
+        id,
+        combo_legado_id: '',
+        nome: '',
+        ativo: false,
+        motivo_desativacao: 'Rascunho ainda não ativado',
+        desconto_percentual: 10,
+        soma_produtos: 0,
+        preco_combo: 0,
+        economia: 0,
+        validade_combo: '',
+        url_imagem: '',
+        itens: [],
+        criado_em: new Date().toISOString(),
+        last_update: Date.now()
+    };
+
+    combosDoSistema.unshift(novo);
+    comboEditandoId = id;
+    saveCombosLocally();
+
+    if (render) {
+        renderizarComboAtual();
+        renderizarListaCombos();
+    }
+}
+
+function renderizarComboAtual() {
+    prepararSelectDescontosCombo();
+
+    const c = getComboAtual();
+    if (!c) return;
+
+    document.getElementById('combo-nome').value = c.nome || '';
+    document.getElementById('combo-desconto').value = String(c.desconto_percentual || 10);
+    document.getElementById('combo-validade').value = c.validade_combo || '';
+    document.getElementById('combo-capa-preview').src = c.url_imagem || 'https://placehold.co/180x180/f4f4f5/a1a1aa?text=CAPA';
+
+    document.getElementById('combo-status-label').innerHTML = c.ativo
+        ? '<span class="mini-badge success">ATIVO</span>'
+        : '<span class="mini-badge danger">INATIVO</span>';
+
+    renderizarItensCombo();
+    recalcularComboEmTela(false);
+}
+
+function produtoResumoParaCombo(p, qtd) {
+    const q = Math.max(1, parseFloat(qtd) || 1);
+    const preco = parseFloat(p.preco) || 0;
+
+    return {
+        sku: p.codigo || '',
+        firebaseKey: p.firebaseKey || p.id || p.codigo || '',
+        nome: p.nome || '',
+        qtd: q,
+        preco_unitario_original: preco,
+        preco_unitario_combo: preco,
+        total_original: preco * q,
+        total_combo: preco * q
+    };
+}
+
+function buscarProdutosParaCombo() {
+    const termo = limparTexto(document.getElementById('combo-busca-produto').value || '');
+    const box = document.getElementById('combo-resultados-produtos');
+
+    if (!box) return;
+
+    if (!termo || termo.length < 2) {
+        box.innerHTML = '<small style="font-size:10px;color:var(--text-secondary);font-weight:800;">Digite pelo menos 2 letras, SKU ou EAN.</small>';
+        return;
+    }
+
+    const resultados = products.filter(p => {
+        const hay = limparTexto(`${p.codigo || ''} ${p.nome || ''} ${p.gtin || ''}`);
+        return hay.includes(termo);
+    }).slice(0, 12);
+
+    if (!resultados.length) {
+        box.innerHTML = '<small style="font-size:10px;color:var(--danger);font-weight:800;">Nenhum produto encontrado.</small>';
+        return;
+    }
+
+    box.innerHTML = resultados.map(p => {
+        const estoque = parseFloat(p.estoque) || 0;
+        const skuSeguro = comboIdAttr(p.codigo);
+
+        return `<div class="combo-line">
+            <div style="min-width:0;">
+                <strong style="font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTMLCombo(p.nome || 'Sem nome')}</strong>
+                <small>SKU ${escapeHTMLCombo(p.codigo || '')} • ${dinheiroBR(p.preco)} • Estoque ${estoque}</small>
+            </div>
+            <button class="nav-btn primary" style="padding:6px 8px;font-size:10px;" onclick="adicionarProdutoAoCombo('${skuSeguro}')">ADD</button>
+        </div>`;
+    }).join('');
+
+    lucide.createIcons();
+}
+
+async function adicionarProdutoAoCombo(skuCodificado) {
+    const sku = decodeComboId(skuCodificado);
+    const c = getComboAtual();
+    const p = products.find(x => x.codigo === sku);
+
+    if (!c || !p) return;
+
+    const qtd = Math.max(1, parseFloat(document.getElementById('combo-qtd-produto').value) || 1);
+    const existente = c.itens.find(i => i.sku === sku);
+
+    if (existente) {
+        existente.qtd = (parseFloat(existente.qtd) || 1) + qtd;
+    } else {
+        c.itens.push(produtoResumoParaCombo(p, qtd));
+    }
+
+    c.last_update = Date.now();
+    recalcularCombo(c);
+
+    await saveCombosLocally();
+
+    renderizarComboAtual();
+    renderizarListaCombos();
+}
+
+async function removerItemCombo(skuCodificado) {
+    const sku = decodeComboId(skuCodificado);
+    const c = getComboAtual();
+
+    if (!c) return;
+
+    c.itens = c.itens.filter(i => i.sku !== sku);
+    c.last_update = Date.now();
+
+    recalcularCombo(c);
+    await saveCombosLocally();
+
+    renderizarComboAtual();
+    renderizarListaCombos();
+}
+
+async function alterarQtdItemCombo(skuCodificado, qtd) {
+    const sku = decodeComboId(skuCodificado);
+    const c = getComboAtual();
+
+    if (!c) return;
+
+    const item = c.itens.find(i => i.sku === sku);
+    if (!item) return;
+
+    item.qtd = Math.max(1, parseFloat(qtd) || 1);
+    c.last_update = Date.now();
+
+    recalcularCombo(c);
+    await saveCombosLocally();
+
+    renderizarComboAtual();
+    renderizarListaCombos();
+}
+
+function recalcularCombo(combo) {
+    const c = combo || getComboAtual();
+    if (!c) return null;
+
+    const desconto = parseFloat(c.desconto_percentual) || 0;
+    let soma = 0;
+
+    c.itens = (c.itens || []).map(item => {
+        const p = products.find(x => x.codigo === item.sku);
+        const precoAtual = p
+            ? (parseFloat(p.preco) || 0)
+            : (parseFloat(item.preco_unitario_original) || 0);
+
+        const qtd = Math.max(1, parseFloat(item.qtd) || 1);
+        const totalOriginal = precoAtual * qtd;
+
+        soma += totalOriginal;
+
+        return {
+            ...item,
+            nome: p ? (p.nome || item.nome) : item.nome,
+            firebaseKey: p ? (p.firebaseKey || p.id || p.codigo || item.firebaseKey) : item.firebaseKey,
+            qtd,
+            preco_unitario_original: parseFloat(precoAtual.toFixed(2)),
+            total_original: parseFloat(totalOriginal.toFixed(2))
+        };
+    });
+
+    const precoCombo = Math.max(0, soma * (1 - desconto / 100));
+    const fator = soma > 0 ? (precoCombo / soma) : 0;
+
+    c.itens = c.itens.map(item => ({
+        ...item,
+        preco_unitario_combo: parseFloat(((parseFloat(item.preco_unitario_original) || 0) * fator).toFixed(2)),
+        total_combo: parseFloat(((parseFloat(item.total_original) || 0) * fator).toFixed(2))
+    }));
+
+    c.soma_produtos = parseFloat(soma.toFixed(2));
+    c.preco_combo = parseFloat(precoCombo.toFixed(2));
+    c.economia = parseFloat((soma - precoCombo).toFixed(2));
+
+    return c;
+}
+
+function recalcularComboEmTela(atualizarModelo = true) {
+    const c = getComboAtual();
+    if (!c) return;
+
+    if (atualizarModelo) {
+        c.nome = document.getElementById('combo-nome').value.trim();
+        c.desconto_percentual = parseFloat(document.getElementById('combo-desconto').value) || 10;
+        c.validade_combo = document.getElementById('combo-validade').value || '';
+        c.last_update = Date.now();
+    }
+
+    recalcularCombo(c);
+
+    document.getElementById('combo-soma').innerText = dinheiroBR(c.soma_produtos);
+    document.getElementById('combo-total').innerText = dinheiroBR(c.preco_combo);
+    document.getElementById('combo-economia').innerText = dinheiroBR(c.economia);
+
+    saveCombosLocally();
+    renderizarItensCombo();
+}
+
+function renderizarItensCombo() {
+    const c = getComboAtual();
+    const box = document.getElementById('combo-itens-lista');
+
+    if (!box || !c) return;
+
+    if (!c.itens || !c.itens.length) {
+        box.innerHTML = '<small style="font-size:10px;color:var(--text-secondary);font-weight:800;">Nenhum produto adicionado ao combo.</small>';
+        return;
+    }
+
+    box.innerHTML = c.itens.map(item => {
+        const p = products.find(x => x.codigo === item.sku);
+        const estoque = p ? (parseFloat(p.estoque) || 0) : 0;
+        const semEstoque = estoque < (parseFloat(item.qtd) || 1);
+        const skuSeguro = comboIdAttr(item.sku);
+
+        return `<div class="combo-line" style="align-items:flex-start;${semEstoque ? 'border-color:#fecaca;background:#fef2f2;' : ''}">
+            <div style="min-width:0; flex:1;">
+                <strong style="font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTMLCombo(item.nome || item.sku)}</strong>
+                <small>Original: ${dinheiroBR(item.preco_unitario_original)} • No combo: ${dinheiroBR(item.preco_unitario_combo)} • Estoque: ${estoque}</small>
+                ${semEstoque ? '<div class="mini-badge danger" style="margin-top:4px;">Estoque insuficiente: combo será desativado</div>' : ''}
+            </div>
+            <input type="number" class="form-input" style="width:72px;padding:6px;" min="1" value="${item.qtd}" onchange="alterarQtdItemCombo('${skuSeguro}', this.value)">
+            <button class="btn-icon" style="width:32px;height:32px;color:var(--danger);" onclick="removerItemCombo('${skuSeguro}')"><i data-lucide="trash-2" size="14"></i></button>
+        </div>`;
+    }).join('');
+
+    lucide.createIcons();
+}
+
+async function salvarCombosNaNuvemAgora() {
+    await processarStatusCombos(false);
+
+    const combosLimpos = sanitizeCombosForExport(combosDoSistema);
+    const combosPorId = {};
+
+    combosLimpos.forEach(c => {
+        if (!c.id) return;
+        combosPorId[normalizarIdFirebase(c.id)] = {
+            ...c,
+            id: normalizarIdFirebase(c.id)
+        };
+    });
+
+    const res = await fetchComTimeout(FirebaseAPI.baseURL + "combos.json", {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(combosPorId)
+    }, 30000, "Salvar combos no Firebase");
+
+    if (!res.ok) {
+        throw new Error("Erro ao salvar combos no Firebase: HTTP " + res.status);
+    }
+
+    await GitHubAPI.saveFile(
+        `site/combos.json`,
+        combosPorId,
+        `PIM: Atualização de Combos`
+    );
+}
+
+async function salvarComboAtual() {
+    const c = getComboAtual();
+    if (!c) return;
+
+    c.nome = document.getElementById('combo-nome').value.trim();
+    c.desconto_percentual = parseFloat(document.getElementById('combo-desconto').value) || 10;
+    c.validade_combo = document.getElementById('combo-validade').value || '';
+
+    if (!c.nome) return alert('Informe o nome do combo.');
+    if (!c.itens || !c.itens.length) return alert('Adicione pelo menos um produto ao combo.');
+    if (!c.validade_combo) return alert('Informe a data final da oferta do combo.');
+
+    recalcularCombo(c);
+
+    c.ativo = true;
+    c.motivo_desativacao = '';
+    c.last_update = Date.now();
+
+    await saveCombosLocally();
+    await processarStatusCombos();
+
+    renderizarComboAtual();
+    renderizarListaCombos();
+
+    try {
+        await salvarCombosNaNuvemAgora();
+        mostrarAlerta('Combo salvo e enviado para a nuvem.', 'sucesso');
+    } catch (e) {
+        console.error(e);
+        mostrarAlerta('Combo salvo localmente, mas falhou ao enviar para a nuvem.', 'erro');
+    }
+}
+
+async function editarCombo(idCodificado) {
+    const id = decodeComboId(idCodificado);
+    const existe = combosDoSistema.some(c => c.id === id);
+
+    if (!existe) {
+        alert('Combo não encontrado para edição.');
+        return;
+    }
+
+    comboEditandoId = id;
+
+    renderizarComboAtual();
+    renderizarListaCombos();
+
+    const nomeInput = document.getElementById('combo-nome');
+    if (nomeInput) nomeInput.focus();
+}
+
+async function alternarStatusCombo(idCodificado) {
+    const id = decodeComboId(idCodificado);
+    const c = combosDoSistema.find(x => x.id === id);
+
+    if (!c) {
+        alert('Combo não encontrado.');
+        return;
+    }
+
+    if (!c.ativo) {
+        const motivo = validarComboPodeAtivar(c);
+        if (motivo) return alert(motivo);
+
+        c.ativo = true;
+        c.motivo_desativacao = '';
+    } else {
+        c.ativo = false;
+        c.motivo_desativacao = 'Desativado manualmente';
+    }
+
+    c.last_update = Date.now();
+
+    await saveCombosLocally();
+
+    renderizarComboAtual();
+    renderizarListaCombos();
+
+    try {
+        await salvarCombosNaNuvemAgora();
+        mostrarAlerta('Status do combo atualizado.', 'sucesso');
+    } catch (e) {
+        console.error(e);
+        mostrarAlerta('Status alterado localmente, mas falhou ao enviar para a nuvem.', 'erro');
+    }
+}
+
+async function excluirCombo(idCodificado) {
+    const id = decodeComboId(idCodificado);
+    const c = combosDoSistema.find(x => x.id === id);
+
+    if (!c) {
+        alert('Combo não encontrado para excluir.');
+        return;
+    }
+
+    if (!confirm(`Excluir permanentemente o combo "${c.nome || c.id}"?`)) return;
+
+    combosDoSistema = combosDoSistema.filter(combo => combo.id !== id);
+
+    if (comboEditandoId === id) {
+        comboEditandoId = combosDoSistema.length ? combosDoSistema[0].id : null;
+    }
+
+    await saveCombosLocally();
+
+    if (!comboEditandoId) {
+        novoComboEmBranco(false);
+    }
+
+    renderizarComboAtual();
+    renderizarListaCombos();
+
+    try {
+        await salvarCombosNaNuvemAgora();
+        mostrarAlerta('Combo excluído da nuvem.', 'sucesso');
+    } catch (e) {
+        console.error(e);
+        mostrarAlerta('Combo excluído localmente, mas falhou ao atualizar a nuvem.', 'erro');
+    }
+}
+
+function validarComboPodeAtivar(c) {
+    if (!c.nome) return 'Informe o nome do combo antes de ativar.';
+    if (!c.itens || !c.itens.length) return 'Adicione produtos ao combo antes de ativar.';
+    if (!c.validade_combo) return 'Informe a data final da oferta do combo.';
+
+    const fim = new Date(c.validade_combo);
+    if (isNaN(fim.getTime()) || fim.getTime() < Date.now()) {
+        return 'A data final do combo já passou.';
+    }
+
+    for (const item of c.itens) {
+        const p = products.find(x => x.codigo === item.sku);
+
+        if (!p) {
+            return `Produto ${item.sku} não encontrado. Combo não pode ser ativado.`;
         }
 
-        function produtoResumoParaCombo(p, qtd) {
-            const q = Math.max(1, parseFloat(qtd) || 1);
-            const preco = parseFloat(p.preco) || 0;
-            return {
-                sku: p.codigo || '',
-                firebaseKey: p.firebaseKey || p.id || p.codigo || '',
-                nome: p.nome || '',
-                qtd: q,
-                preco_unitario_original: preco,
-                preco_unitario_combo: preco,
-                total_original: preco * q,
-                total_combo: preco * q
-            };
+        if ((parseFloat(p.estoque) || 0) < (parseFloat(item.qtd) || 1)) {
+            return `Produto sem estoque suficiente: ${p.nome || item.sku}`;
         }
 
-        function buscarProdutosParaCombo() {
-            const termo = limparTexto(document.getElementById('combo-busca-produto').value || '');
-            const box = document.getElementById('combo-resultados-produtos');
-            if (!box) return;
-            if (!termo || termo.length < 2) {
-                box.innerHTML = '<small style="font-size:10px;color:var(--text-secondary);font-weight:800;">Digite pelo menos 2 letras, SKU ou EAN.</small>';
-                return;
-            }
-
-            const resultados = products.filter(p => {
-                const hay = limparTexto(`${p.codigo || ''} ${p.nome || ''} ${p.gtin || ''}`);
-                return hay.includes(termo);
-            }).slice(0, 12);
-
-            if (!resultados.length) {
-                box.innerHTML = '<small style="font-size:10px;color:var(--danger);font-weight:800;">Nenhum produto encontrado.</small>';
-                return;
-            }
-
-            box.innerHTML = resultados.map(p => {
-                const estoque = parseFloat(p.estoque) || 0;
-                return `<div class="combo-line">
-                    <div style="min-width:0;">
-                        <strong style="font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nome || 'Sem nome'}</strong>
-                        <small>SKU ${p.codigo || ''} • ${dinheiroBR(p.preco)} • Estoque ${estoque}</small>
-                    </div>
-                    <button class="nav-btn primary" style="padding:6px 8px;font-size:10px;" onclick="adicionarProdutoAoCombo('${p.codigo}')">ADD</button>
-                </div>`;
-            }).join('');
-            lucide.createIcons();
+        if (p.situacao === 'I') {
+            return `Produto inativo: ${p.nome || item.sku}`;
         }
+    }
 
-        async function adicionarProdutoAoCombo(sku) {
-            const c = getComboAtual();
-            const p = products.find(x => x.codigo === sku);
-            if (!c || !p) return;
-            const qtd = Math.max(1, parseFloat(document.getElementById('combo-qtd-produto').value) || 1);
-            const existente = c.itens.find(i => i.sku === sku);
-            if (existente) {
-                existente.qtd = (parseFloat(existente.qtd) || 1) + qtd;
-            } else {
-                c.itens.push(produtoResumoParaCombo(p, qtd));
-            }
+    return '';
+}
+
+async function processarStatusCombos(salvarLocal = true) {
+    let mudou = false;
+
+    combosDoSistema.forEach(c => {
+        recalcularCombo(c);
+
+        const motivo = validarComboPodeAtivar(c);
+
+        if (c.ativo && motivo) {
+            c.ativo = false;
+            c.motivo_desativacao = motivo;
             c.last_update = Date.now();
-            recalcularCombo(c);
-            await saveCombosLocally();
-            renderizarComboAtual();
-            renderizarListaCombos();
+            mudou = true;
         }
+    });
 
-        async function removerItemCombo(sku) {
-            const c = getComboAtual();
-            if (!c) return;
-            c.itens = c.itens.filter(i => i.sku !== sku);
-            c.last_update = Date.now();
-            recalcularCombo(c);
-            await saveCombosLocally();
-            renderizarComboAtual();
-            renderizarListaCombos();
-        }
+    if (mudou && salvarLocal) {
+        await saveCombosLocally();
+    }
+}
 
-        async function alterarQtdItemCombo(sku, qtd) {
-            const c = getComboAtual();
-            if (!c) return;
-            const item = c.itens.find(i => i.sku === sku);
-            if (!item) return;
-            item.qtd = Math.max(1, parseFloat(qtd) || 1);
-            c.last_update = Date.now();
-            recalcularCombo(c);
-            await saveCombosLocally();
-            renderizarComboAtual();
-            renderizarListaCombos();
-        }
+function renderizarListaCombos() {
+    const box = document.getElementById('lista-combos-criados');
+    if (!box) return;
 
-        function recalcularCombo(combo) {
-            const c = combo || getComboAtual();
-            if (!c) return null;
-            const desconto = parseFloat(c.desconto_percentual) || 0;
-            let soma = 0;
+    if (!combosDoSistema.length) {
+        box.innerHTML = '<small style="font-size:10px;color:var(--text-secondary);font-weight:800;">Nenhum combo criado ainda.</small>';
+        return;
+    }
 
-            c.itens = (c.itens || []).map(item => {
-                const p = products.find(x => x.codigo === item.sku);
-                const precoAtual = p ? (parseFloat(p.preco) || 0) : (parseFloat(item.preco_unitario_original) || 0);
-                const qtd = Math.max(1, parseFloat(item.qtd) || 1);
-                const totalOriginal = precoAtual * qtd;
-                soma += totalOriginal;
-                return {
-                    ...item,
-                    nome: p ? (p.nome || item.nome) : item.nome,
-                    firebaseKey: p ? (p.firebaseKey || p.id || p.codigo || item.firebaseKey) : item.firebaseKey,
-                    qtd,
-                    preco_unitario_original: precoAtual,
-                    total_original: totalOriginal
-                };
-            });
+    box.innerHTML = combosDoSistema.map(c => {
+        recalcularCombo(c);
 
-            const precoCombo = Math.max(0, soma * (1 - desconto / 100));
-            const fator = soma > 0 ? (precoCombo / soma) : 0;
+        const img = c.url_imagem || 'https://placehold.co/120x120/f4f4f5/a1a1aa?text=COMBO';
+        const idSeguro = comboIdAttr(c.id);
 
-            c.itens = c.itens.map(item => ({
-                ...item,
-                preco_unitario_combo: parseFloat(((parseFloat(item.preco_unitario_original) || 0) * fator).toFixed(2)),
-                total_combo: parseFloat(((parseFloat(item.total_original) || 0) * fator).toFixed(2))
-            }));
+        return `<div class="combo-card" style="${c.id === comboEditandoId ? 'border-color:#0284c7;' : ''}">
+            <img class="combo-cover" src="${img}" onclick="editarCombo('${idSeguro}')">
+            <div style="flex:1; min-width:0;">
+                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                    <strong style="font-size:13px;">${escapeHTMLCombo(c.nome || 'Combo sem nome')}</strong>
+                    ${c.ativo ? '<span class="mini-badge success">ATIVO</span>' : '<span class="mini-badge danger">INATIVO</span>'}
+                </div>
 
-            c.soma_produtos = parseFloat(soma.toFixed(2));
-            c.preco_combo = parseFloat(precoCombo.toFixed(2));
-            c.economia = parseFloat((soma - precoCombo).toFixed(2));
-            return c;
-        }
+                <small style="display:block;color:var(--text-secondary);font-weight:800;margin-top:4px;">
+                    ${(c.itens && c.itens.length) || 0} produto(s) • ${c.desconto_percentual || 0}% off • ${dinheiroBR(c.preco_combo)} • Fim: ${escapeHTMLCombo(c.validade_combo || 'sem data')}
+                </small>
 
-        function recalcularComboEmTela(atualizarModelo = true) {
-            const c = getComboAtual();
-            if (!c) return;
-            if (atualizarModelo) {
-                c.nome = document.getElementById('combo-nome').value.trim();
-                c.desconto_percentual = parseFloat(document.getElementById('combo-desconto').value) || 10;
-                c.validade_combo = document.getElementById('combo-validade').value || '';
-                c.last_update = Date.now();
-            }
+                ${c.combo_legado_id ? `<small style="display:block;color:#0369a1;font-weight:800;margin-top:4px;">Migrado do combo antigo: ${escapeHTMLCombo(c.combo_legado_id)}</small>` : ''}
 
-            recalcularCombo(c);
-            document.getElementById('combo-soma').innerText = dinheiroBR(c.soma_produtos);
-            document.getElementById('combo-total').innerText = dinheiroBR(c.preco_combo);
-            document.getElementById('combo-economia').innerText = dinheiroBR(c.economia);
-            saveCombosLocally();
-            renderizarItensCombo();
-        }
+                ${c.motivo_desativacao ? `<small style="display:block;color:var(--danger);font-weight:800;margin-top:4px;">${escapeHTMLCombo(c.motivo_desativacao)}</small>` : ''}
 
-        function renderizarItensCombo() {
-            const c = getComboAtual();
-            const box = document.getElementById('combo-itens-lista');
-            if (!box || !c) return;
+                <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+                    <button class="nav-btn" style="padding:6px 8px;font-size:10px;" onclick="editarCombo('${idSeguro}')">EDITAR</button>
+                    <button class="nav-btn ${c.ativo ? '' : 'primary'}" style="padding:6px 8px;font-size:10px;" onclick="alternarStatusCombo('${idSeguro}')">${c.ativo ? 'DESATIVAR' : 'ATIVAR'}</button>
+                    <button class="nav-btn" style="padding:6px 8px;font-size:10px;color:var(--danger);border-color:#fecaca;" onclick="excluirCombo('${idSeguro}')">EXCLUIR</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
 
-            if (!c.itens || !c.itens.length) {
-                box.innerHTML = '<small style="font-size:10px;color:var(--text-secondary);font-weight:800;">Nenhum produto adicionado ao combo.</small>';
-                return;
-            }
+    lucide.createIcons();
+}
 
-            box.innerHTML = c.itens.map(item => {
-                const p = products.find(x => x.codigo === item.sku);
-                const estoque = p ? (parseFloat(p.estoque) || 0) : 0;
-                const semEstoque = estoque < (parseFloat(item.qtd) || 1);
-                return `<div class="combo-line" style="align-items:flex-start;${semEstoque ? 'border-color:#fecaca;background:#fef2f2;' : ''}">
-                    <div style="min-width:0; flex:1;">
-                        <strong style="font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.nome || item.sku}</strong>
-                        <small>Original: ${dinheiroBR(item.preco_unitario_original)} • No combo: ${dinheiroBR(item.preco_unitario_combo)} • Estoque: ${estoque}</small>
-                        ${semEstoque ? '<div class="mini-badge danger" style="margin-top:4px;">Estoque insuficiente: combo será desativado</div>' : ''}
-                    </div>
-                    <input type="number" class="form-input" style="width:72px;padding:6px;" min="1" value="${item.qtd}" onchange="alterarQtdItemCombo('${item.sku}', this.value)">
-                    <button class="btn-icon" style="width:32px;height:32px;color:var(--danger);" onclick="removerItemCombo('${item.sku}')"><i data-lucide="trash-2" size="14"></i></button>
-                </div>`;
-            }).join('');
-            lucide.createIcons();
-        }
+function abrirEditorImagemComboAtual() {
+    const c = getComboAtual();
+    if (!c) return;
 
-        async function salvarComboAtual() {
-            const c = getComboAtual();
-            if (!c) return;
-            c.nome = document.getElementById('combo-nome').value.trim();
-            c.desconto_percentual = parseFloat(document.getElementById('combo-desconto').value) || 10;
-            c.validade_combo = document.getElementById('combo-validade').value || '';
-
-            if (!c.nome) return alert('Informe o nome do combo.');
-            if (!c.itens || !c.itens.length) return alert('Adicione pelo menos um produto ao combo.');
-            if (!c.validade_combo) return alert('Informe a data final da oferta do combo.');
-
-            recalcularCombo(c);
-            c.ativo = true;
-            c.motivo_desativacao = '';
-            c.last_update = Date.now();
-
-            await saveCombosLocally();
-            await processarStatusCombos();
-            renderizarComboAtual();
-            renderizarListaCombos();
-            mostrarAlerta('Combo salvo com sucesso.', 'sucesso');
-        }
-
-        async function editarCombo(id) {
-            comboEditandoId = id;
-            renderizarComboAtual();
-            renderizarListaCombos();
-        }
-
-        async function alternarStatusCombo(id) {
-            const c = combosDoSistema.find(x => x.id === id);
-            if (!c) return;
-
-            if (!c.ativo) {
-                const motivo = validarComboPodeAtivar(c);
-                if (motivo) return alert(motivo);
-                c.ativo = true;
-                c.motivo_desativacao = '';
-            } else {
-                c.ativo = false;
-                c.motivo_desativacao = 'Desativado manualmente';
-            }
-
-            c.last_update = Date.now();
-            await saveCombosLocally();
-            renderizarComboAtual();
-            renderizarListaCombos();
-        }
-
-        async function excluirCombo(id) {
-            if (!confirm('Excluir este combo permanentemente?')) return;
-            combosDoSistema = combosDoSistema.filter(c => c.id !== id);
-            if (comboEditandoId === id) comboEditandoId = null;
-            await saveCombosLocally();
-            if (!comboEditandoId) novoComboEmBranco(false);
-            renderizarComboAtual();
-            renderizarListaCombos();
-        }
-
-        function validarComboPodeAtivar(c) {
-            if (!c.nome) return 'Informe o nome do combo antes de ativar.';
-            if (!c.itens || !c.itens.length) return 'Adicione produtos ao combo antes de ativar.';
-            if (!c.validade_combo) return 'Informe a data final da oferta do combo.';
-
-            const fim = new Date(c.validade_combo);
-            if (isNaN(fim.getTime()) || fim.getTime() < Date.now()) return 'A data final do combo já passou.';
-
-            for (const item of c.itens) {
-                const p = products.find(x => x.codigo === item.sku);
-                if (!p) return `Produto ${item.sku} não encontrado. Combo não pode ser ativado.`;
-                if ((parseFloat(p.estoque) || 0) < (parseFloat(item.qtd) || 1)) return `Produto sem estoque suficiente: ${p.nome || item.sku}`;
-                if (p.situacao === 'I') return `Produto inativo: ${p.nome || item.sku}`;
-            }
-
-            return '';
-        }
-
-        async function processarStatusCombos() {
-            let mudou = false;
-
-            combosDoSistema.forEach(c => {
-                recalcularCombo(c);
-                const motivo = validarComboPodeAtivar(c);
-                if (c.ativo && motivo) {
-                    c.ativo = false;
-                    c.motivo_desativacao = motivo;
-                    c.last_update = Date.now();
-                    mudou = true;
-                }
-            });
-
-            if (mudou) await saveCombosLocally();
-        }
-
-        function renderizarListaCombos() {
-            const box = document.getElementById('lista-combos-criados');
-            if (!box) return;
-
-            if (!combosDoSistema.length) {
-                box.innerHTML = '<small style="font-size:10px;color:var(--text-secondary);font-weight:800;">Nenhum combo criado ainda.</small>';
-                return;
-            }
-
-            box.innerHTML = combosDoSistema.map(c => {
-                recalcularCombo(c);
-                const img = c.url_imagem || 'https://placehold.co/120x120/f4f4f5/a1a1aa?text=COMBO';
-                return `<div class="combo-card" style="${c.id === comboEditandoId ? 'border-color:#0284c7;' : ''}">
-                    <img class="combo-cover" src="${img}" onclick="editarCombo('${c.id}')">
-                    <div style="flex:1; min-width:0;">
-                        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-                            <strong style="font-size:13px;">${c.nome || 'Combo sem nome'}</strong>
-                            ${c.ativo ? '<span class="mini-badge success">ATIVO</span>' : '<span class="mini-badge danger">INATIVO</span>'}
-                        </div>
-                        <small style="display:block;color:var(--text-secondary);font-weight:800;margin-top:4px;">${c.itens?.length || 0} produto(s) • ${c.desconto_percentual || 0}% off • ${dinheiroBR(c.preco_combo)} • Fim: ${c.validade_combo || 'sem data'}</small>
-                        ${c.motivo_desativacao ? `<small style="display:block;color:var(--danger);font-weight:800;margin-top:4px;">${c.motivo_desativacao}</small>` : ''}
-                        <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
-                            <button class="nav-btn" style="padding:6px 8px;font-size:10px;" onclick="editarCombo('${c.id}')">EDITAR</button>
-                            <button class="nav-btn ${c.ativo ? '' : 'primary'}" style="padding:6px 8px;font-size:10px;" onclick="alternarStatusCombo('${c.id}')">${c.ativo ? 'DESATIVAR' : 'ATIVAR'}</button>
-                            <button class="nav-btn" style="padding:6px 8px;font-size:10px;color:var(--danger);border-color:#fecaca;" onclick="excluirCombo('${c.id}')">EXCLUIR</button>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
-
-            lucide.createIcons();
-        }
-
-        function abrirEditorImagemComboAtual() {
-            const c = getComboAtual();
-            if (!c) return;
-            openCanvasSidebar(c.id, 'combo');
-        }
+    openCanvasSidebar(c.id, 'combo');
+}
 
         // ==========================================================
         // EDITOR DE CANVAS (NITIDEZ INCLUÍDA)
