@@ -1073,8 +1073,8 @@ let finalBase64 = isBase64Ready
         await GitHubAPI.saveFile(`site/produtos_meta.json`, jsonFinal, `PIM: Meta Ads JSON Atualizado`);
     }, false);
 
-   // 4. Combos ficam separados dos produtos para não interferir no Make nem no produtos.json
-enqueueTask("Salvar Combos no Firebase e GitHub", async () => {
+   // 4. Combos ficam separados dos produtos e salvam somente no GitHub
+enqueueTask("Salvar Combos no GitHub", async () => {
     await salvarCombosNaNuvemAgora();
 }, false);
 }
@@ -1094,39 +1094,52 @@ enqueueTask("Salvar Combos no Firebase e GitHub", async () => {
         }
         
         async function uploadImagens() {
-            if (imageQueue.length === 0) return alert("Não existem imagens na fila.");
+            if (imageQueue.length === 0) return alert('Não existem imagens na fila.');
 
             const queueCopy = [...imageQueue]; 
             imageQueue = []; 
             updateImageBadge();
 
-            mostrarAlerta("Enviando imagens para a fila...", "aviso");
+            mostrarAlerta('Enviando imagens da fila...', 'aviso');
 
             queueCopy.forEach(img => {
                 const tipo = img.tipo || 'produto';
                 const chave = img.sku || img.id;
                 enqueueTask(`Imagem ${tipo} ${chave}`, async () => {
                     const pastaDestinoGithub = await getPastaUploadAtiva(tipo === 'combo' ? 'combo' : 'produto');
-                    const pastaDestinoLocal = "../" + pastaDestinoGithub; 
-                    const prefixo = tipo === 'combo' ? 'combo_' : '';
-                    const fileName = `${prefixo}${chave}.webp`; 
+                    const pastaDestinoLocal = '../' + pastaDestinoGithub; 
+                    let fileName = `${chave}.webp`; 
 
-                    await GitHubAPI.saveFile(`${pastaDestinoGithub}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName}`, true);
+                    if (tipo === 'combo') {
+                        const cRef = combosDoSistema.find(x => x.id === chave);
+                        if (!cRef) throw new Error('Combo não encontrado para atualizar capa.');
 
-                    if (tipo === "combo") {
-    const cRef = combosDoSistema.find(x => x.id === chave);
-    if (cRef) {
-        cRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
-        cRef.last_update = Date.now();
+                        if (img.nome && !cRef.nome) cRef.nome = img.nome;
+                        fileName = getNomeArquivoImagemCombo(cRef);
 
-        await saveCombosLocally();
-        await salvarCombosNaNuvemAgora();
+                        await GitHubAPI.saveFile(
+                            `${pastaDestinoGithub}/${fileName}`,
+                            img.base64data,
+                            `PIM Sync: Capa Combo ${fileName}`,
+                            true
+                        );
 
-        renderizarComboAtual();
-        renderizarListaCombos();
-    }
-}
-                    else {
+                        cRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
+                        cRef.last_update = Date.now();
+
+                        await saveCombosLocally();
+                        await salvarCombosNaNuvemAgora();
+
+                        renderizarComboAtual();
+                        renderizarListaCombos();
+                    } else {
+                        await GitHubAPI.saveFile(
+                            `${pastaDestinoGithub}/${fileName}`,
+                            img.base64data,
+                            `PIM Sync: Imagem ${fileName}`,
+                            true
+                        );
+
                         const pRef = products.find(x => x.codigo === chave); 
                         if(pRef) { 
                             pRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`; 
@@ -2221,6 +2234,22 @@ function normalizarIdFirebase(texto) {
         .slice(0, 80) || gerarIdCombo('COMBO');
 }
 
+function slugArquivoCombo(texto) {
+    return (texto || 'combo')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 80) || 'combo';
+}
+
+function getNomeArquivoImagemCombo(c) {
+    return `${slugArquivoCombo(c && c.nome ? c.nome : c && c.id ? c.id : 'combo')}.webp`;
+}
+
+
 function comboIdAttr(id) {
     return encodeURIComponent(String(id || ''));
 }
@@ -2291,18 +2320,23 @@ function normalizarListaCombosEntrada(dados) {
 
 async function carregarCombosDaNuvemSeExistir() {
     try {
-        const res = await fetchComTimeout(
-            FirebaseAPI.baseURL + "combos.json?nocache=" + Date.now(),
-            { cache: "no-store" },
-            20000,
-            "Ler combos do Firebase"
-        );
+        let dados = null;
+        let origem = '';
 
-        if (!res.ok) return;
+        // Novo padrão: combos ficam no GitHub, fora do Firebase.
+        const arquivoNovo = await GitHubAPI.getFileData('site/combo.json');
+        const arquivoLegado = arquivoNovo ? null : await GitHubAPI.getFileData('site/combos.json');
+        const arquivo = arquivoNovo || arquivoLegado;
 
-        const dados = await res.json();
+        if (arquivo && arquivo.content) {
+            const texto = GitHubAPI.decodeBase64toUTF8(arquivo.content);
+            dados = JSON.parse(texto);
+            origem = arquivoNovo ? 'site/combo.json' : 'site/combos.json';
+        }
+
+        if (!dados) return;
+
         const combosNuvem = normalizarListaCombosEntrada(dados);
-
         if (!combosNuvem.length) return;
 
         const mapa = new Map();
@@ -2320,9 +2354,10 @@ async function carregarCombosDaNuvemSeExistir() {
 
         combosDoSistema = Array.from(mapa.values());
         await saveCombosLocally();
+        console.log('Combos carregados do GitHub:', origem, combosDoSistema.length);
 
     } catch (e) {
-        console.warn("Não foi possível carregar combos da nuvem agora:", e);
+        console.warn('Não foi possível carregar combos do GitHub agora:', e);
     }
 }
 
@@ -2696,27 +2731,13 @@ async function salvarCombosNaNuvemAgora() {
         };
     });
 
-    const res = await fetchComTimeout(FirebaseAPI.baseURL + "combos.json", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(combosPorId)
-    }, 30000, "Salvar combos no Firebase");
-
-    if (!res.ok) {
-        throw new Error("Erro ao salvar combos no Firebase: HTTP " + res.status);
-    }
-
-    // GitHub fica como backup. Se falhar, o combo não deve deixar de ir para o Firebase.
-    try {
-        await GitHubAPI.saveFile(
-            "site/combos.json",
-            combosPorId,
-            "PIM: Atualização de Combos"
-        );
-    } catch (e) {
-        console.warn("Combo salvo no Firebase, mas falhou backup GitHub:", e);
-        mostrarAlerta("Combo salvo no Firebase. Backup GitHub falhou.", "aviso");
-    }
+    // Por decisão operacional, combo agora salva somente no GitHub.
+    // Isso evita travar o módulo caso o Firebase recuse /combos.json.
+    await GitHubAPI.saveFile(
+        'site/combo.json',
+        combosPorId,
+        'PIM: Atualização de Combos Promocionais'
+    );
 
     return combosPorId;
 }
@@ -3074,61 +3095,67 @@ function abrirEditorImagemComboAtual() {
             const base64full = canvas.toDataURL('image/webp', 0.9); 
             const base64data = base64full.split(',')[1];
 
-           if (tipo === "combo") {
-    const c = combosDoSistema.find(x => x.id === chave);
-    if (!c) return;
+            if (tipo === 'combo') {
+                const c = combosDoSistema.find(x => x.id === chave);
+                if (!c) return;
 
-    c.url_imagem = base64full;
-    c.last_update = Date.now();
+                const nomeDigitado = (document.getElementById('combo-nome')?.value || '').trim();
+                if (nomeDigitado) c.nome = nomeDigitado;
 
-    await saveCombosLocally();
+                if (!c.nome) {
+                    alert('Informe o nome do combo antes de aplicar a capa. A imagem será salva com o nome do combo.');
+                    return;
+                }
 
-    closeSidebar("editor-sidebar");
-    renderizarComboAtual();
-    renderizarListaCombos();
+                c.url_imagem = base64full;
+                c.last_update = Date.now();
+                await saveCombosLocally();
 
-    try {
-        mostrarAlerta("Enviando capa do combo para a nuvem...", "aviso");
+                closeSidebar('editor-sidebar');
+                renderizarComboAtual();
+                renderizarListaCombos();
 
-        const pastaDestinoGithub = await getPastaUploadAtiva("combo");
-        const pastaDestinoLocal = "../" + pastaDestinoGithub;
-        const idSeguro = normalizarIdFirebase(chave);
-        const fileName = `combo_${idSeguro}.webp`;
+                try {
+                    mostrarAlerta('Enviando capa do combo para o GitHub...', 'aviso');
 
-        await GitHubAPI.saveFile(
-            `${pastaDestinoGithub}/${fileName}`,
-            base64data,
-            `PIM Sync: Imagem ${fileName}`,
-            true
-        );
+                    const pastaDestinoGithub = await getPastaUploadAtiva('combo');
+                    const pastaDestinoLocal = '../' + pastaDestinoGithub;
+                    const fileName = getNomeArquivoImagemCombo(c);
 
-        c.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
-        c.last_update = Date.now();
+                    await GitHubAPI.saveFile(
+                        `${pastaDestinoGithub}/${fileName}`,
+                        base64data,
+                        `PIM Sync: Capa Combo ${fileName}`,
+                        true
+                    );
 
-        await saveCombosLocally();
-        await salvarCombosNaNuvemAgora();
+                    c.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
+                    c.last_update = Date.now();
 
-        renderizarComboAtual();
-        renderizarListaCombos();
+                    await saveCombosLocally();
+                    await salvarCombosNaNuvemAgora();
 
-        mostrarAlerta("Capa do combo aplicada e enviada para a nuvem.", "sucesso");
-    } catch (e) {
-        console.error(e);
+                    renderizarComboAtual();
+                    renderizarListaCombos();
 
-        imageQueue.push({
-            tipo: "combo",
-            id: chave,
-            sku: chave,
-            base64data: base64data
-        });
+                    mostrarAlerta('Capa do combo aplicada, enviada e combo salvo no GitHub.', 'sucesso');
+                } catch (e) {
+                    console.error(e);
 
-        updateImageBadge();
+                    imageQueue.push({
+                        tipo: 'combo',
+                        id: chave,
+                        sku: chave,
+                        nome: c.nome,
+                        base64data: base64data
+                    });
 
-        mostrarAlerta("A capa ficou salva localmente e entrou na fila de imagens.", "aviso");
-    }
+                    updateImageBadge();
+                    mostrarAlerta('A capa ficou salva localmente e entrou na fila de imagens: ' + e.message, 'aviso');
+                }
 
-    return;
-}
+                return;
+            }
 
             const p = products.find(x => x.codigo === chave); 
             if (!p) return;
