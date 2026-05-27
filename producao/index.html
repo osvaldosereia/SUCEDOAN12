@@ -4056,24 +4056,7 @@ function abrirEditorImagemComboAtual() {
     mostrarAlerta('Foto salva localmente e aplicada no card. Use ENVIAR FOTO ou SALVAR CARD para mandar ao GitHub/Firebase.', 'aviso');
 }
 
-                return;
-            }
-
-            const p = products.find(x => x.codigo === chave); 
-            if (!p) return;
-            p.url_imagem = base64full; 
-            p.last_update = Date.now(); 
-            await saveDataLocally(); 
-
-            imageQueue = imageQueue.filter(img => !((img.tipo || 'produto') === 'produto' && img.sku === chave));
-            imageQueue.push({ tipo: 'produto', sku: chave, base64data: base64data });
-            await localforage.setItem('imageQueue', imageQueue);
-            marcarProdutoParaSincronizacao(p, "upsert");
-            updateImageBadge(); 
-            closeSidebar('editor-sidebar'); 
-            renderGrid(ultimoTermoPesquisa, true);
-            mostrarAlerta('Foto aplicada no card. Clique em SALVAR CARD para enviar a foto ao GitHub e o produto ao Firebase.', 'aviso');
-        }
+                
 
         async function saveConfig() { 
             const cfg = { 
