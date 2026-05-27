@@ -4610,30 +4610,17 @@ function normalizarImagemComboSite(combo) {
     let img = combo.url_imagem || combo.imagem || combo.capa || combo.image || '';
 
     if (img && typeof img === 'string') {
-        let clean = img.trim();
-
-        if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:')) {
-            return clean;
-        }
-
-        clean = clean
+        let clean = img.trim()
             .replace(/^(\.\.\/)+/g, '')
             .replace(/^\.\/+/g, '')
-            .replace(/^\/+/g, '');
+            .replace(/^\/+/g, '')
+            .split('?')[0];
 
-        if (clean.startsWith('site/img/combos/')) {
-            clean = clean.replace('site/img/combos/', 'img/combos/');
-        }
-
-        if (clean.startsWith('site/')) {
-            clean = clean.replace('site/', '');
-        }
-
-        return clean.split('?')[0] + '?v=' + Date.now();
+        return clean + '?v=' + Date.now();
     }
 
     const nomeArquivo = slugComboImagemSite(combo.nome || combo.id);
-    return `img/combos/${nomeArquivo}.webp?v=${Date.now()}`;
+    return `site/img/combos/${nomeArquivo}.webp?v=${Date.now()}`;
 }
 function converterComboNovoParaSite(combo) {
     const itens = Array.isArray(combo.itens) ? combo.itens : [];
