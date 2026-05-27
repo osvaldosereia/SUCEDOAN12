@@ -1836,9 +1836,10 @@ if (p.combo_id !== undefined || p.validade_combo !== undefined) {
                 atual = atual.filter(v => v !== valor);
             }
             
-            p[campo] = atual;
-            p.last_update = Date.now();
-            await saveDataLocally();
+           p[campo] = atual;
+p.last_update = Date.now();
+await saveDataLocally();
+renderGrid(ultimoTermoPesquisa, true);
         }
 
         // ==========================================================
@@ -1975,7 +1976,23 @@ if (p.combo_id !== undefined || p.validade_combo !== undefined) {
             if (produtoTemCampoVazio(p, "sem_preco_custo")) pendencias.push("Custo");
             return pendencias;
         }
+function ordenarProdutosMaisRecentesPrimeiro(lista) {
+    if (!Array.isArray(lista)) return [];
 
+    return [...lista].sort((a, b) => {
+        const dataA = Number(a.last_update || a.id || 0) || 0;
+        const dataB = Number(b.last_update || b.id || 0) || 0;
+
+        if (dataB !== dataA) {
+            return dataB - dataA;
+        }
+
+        const nomeA = (a.nome || "").toString().toLowerCase();
+        const nomeB = (b.nome || "").toString().toLowerCase();
+
+        return nomeA.localeCompare(nomeB, "pt-BR");
+    });
+}
         // ==========================================================
         // LAZY LOADING E CARTÃO DE PRODUTO "FRONTAL"
         // ==========================================================
@@ -2042,8 +2059,10 @@ if (p.combo_id !== undefined || p.validade_combo !== undefined) {
 
             if(isFilter24hActive) { const oneDay = 24 * 60 * 60 * 1000; const now = Date.now(); filtered = filtered.filter(p => { const time = p.last_update || p.id || 0; return (now - time) <= oneDay; }); }
             
-            produtosFiltrados = filtered; gridContainer.innerHTML = ""; itemsCarregados = 0; 
-
+produtosFiltrados = ordenarProdutosMaisRecentesPrimeiro(filtered);
+gridContainer.innerHTML = "";
+itemsCarregados = 0;
+            
             if (produtosFiltrados.length === 0) { 
                 gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><h3 style="margin:0;">Nenhum produto encontrado</h3></div>`; 
                 document.getElementById('load-more-container').style.display = 'none';
