@@ -68,6 +68,10 @@
         .product-card { background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; padding: 15px; gap: 12px; transition: box-shadow 0.2s, transform 0.2s; }
         .product-card:hover { box-shadow: 0 10px 20px rgba(0,0,0,0.06); border-color: #d4d4d8; }
         .product-card.inactive { opacity: 0.5; filter: grayscale(1); }
+        .product-card.pending-save { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.12); }
+        .save-card-btn { width:100%; padding: 7px 5px; justify-content:center; font-size:9px; font-weight:900; }
+        .save-card-btn.pending { background:#f59e0b; color:#111827; border-color:#f59e0b; }
+        .save-card-btn.saved { background:#ecfdf5; color:#047857; border-color:#bbf7d0; }
         
         .card-mini-input { padding: 6px 8px; font-size: 11px; min-height: 32px; border-radius: 6px; background: #fafafa; border: 1px solid #e4e4e7; width: 100%; box-sizing: border-box; }
         .card-mini-input:focus { background: #ffffff; border-color: var(--accent); outline: none; }
@@ -496,7 +500,7 @@
                     <i data-lucide="cloud-download" size="14"></i> 3. ATUALIZAR TELA PELO FIREBASE
                 </button>
                 <p style="font-size:9px; color:var(--text-secondary); margin:0; line-height:1.4; text-align:center;">
-                    Produtos salvam individualmente no Firebase. O produtos.json está desativado para evitar conflito entre sistemas.
+                    Cada card tem botão SALVAR CARD: envia o produto ao Firebase e a foto nova/alterada ao GitHub. produtos.json desativado para evitar conflito.
                 </p>
             </div>
 
@@ -1144,10 +1148,11 @@ function obterChaveSincronizacaoProduto(produto) {
 function obterTodasChavesPossiveisProduto(produto) {
     const chaves = [];
 
+    // Identidade profissional do produto: firebaseKey/id/codigo.
+    // GTIN/EAN pode se repetir em duplicações, variações ou embalagens e NÃO deve fundir produtos sozinho.
     if (produto && produto.firebaseKey) chaves.push(String(produto.firebaseKey).trim());
     if (produto && produto.id) chaves.push(String(produto.id).trim());
     if (produto && produto.codigo) chaves.push(String(produto.codigo).trim());
-    if (produto && produto.gtin) chaves.push(String(produto.gtin).trim());
 
     return [...new Set(chaves.filter(Boolean))];
 }
@@ -1182,14 +1187,17 @@ function registrarProdutoNoIndice(indice, produto, origem) {
     if (!produto) return;
 
     const produtoLimpo = { ...produto };
-    const chaves = obterTodasChavesPossiveisProduto(produtoLimpo);
+    let chaves = obterTodasChavesPossiveisProduto(produtoLimpo);
     const chavePrincipal = obterChaveSincronizacaoProduto(produtoLimpo);
 
     if (!chaves.length && chavePrincipal) chaves.push(chavePrincipal);
+    chaves = [...new Set(chaves.map(c => FirebaseAPI.sanitizarChave(c)).filter(Boolean))];
     if (!chaves.length) return;
 
     let registroExistente = null;
 
+    // Só considera o mesmo produto quando bate em chave forte.
+    // Isso evita que duplicar produto com o mesmo EAN/GTIN sobrescreva ou funda cadastros.
     for (const chave of chaves) {
         if (indice.has(chave)) {
             registroExistente = indice.get(chave);
@@ -1208,7 +1216,6 @@ function registrarProdutoNoIndice(indice, produto, origem) {
         const antigoUpdate = normalizarLastUpdateProduto(antigo);
         const novoUpdate = normalizarLastUpdateProduto(produtoLimpo);
 
-        // O mais novo vence. Em empate, o local vence porque normalmente é a edição recém-feita.
         if (novoUpdate > antigoUpdate || (novoUpdate === antigoUpdate && origem === "local")) {
             registroExistente.produto = {
                 ...antigo,
@@ -1462,14 +1469,127 @@ function marcarProdutoParaSincronizacao(produto, tipo = "upsert", delayMs = 1800
     const chave = FirebaseAPI.sanitizarChave(produto.firebaseKey || produto.id || produto.codigo || produto.gtin);
     if (!chave) return;
 
+    produto.firebaseKey = chave;
+    produto.id = String(produto.id || chave);
+
     produtosPendentesSync.set(chave, {
         tipo,
         produto: { ...produto, firebaseKey: chave }
     });
 
+    // Agora o envio ao Firebase é manual por card. A alteração fica salva no cache local
+    // e marcada como pendente até clicar em SALVAR CARD.
     clearTimeout(syncProdutoTimer);
-    syncProdutoTimer = setTimeout(() => processarProdutosPendentesSync(), delayMs);
     renderQueueStatus();
+}
+
+function produtoPossuiImagemPendente(sku) {
+    const p = products.find(x => x.codigo === sku);
+    if (!p) return false;
+    return imageQueue.some(img => (img.tipo || 'produto') === 'produto' && img.sku === sku) ||
+        (typeof p.url_imagem === 'string' && p.url_imagem.startsWith('data:image'));
+}
+
+function produtoEstaPendenteNoCard(p) {
+    if (!p) return false;
+    const chave = FirebaseAPI.sanitizarChave(p.firebaseKey || p.id || p.codigo || p.gtin);
+    return (chave && produtosPendentesSync.has(chave)) || produtoPossuiImagemPendente(p.codigo);
+}
+
+async function uploadImagemProdutoPendenteSeNecessario(produto) {
+    if (!produto) return { enviada: false };
+
+    const sku = produto.codigo;
+    let itemFila = null;
+    let base64data = "";
+
+    const idxFila = imageQueue.findIndex(img => (img.tipo || 'produto') === 'produto' && img.sku === sku);
+    if (idxFila !== -1) {
+        itemFila = imageQueue[idxFila];
+        base64data = itemFila.base64data;
+    } else if (typeof produto.url_imagem === 'string' && produto.url_imagem.startsWith('data:image')) {
+        base64data = produto.url_imagem.split(',')[1] || "";
+    }
+
+    if (!base64data) return { enviada: false };
+
+    const pastaDestinoGithub = await getPastaUploadAtiva('produto');
+    const pastaDestinoLocal = '../' + pastaDestinoGithub;
+    const chaveArquivo = FirebaseAPI.sanitizarChave(produto.firebaseKey || produto.id || produto.codigo || sku);
+    const fileName = `${chaveArquivo}.webp`;
+
+    await salvarArquivoGithubComRetry(
+        `${pastaDestinoGithub}/${fileName}`,
+        base64data,
+        `PIM: imagem produto ${fileName}`,
+        true,
+        3
+    );
+
+    produto.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
+    produto.last_update = Date.now();
+
+    if (idxFila !== -1) {
+        imageQueue.splice(idxFila, 1);
+        await localforage.setItem('imageQueue', imageQueue);
+        updateImageBadge();
+    }
+
+    return { enviada: true, url: produto.url_imagem };
+}
+
+async function salvarProdutoCardManual(sku) {
+    const produto = products.find(x => x.codigo === sku);
+    if (!produto) {
+        mostrarAlerta("Produto não encontrado na tela.", "erro");
+        return;
+    }
+
+    const chave = FirebaseAPI.sanitizarChave(produto.firebaseKey || produto.id || produto.codigo || produto.gtin);
+    if (!chave) {
+        mostrarAlerta("Este produto está sem chave/código para salvar.", "erro");
+        return;
+    }
+
+    const botao = document.getElementById(`btn-salvar-card-${sku}`);
+    const textoOriginal = botao ? botao.innerHTML : "";
+
+    try {
+        if (botao) {
+            botao.disabled = true;
+            botao.innerHTML = `<i data-lucide="loader" class="spin-icon" size="12"></i> SALVANDO`;
+            lucide.createIcons();
+        }
+
+        mostrarAlerta("Salvando produto no Firebase e verificando foto no GitHub...", "aviso");
+
+        await uploadImagemProdutoPendenteSeNecessario(produto);
+        produto.last_update = Date.now();
+        await saveDataLocally(false);
+
+        const resultado = await salvarProdutoIndividualSeguro(produto, "upsert");
+        produtosPendentesSync.delete(chave);
+
+        await saveDataLocally(false);
+        renderQueueStatus();
+        renderGrid(ultimoTermoPesquisa, true);
+
+        if (resultado.status === "nuvem_mais_nova") {
+            mostrarAlerta("⚠️ Firebase tinha uma versão mais nova. Mantive a versão da nuvem para evitar perda de dados.", "aviso");
+        } else {
+            mostrarAlerta("✅ Produto salvo no Firebase. Foto nova/alterada enviada ao GitHub quando existia.", "sucesso");
+        }
+    } catch (e) {
+        console.error("Erro ao salvar card:", e);
+        produtosPendentesSync.set(chave, { tipo: "upsert", produto: { ...produto, firebaseKey: chave } });
+        renderQueueStatus();
+        if (botao) {
+            botao.disabled = false;
+            botao.innerHTML = textoOriginal;
+            lucide.createIcons();
+        }
+        mostrarAlerta("❌ Erro ao salvar este produto: " + e.message, "erro");
+    }
 }
 
 async function processarProdutosPendentesSync() {
@@ -2340,8 +2460,17 @@ function ordenarProdutosMaisRecentesPrimeiro(lista) {
                 });
             }            
             if(searchTerm) { 
-                const term = searchTerm.toLowerCase().trim(); 
-                filtered = filtered.filter(p => { const nome = (p.nome || "").toLowerCase(); const sku = (p.codigo || "").toLowerCase(); const ean = (p.gtin || "").toLowerCase(); return nome.includes(term) || sku.includes(term) || ean.includes(term); }); 
+                const termoNormalizado = normalizarBuscaProduto(searchTerm);
+                const tokens = termoNormalizado.split(' ').filter(Boolean);
+                filtered = filtered.filter(p => {
+                    const textoBusca = montarTextoBuscaProduto(p);
+                    const codigoCompacto = normalizarBuscaProduto(p.codigo).replace(/\s/g, '');
+                    const gtinCompacto = normalizarBuscaProduto(p.gtin || p.ean).replace(/\s/g, '');
+                    const termoCompacto = termoNormalizado.replace(/\s/g, '');
+                    if (!tokens.length) return true;
+                    if (codigoCompacto.includes(termoCompacto) || gtinCompacto.includes(termoCompacto)) return true;
+                    return tokens.every(t => textoBusca.includes(t));
+                }); 
             }
 
             if(isFilter24hActive) { const oneDay = 24 * 60 * 60 * 1000; const now = Date.now(); filtered = filtered.filter(p => { const time = p.last_update || p.id || 0; return (now - time) <= oneDay; }); }
@@ -2369,7 +2498,8 @@ itemsCarregados = 0;
 
 const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantidade);            
             nextBatch.forEach(p => {
-                const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`;
+                const pendenteNoCard = produtoEstaPendenteNoCard(p);
+                const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''} ${pendenteNoCard ? 'pending-save' : ''}`;
                 
                 const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
                 const safeNameForInput = (p.nome || '').replace(/"/g, '&quot;');
@@ -2396,6 +2526,9 @@ const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + qua
                             <div style="width:100px; height:100px; cursor:pointer; border-radius: 6px; border: 1px solid var(--border); overflow:hidden;" onclick="openCanvasSidebar('${p.codigo}')" title="Clique para editar Foto">
                                 <img src="${imgUrl}" style="object-fit: contain; width: 100%; height: 100%;" onerror="this.src='https://placehold.co/100x100/f4f4f5/ef4444?text=ERRO'">
                             </div>
+                            <button id="btn-salvar-card-${p.codigo}" class="nav-btn save-card-btn ${pendenteNoCard ? 'pending' : 'saved'}" onclick="salvarProdutoCardManual('${p.codigo}')" title="Salva este produto no Firebase e envia a foto nova/alterada ao GitHub">
+                                <i data-lucide="save" size="12"></i> ${pendenteNoCard ? 'SALVAR CARD' : 'SALVO'}
+                            </button>
                             <button class="nav-btn bling-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="exportarProdutoBling('${p.codigo}')"><i data-lucide="download" size="12"></i> EXP. BLING</button>
                             
                             <button class="nav-btn warning" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="duplicarProduto('${p.codigo}')"><i data-lucide="copy" size="12"></i> DUPLICAR</button>
@@ -2668,7 +2801,13 @@ async function deleteProduct(sku) {
         last_update: agora
     };
 
-    marcarProdutoParaSincronizacao(tombstone, "delete", 500);
+    try {
+        await salvarProdutoIndividualSeguro(tombstone, "delete");
+    } catch (e) {
+        console.error("Erro ao excluir no Firebase:", e);
+        mostrarAlerta("❌ Não consegui excluir do Firebase: " + e.message, "erro");
+        return;
+    }
 
     products = products.filter(p => p.codigo !== sku);
     await saveDataLocally();
@@ -2676,8 +2815,8 @@ async function deleteProduct(sku) {
     renderGrid(ultimoTermoPesquisa);
 
     mostrarAlerta(
-        "Produto excluído da tela. Vou remover esse item do Firebase e registrar a exclusão para ele não voltar por cache antigo.",
-        "aviso"
+        "Produto excluído do Firebase e registrado para não voltar por cache antigo.",
+        "sucesso"
     );
 }        
         async function createNewProduct() { 
@@ -3681,10 +3820,14 @@ function abrirEditorImagemComboAtual() {
             p.last_update = Date.now(); 
             await saveDataLocally(); 
 
-            imageQueue.push({ tipo: 'produto', sku: chave, base64data: base64data }); 
+            imageQueue = imageQueue.filter(img => !((img.tipo || 'produto') === 'produto' && img.sku === chave));
+            imageQueue.push({ tipo: 'produto', sku: chave, base64data: base64data });
+            await localforage.setItem('imageQueue', imageQueue);
+            marcarProdutoParaSincronizacao(p, "upsert");
             updateImageBadge(); 
             closeSidebar('editor-sidebar'); 
             renderGrid(ultimoTermoPesquisa, true);
+            mostrarAlerta('Foto aplicada no card. Clique em SALVAR CARD para enviar a foto ao GitHub e o produto ao Firebase.', 'aviso');
         }
 
         async function saveConfig() { 
