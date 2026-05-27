@@ -169,8 +169,9 @@
     const LOCAL_LAST_SYNC_KEY = "sucedoan_last_sync";
 
     let products = [];
-    let currentProd = null;
-    const html5QrCode = new Html5Qrcode("reader");
+let currentProd = null;
+let camposAlteradosProdutoAtual = {};
+const html5QrCode = new Html5Qrcode("reader");
 
     // ---------------------------------------------------------
     // CONVERSÃO DO NOVO FORMATO FIREBASE
@@ -328,46 +329,81 @@
         });
     }
 
-    // ---------------------------------------------------------
-    // LÓGICA PRINCIPAL: MERGE COM FIREBASE E ATUALIZAÇÃO META
-    // ---------------------------------------------------------
     async function saveDataToFirebase() {
-        if (!currentProd) {
-            alert("Selecione ou escaneie um produto antes de salvar.");
-            return;
-        }
-
-        try {
-            const firebaseKey = getProdutoFirebaseKey(currentProd);
-            currentProd.firebaseKey = firebaseKey;
-            currentProd.id = String(currentProd.id || firebaseKey);
-            currentProd.last_update = Date.now();
-
-            atualizarProdutoNoArray(currentProd);
-            await salvarLocalmente();
-
-            // Salva somente o produto editado, sem baixar e reenviar a base inteira.
-            const produtoParaSalvar = {
-                ...currentProd,
-                id: String(currentProd.id || firebaseKey),
-                firebaseKey: firebaseKey
-            };
-
-            const resMain = await fetch(getProdutoFirebaseUrl(produtoParaSalvar), {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(produtoParaSalvar)
-            });
-            
-            if (!resMain.ok) throw new Error("Erro ao guardar o produto no Firebase.");
-
-            alert("✅ Produto atual salvo na nuvem sem reenviar a base inteira.");
-
-        } catch (error) {
-            console.error(error);
-            alert("Falha ao guardar: " + error.message);
-        }
+    if (!currentProd) {
+        alert("Selecione ou escaneie um produto antes de salvar.");
+        return;
     }
+
+    if (!camposAlteradosProdutoAtual || Object.keys(camposAlteradosProdutoAtual).length === 0) {
+        alert("Nenhuma alteração foi feita neste produto.");
+        return;
+    }
+
+    try {
+        const firebaseKey = getProdutoFirebaseKey(currentProd);
+        currentProd.firebaseKey = firebaseKey;
+        currentProd.id = String(currentProd.id || firebaseKey);
+
+        const agora = Date.now();
+
+        // Primeiro lê a versão atual do Firebase.
+        // Assim o celular não trabalha em cima de uma versão cega/desatualizada.
+        const resGet = await fetch(getProdutoFirebaseUrl(currentProd) + "?nocache=" + Date.now(), {
+            cache: "no-store"
+        });
+
+        let produtoNuvem = null;
+
+        if (resGet.ok) {
+            produtoNuvem = await resGet.json();
+        }
+
+        if (!produtoNuvem) {
+            produtoNuvem = {};
+        }
+
+        // Monta um PATCH somente com os campos editados pelo funcionário.
+        // Isso preserva qualquer alteração feita pelo sistema principal.
+        const patchSeguro = {
+            ...camposAlteradosProdutoAtual,
+            id: String(currentProd.id || firebaseKey),
+            firebaseKey: firebaseKey,
+            codigo: currentProd.codigo || produtoNuvem.codigo || String(currentProd.id || firebaseKey),
+            last_update: agora,
+            last_update_estoque_rapido: agora
+        };
+
+        const resMain = await fetch(getProdutoFirebaseUrl(currentProd), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(patchSeguro)
+        });
+
+        if (!resMain.ok) {
+            throw new Error("Erro ao guardar o produto no Firebase.");
+        }
+
+        // Atualiza o produto local mesclando nuvem + alterações do funcionário.
+        const produtoMesclado = {
+            ...produtoNuvem,
+            ...currentProd,
+            ...patchSeguro
+        };
+
+        currentProd = produtoMesclado;
+        atualizarProdutoNoArray(produtoMesclado);
+        await salvarLocalmente();
+
+        camposAlteradosProdutoAtual = {};
+
+        alert("✅ Produto salvo com segurança. Apenas os campos alterados foram enviados, sem apagar alterações do sistema principal.");
+
+    } catch (error) {
+        console.error(error);
+        alert("Falha ao guardar: " + error.message);
+    }
+}
 
     async function atualizarCatalogoMetaGithub() {
         const cfg = await localforage.getItem('sucedoan_config');
@@ -494,7 +530,8 @@
         });
 
         if (p) {
-            currentProd = p;
+    currentProd = p;
+    camposAlteradosProdutoAtual = {};
 
             document.getElementById('display-nome').innerText = p.nome || "Produto sem nome";
             document.getElementById('val-estoque').value = p.estoque || 0;
@@ -510,34 +547,44 @@
         }
     }
 
-    function updateCurrent(field, value) {
-        if (!currentProd) return;
+   function updateCurrent(field, value) {
+    if (!currentProd) return;
 
-        if (field === 'validade') {
-            if (value && value.includes('-')) {
-                const d = value.split('-');
-                currentProd.validade = `${d[2]}/${d[1]}/${d[0]}`;
-            } else {
-                currentProd.validade = "";
-            }
-        } else if (field === 'estoque') {
-            currentProd[field] = Number(value || 0);
+    let valorFinal = value;
+
+    if (field === 'validade') {
+        if (value && value.includes('-')) {
+            const d = value.split('-');
+            valorFinal = `${d[2]}/${d[1]}/${d[0]}`;
+            currentProd.validade = valorFinal;
         } else {
-            currentProd[field] = value;
+            valorFinal = "";
+            currentProd.validade = "";
         }
-        
-        currentProd.last_update = Date.now();
-
-        // Garante que o produto editado também seja atualizado dentro do array principal
-        const chaveAtual = String(currentProd.codigo || currentProd.id);
-        const index = products.findIndex(p => String(p.codigo || p.id) === chaveAtual);
-
-        if (index !== -1) {
-            products[index] = currentProd;
-        }
-
-        localforage.setItem(LOCAL_PRODUCTS_KEY, products);
+    } else if (field === 'estoque') {
+        valorFinal = Number(value || 0);
+        currentProd[field] = valorFinal;
+    } else {
+        currentProd[field] = valorFinal;
     }
+
+    currentProd.last_update = Date.now();
+
+    // Guarda somente o campo que o funcionário realmente alterou.
+    // Isso evita sobrescrever dados novos feitos pelo sistema principal.
+    camposAlteradosProdutoAtual[field] = valorFinal;
+
+    const chaveAtual = String(currentProd.codigo || currentProd.id || currentProd.firebaseKey);
+    const index = products.findIndex(p => {
+        return String(p.codigo || p.id || p.firebaseKey) === chaveAtual;
+    });
+
+    if (index !== -1) {
+        products[index] = currentProd;
+    }
+
+    localforage.setItem(LOCAL_PRODUCTS_KEY, products);
+}
 
     function formatDate(d) {
         if (!d || !d.includes('/')) return '';
