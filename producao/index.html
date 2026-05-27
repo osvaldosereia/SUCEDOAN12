@@ -84,7 +84,16 @@
         #editor-sidebar { z-index: 1011; width: 420px; border-left: 1px solid var(--border); }
         #config-sidebar { z-index: 1012; width: 380px; }
         #menu-sidebar { z-index: 1014; width: 300px; }
-        #categorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar, #pedidos-sidebar, #exportacoes-sidebar { z-index: 1015; width: 450px; }
+        #categorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar, #pedidos-sidebar, #exportacoes-sidebar, #relatorios-sidebar { z-index: 1015; width: 450px; }
+
+        .card-alert-strip { display:flex; flex-wrap:wrap; gap:4px; margin-top:2px; }
+        .mini-badge { display:inline-flex; align-items:center; gap:3px; font-size:8px; font-weight:900; padding:3px 6px; border-radius:999px; border:1px solid var(--border); background:#fafafa; color:var(--text-secondary); text-transform:uppercase; }
+        .mini-badge.warn { background:#fffbeb; border-color:#fde68a; color:#92400e; }
+        .mini-badge.danger { background:#fef2f2; border-color:#fecaca; color:#b91c1c; }
+        .mini-badge.success { background:#ecfdf5; border-color:#bbf7d0; color:#047857; }
+        .report-box { border:1px solid var(--border); border-radius:10px; background:#fafafa; padding:12px; }
+        .report-metric { display:flex; justify-content:space-between; gap:10px; font-size:12px; font-weight:800; padding:7px 0; border-bottom:1px dashed var(--border); }
+        .report-metric:last-child { border-bottom:none; }
         
         .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 14px; font-weight: 900; }
@@ -161,7 +170,7 @@
         let marcasDoSistema = [];
         let tagsDoSistema = []; 
         let filtroAtivo = { tipo: null, valor: null };
-        let advancedFilters = { cat: '', sub: '', subsub: '', marca: '', ncm: '', stock: '', validade: '', tag: '' };
+        let advancedFilters = { cat: '', sub: '', subsub: '', marca: '', tag: '', stock: '', oferta: '', vencimento: '', qualidade: '' };
         
         let ultimoTermoPesquisa = "";
         
@@ -183,6 +192,7 @@
             <div id="queue-status"></div>
             
             <button class="nav-btn desktop-only success-btn" onclick="openSidebar('pedidos-sidebar')"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO</button>
+            <button class="nav-btn desktop-only" onclick="openSidebar('relatorios-sidebar'); gerarRelatorioEstoque();" style="color:#7c3aed; border-color:#ddd6fe; background:#f5f3ff;"><i data-lucide="bar-chart-3" size="14"></i> RELATÓRIOS</button>
             <button class="nav-btn desktop-only" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DADOS DA NUVEM</button>
             
             <button class="btn-icon mobile-only" onclick="openSidebar('menu-sidebar')"><i data-lucide="menu" size="20"></i></button>
@@ -261,6 +271,7 @@
                 <button class="nav-btn primary menu-sidebar-btn" onclick="createNewProduct(); closeSidebar('menu-sidebar');"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="cloud" size="14"></i> DEFINIÇÕES E GITHUB</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('pedidos-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO</button>
+                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('relatorios-sidebar'); gerarRelatorioEstoque(); closeSidebar('menu-sidebar');"><i data-lucide="bar-chart-3" size="14"></i> RELATÓRIOS DE ESTOQUE</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="abrirGerenciadorExportacoes()"><i data-lucide="folder-open" size="14"></i> ARQUIVOS EXPORTADOS (NUVEM)</button>
             </div>
             <div class="form-section" style="margin-top: 15px;">
@@ -331,7 +342,47 @@
                 <div class="form-group"><label class="form-label">Tag Global</label><select class="form-input" id="flt-tag"></select></div>
                 <div class="form-group"><label class="form-label">Estoque</label>
                     <select class="form-input" id="flt-stock">
-                        <option value="">Todos</option><option value="zero">Estoque = 0</option>
+                        <option value="">Todos</option>
+                        <option value="com_estoque">Com estoque</option>
+                        <option value="zero">Estoque = 0</option>
+                        <option value="negativo">Estoque negativo</option>
+                        <option value="baixo">Estoque baixo (1 a 3)</option>
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">Oferta</label>
+                    <select class="form-input" id="flt-oferta">
+                        <option value="">Todos</option>
+                        <option value="em_oferta">Produtos em oferta</option>
+                        <option value="sem_oferta">Sem oferta</option>
+                        <option value="manual">Oferta manual</option>
+                        <option value="vencimento_simulado">Oferta por vencimento simulado</option>
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">Vencimento</label>
+                    <select class="form-input" id="flt-vencimento">
+                        <option value="">Todos</option>
+                        <option value="vencido">Vencidos</option>
+                        <option value="30">Vence em até 30 dias</option>
+                        <option value="60">Vence em até 60 dias</option>
+                        <option value="90">Vence em até 90 dias</option>
+                        <option value="120">Vence em até 120 dias</option>
+                        <option value="180">Vence em até 180 dias</option>
+                        <option value="sem_validade">Sem data de validade</option>
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">Pendência cadastral</label>
+                    <select class="form-input" id="flt-qualidade">
+                        <option value="">Todos</option>
+                        <option value="cadastro_incompleto">Qualquer cadastro incompleto</option>
+                        <option value="sem_ean">Sem EAN / GTIN</option>
+                        <option value="sem_ncm">Sem NCM</option>
+                        <option value="sem_prateleira">Sem prateleira</option>
+                        <option value="sem_gondola">Sem gôndola</option>
+                        <option value="sem_embalagem">Sem embalagem</option>
+                        <option value="sem_validade">Sem data de validade</option>
+                        <option value="sem_categoria">Sem categoria</option>
+                        <option value="sem_marca">Sem marca</option>
+                        <option value="sem_preco_custo">Sem preço de custo</option>
                     </select>
                 </div>
             </div>
@@ -344,7 +395,32 @@
         </div>
     </div>
 
-    <div class="sidebar" id="editor-sidebar">
+    
+    <div class="sidebar" id="relatorios-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Relatórios de Estoque</div>
+            <button class="btn-icon" onclick="closeSidebar('relatorios-sidebar')"><i data-lucide="x" size="16"></i></button>
+        </div>
+        <div class="sidebar-body">
+            <div class="form-section">
+                <div class="section-title">Período</div>
+                <div class="form-grid">
+                    <div class="form-group"><label class="form-label">De</label><input type="date" id="rel-data-inicio" class="form-input"></div>
+                    <div class="form-group"><label class="form-label">Até</label><input type="date" id="rel-data-fim" class="form-input"></div>
+                </div>
+                <button class="nav-btn primary" style="height:44px; justify-content:center;" onclick="gerarRelatorioEstoque()">GERAR RELATÓRIO</button>
+            </div>
+            <div id="relatorio-estoque-container" class="form-section"></div>
+        </div>
+        <div class="sidebar-footer" style="flex-direction:column; gap:8px;">
+            <button class="nav-btn bling-btn" style="width:100%; height:44px; justify-content:center;" onclick="exportarRelatorioEstoqueCSV()">
+                <i data-lucide="download" size="14"></i> EXPORTAR RELATÓRIO CSV
+            </button>
+            <p style="font-size:10px; color:var(--text-secondary); margin:0; text-align:center;">O relatório usa o histórico criado a partir de agora nas alterações de estoque feitas no PIM.</p>
+        </div>
+    </div>
+
+<div class="sidebar" id="editor-sidebar">
         <div class="sidebar-header">
             <div class="sidebar-title">Ajuste de Imagem (1 por Produto)</div>
             <button class="btn-icon" onclick="closeSidebar('editor-sidebar')"><i data-lucide="x" size="16"></i></button>
@@ -789,7 +865,8 @@
         'subcategoria', 'subsubcategoria', 'marca', 'embalagem', 'tag_global', 
         'link_youtube', 'last_update', 'url_imagem', 'gondola', 'prateleira', 'localizacao',
         'descricao', 'descricao_status', 'descricao_atualizada_em',
-        'preco_oferta', 'validade_oferta', 'combo_id', 'validade_combo'
+        'preco_oferta', 'validade_oferta', 'combo_id', 'validade_combo',
+        'oferta_validade_simulada_dias', 'oferta_validade_simulada_ativa', 'oferta_validade_simulada_em', 'oferta_origem', 'estoque_historico'
     ];
 
     return prods.map(p => {
@@ -1063,13 +1140,26 @@ async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync 
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const formatarFimOferta = (dataString) => {
-        if (!dataString || !dataString.includes('/')) return "";
+    const dataParaInputFimOferta = (dataObj) => {
+        const d = new Date(dataObj);
+        d.setHours(23, 59, 0, 0);
+        const local = new Date(d.getTime() - (d.getTimezoneOffset() * 60000));
+        return local.toISOString().slice(0, 16);
+    };
 
-        const partes = dataString.split('/');
-        if (partes.length !== 3) return "";
-
-        return `${partes[2]}-${partes[1]}-${partes[0]}T23:59`;
+    const parseDataValidadeBR = (dataString) => {
+        if (!dataString) return null;
+        if (String(dataString).includes('/')) {
+            const partes = String(dataString).split('/');
+            if (partes.length !== 3) return null;
+            return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+        }
+        if (String(dataString).includes('-')) {
+            const partes = String(dataString).split('-');
+            if (partes.length < 3) return null;
+            return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+        }
+        return null;
     };
 
     const itensParaAnalisar = skuEspecifico
@@ -1080,7 +1170,9 @@ async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync 
         if (p.situacao === 'I') return;
         if (!p.preco) return;
 
+        const regraSimuladaAtiva = !!p.oferta_validade_simulada_ativa && !!p.oferta_validade_simulada_dias;
         const temOfertaManual =
+            !regraSimuladaAtiva &&
             p.preco_oferta !== "" &&
             p.preco_oferta !== null &&
             p.preco_oferta !== undefined;
@@ -1088,55 +1180,66 @@ async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync 
         let novoPrecoOferta = p.preco_oferta;
         let novaValidadeOferta = p.validade_oferta;
         let novoEstoque = parseFloat(p.estoque) || 0;
+        let novaOrigemOferta = p.oferta_origem || "";
 
-        if (p.validade && p.validade.includes('/')) {
-            const partesData = p.validade.split('/');
-            const dataValidade = new Date(partesData[2], partesData[1] - 1, partesData[0]);
-            dataValidade.setHours(0, 0, 0, 0);
+        let diasRestantes = null;
+        let dataFimRegra = null;
 
-            const diasRestantes = Math.ceil(
-                (dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)
-            );
+        if (regraSimuladaAtiva) {
+            diasRestantes = parseInt(p.oferta_validade_simulada_dias, 10);
+            dataFimRegra = new Date(hoje);
+            dataFimRegra.setDate(dataFimRegra.getDate() + diasRestantes);
 
+            // importante: esta simulação NÃO altera p.validade, apenas calcula a regra da oferta
+        } else if (p.validade) {
+            const dataValidade = parseDataValidadeBR(p.validade);
+            if (dataValidade) {
+                dataValidade.setHours(0, 0, 0, 0);
+                diasRestantes = Math.ceil((dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+                dataFimRegra = dataValidade;
+            }
+        }
+
+        if (diasRestantes !== null) {
             const precoOriginal = parseFloat(p.preco) || 0;
             const precoCusto = parseFloat(p.preco_custo) || 0;
 
-            // Produto vencido: zera estoque e remove oferta
-            if (diasRestantes < 1) {
+            // Produto com validade real vencida: zera estoque. A validade simulada nunca zera estoque.
+            if (!regraSimuladaAtiva && diasRestantes < 1) {
                 novoEstoque = 0;
                 novoPrecoOferta = "";
                 novaValidadeOferta = "";
+                novaOrigemOferta = "";
             }
 
-            // Oferta automática somente se não houver oferta manual
+            // Oferta automática por validade real ou simulada, somente se não houver oferta manual
             if (!temOfertaManual && novoEstoque > 0 && diasRestantes >= 1 && diasRestantes <= 180) {
                 let percentualDesconto = 0;
 
                 if (diasRestantes >= 121 && diasRestantes <= 180) {
-                    percentualDesconto = 0.05; // 5%
+                    percentualDesconto = 0.05;
                 } else if (diasRestantes >= 91 && diasRestantes <= 120) {
-                    percentualDesconto = 0.10; // 10%
+                    percentualDesconto = 0.10;
                 } else if (diasRestantes >= 61 && diasRestantes <= 90) {
-                    percentualDesconto = 0.20; // 20%
+                    percentualDesconto = 0.20;
                 } else if (diasRestantes >= 31 && diasRestantes <= 60) {
-                    percentualDesconto = 0.30; // 30%
+                    percentualDesconto = 0.30;
                 } else if (diasRestantes >= 1 && diasRestantes <= 30) {
-                    percentualDesconto = 0.40; // 40%
+                    percentualDesconto = 0.40;
                 }
 
                 if (percentualDesconto > 0) {
                     const precoComDesconto = precoOriginal * (1 - percentualDesconto);
-
-                    // Nunca deixa a oferta abaixo do custo
                     novoPrecoOferta = Math.max(precoComDesconto, precoCusto);
-                    novaValidadeOferta = formatarFimOferta(p.validade);
+                    novaValidadeOferta = dataParaInputFimOferta(dataFimRegra);
+                    novaOrigemOferta = regraSimuladaAtiva ? "vencimento_simulado" : "vencimento_real";
                 }
             }
 
-            // Se estiver acima de 180 dias e não tiver oferta manual, remove oferta automática antiga
             if (!temOfertaManual && diasRestantes > 180) {
                 novoPrecoOferta = "";
                 novaValidadeOferta = "";
+                novaOrigemOferta = "";
             }
         }
 
@@ -1147,11 +1250,13 @@ async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync 
         if (
             parseFloat(p.estoque) !== novoEstoque ||
             parseFloat(p.preco_oferta || 0) !== (novoPrecoOferta || 0) ||
-            p.validade_oferta !== novaValidadeOferta
+            p.validade_oferta !== novaValidadeOferta ||
+            (p.oferta_origem || "") !== novaOrigemOferta
         ) {
             p.estoque = novoEstoque;
             p.preco_oferta = novoPrecoOferta;
             p.validade_oferta = novaValidadeOferta;
+            p.oferta_origem = novaOrigemOferta;
             p.last_update = Date.now();
             houveMudanca = true;
         }
@@ -1429,14 +1534,35 @@ async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync 
         // ==========================================================
         // FILTROS AVANÇADOS E GLOBAIS
         // ==========================================================
-        window.limparFiltroGrid = function() { filtroAtivo = { tipo: null, valor: null }; document.getElementById('active-filter-banner').style.display = 'none'; renderGrid(ultimoTermoPesquisa); }
+        window.limparFiltroGrid = function() { advancedFilters = { cat: '', sub: '', subsub: '', marca: '', tag: '', stock: '', oferta: '', vencimento: '', qualidade: '' }; filtroAtivo = { tipo: null, valor: null }; document.getElementById('active-filter-banner').style.display = 'none'; renderGrid(ultimoTermoPesquisa); }
 
         function renderizarFiltrosAvancados() {
-            document.getElementById('flt-cat').innerHTML = gerarOptionsCategorias('');
+            document.getElementById('flt-cat').innerHTML = gerarOptionsCategorias(advancedFilters.cat || '');
             document.getElementById('flt-sub').innerHTML = `<option value="">Todas as Subcategorias</option>`;
             document.getElementById('flt-subsub').innerHTML = `<option value="">Todas as Sub-subcategorias</option>`;
-            document.getElementById('flt-marca').innerHTML = gerarOptions(marcasDoSistema, '', 'Todas as Marcas');
-            document.getElementById('flt-tag').innerHTML = gerarOptions(tagsDoSistema, '', 'Todas as Tags Globais');
+            if (advancedFilters.cat) atualizarSubcatsFiltro(advancedFilters.cat);
+            if (advancedFilters.sub) {
+                const subEl = document.getElementById('flt-sub');
+                if (subEl) subEl.value = advancedFilters.sub;
+                atualizarSubSubcatsFiltro(advancedFilters.cat, advancedFilters.sub);
+            }
+            if (advancedFilters.subsub) {
+                const subSubEl = document.getElementById('flt-subsub');
+                if (subSubEl) subSubEl.value = advancedFilters.subsub;
+            }
+
+            document.getElementById('flt-marca').innerHTML = gerarOptions(marcasDoSistema, advancedFilters.marca || '', 'Todas as Marcas');
+            document.getElementById('flt-tag').innerHTML = gerarOptions(tagsDoSistema, advancedFilters.tag || '', 'Todas as Tags Globais');
+
+            const setValue = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.value = value || "";
+            };
+
+            setValue('flt-stock', advancedFilters.stock);
+            setValue('flt-oferta', advancedFilters.oferta);
+            setValue('flt-vencimento', advancedFilters.vencimento);
+            setValue('flt-qualidade', advancedFilters.qualidade);
         }
 
         window.aplicarFiltrosAvancados = function() {
@@ -1446,10 +1572,98 @@ async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync 
             advancedFilters.marca = document.getElementById('flt-marca').value;
             advancedFilters.tag = document.getElementById('flt-tag').value;
             advancedFilters.stock = document.getElementById('flt-stock').value;
-            
-            filtroAtivo = { tipo: 'avancado', valor: 'Filtros Combinados' };
-            document.getElementById('active-filter-banner').style.display = 'flex'; document.getElementById('filter-text-display').innerText = 'Filtros Avançados Ativos';
-            closeSidebar('filtros-sidebar'); renderGrid(ultimoTermoPesquisa);
+            advancedFilters.oferta = document.getElementById('flt-oferta').value;
+            advancedFilters.vencimento = document.getElementById('flt-vencimento').value;
+            advancedFilters.qualidade = document.getElementById('flt-qualidade').value;
+
+            const temFiltro = Object.values(advancedFilters).some(v => !!v);
+            filtroAtivo = temFiltro ? { tipo: 'avancado', valor: 'Filtros Combinados' } : { tipo: null, valor: null };
+
+            const banner = document.getElementById('active-filter-banner');
+            if (temFiltro) {
+                banner.style.display = 'flex';
+                document.getElementById('filter-text-display').innerText = montarResumoFiltrosAvancados();
+            } else {
+                banner.style.display = 'none';
+            }
+
+            closeSidebar('filtros-sidebar');
+            renderGrid(ultimoTermoPesquisa);
+        }
+
+        function montarResumoFiltrosAvancados() {
+            const partes = [];
+            if (advancedFilters.cat) partes.push("Categoria");
+            if (advancedFilters.sub) partes.push("Subcategoria");
+            if (advancedFilters.subsub) partes.push("Sub-subcategoria");
+            if (advancedFilters.marca) partes.push("Marca");
+            if (advancedFilters.tag) partes.push("Tag");
+            if (advancedFilters.stock) partes.push("Estoque");
+            if (advancedFilters.oferta) partes.push("Oferta");
+            if (advancedFilters.vencimento) partes.push("Vencimento");
+            if (advancedFilters.qualidade) partes.push("Pendência");
+            return partes.length ? partes.join(" + ") : "Filtros Avançados";
+        }
+
+        function produtoTemOfertaAtiva(p) {
+            return p.preco_oferta !== "" && p.preco_oferta !== null && p.preco_oferta !== undefined && parseFloat(p.preco_oferta) > 0;
+        }
+
+        function produtoTemCampoVazio(p, tipo) {
+            const vazio = (v) => v === undefined || v === null || String(v).trim() === "";
+            const precoCustoVazio = vazio(p.preco_custo) || parseFloat(p.preco_custo) <= 0;
+
+            const mapa = {
+                sem_ean: vazio(p.gtin),
+                sem_ncm: vazio(p.ncm),
+                sem_prateleira: vazio(p.prateleira),
+                sem_gondola: vazio(p.gondola),
+                sem_embalagem: vazio(p.embalagem),
+                sem_validade: vazio(p.validade),
+                sem_categoria: vazio(p.categoria),
+                sem_marca: vazio(p.marca),
+                sem_preco_custo: precoCustoVazio
+            };
+
+            if (tipo === "cadastro_incompleto") {
+                return Object.values(mapa).some(Boolean);
+            }
+
+            return !!mapa[tipo];
+        }
+
+        function calcularDiasParaVencimentoProduto(p) {
+            if (!p.validade) return null;
+            let dataValidade = null;
+
+            if (String(p.validade).includes('/')) {
+                const partes = String(p.validade).split('/');
+                if (partes.length === 3) dataValidade = new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+            } else if (String(p.validade).includes('-')) {
+                const partes = String(p.validade).split('-');
+                if (partes.length >= 3) dataValidade = new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+            }
+
+            if (!dataValidade || isNaN(dataValidade.getTime())) return null;
+
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            dataValidade.setHours(0, 0, 0, 0);
+            return Math.ceil((dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        }
+
+        function obterPendenciasProduto(p) {
+            const pendencias = [];
+            if (produtoTemCampoVazio(p, "sem_ean")) pendencias.push("EAN");
+            if (produtoTemCampoVazio(p, "sem_ncm")) pendencias.push("NCM");
+            if (produtoTemCampoVazio(p, "sem_prateleira")) pendencias.push("Prateleira");
+            if (produtoTemCampoVazio(p, "sem_gondola")) pendencias.push("Gôndola");
+            if (produtoTemCampoVazio(p, "sem_embalagem")) pendencias.push("Embalagem");
+            if (produtoTemCampoVazio(p, "sem_validade")) pendencias.push("Validade");
+            if (produtoTemCampoVazio(p, "sem_categoria")) pendencias.push("Categoria");
+            if (produtoTemCampoVazio(p, "sem_marca")) pendencias.push("Marca");
+            if (produtoTemCampoVazio(p, "sem_preco_custo")) pendencias.push("Custo");
+            return pendencias;
         }
 
         // ==========================================================
@@ -1472,23 +1686,45 @@ async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync 
 
             let filtered = products;
 
-            if (filtroAtivo.tipo === 'avancado') {
+                        if (filtroAtivo.tipo === 'avancado') {
                 filtered = filtered.filter(p => {
                     if(advancedFilters.cat && p.categoria !== advancedFilters.cat) return false;
                     if(advancedFilters.sub && p.subcategoria !== advancedFilters.sub) return false;
                     if(advancedFilters.subsub && p.subsubcategoria !== advancedFilters.subsub) return false;
                     if(advancedFilters.marca && p.marca !== advancedFilters.marca) return false;
-                    
+
                     if(advancedFilters.tag) {
                         let pTags = Array.isArray(p.tag_global) ? p.tag_global : (p.tag_global ? p.tag_global.split(',').map(s=>s.trim()) : []);
                         if(!pTags.includes(advancedFilters.tag)) return false;
                     }
-                    
-                    if(advancedFilters.stock === 'zero' && parseFloat(p.estoque) !== 0) return false;
+
+                    const estoqueNum = parseFloat(p.estoque) || 0;
+                    if(advancedFilters.stock === 'com_estoque' && estoqueNum <= 0) return false;
+                    if(advancedFilters.stock === 'zero' && estoqueNum !== 0) return false;
+                    if(advancedFilters.stock === 'negativo' && estoqueNum >= 0) return false;
+                    if(advancedFilters.stock === 'baixo' && !(estoqueNum >= 1 && estoqueNum <= 3)) return false;
+
+                    const temOferta = produtoTemOfertaAtiva(p);
+                    if(advancedFilters.oferta === 'em_oferta' && !temOferta) return false;
+                    if(advancedFilters.oferta === 'sem_oferta' && temOferta) return false;
+                    if(advancedFilters.oferta === 'manual' && (!temOferta || p.oferta_origem === 'vencimento_real' || p.oferta_origem === 'vencimento_simulado')) return false;
+                    if(advancedFilters.oferta === 'vencimento_simulado' && p.oferta_origem !== 'vencimento_simulado') return false;
+
+                    if(advancedFilters.vencimento) {
+                        const dias = calcularDiasParaVencimentoProduto(p);
+                        if(advancedFilters.vencimento === 'sem_validade' && dias !== null) return false;
+                        if(advancedFilters.vencimento === 'vencido' && !(dias !== null && dias < 1)) return false;
+                        if(['30','60','90','120','180'].includes(advancedFilters.vencimento)) {
+                            const limite = parseInt(advancedFilters.vencimento, 10);
+                            if(!(dias !== null && dias >= 1 && dias <= limite)) return false;
+                        }
+                    }
+
+                    if(advancedFilters.qualidade && !produtoTemCampoVazio(p, advancedFilters.qualidade)) return false;
+
                     return true;
                 });
-            }
-            
+            }            
             if(searchTerm) { 
                 const term = searchTerm.toLowerCase().trim(); 
                 filtered = filtered.filter(p => { const nome = (p.nome || "").toLowerCase(); const sku = (p.codigo || "").toLowerCase(); const ean = (p.gtin || "").toLowerCase(); return nome.includes(term) || sku.includes(term) || ean.includes(term); }); 
@@ -1527,6 +1763,17 @@ const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + qua
                 let venda = parseFloat(p.preco) || 0;
                 let markup = custo > 0 ? (((venda - custo) / custo) * 100).toFixed(1) : 0;
 
+                const pendencias = obterPendenciasProduto(p);
+                const diasVencimento = calcularDiasParaVencimentoProduto(p);
+                const ofertaAtiva = produtoTemOfertaAtiva(p);
+                let badges = "";
+                if (ofertaAtiva) badges += `<span class="mini-badge success">Oferta${p.oferta_origem === 'vencimento_simulado' ? ' Simulada' : ''}</span>`;
+                if (diasVencimento !== null && diasVencimento < 1) badges += `<span class="mini-badge danger">Vencido</span>`;
+                else if (diasVencimento !== null && diasVencimento <= 30) badges += `<span class="mini-badge warn">Vence ${diasVencimento}d</span>`;
+                if ((parseFloat(p.estoque) || 0) <= 0) badges += `<span class="mini-badge danger">Sem estoque</span>`;
+                if (pendencias.length) badges += `<span class="mini-badge warn">Faltam: ${pendencias.slice(0, 4).join(', ')}${pendencias.length > 4 ? ' +' + (pendencias.length - 4) : ''}</span>`;
+
+
                 card.innerHTML = `
                     <div style="display: flex; gap: 15px; align-items: stretch;">
                         <div style="width: 100px; display: flex; flex-direction: column; gap: 8px;">
@@ -1552,6 +1799,7 @@ const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + qua
                                     <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px; color: #ef4444; border-color: #fecaca;" onclick="searchYoutube('${safeNomeGoogle}')" title="Buscar Vídeo no YouTube"><i data-lucide="youtube" size="12"></i> VÍDEO</button>
                                     <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px; color: #0284c7; border-color: #bae6fd; background: #e0f2fe;" onclick="searchGoogleInfo('${safeNomeGoogle}')" title="Buscar informações, avaliações e especificações"><i data-lucide="info" size="12"></i> INFO</button>
                                 </div>
+                                <div class="card-alert-strip">${badges}</div>
                             </div>
                             <div class="field-group">
                                 <label>Link do YouTube</label>
@@ -1609,6 +1857,22 @@ const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + qua
     <input type="datetime-local" class="form-input card-mini-input" value="${p.validade_oferta || ''}" onchange="updateField('${p.codigo}', 'validade_oferta', this.value)">
 </div>
 
+<div class="field-group" style="grid-column: span 2; border:1px dashed #fde68a; background:#fffbeb; border-radius:8px; padding:8px;">
+    <label style="color:#92400e;">Oferta automática por vencimento simulado</label>
+    <div style="display:flex; gap:6px; align-items:center;">
+        <select class="form-input card-mini-input" id="oferta-sim-${p.codigo}" style="flex:1;">
+            <option value="">Selecionar dias</option>
+            <option value="120" ${String(p.oferta_validade_simulada_dias || '') === '120' ? 'selected' : ''}>120 dias para vencer</option>
+            <option value="90" ${String(p.oferta_validade_simulada_dias || '') === '90' ? 'selected' : ''}>90 dias para vencer</option>
+            <option value="60" ${String(p.oferta_validade_simulada_dias || '') === '60' ? 'selected' : ''}>60 dias para vencer</option>
+            <option value="30" ${String(p.oferta_validade_simulada_dias || '') === '30' ? 'selected' : ''}>30 dias para vencer</option>
+        </select>
+        <button class="nav-btn warning" style="min-height:32px; padding:6px 8px; font-size:9px;" onclick="aplicarOfertaValidadeSimulada('${p.codigo}')">ATIVAR</button>
+        <button class="nav-btn" style="min-height:32px; padding:6px 8px; font-size:9px; color:var(--danger); border-color:#fecaca;" onclick="removerOfertaValidadeSimulada('${p.codigo}')">LIMPAR</button>
+    </div>
+    <small style="font-size:9px; color:#92400e; font-weight:700;">Não altera a validade real. Apenas grava uma regra separada para simular o prazo da oferta.</small>
+</div>
+
 <div class="field-group">
     <label style="color:#0284c7;">ID do Combo (Ex: KIT_VERAO)</label>
     <input type="text" class="form-input card-mini-input" placeholder="Sem combo" value="${p.combo_id || ''}" onchange="updateField('${p.codigo}', 'combo_id', this.value)">
@@ -1651,12 +1915,230 @@ const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + qua
             }
         }
 
-        async function updateField(sku, field, value) { 
+        
+        function registrarMovimentoEstoque(produto, estoqueAnterior, estoqueNovo, origem = "ajuste_manual_pim") {
+            const anterior = parseFloat(estoqueAnterior) || 0;
+            const novo = parseFloat(estoqueNovo) || 0;
+            const delta = novo - anterior;
+
+            if (!delta) return;
+
+            if (!Array.isArray(produto.estoque_historico)) {
+                produto.estoque_historico = [];
+            }
+
+            produto.estoque_historico.push({
+                data: new Date().toISOString(),
+                origem: origem,
+                estoque_anterior: anterior,
+                estoque_novo: novo,
+                delta: delta,
+                tipo: delta > 0 ? "entrada" : "saida"
+            });
+
+            // Mantém o arquivo leve para celulares antigos e evita crescimento infinito do JSON.
+            if (produto.estoque_historico.length > 120) {
+                produto.estoque_historico = produto.estoque_historico.slice(-120);
+            }
+        }
+
+        async function aplicarOfertaValidadeSimulada(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if (!p) return;
+
+            const select = document.getElementById(`oferta-sim-${sku}`);
+            const dias = select ? parseInt(select.value, 10) : 0;
+
+            if (![120, 90, 60, 30].includes(dias)) {
+                alert("Selecione 120, 90, 60 ou 30 dias para ativar a oferta simulada.");
+                return;
+            }
+
+            if (!p.preco || parseFloat(p.preco) <= 0) {
+                alert("Cadastre o preço de venda antes de ativar a oferta automática.");
+                return;
+            }
+
+            p.oferta_validade_simulada_ativa = true;
+            p.oferta_validade_simulada_dias = dias;
+            p.oferta_validade_simulada_em = new Date().toISOString();
+            p.oferta_origem = "vencimento_simulado";
+            p.last_update = Date.now();
+
+            await processarInteligenciaDeOfertas(sku);
+            await saveDataLocally();
+            renderGrid(ultimoTermoPesquisa, true);
+            mostrarAlerta(`Oferta simulada ativada: ${dias} dias para vencer.`, "sucesso");
+        }
+
+        async function removerOfertaValidadeSimulada(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if (!p) return;
+
+            p.oferta_validade_simulada_ativa = false;
+            p.oferta_validade_simulada_dias = "";
+            p.oferta_validade_simulada_em = "";
+            if (p.oferta_origem === "vencimento_simulado") {
+                p.preco_oferta = "";
+                p.validade_oferta = "";
+                p.oferta_origem = "";
+            }
+            p.last_update = Date.now();
+
+            await saveDataLocally();
+            renderGrid(ultimoTermoPesquisa, true);
+            mostrarAlerta("Oferta simulada removida sem alterar a validade real.", "aviso");
+        }
+
+        function obterPeriodoRelatorioEstoque() {
+            const hoje = new Date();
+            const fimPadrao = new Date(hoje.getTime() - (hoje.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
+            const inicioObj = new Date(hoje);
+            inicioObj.setDate(inicioObj.getDate() - 30);
+            const inicioPadrao = new Date(inicioObj.getTime() - (inicioObj.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
+
+            const inicioEl = document.getElementById('rel-data-inicio');
+            const fimEl = document.getElementById('rel-data-fim');
+
+            if (inicioEl && !inicioEl.value) inicioEl.value = inicioPadrao;
+            if (fimEl && !fimEl.value) fimEl.value = fimPadrao;
+
+            const inicio = new Date((inicioEl && inicioEl.value ? inicioEl.value : inicioPadrao) + "T00:00:00");
+            const fim = new Date((fimEl && fimEl.value ? fimEl.value : fimPadrao) + "T23:59:59");
+
+            return { inicio, fim, inicioTexto: inicioEl ? inicioEl.value : inicioPadrao, fimTexto: fimEl ? fimEl.value : fimPadrao };
+        }
+
+        let ultimoRelatorioEstoque = null;
+
+        function gerarRelatorioEstoque() {
+            const container = document.getElementById('relatorio-estoque-container');
+            if (!container) return;
+
+            const { inicio, fim, inicioTexto, fimTexto } = obterPeriodoRelatorioEstoque();
+            const movimentos = [];
+
+            products.forEach(p => {
+                const hist = Array.isArray(p.estoque_historico) ? p.estoque_historico : [];
+                hist.forEach(m => {
+                    const dataMov = new Date(m.data);
+                    if (dataMov >= inicio && dataMov <= fim) {
+                        movimentos.push({
+                            codigo: p.codigo || "",
+                            nome: p.nome || "",
+                            data: m.data,
+                            tipo: m.tipo || (parseFloat(m.delta) > 0 ? "entrada" : "saida"),
+                            delta: parseFloat(m.delta) || 0,
+                            estoque_anterior: parseFloat(m.estoque_anterior) || 0,
+                            estoque_novo: parseFloat(m.estoque_novo) || 0,
+                            origem: m.origem || ""
+                        });
+                    }
+                });
+            });
+
+            const entradas = movimentos.filter(m => m.delta > 0).reduce((s, m) => s + m.delta, 0);
+            const saidas = Math.abs(movimentos.filter(m => m.delta < 0).reduce((s, m) => s + m.delta, 0));
+            const saldo = entradas - saidas;
+            const produtosComMovimento = new Set(movimentos.map(m => m.codigo)).size;
+
+            const emOferta = products.filter(produtoTemOfertaAtiva).length;
+            const ofertaSimulada = products.filter(p => p.oferta_origem === "vencimento_simulado").length;
+            const semEstoque = products.filter(p => (parseFloat(p.estoque) || 0) <= 0).length;
+            const estoqueBaixo = products.filter(p => (parseFloat(p.estoque) || 0) >= 1 && (parseFloat(p.estoque) || 0) <= 3).length;
+            const vencendo30 = products.filter(p => {
+                const d = calcularDiasParaVencimentoProduto(p);
+                return d !== null && d >= 1 && d <= 30;
+            }).length;
+            const cadastroIncompleto = products.filter(p => produtoTemCampoVazio(p, "cadastro_incompleto")).length;
+
+            const topSaidas = movimentos
+                .filter(m => m.delta < 0)
+                .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+                .slice(0, 10);
+
+            ultimoRelatorioEstoque = {
+                periodo: { inicio: inicioTexto, fim: fimTexto },
+                movimentos,
+                resumo: { entradas, saidas, saldo, produtosComMovimento, emOferta, ofertaSimulada, semEstoque, estoqueBaixo, vencendo30, cadastroIncompleto }
+            };
+
+            container.innerHTML = `
+                <div class="report-box">
+                    <div class="section-title">Resumo do período (${inicioTexto} até ${fimTexto})</div>
+                    <div class="report-metric"><span>Entradas registradas</span><strong>${entradas}</strong></div>
+                    <div class="report-metric"><span>Saídas registradas</span><strong>${saidas}</strong></div>
+                    <div class="report-metric"><span>Saldo do período</span><strong>${saldo}</strong></div>
+                    <div class="report-metric"><span>Produtos movimentados</span><strong>${produtosComMovimento}</strong></div>
+                </div>
+
+                <div class="report-box">
+                    <div class="section-title">Alertas atuais do cadastro</div>
+                    <div class="report-metric"><span>Produtos em oferta</span><strong>${emOferta}</strong></div>
+                    <div class="report-metric"><span>Ofertas simuladas por vencimento</span><strong>${ofertaSimulada}</strong></div>
+                    <div class="report-metric"><span>Sem estoque</span><strong>${semEstoque}</strong></div>
+                    <div class="report-metric"><span>Estoque baixo (1 a 3)</span><strong>${estoqueBaixo}</strong></div>
+                    <div class="report-metric"><span>Vencendo em até 30 dias</span><strong>${vencendo30}</strong></div>
+                    <div class="report-metric"><span>Cadastro incompleto</span><strong>${cadastroIncompleto}</strong></div>
+                </div>
+
+                <div class="report-box">
+                    <div class="section-title">Maiores saídas do período</div>
+                    ${
+                        topSaidas.length
+                        ? topSaidas.map(m => `<div class="report-metric"><span>${m.nome || m.codigo}</span><strong>${Math.abs(m.delta)}</strong></div>`).join("")
+                        : `<p style="font-size:12px; color:var(--text-secondary); margin:0;">Ainda não há saídas registradas nesse período. A partir deste ajuste, alterações manuais de estoque passarão a gerar histórico.</p>`
+                    }
+                </div>
+            `;
+
+            lucide.createIcons();
+        }
+
+        function exportarRelatorioEstoqueCSV() {
+            if (!ultimoRelatorioEstoque) {
+                gerarRelatorioEstoque();
+            }
+
+            if (!ultimoRelatorioEstoque) return;
+
+            const linhas = ultimoRelatorioEstoque.movimentos.map(m => ({
+                periodo_inicio: ultimoRelatorioEstoque.periodo.inicio,
+                periodo_fim: ultimoRelatorioEstoque.periodo.fim,
+                data: m.data,
+                codigo: m.codigo,
+                nome: m.nome,
+                tipo: m.tipo,
+                quantidade: m.delta,
+                estoque_anterior: m.estoque_anterior,
+                estoque_novo: m.estoque_novo,
+                origem: m.origem
+            }));
+
+            if (!linhas.length) {
+                alert("Não há movimentações para exportar no período selecionado.");
+                return;
+            }
+
+            const csv = Papa.unparse(linhas, { delimiter: ";" });
+            const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `relatorio_estoque_${ultimoRelatorioEstoque.periodo.inicio}_a_${ultimoRelatorioEstoque.periodo.fim}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+async function updateField(sku, field, value) { 
             const p = products.find(x => x.codigo === sku); 
             if(!p) return; 
-            
+
             let finalVal = value; 
-            
+            const valorAnterior = p[field];
+
             if(field === 'validade') { 
                 if (typeof value === 'string' && value.includes('-')) {
                     const partes = value.split('-'); 
@@ -1677,15 +2159,32 @@ const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + qua
             else if(field === 'validade_oferta') {
                 finalVal = value;
             }
-            
-           p[field] = finalVal; 
+
+            if (field === 'estoque') {
+                registrarMovimentoEstoque(p, valorAnterior, finalVal, "ajuste_manual_pim");
+            }
+
+            if (field === 'preco_oferta') {
+                if (finalVal === "" || parseFloat(finalVal) <= 0) {
+                    p.oferta_origem = "";
+                } else if (p.oferta_origem !== "vencimento_simulado" && p.oferta_origem !== "vencimento_real") {
+                    p.oferta_origem = "manual";
+                } else {
+                    // se o usuário alterou o preço diretamente, passa a ser oferta manual
+                    p.oferta_origem = "manual";
+                    p.oferta_validade_simulada_ativa = false;
+                    p.oferta_validade_simulada_dias = "";
+                }
+            }
+
+            p[field] = finalVal; 
             p.last_update = Date.now(); 
             await saveDataLocally(); 
-            
+
             if (field === 'validade' || field === 'preco' || field === 'preco_custo' || field === 'combo_id' || field === 'validade_combo') {
                 await processarInteligenciaDeOfertas(sku);
             }
-            
+
             renderGrid(ultimoTermoPesquisa, true); 
         }
         
