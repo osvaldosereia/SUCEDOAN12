@@ -1831,15 +1831,78 @@ async function salvarProdutosJSON(opcoes = {}) {
         }
 
         window.onload = async function() { 
-            lucide.createIcons(); 
-            await loadData(); 
-            document.getElementById('search-input').addEventListener('input', debounce((e) => {
-                if(e.target.value.trim() !== "") { filtroAtivo = { tipo: null, valor: null }; document.getElementById('active-filter-banner').style.display = 'none'; }
-                renderGrid(e.target.value);
-            }, 300)); 
-            setupEditorEvents(); 
+    lucide.createIcons(); 
+    await loadData(); 
+
+    const searchInput = document.getElementById('search-input');
+
+    if (searchInput) {
+        const executarBusca = function() {
+            const termo = searchInput.value || "";
+
+            if (termo.trim() !== "") { 
+                filtroAtivo = { tipo: null, valor: null }; 
+                const banner = document.getElementById('active-filter-banner');
+                if (banner) banner.style.display = 'none';
+            }
+
+            renderGrid(termo);
         };
-        
+
+        searchInput.addEventListener('input', debounce(executarBusca, 250));
+
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                executarBusca();
+            }
+
+            if (e.key === 'Escape') {
+                searchInput.value = "";
+                ultimoTermoPesquisa = "";
+                renderGrid("");
+            }
+        });
+    }
+
+    setupEditorEvents(); 
+};
+        function normalizarBuscaProduto(valor) {
+    return String(valor || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function montarTextoBuscaProduto(p) {
+    if (!p) return "";
+
+    const tags = Array.isArray(p.tag_global)
+        ? p.tag_global.join(" ")
+        : String(p.tag_global || "");
+
+    return normalizarBuscaProduto([
+        p.codigo,
+        p.id,
+        p.firebaseKey,
+        p.nome,
+        p.gtin,
+        p.ean,
+        p.ncm,
+        p.marca,
+        p.categoria,
+        p.subcategoria,
+        p.subsubcategoria,
+        p.embalagem,
+        p.prateleira,
+        p.gondola,
+        p.localizacao,
+        tags
+    ].join(" "));
+}
         function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
 
        // ==========================================================
