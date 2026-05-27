@@ -485,22 +485,19 @@
         </div>
         <div class="sidebar-body" style="gap:16px;">
             <div class="form-section">
-                <div class="section-title">Salvar e Sincronizar</div>
-                
-                </button>
-                <button class="nav-btn primary" style="height:40px; justify-content:center; margin-bottom: 8px;" onclick="salvarBackupProdutosJsonGithubManual()">
-                    <i data-lucide="github" size="14"></i> 1. BACKUP MANUAL GITHUB: produtos.json
-                </button>
+                <div class="section-title">Firebase, Meta e Imagens</div>
                 <button class="nav-btn bling-btn" style="height:40px; justify-content:center; margin-bottom: 8px;" onclick="enviarMetaGithubManual()">
-                    <i data-lucide="send" size="14"></i> 2. ENVIAR META MANUAL: CSV + JSON
+                    <i data-lucide="send" size="14"></i> 1. ENVIAR META MANUAL: CSV + JSON
                 </button>
                 <button class="nav-btn" style="height:40px; justify-content:center;" onclick="uploadImagens()">
-                    <i data-lucide="image-up" size="14"></i> 3. ENVIAR IMAGENS DA FILA <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px; margin-left:4px;">(0)</span>
+                    <i data-lucide="image-up" size="14"></i> 2. ENVIAR IMAGENS DA FILA <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px; margin-left:4px;">(0)</span>
                 </button>
                 <button class="nav-btn" style="height:40px; justify-content:center; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="fetchFromGithub()">
-                    <i data-lucide="cloud-download" size="14"></i> 4. ATUALIZAR LOCAL DA NUVEM
+                    <i data-lucide="cloud-download" size="14"></i> 3. ATUALIZAR TELA PELO FIREBASE
                 </button>
-                
+                <p style="font-size:9px; color:var(--text-secondary); margin:0; line-height:1.4; text-align:center;">
+                    Produtos salvam individualmente no Firebase. O produtos.json está desativado para evitar conflito entre sistemas.
+                </p>
             </div>
 
             <div class="form-section" style="margin-top:10px;">
@@ -889,7 +886,7 @@ let finalBase64 = isBase64Ready
         function renderQueueStatus() {
             const el = document.getElementById('queue-status');
             if (!el) return;
-            const pendentesProdutos = produtosPendentesSync ? produtosPendentesSync.size : 0;
+            const pendentesProdutos = (typeof produtosPendentesSync !== "undefined" && produtosPendentesSync) ? produtosPendentesSync.size : 0;
             const totalPendentes = syncQueue.length + pendentesProdutos;
             if (isSyncing) {
                 el.style.display = 'flex';
@@ -1318,7 +1315,7 @@ async function salvarArquivoGithubComRetry(path, content, message, isBase64Ready
 }
 
 async function carregarProdutosFirebaseParaArquivoManual() {
-    mostrarAlerta("Lendo produtos direto do Firebase...", "aviso");
+    mostrarAlerta("Lendo produtos atualizados direto do Firebase...", "aviso");
 
     const dadosFirebase = await FirebaseAPI.lerProdutos();
     if (!Array.isArray(dadosFirebase) || dadosFirebase.length === 0) {
@@ -1329,19 +1326,23 @@ async function carregarProdutosFirebaseParaArquivoManual() {
         .filter(p => p && p._deleted !== true)
         .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
 
-    await localforage.setItem(STORAGE_KEY, products);
+    await saveDataLocally();
     renderGrid(ultimoTermoPesquisa, true);
 
     return sanitizeProductsForExport(products);
 }
 
 async function salvarBackupProdutosJsonNoGithub(vitrineFinal) {
-    console.log("produtos.json desativado. Firebase é a fonte oficial.");
+    console.log("produtos.json desativado. Firebase agora é a fonte oficial única.");
     return;
 }
 
 async function enviarArquivosMetaNoGithub(vitrineFinal) {
-    const ativos = vitrineFinal.filter(p => p && p.situacao !== 'I');
+    const ativos = Array.isArray(vitrineFinal) ? vitrineFinal.filter(p => p && p.situacao !== 'I') : [];
+    if (ativos.length === 0) {
+        throw new Error("Nenhum produto ativo encontrado para enviar para a Meta.");
+    }
+
     const csvData = ativos.map(p => mapearProdutoParaMeta(p));
     const csvText = Papa.unparse(csvData, { delimiter: ";" });
 
@@ -1352,27 +1353,14 @@ async function enviarArquivosMetaNoGithub(vitrineFinal) {
 }
 
 async function salvarBackupProdutosNoGithub(vitrineFinal) {
-    // Mantida por compatibilidade, mas agora só deve ser chamada por ação manual.
-    await salvarBackupProdutosJsonNoGithub(vitrineFinal);
+    // Compatibilidade: produtos.json está desativado.
+    // Se alguma função antiga chamar este método, atualiza somente os arquivos da Meta.
     await enviarArquivosMetaNoGithub(vitrineFinal);
 }
 
 async function salvarBackupProdutosJsonGithubManual() {
-    mostrarAlerta("Backup produtos.json desativado. O Firebase agora é o banco oficial único.", "aviso");
-}
-
-    backupGithubEmAndamento = true;
-    try {
-        const vitrineFinal = await carregarProdutosFirebaseParaArquivoManual();
-        mostrarAlerta("Enviando backup produtos.json para o GitHub...", "aviso");
-        await salvarBackupProdutosJsonNoGithub(vitrineFinal);
-        mostrarAlerta(`✅ Backup produtos.json atualizado no GitHub com ${vitrineFinal.length} produto(s) vindos do Firebase.`, "sucesso");
-    } catch (e) {
-        console.error("Erro no backup manual produtos.json:", e);
-        mostrarAlerta("❌ Erro no backup manual: " + e.message, "erro");
-    } finally {
-        backupGithubEmAndamento = false;
-    }
+    mostrarAlerta("produtos.json está desativado. O Firebase é o banco oficial; use o botão manual da Meta quando precisar.", "aviso");
+    return;
 }
 
 async function enviarMetaGithubManual() {
@@ -1382,12 +1370,19 @@ async function enviarMetaGithubManual() {
     }
 
     backupGithubEmAndamento = true;
+
     try {
         const vitrineFinal = await carregarProdutosFirebaseParaArquivoManual();
-        mostrarAlerta("Enviando arquivos da Meta para o GitHub...", "aviso");
+        const ativos = vitrineFinal.filter(p => p && p.situacao !== "I");
+
+        if (ativos.length === 0) {
+            throw new Error("Nenhum produto ativo encontrado para enviar para a Meta.");
+        }
+
+        mostrarAlerta(`Enviando Meta para o GitHub com ${ativos.length} produto(s) ativo(s)...`, "aviso");
         await enviarArquivosMetaNoGithub(vitrineFinal);
-        const ativos = vitrineFinal.filter(p => p && p.situacao !== 'I').length;
-        mostrarAlerta(`✅ Meta atualizada manualmente no GitHub com ${ativos} produto(s) ativos vindos do Firebase.`, "sucesso");
+
+        mostrarAlerta(`✅ Meta atualizada com sucesso: ${ativos.length} produto(s) ativo(s) enviados.`, "sucesso");
     } catch (e) {
         console.error("Erro no envio manual da Meta:", e);
         mostrarAlerta("❌ Erro ao enviar Meta: " + e.message, "erro");
@@ -1449,7 +1444,7 @@ async function salvarProdutoIndividualSeguro(produtoOriginal, tipo = "upsert") {
 
     if (produtoNuvem && lastNuvem > lastLocal) {
         atualizarProdutoLocalComNuvem(produtoNuvem);
-        await localforage.setItem(STORAGE_KEY, products);
+        await saveDataLocally();
         return { status: "nuvem_mais_nova", chave };
     }
 
@@ -1507,7 +1502,7 @@ async function processarProdutosPendentesSync() {
             }
         }
 
-        await localforage.setItem(STORAGE_KEY, products);
+        await saveDataLocally();
 
         if (erros > 0) {
             mostrarAlerta(`⚠️ ${erros} produto(s) não sincronizaram. Vou tentar novamente.`, "aviso");
@@ -1527,60 +1522,16 @@ async function processarProdutosPendentesSync() {
 }
 
 function agendarBackupGithubCompleto(motivo = "backup manual desativado", delayMs = 60000) {
-    // Backup GitHub e arquivos da Meta são MANUAIS.
-    // Esta função foi mantida para evitar erro em chamadas antigas, mas não agenda envio automático.
+    // GitHub produtos.json e Meta são MANUAIS.
+    // Mantida só para compatibilidade com chamadas antigas.
     clearTimeout(backupGithubTimer);
-    console.log("Backup GitHub/Meta automático desativado. Use os botões manuais.", motivo);
+    console.log("Backup GitHub/Meta automático desativado. Use o botão manual da Meta.", motivo);
 }
 
 async function salvarBackupGithubAPartirDoFirebase(motivo = "backup") {
-    if (backupGithubEmAndamento) return;
-    backupGithubEmAndamento = true;
-    try {
-        const dadosFirebase = await FirebaseAPI.lerProdutos();
-        if (Array.isArray(dadosFirebase) && dadosFirebase.length > 0) {
-            products = dadosFirebase.sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
-            await localforage.setItem(STORAGE_KEY, products);
-            await salvarBackupProdutosNoGithub(sanitizeProductsForExport(products));
-            console.log("Backup GitHub atualizado:", motivo);
-        }
-    } catch (e) {
-        console.warn("Firebase foi salvo, mas o backup GitHub falhou:", e);
-        mostrarAlerta("⚠️ Firebase salvo. Backup GitHub falhou: " + e.message, "aviso");
-    } finally {
-        backupGithubEmAndamento = false;
-    }
-}
-
-async function salvarProdutosNoFirebaseSomenteDiferencas(produtosFinais, produtosNuvem, exclusoesFinal = {}) {
-    const mapaNuvem = new Map();
-    (produtosNuvem || []).forEach(p => {
-        const chave = FirebaseAPI.sanitizarChave(p.firebaseKey || p.id || p.codigo || p.gtin);
-        if (chave) mapaNuvem.set(chave, p);
-    });
-
-    let salvos = 0;
-    for (const produto of produtosFinais) {
-        const pLimpo = prepararProdutoParaFirebase(produto);
-        const chave = FirebaseAPI.obterChaveProduto(pLimpo);
-        const remoto = mapaNuvem.get(chave);
-        if (produtoMudouParaFirebase(pLimpo, remoto)) {
-            await FirebaseAPI.salvarProduto(pLimpo);
-            salvos++;
-        }
-    }
-
-    await FirebaseAPI.salvarExclusoesProdutos(exclusoesFinal);
-    return salvos;
-}
-
-function agendarSincronizacaoProdutos(motivo = "alteração de produto", delayMs = 2500) {
-    if (modoCarregandoDados) return;
-
-    clearTimeout(autoSyncTimerProdutos);
-    autoSyncTimerProdutos = setTimeout(() => {
-        salvarProdutosJSON({ automatico: true, motivo });
-    }, delayMs);
+    // produtos.json desativado. Não faz envio automático para evitar conflito entre sistemas.
+    console.log("Backup automático do GitHub ignorado:", motivo);
+    return;
 }
 
 async function salvarProdutosJSON(opcoes = {}) {
@@ -1596,64 +1547,25 @@ async function salvarProdutosJSON(opcoes = {}) {
     salvamentoProdutosEmAndamento = true;
     clearTimeout(autoSyncTimerProdutos);
 
-    if (produtosPendentesSync.size > 0) {
-        await processarProdutosPendentesSync();
-    }
-
     try {
+        if (produtosPendentesSync.size > 0) {
+            await processarProdutosPendentesSync();
+        }
+
+        const dadosFirebase = await FirebaseAPI.lerProdutos();
+        if (Array.isArray(dadosFirebase) && dadosFirebase.length > 0) {
+            products = dadosFirebase
+                .filter(p => p && p._deleted !== true)
+                .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
+            await saveDataLocally();
+            renderGrid(ultimoTermoPesquisa, true);
+        }
+
         if (!automatico) {
-            mostrarAlerta("Sincronizando com segurança: lendo Firebase antes de salvar...", "aviso");
+            mostrarAlerta("✅ Sincronização concluída. Firebase é a fonte oficial. Meta/GitHub só pelo botão manual.", "sucesso");
         }
-
-        let produtosLocais = [];
-        let combosLocais = [];
-
-        try {
-            const dadosLocais = await localforage.getItem(STORAGE_KEY);
-            produtosLocais = Array.isArray(dadosLocais) ? dadosLocais : (Array.isArray(products) ? products : []);
-
-            const dadosCombos = await localforage.getItem(COMBOS_KEY);
-            if (dadosCombos && Array.isArray(dadosCombos)) {
-                combosLocais = dadosCombos;
-                combosDoSistema = dadosCombos;
-            }
-        } catch (e) {
-            console.error("Erro ao ler armazenamento local:", e);
-            throw new Error("Erro ao ler dados locais. Sincronização cancelada para evitar perda.");
-        }
-
-        const [produtosNuvem, exclusoesFirebase] = await Promise.all([
-            lerProdutosFirebaseSeguro(),
-            FirebaseAPI.lerExclusoesProdutos()
-        ]);
-
-        const mesclagem = mesclarProdutosLocalComNuvem(produtosLocais, produtosNuvem, exclusoesFirebase);
-        products = mesclagem.produtos;
-
-        await localforage.setItem(STORAGE_KEY, products);
-
-        const vitrineFinal = sanitizeProductsForExport(products);
-
-        // 1) Firebase principal. Não substitui mais o banco inteiro.
-        // Salva somente produtos que realmente estão diferentes da nuvem.
-        const produtosAlteradosFirebase = await salvarProdutosNoFirebaseSomenteDiferencas(vitrineFinal, produtosNuvem, mesclagem.exclusoes);
-
-        // 2) GitHub produtos.json e Meta NÃO são enviados automaticamente.
-        // Use os botões manuais para puxar do Firebase e atualizar esses arquivos.
-
-        // 3) Combos continuam como backup do módulo de combos.
-        if (Array.isArray(combosLocais) && combosLocais.length > 0) {
-            await salvarCombosNaNuvemAgora();
-        }
-
-        renderGrid(ultimoTermoPesquisa, true);
-
-        mostrarAlerta(
-            `✅ Firebase sincronizado sem perda: ${produtosAlteradosFirebase} produto(s) enviado(s). GitHub produtos.json e Meta ficam manuais. Total: ${vitrineFinal.length} produtos.`,
-            "sucesso"
-        );
     } catch (e) {
-        console.error("Erro crítico ao sincronizar produtos:", e);
+        console.error("Erro ao sincronizar produtos:", e);
         mostrarAlerta("❌ Erro ao sincronizar: " + e.message, "erro");
     } finally {
         salvamentoProdutosEmAndamento = false;
@@ -1955,141 +1867,76 @@ async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync 
         
         async function loadData() {
             modoCarregandoDados = true;
-            let cacheLocalProdutos = [];
-            try { const saved = await localforage.getItem(STORAGE_KEY); if(saved && Array.isArray(saved)) { cacheLocalProdutos = saved; products = saved; } } catch (err) {}
+
             try {
+                const cacheLocalProdutos = await carregarCacheLocalProdutos();
+                if (cacheLocalProdutos.length > 0) {
+                    products = cacheLocalProdutos;
+                    renderGrid(ultimoTermoPesquisa);
+                    mostrarAlerta("Cache local carregado temporariamente. Buscando Firebase...", "aviso");
+                }
+
                 const [produtosFirebase, exclusoesFirebase] = await Promise.all([
                     FirebaseAPI.lerProdutos(),
                     FirebaseAPI.lerExclusoesProdutos()
                 ]);
 
                 if (Array.isArray(produtosFirebase) && produtosFirebase.length > 0) {
-                    const mesclagemInicial = mesclarProdutosLocalComNuvem(cacheLocalProdutos, produtosFirebase, exclusoesFirebase);
-                    products = mesclagemInicial.produtos;
-                    await localforage.setItem(STORAGE_KEY, products);
+                    products = produtosFirebase
+                        .filter(p => p && p._deleted !== true && obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p))
+                        .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
+                    await saveDataLocally();
+                } else if (cacheLocalProdutos.length === 0) {
+                    products = [];
                 }
             } catch (err) {
-                console.warn("Não foi possível iniciar pelo Firebase. Usando cache local:", err);
+                console.warn("Não foi possível iniciar pelo Firebase. Usando cache local se existir:", err);
+                const cacheLocalProdutos = await carregarCacheLocalProdutos();
+                if (cacheLocalProdutos.length > 0) products = cacheLocalProdutos;
             }
-            try { 
-                const c = await localforage.getItem(CATEGORIAS_KEY); 
+
+            try {
+                const c = await localforage.getItem(CATEGORIAS_KEY);
                 if(c && Array.isArray(c)) {
-                    if(c.length > 0 && typeof c[0] === 'string') { categoriasDoSistema = []; } 
+                    if(c.length > 0 && typeof c[0] === 'string') { categoriasDoSistema = []; }
                     else { categoriasDoSistema = c; }
-                } 
+                }
             } catch (err) {}
             try { const m = await localforage.getItem(MARCAS_KEY); if(m && Array.isArray(m)) marcasDoSistema = m; } catch (err) {}
-            try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {} 
-            try { const cb = await localforage.getItem(COMBOS_KEY); if(cb && Array.isArray(cb)) combosDoSistema = cb; } catch (err) {} 
-            
+            try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {}
+            try { const cb = await localforage.getItem(COMBOS_KEY); if(cb && Array.isArray(cb)) combosDoSistema = cb; } catch (err) {}
+
             let idsExistentes = new Set();
-            let skusExistentes = new Set();
-            let precisaSalvarCat = false, precisaSalvarMarca = false, precisaSalvarTag = false;
-            let precisaSalvarProd = false;
+            produtosPendentesSync.clear();
+            products.forEach(p => {
+                const chave = FirebaseAPI.sanitizarChave(p.firebaseKey || p.id || p.codigo || p.gtin);
+                if (chave) {
+                    p.firebaseKey = chave;
+                    p.id = String(p.id || chave);
+                }
 
-            products.forEach((p, index) => {
-                // Não usamos histórico interno de estoque neste PIM.
-                // O relatório oficial de entradas e saídas fica no Bling.
-                if (p.estoque_historico !== undefined) {
-                    delete p.estoque_historico;
-                    precisaSalvarProd = true;
+                if (!p.id) p.id = p.codigo || (Date.now() + Math.random()).toString();
+                if(!p.codigo) p.codigo = 'SKU' + Math.floor(Math.random()*10000);
+                if(idsExistentes.has(p.codigo)) {
+                    const oldSku = p.codigo;
+                    p.codigo = oldSku + '-' + Math.floor(Math.random()*999);
                 }
-               // Mantém combo_id e validade_combo localmente para permitir migração dos combos antigos.
-// Esses campos não entram mais no produtos.json porque sanitizeProductsForExport não exporta eles.
-if (p.combo_id !== undefined || p.validade_combo !== undefined) {
-    // Não apagar aqui. O módulo novo de combos vai migrar essas informações.
-}
-                if (!p.id || idsExistentes.has(p.id)) {
-                    p.id = Date.now().toString() + index.toString() + Math.floor(Math.random() * 10000).toString();
-                    p.last_update = Date.now();
-                    precisaSalvarProd = true;
-                }
-                idsExistentes.add(p.id);
-                if (!p.firebaseKey) p.firebaseKey = FirebaseAPI.sanitizarChave(p.id || p.codigo || p.gtin);
-
-                if (!p.codigo || skusExistentes.has(p.codigo)) {
-                    p.codigo = Date.now().toString().slice(-6) + index.toString().padStart(4, '0') + Math.floor(Math.random() * 1000).toString();
-                    p.last_update = Date.now();
-                    precisaSalvarProd = true;
-                }
-                skusExistentes.add(p.codigo);
-
-                if (p.marca) p.marca = String(p.marca).toUpperCase().trim();
-                if (p.marca && !marcasDoSistema.includes(p.marca)) { marcasDoSistema.push(p.marca); precisaSalvarMarca = true; }
-                
-                if (p.tag_global && Array.isArray(p.tag_global)) {
-                    p.tag_global.forEach(t => {
-                        if (t) {
-                            let tUp = String(t).toUpperCase().trim();
-                            if(!tagsDoSistema.includes(tUp)) { tagsDoSistema.push(tUp); precisaSalvarTag = true; }
-                        }
-                    });
-                }
-                
-                if (p.categoria) {
-                    p.categoria = String(p.categoria).toUpperCase().trim();
-                    
-                    let catObj = categoriasDoSistema.find(c => c && c.nome === p.categoria);
-                    if (!catObj) {
-                        catObj = { nome: p.categoria, subcategorias: [] };
-                        categoriasDoSistema.push(catObj);
-                        precisaSalvarCat = true;
-                    }
-                    
-                    if (p.subcategoria) {
-                        p.subcategoria = String(p.subcategoria).toUpperCase().trim();
-                        
-                        let subObj = catObj.subcategorias.find(s => s && s.nome === p.subcategoria);
-                        if (!subObj) {
-                            subObj = { nome: p.subcategoria, subsubcategorias: [] };
-                            catObj.subcategorias.push(subObj);
-                            precisaSalvarCat = true;
-                        }
-                        
-                        if (p.subsubcategoria) {
-                            p.subsubcategoria = String(p.subsubcategoria).toUpperCase().trim();
-                            
-                            if (!subObj.subsubcategorias.includes(p.subsubcategoria)) {
-                                subObj.subsubcategorias.push(p.subsubcategoria);
-                                precisaSalvarCat = true;
-                            }
-                        }
-                    }
-                }
+                idsExistentes.add(p.codigo);
+                if(!p.descricao) p.descricao = "";
+                if(!p.last_update) p.last_update = 0;
             });
 
-            if (precisaSalvarMarca) await localforage.setItem(MARCAS_KEY, marcasDoSistema);
-            if (precisaSalvarTag) await localforage.setItem(TAGS_KEY, tagsDoSistema);
-            if (precisaSalvarCat) await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema);
-            if (precisaSalvarProd) await saveDataLocally(); 
-
-            if(categoriasDoSistema.length > 0) {
-                categoriasDoSistema.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
-                categoriasDoSistema.forEach(c => {
-                    if(c.subcategorias) {
-                        c.subcategorias.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
-                        c.subcategorias.forEach(s => {
-                            if(s.subsubcategorias) s.subsubcategorias.sort((a,b) => a.localeCompare(b));
-                        });
-                    }
-                });
-            }
-
-            [marcasDoSistema, tagsDoSistema].forEach(lista => lista.sort((a, b) => a.localeCompare(b)));
-
-            const cfg = await localforage.getItem(CONFIG_KEY) || {}; 
-            if(cfg.token) { 
-                document.getElementById('cfg-token').value = cfg.token; 
-                document.getElementById('cfg-user').value = cfg.user; 
-                document.getElementById('cfg-repo').value = cfg.repo; 
-            }
-            
-            await processarInteligenciaDeOfertas(null, true);
+            try {
+                const q = await localforage.getItem('imageQueue');
+                if(q && Array.isArray(q)) imageQueue = q;
+            } catch(e) {}
+            updateImageBadge();
+            atualizarListasDoSistemaComProdutos();
             await processarStatusCombos();
             modoCarregandoDados = false;
             renderGrid(ultimoTermoPesquisa);
         }
-        
+
         function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
         
         async function saveDataLocally() {
@@ -2105,6 +1952,24 @@ if (p.combo_id !== undefined || p.validade_combo !== undefined) {
         await localforage.setItem(STORAGE_KEY, cache);
     } catch (err) {
         console.warn("Não foi possível atualizar o cache local:", err);
+    }
+}
+
+async function carregarCacheLocalProdutos() {
+    try {
+        const cache = await localforage.getItem(STORAGE_KEY);
+        if (!cache) return [];
+
+        // Formato novo: cache com metadados.
+        if (cache && Array.isArray(cache.produtos)) return cache.produtos;
+
+        // Formato antigo: array direto.
+        if (Array.isArray(cache)) return cache;
+
+        return [];
+    } catch (err) {
+        console.warn("Não foi possível ler o cache local:", err);
+        return [];
     }
 }
 
@@ -2803,11 +2668,10 @@ async function deleteProduct(sku) {
         last_update: agora
     };
 
-    await saveDataLocally(false);
     marcarProdutoParaSincronizacao(tombstone, "delete", 500);
 
     products = products.filter(p => p.codigo !== sku);
-    await localforage.setItem(STORAGE_KEY, products);
+    await saveDataLocally();
 
     renderGrid(ultimoTermoPesquisa);
 
@@ -4312,42 +4176,32 @@ async function processarBaixaPedidoTexto() {
             }
         }
         
-        async function fetchFromGithub() { 
+        async function fetchFromGithub() {
     try {
         mostrarAlerta("Atualizando a tela pelo Firebase principal...", "aviso");
-        
+
         const [dadosFirebase, exclusoesFirebase] = await Promise.all([
             FirebaseAPI.lerProdutos(),
             FirebaseAPI.lerExclusoesProdutos()
         ]);
-        const cacheLocal = await localforage.getItem(STORAGE_KEY);
-        const mesclagem = mesclarProdutosLocalComNuvem(Array.isArray(cacheLocal) ? cacheLocal : [], dadosFirebase, exclusoesFirebase);
-        
-        if (mesclagem.produtos && mesclagem.produtos.length > 0) {
-            products = mesclagem.produtos;
-            await localforage.setItem(STORAGE_KEY, products);
-            await FirebaseAPI.salvarExclusoesProdutos(mesclagem.exclusoes);
-            
-            categoriasDoSistema = [];
-            marcasDoSistema = [];
-            tagsDoSistema = [];
-            
-            await localforage.setItem(CATEGORIAS_KEY, []);
-            await localforage.setItem(MARCAS_KEY, []);
-            await localforage.setItem(TAGS_KEY, []);
-            
-            await processarInteligenciaDeOfertas(null, true);
+
+        if (Array.isArray(dadosFirebase) && dadosFirebase.length > 0) {
+            products = dadosFirebase
+                .filter(p => p && p._deleted !== true && obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p))
+                .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
+
+            await saveDataLocally();
             await processarStatusCombos();
             renderGrid(ultimoTermoPesquisa);
-            
-            mostrarAlerta("✅ Dados atualizados do Firebase sem apagar alterações mais novas.", "sucesso"); 
+
+            mostrarAlerta("✅ Tela atualizada com os dados oficiais do Firebase.", "sucesso");
             closeSidebar('config-sidebar');
-        } else { 
-            alert("A base de dados do Firebase está vazia ou o formato está incorreto."); 
+        } else {
+            alert("A base de dados do Firebase está vazia ou o formato está incorreto.");
         }
-    } catch(e) { 
-        console.error("Erro na nuvem:", e);
-        alert("Erro ao puxar da nuvem: " + e.message); 
+    } catch(e) {
+        console.error("Erro na atualização pelo Firebase:", e);
+        alert("Erro ao puxar do Firebase: " + e.message);
     }
 }
 
