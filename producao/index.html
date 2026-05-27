@@ -3504,21 +3504,7 @@ async function alterarQtdItemCombo(skuCodificado, qtd) {
     renderizarItensCombo();
 }
 
-    if (!c) return;
-
-    const item = c.itens.find(i => i.sku === sku);
-    if (!item) return;
-
-    item.qtd = Math.max(1, parseFloat(qtd) || 1);
-    c.last_update = Date.now();
-
-    recalcularCombo(c);
-    await saveCombosLocally();
-
-    renderizarComboAtual();
-    renderizarListaCombos();
-}
-
+    
 function recalcularCombo(combo) {
     const c = combo || getComboAtual();
     if (!c) return null;
