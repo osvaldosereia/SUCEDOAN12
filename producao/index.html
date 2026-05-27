@@ -487,16 +487,22 @@
             <div class="form-section">
                 <div class="section-title">Salvar e Sincronizar</div>
                 <button class="nav-btn sync-btn" style="height:40px; justify-content:center; margin-bottom: 8px;" onclick="salvarProdutosJSON()">
-                    <i data-lucide="database" size="14"></i> 1. SALVAR JSON (FIREBASE + GITHUB)
+                    <i data-lucide="database" size="14"></i> 1. SINCRONIZAR PRODUTOS NO FIREBASE
+                </button>
+                <button class="nav-btn primary" style="height:40px; justify-content:center; margin-bottom: 8px;" onclick="salvarBackupProdutosJsonGithubManual()">
+                    <i data-lucide="github" size="14"></i> 2. BACKUP MANUAL GITHUB: produtos.json
+                </button>
+                <button class="nav-btn bling-btn" style="height:40px; justify-content:center; margin-bottom: 8px;" onclick="enviarMetaGithubManual()">
+                    <i data-lucide="send" size="14"></i> 3. ENVIAR META MANUAL: CSV + JSON
                 </button>
                 <button class="nav-btn" style="height:40px; justify-content:center;" onclick="uploadImagens()">
-                    <i data-lucide="image-up" size="14"></i> 2. ENVIAR IMAGENS DA FILA <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px; margin-left:4px;">(0)</span>
+                    <i data-lucide="image-up" size="14"></i> 4. ENVIAR IMAGENS DA FILA <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px; margin-left:4px;">(0)</span>
                 </button>
                 <button class="nav-btn" style="height:40px; justify-content:center; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="fetchFromGithub()">
-                    <i data-lucide="cloud-download" size="14"></i> 3. ATUALIZAR LOCAL DA NUVEM
+                    <i data-lucide="cloud-download" size="14"></i> 5. ATUALIZAR LOCAL DA NUVEM
                 </button>
                 <button class="nav-btn" style="height:40px; justify-content:center; color: #ef4444; border-color: #fecaca; margin-top: 10px;" onclick="forcarUploadLocalParaFirebase()">
-                    <i data-lucide="upload" size="14"></i> 4. FORÇAR UPLOAD LOCAL -> FIREBASE
+                    <i data-lucide="upload" size="14"></i> 6. FORÇAR UPLOAD LOCAL -> FIREBASE
                 </button>
             </div>
 
@@ -1314,22 +1320,90 @@ async function salvarArquivoGithubComRetry(path, content, message, isBase64Ready
     throw ultimoErro;
 }
 
-async function salvarBackupProdutosNoGithub(vitrineFinal) {
+async function carregarProdutosFirebaseParaArquivoManual() {
+    mostrarAlerta("Lendo produtos direto do Firebase...", "aviso");
+
+    const dadosFirebase = await FirebaseAPI.lerProdutos();
+    if (!Array.isArray(dadosFirebase) || dadosFirebase.length === 0) {
+        throw new Error("Firebase retornou banco vazio. Operação cancelada para evitar gerar arquivo vazio.");
+    }
+
+    products = dadosFirebase
+        .filter(p => p && p._deleted !== true)
+        .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
+
+    await localforage.setItem(STORAGE_KEY, products);
+    renderGrid(ultimoTermoPesquisa, true);
+
+    return sanitizeProductsForExport(products);
+}
+
+async function salvarBackupProdutosJsonNoGithub(vitrineFinal) {
     const vitrinePorId = FirebaseAPI.arrayParaObjetoPorId(vitrineFinal);
 
     await salvarArquivoGithubComRetry(
         `site/produtos.json`,
         vitrinePorId,
-        `PIM: Backup produtos.json sincronizado com Firebase`
+        `PIM: Backup manual produtos.json sincronizado com Firebase`
     );
+}
 
-    const csvData = vitrineFinal.map(p => mapearProdutoParaMeta(p));
+async function enviarArquivosMetaNoGithub(vitrineFinal) {
+    const ativos = vitrineFinal.filter(p => p && p.situacao !== 'I');
+    const csvData = ativos.map(p => mapearProdutoParaMeta(p));
     const csvText = Papa.unparse(csvData, { delimiter: ";" });
 
-    await salvarArquivoGithubComRetry(`site/produtos.csv`, csvText, `PIM: Meta Ads CSV Atualizado`);
+    await salvarArquivoGithubComRetry(`site/produtos.csv`, csvText, `PIM: Meta Ads CSV manual atualizado pelo Firebase`);
 
     const jsonFinal = { "lista_produtos": csvData };
-    await salvarArquivoGithubComRetry(`site/produtos_meta.json`, jsonFinal, `PIM: Meta Ads JSON Atualizado`);
+    await salvarArquivoGithubComRetry(`site/produtos_meta.json`, jsonFinal, `PIM: Meta Ads JSON manual atualizado pelo Firebase`);
+}
+
+async function salvarBackupProdutosNoGithub(vitrineFinal) {
+    // Mantida por compatibilidade, mas agora só deve ser chamada por ação manual.
+    await salvarBackupProdutosJsonNoGithub(vitrineFinal);
+    await enviarArquivosMetaNoGithub(vitrineFinal);
+}
+
+async function salvarBackupProdutosJsonGithubManual() {
+    if (backupGithubEmAndamento) {
+        mostrarAlerta("Já existe um envio manual para o GitHub em andamento.", "aviso");
+        return;
+    }
+
+    backupGithubEmAndamento = true;
+    try {
+        const vitrineFinal = await carregarProdutosFirebaseParaArquivoManual();
+        mostrarAlerta("Enviando backup produtos.json para o GitHub...", "aviso");
+        await salvarBackupProdutosJsonNoGithub(vitrineFinal);
+        mostrarAlerta(`✅ Backup produtos.json atualizado no GitHub com ${vitrineFinal.length} produto(s) vindos do Firebase.`, "sucesso");
+    } catch (e) {
+        console.error("Erro no backup manual produtos.json:", e);
+        mostrarAlerta("❌ Erro no backup manual: " + e.message, "erro");
+    } finally {
+        backupGithubEmAndamento = false;
+    }
+}
+
+async function enviarMetaGithubManual() {
+    if (backupGithubEmAndamento) {
+        mostrarAlerta("Já existe um envio manual para o GitHub em andamento.", "aviso");
+        return;
+    }
+
+    backupGithubEmAndamento = true;
+    try {
+        const vitrineFinal = await carregarProdutosFirebaseParaArquivoManual();
+        mostrarAlerta("Enviando arquivos da Meta para o GitHub...", "aviso");
+        await enviarArquivosMetaNoGithub(vitrineFinal);
+        const ativos = vitrineFinal.filter(p => p && p.situacao !== 'I').length;
+        mostrarAlerta(`✅ Meta atualizada manualmente no GitHub com ${ativos} produto(s) ativos vindos do Firebase.`, "sucesso");
+    } catch (e) {
+        console.error("Erro no envio manual da Meta:", e);
+        mostrarAlerta("❌ Erro ao enviar Meta: " + e.message, "erro");
+    } finally {
+        backupGithubEmAndamento = false;
+    }
 }
 
 function prepararProdutoParaFirebase(produto) {
@@ -1444,9 +1518,6 @@ async function processarProdutosPendentesSync() {
         }
 
         await localforage.setItem(STORAGE_KEY, products);
-        if (salvos > 0 || apagados > 0) {
-            agendarBackupGithubCompleto("backup após alterações individuais", 30000);
-        }
 
         if (erros > 0) {
             mostrarAlerta(`⚠️ ${erros} produto(s) não sincronizaram. Vou tentar novamente.`, "aviso");
@@ -1456,7 +1527,7 @@ async function processarProdutosPendentesSync() {
             mostrarAlerta(`⚠️ Firebase tinha versão mais nova em ${conflitos} produto(s). Mantive a versão da nuvem para não perder dados.`, "aviso");
             renderGrid(ultimoTermoPesquisa, true);
         } else if (salvos > 0 || apagados > 0) {
-            mostrarAlerta(`✅ Firebase atualizado: ${salvos} salvo(s), ${apagados} apagado(s). GitHub backup agendado.`, "sucesso");
+            mostrarAlerta(`✅ Firebase atualizado: ${salvos} salvo(s), ${apagados} apagado(s). Backup GitHub/Meta fica manual.`, "sucesso");
         }
     } finally {
         syncProdutosIndividuaisEmAndamento = false;
@@ -1465,10 +1536,11 @@ async function processarProdutosPendentesSync() {
     }
 }
 
-function agendarBackupGithubCompleto(motivo = "backup automático", delayMs = 60000) {
-    if (modoCarregandoDados) return;
+function agendarBackupGithubCompleto(motivo = "backup manual desativado", delayMs = 60000) {
+    // Backup GitHub e arquivos da Meta são MANUAIS.
+    // Esta função foi mantida para evitar erro em chamadas antigas, mas não agenda envio automático.
     clearTimeout(backupGithubTimer);
-    backupGithubTimer = setTimeout(() => salvarBackupGithubAPartirDoFirebase(motivo), delayMs);
+    console.log("Backup GitHub/Meta automático desativado. Use os botões manuais.", motivo);
 }
 
 async function salvarBackupGithubAPartirDoFirebase(motivo = "backup") {
@@ -1576,8 +1648,8 @@ async function salvarProdutosJSON(opcoes = {}) {
         // Salva somente produtos que realmente estão diferentes da nuvem.
         const produtosAlteradosFirebase = await salvarProdutosNoFirebaseSomenteDiferencas(vitrineFinal, produtosNuvem, mesclagem.exclusoes);
 
-        // 2) GitHub backup completo, gerado depois do Firebase.
-        await salvarBackupProdutosNoGithub(vitrineFinal);
+        // 2) GitHub produtos.json e Meta NÃO são enviados automaticamente.
+        // Use os botões manuais para puxar do Firebase e atualizar esses arquivos.
 
         // 3) Combos continuam como backup do módulo de combos.
         if (Array.isArray(combosLocais) && combosLocais.length > 0) {
@@ -1587,7 +1659,7 @@ async function salvarProdutosJSON(opcoes = {}) {
         renderGrid(ultimoTermoPesquisa, true);
 
         mostrarAlerta(
-            `✅ Sincronizado sem perda: ${produtosAlteradosFirebase} produto(s) enviado(s) ao Firebase + GitHub backup. Total: ${vitrineFinal.length} produtos.`,
+            `✅ Firebase sincronizado sem perda: ${produtosAlteradosFirebase} produto(s) enviado(s). GitHub produtos.json e Meta ficam manuais. Total: ${vitrineFinal.length} produtos.`,
             "sucesso"
         );
     } catch (e) {
