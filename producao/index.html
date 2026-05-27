@@ -486,20 +486,19 @@
         <div class="sidebar-body" style="gap:16px;">
             <div class="form-section">
                 <div class="section-title">Salvar e Sincronizar</div>
-                <button class="nav-btn sync-btn" style="height:40px; justify-content:center; margin-bottom: 8px;" onclick="salvarProdutosJSON()">
-                    <i data-lucide="database" size="14"></i> 1. SINCRONIZAR PRODUTOS NO FIREBASE
+                
                 </button>
                 <button class="nav-btn primary" style="height:40px; justify-content:center; margin-bottom: 8px;" onclick="salvarBackupProdutosJsonGithubManual()">
-                    <i data-lucide="github" size="14"></i> 2. BACKUP MANUAL GITHUB: produtos.json
+                    <i data-lucide="github" size="14"></i> 1. BACKUP MANUAL GITHUB: produtos.json
                 </button>
                 <button class="nav-btn bling-btn" style="height:40px; justify-content:center; margin-bottom: 8px;" onclick="enviarMetaGithubManual()">
-                    <i data-lucide="send" size="14"></i> 3. ENVIAR META MANUAL: CSV + JSON
+                    <i data-lucide="send" size="14"></i> 2. ENVIAR META MANUAL: CSV + JSON
                 </button>
                 <button class="nav-btn" style="height:40px; justify-content:center;" onclick="uploadImagens()">
-                    <i data-lucide="image-up" size="14"></i> 4. ENVIAR IMAGENS DA FILA <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px; margin-left:4px;">(0)</span>
+                    <i data-lucide="image-up" size="14"></i> 3. ENVIAR IMAGENS DA FILA <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px; margin-left:4px;">(0)</span>
                 </button>
                 <button class="nav-btn" style="height:40px; justify-content:center; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="fetchFromGithub()">
-                    <i data-lucide="cloud-download" size="14"></i> 5. ATUALIZAR LOCAL DA NUVEM
+                    <i data-lucide="cloud-download" size="14"></i> 4. ATUALIZAR LOCAL DA NUVEM
                 </button>
                 <button class="nav-btn" style="height:40px; justify-content:center; color: #ef4444; border-color: #fecaca; margin-top: 10px;" onclick="forcarUploadLocalParaFirebase()">
                     <i data-lucide="upload" size="14"></i> 6. FORÇAR UPLOAD LOCAL -> FIREBASE
@@ -1339,13 +1338,8 @@ async function carregarProdutosFirebaseParaArquivoManual() {
 }
 
 async function salvarBackupProdutosJsonNoGithub(vitrineFinal) {
-    const vitrinePorId = FirebaseAPI.arrayParaObjetoPorId(vitrineFinal);
-
-    await salvarArquivoGithubComRetry(
-        `site/produtos.json`,
-        vitrinePorId,
-        `PIM: Backup manual produtos.json sincronizado com Firebase`
-    );
+    console.log("produtos.json desativado. Firebase é a fonte oficial.");
+    return;
 }
 
 async function enviarArquivosMetaNoGithub(vitrineFinal) {
@@ -1366,10 +1360,8 @@ async function salvarBackupProdutosNoGithub(vitrineFinal) {
 }
 
 async function salvarBackupProdutosJsonGithubManual() {
-    if (backupGithubEmAndamento) {
-        mostrarAlerta("Já existe um envio manual para o GitHub em andamento.", "aviso");
-        return;
-    }
+    mostrarAlerta("Backup produtos.json desativado. O Firebase agora é o banco oficial único.", "aviso");
+}
 
     backupGithubEmAndamento = true;
     try {
