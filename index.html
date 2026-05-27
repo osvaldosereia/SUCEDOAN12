@@ -1618,7 +1618,180 @@
     vertical-align: middle;
     box-shadow: 0 2px 5px rgba(220, 38, 38, 0.22);
 }
-        
+        /* =========================================================
+   CARD NOVO DOS COMBOS - 2 PRODUTOS LADO A LADO
+   ========================================================= */
+
+.combo-card-clean.combo-card-duplo {
+    grid-column: 1 / -1;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 14px !important;
+    border-radius: 22px !important;
+    background:
+        radial-gradient(circle at top left, rgba(225, 29, 72, 0.10), transparent 34%),
+        linear-gradient(180deg, #ffffff 0%, #fff7f7 100%) !important;
+    border: 1px solid #fecdd3 !important;
+    box-shadow: 0 8px 24px rgba(225, 29, 72, 0.10) !important;
+    overflow: hidden;
+}
+
+.combo-duplo-topo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    position: relative;
+}
+
+.combo-prod-img-box {
+    flex: 1;
+    min-width: 0;
+    height: 145px;
+    border-radius: 18px;
+    background: #ffffff;
+    border: 1px solid #ffe4e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: inset 0 1px 8px rgba(15, 23, 42, 0.03);
+}
+
+.combo-prod-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 10px;
+}
+
+.combo-plus-center {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #e11d48;
+    color: #ffffff;
+    font-size: 25px;
+    font-weight: 950;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 38px;
+    box-shadow: 0 8px 18px rgba(225, 29, 72, 0.25);
+    border: 3px solid #ffffff;
+}
+
+.combo-discount-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: #e11d48;
+    color: #ffffff;
+    border-radius: 999px;
+    padding: 7px 11px;
+    font-size: 12px;
+    font-weight: 950;
+    box-shadow: 0 6px 16px rgba(225, 29, 72, 0.25);
+    z-index: 2;
+}
+
+.combo-duplo-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+}
+
+.combo-duplo-label {
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: 0.06em;
+    color: #be123c;
+    text-transform: uppercase;
+}
+
+.combo-duplo-title {
+    font-size: 16px;
+    font-weight: 950;
+    line-height: 1.25;
+    color: #0f172a;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 40px;
+}
+
+.combo-duplo-validade {
+    font-size: 12px;
+    font-weight: 800;
+    color: #64748b;
+}
+
+.combo-duplo-precos {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.combo-duplo-preco-antigo {
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: line-through;
+}
+
+.combo-duplo-preco-novo {
+    color: #e11d48;
+    font-size: 26px;
+    font-weight: 950;
+    letter-spacing: -0.05em;
+}
+
+.combo-duplo-btn {
+    width: 100%;
+    height: 50px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 950;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 10px 22px rgba(225, 29, 72, 0.24);
+    border: none;
+}
+
+.combo-duplo-btn:active {
+    transform: scale(0.97);
+}
+
+@media (min-width: 768px) {
+    .combo-card-clean.combo-card-duplo {
+        max-width: 720px;
+        margin: 0 auto;
+    }
+
+    .combo-prod-img-box {
+        height: 190px;
+    }
+
+    .combo-duplo-title {
+        font-size: 20px;
+        min-height: auto;
+    }
+
+    .combo-duplo-preco-novo {
+        font-size: 32px;
+    }
+}
     </style>
 </head>
 <body>
@@ -5148,180 +5321,7 @@ async function init() {
 }
 
             document.addEventListener('DOMContentLoaded', init);
-   /* =========================================================
-   CARD NOVO DOS COMBOS - 2 PRODUTOS LADO A LADO
-   ========================================================= */
-
-.combo-card-clean.combo-card-duplo {
-    grid-column: 1 / -1;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 12px !important;
-    padding: 14px !important;
-    border-radius: 22px !important;
-    background:
-        radial-gradient(circle at top left, rgba(225, 29, 72, 0.10), transparent 34%),
-        linear-gradient(180deg, #ffffff 0%, #fff7f7 100%) !important;
-    border: 1px solid #fecdd3 !important;
-    box-shadow: 0 8px 24px rgba(225, 29, 72, 0.10) !important;
-    overflow: hidden;
-}
-
-.combo-duplo-topo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
-    width: 100%;
-    position: relative;
-}
-
-.combo-prod-img-box {
-    flex: 1;
-    min-width: 0;
-    height: 145px;
-    border-radius: 18px;
-    background: #ffffff;
-    border: 1px solid #ffe4e6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    box-shadow: inset 0 1px 8px rgba(15, 23, 42, 0.03);
-}
-
-.combo-prod-img-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    padding: 10px;
-}
-
-.combo-plus-center {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: #e11d48;
-    color: #ffffff;
-    font-size: 25px;
-    font-weight: 950;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 38px;
-    box-shadow: 0 8px 18px rgba(225, 29, 72, 0.25);
-    border: 3px solid #ffffff;
-}
-
-.combo-discount-badge {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    background: #e11d48;
-    color: #ffffff;
-    border-radius: 999px;
-    padding: 7px 11px;
-    font-size: 12px;
-    font-weight: 950;
-    box-shadow: 0 6px 16px rgba(225, 29, 72, 0.25);
-    z-index: 2;
-}
-
-.combo-duplo-info {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    text-align: center;
-}
-
-.combo-duplo-label {
-    font-size: 11px;
-    font-weight: 950;
-    letter-spacing: 0.06em;
-    color: #be123c;
-    text-transform: uppercase;
-}
-
-.combo-duplo-title {
-    font-size: 16px;
-    font-weight: 950;
-    line-height: 1.25;
-    color: #0f172a;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    min-height: 40px;
-}
-
-.combo-duplo-validade {
-    font-size: 12px;
-    font-weight: 800;
-    color: #64748b;
-}
-
-.combo-duplo-precos {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.combo-duplo-preco-antigo {
-    color: #94a3b8;
-    font-size: 14px;
-    font-weight: 800;
-    text-decoration: line-through;
-}
-
-.combo-duplo-preco-novo {
-    color: #e11d48;
-    font-size: 26px;
-    font-weight: 950;
-    letter-spacing: -0.05em;
-}
-
-.combo-duplo-btn {
-    width: 100%;
-    height: 50px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
-    color: #ffffff;
-    font-size: 15px;
-    font-weight: 950;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    box-shadow: 0 10px 22px rgba(225, 29, 72, 0.24);
-    border: none;
-}
-
-.combo-duplo-btn:active {
-    transform: scale(0.97);
-}
-
-@media (min-width: 768px) {
-    .combo-card-clean.combo-card-duplo {
-        max-width: 720px;
-        margin: 0 auto;
-    }
-
-    .combo-prod-img-box {
-        height: 190px;
-    }
-
-    .combo-duplo-title {
-        font-size: 20px;
-        min-height: auto;
-    }
-
-    .combo-duplo-preco-novo {
-        font-size: 32px;
-    }
-}
+   
     </script>
 </body>
 </html>
