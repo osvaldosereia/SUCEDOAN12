@@ -427,14 +427,12 @@
             <div class="form-section">
                 <div class="section-title">Criar / Editar Combo <span id="combo-status-label"></span></div>
                 <div style="display:flex; gap:12px; align-items:flex-start;">
-                    <img id="combo-capa-preview" class="combo-cover" src="https://placehold.co/180x180/f4f4f5/a1a1aa?text=CAPA" onclick="abrirEditorImagemComboAtual()" title="Clique para editar a capa do combo">
                     <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
                         <div class="form-group"><label class="form-label">Nome do Combo</label><input type="text" id="combo-nome" class="form-input" placeholder="Ex: Combo Cesta Econômica" oninput="recalcularComboEmTela()"></div>
                         <div class="form-grid">
                             <div class="form-group"><label class="form-label">Desconto</label><select id="combo-desconto" class="form-input" onchange="recalcularComboEmTela()"></select></div>
                             <div class="form-group"><label class="form-label">Fim da Oferta</label><input type="datetime-local" id="combo-validade" class="form-input" onchange="recalcularComboEmTela()"></div>
                         </div>
-                        <button class="nav-btn" style="justify-content:center;" onclick="abrirEditorImagemComboAtual()"><i data-lucide="image-plus" size="14"></i> EDITAR CAPA DO COMBO</button>
                     </div>
                 </div>
                 <div class="combo-summary">
@@ -448,7 +446,6 @@
                 <div class="section-title">Adicionar Produtos ao Combo</div>
                 <div style="display:flex; gap:8px;">
                     <input type="text" id="combo-busca-produto" class="form-input" placeholder="Buscar por nome, SKU ou EAN..." oninput="buscarProdutosParaCombo()">
-                    <input type="number" id="combo-qtd-produto" class="form-input" style="width:86px; flex:0 0 86px;" min="1" value="1" title="Quantidade">
                 </div>
                 <div id="combo-resultados-produtos" style="display:flex; flex-direction:column; gap:6px; max-height:180px; overflow:auto;"></div>
                 <div class="section-title" style="margin-top:8px;">Produtos do Combo</div>
@@ -3093,8 +3090,7 @@ async function deleteProduct(sku) {
        // ==========================================================
 // MÓDULO PROFISSIONAL DE COMBOS PROMOCIONAIS
 // ==========================================================
-const DESCONTOS_COMBO = [10,15,20,30,35,40,45,50,55,60,65,70,75,80,85,90];
-
+const DESCONTOS_COMBO = [20, 25, 30];
 function dinheiroBR(valor) {
     return (parseFloat(valor) || 0).toLocaleString('pt-BR', {
         style: 'currency',
@@ -3365,7 +3361,7 @@ function novoComboEmBranco(render = true) {
         nome: '',
         ativo: false,
         motivo_desativacao: 'Rascunho ainda não ativado',
-        desconto_percentual: 10,
+        desconto_percentual: 20,
         soma_produtos: 0,
         preco_combo: 0,
         economia: 0,
@@ -3393,9 +3389,8 @@ function renderizarComboAtual() {
     if (!c) return;
 
     document.getElementById('combo-nome').value = c.nome || '';
-    document.getElementById('combo-desconto').value = String(c.desconto_percentual || 10);
+    document.getElementById('combo-desconto').value = String(c.desconto_percentual || 20);
     document.getElementById('combo-validade').value = c.validade_combo || '';
-    document.getElementById('combo-capa-preview').src = c.url_imagem || 'https://placehold.co/180x180/f4f4f5/a1a1aa?text=CAPA';
 
     document.getElementById('combo-status-label').innerHTML = c.ativo
         ? '<span class="mini-badge success">ATIVO</span>'
@@ -3465,14 +3460,19 @@ async function adicionarProdutoAoCombo(skuCodificado) {
 
     if (!c || !p) return;
 
-    const qtd = Math.max(1, parseFloat(document.getElementById('combo-qtd-produto').value) || 1);
-    const existente = c.itens.find(i => i.sku === sku);
+    c.itens = c.itens || [];
 
-    if (existente) {
-        existente.qtd = (parseFloat(existente.qtd) || 1) + qtd;
-    } else {
-        c.itens.push(produtoResumoParaCombo(p, qtd));
+    if (c.itens.some(i => i.sku === sku)) {
+        alert("Este produto já está no combo.");
+        return;
     }
+
+    if (c.itens.length >= 2) {
+        alert("O combo deve ter somente 2 produtos. Remova um produto antes de adicionar outro.");
+        return;
+    }
+
+    c.itens.push(produtoResumoParaCombo(p, 1));
 
     c.last_update = Date.now();
     recalcularCombo(c);
@@ -3500,8 +3500,9 @@ async function removerItemCombo(skuCodificado) {
 }
 
 async function alterarQtdItemCombo(skuCodificado, qtd) {
-    const sku = decodeComboId(skuCodificado);
-    const c = getComboAtual();
+    alert("Este modelo de combo usa somente 2 produtos, com 1 unidade de cada.");
+    renderizarItensCombo();
+}
 
     if (!c) return;
 
@@ -3523,6 +3524,12 @@ function recalcularCombo(combo) {
     if (!c) return null;
 
     const desconto = parseFloat(c.desconto_percentual) || 0;
+    if (!DESCONTOS_COMBO.includes(desconto)) {
+    c.desconto_percentual = 20;
+}
+
+c.itens = (c.itens || []).slice(0, 2);
+    
     let soma = 0;
 
     c.itens = (c.itens || []).map(item => {
@@ -3531,7 +3538,7 @@ function recalcularCombo(combo) {
             ? (parseFloat(p.preco) || 0)
             : (parseFloat(item.preco_unitario_original) || 0);
 
-        const qtd = Math.max(1, parseFloat(item.qtd) || 1);
+const qtd = 1;
         const totalOriginal = precoAtual * qtd;
 
         soma += totalOriginal;
@@ -3558,7 +3565,13 @@ function recalcularCombo(combo) {
     c.soma_produtos = parseFloat(soma.toFixed(2));
     c.preco_combo = parseFloat(precoCombo.toFixed(2));
     c.economia = parseFloat((soma - precoCombo).toFixed(2));
+const primeiroProduto = c.itens && c.itens[0]
+    ? products.find(x => x.codigo === c.itens[0].sku)
+    : null;
 
+c.url_imagem = primeiroProduto && primeiroProduto.url_imagem
+    ? primeiroProduto.url_imagem
+    : "";
     return c;
 }
 
@@ -3649,11 +3662,13 @@ async function salvarComboAtual() {
     if (!c) return;
 
     c.nome = document.getElementById("combo-nome").value.trim();
-    c.desconto_percentual = parseFloat(document.getElementById("combo-desconto").value) || 10;
+c.desconto_percentual = parseFloat(document.getElementById("combo-desconto").value) || 20;
     c.validade_combo = document.getElementById("combo-validade").value || "";
 
     if (!c.nome) return alert("Informe o nome do combo.");
-    if (!c.itens || !c.itens.length) return alert("Adicione pelo menos um produto ao combo.");
+if (!c.itens || c.itens.length !== 2) {
+    return alert("O combo deve ter obrigatoriamente 2 produtos.");
+}
     if (!c.validade_combo) return alert("Informe a data final da oferta do combo.");
 
     recalcularCombo(c);
@@ -3780,7 +3795,15 @@ async function excluirCombo(idCodificado) {
 
 function validarComboPodeAtivar(c) {
     if (!c.nome) return "Informe o nome do combo antes de ativar.";
-    if (!c.itens || !c.itens.length) return "Adicione produtos ao combo antes de ativar.";
+
+    if (!c.itens || c.itens.length !== 2) {
+        return "O combo deve ter obrigatoriamente 2 produtos.";
+    }
+
+    if (!DESCONTOS_COMBO.includes(parseFloat(c.desconto_percentual))) {
+        return "O desconto do combo deve ser somente 20%, 25% ou 30%.";
+    }
+
     if (!c.validade_combo) return "Informe a data final do combo.";
 
     const fim = new Date(c.validade_combo);
@@ -3799,11 +3822,9 @@ function validarComboPodeAtivar(c) {
             String(x.firebaseKey || "") === skuItem
         );
 
-        if (!p) {
-            return `Produto ${skuItem || item.nome || "sem código"} não encontrado. Combo não pode ser ativado.`;
-        }
+        if (!p) return `Produto ${skuItem || item.nome || "sem código"} não encontrado.`;
 
-        if ((parseFloat(p.estoque) || 0) < (parseFloat(item.qtd) || 1)) {
+        if ((parseFloat(p.estoque) || 0) < 1) {
             return `Produto sem estoque suficiente: ${p.nome || skuItem}`;
         }
 
