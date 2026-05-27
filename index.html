@@ -4307,8 +4307,14 @@ function normalizarImagemProduto(p) {
 /* =========================================================
    PATCH SITE: NOVA REGRA DE COMBOS + BANNER TOP DESCONTOS + FILTROS SEM ROLAGEM
    ========================================================= */
-const COMBOS_FIREBASE_URL = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/combos.json';
-const COMBOS_CACHE_KEY = 'dona_antonia_combos_cache_v2';
+const COMBOS_URLS = [
+    'combo.json',
+    'site/combo.json',
+    'combos.json',
+    'site/combos.json',
+    'https://cedar-chemist-310801-default-rtdb.firebaseio.com/combos.json'
+];
+        const COMBOS_CACHE_KEY = 'dona_antonia_combos_cache_v2';
 const COMBOS_CACHE_MAX_AGE = 1000 * 60 * 10;
 let rawCombosSistema = [];
 STATE.sectionSearchQuery = '';
@@ -4389,8 +4395,27 @@ function saveComboCache(data) {
     } catch (e) {}
 }
 async function fetchCombosSistema() {
-    const res = await fetchWithCache(COMBOS_FIREBASE_URL, 5500);
-    return normalizarListaCombosSite(res);
+    for (const url of COMBOS_URLS) {
+        try {
+            const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now(), {
+                cache: 'no-store'
+            });
+
+            if (!res.ok) continue;
+
+            const dados = await res.json();
+            const lista = normalizarListaCombosSite(dados);
+
+            if (lista.length) {
+                console.log('Combos carregados de:', url, lista.length);
+                return lista;
+            }
+        } catch (e) {
+            console.warn('Falhou ao buscar combos em:', url, e);
+        }
+    }
+
+    return [];
 }
 function comboValidoPorEstoque(combo) {
     const itens = Array.isArray(combo.itens) ? combo.itens : [];
@@ -4410,18 +4435,44 @@ function comboDentroDaValidade(combo) {
     if (isNaN(fim.getTime())) return true;
     return fim.getTime() >= Date.now();
 }
+function slugComboImagemSite(value) {
+    return String(value || 'combo')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'combo';
+}
+
 function normalizarImagemComboSite(combo) {
     const img = combo.url_imagem || combo.imagem || combo.capa || combo.image || '';
+
     if (img && typeof img === 'string') {
-        const clean = img.trim();
-        if (clean.startsWith('http') || clean.startsWith('data:')) return clean;
-        if (clean.startsWith('../')) return clean.replace('../', '');
-        if (clean.startsWith('/site/')) return clean.replace('/site/', '');
-        if (clean.startsWith('/')) return clean.substring(1);
+        let clean = img.trim();
+
+        if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:')) {
+            return clean;
+        }
+
+        clean = clean.replace(/^(\.\.\/)+/g, '');
+        clean = clean.replace(/^\.\/+/g, '');
+        clean = clean.replace(/^\/+/g, '');
+
+        if (clean.startsWith('site/img/combos/')) {
+            clean = clean.replace('site/img/combos/', 'img/combos/');
+        }
+
+        if (clean.startsWith('site/')) {
+            clean = clean.replace('site/', '');
+        }
+
         return clean;
     }
-    const id = String(combo.id || combo.nome || 'combo').replace(/[.#$/\[\]\s]+/g, '_');
-    return `img/combos/${id}.webp`;
+
+    const nomeArquivo = slugComboImagemSite(combo.nome || combo.id);
+    return `img/combos/${nomeArquivo}.webp`;
 }
 function converterComboNovoParaSite(combo) {
     const itens = Array.isArray(combo.itens) ? combo.itens : [];
