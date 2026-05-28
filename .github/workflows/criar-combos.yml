@@ -3,7 +3,7 @@ name: Criar combos automaticos
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/10 * * * *"
       timezone: "America/Cuiaba"
 
 permissions:
