@@ -15,10 +15,13 @@ const PALAVRAS_COMBO = [
   "elseve", "dove", "lixo", "pentear", "bolacha", "facial", "labial",
   "condicionador", "niely", "pantene", "phebo", "paixão", "veja", "copo",
   "plástico", "caldo", "tempero", "maionese", "amendoin", "chocolate", "lacta",
-  "nestle", "detergente", "lava roupa", "escova", "cabelo", "unha", "skala"
+  "nestle", "detergente", "lava roupa", "escova", "cabelo", "unha", "skala",
+  "kolene", "pasta", "minuano", "impala", "risque", "rancheiro", "skiny", "frisco", 
+  "tang", "passata", "heinz", "doce", "fini", "madeira", "tresemme", "bocal", 
+  "refil", "liquido", "cereal", "matinal"
 ];
 
-const DESCONTOS = [20, 25, 30];
+const DESCONTOS = [15, 20, 25];
 
 function normalizarTexto(valor) {
   return String(valor || "")
