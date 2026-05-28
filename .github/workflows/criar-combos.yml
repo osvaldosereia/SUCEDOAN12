@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "*/5 * * * *"
+      timezone: "America/Cuiaba"
 
 permissions:
   contents: write
@@ -26,36 +27,21 @@ jobs:
         env:
           FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
 
-      - name: Salvar alteracoes no GitHub
+      - name: Salvar site/combo.json no GitHub
         run: |
           git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config user.email "actions@github.com"
 
-          echo "Verificando arquivos alterados..."
+          echo "Arquivos alterados:"
           git status --short
 
-          if [ -f "combo.json" ]; then
-            git add combo.json
-          fi
-
-          if [ -f "combos.json" ]; then
-            git add combos.json
-          fi
-
-          if [ -f "data/combo.json" ]; then
-            git add data/combo.json
-          fi
-
-          if [ -f "data/combos.json" ]; then
-            git add data/combos.json
-          fi
-
-          if [ -d "combos" ]; then
-            git add combos
-          fi
-
-          if [ -d "data" ]; then
-            git add data
+          if [ -f "site/combo.json" ]; then
+            git add site/combo.json
+          else
+            echo "ERRO: site/combo.json não foi encontrado."
+            echo "Arquivos existentes na pasta site:"
+            ls -la site || true
+            exit 1
           fi
 
           if git diff --cached --quiet; then
