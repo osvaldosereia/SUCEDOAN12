@@ -5259,53 +5259,236 @@ async function processarBaixaPedidoTexto() {
             }
         }
 
-        // ==========================================================
-        // LEITURA DO CSV DO BLING
-        // ==========================================================
-        document.getElementById('csv-file-atualizar').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            mostrarAlerta("Analisando planilha e atualizando produtos...", "aviso");
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                complete: async function(results) {
-                    const linhas = results.data;
-                    let atualizados = 0; let adicionados = 0;
-                    linhas.forEach((linha, idx) => {
-                        let eanBling = (linha["GTIN/EAN"] || linha["EAN"] || linha["GTIN"] || "").toString().trim();
-                        let idBling = (linha["ID"] || "").toString().trim();
-                        let skuBling = (linha["Código"] || linha["Codigo"] || "").toString().trim();
-let nome = linha["Descrição"] || linha["Descricao"] || "Produto Importado";
-                        let precoStr = linha["Preço"] || "0";
-                        let preco = parseFloat(precoStr.toString().replace(',','.')) || 0;
-                        let custoStr = linha["Preço de custo"] || "0";
-                        let custo = parseFloat(custoStr.toString().replace(',','.')) || 0;
-                        let estoqueStr = linha["Estoque"] || "0";
-                        let estoque = parseFloat(estoqueStr.toString().replace(',','.')) || 0;
-                        let ncm = linha["NCM"] || "";
-                        let marca = linha["Marca"] || "";
-                        let produtoExistente = null;
-                        if (eanBling !== "") produtoExistente = products.find(p => p.gtin === eanBling);
-                        if (!produtoExistente && skuBling !== "") produtoExistente = products.find(p => p.codigo === skuBling);
-                        if (produtoExistente) {
-                            produtoExistente.nome = nome; produtoExistente.preco = preco; produtoExistente.preco_custo = custo; produtoExistente.estoque = estoque;
-                            if (ncm) produtoExistente.ncm = ncm; if (marca) produtoExistente.marca = marca; if (eanBling && !produtoExistente.gtin) produtoExistente.gtin = eanBling;
-                            produtoExistente.last_update = Date.now(); atualizados++;
-                        } else {
-                            let novoIdBling = idBling || (Date.now().toString() + idx.toString() + Math.floor(Math.random() * 10000).toString());
-                            let novoSkuBling = skuBling || (Date.now().toString().slice(-6) + idx.toString().padStart(4, '0') + Math.floor(Math.random() * 1000).toString());
-                            products.unshift({
-                                id: novoIdBling, firebaseKey: novoIdBling, codigo: novoSkuBling, gtin: eanBling, nome: nome, preco: preco, preco_custo: custo, situacao: 'A', estoque: estoque, ncm: ncm, marca: marca, descricao: "", last_update: Date.now()
-                            }); adicionados++;
-                        }
+        function obterCampoCSV(linha, nomesPossiveis) {
+    for (const nome of nomesPossiveis) {
+        if (linha[nome] !== undefined && linha[nome] !== null && String(linha[nome]).trim() !== "") {
+            return String(linha[nome]).trim();
+        }
+    }
+    return "";
+}
+
+function normalizarNumeroCSV(valor) {
+    if (valor === undefined || valor === null) return 0;
+
+    let texto = String(valor).trim();
+
+    if (!texto) return 0;
+
+    texto = texto
+        .replace(/[R$\s]/g, "")
+        .replace(/\./g, "")
+        .replace(",", ".");
+
+    const numero = parseFloat(texto);
+    return Number.isFinite(numero) ? numero : 0;
+}
+
+function limparChaveComparacao(valor) {
+    return String(valor || "")
+        .trim()
+        .replace(/\s+/g, "")
+        .toUpperCase();
+}
+
+function encontrarProdutoExistenteImportacao({ ean, sku, id }) {
+    const eanLimpo = limparChaveComparacao(ean);
+    const skuLimpo = limparChaveComparacao(sku);
+    const idLimpo = limparChaveComparacao(id);
+
+    return products.find(p => {
+        const pGtin = limparChaveComparacao(p.gtin);
+        const pCodigo = limparChaveComparacao(p.codigo);
+        const pId = limparChaveComparacao(p.id);
+        const pFirebaseKey = limparChaveComparacao(p.firebaseKey);
+
+        if (eanLimpo && pGtin && pGtin === eanLimpo) return true;
+        if (skuLimpo && pCodigo && pCodigo === skuLimpo) return true;
+        if (idLimpo && (pId === idLimpo || pFirebaseKey === idLimpo)) return true;
+
+        return false;
+    }) || null;
+}
+
+document.getElementById('csv-file-atualizar').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    mostrarAlerta("Analisando CSV e salvando no Firebase...", "aviso");
+
+    Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: function(header) {
+            return String(header || "").trim();
+        },
+        complete: async function(results) {
+            const linhas = Array.isArray(results.data) ? results.data : [];
+
+            let atualizados = 0;
+            let adicionados = 0;
+            let ignorados = 0;
+            let erros = 0;
+
+            const produtosParaSalvarFirebase = [];
+            const agoraBase = Date.now();
+
+            try {
+                for (let idx = 0; idx < linhas.length; idx++) {
+                    const linha = linhas[idx];
+
+                    const eanBling = obterCampoCSV(linha, [
+                        "GTIN/EAN", "EAN", "GTIN", "Código de barras", "Codigo de barras", "Código Barras", "Codigo Barras"
+                    ]);
+
+                    const idBling = obterCampoCSV(linha, [
+                        "ID", "Id", "id", "Código interno", "Codigo interno"
+                    ]);
+
+                    const skuBling = obterCampoCSV(linha, [
+                        "Código", "Codigo", "SKU", "Sku", "sku", "Código do produto", "Codigo do produto"
+                    ]);
+
+                    const nome = obterCampoCSV(linha, [
+                        "Descrição", "Descricao", "Nome", "Produto", "Título", "Titulo"
+                    ]);
+
+                    if (!nome && !skuBling && !eanBling && !idBling) {
+                        ignorados++;
+                        continue;
+                    }
+
+                    const preco = normalizarNumeroCSV(obterCampoCSV(linha, [
+                        "Preço", "Preco", "Preço venda", "Preco venda", "Preço de venda", "Preco de venda", "Valor"
+                    ]));
+
+                    const custo = normalizarNumeroCSV(obterCampoCSV(linha, [
+                        "Preço de custo", "Preco de custo", "Custo", "Valor custo"
+                    ]));
+
+                    const estoque = normalizarNumeroCSV(obterCampoCSV(linha, [
+                        "Estoque", "Quantidade", "Qtd", "Saldo"
+                    ]));
+
+                    const ncm = obterCampoCSV(linha, ["NCM", "ncm"]);
+                    const marca = obterCampoCSV(linha, ["Marca", "marca", "Fabricante"]);
+                    const categoria = obterCampoCSV(linha, ["Categoria", "categoria"]);
+                    const embalagem = obterCampoCSV(linha, ["Embalagem", "embalagem", "Unidade", "Un"]);
+
+                    let produtoExistente = encontrarProdutoExistenteImportacao({
+                        ean: eanBling,
+                        sku: skuBling,
+                        id: idBling
                     });
-                    await saveDataLocally(); await loadData(); renderGrid(ultimoTermoPesquisa);
-                    mostrarAlerta(`✅ Concluído! ${adicionados} criados e ${atualizados} atualizados.`, "sucesso");
-                    document.getElementById('csv-file-atualizar').value = "";
+
+                    if (produtoExistente) {
+                        produtoExistente.nome = nome || produtoExistente.nome || "Produto Importado";
+                        produtoExistente.preco = preco;
+                        produtoExistente.preco_custo = custo;
+                        produtoExistente.estoque = estoque;
+
+                        if (eanBling) produtoExistente.gtin = eanBling;
+                        if (skuBling) produtoExistente.codigo = skuBling;
+                        if (ncm) produtoExistente.ncm = ncm;
+                        if (marca) produtoExistente.marca = marca;
+                        if (categoria) produtoExistente.categoria = categoria;
+                        if (embalagem) produtoExistente.embalagem = embalagem;
+
+                        produtoExistente.situacao = produtoExistente.situacao || "A";
+                        produtoExistente.last_update = agoraBase + idx;
+
+                        if (!produtoExistente.firebaseKey) {
+                            produtoExistente.firebaseKey = FirebaseAPI.sanitizarChave(
+                                produtoExistente.id || produtoExistente.codigo || produtoExistente.gtin
+                            );
+                        }
+
+                        produtosParaSalvarFirebase.push(produtoExistente);
+                        atualizados++;
+                    } else {
+                        const chaveBase = idBling || skuBling || eanBling || ("IMP-" + agoraBase + "-" + idx);
+                        const chaveFirebase = FirebaseAPI.sanitizarChave(chaveBase);
+
+                        const novoProduto = {
+                            id: String(chaveBase),
+                            firebaseKey: chaveFirebase,
+                            codigo: skuBling || String(chaveBase),
+                            gtin: eanBling || "",
+                            nome: nome || "Produto Importado",
+                            preco: preco,
+                            preco_custo: custo,
+                            estoque: estoque,
+                            situacao: "A",
+                            ncm: ncm || "",
+                            marca: marca || "",
+                            categoria: categoria || "",
+                            subcategoria: "",
+                            subsubcategoria: "",
+                            embalagem: embalagem || "",
+                            descricao: "",
+                            url_imagem: "",
+                            last_update: agoraBase + idx
+                        };
+
+                        products.unshift(novoProduto);
+                        produtosParaSalvarFirebase.push(novoProduto);
+                        adicionados++;
+                    }
                 }
-            });
-        });
+
+                if (produtosParaSalvarFirebase.length === 0) {
+                    mostrarAlerta("Nenhum produto válido foi encontrado no CSV.", "aviso");
+                    return;
+                }
+
+                mostrarAlerta(`Salvando ${produtosParaSalvarFirebase.length} produto(s) no Firebase...`, "aviso");
+
+                for (const produto of produtosParaSalvarFirebase) {
+                    try {
+                        const chaveSalva = await FirebaseAPI.salvarProduto(produto);
+                        produto.firebaseKey = chaveSalva;
+                        produto.id = String(produto.id || chaveSalva);
+                    } catch (erroProduto) {
+                        erros++;
+                        console.error("Erro ao salvar produto importado no Firebase:", produto, erroProduto);
+                    }
+                }
+
+                products = products
+                    .filter(p => p && p._deleted !== true)
+                    .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
+
+                atualizarListasDoSistemaComProdutos();
+                await saveDataLocally();
+
+                filtroAtivo = { tipo: null, valor: null };
+                advancedFilters = { cat: '', sub: '', subsub: '', marca: '', tag: '', stock: '', oferta: '', vencimento: '', qualidade: '' };
+
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) searchInput.value = "";
+
+                ultimoTermoPesquisa = "";
+                renderGrid("", true);
+
+                mostrarAlerta(
+                    `✅ Importação concluída: ${adicionados} criados, ${atualizados} atualizados, ${ignorados} ignorados${erros ? `, ${erros} com erro no Firebase` : ""}.`,
+                    erros ? "aviso" : "sucesso"
+                );
+
+            } catch (erroGeral) {
+                console.error("Erro geral na importação CSV:", erroGeral);
+                mostrarAlerta("Erro ao importar CSV: " + erroGeral.message, "erro");
+            } finally {
+                document.getElementById('csv-file-atualizar').value = "";
+            }
+        },
+        error: function(error) {
+            console.error("Erro ao ler CSV:", error);
+            mostrarAlerta("Erro ao ler CSV: " + error.message, "erro");
+            document.getElementById('csv-file-atualizar').value = "";
+        }
+    });
+});
     </script>
 </body>
 </html>
