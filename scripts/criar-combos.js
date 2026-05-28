@@ -223,14 +223,75 @@ function criarCombos(produtos, quantidade = 1) {
   return combos;
 }
 
+function carregarCombosExistentes(arquivo) {
+  if (!fs.existsSync(arquivo)) {
+    return [];
+  }
+
+  try {
+    const conteudoAtual = fs.readFileSync(arquivo, "utf8").trim();
+
+    if (!conteudoAtual) {
+      return [];
+    }
+
+    const dadosAtuais = JSON.parse(conteudoAtual);
+
+    if (Array.isArray(dadosAtuais)) {
+      return dadosAtuais.filter(Boolean);
+    }
+
+    return [];
+  } catch (erro) {
+    console.log("Não foi possível ler o combo.json atual. Um novo arquivo será criado.");
+    console.log("Erro:", erro.message);
+    return [];
+  }
+}
+
+function comboAindaValido(combo) {
+  if (!combo) return false;
+
+  if (combo.ativo === false) return false;
+
+  if (!combo.validade_combo) return true;
+
+  const validade = new Date(combo.validade_combo);
+
+  if (Number.isNaN(validade.getTime())) {
+    return true;
+  }
+
+  const agora = new Date();
+
+  return validade >= agora;
+}
+
+function removerCombosDuplicados(combos) {
+  const vistos = new Set();
+  const resultado = [];
+
+  for (const combo of combos) {
+    const chave = String(combo.id || "").trim();
+
+    if (!chave) {
+      resultado.push(combo);
+      continue;
+    }
+
+    if (vistos.has(chave)) {
+      continue;
+    }
+
+    vistos.add(chave);
+    resultado.push(combo);
+  }
+
+  return resultado;
+}
+
 async function main() {
   const produtos = await carregarProdutos();
-
-  // IMPORTANTE:
-  // O script agora cria apenas 1 combo por execução.
-  // Como o GitHub Actions vai rodar às 7h, 11h, 15h e 19h,
-  // serão criados 4 combos no dia, um em cada horário.
-  const combos = criarCombos(produtos, 1);
 
   const pasta = path.join(process.cwd(), "site");
 
@@ -240,21 +301,39 @@ async function main() {
 
   const arquivo = path.join(pasta, "combo.json");
 
-  fs.writeFileSync(arquivo, JSON.stringify(combos, null, 2), "utf8");
+  const combosExistentes = carregarCombosExistentes(arquivo);
+
+  const combosAindaValidos = combosExistentes.filter(comboAindaValido);
+
+  // Cria apenas 1 combo novo por execução.
+  // Como o GitHub Actions vai rodar às 7h, 11h, 15h e 19h,
+  // serão criados 4 combos por dia, um em cada horário.
+  const combosNovos = criarCombos(produtos, 1);
+
+  const todosCombos = removerCombosDuplicados([
+    ...combosNovos,
+    ...combosAindaValidos
+  ]);
+
+  fs.writeFileSync(arquivo, JSON.stringify(todosCombos, null, 2), "utf8");
 
   console.log(`Produtos carregados do Firebase: ${produtos.length}`);
-  console.log(`Combos criados nesta execução: ${combos.length}`);
+  console.log(`Combos existentes antes da limpeza: ${combosExistentes.length}`);
+  console.log(`Combos ainda válidos mantidos: ${combosAindaValidos.length}`);
+  console.log(`Combos vencidos ou inativos removidos: ${combosExistentes.length - combosAindaValidos.length}`);
+  console.log(`Combos novos criados nesta execução: ${combosNovos.length}`);
+  console.log(`Total salvo no combo.json: ${todosCombos.length}`);
 
-  combos.forEach((combo, index) => {
-    console.log(`Combo ${index + 1}: ${combo.nome}`);
+  combosNovos.forEach((combo, index) => {
+    console.log(`Combo novo ${index + 1}: ${combo.nome}`);
     console.log(`Produto 1: ${combo.itens[0]?.nome || ""}`);
     console.log(`Imagem 1: ${combo.itens[0]?.url_imagem || ""}`);
     console.log(`Produto 2: ${combo.itens[1]?.nome || ""}`);
     console.log(`Imagem 2: ${combo.itens[1]?.url_imagem || ""}`);
   });
 
-  if (combos.length === 0) {
-    console.log("Nenhum combo criado. Nenhuma palavra da lista encontrou pelo menos 2 produtos válidos com estoque e preço.");
+  if (combosNovos.length === 0) {
+    console.log("Nenhum combo novo criado. Nenhuma palavra da lista encontrou pelo menos 2 produtos válidos com estoque e preço.");
   }
 }
 
