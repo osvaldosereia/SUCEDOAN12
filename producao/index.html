@@ -1555,6 +1555,7 @@ function produtoPossuiImagemPendente(sku) {
     const p = products.find(x => x.codigo === sku);
     if (!p) return false;
     return imageQueue.some(img => (img.tipo || 'produto') === 'produto' && img.sku === sku) ||
+        (typeof p.imagem_preview_local === 'string' && p.imagem_preview_local.startsWith('data:image')) ||
         (typeof p.url_imagem === 'string' && p.url_imagem.startsWith('data:image'));
 }
 
@@ -1736,6 +1737,10 @@ async function processarProdutosPendentesSync() {
 
         for (const [, item] of pendentes) {
             try {
+                if (item.tipo !== "delete" && item.produto) {
+                    await uploadImagemProdutoPendenteSeNecessario(item.produto);
+                }
+
                 const resultado = await salvarProdutoIndividualSeguro(item.produto, item.tipo);
                 if (resultado.status === "salvo") salvos++;
                 if (resultado.status === "apagado") apagados++;
@@ -3920,11 +3925,11 @@ function abrirEditorImagemComboAtual() {
             if (currentEditingImageType === 'combo') {
                 const c = combosDoSistema.find(x => x.id === chave); 
                 if(!c) return;
-                src = c.url_imagem || '';
+                src = c.imagem_preview_local || c.url_imagem || '';
             } else {
                 const p = products.find(x => x.codigo === chave); 
                 if(!p) return;
-                src = p.url_imagem || '';
+                src = p.imagem_preview_local || p.url_imagem || '';
             }
 
             const img = new Image(); 
@@ -3986,15 +3991,126 @@ function abrirEditorImagemComboAtual() {
             context.putImageData(imgData, 0, 0);
         }
 
+        function carregarImagemNoEditor(dataUrl) {
+            if (!dataUrl) return false;
+
+            const img = new Image();
+            img.onload = () => {
+                loadedImage = img;
+                imgOffsetX = 0;
+                imgOffsetY = 0;
+                document.getElementById('zoomRange').value = 1;
+                document.getElementById('brightnessRange').value = 1;
+                document.getElementById('sharpenRange').value = 0;
+                drawCanvas();
+                mostrarAlerta('Imagem carregada no editor. Clique em APLICAR FOTO para salvar.', 'sucesso');
+            };
+            img.onerror = () => mostrarAlerta('Não foi possível carregar esta imagem.', 'erro');
+            img.src = dataUrl;
+            return true;
+        }
+
+        function carregarArquivoNoEditor(file) {
+            if (!file || !String(file.type || '').startsWith('image/')) return false;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => carregarImagemNoEditor(evt.target.result);
+            reader.onerror = () => mostrarAlerta('Erro ao ler a imagem selecionada.', 'erro');
+            reader.readAsDataURL(file);
+            return true;
+        }
+
+        function extrairImagemDeHtml(html) {
+            if (!html) return '';
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const img = doc.querySelector('img');
+            return img ? (img.getAttribute('src') || '') : '';
+        }
+
+        async function carregarImagemUrlNoEditor(url) {
+            if (!url || !/^https?:\/\//i.test(url)) return false;
+
+            try {
+                const res = await fetchComTimeout(url, { cache: 'no-store' }, 20000, 'Baixar imagem colada');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+
+                const blob = await res.blob();
+                if (!String(blob.type || '').startsWith('image/')) throw new Error('O link colado não retornou uma imagem.');
+
+                return carregarArquivoNoEditor(new File([blob], 'imagem-colada', { type: blob.type }));
+            } catch (e) {
+                console.warn('Não consegui baixar a imagem por URL. Tentando carregar direto:', e);
+
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => {
+                    loadedImage = img;
+                    imgOffsetX = 0;
+                    imgOffsetY = 0;
+                    drawCanvas();
+                    mostrarAlerta('Imagem apareceu no editor. Se o site bloquear o salvamento, baixe a imagem e envie pelo botão PC.', 'aviso');
+                };
+                img.onerror = () => mostrarAlerta('Não consegui colar essa imagem por URL. Baixe a imagem e use o botão PC.', 'erro');
+                img.src = url;
+                return true;
+            }
+        }
+
+        async function processarColagemImagemEditor(e) {
+            const editor = document.getElementById('editor-sidebar');
+            const isEditorOpen = editor && editor.classList.contains('open');
+            if (!isEditorOpen) return;
+
+            const clipboard = e.clipboardData || window.clipboardData;
+            if (!clipboard) return;
+
+            const items = Array.from(clipboard.items || []);
+            const itemImagem = items.find(item => item.kind === 'file' && String(item.type || '').startsWith('image/'));
+
+            if (itemImagem) {
+                e.preventDefault();
+                carregarArquivoNoEditor(itemImagem.getAsFile());
+                return;
+            }
+
+            const html = clipboard.getData('text/html');
+            const srcHtml = extrairImagemDeHtml(html);
+            if (srcHtml) {
+                e.preventDefault();
+                if (srcHtml.startsWith('data:image')) carregarImagemNoEditor(srcHtml);
+                else await carregarImagemUrlNoEditor(srcHtml);
+                return;
+            }
+
+            const texto = (clipboard.getData('text/plain') || '').trim();
+            if (/^data:image\//i.test(texto)) {
+                e.preventDefault();
+                carregarImagemNoEditor(texto);
+                return;
+            }
+
+            if (/^https?:\/\//i.test(texto) && /\.(png|jpe?g|webp|gif)(\?|#|$)/i.test(texto)) {
+                e.preventDefault();
+                await carregarImagemUrlNoEditor(texto);
+            }
+        }
+
         function setupEditorEvents() {
-            ['zoomRange','brightnessRange','sharpenRange'].forEach(id => { document.getElementById(id).addEventListener('input', drawCanvas); });
-            document.getElementById('fileInput').addEventListener('change', (e) => { if(e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onload = (evt) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = evt.target.result; }; reader.readAsDataURL(e.target.files[0]); } });
-            window.addEventListener('paste', e => { 
-                const isEditorOpen = document.getElementById('editor-sidebar').classList.contains('open'); if(!isEditorOpen) return;
-                const items = (e.clipboardData || e.originalEvent.clipboardData).items; 
-                for (let index in items) { const item = items[index]; if (item.kind === 'file' && item.type.includes('image/')) { const blob = item.getAsFile(); const reader = new FileReader(); reader.onload = (event) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = event.target.result; }; reader.readAsDataURL(blob); } } 
+            ['zoomRange','brightnessRange','sharpenRange'].forEach(id => {
+                document.getElementById(id).addEventListener('input', drawCanvas);
             });
-            canvas.addEventListener('mousedown', (e) => { isDragging = true; startDragX = e.offsetX - imgOffsetX; startDragY = e.offsetY - imgOffsetY; }); canvas.addEventListener('mousemove', (e) => { if (!isDragging) return; imgOffsetX = e.offsetX - startDragX; imgOffsetY = e.offsetY - startDragY; drawCanvas(); }); canvas.addEventListener('mouseup', () => { isDragging = false; }); canvas.addEventListener('mouseleave', () => { isDragging = false; });
+
+            document.getElementById('fileInput').addEventListener('change', (e) => {
+                if(e.target.files && e.target.files[0]) carregarArquivoNoEditor(e.target.files[0]);
+                e.target.value = '';
+            });
+
+            window.addEventListener('paste', processarColagemImagemEditor);
+
+            canvas.addEventListener('mousedown', (e) => { isDragging = true; startDragX = e.offsetX - imgOffsetX; startDragY = e.offsetY - imgOffsetY; });
+            canvas.addEventListener('mousemove', (e) => { if (!isDragging) return; imgOffsetX = e.offsetX - startDragX; imgOffsetY = e.offsetY - startDragY; drawCanvas(); });
+            canvas.addEventListener('mouseup', () => { isDragging = false; });
+            canvas.addEventListener('mouseleave', () => { isDragging = false; });
         }
 
        async function saveImageToQueue() {
@@ -4002,7 +4118,19 @@ function abrirEditorImagemComboAtual() {
 
     const chave = currentEditingSku; 
     const tipo = currentEditingImageType || 'produto';
-    const base64full = canvas.toDataURL('image/webp', 0.9); 
+    if (!loadedImage) {
+        mostrarAlerta('Cole ou selecione uma imagem antes de aplicar.', 'aviso');
+        return;
+    }
+
+    let base64full = '';
+    try {
+        base64full = canvas.toDataURL('image/webp', 0.9);
+    } catch (e) {
+        mostrarAlerta('Não consegui salvar esta imagem porque o site de origem bloqueou o uso dela. Baixe a imagem e envie pelo botão PC.', 'erro');
+        return;
+    }
+
     const base64data = base64full.split(',')[1];
 
     if (tipo === 'combo') {
@@ -4076,7 +4204,8 @@ function abrirEditorImagemComboAtual() {
     if (!p) return;
 
     p.imagem_preview_local = base64full;
-    p.url_imagem = base64full;
+    // Mantém p.url_imagem com o link antigo até o upload terminar.
+    // Isso evita mandar data:image ou URL vazia para o Firebase em caso de conflito/interrupção.
     p.last_update = Date.now(); 
 
     imageQueue = imageQueue.filter(img => !((img.tipo || 'produto') === 'produto' && img.sku === chave));
