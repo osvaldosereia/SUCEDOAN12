@@ -3,7 +3,7 @@ name: Criar combos automaticos
 on:
   workflow_dispatch:
   schedule:
-    - cron: "7 */2 * * *"
+    - cron: "*/5 * * * *"
 
 permissions:
   contents: write
@@ -26,12 +26,37 @@ jobs:
         env:
           FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
 
-      - name: Salvar combo.json no GitHub
+      - name: Salvar alteracoes no GitHub
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          git add combo.json
+          echo "Verificando arquivos alterados..."
+          git status --short
+
+          if [ -f "combo.json" ]; then
+            git add combo.json
+          fi
+
+          if [ -f "combos.json" ]; then
+            git add combos.json
+          fi
+
+          if [ -f "data/combo.json" ]; then
+            git add data/combo.json
+          fi
+
+          if [ -f "data/combos.json" ]; then
+            git add data/combos.json
+          fi
+
+          if [ -d "combos" ]; then
+            git add combos
+          fi
+
+          if [ -d "data" ]; then
+            git add data
+          fi
 
           if git diff --cached --quiet; then
             echo "Nenhuma alteração para salvar."
