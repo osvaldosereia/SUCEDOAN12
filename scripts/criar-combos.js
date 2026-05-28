@@ -12,7 +12,10 @@ const PALAVRAS_COMBO = [
   "monange", "colgate", "seda", "liane", "macarrão", "maionese",
   "catchup", "mostarda", "geléia", "pano", "sabão", "amaciante",
   "desinfetante", "veja", "omo", "brilhante", "novex", "garnier",
-  "elseve", "dove"
+  "elseve", "dove", "lixo", "pentear", "bolacha", "facial", "labial", 
+  "condicionador", "niely", "pantene", "phebo", "paixão", "veja", "copo", 
+  "plástico", "caldo", "tempero", "maionese", "amendoin", "chocolate", "lacta",
+  "nestle", "detergente", "lava roupa", "escova", "cabelo", "unha", "skala"
 ];
 
 const DESCONTOS = [20, 25, 30];
