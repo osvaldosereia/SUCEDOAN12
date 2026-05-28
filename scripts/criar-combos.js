@@ -22,7 +22,7 @@ const PALAVRAS_COMBO = [
   "garoto", "bis"
 ];
 
-const DESCONTOS = [15, 20, 25];
+const DESCONTOS = [10, 14, 18];
 
 function normalizarTexto(valor) {
   return String(valor || "")
