@@ -909,6 +909,12 @@ let finalBase64 = isBase64Ready
                     } catch(e) {}
                     throw new Error(`Erro Github ${res.status}${detalhe}`);
                 }
+
+                try {
+                    return await res.json();
+                } catch(e) {
+                    return { ok: true };
+                }
             },
             checkWorkflowStatus: async function() { return false; } 
         };
@@ -1461,7 +1467,7 @@ function atualizarProdutoLocalComNuvem(produtoNuvem) {
     }
 }
 
-async function salvarProdutoIndividualSeguro(produtoOriginal, tipo = "upsert") {
+async function salvarProdutoIndividualSeguro(produtoOriginal, tipo = "upsert", opcoes = {}) {
     if (!produtoOriginal) return { status: "ignorado" };
 
     const produto = prepararProdutoParaFirebase(produtoOriginal);
@@ -1518,8 +1524,24 @@ async function salvarProdutoIndividualSeguro(produtoOriginal, tipo = "upsert") {
     const lastNuvem = normalizarLastUpdateProduto(produtoNuvem);
 
     if (produtoNuvem && lastNuvem > lastLocal) {
+        // Segurança profissional: se outra máquina salvou dados mais novos,
+        // não sobrescreve tudo. Se a operação atual for de imagem, mescla somente a imagem.
+        if (opcoes.forcarImagem === true && produto.url_imagem && !String(produto.url_imagem).startsWith("data:image")) {
+            const produtoMesclado = prepararProdutoParaFirebase({
+                ...produtoNuvem,
+                url_imagem: produto.url_imagem,
+                last_update: Date.now()
+            });
+
+            await FirebaseAPI.salvarProduto(produtoMesclado);
+            atualizarProdutoLocalComNuvem(produtoMesclado);
+            await saveDataLocally(false);
+
+            return { status: "salvo_imagem_mesclada", chave };
+        }
+
         atualizarProdutoLocalComNuvem(produtoNuvem);
-        await saveDataLocally();
+        await saveDataLocally(false);
         return { status: "nuvem_mais_nova", chave };
     }
 
@@ -1568,33 +1590,56 @@ function produtoEstaPendenteNoCard(p) {
 async function uploadImagemProdutoPendenteSeNecessario(produto) {
     if (!produto) return { enviada: false };
 
-    const sku = produto.codigo;
-    let base64data = "";
+    const cfg = await GitHubAPI.getConfig();
+    if (!cfg) {
+        throw new Error("Credenciais do GitHub ausentes. Abra DADOS DA NUVEM e confira token, usuário e repositório.");
+    }
 
-    const idxFila = imageQueue.findIndex(img => (img.tipo || 'produto') === 'produto' && img.sku === sku);
+    const sku = String(produto.codigo || "").trim();
+    if (!sku) {
+        throw new Error("Produto sem SKU/código. Não é possível nomear a imagem.");
+    }
+
+    let base64data = "";
+    let base64full = "";
+
+    const idxFila = imageQueue.findIndex(img =>
+        (img.tipo || "produto") === "produto" &&
+        String(img.sku || "") === sku
+    );
 
     if (idxFila !== -1) {
         base64data = imageQueue[idxFila].base64data || "";
-    } else if (typeof produto.imagem_preview_local === 'string' && produto.imagem_preview_local.startsWith('data:image')) {
-        base64data = produto.imagem_preview_local.split(',')[1] || "";
-    } else if (typeof produto.url_imagem === 'string' && produto.url_imagem.startsWith('data:image')) {
-        base64data = produto.url_imagem.split(',')[1] || "";
+        base64full = imageQueue[idxFila].base64full || "";
+    } else if (typeof produto.imagem_preview_local === "string" && produto.imagem_preview_local.startsWith("data:image")) {
+        base64full = produto.imagem_preview_local;
+        base64data = produto.imagem_preview_local.split(",")[1] || "";
+    } else if (typeof produto.url_imagem === "string" && produto.url_imagem.startsWith("data:image")) {
+        base64full = produto.url_imagem;
+        base64data = produto.url_imagem.split(",")[1] || "";
     }
 
     if (!base64data) return { enviada: false };
 
-    const pastaDestinoGithub = await getPastaUploadAtiva('produto');
-    const pastaDestinoLocal = '../' + pastaDestinoGithub;
-    const chaveArquivo = FirebaseAPI.sanitizarChave(produto.firebaseKey || produto.id || produto.codigo || sku);
+    const pastaDestinoGithub = await getPastaUploadAtiva("produto");
+    const pastaDestinoLocal = "../" + pastaDestinoGithub;
+
+    const chaveArquivo = FirebaseAPI.sanitizarChave(sku);
     const fileName = `${chaveArquivo}.webp`;
+    const pathGithub = `${pastaDestinoGithub}/${fileName}`;
 
     await salvarArquivoGithubComRetry(
-        `${pastaDestinoGithub}/${fileName}`,
+        pathGithub,
         base64data,
         `PIM: imagem produto ${fileName}`,
         true,
         3
     );
+
+    const arquivoConfirmado = await GitHubAPI.getFileData(pathGithub);
+    if (!arquivoConfirmado || Array.isArray(arquivoConfirmado)) {
+        throw new Error("O GitHub não confirmou o arquivo enviado. Verifique token, repositório e pasta " + pastaDestinoGithub);
+    }
 
     produto.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
     delete produto.imagem_preview_local;
@@ -1602,13 +1647,18 @@ async function uploadImagemProdutoPendenteSeNecessario(produto) {
 
     if (idxFila !== -1) {
         imageQueue.splice(idxFila, 1);
-        await localforage.setItem('imageQueue', imageQueue);
+        await localforage.setItem("imageQueue", imageQueue);
     }
 
     await saveDataLocally(false);
     updateImageBadge();
 
-    return { enviada: true, url: produto.url_imagem };
+    return {
+        enviada: true,
+        url: produto.url_imagem,
+        path: pathGithub,
+        base64full
+    };
 }
 async function enviarImagemProdutoCardManual(sku) {
     const produto = products.find(x => x.codigo === sku);
@@ -1633,14 +1683,20 @@ async function enviarImagemProdutoCardManual(sku) {
             lucide.createIcons();
         }
 
-        mostrarAlerta("Enviando imagem deste produto para o GitHub...", "aviso");
+        mostrarAlerta("Enviando imagem ao GitHub...", "aviso");
 
-        await uploadImagemProdutoPendenteSeNecessario(produto);
+        const upload = await uploadImagemProdutoPendenteSeNecessario(produto);
+
+        if (!upload.enviada) {
+            throw new Error("Nenhuma imagem pendente foi encontrada para enviar.");
+        }
 
         produto.last_update = Date.now();
         await saveDataLocally(false);
 
-        const resultado = await salvarProdutoIndividualSeguro(produto, "upsert");
+        const resultado = await salvarProdutoIndividualSeguro(produto, "upsert", {
+            forcarImagem: true
+        });
 
         const chave = FirebaseAPI.sanitizarChave(produto.firebaseKey || produto.id || produto.codigo || produto.gtin);
         if (chave) produtosPendentesSync.delete(chave);
@@ -1649,8 +1705,8 @@ async function enviarImagemProdutoCardManual(sku) {
         renderQueueStatus();
         renderGrid(ultimoTermoPesquisa, true);
 
-        if (resultado.status === "nuvem_mais_nova") {
-            mostrarAlerta("⚠️ Imagem enviada, mas o Firebase tinha uma versão mais nova do produto. Confira o card.", "aviso");
+        if (resultado.status === "salvo_imagem_mesclada") {
+            mostrarAlerta("✅ Imagem enviada ao GitHub e link salvo no Firebase sem sobrescrever dados mais novos.", "sucesso");
         } else {
             mostrarAlerta("✅ Imagem enviada ao GitHub e link salvo no Firebase.", "sucesso");
         }
@@ -1667,12 +1723,14 @@ async function enviarImagemProdutoCardManual(sku) {
 }
 async function salvarProdutoCardManual(sku) {
     const produto = products.find(x => x.codigo === sku);
+
     if (!produto) {
         mostrarAlerta("Produto não encontrado na tela.", "erro");
         return;
     }
 
     const chave = FirebaseAPI.sanitizarChave(produto.firebaseKey || produto.id || produto.codigo || produto.gtin);
+
     if (!chave) {
         mostrarAlerta("Este produto está sem chave/código para salvar.", "erro");
         return;
@@ -1688,34 +1746,49 @@ async function salvarProdutoCardManual(sku) {
             lucide.createIcons();
         }
 
-        mostrarAlerta("Salvando produto no Firebase e verificando foto no GitHub...", "aviso");
+        mostrarAlerta("Salvando produto e verificando imagem...", "aviso");
 
-        await uploadImagemProdutoPendenteSeNecessario(produto);
+        const upload = await uploadImagemProdutoPendenteSeNecessario(produto);
+
         produto.last_update = Date.now();
         await saveDataLocally(false);
 
-        const resultado = await salvarProdutoIndividualSeguro(produto, "upsert");
-        produtosPendentesSync.delete(chave);
+        const resultado = await salvarProdutoIndividualSeguro(produto, "upsert", {
+            forcarImagem: upload.enviada === true
+        });
+
+        if (resultado.status !== "nuvem_mais_nova") {
+            produtosPendentesSync.delete(chave);
+        }
 
         await saveDataLocally(false);
         renderQueueStatus();
         renderGrid(ultimoTermoPesquisa, true);
 
         if (resultado.status === "nuvem_mais_nova") {
-            mostrarAlerta("⚠️ Firebase tinha uma versão mais nova. Mantive a versão da nuvem para evitar perda de dados.", "aviso");
+            mostrarAlerta("⚠️ O Firebase tinha versão mais nova. Não sobrescrevi dados de outra máquina.", "aviso");
+        } else if (resultado.status === "salvo_imagem_mesclada") {
+            mostrarAlerta("✅ Foto salva no GitHub e link salvo sem apagar dados mais novos da nuvem.", "sucesso");
         } else {
-            mostrarAlerta("✅ Produto salvo no Firebase. Foto nova/alterada enviada ao GitHub quando existia.", "sucesso");
+            mostrarAlerta("✅ Produto salvo no Firebase. Foto enviada ao GitHub quando existia.", "sucesso");
         }
     } catch (e) {
         console.error("Erro ao salvar card:", e);
-        produtosPendentesSync.set(chave, { tipo: "upsert", produto: { ...produto, firebaseKey: chave } });
+
+        produtosPendentesSync.set(chave, {
+            tipo: "upsert",
+            produto: { ...produto, firebaseKey: chave }
+        });
+
         renderQueueStatus();
+
+        mostrarAlerta("❌ Erro ao salvar este produto: " + e.message, "erro");
+    } finally {
         if (botao) {
             botao.disabled = false;
             botao.innerHTML = textoOriginal;
             lucide.createIcons();
         }
-        mostrarAlerta("❌ Erro ao salvar este produto: " + e.message, "erro");
     }
 }
 
@@ -2221,77 +2294,263 @@ async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync 
     }
 }
         
-        async function loadData() {
-            modoCarregandoDados = true;
+        async function carregarListasLocaisDoSistema() {
+    try {
+        const c = await localforage.getItem(CATEGORIAS_KEY);
+        if (Array.isArray(c)) {
+            categoriasDoSistema = c
+                .filter(item => item && typeof item === "object" && item.nome)
+                .map(cat => ({
+                    nome: String(cat.nome || "").trim().toUpperCase(),
+                    subcategorias: Array.isArray(cat.subcategorias)
+                        ? cat.subcategorias.map(sub => ({
+                            nome: String(sub.nome || "").trim().toUpperCase(),
+                            subsubcategorias: Array.isArray(sub.subsubcategorias)
+                                ? sub.subsubcategorias.map(ss => String(ss || "").trim().toUpperCase()).filter(Boolean)
+                                : []
+                        })).filter(sub => sub.nome)
+                        : []
+                }))
+                .filter(cat => cat.nome);
+        }
+    } catch (err) {
+        console.warn("Não foi possível carregar categorias locais:", err);
+    }
 
-            try {
-                const cacheLocalProdutos = await carregarCacheLocalProdutos();
-                if (cacheLocalProdutos.length > 0) {
-                    products = cacheLocalProdutos;
-                    renderGrid(ultimoTermoPesquisa);
-                    mostrarAlerta("Cache local carregado temporariamente. Buscando Firebase...", "aviso");
-                }
+    try {
+        const m = await localforage.getItem(MARCAS_KEY);
+        if (Array.isArray(m)) {
+            marcasDoSistema = m.map(x => String(x || "").trim().toUpperCase()).filter(Boolean);
+        }
+    } catch (err) {
+        console.warn("Não foi possível carregar marcas locais:", err);
+    }
 
-                const [produtosFirebase, exclusoesFirebase] = await Promise.all([
-                    FirebaseAPI.lerProdutos(),
-                    FirebaseAPI.lerExclusoesProdutos()
-                ]);
+    try {
+        const tg = await localforage.getItem(TAGS_KEY);
+        if (Array.isArray(tg)) {
+            tagsDoSistema = tg.map(x => String(x || "").trim().toUpperCase()).filter(Boolean);
+        }
+    } catch (err) {
+        console.warn("Não foi possível carregar tags locais:", err);
+    }
 
-                if (Array.isArray(produtosFirebase) && produtosFirebase.length > 0) {
-                    products = produtosFirebase
-                        .filter(p => p && p._deleted !== true && obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p))
-                        .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
-                    await saveDataLocally();
-                } else if (cacheLocalProdutos.length === 0) {
-                    products = [];
-                }
-            } catch (err) {
-                console.warn("Não foi possível iniciar pelo Firebase. Usando cache local se existir:", err);
-                const cacheLocalProdutos = await carregarCacheLocalProdutos();
-                if (cacheLocalProdutos.length > 0) products = cacheLocalProdutos;
+    try {
+        const cb = await localforage.getItem(COMBOS_KEY);
+        if (Array.isArray(cb)) combosDoSistema = cb;
+    } catch (err) {
+        console.warn("Não foi possível carregar combos locais:", err);
+    }
+}
+
+function atualizarListasDoSistemaComProdutos() {
+    const mapaCategorias = new Map();
+
+    categoriasDoSistema.forEach(cat => {
+        const nomeCat = String(cat.nome || "").trim().toUpperCase();
+        if (!nomeCat) return;
+
+        const catObj = mapaCategorias.get(nomeCat) || {
+            nome: nomeCat,
+            subcategorias: []
+        };
+
+        const mapaSubs = new Map();
+        (catObj.subcategorias || []).forEach(sub => {
+            const nomeSub = String(sub.nome || "").trim().toUpperCase();
+            if (!nomeSub) return;
+
+            mapaSubs.set(nomeSub, {
+                nome: nomeSub,
+                subsubcategorias: Array.isArray(sub.subsubcategorias)
+                    ? [...new Set(sub.subsubcategorias.map(ss => String(ss || "").trim().toUpperCase()).filter(Boolean))]
+                    : []
+            });
+        });
+
+        (cat.subcategorias || []).forEach(sub => {
+            const nomeSub = String(sub.nome || "").trim().toUpperCase();
+            if (!nomeSub) return;
+
+            const subObj = mapaSubs.get(nomeSub) || {
+                nome: nomeSub,
+                subsubcategorias: []
+            };
+
+            if (Array.isArray(sub.subsubcategorias)) {
+                sub.subsubcategorias.forEach(ss => {
+                    const nomeSS = String(ss || "").trim().toUpperCase();
+                    if (nomeSS && !subObj.subsubcategorias.includes(nomeSS)) {
+                        subObj.subsubcategorias.push(nomeSS);
+                    }
+                });
             }
 
-            try {
-                const c = await localforage.getItem(CATEGORIAS_KEY);
-                if(c && Array.isArray(c)) {
-                    if(c.length > 0 && typeof c[0] === 'string') { categoriasDoSistema = []; }
-                    else { categoriasDoSistema = c; }
-                }
-            } catch (err) {}
-            try { const m = await localforage.getItem(MARCAS_KEY); if(m && Array.isArray(m)) marcasDoSistema = m; } catch (err) {}
-            try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {}
-            try { const cb = await localforage.getItem(COMBOS_KEY); if(cb && Array.isArray(cb)) combosDoSistema = cb; } catch (err) {}
+            mapaSubs.set(nomeSub, subObj);
+        });
 
-            let idsExistentes = new Set();
-            produtosPendentesSync.clear();
-            products.forEach(p => {
-                const chave = FirebaseAPI.sanitizarChave(p.firebaseKey || p.id || p.codigo || p.gtin);
-                if (chave) {
-                    p.firebaseKey = chave;
-                    p.id = String(p.id || chave);
+        catObj.subcategorias = Array.from(mapaSubs.values())
+            .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
+        mapaCategorias.set(nomeCat, catObj);
+    });
+
+    products.forEach(p => {
+        const cat = String(p.categoria || "").trim().toUpperCase();
+        const sub = String(p.subcategoria || "").trim().toUpperCase();
+        const subsub = String(p.subsubcategoria || "").trim().toUpperCase();
+
+        if (cat) {
+            const catObj = mapaCategorias.get(cat) || { nome: cat, subcategorias: [] };
+
+            if (sub) {
+                let subObj = catObj.subcategorias.find(s => s.nome === sub);
+                if (!subObj) {
+                    subObj = { nome: sub, subsubcategorias: [] };
+                    catObj.subcategorias.push(subObj);
                 }
 
-                if (!p.id) p.id = p.codigo || (Date.now() + Math.random()).toString();
-                if(!p.codigo) p.codigo = 'SKU' + Math.floor(Math.random()*10000);
-                if(idsExistentes.has(p.codigo)) {
-                    const oldSku = p.codigo;
-                    p.codigo = oldSku + '-' + Math.floor(Math.random()*999);
+                if (subsub && !subObj.subsubcategorias.includes(subsub)) {
+                    subObj.subsubcategorias.push(subsub);
                 }
-                idsExistentes.add(p.codigo);
-                if(!p.descricao) p.descricao = "";
-                if(!p.last_update) p.last_update = 0;
-            });
+            }
 
-            try {
-                const q = await localforage.getItem('imageQueue');
-                if(q && Array.isArray(q)) imageQueue = q;
-            } catch(e) {}
-            updateImageBadge();
-            atualizarListasDoSistemaComProdutos();
-            await processarStatusCombos();
-            modoCarregandoDados = false;
-            renderGrid(ultimoTermoPesquisa);
+            mapaCategorias.set(cat, catObj);
         }
+
+        const marca = String(p.marca || "").trim().toUpperCase();
+        if (marca && !marcasDoSistema.includes(marca)) marcasDoSistema.push(marca);
+
+        if (Array.isArray(p.tag_global)) {
+            p.tag_global.forEach(tag => {
+                const t = String(tag || "").trim().toUpperCase();
+                if (t && !tagsDoSistema.includes(t)) tagsDoSistema.push(t);
+            });
+        } else if (typeof p.tag_global === "string") {
+            p.tag_global.split(",").forEach(tag => {
+                const t = String(tag || "").trim().toUpperCase();
+                if (t && !tagsDoSistema.includes(t)) tagsDoSistema.push(t);
+            });
+        }
+    });
+
+    categoriasDoSistema = Array.from(mapaCategorias.values())
+        .map(cat => ({
+            ...cat,
+            subcategorias: (cat.subcategorias || [])
+                .map(sub => ({
+                    ...sub,
+                    subsubcategorias: [...new Set(sub.subsubcategorias || [])].sort((a, b) => a.localeCompare(b, "pt-BR"))
+                }))
+                .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
+        }))
+        .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
+    marcasDoSistema = [...new Set(marcasDoSistema)].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    tagsDoSistema = [...new Set(tagsDoSistema)].sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
+async function salvarListasSistemaLocalmente() {
+    try { await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); } catch (e) {}
+    try { await localforage.setItem(MARCAS_KEY, marcasDoSistema); } catch (e) {}
+    try { await localforage.setItem(TAGS_KEY, tagsDoSistema); } catch (e) {}
+}
+
+async function loadData() {
+    modoCarregandoDados = true;
+
+    try {
+        // Primeiro carrega listas. Assim os primeiros cards já renderizam com categorias.
+        await carregarListasLocaisDoSistema();
+
+        const cacheLocalProdutos = await carregarCacheLocalProdutos();
+
+        if (cacheLocalProdutos.length > 0) {
+            products = cacheLocalProdutos;
+            atualizarListasDoSistemaComProdutos();
+            renderGrid(ultimoTermoPesquisa);
+            mostrarAlerta("Cache local carregado. Atualizando pelo Firebase...", "aviso");
+        }
+
+        const [produtosFirebase, exclusoesFirebase] = await Promise.all([
+            FirebaseAPI.lerProdutos(),
+            FirebaseAPI.lerExclusoesProdutos()
+        ]);
+
+        if (Array.isArray(produtosFirebase) && produtosFirebase.length > 0) {
+            products = produtosFirebase
+                .filter(p => p && p._deleted !== true && obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p))
+                .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
+
+            await saveDataLocally(false);
+        } else if (cacheLocalProdutos.length === 0) {
+            products = [];
+        }
+    } catch (err) {
+        console.warn("Não foi possível iniciar pelo Firebase. Usando cache local se existir:", err);
+
+        try {
+            await carregarListasLocaisDoSistema();
+            const cacheLocalProdutos = await carregarCacheLocalProdutos();
+            if (cacheLocalProdutos.length > 0) products = cacheLocalProdutos;
+        } catch (cacheErr) {
+            console.warn("Falha também ao carregar cache local:", cacheErr);
+        }
+    }
+
+    let idsExistentes = new Set();
+    produtosPendentesSync.clear();
+
+    products.forEach(p => {
+        const chave = FirebaseAPI.sanitizarChave(p.firebaseKey || p.id || p.codigo || p.gtin);
+
+        if (chave) {
+            p.firebaseKey = chave;
+            p.id = String(p.id || chave);
+        }
+
+        if (!p.id) p.id = p.codigo || (Date.now() + Math.random()).toString();
+        if (!p.codigo) p.codigo = "SKU" + Math.floor(Math.random() * 10000);
+
+        if (idsExistentes.has(p.codigo)) {
+            const oldSku = p.codigo;
+            p.codigo = oldSku + "-" + Math.floor(Math.random() * 999);
+        }
+
+        idsExistentes.add(p.codigo);
+
+        if (!p.descricao) p.descricao = "";
+        if (!p.last_update) p.last_update = 0;
+
+        p.categoria = p.categoria || "";
+        p.subcategoria = p.subcategoria || "";
+        p.subsubcategoria = p.subsubcategoria || "";
+        p.marca = p.marca || "";
+        if (p.tag_global === undefined || p.tag_global === null) p.tag_global = [];
+    });
+
+    try {
+        const q = await localforage.getItem("imageQueue");
+        if (Array.isArray(q)) imageQueue = q;
+    } catch (e) {
+        console.warn("Não foi possível carregar fila de imagens:", e);
+    }
+
+    updateImageBadge();
+
+    atualizarListasDoSistemaComProdutos();
+    await salvarListasSistemaLocalmente();
+
+    try {
+        await processarStatusCombos();
+    } catch (e) {
+        console.warn("Falha ao processar combos:", e);
+    }
+
+    modoCarregandoDados = false;
+    renderGrid(ultimoTermoPesquisa, true);
+    renderQueueStatus();
+}
 
         function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
         
@@ -3066,30 +3325,44 @@ async function deleteProduct(sku) {
         "sucesso"
     );
 }        
-        async function createNewProduct() { 
-            const timestamp = Date.now(); 
-            
-            const uniqueId = timestamp.toString() + Math.floor(Math.random() * 100000).toString();
-            const sku = timestamp.toString().slice(-6) + Math.floor(Math.random() * 1000).toString().padStart(4, '0'); 
-            
-            const novoProduto = { 
-                id: uniqueId, 
-                firebaseKey: uniqueId,
-                codigo: sku, 
-                nome: "", 
-                preco: 0, 
-                preco_custo: 0, 
-                situacao: 'A', 
-                estoque: 0, 
-                descricao: "", 
-                last_update: timestamp 
-            };
-            products.unshift(novoProduto); 
-            await saveDataLocally(false); 
-            marcarProdutoParaSincronizacao(novoProduto, "upsert", 500);
-            renderGrid(ultimoTermoPesquisa); 
-            window.scrollTo(0, 0); 
-        }
+        async function createNewProduct() {
+    const timestamp = Date.now();
+
+    const uniqueId = timestamp.toString() + Math.floor(Math.random() * 100000).toString();
+    const sku = timestamp.toString().slice(-6) + Math.floor(Math.random() * 1000).toString().padStart(4, "0");
+
+    const novoProduto = {
+        id: uniqueId,
+        firebaseKey: uniqueId,
+        codigo: sku,
+        nome: "",
+        preco: 0,
+        preco_custo: 0,
+        situacao: "A",
+        estoque: 0,
+        descricao: "",
+        categoria: "",
+        subcategoria: "",
+        subsubcategoria: "",
+        marca: "",
+        tag_global: [],
+        url_imagem: "",
+        last_update: timestamp
+    };
+
+    products.unshift(novoProduto);
+
+    await saveDataLocally(false);
+
+    marcarProdutoParaSincronizacao(novoProduto, "upsert", 500);
+
+    renderGrid(ultimoTermoPesquisa, true);
+
+    const main = document.getElementById("main-content-pim");
+    if (main) main.scrollTo({ top: 0, behavior: "smooth" });
+
+    mostrarAlerta("Novo produto criado localmente. Preencha e clique em SALVAR CARD.", "aviso");
+}
 
 
        // ==========================================================
