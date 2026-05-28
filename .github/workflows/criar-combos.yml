@@ -3,7 +3,7 @@ name: Criar combos automaticos
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "2/5 * * * *"
 
 permissions:
   contents: write
@@ -20,6 +20,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Diagnostico
+        run: |
+          echo "Evento: ${{ github.event_name }}"
+          echo "Schedule: ${{ github.event.schedule }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Data UTC:"
+          date -u
 
       - name: Criar combos inteligentes
         run: node scripts/criar-combos.js
