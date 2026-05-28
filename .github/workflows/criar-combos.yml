@@ -21,14 +21,6 @@ jobs:
         with:
           node-version: 20
 
-      - name: Diagnostico
-        run: |
-          echo "Evento: ${{ github.event_name }}"
-          echo "Schedule: ${{ github.event.schedule }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Data UTC:"
-          date -u
-
       - name: Criar combos inteligentes
         run: node scripts/criar-combos.js
         env:
