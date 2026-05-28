@@ -5174,32 +5174,119 @@ async function processarBaixaPedidoTexto() {
         await downloadCSVBling([mapearProdutoParaBling(p)], `Bling_Produto_${sku}.csv`);
     };
 
-    window.exportarTudoBling = async function() {
-        if(!confirm("Exportar todo o banco de dados (Bling CSV)? O sistema dividirá automaticamente em arquivos de até 900 produtos se necessário.")) return;
-        if(products.length === 0) return alert("Banco vazio.");
-        const mappedList = products.map(p => mapearProdutoParaBling(p));
-        const chunkSize = 900; 
+   async function obterProdutosFirebaseParaExportacaoBling() {
+    mostrarAlerta("Buscando dados atualizados no Firebase para exportar Bling...", "aviso");
+
+    const [dadosFirebase, exclusoesFirebase] = await Promise.all([
+        FirebaseAPI.lerProdutos(),
+        FirebaseAPI.lerExclusoesProdutos()
+    ]);
+
+    if (!Array.isArray(dadosFirebase) || dadosFirebase.length === 0) {
+        throw new Error("Firebase vazio ou sem produtos válidos.");
+    }
+
+    const listaAtualizada = dadosFirebase
+        .filter(p => {
+            if (!p || p._deleted === true) return false;
+
+            if (
+                typeof obterMaiorTombstoneProduto === "function" &&
+                typeof normalizarLastUpdateProduto === "function"
+            ) {
+                return obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p);
+            }
+
+            return true;
+        })
+        .sort((a, b) => {
+            if (typeof normalizarLastUpdateProduto === "function") {
+                return normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a);
+            }
+
+            const nomeA = (a.nome || "").toString().toLowerCase();
+            const nomeB = (b.nome || "").toString().toLowerCase();
+            return nomeA.localeCompare(nomeB, "pt-BR");
+        });
+
+    if (listaAtualizada.length === 0) {
+        throw new Error("Nenhum produto ativo encontrado no Firebase.");
+    }
+
+    products = listaAtualizada;
+
+    try {
+        await saveDataLocally(false);
+    } catch (e) {
+        console.warn("Não foi possível atualizar o cache local antes da exportação Bling:", e);
+    }
+
+    return listaAtualizada;
+}
+
+window.exportarTudoBling = async function() {
+    if (!confirm("Exportar todo o banco de dados atualizado do Firebase para Bling CSV? O sistema dividirá automaticamente em arquivos de até 900 produtos se necessário.")) return;
+
+    try {
+        const produtosFirebase = await obterProdutosFirebaseParaExportacaoBling();
+
+        const mappedList = produtosFirebase.map(p => mapearProdutoParaBling(p));
+        const chunkSize = 900;
+
         if (mappedList.length <= chunkSize) {
             await downloadCSVBling(mappedList, "Bling_Banco_Completo.csv");
-        } 
-        else {
+        } else {
             const totalParts = Math.ceil(mappedList.length / chunkSize);
-            mostrarAlerta(`A exportar ${totalParts} ficheiros... Por favor, aguarde.`, 'aviso');
+            mostrarAlerta(`Exportando ${totalParts} arquivos Bling. Aguarde.`, "aviso");
+
             for (let i = 0; i < totalParts; i++) {
                 const chunk = mappedList.slice(i * chunkSize, (i + 1) * chunkSize);
                 const filename = `Bling_Banco_Completo_Parte_${i + 1}.csv`;
                 await downloadCSVBling(chunk, filename);
             }
         }
-    };
-        window.exportarCategoriaBling = async function() {
-            const cat = document.getElementById('flt-cat').value;
-            if(!cat) return alert("Selecione uma categoria principal no filtro primeiro.");
-            const list = products.filter(p => p.categoria === cat);
-            if(list.length === 0) return alert("Nenhum produto encontrado nesta categoria.");
-            const mappedList = list.map(p => mapearProdutoParaBling(p));
-            await downloadCSVBling(mappedList, `Bling_Categoria_${cat}.csv`);
-        };
+
+        mostrarAlerta("✅ Exportação Bling concluída com dados atualizados do Firebase.", "sucesso");
+    } catch (erro) {
+        console.error("Erro ao exportar Bling pelo Firebase:", erro);
+        mostrarAlerta("Erro ao exportar Bling: " + erro.message, "erro");
+    }
+};
+
+window.exportarCategoriaBling = async function() {
+    const cat = document.getElementById('flt-cat').value;
+
+    if (!cat) {
+        return alert("Selecione uma categoria principal no filtro primeiro.");
+    }
+
+    try {
+        const produtosFirebase = await obterProdutosFirebaseParaExportacaoBling();
+
+        const list = produtosFirebase.filter(p => p.categoria === cat);
+
+        if (list.length === 0) {
+            return alert("Nenhum produto encontrado nesta categoria no Firebase.");
+        }
+
+        const mappedList = list.map(p => mapearProdutoParaBling(p));
+
+        const nomeCategoriaSeguro = cat
+            .toString()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^\w\s-]/g, "")
+            .replace(/\s+/g, "_")
+            .trim();
+
+        await downloadCSVBling(mappedList, `Bling_Categoria_${nomeCategoriaSeguro}.csv`);
+
+        mostrarAlerta("✅ Categoria exportada para Bling com dados atualizados do Firebase.", "sucesso");
+    } catch (erro) {
+        console.error("Erro ao exportar categoria Bling pelo Firebase:", erro);
+        mostrarAlerta("Erro ao exportar categoria Bling: " + erro.message, "erro");
+    }
+};
 
         // ==========================================================
         // GERENCIADOR DE EXPORTAÇÕES (GITHUB)
