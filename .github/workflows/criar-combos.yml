@@ -28,6 +28,12 @@ jobs:
         with:
           node-version: 20
 
+      - name: Atualizar repositorio antes de criar combo
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+
       - name: Mostrar horario da execucao
         run: |
           echo "Horario UTC:"
@@ -44,8 +50,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-
-          git pull --rebase origin "${GITHUB_REF_NAME}"
 
           git add site/combo.json
 
