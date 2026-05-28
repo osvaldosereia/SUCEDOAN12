@@ -62,7 +62,6 @@ function obterUrlImagemProduto(produto) {
 
   if (!sku) return "";
 
-  // Caminho padrão usado pelo site quando o produto não tiver imagem salva no Firebase.
   return `../site/img/produtos/${sku}.webp`;
 }
 
@@ -133,8 +132,6 @@ function montarItemCombo(produto, desconto) {
     nome: produto.nome || "",
     qtd: 1,
 
-    // Campos de imagem individual do produto.
-    // Mantive os dois nomes para facilitar no Make e no site.
     url_imagem: urlImagem,
     imagem: urlImagem,
 
@@ -170,12 +167,8 @@ function criarComboComProdutos(p1, p2, palavra, indice) {
     economia: Number(economia.toFixed(2)),
     validade_combo: formatarValidade7Dias(),
 
-    // Imagem principal para manter compatibilidade com o site antigo.
-    // Agora ela usa a imagem do primeiro produto, ou do segundo se a primeira faltar.
     url_imagem: item1.url_imagem || item2.url_imagem || "",
 
-    // Cada combo terá obrigatoriamente 2 produtos.
-    // Cada produto agora leva sua própria imagem.
     itens: [
       item1,
       item2
@@ -186,14 +179,14 @@ function criarComboComProdutos(p1, p2, palavra, indice) {
   };
 }
 
-function criarCombos(produtos) {
+function criarCombos(produtos, quantidade = 1) {
   const produtosValidos = produtos.filter(produtoValido);
   const palavrasMisturadas = embaralhar(PALAVRAS_COMBO);
   const combos = [];
   const produtosUsados = new Set();
 
   for (const palavra of palavrasMisturadas) {
-    if (combos.length >= 5) break;
+    if (combos.length >= quantidade) break;
 
     const palavraNormalizada = normalizarTexto(palavra);
 
@@ -232,7 +225,12 @@ function criarCombos(produtos) {
 
 async function main() {
   const produtos = await carregarProdutos();
-  const combos = criarCombos(produtos);
+
+  // IMPORTANTE:
+  // O script agora cria apenas 1 combo por execução.
+  // Como o GitHub Actions vai rodar às 7h, 11h, 15h e 19h,
+  // serão criados 4 combos no dia, um em cada horário.
+  const combos = criarCombos(produtos, 1);
 
   const pasta = path.join(process.cwd(), "site");
 
@@ -245,7 +243,7 @@ async function main() {
   fs.writeFileSync(arquivo, JSON.stringify(combos, null, 2), "utf8");
 
   console.log(`Produtos carregados do Firebase: ${produtos.length}`);
-  console.log(`Combos criados: ${combos.length}`);
+  console.log(`Combos criados nesta execução: ${combos.length}`);
 
   combos.forEach((combo, index) => {
     console.log(`Combo ${index + 1}: ${combo.nome}`);
