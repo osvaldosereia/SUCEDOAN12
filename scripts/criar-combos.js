@@ -18,7 +18,7 @@ const PALAVRAS_COMBO = [
   "nestle", "detergente", "lava roupa", "escova", "cabelo", "unha", "skala",
   "kolene", "pasta", "minuano", "impala", "risque", "rancheiro", "skiny", "frisco", 
   "tang", "passata", "heinz", "doce", "fini", "madeira", "tresemme", "bocal", 
-  "refil", "liquido", "cereal", "matinal"
+  "refil", "liquido", "cereal", "matinal", "batata", "suco", "colacha", "oreo", "garoto", "bis"
 ];
 
 const DESCONTOS = [15, 20, 25];
