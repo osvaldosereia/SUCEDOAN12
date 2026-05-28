@@ -3,8 +3,7 @@ name: Criar combos automaticos
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/10 * * * *"
-      timezone: "America/Cuiaba"
+    - cron: "7 */2 * * *"
 
 permissions:
   contents: write
@@ -27,7 +26,7 @@ jobs:
         env:
           FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
 
-      - name: Salvar site/combo.json no GitHub
+      - name: Salvar arquivos de combos no GitHub
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
@@ -39,9 +38,12 @@ jobs:
             git add site/combo.json
           else
             echo "ERRO: site/combo.json não foi encontrado."
-            echo "Arquivos existentes na pasta site:"
             ls -la site || true
             exit 1
+          fi
+
+          if [ -f "site/palavras-combo-usadas.json" ]; then
+            git add site/palavras-combo-usadas.json
           fi
 
           if git diff --cached --quiet; then
