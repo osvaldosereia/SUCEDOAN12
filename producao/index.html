@@ -2479,8 +2479,12 @@ async function loadData() {
 
         if (Array.isArray(produtosFirebase) && produtosFirebase.length > 0) {
             products = produtosFirebase
-                .filter(p => p && p._deleted !== true && obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p))
-                .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
+    .filter(p => p && p._deleted !== true && obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p))
+    .sort((a, b) => {
+        const nomeA = (a.nome || "").toString().toLowerCase();
+        const nomeB = (b.nome || "").toString().toLowerCase();
+        return nomeA.localeCompare(nomeB, "pt-BR");
+    });
 
             await saveDataLocally(false);
         } else if (cacheLocalProdutos.length === 0) {
@@ -2879,15 +2883,15 @@ renderGrid(ultimoTermoPesquisa, true);
             return pendencias;
         }
 function ordenarProdutosMaisRecentesPrimeiro(lista) {
+    // Usar somente em telas específicas, relatórios ou filtro "últimas 24h".
+    // NÃO usar como ordem padrão da grade principal.
     if (!Array.isArray(lista)) return [];
 
     return [...lista].sort((a, b) => {
-        const dataA = Number(a.last_update || a.id || 0) || 0;
-        const dataB = Number(b.last_update || b.id || 0) || 0;
+        const dataA = normalizarLastUpdateProduto(a);
+        const dataB = normalizarLastUpdateProduto(b);
 
-        if (dataB !== dataA) {
-            return dataB - dataA;
-        }
+        if (dataB !== dataA) return dataB - dataA;
 
         const nomeA = (a.nome || "").toString().toLowerCase();
         const nomeB = (b.nome || "").toString().toLowerCase();
@@ -2970,8 +2974,11 @@ function ordenarProdutosMaisRecentesPrimeiro(lista) {
 
             if(isFilter24hActive) { const oneDay = 24 * 60 * 60 * 1000; const now = Date.now(); filtered = filtered.filter(p => { const time = p.last_update || p.id || 0; return (now - time) <= oneDay; }); }
             
-produtosFiltrados = ordenarProdutosMaisRecentesPrimeiro(filtered);
-gridContainer.innerHTML = "";
+// ORDEM PROFISSIONAL:
+// A tela respeita a ordem atual do array.
+// Alterar/salvar produto NÃO joga o card para o início.
+produtosFiltrados = Array.isArray(filtered) ? [...filtered] : [];
+            gridContainer.innerHTML = "";
 itemsCarregados = 0;
             
             if (produtosFiltrados.length === 0) { 
@@ -3288,7 +3295,6 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
             await saveDataLocally(false);
             marcarProdutoParaSincronizacao(novoProduto, "upsert", 500);
             renderGrid(ultimoTermoPesquisa);
-            window.scrollTo(0, 0); 
             mostrarAlerta("Produto duplicado com sucesso!", "sucesso");
         };
 
@@ -5003,8 +5009,12 @@ async function processarBaixaPedidoTexto() {
 
         if (Array.isArray(dadosFirebase) && dadosFirebase.length > 0) {
             products = dadosFirebase
-                .filter(p => p && p._deleted !== true && obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p))
-                .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
+    .filter(p => p && p._deleted !== true && obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p))
+    .sort((a, b) => {
+        const nomeA = (a.nome || "").toString().toLowerCase();
+        const nomeB = (b.nome || "").toString().toLowerCase();
+        return nomeA.localeCompare(nomeB, "pt-BR");
+    });
 
             await saveDataLocally();
             await processarStatusCombos();
@@ -5454,10 +5464,8 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
                     }
                 }
 
-                products = products
-                    .filter(p => p && p._deleted !== true)
-                    .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
-
+               products = products
+    .filter(p => p && p._deleted !== true);
                 atualizarListasDoSistemaComProdutos();
                 await saveDataLocally();
 
