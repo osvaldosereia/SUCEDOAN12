@@ -3,15 +3,10 @@ name: Criar combos automaticos
 on:
   workflow_dispatch:
   schedule:
-    - cron: "7 6,7,8,10,11,12,14,16,17,19,21,22 * * *"
-      timezone: "America/Cuiaba"
+    - cron: "*/5 * * * *"
 
 permissions:
   contents: write
-
-concurrency:
-  group: criar-combos-automaticos
-  cancel-in-progress: false
 
 jobs:
   criar-combos:
@@ -20,26 +15,11 @@ jobs:
     steps:
       - name: Baixar repositorio
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Configurar Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Atualizar repositorio antes de criar combo
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git pull --rebase origin "${GITHUB_REF_NAME}"
-
-      - name: Mostrar horario da execucao
-        run: |
-          echo "Horario UTC:"
-          date -u
-          echo "Horario Cuiaba:"
-          TZ="America/Cuiaba" date
 
       - name: Criar combos inteligentes
         run: node scripts/criar-combos.js
@@ -49,14 +29,13 @@ jobs:
       - name: Salvar combo.json no GitHub
         run: |
           git config user.name "github-actions"
-          git config user.email "actions@github.com"
+          git config user.email "github-actions@github.com"
 
-          git add site/combo.json
+          git add combo.json
 
           if git diff --cached --quiet; then
-            echo "Nenhuma alteracao no combo.json para salvar."
-            exit 0
+            echo "Nenhuma alteração para salvar."
+          else
+            git commit -m "Atualiza combos automaticos"
+            git push
           fi
-
-          git commit -m "Atualiza combos automaticos"
-          git push
