@@ -16,9 +16,10 @@ const PALAVRAS_COMBO = [
   "condicionador", "niely", "pantene", "phebo", "paixão", "veja", "copo",
   "plástico", "caldo", "tempero", "maionese", "amendoin", "chocolate", "lacta",
   "nestle", "detergente", "lava roupa", "escova", "cabelo", "unha", "skala",
-  "kolene", "pasta", "minuano", "impala", "risque", "rancheiro", "skiny", "frisco", 
-  "tang", "passata", "heinz", "doce", "fini", "madeira", "tresemme", "bocal", 
-  "refil", "liquido", "cereal", "matinal", "batata", "suco", "colacha", "oreo", "garoto", "bis"
+  "kolene", "pasta", "minuano", "impala", "risque", "rancheiro", "skiny", "frisco",
+  "tang", "passata", "heinz", "doce", "fini", "madeira", "tresemme", "bocal",
+  "refil", "liquido", "cereal", "matinal", "batata", "suco", "colacha", "oreo",
+  "garoto", "bis"
 ];
 
 const DESCONTOS = [15, 20, 25];
@@ -33,7 +34,17 @@ function normalizarTexto(valor) {
 
 function normalizarPreco(valor) {
   if (valor === null || valor === undefined) return 0;
-  return parseFloat(String(valor).replace(",", ".")) || 0;
+
+  let texto = String(valor).trim();
+
+  if (!texto) return 0;
+
+  texto = texto
+    .replace(/[R$\s]/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".");
+
+  return parseFloat(texto) || 0;
 }
 
 function obterUrlImagemProduto(produto) {
@@ -94,6 +105,7 @@ function obterDataCuiaba() {
   }).formatToParts(agora);
 
   const mapa = {};
+
   for (const parte of partes) {
     if (parte.type !== "literal") {
       mapa[parte.type] = parte.value;
@@ -188,7 +200,7 @@ function montarItemCombo(produto, desconto) {
   };
 }
 
-function criarComboComProdutos(p1, p2, palavra, indice) {
+function criarComboComProdutos(p1, p2, palavra, indice, cicloPalavras) {
   const desconto = DESCONTOS[Math.floor(Math.random() * DESCONTOS.length)];
 
   const preco1 = normalizarPreco(p1.preco);
@@ -205,7 +217,7 @@ function criarComboComProdutos(p1, p2, palavra, indice) {
 
   return {
     id: `COMBO-${datas.ordem}-${indice}`,
-    nome: "Combo " + palavra.toUpperCase() + " Especial",
+    nome: "Combo " + String(palavra || "").toUpperCase() + " Especial",
     ativo: true,
     motivo_desativacao: "",
     desconto_percentual: desconto,
@@ -213,6 +225,10 @@ function criarComboComProdutos(p1, p2, palavra, indice) {
     preco_combo: Number(precoCombo.toFixed(2)),
     economia: Number(economia.toFixed(2)),
     validade_combo: formatarValidade7Dias(),
+
+    palavra_base: palavra,
+    palavra_base_normalizada: normalizarTexto(palavra),
+    ciclo_palavras: cicloPalavras || 1,
 
     url_imagem: item1.url_imagem || item2.url_imagem || "",
 
@@ -228,11 +244,144 @@ function criarComboComProdutos(p1, p2, palavra, indice) {
   };
 }
 
-function criarCombos(produtos, quantidade = 1) {
+function obterPalavrasUnicas() {
+  const vistas = new Set();
+  const resultado = [];
+
+  for (const palavra of PALAVRAS_COMBO) {
+    const normalizada = normalizarTexto(palavra);
+
+    if (!normalizada || vistas.has(normalizada)) {
+      continue;
+    }
+
+    vistas.add(normalizada);
+    resultado.push(palavra);
+  }
+
+  return resultado;
+}
+
+function carregarHistoricoPalavras(arquivo) {
+  if (!fs.existsSync(arquivo)) {
+    return {
+      usadas: [],
+      ciclo: 1,
+      atualizado_em: null
+    };
+  }
+
+  try {
+    const conteudo = fs.readFileSync(arquivo, "utf8").trim();
+
+    if (!conteudo) {
+      return {
+        usadas: [],
+        ciclo: 1,
+        atualizado_em: null
+      };
+    }
+
+    const dados = JSON.parse(conteudo);
+
+    return {
+      usadas: Array.isArray(dados.usadas)
+        ? dados.usadas.map(normalizarTexto).filter(Boolean)
+        : [],
+      ciclo: Number(dados.ciclo || 1),
+      atualizado_em: dados.atualizado_em || null
+    };
+  } catch (erro) {
+    console.log("Não foi possível ler o histórico de palavras. Um novo histórico será iniciado.");
+    console.log("Erro:", erro.message);
+
+    return {
+      usadas: [],
+      ciclo: 1,
+      atualizado_em: null
+    };
+  }
+}
+
+function salvarHistoricoPalavras(arquivo, historico) {
+  const palavrasUnicasNormalizadas = obterPalavrasUnicas().map(normalizarTexto);
+  const permitidas = new Set(palavrasUnicasNormalizadas);
+
+  const usadasLimpas = Array.from(
+    new Set(
+      Array.isArray(historico.usadas)
+        ? historico.usadas.map(normalizarTexto).filter(Boolean)
+        : []
+    )
+  ).filter(palavra => permitidas.has(palavra));
+
+  const dados = {
+    usadas: usadasLimpas,
+    ciclo: Number(historico.ciclo || 1),
+    total_palavras_unicas: palavrasUnicasNormalizadas.length,
+    atualizado_em: new Date().toISOString()
+  };
+
+  fs.writeFileSync(arquivo, JSON.stringify(dados, null, 2), "utf8");
+}
+
+function obterPalavrasDisponiveis(historico) {
+  const palavrasUnicas = obterPalavrasUnicas();
+  const palavrasUnicasNormalizadas = palavrasUnicas.map(normalizarTexto);
+  const permitidas = new Set(palavrasUnicasNormalizadas);
+
+  historico.usadas = Array.from(
+    new Set(
+      Array.isArray(historico.usadas)
+        ? historico.usadas.map(normalizarTexto).filter(Boolean)
+        : []
+    )
+  ).filter(palavra => permitidas.has(palavra));
+
+  const usadasSet = new Set(historico.usadas);
+
+  let disponiveis = palavrasUnicas.filter(palavra => {
+    return !usadasSet.has(normalizarTexto(palavra));
+  });
+
+  if (disponiveis.length === 0) {
+    historico.usadas = [];
+    historico.ciclo = Number(historico.ciclo || 1) + 1;
+    disponiveis = palavrasUnicas;
+
+    console.log("Todas as palavras já foram usadas. Iniciando novo ciclo:", historico.ciclo);
+  }
+
+  return disponiveis;
+}
+
+function marcarPalavraComoUsada(historico, palavra) {
+  const palavraNormalizada = normalizarTexto(palavra);
+
+  if (!palavraNormalizada) return;
+
+  if (!Array.isArray(historico.usadas)) {
+    historico.usadas = [];
+  }
+
+  if (!historico.usadas.includes(palavraNormalizada)) {
+    historico.usadas.push(palavraNormalizada);
+  }
+}
+
+function criarCombos(produtos, quantidade = 1, historicoPalavras = null) {
   const produtosValidos = produtos.filter(produtoValido);
-  const palavrasMisturadas = embaralhar(PALAVRAS_COMBO);
   const combos = [];
   const produtosUsados = new Set();
+
+  const historico = historicoPalavras || {
+    usadas: [],
+    ciclo: 1,
+    atualizado_em: null
+  };
+
+  let palavrasDisponiveis = obterPalavrasDisponiveis(historico);
+  let palavrasMisturadas = embaralhar(palavrasDisponiveis);
 
   for (const palavra of palavrasMisturadas) {
     if (combos.length >= quantidade) break;
@@ -263,10 +412,12 @@ function criarCombos(produtos, quantidade = 1) {
     const chave1 = String(p1.codigo || p1.sku || p1.id || p1.firebaseKey || "");
     const chave2 = String(p2.codigo || p2.sku || p2.id || p2.firebaseKey || "");
 
-    combos.push(criarComboComProdutos(p1, p2, palavra, combos.length + 1));
+    combos.push(criarComboComProdutos(p1, p2, palavra, combos.length + 1, historico.ciclo));
 
     produtosUsados.add(chave1);
     produtosUsados.add(chave2);
+
+    marcarPalavraComoUsada(historico, palavra);
   }
 
   return combos;
@@ -352,6 +503,7 @@ function obterValorOrdenacaoCombo(combo) {
 
   if (combo.criado_em) {
     const data = new Date(combo.criado_em);
+
     if (!Number.isNaN(data.getTime())) {
       return String(data.getTime());
     }
@@ -367,6 +519,7 @@ function ordenarCombosMaisRecentesPrimeiro(combos) {
 
     if (valorA < valorB) return 1;
     if (valorA > valorB) return -1;
+
     return 0;
   });
 }
@@ -381,15 +534,17 @@ async function main() {
   }
 
   const arquivo = path.join(pasta, "combo.json");
+  const arquivoHistoricoPalavras = path.join(pasta, "palavras-combo-usadas.json");
 
   const combosExistentes = carregarCombosExistentes(arquivo);
-
   const combosAindaValidos = combosExistentes.filter(comboAindaValido);
+
+  const historicoPalavras = carregarHistoricoPalavras(arquivoHistoricoPalavras);
 
   // Cria apenas 1 combo novo por execução.
   // O GitHub Actions pode rodar várias vezes ao dia.
-  // Cada combo novo agora recebe criado_em_ordem para o Make identificar o mais recente.
-  const combosNovos = criarCombos(produtos, 1);
+  // O sistema agora não repete palavra enquanto todas as palavras únicas não forem usadas.
+  const combosNovos = criarCombos(produtos, 1, historicoPalavras);
 
   const todosCombos = ordenarCombosMaisRecentesPrimeiro(
     removerCombosDuplicados([
@@ -399,6 +554,7 @@ async function main() {
   );
 
   fs.writeFileSync(arquivo, JSON.stringify(todosCombos, null, 2), "utf8");
+  salvarHistoricoPalavras(arquivoHistoricoPalavras, historicoPalavras);
 
   console.log(`Produtos carregados do Firebase: ${produtos.length}`);
   console.log(`Combos existentes antes da limpeza: ${combosExistentes.length}`);
@@ -407,9 +563,15 @@ async function main() {
   console.log(`Combos novos criados nesta execução: ${combosNovos.length}`);
   console.log(`Total salvo no combo.json: ${todosCombos.length}`);
 
+  console.log(`Ciclo de palavras: ${historicoPalavras.ciclo}`);
+  console.log(`Palavras já usadas neste ciclo: ${historicoPalavras.usadas.length}/${obterPalavrasUnicas().length}`);
+  console.log(`Histórico salvo em: site/palavras-combo-usadas.json`);
+
   combosNovos.forEach((combo, index) => {
     console.log(`Combo novo ${index + 1}: ${combo.nome}`);
     console.log(`ID: ${combo.id}`);
+    console.log(`Palavra usada: ${combo.palavra_base}`);
+    console.log(`Ciclo da palavra: ${combo.ciclo_palavras}`);
     console.log(`Criado em UTC: ${combo.criado_em}`);
     console.log(`Criado em Cuiabá: ${combo.criado_em_local}`);
     console.log(`Ordem Make: ${combo.criado_em_ordem}`);
@@ -420,7 +582,9 @@ async function main() {
   });
 
   if (combosNovos.length === 0) {
-    console.log("Nenhum combo novo criado. Nenhuma palavra da lista encontrou pelo menos 2 produtos válidos com estoque e preço.");
+    console.log("Nenhum combo novo criado.");
+    console.log("Motivo provável: nenhuma palavra disponível encontrou pelo menos 2 produtos válidos com estoque e preço.");
+    console.log("O histórico de palavras não será avançado para palavras que não geraram combo.");
   }
 }
 
