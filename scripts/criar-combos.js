@@ -35,14 +35,46 @@ function normalizarTexto(valor) {
 function normalizarPreco(valor) {
   if (valor === null || valor === undefined) return 0;
 
+  if (typeof valor === "number") {
+    return Number.isFinite(valor) ? valor : 0;
+  }
+
   let texto = String(valor).trim();
 
   if (!texto) return 0;
 
   texto = texto
     .replace(/[R$\s]/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
+    .trim();
+
+  if (!texto) return 0;
+
+  // Formato brasileiro com milhar e decimal.
+  // Exemplo: 1.234,56 => 1234.56
+  if (/^\d{1,3}(\.\d{3})+,\d{1,2}$/.test(texto)) {
+    return parseFloat(texto.replace(/\./g, "").replace(",", ".")) || 0;
+  }
+
+  // Formato brasileiro simples.
+  // Exemplo: 12,99 => 12.99
+  if (/^\d+,\d{1,2}$/.test(texto)) {
+    return parseFloat(texto.replace(",", ".")) || 0;
+  }
+
+  // Formato americano/JSON já correto.
+  // Exemplo: 12.99 => 12.99
+  if (/^\d+\.\d{1,2}$/.test(texto)) {
+    return parseFloat(texto) || 0;
+  }
+
+  // Número inteiro.
+  // Exemplo: 12 => 12
+  if (/^\d+$/.test(texto)) {
+    return parseFloat(texto) || 0;
+  }
+
+  // Fallback para casos mistos.
+  texto = texto.replace(",", ".");
 
   return parseFloat(texto) || 0;
 }
@@ -380,8 +412,8 @@ function criarCombos(produtos, quantidade = 1, historicoPalavras = null) {
     atualizado_em: null
   };
 
-  let palavrasDisponiveis = obterPalavrasDisponiveis(historico);
-  let palavrasMisturadas = embaralhar(palavrasDisponiveis);
+  const palavrasDisponiveis = obterPalavrasDisponiveis(historico);
+  const palavrasMisturadas = embaralhar(palavrasDisponiveis);
 
   for (const palavra of palavrasMisturadas) {
     if (combos.length >= quantidade) break;
@@ -541,9 +573,6 @@ async function main() {
 
   const historicoPalavras = carregarHistoricoPalavras(arquivoHistoricoPalavras);
 
-  // Cria apenas 1 combo novo por execução.
-  // O GitHub Actions pode rodar várias vezes ao dia.
-  // O sistema agora não repete palavra enquanto todas as palavras únicas não forem usadas.
   const combosNovos = criarCombos(produtos, 1, historicoPalavras);
 
   const todosCombos = ordenarCombosMaisRecentesPrimeiro(
@@ -576,9 +605,14 @@ async function main() {
     console.log(`Criado em Cuiabá: ${combo.criado_em_local}`);
     console.log(`Ordem Make: ${combo.criado_em_ordem}`);
     console.log(`Produto 1: ${combo.itens[0]?.nome || ""}`);
+    console.log(`Preço produto 1: ${combo.itens[0]?.preco_unitario_original || 0}`);
     console.log(`Imagem 1: ${combo.itens[0]?.url_imagem || ""}`);
     console.log(`Produto 2: ${combo.itens[1]?.nome || ""}`);
+    console.log(`Preço produto 2: ${combo.itens[1]?.preco_unitario_original || 0}`);
     console.log(`Imagem 2: ${combo.itens[1]?.url_imagem || ""}`);
+    console.log(`Soma original: ${combo.soma_produtos}`);
+    console.log(`Preço combo: ${combo.preco_combo}`);
+    console.log(`Economia: ${combo.economia}`);
   });
 
   if (combosNovos.length === 0) {
