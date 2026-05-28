@@ -6,6 +6,7 @@ on:
     - cron: "*/5 * * * *"
 
 permissions:
+  contents: write
 
 jobs:
   criar-combos:
@@ -20,34 +21,23 @@ jobs:
         with:
           node-version: 20
 
+      - name: Diagnostico
+        run: |
+          echo "Evento: ${{ github.event_name }}"
+          echo "Schedule: ${{ github.event.schedule }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Data UTC:"
+          date -u
+
       - name: Criar combos inteligentes
         run: node scripts/criar-combos.js
         env:
           FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
 
-      - name: Salvar arquivos de combos no GitHub
+      - name: Salvar combo.json no GitHub
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-
-          echo "Arquivos alterados:"
-          git status --short
-
-          if [ -f "site/combo.json" ]; then
-            git add site/combo.json
-          else
-            echo "ERRO: site/combo.json não foi encontrado."
-            ls -la site || true
-            exit 1
-          fi
-
-          if [ -f "site/palavras-combo-usadas.json" ]; then
-            git add site/palavras-combo-usadas.json
-          fi
-
-          if git diff --cached --quiet; then
-            echo "Nenhuma alteração para salvar."
-          else
-            git commit -m "Atualiza combos automaticos"
-            git push
-          fi
+          git add site/combo.json
+          git diff --cached --quiet || git commit -m "Atualiza combos automaticos"
+          git push
