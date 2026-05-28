@@ -1,0 +1,17 @@
+name: Teste Cron 5 Minutos
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+jobs:
+  teste:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Testar agendamento
+        run: |
+          echo "Rodou pelo evento: ${{ github.event_name }}"
+          echo "Data UTC:"
+          date -u
