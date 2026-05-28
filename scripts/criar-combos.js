@@ -12,8 +12,8 @@ const PALAVRAS_COMBO = [
   "monange", "colgate", "seda", "liane", "macarrão", "maionese",
   "catchup", "mostarda", "geléia", "pano", "sabão", "amaciante",
   "desinfetante", "veja", "omo", "brilhante", "novex", "garnier",
-  "elseve", "dove", "lixo", "pentear", "bolacha", "facial", "labial", 
-  "condicionador", "niely", "pantene", "phebo", "paixão", "veja", "copo", 
+  "elseve", "dove", "lixo", "pentear", "bolacha", "facial", "labial",
+  "condicionador", "niely", "pantene", "phebo", "paixão", "veja", "copo",
   "plástico", "caldo", "tempero", "maionese", "amendoin", "chocolate", "lacta",
   "nestle", "detergente", "lava roupa", "escova", "cabelo", "unha", "skala"
 ];
@@ -72,14 +72,54 @@ function embaralhar(lista) {
   return [...lista].sort(() => Math.random() - 0.5);
 }
 
+function pad2(valor) {
+  return String(valor).padStart(2, "0");
+}
+
+function obterDataCuiaba() {
+  const agora = new Date();
+
+  const partes = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Cuiaba",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).formatToParts(agora);
+
+  const mapa = {};
+  for (const parte of partes) {
+    if (parte.type !== "literal") {
+      mapa[parte.type] = parte.value;
+    }
+  }
+
+  const ano = mapa.year;
+  const mes = mapa.month;
+  const dia = mapa.day;
+  const hora = mapa.hour;
+  const minuto = mapa.minute;
+  const segundo = mapa.second;
+
+  return {
+    iso_utc: agora.toISOString(),
+    local: `${ano}-${mes}-${dia}T${hora}:${minuto}:${segundo}-04:00`,
+    ordem: `${ano}${mes}${dia}${hora}${minuto}${segundo}`,
+    timestamp: agora.getTime()
+  };
+}
+
 function formatarValidade7Dias() {
   const data = new Date();
   data.setDate(data.getDate() + 7);
   data.setHours(23, 59, 0, 0);
 
   const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
+  const mes = pad2(data.getMonth() + 1);
+  const dia = pad2(data.getDate());
 
   return `${ano}-${mes}-${dia}T23:59`;
 }
@@ -154,13 +194,14 @@ function criarComboComProdutos(p1, p2, palavra, indice) {
   const soma = preco1 + preco2;
   const precoCombo = soma * (1 - desconto / 100);
   const economia = soma - precoCombo;
-  const agora = new Date();
+
+  const datas = obterDataCuiaba();
 
   const item1 = montarItemCombo(p1, desconto);
   const item2 = montarItemCombo(p2, desconto);
 
   return {
-    id: "COMBO-" + Date.now() + "-" + indice,
+    id: `COMBO-${datas.ordem}-${indice}`,
     nome: "Combo " + palavra.toUpperCase() + " Especial",
     ativo: true,
     motivo_desativacao: "",
@@ -177,8 +218,10 @@ function criarComboComProdutos(p1, p2, palavra, indice) {
       item2
     ],
 
-    criado_em: agora.toISOString(),
-    last_update: agora.getTime()
+    criado_em: datas.iso_utc,
+    criado_em_local: datas.local,
+    criado_em_ordem: datas.ordem,
+    last_update: datas.timestamp
   };
 }
 
@@ -293,6 +336,38 @@ function removerCombosDuplicados(combos) {
   return resultado;
 }
 
+function obterValorOrdenacaoCombo(combo) {
+  if (!combo) return "0";
+
+  if (combo.criado_em_ordem) {
+    return String(combo.criado_em_ordem);
+  }
+
+  if (combo.last_update) {
+    return String(combo.last_update);
+  }
+
+  if (combo.criado_em) {
+    const data = new Date(combo.criado_em);
+    if (!Number.isNaN(data.getTime())) {
+      return String(data.getTime());
+    }
+  }
+
+  return "0";
+}
+
+function ordenarCombosMaisRecentesPrimeiro(combos) {
+  return [...combos].sort((a, b) => {
+    const valorA = obterValorOrdenacaoCombo(a);
+    const valorB = obterValorOrdenacaoCombo(b);
+
+    if (valorA < valorB) return 1;
+    if (valorA > valorB) return -1;
+    return 0;
+  });
+}
+
 async function main() {
   const produtos = await carregarProdutos();
 
@@ -309,14 +384,16 @@ async function main() {
   const combosAindaValidos = combosExistentes.filter(comboAindaValido);
 
   // Cria apenas 1 combo novo por execução.
-  // Como o GitHub Actions vai rodar às 7h, 11h, 15h e 19h,
-  // serão criados 4 combos por dia, um em cada horário.
+  // O GitHub Actions pode rodar várias vezes ao dia.
+  // Cada combo novo agora recebe criado_em_ordem para o Make identificar o mais recente.
   const combosNovos = criarCombos(produtos, 1);
 
-  const todosCombos = removerCombosDuplicados([
-    ...combosNovos,
-    ...combosAindaValidos
-  ]);
+  const todosCombos = ordenarCombosMaisRecentesPrimeiro(
+    removerCombosDuplicados([
+      ...combosNovos,
+      ...combosAindaValidos
+    ])
+  );
 
   fs.writeFileSync(arquivo, JSON.stringify(todosCombos, null, 2), "utf8");
 
@@ -329,6 +406,10 @@ async function main() {
 
   combosNovos.forEach((combo, index) => {
     console.log(`Combo novo ${index + 1}: ${combo.nome}`);
+    console.log(`ID: ${combo.id}`);
+    console.log(`Criado em UTC: ${combo.criado_em}`);
+    console.log(`Criado em Cuiabá: ${combo.criado_em_local}`);
+    console.log(`Ordem Make: ${combo.criado_em_ordem}`);
     console.log(`Produto 1: ${combo.itens[0]?.nome || ""}`);
     console.log(`Imagem 1: ${combo.itens[0]?.url_imagem || ""}`);
     console.log(`Produto 2: ${combo.itens[1]?.nome || ""}`);
