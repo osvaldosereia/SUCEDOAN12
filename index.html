@@ -2102,14 +2102,14 @@
     autocomplete="off"
 >
                 <input
-                    type="tel"
-                    id="chk-telefone"
-                    class="chk-input"
-                    placeholder="Telefone / WhatsApp*"
-                    maxlength="15"
-                    inputmode="numeric"
-                    autocomplete="tel"
-                >
+    type="tel"
+    id="chk-telefone"
+    class="chk-input"
+    placeholder="Telefone / WhatsApp*"
+    maxlength="20"
+    inputmode="numeric"
+    autocomplete="tel"
+>
                 <input
                     type="email"
                     id="chk-email"
@@ -4207,7 +4207,62 @@ function limparNumeros(valor, limite) {
 }
 
 function limparTelefone(valor) {
-    return limparNumeros(valor, 11);
+    let tel = String(valor || '').replace(/\D/g, '');
+
+    // Remove prefixo internacional 00, se vier assim: 005565999958040
+    if (tel.startsWith('00')) {
+        tel = tel.slice(2);
+    }
+
+    // Remove código do Brasil quando vier completo: 55 + DDD + número
+    // Exemplo: 5565999958040 -> 65999958040
+    if (tel.startsWith('55') && tel.length >= 12) {
+        tel = tel.slice(2);
+    }
+
+    // Remove zero antes do DDD
+    // Exemplo: 065999958040 -> 65999958040
+    if (tel.startsWith('0') && tel.length >= 11) {
+        tel = tel.slice(1);
+    }
+
+    // Se ainda vier maior que 11, usa os últimos 11 dígitos úteis
+    if (tel.length > 11) {
+        tel = tel.slice(-11);
+    }
+
+    // Se vier com 10 dígitos, tenta transformar em celular com 9
+    // Exemplo: 6599958040 -> 65999958040
+    if (tel.length === 10) {
+        const ddd = tel.slice(0, 2);
+        const numero = tel.slice(2);
+
+        if (/^[2-9][0-9]$/.test(ddd)) {
+            tel = ddd + '9' + numero;
+        }
+    }
+
+    return tel;
+}
+
+function telefoneValidoBR(valor) {
+    const tel = limparTelefone(valor);
+
+    if (tel.length !== 11) return false;
+
+    const ddd = tel.slice(0, 2);
+    const numero = tel.slice(2);
+
+    // DDD brasileiro não começa com 0 nem 1
+    if (!/^[2-9][0-9]$/.test(ddd)) return false;
+
+    // Celular precisa começar com 9
+    if (!numero.startsWith('9')) return false;
+
+    // Bloqueia números falsos tipo 99999999999
+    if (/^(\d)\1+$/.test(tel)) return false;
+
+    return true;
 }
 
 function limparCEP(valor) {
@@ -4216,6 +4271,8 @@ function limparCEP(valor) {
 
 function formatarTelefone(valor) {
     const tel = limparTelefone(valor);
+
+    if (!tel) return '';
 
     if (tel.length > 10) {
         return tel.replace(/(\d{2})(\d{5})(\d{1,4})/, "($1) $2-$3");
@@ -4298,13 +4355,13 @@ document.addEventListener('input', function(e) {
         }
     }
 
-    if (e.target.id === 'chk-telefone') {
-        e.target.value = formatarTelefone(e.target.value);
+   if (e.target.id === 'chk-telefone') {
+    e.target.value = formatarTelefone(e.target.value);
 
-        if (limparTelefone(e.target.value).length >= 10) {
-            e.target.classList.remove('checkout-required-error');
-        }
+    if (telefoneValidoBR(e.target.value)) {
+        e.target.classList.remove('checkout-required-error');
     }
+}
 
     if (e.target.id === 'chk-cep') {
         e.target.value = formatarCEP(e.target.value);
@@ -4324,22 +4381,40 @@ document.addEventListener('input', function(e) {
 });
 ['chk-nome', 'chk-cpf', 'chk-telefone', 'chk-email', 'chk-cep', 'chk-cidade', 'chk-bairro', 'chk-rua', 'chk-casa', 'chk-frente', 'chk-pagamento'].forEach(id => {
     document.addEventListener('input', function(e) {
-                if (e.target && e.target.id === id && String(e.target.value || '').trim()) e.target.classList.remove('checkout-required-error');
-            });
-            document.addEventListener('change', function(e) {
-                if (e.target && e.target.id === id && String(e.target.value || '').trim()) {
-                    e.target.classList.remove('checkout-required-error');
-                    salvarDadosClienteCheckout();
-                }
-            });
-        });
+        if (!e.target || e.target.id !== id) return;
 
-        document.addEventListener('change', function(e) {
-            if (e.target && e.target.name === 'agendamento') {
-                const box = $('agendamento-options-container');
-                if (box) box.classList.remove('checkout-required-error');
+        if (id === 'chk-telefone') {
+            if (telefoneValidoBR(e.target.value)) {
+                e.target.classList.remove('checkout-required-error');
             }
-        });
+            return;
+        }
+
+        if (String(e.target.value || '').trim()) {
+            e.target.classList.remove('checkout-required-error');
+        }
+    });
+
+    document.addEventListener('change', function(e) {
+        if (!e.target || e.target.id !== id) return;
+
+        if (id === 'chk-telefone') {
+            e.target.value = formatarTelefone(e.target.value);
+
+            if (telefoneValidoBR(e.target.value)) {
+                e.target.classList.remove('checkout-required-error');
+            }
+
+            salvarDadosClienteCheckout();
+            return;
+        }
+
+        if (String(e.target.value || '').trim()) {
+            e.target.classList.remove('checkout-required-error');
+            salvarDadosClienteCheckout();
+        }
+    });
+});
 
         window.sendOrder = async function(btnOverride) {
             const btn = btnOverride || $('btn-send-order'); 
@@ -4348,8 +4423,10 @@ document.addEventListener('input', function(e) {
            let nome = $('chk-nome').value.trim();
 let cpfFormatado = $('chk-cpf').value.trim();
 let cpf = limparCPF(cpfFormatado);
-let telefoneFormatado = $('chk-telefone').value.trim();
+let telefoneFormatado = formatarTelefone($('chk-telefone').value.trim());
 let telefone = limparTelefone(telefoneFormatado);
+
+$('chk-telefone').value = telefoneFormatado;
 let email = $('chk-email').value.trim().toLowerCase();
 let cepFormatado = $('chk-cep').value.trim();
 let cep = limparCEP(cepFormatado);
@@ -4369,8 +4446,8 @@ let pag = $('chk-pagamento').value;
     { id: 'agendamento-options-container', label: 'Data de agendamento', customValidate: () => !!dataAgendamento },
     { id: 'chk-nome', label: 'Nome completo' },
     { id: 'chk-cpf', label: 'CPF válido com 11 números', customValidate: () => cpf.length === 11 },
-    { id: 'chk-telefone', label: 'Telefone/WhatsApp válido', customValidate: () => telefone.length >= 10 },
-    { id: 'chk-email', label: 'E-mail válido', customValidate: () => emailValido(email) },
+{ id: 'chk-telefone', label: 'Telefone/WhatsApp válido com DDD', customValidate: () => telefoneValidoBR(telefone) },
+               { id: 'chk-email', label: 'E-mail válido', customValidate: () => emailValido(email) },
     { id: 'chk-cep', label: 'CEP válido com 8 números', customValidate: () => cep.length === 8 },
     { id: 'chk-cidade', label: 'Cidade' },
     { id: 'chk-bairro', label: 'Bairro' },
