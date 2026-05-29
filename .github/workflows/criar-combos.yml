@@ -2,8 +2,6 @@ name: Criar combos automaticos
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "*/50 * * * *"
 
 permissions:
   contents: write
@@ -36,7 +34,6 @@ jobs:
       - name: Diagnostico
         run: |
           echo "Evento: ${{ github.event_name }}"
-          echo "Schedule: ${{ github.event.schedule }}"
           echo "Branch: ${{ github.ref_name }}"
           echo "Data UTC:"
           date -u
