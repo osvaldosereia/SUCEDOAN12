@@ -2105,8 +2105,8 @@
     type="tel"
     id="chk-telefone"
     class="chk-input"
-    placeholder="Telefone / WhatsApp*"
-    maxlength="20"
+    placeholder="WhatsApp com DDD. Ex: 65999998888*"
+    maxlength="15"
     inputmode="numeric"
     autocomplete="tel"
 >
@@ -4423,8 +4423,8 @@ document.addEventListener('input', function(e) {
            let nome = $('chk-nome').value.trim();
 let cpfFormatado = $('chk-cpf').value.trim();
 let cpf = limparCPF(cpfFormatado);
-let telefoneFormatado = formatarTelefone($('chk-telefone').value.trim());
-let telefone = limparTelefone(telefoneFormatado);
+let telefone = limparTelefone($('chk-telefone').value.trim());
+let telefoneFormatado = formatarTelefone(telefone);
 
 $('chk-telefone').value = telefoneFormatado;
 let email = $('chk-email').value.trim().toLowerCase();
@@ -4538,9 +4538,15 @@ Detalhes: ${frente}
 cliente: { 
     nome, 
     cpf, 
-    telefone,
-    telefoneFormatado: formatarTelefone(telefone),
+    telefone: telefone,
+    telefoneFormatado: telefoneFormatado,
+
+    // Este é o campo correto para o Bling: somente números, sem máscara.
     celular: telefone,
+
+    // Campo auxiliar, caso queira usar em mensagem ou observação.
+    celularFormatado: telefoneFormatado,
+
     email,
     cep,
     cepFormatado: formatarCEP(cep),
