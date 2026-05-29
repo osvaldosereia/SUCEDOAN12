@@ -1792,6 +1792,153 @@
         font-size: 32px;
     }
 }
+
+
+        /* AJUSTES PROFISSIONAIS - CESTA / TROCA / CHECKOUT */
+        #swap-items-container {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            padding: 0 !important;
+            background: transparent !important;
+        }
+        #swap-items-container .swap-option-card {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 12px !important;
+            background: #ffffff !important;
+            border: 1px solid var(--border-light) !important;
+            border-radius: 18px !important;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04) !important;
+            cursor: default !important;
+        }
+        #swap-items-container .swap-option-card .img-wrapper {
+            width: 92px !important;
+            min-width: 92px !important;
+            height: 92px !important;
+            margin: 0 !important;
+            border-radius: 14px !important;
+            background: #f8fafc !important;
+            border: 1px solid #eef2f7 !important;
+            overflow: hidden !important;
+        }
+        #swap-items-container .swap-option-card .product-icon-list {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important;
+            padding: 6px !important;
+        }
+        #swap-items-container .swap-option-card .product-details {
+            flex: 1 !important;
+            min-width: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            align-items: stretch !important;
+            padding: 0 !important;
+        }
+        #swap-items-container .swap-option-card .product-name-list {
+            min-height: auto !important;
+            margin: 0 0 10px 0 !important;
+            font-size: 13.5px !important;
+            line-height: 1.3 !important;
+            font-weight: 800 !important;
+            color: var(--text-dark) !important;
+            text-align: left !important;
+        }
+        #swap-items-container .swap-option-bottom {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 8px !important;
+            width: 100% !important;
+            margin-top: auto !important;
+        }
+        #swap-items-container .swap-option-price {
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            min-height: 24px !important;
+            padding-right: 0 !important;
+        }
+        #swap-items-container .swap-option-price .tag-preco-list {
+            display: block !important;
+            font-size: 17px !important;
+            font-weight: 900 !important;
+            line-height: 1.1 !important;
+            color: var(--text-dark) !important;
+            white-space: nowrap !important;
+        }
+        #swap-items-container .btn-swap-option {
+            position: static !important;
+            width: 100% !important;
+            min-height: 42px !important;
+            padding: 12px 14px !important;
+            border-radius: 999px !important;
+            border: none !important;
+            background: var(--success) !important;
+            color: #ffffff !important;
+            font-size: 14px !important;
+            font-weight: 900 !important;
+            line-height: 1 !important;
+            white-space: nowrap !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            box-shadow: 0 7px 18px rgba(22, 163, 74, 0.18) !important;
+        }
+        #swap-items-container .btn-swap-option:active {
+            transform: scale(0.97) !important;
+        }
+        .basket-summary-actions {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+            margin-top: 16px !important;
+        }
+        .basket-summary-actions .btn-send,
+        .basket-summary-actions .btn-basket-secondary {
+            width: 100% !important;
+            min-height: 52px !important;
+            border-radius: 14px !important;
+            font-size: 14px !important;
+            font-weight: 900 !important;
+            text-transform: uppercase !important;
+        }
+        .btn-basket-secondary {
+            background: #ffffff !important;
+            color: var(--text-dark) !important;
+            border: 1px solid var(--border-strong) !important;
+            box-shadow: none !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            cursor: pointer !important;
+        }
+        @media (min-width: 768px) {
+            #swap-items-container .swap-option-card .img-wrapper {
+                width: 104px !important;
+                min-width: 104px !important;
+                height: 104px !important;
+            }
+            #swap-items-container .swap-option-bottom {
+                grid-template-columns: minmax(90px, 1fr) minmax(130px, auto) !important;
+                align-items: center !important;
+            }
+            #swap-items-container .btn-swap-option {
+                min-width: 130px !important;
+            }
+            .basket-summary-actions {
+                grid-template-columns: 1fr 1fr !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -1905,7 +2052,10 @@
                 <div id="basket-summary-container" style="background: #ffffff; padding: 20px; border-radius: 16px; margin-top: 25px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
                     <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 18px; margin-bottom: 15px; color: var(--text-dark);"><span>Total (<span id="basket-total-items">0</span> itens)</span><span id="basket-total-price">R$ 0,00</span></div>
                     <div id="basket-diff-container" style="display: none; margin-bottom: 15px; font-size: 13px; color: var(--text-light); background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px dashed var(--border-light);"></div>
-                    <button class="btn-send" onclick="addBasketToCart()" style="background: var(--text-dark); box-shadow: none;">Adicionar à Lista</button>
+                    <div class="basket-summary-actions">
+                        <button class="btn-send" onclick="addBasketToCart('checkout')" style="background: var(--text-dark); box-shadow: none;">Finalizar pedido</button>
+                        <button class="btn-basket-secondary" onclick="addBasketToCart('home')">Adicionar Produtos</button>
+                    </div>
                 </div>
                 <div id="vip-list-container" style="display: none;"></div>
             </div>
@@ -3216,70 +3366,104 @@ if (typeof lazyLoadImages === 'function') {
 
        window.openSwapModal = function(index) {
             let item = currentBasketItems[index];
-            if(!item) return;
+            if (!item) return;
+
             let cat = item.pObj.categoria;
             let firstWord = norm(item.pObj.name).split(' ')[0];
             let swapProds = STATE.prods.filter(p => p.categoria === cat && p.id !== item.pObj.id);
-            
-            $('swapModalTitle').innerText = "Trocando: " + item.pObj.name;
-            let btnVoltar = document.querySelector('#swapModal .btn-voltar-gigante');
-            if (btnVoltar) { btnVoltar.style.background = "var(--primary)"; btnVoltar.style.transform = "scale(1)"; }
-            
-            let html = '';
-            if(swapProds.length === 0) {
-                html = '<div style="padding: 20px; text-align: center; color: var(--text-light);">Nenhum produto disponível na mesma categoria.</div>';
-            } else {
-                let matches = []; let others = [];
-                swapProds.forEach(p => { if (norm(p.name).includes(firstWord)) matches.push(p); else others.push(p); });
+            let produtoAtualNome = item.pObj.name || 'produto selecionado';
 
-                const renderOptionCard = (p, isReplace) => {
-                    let btnText = isReplace ? "Trocar" : "Adicionar";
-                    let btnColor = isReplace ? "var(--success)" : "var(--primary)";
+            $('swapModalTitle').innerText = "Trocando: " + produtoAtualNome;
+            let btnVoltar = document.querySelector('#swapModal .btn-voltar-gigante');
+            if (btnVoltar) {
+                btnVoltar.style.background = "var(--primary)";
+                btnVoltar.style.transform = "scale(1)";
+            }
+
+            let html = '';
+
+            if (swapProds.length === 0) {
+                html = '<div style="padding: 22px; text-align: center; color: var(--text-light); background:#fff; border:1px solid var(--border-light); border-radius:16px; font-weight:800;">Nenhum produto disponível na mesma sessão.</div>';
+            } else {
+                let matches = [];
+                let others = [];
+
+                swapProds.forEach(p => {
+                    if (norm(p.name).includes(firstWord)) matches.push(p);
+                    else others.push(p);
+                });
+
+                const renderSwapSectionTitle = (title, subtitle) => `
+                    <div style="padding: 4px 2px 0; margin-top: ${html ? '14px' : '0'};">
+                        <div style="font-weight: 900; font-size: 15px; color: var(--text-dark); text-align: left;">${title}</div>
+                        ${subtitle ? `<div style="font-weight: 700; font-size: 12.5px; color: var(--text-light); margin-top: 3px; line-height:1.35;">${subtitle}</div>` : ''}
+                    </div>`;
+
+                const renderOptionCard = (p) => {
+                    const imgSrc = p.img || errorImgFallback;
+                    const nomeProduto = p.name || 'Produto';
                     return `
-                    <div class="product-card-list" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light);">
-                        <div class="img-wrapper"><img src="${p.img}" class="product-icon-list" onerror="this.src='${errorImgFallback}'"></div>
+                    <div class="product-card-list swap-option-card">
+                        <div class="img-wrapper">
+                            <img src="${imgSrc}" class="product-icon-list" loading="lazy" decoding="async" alt="${nomeProduto}" onerror="this.src='${errorImgFallback}'">
+                        </div>
                         <div class="product-details">
-                            <div class="product-name-list">${p.name}</div>
-                            <div class="card-bottom-row" style="margin-top:10px; flex-direction:column; align-items:flex-start; width:100%; gap:10px;">
-                                <div class="price-container">
-                                    <div class="tag-preco-list" style="font-size:16px;">${fmt(p.price)}</div>
+                            <div class="product-name-list">${nomeProduto}</div>
+                            <div class="swap-option-bottom">
+                                <div class="swap-option-price">
+                                    <div class="tag-preco-list">${fmt(p.price)}</div>
                                 </div>
-                                <button class="btn-didatico" style="background: ${btnColor}; color: white; width: 100%; padding: 12px; font-size: 14px; transition: all 0.3s;" onclick="confirmSwap(${index}, '${p.id}', ${isReplace}, this)">${iconPlus} ${btnText}</button>
+                                <button type="button" class="btn-swap-option" onclick="confirmSwap(${index}, '${p.id}', this); event.stopPropagation();">
+                                    ${iconPlus} Trocar
+                                </button>
                             </div>
                         </div>
                     </div>`;
                 };
 
-                if (matches.length > 0) { html += `<div style="font-weight: 800; font-size: 15px; color: var(--text-light); margin-bottom: 15px; text-align: center;">Opções sugeridas:</div>`; matches.forEach(p => html += renderOptionCard(p, true)); }
-                if (others.length > 0) { html += `<div style="font-weight: 800; font-size: 15px; color: var(--text-light); margin: 25px 0 15px; text-align: center;">Outros produtos desta sessão:</div>`; others.forEach(p => html += renderOptionCard(p, false)); }
+                if (matches.length > 0) {
+                    html += renderSwapSectionTitle('Opções sugeridas', 'Produtos mais parecidos com o item que você está trocando.');
+                    matches.forEach(p => html += renderOptionCard(p));
+                }
+
+                if (others.length > 0) {
+                    html += renderSwapSectionTitle('Outros produtos desta sessão', 'Também podem substituir o produto atual.');
+                    others.forEach(p => html += renderOptionCard(p));
+                }
             }
+
             $('swap-items-container').innerHTML = html;
             $('swapModal').classList.add('active');
             document.querySelector('#swapModal .modal-scroll-area').scrollTop = 0;
         };
 
-        window.confirmSwap = function(index, newProdId, isReplace, btnElement) {
-            let newProd = STATE.prods.find(p => p.id === newProdId);
-            if(!newProd) return;
-            
-            if (isReplace) {
-                let oldQty = currentBasketItems[index].qty;
-                let pClone = {...newProd, basketQty: oldQty};
-                currentBasketItems[index] = { pObj: pClone, qty: oldQty };
-                btnElement.innerHTML = "✅ Troca feita"; btnElement.style.background = "#64748b"; 
-            } else {
-                let existingIndex = currentBasketItems.findIndex(item => item.pObj.id === newProdId);
-                if (existingIndex > -1) { currentBasketItems[existingIndex].qty += 1; } 
-                else { let pClone = {...newProd, basketQty: 1}; currentBasketItems.push({ pObj: pClone, qty: 1 }); }
-                btnElement.innerHTML = "✅ Adicionado"; btnElement.style.background = "#64748b";
+        window.confirmSwap = function(index, newProdId, btnElement) {
+            let newProd = STATE.prods.find(p => String(p.id) === String(newProdId));
+            if (!newProd || !currentBasketItems[index]) return;
+
+            let oldQty = currentBasketItems[index].qty;
+            let pClone = {...newProd, basketQty: oldQty};
+            currentBasketItems[index] = { pObj: pClone, qty: oldQty };
+
+            if (btnElement) {
+                btnElement.innerHTML = '✅ Trocado';
+                btnElement.disabled = true;
+                btnElement.style.background = '#64748b';
+                btnElement.style.boxShadow = 'none';
             }
-            
-            let btnVoltar = document.querySelector('#swapModal .btn-voltar-gigante');
-            if (btnVoltar) {
-                btnVoltar.style.transition = "all 0.3s ease"; btnVoltar.style.background = "var(--success)"; btnVoltar.style.transform = "scale(1.05)"; 
-                setTimeout(() => { btnVoltar.style.transform = "scale(1)"; }, 300);
-            }
+
             renderBasketItemsList();
+            closeSwapModal();
+
+            const basketScrollArea = document.querySelector('#basketDetailModal .modal-scroll-area');
+            const basketItemsContainer = $('basket-items-container');
+            if (basketScrollArea && basketItemsContainer) {
+                requestAnimationFrame(() => {
+                    basketScrollArea.scrollTo({ top: basketItemsContainer.offsetTop - 8, behavior: 'smooth' });
+                });
+            }
+
+            showToast('Produto trocado com sucesso.');
         };
 
         window.closeSwapModal = function() { $('swapModal').classList.remove('active'); };
@@ -3292,7 +3476,7 @@ if (typeof lazyLoadImages === 'function') {
             }
         };
 
-       window.addBasketToCart = function() {
+       window.addBasketToCart = function(action = 'post') {
     if (!window.currentBasketId) return; 
 
     const basket = BASKETS.find(b => b.id === window.currentBasketId) || dynamicCombos.find(c => c.id === window.currentBasketId); 
@@ -3377,17 +3561,33 @@ if (typeof lazyLoadImages === 'function') {
         }
     }
     
-    if (addedCount > 0) { 
+    if (addedCount > 0) {
         cancelarDescontoComboSeQuebrou();
-        updateTotals(); 
-        saveCart(); 
+        updateTotals();
+        saveCart();
 
-        $('basketModalTopInfo').style.display = 'none'; 
-        $('basket-items-header').style.display = 'none'; 
-        $('basket-items-container').style.display = 'none'; 
-        $('basket-summary-container').style.display = 'none'; 
+        if (action === 'checkout') {
+            closeSwapModal();
+            $('basketDetailModal').classList.remove('active');
+            window.currentBasketId = null;
+            openCheckout();
+            return;
+        }
 
-        renderPostBasketView(); 
+        if (action === 'home') {
+            closeSwapModal();
+            closeBasketDetail();
+            window.location.hash = '#/';
+            showToast('Produtos enviados para o checkout. Continue comprando.');
+            return;
+        }
+
+        $('basketModalTopInfo').style.display = 'none';
+        $('basket-items-header').style.display = 'none';
+        $('basket-items-container').style.display = 'none';
+        $('basket-summary-container').style.display = 'none';
+
+        renderPostBasketView();
     }
 };
 
