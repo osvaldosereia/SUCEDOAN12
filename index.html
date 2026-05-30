@@ -2101,14 +2101,14 @@
     inputmode="numeric"
     autocomplete="off"
 >
-                <input
+              <input
     type="tel"
     id="chk-telefone"
     class="chk-input"
-    placeholder="WhatsApp com DDD. Ex: 65999998888*"
-    maxlength="15"
-    inputmode="numeric"
-    autocomplete="tel"
+    placeholder="WhatsApp com DDD. Ex: (65) 99999-8888*"
+    maxlength="18"
+    inputmode="tel"
+    autocomplete="tel-national"
 >
                 <input
                     type="email"
@@ -4228,41 +4228,103 @@ function limparNumeros(valor, limite) {
 function limparTelefone(valor) {
     let tel = String(valor || '').replace(/\D/g, '');
 
-    // Normaliza números salvos pelo navegador/localStorage em formatos diferentes.
-    // O sistema usa sempre 11 dígitos nacionais: DDD + 9 dígitos do celular.
     if (!tel) return '';
 
-    // Remove prefixo internacional 00, se vier assim: 005565999958040
-    if (tel.startsWith('00')) tel = tel.slice(2);
+    // Remove prefixo internacional 00
+    // Ex: 00556599998888 -> 556599998888
+    while (tel.startsWith('00')) {
+        tel = tel.slice(2);
+    }
 
-    // Remove código do Brasil quando vier completo: 55 + DDD + número
-    // Exemplo: 5565999958040 -> 65999958040
-    if (tel.startsWith('55') && tel.length >= 12) tel = tel.slice(2);
+    // Remove código do Brasil quando veio completo:
+    // Ex: 5565999998888 -> 65999998888
+    if (tel.length >= 12 && tel.startsWith('55')) {
+        const depoisDo55 = tel.slice(2);
 
-    // Alguns celulares/autocomplete salvam apenas 55 + número, sem DDD real.
-    // Exemplo problemático: 55999958040. Para a loja, assumimos DDD 65.
+        // Se depois do 55 começa com DDD 65, remove o 55
+        if (depoisDo55.startsWith(CHECKOUT_DEFAULT_DDD)) {
+            tel = depoisDo55;
+        }
+    }
+
+    // Corrige o problema principal:
+    // Quando o autocomplete coloca 55 no lugar do DDD
+    // Ex: 55999998888 -> 65999998888
     if (tel.length === 11 && tel.startsWith('55') && tel.charAt(2) === '9') {
         tel = CHECKOUT_DEFAULT_DDD + tel.slice(2);
     }
 
-    // Remove zero antes do DDD
-    // Exemplo: 065999958040 -> 65999958040
-    if (tel.startsWith('0') && tel.length >= 11) tel = tel.slice(1);
+    // Se a pessoa digitou apenas "55", não deixa virar DDD visual
+    if (tel === '55') {
+        tel = CHECKOUT_DEFAULT_DDD;
+    }
 
-    // Se veio só o celular com 9 dígitos, completa com o DDD padrão da loja.
+    // Remove zero antes do DDD
+    // Ex: 065999998888 -> 65999998888
+    if (tel.length >= 12 && tel.startsWith('0')) {
+        tel = tel.slice(1);
+    }
+
+    // Se digitou somente o celular, completa com DDD 65
+    // Ex: 999998888 -> 65999998888
     if (tel.length === 9 && tel.startsWith('9')) {
         tel = CHECKOUT_DEFAULT_DDD + tel;
     }
 
-    // Se ainda vier maior que 11, usa os últimos 11 dígitos úteis.
-    if (tel.length > 11) tel = tel.slice(-11);
+    // Se digitou DDD + telefone antigo com 8 dígitos, adiciona o 9
+    // Ex: 6599998888 -> 65999998888
+    if (tel.length === 10 && tel.startsWith(CHECKOUT_DEFAULT_DDD)) {
+        tel = CHECKOUT_DEFAULT_DDD + '9' + tel.slice(2);
+    }
 
-    // Se vier com 10 dígitos, tenta transformar em celular com 9.
-    // Exemplo: 6599958040 -> 65999958040
-    if (tel.length === 10) {
-        const ddd = tel.slice(0, 2);
-        const numero = tel.slice(2);
-        if (/^[2-9][0-9]$/.test(ddd)) tel = ddd + '9' + numero;
+    // Segurança final:
+    // Se ainda veio maior que 11, tenta preservar DDD 65 + celular
+    if (tel.length > 11) {
+        const posicaoDDD65 = tel.lastIndexOf(CHECKOUT_DEFAULT_DDD);
+
+        if (posicaoDDD65 !== -1) {
+            const possivelTelefone = tel.slice(posicaoDDD65, posicaoDDD65 + 11);
+
+            if (possivelTelefone.length === 11 && possivelTelefone.charAt(2) === '9') {
+                tel = possivelTelefone;
+            } else {
+                tel = tel.slice(-11);
+            }
+        } else {
+            tel = tel.slice(-11);
+        }
+    }
+
+    // Segunda segurança contra o erro do 55 no lugar do DDD
+    if (tel.length === 11 && tel.startsWith('55') && tel.charAt(2) === '9') {
+        tel = CHECKOUT_DEFAULT_DDD + tel.slice(2);
+    }
+
+    return tel;
+}
+
+function formatarTelefone(valor) {
+    const tel = limparTelefone(valor);
+
+    if (!tel) return '';
+
+    // Nunca deixa aparecer (55) no cadastro
+    if (tel.length === 11 && tel.startsWith('55') && tel.charAt(2) === '9') {
+        return formatarTelefone(CHECKOUT_DEFAULT_DDD + tel.slice(2));
+    }
+
+    if (tel.length >= 11) {
+        return tel.slice(0, 11).replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    }
+
+    if (tel.length > 6) {
+        return tel.replace(/(\d{2})(\d{4,5})(\d{0,4})/, function(_, ddd, parte1, parte2) {
+            return parte2 ? `(${ddd}) ${parte1}-${parte2}` : `(${ddd}) ${parte1}`;
+        });
+    }
+
+    if (tel.length > 2) {
+        return tel.replace(/(\d{2})(\d+)/, '($1) $2');
     }
 
     return tel;
@@ -4271,18 +4333,14 @@ function limparTelefone(valor) {
 function telefoneValidoBR(valor) {
     const tel = limparTelefone(valor);
 
-    if (tel.length !== 11) return false;
+    // Precisa ficar exatamente: 65 + 9 dígitos
+    // Ex: 65999998888
+    if (!/^65\d{9}$/.test(tel)) return false;
 
-    const ddd = tel.slice(0, 2);
-    const numero = tel.slice(2);
+    // Depois do DDD, celular precisa começar com 9
+    if (tel.charAt(2) !== '9') return false;
 
-    // DDD brasileiro não começa com 0 nem 1.
-    if (!/^[2-9][0-9]$/.test(ddd)) return false;
-
-    // Celular precisa começar com 9.
-    if (!numero.startsWith('9')) return false;
-
-    // Bloqueia números falsos tipo 99999999999.
+    // Bloqueia número falso repetido
     if (/^(\d)\1+$/.test(tel)) return false;
 
     return true;
@@ -4292,29 +4350,13 @@ function limparCEP(valor) {
     return limparNumeros(valor, 8);
 }
 
-function formatarTelefone(valor) {
-    const tel = limparTelefone(valor);
-
-    if (!tel) return '';
-
-    if (tel.length > 10) {
-        return tel.replace(/(\d{2})(\d{5})(\d{1,4})/, "($1) $2-$3");
-    }
-
-    if (tel.length > 6) {
-        return tel.replace(/(\d{2})(\d{4})(\d{1,4})/, "($1) $2-$3");
-    }
-
-    if (tel.length > 2) {
-        return tel.replace(/(\d{2})(\d{1,5})/, "($1) $2");
-    }
-
-    return tel;
-}
-
 function formatarCEP(valor) {
     const cep = limparCEP(valor);
-    if (cep.length > 5) return cep.replace(/(\d{5})(\d{1,3})/, "$1-$2");
+
+    if (cep.length > 5) {
+        return cep.replace(/(\d{5})(\d{1,3})/, '$1-$2');
+    }
+
     return cep;
 }
 
@@ -4378,8 +4420,14 @@ document.addEventListener('input', function(e) {
         }
     }
 
-   if (e.target.id === 'chk-telefone') {
+  if (e.target.id === 'chk-telefone') {
     e.target.value = formatarTelefone(e.target.value);
+
+    // Garante que nunca apareça (55) no lugar do DDD
+    if (e.target.value.startsWith('(55)')) {
+        const corrigido = CHECKOUT_DEFAULT_DDD + limparTelefone(e.target.value).slice(2);
+        e.target.value = formatarTelefone(corrigido);
+    }
 
     if (telefoneValidoBR(e.target.value)) {
         e.target.classList.remove('checkout-required-error');
