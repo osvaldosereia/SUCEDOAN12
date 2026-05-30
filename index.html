@@ -4225,38 +4225,33 @@ function limparNumeros(valor, limite) {
     return typeof limite === 'number' ? nums.slice(0, limite) : nums;
 }
 
-function limparTelefone(valor) {
-    let tel = String(valor || '').replace(/\D/g, '');
+function telefoneSomenteNumeros(valor) {
+    return String(valor || '').replace(/\D/g, '');
+}
+
+function corrigirTelefoneFinal(valor) {
+    let tel = telefoneSomenteNumeros(valor);
 
     if (!tel) return '';
 
-    // Remove prefixo internacional 00
-    // Ex: 00556599998888 -> 556599998888
     while (tel.startsWith('00')) {
         tel = tel.slice(2);
     }
 
-    // Remove código do Brasil quando veio completo:
+    // Remove DDI 55 quando vier: 55 + 65 + telefone
     // Ex: 5565999998888 -> 65999998888
     if (tel.length >= 12 && tel.startsWith('55')) {
-        const depoisDo55 = tel.slice(2);
+        const semDDI = tel.slice(2);
 
-        // Se depois do 55 começa com DDD 65, remove o 55
-        if (depoisDo55.startsWith(CHECKOUT_DEFAULT_DDD)) {
-            tel = depoisDo55;
+        if (semDDI.startsWith(CHECKOUT_DEFAULT_DDD)) {
+            tel = semDDI;
         }
     }
 
-    // Corrige o problema principal:
-    // Quando o autocomplete coloca 55 no lugar do DDD
+    // Corrige quando o navegador/autocomplete colocou 55 no lugar do DDD
     // Ex: 55999998888 -> 65999998888
     if (tel.length === 11 && tel.startsWith('55') && tel.charAt(2) === '9') {
         tel = CHECKOUT_DEFAULT_DDD + tel.slice(2);
-    }
-
-    // Se a pessoa digitou apenas "55", não deixa virar DDD visual
-    if (tel === '55') {
-        tel = CHECKOUT_DEFAULT_DDD;
     }
 
     // Remove zero antes do DDD
@@ -4265,28 +4260,27 @@ function limparTelefone(valor) {
         tel = tel.slice(1);
     }
 
-    // Se digitou somente o celular, completa com DDD 65
+    // Se veio só o celular, adiciona DDD 65
     // Ex: 999998888 -> 65999998888
     if (tel.length === 9 && tel.startsWith('9')) {
         tel = CHECKOUT_DEFAULT_DDD + tel;
     }
 
-    // Se digitou DDD + telefone antigo com 8 dígitos, adiciona o 9
+    // Se veio DDD 65 + telefone antigo com 8 dígitos, adiciona o 9
     // Ex: 6599998888 -> 65999998888
     if (tel.length === 10 && tel.startsWith(CHECKOUT_DEFAULT_DDD)) {
         tel = CHECKOUT_DEFAULT_DDD + '9' + tel.slice(2);
     }
 
-    // Segurança final:
-    // Se ainda veio maior que 11, tenta preservar DDD 65 + celular
+    // Segurança final para número grande demais
     if (tel.length > 11) {
-        const posicaoDDD65 = tel.lastIndexOf(CHECKOUT_DEFAULT_DDD);
+        const pos65 = tel.lastIndexOf(CHECKOUT_DEFAULT_DDD);
 
-        if (posicaoDDD65 !== -1) {
-            const possivelTelefone = tel.slice(posicaoDDD65, posicaoDDD65 + 11);
+        if (pos65 !== -1) {
+            const possivel = tel.slice(pos65, pos65 + 11);
 
-            if (possivelTelefone.length === 11 && possivelTelefone.charAt(2) === '9') {
-                tel = possivelTelefone;
+            if (possivel.length === 11 && possivel.charAt(2) === '9') {
+                tel = possivel;
             } else {
                 tel = tel.slice(-11);
             }
@@ -4295,7 +4289,7 @@ function limparTelefone(valor) {
         }
     }
 
-    // Segunda segurança contra o erro do 55 no lugar do DDD
+    // Segunda segurança contra 55 no lugar do DDD
     if (tel.length === 11 && tel.startsWith('55') && tel.charAt(2) === '9') {
         tel = CHECKOUT_DEFAULT_DDD + tel.slice(2);
     }
@@ -4303,15 +4297,14 @@ function limparTelefone(valor) {
     return tel;
 }
 
+function limparTelefone(valor) {
+    return corrigirTelefoneFinal(valor);
+}
+
 function formatarTelefone(valor) {
-    const tel = limparTelefone(valor);
+    const tel = corrigirTelefoneFinal(valor);
 
     if (!tel) return '';
-
-    // Nunca deixa aparecer (55) no cadastro
-    if (tel.length === 11 && tel.startsWith('55') && tel.charAt(2) === '9') {
-        return formatarTelefone(CHECKOUT_DEFAULT_DDD + tel.slice(2));
-    }
 
     if (tel.length >= 11) {
         return tel.slice(0, 11).replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
@@ -4331,16 +4324,12 @@ function formatarTelefone(valor) {
 }
 
 function telefoneValidoBR(valor) {
-    const tel = limparTelefone(valor);
+    const tel = corrigirTelefoneFinal(valor);
 
-    // Precisa ficar exatamente: 65 + 9 dígitos
-    // Ex: 65999998888
     if (!/^65\d{9}$/.test(tel)) return false;
 
-    // Depois do DDD, celular precisa começar com 9
     if (tel.charAt(2) !== '9') return false;
 
-    // Bloqueia número falso repetido
     if (/^(\d)\1+$/.test(tel)) return false;
 
     return true;
@@ -4366,17 +4355,31 @@ function emailValido(valor) {
 
 function salvarDadosClienteCheckout() {
     const dados = {};
+
     [
         'chk-nome', 'chk-cpf', 'chk-telefone', 'chk-email', 'chk-cep',
         'chk-cidade', 'chk-bairro', 'chk-rua', 'chk-quadra', 'chk-casa',
         'chk-frente', 'chk-pagamento'
     ].forEach(id => {
         const el = $(id);
-        if (el) dados[id] = id === 'chk-telefone' ? formatarTelefone(el.value || '') : (el.value || '');
+        if (!el) return;
+
+        if (id === 'chk-telefone') {
+            const nums = telefoneSomenteNumeros(el.value || '');
+
+            // Se apagou o telefone, salva vazio.
+            // Isso impede o número antigo de voltar sozinho.
+            dados[id] = nums ? String(el.value || '') : '';
+        } else {
+            dados[id] = el.value || '';
+        }
     });
 
     try {
-        localStorage.setItem(CHECKOUT_CLIENT_KEY, JSON.stringify({ savedAt: Date.now(), dados }));
+        localStorage.setItem(CHECKOUT_CLIENT_KEY, JSON.stringify({
+            savedAt: Date.now(),
+            dados
+        }));
     } catch (e) {}
 }
 
@@ -4384,6 +4387,7 @@ function carregarDadosClienteCheckout() {
     try {
         const raw = localStorage.getItem(CHECKOUT_CLIENT_KEY);
         if (!raw) return {};
+
         const parsed = JSON.parse(raw);
         return parsed && parsed.dados ? parsed.dados : {};
     } catch (e) {
@@ -4396,17 +4400,31 @@ function preencherCheckoutSalvo() {
 
     Object.entries(dados).forEach(([id, value]) => {
         const el = $(id);
-        if (el && !String(el.value || '').trim()) el.value = value || '';
+        if (el && !String(el.value || '').trim()) {
+            el.value = value || '';
+        }
     });
 
     const cpfEl = $('chk-cpf');
-    if (cpfEl) cpfEl.value = formatarCPF(cpfEl.value);
+    if (cpfEl) {
+        cpfEl.value = formatarCPF(cpfEl.value);
+    }
 
     const telefoneEl = $('chk-telefone');
-    if (telefoneEl) telefoneEl.value = formatarTelefone(telefoneEl.value);
+    if (telefoneEl) {
+        const nums = telefoneSomenteNumeros(telefoneEl.value);
+
+        if (!nums) {
+            telefoneEl.value = '';
+        } else {
+            telefoneEl.value = formatarTelefone(telefoneEl.value);
+        }
+    }
 
     const cepEl = $('chk-cep');
-    if (cepEl) cepEl.value = formatarCEP(cepEl.value);
+    if (cepEl) {
+        cepEl.value = formatarCEP(cepEl.value);
+    }
 }
 
 document.addEventListener('input', function(e) {
@@ -4418,21 +4436,37 @@ document.addEventListener('input', function(e) {
         if (limparCPF(e.target.value).length === 11) {
             e.target.classList.remove('checkout-required-error');
         }
+
+        salvarDadosClienteCheckout();
+        return;
     }
 
-  if (e.target.id === 'chk-telefone') {
-    e.target.value = formatarTelefone(e.target.value);
+    if (e.target.id === 'chk-telefone') {
+        const nums = telefoneSomenteNumeros(e.target.value);
 
-    // Garante que nunca apareça (55) no lugar do DDD
-    if (e.target.value.startsWith('(55)')) {
-        const corrigido = CHECKOUT_DEFAULT_DDD + limparTelefone(e.target.value).slice(2);
-        e.target.value = formatarTelefone(corrigido);
-    }
+        // Se apagou tudo, deixa apagar de verdade.
+        // Não completa DDD, não coloca 9 e não formata.
+        if (!nums) {
+            e.target.value = '';
+            e.target.classList.remove('checkout-required-error');
+            salvarDadosClienteCheckout();
+            return;
+        }
 
-    if (telefoneValidoBR(e.target.value)) {
-        e.target.classList.remove('checkout-required-error');
+        // Enquanto digita/apaga, NÃO completa automaticamente.
+        // Só corrige visualmente o 55 ocupando o lugar do DDD.
+        // Ex: 55999998888 -> 65999998888
+        if (nums.length >= 3 && nums.startsWith('55') && nums.charAt(2) === '9') {
+            e.target.value = CHECKOUT_DEFAULT_DDD + nums.slice(2);
+        }
+
+        if (telefoneValidoBR(e.target.value)) {
+            e.target.classList.remove('checkout-required-error');
+        }
+
+        salvarDadosClienteCheckout();
+        return;
     }
-}
 
     if (e.target.id === 'chk-cep') {
         e.target.value = formatarCEP(e.target.value);
@@ -4440,36 +4474,49 @@ document.addEventListener('input', function(e) {
         if (limparCEP(e.target.value).length === 8) {
             e.target.classList.remove('checkout-required-error');
         }
+
+        salvarDadosClienteCheckout();
+        return;
     }
 
-    if (e.target.id === 'chk-email' && emailValido(e.target.value)) {
-        e.target.classList.remove('checkout-required-error');
+    if (e.target.id === 'chk-email') {
+        if (emailValido(e.target.value)) {
+            e.target.classList.remove('checkout-required-error');
+        }
+
+        salvarDadosClienteCheckout();
+        return;
     }
 
     if (e.target.id && e.target.id.startsWith('chk-')) {
-        salvarDadosClienteCheckout();
-    }
-});
-['chk-nome', 'chk-cpf', 'chk-telefone', 'chk-email', 'chk-cep', 'chk-cidade', 'chk-bairro', 'chk-rua', 'chk-casa', 'chk-frente', 'chk-pagamento'].forEach(id => {
-    document.addEventListener('input', function(e) {
-        if (!e.target || e.target.id !== id) return;
-
-        if (id === 'chk-telefone') {
-            if (telefoneValidoBR(e.target.value)) {
-                e.target.classList.remove('checkout-required-error');
-            }
-            return;
-        }
-
         if (String(e.target.value || '').trim()) {
             e.target.classList.remove('checkout-required-error');
         }
-    });
 
+        salvarDadosClienteCheckout();
+    }
+});
+
+[
+    'chk-nome', 'chk-cpf', 'chk-telefone', 'chk-email', 'chk-cep',
+    'chk-cidade', 'chk-bairro', 'chk-rua', 'chk-casa',
+    'chk-frente', 'chk-pagamento'
+].forEach(id => {
     document.addEventListener('change', function(e) {
         if (!e.target || e.target.id !== id) return;
 
         if (id === 'chk-telefone') {
+            const nums = telefoneSomenteNumeros(e.target.value);
+
+            // Se apagou tudo, não deixa voltar número antigo.
+            if (!nums) {
+                e.target.value = '';
+                e.target.classList.remove('checkout-required-error');
+                salvarDadosClienteCheckout();
+                return;
+            }
+
+            // Só corrige e formata quando sair do campo.
             e.target.value = formatarTelefone(e.target.value);
 
             if (telefoneValidoBR(e.target.value)) {
@@ -4482,16 +4529,16 @@ document.addEventListener('input', function(e) {
 
         if (String(e.target.value || '').trim()) {
             e.target.classList.remove('checkout-required-error');
-            salvarDadosClienteCheckout();
         }
+
+        salvarDadosClienteCheckout();
     });
 });
 
-       function abrirWhatsAppPedido(mensagem, janelaPreAberta) {
+function abrirWhatsAppPedido(mensagem, janelaPreAberta) {
     const numeroLoja = '5565998150975';
     const texto = encodeURIComponent(mensagem);
 
-    // Mais simples e mais compatível em Android, iPhone e navegador
     const urlWhatsApp = `https://api.whatsapp.com/send?phone=${numeroLoja}&text=${texto}`;
 
     try {
@@ -4501,10 +4548,8 @@ document.addEventListener('input', function(e) {
         }
     } catch (e) {}
 
-    // Fallback: tenta abrir em nova aba
     const novaJanela = window.open(urlWhatsApp, '_blank');
 
-    // Se o navegador bloquear popup, abre na mesma aba
     if (!novaJanela) {
         window.location.href = urlWhatsApp;
     }
