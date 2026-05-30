@@ -2151,6 +2151,7 @@
 
             <div class="chk-inline-summary">
                 <div class="summary-row"><span>Subtotal dos Produtos</span><span id="sum-sub">R$ 0,00</span></div>
+                <div class="summary-row" style="color: var(--success); display: none;" id="sum-combo-row"><span>Desconto do Combo</span><span id="sum-combo-desc">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-atacado-row"><span>Desconto Atacado (Volume)</span><span id="sum-atacado-desc">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-agendamento-row"><span>Desconto de Agendamento</span><span id="sum-agendamento-desc">R$ 0,00</span></div>
                 <div class="summary-row total"><span>Total Estimado</span><span id="sum-total">R$ 0,00</span></div>
@@ -4047,7 +4048,7 @@ ${textoExtra}
             let htmlItems = STATE.cartOrder.map(id => {
                 if (String(id).startsWith('fee_')) return ''; 
                 
-                let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id]; if(!p) return '';
+                let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id]; if(!p || p.isComboDiscount) return '';
                 return `
                     <div class="cart-item-row">
                         <div class="cart-item-info">
@@ -4068,25 +4069,42 @@ ${textoExtra}
         }
 
         function updateTotals() {
-            let sumBase = 0; let count = 0; let atacadoTotal = 0;
-            
-            Object.entries(STATE.cart).forEach(([id, q]) => { 
-                let p = STATE.prods.find(x => String(x.id) === String(id)); 
-                if (p) { 
-                    sumBase += p.price * q; 
-                    if (!String(id).startsWith('fee_cesta')) {
-                        count += q; 
-                        if (q >= 3) {
-                            atacadoTotal += (p.price * 0.05) * q;
-                        }
-                    } 
-                } 
+            let sumBase = 0;
+            let count = 0;
+            let atacadoTotal = 0;
+            let descontoCombo = 0;
+
+            Object.entries(STATE.cart).forEach(([id, q]) => {
+                let p = STATE.prods.find(x => String(x.id) === String(id));
+                if (!p) return;
+
+                const qtd = Number(q || 0);
+                const valorLinha = Number(p.price || 0) * qtd;
+
+                if (p.isComboDiscount) {
+                    descontoCombo += Math.abs(valorLinha);
+                    return;
+                }
+
+                sumBase += valorLinha;
+
+                if (!String(id).startsWith('fee_cesta')) {
+                    count += qtd;
+                    if (qtd >= 3) {
+                        atacadoTotal += (Number(p.price || 0) * 0.05) * qtd;
+                    }
+                }
             });
-            
-            $('sum-sub').innerText = fmt(sumBase); 
-            
+
+            $('sum-sub').innerText = fmt(sumBase);
+
+            const comboRow = $('sum-combo-row');
+            const comboDesc = $('sum-combo-desc');
+            if (comboDesc) comboDesc.innerText = `- ${fmt(descontoCombo)}`;
+            if (comboRow) comboRow.style.display = descontoCombo > 0 ? 'flex' : 'none';
+
             STATE.atacadoDiscount = atacadoTotal;
-            $('sum-atacado-desc').innerText = `- ${fmt(atacadoTotal)}`; 
+            $('sum-atacado-desc').innerText = `- ${fmt(atacadoTotal)}`;
             $('sum-atacado-row').style.display = atacadoTotal > 0 ? 'flex' : 'none';
 
             let agendamentoDiscount = 0;
@@ -4096,49 +4114,49 @@ ${textoExtra}
                 const discountPercent = parseFloat(selectedAgendamento.getAttribute('data-discount-percent')) || 0;
 
                 if (isSabado && discountPercent > 0) {
-                    const baseParaDescontoAgendamento = Math.max(sumBase - STATE.atacadoDiscount, 0);
+                    const baseParaDescontoAgendamento = Math.max(sumBase - descontoCombo - STATE.atacadoDiscount, 0);
                     agendamentoDiscount = baseParaDescontoAgendamento * (discountPercent / 100);
                 }
             }
             STATE.agendamentoDiscount = agendamentoDiscount;
             atualizarPreviewSabadoAgendamento();
-            
+
             $('sum-agendamento-desc').innerText = `- ${fmt(agendamentoDiscount)}`;
             $('sum-agendamento-row').style.display = agendamentoDiscount > 0 ? 'flex' : 'none';
-            
-            let finalTotal = sumBase - STATE.atacadoDiscount - STATE.agendamentoDiscount; 
+
+            let finalTotal = Math.max(sumBase - descontoCombo - STATE.atacadoDiscount - STATE.agendamentoDiscount, 0);
             $('sum-total').innerText = fmt(finalTotal);
-            
-            let btn = $('btn-send-order'); 
+
+            let btn = $('btn-send-order');
             let warningMsg = $('min-order-warning');
-            
-            btn.disabled = false; 
-            btn.style.background = 'var(--whatsapp)'; 
-            btn.style.boxShadow = '0 4px 15px rgba(37, 211, 102, 0.3)'; 
-            
-            if (finalTotal < MIN_ORDER) { 
-                if(warningMsg) warningMsg.style.display = 'block'; 
-            } else { 
-                if(warningMsg) warningMsg.style.display = 'none'; 
+
+            btn.disabled = false;
+            btn.style.background = 'var(--whatsapp)';
+            btn.style.boxShadow = '0 4px 15px rgba(37, 211, 102, 0.3)';
+
+            if (finalTotal < MIN_ORDER) {
+                if(warningMsg) warningMsg.style.display = 'block';
+            } else {
+                if(warningMsg) warningMsg.style.display = 'none';
             }
-            
+
             let badges = document.querySelectorAll('.cart-badge');
             let bottomSendTotal = $('bottom-send-total');
             let bottomSendBtn = $('bottom-send-btn');
-            
-            if (count > 0) { 
+
+            if (count > 0) {
                 let txt = count > 99 ? '99+' : count;
                 badges.forEach(b => { b.style.display = 'block'; b.innerText = txt; });
-                
+
                 if (bottomSendTotal) bottomSendTotal.innerText = fmt(finalTotal);
                 if (bottomSendBtn) {
                     bottomSendBtn.disabled = false;
                     bottomSendBtn.style.background = finalTotal < MIN_ORDER ? '#f59e0b' : 'var(--whatsapp)';
                     bottomSendBtn.style.boxShadow = finalTotal < MIN_ORDER ? '0 4px 12px rgba(245, 158, 11, 0.3)' : '0 4px 12px rgba(37, 211, 102, 0.3)';
                 }
-            } else { 
+            } else {
                 badges.forEach(b => { b.style.display = 'none'; });
-                
+
                 if (bottomSendTotal) bottomSendTotal.innerText = 'R$ 0,00';
                 if (bottomSendBtn) {
                     bottomSendBtn.disabled = true;
@@ -4200,6 +4218,7 @@ function formatarCPF(valor) {
 }
 
 const CHECKOUT_CLIENT_KEY = 'da_checkout_cliente_v1';
+const CHECKOUT_DEFAULT_DDD = '65';
 
 function limparNumeros(valor, limite) {
     const nums = String(valor || '').replace(/\D/g, '');
@@ -4209,37 +4228,41 @@ function limparNumeros(valor, limite) {
 function limparTelefone(valor) {
     let tel = String(valor || '').replace(/\D/g, '');
 
+    // Normaliza números salvos pelo navegador/localStorage em formatos diferentes.
+    // O sistema usa sempre 11 dígitos nacionais: DDD + 9 dígitos do celular.
+    if (!tel) return '';
+
     // Remove prefixo internacional 00, se vier assim: 005565999958040
-    if (tel.startsWith('00')) {
-        tel = tel.slice(2);
-    }
+    if (tel.startsWith('00')) tel = tel.slice(2);
 
     // Remove código do Brasil quando vier completo: 55 + DDD + número
     // Exemplo: 5565999958040 -> 65999958040
-    if (tel.startsWith('55') && tel.length >= 12) {
-        tel = tel.slice(2);
+    if (tel.startsWith('55') && tel.length >= 12) tel = tel.slice(2);
+
+    // Alguns celulares/autocomplete salvam apenas 55 + número, sem DDD real.
+    // Exemplo problemático: 55999958040. Para a loja, assumimos DDD 65.
+    if (tel.length === 11 && tel.startsWith('55') && tel.charAt(2) === '9') {
+        tel = CHECKOUT_DEFAULT_DDD + tel.slice(2);
     }
 
     // Remove zero antes do DDD
     // Exemplo: 065999958040 -> 65999958040
-    if (tel.startsWith('0') && tel.length >= 11) {
-        tel = tel.slice(1);
+    if (tel.startsWith('0') && tel.length >= 11) tel = tel.slice(1);
+
+    // Se veio só o celular com 9 dígitos, completa com o DDD padrão da loja.
+    if (tel.length === 9 && tel.startsWith('9')) {
+        tel = CHECKOUT_DEFAULT_DDD + tel;
     }
 
-    // Se ainda vier maior que 11, usa os últimos 11 dígitos úteis
-    if (tel.length > 11) {
-        tel = tel.slice(-11);
-    }
+    // Se ainda vier maior que 11, usa os últimos 11 dígitos úteis.
+    if (tel.length > 11) tel = tel.slice(-11);
 
-    // Se vier com 10 dígitos, tenta transformar em celular com 9
+    // Se vier com 10 dígitos, tenta transformar em celular com 9.
     // Exemplo: 6599958040 -> 65999958040
     if (tel.length === 10) {
         const ddd = tel.slice(0, 2);
         const numero = tel.slice(2);
-
-        if (/^[2-9][0-9]$/.test(ddd)) {
-            tel = ddd + '9' + numero;
-        }
+        if (/^[2-9][0-9]$/.test(ddd)) tel = ddd + '9' + numero;
     }
 
     return tel;
@@ -4253,13 +4276,13 @@ function telefoneValidoBR(valor) {
     const ddd = tel.slice(0, 2);
     const numero = tel.slice(2);
 
-    // DDD brasileiro não começa com 0 nem 1
+    // DDD brasileiro não começa com 0 nem 1.
     if (!/^[2-9][0-9]$/.test(ddd)) return false;
 
-    // Celular precisa começar com 9
+    // Celular precisa começar com 9.
     if (!numero.startsWith('9')) return false;
 
-    // Bloqueia números falsos tipo 99999999999
+    // Bloqueia números falsos tipo 99999999999.
     if (/^(\d)\1+$/.test(tel)) return false;
 
     return true;
@@ -4307,7 +4330,7 @@ function salvarDadosClienteCheckout() {
         'chk-frente', 'chk-pagamento'
     ].forEach(id => {
         const el = $(id);
-        if (el) dados[id] = el.value || '';
+        if (el) dados[id] = id === 'chk-telefone' ? formatarTelefone(el.value || '') : (el.value || '');
     });
 
     try {
@@ -4416,6 +4439,25 @@ document.addEventListener('input', function(e) {
     });
 });
 
+        function abrirWhatsAppPedido(mensagem, janelaPreAberta) {
+            const texto = encodeURIComponent(mensagem);
+            const numeroLoja = '5565998150975';
+            const urlPrincipal = `https://wa.me/${numeroLoja}?text=${texto}`;
+            const urlAlternativa = `https://api.whatsapp.com/send?phone=${numeroLoja}&text=${texto}`;
+
+            try {
+                if (janelaPreAberta && !janelaPreAberta.closed) {
+                    janelaPreAberta.location.href = urlPrincipal;
+                    return;
+                }
+            } catch (e) {}
+
+            const aberta = window.open(urlPrincipal, '_blank', 'noopener,noreferrer');
+            if (!aberta) {
+                window.location.href = urlAlternativa;
+            }
+        }
+
         window.sendOrder = async function(btnOverride) {
             const btn = btnOverride || $('btn-send-order'); 
             if (!btnOverride && btn.disabled) return;
@@ -4470,6 +4512,8 @@ let pag = $('chk-pagamento').value;
                 mostrarErrosCheckout(faltantes);
                 return;
             }
+
+            const janelaWhatsApp = window.open('', '_blank');
             
             btn.innerHTML = "Processando...";
             const orderId = String(Date.now()).slice(-6); 
@@ -4478,26 +4522,38 @@ let pag = $('chk-pagamento').value;
             let totalTaxasExtras = 0;
             let pedidoItens = [];
 
-            Object.entries(STATE.cart).forEach(([cartId, q]) => { 
-                const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
-                if (p) { 
-                    totalBruto += p.price * q; 
-                    if (!String(cartId).startsWith('fee_cesta')) {
-                        itemsTxt += `${q}x ${p.name}\n`; 
-                        pedidoItens.push({
+            let descontoCombo = 0;
+
+            Object.entries(STATE.cart).forEach(([cartId, q]) => {
+                const p = STATE.prods.find(x => String(x.id) === String(cartId));
+                if (!p) return;
+
+                const qtd = Number(q || 0);
+                const valorLinha = Number(p.price || 0) * qtd;
+
+                if (p.isComboDiscount) {
+                    descontoCombo += Math.abs(valorLinha);
+                    return;
+                }
+
+                totalBruto += valorLinha;
+
+                if (!String(cartId).startsWith('fee_cesta')) {
+                    itemsTxt += `${qtd}x ${p.name}
+`;
+                    pedidoItens.push({
   firebaseKey: String(p.firebaseKey || ""),
   sku: String(p.codigo || p.id),
   nome: p.name,
-  qtd: q,
-  price: p.price
+  qtd: qtd,
+  price: Number(p.price || 0)
 });
-                    } else { 
-                        totalTaxasExtras += (p.price * q);
-                    } 
-                } 
+                } else {
+                    totalTaxasExtras += valorLinha;
+                }
             });
 
-            let final = totalBruto - STATE.atacadoDiscount - STATE.agendamentoDiscount;
+            let final = Math.max(totalBruto - descontoCombo - STATE.atacadoDiscount - STATE.agendamentoDiscount, 0);
 
             let basketInfo = "";
             let hasBasket = Object.keys(STATE.basketCustomizations).length > 0;
@@ -4533,7 +4589,8 @@ Detalhes: ${frente}
                         id: orderId,
                         itens: pedidoItens,
                         total: final,
-                        desconto: STATE.atacadoDiscount + STATE.agendamentoDiscount,
+                        desconto: descontoCombo + STATE.atacadoDiscount + STATE.agendamentoDiscount,
+                        descontoCombo: descontoCombo,
                         observacoes: hasBasket ? "Pedido com Cesta/Kit" : "Pedido Comum",
 cliente: { 
     nome, 
@@ -4601,7 +4658,7 @@ Por favor, podem incluir na minha entrega?`;
 
             salvarDadosClienteCheckout();
 
-            window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
+            abrirWhatsAppPedido(msg, janelaWhatsApp);
             
             saveCart(); 
             updateTotals(); 
