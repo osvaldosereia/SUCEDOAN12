@@ -4439,24 +4439,28 @@ document.addEventListener('input', function(e) {
     });
 });
 
-        function abrirWhatsAppPedido(mensagem, janelaPreAberta) {
-            const texto = encodeURIComponent(mensagem);
-            const numeroLoja = '5565998150975';
-            const urlPrincipal = `https://wa.me/${numeroLoja}?text=${texto}`;
-            const urlAlternativa = `https://api.whatsapp.com/send?phone=${numeroLoja}&text=${texto}`;
+       function abrirWhatsAppPedido(mensagem, janelaPreAberta) {
+    const numeroLoja = '5565998150975';
+    const texto = encodeURIComponent(mensagem);
 
-            try {
-                if (janelaPreAberta && !janelaPreAberta.closed) {
-                    janelaPreAberta.location.href = urlPrincipal;
-                    return;
-                }
-            } catch (e) {}
+    // Mais simples e mais compatível em Android, iPhone e navegador
+    const urlWhatsApp = `https://api.whatsapp.com/send?phone=${numeroLoja}&text=${texto}`;
 
-            const aberta = window.open(urlPrincipal, '_blank', 'noopener,noreferrer');
-            if (!aberta) {
-                window.location.href = urlAlternativa;
-            }
+    try {
+        if (janelaPreAberta && !janelaPreAberta.closed) {
+            janelaPreAberta.location.href = urlWhatsApp;
+            return;
         }
+    } catch (e) {}
+
+    // Fallback: tenta abrir em nova aba
+    const novaJanela = window.open(urlWhatsApp, '_blank');
+
+    // Se o navegador bloquear popup, abre na mesma aba
+    if (!novaJanela) {
+        window.location.href = urlWhatsApp;
+    }
+}
 
         window.sendOrder = async function(btnOverride) {
             const btn = btnOverride || $('btn-send-order'); 
@@ -4513,8 +4517,7 @@ let pag = $('chk-pagamento').value;
                 return;
             }
 
-            const janelaWhatsApp = window.open('', '_blank');
-            
+const janelaWhatsApp = window.open('about:blank', '_blank');
             btn.innerHTML = "Processando...";
             const orderId = String(Date.now()).slice(-6); 
             let itemsTxt = ""; 
