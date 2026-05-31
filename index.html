@@ -2141,12 +2141,14 @@
 
                 <div class="chk-title" style="font-size: 16px; margin-top: 15px;">💳 Forma de Pagamento*</div>
                 <select id="chk-pagamento" class="chk-input">
-                    <option value="">Selecione...</option>
-                    <option value="Dinheiro">Dinheiro</option>
-                    <option value="Pix">Pix</option>
-                    <option value="Cartão">Cartão (Débito/Crédito na entrega)</option>
-                    <option value="Link de Pagamento">Link de Pagamento</option>
-                </select>
+    <option value="">Selecione...</option>
+    <option value="DINHEIRO">Dinheiro</option>
+    <option value="PIX">Pix</option>
+    <option value="CARTAO_DE_DEBITO">Cartão de Débito</option>
+    <option value="CARTAO_DE_CREDITO">Cartão de Crédito</option>
+    <option value="VALE_ALIMENTACAO">Vale Alimentação</option>
+    <option value="VALE_REFEICAO">Vale Refeição</option>
+</select>
             </div>
 
             <div class="chk-inline-summary">
@@ -4699,6 +4701,27 @@ const diferencaBling = arredondar2(totalSite - totalProdutosBling);
 const outrasDespesasBling = diferencaBling > 0 ? diferencaBling : 0;
 const descontoBling = diferencaBling < 0 ? Math.abs(diferencaBling) : 0;
 
+const normalizarPagamentoParaBling = (pagamento) => {
+    const codigo = String(pagamento || '').trim().toUpperCase();
+
+    const nomes = {
+        DINHEIRO: 'Dinheiro',
+        PIX: 'Pix',
+        CARTAO_DE_DEBITO: 'Cartão de Débito',
+        CARTAO_DE_CREDITO: 'Cartão de Crédito',
+        VALE_ALIMENTACAO: 'Vale Alimentação',
+        VALE_REFEICAO: 'Vale Refeição'
+    };
+
+    return {
+        codigo,
+        nome: nomes[codigo] || pagamento || '',
+        idBling: ''
+    };
+};
+
+const pagamentoBling = normalizarPagamentoParaBling(pag);
+                
 const makePayload = {
     pedido: {
         id: orderId,
@@ -4741,8 +4764,10 @@ const makePayload = {
             numero: casa,
             complemento: quadra ? `Quadra ${quadra}. ${frente}` : frente,
             frente, 
-            pagamento: pag, 
-            agendamento: dataAgendamento 
+            pagamento: pagamentoBling.nome,
+pagamentoCodigo: pagamentoBling.codigo,
+pagamentoIdBling: pagamentoBling.idBling,
+agendamento: dataAgendamento 
         }
     }
 };
