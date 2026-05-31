@@ -207,6 +207,8 @@
             <div class="brand"><i data-lucide="boxes" size="20"></i> SUCEDOAN PIM</div>
             <div id="queue-status"></div>
             
+            <button class="nav-btn desktop-only success-btn" id="btn-enviar-pendentes-firebase" onclick="enviarPendentesFirebaseManual()" title="Envia todos os produtos editados que ainda não foram salvos individualmente no Firebase"><i data-lucide="cloud-upload" size="14"></i> ENVIAR PENDENTES</button>
+            <button class="nav-btn desktop-only sync-btn" onclick="abrirModalBackupMetaManual()" title="Atualiza manualmente o backup produtos.json e os arquivos da Meta"><i data-lucide="database-backup" size="14"></i> BACKUP / META</button>
             <button class="nav-btn desktop-only success-btn" onclick="openSidebar('pedidos-sidebar')"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO</button>
             <button class="nav-btn desktop-only warning" onclick="abrirModuloCombos()"><i data-lucide="package-plus" size="14"></i> COMBOS</button>
             <button class="nav-btn desktop-only" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DADOS DA NUVEM</button>
@@ -258,6 +260,25 @@
 
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeAllSidebars()"></div>
 
+    <div id="modal-backup-meta-manual" class="sidebar-overlay" style="display:none; align-items:center; justify-content:center; z-index: 10001; opacity:1;">
+        <div style="background:white; padding:20px; border-radius:12px; width:95%; max-width:520px; display:flex; flex-direction:column; gap:14px; box-shadow:0 10px 40px rgba(0,0,0,0.25);">
+            <h3 style="margin:0; font-size:16px; color:var(--accent);">Atualizar Backup / Meta</h3>
+            <p style="margin:0; font-size:12px; color:var(--text-secondary); font-weight:700; line-height:1.45;">Essas ações são manuais. Antes de gerar arquivos, o sistema lê os produtos atuais direto do Firebase para evitar usar dados antigos da tela.</p>
+            <button class="nav-btn primary" style="height:44px; justify-content:center;" onclick="atualizarBackupEMetaManual()">
+                <i data-lucide="refresh-cw" size="16"></i> ATUALIZAR PRODUTOS.JSON + META
+            </button>
+            <div style="display:flex; gap:8px;">
+                <button class="nav-btn sync-btn" style="flex:1; height:42px; justify-content:center;" onclick="atualizarProdutosJsonBackupManual()">
+                    <i data-lucide="file-json" size="15"></i> SÓ PRODUTOS.JSON
+                </button>
+                <button class="nav-btn success-btn" style="flex:1; height:42px; justify-content:center;" onclick="enviarMetaGithubManual()">
+                    <i data-lucide="megaphone" size="15"></i> SÓ META
+                </button>
+            </div>
+            <button class="nav-btn" style="height:40px; justify-content:center;" onclick="fecharModalBackupMetaManual()">FECHAR</button>
+        </div>
+    </div>
+
     <div id="modal-meta-export" class="sidebar-overlay" style="display:none; align-items:center; justify-content:center; z-index: 10000; opacity:1;">
         <div style="background: white; padding: 20px; border-radius: 12px; width: 95%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
             <h3 style="margin: 0; font-size: 16px; color: var(--accent);">Exportar Catálogo Meta</h3>
@@ -290,6 +311,8 @@
             <div class="form-section">
                 <div class="section-title">Ações</div>
                 <button class="nav-btn primary menu-sidebar-btn" onclick="createNewProduct(); closeSidebar('menu-sidebar');"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
+                <button class="nav-btn success-btn menu-sidebar-btn" onclick="enviarPendentesFirebaseManual(); closeSidebar('menu-sidebar');"><i data-lucide="cloud-upload" size="14"></i> ENVIAR PENDENTES AO FIREBASE</button>
+                <button class="nav-btn sync-btn menu-sidebar-btn" onclick="abrirModalBackupMetaManual(); closeSidebar('menu-sidebar');"><i data-lucide="database-backup" size="14"></i> ATUALIZAR BACKUP / META</button>
                 <button class="nav-btn warning menu-sidebar-btn" onclick="abrirModuloCombos(); closeSidebar('menu-sidebar');"><i data-lucide="package-plus" size="14"></i> CRIAR / ADMINISTRAR COMBOS</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="cloud" size="14"></i> DEFINIÇÕES E GITHUB</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('pedidos-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO</button>
@@ -1378,8 +1401,19 @@ async function carregarProdutosFirebaseParaArquivoManual() {
 }
 
 async function salvarBackupProdutosJsonNoGithub(vitrineFinal) {
-    console.log("produtos.json desativado. Firebase agora é a fonte oficial única.");
-    return;
+    const lista = Array.isArray(vitrineFinal) ? vitrineFinal.filter(p => p && p._deleted !== true) : [];
+    if (lista.length === 0) {
+        throw new Error("Nenhum produto encontrado para gerar o backup produtos.json.");
+    }
+
+    const jsonBackup = JSON.stringify(lista, null, 2);
+    await salvarArquivoGithubComRetry(
+        `site/produtos.json`,
+        jsonBackup,
+        `PIM: Backup produtos.json manual atualizado pelo Firebase`
+    );
+
+    return lista.length;
 }
 
 async function enviarArquivosMetaNoGithub(vitrineFinal) {
@@ -1398,14 +1432,80 @@ async function enviarArquivosMetaNoGithub(vitrineFinal) {
 }
 
 async function salvarBackupProdutosNoGithub(vitrineFinal) {
-    // Compatibilidade: produtos.json está desativado.
-    // Se alguma função antiga chamar este método, atualiza somente os arquivos da Meta.
+    await salvarBackupProdutosJsonNoGithub(vitrineFinal);
     await enviarArquivosMetaNoGithub(vitrineFinal);
 }
 
 async function salvarBackupProdutosJsonGithubManual() {
-    mostrarAlerta("produtos.json está desativado. O Firebase é o banco oficial; use o botão manual da Meta quando precisar.", "aviso");
-    return;
+    return atualizarProdutosJsonBackupManual();
+}
+
+function abrirModalBackupMetaManual() {
+    const modal = document.getElementById("modal-backup-meta-manual");
+    if (modal) modal.style.display = "flex";
+    if (typeof lucide !== "undefined") lucide.createIcons();
+}
+
+function fecharModalBackupMetaManual() {
+    const modal = document.getElementById("modal-backup-meta-manual");
+    if (modal) modal.style.display = "none";
+}
+
+async function enviarPendentesFirebaseManual() {
+    const total = produtosPendentesSync ? produtosPendentesSync.size : 0;
+    if (total === 0) {
+        mostrarAlerta("Não há produtos pendentes para enviar ao Firebase.", "aviso");
+        return;
+    }
+
+    mostrarAlerta(`Enviando ${total} alteração(ões) pendente(s) ao Firebase...`, "aviso");
+    await processarProdutosPendentesSync();
+}
+
+async function atualizarProdutosJsonBackupManual() {
+    if (backupGithubEmAndamento) {
+        mostrarAlerta("Já existe uma atualização manual do GitHub em andamento.", "aviso");
+        return;
+    }
+
+    backupGithubEmAndamento = true;
+
+    try {
+        const vitrineFinal = await carregarProdutosFirebaseParaArquivoManual();
+        mostrarAlerta(`Gerando produtos.json com ${vitrineFinal.length} produto(s)...`, "aviso");
+        const total = await salvarBackupProdutosJsonNoGithub(vitrineFinal);
+        mostrarAlerta(`✅ produtos.json atualizado no GitHub com ${total} produto(s).`, "sucesso");
+    } catch (e) {
+        console.error("Erro ao atualizar produtos.json:", e);
+        mostrarAlerta("❌ Erro ao atualizar produtos.json: " + e.message, "erro");
+    } finally {
+        backupGithubEmAndamento = false;
+    }
+}
+
+async function atualizarBackupEMetaManual() {
+    if (backupGithubEmAndamento) {
+        mostrarAlerta("Já existe uma atualização manual do GitHub em andamento.", "aviso");
+        return;
+    }
+
+    backupGithubEmAndamento = true;
+
+    try {
+        const vitrineFinal = await carregarProdutosFirebaseParaArquivoManual();
+        const ativos = vitrineFinal.filter(p => p && p.situacao !== "I");
+
+        mostrarAlerta(`Atualizando produtos.json e Meta com dados do Firebase...`, "aviso");
+        const totalBackup = await salvarBackupProdutosJsonNoGithub(vitrineFinal);
+        await enviarArquivosMetaNoGithub(vitrineFinal);
+
+        mostrarAlerta(`✅ Backup e Meta atualizados. produtos.json: ${totalBackup} produto(s). Meta: ${ativos.length} ativo(s).`, "sucesso");
+    } catch (e) {
+        console.error("Erro ao atualizar backup/meta:", e);
+        mostrarAlerta("❌ Erro ao atualizar Backup/Meta: " + e.message, "erro");
+    } finally {
+        backupGithubEmAndamento = false;
+    }
 }
 
 async function enviarMetaGithubManual() {
@@ -1467,6 +1567,45 @@ function atualizarProdutoLocalComNuvem(produtoNuvem) {
     }
 }
 
+async function encontrarChavesFirebaseDoProduto(produto) {
+    const chaves = new Set();
+    const add = valor => {
+        const chave = FirebaseAPI.sanitizarChave(valor);
+        if (chave) chaves.add(chave);
+    };
+
+    obterTodasChavesPossiveisProduto(produto).forEach(add);
+    add(produto && produto.firebaseKey);
+    add(produto && produto.id);
+    add(produto && produto.codigo);
+
+    const codigo = String((produto && produto.codigo) || "").trim();
+    const id = String((produto && produto.id) || "").trim();
+    const firebaseKey = String((produto && produto.firebaseKey) || "").trim();
+
+    try {
+        const banco = await FirebaseAPI.lerProdutos();
+        banco.forEach(remoto => {
+            if (!remoto || remoto._deleted === true) return;
+            const rKey = String(remoto.firebaseKey || "").trim();
+            const rId = String(remoto.id || "").trim();
+            const rCodigo = String(remoto.codigo || "").trim();
+
+            if (
+                (firebaseKey && rKey === firebaseKey) ||
+                (id && (rKey === id || rId === id)) ||
+                (codigo && (rKey === codigo || rCodigo === codigo))
+            ) {
+                add(rKey || rId || rCodigo);
+            }
+        });
+    } catch (e) {
+        console.warn("Não consegui varrer o Firebase para localizar chaves extras do produto. Vou usar as chaves locais.", e);
+    }
+
+    return Array.from(chaves).filter(Boolean);
+}
+
 async function salvarProdutoIndividualSeguro(produtoOriginal, tipo = "upsert", opcoes = {}) {
     if (!produtoOriginal) return { status: "ignorado" };
 
@@ -1478,45 +1617,65 @@ async function salvarProdutoIndividualSeguro(produtoOriginal, tipo = "upsert", o
 
     if (tipo === "delete" || produtoOriginal._deleted === true) {
         const dataExclusao = normalizarLastUpdateProduto(produtoOriginal) || Date.now();
+        const chavesParaApagar = await encontrarChavesFirebaseDoProduto(produtoOriginal);
+        if (!chavesParaApagar.includes(chave)) chavesParaApagar.unshift(chave);
 
         const exclusoes = await FirebaseAPI.lerExclusoesProdutos();
         registrarExclusaoProduto(exclusoes, produtoOriginal, dataExclusao);
-
-        const tombstone = {
-            ...produtoOriginal,
-            firebaseKey: chave,
-            id: String(produtoOriginal.id || chave),
-            codigo: String(produtoOriginal.codigo || chave),
-            _deleted: true,
-            situacao: "I",
-            last_update: dataExclusao,
-            deleted_at: dataExclusao
-        };
+        chavesParaApagar.forEach(chaveExclusao => {
+            registrarExclusaoProduto(exclusoes, { ...produtoOriginal, firebaseKey: chaveExclusao, id: produtoOriginal.id || chaveExclusao }, dataExclusao);
+        });
 
         await FirebaseAPI.salvarExclusoesProdutos(exclusoes);
 
-        try {
-            await FirebaseAPI.apagarProduto(chave);
-        } catch (erroDelete) {
-            console.warn("DELETE falhou. Gravando produto como excluído:", erroDelete);
+        const errosDelete = [];
+        let apagouOuMarcou = 0;
 
-            const res = await fetchComTimeout(
-                FirebaseAPI.baseURL + "produtos/" + encodeURIComponent(chave) + ".json",
-                {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(tombstone)
-                },
-                30000,
-                "Marcar produto como excluído no Firebase"
-            );
+        for (const chaveDelete of chavesParaApagar) {
+            const tombstone = {
+                ...produtoOriginal,
+                firebaseKey: chaveDelete,
+                id: String(produtoOriginal.id || chaveDelete),
+                codigo: String(produtoOriginal.codigo || chaveDelete),
+                _deleted: true,
+                situacao: "I",
+                last_update: dataExclusao,
+                deleted_at: dataExclusao
+            };
 
-            if (!res.ok) {
-                throw new Error("Não foi possível excluir nem marcar como excluído. HTTP " + res.status);
+            try {
+                await FirebaseAPI.apagarProduto(chaveDelete);
+                apagouOuMarcou++;
+            } catch (erroDelete) {
+                console.warn("DELETE falhou para chave " + chaveDelete + ". Gravando produto como excluído:", erroDelete);
+
+                try {
+                    const res = await fetchComTimeout(
+                        FirebaseAPI.baseURL + "produtos/" + encodeURIComponent(chaveDelete) + ".json",
+                        {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(tombstone)
+                        },
+                        30000,
+                        "Marcar produto como excluído no Firebase"
+                    );
+
+                    if (!res.ok) {
+                        throw new Error("HTTP " + res.status);
+                    }
+                    apagouOuMarcou++;
+                } catch (erroMarcacao) {
+                    errosDelete.push(chaveDelete + ": " + (erroMarcacao.message || erroMarcacao));
+                }
             }
         }
 
-        return { status: "apagado", chave };
+        if (apagouOuMarcou === 0) {
+            throw new Error("Não foi possível excluir nem marcar como excluído. " + errosDelete.join(" | "));
+        }
+
+        return { status: "apagado", chave, chaves: chavesParaApagar };
     }
 
     const produtoNuvem = await FirebaseAPI.lerProduto(chave);
@@ -1845,15 +2004,14 @@ async function processarProdutosPendentesSync() {
     }
 }
 
-function agendarBackupGithubCompleto(motivo = "backup manual desativado", delayMs = 60000) {
-    // GitHub produtos.json e Meta são MANUAIS.
-    // Mantida só para compatibilidade com chamadas antigas.
+function agendarBackupGithubCompleto(motivo = "backup manual", delayMs = 60000) {
+    // GitHub produtos.json e Meta continuam MANUAIS para evitar custo e conflito.
     clearTimeout(backupGithubTimer);
-    console.log("Backup GitHub/Meta automático desativado. Use o botão manual da Meta.", motivo);
+    console.log("Backup GitHub/Meta automático desativado. Use o botão BACKUP / META.", motivo);
 }
 
 async function salvarBackupGithubAPartirDoFirebase(motivo = "backup") {
-    // produtos.json desativado. Não faz envio automático para evitar conflito entre sistemas.
+    // Mantido sem disparo automático. Use o botão BACKUP / META.
     console.log("Backup automático do GitHub ignorado:", motivo);
     return;
 }
@@ -3303,7 +3461,7 @@ async function deleteProduct(sku) {
     if (!confirm(`Apagar produto permanentemente?`)) return;
 
     const agora = Date.now();
-    const produtoApagado = products.find(p => p.codigo === sku);
+    const produtoApagado = products.find(p => p.codigo === sku || p.id === sku || p.firebaseKey === sku);
     if (!produtoApagado) return;
 
     const tombstone = {
@@ -3314,22 +3472,31 @@ async function deleteProduct(sku) {
     };
 
     try {
-        await salvarProdutoIndividualSeguro(tombstone, "delete");
+        mostrarAlerta("Excluindo produto do Firebase e registrando histórico...", "aviso");
+        const resultado = await salvarProdutoIndividualSeguro(tombstone, "delete");
+        const chavesApagadas = new Set((resultado.chaves || [resultado.chave]).map(c => String(c)));
+        const chavesLocais = new Set(obterTodasChavesPossiveisProduto(produtoApagado).map(c => String(FirebaseAPI.sanitizarChave(c))));
+        chavesApagadas.forEach(c => chavesLocais.add(c));
+
+        chavesLocais.forEach(chavePendente => produtosPendentesSync.delete(chavePendente));
+
+        products = products.filter(p => {
+            const chavesProduto = obterTodasChavesPossiveisProduto(p).map(c => String(FirebaseAPI.sanitizarChave(c)));
+            return !chavesProduto.some(c => chavesLocais.has(c)) && p.codigo !== sku;
+        });
+
+        await saveDataLocally();
+        renderQueueStatus();
+        renderGrid(ultimoTermoPesquisa, true);
+
+        mostrarAlerta(
+            "✅ Produto excluído do Firebase pela chave real e registrado para não voltar por cache antigo.",
+            "sucesso"
+        );
     } catch (e) {
         console.error("Erro ao excluir no Firebase:", e);
         mostrarAlerta("❌ Não consegui excluir do Firebase: " + e.message, "erro");
-        return;
     }
-
-    products = products.filter(p => p.codigo !== sku);
-    await saveDataLocally();
-
-    renderGrid(ultimoTermoPesquisa);
-
-    mostrarAlerta(
-        "Produto excluído do Firebase e registrado para não voltar por cache antigo.",
-        "sucesso"
-    );
 }        
         async function createNewProduct() {
     const timestamp = Date.now();
