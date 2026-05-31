@@ -5001,7 +5001,6 @@ Por favor, podem incluir na minha entrega?`;
             .map(p => {
                 let baseName = p.nome ? formatName(String(p.nome).trim()) : "Produto";
                 const safeId = String(p.codigo || p.id || p.firebaseKey || baseName);
-                return {
                   return {
     id: safeId,
     firebaseKey: String(p.firebaseKey || p.id || p.codigo || ""),
