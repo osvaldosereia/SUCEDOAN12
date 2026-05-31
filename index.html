@@ -4680,43 +4680,72 @@ Detalhes: ${frente}
             let msg = "";
 
             if (final >= MIN_ORDER) {
-                const makePayload = {
-                    pedido: {
-                        id: orderId,
-                        itens: pedidoItens,
-                        total: final,
-                        desconto: descontoCombo + STATE.atacadoDiscount + STATE.agendamentoDiscount,
-                        descontoCombo: descontoCombo,
-                        observacoes: hasBasket ? "Pedido com Cesta/Kit" : "Pedido Comum",
-cliente: { 
-    nome, 
-    cpf, 
-    telefone: telefone,
-    telefoneFormatado: telefoneFormatado,
+                const arredondar2 = (valor) => {
+    return Math.round((Number(valor || 0) + Number.EPSILON) * 100) / 100;
+};
 
-    // Este é o campo correto para o Bling: somente números, sem máscara.
-    celular: telefone,
+const totalSite = arredondar2(final);
 
-    // Campo auxiliar, caso queira usar em mensagem ou observação.
-    celularFormatado: telefoneFormatado,
+const totalProdutosBling = arredondar2(
+    pedidoItens.reduce((soma, item) => {
+        const qtd = Number(item.qtd || 0);
+        const preco = Number(item.price || 0);
+        return soma + (qtd * preco);
+    }, 0)
+);
 
-    email,
-    cep,
-    cepFormatado: formatarCEP(cep),
-    cidade,
-    uf,
-    bairro, 
-    rua, 
-    quadra, 
-    casa, 
-    numero: casa,
-    complemento: quadra ? `Quadra ${quadra}. ${frente}` : frente,
-    frente, 
-    pagamento: pag, 
-    agendamento: dataAgendamento 
-}
-                    }
-                };
+const diferencaBling = arredondar2(totalSite - totalProdutosBling);
+
+const outrasDespesasBling = diferencaBling > 0 ? diferencaBling : 0;
+const descontoBling = diferencaBling < 0 ? Math.abs(diferencaBling) : 0;
+
+const makePayload = {
+    pedido: {
+        id: orderId,
+        itens: pedidoItens,
+
+        // Total exato do pedido calculado pelo site
+        total: totalSite,
+
+        // Soma real dos produtos enviados
+        totalProdutos: totalProdutosBling,
+
+        // Se o total do site for maior que a soma dos produtos,
+        // a diferença vai para outras despesas no Bling
+        outrasDespesasBling: outrasDespesasBling,
+
+        // Se a soma dos produtos for maior que o total do site,
+        // a diferença vai como desconto no Bling
+        descontoBling: descontoBling,
+
+        // Mantém também o desconto original do site para histórico/observação
+        desconto: arredondar2(STATE.atacadoDiscount + STATE.agendamentoDiscount),
+
+        observacoes: hasBasket ? "Pedido com Cesta/Kit" : "Pedido Comum",
+
+        cliente: { 
+            nome, 
+            cpf, 
+            telefone,
+            telefoneFormatado: formatarTelefone(telefone),
+            celular: telefone,
+            email,
+            cep,
+            cepFormatado: formatarCEP(cep),
+            cidade,
+            uf,
+            bairro, 
+            rua, 
+            quadra, 
+            casa, 
+            numero: casa,
+            complemento: quadra ? `Quadra ${quadra}. ${frente}` : frente,
+            frente, 
+            pagamento: pag, 
+            agendamento: dataAgendamento 
+        }
+    }
+};
 
                 try {
                     await fetch('https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc', {
