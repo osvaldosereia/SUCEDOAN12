@@ -869,8 +869,51 @@
             };
         }
 
+        function limparCaminhoGitHub(caminho) {
+            return String(caminho || '').trim().replace(/^\/+/, '').replace(/\/g, '/');
+        }
+
+        function githubBaseUrl() {
+            return 'https://api.github.com/repos/' + encodeURIComponent(cfg.user) + '/' + encodeURIComponent(cfg.repo);
+        }
+
         function githubUrl(caminho) {
-            return 'https://api.github.com/repos/' + encodeURIComponent(cfg.user) + '/' + encodeURIComponent(cfg.repo) + '/contents/' + caminho + '?t=' + Date.now();
+            return githubBaseUrl() + '/contents/' + limparCaminhoGitHub(caminho) + '?t=' + Date.now();
+        }
+
+        async function obterDefaultBranch() {
+            const res = await fetchComTimeout(githubBaseUrl() + '?t=' + Date.now(), {
+                headers: githubHeaders(),
+                cache: 'no-store'
+            }, 30000);
+            if (!res.ok) return 'main';
+            const data = await res.json();
+            return data.default_branch || 'main';
+        }
+
+        async function listarArquivosSpedidosPorTree() {
+            const branch = await obterDefaultBranch();
+            const treeUrl = githubBaseUrl() + '/git/trees/' + encodeURIComponent(branch) + '?recursive=1&t=' + Date.now();
+            const res = await fetchComTimeout(treeUrl, {
+                headers: githubHeaders(),
+                cache: 'no-store'
+            }, 30000);
+            if (!res.ok) return [];
+            const data = await res.json();
+            const tree = Array.isArray(data.tree) ? data.tree : [];
+            return tree.filter(function(a) {
+                const path = limparCaminhoGitHub(a.path || '');
+                return a.type === 'blob'
+                    && /(^|\/)site\/spedidos\/[^\/]+\.json$/i.test(path)
+                    && !/\.gitkeep$/i.test(path);
+            }).map(function(a) {
+                return {
+                    name: String(a.path || '').split('/').pop(),
+                    path: limparCaminhoGitHub(a.path || ''),
+                    type: 'file',
+                    sha: a.sha || ''
+                };
+            });
         }
 
         async function fetchComTimeout(url, options, timeoutMs) {
@@ -967,18 +1010,45 @@
             });
         }
 
+        async function carregarPedidoDeArquivo(arq) {
+            const arqRes = await fetchComTimeout(githubUrl(arq.path), {
+                headers: githubHeaders(),
+                cache: 'no-store'
+            }, 30000);
+
+            if (!arqRes.ok) return [];
+
+            const arqData = await arqRes.json();
+            if (!arqData.content) return [];
+
+            const bruto = JSON.parse(decodeBase64Unicode(arqData.content));
+            const lista = Array.isArray(bruto) ? bruto : [bruto];
+            const carregados = [];
+
+            lista.forEach(function(pedido) {
+                if (!pedido || typeof pedido !== 'object') return;
+                pedido.__githubPath = limparCaminhoGitHub(arqData.path || arq.path);
+                pedido.__githubSha = arqData.sha || arq.sha || '';
+                carregados.push(normalizarPedidoSeparacao(pedido));
+            });
+
+            return carregados;
+        }
+
         async function buscarPedidos() {
             if (!cfg || !cfg.token) {
                 abrirConfig();
                 return;
             }
 
-            mostrarStatus('Buscando pedidos atualizados...', 'aviso');
+            mostrarStatus('Buscando pedidos em site/spedidos...', 'aviso');
             document.getElementById('lista-pedidos').innerHTML = '<div class="empty"><span class="spin">↻</span> Carregando pedidos...</div>';
             idsSelecionados.clear();
             atualizarBarraSelecao();
 
             try {
+                let jsons = [];
+
                 const listaRes = await fetchComTimeout(githubUrl(PASTA_SPEDIDOS), {
                     headers: githubHeaders(),
                     cache: 'no-store'
@@ -986,44 +1056,29 @@
 
                 if (listaRes.ok) {
                     const arquivos = await listaRes.json();
-                    const jsons = Array.isArray(arquivos)
+                    jsons = Array.isArray(arquivos)
                         ? arquivos.filter(function(a) {
                             return a && a.type === 'file' && /\.json$/i.test(a.name || '') && (a.name || '') !== '.gitkeep';
+                        }).map(function(a) {
+                            a.path = limparCaminhoGitHub(a.path || (PASTA_SPEDIDOS + '/' + a.name));
+                            return a;
                         })
                         : [];
+                }
 
+                if (jsons.length === 0) {
+                    jsons = await listarArquivosSpedidosPorTree();
+                }
+
+                if (jsons.length > 0) {
                     modoArquivosIndividuais = true;
                     fileSha = null;
-                    todosOsPedidos = [];
-
-                    if (jsons.length === 0) {
-                        mostrarStatus('Pasta site/spedidos encontrada, mas sem arquivos .json.', 'aviso');
-                        renderizarListaPedidos();
-                        return;
-                    }
-
                     const carregados = [];
+
                     for (const arq of jsons) {
                         try {
-                            const arqRes = await fetchComTimeout(githubUrl(arq.path), {
-                                headers: githubHeaders(),
-                                cache: 'no-store'
-                            }, 30000);
-
-                            if (!arqRes.ok) continue;
-
-                            const arqData = await arqRes.json();
-                            if (!arqData.content) continue;
-
-                            const bruto = JSON.parse(decodeBase64Unicode(arqData.content));
-                            const lista = Array.isArray(bruto) ? bruto : [bruto];
-
-                            lista.forEach(function(pedido) {
-                                if (!pedido || typeof pedido !== 'object') return;
-                                pedido.__githubPath = arqData.path || arq.path;
-                                pedido.__githubSha = arqData.sha || arq.sha || '';
-                                carregados.push(normalizarPedidoSeparacao(pedido));
-                            });
+                            const pedidosDoArquivo = await carregarPedidoDeArquivo(arq);
+                            pedidosDoArquivo.forEach(function(p) { carregados.push(p); });
                         } catch (e) {
                             console.warn('Arquivo de pedido ignorado:', arq.path, e);
                         }
@@ -1033,8 +1088,12 @@
                         return new Date(obterDataPedido(b)).getTime() - new Date(obterDataPedido(a)).getTime();
                     });
 
-                    mostrarStatus('Pedidos carregados da pasta site/spedidos. Total: ' + todosOsPedidos.length, 'ok');
-                    setTimeout(function() { mostrarStatus(''); }, 2200);
+                    if (todosOsPedidos.length === 0) {
+                        mostrarStatus('Achei arquivos em site/spedidos, mas nenhum tem formato de pedido válido.', 'erro');
+                    } else {
+                        mostrarStatus('Pedidos carregados de site/spedidos. Total: ' + todosOsPedidos.length, 'ok');
+                        setTimeout(function() { mostrarStatus(''); }, 2200);
+                    }
                     renderizarListaPedidos();
                     return;
                 }
@@ -1049,7 +1108,7 @@
                 if (res.status === 404) {
                     fileSha = null;
                     todosOsPedidos = [];
-                    mostrarStatus('Não encontrei site/spedidos nem site/pedidoseparar.json.', 'erro');
+                    mostrarStatus('Não encontrei site/spedidos/*.json nem site/pedidoseparar.json.', 'erro');
                     renderizarListaPedidos();
                     return;
                 }
@@ -1078,7 +1137,7 @@
             } catch (err) {
                 console.error(err);
                 mostrarStatus('Erro ao buscar pedidos: ' + err.message, 'erro');
-                document.getElementById('lista-pedidos').innerHTML = '<div class="empty">Erro ao carregar. Confira internet, token e repositório.</div>';
+                document.getElementById('lista-pedidos').innerHTML = '<div class="empty">Erro ao carregar. Confira usuário, repositório, token e se existe site/spedidos/155867.json.</div>';
             }
         }
 
@@ -1360,7 +1419,7 @@
         }
 
         async function salvarPedidoIndividualNoGitHub(pedido, mensagem) {
-            const caminho = pedido.__githubPath || (PASTA_SPEDIDOS + '/' + pedido.id + '.json');
+            const caminho = limparCaminhoGitHub(pedido.__githubPath || (PASTA_SPEDIDOS + '/' + pedido.id + '.json'));
             let shaAtual = pedido.__githubSha || '';
 
             const getRes = await fetchComTimeout(githubUrl(caminho), {
@@ -1386,7 +1445,7 @@
 
             if (shaAtual) body.sha = shaAtual;
 
-            const putUrl = 'https://api.github.com/repos/' + encodeURIComponent(cfg.user) + '/' + encodeURIComponent(cfg.repo) + '/contents/' + caminho;
+            const putUrl = 'https://api.github.com/repos/' + encodeURIComponent(cfg.user) + '/' + encodeURIComponent(cfg.repo) + '/contents/' + limparCaminhoGitHub(caminho);
             const putRes = await fetchComTimeout(putUrl, {
                 method: 'PUT',
                 headers: githubHeaders(),
