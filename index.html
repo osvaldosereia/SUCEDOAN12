@@ -4677,7 +4677,19 @@ const janelaWhatsApp = window.open('about:blank', '_blank');
   sku: String(p.codigo || p.id),
   nome: p.name,
   qtd: qtd,
-  price: Number(p.price || 0)
+  price: Number(p.price || 0),
+
+  gtin: String(p.gtin || p.ean || ""),
+  ean: String(p.ean || p.gtin || ""),
+  url_imagem: String(p.url_imagem || p.img || ""),
+  gondola: String(p.gondola || "Z-Sem Gôndola"),
+  prateleira: String(p.prateleira || "-"),
+  localizacao: String(p.localizacao || ""),
+  categoria: String(p.categoria || ""),
+  subcategoria: String(p.subcategoria || ""),
+  subsubcategoria: String(p.subsubcategoria || ""),
+  marca: String(p.marca || ""),
+  embalagem: String(p.embalagem || "")
 });
                 } else {
                     totalTaxasExtras += valorLinha;
@@ -4990,27 +5002,40 @@ Por favor, podem incluir na minha entrega?`;
                 let baseName = p.nome ? formatName(String(p.nome).trim()) : "Produto";
                 const safeId = String(p.codigo || p.id || p.firebaseKey || baseName);
                 return {
-                    id: safeId,
-                    firebaseKey: String(p.firebaseKey || p.id || p.codigo || ""),
-                    codigo: String(p.codigo || safeId),
-                    name: baseName,
-                    slug: getFriendlySlug(baseName),
-                    price: Number(String(p.preco || 0).replace(',', '.')),
-                    stock: parseInt(p.estoque) || 0,
-                    img: normalizarImagemProduto(p),
-                    categoria: p.categoria || "Outros",
-                    subcategoria: p.subcategoria || "",
-                    vencimento: p.validade || p.vencimento || null,
-                    embalagem: p.embalagem || extractVolume(p.nome || baseName),
-                    marca: p.marca || "",
-                    descricao: p.descricao || "",
-gtin: p.gtin || "",
-link_youtube: p.link_youtube || p.youtube || p.video || p.url_video || "",
-preco_oferta: p.preco_oferta ? Number(String(p.preco_oferta).replace(',', '.')) : null,
-                    validade_oferta: p.validade_oferta || null,
-                    combo_id: p.combo_id || null,
-                    validade_combo: p.validade_combo || null
-                };
+                  return {
+    id: safeId,
+    firebaseKey: String(p.firebaseKey || p.id || p.codigo || ""),
+    codigo: String(p.codigo || safeId),
+    name: baseName,
+    slug: getFriendlySlug(baseName),
+    price: Number(String(p.preco || 0).replace(',', '.')),
+    stock: parseInt(p.estoque) || 0,
+
+    img: normalizarImagemProduto(p),
+    url_imagem: normalizarImagemProduto(p),
+
+    categoria: p.categoria || "Outros",
+    subcategoria: p.subcategoria || "",
+    subsubcategoria: p.subsubcategoria || "",
+
+    vencimento: p.validade || p.vencimento || null,
+    embalagem: p.embalagem || extractVolume(p.nome || baseName),
+    marca: p.marca || "",
+    descricao: p.descricao || "",
+
+    gtin: p.gtin || p.ean || "",
+    ean: p.ean || p.gtin || "",
+
+    gondola: p.gondola || p["gôndola"] || "",
+    prateleira: p.prateleira || "",
+    localizacao: p.localizacao || "",
+
+    link_youtube: p.link_youtube || p.youtube || p.video || p.url_video || "",
+    preco_oferta: p.preco_oferta ? Number(String(p.preco_oferta).replace(',', '.')) : null,
+    validade_oferta: p.validade_oferta || null,
+    combo_id: p.combo_id || null,
+    validade_combo: p.validade_combo || null
+};
             });
     }
 
