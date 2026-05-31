@@ -1,5 +1,60 @@
 [
   {
+    "id": "COMBO-20260530222734-1",
+    "nome": "Combo Sessão Cinema",
+    "ativo": true,
+    "motivo_desativacao": "",
+    "desconto_percentual": 10,
+    "soma_produtos": 6.88,
+    "preco_combo": 6.19,
+    "economia": 0.69,
+    "validade_combo": "2026-06-03T23:59",
+    "validade_dias": 3,
+    "combinacao_id": "pipoca-refrigerante",
+    "combinacao_nome": "Combo Sessão Cinema",
+    "palavra_produto_1": [
+      "pipoca"
+    ],
+    "palavra_produto_2": [
+      "refrigerante",
+      "guarana",
+      "guaraná",
+      "coca"
+    ],
+    "ciclo_combinacoes": 1,
+    "url_imagem": "../site/img/produtos/86806119.webp",
+    "itens": [
+      {
+        "sku": "86806119",
+        "firebaseKey": "7896635103574",
+        "nome": "PIPOCA DOCE BEBELA 90G",
+        "qtd": 1,
+        "url_imagem": "../site/img/produtos/86806119.webp",
+        "imagem": "../site/img/produtos/86806119.webp",
+        "preco_unitario_original": 2.89,
+        "preco_unitario_combo": 2.6,
+        "total_original": 2.89,
+        "total_combo": 2.6
+      },
+      {
+        "sku": "536796L",
+        "firebaseKey": "1776031547894",
+        "nome": "COCA-COLA LATA 310 ML",
+        "qtd": 1,
+        "url_imagem": "../site/img/produtos/536796L.webp",
+        "imagem": "../site/img/produtos/536796L.webp",
+        "preco_unitario_original": 3.99,
+        "preco_unitario_combo": 3.59,
+        "total_original": 3.99,
+        "total_combo": 3.59
+      }
+    ],
+    "criado_em": "2026-05-31T02:27:34.924Z",
+    "criado_em_local": "2026-05-30T22:27:34-04:00",
+    "criado_em_ordem": "20260530222734",
+    "last_update": 1780194454924
+  },
+  {
     "id": "COMBO-20260530215728-1",
     "nome": "Combo Salada Cremosa",
     "ativo": true,
@@ -5080,45 +5135,5 @@
     ],
     "criado_em": "2026-05-28T03:18:50.453Z",
     "last_update": 1779938330453
-  },
-  {
-    "id": "COMBO-1779936650854-1",
-    "nome": "Combo PENTEAR Especial",
-    "ativo": true,
-    "motivo_desativacao": "",
-    "desconto_percentual": 25,
-    "soma_produtos": 29.8,
-    "preco_combo": 22.35,
-    "economia": 7.45,
-    "validade_combo": "2026-06-04T23:59",
-    "url_imagem": "../site/img/produtos/572665P.webp",
-    "itens": [
-      {
-        "sku": "572665P",
-        "firebaseKey": "1775971741063",
-        "nome": "SKALA CREME PARA PENTEAR POTAO DESMAIADO 1KG",
-        "qtd": 1,
-        "url_imagem": "../site/img/produtos/572665P.webp",
-        "imagem": "../site/img/produtos/572665P.webp",
-        "preco_unitario_original": 14.9,
-        "preco_unitario_combo": 11.18,
-        "total_original": 14.9,
-        "total_combo": 11.18
-      },
-      {
-        "sku": "326805S",
-        "firebaseKey": "1776338128840",
-        "nome": "SKALA CREME PARA PENTEAR UVA 1KG",
-        "qtd": 1,
-        "url_imagem": "../site/img/produtos/326805S.webp",
-        "imagem": "../site/img/produtos/326805S.webp",
-        "preco_unitario_original": 14.9,
-        "preco_unitario_combo": 11.18,
-        "total_original": 14.9,
-        "total_combo": 11.18
-      }
-    ],
-    "criado_em": "2026-05-28T02:50:50.854Z",
-    "last_update": 1779936650854
   }
 ]
