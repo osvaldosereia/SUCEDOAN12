@@ -2545,6 +2545,8 @@
             vitrine.style.top = '';
             vitrine.style.height = '';
             atualizarTopbarDaRota(hash);
+            if (hash !== '#/buscar' && STATE.searchQuery) STATE.searchQuery = '';
+            sincronizarCampoBuscaTopo();
 
             if($('basketDetailModal').classList.contains('active')) $('basketDetailModal').classList.remove('active');
             if($('checkout-drawer').classList.contains('open')) $('checkout-drawer').classList.remove('open');
@@ -3090,88 +3092,119 @@ let controlsHtml = '';
          * 1. Função que apenas mostra/esconde os botões (Seta e X) 
          * enquanto o usuário digita. NÃO faz a pesquisa.
          */
-        window.toggleSearchButtons = function() {
+        function normalizarTermoBuscaSite(valor) {
+            return norm(String(valor || '')).replace(/\s+/g, ' ').trim();
+        }
+
+        function montarTextoBuscaProdutoSite(p) {
+            return normalizarTermoBuscaSite([
+                p.name, p.nome, p.codigo, p.id, p.gtin, p.marca,
+                p.categoria, p.subcategoria, p.embalagem, p.descricao
+            ].filter(Boolean).join(' '));
+        }
+
+        function sincronizarCampoBuscaTopo() {
+            const input = $('app-search-input');
+            if (!input) return;
+            input.value = STATE.searchQuery || '';
+            toggleSearchButtons(false);
+        }
+
+        window.toggleSearchButtons = function(voltarInicioQuandoVazio = true) {
             const input = $('app-search-input');
             const clearBtn = $('clear-search-btn');
             const submitBtn = $('submit-search-btn');
-            
-            // Se tem texto, mostra os botões de ação
-            if (input.value.trim().length > 0) {
-                clearBtn.style.display = 'flex';
-                submitBtn.style.display = 'flex';
-            } else {
-                // Se está vazio, esconde os botões
-                clearBtn.style.display = 'none';
-                submitBtn.style.display = 'none';
-                
-                // Se o usuário apagou tudo manualmente e estava na página de busca, volta pro início
-                if (window.location.hash === '#/buscar') {
-                    window.location.hash = '#/';
-                }
+            if (!input || !clearBtn || !submitBtn) return;
+
+            const temTexto = input.value.trim().length > 0;
+            clearBtn.style.display = temTexto ? 'flex' : 'none';
+            submitBtn.style.display = temTexto ? 'flex' : 'none';
+
+            if (!temTexto && voltarInicioQuandoVazio && window.location.hash === '#/buscar') {
+                STATE.searchQuery = '';
+                window.location.hash = '#/';
             }
         };
 
-        /**
-         * 2. Função que REALIZA a busca de fato.
-         * É disparada ao clicar na Seta ou ao dar "Enter / Ir" no teclado.
-         */
         window.executeSearch = function(event) {
-            // Evita que a página recarregue (comportamento padrão de formulários)
             if (event) event.preventDefault();
 
             const input = $('app-search-input');
-            STATE.searchQuery = input.value.trim();
+            if (!input) return false;
 
-            // Esconde o teclado do celular após o usuário comandar a busca
+            const termo = input.value.replace(/\s+/g, ' ').trim();
+            STATE.searchQuery = termo;
+            input.value = termo;
             input.blur();
+            toggleSearchButtons(false);
 
-            // Só pesquisa se tiver algo digitado
-            if (STATE.searchQuery.length > 0) {
-                // Se ainda não estiver na página de busca, vai para ela
-                if (window.location.hash !== '#/buscar') {
-                    window.location.hash = '#/buscar';
-                } else {
-                    // Se já estiver, apenas atualiza os resultados na tela
-                    renderSearch();
-                }
+            if (!termo) {
+                clearSearch();
+                return false;
             }
+
+            if (window.location.hash !== '#/buscar') {
+                window.location.hash = '#/buscar';
+            } else {
+                renderSearch();
+            }
+            return false;
         };
 
-        /**
-         * 3. Função para limpar a busca ao clicar no ícone de "X"
-         */
         window.clearSearch = function() {
             const input = $('app-search-input');
-            input.value = ''; // Limpa o texto
-            toggleSearchButtons(); // Aciona a função para esconder os botões e voltar pro início
+            STATE.searchQuery = '';
+            if (input) {
+                input.value = '';
+                input.blur();
+            }
+            toggleSearchButtons(false);
+
+            if (window.location.hash === '#/buscar') {
+                window.location.hash = '#/';
+            } else {
+                atualizarTopbarDaRota(window.location.hash || '#/');
+                handleRoute();
+            }
         };
 
-        /**
-         * 4. A função de renderização que já tínhamos arrumado antes
-         */
         function renderSearch() {
-            atualizarTopbarDaRota(window.location.hash || '#/buscar');
-            
-            let termoNormalizado = norm(STATE.searchQuery);
-            let terms = termoNormalizado.split(' ').filter(t => t.trim().length > 0); 
-            
-            let results = STATE.prods.filter(p => { 
-                let textoBusca = norm(p.name); 
-                return terms.every(term => textoBusca.includes(term)); 
-            });
-            
-            if(results.length === 0) {
-                $('vitrine').innerHTML = `<div style="padding: 24px 20px; text-align: center; font-weight:600; color:var(--text-light); background:var(--bg-card);">Ops, não achamos "${STATE.searchQuery}".</div>`;
+            sincronizarCampoBuscaTopo();
+            atualizarTopbarDaRota('#/buscar');
+
+            const termoOriginal = String(STATE.searchQuery || '').trim();
+            const termoNormalizado = normalizarTermoBuscaSite(termoOriginal);
+            const terms = termoNormalizado.split(' ').filter(Boolean);
+
+            if (!terms.length) {
+                $('vitrine').innerHTML = `<div style="padding: 24px 20px; text-align: center; font-weight:800; color:var(--text-light); background:var(--bg-card);">Digite o nome, marca, código ou categoria do produto.</div>`;
+                updateCollectionSeo('Busca', []);
                 return;
             }
-            
-            let html = `<div style="padding: 0;"><div class="products-grid">`;
+
+            const results = STATE.prods.filter(p => {
+                const textoBusca = montarTextoBuscaProdutoSite(p);
+                return terms.every(term => textoBusca.includes(term));
+            });
+
+            if (results.length === 0) {
+                $('vitrine').innerHTML = `
+                    <div style="padding: 28px 20px; text-align: center; font-weight:700; color:var(--text-light); background:var(--bg-card); border-radius: 18px; margin: 10px;">
+                        <div style="font-size:16px;font-weight:900;color:var(--text-dark);margin-bottom:8px;">Nenhum produto encontrado</div>
+                        <div>Não achamos nada para "${termoOriginal}".</div>
+                        <button class="btn-ver-todos-cat" style="margin-top:16px;" onclick="clearSearch()">Limpar busca e voltar ao início</button>
+                    </div>`;
+                updateCollectionSeo('Busca', []);
+                return;
+            }
+
+            let html = `<div style="padding: 0;"><div class="ver-tudo-header" onclick="clearSearch()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 12H5m7 7l-7-7 7-7"></path></svg> Resultado da busca: ${termoOriginal}</div><div class="products-grid">`;
             results.forEach(p => html += renderCardHTML(p));
             html += '</div></div>';
-            
+
             $('vitrine').innerHTML = html;
             updateCollectionSeo('Busca', results);
-            lazyLoadImages(); 
+            lazyLoadImages();
         }
         
         // ==========================================
@@ -4819,15 +4852,93 @@ Por favor, podem incluir na minha entrega?`;
             }, 3000);
         };
 
+        const CART_STORAGE_KEY = 'da_carrinho_v1';
+
         function forcarLimpezaDeCacheClient() {
-            const chavesProtegidas = ['da_user', 'da_produtos_cache_v4', CHECKOUT_CLIENT_KEY]; 
+            const chavesProtegidas = ['da_user', 'da_produtos_cache_v4', CHECKOUT_CLIENT_KEY, CART_STORAGE_KEY]; 
             const todasAsChaves = Object.keys(localStorage);
             todasAsChaves.forEach(chave => { if (!chavesProtegidas.includes(chave)) localStorage.removeItem(chave); });
         }
         forcarLimpezaDeCacheClient();
 
-        function loadCart() { STATE.cart = {}; STATE.cartOrder = []; STATE.basketCustomizations = {}; }
-        function saveCart() {}
+        function loadCart() {
+            STATE.cart = {};
+            STATE.cartOrder = [];
+            STATE.basketCustomizations = {};
+
+            try {
+                const raw = localStorage.getItem(CART_STORAGE_KEY);
+                if (!raw) return;
+
+                const saved = JSON.parse(raw);
+                if (!saved || typeof saved !== 'object') return;
+
+                const cart = saved.cart && typeof saved.cart === 'object' ? saved.cart : {};
+                const order = Array.isArray(saved.cartOrder) ? saved.cartOrder : Object.keys(cart);
+                const cleanCart = {};
+                const cleanOrder = [];
+
+                order.forEach(id => {
+                    const key = String(id);
+                    const qtd = Math.max(0, parseInt(cart[key], 10) || 0);
+                    if (qtd > 0 && !cleanOrder.includes(key)) {
+                        cleanCart[key] = qtd;
+                        cleanOrder.push(key);
+                    }
+                });
+
+                Object.keys(cart).forEach(id => {
+                    const key = String(id);
+                    const qtd = Math.max(0, parseInt(cart[key], 10) || 0);
+                    if (qtd > 0 && !cleanOrder.includes(key)) {
+                        cleanCart[key] = qtd;
+                        cleanOrder.push(key);
+                    }
+                });
+
+                STATE.cart = cleanCart;
+                STATE.cartOrder = cleanOrder;
+                STATE.basketCustomizations = saved.basketCustomizations && typeof saved.basketCustomizations === 'object' ? saved.basketCustomizations : {};
+            } catch (e) {
+                console.warn('Não foi possível restaurar o carrinho salvo:', e);
+                localStorage.removeItem(CART_STORAGE_KEY);
+            }
+        }
+
+        function saveCart() {
+            try {
+                const payload = {
+                    savedAt: Date.now(),
+                    cart: STATE.cart || {},
+                    cartOrder: STATE.cartOrder || [],
+                    basketCustomizations: STATE.basketCustomizations || {}
+                };
+                localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(payload));
+            } catch (e) {
+                console.warn('Não foi possível salvar o carrinho:', e);
+            }
+        }
+
+        function pruneCartAgainstProducts() {
+            if (!Array.isArray(STATE.prods) || !STATE.prods.length) return;
+            const idsValidos = new Set(STATE.prods.map(p => String(p.id)));
+            let mudou = false;
+
+            Object.keys(STATE.cart || {}).forEach(id => {
+                if (!idsValidos.has(String(id))) {
+                    delete STATE.cart[id];
+                    mudou = true;
+                }
+            });
+
+            STATE.cartOrder = (STATE.cartOrder || []).filter(id => {
+                const valido = idsValidos.has(String(id)) && Number(STATE.cart[id] || 0) > 0;
+                if (!valido) mudou = true;
+                return valido;
+            });
+
+            if (mudou) saveCart();
+        }
 
     const PRODUCT_CACHE_KEY = 'da_produtos_cache_v4';
     const PRODUCT_CACHE_MAX_AGE = 1000 * 60 * 20;
@@ -4854,8 +4965,10 @@ Por favor, podem incluir na minha entrega?`;
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);
         try {
-            const res = await fetch(url, {
-                cache: 'default',
+            const separador = url.includes('?') ? '&' : '?';
+            const urlSemCache = `${url}${separador}_=${Date.now()}`;
+            const res = await fetch(urlSemCache, {
+                cache: 'no-store',
                 signal: controller.signal,
                 headers: { 'Accept': 'application/json' }
             });
@@ -4910,6 +5023,7 @@ preco_oferta: p.preco_oferta ? Number(String(p.preco_oferta).replace(',', '.')) 
         if (shouldRender) {
             updateTotals();
             handleRoute();
+            updateAllCardUIs();
         }
         return true;
     }
