@@ -3,851 +3,626 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Estoque Rápido</title>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <title>Estoque Rápido Firebase</title>
+
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+
     <style>
-        /* =========================================================
-           1. RESET E ESTRUTURA BASE (Sem Rolagem)
-           ========================================================= */
-        * { box-sizing: border-box; }
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: #f4f4f5; 
-            margin: 0; padding: 0; color: #0f172a; 
-            height: 100dvh; /* dvh adapta-se à barra do navegador mobile */
-            display: flex; flex-direction: column; 
-            overflow: hidden; /* Proíbe a rolagem estritamente */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background: #f4f4f5;
+            color: #0f172a;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
-        
-        /* =========================================================
-           2. CABEÇALHO E CÂMERA
-           ========================================================= */
-        .header-area { 
-            flex: 0 0 auto; padding: 8px; background: white; 
-            border-bottom: 1px solid #e2e8f0; 
+
+        .topo {
+            flex: 0 0 auto;
+            background: #fff;
+            padding: 8px;
+            border-bottom: 1px solid #e2e8f0;
         }
-        #reader { 
-            width: 100%; height: 25dvh; min-height: 100px; 
-            margin: 0 auto 8px; background: #000;
-            position: relative; overflow: hidden; border-radius: 8px;
+
+        #reader {
+            width: 100%;
+            height: 24dvh;
+            min-height: 120px;
+            max-height: 210px;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 8px;
         }
         #reader video {
-            object-fit: cover !important; width: 100% !important; height: 100% !important;
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        }
-        
-        .search-row { display: flex; gap: 6px; height: 36px; }
-        .search-row input { 
-            flex: 1; border-radius: 8px; border: 1px solid #cbd5e1; 
-            padding: 0 10px; font-size: 14px; outline: none;
-        }
-        .search-row input:focus { border-color: #0f172a; }
-        .search-row button { 
-            padding: 0 16px; background: #0f172a; color: #fff; 
-            border: none; border-radius: 8px; font-weight: 800; font-size: 12px;
+            object-fit: cover !important;
+            width: 100% !important;
+            height: 100% !important;
         }
 
-        /* =========================================================
-           3. ÁREA DE DADOS DO PRODUTO (Compacta)
-           ========================================================= */
-        .content-area { 
-            flex: 1 1 auto; display: flex; flex-direction: column; 
-            padding: 10px; overflow: hidden; justify-content: space-evenly; 
+        .busca-row { display: flex; gap: 7px; height: 42px; }
+        .busca-row input {
+            flex: 1;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 0 12px;
+            font-size: 15px;
+            font-weight: 700;
+            outline: none;
+            background: #fff;
         }
-        .prod-title { 
-            font-size: 15px; font-weight: 800; text-align: center; 
-            color: #0f172a; margin: 0; white-space: nowrap; 
-            overflow: hidden; text-overflow: ellipsis; 
+        .busca-row button {
+            width: 92px;
+            border: 0;
+            border-radius: 10px;
+            background: #0f172a;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 900;
+            cursor: pointer;
         }
-        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .form-group { display: flex; flex-direction: column; }
-        .label { font-size: 9px; color: #64748b; font-weight: 800; margin-bottom: 2px; text-transform: uppercase; }
-        .form-group input { 
-            height: 32px; border-radius: 6px; border: 1px solid #cbd5e1; 
-            font-size: 14px; font-weight: 600; padding: 0 8px; 
-            background: #fff; outline: none;
-        }
-        .form-group input:focus { border-color: #3b82f6; background: #eff6ff; }
-        
-        /* Destaque para o input de estoque */
-        #val-estoque { color: #2563eb; font-weight: 900; font-size: 16px; text-align: center;}
 
-        /* =========================================================
-           4. BARRA INFERIOR
-           ========================================================= */
-        .bottom-bar { 
-            flex: 0 0 54px; background: #fff; border-top: 1px solid #e2e8f0; 
-            display: flex; align-items: center; justify-content: space-around; z-index: 10; 
+        .status {
+            margin-top: 6px;
+            min-height: 18px;
+            font-size: 11px;
+            font-weight: 800;
+            text-align: center;
+            color: #64748b;
         }
-        .btn-icon { 
-            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 50%;
-            font-size: 20px; width: 40px; height: 40px; cursor: pointer; 
-            display: flex; align-items: center; justify-content: center;
-        }
-        .btn-icon.primary { background: #22c55e; border-color: #16a34a; color: white; }
+        .status.ok { color: #16a34a; }
+        .status.warn { color: #d97706; }
+        .status.erro { color: #dc2626; }
 
-        /* =========================================================
-           5. PAINEIS E MODAIS SOBREPOSTOS
-           ========================================================= */
-        .overlay-panel { 
-            display: none; position: fixed; inset: 0; background: #f8fafc; 
-            z-index: 50; padding: 20px; flex-direction: column; gap: 10px;
+        .conteudo {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 10px;
+            gap: 8px;
         }
-        .overlay-panel h3 { margin: 0 0 10px 0; font-size: 16px; }
-        .overlay-panel input { 
-            height: 40px; border-radius: 8px; border: 1px solid #cbd5e1; 
-            padding: 0 10px; font-size: 14px; margin-bottom: 5px;
+
+        .produto-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px;
+            min-height: 68px;
         }
-        .overlay-panel button { 
-            height: 44px; border: none; border-radius: 8px; 
-            font-weight: 800; font-size: 14px; cursor: pointer;
+        .produto-nome {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 900;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        
-        #modal-foto { 
-            display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); 
-            z-index:99; align-items:center; justify-content:center; 
+        .produto-info {
+            margin-top: 5px;
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 800;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            overflow: auto;
+            padding-bottom: 4px;
+        }
+        .grupo {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .grupo.full { grid-column: 1 / -1; }
+        .label {
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 900;
+            text-transform: uppercase;
+            padding-left: 2px;
+        }
+        .grupo input {
+            height: 42px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 0 10px;
+            background: #fff;
+            outline: none;
+            font-size: 16px;
+            font-weight: 800;
+        }
+        .grupo input:focus { border-color: #2563eb; background: #eff6ff; }
+        .grupo input.alterado { border-color: #f59e0b; background: #fffbeb; }
+        #val-estoque { text-align: center; font-size: 21px; font-weight: 900; color: #2563eb; }
+
+        .acoes {
+            flex: 0 0 auto;
+            background: #fff;
+            border-top: 1px solid #e2e8f0;
+            padding: 8px;
+            display: grid;
+            grid-template-columns: 48px 1fr 48px;
+            gap: 8px;
+        }
+        .btn {
+            height: 48px;
+            border: 0;
+            border-radius: 12px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+        .btn-ico { background: #f1f5f9; border: 1px solid #e2e8f0; font-size: 20px; }
+        .btn-salvar { background: #22c55e; color: #fff; font-size: 15px; }
+        .btn-salvar:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 99;
+            background: rgba(15, 23, 42, 0.92);
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+        .modal-box {
+            width: 100%;
+            max-width: 430px;
+            background: #fff;
+            border-radius: 16px;
+            padding: 16px;
+        }
+        .modal-box h3 { margin: 0 0 10px 0; font-size: 16px; }
+        .modal-box p { font-size: 12px; color: #475569; line-height: 1.45; }
+        .modal-box button {
+            width: 100%;
+            height: 44px;
+            border: 0;
+            border-radius: 10px;
+            font-weight: 900;
+            margin-top: 8px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-<div class="header-area">
+<div class="topo">
     <div id="reader"></div>
-    <div class="search-row">
-        <input type="text" id="search" placeholder="Código ou Nome...">
-        <button onclick="buscar()">BUSCAR</button>
+    <div class="busca-row">
+        <input type="text" id="search" placeholder="Código, EAN ou nome..." autocomplete="off">
+        <button onclick="buscarProduto()">BUSCAR</button>
+    </div>
+    <div id="status" class="status">Carregando banco do Firebase...</div>
+</div>
+
+<div class="conteudo">
+    <div class="produto-card">
+        <h3 class="produto-nome" id="display-nome">Aguardando produto...</h3>
+        <div class="produto-info" id="display-info">Fonte oficial: Firebase</div>
+    </div>
+
+    <div class="grid">
+        <div class="grupo">
+            <div class="label">Estoque</div>
+            <input type="number" id="val-estoque" inputmode="numeric" onchange="marcarAlteracao('estoque', this.value)" oninput="marcarAlteracao('estoque', this.value)">
+        </div>
+
+        <div class="grupo">
+            <div class="label">Validade</div>
+            <input type="date" id="val-validade" onchange="marcarAlteracao('validade', this.value)">
+        </div>
+
+        <div class="grupo full">
+            <div class="label">Embalagem</div>
+            <input type="text" id="val-embalagem" onchange="marcarAlteracao('embalagem', this.value)" oninput="marcarAlteracao('embalagem', this.value)">
+        </div>
+
+        <div class="grupo">
+            <div class="label">Gôndola</div>
+            <input type="text" id="val-gondola" onchange="marcarAlteracao('gondola', this.value)" oninput="marcarAlteracao('gondola', this.value)">
+        </div>
+
+        <div class="grupo">
+            <div class="label">Prateleira</div>
+            <input type="text" id="val-prateleira" onchange="marcarAlteracao('prateleira', this.value)" oninput="marcarAlteracao('prateleira', this.value)">
+        </div>
     </div>
 </div>
 
-<div class="content-area">
-    <h3 class="prod-title" id="display-nome">Aguardando leitura...</h3>
-    
-    <div class="grid-inputs">
-        <div class="form-group"><div class="label">ESTOQUE</div><input type="number" id="val-estoque" onchange="updateCurrent('estoque', this.value)"></div>
-        <div class="form-group"><div class="label">VALIDADE</div><input type="date" id="val-validade" onchange="updateCurrent('validade', this.value)"></div>
-        <div class="form-group"><div class="label">EAN</div><input type="text" id="val-gtin" onchange="updateCurrent('gtin', this.value)"></div>
-        <div class="form-group"><div class="label">EMBALAGEM</div><input type="text" id="val-embalagem" onchange="updateCurrent('embalagem', this.value)"></div>
-        <div class="form-group"><div class="label">GÔNDOLA</div><input type="text" id="val-gondola" onchange="updateCurrent('gondola', this.value)"></div>
-        <div class="form-group"><div class="label">PRATELEIRA</div><input type="text" id="val-prateleira" onchange="updateCurrent('prateleira', this.value)"></div>
+<div class="acoes">
+    <button class="btn btn-ico" onclick="abrirAjuda()" title="Ajuda">ℹ️</button>
+    <button class="btn btn-salvar" id="btn-salvar" onclick="salvarProdutoFirebase()" disabled>☁️ SALVAR NO FIREBASE</button>
+    <button class="btn btn-ico" onclick="recarregarFirebase()" title="Recarregar Firebase">🔄</button>
+</div>
+
+<div id="modal-ajuda" class="modal" onclick="fecharAjuda()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <h3>Como este sistema salva</h3>
+        <p>Ele puxa a base somente do Firebase. Quando você altera um produto, o botão verde envia um PATCH somente para aquele produto e somente com estes campos: estoque, validade, embalagem, gondola e prateleira.</p>
+        <p>Nenhum outro produto é enviado. Nenhum arquivo do GitHub é alterado por esta tela.</p>
+        <button style="background:#0f172a;color:#fff;" onclick="fecharAjuda()">FECHAR</button>
     </div>
-</div>
-
-<div class="bottom-bar">
-    <button class="btn-icon" onclick="toggleConfig()" title="Configurações">⚙️</button>
-    <button class="btn-icon" onclick="verFoto()" title="Ver Foto">📷</button>
-</div>
-
-<div id="config-panel" class="overlay-panel">
-    <h3>Configurações de Sincronização</h3>
-    <input type="text" id="cfg-user" placeholder="Usuário GitHub">
-    <input type="text" id="cfg-repo" placeholder="Repositório GitHub">
-    <input type="password" id="cfg-token" placeholder="Token GitHub">
-    
-    <button onclick="saveDataToFirebase()" style="background:#22c55e; color:#fff; margin-top:10px;">☁️ SALVAR ALTERAÇÕES NO FIREBASE</button>
-    <button onclick="syncData({force:true})" style="background:#2563eb; color:#fff;">🔄 PUXAR DADOS DA NUVEM</button>
-    <button onclick="atualizarCatalogoMetaGithub()" style="background:#16a34a; color:#fff;">📦 ATUALIZAR CATÁLOGO META</button>
-    <button onclick="saveConfig()" style="background:#0f172a; color:#fff;">🔐 SALVAR CREDENCIAIS</button>
-    <button onclick="toggleConfig()" style="background:#ef4444; color:#fff; margin-top: 20px;">❌ FECHAR</button>
-    
-    <p style="font-size: 10px; color: #64748b; text-align: center; margin-top: auto;">Firebase é o banco oficial. O cache local é apenas apoio de leitura; o salvamento envia somente os campos alterados com proteção contra conflito.</p>
-</div>
-
-<div id="modal-foto" onclick="this.style.display='none'">
-    <img id="img-ampliada" style="max-width:95%; max-height: 90vh; border-radius:8px; object-fit: contain;">
 </div>
 
 <script>
-    // URL DO SEU FIREBASE (Centralizado aqui)
     const FIREBASE_URL = "https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json";
-    const FIREBASE_PRODUTOS_BASE_URL = FIREBASE_URL.replace(/\.json$/, "");
-    const LOCAL_PRODUCTS_KEY = "sucedoan_pim_v37";
-    const LOCAL_LAST_SYNC_KEY = "sucedoan_last_sync";
+    const FIREBASE_BASE_URL = FIREBASE_URL.replace(/\.json$/, "");
+
+    const CAMPOS_PERMITIDOS = ["estoque", "validade", "embalagem", "gondola", "prateleira"];
 
     let products = [];
     let currentProd = null;
-    let camposAlteradosProdutoAtual = {};
-    let valoresOriginaisProdutoAtual = {};
-    let produtoSelecionadoEm = 0;
-    let sincronizacaoEmAndamento = false;
-    const CAMPOS_EDITAVEIS_ESTOQUE = ["estoque", "validade", "gtin", "embalagem", "gondola", "prateleira"];
-    const html5QrCode = new Html5Qrcode("reader");
+    let valoresOriginais = {};
+    let alteracoesPendentes = {};
+    let carregando = false;
+    let salvando = false;
+    let scanner = null;
+    let ultimoCodigoLido = "";
+    let ultimoCodigoLidoEm = 0;
 
-    // ---------------------------------------------------------
-    // CONVERSÃO DO NOVO FORMATO FIREBASE
-    // Firebase novo: { "id_do_produto": { dados } }
-    // Sistema interno: products = [ { dados }, { dados } ]
-    // ---------------------------------------------------------
-function sanitizarChaveFirebase(chave) {
-        return String(chave || "")
-            .trim()
-            .replace(/[.#$\[\]\/]/g, "_");
+    function setStatus(msg, tipo = "") {
+        const el = document.getElementById("status");
+        el.className = "status" + (tipo ? " " + tipo : "");
+        el.textContent = msg;
     }
 
-    function gerarChaveProduto(produto) {
-        const chave = String(
-            (produto && produto.firebaseKey) ||
-            (produto && produto.id) ||
-            (produto && produto.codigo) ||
-            (produto && produto.gtin) ||
-            ""
-        ).trim();
-
-        return sanitizarChaveFirebase(chave || (Date.now() + "" + Math.floor(Math.random() * 100000)));
-    }
-
-
-    function arrayParaObjetoPorId(lista) {
-        const obj = {};
-
-        if (!Array.isArray(lista)) return obj;
-
-        lista.forEach(produto => {
-            const chave = gerarChaveProduto(produto);
-
-            obj[chave] = {
-                ...produto,
-                id: String(produto.id || chave)
-            };
-        });
-
-        return obj;
-    }
-function objetoPorIdParaArray(dados) {
-        if (!dados) return [];
-
-        // Cache local novo: { origem, atualizado_em, produtos: [...] }
-        if (dados && Array.isArray(dados.produtos)) {
-            return dados.produtos.filter(Boolean);
-        }
-
-        // Formato antigo: array direto.
-        if (Array.isArray(dados)) {
-            return dados.filter(Boolean);
-        }
-
-        // Formato correto do Firebase: { firebaseKey: { dados } }
-        if (typeof dados === "object") {
-            return Object.entries(dados).map(([firebaseKey, produto]) => ({
-                ...(produto || {}),
-                firebaseKey: String(firebaseKey),
-                id: String((produto && produto.id) || firebaseKey)
-            }));
-        }
-
-        return [];
-    }
-function getProdutoFirebaseKey(produto) {
-        const chave = gerarChaveProduto(produto);
-        if (!chave) throw new Error("Produto sem chave Firebase válida.");
-        return chave;
-    }
-
-
-    function getProdutoFirebaseUrl(produto) {
-        return `${FIREBASE_PRODUTOS_BASE_URL}/${encodeURIComponent(getProdutoFirebaseKey(produto))}.json`;
-    }
-
-    function dataLocalHoje() {
-        const agora = new Date();
-        const ano = agora.getFullYear();
-        const mes = String(agora.getMonth() + 1).padStart(2, "0");
-        const dia = String(agora.getDate()).padStart(2, "0");
-        return `${ano}-${mes}-${dia}`;
-    }
-async function salvarLocalmente() {
-        // CACHE LOCAL APENAS PARA ABRIR MAIS RÁPIDO E AJUDAR NA BUSCA.
-        // Nunca usar este cache para sobrescrever o Firebase.
-        const cache = {
-            origem: "firebase_cache_estoque_rapido",
-            atualizado_em: Date.now(),
-            produtos: Array.isArray(products) ? products : []
-        };
-        await localforage.setItem(LOCAL_PRODUCTS_KEY, cache);
-    }
-
-    async function carregarCacheLocalProdutos() {
-        try {
-            const cache = await localforage.getItem(LOCAL_PRODUCTS_KEY);
-            return objetoPorIdParaArray(cache);
-        } catch (e) {
-            console.warn("Falha ao ler cache local:", e);
-            return [];
+    function setSalvarAtivo() {
+        const btn = document.getElementById("btn-salvar");
+        const temAlteracao = Object.keys(alteracoesPendentes).length > 0;
+        btn.disabled = !currentProd || !temAlteracao || salvando;
+        if (salvando) {
+            btn.textContent = "SALVANDO...";
+        } else if (temAlteracao) {
+            btn.textContent = "☁️ SALVAR ALTERAÇÕES";
+        } else {
+            btn.textContent = "☁️ SALVAR NO FIREBASE";
         }
     }
 
-    function normalizarValorCampo(valor, campo) {
-        if (valor === undefined || valor === null) return "";
-        if (campo === "estoque") return String(Number(valor || 0));
-        return String(valor).trim();
+    function limparTexto(valor) {
+        return String(valor ?? "").trim();
     }
 
-    function valoresIguaisCampo(a, b, campo) {
-        return normalizarValorCampo(a, campo) === normalizarValorCampo(b, campo);
+    function normalizarBusca(valor) {
+        return limparTexto(valor).toLowerCase();
     }
 
-    function capturarValoresEditaveis(produto) {
+    function formatarDataParaInput(valor) {
+        const texto = limparTexto(valor);
+        if (!texto) return "";
+        if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto;
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
+            const [dia, mes, ano] = texto.split("/");
+            return `${ano}-${mes}-${dia}`;
+        }
+        return "";
+    }
+
+    function formatarDataParaFirebase(valorInput) {
+        const texto = limparTexto(valorInput);
+        if (!texto) return "";
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) return texto;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+            const [ano, mes, dia] = texto.split("-");
+            return `${dia}/${mes}/${ano}`;
+        }
+        return texto;
+    }
+
+    function normalizarValorCampo(campo, valor) {
+        if (campo === "estoque") {
+            const n = Number(String(valor ?? "").replace(",", "."));
+            return Number.isFinite(n) ? n : 0;
+        }
+        if (campo === "validade") return formatarDataParaFirebase(valor);
+        return limparTexto(valor);
+    }
+
+    function compararCampo(campo, a, b) {
+        if (campo === "estoque") return Number(a || 0) === Number(b || 0);
+        return limparTexto(a) === limparTexto(b);
+    }
+
+    function capturarOriginais(produto) {
         const snap = {};
-        CAMPOS_EDITAVEIS_ESTOQUE.forEach(campo => {
-            snap[campo] = produto ? produto[campo] : "";
+        CAMPOS_PERMITIDOS.forEach(campo => {
+            snap[campo] = normalizarValorCampo(campo, produto ? produto[campo] : "");
         });
         return snap;
     }
 
+    function objetoFirebaseParaArray(dados) {
+        if (!dados) return [];
+
+        if (Array.isArray(dados)) {
+            return dados
+                .map((produto, index) => produto ? {
+                    ...produto,
+                    firebaseKey: String(index),
+                    id: String(produto.id || index)
+                } : null)
+                .filter(Boolean);
+        }
+
+        if (typeof dados === "object") {
+            return Object.entries(dados)
+                .map(([firebaseKey, produto]) => produto ? {
+                    ...produto,
+                    firebaseKey: String(firebaseKey),
+                    id: String(produto.id || firebaseKey)
+                } : null)
+                .filter(Boolean);
+        }
+
+        return [];
+    }
+
+    function getProdutoKey(produto) {
+        const key = limparTexto(produto && produto.firebaseKey);
+        if (!key) throw new Error("Produto sem firebaseKey. Recarregue a base do Firebase e tente novamente.");
+        return key;
+    }
+
+    function getProdutoUrl(produto) {
+        return `${FIREBASE_BASE_URL}/${encodeURIComponent(getProdutoKey(produto))}.json`;
+    }
+
     async function carregarProdutosFirebase() {
-        const res = await fetch(FIREBASE_URL + "?nocache=" + Date.now(), {
-            cache: "no-store"
-        });
-
-        if (!res.ok) {
-            throw new Error("Falha na comunicação com o Firebase: HTTP " + res.status);
-        }
-
-        const dadosFirebase = await res.json();
-        return autoFixDatabase(objetoPorIdParaArray(dadosFirebase));
-    }
-
-    async function lerProdutoFirebaseComEtag(produto) {
-        const url = getProdutoFirebaseUrl(produto) + "?nocache=" + Date.now();
-
-        const res = await fetch(url, {
-            method: "GET",
-            headers: { "X-Firebase-ETag": "true" },
-            cache: "no-store"
-        });
-
-        if (!res.ok) {
-            throw new Error("Erro ao ler produto individual no Firebase: HTTP " + res.status);
-        }
-
-        const etag = res.headers.get("ETag");
+        const res = await fetch(FIREBASE_URL + "?t=" + Date.now(), { cache: "no-store" });
+        if (!res.ok) throw new Error("Firebase HTTP " + res.status);
         const dados = await res.json();
-
-        return {
-            etag,
-            produto: dados ? {
-                ...dados,
-                firebaseKey: getProdutoFirebaseKey(produto),
-                id: String(dados.id || getProdutoFirebaseKey(produto))
-            } : null
-        };
+        products = objetoFirebaseParaArray(dados);
+        return products;
     }
 
-
-    function atualizarProdutoNoArray(produtoAtualizado) {
-        if (!produtoAtualizado) return;
-
-        const firebaseKeyAtual = String(produtoAtualizado.firebaseKey || "").trim();
-        const idAtual = String(produtoAtualizado.id || "").trim();
-        const codigoAtual = String(produtoAtualizado.codigo || "").trim();
-        const gtinAtual = String(produtoAtualizado.gtin || "").trim();
-
-        const index = products.findIndex(p => {
-            return (
-                (firebaseKeyAtual && String(p.firebaseKey || "").trim() === firebaseKeyAtual) ||
-                (idAtual && String(p.id || "").trim() === idAtual) ||
-                (codigoAtual && String(p.codigo || "").trim() === codigoAtual) ||
-                (gtinAtual && String(p.gtin || "").trim() === gtinAtual)
-            );
-        });
-
-        if (index !== -1) {
-            products[index] = produtoAtualizado;
-        } else {
-            products.unshift(produtoAtualizado);
-        }
-    }
-    
-    // ---------------------------------------------------------
-    // FUNÇÕES DE AUTO-REPARO DE TEXTOS
-    // ---------------------------------------------------------
-    function fixBrokenText(text) {
-        if (!text || typeof text !== 'string') return text;
-        try { return decodeURIComponent(escape(text)); } catch (e) { return text; }
-    }
-
-    function autoFixDatabase(dataArray) {
-        return dataArray.map(item => {
-            const newItem = { ...item };
-            for (let key in newItem) {
-                if (typeof newItem[key] === 'string') newItem[key] = fixBrokenText(newItem[key]);
-            }
-            return newItem;
-        });
-    }
-
-    // ---------------------------------------------------------
-    // FUNÇÕES MODERNAS PARA UTF-8 E BASE64 (GitHub)
-    // ---------------------------------------------------------
-    function utf8ToBase64(str) {
-        const bytes = new TextEncoder().encode(str);
-        let binary = '';
-        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-        return btoa(binary);
-    }
-
-    function base64ToUtf8(base64) {
-        const binary = atob(base64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        return new TextDecoder().decode(bytes);
-    }
-
-    // ---------------------------------------------------------
-    // MAPEAMENTO META ADS E GITHUB
-    // ---------------------------------------------------------
-    function mapearProdutoParaMeta(p) {
-        let urlFoto = p.url_imagem || "";
-        if (typeof urlFoto === 'string' && urlFoto.includes('../')) {
-            urlFoto = urlFoto.split('?')[0].replace("../", "https://donaantonia.com.br/");
-        } else if (typeof urlFoto === 'string' && urlFoto.startsWith('http')) {
-            urlFoto = urlFoto.split('?')[0];
-        }
-
-        let slug = p.nome ? p.nome.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '') : (p.codigo || "");
-        
-        let estoqueNum = parseFloat(p.estoque) || 0;
-        let disponibilidade = estoqueNum > 0 ? "in stock" : "out of stock";
-        let descricaoLimpa = p.nome + (p.embalagem ? " - " + p.embalagem : "");
-
-        let objMeta = {
-            "id": p.codigo || "", "title": p.nome || "", "description": descricaoLimpa,
-            "availability": disponibilidade, "condition": "new", "price": `${p.preco || "0.00"} BRL`,
-            "link": `https://donaantonia.com.br/#/produto/${slug}`, "image_link": urlFoto, "brand": p.marca || "Dona Antônia"
-        };
-
-        if (p.preco_oferta && parseFloat(p.preco_oferta) > 0) {
-            objMeta["sale_price"] = `${parseFloat(p.preco_oferta).toFixed(2)} BRL`;
-            if (p.validade_oferta) objMeta["sale_price_effective_date"] = `${p.validade_oferta}-03:00/${p.validade_oferta}-03:00`;
-        }
-        return objMeta;
-    }
-async function saveGenericFileGithub(cfg, path, contentBase64, message) {
-        let sha = null;
-        try {
-            const resGet = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`, {
-                headers: {
-                    "Authorization": `Bearer ${cfg.token}`,
-                    "Accept": "application/vnd.github.v3+json"
-                },
-                cache: "no-store"
-            });
-            if (resGet.ok) {
-                const data = await resGet.json();
-                sha = data.sha;
-            }
-        } catch(e) {}
-
-        let bodyData = { message: message, content: contentBase64 };
-        if (sha) bodyData.sha = sha;
-
-        const resPut = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`, {
-            method: 'PUT',
-            headers: {
-                "Authorization": `Bearer ${cfg.token}`,
-                "Content-Type": "application/json",
-                "Accept": "application/vnd.github.v3+json"
-            },
-            body: JSON.stringify(bodyData)
-        });
-
-        if (!resPut.ok) {
-            let detalhe = "";
-            try {
-                const erro = await resPut.json();
-                detalhe = erro && erro.message ? " - " + erro.message : "";
-            } catch(e) {}
-            throw new Error("GitHub HTTP " + resPut.status + detalhe);
-        }
-    }
-
-async function saveDataToFirebase() {
-        if (!currentProd) {
-            alert("Selecione ou escaneie um produto antes de salvar.");
-            return;
-        }
-
-        if (!camposAlteradosProdutoAtual || Object.keys(camposAlteradosProdutoAtual).length === 0) {
-            alert("Nenhuma alteração foi feita neste produto.");
-            return;
-        }
+    async function recarregarFirebase() {
+        if (carregando) return;
+        carregando = true;
+        setStatus("Atualizando banco do Firebase...", "warn");
 
         try {
-            const firebaseKey = getProdutoFirebaseKey(currentProd);
-            currentProd.firebaseKey = firebaseKey;
-            currentProd.id = String(currentProd.id || firebaseKey);
+            await carregarProdutosFirebase();
+            setStatus(`Firebase carregado: ${products.length} produtos.`, "ok");
 
-            // Lê somente o produto atual no Firebase e usa ETag para evitar escrita cega.
-            const leitura = await lerProdutoFirebaseComEtag(currentProd);
-            const produtoNuvem = leitura.produto;
-            const etag = leitura.etag;
-
-            if (!produtoNuvem) {
-                throw new Error("Produto não encontrado no Firebase. Puxe os dados da nuvem antes de salvar para evitar criar duplicado.");
+            if (currentProd) {
+                const keyAtual = getProdutoKey(currentProd);
+                const atualizado = products.find(p => limparTexto(p.firebaseKey) === keyAtual);
+                if (atualizado) selecionarProduto(atualizado, false);
             }
-
-            // Proteção contra conflito:
-            // Se outro aparelho/sistema alterou o mesmo campo depois que este produto foi selecionado,
-            // o salvamento é cancelado e o funcionário deve recarregar.
-            const conflitos = [];
-            Object.keys(camposAlteradosProdutoAtual).forEach(campo => {
-                const valorNuvemAtual = produtoNuvem[campo];
-                const valorOriginalTela = valoresOriginaisProdutoAtual[campo];
-
-                if (!valoresIguaisCampo(valorNuvemAtual, valorOriginalTela, campo)) {
-                    conflitos.push({
-                        campo,
-                        nuvem: valorNuvemAtual,
-                        original: valorOriginalTela
-                    });
-                }
-            });
-
-            if (conflitos.length > 0) {
-                const lista = conflitos.map(c => `${c.campo}: Firebase="${c.nuvem ?? ""}" / Tela antiga="${c.original ?? ""}"`).join("\\n");
-                currentProd = produtoNuvem;
-                atualizarProdutoNoArray(produtoNuvem);
-                await salvarLocalmente();
-
-                // Atualiza a tela com a versão atual para o funcionário conferir.
-                document.getElementById("display-nome").innerText = produtoNuvem.nome || "Produto sem nome";
-                document.getElementById("val-estoque").value = produtoNuvem.estoque || 0;
-                document.getElementById("val-validade").value = formatDate(produtoNuvem.validade);
-                document.getElementById("val-gtin").value = produtoNuvem.gtin || "";
-                document.getElementById("val-embalagem").value = produtoNuvem.embalagem || "";
-                document.getElementById("val-gondola").value = produtoNuvem.gondola || "";
-                document.getElementById("val-prateleira").value = produtoNuvem.prateleira || "";
-
-                camposAlteradosProdutoAtual = {};
-                valoresOriginaisProdutoAtual = capturarValoresEditaveis(produtoNuvem);
-                produtoSelecionadoEm = Date.now();
-
-                throw new Error("Conflito detectado. Outro sistema alterou este mesmo campo antes do seu salvamento. Confira os dados atuais e altere novamente.\\n" + lista);
-            }
-
-            const agora = Date.now();
-
-            // Envia somente os campos realmente alterados neste produto.
-            // Não envia a base inteira e não sobrescreve campos que o funcionário não mexeu.
-            const patchSeguro = {
-                ...camposAlteradosProdutoAtual,
-                last_update: agora,
-                last_update_estoque_rapido: agora
-            };
-
-            const headers = { "Content-Type": "application/json" };
-            if (etag) headers["If-Match"] = etag;
-
-            const resMain = await fetch(getProdutoFirebaseUrl(currentProd), {
-                method: "PATCH",
-                headers,
-                body: JSON.stringify(patchSeguro)
-            });
-
-            if (resMain.status === 412) {
-                throw new Error("Conflito detectado no Firebase durante o salvamento. Puxe os dados da nuvem e tente novamente.");
-            }
-
-            if (!resMain.ok) {
-                throw new Error("Erro ao guardar o produto no Firebase: HTTP " + resMain.status);
-            }
-
-            const produtoMesclado = {
-                ...produtoNuvem,
-                ...patchSeguro,
-                firebaseKey: firebaseKey
-            };
-
-            currentProd = produtoMesclado;
-            atualizarProdutoNoArray(produtoMesclado);
-            await salvarLocalmente();
-
-            camposAlteradosProdutoAtual = {};
-            valoresOriginaisProdutoAtual = capturarValoresEditaveis(produtoMesclado);
-            produtoSelecionadoEm = Date.now();
-
-            alert("✅ Produto salvo com segurança no Firebase. Apenas os campos alterados foram enviados.");
-
-        } catch (error) {
-            console.error(error);
-            alert("Falha ao guardar: " + error.message);
-        }
-    }
-async function atualizarCatalogoMetaGithub() {
-        const cfg = await localforage.getItem('sucedoan_config');
-
-        if (!cfg || !cfg.token || !cfg.user || !cfg.repo) {
-            alert("Configure as credenciais do GitHub antes de atualizar o catálogo da Meta.");
-            return;
-        }
-
-        try {
-            alert("Buscando produtos atualizados direto do Firebase para gerar a Meta...");
-
-            const produtosFirebase = await carregarProdutosFirebase();
-
-            if (!Array.isArray(produtosFirebase) || produtosFirebase.length === 0) {
-                throw new Error("Firebase retornou base vazia. Envio da Meta cancelado por segurança.");
-            }
-
-            products = produtosFirebase;
-            await salvarLocalmente();
-
-            const metaCatalog = produtosFirebase
-                .filter(p => p && p.situacao !== 'I')
-                .map(p => mapearProdutoParaMeta(p));
-
-            if (metaCatalog.length === 0) {
-                throw new Error("Nenhum produto ativo encontrado para gerar catálogo da Meta.");
-            }
-
-            const csvText = Papa.unparse(metaCatalog, { delimiter: ";" });
-
-            await saveGenericFileGithub(
-                cfg,
-                'site/produtos.csv',
-                utf8ToBase64(csvText),
-                "Estoque Rápido: Atualização Meta CSV puxada do Firebase"
-            );
-
-            const metaJsonFinal = { "lista_produtos": metaCatalog };
-
-            await saveGenericFileGithub(
-                cfg,
-                'site/produtos_meta.json',
-                utf8ToBase64(JSON.stringify(metaJsonFinal, null, 2)),
-                "Estoque Rápido: Atualização Meta JSON puxada do Firebase"
-            );
-
-            alert("✅ Catálogo da Meta atualizado no GitHub com dados atuais do Firebase.");
-        } catch (error) {
-            console.error(error);
-            alert("Falha ao atualizar GitHub/Meta: " + error.message);
-        }
-    }
-async function syncData(options = {}) {
-        const force = !!options.force;
-        const silent = !!options.silent;
-        const closePanel = options.closePanel !== false;
-
-        if (sincronizacaoEmAndamento) return;
-
-        sincronizacaoEmAndamento = true;
-
-        try {
-            // Firebase é o banco oficial.
-            // O cache local só ajuda a abrir rápido; a sincronização busca sempre a base real quando chamada.
-            const produtosFirebase = await carregarProdutosFirebase();
-
-            if (produtosFirebase && Array.isArray(produtosFirebase) && produtosFirebase.length > 0) {
-                products = produtosFirebase;
-
-                await salvarLocalmente();
-                await localforage.setItem(LOCAL_LAST_SYNC_KEY, Date.now());
-
-                if (!silent) alert("Sincronizado do Firebase com sucesso.");
-                if (!silent && closePanel) toggleConfig();
-
-                if (currentProd) {
-                    const chaveAtual = String(currentProd.firebaseKey || currentProd.id || currentProd.codigo || currentProd.gtin || "");
-                    const atualizado = products.find(p => {
-                        return String(p.firebaseKey || p.id || p.codigo || p.gtin || "") === chaveAtual ||
-                               String(p.codigo || "") === String(currentProd.codigo || "");
-                    });
-
-                    if (atualizado) {
-                        currentProd = atualizado;
-                        camposAlteradosProdutoAtual = {};
-                        valoresOriginaisProdutoAtual = capturarValoresEditaveis(atualizado);
-                        produtoSelecionadoEm = Date.now();
-
-                        document.getElementById('display-nome').innerText = atualizado.nome || "Produto sem nome";
-                        document.getElementById('val-estoque').value = atualizado.estoque || 0;
-                        document.getElementById('val-validade').value = formatDate(atualizado.validade);
-                        document.getElementById('val-gtin').value = atualizado.gtin || '';
-                        document.getElementById('val-embalagem').value = atualizado.embalagem || '';
-                        document.getElementById('val-gondola').value = atualizado.gondola || '';
-                        document.getElementById('val-prateleira').value = atualizado.prateleira || '';
-                    }
-                }
-            } else {
-                if (!silent) alert("A base de dados do Firebase está vazia.");
-            }
-        } catch (error) {
-            console.error(error);
-            if (!silent) alert("Erro ao sincronizar: " + error.message);
+        } catch (e) {
+            console.error(e);
+            setStatus("Erro ao puxar Firebase: " + e.message, "erro");
+            alert("Erro ao puxar Firebase: " + e.message);
         } finally {
-            sincronizacaoEmAndamento = false;
+            carregando = false;
         }
     }
 
-    // ---------------------------------------------------------
-    // LÓGICA DE UI E CÂMERA
-    // ---------------------------------------------------------
-    async function startScanner() {
-        try {
-            await html5QrCode.start({ facingMode: "environment" }, { fps: 5, qrbox: 180 }, (decodedText) => {
-                document.getElementById('search').value = decodedText;
-                buscar();
-            });
-        } catch (err) { console.error("Câmera:", err); }
-    }
-
-    function toggleConfig() {
-        const p = document.getElementById('config-panel');
-        p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
-    }
-function encontrarProdutoPorTermo(termo) {
-        const t = String(termo || '').toLowerCase().trim();
-
+    function encontrarProduto(termo) {
+        const t = normalizarBusca(termo);
         if (!t) return null;
 
-        return products.find(x => {
-            const nome = String(x.nome || '').toLowerCase();
-            const gtin = String(x.gtin || '').toLowerCase().trim();
-            const codigo = String(x.codigo || '').toLowerCase().trim();
-            const id = String(x.id || '').toLowerCase().trim();
-            const firebaseKey = String(x.firebaseKey || '').toLowerCase().trim();
+        return products.find(p => {
+            const codigo = normalizarBusca(p.codigo);
+            const gtin = normalizarBusca(p.gtin || p.ean);
+            const id = normalizarBusca(p.id);
+            const key = normalizarBusca(p.firebaseKey);
+            const nome = normalizarBusca(p.nome);
 
-            return (
-                nome.includes(t) ||
-                gtin === t ||
-                codigo === t ||
-                id === t ||
-                firebaseKey === t
-            );
+            return codigo === t || gtin === t || id === t || key === t || nome.includes(t);
         }) || null;
     }
 
-    async function buscar() {
-        const termo = String(document.getElementById('search').value || '').toLowerCase().trim();
-
-        if (!termo) {
+    async function buscarProduto() {
+        const termo = document.getElementById("search").value;
+        if (!limparTexto(termo)) {
             alert("Digite ou escaneie um código.");
             return;
         }
 
-        let p = encontrarProdutoPorTermo(termo);
-
-        // Se não achou no cache, puxa Firebase uma vez para evitar erro de cache antigo.
-        if (!p) {
-            await syncData({ silent: true, force: true, closePanel: false });
-            p = encontrarProdutoPorTermo(termo);
+        if (products.length === 0) {
+            await recarregarFirebase();
         }
 
-        if (p) {
-            currentProd = p;
-            camposAlteradosProdutoAtual = {};
-            valoresOriginaisProdutoAtual = capturarValoresEditaveis(p);
-            produtoSelecionadoEm = Date.now();
+        let produto = encontrarProduto(termo);
 
-            document.getElementById('display-nome').innerText = p.nome || "Produto sem nome";
-            document.getElementById('val-estoque').value = p.estoque || 0;
-            document.getElementById('val-validade').value = formatDate(p.validade);
-            document.getElementById('val-gtin').value = p.gtin || '';
-            document.getElementById('val-embalagem').value = p.embalagem || '';
-            document.getElementById('val-gondola').value = p.gondola || '';
-            document.getElementById('val-prateleira').value = p.prateleira || '';
-
-            document.getElementById('search').blur();
-        } else {
-            alert("Produto não encontrado no Firebase/cache.");
+        if (!produto) {
+            setStatus("Produto não achado no cache atual. Conferindo Firebase...", "warn");
+            await carregarProdutosFirebase();
+            produto = encontrarProduto(termo);
         }
-    }
-function updateCurrent(field, value) {
-        if (!currentProd) return;
 
-        if (!CAMPOS_EDITAVEIS_ESTOQUE.includes(field)) {
-            alert("Campo não autorizado para edição neste módulo.");
+        if (!produto) {
+            setStatus("Produto não encontrado no Firebase.", "erro");
+            alert("Produto não encontrado no Firebase.");
             return;
         }
 
-        let valorFinal = value;
-
-        if (field === 'validade') {
-            if (value && value.includes('-')) {
-                const d = value.split('-');
-                valorFinal = `${d[2]}/${d[1]}/${d[0]}`;
-                currentProd.validade = valorFinal;
-            } else {
-                valorFinal = "";
-                currentProd.validade = "";
-            }
-        } else if (field === 'estoque') {
-            valorFinal = Number(value || 0);
-            currentProd[field] = valorFinal;
-        } else {
-            currentProd[field] = valorFinal;
-        }
-
-        currentProd.last_update_local_cache = Date.now();
-
-        // Guarda somente o campo que o funcionário realmente alterou.
-        // Se ele voltar para o valor original, o campo sai da lista e não será enviado ao Firebase.
-        if (valoresIguaisCampo(valorFinal, valoresOriginaisProdutoAtual[field], field)) {
-            delete camposAlteradosProdutoAtual[field];
-        } else {
-            camposAlteradosProdutoAtual[field] = valorFinal;
-        }
-
-        atualizarProdutoNoArray(currentProd);
-
-        // Cache local apenas para manter a tela rápida e não perder a digitação se a internet oscilar.
-        salvarLocalmente().catch(e => console.warn("Falha ao atualizar cache local:", e));
-    }
-function formatDate(d) {
-        if (!d) return '';
-
-        const texto = String(d).trim();
-
-        // Já está no formato do input date.
-        if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto;
-
-        // Formato brasileiro salvo no banco.
-        if (texto.includes('/')) {
-            const p = texto.split('/');
-            if (p.length === 3) return `${p[2]}-${p[1]}-${p[0]}`;
-        }
-
-        return '';
+        selecionarProduto(produto, true);
+        document.getElementById("search").blur();
     }
 
+    function selecionarProduto(produto, mostrarOk) {
+        currentProd = { ...produto };
+        valoresOriginais = capturarOriginais(currentProd);
+        alteracoesPendentes = {};
 
-    function verFoto() {
-        if(!currentProd || !currentProd.url_imagem) return alert("Selecione um produto com foto.");
-        document.getElementById('img-ampliada').src = currentProd.url_imagem.replace("../", "https://donaantonia.com.br/");
-        document.getElementById('modal-foto').style.display = 'flex';
+        document.getElementById("display-nome").textContent = currentProd.nome || "Produto sem nome";
+        document.getElementById("display-info").textContent = `Código: ${currentProd.codigo || "-"} | EAN: ${currentProd.gtin || currentProd.ean || "-"}`;
+
+        document.getElementById("val-estoque").value = currentProd.estoque ?? 0;
+        document.getElementById("val-validade").value = formatarDataParaInput(currentProd.validade);
+        document.getElementById("val-embalagem").value = currentProd.embalagem || "";
+        document.getElementById("val-gondola").value = currentProd.gondola || "";
+        document.getElementById("val-prateleira").value = currentProd.prateleira || "";
+
+        limparMarcacoesCampos();
+        setSalvarAtivo();
+
+        if (mostrarOk) setStatus("Produto carregado. Altere e salve no Firebase.", "ok");
     }
 
-    async function saveConfig() {
-        await localforage.setItem('sucedoan_config', { 
-            user: document.getElementById('cfg-user').value, 
-            repo: document.getElementById('cfg-repo').value, 
-            token: document.getElementById('cfg-token').value 
+    function limparMarcacoesCampos() {
+        ["val-estoque", "val-validade", "val-embalagem", "val-gondola", "val-prateleira"].forEach(id => {
+            document.getElementById(id).classList.remove("alterado");
         });
-        alert("Credenciais do GitHub salvas com sucesso.");
     }
-window.onload = async () => {
-        const dadosLocais = await carregarCacheLocalProdutos();
-        products = dadosLocais;
 
-        const cfg = await localforage.getItem('sucedoan_config');
-        if(cfg) {
-            document.getElementById('cfg-user').value = cfg.user || "";
-            document.getElementById('cfg-repo').value = cfg.repo || "";
-            document.getElementById('cfg-token').value = cfg.token || "";
+    function marcarVisualCampo(campo, alterado) {
+        const mapa = {
+            estoque: "val-estoque",
+            validade: "val-validade",
+            embalagem: "val-embalagem",
+            gondola: "val-gondola",
+            prateleira: "val-prateleira"
+        };
+        const el = document.getElementById(mapa[campo]);
+        if (!el) return;
+        el.classList.toggle("alterado", !!alterado);
+    }
+
+    function marcarAlteracao(campo, valor) {
+        if (!currentProd) return;
+        if (!CAMPOS_PERMITIDOS.includes(campo)) return;
+
+        const valorFinal = normalizarValorCampo(campo, valor);
+        currentProd[campo] = valorFinal;
+
+        const valorOriginal = valoresOriginais[campo];
+        const mudou = !compararCampo(campo, valorFinal, valorOriginal);
+
+        if (mudou) {
+            alteracoesPendentes[campo] = valorFinal;
+        } else {
+            delete alteracoesPendentes[campo];
         }
 
-        // Abre rápido com cache, mas em seguida busca o Firebase.
-        // Firebase é sempre a fonte oficial.
-        await syncData({ silent: true, force: true, closePanel: false });
+        marcarVisualCampo(campo, mudou);
+        setSalvarAtivo();
 
-        startScanner();
-    };
+        if (mudou) {
+            setStatus("Alteração pendente. Toque em SALVAR.", "warn");
+        } else if (Object.keys(alteracoesPendentes).length === 0) {
+            setStatus("Sem alterações pendentes.", "ok");
+        }
+    }
+
+    async function salvarProdutoFirebase() {
+        if (!currentProd) {
+            alert("Busque ou escaneie um produto antes de salvar.");
+            return;
+        }
+
+        const campos = Object.keys(alteracoesPendentes).filter(c => CAMPOS_PERMITIDOS.includes(c));
+        if (campos.length === 0) {
+            alert("Nenhuma alteração para salvar.");
+            return;
+        }
+
+        salvando = true;
+        setSalvarAtivo();
+        setStatus("Salvando somente este produto no Firebase...", "warn");
+
+        try {
+            const patch = {};
+            campos.forEach(campo => {
+                patch[campo] = alteracoesPendentes[campo];
+            });
+            patch.last_update = Date.now();
+            patch.last_update_estoque_rapido = Date.now();
+
+            const res = await fetch(getProdutoUrl(currentProd), {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(patch)
+            });
+
+            if (!res.ok) {
+                let detalhe = "";
+                try {
+                    const erro = await res.json();
+                    detalhe = erro && erro.error ? " - " + erro.error : "";
+                } catch (e) {}
+                throw new Error("Firebase HTTP " + res.status + detalhe);
+            }
+
+            Object.assign(currentProd, patch);
+            const key = getProdutoKey(currentProd);
+            const index = products.findIndex(p => limparTexto(p.firebaseKey) === key);
+            if (index >= 0) products[index] = { ...products[index], ...patch };
+
+            valoresOriginais = capturarOriginais(currentProd);
+            alteracoesPendentes = {};
+            limparMarcacoesCampos();
+            setStatus("✅ Salvo no Firebase: somente este produto e somente os campos alterados.", "ok");
+        } catch (e) {
+            console.error(e);
+            setStatus("Erro ao salvar no Firebase: " + e.message, "erro");
+            alert("Erro ao salvar no Firebase: " + e.message);
+        } finally {
+            salvando = false;
+            setSalvarAtivo();
+        }
+    }
+
+    async function iniciarScanner() {
+        try {
+            if (!window.Html5Qrcode) {
+                setStatus("Leitor de câmera não carregou. Use busca manual.", "warn");
+                return;
+            }
+
+            scanner = new Html5Qrcode("reader");
+            await scanner.start(
+                { facingMode: "environment" },
+                { fps: 6, qrbox: { width: 210, height: 120 } },
+                decodedText => {
+                    const agora = Date.now();
+                    const codigo = limparTexto(decodedText);
+                    if (!codigo) return;
+                    if (codigo === ultimoCodigoLido && agora - ultimoCodigoLidoEm < 2500) return;
+                    ultimoCodigoLido = codigo;
+                    ultimoCodigoLidoEm = agora;
+                    document.getElementById("search").value = codigo;
+                    buscarProduto();
+                }
+            );
+        } catch (e) {
+            console.warn("Câmera não iniciou:", e);
+            setStatus("Câmera não iniciou. Use busca manual.", "warn");
+        }
+    }
+
+    function abrirAjuda() {
+        document.getElementById("modal-ajuda").style.display = "flex";
+    }
+
+    function fecharAjuda() {
+        document.getElementById("modal-ajuda").style.display = "none";
+    }
+
+    document.getElementById("search").addEventListener("keydown", function(e) {
+        if (e.key === "Enter") buscarProduto();
+    });
+
+    window.addEventListener("load", async () => {
+        await recarregarFirebase();
+        iniciarScanner();
+    });
 </script>
 </body>
 </html>
