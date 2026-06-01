@@ -7060,10 +7060,33 @@ Por favor, podem incluir na minha entrega?`;
 
     // Limpa antes de abrir o WhatsApp, porque no celular o redirecionamento pode sair da página imediatamente.
     zerarCarrinhoEmMemoriaELocalStorage();
+
+    // Fecha checkout e qualquer modal sem usar closeCheckout(),
+    // porque closeCheckout() pode acionar histórico e voltar para a página de cestas.
+    if ($('checkout-drawer')) $('checkout-drawer').classList.remove('open');
+    if ($('basketDetailModal')) $('basketDetailModal').classList.remove('active');
+    if ($('swapModal')) $('swapModal').classList.remove('active');
+    if ($('overlay')) $('overlay').classList.remove('open');
+
+    window.currentBasketId = null;
+
+    if (typeof limparEstadoModalAtualDoHistorico === 'function') {
+        limparEstadoModalAtualDoHistorico();
+    }
+
     updateTotals();
     updateAllCardUIs();
-    renderCheckoutItems();
-    closeCheckout();
+
+    if ($('chk-items-list')) {
+        $('chk-items-list').innerHTML = '';
+    }
+
+    // Volta para a página inicial com o carrinho já limpo
+    if (window.location.hash !== '#/') {
+        window.location.hash = '#/';
+    } else {
+        handleRoute();
+    }
 
     abrirWhatsAppPedido(msg);
 
