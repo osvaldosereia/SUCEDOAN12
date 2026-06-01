@@ -1939,6 +1939,354 @@
             }
         }
 
+        /* =========================================================
+   NOVO VISUAL DOS CARDS - IGUAL AO ofertas.html
+   Cards em 2 colunas, foto grande, informações discretas
+   Cole antes de </style>
+========================================================= */
+
+.products-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    padding: 10px !important;
+    background: transparent !important;
+}
+
+.products-grid .product-card-list {
+    min-width: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    text-align: left !important;
+    gap: 8px !important;
+    padding: 8px !important;
+    border-radius: 20px !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(229, 231, 235, 0.95) !important;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035) !important;
+    overflow: hidden !important;
+    position: relative !important;
+    content-visibility: auto;
+    contain-intrinsic-size: 260px;
+}
+
+.products-grid .product-card-list:active {
+    transform: scale(0.985) !important;
+}
+
+.products-grid .product-card-list .img-wrapper {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 142px !important;
+    aspect-ratio: 1 / 1 !important;
+    margin: 0 !important;
+    border-radius: 17px !important;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+    border: 1px solid #eef2f7 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+}
+
+.products-grid .product-icon-list {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    padding: 5px !important;
+    margin: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    mix-blend-mode: multiply;
+}
+
+.products-grid .product-details {
+    flex: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 116px !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: space-between !important;
+    gap: 5px !important;
+}
+
+.products-grid .embalagem-tag-text {
+    min-height: 14px !important;
+    font-size: 10.2px !important;
+    line-height: 1.2 !important;
+    color: #98a2b3 !important;
+    font-weight: 850 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.03em !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin-bottom: 3px !important;
+}
+
+.products-grid .product-name-list {
+    min-height: 36px !important;
+    font-size: 13px !important;
+    line-height: 1.35 !important;
+    color: #1f2937 !important;
+    font-weight: 760 !important;
+    letter-spacing: -0.01em !important;
+    margin-bottom: 6px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+}
+
+.products-grid .card-bottom-row {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    margin-top: auto !important;
+}
+
+.products-grid .price-container {
+    width: 100% !important;
+    min-height: 34px !important;
+    min-width: 0 !important;
+    flex: unset !important;
+}
+
+.products-grid .old-price {
+    height: 14px !important;
+    color: #98a2b3 !important;
+    text-decoration: line-through !important;
+    font-size: 11px !important;
+    font-weight: 750 !important;
+    line-height: 1.1 !important;
+}
+
+.products-grid .tag-preco-list {
+    color: #0f172a !important;
+    font-size: 19px !important;
+    line-height: 1.05 !important;
+    font-weight: 950 !important;
+    letter-spacing: -0.04em !important;
+    margin-top: 0 !important;
+}
+
+.products-grid .card-action-area {
+    width: 100% !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+}
+
+.products-grid .btn-quick-add-list {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    border-radius: 999px !important;
+    padding: 0 12px !important;
+    background: #0f172a !important;
+    color: #ffffff !important;
+    border: 1px solid #0f172a !important;
+    box-shadow: 0 7px 18px rgba(15, 23, 42, 0.16) !important;
+    font-size: 13px !important;
+    font-weight: 950 !important;
+    gap: 6px !important;
+}
+
+.products-grid .btn-quick-add-list::after {
+    content: "Adicionar" !important;
+    display: inline !important;
+    font-size: 13px !important;
+    font-weight: 950 !important;
+}
+
+.products-grid .btn-quick-add-list .svg-icon {
+    width: 17px !important;
+    height: 17px !important;
+}
+
+.products-grid .qty-controls {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 40px !important;
+    border-radius: 999px !important;
+    overflow: hidden !important;
+    border: 1px solid #d0d5dd !important;
+    background: #ffffff !important;
+}
+
+.products-grid .qty-btn {
+    width: 42px !important;
+    height: 100% !important;
+    font-size: 20px !important;
+    font-weight: 950 !important;
+    color: #0f172a !important;
+}
+
+.products-grid .qty-display {
+    font-size: 15px !important;
+    font-weight: 950 !important;
+    color: #0f172a !important;
+    border-left: 1px solid #e5e7eb !important;
+    border-right: 1px solid #e5e7eb !important;
+}
+
+/* Corrige os grids de catálogo/ofertas que usam card-catalogo */
+.grid-catalogo {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    padding: 10px !important;
+    background: transparent !important;
+}
+
+.grid-catalogo .card-catalogo {
+    min-width: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 8px !important;
+    border-radius: 20px !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(229, 231, 235, 0.95) !important;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035) !important;
+    overflow: hidden !important;
+}
+
+.grid-catalogo .card-catalogo img {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 142px !important;
+    aspect-ratio: 1 / 1 !important;
+    object-fit: contain !important;
+    padding: 5px !important;
+    margin: 0 !important;
+    border-radius: 17px !important;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+    border: 1px solid #eef2f7 !important;
+    mix-blend-mode: multiply;
+}
+
+.grid-catalogo .card-catalogo-bottom {
+    width: 100% !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-top: auto !important;
+}
+
+.grid-catalogo .card-catalogo-price {
+    color: #0f172a !important;
+    font-size: 19px !important;
+    line-height: 1.05 !important;
+    font-weight: 950 !important;
+    letter-spacing: -0.04em !important;
+}
+
+.grid-catalogo .add-btn-cat {
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    border-radius: 999px !important;
+    background: #0f172a !important;
+    color: #ffffff !important;
+    border: 1px solid #0f172a !important;
+}
+
+/* Mantém carrinho, troca de cesta e itens internos em formato horizontal */
+#basket-items-container .product-card-list,
+#swap-items-container .product-card-list,
+.checkout-drawer .product-card-list {
+    flex-direction: row !important;
+}
+
+/* Celulares muito pequenos */
+@media (max-width: 374px) {
+    .products-grid,
+    .grid-catalogo {
+        gap: 8px !important;
+        padding: 8px !important;
+    }
+
+    .products-grid .product-card-list,
+    .grid-catalogo .card-catalogo {
+        padding: 7px !important;
+        border-radius: 18px !important;
+    }
+
+    .products-grid .product-card-list .img-wrapper,
+    .grid-catalogo .card-catalogo img {
+        min-height: 124px !important;
+    }
+
+    .products-grid .product-name-list {
+        font-size: 12.4px !important;
+    }
+
+    .products-grid .tag-preco-list,
+    .grid-catalogo .card-catalogo-price {
+        font-size: 17px !important;
+    }
+
+    .products-grid .btn-quick-add-list {
+        height: 38px !important;
+        font-size: 12px !important;
+    }
+}
+
+/* Tablet e desktop */
+@media (min-width: 768px) {
+    .products-grid,
+    .grid-catalogo {
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
+        gap: 16px !important;
+        padding: 0 !important;
+    }
+
+    .products-grid .product-card-list,
+    .grid-catalogo .card-catalogo {
+        padding: 10px !important;
+        border-radius: 22px !important;
+    }
+
+    .products-grid .product-card-list:hover,
+    .grid-catalogo .card-catalogo:hover {
+        transform: translateY(-3px) !important;
+        border-color: #d0d5dd !important;
+        box-shadow: 0 8px 24px rgba(16, 24, 40, 0.08) !important;
+    }
+
+    .products-grid .product-card-list .img-wrapper,
+    .grid-catalogo .card-catalogo img {
+        min-height: 160px !important;
+    }
+}
+
+@media (min-width: 1100px) {
+    .products-grid,
+    .grid-catalogo {
+        grid-template-columns: repeat(auto-fill, minmax(205px, 1fr)) !important;
+    }
+}
+
     </style>
 </head>
 <body>
