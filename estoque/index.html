@@ -339,8 +339,21 @@ async function salvarLocalmente() {
 
 
     function atualizarProdutoNoArray(produtoAtualizado) {
-        const chaveAtual = String(produtoAtualizado.codigo || produtoAtualizado.id || produtoAtualizado.firebaseKey);
-        const index = products.findIndex(p => String(p.codigo || p.id || p.firebaseKey) === chaveAtual);
+        if (!produtoAtualizado) return;
+
+        const firebaseKeyAtual = String(produtoAtualizado.firebaseKey || "").trim();
+        const idAtual = String(produtoAtualizado.id || "").trim();
+        const codigoAtual = String(produtoAtualizado.codigo || "").trim();
+        const gtinAtual = String(produtoAtualizado.gtin || "").trim();
+
+        const index = products.findIndex(p => {
+            return (
+                (firebaseKeyAtual && String(p.firebaseKey || "").trim() === firebaseKeyAtual) ||
+                (idAtual && String(p.id || "").trim() === idAtual) ||
+                (codigoAtual && String(p.codigo || "").trim() === codigoAtual) ||
+                (gtinAtual && String(p.gtin || "").trim() === gtinAtual)
+            );
+        });
 
         if (index !== -1) {
             products[index] = produtoAtualizado;
@@ -518,12 +531,10 @@ async function saveDataToFirebase() {
 
             const agora = Date.now();
 
-            // Envia somente os campos realmente alterados.
+            // Envia somente os campos realmente alterados neste produto.
+            // Não envia a base inteira e não sobrescreve campos que o funcionário não mexeu.
             const patchSeguro = {
                 ...camposAlteradosProdutoAtual,
-                id: String(currentProd.id || firebaseKey),
-                firebaseKey: firebaseKey,
-                codigo: currentProd.codigo || produtoNuvem.codigo || String(currentProd.id || firebaseKey),
                 last_update: agora,
                 last_update_estoque_rapido: agora
             };
@@ -673,52 +684,6 @@ async function syncData(options = {}) {
             sincronizacaoEmAndamento = false;
         }
     }
-) {
-        const force = !!options.force;
-        const silent = !!options.silent;
-        const closePanel = options.closePanel !== false;
-
-        try {
-            const hoje = dataLocalHoje();
-            const ultimaSync = await localforage.getItem(LOCAL_LAST_SYNC_KEY);
-            const dadosLocais = await localforage.getItem(LOCAL_PRODUCTS_KEY) || [];
-            const jaTemBaseLocal = Array.isArray(dadosLocais) && dadosLocais.length > 0;
-
-            // No carregamento automático, sincroniza apenas uma vez por dia.
-            if (!force && ultimaSync === hoje && jaTemBaseLocal) {
-                products = objetoPorIdParaArray(dadosLocais);
-                return;
-            }
-
-            const res = await fetch(FIREBASE_URL + '?nocache=' + Date.now(), {
-                cache: "no-store"
-            });
-
-            if (!res.ok) throw new Error("Falha na comunicação com o Firebase");
-            
-            const dadosFirebase = await res.json();
-
-            // Aceita tanto o formato antigo array quanto o novo formato por ID.
-            let rawProducts = objetoPorIdParaArray(dadosFirebase);
-            
-            if (rawProducts && Array.isArray(rawProducts) && rawProducts.length > 0) {
-                products = autoFixDatabase(rawProducts);
-
-                await salvarLocalmente();
-                await localforage.setItem(LOCAL_LAST_SYNC_KEY, hoje);
-
-                if (!silent) alert("Sincronizado do Firebase com sucesso!");
-                if (!silent && closePanel) toggleConfig();
-
-                if (currentProd) buscar(); 
-            } else {
-                if (!silent) alert("A base de dados do Firebase está vazia.");
-            }
-        } catch (error) {
-            console.error(error);
-            if (!silent) alert("Erro ao sincronizar: " + error.message);
-        }
-    }
 
     // ---------------------------------------------------------
     // LÓGICA DE UI E CÂMERA
@@ -822,7 +787,12 @@ function updateCurrent(field, value) {
         currentProd.last_update_local_cache = Date.now();
 
         // Guarda somente o campo que o funcionário realmente alterou.
-        camposAlteradosProdutoAtual[field] = valorFinal;
+        // Se ele voltar para o valor original, o campo sai da lista e não será enviado ao Firebase.
+        if (valoresIguaisCampo(valorFinal, valoresOriginaisProdutoAtual[field], field)) {
+            delete camposAlteradosProdutoAtual[field];
+        } else {
+            camposAlteradosProdutoAtual[field] = valorFinal;
+        }
 
         atualizarProdutoNoArray(currentProd);
 
