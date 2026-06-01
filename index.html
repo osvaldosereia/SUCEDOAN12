@@ -4570,11 +4570,12 @@ document.addEventListener('input', function(e) {
     });
 });
 
-function abrirWhatsAppPedido(mensagem, janelaPreAberta) {
+function abrirWhatsAppPedido(mensagem) {
     const numeroLoja = '5565998150975';
     const texto = encodeURIComponent(mensagem);
+    const url = `https://wa.me/${numeroLoja}?text=${texto}`;
 
-    window.location.href = `https://wa.me/${numeroLoja}?text=${texto}`;
+    window.open(url, '_blank');
 }
         window.sendOrder = async function(btnOverride) {
             const btn = btnOverride || $('btn-send-order'); 
@@ -4734,19 +4735,37 @@ const descontoBling = diferencaBling < 0 ? Math.abs(diferencaBling) : 0;
 const normalizarPagamentoParaBling = (pagamento) => {
     const codigo = String(pagamento || '').trim().toUpperCase();
 
-    const nomes = {
-        DINHEIRO: 'Dinheiro',
-        PIX: 'Pix',
-        CARTAO_DE_DEBITO: 'Cartão de Débito',
-        CARTAO_DE_CREDITO: 'Cartão de Crédito',
-        VALE_ALIMENTACAO: 'Vale Alimentação',
-        VALE_REFEICAO: 'Vale Refeição'
+    const dados = {
+        DINHEIRO: {
+            nome: 'Dinheiro',
+            idBling: '4258158'
+        },
+        PIX: {
+            nome: 'Pix',
+            idBling: '9144864'
+        },
+        CARTAO_DE_DEBITO: {
+            nome: 'Cartão de Débito',
+            idBling: '9144853'
+        },
+        CARTAO_DE_CREDITO: {
+            nome: 'Cartão de Crédito',
+            idBling: '5458693'
+        },
+        VALE_ALIMENTACAO: {
+            nome: 'Vale Alimentação',
+            idBling: '9144861'
+        },
+        VALE_REFEICAO: {
+            nome: 'Vale Refeição',
+            idBling: '9144862'
+        }
     };
 
     return {
         codigo,
-        nome: nomes[codigo] || pagamento || '',
-        idBling: ''
+        nome: dados[codigo]?.nome || pagamento || '',
+        idBling: dados[codigo]?.idBling || ''
     };
 };
 
@@ -4838,8 +4857,7 @@ Por favor, podem incluir na minha entrega?`;
 
             salvarDadosClienteCheckout();
 
-            abrirWhatsAppPedido(msg, janelaWhatsApp);
-            
+abrirWhatsAppPedido(msg);            
             saveCart(); 
             updateTotals(); 
             closeCheckout();
