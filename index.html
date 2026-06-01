@@ -6131,7 +6131,955 @@ async function init() {
     }
 }
 
-            document.addEventListener('DOMContentLoaded', init);
+            /* =========================================================
+   CORREÇÃO FINAL CARRINHO / TAXA OCULTA / CHECKOUT / BLING
+   Ajustes aplicados em 01/06/2026
+   ========================================================= */
+
+function carrinhoPodeSerAuditadoAgora() {
+    return Array.isArray(STATE.prods) && STATE.prods.length > 0;
+}
+
+function getQuantidadeItensVisiveisCarrinho() {
+    let count = 0;
+
+    Object.entries(STATE.cart || {}).forEach(([id, q]) => {
+        const key = String(id);
+        if (key.startsWith('fee_')) return;
+
+        const p = STATE.prods.find(x => String(x.id) === key);
+        if (!p || p.isComboDiscount) return;
+
+        count += Number(q || 0);
+    });
+
+    return count;
+}
+
+function getBasketByFeeId(feeId) {
+    const basketId = String(feeId || '').replace(/^fee_/, '');
+    return BASKETS.find(b => String(b.id) === basketId) || dynamicCombos.find(c => String(c.id) === basketId) || null;
+}
+
+function getCodigosOriginaisBasket(basket) {
+    const codigos = [];
+
+    if (!basket || !Array.isArray(basket.produtos)) return codigos;
+
+    basket.produtos.forEach(str => {
+        const partes = String(str || '').split('x ');
+        if (partes.length !== 2) return;
+
+        const cod = partes[1].trim();
+        if (cod) codigos.push(cod);
+    });
+
+    return codigos;
+}
+
+function carrinhoTemAlgumItemDaBasket(basket) {
+    const codigos = getCodigosOriginaisBasket(basket);
+
+    if (!codigos.length) return false;
+
+    return codigos.some(cod => {
+        const prod = STATE.prods.find(p =>
+            String(p.codigo || '') === String(cod) ||
+            String(p.id || '') === String(cod) ||
+            String(p.firebaseKey || '') === String(cod)
+        );
+
+        if (!prod) return false;
+
+        return Number(STATE.cart[prod.id] || 0) > 0;
+    });
+}
+
+function removerItemCarrinhoPorId(id) {
+    const key = String(id);
+    delete STATE.cart[key];
+    STATE.cartOrder = (STATE.cartOrder || []).filter(x => String(x) !== key);
+}
+
+function garantirProdutoFeeBasket(basket, feeId) {
+    if (!basket || basket.isCombo || !feeId) return null;
+
+    const dyn = getBasketDynamicPrice(basket);
+    const diferencaFixa = Number(dyn.taxaExtra || 0);
+
+    if (diferencaFixa <= 0.01) return null;
+
+    let feeProd = STATE.prods.find(p => String(p.id) === String(feeId));
+    const basketCodigos = getCodigosOriginaisBasket(basket);
+
+    if (!feeProd) {
+        feeProd = {
+            id: feeId,
+            codigo: feeId,
+            name: 'Taxa Oculta (' + basket.nome + ')',
+            price: diferencaFixa,
+            oldPrice: diferencaFixa,
+            stock: 9999,
+            img: basket.imagem,
+            categoria: 'Cestas',
+            isBasketFee: true,
+            hiddenFromCatalog: true,
+            basketId: basket.id,
+            basketNome: basket.nome,
+            basketCodigos: basketCodigos
+        };
+
+        STATE.prods.push(feeProd);
+    } else {
+        feeProd.codigo = feeId;
+        feeProd.name = 'Taxa Oculta (' + basket.nome + ')';
+        feeProd.price = diferencaFixa;
+        feeProd.oldPrice = diferencaFixa;
+        feeProd.stock = 9999;
+        feeProd.img = basket.imagem;
+        feeProd.categoria = 'Cestas';
+        feeProd.isBasketFee = true;
+        feeProd.hiddenFromCatalog = true;
+        feeProd.basketId = basket.id;
+        feeProd.basketNome = basket.nome;
+        feeProd.basketCodigos = basketCodigos;
+    }
+
+    return feeProd;
+}
+
+function limparFeesOrfaos(options = {}) {
+    const salvar = options.salvar === true;
+
+    if (!carrinhoPodeSerAuditadoAgora()) return false;
+
+    let mudou = false;
+
+    Object.keys(STATE.cart || {}).forEach(id => {
+        const key = String(id);
+        const qtd = Number(STATE.cart[key] || 0);
+
+        if (qtd <= 0) {
+            removerItemCarrinhoPorId(key);
+            mudou = true;
+            return;
+        }
+
+        if (key.startsWith('fee_')) {
+            const basket = getBasketByFeeId(key);
+
+            if (!basket || basket.isCombo || !carrinhoTemAlgumItemDaBasket(basket)) {
+                removerItemCarrinhoPorId(key);
+
+                const basketId = key.replace(/^fee_/, '');
+                if (STATE.basketCustomizations && STATE.basketCustomizations[basketId]) {
+                    delete STATE.basketCustomizations[basketId];
+                }
+
+                mudou = true;
+                return;
+            }
+
+            garantirProdutoFeeBasket(basket, key);
+            return;
+        }
+
+        const p = STATE.prods.find(x => String(x.id) === key);
+
+        if (!p) {
+            removerItemCarrinhoPorId(key);
+            mudou = true;
+            return;
+        }
+
+        if (p.isComboDiscount && !carrinhoTemComboCompleto(p)) {
+            removerItemCarrinhoPorId(key);
+            mudou = true;
+        }
+    });
+
+    const novaOrdem = [];
+
+    (STATE.cartOrder || []).forEach(id => {
+        const key = String(id);
+        const qtd = Number(STATE.cart[key] || 0);
+
+        if (qtd > 0 && !novaOrdem.includes(key)) {
+            novaOrdem.push(key);
+        }
+    });
+
+    Object.keys(STATE.cart || {}).forEach(id => {
+        const key = String(id);
+        const qtd = Number(STATE.cart[key] || 0);
+
+        if (qtd > 0 && !novaOrdem.includes(key)) {
+            novaOrdem.push(key);
+        }
+    });
+
+    STATE.cartOrder = novaOrdem;
+
+    if (mudou && salvar) {
+        saveCart();
+    }
+
+    return mudou;
+}
+
+function zerarCarrinhoEmMemoriaELocalStorage() {
+    STATE.cart = {};
+    STATE.cartOrder = [];
+    STATE.basketCustomizations = {};
+    STATE.atacadoDiscount = 0;
+    STATE.agendamentoDiscount = 0;
+
+    try {
+        localStorage.removeItem(CART_STORAGE_KEY);
+    } catch (e) {}
+}
+
+window.limparCarrinhoCompleto = function(confirmar = true) {
+    if (confirmar) {
+        const ok = confirm('Deseja limpar todos os produtos do carrinho?');
+        if (!ok) return;
+    }
+
+    zerarCarrinhoEmMemoriaELocalStorage();
+
+    if ($('chk-items-list')) {
+        $('chk-items-list').innerHTML = `
+            <div style="padding: 24px 12px; text-align: center; color: var(--text-light); font-weight: 800;">
+                Seu carrinho está vazio.
+            </div>
+        `;
+    }
+
+    updateTotals();
+    updateAllCardUIs();
+
+    if ($('checkout-drawer') && $('checkout-drawer').classList.contains('open')) {
+        renderCheckoutItems();
+    }
+
+    showToast('Carrinho limpo com sucesso.');
+};
+
+window.updateCartItem = function(id, delta) {
+    const key = String(id);
+    const p = STATE.prods.find(x => String(x.id) === key);
+
+    if (!p) {
+        removerItemCarrinhoPorId(key);
+        limparFeesOrfaos({ salvar: true });
+        updateTotals();
+        saveCart();
+        updateAllCardUIs();
+
+        if ($('checkout-drawer') && $('checkout-drawer').classList.contains('open')) {
+            renderCheckoutItems();
+        }
+
+        return;
+    }
+
+    let atual = Number(STATE.cart[key] || 0);
+    let novo = Math.max(0, atual + Number(delta || 0));
+
+    if (novo > Number(p.stock || 0) && !key.startsWith('fee_') && !p.isComboDiscount) {
+        alert('Estoque insuficiente.');
+        return;
+    }
+
+    if (novo <= 0) {
+        removerItemCarrinhoPorId(key);
+    } else {
+        STATE.cart[key] = novo;
+
+        if (!STATE.cartOrder.includes(key)) {
+            STATE.cartOrder.push(key);
+        }
+    }
+
+    limparFeesOrfaos({ salvar: false });
+
+    if (getQuantidadeItensVisiveisCarrinho() === 0) {
+        zerarCarrinhoEmMemoriaELocalStorage();
+    }
+
+    updateTotals();
+    saveCart();
+    updateAllCardUIs();
+
+    if ($('checkout-drawer') && $('checkout-drawer').classList.contains('open')) {
+        renderCheckoutItems();
+    }
+};
+
+window.addBasketToCart = function(action = 'post') {
+    if (!window.currentBasketId) return;
+
+    const basket = BASKETS.find(b => b.id === window.currentBasketId) || dynamicCombos.find(c => c.id === window.currentBasketId);
+    if (!basket) return;
+
+    const isCombo = !!basket.isCombo;
+
+    let origItemsMap = {};
+    basket.produtos.forEach(str => {
+        let p = String(str || '').split('x ');
+        if (p.length === 2) {
+            let qtd = parseInt(p[0], 10) || 0;
+            let cod = p[1].trim();
+            if (cod && qtd > 0) origItemsMap[cod] = qtd;
+        }
+    });
+
+    let dyn = getBasketDynamicPrice(basket);
+    let diferencaFixa = isCombo ? 0 : Number(dyn.taxaExtra || 0);
+
+    let basketDiff = {
+        id: basket.id,
+        name: basket.nome,
+        removed: [],
+        added: [],
+        changed: false
+    };
+
+    let hasChanges = false;
+    let addedCount = 0;
+
+    Object.keys(origItemsMap).forEach(pid => {
+        let origQty = origItemsMap[pid];
+        let currentItem = currentBasketItems.find(item => String(item.pObj.codigo || item.pObj.id) === String(pid));
+        let currentQty = currentItem ? Number(currentItem.qty || 0) : 0;
+
+        if (currentQty < origQty) {
+            hasChanges = true;
+        }
+    });
+
+    currentBasketItems.forEach(item => {
+        let pid = item.pObj.codigo || item.pObj.id;
+        let origQty = origItemsMap[pid] || 0;
+        let currentQty = Number(item.qty || 0);
+
+        if (currentQty > origQty) {
+            hasChanges = true;
+        }
+
+        if (currentQty > 0) {
+            let itemId = String(item.pObj.id);
+            let currentInCart = Number(STATE.cart[itemId] || 0);
+
+            if (currentInCart === 0 && !STATE.cartOrder.includes(itemId)) {
+                STATE.cartOrder.push(itemId);
+            }
+
+            STATE.cart[itemId] = currentInCart + currentQty;
+            addedCount++;
+        }
+    });
+
+    basketDiff.changed = hasChanges;
+    STATE.basketCustomizations[basket.id] = basketDiff;
+
+    if (!isCombo && addedCount > 0 && diferencaFixa > 0.01) {
+        let feeId = 'fee_' + basket.id;
+        garantirProdutoFeeBasket(basket, feeId);
+
+        let currentFee = Number(STATE.cart[feeId] || 0);
+
+        if (currentFee === 0 && !STATE.cartOrder.includes(feeId)) {
+            STATE.cartOrder.push(feeId);
+        }
+
+        STATE.cart[feeId] = currentFee + 1;
+    }
+
+    if (isCombo && addedCount > 0) {
+        const economiaCombo = getEconomiaCombo(basket);
+
+        if (economiaCombo > 0.01) {
+            const discountProd = criarProdutoDescontoCombo(basket, economiaCombo);
+            const discountId = String(discountProd.id);
+
+            let currentDiscount = Number(STATE.cart[discountId] || 0);
+
+            if (currentDiscount === 0 && !STATE.cartOrder.includes(discountId)) {
+                STATE.cartOrder.push(discountId);
+            }
+
+            STATE.cart[discountId] = currentDiscount + 1;
+        }
+    }
+
+    if (addedCount > 0) {
+        limparFeesOrfaos({ salvar: false });
+        cancelarDescontoComboSeQuebrou();
+
+        updateTotals();
+        saveCart();
+
+        if (action === 'checkout') {
+            $('swapModal').classList.remove('active');
+            $('basketDetailModal').classList.remove('active');
+            window.currentBasketId = null;
+            limparEstadoModalAtualDoHistorico();
+            openCheckout();
+            return;
+        }
+
+        if (action === 'home') {
+            $('swapModal').classList.remove('active');
+            $('basketDetailModal').classList.remove('active');
+            window.currentBasketId = null;
+            limparEstadoModalAtualDoHistorico();
+            $('overlay').classList.remove('open');
+            window.location.hash = '#/';
+            showToast('Produtos enviados para o checkout. Continue comprando.');
+            return;
+        }
+
+        $('basketModalTopInfo').style.display = 'none';
+        $('basket-items-header').style.display = 'none';
+        $('basket-items-container').style.display = 'none';
+        $('basket-summary-container').style.display = 'none';
+
+        renderPostBasketView();
+    }
+};
+
+window.openCheckout = function() {
+    limparFeesOrfaos({ salvar: true });
+
+    if (getQuantidadeItensVisiveisCarrinho() === 0) {
+        zerarCarrinhoEmMemoriaELocalStorage();
+        updateTotals();
+        updateAllCardUIs();
+        return alert('Sua lista está vazia!');
+    }
+
+    renderCheckoutItems();
+    renderAgendamentoOptions();
+    preencherCheckoutSalvo();
+    updateTotals();
+
+    $('checkout-drawer').scrollTop = 0;
+
+    $('overlay').classList.add('open');
+    $('overlay').onclick = () => { goBackSmart(); };
+    $('checkout-drawer').classList.add('open');
+    registrarModalNoHistorico('checkout');
+};
+
+window.closeCheckout = function() {
+    fecharModalPeloHistorico('checkout', function() {
+        $('checkout-drawer').classList.remove('open');
+
+        if(!$('basketDetailModal').classList.contains('active') && !$('swapModal').classList.contains('active')) {
+            $('overlay').classList.remove('open');
+        }
+    });
+};
+
+function renderCheckoutItems() {
+    limparFeesOrfaos({ salvar: true });
+
+    let htmlItems = `
+        <div style="padding: 10px 0 18px 0;">
+            <button
+                type="button"
+                onclick="limparCarrinhoCompleto(true)"
+                style="
+                    width:100%;
+                    min-height:50px;
+                    border:none;
+                    border-radius:14px;
+                    background:#fee2e2;
+                    color:#b91c1c;
+                    font-size:14px;
+                    font-weight:950;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    gap:8px;
+                    cursor:pointer;
+                "
+            >
+                🗑️ Limpar carrinho inteiro
+            </button>
+        </div>
+    `;
+
+    const itensValidos = (STATE.cartOrder || []).filter(id => {
+        const key = String(id);
+        if (key.startsWith('fee_')) return false;
+
+        const p = STATE.prods.find(x => String(x.id) === key);
+        if (!p || p.isComboDiscount) return false;
+
+        return Number(STATE.cart[key] || 0) > 0;
+    });
+
+    if (itensValidos.length === 0) {
+        htmlItems += `
+            <div style="padding: 24px 12px; text-align: center; color: var(--text-light); font-weight: 800;">
+                Seu carrinho está vazio.
+            </div>
+        `;
+
+        $('chk-items-list').innerHTML = htmlItems;
+        return;
+    }
+
+    htmlItems += itensValidos.map(id => {
+        const key = String(id);
+        const p = STATE.prods.find(x => String(x.id) === key);
+        const q = Number(STATE.cart[key] || 0);
+
+        return `
+            <div class="cart-item-row">
+                <div class="cart-item-info">
+                    <img src="${p.img}" class="cart-item-img" onerror="this.src='${errorImgFallback}'">
+                    <div class="cart-item-text-col">
+                        <div class="cart-item-name">${p.name}</div>
+                        <div style="font-size: 15px; font-weight:900; color:var(--text-dark);">${fmt(p.price)}</div>
+                    </div>
+                </div>
+                <div class="cart-qty-ctrl" style="position:static;">
+                    <button class="cart-qty-btn" onclick="updateCartItem('${key}', -1)">${iconMinus}</button>
+                    <span class="cart-qty-val">${q}</span>
+                    <button class="cart-qty-btn" onclick="updateCartItem('${key}', 1)">${iconPlus}</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    $('chk-items-list').innerHTML = htmlItems;
+}
+
+function updateTotals() {
+    limparFeesOrfaos({ salvar: false });
+
+    let sumBase = 0;
+    let count = 0;
+    let atacadoTotal = 0;
+    let descontoCombo = 0;
+
+    Object.entries(STATE.cart || {}).forEach(([id, q]) => {
+        let p = STATE.prods.find(x => String(x.id) === String(id));
+        if (!p) return;
+
+        const qtd = Number(q || 0);
+        if (qtd <= 0) return;
+
+        const valorLinha = Number(p.price || 0) * qtd;
+
+        if (p.isComboDiscount) {
+            descontoCombo += Math.abs(valorLinha);
+            return;
+        }
+
+        sumBase += valorLinha;
+
+        if (!String(id).startsWith('fee_')) {
+            count += qtd;
+
+            if (qtd >= 3) {
+                atacadoTotal += (Number(p.price || 0) * 0.05) * qtd;
+            }
+        }
+    });
+
+    if ($('sum-sub')) $('sum-sub').innerText = fmt(sumBase);
+
+    const comboRow = $('sum-combo-row');
+    const comboDesc = $('sum-combo-desc');
+
+    if (comboDesc) comboDesc.innerText = `- ${fmt(descontoCombo)}`;
+    if (comboRow) comboRow.style.display = descontoCombo > 0 ? 'flex' : 'none';
+
+    STATE.atacadoDiscount = atacadoTotal;
+
+    if ($('sum-atacado-desc')) $('sum-atacado-desc').innerText = `- ${fmt(atacadoTotal)}`;
+    if ($('sum-atacado-row')) $('sum-atacado-row').style.display = atacadoTotal > 0 ? 'flex' : 'none';
+
+    let agendamentoDiscount = 0;
+    let selectedAgendamento = document.querySelector('input[name="agendamento"]:checked');
+
+    if (selectedAgendamento) {
+        const isSabado = selectedAgendamento.getAttribute('data-is-sabado') === '1';
+        const discountPercent = parseFloat(selectedAgendamento.getAttribute('data-discount-percent')) || 0;
+
+        if (isSabado && discountPercent > 0) {
+            const baseParaDescontoAgendamento = Math.max(sumBase - descontoCombo - STATE.atacadoDiscount, 0);
+            agendamentoDiscount = baseParaDescontoAgendamento * (discountPercent / 100);
+        }
+    }
+
+    STATE.agendamentoDiscount = agendamentoDiscount;
+    atualizarPreviewSabadoAgendamento();
+
+    if ($('sum-agendamento-desc')) $('sum-agendamento-desc').innerText = `- ${fmt(agendamentoDiscount)}`;
+    if ($('sum-agendamento-row')) $('sum-agendamento-row').style.display = agendamentoDiscount > 0 ? 'flex' : 'none';
+
+    let finalTotal = Math.max(sumBase - descontoCombo - STATE.atacadoDiscount - STATE.agendamentoDiscount, 0);
+
+    if ($('sum-total')) $('sum-total').innerText = fmt(finalTotal);
+
+    let btn = $('btn-send-order');
+    let warningMsg = $('min-order-warning');
+
+    if (btn) {
+        btn.disabled = false;
+        btn.style.background = 'var(--whatsapp)';
+        btn.style.boxShadow = '0 4px 15px rgba(37, 211, 102, 0.3)';
+    }
+
+    if (finalTotal < MIN_ORDER) {
+        if (warningMsg) warningMsg.style.display = 'block';
+    } else {
+        if (warningMsg) warningMsg.style.display = 'none';
+    }
+
+    let badges = document.querySelectorAll('.cart-badge');
+    let bottomSendTotal = $('bottom-send-total');
+    let bottomSendBtn = $('bottom-send-btn');
+
+    if (count > 0) {
+        let txt = count > 99 ? '99+' : count;
+
+        badges.forEach(b => {
+            b.style.display = 'block';
+            b.innerText = txt;
+        });
+
+        if (bottomSendTotal) bottomSendTotal.innerText = fmt(finalTotal);
+
+        if (bottomSendBtn) {
+            bottomSendBtn.disabled = false;
+            bottomSendBtn.style.background = finalTotal < MIN_ORDER ? '#f59e0b' : 'var(--whatsapp)';
+            bottomSendBtn.style.boxShadow = finalTotal < MIN_ORDER ? '0 4px 12px rgba(245, 158, 11, 0.3)' : '0 4px 12px rgba(37, 211, 102, 0.3)';
+        }
+    } else {
+        badges.forEach(b => {
+            b.style.display = 'none';
+        });
+
+        if (bottomSendTotal) bottomSendTotal.innerText = 'R$ 0,00';
+
+        if (bottomSendBtn) {
+            bottomSendBtn.disabled = true;
+            bottomSendBtn.style.background = '#cbd5e1';
+            bottomSendBtn.style.boxShadow = 'none';
+        }
+    }
+}
+
+window.sendOrder = async function(btnOverride) {
+    limparFeesOrfaos({ salvar: true });
+    updateTotals();
+
+    if (getQuantidadeItensVisiveisCarrinho() === 0) {
+        zerarCarrinhoEmMemoriaELocalStorage();
+        updateTotals();
+        updateAllCardUIs();
+        alert('Seu carrinho está vazio.');
+        return;
+    }
+
+    const btn = btnOverride || $('btn-send-order');
+    if (!btnOverride && btn.disabled) return;
+
+    let nome = $('chk-nome').value.trim();
+    let cpfFormatado = $('chk-cpf').value.trim();
+    let cpf = limparCPF(cpfFormatado);
+    let telefone = limparTelefone($('chk-telefone').value.trim());
+    let telefoneFormatado = formatarTelefone(telefone);
+
+    $('chk-telefone').value = telefoneFormatado;
+
+    let email = $('chk-email').value.trim().toLowerCase();
+    let cepFormatado = $('chk-cep').value.trim();
+    let cep = limparCEP(cepFormatado);
+    let cidade = $('chk-cidade').value.trim();
+    let uf = 'MT';
+    let bairro = $('chk-bairro').value.trim();
+    let rua = $('chk-rua').value.trim();
+    let quadra = $('chk-quadra').value.trim();
+    let casa = $('chk-casa').value.trim();
+    let frente = $('chk-frente').value.trim();
+    let pag = $('chk-pagamento').value;
+
+    let agendamentoObj = document.querySelector('input[name="agendamento"]:checked');
+    let dataAgendamento = agendamentoObj ? agendamentoObj.value : '';
+
+    const camposObrigatorios = [
+        { id: 'agendamento-options-container', label: 'Data de agendamento', customValidate: () => !!dataAgendamento },
+        { id: 'chk-nome', label: 'Nome completo' },
+        { id: 'chk-cpf', label: 'CPF válido com 11 números', customValidate: () => cpf.length === 11 },
+        { id: 'chk-telefone', label: 'Telefone/WhatsApp válido com DDD', customValidate: () => telefoneValidoBR(telefone) },
+        { id: 'chk-email', label: 'E-mail válido', customValidate: () => emailValido(email) },
+        { id: 'chk-cep', label: 'CEP válido com 8 números', customValidate: () => cep.length === 8 },
+        { id: 'chk-cidade', label: 'Cidade' },
+        { id: 'chk-bairro', label: 'Bairro' },
+        { id: 'chk-rua', label: 'Rua' },
+        { id: 'chk-casa', label: 'Nº da casa' },
+        { id: 'chk-frente', label: 'Como é a frente da casa' },
+        { id: 'chk-pagamento', label: 'Forma de pagamento' }
+    ];
+
+    const faltantes = camposObrigatorios.filter(campo => {
+        if (typeof campo.customValidate === 'function') {
+            return !campo.customValidate();
+        }
+
+        const el = $(campo.id);
+        return !el || !String(el.value || '').trim();
+    });
+
+    if (faltantes.length > 0) {
+        mostrarErrosCheckout(faltantes);
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = 'Processando...';
+    }
+
+    const orderId = String(Date.now()).slice(-6);
+    let itemsTxt = '';
+    let totalBruto = 0;
+    let pedidoItens = [];
+    let descontoCombo = 0;
+
+    Object.entries(STATE.cart || {}).forEach(([cartId, q]) => {
+        const p = STATE.prods.find(x => String(x.id) === String(cartId));
+        if (!p) return;
+
+        const qtd = Number(q || 0);
+        if (qtd <= 0) return;
+
+        const valorLinha = Number(p.price || 0) * qtd;
+
+        if (p.isComboDiscount) {
+            descontoCombo += Math.abs(valorLinha);
+            return;
+        }
+
+        totalBruto += valorLinha;
+
+        if (!String(cartId).startsWith('fee_')) {
+            itemsTxt += `${qtd}x ${p.name}\n`;
+
+            pedidoItens.push({
+                firebaseKey: String(p.firebaseKey || ''),
+                sku: String(p.codigo || p.id),
+                nome: p.name,
+                qtd: qtd,
+                price: Number(p.price || 0),
+
+                gtin: String(p.gtin || ''),
+                ean: String(p.ean || p.gtin || ''),
+                url_imagem: String(p.url_imagem || p.img || ''),
+                gondola: String(p.gondola || 'Z-Sem Gôndola'),
+                prateleira: String(p.prateleira || '-'),
+                localizacao: String(p.localizacao || ''),
+                categoria: String(p.categoria || ''),
+                subcategoria: String(p.subcategoria || ''),
+                subsubcategoria: String(p.subsubcategoria || ''),
+                marca: String(p.marca || ''),
+                embalagem: String(p.embalagem || '')
+            });
+        }
+    });
+
+    let final = Math.max(totalBruto - descontoCombo - STATE.atacadoDiscount - STATE.agendamentoDiscount, 0);
+
+    let basketInfo = '';
+    let hasBasket = Object.keys(STATE.basketCustomizations || {}).length > 0;
+
+    if (hasBasket) {
+        basketInfo = '\n------------------------------';
+
+        Object.keys(STATE.basketCustomizations).forEach(bId => {
+            let diff = STATE.basketCustomizations[bId];
+            let statusLabel = diff.changed ? 'ALTERADA' : 'PADRÃO';
+            basketInfo += `\nCesta/Kit ${diff.name} ${statusLabel}`;
+        });
+    }
+
+    let descontosTxt = '';
+
+    if (descontoCombo > 0) {
+        descontosTxt += `\n🎁 DESCONTO COMBO: -${fmt(descontoCombo)}`;
+    }
+
+    if (STATE.atacadoDiscount > 0) {
+        descontosTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
+    }
+
+    if (STATE.agendamentoDiscount > 0) {
+        descontosTxt += `\n📅 DESCONTO AGENDAMENTO (${dataAgendamento}): -${fmt(STATE.agendamentoDiscount)}`;
+    }
+
+    let dadosCliente = `
+*👤 DADOS DO CLIENTE E ENTREGA*
+Nome: ${nome} ${cpf ? `\nCPF: ${formatarCPF(cpf)}` : ''}
+Telefone/WhatsApp: ${formatarTelefone(telefone)}
+E-mail: ${email}
+Endereço: CEP ${formatarCEP(cep)}, ${cidade}/${uf}, Bairro ${bairro}, Rua ${rua}, Quadra ${quadra || 'S/N'}, Casa ${casa}
+Detalhes: ${frente}
+📅 *Agendamento:* ${dataAgendamento}
+💳 *Pagamento:* ${pag}`;
+
+    let msg = '';
+
+    if (final >= MIN_ORDER) {
+        const arredondar2 = (valor) => {
+            return Math.round((Number(valor || 0) + Number.EPSILON) * 100) / 100;
+        };
+
+        const totalSite = arredondar2(final);
+
+        const totalProdutosBling = arredondar2(
+            pedidoItens.reduce((soma, item) => {
+                const qtd = Number(item.qtd || 0);
+                const preco = Number(item.price || 0);
+                return soma + (qtd * preco);
+            }, 0)
+        );
+
+        const diferencaBling = arredondar2(totalSite - totalProdutosBling);
+
+        const outrasDespesasBling = diferencaBling > 0 ? diferencaBling : 0;
+        const descontoBling = diferencaBling < 0 ? Math.abs(diferencaBling) : 0;
+
+        const normalizarPagamentoParaBling = (pagamento) => {
+            const codigo = String(pagamento || '').trim().toUpperCase();
+
+            const nomes = {
+                DINHEIRO: 'Dinheiro',
+                PIX: 'Pix',
+                CARTAO_DE_DEBITO: 'Cartão de Débito',
+                CARTAO_DE_CREDITO: 'Cartão de Crédito',
+                VALE_ALIMENTACAO: 'Vale Alimentação',
+                VALE_REFEICAO: 'Vale Refeição'
+            };
+
+            return {
+                codigo,
+                nome: nomes[codigo] || pagamento || '',
+                idBling: ''
+            };
+        };
+
+        const pagamentoBling = normalizarPagamentoParaBling(pag);
+
+        const makePayload = {
+            pedido: {
+                id: orderId,
+                itens: pedidoItens,
+
+                total: totalSite,
+                totalProdutos: totalProdutosBling,
+
+                // Valor oculto da cesta entra aqui quando o total do site fica maior que a soma dos produtos.
+                // O item fee_ não é enviado como produto para o Bling.
+                outrasDespesasBling: outrasDespesasBling,
+
+                // Se descontos forem maiores que a taxa oculta, a diferença vira desconto no Bling.
+                descontoBling: descontoBling,
+
+                desconto: arredondar2(descontoCombo + STATE.atacadoDiscount + STATE.agendamentoDiscount),
+
+                observacoes: hasBasket ? 'Pedido com Cesta/Kit' : 'Pedido Comum',
+
+                cliente: {
+                    nome,
+                    cpf,
+                    telefone,
+                    telefoneFormatado: formatarTelefone(telefone),
+                    celular: telefone,
+                    email,
+                    cep,
+                    cepFormatado: formatarCEP(cep),
+                    cidade,
+                    uf,
+                    bairro,
+                    rua,
+                    quadra,
+                    casa,
+                    numero: casa,
+                    complemento: quadra ? `Quadra ${quadra}. ${frente}` : frente,
+                    frente,
+                    pagamento: pagamentoBling.nome,
+                    pagamentoCodigo: pagamentoBling.codigo,
+                    pagamentoIdBling: pagamentoBling.idBling,
+                    agendamento: dataAgendamento
+                }
+            }
+        };
+
+        try {
+            await fetch('https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(makePayload)
+            });
+        } catch (err) {
+            console.error('Erro na integração:', err);
+        }
+
+        msg = `*PEDIDO #${orderId}*
+------------------------------
+*ITENS SELECIONADOS*
+${itemsTxt}
+*RESUMO DE VALORES*${descontosTxt}
+💰 *TOTAL:* ${fmt(final)}${basketInfo}
+------------------------------${dadosCliente}
+------------------------------
+Olá, esse é o meu pedido.`;
+
+    } else {
+        msg = `*ADICIONAR AO PEDIDO ANTERIOR*
+------------------------------
+Olá! Gostaria de adicionar os itens abaixo ao pedido que fiz anteriormente:
+
+*ITENS ADICIONAIS*
+${itemsTxt}
+*RESUMO DE VALORES*${descontosTxt}
+💰 *TOTAL DO ACRÉSCIMO:* ${fmt(final)}${basketInfo}
+------------------------------${dadosCliente}
+------------------------------
+Por favor, podem incluir na minha entrega?`;
+    }
+
+    salvarDadosClienteCheckout();
+
+    // Limpa antes de abrir o WhatsApp, porque no celular o redirecionamento pode sair da página imediatamente.
+    zerarCarrinhoEmMemoriaELocalStorage();
+    updateTotals();
+    updateAllCardUIs();
+    renderCheckoutItems();
+    closeCheckout();
+
+    abrirWhatsAppPedido(msg);
+
+    setTimeout(() => {
+        if (!btn) return;
+
+        btn.disabled = false;
+        btn.innerHTML = `
+            <svg class="svg-icon-fill" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg>
+            Enviar para o WhatsApp
+        `;
+    }, 3000);
+};
+
+document.addEventListener('DOMContentLoaded', init);
+
    
     </script>
 </body>
