@@ -10,7 +10,7 @@
 
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow-x: hidden; }
         body {
             font-family: 'Inter', Arial, sans-serif;
             background: #f4f4f5;
@@ -115,13 +115,17 @@
         }
 
         .grid {
+            width: 100%;
+            max-width: 100%;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            overflow: auto;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 7px;
+            overflow-y: auto;
+            overflow-x: hidden;
             padding-bottom: 4px;
         }
         .grupo {
+            min-width: 0;
             display: flex;
             flex-direction: column;
             gap: 3px;
@@ -135,18 +139,21 @@
             padding-left: 2px;
         }
         .grupo input {
-            height: 42px;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            height: 40px;
             border: 1px solid #cbd5e1;
             border-radius: 10px;
-            padding: 0 10px;
+            padding: 0 7px;
             background: #fff;
             outline: none;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 800;
         }
         .grupo input:focus { border-color: #2563eb; background: #eff6ff; }
         .grupo input.alterado { border-color: #f59e0b; background: #fffbeb; }
-        #val-estoque { text-align: center; font-size: 21px; font-weight: 900; color: #2563eb; }
+        #val-estoque { text-align: center; font-size: 18px; font-weight: 900; color: #2563eb; }
 
         .acoes {
             flex: 0 0 auto;
@@ -195,6 +202,20 @@
             font-weight: 900;
             margin-top: 8px;
             cursor: pointer;
+        }
+
+
+        @media (max-width: 360px) {
+            .topo { padding: 6px; }
+            .conteudo { padding: 7px; gap: 6px; }
+            .grid { gap: 6px; }
+            .grupo input { height: 38px; font-size: 13px; padding: 0 6px; }
+            .label { font-size: 9px; }
+            .busca-row { gap: 5px; }
+            .busca-row button { width: 78px; font-size: 11px; }
+            .acoes { grid-template-columns: 42px 1fr 42px; gap: 6px; }
+            .btn { height: 44px; }
+            .btn-salvar { font-size: 13px; }
         }
     </style>
 </head>
@@ -273,6 +294,34 @@
     let scanner = null;
     let ultimoCodigoLido = "";
     let ultimoCodigoLidoEm = 0;
+
+    let audioCtx = null;
+
+    function tocarBipLeitura() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === "suspended") audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.18, audioCtx.currentTime + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.14);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.15);
+        } catch (e) {
+            console.warn("Falha no bip:", e);
+        }
+    }
 
     function setStatus(msg, tipo = "") {
         const el = document.getElementById("status");
@@ -598,6 +647,7 @@
                     ultimoCodigoLido = codigo;
                     ultimoCodigoLidoEm = agora;
                     document.getElementById("search").value = codigo;
+                    tocarBipLeitura();
                     buscarProduto();
                 }
             );
@@ -614,6 +664,11 @@
     function fecharAjuda() {
         document.getElementById("modal-ajuda").style.display = "none";
     }
+
+    document.addEventListener("pointerdown", function liberarAudio() {
+        tocarBipLeitura();
+        document.removeEventListener("pointerdown", liberarAudio);
+    }, { once: true });
 
     document.getElementById("search").addEventListener("keydown", function(e) {
         if (e.key === "Enter") buscarProduto();
