@@ -17,6 +17,9 @@
     <meta name="twitter:card" content="summary_large_image">
     <link rel="canonical" href="https://www.donaantonia.com.br/">
     <link rel="icon" href="data:,">
+    <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
+    <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
+
     
     <style>
         :root {
@@ -2179,6 +2182,102 @@
     }
 }
 
+    
+
+        /* =========================================================
+           GOOGLE MERCHANT / CONFIANÇA DA LOJA
+           Links públicos, páginas institucionais e blocos de política
+           ========================================================= */
+        .merchant-link-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            padding: 8px 11px;
+            border-radius: 999px;
+            border: 1px solid rgba(208, 213, 221, 0.95);
+            background: rgba(255,255,255,0.92);
+            color: var(--text-dark);
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 850;
+            white-space: nowrap;
+        }
+        .merchant-info-card {
+            background: #fff;
+            border: 1px solid var(--border-light);
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 2px rgba(16,24,40,.035);
+        }
+        .merchant-info-card h2,
+        .merchant-info-card h3 {
+            color: var(--text-dark);
+            font-weight: 900;
+            line-height: 1.25;
+            margin-bottom: 10px;
+            letter-spacing: -0.02em;
+        }
+        .merchant-info-card h2 { font-size: 20px; }
+        .merchant-info-card h3 { font-size: 16px; margin-top: 18px; }
+        .merchant-info-card p,
+        .merchant-info-card li {
+            color: var(--text-light);
+            font-size: 14.5px;
+            line-height: 1.65;
+            font-weight: 600;
+        }
+        .merchant-info-card ul { padding-left: 18px; margin-top: 8px; }
+        .merchant-policy-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .merchant-policy-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 15px;
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 900;
+            background: #f8fafc;
+        }
+        .merchant-policy-link span { color: var(--text-light); font-size: 18px; }
+        .merchant-trust-footer {
+            margin: 18px 10px 24px;
+            padding: 18px;
+            border-radius: 18px;
+            border: 1px solid var(--border-light);
+            background: #ffffff;
+            color: var(--text-light);
+            font-size: 12.5px;
+            line-height: 1.55;
+        }
+        .merchant-trust-footer strong { color: var(--text-dark); }
+        .merchant-trust-footer nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            margin-top: 12px;
+        }
+        .merchant-trust-footer a {
+            color: var(--text-dark);
+            font-weight: 850;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+        @media (min-width: 768px) {
+            .merchant-policy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .merchant-trust-footer { margin: 28px 0 40px; }
+        }
+
     </style>
 </head>
 <body>
@@ -2197,6 +2296,12 @@
             <a href="#/ofertas" class="app-nav-item" id="nav-ofertas">
                 <svg class="svg-icon" style="color: #ef4444;" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg>
                 <span>Ofertas</span>
+            </a>
+
+
+            <a href="contato.html" class="app-nav-item" id="nav-info-site">
+                <svg class="svg-icon" style="color: #64748b;" viewBox="0 0 24 24"><path d="M21 10c0 7-9 12-9 12S3 17 3 10a9 9 0 1118 0z"></path><path d="M12 10h.01"></path></svg>
+                <span>Info</span>
             </a>
 
             <div class="app-nav-item" onclick="openCheckout()" id="nav-lista">
@@ -2249,6 +2354,9 @@
                     <a href="#/mercado" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l1.5 12h15L21 9M3 9h18M3 9L4.5 3h15L21 9"></path></svg> Mercado</a>
                     <a href="#/ofertas" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg> Ofertas</a>
                     <a href="#/informacoes" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Informações</a>
+                    <a href="contato.html" class="desktop-nav-item">Contato</a>
+                    <a href="politica-de-entrega.html" class="desktop-nav-item">Entrega</a>
+                    <a href="politica-de-troca.html" class="desktop-nav-item">Trocas</a>
                     <div class="desktop-nav-item" onclick="openCheckout()">
                         <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg> Sua Lista
                         <span class="cart-badge" id="top-cart-count" style="position:absolute; top:-8px; right:-12px;">0</span>
@@ -2965,6 +3073,22 @@ let onClickAction = `onclick="window.location.hash='#/produto/${getProductRouteK
             });
         };
 
+        function getMerchantTrustFooterHTML() {
+            return `
+            <footer class="merchant-trust-footer" aria-label="Informações comerciais e políticas da loja">
+                <strong>Super Cestas Básicas Dona Antônia</strong><br>
+                Loja on-line de supermercado, cestas básicas, combos e produtos alimentícios com atendimento em Cuiabá e Várzea Grande - MT.
+                <nav>
+                    <a href="sobre-nos.html">Sobre nós</a>
+                    <a href="contato.html">Contato</a>
+                    <a href="politica-de-entrega.html">Entrega</a>
+                    <a href="politica-de-troca.html">Trocas e devoluções</a>
+                    <a href="politica-de-privacidade.html">Privacidade</a>
+                    <a href="termos-de-uso.html">Termos de uso</a>
+                </nav>
+            </footer>`;
+        }
+
         function renderInformacoes() {
             let html = `
             <div style="padding: 15px 0 30px 0;">
@@ -2973,43 +3097,61 @@ let onClickAction = `onclick="window.location.hash='#/produto/${getProductRouteK
                 </div>
                 
                 <div style="padding: 20px;">
-                    <div style="background: #fff; padding: 25px; border-radius: 16px; border: 1px solid var(--border-light); margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-                        <h2 style="font-size: 20px; font-weight: 900; margin-bottom: 10px; color: var(--text-dark);">Super Cestas Básicas Dona Antônia</h2>
-                        
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
-                            <span style="color: #f59e0b; font-size: 20px; font-weight: 900; letter-spacing: 2px;">★★★★★</span>
-                            <span style="font-size: 14.5px; color: var(--text-light); font-weight: 600;">5,0 (25 avaliações no Google)</span>
-                        </div>
-                        
-                        <div style="font-size: 14.5px; color: var(--text-light); line-height: 1.6; margin-bottom: 20px;">
-                            <strong>Cesta básica</strong><br>
-                            Endereço: R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT, 78090-660
-                        </div>
-                        
-                        <div style="background: #fef3c7; color: #d97706; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 14.5px; margin-bottom: 20px; border: 1px solid #fde68a; line-height: 1.5;">
-                            🛵 ENTREGA GRÁTIS EM CUIABÁ E VÁRZEA GRANDE<br>
-                            🛍️ PEDIDO MÍNIMO ${fmt(MIN_ORDER)}
-                        </div>
+                    <section class="merchant-info-card">
+                        <h2>Super Cestas Básicas Dona Antônia</h2>
+                        <p><strong>Tipo de loja:</strong> supermercado on-line, cestas básicas, combos e produtos alimentícios.</p>
+                        <p><strong>Área de atendimento:</strong> Cuiabá e Várzea Grande - MT.</p>
+                        <p><strong>Endereço comercial:</strong> R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT, 78090-660.</p>
+                        <p><strong>CNPJ:</strong> 00.000.000/0000-00. Substitua pelo CNPJ correto da empresa.</p>
+                        <p><strong>E-mail:</strong> atendimento@donaantonia.com.br. Substitua pelo e-mail correto.</p>
+                        <p><strong>WhatsApp:</strong> (65) 99815-0975.</p>
+                        <p><strong>Horário de atendimento:</strong> Segunda a sábado, das 08h às 18h. Ajuste conforme sua operação real.</p>
 
-                        <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 10px; background: #25D366; color: #fff; text-decoration: none; padding: 16px; border-radius: 14px; font-weight: 900; font-size: 16px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); transition: 0.2s;">
-                            <svg style="width: 24px; height: 24px; fill: currentColor;" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"></path></svg>
-                            (65) 99815-0975
+                        <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" rel="noopener" style="display: flex; align-items: center; justify-content: center; gap: 10px; background: #25D366; color: #fff; text-decoration: none; padding: 16px; border-radius: 14px; font-weight: 900; font-size: 16px; margin-top: 18px; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);">
+                            Falar pelo WhatsApp
                         </a>
+                    </section>
 
-                        <h3 style="font-size: 16px; font-weight: 900; margin-bottom: 12px; color: var(--text-dark);">Nossas Redes Sociais</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <a href="#instagram" class="pay-btn" style="text-decoration: none; color: #e1306c; border-color: #e1306c; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid; padding: 10px; border-radius: 8px;">Instagram</a>
-                            <a href="#facebook" class="pay-btn" style="text-decoration: none; color: #1877f2; border-color: #1877f2; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid; padding: 10px; border-radius: 8px;">Facebook</a>
-                            <a href="#tiktok" class="pay-btn" style="text-decoration: none; color: #000000; border-color: #000000; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid; padding: 10px; border-radius: 8px;">TikTok</a>
-                            <a href="#pinterest" class="pay-btn" style="text-decoration: none; color: #bd081c; border-color: #bd081c; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid; padding: 10px; border-radius: 8px;">Pinterest</a>
+                    <section class="merchant-info-card">
+                        <h2>Como funciona o pedido</h2>
+                        <ul>
+                            <li>O cliente escolhe os produtos no site e envia a lista pelo WhatsApp.</li>
+                            <li>Nossa equipe confirma disponibilidade, valores, endereço, forma de pagamento e prazo de entrega antes de finalizar o atendimento.</li>
+                            <li>Caso algum produto esteja indisponível, o cliente é avisado antes da entrega para escolher substituição, remoção do item ou ajuste do pedido.</li>
+                            <li>As informações de preço e estoque exibidas no site devem ser mantidas iguais às informações enviadas ao Google Merchant Center.</li>
+                        </ul>
+                    </section>
+
+                    <section class="merchant-info-card">
+                        <h2>Entrega, pagamento e pós-venda</h2>
+                        <p><strong>Pedido mínimo:</strong> ${fmt(MIN_ORDER)}.</p>
+                        <p><strong>Entrega:</strong> Cuiabá e Várzea Grande - MT. Ajuste custo, prazo e condições conforme sua operação real.</p>
+                        <p><strong>Formas de pagamento:</strong> Dinheiro, Pix, cartão de débito, cartão de crédito, vale alimentação e vale refeição.</p>
+                        <p><strong>Trocas e devoluções:</strong> produtos errados, avariados ou em desacordo com o pedido podem ser analisados pelo atendimento, conforme a política publicada.</p>
+                    </section>
+
+                    <section class="merchant-info-card">
+                        <h2>Políticas da loja</h2>
+                        <p>Estes links precisam ficar publicados e com as mesmas informações cadastradas no Google Merchant Center.</p>
+                        <div class="merchant-policy-grid">
+                            <a class="merchant-policy-link" href="sobre-nos.html">Sobre nós <span>›</span></a>
+                            <a class="merchant-policy-link" href="contato.html">Contato <span>›</span></a>
+                            <a class="merchant-policy-link" href="politica-de-entrega.html">Política de entrega <span>›</span></a>
+                            <a class="merchant-policy-link" href="politica-de-troca.html">Trocas e devoluções <span>›</span></a>
+                            <a class="merchant-policy-link" href="politica-de-privacidade.html">Política de privacidade <span>›</span></a>
+                            <a class="merchant-policy-link" href="termos-de-uso.html">Termos de uso <span>›</span></a>
                         </div>
-                    </div>
+                    </section>
+
+                    ${getMerchantTrustFooterHTML()}
                 </div>
             </div>`;
             $('vitrine').innerHTML = html;
+            updatePageMetaSEO('Informações da loja - Dona Antônia', 'Dados comerciais, atendimento, entrega, formas de pagamento e políticas da Super Cestas Básicas Dona Antônia.', `${SITE_BASE_URL}/#/informacoes`);
         }
 
-        function renderInicio() {
+        
+function renderInicio() {
             const vitrine = $('vitrine'); vitrine.innerHTML = '';
             
             let catMap = new Set(); 
@@ -3075,6 +3217,7 @@ let onClickAction = `onclick="window.location.hash='#/produto/${getProductRouteK
             });
             htmlMercado += '</div>'; 
             
+            htmlMercado += getMerchantTrustFooterHTML();
             vitrine.innerHTML = htmlMercado; 
             updateHomeSeo();
             lazyLoadImages();
@@ -5475,7 +5618,22 @@ Por favor, podem incluir na minha entrega?`;
                         name: 'Dona Antônia',
                         url: SITE_BASE_URL + '/',
                         logo: absoluteSiteUrl('/img/logoantonia5.png'),
-                        sameAs: []
+                        sameAs: [],
+                        contactPoint: [{
+                            '@type': 'ContactPoint',
+                            telephone: '+55 65 99815-0975',
+                            contactType: 'customer service',
+                            areaServed: 'BR',
+                            availableLanguage: ['Portuguese']
+                        }],
+                        hasMerchantReturnPolicy: {
+                            '@type': 'MerchantReturnPolicy',
+                            applicableCountry: 'BR',
+                            returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                            merchantReturnDays: 7,
+                            returnMethod: 'https://schema.org/ReturnByMail',
+                            returnFees: 'https://schema.org/FreeReturn'
+                        }
                     },
                     {
                         '@type': 'WebSite',
@@ -5496,6 +5654,7 @@ Por favor, podem incluir na minha entrega?`;
                         image: absoluteSiteUrl('/img/logoantonia5.png'),
                         url: SITE_BASE_URL + '/',
                         telephone: '+55 65 99815-0975',
+                        email: 'atendimento@donaantonia.com.br',
                         priceRange: '$$',
                         address: {
                             '@type': 'PostalAddress',
@@ -5505,7 +5664,13 @@ Por favor, podem incluir na minha entrega?`;
                             postalCode: '78090-660',
                             addressCountry: 'BR'
                         },
-                        areaServed: ['Cuiabá', 'Várzea Grande']
+                        areaServed: ['Cuiabá', 'Várzea Grande'],
+                        openingHoursSpecification: [{
+                            '@type': 'OpeningHoursSpecification',
+                            dayOfWeek: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+                            opens: '08:00',
+                            closes: '18:00'
+                        }]
                     },
                     ...extraItems
                 ]
