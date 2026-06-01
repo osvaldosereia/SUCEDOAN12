@@ -4574,51 +4574,8 @@ function abrirWhatsAppPedido(mensagem, janelaPreAberta) {
     const numeroLoja = '5565998150975';
     const texto = encodeURIComponent(mensagem);
 
-    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-
-    const urlApp = `whatsapp://send?phone=${numeroLoja}&text=${texto}`;
-    const urlWeb = `https://wa.me/${numeroLoja}?text=${texto}`;
-
-    if (isMobile) {
-        try {
-            if (janelaPreAberta && !janelaPreAberta.closed) {
-                janelaPreAberta.location.href = urlApp;
-
-                setTimeout(() => {
-                    try {
-                        if (janelaPreAberta && !janelaPreAberta.closed) {
-                            janelaPreAberta.location.href = urlWeb;
-                        }
-                    } catch (e) {}
-                }, 1800);
-
-                return;
-            }
-        } catch (e) {}
-
-        window.location.href = urlApp;
-
-        setTimeout(() => {
-            window.location.href = urlWeb;
-        }, 1800);
-
-        return;
-    }
-
-    try {
-        if (janelaPreAberta && !janelaPreAberta.closed) {
-            janelaPreAberta.location.href = urlWeb;
-            return;
-        }
-    } catch (e) {}
-
-    const novaJanela = window.open(urlWeb, '_blank');
-
-    if (!novaJanela) {
-        window.location.href = urlWeb;
-    }
+    window.location.href = `https://wa.me/${numeroLoja}?text=${texto}`;
 }
-
         window.sendOrder = async function(btnOverride) {
             const btn = btnOverride || $('btn-send-order'); 
             if (!btnOverride && btn.disabled) return;
