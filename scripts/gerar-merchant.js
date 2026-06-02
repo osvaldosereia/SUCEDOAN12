@@ -3,7 +3,7 @@ const path = require("path");
 
 const FIREBASE_PRODUTOS_URL = "https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json";
 
-const SITE_URL = "https://www.donaantonia.com.br";
+const SITE_URL = "https://donaantonia.com.br";
 const NOME_LOJA = "Super Cestas Básicas Dona Antônia";
 const DESCRICAO_LOJA = "Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.";
 
@@ -179,7 +179,7 @@ function obterImagem(produto, idProduto) {
         .replace(/\s+/g, "");
 
     if (!imagem) {
-        imagem = `img/produtos/${idProduto}.webp`;
+        imagem = `site/img/produtos/${idProduto}.webp`;
     }
 
     imagem = imagem
@@ -187,19 +187,10 @@ function obterImagem(produto, idProduto) {
         .replace(/^\.\/+/g, "")
         .replace(/^\/+/g, "");
 
-    /*
-        ATENÇÃO:
-
-        Se suas imagens abrem assim:
-        https://www.donaantonia.com.br/site/img/produtos/P440.webp
-        deixe a linha abaixo comentada.
-
-        Se suas imagens abrem assim:
-        https://www.donaantonia.com.br/img/produtos/P440.webp
-        descomente a linha abaixo.
-    */
-
-    imagem = imagem.replace(/^site\//, "");
+    // NÃO remover "site/", porque suas imagens públicas abrem em:
+    // https://donaantonia.com.br/site/img/produtos/...
+    // e também podem abrir em:
+    // https://donaantonia.com.br/site/img/produtos_2/...
 
     let urlFinal;
 
@@ -225,11 +216,12 @@ function obterImagem(produto, idProduto) {
             })
             .join("/");
 
+        // Força o Google a rastrear novamente a URL da imagem.
         url.searchParams.set("v", "merchant-2026-06-01");
 
         return url.toString();
     } catch (e) {
-        return `${SITE_URL}/img/logoantonia5.png?v=merchant-2026-06-01`;
+        return `${SITE_URL}/site/img/logoantonia5.png?v=merchant-2026-06-01`;
     }
 }
 
