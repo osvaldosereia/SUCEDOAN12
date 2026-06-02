@@ -172,7 +172,11 @@ function obterImagem(produto, idProduto) {
         produto.urlImagem ||
         produto.imagem_url ||
         ""
-    ).trim();
+    )
+        .trim()
+        .replace(/\u0009/g, "")
+        .replace(/\u00A0/g, "")
+        .replace(/\s+/g, "");
 
     if (!imagem) {
         imagem = `img/produtos/${idProduto}.webp`;
@@ -183,15 +187,50 @@ function obterImagem(produto, idProduto) {
         .replace(/^\.\/+/g, "")
         .replace(/^\/+/g, "");
 
+    /*
+        ATENÇÃO:
+
+        Se suas imagens abrem assim:
+        https://www.donaantonia.com.br/site/img/produtos/P440.webp
+        deixe a linha abaixo comentada.
+
+        Se suas imagens abrem assim:
+        https://www.donaantonia.com.br/img/produtos/P440.webp
+        descomente a linha abaixo.
+    */
+
+    imagem = imagem.replace(/^site\//, "");
+
+    let urlFinal;
+
     if (imagem.startsWith("http://") || imagem.startsWith("https://")) {
-        return imagem;
+        urlFinal = imagem;
+    } else {
+        urlFinal = `${SITE_URL}/${imagem}`;
     }
 
-    if (imagem.startsWith("site/")) {
-        imagem = imagem.replace(/^site\//, "");
-    }
+    try {
+        const url = new URL(urlFinal);
 
-    return `${SITE_URL}/${imagem}`;
+        url.protocol = "https:";
+
+        url.pathname = url.pathname
+            .split("/")
+            .map(parte => {
+                try {
+                    return encodeURIComponent(decodeURIComponent(parte));
+                } catch (e) {
+                    return encodeURIComponent(parte);
+                }
+            })
+            .join("/");
+
+        url.searchParams.set("v", "merchant-2026-06-01");
+
+        return url.toString();
+    } catch (e) {
+        return `${SITE_URL}/img/logoantonia5.png?v=merchant-2026-06-01`;
+    }
 }
 
 function obterLinkProduto(produto, idProduto, nome) {
