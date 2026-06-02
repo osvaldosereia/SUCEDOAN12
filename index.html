@@ -2278,6 +2278,664 @@
             .merchant-trust-footer { margin: 28px 0 40px; }
         }
 
+
+
+        /* =========================================================
+           PATCH FINAL DONA ANTÔNIA - FOTOS GRANDES / FUNDO BRANCO
+           Prioridade: visual limpo, fotos grandes, cestas 1 coluna,
+           produtos da cesta e troca em 2 colunas.
+           ========================================================= */
+        :root {
+            --bg-body: #ffffff !important;
+            --bg-card: #ffffff !important;
+            --photo-bg: #f2f4f7;
+            --photo-bg-2: #f5f6f8;
+            --clean-border: transparent;
+            --clean-shadow: none;
+        }
+
+        html,
+        body {
+            background: #ffffff !important;
+        }
+
+        .main-container,
+        #vitrine,
+        .modal-scroll-area,
+        .full-screen-detail,
+        .checkout-drawer {
+            background: #ffffff !important;
+        }
+
+        .main-container {
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+        }
+
+        .products-grid,
+        .grid-catalogo,
+        .carousel-container,
+        .vip-container,
+        .related-products-box {
+            background: #ffffff !important;
+        }
+
+        /* Lente visual para produtos com fundo branco: o branco some no fundo cinza claro. */
+        .product-icon-list,
+        .card-catalogo img,
+        .cart-item-img,
+        .prod-page-img,
+        .basket-img-box img,
+        #basketModalImg,
+        .combo-prod-img-box img,
+        .top-discount-imgbox img {
+            mix-blend-mode: multiply !important;
+            filter: contrast(1.04) saturate(1.03) !important;
+        }
+
+        .header-logo,
+        img[src*="logo"] {
+            mix-blend-mode: normal !important;
+            filter: none !important;
+        }
+
+        /* Cards padrão do site: 2 colunas, foto grande em cima, informações abaixo. */
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 14px !important;
+            padding: 10px 2px 18px 2px !important;
+            background: #ffffff !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item),
+        #vitrine .grid-catalogo > .card-catalogo {
+            width: 100% !important;
+            min-width: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 8px !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+            text-align: left !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .img-wrapper,
+        #vitrine .grid-catalogo > .card-catalogo img {
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: none !important;
+            height: auto !important;
+            min-height: 168px !important;
+            aspect-ratio: 1 / 1 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            border-radius: 16px !important;
+            background: var(--photo-bg) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            overflow: hidden !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .product-icon-list,
+        #vitrine .grid-catalogo > .card-catalogo img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important;
+            padding: 4px !important;
+            margin: 0 !important;
+            background: transparent !important;
+            border: 0 !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .product-details {
+            width: 100% !important;
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            justify-content: space-between !important;
+            gap: 7px !important;
+            min-height: 128px !important;
+            padding: 0 2px 2px 2px !important;
+            text-align: left !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .embalagem-tag-text {
+            min-height: 14px !important;
+            margin: 0 !important;
+            color: #667085 !important;
+            font-size: 10px !important;
+            line-height: 1.2 !important;
+            font-weight: 850 !important;
+            letter-spacing: .035em !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .product-name-list {
+            min-height: 38px !important;
+            margin: 0 !important;
+            color: #111827 !important;
+            font-size: 13.4px !important;
+            line-height: 1.35 !important;
+            font-weight: 780 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .card-bottom-row {
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            justify-content: flex-end !important;
+            gap: 8px !important;
+            margin-top: auto !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .price-container {
+            width: 100% !important;
+            min-height: 52px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            justify-content: flex-end !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .tag-preco-list {
+            color: #0f172a !important;
+            font-size: 19px !important;
+            line-height: 1.08 !important;
+            font-weight: 950 !important;
+            letter-spacing: -.045em !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .card-action-area {
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .btn-quick-add-list,
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .qty-controls {
+            width: 100% !important;
+            min-width: 0 !important;
+            height: 42px !important;
+            border-radius: 999px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .btn-quick-add-list {
+            background: #0f172a !important;
+            color: #ffffff !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            gap: 7px !important;
+            font-size: 13px !important;
+            font-weight: 950 !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .btn-quick-add-list::after {
+            content: "Adicionar" !important;
+            display: inline !important;
+            font-size: 13px !important;
+            font-weight: 950 !important;
+        }
+
+        #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .qty-controls {
+            border: 1px solid #d0d5dd !important;
+            background: #ffffff !important;
+            overflow: hidden !important;
+        }
+
+        /* Cestas básicas: 1 coluna, foto quadrada grande, sem box pesado. */
+        #vitrine .cestas-grid-grande {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 18px !important;
+            padding: 8px 0 24px 0 !important;
+            background: #ffffff !important;
+        }
+
+        #vitrine .cestas-grid-grande .basket-card-clean {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+            width: 100% !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+        }
+
+        #vitrine .cestas-grid-grande .basket-card-clean .basket-img-box {
+            width: 100% !important;
+            min-width: 0 !important;
+            height: auto !important;
+            min-height: 310px !important;
+            aspect-ratio: 1 / 1 !important;
+            margin: 0 !important;
+            border: 0 !important;
+            border-radius: 18px !important;
+            background: var(--photo-bg) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            overflow: hidden !important;
+        }
+
+        #vitrine .cestas-grid-grande .basket-card-clean .basket-img-box img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important;
+            padding: 6px !important;
+        }
+
+        #vitrine .cestas-grid-grande .basket-card-clean .product-details {
+            padding: 0 2px 4px 2px !important;
+            min-height: 0 !important;
+            text-align: left !important;
+        }
+
+        #vitrine .cestas-grid-grande .basket-card-clean .basket-title {
+            font-size: 18px !important;
+            line-height: 1.25 !important;
+            font-weight: 950 !important;
+            color: #0f172a !important;
+        }
+
+        #vitrine .cestas-grid-grande .basket-card-clean .basket-price {
+            font-size: 23px !important;
+            font-weight: 950 !important;
+        }
+
+        #vitrine .cestas-grid-grande .basket-card-clean .btn-quick-add-list {
+            width: 100% !important;
+            height: 44px !important;
+            border-radius: 999px !important;
+            background: #0f172a !important;
+            color: #ffffff !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            font-size: 13px !important;
+            gap: 7px !important;
+        }
+
+        #vitrine .cestas-grid-grande .basket-card-clean .btn-quick-add-list::after {
+            content: "Ver produtos" !important;
+            display: inline !important;
+            font-size: 13px !important;
+            font-weight: 950 !important;
+        }
+
+        /* Combos: mantém formato atual, só limpa bordas e deixa imagens maiores/mais leves. */
+        #vitrine .combos-grid-ofertas {
+            background: #ffffff !important;
+        }
+
+        #vitrine .combos-grid-ofertas .combo-card-clean {
+            border: 0 !important;
+            box-shadow: none !important;
+            background: #ffffff !important;
+        }
+
+        #vitrine .combos-grid-ofertas .combo-card-clean .basket-img-box,
+        #vitrine .combos-grid-ofertas .combo-prod-img-box {
+            background: var(--photo-bg) !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+
+        #vitrine .combos-grid-ofertas .combo-card-clean .basket-img-box img,
+        #vitrine .combos-grid-ofertas .combo-prod-img-box img {
+            object-fit: contain !important;
+            padding: 5px !important;
+        }
+
+        /* Modal da cesta: produtos em 2 colunas com quantidade, excluir e trocar. */
+        #basketModalTopInfo {
+            background: #ffffff !important;
+        }
+
+        #basketModalImg {
+            width: 100% !important;
+            height: 38vh !important;
+            object-fit: contain !important;
+            background: var(--photo-bg) !important;
+            padding: 8px !important;
+        }
+
+        #basketModalContentArea {
+            padding: 14px 8px 20px 8px !important;
+            background: #ffffff !important;
+        }
+
+        #basket-items-container {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 12px !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+        }
+
+        #basket-items-container .basket-item-card,
+        #basket-items-container .product-card-list.basket-item-card {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 8px !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: #ffffff !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+        }
+
+        #basket-items-container .basket-item-card .basket-item-main {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 7px !important;
+            width: 100% !important;
+        }
+
+        #basket-items-container .basket-item-card .basket-item-main .img-wrapper {
+            width: 100% !important;
+            min-width: 0 !important;
+            height: auto !important;
+            min-height: 150px !important;
+            aspect-ratio: 1 / 1 !important;
+            margin: 0 !important;
+            border: 0 !important;
+            border-radius: 14px !important;
+            background: var(--photo-bg) !important;
+            overflow: hidden !important;
+        }
+
+        #basket-items-container .basket-item-card .basket-item-main .img-wrapper img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important;
+            padding: 4px !important;
+        }
+
+        #basket-items-container .basket-item-card .product-details {
+            width: 100% !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            align-items: stretch !important;
+            text-align: left !important;
+        }
+
+        #basket-items-container .basket-item-card .product-name-list {
+            min-height: 35px !important;
+            margin: 0 0 4px 0 !important;
+            font-size: 12.7px !important;
+            line-height: 1.32 !important;
+            font-weight: 830 !important;
+            color: #111827 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+        }
+
+        #basket-items-container .basket-item-card .tag-preco-list {
+            font-size: 16px !important;
+            font-weight: 950 !important;
+        }
+
+        #basket-items-container .basket-item-card .qty-controls-didatic {
+            width: 100% !important;
+            height: 38px !important;
+            margin-top: 7px !important;
+            padding: 3px !important;
+            border: 1px solid #d0d5dd !important;
+            border-radius: 999px !important;
+            background: #ffffff !important;
+            display: flex !important;
+            justify-content: space-between !important;
+        }
+
+        #basket-items-container .basket-item-card .qty-btn-round {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            box-shadow: none !important;
+            border: 0 !important;
+            background: #f3f4f6 !important;
+        }
+
+        #basket-items-container .basket-item-card .qty-display-didatic {
+            font-size: 12px !important;
+            font-weight: 950 !important;
+            white-space: nowrap !important;
+        }
+
+        #basket-items-container .basket-item-card .basket-item-actions {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 6px !important;
+            width: 100% !important;
+            margin-top: 0 !important;
+        }
+
+        #basket-items-container .basket-item-card .btn-didatico {
+            width: 100% !important;
+            min-width: 0 !important;
+            min-height: 38px !important;
+            padding: 8px 5px !important;
+            border-radius: 999px !important;
+            font-size: 10.8px !important;
+            font-weight: 950 !important;
+            line-height: 1.05 !important;
+            white-space: normal !important;
+            box-shadow: none !important;
+        }
+
+        #basket-items-container .basket-item-card .btn-didatico svg {
+            display: none !important;
+        }
+
+        #basket-summary-container {
+            background: #ffffff !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin-top: 18px !important;
+            padding: 14px 4px 4px 4px !important;
+        }
+
+        /* Tela de troca: 2 colunas, foto grande e botão trocar. */
+        #swapModal .swap-header {
+            background: #ffffff !important;
+            border-bottom: 0 !important;
+            box-shadow: none !important;
+        }
+
+        #swap-items-container {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 12px !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+        }
+
+        #swap-items-container .swap-section-title {
+            grid-column: 1 / -1 !important;
+        }
+
+        #swap-items-container .swap-option-card {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 7px !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+        }
+
+        #swap-items-container .swap-option-card .img-wrapper {
+            width: 100% !important;
+            min-width: 0 !important;
+            height: auto !important;
+            min-height: 150px !important;
+            aspect-ratio: 1 / 1 !important;
+            margin: 0 !important;
+            border: 0 !important;
+            border-radius: 14px !important;
+            background: var(--photo-bg) !important;
+            overflow: hidden !important;
+        }
+
+        #swap-items-container .swap-option-card .product-icon-list {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important;
+            padding: 4px !important;
+        }
+
+        #swap-items-container .swap-option-card .product-details {
+            width: 100% !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            justify-content: space-between !important;
+            gap: 7px !important;
+        }
+
+        #swap-items-container .swap-option-card .product-name-list {
+            min-height: 35px !important;
+            margin: 0 !important;
+            font-size: 12.7px !important;
+            line-height: 1.32 !important;
+            font-weight: 830 !important;
+            color: #111827 !important;
+            text-align: left !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+        }
+
+        #swap-items-container .swap-option-bottom {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 7px !important;
+            width: 100% !important;
+            margin-top: auto !important;
+        }
+
+        #swap-items-container .swap-option-price .tag-preco-list {
+            font-size: 15px !important;
+            font-weight: 950 !important;
+        }
+
+        #swap-items-container .btn-swap-option {
+            width: 100% !important;
+            min-height: 40px !important;
+            border: 0 !important;
+            border-radius: 999px !important;
+            background: #16a34a !important;
+            color: #ffffff !important;
+            box-shadow: none !important;
+            font-size: 12.5px !important;
+            font-weight: 950 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 5px !important;
+        }
+
+        .chk-section,
+        .merchant-info-card,
+        .related-products-box,
+        .prod-page-container,
+        .prod-page-desc-box {
+            box-shadow: none !important;
+        }
+
+        @media (max-width: 374px) {
+            #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) {
+                gap: 10px !important;
+            }
+            #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .img-wrapper,
+            #basket-items-container .basket-item-card .basket-item-main .img-wrapper,
+            #swap-items-container .swap-option-card .img-wrapper {
+                min-height: 136px !important;
+            }
+            #basket-items-container .basket-item-card .btn-didatico,
+            #swap-items-container .btn-swap-option {
+                font-size: 10px !important;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .main-container {
+                padding-left: 14px !important;
+                padding-right: 14px !important;
+            }
+            #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 22px !important;
+                max-width: 920px !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+            }
+            #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .img-wrapper {
+                min-height: 260px !important;
+            }
+            #vitrine .cestas-grid-grande {
+                max-width: 720px !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+            }
+            #vitrine .cestas-grid-grande .basket-card-clean .basket-img-box {
+                min-height: 520px !important;
+            }
+            #basket-items-container,
+            #swap-items-container {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 16px !important;
+            }
+            #basket-items-container .basket-item-card .basket-item-main .img-wrapper,
+            #swap-items-container .swap-option-card .img-wrapper {
+                min-height: 210px !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -3279,7 +3937,7 @@ function renderInicio() {
         }
 
         function renderCestas() {
-            let html = `<div style="padding: 0;"><div class="products-grid">`;
+            let html = `<div style="padding: 0;"><div class="products-grid cestas-grid-grande">`;
             
             BASKETS.forEach(basket => {
                 let prices = calculateBasketPrices(basket.id);
@@ -3933,7 +4591,7 @@ if (typeof lazyLoadImages === 'function') {
                 });
 
                 const renderSwapSectionTitle = (title, subtitle) => `
-                    <div style="padding: 4px 2px 0; margin-top: ${html ? '14px' : '0'};">
+                    <div class="swap-section-title" style="padding: 4px 2px 0; margin-top: ${html ? '14px' : '0'};">
                         <div style="font-weight: 900; font-size: 15px; color: var(--text-dark); text-align: left;">${title}</div>
                         ${subtitle ? `<div style="font-weight: 700; font-size: 12.5px; color: var(--text-light); margin-top: 3px; line-height:1.35;">${subtitle}</div>` : ''}
                     </div>`;
