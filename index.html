@@ -2936,6 +2936,241 @@
             }
         }
 
+    
+
+        /* =========================================================
+           PATCH SÊNIOR 2026-06-02: ajustes solicitados
+           ========================================================= */
+        .home-offers-hero {
+            position: relative;
+            display: block;
+            margin: 0 0 18px 0;
+            padding: 18px;
+            border-radius: 24px;
+            text-decoration: none;
+            color: #ffffff;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 92% 12%, rgba(255,255,255,.24), transparent 26%),
+                radial-gradient(circle at 8% 0%, rgba(251,191,36,.35), transparent 30%),
+                linear-gradient(135deg, #111827 0%, #14532d 56%, #16a34a 100%);
+            box-shadow: 0 16px 34px rgba(15, 23, 42, .18);
+            isolation: isolate;
+        }
+        .home-offers-hero::before {
+            content: "";
+            position: absolute;
+            inset: auto -28px -44px auto;
+            width: 165px;
+            height: 165px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.12);
+            z-index: -1;
+        }
+        .home-offers-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 13px;
+        }
+        .home-offers-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.16);
+            border: 1px solid rgba(255,255,255,.22);
+            font-size: 11px;
+            font-weight: 950;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+        .home-offers-cta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 36px;
+            padding: 0 13px;
+            border-radius: 999px;
+            background: #ffffff;
+            color: #14532d;
+            font-size: 12px;
+            font-weight: 950;
+            white-space: nowrap;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .16);
+        }
+        .home-offers-title {
+            font-size: clamp(22px, 7vw, 34px);
+            line-height: .96;
+            font-weight: 980;
+            letter-spacing: -.06em;
+            max-width: 620px;
+        }
+        .home-offers-subtitle {
+            margin-top: 8px;
+            font-size: 13.5px;
+            line-height: 1.35;
+            font-weight: 800;
+            color: rgba(255,255,255,.86);
+        }
+        .home-offers-products {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .home-offer-mini {
+            min-width: 0;
+            border-radius: 16px;
+            background: rgba(255,255,255,.94);
+            color: #101828;
+            padding: 8px;
+            display: grid;
+            grid-template-columns: 46px 1fr;
+            gap: 7px;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,.70);
+        }
+        .home-offer-mini-img {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            background: #f2f4f7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .home-offer-mini-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 3px;
+            mix-blend-mode: multiply;
+        }
+        .home-offer-mini-name {
+            font-size: 10.5px;
+            line-height: 1.18;
+            font-weight: 900;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .home-offer-mini-price {
+            margin-top: 3px;
+            color: #e11d48;
+            font-size: 12.5px;
+            font-weight: 980;
+            letter-spacing: -.035em;
+        }
+        .compact-home-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 34px;
+            padding: 0 11px;
+            border: 1px solid #dcfce7;
+            border-radius: 999px;
+            background: #ecfdf3;
+            color: #166534;
+            font-size: 12px;
+            font-weight: 950;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        body.route-no-section-search .section-search-container { display: none !important; }
+        body.route-compact.route-no-section-search .header-main {
+            height: max(74px, calc(74px + env(safe-area-inset-top))) !important;
+            padding: env(safe-area-inset-top) 14px 0 14px !important;
+        }
+        body.route-compact.route-no-section-search .main-container {
+            top: calc(74px + env(safe-area-inset-top)) !important;
+            height: calc(100dvh - 74px - env(safe-area-inset-top)) !important;
+            padding-top: 0 !important;
+        }
+        body.route-compact.route-no-section-search .compact-route-header { padding: 7px 0 8px 0 !important; }
+        body.route-compact.route-no-section-search .compact-route-main {
+            display: grid !important;
+            grid-template-columns: auto auto minmax(0, 1fr) !important;
+            grid-template-areas: "back home title" !important;
+            min-height: 56px !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+        body.route-compact.route-no-section-search .compact-back-btn { grid-area: back; }
+        body.route-compact.route-no-section-search .compact-home-btn { grid-area: home; }
+        body.route-compact.route-no-section-search .compact-title { grid-area: title; }
+        body.route-compact.route-no-section-search .compact-chips-row { display: none !important; }
+        #vitrine .related-products-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 14px !important;
+            padding: 12px 0 18px 0 !important;
+            background: #ffffff !important;
+        }
+        #vitrine .related-products-grid > .product-card-list {
+            flex-direction: column !important;
+        }
+        #vitrine .combos-grid-ofertas .combo-duplo-label,
+        #vitrine .combos-grid-ofertas .combo-duplo-title {
+            display: none !important;
+        }
+        #vitrine .combos-grid-ofertas .combo-card-clean.combo-card-duplo {
+            grid-column: auto !important;
+            gap: 10px !important;
+        }
+        #vitrine .combos-grid-ofertas .combo-prod-img-box {
+            height: 174px !important;
+            border-radius: 20px !important;
+        }
+        #vitrine .combos-grid-ofertas .combo-prod-img-box img {
+            padding: 3px !important;
+        }
+        #vitrine .combos-grid-ofertas .combo-duplo-info {
+            gap: 8px !important;
+        }
+        #vitrine .combos-grid-ofertas .combo-duplo-btn {
+            height: 46px !important;
+        }
+        @media (max-width: 430px) {
+            .home-offers-products { grid-template-columns: 1fr; }
+            .home-offer-mini:nth-child(n+3) { display: none; }
+            body.route-compact.route-no-section-search .compact-back-btn {
+                min-width: 74px !important;
+                height: 40px !important;
+                padding: 0 10px !important;
+                font-size: 12px !important;
+            }
+            body.route-compact.route-no-section-search .compact-home-btn {
+                height: 40px !important;
+                padding: 0 10px !important;
+            }
+            body.route-compact.route-no-section-search .compact-title {
+                font-size: 14px !important;
+            }
+        }
+        @media (min-width: 768px) {
+            .home-offers-hero { padding: 24px; }
+            .home-offers-products { max-width: 720px; }
+            body.route-compact.route-no-section-search .header-main {
+                height: max(78px, calc(78px + env(safe-area-inset-top))) !important;
+            }
+            body.route-compact.route-no-section-search .main-container {
+                top: calc(78px + env(safe-area-inset-top)) !important;
+                height: calc(100dvh - 78px - env(safe-area-inset-top)) !important;
+            }
+            #vitrine .related-products-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                max-width: 920px !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+            }
+            #vitrine .combos-grid-ofertas .combo-prod-img-box { height: 210px !important; }
+        }
+
     </style>
 </head>
 <body>
@@ -3029,6 +3264,7 @@
                     <svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     <span>Voltar</span>
                 </button>
+                <button type="button" class="compact-home-btn" onclick="window.location.hash='#/'" aria-label="Ir para o início">Início</button>
                 <div class="compact-title" id="compact-route-title">Página</div>
                 <div class="section-search-container" id="section-search-wrap">
                     <div class="section-search-icon"><svg class="svg-icon" viewBox="0 0 24 24" style="width:17px;height:17px;"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
@@ -3832,15 +4068,7 @@ function renderInicio() {
                         <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
                     </a>`;
 
-            htmlMercado += `<a href="#/ofertas" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
-                        <div style="display:flex; align-items:center; gap:14px;">
-                            <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef2f2; display:flex; align-items:center; justify-content:center; color: var(--danger);">
-                                <svg class="svg-icon" style="width: 1.2em; height: 1.2em;" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg>
-                            </div>
-                            <span style="font-size: 16px; font-weight: 900; color: var(--danger);">OFERTAS</span>
-                        </div>
-                        <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
-                    </a>`;
+            htmlMercado += getHomeOffersHeroHTML();
 
             htmlMercado += `<a href="#/combos" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
                         <div style="display:flex; align-items:center; gap:14px;">
@@ -4104,7 +4332,7 @@ let controlsHtml = '';
                 let bScore = (prod.subcategoria && b.subcategoria === prod.subcategoria) ? 0 : 1;
                 return aScore - bScore || a.name.localeCompare(b.name);
             }).slice(0, 12);
-            let relacionadosHtml = relacionados.length > 0 ? `<div class="related-products-box"><h3 class="subcat-title" style="margin:0;">Produtos relacionados</h3><div id="related-products-grid" class="grid-catalogo" style="margin:0;"></div></div>` : '';
+            let relacionadosHtml = relacionados.length > 0 ? `<div class="related-products-box"><h3 class="subcat-title" style="margin:0;">Produtos relacionados</h3><div id="related-products-grid" class="products-grid related-products-grid" style="margin:0;"></div></div>` : '';
             
             let html = `<div class="prod-page-container">
                             <div class="prod-page-img-box"><img src="${prod.img}" class="prod-page-img" loading="eager" decoding="async" fetchpriority="high" alt="${prod.name}" onerror="this.src='${errorImgFallback}'"></div>
@@ -4780,7 +5008,7 @@ if (typeof lazyLoadImages === 'function') {
             $('basketDetailModal').classList.remove('active');
             window.currentBasketId = null;
             limparEstadoModalAtualDoHistorico();
-            openCheckout();
+            openCheckout({ scrollToAgendamento: true });
             return;
         }
 
@@ -7061,8 +7289,6 @@ renderCombos = function() {
             </div>
 
             <div class="combo-duplo-info">
-                <div class="combo-duplo-label">COMBO PROMOCIONAL</div>
-                <div class="combo-duplo-title">${combo.nome}</div>
                 <div class="combo-duplo-validade">${validadeTxt}</div>
 
                 <div class="combo-duplo-precos">
@@ -7087,7 +7313,7 @@ renderCestas = function() {
     const busca = getSectionSearchQuery();
     if (!busca) return renderCestasOriginalDA();
 
-    let html = `<div style="padding: 0;"><div class="products-grid">`;
+    let html = `<div style="padding: 0;"><div class="products-grid combos-grid-ofertas">`;
     const filtradas = BASKETS.filter(b => itemCombinaBuscaDA({ name: b.nome, id: b.id }, busca));
 
     if (!filtradas.length) {
@@ -8166,6 +8392,201 @@ Por favor, podem incluir na minha entrega?`;
         `;
     }, 3000);
 };
+
+
+
+/* =========================================================
+   PATCH SÊNIOR 2026-06-02: busca, topbar, combos, checkout
+   ========================================================= */
+function getHomeOffersHeroHTML() {
+    const ofertas = (STATE.prods || [])
+        .filter(p => p.categoria !== 'Cestas' && Number(p.discountPercent || 0) > 0)
+        .sort((a, b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || String(a.name || '').localeCompare(String(b.name || '')))
+        .slice(0, 3);
+
+    const minis = ofertas.map(p => `
+        <div class="home-offer-mini">
+            <div class="home-offer-mini-img"><img src="${escapeAttrDA(p.img || errorImgFallback)}" alt="${escapeAttrDA(p.name || 'Oferta')}" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'"></div>
+            <div>
+                <div class="home-offer-mini-name">${p.name || 'Produto em oferta'}</div>
+                <div class="home-offer-mini-price">${fmt(Number(p.price || 0))}</div>
+            </div>
+        </div>
+    `).join('');
+
+    return `
+        <a href="#/ofertas" class="home-offers-hero" aria-label="Ver ofertas da loja">
+            <div class="home-offers-top">
+                <div class="home-offers-kicker">🔥 Ofertas selecionadas</div>
+                <div class="home-offers-cta">Ver ofertas</div>
+            </div>
+            <div class="home-offers-title">Economize na compra do mês</div>
+            <div class="home-offers-subtitle">Produtos com desconto, cestas e itens essenciais para completar seu pedido.</div>
+            ${minis ? `<div class="home-offers-products">${minis}</div>` : ''}
+        </a>
+    `;
+}
+
+const atualizarBuscaSecaoVisualSeniorDA = atualizarBuscaSecaoVisual;
+atualizarBuscaSecaoVisual = function() {
+    const input = $('section-search-input');
+    const clear = $('section-search-clear');
+    const wrap = $('section-search-wrap');
+    if (!input || !clear || !wrap) return;
+
+    const hashAtual = window.location.hash || '#/';
+    const isHome = hashAtual === '#/' || hashAtual === '';
+    const isProductPage = hashAtual.startsWith('#/produto/');
+    const isCestas = hashAtual === '#/cestas';
+    const isInfo = hashAtual === '#/informacoes';
+    const isSearch = hashAtual === '#/buscar';
+    const hideSectionSearch = isHome || isProductPage || isCestas || isInfo;
+
+    wrap.style.display = hideSectionSearch ? 'none' : 'block';
+
+    if (isSearch) {
+        input.placeholder = 'Nova busca';
+        input.value = STATE.searchQuery || '';
+    } else {
+        input.placeholder = 'Buscar nesta seção';
+        input.value = STATE.sectionSearchQuery || '';
+    }
+
+    clear.style.display = input.value ? 'flex' : 'none';
+};
+
+window.applySectionSearch = function(value) {
+    const hashAtual = window.location.hash || '#/';
+    if (hashAtual === '#/buscar') {
+        STATE.searchQuery = String(value || '').replace(/\s+/g, ' ').trimStart();
+        atualizarBuscaSecaoVisual();
+        renderSearch();
+        return;
+    }
+    STATE.sectionSearchQuery = String(value || '');
+    atualizarBuscaSecaoVisual();
+    renderCurrentSectionOnly();
+};
+
+window.clearSectionSearch = function() {
+    const hashAtual = window.location.hash || '#/';
+    if (hashAtual === '#/buscar') {
+        clearSearch({ stayOnSearch: true, focus: true });
+        return;
+    }
+    STATE.sectionSearchQuery = '';
+    atualizarBuscaSecaoVisual();
+    renderCurrentSectionOnly();
+};
+
+const atualizarTopbarDaRotaSeniorDA = atualizarTopbarDaRota;
+atualizarTopbarDaRota = function(hash) {
+    atualizarTopbarDaRotaSeniorDA(hash);
+
+    const hashAtual = hash || window.location.hash || '#/';
+    const noSectionSearch = hashAtual.startsWith('#/produto/') || hashAtual === '#/cestas' || hashAtual === '#/informacoes';
+    document.body.classList.toggle('route-no-section-search', noSectionSearch);
+    document.body.classList.toggle('route-product-page', hashAtual.startsWith('#/produto/'));
+    document.body.classList.toggle('route-cestas-page', hashAtual === '#/cestas');
+    document.body.classList.toggle('route-info-page', hashAtual === '#/informacoes');
+
+    const compactChips = $('compact-route-chips');
+    if (noSectionSearch) {
+        document.documentElement.style.setProperty('--compact-header-height', '74px');
+    } else if (compactChips) {
+        document.documentElement.style.setProperty('--compact-header-height', compactChips.innerHTML.trim() ? '94px' : '58px');
+    }
+
+    atualizarBuscaSecaoVisual();
+};
+
+window.toggleSearchButtons = function() {
+    const input = $('app-search-input');
+    const clearBtn = $('clear-search-btn');
+    const submitBtn = $('submit-search-btn');
+    if (!input || !clearBtn || !submitBtn) return;
+
+    const temTexto = input.value.trim().length > 0;
+    clearBtn.style.display = temTexto ? 'flex' : 'none';
+    submitBtn.style.display = temTexto ? 'flex' : 'none';
+};
+
+window.executeSearch = function(event) {
+    if (event) event.preventDefault();
+
+    const input = $('app-search-input');
+    const sectionInput = $('section-search-input');
+    const source = input && input.offsetParent !== null ? input : (sectionInput && sectionInput.offsetParent !== null ? sectionInput : input);
+    if (!source) return false;
+
+    const termo = String(source.value || '').replace(/\s+/g, ' ').trim();
+    STATE.searchQuery = termo;
+    if (input) input.value = termo;
+    if (sectionInput && (window.location.hash || '#/') === '#/buscar') sectionInput.value = termo;
+    toggleSearchButtons();
+    atualizarBuscaSecaoVisual();
+
+    if (!termo) {
+        clearSearch({ stayOnSearch: window.location.hash === '#/buscar', focus: true });
+        return false;
+    }
+
+    if (window.location.hash !== '#/buscar') {
+        window.location.hash = '#/buscar';
+    } else {
+        renderSearch();
+    }
+    return false;
+};
+
+window.clearSearch = function(options = {}) {
+    const input = $('app-search-input');
+    const sectionInput = $('section-search-input');
+    STATE.searchQuery = '';
+    if (input) input.value = '';
+    if (sectionInput && (window.location.hash || '#/') === '#/buscar') sectionInput.value = '';
+
+    toggleSearchButtons();
+    atualizarBuscaSecaoVisual();
+
+    if (window.location.hash === '#/buscar') {
+        if (options.goHome) {
+            window.location.hash = '#/';
+        } else {
+            renderSearch();
+            requestAnimationFrame(() => {
+                const target = sectionInput && sectionInput.offsetParent !== null ? sectionInput : input;
+                if (options.focus && target) target.focus();
+            });
+        }
+        return;
+    }
+
+    if (options.goHome) window.location.hash = '#/';
+};
+
+const openCheckoutSeniorDA = window.openCheckout;
+window.openCheckout = function(options = {}) {
+    openCheckoutSeniorDA();
+
+    if (options && options.scrollToAgendamento) {
+        requestAnimationFrame(() => {
+            const drawer = $('checkout-drawer');
+            const alvo = $('agendamento-options-container');
+            if (!drawer || !alvo) return;
+            const topo = Math.max(alvo.offsetTop - 78, 0);
+            drawer.scrollTo({ top: topo, behavior: 'smooth' });
+        });
+    }
+};
+
+// Garante que Enter dentro da busca compacta da tela de resultados faça uma nova busca.
+document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    if (e.target && e.target.id === 'section-search-input' && (window.location.hash || '#/') === '#/buscar') {
+        executeSearch(e);
+    }
+});
 
 document.addEventListener('DOMContentLoaded', init);
 
