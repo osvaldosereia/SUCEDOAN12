@@ -16,6 +16,68 @@ function limparTexto(valor) {
         .trim();
 }
 
+function normalizarTituloProduto(valor) {
+    const texto = limparTexto(valor);
+
+    if (!texto) return "";
+
+    const siglasPermitidas = new Set([
+        "kg", "g", "mg", "ml", "l", "un", "und", "pct", "pc", "cx", "fd", "pet",
+        "vip", "zero", "plus", "mm", "cm", "mt", "m", "br", "rj", "sp", "mt"
+    ]);
+
+    const palavrasMinusculas = new Set([
+        "de", "da", "do", "das", "dos", "e", "com", "sem", "para", "por", "em", "no", "na", "nos", "nas"
+    ]);
+
+    const marcasSiglas = new Set([
+        "omo", "ype", "ypê", "uht", "pet", "vip", "toddy", "nescau", "sadia", "seara", "tio", "tia"
+    ]);
+
+    return texto
+        .toLowerCase()
+        .split(" ")
+        .map((palavra, index) => {
+            if (!palavra) return palavra;
+
+            const prefixo = palavra.match(/^[^\wÀ-ÿ]+/)?.[0] || "";
+            const sufixo = palavra.match(/[^\wÀ-ÿ]+$/)?.[0] || "";
+            const miolo = palavra.replace(/^[^\wÀ-ÿ]+/, "").replace(/[^\wÀ-ÿ]+$/, "");
+
+            if (!miolo) return palavra;
+
+            const mioloLimpo = miolo.toLowerCase();
+
+            if (/^\d/.test(mioloLimpo)) {
+                return prefixo + mioloLimpo + sufixo;
+            }
+
+            if (siglasPermitidas.has(mioloLimpo)) {
+                return prefixo + mioloLimpo + sufixo;
+            }
+
+            if (index > 0 && palavrasMinusculas.has(mioloLimpo)) {
+                return prefixo + mioloLimpo + sufixo;
+            }
+
+            if (marcasSiglas.has(mioloLimpo)) {
+                return prefixo + mioloLimpo.charAt(0).toUpperCase() + mioloLimpo.slice(1) + sufixo;
+            }
+
+            return prefixo + mioloLimpo.charAt(0).toUpperCase() + mioloLimpo.slice(1) + sufixo;
+        })
+        .join(" ")
+        .replace(/\bKg\b/g, "kg")
+        .replace(/\bMl\b/g, "ml")
+        .replace(/\bUn\b/g, "un")
+        .replace(/\bUnd\b/g, "und")
+        .replace(/\bPct\b/g, "pct")
+        .replace(/\bCx\b/g, "cx")
+        .replace(/\bFd\b/g, "fd")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 function xmlEscape(valor) {
     return String(valor || "")
         .replace(/&/g, "&amp;")
@@ -122,7 +184,7 @@ function obterIdProduto(chaveFirebase, produto) {
 }
 
 function obterNomeProduto(produto) {
-    return limparTexto(
+    return normalizarTituloProduto(
         produto.nome ||
         produto.name ||
         produto.titulo ||
@@ -187,11 +249,6 @@ function obterImagem(produto, idProduto) {
         .replace(/^\.\/+/g, "")
         .replace(/^\/+/g, "");
 
-    // NÃO remover "site/", porque suas imagens públicas abrem em:
-    // https://donaantonia.com.br/site/img/produtos/...
-    // e também podem abrir em:
-    // https://donaantonia.com.br/site/img/produtos_2/...
-
     let urlFinal;
 
     if (imagem.startsWith("http://") || imagem.startsWith("https://")) {
@@ -216,7 +273,6 @@ function obterImagem(produto, idProduto) {
             })
             .join("/");
 
-        // Força o Google a rastrear novamente a URL da imagem.
         url.searchParams.set("v", "merchant-2026-06-01");
 
         return url.toString();
