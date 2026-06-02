@@ -3066,21 +3066,7 @@
             font-weight: 980;
             letter-spacing: -.035em;
         }
-        .compact-home-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            height: 34px;
-            padding: 0 11px;
-            border: 1px solid #dcfce7;
-            border-radius: 999px;
-            background: #ecfdf3;
-            color: #166534;
-            font-size: 12px;
-            font-weight: 950;
-            cursor: pointer;
-            white-space: nowrap;
-        }
+        
         body.route-no-section-search .section-search-container { display: none !important; }
         body.route-compact.route-no-section-search .header-main {
             height: max(74px, calc(74px + env(safe-area-inset-top))) !important;
@@ -3093,16 +3079,15 @@
         }
         body.route-compact.route-no-section-search .compact-route-header { padding: 7px 0 8px 0 !important; }
         body.route-compact.route-no-section-search .compact-route-main {
-            display: grid !important;
-            grid-template-columns: auto auto minmax(0, 1fr) !important;
-            grid-template-areas: "back home title" !important;
-            min-height: 56px !important;
-            align-items: center !important;
-            gap: 8px !important;
-        }
-        body.route-compact.route-no-section-search .compact-back-btn { grid-area: back; }
-        body.route-compact.route-no-section-search .compact-home-btn { grid-area: home; }
-        body.route-compact.route-no-section-search .compact-title { grid-area: title; }
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    grid-template-areas: "back title" !important;
+    min-height: 56px !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+body.route-compact.route-no-section-search .compact-back-btn { grid-area: back; }
+body.route-compact.route-no-section-search .compact-title { grid-area: title; }
         body.route-compact.route-no-section-search .compact-chips-row { display: none !important; }
         #vitrine .related-products-grid {
             display: grid !important;
@@ -3144,10 +3129,7 @@
                 padding: 0 10px !important;
                 font-size: 12px !important;
             }
-            body.route-compact.route-no-section-search .compact-home-btn {
-                height: 40px !important;
-                padding: 0 10px !important;
-            }
+            
             body.route-compact.route-no-section-search .compact-title {
                 font-size: 14px !important;
             }
@@ -3512,7 +3494,6 @@
                     <svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     <span>Voltar</span>
                 </button>
-                <button type="button" class="compact-home-btn" onclick="window.location.hash='#/'" aria-label="Ir para o início">Início</button>
                 <div class="compact-title" id="compact-route-title">Página</div>
                 <div class="section-search-container" id="section-search-wrap">
                     <div class="section-search-icon"><svg class="svg-icon" viewBox="0 0 24 24" style="width:17px;height:17px;"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
