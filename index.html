@@ -4478,7 +4478,7 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
             <div class="chk-inline-summary">
                 <div class="summary-row"><span>Subtotal dos Produtos</span><span id="sum-sub">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-combo-row"><span>Desconto do Combo</span><span id="sum-combo-desc">R$ 0,00</span></div>
-                <div class="summary-row" style="color: var(--success); display: none;" id="sum-atacado-row"><span>Desconto Leve Mais</span><span id="sum-atacado-desc">R$ 0,00</span></div>
+                <div class="summary-row" style="color: var(--success); display: none;" id="sum-atacado-row"><span>Desconto por quantidade</span><span id="sum-atacado-desc">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-agendamento-row"><span>Desconto de Agendamento</span><span id="sum-agendamento-desc">R$ 0,00</span></div>
                 <div class="summary-row total"><span>Total Estimado</span><span id="sum-total">R$ 0,00</span></div>
             </div>
@@ -4884,7 +4884,7 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
 
             if (hash === '#/' || hash === '') { renderInicio(); document.title = "Dona Antônia - Supermercado e Cestas"; } 
             else if (hash === '#/cestas') { renderCestas(); document.title = "Cestas Básicas - Dona Antônia"; } 
-            else if (hash === '#/combos') { renderCombos(); document.title = "Leve Mais, Pague Menos - Dona Antônia"; } 
+            else if (hash === '#/combos') { renderCombos(); document.title = "Dona Antônia - Supermercado e Cestas"; } 
             else if (hash === '#/ofertas') { renderDepartamentoCompleto('Ofertas'); } 
             else if (hash === '#/informacoes') { renderInformacoes(); document.title = "Informações - Dona Antônia"; } 
             else if (hash === '#/mercado') { renderInicio(); document.title = "Mercado Completo - Dona Antônia"; } 
@@ -5154,7 +5154,7 @@ function renderInicio() {
 
             htmlMercado += getHomeOffersHeroHTML();
 
-            htmlMercado += getHomeCombosHeroHTML();
+            // Seção Leve mais, pague menos removida.
 
             htmlMercado += `<a href="#/catalogo" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
                         <div style="display:flex; align-items:center; gap:14px;">
@@ -7078,7 +7078,7 @@ function abrirWhatsAppPedido(mensagem) {
 
     let descontosTxt = "";
     if (descontoCombo > 0) descontosTxt += `\n🎁 DESCONTO DO COMBO: -${fmt(descontoCombo)}`;
-    if (STATE.atacadoDiscount > 0) descontosTxt += `\n📦 DESCONTO LEVE MAIS: -${fmt(STATE.atacadoDiscount)}`;
+    if (STATE.atacadoDiscount > 0) descontosTxt += `\n📦 DESCONTO POR QUANTIDADE: -${fmt(STATE.atacadoDiscount)}`;
     if (STATE.agendamentoDiscount > 0) descontosTxt += `\n📅 DESCONTO AGENDAMENTO (${dataAgendamento}): -${fmt(STATE.agendamentoDiscount)}`;
 
     let dadosCliente = `
@@ -7412,7 +7412,14 @@ Por favor, podem incluir na minha entrega?`;
     preco_oferta: p.preco_oferta ? Number(String(p.preco_oferta).replace(',', '.')) : null,
     validade_oferta: p.validade_oferta || null,
     combo_id: p.combo_id || null,
-    validade_combo: p.validade_combo || null
+    validade_combo: p.validade_combo || null,
+
+    // Campos usados para bloquear desconto por quantidade quando a tag global for "nao"/"não".
+    tag_global: p.tag_global || p.tagGlobal || p.global || p.global_tag || p.tag || p.tags || "",
+    global: p.global || "",
+    tagGlobal: p.tagGlobal || p.tag_global || "",
+    desconto_quantidade: p.desconto_quantidade || p.descontoQuantidade || "",
+    rawProduto: p
 };
             });
     }
@@ -9264,7 +9271,7 @@ window.sendOrder = async function(btnOverride) {
     }
 
     if (STATE.atacadoDiscount > 0) {
-        descontosTxt += `\n📦 DESCONTO LEVE MAIS: -${fmt(STATE.atacadoDiscount)}`;
+        descontosTxt += `\n📦 DESCONTO POR QUANTIDADE: -${fmt(STATE.atacadoDiscount)}`;
     }
 
     if (STATE.agendamentoDiscount > 0) {
@@ -9885,7 +9892,7 @@ renderCombos = function() {
     const produtos = getProdutosLeveMais();
     const busca = typeof getSectionSearchQuery === 'function' ? getSectionSearchQuery() : '';
 
-    document.title = 'Leve Mais, Pague Menos - Dona Antônia';
+    document.title = 'Dona Antônia - Supermercado e Cestas';
 
     let html = `
         <div style="padding: 0 0 10px 0;">
@@ -10086,6 +10093,372 @@ updateTotals = function() {
         }
     }
 };
+
+
+
+/* =========================================================
+   PATCH FINAL: remover seção Leve Mais e ajustar descontos por quantidade
+   Regras:
+   - Sem desconto antigo de atacado.
+   - Sem desconto de agendamento no sábado.
+   - 2 un = 10% OFF; 3 un ou mais = 15% OFF.
+   - Não aplica em produtos das cestas básicas, produtos em oferta/validade,
+     produtos com tag global "nao"/"não", taxas e descontos internos.
+   ========================================================= */
+function normalizarValorRegraQuantidadeDA(valor) {
+    return String(valor == null ? '' : valor)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
+function getCodigosProdutosCestasBasicasDA() {
+    const codigos = new Set();
+
+    (BASKETS || []).forEach(cesta => {
+        if (!cesta || !Array.isArray(cesta.produtos)) return;
+
+        cesta.produtos.forEach(item => {
+            const partes = String(item || '').split('x ');
+            const codigo = partes.length === 2 ? partes[1].trim() : String(item || '').trim();
+            if (codigo) codigos.add(String(codigo));
+        });
+    });
+
+    return codigos;
+}
+
+const CODIGOS_PRODUTOS_CESTAS_BASICAS_DA = getCodigosProdutosCestasBasicasDA();
+
+function produtoFazParteDeCestaBasicaDA(prod) {
+    if (!prod) return false;
+
+    const candidatos = [prod.codigo, prod.id, prod.firebaseKey]
+        .map(v => String(v == null ? '' : v).trim())
+        .filter(Boolean);
+
+    return candidatos.some(codigo => CODIGOS_PRODUTOS_CESTAS_BASICAS_DA.has(codigo));
+}
+
+function produtoTemTagGlobalNaoDA(prod) {
+    if (!prod) return false;
+
+    const raw = prod.rawProduto || {};
+    const campos = [
+        prod.tag_global,
+        prod.tagGlobal,
+        prod.global,
+        prod.global_tag,
+        prod.tag,
+        prod.tags,
+        prod.desconto_quantidade,
+        prod.descontoQuantidade,
+        prod.regra_global,
+        prod.regraGlobal,
+        raw.tag_global,
+        raw.tagGlobal,
+        raw.global,
+        raw.global_tag,
+        raw.tag,
+        raw.tags,
+        raw.desconto_quantidade,
+        raw.descontoQuantidade,
+        raw.regra_global,
+        raw.regraGlobal
+    ];
+
+    return campos.some(valor => {
+        if (Array.isArray(valor)) {
+            return valor.some(item => ['nao', 'não', 'no', 'false', '0'].includes(normalizarValorRegraQuantidadeDA(item)));
+        }
+
+        const normalizado = normalizarValorRegraQuantidadeDA(valor);
+        if (!normalizado) return false;
+
+        return ['nao', 'não', 'no', 'false', '0'].includes(normalizado);
+    });
+}
+
+function produtoElegivelDescontoQuantidadeDA(prod) {
+    if (!prod) return false;
+    if (prod.hiddenFromCatalog || prod.isComboDiscount || prod.isBasketFee) return false;
+    if (String(prod.id || '').startsWith('fee_')) return false;
+    if (String(prod.categoria || '') === 'Cestas') return false;
+    if (String(prod.categoria || '') === 'Descontos') return false;
+    if (Number(prod.price || 0) <= 0) return false;
+
+    // Produto em oferta por validade/preço especial não recebe desconto por quantidade.
+    if (Number(prod.discountPercent || 0) > 0 || prod.hasExplicitOffer === true) return false;
+    if (Number(prod.oldPrice || prod.price || 0) > Number(prod.price || 0)) return false;
+
+    // Produto que faz parte das cestas básicas não recebe desconto por quantidade.
+    if (produtoFazParteDeCestaBasicaDA(prod)) return false;
+
+    // Produto marcado com tag global "nao"/"não" não recebe desconto por quantidade.
+    if (produtoTemTagGlobalNaoDA(prod)) return false;
+
+    return true;
+}
+
+function getLeveMaisPercent(qtd) {
+    qtd = Number(qtd || 0);
+    if (qtd >= 3) return 15;
+    if (qtd >= 2) return 10;
+    return 0;
+}
+
+function getLeveMaisUnitPrice(prod, qtd) {
+    const preco = Number(prod && prod.price || 0);
+    const pct = produtoElegivelDescontoQuantidadeDA(prod) ? getLeveMaisPercent(qtd) : 0;
+    return preco * (1 - (pct / 100));
+}
+
+function getLeveMaisDiscountValue(prod, qtd) {
+    if (!produtoElegivelDescontoQuantidadeDA(prod)) return 0;
+
+    const preco = Number(prod && prod.price || 0);
+    const pct = getLeveMaisPercent(qtd);
+
+    return (preco * (pct / 100)) * Number(qtd || 0);
+}
+
+function getLeveMaisResumoCurto(prod) {
+    if (!produtoElegivelDescontoQuantidadeDA(prod)) return '';
+
+    return `
+        <div class="lmp-short-tag">
+            2 un: ${fmt(getLeveMaisUnitPrice(prod, 2))}/un<br>
+            3 un+: ${fmt(getLeveMaisUnitPrice(prod, 3))}/un
+        </div>
+    `;
+}
+
+function getLeveMaisResumoProdutoPage(prod, q) {
+    if (!produtoElegivelDescontoQuantidadeDA(prod)) return '';
+
+    const prodId = String(prod.id);
+
+    return `
+        <div class="prod-page-promo-row">
+            <div class="prod-page-atacado-text">
+                Compre 2: ${fmt(getLeveMaisUnitPrice(prod, 2))}/un • Compre 3 ou mais: ${fmt(getLeveMaisUnitPrice(prod, 3))}/un
+            </div>
+            <div class="prod-page-inline-action" id="action-card-${prodId}">
+                ${
+                    Number(q || 0) === 0
+                    ? `<button class="prod-page-add-round" onclick="quickAddToCart('${prodId.replace(/'/g, "\\'")}', event); event.stopPropagation();" aria-label="Adicionar produto">${iconPlus}</button>`
+                    : `<div class="qty-controls prod-page-qty-inline">
+                        <button class="qty-btn" onclick="updateCartItem('${prodId.replace(/'/g, "\\'")}', -1); event.stopPropagation();">${iconMinus}</button>
+                        <span class="qty-display">${Number(q || 0)}</span>
+                        <button class="qty-btn" onclick="updateCartItem('${prodId.replace(/'/g, "\\'")}', 1); event.stopPropagation();">${iconPlus}</button>
+                    </div>`
+                }
+            </div>
+        </div>
+    `;
+}
+
+// A seção visual foi removida da página inicial.
+getHomeCombosHeroHTML = function() {
+    return '';
+};
+
+// Se alguém abrir a rota antiga diretamente, volta para a home sem exibir seção.
+renderCombos = function() {
+    window.location.hash = '#/';
+};
+
+// Cestas básicas não recebem desconto por quantidade no cálculo interno.
+calculateBasketPrices = function(basketId) {
+    const basket = (BASKETS || []).find(b => String(b.id) === String(basketId)) || (dynamicCombos || []).find(c => String(c.id) === String(basketId));
+    if (!basket) return { original: 0, final: 0, atacado: 0 };
+
+    const dyn = getBasketDynamicPrice(basket);
+
+    if (basket.isCombo) {
+        const originalCombo = Number(basket.precoOriginal || dyn.valorFinal || dyn.valorPadrao || 0);
+        const finalCombo = Number(basket.preco || dyn.valorPadrao || dyn.valorFinal || 0);
+        return { original: originalCombo, final: finalCombo, atacado: 0 };
+    }
+
+    const valor = Number(dyn.valorFinal || basket.preco || dyn.valorPadrao || 0);
+    return { original: valor, final: valor, atacado: 0 };
+};
+
+calcularDescontoAtacadoAtual = function() {
+    let total = 0;
+
+    Object.entries(STATE.cart || {}).forEach(([id, q]) => {
+        const key = String(id);
+        if (key.startsWith('fee_')) return;
+
+        const prod = (STATE.prods || []).find(p => String(p.id) === key);
+        total += getLeveMaisDiscountValue(prod, Number(q || 0));
+    });
+
+    return total;
+};
+
+calcularTotalPreviewSabado = function() {
+    const subtotal = typeof calcularSubtotalCarrinho === 'function' ? calcularSubtotalCarrinho() : 0;
+    const descontoQuantidade = calcularDescontoAtacadoAtual();
+
+    return {
+        subtotal,
+        descontoAtacado: descontoQuantidade,
+        descontoSabado: 0,
+        totalSabado: Math.max(subtotal - descontoQuantidade, 0)
+    };
+};
+
+atualizarPreviewSabadoAgendamento = function() {
+    const el = $('sabado-preview-total');
+    if (el) el.innerText = fmt(calcularTotalPreviewSabado().totalSabado);
+};
+
+const renderAgendamentoOptionsSemDescontoSabadoDA = window.renderAgendamentoOptions;
+window.renderAgendamentoOptions = function() {
+    if (typeof renderAgendamentoOptionsSemDescontoSabadoDA === 'function') {
+        renderAgendamentoOptionsSemDescontoSabadoDA();
+    }
+
+    document.querySelectorAll('input[name="agendamento"]').forEach(input => {
+        input.setAttribute('data-discount-percent', '0');
+    });
+
+    const preview = $('sabado-preview-total');
+    if (preview) {
+        const linha = preview.closest('div');
+        if (linha) linha.remove();
+    }
+};
+
+function calcularResumoCarrinhoSemAgendamentoDA() {
+    let sumBase = 0;
+    let count = 0;
+    let descontoQuantidade = 0;
+    let descontoCombo = 0;
+
+    Object.entries(STATE.cart || {}).forEach(([id, q]) => {
+        const key = String(id);
+        const prod = (STATE.prods || []).find(p => String(p.id) === key);
+        if (!prod) return;
+
+        const qtd = Number(q || 0);
+        if (qtd <= 0) return;
+
+        const valorLinha = Number(prod.price || 0) * qtd;
+
+        if (prod.isComboDiscount) {
+            descontoCombo += Math.abs(valorLinha);
+            return;
+        }
+
+        sumBase += valorLinha;
+
+        if (!key.startsWith('fee_')) {
+            count += qtd;
+            descontoQuantidade += getLeveMaisDiscountValue(prod, qtd);
+        }
+    });
+
+    return { sumBase, count, descontoQuantidade, descontoCombo };
+}
+
+updateTotals = function() {
+    if (typeof cancelarDescontoComboSeQuebrou === 'function') cancelarDescontoComboSeQuebrou();
+    if (typeof limparFeesOrfaos === 'function') limparFeesOrfaos({ salvar: false });
+
+    const resumo = calcularResumoCarrinhoSemAgendamentoDA();
+    const sumBase = resumo.sumBase;
+    const descontoCombo = resumo.descontoCombo;
+    const descontoQuantidade = resumo.descontoQuantidade;
+    const count = resumo.count;
+
+    STATE.atacadoDiscount = descontoQuantidade;
+    STATE.agendamentoDiscount = 0;
+
+    if ($('sum-sub')) $('sum-sub').innerText = fmt(sumBase);
+
+    if ($('sum-combo-desc')) $('sum-combo-desc').innerText = `- ${fmt(descontoCombo)}`;
+    if ($('sum-combo-row')) $('sum-combo-row').style.display = descontoCombo > 0 ? 'flex' : 'none';
+
+    if ($('sum-atacado-desc')) $('sum-atacado-desc').innerText = `- ${fmt(descontoQuantidade)}`;
+    if ($('sum-atacado-row')) $('sum-atacado-row').style.display = descontoQuantidade > 0 ? 'flex' : 'none';
+
+    if ($('sum-agendamento-desc')) $('sum-agendamento-desc').innerText = '- R$ 0,00';
+    if ($('sum-agendamento-row')) $('sum-agendamento-row').style.display = 'none';
+
+    const finalTotal = Math.max(sumBase - descontoCombo - descontoQuantidade, 0);
+
+    if ($('sum-total')) $('sum-total').innerText = fmt(finalTotal);
+
+    const btn = $('btn-send-order');
+    const warningMsg = $('min-order-warning');
+
+    if (btn) {
+        btn.disabled = false;
+        btn.style.background = 'var(--whatsapp)';
+        btn.style.boxShadow = '0 4px 15px rgba(37, 211, 102, 0.3)';
+    }
+
+    if (warningMsg) warningMsg.style.display = finalTotal < MIN_ORDER ? 'block' : 'none';
+
+    const badges = document.querySelectorAll('.cart-badge');
+    const bottomSendTotal = $('bottom-send-total');
+    const bottomSendBtn = $('bottom-send-btn');
+
+    if (count > 0) {
+        const txt = count > 99 ? '99+' : String(count);
+        badges.forEach(b => {
+            b.style.display = 'block';
+            b.innerText = txt;
+        });
+
+        if (bottomSendTotal) bottomSendTotal.innerText = fmt(finalTotal);
+
+        if (bottomSendBtn) {
+            bottomSendBtn.disabled = false;
+            bottomSendBtn.style.background = finalTotal < MIN_ORDER ? '#f59e0b' : 'var(--whatsapp)';
+            bottomSendBtn.style.boxShadow = finalTotal < MIN_ORDER ? '0 4px 12px rgba(245, 158, 11, 0.3)' : '0 4px 12px rgba(37, 211, 102, 0.3)';
+        }
+    } else {
+        badges.forEach(b => { b.style.display = 'none'; });
+        if (bottomSendTotal) bottomSendTotal.innerText = 'R$ 0,00';
+
+        if (bottomSendBtn) {
+            bottomSendBtn.disabled = true;
+            bottomSendBtn.style.background = '#cbd5e1';
+            bottomSendBtn.style.boxShadow = 'none';
+        }
+    }
+};
+
+// O rail de maiores descontos passa a considerar somente produtos, sem combos/leve mais.
+getTopDiscountItems = function() {
+    return (STATE.prods || [])
+        .filter(p => p.categoria !== 'Cestas' && Number(p.discountPercent || 0) > 0 && Number(p.stock || 0) > 0)
+        .map(p => ({
+            type: 'produto',
+            id: p.id,
+            name: p.name,
+            img: p.img,
+            price: p.price,
+            oldPrice: p.oldPrice,
+            discount: Number(p.discountPercent || 0),
+            click: `window.location.hash='#/produto/${getProductRouteKey(p)}'`
+        }))
+        .sort((a, b) => b.discount - a.discount || (b.oldPrice - b.price) - (a.oldPrice - a.price))
+        .slice(0, 15);
+};
+
+const renderTopDiscountBannerProdutosDA = renderTopDiscountBanner;
+renderTopDiscountBanner = function() {
+    const html = renderTopDiscountBannerProdutosDA();
+    return String(html || '').replace('Produtos e combos', 'Produtos em oferta');
+};
+
 
 document.addEventListener('DOMContentLoaded', init);
 
