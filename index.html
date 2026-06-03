@@ -4077,6 +4077,183 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
                 grid-template-columns: repeat(4, minmax(0,1fr)) !important;
             }
         }
+
+
+/* =========================================================
+   LEVE MAIS, PAGUE MENOS - substitui Kits Promocionais
+   ========================================================= */
+.lmp-hero-info {
+    margin: 0 0 12px 0;
+    padding: 16px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #ecfdf3 0%, #ffffff 100%);
+    border: 1px solid #bbf7d0;
+    color: #14532d;
+}
+.lmp-hero-info strong {
+    display: block;
+    font-size: 18px;
+    font-weight: 950;
+    letter-spacing: -0.035em;
+    margin-bottom: 5px;
+}
+.lmp-hero-info span {
+    display: block;
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.35;
+    color: #166534;
+}
+#vitrine .lmp-grid {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+    padding: 0 0 18px 0;
+    background: transparent !important;
+}
+.lmp-card {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 12px;
+    align-items: stretch;
+    background: #ffffff;
+    border: 1px solid rgba(229, 231, 235, 0.95);
+    border-radius: 22px;
+    padding: 10px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
+    cursor: pointer;
+}
+.lmp-card:active { transform: scale(0.988); }
+.lmp-img-box {
+    min-height: 150px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #eef2f7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.lmp-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 8px;
+    mix-blend-mode: multiply;
+}
+.lmp-info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 2px 0;
+}
+.lmp-kicker {
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #047857;
+    margin-bottom: 4px;
+}
+.lmp-name {
+    font-size: 14px;
+    line-height: 1.28;
+    font-weight: 850;
+    color: #1f2937;
+    letter-spacing: -0.02em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.lmp-price-line {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-top: 5px;
+}
+.lmp-price-main {
+    font-size: 18px;
+    font-weight: 950;
+    letter-spacing: -0.045em;
+    color: #0f172a;
+}
+.lmp-price-unit {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--text-light);
+}
+.lmp-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+}
+.lmp-btn {
+    min-height: 42px;
+    border: 1px solid #d1fae5;
+    border-radius: 14px;
+    background: #f0fdf4;
+    color: #14532d;
+    font-size: 11.5px;
+    font-weight: 900;
+    line-height: 1.15;
+    padding: 7px 6px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+.lmp-btn strong {
+    font-size: 12px;
+    font-weight: 950;
+}
+.lmp-btn span {
+    font-size: 10.5px;
+    color: #047857;
+    font-weight: 850;
+}
+.lmp-btn.best {
+    background: #0f172a;
+    border-color: #0f172a;
+    color: #ffffff;
+}
+.lmp-btn.best span { color: #bbf7d0; }
+.lmp-btn:active { transform: scale(0.96); }
+.lmp-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-light);
+    font-weight: 850;
+    background: #ffffff;
+    border-radius: 18px;
+}
+.lmp-short-tag {
+    font-size: 11.5px;
+    color: #047857;
+    font-weight: 750;
+    margin-top: 6px;
+    line-height: 1.35;
+}
+@media (max-width: 390px) {
+    .lmp-card { grid-template-columns: 116px minmax(0, 1fr); gap: 10px; }
+    .lmp-img-box { min-height: 138px; }
+    .lmp-btn { font-size: 10.8px; padding-left: 4px; padding-right: 4px; }
+}
+@media (min-width: 768px) {
+    #vitrine .lmp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 16px; }
+    .lmp-card { grid-template-columns: 155px minmax(0, 1fr); padding: 12px; }
+    .lmp-img-box { min-height: 172px; }
+    .lmp-name { font-size: 15px; }
+}
+@media (min-width: 1100px) {
+    #vitrine .lmp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+}
+
 </style>
 </head>
 <body>
@@ -4301,7 +4478,7 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
             <div class="chk-inline-summary">
                 <div class="summary-row"><span>Subtotal dos Produtos</span><span id="sum-sub">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-combo-row"><span>Desconto do Combo</span><span id="sum-combo-desc">R$ 0,00</span></div>
-                <div class="summary-row" style="color: var(--success); display: none;" id="sum-atacado-row"><span>Desconto Atacado (Volume)</span><span id="sum-atacado-desc">R$ 0,00</span></div>
+                <div class="summary-row" style="color: var(--success); display: none;" id="sum-atacado-row"><span>Desconto Leve Mais</span><span id="sum-atacado-desc">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-agendamento-row"><span>Desconto de Agendamento</span><span id="sum-agendamento-desc">R$ 0,00</span></div>
                 <div class="summary-row total"><span>Total Estimado</span><span id="sum-total">R$ 0,00</span></div>
             </div>
@@ -4618,7 +4795,7 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
             if (hash === '#/mercado') return 'Mercado';
             if (hash === '#/catalogo') return 'Catálogo rápido';
             if (hash === '#/cestas') return 'Cestas básicas';
-            if (hash === '#/combos') return 'Kits promocionais';
+            if (hash === '#/combos') return 'Leve mais, pague menos';
             if (hash === '#/buscar') return STATE.searchQuery ? `Busca: ${STATE.searchQuery}` : 'Busca';
             if (hash.startsWith('#/departamento/')) return decodeHash(hash.split('/')[2] || 'Departamento');
             if (hash.startsWith('#/produto/')) return 'Produto';
@@ -4707,7 +4884,7 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
 
             if (hash === '#/' || hash === '') { renderInicio(); document.title = "Dona Antônia - Supermercado e Cestas"; } 
             else if (hash === '#/cestas') { renderCestas(); document.title = "Cestas Básicas - Dona Antônia"; } 
-            else if (hash === '#/combos') { renderCombos(); document.title = "Kits Promocionais - Dona Antônia"; } 
+            else if (hash === '#/combos') { renderCombos(); document.title = "Leve Mais, Pague Menos - Dona Antônia"; } 
             else if (hash === '#/ofertas') { renderDepartamentoCompleto('Ofertas'); } 
             else if (hash === '#/informacoes') { renderInformacoes(); document.title = "Informações - Dona Antônia"; } 
             else if (hash === '#/mercado') { renderInicio(); document.title = "Mercado Completo - Dona Antônia"; } 
@@ -4734,7 +4911,7 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
             let embalagem = prod.embalagem || extractVolume(prod.name);
             let tagEmbalagem = getDiscountLineHtml(prod, embalagem);
 
-            let atacadoTag = (!isBasketItem) ? `<div style="font-size: 12px; color: #047857; font-weight: 600; margin-top: 6px; line-height: 1.3;">A partir de 3un:<br>pague ${fmt(prod.price * 0.95)}/un</div>` : '';
+            let atacadoTag = (!isBasketItem) ? getLeveMaisResumoCurto(prod) : '';
 let onClickAction = `onclick="window.location.hash='#/produto/${getProductRouteKey(prod)}'"`;
             let controlsHtml = '';
             let cardContent = '';
@@ -5202,23 +5379,7 @@ function renderInicio() {
             let discountBadge = (prod.discountPercent > 0) ? `<span style="color: var(--danger); font-size: 16px; margin-right: 6px; font-weight: 900;">-${prod.discountPercent}%</span>` : '';
             let oldPriceHtml = (prod.discountPercent > 0) ? `<div class="prod-page-oldprice" style="display:inline-block; text-decoration: line-through; color: var(--text-light); margin-bottom: 4px;">De: ${fmt(prod.oldPrice)}</div>` : '';
             let embalagemTag = getDiscountLineHtml(prod, prod.embalagem || extractVolume(prod.name));
-            let atacadoText = `
-    <div class="prod-page-promo-row">
-        <div class="prod-page-atacado-text">
-            A partir de 3 unidades pague ${fmt(prod.price * 0.95)} cada
-        </div>
-        <div class="prod-page-inline-action" id="action-card-${prod.id}">
-            ${
-                q === 0
-                ? `<button class="prod-page-add-round" onclick="quickAddToCart('${prod.id}', event); event.stopPropagation();" aria-label="Adicionar produto">${iconPlus}</button>`
-                : `<div class="qty-controls prod-page-qty-inline">
-                    <button class="qty-btn" onclick="updateCartItem('${prod.id}', -1); event.stopPropagation();">${iconMinus}</button>
-                    <span class="qty-display">${q}</span>
-                    <button class="qty-btn" onclick="updateCartItem('${prod.id}', 1); event.stopPropagation();">${iconPlus}</button>
-                </div>`
-            }
-        </div>
-    </div>`;
+            let atacadoText = getLeveMaisResumoProdutoPage(prod, q);
 let descHtml = prod.descricao ? `<div class="prod-page-desc-box"><div class="prod-page-desc-title">Detalhes do Produto</div><div class="prod-page-desc-content">${prod.descricao}</div></div>` : '';
 let controlsHtml = '';
             let relacionados = STATE.prods.filter(p => {
@@ -6917,7 +7078,7 @@ function abrirWhatsAppPedido(mensagem) {
 
     let descontosTxt = "";
     if (descontoCombo > 0) descontosTxt += `\n🎁 DESCONTO DO COMBO: -${fmt(descontoCombo)}`;
-    if (STATE.atacadoDiscount > 0) descontosTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
+    if (STATE.atacadoDiscount > 0) descontosTxt += `\n📦 DESCONTO LEVE MAIS: -${fmt(STATE.atacadoDiscount)}`;
     if (STATE.agendamentoDiscount > 0) descontosTxt += `\n📅 DESCONTO AGENDAMENTO (${dataAgendamento}): -${fmt(STATE.agendamentoDiscount)}`;
 
     let dadosCliente = `
@@ -9103,7 +9264,7 @@ window.sendOrder = async function(btnOverride) {
     }
 
     if (STATE.atacadoDiscount > 0) {
-        descontosTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
+        descontosTxt += `\n📦 DESCONTO LEVE MAIS: -${fmt(STATE.atacadoDiscount)}`;
     }
 
     if (STATE.agendamentoDiscount > 0) {
@@ -9524,6 +9685,407 @@ document.addEventListener('keydown', function(e) {
         executeSearch(e);
     }
 });
+
+
+
+/* =========================================================
+   LEVE MAIS, PAGUE MENOS - nova seção no lugar dos kits
+   Regras: 2 un 10% | 3 un 15% | 4+ un 20%
+   ========================================================= */
+const LEVE_MAIS_TIERS_DA = [
+    { qtd: 1, desconto: 0 },
+    { qtd: 2, desconto: 10 },
+    { qtd: 3, desconto: 15 },
+    { qtd: 4, desconto: 20 }
+];
+
+function getLeveMaisPercent(qtd) {
+    qtd = Number(qtd || 0);
+    if (qtd >= 4) return 20;
+    if (qtd >= 3) return 15;
+    if (qtd >= 2) return 10;
+    return 0;
+}
+
+function getLeveMaisUnitPrice(prod, qtd) {
+    const preco = Number(prod && prod.price || 0);
+    const pct = getLeveMaisPercent(qtd);
+    return preco * (1 - (pct / 100));
+}
+
+function getLeveMaisDiscountValue(prod, qtd) {
+    const preco = Number(prod && prod.price || 0);
+    const pct = getLeveMaisPercent(qtd);
+    return (preco * (pct / 100)) * Number(qtd || 0);
+}
+
+function getLeveMaisResumoCurto(prod) {
+    if (!prod || Number(prod.price || 0) <= 0) return '';
+    return `
+        <div class="lmp-short-tag">
+            Leve 2: ${fmt(getLeveMaisUnitPrice(prod, 2))}/un<br>
+            Leve 4+: ${fmt(getLeveMaisUnitPrice(prod, 4))}/un
+        </div>
+    `;
+}
+
+function getLeveMaisResumoProdutoPage(prod, q) {
+    if (!prod || Number(prod.price || 0) <= 0) return '';
+    const prodId = String(prod.id);
+    const arg = JSON.stringify(prodId).replace(/"/g, '&quot;');
+    return `
+        <div class="prod-page-promo-row">
+            <div class="prod-page-atacado-text">
+                Leve 2: ${fmt(getLeveMaisUnitPrice(prod, 2))}/un • Leve 3: ${fmt(getLeveMaisUnitPrice(prod, 3))}/un • Leve 4+: ${fmt(getLeveMaisUnitPrice(prod, 4))}/un
+            </div>
+            <div class="prod-page-inline-action" id="action-card-${prodId}">
+                ${
+                    Number(q || 0) === 0
+                    ? `<button class="prod-page-add-round" onclick="quickAddToCart('${prodId.replace(/'/g, "\\'")}', event); event.stopPropagation();" aria-label="Adicionar produto">${iconPlus}</button>`
+                    : `<div class="qty-controls prod-page-qty-inline">
+                        <button class="qty-btn" onclick="updateCartItem('${prodId.replace(/'/g, "\\'")}', -1); event.stopPropagation();">${iconMinus}</button>
+                        <span class="qty-display">${Number(q || 0)}</span>
+                        <button class="qty-btn" onclick="updateCartItem('${prodId.replace(/'/g, "\\'")}', 1); event.stopPropagation();">${iconPlus}</button>
+                    </div>`
+                }
+            </div>
+        </div>
+    `;
+}
+
+function escapeLeveMaisAttr(valor) {
+    if (typeof escapeAttrDA === 'function') return escapeAttrDA(valor);
+    return String(valor || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function produtoElegivelLeveMais(prod) {
+    if (!prod) return false;
+    if (prod.hiddenFromCatalog || prod.isComboDiscount || prod.isBasketFee) return false;
+    if (String(prod.categoria || '') === 'Cestas') return false;
+    if (String(prod.categoria || '') === 'Descontos') return false;
+    if (Number(prod.price || 0) <= 0) return false;
+    if (Number(prod.stock || 0) <= 0) return false;
+    return true;
+}
+
+function getProdutosLeveMais() {
+    let lista = (STATE.prods || []).filter(produtoElegivelLeveMais);
+    const busca = typeof getSectionSearchQuery === 'function' ? getSectionSearchQuery() : '';
+
+    if (busca) {
+        if (typeof itemCombinaBuscaDA === 'function') {
+            lista = lista.filter(p => itemCombinaBuscaDA(p, busca));
+        } else {
+            const q = norm(busca);
+            lista = lista.filter(p => norm(`${p.name || ''} ${p.categoria || ''} ${p.subcategoria || ''}`).includes(q));
+        }
+    }
+
+    return lista.sort((a, b) => {
+        const aOferta = Number(a.discountPercent || 0);
+        const bOferta = Number(b.discountPercent || 0);
+        return bOferta - aOferta || String(a.categoria || '').localeCompare(String(b.categoria || '')) || String(a.name || '').localeCompare(String(b.name || ''));
+    });
+}
+
+function renderLeveMaisButton(prod, qtd) {
+    const pct = getLeveMaisPercent(qtd);
+    const unit = getLeveMaisUnitPrice(prod, qtd);
+    const labelQtd = qtd >= 4 ? '4 un+' : `${qtd} un`;
+    const labelDesc = pct > 0 ? `-${pct}%` : 'sem desconto';
+    const bestClass = qtd >= 4 ? ' best' : '';
+    const prodArg = escapeLeveMaisAttr(JSON.stringify(String(prod.id)));
+
+    return `
+        <button class="lmp-btn${bestClass}" onclick="addLeveMaisToCart(${prodArg}, ${qtd}, event)">
+            <strong>${labelQtd} • ${labelDesc}</strong>
+            <span>${fmt(unit)}/un</span>
+        </button>
+    `;
+}
+
+function renderLeveMaisCard(prod) {
+    const rota = typeof getProductRouteKey === 'function' ? getProductRouteKey(prod) : encodeURIComponent(String(prod.id || ''));
+    const img = prod.img || prod.url_imagem || errorImgFallback;
+    const embalagem = prod.embalagem || (typeof extractVolume === 'function' ? extractVolume(prod.name || '') : '');
+    const descontoOferta = Number(prod.discountPercent || 0) > 0 ? `<span class="old-price">${fmt(Number(prod.oldPrice || 0))}</span>` : '';
+
+    return `
+        <article class="lmp-card" onclick="window.location.hash='#/produto/${escapeLeveMaisAttr(rota)}'">
+            <div class="lmp-img-box">
+                <img src="${escapeLeveMaisAttr(img)}" alt="${escapeLeveMaisAttr(prod.name || 'Produto')}" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'">
+            </div>
+            <div class="lmp-info">
+                <div>
+                    <div class="lmp-kicker">Leve mais, pague menos${embalagem ? ' • ' + embalagem : ''}</div>
+                    <div class="lmp-name">${prod.name || ''}</div>
+                    <div class="lmp-price-line">
+                        <div>
+                            ${descontoOferta}
+                            <div class="lmp-price-main">${fmt(Number(prod.price || 0))}</div>
+                        </div>
+                        <div class="lmp-price-unit">preço normal</div>
+                    </div>
+                </div>
+                <div class="lmp-buttons">
+                    ${LEVE_MAIS_TIERS_DA.map(t => renderLeveMaisButton(prod, t.qtd)).join('')}
+                </div>
+            </div>
+        </article>
+    `;
+}
+
+window.addLeveMaisToCart = function(prodId, qtd, event) {
+    if (event) event.stopPropagation();
+
+    const key = String(prodId);
+    const qtdAdd = Math.max(1, Number(qtd || 1));
+    const prod = (STATE.prods || []).find(p => String(p.id) === key);
+
+    if (!prod) return;
+
+    const atual = Number(STATE.cart[key] || 0);
+    const novo = atual + qtdAdd;
+
+    if (novo > Number(prod.stock || 0)) {
+        alert('Estoque insuficiente para essa quantidade.');
+        return;
+    }
+
+    if (atual === 0 && !(STATE.cartOrder || []).includes(key)) {
+        STATE.cartOrder.push(key);
+    }
+
+    STATE.cart[key] = novo;
+
+    if (typeof limparFeesOrfaos === 'function') limparFeesOrfaos({ salvar: false });
+    if (typeof updateTotals === 'function') updateTotals();
+    if (typeof saveCart === 'function') saveCart();
+    if (typeof updateAllCardUIs === 'function') updateAllCardUIs();
+
+    if ((window.location.hash || '#/') === '#/combos') {
+        renderCombos();
+    }
+
+    const pct = getLeveMaisPercent(novo);
+    const unit = getLeveMaisUnitPrice(prod, novo);
+    const msg = pct > 0
+        ? `${novo} un adicionadas: ${pct}% OFF, ${fmt(unit)}/un.`
+        : `${qtdAdd} un adicionada ao carrinho.`;
+
+    if (typeof showToast === 'function') showToast(msg);
+};
+
+renderCombos = function() {
+    const produtos = getProdutosLeveMais();
+    const busca = typeof getSectionSearchQuery === 'function' ? getSectionSearchQuery() : '';
+
+    document.title = 'Leve Mais, Pague Menos - Dona Antônia';
+
+    let html = `
+        <div style="padding: 0 0 10px 0;">
+            <div class="lmp-hero-info">
+                <strong>Leve mais, pague menos</strong>
+                <span>Escolha a quantidade no próprio card. 2 un = 10% OFF, 3 un = 15% OFF e 4 un ou mais = 20% OFF.</span>
+            </div>
+            <div class="lmp-grid">
+    `;
+
+    if (!produtos.length) {
+        html += `<div class="lmp-empty">Nenhum produto encontrado${busca ? ' para essa busca' : ' no momento'}.</div>`;
+    } else {
+        html += produtos.map(renderLeveMaisCard).join('');
+    }
+
+    html += `</div></div>`;
+    $('vitrine').innerHTML = html;
+    if (typeof lazyLoadImages === 'function') lazyLoadImages();
+};
+
+getHomeCombosHeroHTML = function() {
+    const produtos = getProdutosLeveMais().slice(0, 4);
+    const minis = produtos.map(p => `
+        <div class="home-combo-mini">
+            <div class="home-combo-imgs">
+                <span style="width:100%;"><img src="${escapeLeveMaisAttr(p.img || errorImgFallback)}" alt="${escapeLeveMaisAttr(p.name || 'Produto')}" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'"></span>
+            </div>
+            <div class="home-combo-mini-bottom">
+                <div class="home-combo-mini-price">${fmt(getLeveMaisUnitPrice(p, 4))}/un</div>
+                <div class="home-combo-mini-discount">-20%</div>
+            </div>
+        </div>
+    `).join('');
+
+    return `
+        <a href="#/combos" class="home-combos-hero" aria-label="Ver Leve mais, pague menos">
+            <div class="home-offers-top">
+                <div class="home-offers-kicker">🛒 Leve mais, pague menos</div>
+                <div class="home-offers-cta">Ver produtos</div>
+            </div>
+            <div class="home-offers-title">Compre mais unidades e economize</div>
+            <div class="home-offers-subtitle">2 un = 10% OFF • 3 un = 15% OFF • 4 un+ = 20% OFF.</div>
+            ${minis ? `<div class="home-combos-products">${minis}</div>` : `<div class="home-combos-empty">Toque para ver os produtos participantes.</div>`}
+        </a>
+    `;
+};
+
+calcularDescontoAtacadoAtual = function() {
+    let total = 0;
+
+    Object.entries(STATE.cart || {}).forEach(([id, q]) => {
+        const key = String(id);
+        if (key.startsWith('fee_')) return;
+
+        const p = (STATE.prods || []).find(x => String(x.id) === key);
+        if (!p || p.isComboDiscount) return;
+
+        total += getLeveMaisDiscountValue(p, Number(q || 0));
+    });
+
+    return total;
+};
+
+const calculateBasketPricesLeveMaisOriginalDA = calculateBasketPrices;
+calculateBasketPrices = function(basketId) {
+    const basket = BASKETS.find(b => b.id === basketId) || dynamicCombos.find(c => c.id === basketId);
+
+    if (basket && basket.isCombo) {
+        return calculateBasketPricesLeveMaisOriginalDA(basketId);
+    }
+
+    if (!basket) return { original: 0, final: 0, atacado: 0 };
+
+    const dyn = getBasketDynamicPrice(basket);
+    const original = Number(dyn.valorFinal || 0);
+    let atacado = 0;
+
+    if ((STATE.prods || []).length > 0) {
+        basket.produtos.forEach(str => {
+            let p = String(str || '').split('x ');
+            if (p.length === 2) {
+                let qty = parseInt(p[0], 10) || 0;
+                let cod = p[1].trim();
+                let pObj = STATE.prods.find(x => x.codigo === cod || String(x.id) === cod);
+                if (pObj) atacado += getLeveMaisDiscountValue(pObj, qty);
+            }
+        });
+    }
+
+    return { original: original, final: Math.ceil(original - atacado), atacado: atacado };
+};
+
+updateTotals = function() {
+    if (typeof cancelarDescontoComboSeQuebrou === 'function') cancelarDescontoComboSeQuebrou();
+    if (typeof limparFeesOrfaos === 'function') limparFeesOrfaos({ salvar: false });
+
+    let sumBase = 0;
+    let count = 0;
+    let atacadoTotal = 0;
+    let descontoCombo = 0;
+
+    Object.entries(STATE.cart || {}).forEach(([id, q]) => {
+        const key = String(id);
+        let p = (STATE.prods || []).find(x => String(x.id) === key);
+        if (!p) return;
+
+        const qtd = Number(q || 0);
+        if (qtd <= 0) return;
+
+        const valorLinha = Number(p.price || 0) * qtd;
+
+        if (p.isComboDiscount) {
+            descontoCombo += Math.abs(valorLinha);
+            return;
+        }
+
+        sumBase += valorLinha;
+
+        if (!key.startsWith('fee_')) {
+            count += qtd;
+            atacadoTotal += getLeveMaisDiscountValue(p, qtd);
+        }
+    });
+
+    if ($('sum-sub')) $('sum-sub').innerText = fmt(sumBase);
+
+    if ($('sum-combo-desc')) $('sum-combo-desc').innerText = `- ${fmt(descontoCombo)}`;
+    if ($('sum-combo-row')) $('sum-combo-row').style.display = descontoCombo > 0 ? 'flex' : 'none';
+
+    STATE.atacadoDiscount = atacadoTotal;
+
+    if ($('sum-atacado-desc')) $('sum-atacado-desc').innerText = `- ${fmt(atacadoTotal)}`;
+    if ($('sum-atacado-row')) $('sum-atacado-row').style.display = atacadoTotal > 0 ? 'flex' : 'none';
+
+    let agendamentoDiscount = 0;
+    let selectedAgendamento = document.querySelector('input[name="agendamento"]:checked');
+
+    if (selectedAgendamento) {
+        const isSabado = selectedAgendamento.getAttribute('data-is-sabado') === '1';
+        const discountPercent = parseFloat(selectedAgendamento.getAttribute('data-discount-percent')) || 0;
+
+        if (isSabado && discountPercent > 0) {
+            const baseParaDescontoAgendamento = Math.max(sumBase - descontoCombo - STATE.atacadoDiscount, 0);
+            agendamentoDiscount = baseParaDescontoAgendamento * (discountPercent / 100);
+        }
+    }
+
+    STATE.agendamentoDiscount = agendamentoDiscount;
+    if (typeof atualizarPreviewSabadoAgendamento === 'function') atualizarPreviewSabadoAgendamento();
+
+    if ($('sum-agendamento-desc')) $('sum-agendamento-desc').innerText = `- ${fmt(agendamentoDiscount)}`;
+    if ($('sum-agendamento-row')) $('sum-agendamento-row').style.display = agendamentoDiscount > 0 ? 'flex' : 'none';
+
+    let finalTotal = Math.max(sumBase - descontoCombo - STATE.atacadoDiscount - STATE.agendamentoDiscount, 0);
+
+    if ($('sum-total')) $('sum-total').innerText = fmt(finalTotal);
+
+    let btn = $('btn-send-order');
+    let warningMsg = $('min-order-warning');
+
+    if (btn) {
+        btn.disabled = false;
+        btn.style.background = 'var(--whatsapp)';
+        btn.style.boxShadow = '0 4px 15px rgba(37, 211, 102, 0.3)';
+    }
+
+    if (warningMsg) warningMsg.style.display = finalTotal < MIN_ORDER ? 'block' : 'none';
+
+    let badges = document.querySelectorAll('.cart-badge');
+    let bottomSendTotal = $('bottom-send-total');
+    let bottomSendBtn = $('bottom-send-btn');
+
+    if (count > 0) {
+        let txt = count > 99 ? '99+' : count;
+
+        badges.forEach(b => {
+            b.style.display = 'block';
+            b.innerText = txt;
+        });
+
+        if (bottomSendTotal) bottomSendTotal.innerText = fmt(finalTotal);
+
+        if (bottomSendBtn) {
+            bottomSendBtn.disabled = false;
+            bottomSendBtn.style.background = finalTotal < MIN_ORDER ? '#f59e0b' : 'var(--whatsapp)';
+            bottomSendBtn.style.boxShadow = finalTotal < MIN_ORDER ? '0 4px 12px rgba(245, 158, 11, 0.3)' : '0 4px 12px rgba(37, 211, 102, 0.3)';
+        }
+    } else {
+        badges.forEach(b => { b.style.display = 'none'; });
+
+        if (bottomSendTotal) bottomSendTotal.innerText = 'R$ 0,00';
+
+        if (bottomSendBtn) {
+            bottomSendBtn.disabled = true;
+            bottomSendBtn.style.background = '#cbd5e1';
+            bottomSendBtn.style.boxShadow = 'none';
+        }
+    }
+};
 
 document.addEventListener('DOMContentLoaded', init);
 
