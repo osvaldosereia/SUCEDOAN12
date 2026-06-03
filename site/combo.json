@@ -1,5 +1,53 @@
 [
   {
+    "id": "COMBO-20260603025735-1",
+    "nome": "Combo BOLO",
+    "ativo": true,
+    "motivo_desativacao": "",
+    "desconto_percentual": 10,
+    "soma_produtos": 9.58,
+    "preco_combo": 8.62,
+    "economia": 0.96,
+    "validade_combo": "2026-06-06T23:59",
+    "validade_dias": 3,
+    "combinacao_id": "bolo",
+    "combinacao_nome": "BOLO",
+    "subcategoria_combo": "BOLO",
+    "regra_combo": "2 produtos da mesma subcategoria",
+    "ciclo_combinacoes": 1,
+    "url_imagem": "../site/img/produtos/P572.webp",
+    "itens": [
+      {
+        "sku": "P572",
+        "firebaseKey": "1776338131379",
+        "nome": "MISTURA PRA BOLO APTI 400G LARANJA",
+        "qtd": 1,
+        "url_imagem": "../site/img/produtos/P572.webp",
+        "imagem": "../site/img/produtos/P572.webp",
+        "preco_unitario_original": 4.79,
+        "preco_unitario_combo": 4.31,
+        "total_original": 4.79,
+        "total_combo": 4.31
+      },
+      {
+        "sku": "P483",
+        "firebaseKey": "1776338123804",
+        "nome": "MISTURA PARA BOLO APTI 400G QUATRO LEITES",
+        "qtd": 1,
+        "url_imagem": "../site/img/produtos/P483.webp",
+        "imagem": "../site/img/produtos/P483.webp",
+        "preco_unitario_original": 4.79,
+        "preco_unitario_combo": 4.31,
+        "total_original": 4.79,
+        "total_combo": 4.31
+      }
+    ],
+    "criado_em": "2026-06-03T06:57:35.033Z",
+    "criado_em_local": "2026-06-03T02:57:35-04:00",
+    "criado_em_ordem": "20260603025735",
+    "last_update": 1780469855033
+  },
+  {
     "id": "COMBO-20260603022733-1",
     "nome": "Combo AMENDOIN",
     "ativo": true,
@@ -5212,57 +5260,5 @@
     "criado_em_local": "2026-06-01T02:27:33-04:00",
     "criado_em_ordem": "20260601022733",
     "last_update": 1780295253052
-  },
-  {
-    "id": "COMBO-20260601015732-1",
-    "nome": "Combo Monange Banho",
-    "ativo": true,
-    "motivo_desativacao": "",
-    "desconto_percentual": 10,
-    "soma_produtos": 32.8,
-    "preco_combo": 29.52,
-    "economia": 3.28,
-    "validade_combo": "2026-06-04T23:59",
-    "validade_dias": 3,
-    "combinacao_id": "monange-sabonete",
-    "combinacao_nome": "Combo Monange Banho",
-    "palavra_produto_1": [
-      "monange"
-    ],
-    "palavra_produto_2": [
-      "sabonete"
-    ],
-    "ciclo_combinacoes": 1,
-    "url_imagem": "../site/img/produtos/636012W.webp",
-    "itens": [
-      {
-        "sku": "636012W",
-        "firebaseKey": "1775915390332",
-        "nome": "MONANGE HIDRATANTE FACIAL HIDRA ANTISSINAIS COM ACIDO HIALURONICO E NIACINAMIDA 80G",
-        "qtd": 1,
-        "url_imagem": "../site/img/produtos/636012W.webp",
-        "imagem": "../site/img/produtos/636012W.webp",
-        "preco_unitario_original": 26.9,
-        "preco_unitario_combo": 24.21,
-        "total_original": 26.9,
-        "total_combo": 24.21
-      },
-      {
-        "sku": "P4996R",
-        "firebaseKey": "1776338129763",
-        "nome": "NIVEA SABONETE  CREME CARE 90G",
-        "qtd": 1,
-        "url_imagem": "../site/img/produtos/P4996R.webp",
-        "imagem": "../site/img/produtos/P4996R.webp",
-        "preco_unitario_original": 5.9,
-        "preco_unitario_combo": 5.31,
-        "total_original": 5.9,
-        "total_combo": 5.31
-      }
-    ],
-    "criado_em": "2026-06-01T05:57:32.999Z",
-    "criado_em_local": "2026-06-01T01:57:32-04:00",
-    "criado_em_ordem": "20260601015732",
-    "last_update": 1780293452999
   }
 ]
