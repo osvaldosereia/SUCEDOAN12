@@ -12,112 +12,11 @@ const MAX_COMBOS_ATIVOS = 100;
 const DIAS_VALIDADE_COMBO = 3;
 const DESCONTOS = [10, 14, 18];
 
-function c(id, nome, produto1, produto2) {
-  return { id, nome, produto1, produto2 };
-}
-
-const COMBINACOES_COMBO = [
-  c("desodorante-sabonete-liquido", "Combo Banho Perfumado", ["desodorante"], ["sabonete liquido", "sabonete líquido"]),
-  c("nivea-sabonete", "Combo Nivea Cuidado", ["nivea"], ["sabonete"]),
-  c("nivea-hidratante", "Combo Hidratação Nivea", ["nivea"], ["hidratante"]),
-  c("monange-sabonete", "Combo Monange Banho", ["monange"], ["sabonete"]),
-  c("palmolive-desodorante", "Combo Palmolive Diário", ["palmolive"], ["desodorante"]),
-  c("dove-desodorante", "Combo Dove Cuidado", ["dove"], ["desodorante"]),
-  c("sabonete-hidratante", "Combo Pele Macia", ["sabonete"], ["hidratante"]),
-  c("sabonete-algodao", "Combo Cuidado Suave", ["sabonete"], ["algodao", "algodão"]),
-  c("sabonete-facial", "Combo Rosto Limpo", ["sabonete"], ["facial", "gel de limpeza"]),
-  c("hidratante-facial", "Combo Skincare Básico", ["hidratante"], ["facial"]),
-  c("absorvente-sabonete", "Combo Cuidado Feminino", ["absorvente"], ["sabonete"]),
-  c("absorvente-algodao", "Combo Proteção Feminina", ["absorvente"], ["algodao", "algodão"]),
-  c("barbeador-desodorante", "Combo Cuidado Masculino", ["barbeador", "aparelho barbear"], ["desodorante"]),
-  c("barbeador-sabonete", "Combo Barbear e Banho", ["barbeador", "aparelho barbear"], ["sabonete"]),
-  c("creme-dental-escova", "Combo Higiene Bucal", ["creme dental", "pasta dental", "colgate"], ["escova de dente", "escova dental"]),
-  c("colgate-fio-dental", "Combo Sorriso Protegido", ["colgate", "creme dental"], ["fio dental"]),
-  c("fio-dental-escova", "Combo Boca Saudável", ["fio dental"], ["escova de dente", "escova dental"]),
-  c("enxaguante-creme-dental", "Combo Hálito Fresco", ["enxaguante", "antisseptico bucal", "antisséptico bucal"], ["creme dental", "colgate"]),
-  c("carmed-fini", "Combo Carmed Fini", ["carmed"], ["fini"]),
-  c("protetor-labial-sabonete", "Combo Cuidado Essencial", ["protetor labial", "labial"], ["sabonete"]),
-  c("talco-sabonete", "Combo Pós-Banho", ["talco"], ["sabonete"]),
-  c("shampoo-condicionador", "Combo Cabelo Completo", ["shampoo"], ["condicionador"]),
-  c("shampoo-creme-pentear", "Combo Cabelo Hidratado", ["shampoo"], ["creme para pentear", "creme pentear", "pentear"]),
-  c("condicionador-creme-pentear", "Combo Finalização Capilar", ["condicionador"], ["creme para pentear", "creme pentear", "pentear"]),
-  c("seda-condicionador", "Combo Seda Completo", ["seda", "shampoo seda"], ["condicionador seda", "creme seda"]),
-  c("seda-creme-pentear", "Combo Seda Finalização", ["seda"], ["creme para pentear", "pentear"]),
-  c("lola-condicionador", "Combo Lola Cabelos", ["lola", "shampoo lola"], ["condicionador lola", "creme lola"]),
-  c("lola-tratamento", "Combo Lola Tratamento", ["lola"], ["tratamento", "mascara", "máscara", "creme"]),
-  c("elseve-condicionador", "Combo Elseve Completo", ["elseve", "shampoo elseve"], ["condicionador elseve", "creme elseve"]),
-  c("elseve-tratamento", "Combo Elseve Tratamento", ["elseve"], ["tratamento", "creme de tratamento", "mascara", "máscara"]),
-  c("dove-cabelo", "Combo Dove Cabelos", ["dove", "shampoo dove"], ["condicionador dove", "kit shampoo"]),
-  c("pantene-condicionador", "Combo Pantene Pro-V", ["pantene"], ["condicionador", "shampoo"]),
-  c("skala-creme-pentear", "Combo Skala Finalização", ["skala"], ["creme para pentear", "pentear"]),
-  c("skala-tratamento", "Combo Skala Tratamento", ["skala"], ["tratamento", "creme"]),
-  c("novex-tratamento", "Combo Novex Profundo", ["novex"], ["tratamento", "creme"]),
-  c("garnier-cabelo", "Combo Garnier Cuidado", ["garnier"], ["shampoo", "condicionador", "creme"]),
-  c("tresemme-condicionador", "Combo Tresemmé Salão", ["tresemme", "tresseme", "tresemmé"], ["condicionador", "shampoo"]),
-  c("niely-creme-pentear", "Combo Niely Finalização", ["niely"], ["creme para pentear", "pentear"]),
-  c("kolene-creme-pentear", "Combo Kolene Cabelos", ["kolene"], ["creme para pentear", "pentear"]),
-  c("escova-creme-pentear", "Combo Pentear Fácil", ["escova de cabelo", "escova cabelo"], ["creme para pentear", "pentear"]),
-  c("tratamento-condicionador", "Combo Nutrição Capilar", ["tratamento", "mascara", "máscara"], ["condicionador"]),
-  c("cachos-creme-pentear", "Combo Cachos Definidos", ["cachos", "cacheado"], ["creme para pentear", "pentear"]),
-  c("liso-creme-pentear", "Combo Liso Perfeito", ["liso"], ["creme para pentear", "pentear"]),
-  c("macarrao-tomate", "Combo Macarronada", ["macarrao", "macarrão"], ["molho de tomate", "tomate", "passata"]),
-  c("macarrao-molho", "Combo Massa Prática", ["macarrao", "macarrão"], ["molho"]),
-  c("macarrao-maionese", "Combo Massa Cremosa", ["macarrao", "macarrão"], ["maionese"]),
-  c("tomate-tempero", "Combo Molho Temperado", ["molho de tomate", "tomate", "passata"], ["tempero"]),
-  c("tomate-caldo", "Combo Sabor Caseiro", ["molho de tomate", "tomate"], ["caldo"]),
-  c("maionese-catchup", "Combo Lanche Fácil", ["maionese"], ["catchup", "ketchup"]),
-  c("catchup-mostarda", "Combo Hot Dog", ["catchup", "ketchup"], ["mostarda"]),
-  c("maionese-mostarda", "Combo Molhos Especiais", ["maionese"], ["mostarda"]),
-  c("heinz-catchup", "Combo Heinz Lanche", ["heinz"], ["catchup", "ketchup"]),
-  c("heinz-mostarda", "Combo Heinz Hot Dog", ["heinz"], ["mostarda"]),
-  c("hellmanns-catchup", "Combo Hellmanns Lanche", ["hellmanns", "hellmann's", "hellmann"], ["catchup", "ketchup"]),
-  c("sardinha-tomate", "Combo Sardinha com Molho", ["sardinha"], ["molho de tomate", "tomate"]),
-  c("atum-maionese", "Combo Patê Fácil", ["atum"], ["maionese"]),
-  c("milho-maionese", "Combo Salada Cremosa", ["milho"], ["maionese"]),
-  c("ervilha-maionese", "Combo Salada Especial", ["ervilha"], ["maionese"]),
-  c("tempero-caldo", "Combo Tempero Completo", ["tempero"], ["caldo"]),
-  c("sal-tempero", "Combo Cozinha Temperada", ["sal"], ["tempero"]),
-  c("alho-tempero", "Combo Refogado Prático", ["alho"], ["tempero"]),
-  c("cebola-tempero", "Combo Sabor do Dia", ["cebola"], ["tempero"]),
-  c("batata-maionese", "Combo Batata Cremosa", ["batata"], ["maionese"]),
-  c("batata-palha-catchup", "Combo Batata Crocante", ["batata palha", "batata"], ["catchup", "ketchup"]),
-  c("pipoca-refrigerante", "Combo Sessão Cinema", ["pipoca"], ["refrigerante", "guarana", "guaraná", "coca"]),
-  c("pipoca-chocolate", "Combo Cinema Doce", ["pipoca"], ["chocolate"]),
-  c("amendoim-refrigerante", "Combo Petisco", ["amendoim", "amendoin"], ["refrigerante", "guarana", "guaraná"]),
-  c("biscoito-suco", "Combo Lanche Infantil", ["biscoito", "bolacha"], ["suco", "refresco"]),
-  c("bolacha-achocolatado", "Combo Lanche Doce", ["bolacha", "biscoito"], ["achocolatado"]),
-  c("rosquinha-achocolatado", "Combo Rosquinha Doce", ["rosquinha"], ["achocolatado"]),
-  c("cereal-achocolatado", "Combo Matinal Doce", ["cereal", "matinal"], ["achocolatado"]),
-  c("suco-bolacha", "Combo Lanche Econômico", ["suco", "tang", "frisco"], ["bolacha", "biscoito"]),
-  c("tang-bolacha", "Combo Refresco com Bolacha", ["tang", "frisco", "suco po", "suco pó"], ["bolacha", "biscoito"]),
-  c("chocolate-oreo", "Combo Chocolate Oreo", ["chocolate"], ["oreo"]),
-  c("lacta-oreo", "Combo Lacta Oreo", ["lacta"], ["oreo"]),
-  c("garoto-bis", "Combo Garoto Bis", ["garoto"], ["bis"]),
-  c("fini-chocolate", "Combo Doces Favoritos", ["fini"], ["chocolate"]),
-  c("gelatina-creme", "Combo Sobremesa Fácil", ["gelatina"], ["creme"]),
-  c("doce-bolacha", "Combo Doce da Tarde", ["doce"], ["bolacha", "biscoito"]),
-  c("detergente-esponja", "Combo Louça Limpa", ["detergente", "lava louça", "lava louca"], ["esponja"]),
-  c("detergente-pano", "Combo Cozinha Limpa", ["detergente", "lava louça", "lava louca"], ["pano"]),
-  c("sabao-amaciante", "Combo Roupa Cheirosa", ["sabao", "sabão", "lava roupa"], ["amaciante"]),
-  c("sabao-tira-manchas", "Combo Lavanderia", ["sabao", "sabão", "lava roupa"], ["tira manchas", "vanish"]),
-  c("omo-amaciante", "Combo OMO Lavanderia", ["omo"], ["amaciante"]),
-  c("brilhante-amaciante", "Combo Brilhante Roupas", ["brilhante"], ["amaciante"]),
-  c("minuano-detergente-esponja", "Combo Minuano Louça", ["minuano"], ["esponja", "detergente"]),
-  c("desinfetante-pano", "Combo Casa Limpa", ["desinfetante"], ["pano"]),
-  c("veja-pano", "Combo Limpeza Pesada", ["veja", "limpador"], ["pano"]),
-  c("alcool-pano", "Combo Higienização", ["alcool", "álcool"], ["pano"]),
-  c("lixo-desinfetante", "Combo Área de Serviço", ["lixo", "saco de lixo"], ["desinfetante"]),
-  c("vassoura-pano", "Combo Faxina Rápida", ["vassoura"], ["pano"]),
-  c("rodo-pano", "Combo Piso Limpo", ["rodo"], ["pano"]),
-  c("papel-higienico-sabonete", "Combo Banheiro Básico", ["papel higienico", "papel higiênico"], ["sabonete"]),
-  c("multiuso-pano", "Combo Multiuso", ["multiuso", "limpador"], ["pano"]),
-  c("cloro-pano", "Combo Limpeza Forte", ["cloro", "agua sanitaria", "água sanitária"], ["pano"]),
-  c("copo-suco", "Combo Refresco", ["copo"], ["suco", "refresco"]),
-  c("jarra-suco", "Combo Servir Bebidas", ["jarra"], ["suco", "refresco"]),
-  c("garrafa-suco", "Combo Hidratação", ["garrafa"], ["suco", "refresco"]),
-  c("prato-copo", "Combo Mesa Prática", ["prato"], ["copo"]),
-  c("pote-plastico", "Combo Organização", ["pote"], ["plastico", "plástico"]),
-];
+/*
+  Agora cada combo é formado por 2 produtos da MESMA subcategoria.
+  O script não usa mais palavras-chave, categoria ou subsubcategoria.
+  Ele lê os produtos do Firebase e monta automaticamente a lista de subcategorias elegíveis.
+*/
 
 function normalizarTexto(valor) {
   return String(valor || "")
@@ -149,25 +48,6 @@ function obterNomeProdutoNormalizado(produto) {
   return normalizarTexto(produto.nome || produto.descricao || produto.descrição || produto["Descrição"] || produto.titulo || "");
 }
 
-function escaparRegex(valor) {
-  return String(valor).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function textoContemChave(textoNormalizado, chave) {
-  const chaveNormalizada = normalizarTexto(chave);
-  if (!chaveNormalizada) return false;
-
-  if (chaveNormalizada.includes(" ")) return textoNormalizado.includes(chaveNormalizada);
-
-  const regex = new RegExp(`(^|[^a-z0-9])${escaparRegex(chaveNormalizada)}([^a-z0-9]|$)`, "i");
-  return regex.test(textoNormalizado);
-}
-
-function produtoCorrespondeAsChaves(produto, chaves) {
-  const nome = obterNomeProdutoNormalizado(produto);
-  return chaves.some(chave => textoContemChave(nome, chave));
-}
-
 function obterChaveProduto(produto) {
   return String(produto.codigo || produto.sku || produto.id || produto.firebaseKey || "").trim();
 }
@@ -175,7 +55,21 @@ function obterChaveProduto(produto) {
 function obterUrlImagemProduto(produto) {
   if (!produto) return "";
 
-  const imagem = produto.url_imagem || produto.imagem || produto.image || produto.img || produto.foto || produto.url_foto || produto.imageUrl || produto.urlImagem || produto.link_imagem || produto.linkImagem || produto.foto_url || produto.fotoUrl || "";
+  const imagem =
+    produto.url_imagem ||
+    produto.imagem ||
+    produto.image ||
+    produto.img ||
+    produto.foto ||
+    produto.url_foto ||
+    produto.imageUrl ||
+    produto.urlImagem ||
+    produto.link_imagem ||
+    produto.linkImagem ||
+    produto.foto_url ||
+    produto.fotoUrl ||
+    "";
+
   if (imagem) return String(imagem).trim();
 
   const sku = obterChaveProduto(produto);
@@ -205,6 +99,7 @@ function obterDataCuiaba(dataBase = new Date()) {
   }).formatToParts(dataBase);
 
   const mapa = {};
+
   for (const parte of partes) {
     if (parte.type !== "literal") mapa[parte.type] = parte.value;
   }
@@ -234,20 +129,32 @@ function obterTimestampValidade(combo) {
 
   const texto = String(combo.validade_combo);
   const data = new Date(texto);
+
   if (!Number.isNaN(data.getTime())) return data.getTime();
 
   const match = texto.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
   if (!match) return 0;
 
   const [, ano, mes, dia, hora, minuto] = match;
-  return new Date(Number(ano), Number(mes) - 1, Number(dia), Number(hora), Number(minuto), 0, 0).getTime();
+
+  return new Date(
+    Number(ano),
+    Number(mes) - 1,
+    Number(dia),
+    Number(hora),
+    Number(minuto),
+    0,
+    0
+  ).getTime();
 }
 
 async function carregarProdutos() {
   const url = FIREBASE_URL.replace(/\/$/, "") + "/produtos.json";
   const res = await fetch(url);
 
-  if (!res.ok) throw new Error("Erro ao ler Firebase: HTTP " + res.status);
+  if (!res.ok) {
+    throw new Error("Erro ao ler Firebase: HTTP " + res.status);
+  }
 
   const dados = await res.json();
   if (!dados) return [];
@@ -267,8 +174,15 @@ async function carregarProdutos() {
   }));
 }
 
-function produtoValido(p) {
-  return p && !p._deleted && String(p.situacao || "A").toUpperCase() !== "I" && normalizarPreco(p.preco) > 0 && normalizarPreco(p.estoque) > 0 && obterNomeProdutoNormalizado(p).length > 0;
+function produtoValido(produto) {
+  return (
+    produto &&
+    !produto._deleted &&
+    String(produto.situacao || "A").toUpperCase() !== "I" &&
+    normalizarPreco(produto.preco) > 0 &&
+    normalizarPreco(produto.estoque) > 0 &&
+    obterNomeProdutoNormalizado(produto).length > 0
+  );
 }
 
 function montarItemCombo(produto, desconto) {
@@ -290,29 +204,73 @@ function montarItemCombo(produto, desconto) {
   };
 }
 
-function escolherProdutoPorChaves(produtosValidos, chaves, produtosUsados) {
-  const candidatos = embaralhar(produtosValidos.filter(produto => {
-    const chave = obterChaveProduto(produto);
-    return chave && !produtosUsados.has(chave) && produtoCorrespondeAsChaves(produto, chaves);
-  }));
-
-  return candidatos[0] || null;
+function obterSubcategoriaProduto(produto) {
+  return String(
+    produto?.subcategoria ||
+    produto?.subCategoria ||
+    produto?.sub_category ||
+    ""
+  ).trim();
 }
 
-function criarComboComProdutos(p1, p2, combinacao, indice, cicloCombinacoes) {
+function obterSubcategoriasElegiveis(produtosValidos) {
+  const mapa = new Map();
+
+  for (const produto of produtosValidos) {
+    const nomeSubcategoria = obterSubcategoriaProduto(produto);
+    const idSubcategoria = normalizarTexto(nomeSubcategoria);
+    const chaveProduto = obterChaveProduto(produto);
+
+    if (!idSubcategoria || !chaveProduto) continue;
+
+    if (!mapa.has(idSubcategoria)) {
+      mapa.set(idSubcategoria, {
+        id: idSubcategoria,
+        nome: nomeSubcategoria.toUpperCase(),
+        produtos: []
+      });
+    }
+
+    mapa.get(idSubcategoria).produtos.push(produto);
+  }
+
+  return Array.from(mapa.values())
+    .filter(subcategoria => subcategoria.produtos.length >= 2)
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+}
+
+function escolherDoisProdutosDaSubcategoria(subcategoria, produtosUsados) {
+  const candidatos = embaralhar(
+    subcategoria.produtos.filter(produto => {
+      const chave = obterChaveProduto(produto);
+      return chave && !produtosUsados.has(chave);
+    })
+  );
+
+  if (candidatos.length < 2) return null;
+
+  return [candidatos[0], candidatos[1]];
+}
+
+function criarComboComProdutos(produto1, produto2, subcategoria, indice, cicloCombinacoes) {
   const desconto = DESCONTOS[Math.floor(Math.random() * DESCONTOS.length)];
-  const preco1 = normalizarPreco(p1.preco);
-  const preco2 = normalizarPreco(p2.preco);
+
+  const preco1 = normalizarPreco(produto1.preco);
+  const preco2 = normalizarPreco(produto2.preco);
   const soma = preco1 + preco2;
   const precoCombo = soma * (1 - desconto / 100);
   const economia = soma - precoCombo;
+
   const datas = obterDataCuiaba();
-  const item1 = montarItemCombo(p1, desconto);
-  const item2 = montarItemCombo(p2, desconto);
+
+  const item1 = montarItemCombo(produto1, desconto);
+  const item2 = montarItemCombo(produto2, desconto);
+
+  const nomeSubcategoria = subcategoria?.nome || obterSubcategoriaProduto(produto1) || "Especial";
 
   return {
     id: `COMBO-${datas.ordem}-${indice}`,
-    nome: combinacao.nome || "Combo Especial",
+    nome: `Combo ${nomeSubcategoria}`,
     ativo: true,
     motivo_desativacao: "",
     desconto_percentual: desconto,
@@ -321,10 +279,10 @@ function criarComboComProdutos(p1, p2, combinacao, indice, cicloCombinacoes) {
     economia: Number(economia.toFixed(2)),
     validade_combo: formatarValidadeDias(DIAS_VALIDADE_COMBO),
     validade_dias: DIAS_VALIDADE_COMBO,
-    combinacao_id: combinacao.id,
-    combinacao_nome: combinacao.nome,
-    palavra_produto_1: combinacao.produto1,
-    palavra_produto_2: combinacao.produto2,
+    combinacao_id: subcategoria.id,
+    combinacao_nome: nomeSubcategoria,
+    subcategoria_combo: nomeSubcategoria,
+    regra_combo: "2 produtos da mesma subcategoria",
     ciclo_combinacoes: cicloCombinacoes || 1,
     url_imagem: item1.url_imagem || item2.url_imagem || "",
     itens: [item1, item2],
@@ -335,68 +293,103 @@ function criarComboComProdutos(p1, p2, combinacao, indice, cicloCombinacoes) {
   };
 }
 
-function obterCombinacoesUnicas() {
-  const vistas = new Set();
-  const resultado = [];
-
-  for (const combinacao of COMBINACOES_COMBO) {
-    const id = normalizarTexto(combinacao.id || combinacao.nome);
-    if (!id || vistas.has(id)) continue;
-    vistas.add(id);
-    resultado.push(combinacao);
-  }
-
-  return resultado;
-}
-
 function carregarHistoricoCombinacoes(arquivo) {
-  if (!fs.existsSync(arquivo)) return { usadas: [], ciclo: 1, atualizado_em: null };
+  if (!fs.existsSync(arquivo)) {
+    return {
+      usadas: [],
+      ciclo: 1,
+      atualizado_em: null
+    };
+  }
 
   try {
     const conteudo = fs.readFileSync(arquivo, "utf8").trim();
-    if (!conteudo) return { usadas: [], ciclo: 1, atualizado_em: null };
+
+    if (!conteudo) {
+      return {
+        usadas: [],
+        ciclo: 1,
+        atualizado_em: null
+      };
+    }
+
     const dados = JSON.parse(conteudo);
 
     return {
-      usadas: Array.isArray(dados.usadas) ? dados.usadas.map(normalizarTexto).filter(Boolean) : [],
+      usadas: Array.isArray(dados.usadas)
+        ? dados.usadas.map(normalizarTexto).filter(Boolean)
+        : [],
       ciclo: Number(dados.ciclo || 1),
       atualizado_em: dados.atualizado_em || null
     };
   } catch (erro) {
     console.log("Não foi possível ler o histórico de combinações. Um novo histórico será iniciado.");
     console.log("Erro:", erro.message);
-    return { usadas: [], ciclo: 1, atualizado_em: null };
+
+    return {
+      usadas: [],
+      ciclo: 1,
+      atualizado_em: null
+    };
   }
 }
 
-function salvarHistoricoCombinacoes(arquivo, historico) {
-  const permitidas = new Set(obterCombinacoesUnicas().map(c => normalizarTexto(c.id || c.nome)));
-  const usadasLimpas = Array.from(new Set(Array.isArray(historico.usadas) ? historico.usadas.map(normalizarTexto).filter(Boolean) : [])).filter(id => permitidas.has(id));
+function salvarHistoricoCombinacoes(arquivo, historico, subcategoriasElegiveis = []) {
+  const permitidas = new Set(
+    subcategoriasElegiveis.map(subcategoria =>
+      normalizarTexto(subcategoria.id || subcategoria.nome)
+    )
+  );
+
+  const usadasLimpas = Array.from(
+    new Set(
+      Array.isArray(historico.usadas)
+        ? historico.usadas.map(normalizarTexto).filter(Boolean)
+        : []
+    )
+  ).filter(id => permitidas.size === 0 || permitidas.has(id));
 
   const dados = {
     usadas: usadasLimpas,
     ciclo: Number(historico.ciclo || 1),
     total_combinacoes_unicas: permitidas.size,
+    tipo_combinacao: "subcategoria",
+    regra: "cada combo usa 2 produtos válidos da mesma subcategoria",
     atualizado_em: new Date().toISOString()
   };
 
   fs.writeFileSync(arquivo, JSON.stringify(dados, null, 2), "utf8");
 }
 
-function obterCombinacoesDisponiveis(historico) {
-  const combinacoesUnicas = obterCombinacoesUnicas();
-  const permitidas = new Set(combinacoesUnicas.map(c => normalizarTexto(c.id || c.nome)));
+function obterCombinacoesDisponiveis(historico, produtosValidos = []) {
+  const subcategoriasElegiveis = obterSubcategoriasElegiveis(produtosValidos);
 
-  historico.usadas = Array.from(new Set(Array.isArray(historico.usadas) ? historico.usadas.map(normalizarTexto).filter(Boolean) : [])).filter(id => permitidas.has(id));
+  const permitidas = new Set(
+    subcategoriasElegiveis.map(subcategoria =>
+      normalizarTexto(subcategoria.id || subcategoria.nome)
+    )
+  );
+
+  historico.usadas = Array.from(
+    new Set(
+      Array.isArray(historico.usadas)
+        ? historico.usadas.map(normalizarTexto).filter(Boolean)
+        : []
+    )
+  ).filter(id => permitidas.has(id));
 
   const usadasSet = new Set(historico.usadas);
-  let disponiveis = combinacoesUnicas.filter(combinacao => !usadasSet.has(normalizarTexto(combinacao.id || combinacao.nome)));
 
-  if (disponiveis.length === 0) {
+  let disponiveis = subcategoriasElegiveis.filter(subcategoria =>
+    !usadasSet.has(normalizarTexto(subcategoria.id || subcategoria.nome))
+  );
+
+  if (disponiveis.length === 0 && subcategoriasElegiveis.length > 0) {
     historico.usadas = [];
     historico.ciclo = Number(historico.ciclo || 1) + 1;
-    disponiveis = combinacoesUnicas;
-    console.log("Todas as combinações já foram usadas. Iniciando novo ciclo:", historico.ciclo);
+    disponiveis = subcategoriasElegiveis;
+
+    console.log("Todas as subcategorias elegíveis já foram usadas. Iniciando novo ciclo:", historico.ciclo);
   }
 
   return disponiveis;
@@ -404,39 +397,62 @@ function obterCombinacoesDisponiveis(historico) {
 
 function marcarCombinacaoComoUsada(historico, combinacao) {
   const id = normalizarTexto(combinacao.id || combinacao.nome);
+
   if (!id) return;
   if (!Array.isArray(historico.usadas)) historico.usadas = [];
-  if (!historico.usadas.includes(id)) historico.usadas.push(id);
+
+  if (!historico.usadas.includes(id)) {
+    historico.usadas.push(id);
+  }
 }
 
 function criarCombos(produtos, quantidade = 1, historicoCombinacoes = null) {
   const produtosValidos = produtos.filter(produtoValido);
   const combos = [];
   const produtosUsados = new Set();
-  const historico = historicoCombinacoes || { usadas: [], ciclo: 1, atualizado_em: null };
-  const combinacoesMisturadas = embaralhar(obterCombinacoesDisponiveis(historico));
 
-  for (const combinacao of combinacoesMisturadas) {
+  const historico = historicoCombinacoes || {
+    usadas: [],
+    ciclo: 1,
+    atualizado_em: null
+  };
+
+  const subcategoriasMisturadas = embaralhar(
+    obterCombinacoesDisponiveis(historico, produtosValidos)
+  );
+
+  for (const subcategoria of subcategoriasMisturadas) {
     if (combos.length >= quantidade) break;
 
-    const p1 = escolherProdutoPorChaves(produtosValidos, combinacao.produto1, produtosUsados);
-    if (!p1) {
-      console.log(`Combinação "${combinacao.nome}" ignorada: não encontrou produto 1 com chaves: ${combinacao.produto1.join(", ")}`);
+    const produtosEscolhidos = escolherDoisProdutosDaSubcategoria(
+      subcategoria,
+      produtosUsados
+    );
+
+    if (!produtosEscolhidos) {
+      console.log(`Subcategoria "${subcategoria.nome}" ignorada: não encontrou 2 produtos válidos com estoque e preço.`);
       continue;
     }
 
-    const chave1 = obterChaveProduto(p1);
-    const p2 = escolherProdutoPorChaves(produtosValidos, combinacao.produto2, new Set([...produtosUsados, chave1]));
-    if (!p2) {
-      console.log(`Combinação "${combinacao.nome}" ignorada: encontrou produto 1, mas não encontrou produto 2 com chaves: ${combinacao.produto2.join(", ")}`);
-      continue;
-    }
+    const [produto1, produto2] = produtosEscolhidos;
 
-    const chave2 = obterChaveProduto(p2);
-    combos.push(criarComboComProdutos(p1, p2, combinacao, combos.length + 1, historico.ciclo));
+    const chave1 = obterChaveProduto(produto1);
+    const chave2 = obterChaveProduto(produto2);
+
+    combos.push(
+      criarComboComProdutos(
+        produto1,
+        produto2,
+        subcategoria,
+        combos.length + 1,
+        historico.ciclo
+      )
+    );
+
     produtosUsados.add(chave1);
     produtosUsados.add(chave2);
-    marcarCombinacaoComoUsada(historico, combinacao);
+
+    marcarCombinacaoComoUsada(historico, subcategoria);
   }
 
   return combos;
@@ -447,12 +463,18 @@ function carregarCombosExistentes(arquivo) {
 
   try {
     const conteudoAtual = fs.readFileSync(arquivo, "utf8").trim();
+
     if (!conteudoAtual) return [];
+
     const dadosAtuais = JSON.parse(conteudoAtual);
-    return Array.isArray(dadosAtuais) ? dadosAtuais.filter(Boolean) : [];
+
+    return Array.isArray(dadosAtuais)
+      ? dadosAtuais.filter(Boolean)
+      : [];
   } catch (erro) {
     console.log("Não foi possível ler o combo.json atual. Um novo arquivo será criado.");
     console.log("Erro:", erro.message);
+
     return [];
   }
 }
@@ -460,8 +482,11 @@ function carregarCombosExistentes(arquivo) {
 function comboAindaValido(combo) {
   if (!combo) return false;
   if (combo.ativo === false) return false;
+
   const timestampValidade = obterTimestampValidade(combo);
+
   if (!timestampValidade) return false;
+
   return timestampValidade >= Date.now();
 }
 
@@ -471,11 +496,14 @@ function removerCombosDuplicados(combos) {
 
   for (const combo of combos) {
     const chave = String(combo.id || "").trim();
+
     if (!chave) {
       resultado.push(combo);
       continue;
     }
+
     if (vistos.has(chave)) continue;
+
     vistos.add(chave);
     resultado.push(combo);
   }
@@ -490,7 +518,10 @@ function obterValorOrdenacaoCombo(combo) {
 
   if (combo.criado_em) {
     const data = new Date(combo.criado_em);
-    if (!Number.isNaN(data.getTime())) return String(data.getTime());
+
+    if (!Number.isNaN(data.getTime())) {
+      return String(data.getTime());
+    }
   }
 
   return "0";
@@ -500,14 +531,17 @@ function ordenarCombosMaisRecentesPrimeiro(combos) {
   return [...combos].sort((a, b) => {
     const valorA = obterValorOrdenacaoCombo(a);
     const valorB = obterValorOrdenacaoCombo(b);
+
     if (valorA < valorB) return 1;
     if (valorA > valorB) return -1;
+
     return 0;
   });
 }
 
 function limitarCombosAtivos(combos, limite = MAX_COMBOS_ATIVOS) {
   if (!Number.isFinite(limite) || limite <= 0) return combos;
+
   return combos.slice(0, limite);
 }
 
@@ -515,31 +549,55 @@ async function main() {
   const produtos = await carregarProdutos();
 
   const pasta = path.join(process.cwd(), "site");
-  if (!fs.existsSync(pasta)) fs.mkdirSync(pasta, { recursive: true });
+
+  if (!fs.existsSync(pasta)) {
+    fs.mkdirSync(pasta, { recursive: true });
+  }
 
   const arquivo = path.join(pasta, "combo.json");
-  const arquivoHistoricoCombinacoes = path.join(pasta, "combinacoes-combo-usadas.json");
+  const arquivoHistoricoCombinacoes = path.join(
+    pasta,
+    "combinacoes-combo-usadas.json"
+  );
 
   const combosExistentes = carregarCombosExistentes(arquivo);
   const combosAindaValidos = combosExistentes.filter(comboAindaValido);
   const combosRemovidos = combosExistentes.length - combosAindaValidos.length;
 
-  const historicoCombinacoes = carregarHistoricoCombinacoes(arquivoHistoricoCombinacoes);
-  const combosNovos = criarCombos(produtos, QUANTIDADE_COMBOS_POR_EXECUCAO, historicoCombinacoes);
+  const historicoCombinacoes = carregarHistoricoCombinacoes(
+    arquivoHistoricoCombinacoes
+  );
+
+  const produtosValidos = produtos.filter(produtoValido);
+  const subcategoriasElegiveis = obterSubcategoriasElegiveis(produtosValidos);
+
+  const combosNovos = criarCombos(
+    produtos,
+    QUANTIDADE_COMBOS_POR_EXECUCAO,
+    historicoCombinacoes
+  );
 
   const todosCombos = limitarCombosAtivos(
     ordenarCombosMaisRecentesPrimeiro(
-      removerCombosDuplicados([...combosNovos, ...combosAindaValidos])
+      removerCombosDuplicados([
+        ...combosNovos,
+        ...combosAindaValidos
+      ])
     ),
     MAX_COMBOS_ATIVOS
   );
 
   fs.writeFileSync(arquivo, JSON.stringify(todosCombos, null, 2), "utf8");
-  salvarHistoricoCombinacoes(arquivoHistoricoCombinacoes, historicoCombinacoes);
+
+  salvarHistoricoCombinacoes(
+    arquivoHistoricoCombinacoes,
+    historicoCombinacoes,
+    subcategoriasElegiveis
+  );
 
   console.log(`Produtos carregados do Firebase: ${produtos.length}`);
-  console.log(`Produtos válidos para combo: ${produtos.filter(produtoValido).length}`);
-  console.log(`Total de combinações cadastradas: ${obterCombinacoesUnicas().length}`);
+  console.log(`Produtos válidos para combo: ${produtosValidos.length}`);
+  console.log(`Total de subcategorias elegíveis para combo: ${subcategoriasElegiveis.length}`);
   console.log(`Combos existentes antes da limpeza: ${combosExistentes.length}`);
   console.log(`Combos ainda válidos mantidos: ${combosAindaValidos.length}`);
   console.log(`Combos vencidos, inválidos ou inativos apagados automaticamente: ${combosRemovidos}`);
@@ -548,14 +606,14 @@ async function main() {
   console.log(`Validade máxima de cada combo novo: ${DIAS_VALIDADE_COMBO} dias`);
   console.log(`Limite máximo de combos ativos no arquivo: ${MAX_COMBOS_ATIVOS}`);
   console.log(`Ciclo de combinações: ${historicoCombinacoes.ciclo}`);
-  console.log(`Combinações já usadas neste ciclo: ${historicoCombinacoes.usadas.length}/${obterCombinacoesUnicas().length}`);
+  console.log(`Subcategorias já usadas neste ciclo: ${historicoCombinacoes.usadas.length}/${subcategoriasElegiveis.length}`);
   console.log("Histórico salvo em: site/combinacoes-combo-usadas.json");
 
   combosNovos.forEach((combo, index) => {
     console.log(`Combo novo ${index + 1}: ${combo.nome}`);
     console.log(`ID: ${combo.id}`);
-    console.log(`Combinação usada: ${combo.combinacao_nome}`);
-    console.log(`ID da combinação: ${combo.combinacao_id}`);
+    console.log(`Subcategoria usada: ${combo.subcategoria_combo || combo.combinacao_nome}`);
+    console.log(`ID da subcategoria: ${combo.combinacao_id}`);
     console.log(`Validade: ${combo.validade_combo}`);
     console.log(`Produto 1: ${combo.itens[0]?.nome || ""}`);
     console.log(`Produto 2: ${combo.itens[1]?.nome || ""}`);
@@ -564,12 +622,12 @@ async function main() {
 
   if (combosNovos.length === 0) {
     console.log("Nenhum combo novo criado.");
-    console.log("Motivo provável: nenhuma combinação disponível encontrou os 2 produtos necessários com estoque e preço.");
-    console.log("O histórico de combinações não avança para combinações que não geraram combo.");
+    console.log("Motivo provável: nenhuma subcategoria disponível encontrou 2 produtos válidos com estoque e preço.");
+    console.log("O histórico de subcategorias não avança para subcategorias que não geraram combo.");
   }
 }
 
-main().catch(err => {
-  console.error(err);
+main().catch(erro => {
+  console.error(erro);
   process.exit(1);
 });
