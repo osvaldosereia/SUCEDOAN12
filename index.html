@@ -6605,60 +6605,53 @@ function corrigirTelefoneFinal(valor) {
         tel = tel.slice(2);
     }
 
-    // Remove DDI 55 quando vier: 55 + 65 + telefone
+    // Remove zero antes do DDD
+    // Ex: 065999998888 -> 65999998888
+    if (tel.length === 12 && tel.startsWith('0')) {
+        tel = tel.slice(1);
+    }
+
+    // Remove DDI 55 quando vier corretamente: 55 + DDD + celular
     // Ex: 5565999998888 -> 65999998888
-    if (tel.length >= 12 && tel.startsWith('55')) {
+    // Ex: 5511999998888 -> 11999998888
+    if (tel.length === 13 && tel.startsWith('55')) {
         const semDDI = tel.slice(2);
 
-        if (semDDI.startsWith(CHECKOUT_DEFAULT_DDD)) {
+        if (/^[1-9]{2}9\d{8}$/.test(semDDI)) {
             tel = semDDI;
         }
     }
 
-    // Corrige quando o navegador/autocomplete colocou 55 no lugar do DDD
-    // Ex: 55999998888 -> 65999998888
-    if (tel.length === 11 && tel.startsWith('55') && tel.charAt(2) === '9') {
-        tel = CHECKOUT_DEFAULT_DDD + tel.slice(2);
-    }
+    // Remove DDI 55 quando vier corretamente: 55 + DDD + telefone fixo
+    // Ex: 556533218888 -> 6533218888
+    if (tel.length === 12 && tel.startsWith('55')) {
+        const semDDI = tel.slice(2);
 
-    // Remove zero antes do DDD
-    // Ex: 065999998888 -> 65999998888
-    if (tel.length >= 12 && tel.startsWith('0')) {
-        tel = tel.slice(1);
-    }
-
-    // Se veio só o celular, adiciona DDD 65
-    // Ex: 999998888 -> 65999998888
-    if (tel.length === 9 && tel.startsWith('9')) {
-        tel = CHECKOUT_DEFAULT_DDD + tel;
-    }
-
-    // Se veio DDD 65 + telefone antigo com 8 dígitos, adiciona o 9
-    // Ex: 6599998888 -> 65999998888
-    if (tel.length === 10 && tel.startsWith(CHECKOUT_DEFAULT_DDD)) {
-        tel = CHECKOUT_DEFAULT_DDD + '9' + tel.slice(2);
-    }
-
-    // Segurança final para número grande demais
-    if (tel.length > 11) {
-        const pos65 = tel.lastIndexOf(CHECKOUT_DEFAULT_DDD);
-
-        if (pos65 !== -1) {
-            const possivel = tel.slice(pos65, pos65 + 11);
-
-            if (possivel.length === 11 && possivel.charAt(2) === '9') {
-                tel = possivel;
-            } else {
-                tel = tel.slice(-11);
-            }
-        } else {
-            tel = tel.slice(-11);
+        if (/^[1-9]{2}\d{8}$/.test(semDDI)) {
+            tel = semDDI;
         }
     }
 
-    // Segunda segurança contra 55 no lugar do DDD
-    if (tel.length === 11 && tel.startsWith('55') && tel.charAt(2) === '9') {
-        tel = CHECKOUT_DEFAULT_DDD + tel.slice(2);
+    // Se veio só o celular, mantém sem corrigir automaticamente.
+    // Ex: 999998888 continua 999998888 e será recusado na validação,
+    // porque agora o cliente precisa informar o DDD real.
+    
+    // Se veio DDD + telefone antigo com 8 dígitos, adiciona o 9.
+    // Aceita qualquer DDD.
+    // Ex: 6599998888 -> 65999998888
+    // Ex: 1199998888 -> 11999998888
+    if (tel.length === 10 && /^[1-9]{2}\d{8}$/.test(tel)) {
+        tel = tel.slice(0, 2) + '9' + tel.slice(2);
+    }
+
+    // Segurança final para número grande demais:
+    // pega os últimos 11 dígitos sem forçar DDD 65.
+    if (tel.length > 11) {
+        const ultimos11 = tel.slice(-11);
+
+        if (/^[1-9]{2}9\d{8}$/.test(ultimos11)) {
+            tel = ultimos11;
+        }
     }
 
     return tel;
@@ -6691,13 +6684,29 @@ function formatarTelefone(valor) {
 }
 
 function telefoneValidoBR(valor) {
+    const original = telefoneSomenteNumeros(valor);
     const tel = corrigirTelefoneFinal(valor);
 
-    if (!/^65\d{9}$/.test(tel)) return false;
+    // Bloqueia quando o navegador/cache colocou 55 no lugar do DDD.
+    // Ex: 55999998888
+    if (original.length === 11 && original.startsWith('55') && original.charAt(2) === '9') {
+        return false;
+    }
 
-    if (tel.charAt(2) !== '9') return false;
+    // Aceita celular brasileiro com qualquer DDD:
+    // DDD + 9 + 8 dígitos
+    if (!/^[1-9]{2}9\d{8}$/.test(tel)) return false;
 
+    // Bloqueia DDD 55 quando ele veio como se fosse DDD brasileiro.
+    if (tel.startsWith('55')) return false;
+
+    // Bloqueia número totalmente repetido.
     if (/^(\d)\1+$/.test(tel)) return false;
+
+    // Bloqueia celular fake comum depois do DDD.
+    // Ex: 65999999999, 11111111111, etc.
+    const numeroSemDDD = tel.slice(2);
+    if (/^(\d)\1+$/.test(numeroSemDDD)) return false;
 
     return true;
 }
