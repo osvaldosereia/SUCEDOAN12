@@ -3,457 +3,338 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#f6f1e8" />
   <title>Leitor de Carrosséis</title>
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <style>
     :root {
-      --bg: #f6f1e8;
-      --card: #fffaf1;
-      --text: #211d18;
-      --muted: #766d62;
-      --line: rgba(33, 29, 24, .11);
-      --soft: rgba(33, 29, 24, .06);
-      --brand: #2b2118;
-      --brand-2: #f0dfc6;
-      --danger: #a33c2f;
-      --ok: #276738;
-      --radius: 24px;
-      --shadow: 0 14px 40px rgba(33, 29, 24, .08);
+      --bg: #f6f3ee;
+      --card: #fffaf4;
+      --text: #211b16;
+      --muted: #7a6f66;
+      --line: #eadfd3;
+      --brand: #7b3f19;
+      --brand2: #3d2618;
+      --soft: #efe5d9;
+      --ok: #267547;
+      --danger: #a33a2a;
+      --shadow: 0 14px 40px rgba(55, 37, 20, .08);
     }
 
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
+    * { box-sizing: border-box; }
 
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
+    html, body {
       margin: 0;
-      background: radial-gradient(circle at top, #fff6e7 0, var(--bg) 42%, #f4ead9 100%);
+      padding: 0;
+      background: var(--bg);
       color: var(--text);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      min-height: 100vh;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
 
-    button, input, textarea {
-      font: inherit;
-    }
-
-    button {
-      border: 0;
-      cursor: pointer;
-    }
-
-    img {
-      display: block;
-      max-width: 100%;
-    }
+    body { min-height: 100vh; }
 
     .app {
-      width: min(760px, 100%);
+      width: min(100%, 540px);
       margin: 0 auto;
-      padding: 16px 14px 36px;
+      padding: 14px 12px 34px;
     }
 
     .top {
       position: sticky;
       top: 0;
       z-index: 20;
-      margin: -16px -14px 16px;
-      padding: calc(12px + env(safe-area-inset-top)) 14px 12px;
-      background: rgba(246, 241, 232, .86);
-      backdrop-filter: blur(18px);
-      border-bottom: 1px solid var(--line);
+      background: rgba(246, 243, 238, .92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(234, 223, 211, .8);
+      margin: 0 -12px 14px;
+      padding: 12px 12px 10px;
     }
 
     .top-inner {
-      width: min(760px, 100%);
+      width: min(100%, 540px);
       margin: 0 auto;
-      display: grid;
-      gap: 10px;
-    }
-
-    .brand-row {
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
       gap: 12px;
     }
 
-    .brand-title {
-      display: grid;
-      gap: 2px;
-    }
-
-    .brand-title h1 {
+    h1 {
       margin: 0;
-      font-size: 20px;
+      font-size: 18px;
       line-height: 1.1;
-      letter-spacing: -.04em;
-      font-weight: 650;
+      letter-spacing: -.02em;
+      font-weight: 760;
     }
 
-    .brand-title p {
-      margin: 0;
-      color: var(--muted);
+    .sub {
+      margin: 4px 0 0;
       font-size: 12px;
       line-height: 1.35;
-    }
-
-    .refresh-btn {
-      min-width: 44px;
-      height: 44px;
-      border-radius: 999px;
-      background: var(--brand);
-      color: #fff;
-      display: inline-grid;
-      place-items: center;
-      box-shadow: 0 10px 22px rgba(33, 29, 24, .18);
-    }
-
-    .summary {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: rgba(255, 250, 241, .72);
       color: var(--muted);
-      font-size: 12px;
-      line-height: 1.3;
     }
 
-    .summary strong {
-      color: var(--text);
-      font-weight: 650;
+    .pill {
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--muted);
+      padding: 7px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      white-space: nowrap;
     }
 
     .status {
-      display: grid;
-      gap: 8px;
-      margin: 12px 0;
-    }
-
-    .notice {
+      background: var(--card);
       border: 1px solid var(--line);
-      background: rgba(255, 250, 241, .82);
       border-radius: 18px;
-      padding: 12px;
+      padding: 13px;
+      box-shadow: var(--shadow);
+      margin-bottom: 12px;
       color: var(--muted);
       font-size: 13px;
       line-height: 1.45;
     }
 
-    .notice.ok {
-      border-color: rgba(39, 103, 56, .18);
-      color: var(--ok);
-    }
-
-    .notice.error {
-      border-color: rgba(163, 60, 47, .18);
-      color: var(--danger);
-    }
-
-    .grid {
-      display: grid;
-      gap: 18px;
-    }
+    .status strong { color: var(--text); }
+    .status.ok { border-color: rgba(38, 117, 71, .24); }
+    .status.err { border-color: rgba(163, 58, 42, .28); color: var(--danger); }
 
     .card {
       background: var(--card);
       border: 1px solid var(--line);
-      border-radius: var(--radius);
+      border-radius: 24px;
       overflow: hidden;
       box-shadow: var(--shadow);
     }
 
-    .card-head {
-      padding: 16px 16px 12px;
-      display: grid;
-      gap: 10px;
+    .media {
+      background: #e9dfd4;
+      position: relative;
+      width: 100%;
+      min-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
     }
 
-    .meta-row {
+    .media img {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: #eadfd3;
+    }
+
+    .media-placeholder {
+      width: 100%;
+      min-height: 420px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      padding: 24px;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .counter {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      background: rgba(33, 27, 22, .75);
+      color: white;
+      border-radius: 999px;
+      padding: 6px 9px;
+      font-size: 12px;
+      backdrop-filter: blur(10px);
+    }
+
+    .image-loader {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      background: rgba(255, 250, 244, .88);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, .45);
+      border-radius: 999px;
+      padding: 6px 9px;
+      font-size: 12px;
+      display: none;
+    }
+
+    .image-loader.active { display: block; }
+
+    .slide-nav {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 10px;
+      background: rgba(255, 250, 244, .98);
+      border-bottom: 1px solid var(--line);
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 13px 12px;
+      font-size: 14px;
+      font-weight: 720;
+      cursor: pointer;
+      min-height: 46px;
+      font-family: inherit;
+      transition: transform .08s ease, opacity .12s ease;
+      touch-action: manipulation;
+    }
+
+    button:active { transform: scale(.985); }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+
+    .btn-soft {
+      background: var(--soft);
+      color: var(--brand2);
+    }
+
+    .btn-main {
+      background: var(--brand);
+      color: white;
+    }
+
+    .btn-dark {
+      background: var(--brand2);
+      color: white;
+    }
+
+    .content { padding: 14px; }
+
+    .meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 7px;
+      margin-bottom: 12px;
     }
 
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      min-height: 26px;
-      border-radius: 999px;
-      padding: 6px 10px;
+    .tag {
       background: var(--soft);
       color: var(--muted);
-      font-size: 11px;
+      border-radius: 999px;
+      padding: 6px 8px;
+      font-size: 12px;
       line-height: 1;
-      white-space: nowrap;
     }
 
-    .pill.dark {
-      background: var(--brand);
-      color: #fff;
+    .title {
+      margin: 0 0 6px;
+      font-size: 20px;
+      line-height: 1.16;
+      letter-spacing: -.03em;
+      font-weight: 800;
     }
 
-    .card h2 {
-      margin: 0;
-      font-size: 21px;
-      line-height: 1.14;
-      letter-spacing: -.04em;
-      font-weight: 680;
-    }
-
-    .card-sub {
-      margin: 0;
+    .theme {
+      margin: 0 0 12px;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 14px;
       line-height: 1.38;
     }
 
-    .slider {
-      padding: 0 12px 12px;
-    }
-
-    .slide-frame {
-      position: relative;
-      width: 100%;
-      overflow: hidden;
-      border-radius: 22px;
-      background: #e7dccb;
-      border: 1px solid var(--line);
-      aspect-ratio: 4 / 5;
-      display: grid;
-      place-items: center;
-    }
-
-    .slide-img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      background: #efe4d3;
-    }
-
-    .slide-empty {
-      padding: 28px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .nav-btn {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 42px;
-      height: 42px;
-      border-radius: 999px;
-      background: rgba(33, 29, 24, .78);
-      color: #fff;
-      display: grid;
-      place-items: center;
-      z-index: 2;
-      backdrop-filter: blur(10px);
-    }
-
-    .nav-btn:disabled {
-      opacity: .32;
-      cursor: default;
-    }
-
-    .nav-btn.prev { left: 10px; }
-    .nav-btn.next { right: 10px; }
-
-    .page-badge {
-      position: absolute;
-      left: 50%;
-      bottom: 10px;
-      transform: translateX(-50%);
-      min-height: 30px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(33, 29, 24, .78);
-      color: #fff;
-      font-size: 12px;
-      line-height: 1;
-      backdrop-filter: blur(10px);
-      z-index: 2;
-    }
-
-    .thumbs {
-      display: flex;
-      gap: 7px;
-      overflow-x: auto;
-      padding: 10px 2px 0;
-      scrollbar-width: none;
-    }
-
-    .thumbs::-webkit-scrollbar { display: none; }
-
-    .dot {
-      flex: 0 0 auto;
-      width: 28px;
-      height: 28px;
-      border-radius: 999px;
-      background: var(--soft);
-      color: var(--muted);
-      font-size: 11px;
-      display: grid;
-      place-items: center;
-      border: 1px solid transparent;
-    }
-
-    .dot.active {
-      background: var(--brand);
-      color: #fff;
-      border-color: var(--brand);
-    }
-
     .legend-box {
-      margin: 0 12px 12px;
-      background: rgba(255, 255, 255, .44);
+      background: #fff;
       border: 1px solid var(--line);
-      border-radius: 20px;
-      overflow: hidden;
+      border-radius: 18px;
+      padding: 12px;
+      margin: 12px 0;
     }
 
     .legend-title {
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
       gap: 10px;
-      padding: 12px 12px 0;
-    }
-
-    .legend-title strong {
+      margin-bottom: 8px;
       font-size: 13px;
-      letter-spacing: -.01em;
+      color: var(--muted);
+      font-weight: 700;
     }
 
-    .copy-mini {
-      min-height: 32px;
-      border-radius: 999px;
-      padding: 8px 12px;
-      background: var(--brand-2);
-      color: var(--brand);
-      font-size: 12px;
-      font-weight: 620;
-    }
-
-    .legend-text {
-      margin: 0;
-      padding: 10px 12px 14px;
-      color: #3e372f;
-      font-size: 13px;
-      line-height: 1.52;
+    .legend {
       white-space: pre-wrap;
-      word-break: break-word;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.46;
+      max-height: 220px;
+      overflow: auto;
+      padding-right: 2px;
     }
 
     .actions {
       display: grid;
-      gap: 10px;
-      padding: 0 12px 14px;
+      gap: 9px;
+      margin-top: 12px;
     }
 
-    .primary-btn {
+    .download-progress {
+      display: none;
+      margin-top: 10px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .download-progress.active { display: block; }
+
+    .progress-bar {
       width: 100%;
-      min-height: 52px;
-      border-radius: 18px;
+      height: 8px;
+      background: var(--soft);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
       background: var(--brand);
-      color: #fff;
-      font-size: 14px;
-      font-weight: 680;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      box-shadow: 0 12px 24px rgba(33, 29, 24, .16);
+      border-radius: 999px;
+      transition: width .2s ease;
     }
 
-    .primary-btn:disabled {
-      opacity: .58;
-      cursor: wait;
-    }
-
-    .secondary-btn {
-      width: 100%;
-      min-height: 48px;
-      border-radius: 18px;
-      background: var(--brand-2);
-      color: var(--brand);
-      font-size: 14px;
-      font-weight: 650;
-    }
-
-    .load-more-wrap {
+    .carousel-nav {
       display: grid;
-      gap: 10px;
-      padding: 20px 0 0;
+      grid-template-columns: 1fr;
+      gap: 9px;
+      margin: 12px 0 0;
     }
 
-    .load-more {
-      min-height: 54px;
-      border-radius: 20px;
-      background: var(--brand);
-      color: #fff;
-      font-size: 14px;
-      font-weight: 680;
-      box-shadow: 0 12px 24px rgba(33, 29, 24, .14);
-    }
-
-    .load-more:disabled {
-      opacity: .55;
-      cursor: wait;
-    }
-
-    .footer-note {
-      text-align: center;
+    .small-note {
       color: var(--muted);
       font-size: 12px;
-      line-height: 1.4;
-      padding: 20px 12px 0;
+      line-height: 1.35;
+      margin-top: 10px;
     }
 
-    .skeleton {
-      background: linear-gradient(90deg, rgba(33,29,24,.05), rgba(33,29,24,.11), rgba(33,29,24,.05));
-      background-size: 220% 100%;
-      animation: pulse 1.2s infinite linear;
-      border-radius: 18px;
+    .empty {
+      background: var(--card);
+      border: 1px dashed var(--line);
+      border-radius: 20px;
+      padding: 18px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
     }
 
-    .skeleton-card {
-      height: 520px;
-      border-radius: var(--radius);
-      border: 1px solid var(--line);
-      background-color: var(--card);
-      overflow: hidden;
-      padding: 14px;
-      display: grid;
-      gap: 12px;
+    code {
+      background: rgba(0, 0, 0, .05);
+      padding: 2px 5px;
+      border-radius: 6px;
     }
 
-    @keyframes pulse {
-      from { background-position: 220% 0; }
-      to { background-position: -220% 0; }
-    }
-
-    @media (min-width: 680px) {
-      .app {
-        padding-top: 18px;
-      }
-
-      .card h2 {
-        font-size: 24px;
-      }
+    @media (min-width: 560px) {
+      .carousel-nav { grid-template-columns: 1fr 1fr; }
+      .media { min-height: 520px; }
     }
   </style>
 </head>
@@ -461,30 +342,16 @@
   <main class="app">
     <header class="top">
       <div class="top-inner">
-        <div class="brand-row">
-          <div class="brand-title">
-            <h1>Carrosséis</h1>
-            <p>Dona Antônia · leitura direta do GitHub</p>
-          </div>
-          <button class="refresh-btn" id="refreshBtn" type="button" aria-label="Atualizar">↻</button>
+        <div>
+          <h1>Leitor de Carrosséis</h1>
+          <p class="sub">Carrega só o carrossel em uso para economizar dados.</p>
         </div>
-        <div class="summary" id="summaryBox">
-          <span>Buscando carrosséis...</span>
-          <strong>0</strong>
-        </div>
+        <div class="pill" id="repoPill">GitHub</div>
       </div>
     </header>
 
-    <section class="status" id="statusBox"></section>
-    <section class="grid" id="list"></section>
-
-    <div class="load-more-wrap" id="loadMoreWrap" hidden>
-      <button class="load-more" id="loadMoreBtn" type="button">Carregar mais 10</button>
-    </div>
-
-    <p class="footer-note">
-      As imagens são convertidas para JPG compactado antes de entrar no ZIP. O processamento acontece no próprio celular.
-    </p>
+    <section id="status" class="status">Carregando lista de carrosséis...</section>
+    <section id="viewer"></section>
   </main>
 
   <script>
@@ -492,471 +359,371 @@
       owner: 'osvaldosereia',
       repo: 'SUCEDOAN12',
       branch: 'main',
-      roots: ['/carrosseis', 'carrosseis'],
-      batchSize: 10,
-      jpegQuality: 0.78,
-      maxImageWidth: 1440
+
+      // Caminho correto informado: carrossel/
+      // Também mantive carrosseis/ como fallback, caso alguma pasta antiga esteja no plural.
+      rootPaths: ['carrossel', 'carrosseis'],
+
+      jpegQuality: 0.76,
+      maxImageWidth: 1280,
+      pauseBetweenDownloadsMs: 900
     };
 
     const state = {
-      candidates: [],
-      loaded: [],
-      nextIndex: 0,
-      loading: false,
-      slideIndex: new Map(),
-      cacheBust: Date.now(),
-      imagePathsByFolder: new Map()
+      tree: [],
+      records: [],
+      currentRecordIndex: 0,
+      currentPageIndex: 0,
+      loadedData: new Map(),
+      isDownloading: false
     };
 
-    const els = {
-      list: document.getElementById('list'),
-      statusBox: document.getElementById('statusBox'),
-      summaryBox: document.getElementById('summaryBox'),
-      loadMoreWrap: document.getElementById('loadMoreWrap'),
-      loadMoreBtn: document.getElementById('loadMoreBtn'),
-      refreshBtn: document.getElementById('refreshBtn')
-    };
+    const $status = document.getElementById('status');
+    const $viewer = document.getElementById('viewer');
+    const $repoPill = document.getElementById('repoPill');
 
-    document.addEventListener('DOMContentLoaded', init);
-    els.loadMoreBtn.addEventListener('click', () => loadNextBatch());
-    els.refreshBtn.addEventListener('click', () => init(true));
+    $repoPill.textContent = `${CONFIG.owner}/${CONFIG.repo}`;
 
-    async function init(forceRefresh = false) {
-      if (state.loading) return;
+    init();
 
-      state.cacheBust = Date.now();
-      state.candidates = [];
-      state.loaded = [];
-      state.nextIndex = 0;
-      state.slideIndex.clear();
-      state.imagePathsByFolder.clear();
-
-      els.list.innerHTML = renderSkeletons(3);
-      setNotice('Buscando a lista de carrosséis no GitHub...', '');
-      updateSummary('Carregando...', 0);
-      els.loadMoreWrap.hidden = true;
-
+    async function init() {
       try {
-        const candidates = await getCarouselCandidates();
-        state.candidates = candidates;
+        setStatus('Carregando lista de carrosséis no GitHub...');
 
-        if (!state.candidates.length) {
-          els.list.innerHTML = '';
-          updateSummary('Nenhum carrossel encontrado', 0);
-          setNotice('Não encontrei arquivos dados.json em /carrosseis/ nem em carrosseis/. Confira se cada pasta tem dados.json.', 'error');
+        const tree = await fetchGithubTree();
+        state.tree = Array.isArray(tree) ? tree : [];
+        state.records = findCarouselRecords(state.tree);
+
+        if (!state.records.length) {
+          renderEmpty();
           return;
         }
 
-        els.list.innerHTML = '';
-        updateSummary('Encontrados no GitHub', state.candidates.length);
-        setNotice(`Encontrei ${state.candidates.length} carrossel(is). Carregando de 10 em 10, começando pelos mais recentes.`, 'ok');
-        await loadNextBatch();
+        setStatus(`Encontrados ${state.records.length} carrosséis. Carregando o mais recente...`, 'ok');
+
+        state.currentRecordIndex = 0;
+        state.currentPageIndex = 0;
+        await loadAndRenderCurrent();
       } catch (error) {
-        els.list.innerHTML = '';
-        updateSummary('Erro ao carregar', 0);
-        setNotice(error.message || 'Não foi possível carregar os carrosséis.', 'error');
+        console.error(error);
+        setStatus(`Erro ao carregar: ${error.message}`, 'err');
+        renderEmpty(error.message);
       }
     }
 
-    async function getCarouselCandidates() {
-      try {
-        const fromTree = await getCandidatesFromGitTree();
-        if (fromTree.length) return fromTree;
-      } catch (error) {
-        console.warn('Falha na árvore do GitHub. Tentando contents API.', error);
+    async function fetchGithubTree() {
+      const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/git/trees/${encodeURIComponent(CONFIG.branch)}?recursive=1`;
+      const res = await fetch(url, { cache: 'no-store' });
+
+      if (!res.ok) {
+        throw new Error(`GitHub retornou ${res.status}. Confira repo, branch e se o repositório é público.`);
       }
 
-      return await getCandidatesFromContentsApi();
+      const data = await res.json();
+      return data.tree || [];
     }
 
-    async function getCandidatesFromGitTree() {
-      const treeUrl = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/git/trees/${encodeURIComponent(CONFIG.branch)}?recursive=1`;
-      const data = await fetchJson(treeUrl);
+    function findCarouselRecords(tree) {
+      const roots = CONFIG.rootPaths.map(cleanPath);
+      const records = [];
 
-      if (!Array.isArray(data.tree)) return [];
+      for (const item of tree) {
+        if (!item || item.type !== 'blob') continue;
+        const path = cleanPath(item.path || '');
+        const isDados = path.toLowerCase().endsWith('/dados.json');
+        if (!isDados) continue;
 
-      const dadosPaths = [];
-      const roots = Array.isArray(CONFIG.roots) ? CONFIG.roots : [CONFIG.root || 'carrosseis'];
+        const root = roots.find(rootPath => path === `${rootPath}/dados.json` || path.startsWith(`${rootPath}/`));
+        if (!root) continue;
 
-      for (const item of data.tree) {
-        if (!item || item.type !== 'blob' || !item.path) continue;
+        const parts = path.split('/');
+        const dadosIndex = parts.length - 1;
+        const folderParts = parts.slice(0, dadosIndex);
+        const id = folderParts[folderParts.length - 1] || '';
+        const folder = folderParts.join('/');
 
-        for (const rootPath of roots) {
-          const root = escapeRegExp(rootPath.replace(/^\/+|\/+$/g, ''));
-          const dadosRegex = new RegExp(`^${root}/([^/]+)/dados\\.json$`, 'i');
-          const imageRegex = new RegExp(`^${root}/([^/]+)/(.+\\.(?:jpg|jpeg|png|webp))$`, 'i');
+        if (!id || !folder) continue;
 
-          const dadosMatch = item.path.match(dadosRegex);
-          if (dadosMatch) {
-            const folderId = dadosMatch[1];
-            dadosPaths.push({
-              id: folderId,
-              root: rootPath,
-              folderKey: `${rootPath}/${folderId}`,
-              dadosPath: item.path,
-              dadosUrl: rawUrl(item.path),
-              source: 'tree'
-            });
-            break;
-          }
-
-          const imageMatch = item.path.match(imageRegex);
-          if (imageMatch) {
-            const folderId = imageMatch[1];
-            const folderKey = `${rootPath}/${folderId}`;
-            if (!state.imagePathsByFolder.has(folderKey)) state.imagePathsByFolder.set(folderKey, []);
-            state.imagePathsByFolder.get(folderKey).push(item.path);
-            break;
-          }
-        }
-      }
-
-      return uniqueBy(dadosPaths, 'dadosPath').sort(sortCandidateDesc);
-    }
-
-    async function getCandidatesFromContentsApi() {
-      const roots = Array.isArray(CONFIG.roots) ? CONFIG.roots : [CONFIG.root || 'carrosseis'];
-      const all = [];
-
-      for (const rootPath of roots) {
-        const safeRoot = rootPath.split('/').map(encodeURIComponent).join('/');
-        const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${safeRoot}?ref=${encodeURIComponent(CONFIG.branch)}`;
-
-        try {
-          const data = await fetchJson(url);
-          if (!Array.isArray(data)) continue;
-
-          all.push(...data
-            .filter(item => item && item.type === 'dir' && item.name)
-            .map(item => ({
-              id: item.name,
-              root: rootPath,
-              folderKey: `${rootPath}/${item.name}`,
-              dadosPath: `${rootPath}/${item.name}/dados.json`,
-              dadosUrl: rawUrl(`${rootPath}/${item.name}/dados.json`),
-              source: 'contents'
-            }))
-          );
-        } catch (error) {
-          console.warn(`Não consegui ler ${rootPath} pela contents API.`, error);
-        }
-      }
-
-      return uniqueBy(all, 'dadosPath').sort(sortCandidateDesc);
-    }
-
-    async function loadNextBatch() {
-      if (state.loading) return;
-      if (state.nextIndex >= state.candidates.length) return;
-
-      state.loading = true;
-      els.loadMoreBtn.disabled = true;
-      els.loadMoreBtn.textContent = 'Carregando...';
-
-      const start = state.nextIndex;
-      const end = Math.min(start + CONFIG.batchSize, state.candidates.length);
-      const batch = state.candidates.slice(start, end);
-      state.nextIndex = end;
-
-      if (!state.loaded.length) {
-        els.list.innerHTML = renderSkeletons(Math.min(3, batch.length));
-      }
-
-      setNotice(`Carregando carrosséis ${start + 1} a ${end} de ${state.candidates.length}...`, '');
-
-      const results = await poolMap(batch, 4, async (candidate) => {
-        try {
-          const dados = await fetchJson(addCache(candidate.dadosUrl));
-          return normalizeCarousel(dados, candidate);
-        } catch (error) {
-          console.warn('Erro ao carregar dados.json', candidate, error);
-          return null;
-        }
-      });
-
-      const valid = results.filter(Boolean);
-      state.loaded.push(...valid);
-      state.loaded = uniqueBy(state.loaded, 'id').sort(sortCarouselDesc);
-
-      renderCarousels();
-      updateSummary(`Mostrando ${state.loaded.length} de ${state.candidates.length}`, state.loaded.length);
-
-      if (state.nextIndex < state.candidates.length) {
-        els.loadMoreWrap.hidden = false;
-        els.loadMoreBtn.disabled = false;
-        els.loadMoreBtn.textContent = 'Carregar mais 10';
-        setNotice(`Carregados ${state.loaded.length}. Toque em “Carregar mais 10” para ver os próximos.`, 'ok');
-      } else {
-        els.loadMoreWrap.hidden = true;
-        setNotice(`Todos os ${state.loaded.length} carrosséis foram carregados.`, 'ok');
-      }
-
-      state.loading = false;
-    }
-
-    function normalizeCarousel(dados, candidate) {
-      const folderId = candidate.id;
-      const rootPath = candidate.root || (Array.isArray(CONFIG.roots) ? CONFIG.roots[0] : CONFIG.root || 'carrosseis');
-      const folderKey = candidate.folderKey || `${rootPath}/${folderId}`;
-      const id = cleanText(dados.id_carrossel) || folderId;
-      const title = cleanText(dados.titulo_carrossel) || cleanText(dados.tema) || `Carrossel ${id}`;
-      const legend = cleanText(dados.legenda_instagram);
-      const createdAt = cleanText(dados.criado_em) || inferDateFromId(id) || inferDateFromId(folderId) || '';
-      const total = Number.parseInt(dados.total_paginas, 10) || 0;
-
-      let images = [];
-
-      if (Array.isArray(dados.urls_imagens) && dados.urls_imagens.length) {
-        images = dados.urls_imagens
-          .map((item, index) => ({
-            numero: Number.parseInt(item.numero, 10) || index + 1,
-            url: cleanText(item.url)
-          }))
-          .filter(item => item.url)
-          .sort((a, b) => a.numero - b.numero);
-      }
-
-      if (!images.length) {
-        const imagePaths = state.imagePathsByFolder.get(folderKey) || state.imagePathsByFolder.get(folderId) || state.imagePathsByFolder.get(id) || [];
-        images = imagePaths
-          .map(path => ({
-            numero: extractPageNumber(path),
-            url: rawUrl(path)
-          }))
-          .filter(item => item.numero > 0 || item.url)
-          .sort((a, b) => {
-            if (a.numero !== b.numero) return a.numero - b.numero;
-            return a.url.localeCompare(b.url);
-          });
-      }
-
-      if (!images.length && total > 0) {
-        images = Array.from({ length: total }, (_, index) => {
-          const numero = index + 1;
-          return {
-            numero,
-            url: rawUrl(`${rootPath}/${folderId}/pagina-${numero}.jpg`)
-          };
+        records.push({
+          id,
+          root,
+          folder,
+          dadosPath: path,
+          sortTime: parseCarouselDate(id)
         });
       }
 
-      images = uniqueBy(images, 'url').map((item, index) => ({
-        numero: item.numero || index + 1,
-        url: item.url
-      }));
+      records.sort((a, b) => {
+        if (b.sortTime !== a.sortTime) return b.sortTime - a.sortTime;
+        return b.id.localeCompare(a.id);
+      });
 
-      return {
-        id,
-        folderId,
-        root: rootPath,
-        status: cleanText(dados.status),
-        tema: cleanText(dados.tema),
-        categoria: cleanText(dados.categoria),
-        intencao: cleanText(dados.intencao),
-        title,
-        legend,
-        createdAt,
-        total: total || images.length,
-        images,
-        raw: dados
-      };
+      return records;
     }
 
-    function renderCarousels() {
-      els.list.innerHTML = state.loaded.map(renderCard).join('');
-      bindCardEvents();
+    function parseCarouselDate(id) {
+      const match = String(id).match(/(\d{4})(\d{2})(\d{2})[-_ ]?(\d{2})?(\d{2})?(\d{2})?/);
+      if (!match) return 0;
+
+      const y = Number(match[1]);
+      const mo = Number(match[2]) - 1;
+      const d = Number(match[3]);
+      const h = Number(match[4] || 0);
+      const mi = Number(match[5] || 0);
+      const s = Number(match[6] || 0);
+
+      const time = Date.UTC(y, mo, d, h, mi, s);
+      return Number.isFinite(time) ? time : 0;
     }
 
-    function renderCard(carousel) {
-      const current = getSlideIndex(carousel.id);
-      const image = carousel.images[current];
-      const pageTotal = carousel.images.length;
-      const dateLabel = formatDate(carousel.createdAt) || carousel.id;
-      const legend = carousel.legend || 'Legenda não encontrada no dados.json.';
+    async function loadAndRenderCurrent() {
+      const record = state.records[state.currentRecordIndex];
+      if (!record) return;
 
-      return `
-        <article class="card" data-id="${escapeHtml(carousel.id)}">
-          <div class="card-head">
-            <div class="meta-row">
-              <span class="pill dark">${escapeHtml(dateLabel)}</span>
-              ${carousel.status ? `<span class="pill">${escapeHtml(carousel.status)}</span>` : ''}
-              ${carousel.categoria ? `<span class="pill">${escapeHtml(carousel.categoria)}</span>` : ''}
-              ${carousel.intencao ? `<span class="pill">${escapeHtml(carousel.intencao)}</span>` : ''}
-              <span class="pill">${pageTotal} página(s)</span>
-            </div>
-            <h2>${escapeHtml(carousel.title)}</h2>
-            ${carousel.tema && carousel.tema !== carousel.title ? `<p class="card-sub">${escapeHtml(carousel.tema)}</p>` : ''}
+      const data = await getCarouselData(record);
+      renderCarousel(record, data);
+    }
+
+    async function getCarouselData(record) {
+      if (state.loadedData.has(record.dadosPath)) {
+        return state.loadedData.get(record.dadosPath);
+      }
+
+      setStatus(`Carregando dados do carrossel ${record.id}...`, 'ok');
+
+      const url = rawUrl(record.dadosPath);
+      const res = await fetch(url, { cache: 'no-store' });
+
+      if (!res.ok) {
+        throw new Error(`Não consegui abrir ${record.dadosPath}. Status ${res.status}.`);
+      }
+
+      const json = await res.json();
+      const images = resolveImages(record, json);
+      const data = { ...json, images };
+
+      state.loadedData.set(record.dadosPath, data);
+      return data;
+    }
+
+    function resolveImages(record, json) {
+      const folderPrefix = `${cleanPath(record.folder)}/`;
+      const fromTree = state.tree
+        .filter(item => item && item.type === 'blob')
+        .map(item => cleanPath(item.path || ''))
+        .filter(path => path.startsWith(folderPrefix))
+        .filter(path => /\.(jpe?g|png|webp)$/i.test(path))
+        .filter(path => !/dados\.json$/i.test(path))
+        .map(path => ({
+          numero: imageNumber(path),
+          url: rawUrl(path),
+          path
+        }))
+        .sort((a, b) => a.numero - b.numero || a.path.localeCompare(b.path));
+
+      if (fromTree.length) return fromTree;
+
+      const fromJson = Array.isArray(json.urls_imagens) ? json.urls_imagens : [];
+      return fromJson
+        .map((item, index) => ({
+          numero: Number(item.numero || index + 1),
+          url: item.url,
+          path: item.url || ''
+        }))
+        .filter(item => item.url)
+        .sort((a, b) => a.numero - b.numero);
+    }
+
+    function imageNumber(path) {
+      const name = String(path).split('/').pop() || '';
+      const explicit = name.match(/(?:pagina|página|page|img|imagem)[-_ ]?(\d+)/i);
+      if (explicit) return Number(explicit[1]);
+
+      const any = name.match(/(\d+)/);
+      if (any) return Number(any[1]);
+
+      return 9999;
+    }
+
+    function renderCarousel(record, data) {
+      const images = data.images || [];
+      const total = images.length;
+      const page = images[state.currentPageIndex] || images[0];
+      const title = data.titulo_carrossel || data.tema || `Carrossel ${record.id}`;
+      const theme = data.tema || '';
+      const legenda = data.legenda_instagram || '';
+      const currentNumber = page ? page.numero : state.currentPageIndex + 1;
+      const hasPreviousCarousel = state.currentRecordIndex < state.records.length - 1;
+      const hasNewerCarousel = state.currentRecordIndex > 0;
+
+      setStatus(`Mostrando ${state.currentRecordIndex + 1} de ${state.records.length}: ${record.id}`, 'ok');
+
+      $viewer.innerHTML = `
+        <article class="card">
+          <div class="media" id="mediaBox">
+            ${page ? `<img id="slideImage" alt="Página ${escapeHtml(currentNumber)} do carrossel" src="${escapeAttr(page.url)}">` : `<div class="media-placeholder">Nenhuma imagem encontrada nessa pasta.</div>`}
+            <div class="counter">Página <span id="pageNow">${escapeHtml(state.currentPageIndex + 1)}</span> de ${escapeHtml(total || 0)}</div>
+            <div class="image-loader" id="imageLoader">Carregando...</div>
           </div>
 
-          <div class="slider">
-            <div class="slide-frame">
-              ${image ? `<img class="slide-img" src="${escapeAttr(image.url)}" alt="Página ${image.numero} do carrossel ${escapeAttr(carousel.title)}" loading="lazy" decoding="async" />` : `<div class="slide-empty">Nenhuma imagem encontrada para este carrossel.</div>`}
-              <button class="nav-btn prev" type="button" data-action="prev" ${pageTotal <= 1 ? 'disabled' : ''}>‹</button>
-              <button class="nav-btn next" type="button" data-action="next" ${pageTotal <= 1 ? 'disabled' : ''}>›</button>
-              <div class="page-badge">Página ${pageTotal ? current + 1 : 0} de ${pageTotal}</div>
-            </div>
-            ${renderDots(carousel, current)}
+          <div class="slide-nav">
+            <button class="btn-soft" id="prevPageBtn" ${state.currentPageIndex <= 0 ? 'disabled' : ''}>Página anterior</button>
+            <button class="btn-soft" id="nextPageBtn" ${state.currentPageIndex >= total - 1 ? 'disabled' : ''}>Próxima página</button>
           </div>
 
-          <div class="legend-box">
-            <div class="legend-title">
-              <strong>Legenda</strong>
-              <button class="copy-mini" type="button" data-action="copy">Copiar</button>
+          <div class="content">
+            <div class="meta">
+              <span class="tag">${escapeHtml(record.id)}</span>
+              <span class="tag">${escapeHtml(record.folder)}</span>
+              ${data.status ? `<span class="tag">${escapeHtml(data.status)}</span>` : ''}
+              ${data.categoria ? `<span class="tag">${escapeHtml(data.categoria)}</span>` : ''}
             </div>
-            <p class="legend-text">${escapeHtml(legend)}</p>
-          </div>
 
-          <div class="actions">
-            <button class="primary-btn" type="button" data-action="download">Baixar todas compactadas</button>
+            <h2 class="title">${escapeHtml(title)}</h2>
+            ${theme && theme !== title ? `<p class="theme">${escapeHtml(theme)}</p>` : ''}
+
+            <div class="legend-box">
+              <div class="legend-title">
+                <span>Legenda</span>
+                <span>${escapeHtml((legenda || '').length)} caracteres</span>
+              </div>
+              <div class="legend" id="legendText">${escapeHtml(legenda || 'Sem legenda no dados.json.')}</div>
+            </div>
+
+            <div class="actions">
+              <button class="btn-dark" id="copyLegendBtn">Copiar legenda</button>
+              <button class="btn-main" id="downloadBtn" ${!total ? 'disabled' : ''}>Baixar todas as páginas uma a uma</button>
+            </div>
+
+            <div class="download-progress" id="downloadProgress">
+              <div id="downloadText">Preparando...</div>
+              <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            </div>
+
+            <div class="carousel-nav">
+              <button class="btn-soft" id="newerCarouselBtn" ${!hasNewerCarousel ? 'disabled' : ''}>Carrossel mais recente</button>
+              <button class="btn-soft" id="olderCarouselBtn" ${!hasPreviousCarousel ? 'disabled' : ''}>Carrossel anterior</button>
+            </div>
+
+            <p class="small-note">Para economizar dados, o site carrega a lista do GitHub e mostra só o carrossel atual. O carrossel anterior só é buscado quando você toca no botão.</p>
           </div>
         </article>
       `;
+
+      bindCarouselEvents(record, data);
     }
 
-    function renderDots(carousel, current) {
-      if (!carousel.images.length) return '';
+    function bindCarouselEvents(record, data) {
+      const images = data.images || [];
+      const $img = document.getElementById('slideImage');
+      const $loader = document.getElementById('imageLoader');
+      const $prev = document.getElementById('prevPageBtn');
+      const $next = document.getElementById('nextPageBtn');
+      const $copy = document.getElementById('copyLegendBtn');
+      const $download = document.getElementById('downloadBtn');
+      const $older = document.getElementById('olderCarouselBtn');
+      const $newer = document.getElementById('newerCarouselBtn');
 
-      return `
-        <div class="thumbs" aria-label="Páginas do carrossel">
-          ${carousel.images.map((image, index) => `
-            <button class="dot ${index === current ? 'active' : ''}" type="button" data-action="goto" data-index="${index}" aria-label="Ver página ${image.numero}">${image.numero}</button>
-          `).join('')}
-        </div>
-      `;
-    }
-
-    function bindCardEvents() {
-      for (const card of document.querySelectorAll('.card')) {
-        card.addEventListener('click', async (event) => {
-          const button = event.target.closest('button[data-action]');
-          if (!button) return;
-
-          const id = card.dataset.id;
-          const carousel = state.loaded.find(item => item.id === id);
-          if (!carousel) return;
-
-          const action = button.dataset.action;
-
-          if (action === 'prev') {
-            moveSlide(carousel, -1);
-          }
-
-          if (action === 'next') {
-            moveSlide(carousel, 1);
-          }
-
-          if (action === 'goto') {
-            setSlide(carousel, Number.parseInt(button.dataset.index, 10) || 0);
-          }
-
-          if (action === 'copy') {
-            await copyLegend(carousel, button);
-          }
-
-          if (action === 'download') {
-            await downloadCarouselZip(carousel, button);
-          }
-        });
+      if ($img && $loader) {
+        $loader.classList.add('active');
+        $img.addEventListener('load', () => $loader.classList.remove('active'), { once: true });
+        $img.addEventListener('error', () => {
+          $loader.textContent = 'Erro na imagem';
+          $loader.classList.add('active');
+        }, { once: true });
       }
+
+      $prev?.addEventListener('click', () => {
+        if (state.currentPageIndex <= 0) return;
+        state.currentPageIndex -= 1;
+        renderCarousel(record, data);
+      });
+
+      $next?.addEventListener('click', () => {
+        if (state.currentPageIndex >= images.length - 1) return;
+        state.currentPageIndex += 1;
+        renderCarousel(record, data);
+      });
+
+      $copy?.addEventListener('click', async () => {
+        await copyText(data.legenda_instagram || '');
+        flashButton($copy, 'Legenda copiada');
+      });
+
+      $download?.addEventListener('click', async () => {
+        if (state.isDownloading) return;
+        await downloadAllImagesOneByOne(record, data);
+      });
+
+      $older?.addEventListener('click', async () => {
+        if (state.currentRecordIndex >= state.records.length - 1) return;
+        state.currentRecordIndex += 1;
+        state.currentPageIndex = 0;
+        $viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        await loadAndRenderCurrent();
+      });
+
+      $newer?.addEventListener('click', async () => {
+        if (state.currentRecordIndex <= 0) return;
+        state.currentRecordIndex -= 1;
+        state.currentPageIndex = 0;
+        $viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        await loadAndRenderCurrent();
+      });
     }
 
-    function moveSlide(carousel, direction) {
-      const total = carousel.images.length;
-      if (!total) return;
-      const current = getSlideIndex(carousel.id);
-      const next = (current + direction + total) % total;
-      setSlide(carousel, next);
-    }
+    async function downloadAllImagesOneByOne(record, data) {
+      const images = data.images || [];
+      const $progress = document.getElementById('downloadProgress');
+      const $text = document.getElementById('downloadText');
+      const $fill = document.getElementById('progressFill');
+      const $btn = document.getElementById('downloadBtn');
 
-    function setSlide(carousel, index) {
-      state.slideIndex.set(carousel.id, index);
-      renderCarousels();
-      const card = document.querySelector(`.card[data-id="${cssEscape(carousel.id)}"]`);
-      if (card) card.scrollIntoView({ block: 'nearest' });
-    }
+      if (!images.length) return;
 
-    function getSlideIndex(id) {
-      return state.slideIndex.get(id) || 0;
-    }
-
-    async function copyLegend(carousel, button) {
-      const text = carousel.legend || '';
-      if (!text) {
-        toast('Este carrossel não tem legenda.', 'error');
-        return;
-      }
+      state.isDownloading = true;
+      if ($btn) $btn.disabled = true;
+      if ($progress) $progress.classList.add('active');
 
       try {
-        await navigator.clipboard.writeText(text);
-        temporaryButtonText(button, 'Copiado!');
-        toast('Legenda copiada.', 'ok');
-      } catch (error) {
-        fallbackCopy(text);
-        temporaryButtonText(button, 'Copiado!');
-        toast('Legenda copiada.', 'ok');
-      }
-    }
+        for (let i = 0; i < images.length; i++) {
+          const img = images[i];
+          const pageNumber = img.numero || i + 1;
+          const percent = Math.round((i / images.length) * 100);
 
-    async function downloadCarouselZip(carousel, button) {
-      if (!window.JSZip) {
-        toast('Não foi possível carregar o compactador ZIP. Verifique a internet e atualize a página.', 'error');
-        return;
-      }
+          if ($text) $text.textContent = `Baixando página ${i + 1} de ${images.length}...`;
+          if ($fill) $fill.style.width = `${percent}%`;
 
-      if (!carousel.images.length) {
-        toast('Este carrossel não tem imagens para baixar.', 'error');
-        return;
-      }
+          const blob = await fetchAndCompressImage(img.url);
+          const filename = `${safeName(record.id)}-pagina-${String(pageNumber).padStart(2, '0')}.jpg`;
+          triggerDownload(blob, filename);
 
-      const originalText = button.textContent;
-      button.disabled = true;
-
-      try {
-        const zip = new JSZip();
-        const folder = zip.folder(safeFileName(carousel.id));
-
-        folder.file('legenda.txt', carousel.legend || '');
-        folder.file('dados.json', JSON.stringify(carousel.raw, null, 2));
-
-        for (let i = 0; i < carousel.images.length; i++) {
-          const image = carousel.images[i];
-          button.textContent = `Compactando ${i + 1}/${carousel.images.length}...`;
-          const jpgBlob = await convertImageToJpeg(image.url, CONFIG.maxImageWidth, CONFIG.jpegQuality);
-          const pageName = `pagina-${String(image.numero || i + 1).padStart(2, '0')}.jpg`;
-          folder.file(pageName, jpgBlob);
+          await sleep(CONFIG.pauseBetweenDownloadsMs);
         }
 
-        button.textContent = 'Gerando ZIP...';
-        const zipBlob = await zip.generateAsync({
-          type: 'blob',
-          compression: 'DEFLATE',
-          compressionOptions: { level: 7 }
-        });
-
-        downloadBlob(zipBlob, `${safeFileName(carousel.id)}-${safeFileName(carousel.title)}.zip`);
-        button.textContent = 'Baixado!';
-        toast('ZIP gerado com as imagens compactadas.', 'ok');
+        if ($text) $text.textContent = `Download concluído: ${images.length} imagens.`;
+        if ($fill) $fill.style.width = '100%';
       } catch (error) {
         console.error(error);
-        toast('Erro ao compactar. Confira se as imagens do GitHub estão públicas e tente novamente.', 'error');
-        button.textContent = 'Erro ao baixar';
+        if ($text) $text.textContent = `Erro no download: ${error.message}`;
       } finally {
-        setTimeout(() => {
-          button.disabled = false;
-          button.textContent = originalText;
-        }, 1400);
+        state.isDownloading = false;
+        if ($btn) $btn.disabled = false;
       }
     }
 
-    async function convertImageToJpeg(url, maxWidth, quality) {
-      const response = await fetch(addCache(url), { mode: 'cors', cache: 'no-store' });
-      if (!response.ok) throw new Error(`Erro ao baixar imagem: ${response.status}`);
-      const sourceBlob = await response.blob();
-      const image = await blobToImage(sourceBlob);
+    async function fetchAndCompressImage(url) {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Imagem retornou ${res.status}`);
 
-      const scale = Math.min(1, maxWidth / image.naturalWidth);
-      const width = Math.max(1, Math.round(image.naturalWidth * scale));
-      const height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const inputBlob = await res.blob();
+      const bitmap = await blobToImage(inputBlob);
+
+      const originalWidth = bitmap.naturalWidth || bitmap.width;
+      const originalHeight = bitmap.naturalHeight || bitmap.height;
+      const scale = Math.min(1, CONFIG.maxImageWidth / originalWidth);
+      const width = Math.max(1, Math.round(originalWidth * scale));
+      const height = Math.max(1, Math.round(originalHeight * scale));
 
       const canvas = document.createElement('canvas');
       canvas.width = width;
@@ -965,198 +732,106 @@
       const ctx = canvas.getContext('2d', { alpha: false });
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);
-      ctx.drawImage(image, 0, 0, width, height);
+      ctx.drawImage(bitmap, 0, 0, width, height);
 
-      URL.revokeObjectURL(image.src);
+      URL.revokeObjectURL(bitmap.src);
 
       return await new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => {
+        canvas.toBlob(blob => {
           if (blob) resolve(blob);
-          else reject(new Error('Canvas não conseguiu gerar JPG.'));
-        }, 'image/jpeg', quality);
+          else reject(new Error('Não foi possível compactar a imagem.'));
+        }, 'image/jpeg', CONFIG.jpegQuality);
       });
     }
 
     function blobToImage(blob) {
       return new Promise((resolve, reject) => {
-        const url = URL.createObjectURL(blob);
-        const image = new Image();
-        image.onload = () => resolve(image);
-        image.onerror = () => {
-          URL.revokeObjectURL(url);
-          reject(new Error('Não foi possível ler a imagem.'));
-        };
-        image.src = url;
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Não foi possível ler a imagem.'));
+        img.src = URL.createObjectURL(blob);
       });
     }
 
-    async function fetchJson(url) {
-      const response = await fetch(url, {
-        headers: { Accept: 'application/vnd.github+json, application/json, text/plain' },
-        cache: 'no-store'
-      });
-
-      if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error('O GitHub bloqueou temporariamente por limite de acessos. Aguarde alguns minutos ou use um token no futuro.');
-        }
-        if (response.status === 404) {
-          throw new Error('Caminho não encontrado no GitHub. Confira owner, repositório, branch e pasta carrosseis.');
-        }
-        throw new Error(`Erro ao consultar GitHub: ${response.status}`);
-      }
-
-      const text = await response.text();
-      try {
-        return JSON.parse(text);
-      } catch (error) {
-        throw new Error('O arquivo retornado não é um JSON válido.');
-      }
+    function triggerDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
     }
 
-    async function poolMap(items, limit, mapper) {
-      const results = new Array(items.length);
-      let index = 0;
-
-      async function worker() {
-        while (index < items.length) {
-          const current = index++;
-          results[current] = await mapper(items[current], current);
-        }
-      }
-
-      await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
-      return results;
-    }
-
-    function updateSummary(text, count) {
-      els.summaryBox.innerHTML = `<span>${escapeHtml(text)}</span><strong>${escapeHtml(String(count))}</strong>`;
-    }
-
-    function setNotice(message, type) {
-      if (!message) {
-        els.statusBox.innerHTML = '';
+    async function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
         return;
       }
 
-      els.statusBox.innerHTML = `<div class="notice ${type || ''}">${escapeHtml(message)}</div>`;
-    }
-
-    function toast(message, type = '') {
-      setNotice(message, type);
-      clearTimeout(toast.timer);
-      toast.timer = setTimeout(() => {
-        if (state.loaded.length) setNotice(`Mostrando ${state.loaded.length} de ${state.candidates.length}.`, 'ok');
-      }, 2200);
-    }
-
-    function temporaryButtonText(button, text) {
-      const original = button.textContent;
-      button.textContent = text;
-      setTimeout(() => button.textContent = original, 1200);
-    }
-
-    function fallbackCopy(text) {
       const textarea = document.createElement('textarea');
       textarea.value = text;
       textarea.style.position = 'fixed';
       textarea.style.left = '-9999px';
+      textarea.style.top = '0';
       document.body.appendChild(textarea);
+      textarea.focus();
       textarea.select();
       document.execCommand('copy');
       textarea.remove();
     }
 
-    function downloadBlob(blob, filename) {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    function flashButton(button, text) {
+      const original = button.textContent;
+      button.textContent = text;
+      button.disabled = true;
+      setTimeout(() => {
+        button.textContent = original;
+        button.disabled = false;
+      }, 1200);
     }
 
     function rawUrl(path) {
-      const safePath = path.split('/').map(encodeURIComponent).join('/');
-      return `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${encodeURIComponent(CONFIG.branch)}/${safePath}`;
+      const encodedPath = cleanPath(path).split('/').map(encodeURIComponent).join('/');
+      return `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${encodeURIComponent(CONFIG.branch)}/${encodedPath}`;
     }
 
-    function addCache(url) {
-      if (!url) return url;
-      const sep = url.includes('?') ? '&' : '?';
-      return `${url}${sep}v=${state.cacheBust}`;
+    function cleanPath(path) {
+      return String(path || '').replace(/^\/+|\/+$/g, '').replace(/\/+/g, '/');
     }
 
-    function sortCandidateDesc(a, b) {
-      const ad = inferDateFromId(a.id) || '';
-      const bd = inferDateFromId(b.id) || '';
-      if (ad && bd && ad !== bd) return bd.localeCompare(ad);
-      return String(b.id).localeCompare(String(a.id));
-    }
-
-    function sortCarouselDesc(a, b) {
-      const ad = a.createdAt || inferDateFromId(a.id) || '';
-      const bd = b.createdAt || inferDateFromId(b.id) || '';
-      if (ad && bd && ad !== bd) return bd.localeCompare(ad);
-      return String(b.id).localeCompare(String(a.id));
-    }
-
-    function inferDateFromId(id) {
-      const match = String(id || '').match(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})/);
-      if (!match) return '';
-      const [, y, m, d, h, min, s] = match;
-      return `${y}-${m}-${d}T${h}:${min}:${s}`;
-    }
-
-    function formatDate(value) {
-      if (!value) return '';
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return value;
-      return new Intl.DateTimeFormat('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(date);
-    }
-
-    function extractPageNumber(path) {
-      const file = String(path || '').split('/').pop() || '';
-      const pageMatch = file.match(/pagina[-_ ]?(\d+)/i);
-      if (pageMatch) return Number.parseInt(pageMatch[1], 10) || 0;
-      const anyNumber = file.match(/(\d+)/);
-      return anyNumber ? Number.parseInt(anyNumber[1], 10) || 0 : 1;
-    }
-
-    function cleanText(value) {
-      return String(value ?? '').trim();
-    }
-
-    function safeFileName(value) {
+    function safeName(value) {
       return String(value || 'carrossel')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-zA-Z0-9-_]+/g, '-')
+        .replace(/[^a-z0-9-_]+/gi, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '')
-        .slice(0, 90) || 'carrossel';
+        .toLowerCase();
     }
 
-    function uniqueBy(items, key) {
-      const seen = new Set();
-      return items.filter(item => {
-        const value = item[key];
-        if (seen.has(value)) return false;
-        seen.add(value);
-        return true;
-      });
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    function escapeRegExp(value) {
-      return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    function setStatus(message, type) {
+      $status.className = `status${type ? ` ${type}` : ''}`;
+      $status.innerHTML = escapeHtml(message);
+    }
+
+    function renderEmpty(extra) {
+      const paths = CONFIG.rootPaths.map(path => `<code>${escapeHtml(path)}/20260604-103104/dados.json</code>`).join('<br>');
+      $viewer.innerHTML = `
+        <div class="empty">
+          <strong>Nenhum carrossel encontrado.</strong><br><br>
+          O site está procurando arquivos <code>dados.json</code> nestes caminhos:<br><br>
+          ${paths}<br><br>
+          Confira se o branch é <code>${escapeHtml(CONFIG.branch)}</code>, se o repositório é público e se o arquivo se chama exatamente <code>dados.json</code>.
+          ${extra ? `<br><br>Detalhe: ${escapeHtml(extra)}` : ''}
+        </div>
+      `;
     }
 
     function escapeHtml(value) {
@@ -1169,23 +844,7 @@
     }
 
     function escapeAttr(value) {
-      return escapeHtml(value);
-    }
-
-    function cssEscape(value) {
-      if (window.CSS && CSS.escape) return CSS.escape(value);
-      return String(value).replace(/"/g, '\\"');
-    }
-
-    function renderSkeletons(count) {
-      return Array.from({ length: count }, () => `
-        <div class="skeleton-card">
-          <div class="skeleton" style="height:26px;width:56%"></div>
-          <div class="skeleton" style="height:30px;width:88%"></div>
-          <div class="skeleton" style="height:330px;width:100%;border-radius:22px"></div>
-          <div class="skeleton" style="height:78px;width:100%"></div>
-        </div>
-      `).join('');
+      return escapeHtml(value).replace(/`/g, '&#096;');
     }
   </script>
 </body>
