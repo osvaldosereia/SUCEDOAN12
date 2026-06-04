@@ -1,0 +1,1169 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111111" />
+  <title>Leitor de Carrosséis Dona Antônia</title>
+
+  <!-- ZIP para baixar todas as páginas compactadas em um arquivo único -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f3ed;
+      --card: #fffaf3;
+      --text: #1d1a16;
+      --muted: #73695e;
+      --line: rgba(29, 26, 22, .10);
+      --brand: #111111;
+      --accent: #efe2cf;
+      --good: #17633a;
+      --danger: #a63526;
+      --radius: 24px;
+      --shadow: 0 18px 50px rgba(0,0,0,.08);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #fffaf2 0, var(--bg) 42%, #f3ecdf 100%);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+    .app {
+      width: min(100%, 560px);
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding: 18px 14px 110px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 10px 0 12px;
+      backdrop-filter: blur(18px);
+      background: linear-gradient(to bottom, rgba(247,243,237,.96), rgba(247,243,237,.78));
+    }
+
+    .brandline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .brandline h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: -.04em;
+      line-height: 1.05;
+    }
+
+    .brandline small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: -.01em;
+    }
+
+    .pill-count {
+      min-width: 54px;
+      text-align: center;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 13px;
+    }
+
+    .searchbox {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px;
+      background: rgba(255,255,255,.64);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+    }
+
+    .searchbox input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      padding: 11px 8px 11px 12px;
+      color: var(--text);
+    }
+
+    .icon-btn, .primary-btn, .ghost-btn, .tiny-btn, .danger-btn {
+      border: 0;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 16px;
+      white-space: nowrap;
+    }
+
+    .icon-btn {
+      width: 44px;
+      padding: 0;
+      background: var(--brand);
+      color: #fff;
+      font-size: 18px;
+    }
+
+    .primary-btn {
+      width: 100%;
+      background: var(--brand);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .ghost-btn {
+      width: 100%;
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .danger-btn {
+      width: 100%;
+      background: #fff0eb;
+      color: var(--danger);
+      border: 1px solid rgba(166,53,38,.18);
+    }
+
+    .tiny-btn {
+      min-height: 36px;
+      padding: 0 12px;
+      font-size: 13px;
+      background: rgba(255,255,255,.78);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px 2px 2px;
+      scrollbar-width: none;
+    }
+
+    .filters::-webkit-scrollbar { display: none; }
+
+    .chip {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.68);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 9px 13px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .chip.active {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+
+    .status-line {
+      margin: 16px 4px 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,250,243,.82);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-cover {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      background: #eadfce;
+      overflow: hidden;
+    }
+
+    .card-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .badge-row {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .badge {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(17,17,17,.82);
+      color: #fff;
+      font-size: 12px;
+      backdrop-filter: blur(10px);
+    }
+
+    .badge.light {
+      background: rgba(255,255,255,.86);
+      color: var(--text);
+    }
+
+    .card-body {
+      padding: 16px;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      letter-spacing: -.035em;
+      line-height: 1.12;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+
+    .actions-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .drawer {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .drawer.open { display: block; }
+
+    .drawer-inner {
+      width: min(100%, 560px);
+      height: 100dvh;
+      margin: 0 auto;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      background: var(--bg);
+    }
+
+    .drawer-head {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 14px 14px 10px;
+      background: rgba(247,243,237,.92);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .drawer-title {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .back-btn {
+      width: 42px;
+      height: 42px;
+      border: 0;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--line);
+      font-size: 20px;
+    }
+
+    .drawer-title h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -.035em;
+      line-height: 1.1;
+    }
+
+    .drawer-title small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .drawer-content {
+      overflow: auto;
+      padding: 14px;
+    }
+
+    .viewer {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding: 2px 2px 14px;
+      scrollbar-width: none;
+    }
+
+    .viewer::-webkit-scrollbar { display: none; }
+
+    .page-shot {
+      flex: 0 0 86%;
+      scroll-snap-align: center;
+      border-radius: 22px;
+      overflow: hidden;
+      background: #eadfce;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .page-shot img {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #eadfce;
+    }
+
+    .page-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 10px;
+      background: rgba(255,255,255,.76);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .caption-box {
+      margin-top: 12px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: rgba(255,255,255,.7);
+    }
+
+    .caption-box h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      letter-spacing: -.02em;
+    }
+
+    .caption-text {
+      max-height: 190px;
+      overflow: auto;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+
+    .drawer-actions {
+      padding: 10px 14px calc(14px + env(safe-area-inset-bottom));
+      display: grid;
+      gap: 8px;
+      background: rgba(247,243,237,.94);
+      backdrop-filter: blur(18px);
+      border-top: 1px solid var(--line);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .progress-wrap {
+      display: none;
+      padding: 10px 4px 0;
+    }
+
+    .progress-wrap.show { display: block; }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba(0,0,0,.09);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: var(--brand);
+      border-radius: 999px;
+      transition: width .25s ease;
+    }
+
+    .progress-label {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .empty, .error {
+      padding: 30px 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.66);
+      color: var(--muted);
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .error strong { color: var(--danger); }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(20px + env(safe-area-inset-bottom));
+      transform: translateX(-50%) translateY(120px);
+      z-index: 80;
+      max-width: min(92vw, 520px);
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 13px;
+      box-shadow: 0 16px 38px rgba(0,0,0,.22);
+      opacity: 0;
+      transition: .22s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (min-width: 680px) {
+      .app { padding-top: 22px; }
+      .list { grid-template-columns: 1fr 1fr; }
+      .card-cover { aspect-ratio: 4 / 5; }
+      .page-shot { flex-basis: 72%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brandline">
+        <div>
+          <h1>Carrosséis</h1>
+          <small>Dona Antônia · GitHub</small>
+        </div>
+        <div class="pill-count" id="totalCount">0</div>
+      </div>
+
+      <div class="searchbox">
+        <input id="searchInput" type="search" placeholder="Buscar por tema, categoria ou id" autocomplete="off" />
+        <button class="icon-btn" id="refreshBtn" type="button" title="Atualizar">↻</button>
+      </div>
+
+      <nav class="filters" id="filters"></nav>
+    </header>
+
+    <p class="status-line" id="statusLine">Carregando carrosséis...</p>
+    <section class="list" id="carouselList"></section>
+  </main>
+
+  <section class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-inner">
+      <header class="drawer-head">
+        <div class="drawer-title">
+          <button class="back-btn" id="closeDrawer" type="button">←</button>
+          <div>
+            <h2 id="drawerTitle">Carrossel</h2>
+            <small id="drawerMeta">0 páginas</small>
+          </div>
+        </div>
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-bar"><span id="progressBar"></span></div>
+          <div class="progress-label" id="progressLabel">Preparando...</div>
+        </div>
+      </header>
+
+      <div class="drawer-content">
+        <div class="viewer" id="pageViewer"></div>
+
+        <div class="caption-box">
+          <h3>Legenda do Instagram</h3>
+          <div class="caption-text" id="captionText"></div>
+        </div>
+      </div>
+
+      <footer class="drawer-actions">
+        <div class="grid-2">
+          <button class="ghost-btn" id="copyCaptionBtn" type="button">Copiar legenda</button>
+          <button class="ghost-btn" id="shareNativeBtn" type="button">Compartilhar</button>
+        </div>
+        <button class="primary-btn" id="zipBtn" type="button">Baixar JPG compactado em ZIP</button>
+        <button class="ghost-btn" id="makeBtn" type="button">Enviar para automação Make</button>
+      </footer>
+    </div>
+  </section>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    /**************************************************************
+     * CONFIGURAÇÃO PRINCIPAL
+     **************************************************************/
+    const CONFIG = {
+      owner: 'osvaldosereia',
+      repo: 'SUCEDOAN12',
+      branch: 'main',
+      carrosseisDir: 'carrosseis',
+
+      // Para publicar em Instagram/Facebook/Pinterest/Google/TikTok com segurança,
+      // coloque aqui o webhook do Make. Deixe vazio se não for usar agora.
+      // Exemplo: 'https://hook.us1.make.com/xxxxxxxxxxxxxxxx'
+      makeWebhookUrl: '',
+
+      // Compactação dos JPGs baixados/compartilhados.
+      jpgQuality: 0.82,
+      maxWidth: 1080,
+      maxHeight: 1350,
+
+      // GitHub API sem token tem limite baixo. Para repo público funciona.
+      githubToken: ''
+    };
+
+    const RAW_BASE = `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${CONFIG.branch}`;
+    const API_BASE = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}`;
+
+    const els = {
+      totalCount: document.getElementById('totalCount'),
+      refreshBtn: document.getElementById('refreshBtn'),
+      searchInput: document.getElementById('searchInput'),
+      filters: document.getElementById('filters'),
+      statusLine: document.getElementById('statusLine'),
+      list: document.getElementById('carouselList'),
+      drawer: document.getElementById('drawer'),
+      closeDrawer: document.getElementById('closeDrawer'),
+      drawerTitle: document.getElementById('drawerTitle'),
+      drawerMeta: document.getElementById('drawerMeta'),
+      pageViewer: document.getElementById('pageViewer'),
+      captionText: document.getElementById('captionText'),
+      copyCaptionBtn: document.getElementById('copyCaptionBtn'),
+      shareNativeBtn: document.getElementById('shareNativeBtn'),
+      zipBtn: document.getElementById('zipBtn'),
+      makeBtn: document.getElementById('makeBtn'),
+      toast: document.getElementById('toast'),
+      progressWrap: document.getElementById('progressWrap'),
+      progressBar: document.getElementById('progressBar'),
+      progressLabel: document.getElementById('progressLabel')
+    };
+
+    let state = {
+      all: [],
+      visible: [],
+      activeCategory: 'todos',
+      current: null,
+      treeFiles: []
+    };
+
+    init();
+
+    function init() {
+      els.refreshBtn.addEventListener('click', () => loadCarousels(true));
+      els.searchInput.addEventListener('input', applyFilters);
+      els.closeDrawer.addEventListener('click', closeDrawer);
+      els.copyCaptionBtn.addEventListener('click', copyCurrentCaption);
+      els.zipBtn.addEventListener('click', downloadZipCurrent);
+      els.shareNativeBtn.addEventListener('click', shareCurrentNative);
+      els.makeBtn.addEventListener('click', sendCurrentToMake);
+      document.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape') closeDrawer();
+      });
+      loadCarousels();
+    }
+
+    async function loadCarousels(force = false) {
+      try {
+        setStatus(force ? 'Atualizando carrosséis...' : 'Carregando carrosséis...');
+        els.list.innerHTML = skeletonCards(4);
+
+        const tree = await fetchGithubTree();
+        state.treeFiles = tree.filter(item => item.type === 'blob').map(item => item.path);
+
+        const dadosPaths = state.treeFiles
+          .filter(path => path.startsWith(`${CONFIG.carrosseisDir}/`) && path.endsWith('/dados.json'))
+          .sort((a, b) => b.localeCompare(a));
+
+        if (!dadosPaths.length) {
+          throw new Error(`Nenhum dados.json encontrado em ${CONFIG.carrosseisDir}/`);
+        }
+
+        const dadosList = await mapWithConcurrency(dadosPaths, 6, async (path) => {
+          try {
+            const json = await fetchJson(`${RAW_BASE}/${path}?v=${Date.now()}`);
+            const folderId = path.split('/')[1];
+            return normalizeCarousel(json, folderId);
+          } catch (err) {
+            console.warn('Falha ao ler', path, err);
+            return null;
+          }
+        });
+
+        state.all = dadosList
+          .filter(Boolean)
+          .sort((a, b) => String(b.id_carrossel).localeCompare(String(a.id_carrossel)));
+
+        renderFilters();
+        applyFilters();
+      } catch (err) {
+        console.error(err);
+        els.totalCount.textContent = '0';
+        els.statusLine.innerHTML = `<strong>Erro:</strong> ${escapeHtml(err.message || 'não foi possível carregar os carrosséis.')}`;
+        els.list.innerHTML = `<div class="error"><strong>Não carregou.</strong><br>Confira se o repositório é público, se a pasta <b>${CONFIG.carrosseisDir}</b> existe e se cada carrossel tem um <b>dados.json</b>.</div>`;
+      }
+    }
+
+    async function fetchGithubTree() {
+      const url = `${API_BASE}/git/trees/${CONFIG.branch}?recursive=1`;
+      const data = await fetchJson(url, githubHeaders());
+      if (!data.tree || !Array.isArray(data.tree)) {
+        throw new Error('Resposta inválida da API do GitHub.');
+      }
+      return data.tree;
+    }
+
+    function githubHeaders() {
+      const headers = { 'Accept': 'application/vnd.github+json' };
+      if (CONFIG.githubToken) headers.Authorization = `Bearer ${CONFIG.githubToken}`;
+      return headers;
+    }
+
+    async function fetchJson(url, headers = {}) {
+      const res = await fetch(url, { headers, cache: 'no-store' });
+      if (!res.ok) throw new Error(`${res.status} ao acessar ${url}`);
+      return res.json();
+    }
+
+    function normalizeCarousel(data, folderId) {
+      const id = data.id_carrossel || folderId;
+      let urls = Array.isArray(data.urls_imagens) ? data.urls_imagens : [];
+
+      urls = urls.map((item, index) => ({
+        numero: toNumber(item.numero, index + 1),
+        url: item.url,
+        nome: item.nome || `pagina-${toNumber(item.numero, index + 1)}.jpg`
+      })).filter(item => item.url);
+
+      if (!urls.length) urls = fallbackImagesFromTree(id);
+
+      urls.sort((a, b) => a.numero - b.numero);
+
+      return {
+        id_carrossel: id,
+        status: data.status || 'sem_status',
+        tema: data.tema || data.titulo_carrossel || id,
+        categoria: data.categoria || 'sem_categoria',
+        intencao: data.intencao || '',
+        titulo_carrossel: data.titulo_carrossel || data.tema || id,
+        legenda_instagram: data.legenda_instagram || '',
+        hashtags_texto: data.hashtags_texto || '',
+        total_paginas: toNumber(data.total_paginas, urls.length),
+        urls_imagens: urls,
+        criado_em: data.criado_em || inferDateFromId(id),
+        folder_url: `${RAW_BASE}/${CONFIG.carrosseisDir}/${id}`
+      };
+    }
+
+    function fallbackImagesFromTree(id) {
+      const prefix = `${CONFIG.carrosseisDir}/${id}/`;
+      return state.treeFiles
+        .filter(path => path.startsWith(prefix))
+        .filter(path => /\.(jpe?g|png|webp)$/i.test(path))
+        .map((path, index) => {
+          const filename = path.split('/').pop();
+          const matched = filename.match(/(?:pagina|page)[-_ ]?(\d+)/i) || filename.match(/(\d+)/);
+          return {
+            numero: matched ? Number(matched[1]) : index + 1,
+            url: `${RAW_BASE}/${path}`,
+            nome: filename
+          };
+        })
+        .sort((a, b) => a.numero - b.numero);
+    }
+
+    function inferDateFromId(id) {
+      const m = String(id).match(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})/);
+      if (!m) return '';
+      return `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`;
+    }
+
+    function renderFilters() {
+      const categories = [...new Set(state.all.map(c => c.categoria || 'sem_categoria'))].sort();
+      const chips = ['todos', ...categories];
+      els.filters.innerHTML = chips.map(cat => `
+        <button class="chip ${cat === state.activeCategory ? 'active' : ''}" type="button" data-cat="${escapeHtml(cat)}">
+          ${cat === 'todos' ? 'Todos' : formatLabel(cat)}
+        </button>
+      `).join('');
+
+      els.filters.querySelectorAll('.chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.activeCategory = btn.dataset.cat;
+          renderFilters();
+          applyFilters();
+        });
+      });
+    }
+
+    function applyFilters() {
+      const q = normalizeText(els.searchInput.value);
+      state.visible = state.all.filter(item => {
+        const inCategory = state.activeCategory === 'todos' || item.categoria === state.activeCategory;
+        const haystack = normalizeText([
+          item.id_carrossel,
+          item.tema,
+          item.categoria,
+          item.intencao,
+          item.titulo_carrossel,
+          item.status
+        ].join(' '));
+        return inCategory && (!q || haystack.includes(q));
+      });
+      renderList();
+    }
+
+    function renderList() {
+      els.totalCount.textContent = state.visible.length;
+      setStatus(`${state.visible.length} carrossel${state.visible.length === 1 ? '' : 's'} encontrado${state.visible.length === 1 ? '' : 's'}.`);
+
+      if (!state.visible.length) {
+        els.list.innerHTML = `<div class="empty">Nenhum carrossel encontrado com esse filtro.</div>`;
+        return;
+      }
+
+      els.list.innerHTML = state.visible.map((item, index) => {
+        const cover = item.urls_imagens[0]?.url || '';
+        return `
+          <article class="card">
+            <div class="card-cover">
+              ${cover ? `<img loading="lazy" src="${escapeAttr(cover)}" alt="${escapeAttr(item.titulo_carrossel)}">` : ''}
+              <div class="badge-row">
+                <span class="badge">${item.total_paginas || item.urls_imagens.length} páginas</span>
+                <span class="badge light">${escapeHtml(item.status)}</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <h2>${escapeHtml(item.titulo_carrossel)}</h2>
+              <div class="meta">
+                ${escapeHtml(formatLabel(item.categoria))} · ${escapeHtml(item.id_carrossel)}<br>
+                ${escapeHtml(formatDate(item.criado_em))}
+              </div>
+              <div class="actions-row">
+                <button class="ghost-btn" type="button" data-copy="${index}">Legenda</button>
+                <button class="primary-btn" type="button" data-open="${index}">Abrir</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      els.list.querySelectorAll('[data-open]').forEach(btn => {
+        btn.addEventListener('click', () => openDrawer(state.visible[Number(btn.dataset.open)]));
+      });
+
+      els.list.querySelectorAll('[data-copy]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const item = state.visible[Number(btn.dataset.copy)];
+          await copyText(buildCaption(item));
+        });
+      });
+    }
+
+    function openDrawer(item) {
+      state.current = item;
+      els.drawer.classList.add('open');
+      els.drawer.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+
+      els.drawerTitle.textContent = item.titulo_carrossel;
+      els.drawerMeta.textContent = `${item.id_carrossel} · ${item.urls_imagens.length} página${item.urls_imagens.length === 1 ? '' : 's'}`;
+      els.captionText.textContent = buildCaption(item) || 'Sem legenda cadastrada.';
+
+      els.pageViewer.innerHTML = item.urls_imagens.map(page => `
+        <figure class="page-shot">
+          <img src="${escapeAttr(page.url)}" alt="Página ${page.numero}" loading="lazy">
+          <figcaption class="page-footer">
+            <span>Página ${page.numero}</span>
+            <button class="tiny-btn" type="button" data-download-one="${page.numero}">Baixar JPG</button>
+          </figcaption>
+        </figure>
+      `).join('');
+
+      els.pageViewer.querySelectorAll('[data-download-one]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const numero = Number(btn.dataset.downloadOne);
+          const page = state.current.urls_imagens.find(p => p.numero === numero);
+          if (page) await downloadOnePage(state.current, page);
+        });
+      });
+    }
+
+    function closeDrawer() {
+      els.drawer.classList.remove('open');
+      els.drawer.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      state.current = null;
+      hideProgress();
+    }
+
+    function buildCaption(item) {
+      const legenda = (item.legenda_instagram || '').trim();
+      const hashtags = (item.hashtags_texto || '').trim();
+      return [legenda, hashtags].filter(Boolean).join('\n\n');
+    }
+
+    async function copyCurrentCaption() {
+      if (!state.current) return;
+      await copyText(buildCaption(state.current));
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text || '');
+        toast('Legenda copiada.');
+      } catch (err) {
+        const area = document.createElement('textarea');
+        area.value = text || '';
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        area.remove();
+        toast('Legenda copiada.');
+      }
+    }
+
+    async function downloadOnePage(item, page) {
+      try {
+        showProgress(0, 'Compactando imagem...');
+        const file = await compressPageToFile(page, item.id_carrossel);
+        downloadBlob(file, file.name);
+        showProgress(100, 'Download iniciado.');
+        setTimeout(hideProgress, 700);
+      } catch (err) {
+        console.error(err);
+        hideProgress();
+        toast('Não consegui compactar esta imagem.');
+      }
+    }
+
+    async function downloadZipCurrent() {
+      const item = state.current;
+      if (!item) return;
+
+      try {
+        if (!window.JSZip) {
+          toast('JSZip não carregou. Baixando imagens separadas.');
+          await downloadAllSeparately(item);
+          return;
+        }
+
+        const zip = new JSZip();
+        const files = await buildCompressedFiles(item, 'Compactando para ZIP');
+
+        files.forEach(file => zip.file(file.name, file));
+        zip.file('legenda.txt', buildCaption(item));
+        zip.file('dados.json', JSON.stringify(item, null, 2));
+
+        showProgress(96, 'Gerando arquivo ZIP...');
+        const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }, meta => {
+          showProgress(96 + Math.round(meta.percent * 0.04), 'Gerando arquivo ZIP...');
+        });
+
+        downloadBlob(blob, `${safeFileName(item.id_carrossel)}-jpg-compactado.zip`);
+        showProgress(100, 'Download iniciado.');
+        setTimeout(hideProgress, 900);
+      } catch (err) {
+        console.error(err);
+        hideProgress();
+        toast('Falha ao gerar ZIP. Tente baixar página por página.');
+      }
+    }
+
+    async function downloadAllSeparately(item) {
+      const files = await buildCompressedFiles(item, 'Compactando imagens');
+      for (const file of files) downloadBlob(file, file.name);
+      hideProgress();
+    }
+
+    async function shareCurrentNative() {
+      const item = state.current;
+      if (!item) return;
+
+      try {
+        await copyText(buildCaption(item));
+        const files = await buildCompressedFiles(item, 'Preparando compartilhamento');
+
+        if (navigator.canShare && navigator.canShare({ files })) {
+          await navigator.share({
+            title: item.titulo_carrossel,
+            text: buildCaption(item),
+            files
+          });
+          toast('Compartilhamento aberto.');
+        } else if (navigator.share) {
+          await navigator.share({
+            title: item.titulo_carrossel,
+            text: buildCaption(item),
+            url: `${RAW_BASE}/${CONFIG.carrosseisDir}/${item.id_carrossel}/dados.json`
+          });
+          toast('Compartilhamento aberto sem arquivos.');
+        } else {
+          toast('Este navegador não suporta compartilhamento nativo.');
+        }
+      } catch (err) {
+        console.error(err);
+        toast('Compartilhamento cancelado ou não suportado.');
+      } finally {
+        hideProgress();
+      }
+    }
+
+    async function sendCurrentToMake() {
+      const item = state.current;
+      if (!item) return;
+
+      if (!CONFIG.makeWebhookUrl) {
+        toast('Configure CONFIG.makeWebhookUrl no código.');
+        return;
+      }
+
+      try {
+        showProgress(15, 'Enviando dados para o Make...');
+        const payload = {
+          origem: 'leitor-carrosseis-mobile',
+          id_carrossel: item.id_carrossel,
+          status: item.status,
+          tema: item.tema,
+          categoria: item.categoria,
+          intencao: item.intencao,
+          titulo_carrossel: item.titulo_carrossel,
+          legenda_instagram: buildCaption(item),
+          total_paginas: item.urls_imagens.length,
+          urls_imagens: item.urls_imagens,
+          dados_json_url: `${RAW_BASE}/${CONFIG.carrosseisDir}/${item.id_carrossel}/dados.json`,
+          criado_em: item.criado_em
+        };
+
+        const res = await fetch(CONFIG.makeWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error(`Make retornou ${res.status}`);
+        showProgress(100, 'Enviado para o Make.');
+        toast('Enviado para automação Make.');
+        setTimeout(hideProgress, 900);
+      } catch (err) {
+        console.error(err);
+        hideProgress();
+        toast('Erro ao enviar para o Make.');
+      }
+    }
+
+    async function buildCompressedFiles(item, label) {
+      const pages = [...item.urls_imagens].sort((a, b) => a.numero - b.numero);
+      const files = [];
+
+      for (let i = 0; i < pages.length; i++) {
+        showProgress(Math.round((i / pages.length) * 92), `${label}: ${i + 1}/${pages.length}`);
+        files.push(await compressPageToFile(pages[i], item.id_carrossel));
+      }
+
+      showProgress(94, 'Finalizando...');
+      return files;
+    }
+
+    async function compressPageToFile(page, carouselId) {
+      const res = await fetch(page.url, { mode: 'cors', cache: 'no-store' });
+      if (!res.ok) throw new Error(`Imagem ${page.numero} retornou ${res.status}`);
+      const blob = await res.blob();
+      const bitmap = await createImageBitmap(blob);
+
+      const size = getResizeSize(bitmap.width, bitmap.height, CONFIG.maxWidth, CONFIG.maxHeight);
+      const canvas = document.createElement('canvas');
+      canvas.width = size.width;
+      canvas.height = size.height;
+
+      const ctx = canvas.getContext('2d', { alpha: false });
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close?.();
+
+      const jpgBlob = await new Promise((resolve, reject) => {
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Falha ao converter canvas em JPG')), 'image/jpeg', CONFIG.jpgQuality);
+      });
+
+      return new File([jpgBlob], `${safeFileName(carouselId)}-pagina-${String(page.numero).padStart(2, '0')}.jpg`, {
+        type: 'image/jpeg',
+        lastModified: Date.now()
+      });
+    }
+
+    function getResizeSize(width, height, maxWidth, maxHeight) {
+      const ratio = Math.min(maxWidth / width, maxHeight / height, 1);
+      return {
+        width: Math.round(width * ratio),
+        height: Math.round(height * ratio)
+      };
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    function showProgress(percent, label) {
+      els.progressWrap.classList.add('show');
+      els.progressBar.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+      els.progressLabel.textContent = label;
+    }
+
+    function hideProgress() {
+      els.progressWrap.classList.remove('show');
+      els.progressBar.style.width = '0%';
+      els.progressLabel.textContent = 'Preparando...';
+    }
+
+    function toast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add('show');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => els.toast.classList.remove('show'), 2400);
+    }
+
+    function setStatus(text) {
+      els.statusLine.textContent = text;
+    }
+
+    async function mapWithConcurrency(items, limit, worker) {
+      const results = [];
+      let index = 0;
+      const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+        while (index < items.length) {
+          const currentIndex = index++;
+          results[currentIndex] = await worker(items[currentIndex], currentIndex);
+        }
+      });
+      await Promise.all(runners);
+      return results;
+    }
+
+    function skeletonCards(qty) {
+      return Array.from({ length: qty }, () => `
+        <article class="card">
+          <div class="card-cover"></div>
+          <div class="card-body">
+            <h2>Carregando...</h2>
+            <div class="meta">Aguarde alguns segundos</div>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function toNumber(value, fallback = 0) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function normalizeText(text) {
+      return String(text || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+    }
+
+    function formatLabel(text) {
+      return String(text || '')
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/^./, c => c.toUpperCase());
+    }
+
+    function formatDate(value) {
+      if (!value) return 'Sem data';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value);
+      return date.toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    function safeFileName(value) {
+      return String(value || 'carrossel')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9-_]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .toLowerCase();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/`/g, '&#096;');
+    }
+  </script>
+</body>
+</html>
