@@ -492,7 +492,7 @@
       owner: 'osvaldosereia',
       repo: 'SUCEDOAN12',
       branch: 'main',
-      root: 'carrosseis',
+      roots: ['/carrosseis', 'carrosseis'],
       batchSize: 10,
       jpegQuality: 0.78,
       maxImageWidth: 1440
@@ -543,7 +543,7 @@
         if (!state.candidates.length) {
           els.list.innerHTML = '';
           updateSummary('Nenhum carrossel encontrado', 0);
-          setNotice('Não encontrei arquivos dados.json dentro da pasta carrosseis/. Confira se o caminho está assim: carrosseis/ID_DO_CARROSSEL/dados.json', 'error');
+          setNotice('Não encontrei arquivos dados.json em /carrosseis/ nem em carrosseis/. Confira se cada pasta tem dados.json.', 'error');
           return;
         }
 
@@ -576,49 +576,73 @@
       if (!Array.isArray(data.tree)) return [];
 
       const dadosPaths = [];
-      const root = escapeRegExp(CONFIG.root);
-      const dadosRegex = new RegExp(`^${root}/([^/]+)/dados\\.json$`, 'i');
-      const imageRegex = new RegExp(`^${root}/([^/]+)/(.+\\.(?:jpg|jpeg|png|webp))$`, 'i');
+      const roots = Array.isArray(CONFIG.roots) ? CONFIG.roots : [CONFIG.root || 'carrosseis'];
 
       for (const item of data.tree) {
         if (!item || item.type !== 'blob' || !item.path) continue;
 
-        const dadosMatch = item.path.match(dadosRegex);
-        if (dadosMatch) {
-          dadosPaths.push({
-            id: dadosMatch[1],
-            dadosPath: item.path,
-            dadosUrl: rawUrl(item.path),
-            source: 'tree'
-          });
-          continue;
-        }
+        for (const rootPath of roots) {
+          const root = escapeRegExp(rootPath.replace(/^\/+|\/+$/g, ''));
+          const dadosRegex = new RegExp(`^${root}/([^/]+)/dados\\.json$`, 'i');
+          const imageRegex = new RegExp(`^${root}/([^/]+)/(.+\\.(?:jpg|jpeg|png|webp))$`, 'i');
 
-        const imageMatch = item.path.match(imageRegex);
-        if (imageMatch) {
-          const folderId = imageMatch[1];
-          if (!state.imagePathsByFolder.has(folderId)) state.imagePathsByFolder.set(folderId, []);
-          state.imagePathsByFolder.get(folderId).push(item.path);
+          const dadosMatch = item.path.match(dadosRegex);
+          if (dadosMatch) {
+            const folderId = dadosMatch[1];
+            dadosPaths.push({
+              id: folderId,
+              root: rootPath,
+              folderKey: `${rootPath}/${folderId}`,
+              dadosPath: item.path,
+              dadosUrl: rawUrl(item.path),
+              source: 'tree'
+            });
+            break;
+          }
+
+          const imageMatch = item.path.match(imageRegex);
+          if (imageMatch) {
+            const folderId = imageMatch[1];
+            const folderKey = `${rootPath}/${folderId}`;
+            if (!state.imagePathsByFolder.has(folderKey)) state.imagePathsByFolder.set(folderKey, []);
+            state.imagePathsByFolder.get(folderKey).push(item.path);
+            break;
+          }
         }
       }
 
-      return uniqueBy(dadosPaths, 'id').sort(sortCandidateDesc);
+      return uniqueBy(dadosPaths, 'dadosPath').sort(sortCandidateDesc);
     }
 
     async function getCandidatesFromContentsApi() {
-      const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${encodeURIComponent(CONFIG.root)}?ref=${encodeURIComponent(CONFIG.branch)}`;
-      const data = await fetchJson(url);
-      if (!Array.isArray(data)) return [];
+      const roots = Array.isArray(CONFIG.roots) ? CONFIG.roots : [CONFIG.root || 'carrosseis'];
+      const all = [];
 
-      return data
-        .filter(item => item && item.type === 'dir' && item.name)
-        .map(item => ({
-          id: item.name,
-          dadosPath: `${CONFIG.root}/${item.name}/dados.json`,
-          dadosUrl: rawUrl(`${CONFIG.root}/${item.name}/dados.json`),
-          source: 'contents'
-        }))
-        .sort(sortCandidateDesc);
+      for (const rootPath of roots) {
+        const safeRoot = rootPath.split('/').map(encodeURIComponent).join('/');
+        const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${safeRoot}?ref=${encodeURIComponent(CONFIG.branch)}`;
+
+        try {
+          const data = await fetchJson(url);
+          if (!Array.isArray(data)) continue;
+
+          all.push(...data
+            .filter(item => item && item.type === 'dir' && item.name)
+            .map(item => ({
+              id: item.name,
+              root: rootPath,
+              folderKey: `${rootPath}/${item.name}`,
+              dadosPath: `${rootPath}/${item.name}/dados.json`,
+              dadosUrl: rawUrl(`${rootPath}/${item.name}/dados.json`),
+              source: 'contents'
+            }))
+          );
+        } catch (error) {
+          console.warn(`Não consegui ler ${rootPath} pela contents API.`, error);
+        }
+      }
+
+      return uniqueBy(all, 'dadosPath').sort(sortCandidateDesc);
     }
 
     async function loadNextBatch() {
@@ -672,6 +696,8 @@
 
     function normalizeCarousel(dados, candidate) {
       const folderId = candidate.id;
+      const rootPath = candidate.root || (Array.isArray(CONFIG.roots) ? CONFIG.roots[0] : CONFIG.root || 'carrosseis');
+      const folderKey = candidate.folderKey || `${rootPath}/${folderId}`;
       const id = cleanText(dados.id_carrossel) || folderId;
       const title = cleanText(dados.titulo_carrossel) || cleanText(dados.tema) || `Carrossel ${id}`;
       const legend = cleanText(dados.legenda_instagram);
@@ -691,7 +717,7 @@
       }
 
       if (!images.length) {
-        const imagePaths = state.imagePathsByFolder.get(folderId) || state.imagePathsByFolder.get(id) || [];
+        const imagePaths = state.imagePathsByFolder.get(folderKey) || state.imagePathsByFolder.get(folderId) || state.imagePathsByFolder.get(id) || [];
         images = imagePaths
           .map(path => ({
             numero: extractPageNumber(path),
@@ -709,7 +735,7 @@
           const numero = index + 1;
           return {
             numero,
-            url: rawUrl(`${CONFIG.root}/${folderId}/pagina-${numero}.jpg`)
+            url: rawUrl(`${rootPath}/${folderId}/pagina-${numero}.jpg`)
           };
         });
       }
@@ -722,6 +748,7 @@
       return {
         id,
         folderId,
+        root: rootPath,
         status: cleanText(dados.status),
         tema: cleanText(dados.tema),
         categoria: cleanText(dados.categoria),
