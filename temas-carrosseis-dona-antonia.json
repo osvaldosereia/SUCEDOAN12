@@ -2,7 +2,7 @@
   "projeto": "Carrosseis Dona Antonia",
   "formato": "carrossel_instagram_3_paginas",
   "idioma": "pt-BR",
-  "uso": "Arquivo de temas para o Make sortear e enviar ao ChatGPT na criacao de roteiros de carrossel.",
+  "uso": "Arquivo completo com 400 temas intercalados para o Make sortear e enviar ao ChatGPT na criação de roteiros de carrossel.",
   "regras_gerais": [
     "Não inventar preços.",
     "Não inventar estatísticas.",
@@ -11,7 +11,10 @@
     "Criar conteúdos úteis, simples, salváveis e compartilháveis.",
     "Usar português do Brasil.",
     "Evitar textos longos nas imagens.",
-    "Priorizar temas de compras da casa, cesta básica, economia doméstica, despensa, receitas simples e rotina familiar."
+    "Priorizar temas de compras da casa, cesta básica, economia doméstica, despensa, receitas simples, rotina familiar, limpeza doméstica e cuidados com roupas.",
+    "Em temas de limpeza, evitar orientar mistura de produtos químicos.",
+    "Em temas de roupas, priorizar cuidados simples, práticos e seguros para o dia a dia.",
+    "Em temas de família, manter tom positivo, respeitoso e acolhedor."
   ],
   "estrutura_carrossel": {
     "pagina_1": "Gancho forte com pouco texto.",
@@ -29,6 +32,30 @@
     },
     {
       "id": "T002",
+      "categoria": "limpeza_cozinha",
+      "tema": "Rotina de limpeza rápida para cozinha todos os dias",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Casa limpa com menos esforço",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T003",
+      "categoria": "lavagem_basica",
+      "tema": "Como separar roupas antes de lavar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T004",
+      "categoria": "familia_rotina",
+      "tema": "Como organizar a rotina da casa sem brigas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T005",
       "categoria": "lista_de_compras",
       "tema": "Lista de compras básica para casa pequena",
       "intencao": "salvamento",
@@ -36,7 +63,31 @@
       "cta_sugerido": "Envie para quem cuida das compras"
     },
     {
-      "id": "T003",
+      "id": "T006",
+      "categoria": "limpeza_cozinha",
+      "tema": "Como limpar pia da cozinha sem deixar cheiro ruim",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T007",
+      "categoria": "lavagem_basica",
+      "tema": "Checklist para lavar roupa sem esquecer etapas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist de lavanderia para salvar",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T008",
+      "categoria": "familia_rotina",
+      "tema": "Pequenos combinados que facilitam o dia a dia da família",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T009",
       "categoria": "lista_de_compras",
       "tema": "Lista de compras para família com crianças",
       "intencao": "salvamento",
@@ -44,7 +95,31 @@
       "cta_sugerido": "Salve para planejar a semana"
     },
     {
-      "id": "T004",
+      "id": "T010",
+      "categoria": "limpeza_cozinha",
+      "tema": "Como organizar a limpeza do fogão depois do almoço",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T011",
+      "categoria": "lavagem_basica",
+      "tema": "Erros que fazem a roupa sair mal lavada",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Evite isso ao cuidar das roupas",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T012",
+      "categoria": "familia_rotina",
+      "tema": "Como dividir tarefas domésticas de forma mais justa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T013",
       "categoria": "lista_de_compras",
       "tema": "Lista de compras para o fim do mês",
       "intencao": "salvamento",
@@ -52,7 +127,31 @@
       "cta_sugerido": "Salve esta lista para consultar depois"
     },
     {
-      "id": "T005",
+      "id": "T014",
+      "categoria": "limpeza_cozinha",
+      "tema": "Checklist de limpeza da geladeira antes da compra",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Checklist pronto para salvar",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T015",
+      "categoria": "lavagem_basica",
+      "tema": "Como escolher o ciclo certo da máquina",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T016",
+      "categoria": "familia_rotina",
+      "tema": "Checklist da semana para uma casa mais tranquila",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Checklist familiar para usar na semana",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T017",
       "categoria": "lista_de_compras",
       "tema": "Lista de compras para café da manhã simples",
       "intencao": "salvamento",
@@ -60,7 +159,31 @@
       "cta_sugerido": "Salve para montar sua próxima compra"
     },
     {
-      "id": "T006",
+      "id": "T018",
+      "categoria": "limpeza_cozinha",
+      "tema": "Como limpar armários da cozinha por dentro e por fora",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T019",
+      "categoria": "lavagem_basica",
+      "tema": "Como medir sabão sem exagerar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T020",
+      "categoria": "familia_rotina",
+      "tema": "Como preparar a casa para a segunda-feira",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T021",
       "categoria": "lista_de_compras",
       "tema": "Lista de compras para almoço da semana",
       "intencao": "salvamento",
@@ -68,7 +191,31 @@
       "cta_sugerido": "Salve para organizar sua cozinha"
     },
     {
-      "id": "T007",
+      "id": "T022",
+      "categoria": "limpeza_cozinha",
+      "tema": "Dicas para tirar gordura leve de azulejo da cozinha",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas simples para casa limpa",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T023",
+      "categoria": "lavagem_basica",
+      "tema": "Como evitar cheiro ruim em roupa lavada",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T024",
+      "categoria": "familia_rotina",
+      "tema": "Dicas para uma manhã menos corrida em família",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas para uma rotina mais leve",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T025",
       "categoria": "lista_de_compras",
       "tema": "Lista de compras para jantar econômico",
       "intencao": "salvamento",
@@ -76,7 +223,31 @@
       "cta_sugerido": "Compartilhe com quem cozinha em casa"
     },
     {
-      "id": "T008",
+      "id": "T026",
+      "categoria": "limpeza_cozinha",
+      "tema": "Como manter a bancada limpa durante o preparo das refeições",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T027",
+      "categoria": "lavagem_basica",
+      "tema": "Como lavar roupa de uso diário com mais cuidado",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T028",
+      "categoria": "familia_rotina",
+      "tema": "Como criar uma rotina noturna mais leve",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T029",
       "categoria": "lista_de_compras",
       "tema": "Lista de compras para montar uma despensa básica",
       "intencao": "salvamento",
@@ -84,7 +255,31 @@
       "cta_sugerido": "Salve para conferir antes de comprar"
     },
     {
-      "id": "T009",
+      "id": "T030",
+      "categoria": "limpeza_cozinha",
+      "tema": "Erros que deixam a cozinha com aspecto de suja",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Evite isso na limpeza da casa",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T031",
+      "categoria": "lavagem_basica",
+      "tema": "Como deixar a lavanderia organizada antes de lavar",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T032",
+      "categoria": "familia_rotina",
+      "tema": "Atitudes simples para diminuir a bagunça diária",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T033",
       "categoria": "lista_de_compras",
       "tema": "Lista de compras para evitar compras por impulso",
       "intencao": "compartilhamento",
@@ -92,7 +287,31 @@
       "cta_sugerido": "Envie para alguém que sempre esquece a lista"
     },
     {
-      "id": "T010",
+      "id": "T034",
+      "categoria": "limpeza_cozinha",
+      "tema": "Como limpar o micro-ondas com mais praticidade",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T035",
+      "categoria": "lavagem_basica",
+      "tema": "Dicas para não acumular roupa suja na semana",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Dicas simples para cuidar das roupas",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T036",
+      "categoria": "familia_rotina",
+      "tema": "Como envolver todos nos cuidados com a casa",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T037",
       "categoria": "lista_de_compras",
       "tema": "Lista de compras para quem mora sozinho",
       "intencao": "salvamento",
@@ -100,7 +319,31 @@
       "cta_sugerido": "Salve para não comprar além do necessário"
     },
     {
-      "id": "T011",
+      "id": "T038",
+      "categoria": "limpeza_cozinha",
+      "tema": "Como evitar cheiro forte no lixo da cozinha",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T039",
+      "categoria": "lavagem_basica",
+      "tema": "Como criar uma rotina simples de lavanderia",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T040",
+      "categoria": "familia_rotina",
+      "tema": "Hábitos que deixam o lar mais organizado",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T041",
       "categoria": "cardapio_economico",
       "tema": "Cardápio econômico para 7 dias",
       "intencao": "salvamento",
@@ -108,7 +351,31 @@
       "cta_sugerido": "Salve para usar no planejamento"
     },
     {
-      "id": "T012",
+      "id": "T042",
+      "categoria": "limpeza_louca",
+      "tema": "Como lavar louça mais rápido sem bagunçar a pia",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T043",
+      "categoria": "roupas_claras",
+      "tema": "Como lavar roupas claras sem encardir",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T044",
+      "categoria": "filhos",
+      "tema": "Como ensinar filhos a guardar brinquedos com leveza",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T045",
       "categoria": "cardapio_economico",
       "tema": "Cardápio simples usando arroz e feijão",
       "intencao": "salvamento",
@@ -116,7 +383,31 @@
       "cta_sugerido": "Compartilhe com quem cozinha todo dia"
     },
     {
-      "id": "T013",
+      "id": "T046",
+      "categoria": "limpeza_louca",
+      "tema": "Ordem certa para lavar copos, pratos, talheres e panelas",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Casa limpa com menos esforço",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T047",
+      "categoria": "roupas_claras",
+      "tema": "Dicas para manter roupa branca com boa aparência",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Dicas simples para cuidar das roupas",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T048",
+      "categoria": "filhos",
+      "tema": "Dicas para crianças ajudarem nas pequenas tarefas",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Dicas para uma rotina mais leve",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T049",
       "categoria": "cardapio_economico",
       "tema": "Cardápio econômico para almoço de segunda a sexta",
       "intencao": "salvamento",
@@ -124,7 +415,31 @@
       "cta_sugerido": "Salve para consultar na cozinha"
     },
     {
-      "id": "T014",
+      "id": "T050",
+      "categoria": "limpeza_louca",
+      "tema": "Como evitar mau cheiro na esponja e no pano de pia",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T051",
+      "categoria": "roupas_claras",
+      "tema": "Erros que deixam roupas claras amareladas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Evite isso ao cuidar das roupas",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T052",
+      "categoria": "filhos",
+      "tema": "Como criar combinados de respeito dentro de casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T053",
       "categoria": "cardapio_economico",
       "tema": "Cardápio de jantares rápidos e baratos",
       "intencao": "compartilhamento",
@@ -132,7 +447,31 @@
       "cta_sugerido": "Envie para quem chega cansado em casa"
     },
     {
-      "id": "T015",
+      "id": "T054",
+      "categoria": "limpeza_louca",
+      "tema": "Dicas para deixar panelas limpas sem sofrimento",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas simples para casa limpa",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T055",
+      "categoria": "roupas_claras",
+      "tema": "Como separar peças claras por nível de sujeira",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T056",
+      "categoria": "filhos",
+      "tema": "Atitudes que ajudam filhos a serem mais responsáveis",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T057",
       "categoria": "cardapio_economico",
       "tema": "Cardápio com alimentos que rendem mais",
       "intencao": "salvamento",
@@ -140,7 +479,31 @@
       "cta_sugerido": "Salve para planejar melhor"
     },
     {
-      "id": "T016",
+      "id": "T058",
+      "categoria": "limpeza_louca",
+      "tema": "Como organizar a louça para secar melhor",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T059",
+      "categoria": "roupas_claras",
+      "tema": "Como cuidar de uniformes escolares claros",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T060",
+      "categoria": "filhos",
+      "tema": "Como lidar com a bagunça das crianças sem perder a calma",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T061",
       "categoria": "cardapio_economico",
       "tema": "Cardápio para aproveitar sobras sem desperdício",
       "intencao": "compartilhamento",
@@ -148,7 +511,31 @@
       "cta_sugerido": "Compartilhe com quem odeia desperdício"
     },
     {
-      "id": "T017",
+      "id": "T062",
+      "categoria": "limpeza_louca",
+      "tema": "Erros comuns na hora de lavar a louça",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Evite isso na limpeza da casa",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T063",
+      "categoria": "roupas_claras",
+      "tema": "Como lavar toalhas claras com mais higiene",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T064",
+      "categoria": "filhos",
+      "tema": "Ideias de tarefas simples por idade",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Um lar mais leve começa nos detalhes",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T065",
       "categoria": "cardapio_economico",
       "tema": "Cardápio básico para marmitas da semana",
       "intencao": "salvamento",
@@ -156,7 +543,31 @@
       "cta_sugerido": "Salve para montar suas marmitas"
     },
     {
-      "id": "T018",
+      "id": "T066",
+      "categoria": "limpeza_louca",
+      "tema": "Como manter a pia limpa depois do jantar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T067",
+      "categoria": "roupas_claras",
+      "tema": "Como evitar manchas em roupas brancas no varal",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T068",
+      "categoria": "filhos",
+      "tema": "Como transformar organização em brincadeira para as crianças",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T069",
       "categoria": "cardapio_economico",
       "tema": "Cardápio para família grande gastando menos",
       "intencao": "salvamento",
@@ -164,7 +575,31 @@
       "cta_sugerido": "Envie para quem faz compra da casa"
     },
     {
-      "id": "T019",
+      "id": "T070",
+      "categoria": "limpeza_louca",
+      "tema": "Como cuidar dos panos de prato da cozinha",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T071",
+      "categoria": "roupas_claras",
+      "tema": "Checklist para roupas claras antes de colocar na máquina",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Checklist de lavanderia para salvar",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T072",
+      "categoria": "filhos",
+      "tema": "Como ensinar cuidado com alimentos e desperdício",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T073",
       "categoria": "cardapio_economico",
       "tema": "Cardápio econômico com macarrão",
       "intencao": "salvamento",
@@ -172,7 +607,31 @@
       "cta_sugerido": "Salve para variar o jantar"
     },
     {
-      "id": "T020",
+      "id": "T074",
+      "categoria": "limpeza_louca",
+      "tema": "Checklist para deixar a pia zerada antes de dormir",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist pronto para salvar",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T075",
+      "categoria": "roupas_claras",
+      "tema": "Como recuperar a aparência de roupa clara no dia a dia",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T076",
+      "categoria": "filhos",
+      "tema": "Como preparar lancheira com participação das crianças",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T077",
       "categoria": "cardapio_economico",
       "tema": "Cardápio com ovos para economizar nas refeições",
       "intencao": "salvamento",
@@ -180,7 +639,31 @@
       "cta_sugerido": "Salve para lembrar dessas ideias"
     },
     {
-      "id": "T021",
+      "id": "T078",
+      "categoria": "limpeza_louca",
+      "tema": "Como separar louça engordurada da louça comum",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T079",
+      "categoria": "roupas_claras",
+      "tema": "Cuidados com meias claras e panos claros",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Lavanderia mais prática em casa",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T080",
+      "categoria": "filhos",
+      "tema": "Como elogiar atitudes positivas dos filhos no dia a dia",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T081",
       "categoria": "economia_domestica",
       "tema": "Erros que fazem gastar mais no mercado",
       "intencao": "compartilhamento",
@@ -188,7 +671,31 @@
       "cta_sugerido": "Envie para quem faz compras sem lista"
     },
     {
-      "id": "T022",
+      "id": "T082",
+      "categoria": "limpeza_banheiro",
+      "tema": "Rotina simples para manter o banheiro limpo",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Casa limpa com menos esforço",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T083",
+      "categoria": "roupas_escuras",
+      "tema": "Como lavar roupas escuras sem desbotar tanto",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T084",
+      "categoria": "relacionamento_familiar",
+      "tema": "Como melhorar a conversa dentro de casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T085",
       "categoria": "economia_domestica",
       "tema": "Como economizar fazendo compra com lista",
       "intencao": "salvamento",
@@ -196,7 +703,31 @@
       "cta_sugerido": "Salve para testar na próxima compra"
     },
     {
-      "id": "T023",
+      "id": "T086",
+      "categoria": "limpeza_banheiro",
+      "tema": "Como limpar vaso sanitário com mais segurança e cuidado",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T087",
+      "categoria": "roupas_escuras",
+      "tema": "Dicas para manter roupa preta bonita por mais tempo",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas simples para cuidar das roupas",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T088",
+      "categoria": "relacionamento_familiar",
+      "tema": "Pequenas atitudes que demonstram cuidado na família",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T089",
       "categoria": "economia_domestica",
       "tema": "Como evitar desperdício na despensa",
       "intencao": "salvamento",
@@ -204,7 +735,31 @@
       "cta_sugerido": "Salve para organizar hoje"
     },
     {
-      "id": "T024",
+      "id": "T090",
+      "categoria": "limpeza_banheiro",
+      "tema": "Checklist de limpeza semanal do banheiro",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist pronto para salvar",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T091",
+      "categoria": "roupas_escuras",
+      "tema": "Erros que deixam roupa escura cheia de fiapos",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Evite isso ao cuidar das roupas",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T092",
+      "categoria": "relacionamento_familiar",
+      "tema": "Como pedir ajuda sem parecer cobrança",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T093",
       "categoria": "economia_domestica",
       "tema": "Como montar compra do mês sem exagero",
       "intencao": "salvamento",
@@ -212,7 +767,31 @@
       "cta_sugerido": "Compartilhe com quem compra para casa"
     },
     {
-      "id": "T025",
+      "id": "T094",
+      "categoria": "limpeza_banheiro",
+      "tema": "Como limpar box do banheiro sem deixar manchas aparentes",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T095",
+      "categoria": "roupas_escuras",
+      "tema": "Como secar roupa escura sem marcar",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T096",
+      "categoria": "relacionamento_familiar",
+      "tema": "Como agradecer mais dentro de casa",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T097",
       "categoria": "economia_domestica",
       "tema": "Diferença entre comprar por semana e por mês",
       "intencao": "compartilhamento",
@@ -220,7 +799,31 @@
       "cta_sugerido": "Envie para alguém decidir melhor"
     },
     {
-      "id": "T026",
+      "id": "T098",
+      "categoria": "limpeza_banheiro",
+      "tema": "Como evitar cheiro ruim no ralo do banheiro",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T099",
+      "categoria": "roupas_escuras",
+      "tema": "Como separar jeans, camisetas e peças escuras",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T100",
+      "categoria": "relacionamento_familiar",
+      "tema": "Erros de comunicação que aumentam conflitos em família",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Evite conflitos com atitudes simples",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T101",
       "categoria": "economia_domestica",
       "tema": "Como comparar preços sem se confundir",
       "intencao": "salvamento",
@@ -228,7 +831,31 @@
       "cta_sugerido": "Salve para comprar com mais atenção"
     },
     {
-      "id": "T027",
+      "id": "T102",
+      "categoria": "limpeza_banheiro",
+      "tema": "Como limpar pia e espelho do banheiro em poucos minutos",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T103",
+      "categoria": "roupas_escuras",
+      "tema": "Checklist de cuidados com roupa preta",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist de lavanderia para salvar",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T104",
+      "categoria": "relacionamento_familiar",
+      "tema": "Como criar momentos de conversa durante as refeições",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T105",
       "categoria": "economia_domestica",
       "tema": "Como organizar a compra por prioridade",
       "intencao": "salvamento",
@@ -236,7 +863,31 @@
       "cta_sugerido": "Salve para montar sua próxima lista"
     },
     {
-      "id": "T028",
+      "id": "T106",
+      "categoria": "limpeza_banheiro",
+      "tema": "Erros que deixam o banheiro com aparência de abandonado",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Evite isso na limpeza da casa",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T107",
+      "categoria": "roupas_escuras",
+      "tema": "Como lavar roupas coloridas sem misturar cores",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T108",
+      "categoria": "relacionamento_familiar",
+      "tema": "Como ouvir melhor quem mora com você",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T109",
       "categoria": "economia_domestica",
       "tema": "Como reduzir compras por impulso",
       "intencao": "compartilhamento",
@@ -244,7 +895,31 @@
       "cta_sugerido": "Envie para quem sempre passa do orçamento"
     },
     {
-      "id": "T029",
+      "id": "T110",
+      "categoria": "limpeza_banheiro",
+      "tema": "Como organizar produtos de higiene no banheiro",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T111",
+      "categoria": "roupas_escuras",
+      "tema": "Como evitar bolinhas em peças escuras",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T112",
+      "categoria": "relacionamento_familiar",
+      "tema": "Dicas para resolver pequenos conflitos com respeito",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Dicas para uma rotina mais leve",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T113",
       "categoria": "economia_domestica",
       "tema": "Como planejar compras para não faltar comida",
       "intencao": "salvamento",
@@ -252,7 +927,31 @@
       "cta_sugerido": "Salve para planejar a semana"
     },
     {
-      "id": "T030",
+      "id": "T114",
+      "categoria": "limpeza_banheiro",
+      "tema": "Como limpar rejunte do banheiro com cuidado",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T115",
+      "categoria": "roupas_escuras",
+      "tema": "Como guardar roupa escura sem cheiro de armário",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T116",
+      "categoria": "relacionamento_familiar",
+      "tema": "Como combinar regras da casa sem imposição",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T117",
       "categoria": "economia_domestica",
       "tema": "Como fazer o dinheiro render mais na feira e mercado",
       "intencao": "compartilhamento",
@@ -260,7 +959,31 @@
       "cta_sugerido": "Compartilhe com quem quer economizar"
     },
     {
-      "id": "T031",
+      "id": "T118",
+      "categoria": "limpeza_banheiro",
+      "tema": "Dicas para manter toalhas e banheiro mais arejados",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas simples para casa limpa",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T119",
+      "categoria": "roupas_escuras",
+      "tema": "Dicas para preservar cor de roupas do trabalho",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas simples para cuidar das roupas",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T120",
+      "categoria": "relacionamento_familiar",
+      "tema": "Atitudes que fortalecem a união familiar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T121",
       "categoria": "despensa",
       "tema": "Itens que não podem faltar na despensa",
       "intencao": "salvamento",
@@ -268,7 +991,31 @@
       "cta_sugerido": "Salve para conferir sua despensa"
     },
     {
-      "id": "T032",
+      "id": "T122",
+      "categoria": "limpeza_sala",
+      "tema": "Como limpar a sala em 15 minutos antes da visita",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T123",
+      "categoria": "roupas_intimas",
+      "tema": "Como lavar roupas íntimas com mais cuidado",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T124",
+      "categoria": "respeito",
+      "tema": "Como praticar respeito na rotina da casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T125",
       "categoria": "despensa",
       "tema": "Como organizar arroz, feijão e massas na despensa",
       "intencao": "salvamento",
@@ -276,7 +1023,31 @@
       "cta_sugerido": "Salve para organizar depois"
     },
     {
-      "id": "T033",
+      "id": "T126",
+      "categoria": "limpeza_sala",
+      "tema": "Checklist de limpeza rápida para sala de estar",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Checklist pronto para salvar",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T127",
+      "categoria": "roupas_intimas",
+      "tema": "O que evitar na lavagem de peças íntimas",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Cuide melhor antes de lavar",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T128",
+      "categoria": "respeito",
+      "tema": "Frases simples que ajudam a manter o respeito",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Um lar mais leve começa nos detalhes",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T129",
       "categoria": "despensa",
       "tema": "Como saber o que está faltando na despensa",
       "intencao": "salvamento",
@@ -284,7 +1055,31 @@
       "cta_sugerido": "Salve para revisar antes da compra"
     },
     {
-      "id": "T034",
+      "id": "T130",
+      "categoria": "limpeza_sala",
+      "tema": "Como tirar poeira dos móveis sem espalhar sujeira",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T131",
+      "categoria": "roupas_intimas",
+      "tema": "Como secar roupas íntimas do jeito mais adequado",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T132",
+      "categoria": "respeito",
+      "tema": "Como corrigir sem humilhar dentro da família",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T133",
       "categoria": "despensa",
       "tema": "Como separar alimentos por frequência de uso",
       "intencao": "salvamento",
@@ -292,7 +1087,31 @@
       "cta_sugerido": "Compartilhe com quem ama casa organizada"
     },
     {
-      "id": "T035",
+      "id": "T134",
+      "categoria": "limpeza_sala",
+      "tema": "Como organizar a sala depois de um dia corrido",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T135",
+      "categoria": "roupas_intimas",
+      "tema": "Como organizar roupas íntimas limpas na gaveta",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T136",
+      "categoria": "respeito",
+      "tema": "Como respeitar o espaço de cada pessoa em casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T137",
       "categoria": "despensa",
       "tema": "Como evitar produto vencido no armário",
       "intencao": "salvamento",
@@ -300,7 +1119,31 @@
       "cta_sugerido": "Salve para aplicar hoje"
     },
     {
-      "id": "T036",
+      "id": "T138",
+      "categoria": "limpeza_sala",
+      "tema": "Dicas para manter a sala cheirosa e acolhedora",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas simples para casa limpa",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T139",
+      "categoria": "roupas_intimas",
+      "tema": "Checklist de cuidados com peças delicadas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist de lavanderia para salvar",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T140",
+      "categoria": "respeito",
+      "tema": "Dicas para discordar sem ofender",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas para uma rotina mais leve",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T141",
       "categoria": "despensa",
       "tema": "Como montar uma despensa para emergências",
       "intencao": "salvamento",
@@ -308,7 +1151,31 @@
       "cta_sugerido": "Salve para montar aos poucos"
     },
     {
-      "id": "T037",
+      "id": "T142",
+      "categoria": "limpeza_sala",
+      "tema": "Como limpar rack, mesa de centro e aparador",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T143",
+      "categoria": "roupas_intimas",
+      "tema": "Como lavar meias separadas das roupas íntimas",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T144",
+      "categoria": "respeito",
+      "tema": "Como ensinar respeito pelo exemplo",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T145",
       "categoria": "despensa",
       "tema": "Itens básicos para cozinhar sem depender de delivery",
       "intencao": "compartilhamento",
@@ -316,7 +1183,31 @@
       "cta_sugerido": "Envie para quem quer economizar"
     },
     {
-      "id": "T038",
+      "id": "T146",
+      "categoria": "limpeza_sala",
+      "tema": "Erros que fazem a sala parecer bagunçada",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Evite isso na limpeza da casa",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T147",
+      "categoria": "roupas_intimas",
+      "tema": "Dicas para preservar elástico de peças íntimas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas simples para cuidar das roupas",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T148",
+      "categoria": "respeito",
+      "tema": "Atitudes que mostram consideração no dia a dia",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T149",
       "categoria": "despensa",
       "tema": "Como guardar alimentos secos do jeito certo",
       "intencao": "salvamento",
@@ -324,7 +1215,31 @@
       "cta_sugerido": "Salve para consultar depois"
     },
     {
-      "id": "T039",
+      "id": "T150",
+      "categoria": "limpeza_sala",
+      "tema": "Como criar uma rotina leve de manutenção da sala",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T151",
+      "categoria": "roupas_intimas",
+      "tema": "Como evitar cheiro de umidade em roupas íntimas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T152",
+      "categoria": "respeito",
+      "tema": "Como evitar gritos em conversas familiares",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T153",
       "categoria": "despensa",
       "tema": "Como organizar a despensa pequena",
       "intencao": "salvamento",
@@ -332,7 +1247,31 @@
       "cta_sugerido": "Compartilhe com quem tem pouco espaço"
     },
     {
-      "id": "T040",
+      "id": "T154",
+      "categoria": "limpeza_sala",
+      "tema": "Como limpar objetos decorativos sem perder tempo",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T155",
+      "categoria": "roupas_intimas",
+      "tema": "Quando separar peças íntimas para lavagem manual",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Cuide da roupa no momento certo",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T156",
+      "categoria": "respeito",
+      "tema": "Como criar limites saudáveis dentro de casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T157",
       "categoria": "despensa",
       "tema": "Como fazer rodízio dos alimentos da despensa",
       "intencao": "salvamento",
@@ -340,7 +1279,31 @@
       "cta_sugerido": "Salve para evitar desperdício"
     },
     {
-      "id": "T041",
+      "id": "T158",
+      "categoria": "limpeza_sala",
+      "tema": "Como deixar a sala pronta para receber visitas",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T159",
+      "categoria": "roupas_intimas",
+      "tema": "Cuidados com roupas íntimas em dias de chuva",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Lavanderia mais prática em casa",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T160",
+      "categoria": "respeito",
+      "tema": "Pequenos gestos que deixam o lar mais leve",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T161",
       "categoria": "alimentos_que_rendem",
       "tema": "Alimentos que rendem mais nas refeições",
       "intencao": "salvamento",
@@ -348,7 +1311,31 @@
       "cta_sugerido": "Salve para planejar melhor"
     },
     {
-      "id": "T042",
+      "id": "T162",
+      "categoria": "limpeza_sofa",
+      "tema": "Como limpar sofá no dia a dia sem encharcar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T163",
+      "categoria": "roupas_delicadas",
+      "tema": "Como lavar roupas delicadas sem deformar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T164",
+      "categoria": "cuidados_com_a_casa",
+      "tema": "Como transformar cuidado com a casa em cuidado com a família",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T165",
       "categoria": "alimentos_que_rendem",
       "tema": "Como fazer o arroz render mais com acompanhamentos",
       "intencao": "salvamento",
@@ -356,7 +1343,31 @@
       "cta_sugerido": "Compartilhe com quem cozinha todo dia"
     },
     {
-      "id": "T043",
+      "id": "T166",
+      "categoria": "limpeza_sofa",
+      "tema": "Dicas para tirar migalhas e poeira do sofá",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas simples para casa limpa",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T167",
+      "categoria": "roupas_delicadas",
+      "tema": "Dicas para cuidar de blusas leves e finas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas simples para cuidar das roupas",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T168",
+      "categoria": "cuidados_com_a_casa",
+      "tema": "Dicas para todos cuidarem dos espaços em comum",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas para uma rotina mais leve",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T169",
       "categoria": "alimentos_que_rendem",
       "tema": "Como usar feijão em mais de uma refeição",
       "intencao": "salvamento",
@@ -364,7 +1375,31 @@
       "cta_sugerido": "Salve para variar o cardápio"
     },
     {
-      "id": "T044",
+      "id": "T170",
+      "categoria": "limpeza_sofa",
+      "tema": "Como cuidar do sofá quando tem criança em casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T171",
+      "categoria": "roupas_delicadas",
+      "tema": "Como lavar peças com renda e detalhes",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T172",
+      "categoria": "cuidados_com_a_casa",
+      "tema": "Como manter a cozinha organizada com ajuda da família",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T173",
       "categoria": "alimentos_que_rendem",
       "tema": "Ideias para usar macarrão de forma econômica",
       "intencao": "salvamento",
@@ -372,7 +1407,31 @@
       "cta_sugerido": "Salve para os dias corridos"
     },
     {
-      "id": "T045",
+      "id": "T174",
+      "categoria": "limpeza_sofa",
+      "tema": "Como evitar manchas no sofá durante a rotina",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T175",
+      "categoria": "roupas_delicadas",
+      "tema": "Erros que estragam roupas delicadas",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Evite isso ao cuidar das roupas",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T176",
+      "categoria": "cuidados_com_a_casa",
+      "tema": "Como evitar que uma pessoa fique responsável por tudo",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T177",
       "categoria": "alimentos_que_rendem",
       "tema": "Como transformar sobras em novas refeições",
       "intencao": "compartilhamento",
@@ -380,7 +1439,31 @@
       "cta_sugerido": "Envie para quem não gosta de desperdício"
     },
     {
-      "id": "T046",
+      "id": "T178",
+      "categoria": "limpeza_sofa",
+      "tema": "Checklist de cuidados semanais com sofá",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Checklist pronto para salvar",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T179",
+      "categoria": "roupas_delicadas",
+      "tema": "Como usar saquinho protetor na lavagem",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T180",
+      "categoria": "cuidados_com_a_casa",
+      "tema": "Como criar uma escala simples de tarefas",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T181",
       "categoria": "alimentos_que_rendem",
       "tema": "Alimentos baratos que ajudam a completar o prato",
       "intencao": "salvamento",
@@ -388,7 +1471,31 @@
       "cta_sugerido": "Salve para lembrar na compra"
     },
     {
-      "id": "T047",
+      "id": "T182",
+      "categoria": "limpeza_sofa",
+      "tema": "Como limpar sofá de tecido com delicadeza",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T183",
+      "categoria": "roupas_delicadas",
+      "tema": "Como secar roupas leves sem marcar pregador",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T184",
+      "categoria": "cuidados_com_a_casa",
+      "tema": "Atitudes para valorizar quem cuida da casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T185",
       "categoria": "alimentos_que_rendem",
       "tema": "Como combinar arroz, feijão e ovo",
       "intencao": "salvamento",
@@ -396,7 +1503,31 @@
       "cta_sugerido": "Compartilhe com quem busca praticidade"
     },
     {
-      "id": "T048",
+      "id": "T186",
+      "categoria": "limpeza_sofa",
+      "tema": "Como manter almofadas limpas e cheirosas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T187",
+      "categoria": "roupas_delicadas",
+      "tema": "Como guardar peças delicadas sem amassar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T188",
+      "categoria": "cuidados_com_a_casa",
+      "tema": "Como ensinar que bagunça de um afeta todos",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T189",
       "categoria": "alimentos_que_rendem",
       "tema": "Como montar refeições com poucos ingredientes",
       "intencao": "salvamento",
@@ -404,7 +1535,31 @@
       "cta_sugerido": "Salve para dias de pressa"
     },
     {
-      "id": "T049",
+      "id": "T190",
+      "categoria": "limpeza_sofa",
+      "tema": "Erros que podem estragar o tecido do sofá",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Evite isso na limpeza da casa",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T191",
+      "categoria": "roupas_delicadas",
+      "tema": "Checklist para lavar roupa delicada à mão",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Checklist de lavanderia para salvar",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T192",
+      "categoria": "cuidados_com_a_casa",
+      "tema": "Como cuidar da casa sem buscar perfeição",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T193",
       "categoria": "alimentos_que_rendem",
       "tema": "Alimentos coringa para ter em casa",
       "intencao": "salvamento",
@@ -412,7 +1567,31 @@
       "cta_sugerido": "Salve para montar sua despensa"
     },
     {
-      "id": "T050",
+      "id": "T194",
+      "categoria": "limpeza_sofa",
+      "tema": "Como proteger o sofá em casas com pets",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T195",
+      "categoria": "roupas_delicadas",
+      "tema": "Como cuidar de roupas de bebê com delicadeza",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T196",
+      "categoria": "cuidados_com_a_casa",
+      "tema": "Checklist familiar de cuidados básicos com o lar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist familiar para usar na semana",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T197",
       "categoria": "alimentos_que_rendem",
       "tema": "Como variar refeições usando os mesmos básicos",
       "intencao": "compartilhamento",
@@ -420,7 +1599,31 @@
       "cta_sugerido": "Envie para quem enjoa do cardápio"
     },
     {
-      "id": "T051",
+      "id": "T198",
+      "categoria": "limpeza_sofa",
+      "tema": "Como deixar o cantinho do sofá mais agradável",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T199",
+      "categoria": "roupas_delicadas",
+      "tema": "Como preservar tecidos leves no dia a dia",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T200",
+      "categoria": "cuidados_com_a_casa",
+      "tema": "Como tornar a faxina mais colaborativa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T201",
       "categoria": "receitas_simples",
       "tema": "Receitas rápidas com arroz",
       "intencao": "salvamento",
@@ -428,7 +1631,31 @@
       "cta_sugerido": "Salve para testar na semana"
     },
     {
-      "id": "T052",
+      "id": "T202",
+      "categoria": "limpeza_cortina",
+      "tema": "Como tirar poeira das cortinas sem desmontar tudo",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T203",
+      "categoria": "roupas_pesadas",
+      "tema": "Como lavar jeans sem estragar a peça",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T204",
+      "categoria": "economia_familiar",
+      "tema": "Como conversar sobre economia doméstica em família",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T205",
       "categoria": "receitas_simples",
       "tema": "Receitas simples com feijão",
       "intencao": "salvamento",
@@ -436,7 +1663,31 @@
       "cta_sugerido": "Compartilhe com quem ama comida caseira"
     },
     {
-      "id": "T053",
+      "id": "T206",
+      "categoria": "limpeza_cortina",
+      "tema": "Quando lavar cortinas e como se organizar",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Saiba a hora certa de limpar",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T207",
+      "categoria": "roupas_pesadas",
+      "tema": "Dicas para lavar toalhas sem deixar ásperas",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Dicas simples para cuidar das roupas",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T208",
+      "categoria": "economia_familiar",
+      "tema": "Dicas para envolver a família na lista de compras",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Dicas para uma rotina mais leve",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T209",
       "categoria": "receitas_simples",
       "tema": "Receitas econômicas com macarrão",
       "intencao": "salvamento",
@@ -444,7 +1695,31 @@
       "cta_sugerido": "Salve para quando faltar ideia"
     },
     {
-      "id": "T054",
+      "id": "T210",
+      "categoria": "limpeza_cortina",
+      "tema": "Como cuidar de cortinas claras no dia a dia",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T211",
+      "categoria": "roupas_pesadas",
+      "tema": "Como lavar cobertores em casa com organização",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T212",
+      "categoria": "economia_familiar",
+      "tema": "Como ensinar crianças a evitar desperdício",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T213",
       "categoria": "receitas_simples",
       "tema": "Receitas com ovo para o dia a dia",
       "intencao": "salvamento",
@@ -452,7 +1727,31 @@
       "cta_sugerido": "Compartilhe com quem quer praticidade"
     },
     {
-      "id": "T055",
+      "id": "T214",
+      "categoria": "limpeza_cortina",
+      "tema": "Erros que deixam cortinas com cheiro de guardado",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Evite isso na limpeza da casa",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T215",
+      "categoria": "roupas_pesadas",
+      "tema": "Cuidados com roupas de cama na lavagem",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Lavanderia mais prática em casa",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T216",
+      "categoria": "economia_familiar",
+      "tema": "Como combinar prioridades antes da compra do mês",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T217",
       "categoria": "receitas_simples",
       "tema": "Receitas de 3 ingredientes",
       "intencao": "compartilhamento",
@@ -460,7 +1759,31 @@
       "cta_sugerido": "Envie para quem cozinha com pressa"
     },
     {
-      "id": "T056",
+      "id": "T218",
+      "categoria": "limpeza_cortina",
+      "tema": "Como manter cortinas arejadas e bonitas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T219",
+      "categoria": "roupas_pesadas",
+      "tema": "Como secar peças pesadas mais rápido",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T220",
+      "categoria": "economia_familiar",
+      "tema": "Atitudes simples para economizar sem brigar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T221",
       "categoria": "receitas_simples",
       "tema": "Receitas para aproveitar pão amanhecido",
       "intencao": "salvamento",
@@ -468,7 +1791,31 @@
       "cta_sugerido": "Salve para evitar desperdício"
     },
     {
-      "id": "T057",
+      "id": "T222",
+      "categoria": "limpeza_cortina",
+      "tema": "Dicas para limpar trilhos e varões de cortina",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Dicas simples para casa limpa",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T223",
+      "categoria": "roupas_pesadas",
+      "tema": "Erros ao lavar toalhas, lençóis e cobertores",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Evite isso ao cuidar das roupas",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T224",
+      "categoria": "economia_familiar",
+      "tema": "Como planejar refeições com participação da família",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T225",
       "categoria": "receitas_simples",
       "tema": "Receitas simples para café da tarde",
       "intencao": "compartilhamento",
@@ -476,7 +1823,31 @@
       "cta_sugerido": "Envie para quem ama café da tarde"
     },
     {
-      "id": "T058",
+      "id": "T226",
+      "categoria": "limpeza_cortina",
+      "tema": "Como dobrar e guardar cortinas sem amassar demais",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T227",
+      "categoria": "roupas_pesadas",
+      "tema": "Como lavar roupas de trabalho mais sujas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T228",
+      "categoria": "economia_familiar",
+      "tema": "Como mostrar para os filhos o valor das pequenas escolhas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T229",
       "categoria": "receitas_simples",
       "tema": "Receitas de panela única",
       "intencao": "salvamento",
@@ -484,7 +1855,31 @@
       "cta_sugerido": "Salve para dias corridos"
     },
     {
-      "id": "T059",
+      "id": "T230",
+      "categoria": "limpeza_cortina",
+      "tema": "Checklist para lavar cortina com mais cuidado",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist pronto para salvar",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T231",
+      "categoria": "roupas_pesadas",
+      "tema": "Checklist para lavar peças pesadas sem sobrecarregar a máquina",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist de lavanderia para salvar",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T232",
+      "categoria": "economia_familiar",
+      "tema": "Como evitar compras por impulso com apoio da família",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T233",
       "categoria": "receitas_simples",
       "tema": "Receitas para almoço rápido",
       "intencao": "salvamento",
@@ -492,7 +1887,31 @@
       "cta_sugerido": "Compartilhe com quem vive na correria"
     },
     {
-      "id": "T060",
+      "id": "T234",
+      "categoria": "limpeza_cortina",
+      "tema": "Como limpar persianas sem levantar poeira demais",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T235",
+      "categoria": "roupas_pesadas",
+      "tema": "Como separar panos de limpeza das roupas da família",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T236",
+      "categoria": "economia_familiar",
+      "tema": "Como transformar economia em meta da casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T237",
       "categoria": "receitas_simples",
       "tema": "Receitas econômicas para o fim de semana",
       "intencao": "compartilhamento",
@@ -500,7 +1919,31 @@
       "cta_sugerido": "Salve para fazer no sábado"
     },
     {
-      "id": "T061",
+      "id": "T238",
+      "categoria": "limpeza_cortina",
+      "tema": "Como combinar limpeza da janela com limpeza da cortina",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T239",
+      "categoria": "roupas_pesadas",
+      "tema": "Como cuidar de tapetes pequenos laváveis",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T240",
+      "categoria": "economia_familiar",
+      "tema": "Checklist de compra familiar mais consciente",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Checklist familiar para usar na semana",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T241",
       "categoria": "validade_e_conservacao",
       "tema": "Quanto tempo alguns alimentos duram depois de abertos",
       "intencao": "salvamento",
@@ -508,7 +1951,31 @@
       "cta_sugerido": "Salve para consultar depois"
     },
     {
-      "id": "T062",
+      "id": "T242",
+      "categoria": "limpeza_piso",
+      "tema": "Como limpar piso sem deixar embaçado",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T243",
+      "categoria": "secagem",
+      "tema": "Como estender roupas para secar melhor",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T244",
+      "categoria": "refeicoes_em_familia",
+      "tema": "Como valorizar a hora da refeição em casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T245",
       "categoria": "validade_e_conservacao",
       "tema": "Como conservar alimentos secos",
       "intencao": "salvamento",
@@ -516,7 +1983,31 @@
       "cta_sugerido": "Salve para organizar a despensa"
     },
     {
-      "id": "T063",
+      "id": "T246",
+      "categoria": "limpeza_piso",
+      "tema": "Ordem certa para varrer, passar pano e finalizar o piso",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Casa limpa com menos esforço",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T247",
+      "categoria": "secagem",
+      "tema": "Dicas para roupa secar em apartamento pequeno",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas simples para cuidar das roupas",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T248",
+      "categoria": "refeicoes_em_familia",
+      "tema": "Dicas para reunir a família à mesa com simplicidade",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas para uma rotina mais leve",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T249",
       "categoria": "validade_e_conservacao",
       "tema": "Como identificar sinais de alimento mal armazenado",
       "intencao": "salvamento",
@@ -524,7 +2015,31 @@
       "cta_sugerido": "Compartilhe com sua família"
     },
     {
-      "id": "T064",
+      "id": "T250",
+      "categoria": "limpeza_piso",
+      "tema": "Como cuidar de piso claro na rotina da casa",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T251",
+      "categoria": "secagem",
+      "tema": "Como secar roupa em dias de chuva",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T252",
+      "categoria": "refeicoes_em_familia",
+      "tema": "Como transformar jantar simples em momento especial",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T253",
       "categoria": "validade_e_conservacao",
       "tema": "Como guardar arroz, feijão e macarrão",
       "intencao": "salvamento",
@@ -532,7 +2047,31 @@
       "cta_sugerido": "Salve para consultar depois"
     },
     {
-      "id": "T065",
+      "id": "T254",
+      "categoria": "limpeza_piso",
+      "tema": "Como limpar piso da cozinha depois de fritura",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T255",
+      "categoria": "secagem",
+      "tema": "Como evitar cheiro de guardado em roupa úmida",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T256",
+      "categoria": "refeicoes_em_familia",
+      "tema": "Assuntos leves para conversar durante a refeição",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Um lar mais leve começa nos detalhes",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T257",
       "categoria": "validade_e_conservacao",
       "tema": "Como organizar produtos por validade",
       "intencao": "salvamento",
@@ -540,7 +2079,31 @@
       "cta_sugerido": "Salve para aplicar na despensa"
     },
     {
-      "id": "T066",
+      "id": "T258",
+      "categoria": "limpeza_piso",
+      "tema": "Como evitar marcas de pano no chão",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T259",
+      "categoria": "secagem",
+      "tema": "Erros no varal que amassam mais a roupa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Evite isso ao cuidar das roupas",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T260",
+      "categoria": "refeicoes_em_familia",
+      "tema": "Como reduzir celular na hora de comer",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T261",
       "categoria": "validade_e_conservacao",
       "tema": "Cuidados com alimentos no calor",
       "intencao": "compartilhamento",
@@ -548,7 +2111,31 @@
       "cta_sugerido": "Envie para quem mora em lugar quente"
     },
     {
-      "id": "T067",
+      "id": "T262",
+      "categoria": "limpeza_piso",
+      "tema": "Checklist de limpeza do piso para casa pequena",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist pronto para salvar",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T263",
+      "categoria": "secagem",
+      "tema": "Como usar cabides para secar camisas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T264",
+      "categoria": "refeicoes_em_familia",
+      "tema": "Atitudes que aproximam a família na cozinha",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T265",
       "categoria": "validade_e_conservacao",
       "tema": "Como evitar insetos na despensa",
       "intencao": "salvamento",
@@ -556,7 +2143,31 @@
       "cta_sugerido": "Salve para cuidar da sua despensa"
     },
     {
-      "id": "T068",
+      "id": "T266",
+      "categoria": "limpeza_piso",
+      "tema": "Como escolher o pano certo para cada tipo de piso",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T267",
+      "categoria": "secagem",
+      "tema": "Como organizar o varal por tipo de peça",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T268",
+      "categoria": "refeicoes_em_familia",
+      "tema": "Como cozinhar junto sem virar bagunça",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T269",
       "categoria": "validade_e_conservacao",
       "tema": "Como guardar açúcar, farinha e café",
       "intencao": "salvamento",
@@ -564,7 +2175,31 @@
       "cta_sugerido": "Compartilhe com quem organiza a casa"
     },
     {
-      "id": "T069",
+      "id": "T270",
+      "categoria": "limpeza_piso",
+      "tema": "Erros que deixam o piso com aspecto grudento",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Evite isso na limpeza da casa",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T271",
+      "categoria": "secagem",
+      "tema": "Dicas para secar toalhas sem mau cheiro",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Dicas simples para cuidar das roupas",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T272",
+      "categoria": "refeicoes_em_familia",
+      "tema": "Como criar tradições simples no fim de semana",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T273",
       "categoria": "validade_e_conservacao",
       "tema": "Como evitar umidade nos alimentos secos",
       "intencao": "salvamento",
@@ -572,7 +2207,31 @@
       "cta_sugerido": "Salve para conferir sua cozinha"
     },
     {
-      "id": "T070",
+      "id": "T274",
+      "categoria": "limpeza_piso",
+      "tema": "Como manter entrada da casa sempre limpa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T275",
+      "categoria": "secagem",
+      "tema": "Como aproveitar melhor o sol sem desbotar roupas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T276",
+      "categoria": "refeicoes_em_familia",
+      "tema": "Dicas para café da manhã em família sem correria",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas para uma rotina mais leve",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T277",
       "categoria": "validade_e_conservacao",
       "tema": "Como armazenar alimentos após abrir a embalagem",
       "intencao": "salvamento",
@@ -580,7 +2239,31 @@
       "cta_sugerido": "Salve para não esquecer"
     },
     {
-      "id": "T071",
+      "id": "T278",
+      "categoria": "limpeza_piso",
+      "tema": "Como limpar cantinhos e rodapés com mais facilidade",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T279",
+      "categoria": "secagem",
+      "tema": "Checklist para recolher roupa do varal na hora certa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist de lavanderia para salvar",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T280",
+      "categoria": "refeicoes_em_familia",
+      "tema": "Como agradecer pela comida e por quem preparou",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T281",
       "categoria": "dicas_domesticas",
       "tema": "Truques simples para economizar tempo na cozinha",
       "intencao": "compartilhamento",
@@ -588,7 +2271,31 @@
       "cta_sugerido": "Envie para quem cozinha todo dia"
     },
     {
-      "id": "T072",
+      "id": "T282",
+      "categoria": "limpeza_parede",
+      "tema": "Como limpar parede sem manchar a pintura",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T283",
+      "categoria": "passar_roupa",
+      "tema": "Como passar roupa com mais facilidade",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T284",
+      "categoria": "bem_estar_no_lar",
+      "tema": "Como deixar a casa mais acolhedora no dia a dia",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T285",
       "categoria": "dicas_domesticas",
       "tema": "Como deixar a cozinha mais prática para a semana",
       "intencao": "salvamento",
@@ -596,7 +2303,31 @@
       "cta_sugerido": "Salve para organizar no domingo"
     },
     {
-      "id": "T073",
+      "id": "T286",
+      "categoria": "limpeza_parede",
+      "tema": "Dicas para tirar marcas leves da parede",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Dicas simples para casa limpa",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T287",
+      "categoria": "passar_roupa",
+      "tema": "Ordem certa para passar camisas, calças e camisetas",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Lavanderia mais prática em casa",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T288",
+      "categoria": "bem_estar_no_lar",
+      "tema": "Pequenos rituais para começar bem a semana",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T289",
       "categoria": "dicas_domesticas",
       "tema": "Como lavar e guardar potes de mantimentos",
       "intencao": "salvamento",
@@ -604,7 +2335,31 @@
       "cta_sugerido": "Compartilhe com quem ama organização"
     },
     {
-      "id": "T074",
+      "id": "T290",
+      "categoria": "limpeza_parede",
+      "tema": "Como cuidar de parede perto do fogão",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T291",
+      "categoria": "passar_roupa",
+      "tema": "Dicas para reduzir roupas amassadas antes de passar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas simples para cuidar das roupas",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T292",
+      "categoria": "bem_estar_no_lar",
+      "tema": "Como criar um cantinho de descanso em casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T293",
       "categoria": "dicas_domesticas",
       "tema": "Como montar uma rotina simples de limpeza da cozinha",
       "intencao": "salvamento",
@@ -612,7 +2367,31 @@
       "cta_sugerido": "Salve para seguir depois"
     },
     {
-      "id": "T075",
+      "id": "T294",
+      "categoria": "limpeza_parede",
+      "tema": "Como limpar interruptores e tomadas com cuidado",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T295",
+      "categoria": "passar_roupa",
+      "tema": "Como dobrar roupas para amassar menos",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T296",
+      "categoria": "bem_estar_no_lar",
+      "tema": "Dicas para reduzir estresse na rotina doméstica",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas para uma rotina mais leve",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T297",
       "categoria": "dicas_domesticas",
       "tema": "Dicas para evitar desperdício de comida pronta",
       "intencao": "compartilhamento",
@@ -620,7 +2399,31 @@
       "cta_sugerido": "Envie para quem sempre guarda sobras"
     },
     {
-      "id": "T076",
+      "id": "T298",
+      "categoria": "limpeza_parede",
+      "tema": "Erros que podem piorar manchas na parede",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Evite isso na limpeza da casa",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T299",
+      "categoria": "passar_roupa",
+      "tema": "Erros que dificultam a hora de passar roupa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Evite isso ao cuidar das roupas",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T300",
+      "categoria": "bem_estar_no_lar",
+      "tema": "Como tornar a casa mais tranquila à noite",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T301",
       "categoria": "dicas_domesticas",
       "tema": "Como organizar a geladeira para enxergar melhor os alimentos",
       "intencao": "salvamento",
@@ -628,7 +2431,31 @@
       "cta_sugerido": "Salve para fazer hoje"
     },
     {
-      "id": "T077",
+      "id": "T302",
+      "categoria": "limpeza_parede",
+      "tema": "Checklist para limpar paredes antes de receber visitas",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Checklist pronto para salvar",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T303",
+      "categoria": "passar_roupa",
+      "tema": "Como organizar um cesto de roupas para passar",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T304",
+      "categoria": "bem_estar_no_lar",
+      "tema": "Atitudes que melhoram o clima dentro de casa",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T305",
       "categoria": "dicas_domesticas",
       "tema": "Como separar compras assim que chegam em casa",
       "intencao": "salvamento",
@@ -636,7 +2463,31 @@
       "cta_sugerido": "Salve para lembrar na próxima compra"
     },
     {
-      "id": "T078",
+      "id": "T306",
+      "categoria": "limpeza_parede",
+      "tema": "Como limpar marcas de mão em portas e paredes",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T307",
+      "categoria": "passar_roupa",
+      "tema": "Como passar roupa social com mais cuidado",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T308",
+      "categoria": "bem_estar_no_lar",
+      "tema": "Como organizar a casa sem se cobrar demais",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T309",
       "categoria": "dicas_domesticas",
       "tema": "Como manter a despensa visualmente bonita e funcional",
       "intencao": "compartilhamento",
@@ -644,7 +2495,31 @@
       "cta_sugerido": "Compartilhe com quem gosta de casa organizada"
     },
     {
-      "id": "T079",
+      "id": "T310",
+      "categoria": "limpeza_parede",
+      "tema": "Como manter paredes claras com aparência de novas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T311",
+      "categoria": "passar_roupa",
+      "tema": "Como cuidar de tecidos que não podem receber muito calor",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T312",
+      "categoria": "bem_estar_no_lar",
+      "tema": "Como celebrar pequenas conquistas da família",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T313",
       "categoria": "dicas_domesticas",
       "tema": "Como preparar a cozinha para cozinhar mais rápido",
       "intencao": "salvamento",
@@ -652,7 +2527,31 @@
       "cta_sugerido": "Salve para testar esta semana"
     },
     {
-      "id": "T080",
+      "id": "T314",
+      "categoria": "limpeza_parede",
+      "tema": "Como limpar rodapés sem cansar tanto",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T315",
+      "categoria": "passar_roupa",
+      "tema": "Checklist rápido para passar roupa sem pressa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist de lavanderia para salvar",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T316",
+      "categoria": "bem_estar_no_lar",
+      "tema": "Dicas para um domingo mais leve em casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas para uma rotina mais leve",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T317",
       "categoria": "dicas_domesticas",
       "tema": "Dicas para montar uma rotina de compras da casa",
       "intencao": "salvamento",
@@ -660,7 +2559,31 @@
       "cta_sugerido": "Envie para quem cuida do lar"
     },
     {
-      "id": "T081",
+      "id": "T318",
+      "categoria": "limpeza_parede",
+      "tema": "Dicas para parede de casa com crianças",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Dicas simples para casa limpa",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T319",
+      "categoria": "passar_roupa",
+      "tema": "Como deixar roupas prontas para a semana",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T320",
+      "categoria": "bem_estar_no_lar",
+      "tema": "Como cuidar do lar sem esquecer de você",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T321",
       "categoria": "cesta_basica",
       "tema": "Como montar uma cesta básica inteligente",
       "intencao": "salvamento",
@@ -668,7 +2591,31 @@
       "cta_sugerido": "Salve para montar a sua"
     },
     {
-      "id": "T082",
+      "id": "T322",
+      "categoria": "limpeza_varanda",
+      "tema": "Como limpar varanda sem jogar sujeira para dentro de casa",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T323",
+      "categoria": "manchas_odores",
+      "tema": "Como agir rápido quando a roupa mancha",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T324",
+      "categoria": "atitudes_positivas",
+      "tema": "Como começar o dia com atitudes positivas em família",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T325",
       "categoria": "cesta_basica",
       "tema": "Itens essenciais de uma cesta básica",
       "intencao": "salvamento",
@@ -676,7 +2623,31 @@
       "cta_sugerido": "Compartilhe com quem compra mantimentos"
     },
     {
-      "id": "T083",
+      "id": "T326",
+      "categoria": "limpeza_varanda",
+      "tema": "Checklist de limpeza para varanda pequena",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist pronto para salvar",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T327",
+      "categoria": "manchas_odores",
+      "tema": "Dicas para reduzir cheiro de suor em camisetas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas simples para cuidar das roupas",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T328",
+      "categoria": "atitudes_positivas",
+      "tema": "Pequenos gestos de carinho que fazem diferença",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T329",
       "categoria": "cesta_basica",
       "tema": "Como complementar a cesta básica da família",
       "intencao": "salvamento",
@@ -684,7 +2655,31 @@
       "cta_sugerido": "Salve para conferir na próxima compra"
     },
     {
-      "id": "T084",
+      "id": "T330",
+      "categoria": "limpeza_varanda",
+      "tema": "Como cuidar de piso externo no dia a dia",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T331",
+      "categoria": "manchas_odores",
+      "tema": "Como evitar cheiro de mofo em roupa guardada",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T332",
+      "categoria": "atitudes_positivas",
+      "tema": "Como incentivar colaboração sem reclamar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T333",
       "categoria": "cesta_basica",
       "tema": "Diferença entre cesta básica simples e reforçada",
       "intencao": "compartilhamento",
@@ -692,7 +2687,31 @@
       "cta_sugerido": "Envie para quem compra para a família"
     },
     {
-      "id": "T085",
+      "id": "T334",
+      "categoria": "limpeza_varanda",
+      "tema": "Como limpar mesa e cadeiras da varanda",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T335",
+      "categoria": "manchas_odores",
+      "tema": "Como cuidar de manchas do dia a dia sem desespero",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T336",
+      "categoria": "atitudes_positivas",
+      "tema": "Como reconhecer o esforço de cada pessoa em casa",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T337",
       "categoria": "cesta_basica",
       "tema": "Como fazer a cesta básica durar mais",
       "intencao": "salvamento",
@@ -700,7 +2719,31 @@
       "cta_sugerido": "Salve para organizar o consumo"
     },
     {
-      "id": "T086",
+      "id": "T338",
+      "categoria": "limpeza_varanda",
+      "tema": "Dicas para evitar poeira acumulada na varanda",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas simples para casa limpa",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T339",
+      "categoria": "manchas_odores",
+      "tema": "Erros que fixam manchas na roupa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Evite isso ao cuidar das roupas",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T340",
+      "categoria": "atitudes_positivas",
+      "tema": "Dicas para transformar reclamação em pedido claro",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas para uma rotina mais leve",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T341",
       "categoria": "cesta_basica",
       "tema": "Como planejar refeições usando itens da cesta básica",
       "intencao": "salvamento",
@@ -708,7 +2751,31 @@
       "cta_sugerido": "Compartilhe com quem compra cesta"
     },
     {
-      "id": "T087",
+      "id": "T342",
+      "categoria": "limpeza_varanda",
+      "tema": "Como organizar produtos de limpeza da área externa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T343",
+      "categoria": "manchas_odores",
+      "tema": "Como separar roupa muito suja antes da lavagem",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T344",
+      "categoria": "atitudes_positivas",
+      "tema": "Como cultivar paciência na rotina familiar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T345",
       "categoria": "cesta_basica",
       "tema": "Itens da cesta básica que mais ajudam no dia a dia",
       "intencao": "salvamento",
@@ -716,7 +2783,31 @@
       "cta_sugerido": "Salve para lembrar na compra"
     },
     {
-      "id": "T088",
+      "id": "T346",
+      "categoria": "limpeza_varanda",
+      "tema": "Como deixar a varanda pronta para o fim de semana",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T347",
+      "categoria": "manchas_odores",
+      "tema": "Como tirar cheiro de cozinha das roupas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T348",
+      "categoria": "atitudes_positivas",
+      "tema": "Atitudes para deixar o ambiente mais alegre",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T349",
       "categoria": "cesta_basica",
       "tema": "Como organizar a cesta básica depois que chega",
       "intencao": "salvamento",
@@ -724,7 +2815,31 @@
       "cta_sugerido": "Salve para fazer em casa"
     },
     {
-      "id": "T089",
+      "id": "T350",
+      "categoria": "limpeza_varanda",
+      "tema": "Erros que deixam a varanda com aparência descuidada",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Evite isso na limpeza da casa",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T351",
+      "categoria": "manchas_odores",
+      "tema": "Como lidar com roupa molhada esquecida",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T352",
+      "categoria": "atitudes_positivas",
+      "tema": "Como criar uma cultura de ajuda dentro de casa",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T353",
       "categoria": "cesta_basica",
       "tema": "Como escolher uma cesta básica para presentear ou ajudar alguém",
       "intencao": "compartilhamento",
@@ -732,7 +2847,31 @@
       "cta_sugerido": "Envie para quem quer ajudar alguém"
     },
     {
-      "id": "T090",
+      "id": "T354",
+      "categoria": "limpeza_varanda",
+      "tema": "Como limpar janelas e grades com mais praticidade",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T355",
+      "categoria": "manchas_odores",
+      "tema": "Checklist para revisar manchas antes de secar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist de lavanderia para salvar",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T356",
+      "categoria": "atitudes_positivas",
+      "tema": "Como pedir desculpas e seguir em frente",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T357",
       "categoria": "cesta_basica",
       "tema": "Como calcular itens básicos para uma família",
       "intencao": "salvamento",
@@ -740,7 +2879,31 @@
       "cta_sugerido": "Salve para organizar melhor"
     },
     {
-      "id": "T091",
+      "id": "T358",
+      "categoria": "limpeza_varanda",
+      "tema": "Como manter plantas e varanda limpas sem bagunça",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T359",
+      "categoria": "manchas_odores",
+      "tema": "Como evitar mistura de cheiro no cesto de roupa suja",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T360",
+      "categoria": "atitudes_positivas",
+      "tema": "Hábitos simples para uma família mais unida",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Pequenas atitudes mudam o lar",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T361",
       "categoria": "conteudo_local",
       "tema": "Como economizar nas compras em Cuiabá e Várzea Grande",
       "intencao": "compartilhamento",
@@ -748,7 +2911,31 @@
       "cta_sugerido": "Envie para quem mora em Cuiabá ou VG"
     },
     {
-      "id": "T092",
+      "id": "T362",
+      "categoria": "limpeza_rotina",
+      "tema": "Cronograma simples de limpeza para a semana",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Casa limpa com menos esforço",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T363",
+      "categoria": "organizacao_roupas",
+      "tema": "Como organizar armário depois da roupa lavada",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T364",
+      "categoria": "vida_pratica",
+      "tema": "Como preparar a semana da família no domingo",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T365",
       "categoria": "conteudo_local",
       "tema": "Dicas para comprar mantimentos sem sair de casa",
       "intencao": "salvamento",
@@ -756,7 +2943,31 @@
       "cta_sugerido": "Salve para a próxima compra"
     },
     {
-      "id": "T093",
+      "id": "T366",
+      "categoria": "limpeza_rotina",
+      "tema": "O que limpar todos os dias e o que deixar para a faxina",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Organize a faxina sem complicar",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T367",
+      "categoria": "organizacao_roupas",
+      "tema": "Dicas para dobrar roupas ocupando menos espaço",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Dicas simples para cuidar das roupas",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T368",
+      "categoria": "vida_pratica",
+      "tema": "Checklist familiar para dias de muita correria",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Checklist familiar para usar na semana",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T369",
       "categoria": "conteudo_local",
       "tema": "Como organizar compras com entrega em casa",
       "intencao": "salvamento",
@@ -764,7 +2975,31 @@
       "cta_sugerido": "Compartilhe com quem gosta de praticidade"
     },
     {
-      "id": "T094",
+      "id": "T370",
+      "categoria": "limpeza_rotina",
+      "tema": "Como dividir a limpeza da casa sem sobrecarregar ninguém",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T371",
+      "categoria": "organizacao_roupas",
+      "tema": "Como separar roupas da semana da família",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T372",
+      "categoria": "vida_pratica",
+      "tema": "Como organizar mochila, uniforme e documentos",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T373",
       "categoria": "conteudo_local",
       "tema": "Por que comprar cesta básica online pode facilitar a rotina",
       "intencao": "compartilhamento",
@@ -772,7 +3007,31 @@
       "cta_sugerido": "Envie para quem vive sem tempo"
     },
     {
-      "id": "T095",
+      "id": "T374",
+      "categoria": "limpeza_rotina",
+      "tema": "Checklist de limpeza para quem tem pouco tempo",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Checklist pronto para salvar",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T375",
+      "categoria": "organizacao_roupas",
+      "tema": "Como montar gavetas por tipo de peça",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T376",
+      "categoria": "vida_pratica",
+      "tema": "Dicas para não esquecer compromissos da família",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Dicas para uma rotina mais leve",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T377",
       "categoria": "conteudo_local",
       "tema": "Como planejar a compra para aproveitar entrega grátis",
       "intencao": "salvamento",
@@ -780,7 +3039,31 @@
       "cta_sugerido": "Salve para montar seu pedido"
     },
     {
-      "id": "T096",
+      "id": "T378",
+      "categoria": "limpeza_rotina",
+      "tema": "Produtos básicos para uma limpeza eficiente em casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Cuidado importante na limpeza",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T379",
+      "categoria": "organizacao_roupas",
+      "tema": "Como guardar roupas de cama por conjunto",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T380",
+      "categoria": "vida_pratica",
+      "tema": "Como criar um mural simples de avisos em casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T381",
       "categoria": "conteudo_local",
       "tema": "Como fazer compra de mantimentos para a semana em poucos minutos",
       "intencao": "salvamento",
@@ -788,7 +3071,31 @@
       "cta_sugerido": "Compartilhe com quem tem rotina corrida"
     },
     {
-      "id": "T097",
+      "id": "T382",
+      "categoria": "limpeza_rotina",
+      "tema": "Como guardar produtos de limpeza com segurança",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T383",
+      "categoria": "organizacao_roupas",
+      "tema": "Checklist para organizar lavanderia pequena",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Checklist de lavanderia para salvar",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T384",
+      "categoria": "vida_pratica",
+      "tema": "Como planejar compras, escola e rotina no mesmo calendário",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para praticar em casa"
+    },
+    {
+      "id": "T385",
       "categoria": "conteudo_local",
       "tema": "Itens úteis para ter em casa no período de calor",
       "intencao": "salvamento",
@@ -796,7 +3103,31 @@
       "cta_sugerido": "Envie para quem mora em Cuiabá ou VG"
     },
     {
-      "id": "T098",
+      "id": "T386",
+      "categoria": "limpeza_rotina",
+      "tema": "Produtos de limpeza que não devem ser misturados",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Cuidado importante na limpeza",
+      "cta_sugerido": "Compartilhe com quem cuida da casa"
+    },
+    {
+      "id": "T387",
+      "categoria": "organizacao_roupas",
+      "tema": "Como evitar acúmulo de roupa limpa sem guardar",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Compartilhe com quem cuida das roupas"
+    },
+    {
+      "id": "T388",
+      "categoria": "vida_pratica",
+      "tema": "Como organizar remédios, documentos e itens importantes",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Compartilhe com sua família"
+    },
+    {
+      "id": "T389",
       "categoria": "conteudo_local",
       "tema": "Como evitar esquecer itens importantes na compra online",
       "intencao": "salvamento",
@@ -804,7 +3135,31 @@
       "cta_sugerido": "Salve antes de fechar seu pedido"
     },
     {
-      "id": "T099",
+      "id": "T390",
+      "categoria": "limpeza_rotina",
+      "tema": "Como montar um kit de limpeza para cada cômodo",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Envie para quem gosta de casa organizada"
+    },
+    {
+      "id": "T391",
+      "categoria": "organizacao_roupas",
+      "tema": "Como ensinar crianças a cuidar das próprias roupas",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Envie para quem vive na lavanderia"
+    },
+    {
+      "id": "T392",
+      "categoria": "vida_pratica",
+      "tema": "Como montar uma rotina de chegada em casa",
+      "intencao": "salvamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Envie para alguém que cuida do lar"
+    },
+    {
+      "id": "T393",
       "categoria": "conteudo_local",
       "tema": "Como montar um pedido completo para entrega",
       "intencao": "salvamento",
@@ -812,12 +3167,60 @@
       "cta_sugerido": "Compartilhe com quem faz compra online"
     },
     {
-      "id": "T100",
+      "id": "T394",
+      "categoria": "limpeza_rotina",
+      "tema": "Como transformar faxina pesada em pequenas tarefas",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Limpeza mais fácil na prática",
+      "cta_sugerido": "Salve para testar hoje em casa"
+    },
+    {
+      "id": "T395",
+      "categoria": "organizacao_roupas",
+      "tema": "Como montar uma rotina de troca de toalhas e lençóis",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Roupa bem cuidada dura mais",
+      "cta_sugerido": "Salve para lembrar antes da próxima lavagem"
+    },
+    {
+      "id": "T396",
+      "categoria": "vida_pratica",
+      "tema": "Como facilitar a saída de casa pela manhã",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Rotina mais leve em família",
+      "cta_sugerido": "Salve para melhorar a rotina da casa"
+    },
+    {
+      "id": "T397",
       "categoria": "conteudo_local",
       "tema": "Dicas para receber compras em casa com organização",
       "intencao": "salvamento",
       "gancho_sugerido": "Receba, confira e organize melhor",
       "cta_sugerido": "Salve para usar na próxima entrega"
+    },
+    {
+      "id": "T398",
+      "categoria": "limpeza_rotina",
+      "tema": "Hábitos simples para manter a casa limpa por mais tempo",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Pequenos hábitos mantêm a casa limpa",
+      "cta_sugerido": "Salve para usar na próxima faxina"
+    },
+    {
+      "id": "T399",
+      "categoria": "organizacao_roupas",
+      "tema": "Hábitos que fazem as roupas durarem mais",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Hábitos que cuidam melhor das roupas",
+      "cta_sugerido": "Salve para usar no dia de lavar"
+    },
+    {
+      "id": "T400",
+      "categoria": "vida_pratica",
+      "tema": "Dicas para encerrar o dia com a casa em ordem",
+      "intencao": "compartilhamento",
+      "gancho_sugerido": "Dicas para uma rotina mais leve",
+      "cta_sugerido": "Salve para praticar em casa"
     }
   ]
 }
