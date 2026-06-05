@@ -4254,6 +4254,71 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
     #vitrine .lmp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
 }
 
+
+        .coupon-box-da {
+            background: #ffffff;
+            border: 1px solid var(--border-light);
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 25px;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
+        }
+        .coupon-title-da {
+            font-size: 16px;
+            font-weight: 950;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+        .coupon-row-da {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .coupon-input-da {
+            flex: 1;
+            height: 46px;
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            padding: 0 14px;
+            font-weight: 850;
+            text-transform: uppercase;
+            outline: none;
+            background: #f8fafc;
+        }
+        .coupon-input-da:focus {
+            background: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
+        }
+        .coupon-btn-da {
+            height: 46px;
+            border: none;
+            border-radius: 14px;
+            padding: 0 14px;
+            background: var(--text-dark);
+            color: #ffffff;
+            font-weight: 950;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .coupon-btn-da:active { transform: scale(0.97); }
+        .coupon-msg-da {
+            margin-top: 10px;
+            font-size: 12.5px;
+            font-weight: 850;
+            line-height: 1.4;
+            color: var(--text-light);
+            min-height: 18px;
+        }
+        .coupon-msg-da.ok { color: var(--success); }
+        .coupon-msg-da.error { color: var(--danger); }
+        .coupon-remove-da {
+            margin-left: 6px;
+            color: var(--danger);
+            font-weight: 950;
+            cursor: pointer;
+            text-decoration: underline;
+        }
 </style>
 </head>
 <body>
@@ -4475,11 +4540,21 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
 </select>
             </div>
 
+            <div class="coupon-box-da" id="coupon-box-da">
+                <div class="coupon-title-da">🎟️ Cupom de desconto</div>
+                <div class="coupon-row-da">
+                    <input type="text" id="coupon-code-input" class="coupon-input-da" placeholder="Digite seu cupom" autocomplete="off">
+                    <button type="button" class="coupon-btn-da" id="coupon-apply-btn" onclick="aplicarCupomCheckoutDA()">Aplicar</button>
+                </div>
+                <div id="coupon-msg-da" class="coupon-msg-da">Use um cupom válido para receber desconto no pedido.</div>
+            </div>
+
             <div class="chk-inline-summary">
                 <div class="summary-row"><span>Subtotal dos Produtos</span><span id="sum-sub">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-combo-row"><span>Desconto do Combo</span><span id="sum-combo-desc">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-atacado-row"><span>Desconto por quantidade</span><span id="sum-atacado-desc">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-agendamento-row"><span>Desconto de Agendamento</span><span id="sum-agendamento-desc">R$ 0,00</span></div>
+                <div class="summary-row" style="color: var(--success); display: none;" id="sum-cupom-row"><span id="sum-cupom-label">Desconto do Cupom</span><span id="sum-cupom-desc">R$ 0,00</span></div>
                 <div class="summary-row total"><span>Total Estimado</span><span id="sum-total">R$ 0,00</span></div>
             </div>
             
@@ -9142,9 +9217,13 @@ function updateTotals() {
 window.sendOrder = async function(btnOverride) {
     limparFeesOrfaos({ salvar: true });
     updateTotals();
+    const cupomResumoFinalDA = calcularResumoCupomDA(STATE.cupomAplicadoCodigo);
+    const descontoCupomFinalDA = cupomResumoFinalDA.valido ? Number(cupomResumoFinalDA.desconto || 0) : 0;
 
     if (getQuantidadeItensVisiveisCarrinho() === 0) {
         zerarCarrinhoEmMemoriaELocalStorage();
+    STATE.cupomAplicadoCodigo = '';
+    STATE.cupomAplicadoResumo = null;
         updateTotals();
         updateAllCardUIs();
         alert('Seu carrinho está vazio.');
@@ -9258,7 +9337,7 @@ window.sendOrder = async function(btnOverride) {
         }
     });
 
-    let final = Math.max(totalBruto - descontoCombo - STATE.atacadoDiscount - STATE.agendamentoDiscount, 0);
+    let final = Math.max(totalBruto - descontoCombo - STATE.atacadoDiscount - STATE.agendamentoDiscount - descontoCupomFinalDA, 0);
 
     let basketInfo = '';
     let hasBasket = Object.keys(STATE.basketCustomizations || {}).length > 0;
@@ -9355,9 +9434,17 @@ Detalhes: ${frente}
                 // Se descontos forem maiores que a taxa oculta, a diferença vira desconto no Bling.
                 descontoBling: descontoBling,
 
-                desconto: arredondar2(descontoCombo + STATE.atacadoDiscount + STATE.agendamentoDiscount),
+                desconto: arredondar2(descontoCombo + STATE.atacadoDiscount + STATE.agendamentoDiscount + descontoCupomFinalDA),
 
-                observacoes: hasBasket ? 'Pedido com Cesta/Kit' : 'Pedido Comum',
+                cupom: descontoCupomFinalDA > 0 ? {
+                    codigo: cupomResumoFinalDA.codigo,
+                    desconto: arredondar2(descontoCupomFinalDA),
+                    tipo: cupomResumoFinalDA.cupom ? String(cupomResumoFinalDA.cupom.tipo || 'valor') : 'valor',
+                    valorMinimo: cupomResumoFinalDA.cupom ? Number(cupomResumoFinalDA.cupom.valorMinimo || 0) : 0,
+                    validade: cupomResumoFinalDA.cupom ? String(cupomResumoFinalDA.cupom.validade || '') : ''
+                } : null,
+
+                observacoes: hasBasket ? 'Pedido com Cesta/Kit' : (descontoCupomFinalDA > 0 ? `Pedido com cupom ${cupomResumoFinalDA.codigo}` : 'Pedido Comum'),
 
                 cliente: {
                     nome,
@@ -10442,6 +10529,306 @@ updateTotals = function() {
             bottomSendBtn.style.boxShadow = 'none';
         }
     }
+};
+
+
+
+/* =========================================================
+   SISTEMA DE CUPONS CONFIGURÁVEIS - Dona Antônia
+   Arquivo esperado: site/cuponsativos.json
+   ========================================================= */
+const CUPONS_ATIVOS_URLS_DA = [
+    'site/cuponsativos.json',
+    'cuponsativos.json'
+];
+const CUPONS_CACHE_KEY_DA = 'dona_antonia_cupons_ativos_v1';
+const CUPONS_CACHE_MAX_AGE_DA = 1000 * 60 * 5;
+
+STATE.cuponsAtivos = [];
+STATE.cupomAplicadoCodigo = '';
+STATE.cupomAplicadoResumo = null;
+
+function normalizarCupomTextoDA(valor) {
+    const texto = String(valor || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return texto.replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function normalizarCodigoCupomDA(valor) {
+    return String(valor || '').trim().toUpperCase().replace(/\s+/g, '');
+}
+
+function listaCupomDA(valor) {
+    if (Array.isArray(valor)) return valor.map(v => String(v || '').trim()).filter(Boolean);
+    if (typeof valor === 'string') return valor.split(',').map(v => v.trim()).filter(Boolean);
+    return [];
+}
+
+function normalizarListaCuponsDA(dados) {
+    const lista = Array.isArray(dados) ? dados : (dados && typeof dados === 'object' ? Object.values(dados) : []);
+    return lista
+        .filter(Boolean)
+        .map(c => ({
+            ...c,
+            codigo: normalizarCodigoCupomDA(c.codigo || c.code || c.cupom),
+            ativo: c.ativo !== false,
+            tipo: String(c.tipo || c.tipo_desconto || 'valor').toLowerCase(),
+            desconto: Number(String(c.desconto ?? c.valor_desconto ?? c.valor ?? c.valorDesconto ?? 0).replace(',', '.')) || 0,
+            valorMinimo: Number(String(c.valorMinimo ?? c.valor_minimo ?? c.compra_minima ?? c.minimo ?? 0).replace(',', '.')) || 0,
+            validade: String(c.validade || c.data_validade || c.valido_ate || '').trim(),
+            categorias: listaCupomDA(c.categorias || c.categoria),
+            marcas: listaCupomDA(c.marcas || c.marca),
+            palavras_chave: listaCupomDA(c.palavras_chave || c.palavrasChave || c.keywords || c.palavras)
+        }))
+        .filter(c => c.codigo && c.desconto > 0);
+}
+
+async function carregarCuponsAtivosDA() {
+    try {
+        const cache = JSON.parse(localStorage.getItem(CUPONS_CACHE_KEY_DA) || 'null');
+        if (cache && Array.isArray(cache.data) && Date.now() - Number(cache.savedAt || 0) < CUPONS_CACHE_MAX_AGE_DA) {
+            STATE.cuponsAtivos = cache.data;
+            return STATE.cuponsAtivos;
+        }
+    } catch (e) {}
+
+    for (const url of CUPONS_ATIVOS_URLS_DA) {
+        try {
+            const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now(), { cache: 'no-store' });
+            if (!res.ok) continue;
+            const dados = await res.json();
+            const lista = normalizarListaCuponsDA(dados);
+            STATE.cuponsAtivos = lista;
+            try { localStorage.setItem(CUPONS_CACHE_KEY_DA, JSON.stringify({ savedAt: Date.now(), data: lista })); } catch (e) {}
+            return lista;
+        } catch (e) {
+            console.warn('Falha ao carregar cupons em:', url, e);
+        }
+    }
+
+    STATE.cuponsAtivos = [];
+    return [];
+}
+
+function cupomDentroDaValidadeDA(cupom) {
+    if (!cupom || !cupom.validade) return true;
+    const partes = String(cupom.validade).slice(0, 10).split('-').map(Number);
+    if (partes.length !== 3 || partes.some(n => !Number.isFinite(n))) return true;
+    const fim = new Date(partes[0], partes[1] - 1, partes[2], 23, 59, 59, 999);
+    return new Date() <= fim;
+}
+
+function getProdutosCarrinhoCupomDA() {
+    const itens = [];
+    Object.entries(STATE.cart || {}).forEach(([id, q]) => {
+        const key = String(id);
+        if (key.startsWith('fee_')) return;
+        const prod = (STATE.prods || []).find(p => String(p.id) === key);
+        const qtd = Number(q || 0);
+        if (!prod || qtd <= 0 || prod.isComboDiscount || prod.hiddenFromCatalog) return;
+        itens.push({ prod, qtd, total: Number(prod.price || 0) * qtd });
+    });
+    return itens;
+}
+
+function produtoElegivelCupomDA(prod, cupom) {
+    const categorias = listaCupomDA(cupom.categorias).map(normalizarCupomTextoDA);
+    const marcas = listaCupomDA(cupom.marcas).map(normalizarCupomTextoDA);
+    const palavras = listaCupomDA(cupom.palavras_chave).map(normalizarCupomTextoDA);
+    const semRestricao = categorias.length === 0 && marcas.length === 0 && palavras.length === 0;
+    if (semRestricao) return true;
+
+    const textoCategoria = normalizarCupomTextoDA(`${prod.categoria || ''} ${prod.subcategoria || ''} ${prod.subsubcategoria || ''}`);
+    const textoMarca = normalizarCupomTextoDA(prod.marca || '');
+    const textoProduto = normalizarCupomTextoDA(`${prod.name || prod.nome || ''} ${prod.marca || ''} ${prod.categoria || ''} ${prod.subcategoria || ''} ${prod.embalagem || ''}`);
+
+    const bateCategoria = categorias.some(cat => cat && textoCategoria.includes(cat));
+    const bateMarca = marcas.some(marca => marca && textoMarca.includes(marca));
+    const batePalavra = palavras.some(palavra => palavra && textoProduto.includes(palavra));
+
+    return bateCategoria || bateMarca || batePalavra;
+}
+
+function calcularResumoCupomDA(codigoInformado) {
+    const codigo = normalizarCodigoCupomDA(codigoInformado || STATE.cupomAplicadoCodigo);
+    if (!codigo) return { valido: false, codigo: '', desconto: 0, motivo: 'Digite um cupom para aplicar.' };
+
+    const cupom = (STATE.cuponsAtivos || []).find(c => normalizarCodigoCupomDA(c.codigo) === codigo);
+    if (!cupom) return { valido: false, codigo, desconto: 0, motivo: 'Cupom não encontrado.' };
+    if (!cupom.ativo) return { valido: false, codigo, cupom, desconto: 0, motivo: 'Este cupom está desativado.' };
+    if (!cupomDentroDaValidadeDA(cupom)) return { valido: false, codigo, cupom, desconto: 0, motivo: 'Este cupom está vencido.' };
+
+    const resumo = typeof calcularResumoCarrinhoSemAgendamentoDA === 'function'
+        ? calcularResumoCarrinhoSemAgendamentoDA()
+        : { sumBase: 0, descontoCombo: 0, descontoQuantidade: 0 };
+
+    const totalAntesCupom = Math.max(Number(resumo.sumBase || 0) - Number(resumo.descontoCombo || 0) - Number(resumo.descontoQuantidade || 0), 0);
+    if (totalAntesCupom < Number(cupom.valorMinimo || 0)) {
+        return { valido: false, codigo, cupom, desconto: 0, motivo: `Este cupom exige compra mínima de ${fmt(cupom.valorMinimo)}.` };
+    }
+
+    const itensElegiveis = getProdutosCarrinhoCupomDA().filter(item => produtoElegivelCupomDA(item.prod, cupom));
+    const subtotalElegivel = itensElegiveis.reduce((soma, item) => soma + item.total, 0);
+    if (subtotalElegivel <= 0) {
+        return { valido: false, codigo, cupom, desconto: 0, motivo: 'Nenhum item do carrinho atende às regras deste cupom.' };
+    }
+
+    let desconto = 0;
+    if (cupom.tipo.includes('percent')) {
+        desconto = subtotalElegivel * (Number(cupom.desconto || 0) / 100);
+    } else {
+        desconto = Number(cupom.desconto || 0);
+    }
+
+    desconto = Math.min(Math.max(desconto, 0), subtotalElegivel, totalAntesCupom);
+    if (desconto <= 0) return { valido: false, codigo, cupom, desconto: 0, motivo: 'Este cupom não gerou desconto para este carrinho.' };
+
+    return { valido: true, codigo, cupom, desconto, subtotalElegivel, motivo: `Cupom ${codigo} aplicado: -${fmt(desconto)}.` };
+}
+
+function atualizarMensagemCupomDA(resumo) {
+    const msg = $('coupon-msg-da');
+    const input = $('coupon-code-input');
+    if (!msg) return;
+
+    msg.classList.remove('ok', 'error');
+
+    if (!STATE.cupomAplicadoCodigo) {
+        msg.innerHTML = 'Use um cupom válido para receber desconto no pedido.';
+        if (input) input.value = '';
+        return;
+    }
+
+    if (input) input.value = STATE.cupomAplicadoCodigo;
+
+    if (resumo && resumo.valido) {
+        msg.classList.add('ok');
+        msg.innerHTML = `${resumo.motivo} <span class="coupon-remove-da" onclick="removerCupomCheckoutDA()">remover</span>`;
+    } else {
+        msg.classList.add('error');
+        msg.innerHTML = `${(resumo && resumo.motivo) || 'Cupom inválido.'} <span class="coupon-remove-da" onclick="removerCupomCheckoutDA()">remover</span>`;
+    }
+}
+
+window.aplicarCupomCheckoutDA = function() {
+    const input = $('coupon-code-input');
+    const codigo = normalizarCodigoCupomDA(input ? input.value : '');
+    STATE.cupomAplicadoCodigo = codigo;
+    const resumo = calcularResumoCupomDA(codigo);
+    STATE.cupomAplicadoResumo = resumo;
+    atualizarMensagemCupomDA(resumo);
+    updateTotals();
+};
+
+window.removerCupomCheckoutDA = function() {
+    STATE.cupomAplicadoCodigo = '';
+    STATE.cupomAplicadoResumo = null;
+    atualizarMensagemCupomDA(null);
+    updateTotals();
+};
+
+function inicializarEventosCupomDA() {
+    const input = $('coupon-code-input');
+    if (!input || input.dataset.cupomReady === '1') return;
+    input.dataset.cupomReady = '1';
+    input.addEventListener('input', () => {
+        input.value = normalizarCodigoCupomDA(input.value);
+    });
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            aplicarCupomCheckoutDA();
+        }
+    });
+}
+
+const updateTotalsSemCupomDA = updateTotals;
+updateTotals = function() {
+    if (typeof cancelarDescontoComboSeQuebrou === 'function') cancelarDescontoComboSeQuebrou();
+    if (typeof limparFeesOrfaos === 'function') limparFeesOrfaos({ salvar: false });
+
+    const resumo = calcularResumoCarrinhoSemAgendamentoDA();
+    const sumBase = resumo.sumBase;
+    const descontoCombo = resumo.descontoCombo;
+    const descontoQuantidade = resumo.descontoQuantidade;
+    const count = resumo.count;
+
+    STATE.atacadoDiscount = descontoQuantidade;
+    STATE.agendamentoDiscount = 0;
+
+    let cupomResumo = calcularResumoCupomDA(STATE.cupomAplicadoCodigo);
+    if (!STATE.cupomAplicadoCodigo) cupomResumo = { valido: false, codigo: '', desconto: 0 };
+    STATE.cupomAplicadoResumo = cupomResumo;
+    const descontoCupom = cupomResumo.valido ? Number(cupomResumo.desconto || 0) : 0;
+
+    if ($('sum-sub')) $('sum-sub').innerText = fmt(sumBase);
+
+    if ($('sum-combo-desc')) $('sum-combo-desc').innerText = `- ${fmt(descontoCombo)}`;
+    if ($('sum-combo-row')) $('sum-combo-row').style.display = descontoCombo > 0 ? 'flex' : 'none';
+
+    if ($('sum-atacado-desc')) $('sum-atacado-desc').innerText = `- ${fmt(descontoQuantidade)}`;
+    if ($('sum-atacado-row')) $('sum-atacado-row').style.display = descontoQuantidade > 0 ? 'flex' : 'none';
+
+    if ($('sum-agendamento-desc')) $('sum-agendamento-desc').innerText = '- R$ 0,00';
+    if ($('sum-agendamento-row')) $('sum-agendamento-row').style.display = 'none';
+
+    if ($('sum-cupom-label')) $('sum-cupom-label').innerText = cupomResumo.codigo ? `Cupom ${cupomResumo.codigo}` : 'Desconto do Cupom';
+    if ($('sum-cupom-desc')) $('sum-cupom-desc').innerText = `- ${fmt(descontoCupom)}`;
+    if ($('sum-cupom-row')) $('sum-cupom-row').style.display = descontoCupom > 0 ? 'flex' : 'none';
+
+    atualizarMensagemCupomDA(cupomResumo);
+
+    const finalTotal = Math.max(sumBase - descontoCombo - descontoQuantidade - descontoCupom, 0);
+
+    if ($('sum-total')) $('sum-total').innerText = fmt(finalTotal);
+
+    const btn = $('btn-send-order');
+    const warningMsg = $('min-order-warning');
+
+    if (btn) {
+        btn.disabled = false;
+        btn.style.background = 'var(--whatsapp)';
+        btn.style.boxShadow = '0 4px 15px rgba(37, 211, 102, 0.3)';
+    }
+
+    if (warningMsg) warningMsg.style.display = finalTotal < MIN_ORDER ? 'block' : 'none';
+
+    const badges = document.querySelectorAll('.cart-badge');
+    const bottomSendTotal = $('bottom-send-total');
+    const bottomSendBtn = $('bottom-send-btn');
+
+    if (count > 0) {
+        const txt = count > 99 ? '99+' : String(count);
+        badges.forEach(b => {
+            b.style.display = 'block';
+            b.innerText = txt;
+        });
+
+        if (bottomSendTotal) bottomSendTotal.innerText = fmt(finalTotal);
+
+        if (bottomSendBtn) {
+            bottomSendBtn.disabled = false;
+            bottomSendBtn.style.background = finalTotal < MIN_ORDER ? '#f59e0b' : 'var(--whatsapp)';
+            bottomSendBtn.style.boxShadow = finalTotal < MIN_ORDER ? '0 4px 12px rgba(245, 158, 11, 0.3)' : '0 4px 12px rgba(37, 211, 102, 0.3)';
+        }
+    } else {
+        badges.forEach(b => { b.style.display = 'none'; });
+        if (bottomSendTotal) bottomSendTotal.innerText = 'R$ 0,00';
+
+        if (bottomSendBtn) {
+            bottomSendBtn.disabled = true;
+            bottomSendBtn.style.background = '#cbd5e1';
+            bottomSendBtn.style.boxShadow = 'none';
+        }
+    }
+};
+
+const initSemCuponsDA = init;
+init = async function() {
+    inicializarEventosCupomDA();
+    await carregarCuponsAtivosDA();
+    await initSemCuponsDA();
+    inicializarEventosCupomDA();
+    updateTotals();
 };
 
 // O rail de maiores descontos passa a considerar somente produtos, sem combos/leve mais.
