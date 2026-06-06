@@ -4887,6 +4887,141 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
             .home-top-banners-da .home-cestas-arrow { height: 42px !important; font-size: 12.5px !important; }
         }
 
+
+
+        /* =========================================================
+           PATCH FINAL 2026-06-06: cesta primeiro + ofertas rotativas
+           Mantém o visual premium aprovado, com troca no mobile/desktop.
+           ========================================================= */
+        .home-top-banners-da .home-featured-search-banner {
+            position: relative !important;
+            display: block !important;
+            min-height: 178px !important;
+            padding: 0 !important;
+            border-radius: 26px !important;
+            overflow: hidden !important;
+        }
+        .home-featured-search-track {
+            position: relative !important;
+            width: 100% !important;
+            min-height: inherit !important;
+            height: 100% !important;
+        }
+        .home-featured-search-slide {
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            min-height: inherit !important;
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) minmax(118px, 38%) !important;
+            gap: 10px !important;
+            align-items: stretch !important;
+            padding: 0 !important;
+            border: 0 !important;
+            background: transparent !important;
+            color: #ffffff !important;
+            text-align: left !important;
+            cursor: pointer !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transform: translateX(12px) !important;
+            transition: opacity .35s ease, transform .35s ease !important;
+        }
+        .home-featured-search-slide.active {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            transform: translateX(0) !important;
+            z-index: 2 !important;
+        }
+        .home-featured-search-slide.home-featured-theme-beleza .home-featured-search-cta { color: #831843 !important; }
+        .home-featured-search-slide.home-featured-theme-limpeza .home-featured-search-cta { color: #075985 !important; }
+        .home-top-banners-da .home-featured-search-banner:has(.home-featured-theme-beleza.active) {
+            background:
+                radial-gradient(circle at 86% 18%, rgba(255,255,255,.30), transparent 28%),
+                linear-gradient(135deg, #500724 0%, #be185d 52%, #f9a8d4 100%) !important;
+            box-shadow: 0 16px 34px rgba(190, 24, 93, .20) !important;
+        }
+        .home-top-banners-da .home-featured-search-banner:has(.home-featured-theme-limpeza.active) {
+            background:
+                radial-gradient(circle at 86% 18%, rgba(255,255,255,.30), transparent 28%),
+                linear-gradient(135deg, #082f49 0%, #0284c7 52%, #67e8f9 100%) !important;
+            box-shadow: 0 16px 34px rgba(2, 132, 199, .20) !important;
+        }
+        .home-featured-nav {
+            position: absolute !important;
+            top: 50% !important;
+            z-index: 8 !important;
+            width: 34px !important;
+            height: 34px !important;
+            border-radius: 999px !important;
+            border: 1px solid rgba(255,255,255,.42) !important;
+            background: rgba(15, 23, 42, .38) !important;
+            color: #ffffff !important;
+            font-size: 24px !important;
+            line-height: 1 !important;
+            font-weight: 900 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            transform: translateY(-50%) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        .home-featured-prev { left: 9px !important; }
+        .home-featured-next { right: 9px !important; }
+        .home-featured-nav:active { transform: translateY(-50%) scale(.92) !important; }
+        .home-featured-dots {
+            position: absolute !important;
+            left: 18px !important;
+            bottom: 10px !important;
+            z-index: 9 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+        }
+        .home-featured-dot {
+            width: 7px !important;
+            height: 7px !important;
+            border-radius: 999px !important;
+            border: 0 !important;
+            background: rgba(255,255,255,.44) !important;
+            cursor: pointer !important;
+            padding: 0 !important;
+            transition: width .25s ease, background .25s ease !important;
+        }
+        .home-featured-dot.active {
+            width: 22px !important;
+            background: #ffffff !important;
+        }
+        .home-top-banners-da .home-cestas-feature.home-cestas-feature-destaque {
+            order: 1 !important;
+        }
+        .home-top-banners-da .home-featured-search-banner {
+            order: 2 !important;
+        }
+        @media (max-width: 767px) {
+            .home-top-banners-da .home-featured-search-copy { padding-left: 18px !important; padding-right: 0 !important; }
+            .home-top-banners-da .home-featured-search-title { padding-right: 4px !important; }
+            .home-top-banners-da .home-featured-search-cta { margin-bottom: 12px !important; }
+            .home-featured-nav { width: 30px !important; height: 30px !important; font-size: 21px !important; }
+        }
+        @media (min-width: 768px) {
+            .home-top-banners-da .home-featured-search-banner { min-height: 228px !important; }
+            .home-featured-search-slide {
+                grid-template-columns: minmax(0, 1fr) minmax(170px, 38%) !important;
+            }
+            .home-featured-nav {
+                width: 38px !important;
+                height: 38px !important;
+                opacity: .92 !important;
+            }
+            .home-featured-prev { left: 12px !important; }
+            .home-featured-next { right: 12px !important; }
+            .home-featured-dots { left: 24px !important; bottom: 14px !important; }
+        }
+
 </style>
 </head>
 <body>
@@ -5304,21 +5439,62 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
 
 
         /* =========================================================
-           BANNER EDITÁVEL DA HOME - BUSCA POR SEÇÃO
-           Para mudar depois, altere APENAS este bloco:
-           - termoBusca: palavra que será buscada
+           BANNERS EDITÁVEIS DA HOME
+           1) Cesta básica fica em primeiro.
+           2) Banner de ofertas fica em segundo e rotativo.
+           Para mudar depois, altere APENAS o array HOME_PROMO_BANNERS.
+           - termoBusca: palavra principal exibida/aberta
+           - termosBusca: palavras usadas para encontrar produtos
            - sessaoBusca: seção/categoria onde a busca será feita
            ========================================================= */
-        const HOME_FEATURED_SEARCH_BANNER = {
-            ativo: true,
-            termoBusca: 'chocolate',
-            sessaoBusca: 'CHOCOLATES E DOCES',
-            chamadaPequena: 'Especial da semana',
-            titulo: 'Chocolates e doces',
-            subtitulo: 'Toque aqui e veja os produtos encontrados nessa seção.',
-            textoBotao: 'Ver chocolates',
-            imagemFallback: ''
-        };
+        const HOME_PROMO_BANNERS = [
+            {
+                ativo: true,
+                id: 'chocolate',
+                termoBusca: 'chocolate',
+                termosBusca: ['chocolate'],
+                sessaoBusca: 'CHOCOLATES E DOCES',
+                chamadaPequena: 'Especial da semana',
+                titulo: 'Chocolates e doces',
+                subtitulo: 'Toque aqui e veja os produtos encontrados nessa seção.',
+                textoBotao: 'Ver chocolates',
+                tema: 'chocolate',
+                imagemFallback: ''
+            },
+            {
+                ativo: true,
+                id: 'beleza-nivea',
+                termoBusca: 'NIVEA',
+                termosBusca: ['NIVEA'],
+                sessaoBusca: 'BELEZA',
+                chamadaPequena: 'Oferta de beleza',
+                titulo: 'Nivea em destaque',
+                subtitulo: 'Produtos de beleza selecionados para cuidar da rotina.',
+                textoBotao: 'Ver Nivea',
+                tema: 'beleza',
+                imagemFallback: ''
+            },
+            {
+                ativo: true,
+                id: 'limpeza-casa',
+                termoBusca: 'limpeza',
+                termosBusca: ['VASSOURA', 'RODO', 'PANO'],
+                sessaoBusca: 'LIMPEZA',
+                chamadaPequena: 'Casa limpa',
+                titulo: 'Limpeza prática',
+                subtitulo: 'Vassouras, rodos e panos para facilitar a faxina.',
+                textoBotao: 'Ver limpeza',
+                tema: 'limpeza',
+                imagemFallback: ''
+            }
+        ];
+
+        let HOME_PROMO_BANNER_INDEX = 0;
+        let HOME_PROMO_BANNER_TIMER = null;
+
+        function getHomePromoBannersAtivosDA() {
+            return (HOME_PROMO_BANNERS || []).filter(item => item && item.ativo !== false);
+        }
 
         function produtoPertenceSessaoBannerDA(prod, sessao) {
             const alvo = norm(sessao || '');
@@ -5327,34 +5503,42 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
             return campos.some(campo => norm(campo || '') === alvo);
         }
 
-        function produtoCombinaTermoBannerDA(prod, termo) {
-            const termos = normalizarTermoBuscaSite(termo || '').split(' ').filter(Boolean);
+        function produtoCombinaTermosBannerDA(prod, cfg) {
+            const listaTermos = Array.isArray(cfg.termosBusca) && cfg.termosBusca.length ? cfg.termosBusca : [cfg.termoBusca];
+            const termos = listaTermos
+                .map(t => normalizarTermoBuscaSite(t || '').trim())
+                .filter(Boolean);
             if (!termos.length) return true;
             const texto = montarTextoBuscaProdutoSite(prod);
-            return termos.every(t => texto.includes(t));
+            return termos.some(termo => {
+                const partes = termo.split(' ').filter(Boolean);
+                return partes.length ? partes.every(p => texto.includes(p)) : false;
+            });
         }
 
-        function getProdutosBuscaBannerHomeDA() {
-            const cfg = HOME_FEATURED_SEARCH_BANNER || {};
+        function getProdutosBuscaBannerHomeDA(cfg) {
+            cfg = cfg || getHomePromoBannersAtivosDA()[HOME_PROMO_BANNER_INDEX] || {};
             return (STATE.prods || []).filter(prod => {
                 if (!prod || prod.categoria === 'Cestas') return false;
                 if (Number(prod.stock || 0) <= 0) return false;
-                return produtoPertenceSessaoBannerDA(prod, cfg.sessaoBusca) && produtoCombinaTermoBannerDA(prod, cfg.termoBusca);
+                return produtoPertenceSessaoBannerDA(prod, cfg.sessaoBusca) && produtoCombinaTermosBannerDA(prod, cfg);
             });
         }
 
         function getHomeFeaturedSearchBannerHTML() {
-            const cfg = HOME_FEATURED_SEARCH_BANNER || {};
-            if (!cfg.ativo) return '';
+            const banners = getHomePromoBannersAtivosDA();
+            if (!banners.length) return '';
 
-            const produtos = getProdutosBuscaBannerHomeDA();
-            const primeiroProduto = produtos[0] || null;
-            const imagem = (primeiroProduto && primeiroProduto.img) || cfg.imagemFallback || errorImgFallback;
-            const alt = (primeiroProduto && primeiroProduto.name) || cfg.titulo || 'Produtos em destaque';
-            const totalTexto = produtos.length ? `${produtos.length} produto${produtos.length === 1 ? '' : 's'} encontrado${produtos.length === 1 ? '' : 's'}` : `Buscar ${cfg.termoBusca}`;
+            const slides = banners.map((cfg, index) => {
+                const produtos = getProdutosBuscaBannerHomeDA(cfg);
+                const primeiroProduto = produtos[0] || null;
+                const imagem = (primeiroProduto && primeiroProduto.img) || cfg.imagemFallback || errorImgFallback;
+                const alt = (primeiroProduto && primeiroProduto.name) || cfg.titulo || 'Produtos em destaque';
+                const totalTexto = produtos.length ? `${produtos.length} produto${produtos.length === 1 ? '' : 's'} encontrado${produtos.length === 1 ? '' : 's'}` : `Buscar ${cfg.termoBusca}`;
+                const activeClass = index === HOME_PROMO_BANNER_INDEX ? 'active' : '';
+                const temaClass = cfg.tema ? `home-featured-theme-${String(cfg.tema).replace(/[^a-z0-9_-]/gi, '').toLowerCase()}` : '';
 
-            return `
-                <a href="javascript:void(0)" class="home-featured-search-banner" onclick="openHomeFeaturedSearchBanner(); return false;" aria-label="Abrir busca de ${cfg.termoBusca} na seção ${cfg.sessaoBusca}">
+                return `<button type="button" class="home-featured-search-slide ${activeClass} ${temaClass}" data-banner-index="${index}" onclick="openHomeFeaturedSearchBanner(${index}); return false;" aria-label="Abrir busca de ${escapeAttrDA(cfg.termoBusca)} na seção ${escapeAttrDA(cfg.sessaoBusca)}">
                     <div class="home-featured-search-copy">
                         <div class="home-featured-search-kicker">${cfg.chamadaPequena || 'Destaque'}</div>
                         <div class="home-featured-search-title">${cfg.titulo || cfg.termoBusca}</div>
@@ -5363,15 +5547,57 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
                     </div>
                     <div class="home-featured-search-imagebox">
                         <div class="home-featured-search-imageframe">
-                            ${primeiroProduto ? `<img src="${imagem}" alt="${alt}" loading="eager" decoding="async" fetchpriority="high" onerror="this.src='${errorImgFallback}'">` : `<div class="home-featured-search-empty">Imagem do 1º produto aparecerá aqui quando houver resultado.</div>`}
+                            ${primeiroProduto ? `<img src="${escapeAttrDA(imagem)}" alt="${escapeAttrDA(alt)}" loading="${index === 0 ? 'eager' : 'lazy'}" decoding="async" ${index === 0 ? 'fetchpriority="high"' : ''} onerror="this.src='${errorImgFallback}'">` : `<div class="home-featured-search-empty">Imagem do 1º produto aparecerá aqui quando houver resultado.</div>`}
                         </div>
                     </div>
-                </a>`;
+                </button>`;
+            }).join('');
+
+            const dots = banners.map((cfg, index) => `<button type="button" class="home-featured-dot ${index === HOME_PROMO_BANNER_INDEX ? 'active' : ''}" onclick="setHomeFeaturedSearchBanner(${index}, true); return false;" aria-label="Mostrar banner ${index + 1}"></button>`).join('');
+
+            return `<section class="home-featured-search-banner" aria-label="Ofertas em destaque">
+                        <div class="home-featured-search-track">${slides}</div>
+                        <button type="button" class="home-featured-nav home-featured-prev" onclick="moveHomeFeaturedSearchBanner(-1); return false;" aria-label="Oferta anterior">‹</button>
+                        <button type="button" class="home-featured-nav home-featured-next" onclick="moveHomeFeaturedSearchBanner(1); return false;" aria-label="Próxima oferta">›</button>
+                        <div class="home-featured-dots">${dots}</div>
+                    </section>`;
         }
 
-        window.openHomeFeaturedSearchBanner = function() {
-            const cfg = HOME_FEATURED_SEARCH_BANNER || {};
-            STATE.searchQuery = String(cfg.termoBusca || '').replace(/\s+/g, ' ').trim();
+        window.setHomeFeaturedSearchBanner = function(index, manual) {
+            const banners = getHomePromoBannersAtivosDA();
+            if (!banners.length) return;
+            HOME_PROMO_BANNER_INDEX = ((Number(index) || 0) + banners.length) % banners.length;
+
+            document.querySelectorAll('.home-featured-search-slide').forEach((slide, i) => {
+                slide.classList.toggle('active', i === HOME_PROMO_BANNER_INDEX);
+            });
+            document.querySelectorAll('.home-featured-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === HOME_PROMO_BANNER_INDEX);
+            });
+
+            if (manual) startHomeFeaturedSearchBannerAuto();
+        };
+
+        window.moveHomeFeaturedSearchBanner = function(direction) {
+            setHomeFeaturedSearchBanner(HOME_PROMO_BANNER_INDEX + Number(direction || 1), true);
+        };
+
+        function startHomeFeaturedSearchBannerAuto() {
+            clearInterval(HOME_PROMO_BANNER_TIMER);
+            const banners = getHomePromoBannersAtivosDA();
+            if (banners.length <= 1) return;
+            HOME_PROMO_BANNER_TIMER = setInterval(() => {
+                const bannerEl = document.querySelector('.home-featured-search-banner');
+                if (!bannerEl || document.hidden) return;
+                setHomeFeaturedSearchBanner(HOME_PROMO_BANNER_INDEX + 1, false);
+            }, 5200);
+        }
+
+        window.openHomeFeaturedSearchBanner = function(index) {
+            const banners = getHomePromoBannersAtivosDA();
+            const cfg = banners[((Number(index) || 0) + banners.length) % banners.length] || banners[0] || {};
+            const termoPrincipal = String(cfg.termoBusca || (Array.isArray(cfg.termosBusca) ? cfg.termosBusca[0] : '') || '').replace(/\s+/g, ' ').trim();
+            STATE.searchQuery = termoPrincipal;
             STATE.searchSection = String(cfg.sessaoBusca || '').trim();
 
             const input = $('app-search-input');
@@ -5385,7 +5611,6 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
                 renderSearch();
             }
         };
-
 
         window.showToast = function(msg) {
             let toast = $('toast-msg');
@@ -5897,8 +6122,8 @@ function renderInicio() {
             let htmlMercado = '<div style="padding: 15px 20px;">';
             htmlMercado += `<div class="info-banner-home">Pedidos a partir de R$ 75 | Entrega Grátis em Cuiabá e VG.</div>`;
             htmlMercado += `<div class="home-top-banners-da">`;
-            htmlMercado += getHomeFeaturedSearchBannerHTML();
             htmlMercado += getHomeCestasFeatureHTML();
+            htmlMercado += getHomeFeaturedSearchBannerHTML();
             htmlMercado += `</div>`;
 
             htmlMercado += getHomeOffersHeroHTML();
