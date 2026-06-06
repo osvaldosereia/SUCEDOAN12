@@ -6989,9 +6989,17 @@ document.addEventListener('input', function(e) {
 function abrirWhatsAppPedido(mensagem) {
     const numeroLoja = '5565998150975';
     const texto = encodeURIComponent(mensagem);
-    const url = `https://wa.me/${numeroLoja}?text=${texto}`;
 
-    window.open(url, '_blank');
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    const urlMobile = `https://api.whatsapp.com/send?phone=${numeroLoja}&text=${texto}&type=phone_number&app_absent=0`;
+    const urlDesktop = `https://web.whatsapp.com/send?phone=${numeroLoja}&text=${texto}`;
+
+    if (isMobile) {
+        window.location.href = urlMobile;
+    } else {
+        window.open(urlDesktop, '_blank', 'noopener,noreferrer');
+    }
 }
         window.sendOrder = async function(btnOverride) {
     const btn = btnOverride || $('btn-send-order'); 
