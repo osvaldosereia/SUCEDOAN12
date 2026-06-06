@@ -4319,6 +4319,264 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
             cursor: pointer;
             text-decoration: underline;
         }
+
+
+        /* Banner editável da home: busca direcionada por seção */
+        .home-featured-search-banner {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1.35fr 0.85fr;
+            align-items: stretch;
+            gap: 10px;
+            margin: 0 0 15px 0;
+            min-height: 168px;
+            overflow: hidden;
+            border-radius: 22px;
+            border: 1px solid rgba(245, 158, 11, 0.42);
+            background:
+                radial-gradient(circle at 92% 18%, rgba(255, 255, 255, 0.38), transparent 28%),
+                linear-gradient(135deg, #451a03 0%, #92400e 45%, #f59e0b 100%);
+            color: #ffffff;
+            text-decoration: none;
+            box-shadow: 0 14px 34px rgba(146, 64, 14, 0.24);
+            isolation: isolate;
+        }
+        .home-featured-search-banner::before {
+            content: "";
+            position: absolute;
+            inset: -40% -18% auto auto;
+            width: 210px;
+            height: 210px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.13);
+            z-index: -1;
+        }
+        .home-featured-search-copy {
+            min-width: 0;
+            padding: 18px 0 18px 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .home-featured-search-kicker {
+            width: fit-content;
+            margin-bottom: 8px;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.22);
+            font-size: 10px;
+            font-weight: 950;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+        }
+        .home-featured-search-title {
+            font-size: clamp(22px, 7vw, 36px);
+            line-height: .95;
+            font-weight: 1000;
+            letter-spacing: -.065em;
+            text-shadow: 0 2px 8px rgba(0,0,0,.16);
+        }
+        .home-featured-search-subtitle {
+            margin-top: 8px;
+            max-width: 240px;
+            font-size: 12.5px;
+            line-height: 1.28;
+            font-weight: 800;
+            color: rgba(255,255,255,.88);
+        }
+        .home-featured-search-cta {
+            width: fit-content;
+            margin-top: 12px;
+            padding: 9px 12px;
+            border-radius: 999px;
+            background: #ffffff;
+            color: #78350f;
+            font-size: 12px;
+            font-weight: 950;
+            box-shadow: 0 8px 18px rgba(0,0,0,.14);
+        }
+        .home-featured-search-imagebox {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            padding: 12px 12px 12px 0;
+        }
+        .home-featured-search-imageframe {
+            width: 100%;
+            height: 100%;
+            min-height: 138px;
+            border-radius: 20px;
+            background: rgba(255,255,255,.95);
+            border: 1px solid rgba(255,255,255,.70);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 10px 24px rgba(0,0,0,.16);
+            transform: rotate(2deg);
+        }
+        .home-featured-search-imageframe img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 10px;
+        }
+        .home-featured-search-empty {
+            padding: 12px;
+            color: #78350f;
+            font-size: 12px;
+            font-weight: 900;
+            text-align: center;
+        }
+        .home-featured-search-banner:active { transform: scale(.985); }
+        @media (min-width: 768px) {
+            .home-featured-search-banner { min-height: 210px; grid-template-columns: 1.15fr .85fr; border-radius: 28px; }
+            .home-featured-search-copy { padding-left: 28px; }
+            .home-featured-search-title { font-size: 42px; }
+            .home-featured-search-subtitle { font-size: 14px; max-width: 360px; }
+            .home-featured-search-imagebox { padding: 18px 18px 18px 0; }
+        }
+
+
+        /* PATCH 2026-06-06: destaque da chamada de cestas básicas na home */
+        .home-featured-search-banner + .home-cestas-feature,
+        .home-cestas-feature.home-cestas-feature-destaque {
+            margin-top: 22px !important;
+        }
+        .home-cestas-feature.home-cestas-feature-destaque {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) 112px !important;
+            align-items: stretch !important;
+            gap: 14px !important;
+            margin-bottom: 22px !important;
+            min-height: 158px !important;
+            padding: 16px !important;
+            border-radius: 26px !important;
+            background:
+                radial-gradient(circle at 92% 10%, rgba(255,255,255,.34), transparent 30%),
+                linear-gradient(135deg, #064e3b 0%, #16a34a 52%, #f59e0b 100%) !important;
+            border: 1px solid rgba(255,255,255,.42) !important;
+            box-shadow: 0 18px 42px rgba(5, 150, 105, .28), 0 5px 16px rgba(15, 23, 42, .10) !important;
+        }
+        .home-cestas-feature.home-cestas-feature-destaque::before {
+            content: "";
+            position: absolute;
+            inset: 8px 8px 8px auto;
+            width: 118px;
+            border-radius: 24px;
+            background: rgba(255,255,255,.13);
+            border: 1px solid rgba(255,255,255,.18);
+            pointer-events: none;
+        }
+        .home-cestas-feature.home-cestas-feature-destaque .home-cestas-icon {
+            display: none !important;
+        }
+        .home-cestas-feature.home-cestas-feature-destaque .home-cestas-copy {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            z-index: 2 !important;
+        }
+        .home-cestas-feature.home-cestas-feature-destaque .home-cestas-copy span {
+            width: fit-content !important;
+            margin-bottom: 8px !important;
+            background: rgba(255,255,255,.19) !important;
+            border-color: rgba(255,255,255,.30) !important;
+        }
+        .home-cestas-feature.home-cestas-feature-destaque .home-cestas-copy strong {
+            font-size: clamp(23px, 7.1vw, 34px) !important;
+            line-height: .96 !important;
+            max-width: 230px !important;
+            text-shadow: 0 2px 10px rgba(0,0,0,.16) !important;
+        }
+        .home-cestas-feature.home-cestas-feature-destaque .home-cestas-copy small {
+            max-width: 220px !important;
+            margin-top: 8px !important;
+            color: rgba(255,255,255,.92) !important;
+            font-size: 12.5px !important;
+            line-height: 1.28 !important;
+        }
+        .home-cestas-feature.home-cestas-feature-destaque .home-cestas-price {
+            display: inline-flex;
+            width: fit-content;
+            margin-top: 10px;
+            padding: 7px 10px;
+            border-radius: 999px;
+            background: #ffffff;
+            color: #065f46;
+            font-size: 12px;
+            font-weight: 1000;
+            box-shadow: 0 8px 18px rgba(0,0,0,.13);
+        }
+        .home-cestas-feature.home-cestas-feature-destaque .home-cestas-visual {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: center;
+            min-width: 0;
+            gap: 8px;
+        }
+        .home-cestas-feature.home-cestas-feature-destaque .home-cestas-imgbox {
+            height: 108px;
+            border-radius: 22px;
+            background: rgba(255,255,255,.96);
+            border: 1px solid rgba(255,255,255,.72);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 12px 26px rgba(0,0,0,.16);
+            transform: rotate(-2deg);
+        }
+        .home-cestas-feature.home-cestas-feature-destaque .home-cestas-imgbox img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 8px;
+            mix-blend-mode: normal !important;
+            filter: none !important;
+        }
+        .home-cestas-feature.home-cestas-feature-destaque .home-cestas-arrow {
+            width: 100% !important;
+            height: 36px !important;
+            border-radius: 999px !important;
+            background: rgba(15, 23, 42, .92) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255,255,255,.22) !important;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .20) !important;
+            font-size: 12px !important;
+            font-weight: 1000 !important;
+        }
+        @media (max-width: 380px) {
+            .home-cestas-feature.home-cestas-feature-destaque {
+                grid-template-columns: minmax(0, 1fr) 98px !important;
+                gap: 10px !important;
+                padding: 14px !important;
+            }
+            .home-cestas-feature.home-cestas-feature-destaque .home-cestas-imgbox { height: 98px; }
+            .home-cestas-feature.home-cestas-feature-destaque .home-cestas-copy strong { font-size: 22px !important; }
+            .home-cestas-feature.home-cestas-feature-destaque .home-cestas-copy small { font-size: 11.5px !important; }
+        }
+        @media (min-width: 768px) {
+            .home-featured-search-banner + .home-cestas-feature,
+            .home-cestas-feature.home-cestas-feature-destaque { margin-top: 26px !important; }
+            .home-cestas-feature.home-cestas-feature-destaque {
+                grid-template-columns: minmax(0, 1fr) 180px !important;
+                min-height: 190px !important;
+                padding: 24px !important;
+                border-radius: 30px !important;
+            }
+            .home-cestas-feature.home-cestas-feature-destaque::before { width: 190px; }
+            .home-cestas-feature.home-cestas-feature-destaque .home-cestas-copy strong { font-size: 42px !important; max-width: none !important; }
+            .home-cestas-feature.home-cestas-feature-destaque .home-cestas-copy small { font-size: 15px !important; max-width: 430px !important; }
+            .home-cestas-feature.home-cestas-feature-destaque .home-cestas-imgbox { height: 138px; }
+            .home-cestas-feature.home-cestas-feature-destaque .home-cestas-arrow { height: 42px !important; }
+        }
+
 </style>
 </head>
 <body>
@@ -4733,6 +4991,92 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
         const placeholderImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8fafc'/%3E%3C/svg%3E";
         const errorImgFallback = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjY2JkNWUxIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE2IDExVjdhNCA0IDAgMDAtOCAwdjRNNCA5aDE2bDEgMTJIM2wxLTEyeiIvPjwvc3ZnPg==";
 
+
+
+        /* =========================================================
+           BANNER EDITÁVEL DA HOME - BUSCA POR SEÇÃO
+           Para mudar depois, altere APENAS este bloco:
+           - termoBusca: palavra que será buscada
+           - sessaoBusca: seção/categoria onde a busca será feita
+           ========================================================= */
+        const HOME_FEATURED_SEARCH_BANNER = {
+            ativo: true,
+            termoBusca: 'chocolate',
+            sessaoBusca: 'CHOCOLATES E DOCES',
+            chamadaPequena: 'Especial da semana',
+            titulo: 'Chocolates e doces',
+            subtitulo: 'Toque aqui e veja os produtos encontrados nessa seção.',
+            textoBotao: 'Ver chocolates',
+            imagemFallback: ''
+        };
+
+        function produtoPertenceSessaoBannerDA(prod, sessao) {
+            const alvo = norm(sessao || '');
+            if (!alvo) return true;
+            const campos = [prod.categoria, prod.subcategoria, prod.subsubcategoria, prod.departamento, prod.sessao, prod.secao];
+            return campos.some(campo => norm(campo || '') === alvo);
+        }
+
+        function produtoCombinaTermoBannerDA(prod, termo) {
+            const termos = normalizarTermoBuscaSite(termo || '').split(' ').filter(Boolean);
+            if (!termos.length) return true;
+            const texto = montarTextoBuscaProdutoSite(prod);
+            return termos.every(t => texto.includes(t));
+        }
+
+        function getProdutosBuscaBannerHomeDA() {
+            const cfg = HOME_FEATURED_SEARCH_BANNER || {};
+            return (STATE.prods || []).filter(prod => {
+                if (!prod || prod.categoria === 'Cestas') return false;
+                if (Number(prod.stock || 0) <= 0) return false;
+                return produtoPertenceSessaoBannerDA(prod, cfg.sessaoBusca) && produtoCombinaTermoBannerDA(prod, cfg.termoBusca);
+            });
+        }
+
+        function getHomeFeaturedSearchBannerHTML() {
+            const cfg = HOME_FEATURED_SEARCH_BANNER || {};
+            if (!cfg.ativo) return '';
+
+            const produtos = getProdutosBuscaBannerHomeDA();
+            const primeiroProduto = produtos[0] || null;
+            const imagem = (primeiroProduto && primeiroProduto.img) || cfg.imagemFallback || errorImgFallback;
+            const alt = (primeiroProduto && primeiroProduto.name) || cfg.titulo || 'Produtos em destaque';
+            const totalTexto = produtos.length ? `${produtos.length} produto${produtos.length === 1 ? '' : 's'} encontrado${produtos.length === 1 ? '' : 's'}` : `Buscar ${cfg.termoBusca}`;
+
+            return `
+                <a href="javascript:void(0)" class="home-featured-search-banner" onclick="openHomeFeaturedSearchBanner(); return false;" aria-label="Abrir busca de ${cfg.termoBusca} na seção ${cfg.sessaoBusca}">
+                    <div class="home-featured-search-copy">
+                        <div class="home-featured-search-kicker">${cfg.chamadaPequena || 'Destaque'}</div>
+                        <div class="home-featured-search-title">${cfg.titulo || cfg.termoBusca}</div>
+                        <div class="home-featured-search-subtitle">${cfg.subtitulo || ''}<br><strong>${totalTexto}</strong></div>
+                        <div class="home-featured-search-cta">${cfg.textoBotao || 'Ver produtos'} ›</div>
+                    </div>
+                    <div class="home-featured-search-imagebox">
+                        <div class="home-featured-search-imageframe">
+                            ${primeiroProduto ? `<img src="${imagem}" alt="${alt}" loading="eager" decoding="async" fetchpriority="high" onerror="this.src='${errorImgFallback}'">` : `<div class="home-featured-search-empty">Imagem do 1º produto aparecerá aqui quando houver resultado.</div>`}
+                        </div>
+                    </div>
+                </a>`;
+        }
+
+        window.openHomeFeaturedSearchBanner = function() {
+            const cfg = HOME_FEATURED_SEARCH_BANNER || {};
+            STATE.searchQuery = String(cfg.termoBusca || '').replace(/\s+/g, ' ').trim();
+            STATE.searchSection = String(cfg.sessaoBusca || '').trim();
+
+            const input = $('app-search-input');
+            const sectionInput = $('section-search-input');
+            if (input) input.value = STATE.searchQuery;
+            if (sectionInput) sectionInput.value = STATE.searchQuery;
+
+            if (window.location.hash !== '#/buscar') {
+                window.location.hash = '#/buscar';
+            } else {
+                renderSearch();
+            }
+        };
+
+
         window.showToast = function(msg) {
             let toast = $('toast-msg');
             toast.innerText = msg;
@@ -4945,6 +5289,7 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
             vitrine.style.height = '';
             atualizarTopbarDaRota(hash);
             if (hash !== '#/buscar' && STATE.searchQuery) STATE.searchQuery = '';
+            if (hash !== '#/buscar' && STATE.searchSection) STATE.searchSection = '';
             sincronizarCampoBuscaTopo();
 
             if($('basketDetailModal').classList.contains('active')) $('basketDetailModal').classList.remove('active');
@@ -5202,6 +5547,33 @@ let onClickAction = `onclick="window.location.hash='#/produto/${getProductRouteK
         }
 
         
+
+        function getHomeCestasFeatureHTML() {
+            const primeiraCesta = (BASKETS || [])[0] || {};
+            const nomeCesta = primeiraCesta.nome || 'Cesta básica';
+            const imagemCesta = primeiraCesta.imagem || errorImgFallback;
+            const precoCesta = Number(primeiraCesta.preco || 0);
+            const precoTexto = precoCesta > 0 ? `A partir de ${fmt(precoCesta)}` : 'Veja as opções';
+
+            return `<a href="#/cestas" class="home-cestas-feature home-cestas-feature-destaque" aria-label="Abrir sessão de cestas básicas">
+                        <div class="home-cestas-icon">
+                            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"></path></svg>
+                        </div>
+                        <div class="home-cestas-copy">
+                            <span>Entrega em Cuiabá e VG</span>
+                            <strong>Cestas Básicas</strong>
+                            <small>Primeira opção: ${escapeAttrDA(nomeCesta)}. Escolha pronta ou personalize do seu jeito.</small>
+                            <b class="home-cestas-price">${precoTexto}</b>
+                        </div>
+                        <div class="home-cestas-visual">
+                            <div class="home-cestas-imgbox">
+                                <img src="${escapeAttrDA(imagemCesta)}" alt="${escapeAttrDA(nomeCesta)}" loading="eager" decoding="async" onerror="this.src='${errorImgFallback}'">
+                            </div>
+                            <div class="home-cestas-arrow">Ver cestas</div>
+                        </div>
+                    </a>`;
+        }
+
 function renderInicio() {
             const vitrine = $('vitrine'); vitrine.innerHTML = '';
             
@@ -5214,18 +5586,9 @@ function renderInicio() {
             
             let htmlMercado = '<div style="padding: 15px 20px;">';
             htmlMercado += `<div class="info-banner-home">Pedidos a partir de R$ 75 | Entrega Grátis em Cuiabá e VG.</div>`;
+            htmlMercado += getHomeFeaturedSearchBannerHTML();
             
-            htmlMercado += `<a href="#/cestas" class="home-cestas-feature" aria-label="Abrir sessão de cestas básicas">
-                        <div class="home-cestas-icon">
-                            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"></path></svg>
-                        </div>
-                        <div class="home-cestas-copy">
-                            <span>Entregamos em Cuiabá e VG</span>
-                            <strong>Cestas Básicas</strong>
-                            <small>Escolha e Personalize</small>
-                        </div>
-                        <div class="home-cestas-arrow">Abrir</div>
-                    </a>`;
+            htmlMercado += getHomeCestasFeatureHTML();
 
             htmlMercado += getHomeOffersHeroHTML();
 
@@ -5540,6 +5903,7 @@ let controlsHtml = '';
             if (!input) return false;
 
             const termo = input.value.replace(/\s+/g, ' ').trim();
+            STATE.searchSection = '';
             STATE.searchQuery = termo;
             input.value = termo;
             input.blur();
@@ -5561,6 +5925,7 @@ let controlsHtml = '';
         window.clearSearch = function() {
             const input = $('app-search-input');
             STATE.searchQuery = '';
+            STATE.searchSection = '';
             if (input) {
                 input.value = '';
                 input.blur();
@@ -5589,7 +5954,10 @@ let controlsHtml = '';
                 return;
             }
 
+            const secaoBusca = String(STATE.searchSection || '').trim();
             const results = STATE.prods.filter(p => {
+                if (p.categoria === 'Cestas') return false;
+                if (secaoBusca && !produtoPertenceSessaoBannerDA(p, secaoBusca)) return false;
                 const textoBusca = montarTextoBuscaProdutoSite(p);
                 return terms.every(term => textoBusca.includes(term));
             });
@@ -5598,14 +5966,15 @@ let controlsHtml = '';
                 $('vitrine').innerHTML = `
                     <div style="padding: 28px 20px; text-align: center; font-weight:700; color:var(--text-light); background:var(--bg-card); border-radius: 18px; margin: 10px;">
                         <div style="font-size:16px;font-weight:900;color:var(--text-dark);margin-bottom:8px;">Nenhum produto encontrado</div>
-                        <div>Não achamos nada para "${termoOriginal}".</div>
+                        <div>Não achamos nada para "${termoOriginal}"${secaoBusca ? ` na seção ${secaoBusca}` : ''}.</div>
                         <button class="btn-ver-todos-cat" style="margin-top:16px;" onclick="clearSearch()">Limpar busca e voltar ao início</button>
                     </div>`;
                 updateCollectionSeo('Busca', []);
                 return;
             }
 
-            let html = `<div style="padding: 0;"><div class="ver-tudo-header" onclick="clearSearch()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 12H5m7 7l-7-7 7-7"></path></svg> Resultado da busca: ${termoOriginal}</div><div class="products-grid">`;
+            const tituloResultadoBusca = secaoBusca ? `Resultado da busca: ${termoOriginal} em ${secaoBusca}` : `Resultado da busca: ${termoOriginal}`;
+            let html = `<div style="padding: 0;"><div class="ver-tudo-header" onclick="clearSearch({goHome:true})"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 12H5m7 7l-7-7 7-7"></path></svg> ${tituloResultadoBusca}</div><div class="products-grid">`;
             results.forEach(p => html += renderCardHTML(p));
             html += '</div></div>';
 
@@ -9729,6 +10098,7 @@ window.executeSearch = function(event) {
     if (!source) return false;
 
     const termo = String(source.value || '').replace(/\s+/g, ' ').trim();
+    STATE.searchSection = '';
     STATE.searchQuery = termo;
     if (input) input.value = termo;
     if (sectionInput && (window.location.hash || '#/') === '#/buscar') sectionInput.value = termo;
@@ -9752,6 +10122,7 @@ window.clearSearch = function(options = {}) {
     const input = $('app-search-input');
     const sectionInput = $('section-search-input');
     STATE.searchQuery = '';
+    STATE.searchSection = '';
     if (input) input.value = '';
     if (sectionInput && (window.location.hash || '#/') === '#/buscar') sectionInput.value = '';
 
