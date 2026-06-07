@@ -12659,6 +12659,373 @@ renderInicio = function() {
     if (typeof rolarPaginaParaTopoDA === 'function') requestAnimationFrame(rolarPaginaParaTopoDA);
 };
 
+
+/* =========================================================
+   SEO LOCAL PROFISSIONAL - DONA ANTÔNIA
+   Páginas indexáveis por query string: ?p=, ?secao=, ?categoria=, ?subcategoria=, ?marca=, ?busca=, ?cidade=
+   ========================================================= */
+(function(){
+    const SEO_LOCAL_CITIES = {
+        'cuiaba': 'Cuiabá',
+        'varzea-grande': 'Várzea Grande',
+        'varzea grande': 'Várzea Grande',
+        'vg': 'Várzea Grande'
+    };
+
+    function seoSlugDA(value) {
+        return String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, '-')
+            .replace(/[^\w\-]+/g, '')
+            .replace(/\-\-+/g, '-')
+            .replace(/^\-+|\-+$/g, '');
+    }
+
+    function seoParamDA(name) {
+        try { return new URLSearchParams(window.location.search || '').get(name) || ''; }
+        catch(e) { return ''; }
+    }
+
+    function seoQueryUrlDA(params) {
+        const qs = new URLSearchParams();
+        Object.keys(params || {}).forEach(k => {
+            if (params[k] !== undefined && params[k] !== null && String(params[k]).trim() !== '') qs.set(k, String(params[k]));
+        });
+        const query = qs.toString();
+        return `${SITE_BASE_URL}/${query ? '?' + query : ''}`;
+    }
+
+    function findValueBySlugDA(values, value) {
+        const wanted = seoSlugDA(decodeHash(String(value || '')));
+        return (values || []).find(v => seoSlugDA(v) === wanted) || decodeHash(String(value || '')).replace(/-/g, ' ');
+    }
+
+    function getAllCategoriesSEO() {
+        return Array.from(new Set((STATE.prods || [])
+            .filter(p => p && p.categoria && p.categoria !== 'Cestas')
+            .map(p => p.categoria))).sort((a,b) => a.localeCompare(b));
+    }
+
+    function getAllBrandsSEO() {
+        return Array.from(new Set((STATE.prods || [])
+            .filter(p => p && p.marca && p.categoria !== 'Cestas')
+            .map(p => p.marca))).sort((a,b) => a.localeCompare(b));
+    }
+
+    function getAllSubcategoriesSEO() {
+        return Array.from(new Set((STATE.prods || [])
+            .filter(p => p && p.subcategoria && p.categoria !== 'Cestas')
+            .map(p => p.subcategoria))).sort((a,b) => a.localeCompare(b));
+    }
+
+    window.getPublicCategoryUrlSEO = function(cat) { return seoQueryUrlDA({ categoria: seoSlugDA(cat) }); };
+    window.getPublicSubcategoryUrlSEO = function(sub) { return seoQueryUrlDA({ subcategoria: seoSlugDA(sub) }); };
+    window.getPublicBrandUrlSEO = function(brand) { return seoQueryUrlDA({ marca: seoSlugDA(brand) }); };
+    window.getPublicSectionUrlSEO = function(secao) { return seoQueryUrlDA({ secao: seoSlugDA(secao) }); };
+    window.getPublicCityUrlSEO = function(city) { return seoQueryUrlDA({ cidade: seoSlugDA(city) }); };
+    window.getPublicSearchUrlSEO = function(term) { return seoQueryUrlDA({ busca: String(term || '').trim() }); };
+
+    const originalGetProductPublicUrlSEO = window.getProductPublicUrlSEO;
+    window.getProductPublicUrlSEO = function(prod) {
+        if (typeof originalGetProductPublicUrlSEO === 'function') return originalGetProductPublicUrlSEO(prod);
+        return seoQueryUrlDA({ p: getProductRouteKey(prod) });
+    };
+
+    window.getRouteFromUrlForSEO = function(hashValue) {
+        const hash = hashValue || window.location.hash || '#/';
+        const productParam = seoParamDA('p') || seoParamDA('produto');
+        if (productParam && (!hash || hash === '#/' || hash === '#')) return `#/produto/${encodeURIComponent(productParam)}`;
+
+        const secaoParam = seoParamDA('secao');
+        if (secaoParam && (!hash || hash === '#/' || hash === '#')) {
+            const secao = seoSlugDA(secaoParam);
+            if (secao === 'ofertas' || secao === 'promocoes') return '#/ofertas';
+            if (secao === 'cestas' || secao === 'cestas-basicas') return '#/cestas';
+            if (secao === 'combos' || secao === 'kits') return '#/combos';
+            if (secao === 'informacoes' || secao === 'sobre') return '#/informacoes';
+            if (secao === 'mercado' || secao === 'produtos') return '#/mercado';
+        }
+
+        const catParam = seoParamDA('categoria');
+        if (catParam && (!hash || hash === '#/' || hash === '#')) {
+            const cat = findValueBySlugDA(getAllCategoriesSEO(), catParam);
+            return `#/departamento/${encodeHash(cat)}`;
+        }
+
+        const brandParam = seoParamDA('marca');
+        if (brandParam && (!hash || hash === '#/' || hash === '#')) {
+            const brand = findValueBySlugDA(getAllBrandsSEO(), brandParam);
+            return `#/marca/${encodeHash(brand)}`;
+        }
+
+        const subParam = seoParamDA('subcategoria');
+        if (subParam && (!hash || hash === '#/' || hash === '#')) {
+            const sub = findValueBySlugDA(getAllSubcategoriesSEO(), subParam);
+            return `#/subcategoria/${encodeHash(sub)}`;
+        }
+
+        const buscaParam = seoParamDA('busca') || seoParamDA('q');
+        if (buscaParam && (!hash || hash === '#/' || hash === '#')) {
+            STATE.searchQuery = decodeHash(buscaParam).trim();
+            return '#/buscar';
+        }
+
+        const cidadeParam = seoParamDA('cidade') || seoParamDA('local');
+        if (cidadeParam && (!hash || hash === '#/' || hash === '#')) {
+            return `#/local/${encodeHash(cidadeParam)}`;
+        }
+
+        return hash;
+    };
+
+    function localPhraseSEO() {
+        return 'com entrega em Cuiabá e Várzea Grande';
+    }
+
+    const originalUpdateHomeSeo = window.updateHomeSeo;
+    window.updateHomeSeo = function() {
+        const url = SITE_BASE_URL + '/';
+        updatePageMetaSEO(
+            'Dona Antônia - Supermercado online em Cuiabá e Várzea Grande',
+            'Mercado online, cestas básicas, ofertas, limpeza, beleza e mercearia com entrega em Cuiabá e Várzea Grande.',
+            url
+        );
+        const produtos = (STATE.prods || []).filter(p => p.categoria !== 'Cestas').slice(0, 36);
+        const itemList = {
+            '@type': 'ItemList',
+            '@id': `${url}#produtos`,
+            name: 'Produtos de mercado com entrega local Dona Antônia',
+            itemListElement: produtos.map((prod, index) => ({ '@type': 'ListItem', position: index + 1, url: getProductUrlSEO(prod), name: prod.name }))
+        };
+        const service = {
+            '@type': 'Service',
+            '@id': `${SITE_BASE_URL}/#entrega-local`,
+            name: 'Entrega de mercado em Cuiabá e Várzea Grande',
+            provider: { '@id': `${SITE_BASE_URL}/#localbusiness` },
+            areaServed: [
+                { '@type': 'City', name: 'Cuiabá', addressRegion: 'MT', addressCountry: 'BR' },
+                { '@type': 'City', name: 'Várzea Grande', addressRegion: 'MT', addressCountry: 'BR' }
+            ],
+            serviceType: 'Entrega local de supermercado online, cestas básicas e produtos de mercado'
+        };
+        setStructuredDataSEO(baseGraphSEO([service, itemList]));
+    };
+
+    window.updateCollectionSeo = function(cat, produtos, options) {
+        const opts = options || {};
+        const tipo = opts.tipo || 'categoria';
+        const safeCat = cat || 'Produtos';
+        let url = `${SITE_BASE_URL}/`;
+        let title = `${safeCat} com entrega em Cuiabá e Várzea Grande - Dona Antônia`;
+        let description = `Veja ${String(safeCat).toLowerCase()} na Dona Antônia, mercado online com entrega em Cuiabá e Várzea Grande.`;
+
+        if (tipo === 'secao') {
+            url = getPublicSectionUrlSEO(safeCat);
+            if (safeCat === 'Ofertas') title = 'Ofertas de mercado em Cuiabá e Várzea Grande - Dona Antônia';
+            if (safeCat === 'Cestas Básicas') title = 'Cestas básicas em Cuiabá e Várzea Grande - Dona Antônia';
+            if (safeCat === 'Combos') title = 'Combos de mercado em Cuiabá e Várzea Grande - Dona Antônia';
+            description = `${safeCat} da Dona Antônia com atendimento local para Cuiabá e Várzea Grande.`;
+        } else if (tipo === 'marca') {
+            url = getPublicBrandUrlSEO(safeCat);
+            title = `${safeCat} em Cuiabá e Várzea Grande - Dona Antônia`;
+            description = `Produtos ${safeCat} disponíveis na Dona Antônia com entrega local em Cuiabá e Várzea Grande.`;
+        } else if (tipo === 'subcategoria') {
+            url = getPublicSubcategoryUrlSEO(safeCat);
+            title = `${safeCat} em Cuiabá e Várzea Grande - Dona Antônia`;
+            description = `Compre ${String(safeCat).toLowerCase()} na Dona Antônia com entrega em Cuiabá e Várzea Grande.`;
+        } else if (tipo === 'busca') {
+            url = getPublicSearchUrlSEO(safeCat);
+            title = `Busca por ${safeCat} - Dona Antônia`;
+            description = `Resultado da busca por ${safeCat} na Dona Antônia, mercado online com entrega em Cuiabá e Várzea Grande.`;
+        } else if (String(safeCat).toLowerCase() === 'ofertas') {
+            url = getPublicSectionUrlSEO('ofertas');
+            title = 'Ofertas de mercado em Cuiabá e Várzea Grande - Dona Antônia';
+            description = 'Ofertas de supermercado, limpeza, beleza, mercearia e produtos para casa com entrega em Cuiabá e Várzea Grande.';
+        } else {
+            url = getPublicCategoryUrlSEO(safeCat);
+        }
+
+        updatePageMetaSEO(title, description.slice(0, 158), url);
+        const itemList = {
+            '@type': 'ItemList',
+            '@id': `${url}#lista-produtos`,
+            name: `${safeCat} - Dona Antônia`,
+            itemListElement: (produtos || []).slice(0, 60).map((prod, index) => ({
+                '@type': 'ListItem',
+                position: index + 1,
+                url: getProductUrlSEO(prod),
+                name: prod.name
+            }))
+        };
+        const breadcrumb = {
+            '@type': 'BreadcrumbList',
+            '@id': `${url}#breadcrumb`,
+            itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_BASE_URL + '/' },
+                { '@type': 'ListItem', position: 2, name: safeCat, item: url }
+            ]
+        };
+        setStructuredDataSEO(baseGraphSEO([breadcrumb, itemList]));
+    };
+
+    const originalUpdateProductSeo = window.updateProductSeo;
+    window.updateProductSeo = function(prod) {
+        if (!prod) return;
+        const url = getProductUrlSEO(prod);
+        const descBase = escapeTextSEO(prod.descricao) || `${prod.name} disponível na Dona Antônia.`;
+        const desc = `${descBase} Entrega em Cuiabá e Várzea Grande.`.slice(0, 158);
+        updatePageMetaSEO(`${prod.name} em Cuiabá e Várzea Grande - Dona Antônia`, desc, url);
+        setNamedMetaSEO('meta[property="og:type"]', 'content', 'product');
+        setNamedMetaSEO('meta[property="og:image"]', 'content', getProductImageSEO(prod));
+        setNamedMetaSEO('meta[property="product:price:amount"]', 'content', String(Number(prod.price || 0).toFixed(2)));
+        setNamedMetaSEO('meta[property="product:price:currency"]', 'content', 'BRL');
+
+        const identifiers = {};
+        const gtin = String(prod.gtin || '').replace(/\D/g, '');
+        if (gtin.length === 8) identifiers.gtin8 = gtin;
+        if (gtin.length === 12) identifiers.gtin12 = gtin;
+        if (gtin.length === 13) identifiers.gtin13 = gtin;
+        if (gtin.length === 14) identifiers.gtin14 = gtin;
+
+        const categoryUrl = prod.categoria ? getPublicCategoryUrlSEO(prod.categoria) : SITE_BASE_URL + '/';
+        const brandUrl = prod.marca ? getPublicBrandUrlSEO(prod.marca) : '';
+        const productSchema = {
+            '@type': 'Product',
+            '@id': `${url}#product`,
+            name: prod.name,
+            image: [getProductImageSEO(prod)],
+            description: desc,
+            sku: prod.codigo || prod.id,
+            brand: { '@type': 'Brand', name: prod.marca || 'Dona Antônia', ...(brandUrl ? { url: brandUrl } : {}) },
+            category: [prod.categoria, prod.subcategoria].filter(Boolean).join(' > '),
+            ...identifiers,
+            offers: {
+                '@type': 'Offer',
+                url: url,
+                priceCurrency: 'BRL',
+                price: Number(prod.price || 0).toFixed(2),
+                availability: Number(prod.stock || 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                itemCondition: 'https://schema.org/NewCondition',
+                areaServed: ['Cuiabá', 'Várzea Grande'],
+                seller: { '@id': `${SITE_BASE_URL}/#organization` }
+            }
+        };
+        const breadcrumbSchema = {
+            '@type': 'BreadcrumbList',
+            '@id': `${url}#breadcrumb`,
+            itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_BASE_URL + '/' },
+                { '@type': 'ListItem', position: 2, name: prod.categoria || 'Produtos', item: categoryUrl },
+                { '@type': 'ListItem', position: 3, name: prod.name, item: url }
+            ]
+        };
+        setStructuredDataSEO(baseGraphSEO([productSchema, breadcrumbSchema]));
+    };
+
+    window.renderSeoListPageDA = function(title, produtos, tipo) {
+        let html = `<div style="padding: 0;">`;
+        html += `<div style="padding:18px 20px;background:#fff;border-bottom:1px solid var(--border-light);"><h1 style="font-size:22px;line-height:1.2;margin-bottom:8px;">${title}</h1><p style="color:var(--text-light);font-weight:700;line-height:1.45;">Produtos com atendimento local da Dona Antônia para Cuiabá e Várzea Grande.</p></div>`;
+        if (!produtos.length) {
+            html += `<div style="padding:40px 20px;text-align:center;color:var(--text-light);font-weight:800;background:#fff;">Nenhum produto encontrado.</div>`;
+        } else {
+            html += `<div class="products-grid" style="margin:0;">${produtos.map(p => renderCardHTML(p)).join('')}</div>`;
+        }
+        html += `</div>`;
+        $('vitrine').innerHTML = html;
+        updateCollectionSeo(title, produtos, { tipo });
+        lazyLoadImages();
+    };
+
+    window.renderMarcaSeoPageDA = function(marca) {
+        const produtos = (STATE.prods || []).filter(p => p.categoria !== 'Cestas' && seoSlugDA(p.marca) === seoSlugDA(marca)).sort((a,b) => a.name.localeCompare(b.name));
+        renderSeoListPageDA(marca, produtos, 'marca');
+    };
+
+    window.renderSubcategoriaSeoPageDA = function(sub) {
+        const produtos = (STATE.prods || []).filter(p => p.categoria !== 'Cestas' && seoSlugDA(p.subcategoria) === seoSlugDA(sub)).sort((a,b) => a.name.localeCompare(b.name));
+        renderSeoListPageDA(sub, produtos, 'subcategoria');
+    };
+
+    window.renderLocalSeoPageDA = function(cidadeParam) {
+        const slug = seoSlugDA(cidadeParam).replace(/-/g, ' ');
+        const cidade = SEO_LOCAL_CITIES[slug] || findValueBySlugDA(Object.values(SEO_LOCAL_CITIES), cidadeParam) || 'Cuiabá';
+        const url = getPublicCityUrlSEO(cidade);
+        const produtos = (STATE.prods || []).filter(p => p.categoria !== 'Cestas').slice(0, 36);
+        let html = `<div style="padding:15px 10px 24px;">
+            <div style="background:#fff;border:1px solid var(--border-light);border-radius:18px;padding:22px;margin-bottom:16px;">
+                <h1 style="font-size:24px;line-height:1.15;margin-bottom:10px;">Supermercado online em ${cidade}</h1>
+                <p style="color:var(--text-light);font-weight:700;line-height:1.5;">A Dona Antônia atende ${cidade} com cestas básicas, produtos de mercearia, limpeza, higiene, beleza e ofertas para completar sua compra.</p>
+                <a href="#/cestas" style="display:inline-flex;margin-top:16px;background:#000;color:#fff;text-decoration:none;font-weight:900;border-radius:12px;padding:12px 16px;">Ver cestas básicas</a>
+            </div>
+            <div class="home-shelves-da">${getHomeCestasShelfDA()}${getHomeOfertasShelfDA()}${getHomeCategoriaShelvesDA()}</div>
+        </div>`;
+        $('vitrine').innerHTML = html;
+        updatePageMetaSEO(
+            `Supermercado online em ${cidade} - Dona Antônia`,
+            `Cestas básicas, mercado, ofertas, limpeza e beleza com entrega local em ${cidade}, MT. Compre pelo site da Dona Antônia.`,
+            url
+        );
+        const localPage = {
+            '@type': 'CollectionPage',
+            '@id': `${url}#webpage`,
+            name: `Supermercado online em ${cidade}`,
+            url: url,
+            about: { '@id': `${SITE_BASE_URL}/#localbusiness` },
+            mainEntity: { '@id': `${SITE_BASE_URL}/#entrega-local` }
+        };
+        setStructuredDataSEO(baseGraphSEO([localPage]));
+        lazyLoadImages();
+    };
+
+    const originalHandleRoute = window.handleRoute;
+    window.handleRoute = function() {
+        let hash = getRouteFromUrlForSEO(window.location.hash || '#/');
+        if (hash.startsWith('#/marca/')) {
+            const vitrine = $('vitrine');
+            if (STATE.currentRoute) STATE.scrollMap[STATE.currentRoute] = vitrine.scrollTop;
+            STATE.currentRoute = hash;
+            $('header-main').style.display = 'flex';
+            atualizarTopbarDaRota(hash);
+            renderMarcaSeoPageDA(decodeHash(hash.split('#/marca/')[1] || ''));
+            requestAnimationFrame(() => { vitrine.scrollTop = 0; });
+            return;
+        }
+        if (hash.startsWith('#/subcategoria/')) {
+            const vitrine = $('vitrine');
+            if (STATE.currentRoute) STATE.scrollMap[STATE.currentRoute] = vitrine.scrollTop;
+            STATE.currentRoute = hash;
+            $('header-main').style.display = 'flex';
+            atualizarTopbarDaRota(hash);
+            renderSubcategoriaSeoPageDA(decodeHash(hash.split('#/subcategoria/')[1] || ''));
+            requestAnimationFrame(() => { vitrine.scrollTop = 0; });
+            return;
+        }
+        if (hash.startsWith('#/local/')) {
+            const vitrine = $('vitrine');
+            if (STATE.currentRoute) STATE.scrollMap[STATE.currentRoute] = vitrine.scrollTop;
+            STATE.currentRoute = hash;
+            $('header-main').style.display = 'flex';
+            atualizarTopbarDaRota(hash);
+            renderLocalSeoPageDA(decodeHash(hash.split('#/local/')[1] || ''));
+            requestAnimationFrame(() => { vitrine.scrollTop = 0; });
+            return;
+        }
+        if (typeof originalHandleRoute === 'function') return originalHandleRoute();
+    };
+
+    const originalGetRouteTitle = window.getRouteTitle;
+    window.getRouteTitle = function(hash) {
+        if (hash && hash.startsWith('#/marca/')) return decodeHash(hash.split('#/marca/')[1] || 'Marca');
+        if (hash && hash.startsWith('#/subcategoria/')) return decodeHash(hash.split('#/subcategoria/')[1] || 'Produtos');
+        if (hash && hash.startsWith('#/local/')) return 'Entrega local';
+        return typeof originalGetRouteTitle === 'function' ? originalGetRouteTitle(hash) : 'Dona Antônia';
+    };
+})();
+
+
 document.addEventListener('DOMContentLoaded', init);
 
    
