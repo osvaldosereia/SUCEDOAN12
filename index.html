@@ -5022,6 +5022,56 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
             .home-featured-dots { left: 24px !important; bottom: 14px !important; }
         }
 
+
+/* =========================================================
+   PATCH FINAL PROFISSIONAL - 2026-06-07
+   Desktop limpo, topbar sem sobra, barras grudadas e banners menos carregados.
+   ========================================================= */
+:root{--h-top:132px;--compact-header-height:64px;--page-max:1220px;}
+.header-main{height:auto!important;min-height:calc(var(--h-top) + env(safe-area-inset-top))!important;padding:calc(10px + env(safe-area-inset-top)) 14px 10px!important;align-items:center!important;}
+.route-compact .header-main{height:auto!important;min-height:calc(var(--compact-header-height) + env(safe-area-inset-top))!important;padding:env(safe-area-inset-top) 14px 0!important;}
+.main-container{top:calc(var(--h-top) + env(safe-area-inset-top))!important;height:calc(100dvh - var(--h-top) - env(safe-area-inset-top))!important;padding-top:0!important;}
+.route-compact .main-container{top:calc(var(--compact-header-height) + env(safe-area-inset-top))!important;height:calc(100dvh - var(--compact-header-height) - env(safe-area-inset-top))!important;padding-top:0!important;}
+.compact-route-header{padding:0!important;}
+.compact-route-main{min-height:64px!important;align-items:center!important;}
+.compact-chips-row{padding:0 0 8px!important;}
+.ver-tudo-header{top:0!important;margin:0!important;border-radius:0!important;box-shadow:none!important;}
+.subcat-title{margin:0!important;}
+#vitrine{scroll-padding-top:0!important;}
+.home-top-banners-da{gap:14px!important;margin:8px 0 18px!important;}
+.home-top-banners-da .home-featured-search-banner,.home-top-banners-da .home-cestas-feature.home-cestas-feature-destaque{border-radius:22px!important;min-height:172px!important;box-shadow:0 8px 26px rgba(16,24,40,.08)!important;border:1px solid rgba(229,231,235,.95)!important;overflow:hidden!important;}
+.home-top-banners-da .home-cestas-feature.home-cestas-feature-destaque{background:linear-gradient(135deg,#fff 0%,#f7faf8 100%)!important;color:#101828!important;}
+.home-top-banners-da .home-featured-search-banner{background:linear-gradient(135deg,#111827 0%,#1f2937 100%)!important;}
+.home-top-banners-da .home-featured-search-copy,.home-top-banners-da .home-cestas-feature.home-cestas-feature-destaque{padding:20px!important;}
+.home-top-banners-da .home-featured-search-kicker,.home-top-banners-da .home-cestas-copy span{font-size:11px!important;letter-spacing:.08em!important;text-transform:uppercase!important;opacity:.78!important;}
+.home-top-banners-da .home-featured-search-title,.home-top-banners-da .home-cestas-copy strong{font-size:25px!important;line-height:1.03!important;letter-spacing:-.045em!important;font-weight:950!important;}
+.home-top-banners-da .home-featured-search-subtitle,.home-top-banners-da .home-cestas-copy small{font-size:13px!important;line-height:1.35!important;max-width:320px!important;opacity:.86!important;}
+.home-top-banners-da .home-featured-search-cta,.home-top-banners-da .home-cestas-price{display:inline-flex!important;width:max-content!important;border-radius:999px!important;padding:9px 13px!important;font-size:12px!important;box-shadow:none!important;}
+.home-top-banners-da .home-featured-search-imagebox,.home-top-banners-da .home-cestas-visual{padding:14px!important;}
+.home-top-banners-da .home-featured-search-imageframe,.home-top-banners-da .home-cestas-imgbox{background:rgba(255,255,255,.92)!important;border:1px solid rgba(255,255,255,.5)!important;border-radius:20px!important;box-shadow:none!important;}
+.home-top-banners-da .home-featured-search-imageframe img,.home-top-banners-da .home-cestas-imgbox img{object-fit:contain!important;padding:10px!important;mix-blend-mode:normal!important;filter:none!important;}
+.home-cestas-icon,.home-cestas-arrow{display:none!important;}
+@media (min-width:768px){
+  :root{--h-top:76px;--compact-header-height:64px;}
+  .header-main{min-height:calc(var(--h-top) + env(safe-area-inset-top))!important;padding:0 28px!important;}
+  .header-home-content{max-width:var(--page-max)!important;gap:20px!important;}
+  .desktop-nav{gap:8px!important;}
+  .desktop-nav-item{padding:9px 10px!important;font-size:12.5px!important;}
+  .search-container{max-width:390px!important;}
+  .main-container{max-width:var(--page-max)!important;padding-left:18px!important;padding-right:18px!important;}
+  .home-top-banners-da{display:grid!important;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr)!important;align-items:stretch!important;}
+  .home-top-banners-da .home-featured-search-banner,.home-top-banners-da .home-cestas-feature.home-cestas-feature-destaque{min-height:205px!important;}
+  #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas){grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:16px!important;}
+  #vitrine .cestas-grid-grande{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:16px!important;}
+  .route-compact .compact-route-header{max-width:var(--page-max)!important;}
+}
+@media (max-width:767px){
+  .header-home-content{gap:10px!important;}
+  .home-top-banners-da{display:flex!important;flex-direction:column!important;}
+  .home-top-banners-da .home-featured-search-slide{grid-template-columns:minmax(0,1fr) 118px!important;}
+  .home-top-banners-da .home-featured-search-title,.home-top-banners-da .home-cestas-copy strong{font-size:22px!important;}
+}
+
 </style>
 </head>
 <body>
@@ -5042,6 +5092,10 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
                 <span>Ofertas</span>
             </a>
 
+            <a href="#/selecionados/OFERTA" class="app-nav-item" id="nav-selecionados">
+                <svg class="svg-icon" style="color: #f59e0b;" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"></path></svg>
+                <span>Tags</span>
+            </a>
 
             <a href="contato.html" class="app-nav-item" id="nav-info-site">
                 <svg class="svg-icon" style="color: #64748b;" viewBox="0 0 24 24"><path d="M21 10c0 7-9 12-9 12S3 17 3 10a9 9 0 1118 0z"></path><path d="M12 10h.01"></path></svg>
@@ -5097,6 +5151,7 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
                 <div class="desktop-nav mobile-hide">
                     <a href="#/mercado" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l1.5 12h15L21 9M3 9h18M3 9L4.5 3h15L21 9"></path></svg> Mercado</a>
                     <a href="#/ofertas" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg> Ofertas</a>
+                    <a href="#/selecionados/OFERTA" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"></path></svg> Selecionados</a>
                     <a href="#/informacoes" class="desktop-nav-item"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Informações</a>
                     <a href="contato.html" class="desktop-nav-item">Contato</a>
                     <a href="politica-de-entrega.html" class="desktop-nav-item">Entrega</a>
@@ -5287,18 +5342,9 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
         let imageObserver;
 
         const ORDEM_CATEGORIAS = ['mercearia basica', 'cafe da manha', 'macarrao e molhos', 'temperos', 'sucos e refris', 'bebidas', 'frios', 'congelados', 'hortifruti', 'padaria', 'carnes', 'limpeza', 'lavanderia', 'beleza', 'higiene', 'sabonete', 'shampoo', 'cabelo'];
-        
-        const BASKETS = [
-          { "id": "cesta1", "nome": "Economica Bonini", "preco": 92.00, "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P440", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
-          { "id": "cesta2", "nome": "Mini Bonini", "preco": 178.00, "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P440", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x 8555660962", "1x P447", "1x 8270960141", "1x 16109433", "1x P0144"] },
-          { "id": "cesta3", "nome": "Mini Koblenz", "preco": 182.00, "imagem": "img/CESTA-MINI-KOBLENZ.webp", "produtos": ["1x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "1x P491", "1x P0018", "1x 8555660962", "1x P447", "1x 8270960141", "1x 16109433", "1x P0144"] },
-          { "id": "cesta4", "nome": "Pequena Bonini", "preco": 230.00, "imagem": "img/CESTA-PEQUENA-BONINI.webp", "produtos": ["2x P440", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76685539", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P483", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "2x 8270960141", "1x P491", "1x P0018", "1x 8555660962", "1x P447", "1x 16109433", "1x P0144"] },
-          { "id": "cesta5", "nome": "Pequena Koblenz", "preco": 240.00, "imagem": "img/CESTA-PEQUENA-KOBLENZ.webp", "produtos": ["2x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76685539", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P483", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x 0554800381", "2x 8270960141", "1x P491", "1x P0018", "1x 8555660962", "1x P447", "1x 16109433", "1x P0144"] },
-          { "id": "cesta6", "nome": "Média Koblenz", "preco": 350.00, "imagem": "img/CESTA-MEDIA-KOBLENZ.webp", "produtos": ["3x P500", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76685539", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P483", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "2x 8270960141", "1x 8555660962", "1x P447", "1x 16109433", "1x P0144"] },
-          { "id": "cesta7", "nome": "Média Bonini", "preco": 340.00, "imagem": "img/CESTA-MEDIA-BONINI.webp", "produtos": ["3x P440", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76685539", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P483", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "2x 8270960141", "1x 8555660962", "1x P447", "1x 16109433", "1x P0144"] },
-          { "id": "cesta8", "nome": "Grande Koblenz", "preco": 420.00, "imagem": "img/CESTA-GRANDE-KOBLENZ.webp", "produtos": ["4x P500", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76685539", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P483", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "2x 8270960141", "1x 8555660962", "1x P447", "1x 16109433", "1x P0144"] },
-          { "id": "cesta9", "nome": "Grande Bonini", "preco": 405.00, "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76685539", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P483", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x 0554800381", "1x P491", "1x P0018", "2x 8270960141", "1x 8555660962", "1x P447", "1x 16109433", "1x P0144"] }
-        ];
+        let BASKETS = [];
+        window.BASKETS = BASKETS;
+
 
         const MIN_ORDER = 75; 
 
@@ -6820,7 +6866,7 @@ if (typeof lazyLoadImages === 'function') {
                 
                
 
-        window.updateBasketItemQty = function(index, delta) { let item = currentBasketItems[index]; if (!item) return; let newQty = item.qty + delta; if (newQty < 0) newQty = 0; if (newQty > item.pObj.stock) return alert("Estoque insuficiente."); item.qty = newQty; renderBasketItemsList(); };
+        window.updateBasketItemQty = function(index, delta) { let item = currentBasketItems[index]; if (!item) return; let newQty = item.qty + delta; if (newQty < 0) newQty = 0; /* Produtos de cesta podem ser vendidos mesmo com estoque zero. */ item.qty = newQty; renderBasketItemsList(); };
         
         window.removeBasketItem = function(index) {
             let itemNome = currentBasketItems[index].pObj.name;
@@ -8373,7 +8419,7 @@ Por favor, podem incluir na minha entrega?`;
             : (raw ? Object.entries(raw).map(([firebaseKey, produto]) => ({ ...produto, firebaseKey })) : []);
 
         return produtosArray
-            .filter(x => x && x.situacao !== "I" && parseInt(x.estoque || 0) > 0)
+            .filter(x => x && x.situacao !== "I")
             .map(p => {
                 let baseName = p.nome ? formatName(String(p.nome).trim()) : "Produto";
                 const safeId = String(p.codigo || p.id || p.firebaseKey || baseName);
@@ -11770,6 +11816,107 @@ renderTopDiscountBanner = function() {
     return String(html || '').replace('Produtos e combos', 'Produtos em oferta');
 };
 
+
+
+/* =========================================================
+   PATCH FINAL JS - cestas.json, tags universais e estoque zero em cesta
+   ========================================================= */
+const CESTAS_JSON_URLS_DA = ['cestas.json', './cestas.json', 'site/cestas.json'];
+async function carregarCestasBasicasDA() {
+    for (const url of CESTAS_JSON_URLS_DA) {
+        try {
+            const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now(), { cache: 'no-store', headers: { 'Accept': 'application/json' } });
+            if (!res.ok) continue;
+            const dados = await res.json();
+            const lista = Array.isArray(dados) ? dados : (dados && typeof dados === 'object' ? Object.values(dados) : []);
+            BASKETS = lista.filter(c => c && c.id && c.nome && Array.isArray(c.produtos));
+            window.BASKETS = BASKETS;
+            return BASKETS;
+        } catch (e) {}
+    }
+    BASKETS = [];
+    window.BASKETS = BASKETS;
+    console.warn('Não foi possível carregar cestas.json. Envie o arquivo cestas.json junto com o index.html.');
+    return BASKETS;
+}
+
+function produtoTemTagUniversalDA(prod, tag) {
+    const alvo = norm(tag || '');
+    if (!alvo || !prod) return false;
+    const valor = prod.tag_global || prod.tagGlobal || prod.tags || prod.tag || prod.global || '';
+    const lista = Array.isArray(valor) ? valor : String(valor).split(/[;,|]/g);
+    return lista.some(t => norm(String(t || '').trim()) === alvo);
+}
+
+function getTagsUniversaisDisponiveisDA() {
+    const tags = new Set();
+    (STATE.prods || []).forEach(p => {
+        const valor = p.tag_global || p.tagGlobal || p.tags || p.tag || p.global || '';
+        const lista = Array.isArray(valor) ? valor : String(valor).split(/[;,|]/g);
+        lista.forEach(t => {
+            const limpo = String(t || '').trim();
+            if (limpo) tags.add(limpo.toUpperCase());
+        });
+    });
+    return Array.from(tags).sort((a,b) => a.localeCompare(b));
+}
+
+function renderProdutosSelecionadosPorTagDA(tag) {
+    const tagFinal = String(tag || 'OFERTA').trim() || 'OFERTA';
+    const produtos = (STATE.prods || [])
+        .filter(p => p && p.categoria !== 'Cestas' && produtoTemTagUniversalDA(p, tagFinal))
+        .sort((a,b) => Number(b.stock || 0) - Number(a.stock || 0) || String(a.name || '').localeCompare(String(b.name || '')));
+    const tags = getTagsUniversaisDisponiveisDA();
+    const chips = tags.length ? `<div class="search-chips-container" style="padding:14px 0 4px;">${tags.map(t => `<a class="chip-cat ${norm(t) === norm(tagFinal) ? 'active' : ''}" href="#/selecionados/${encodeURIComponent(t)}" style="text-decoration:none;">${t}</a>`).join('')}</div>` : '';
+    let html = `<div style="padding:14px 0 20px;"><div class="ver-tudo-header" onclick="goBackSmart()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>Produtos selecionados: ${escapeAttrDA(tagFinal)}</div>${chips}`;
+    if (!produtos.length) {
+        html += `<div style="padding:34px 18px;text-align:center;background:#fff;border:1px solid var(--border-light);border-radius:18px;color:var(--text-light);font-weight:800;">Nenhum produto encontrado com a tag ${escapeAttrDA(tagFinal)}.</div>`;
+    } else {
+        html += `<div class="products-grid">${produtos.map(p => renderCardHTML(p)).join('')}</div>`;
+    }
+    html += `</div>`;
+    $('vitrine').innerHTML = html;
+    lazyLoadImages();
+    document.title = `Produtos selecionados ${tagFinal} - Dona Antônia`;
+}
+
+const handleRouteTagsUniversaisDA = handleRoute;
+handleRoute = function() {
+    const hash = window.location.hash || '#/';
+    if (hash.startsWith('#/selecionados')) {
+        STATE.currentRoute = hash;
+        $('header-main').style.display = 'flex';
+        atualizarTopbarDaRota(hash);
+        document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active'));
+        if ($('nav-selecionados')) $('nav-selecionados').classList.add('active');
+        const partes = hash.split('/');
+        renderProdutosSelecionadosPorTagDA(decodeHash(partes[2] || 'OFERTA'));
+        return;
+    }
+    return handleRouteTagsUniversaisDA.apply(this, arguments);
+};
+window.addEventListener('hashchange', handleRoute);
+
+const atualizarTopbarTagsUniversaisDA = atualizarTopbarDaRota;
+atualizarTopbarDaRota = function(hash) {
+    atualizarTopbarTagsUniversaisDA(hash);
+    const h = hash || window.location.hash || '#/';
+    if (h.startsWith('#/selecionados')) {
+        document.body.classList.add('route-compact');
+        document.body.classList.remove('route-home');
+        const titulo = $('compact-route-title');
+        if (titulo) titulo.innerText = 'Produtos selecionados';
+        document.documentElement.style.setProperty('--compact-header-height', '64px');
+        atualizarBuscaSecaoVisual();
+    }
+};
+
+const initCestasJsonDA = init;
+init = async function() {
+    await carregarCestasBasicasDA();
+    await initCestasJsonDA();
+    if ((window.location.hash || '#/').startsWith('#/selecionados')) { handleRoute(); }
+};
 
 document.addEventListener('DOMContentLoaded', init);
 
