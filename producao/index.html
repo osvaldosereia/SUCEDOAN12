@@ -1071,6 +1071,10 @@ let finalBase64 = isBase64Ready
             if (p[campo] !== undefined && p[campo] !== null) {
                 cleanP[campo] = p[campo];
 
+                if (campo === 'marca') {
+                    cleanP[campo] = limparMarcaProduto(p[campo]);
+                }
+
                 if (
                     campo === 'url_imagem' &&
                     typeof p[campo] === 'string' &&
@@ -1542,6 +1546,7 @@ function prepararProdutoParaFirebase(produto) {
     limpo.id = String(limpo.id || produto.firebaseKey || produto.codigo || Date.now());
     limpo.codigo = String(limpo.codigo || produto.codigo || limpo.id);
     limpo.last_update = normalizarLastUpdateProduto(limpo) || Date.now();
+    limpo.marca = limparMarcaProduto(limpo.marca);
     limpo.firebaseKey = FirebaseAPI.sanitizarChave(produto.firebaseKey || limpo.id || limpo.codigo);
     return limpo;
 }
@@ -2450,6 +2455,75 @@ async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync 
             salvarProdutosJSON();
         }
     }
+ }
+
+// ==========================================================
+// NORMALIZAÇÃO DE MARCAS E COMPARAÇÃO SEGURA
+// ==========================================================
+function limparTextoSistema(valor) {
+    return String(valor || "")
+        .replace(/\u00A0/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function normalizarChaveSistema(valor) {
+    return limparTextoSistema(valor)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase();
+}
+
+function valoresIguaisSistema(a, b) {
+    return normalizarChaveSistema(a) === normalizarChaveSistema(b);
+}
+
+function ehMarcaVaziaOuPlaceholder(valor) {
+    const chave = normalizarChaveSistema(valor).replace(/[\s_\-\/]+/g, "");
+    return !chave || ["SEMMARCA", "SMMARCA", "NA", "NENHUMA", "GENERICO"].includes(chave);
+}
+
+function limparMarcaProduto(valor) {
+    const limpo = limparTextoSistema(valor);
+    return ehMarcaVaziaOuPlaceholder(limpo) ? "" : limpo;
+}
+
+function adicionarValorUnicoSistema(lista, valor) {
+    const limpo = limparTextoSistema(valor);
+    if (!limpo) return;
+
+    const chave = normalizarChaveSistema(limpo);
+    const existenteIndex = lista.findIndex(item => normalizarChaveSistema(item) === chave);
+
+    if (existenteIndex === -1) {
+        lista.push(limpo);
+        return;
+    }
+
+    const existente = limparTextoSistema(lista[existenteIndex]);
+    const existenteTemMinuscula = /[a-záéíóúâêîôûãõç]/.test(existente);
+    const novoTemMinuscula = /[a-záéíóúâêîôûãõç]/.test(limpo);
+
+    // Se a lista local antiga estava toda em maiúsculo, mas o produto veio com a marca formatada,
+    // mantém a marca mais amigável visualmente no seletor sem quebrar a comparação.
+    if (!existenteTemMinuscula && novoTemMinuscula) {
+        lista[existenteIndex] = limpo;
+    }
+}
+
+function deduplicarListaSistema(lista) {
+    const resultado = [];
+    (Array.isArray(lista) ? lista : []).forEach(item => adicionarValorUnicoSistema(resultado, item));
+    return resultado;
+}
+
+function escaparHtmlSistema(valor) {
+    return String(valor || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
         
         async function carregarListasLocaisDoSistema() {
@@ -2478,7 +2552,7 @@ async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync 
     try {
         const m = await localforage.getItem(MARCAS_KEY);
         if (Array.isArray(m)) {
-            marcasDoSistema = m.map(x => String(x || "").trim().toUpperCase()).filter(Boolean);
+            marcasDoSistema = deduplicarListaSistema(m.map(limparMarcaProduto).filter(Boolean));
         }
     } catch (err) {
         console.warn("Não foi possível carregar marcas locais:", err);
@@ -2576,8 +2650,7 @@ function atualizarListasDoSistemaComProdutos() {
             mapaCategorias.set(cat, catObj);
         }
 
-        const marca = String(p.marca || "").trim().toUpperCase();
-        if (marca && !marcasDoSistema.includes(marca)) marcasDoSistema.push(marca);
+        adicionarValorUnicoSistema(marcasDoSistema, limparMarcaProduto(p.marca));
 
         if (Array.isArray(p.tag_global)) {
             p.tag_global.forEach(tag => {
@@ -2604,7 +2677,7 @@ function atualizarListasDoSistemaComProdutos() {
         }))
         .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
-    marcasDoSistema = [...new Set(marcasDoSistema)].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    marcasDoSistema = deduplicarListaSistema(marcasDoSistema).sort((a, b) => a.localeCompare(b, "pt-BR"));
     tagsDoSistema = [...new Set(tagsDoSistema)].sort((a, b) => a.localeCompare(b, "pt-BR"));
 }
 
@@ -2687,7 +2760,7 @@ async function loadData() {
         p.categoria = p.categoria || "";
         p.subcategoria = p.subcategoria || "";
         p.subsubcategoria = p.subsubcategoria || "";
-        p.marca = p.marca || "";
+        p.marca = limparMarcaProduto(p.marca);
         if (p.tag_global === undefined || p.tag_global === null) p.tag_global = [];
     });
 
@@ -2781,11 +2854,26 @@ async function carregarCacheLocalProdutos() {
         }
 
         function gerarOptions(lista, selecionado, textoPadrao) {
-            let html = `<option value="">${textoPadrao}</option>`;
-            lista.forEach(item => {
-                let sel = (item === selecionado) ? 'selected' : '';
-                html += `<option value="${item}" ${sel}>${item}</option>`;
+            const selecionadoLimpo = limparTextoSistema(selecionado);
+            const chaveSelecionada = normalizarChaveSistema(selecionadoLimpo);
+            let encontrouSelecionado = !chaveSelecionada;
+            let html = `<option value="">${escaparHtmlSistema(textoPadrao)}</option>`;
+
+            deduplicarListaSistema(lista).forEach(item => {
+                const itemLimpo = limparTextoSistema(item);
+                const selecionadoAtual = chaveSelecionada && normalizarChaveSistema(itemLimpo) === chaveSelecionada;
+                if (selecionadoAtual) encontrouSelecionado = true;
+                const itemSeguro = escaparHtmlSistema(itemLimpo);
+                html += `<option value="${itemSeguro}" ${selecionadoAtual ? 'selected' : ''}>${itemSeguro}</option>`;
             });
+
+            // Se o produto veio do Firebase com uma marca que ainda não estava salva na lista local,
+            // ela aparece selecionada mesmo assim. Isso evita o card parecer sem marca.
+            if (chaveSelecionada && !encontrouSelecionado) {
+                const selecionadoSeguro = escaparHtmlSistema(selecionadoLimpo);
+                html += `<option value="${selecionadoSeguro}" selected>${selecionadoSeguro}</option>`;
+            }
+
             return html;
         }
 
@@ -2996,7 +3084,7 @@ renderGrid(ultimoTermoPesquisa, true);
                 sem_embalagem: vazio(p.embalagem),
                 sem_validade: vazio(p.validade),
                 sem_categoria: vazio(p.categoria),
-                sem_marca: vazio(p.marca),
+                sem_marca: ehMarcaVaziaOuPlaceholder(p.marca),
                 sem_preco_custo: precoCustoVazio
             };
 
@@ -3082,7 +3170,7 @@ function ordenarProdutosMaisRecentesPrimeiro(lista) {
                     if(advancedFilters.cat && p.categoria !== advancedFilters.cat) return false;
                     if(advancedFilters.sub && p.subcategoria !== advancedFilters.sub) return false;
                     if(advancedFilters.subsub && p.subsubcategoria !== advancedFilters.subsub) return false;
-                    if(advancedFilters.marca && p.marca !== advancedFilters.marca) return false;
+                    if(advancedFilters.marca && !valoresIguaisSistema(p.marca, advancedFilters.marca)) return false;
 
                     if(advancedFilters.tag) {
                         let pTags = Array.isArray(p.tag_global) ? p.tag_global : (p.tag_global ? p.tag_global.split(',').map(s=>s.trim()) : []);
@@ -3403,6 +3491,11 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
             }
             else if(field === 'validade_oferta') {
                 finalVal = value;
+            }
+            else if(field === 'marca') {
+                finalVal = limparMarcaProduto(value);
+                if (finalVal) adicionarValorUnicoSistema(marcasDoSistema, finalVal);
+                try { await localforage.setItem(MARCAS_KEY, marcasDoSistema); } catch (e) {}
             }
 
 
@@ -4831,21 +4924,34 @@ function abrirEditorImagemComboAtual() {
         }
 
         window.criarNovoItem = async function(lista, storageKey, sidebarId) { 
-            const nome = prompt("Nome do novo item:"); if (!nome || nome.trim() === "") return; 
-            const nm = nome.toUpperCase().trim(); if(lista.includes(nm)) return alert("Já existe!"); 
-            lista.push(nm); await localforage.setItem(storageKey, lista); renderizarCRUD(lista, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
+            const nome = prompt("Nome do novo item:"); if (!nome || nome.trim() === "") return;
+            const isMarca = sidebarId.includes('marcas');
+            const nm = isMarca ? limparMarcaProduto(nome) : String(nome || "").toUpperCase().trim();
+            if (!nm) return;
+            const jaExiste = isMarca
+                ? lista.some(item => valoresIguaisSistema(item, nm))
+                : lista.includes(nm);
+            if(jaExiste) return alert("Já existe!");
+            if (isMarca) adicionarValorUnicoSistema(lista, nm); else lista.push(nm);
+            await localforage.setItem(storageKey, lista); renderizarCRUD(lista, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
         }
 
       window.editarItem = async function(sidebarId, index) { 
             const obj = getListaByKey(sidebarId); const novoNome = prompt("Renomear:", obj.arr[index]); 
-            if (!novoNome || novoNome.trim() === "") return; 
-            const old = obj.arr[index]; const nm = novoNome.toUpperCase().trim(); obj.arr[index] = nm; 
+            if (!novoNome || novoNome.trim() === "") return;
+            const isMarca = obj.prop === 'marca';
+            const old = obj.arr[index];
+            const nm = isMarca ? limparMarcaProduto(novoNome) : String(novoNome || "").toUpperCase().trim();
+            if (!nm) return;
+            obj.arr[index] = nm;
+            obj.arr = deduplicarListaSistema(obj.arr);
+            if (isMarca) marcasDoSistema = obj.arr;
             
             products.forEach(p => { 
                 if (Array.isArray(p[obj.prop])) {
-                    let idx = p[obj.prop].indexOf(old);
+                    let idx = p[obj.prop].findIndex(valor => isMarca ? valoresIguaisSistema(valor, old) : valor === old);
                     if (idx > -1) p[obj.prop][idx] = nm; 
-                } else if (p[obj.prop] === old) {
+                } else if (isMarca ? valoresIguaisSistema(p[obj.prop], old) : p[obj.prop] === old) {
                     p[obj.prop] = nm; 
                 }
             }); 
@@ -4855,12 +4961,14 @@ function abrirEditorImagemComboAtual() {
 
         window.removerItem = async function(sidebarId, index) { 
             const obj = getListaByKey(sidebarId); if (!confirm(`Apagar "${obj.arr[index]}"?`)) return; 
-            const old = obj.arr[index]; obj.arr.splice(index, 1); 
+            const isMarca = obj.prop === 'marca';
+            const old = obj.arr[index]; obj.arr.splice(index, 1);
+            if (isMarca) marcasDoSistema = obj.arr;
             
             products.forEach(p => { 
                 if (Array.isArray(p[obj.prop])) {
-                    p[obj.prop] = p[obj.prop].filter(t => t !== old); 
-                } else if (p[obj.prop] === old) {
+                    p[obj.prop] = p[obj.prop].filter(t => isMarca ? !valoresIguaisSistema(t, old) : t !== old); 
+                } else if (isMarca ? valoresIguaisSistema(p[obj.prop], old) : p[obj.prop] === old) {
                     p[obj.prop] = ""; 
                 }
             }); 
