@@ -5702,6 +5702,28 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
             return code ? `${encodeURIComponent(code)}-${slug}` : slug;
         }
 
+        function getProductQueryParamSEO() {
+            try {
+                const params = new URLSearchParams(window.location.search || '');
+                return params.get('p') || params.get('produto') || '';
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function getRouteFromUrlForSEO(hashValue) {
+            const hash = hashValue || window.location.hash || '#/';
+            const productParam = getProductQueryParamSEO();
+            if (productParam && (!hash || hash === '#/' || hash === '#')) {
+                return `#/produto/${encodeURIComponent(productParam)}`;
+            }
+            return hash;
+        }
+
+        function getProductPublicUrlSEO(prod) {
+            return `${SITE_BASE_URL}/?p=${encodeURIComponent(getProductRouteKey(prod))}`;
+        }
+
         function findProductByRouteParam(routeParam) {
             const raw = decodeHash(String(routeParam || '')).split('?')[0].split('#')[0].trim();
             const normalized = normalizeProductRouteValue(raw);
@@ -6162,7 +6184,7 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
         }
 
        function handleRoute() {
-            let hash = window.location.hash || '#/';
+            let hash = getRouteFromUrlForSEO(window.location.hash || '#/');
             const vitrine = $('vitrine');
 
             if(STATE.currentRoute) STATE.scrollMap[STATE.currentRoute] = vitrine.scrollTop;
@@ -8900,7 +8922,7 @@ Por favor, podem incluir na minha entrega?`;
         }
 
         function getProductUrlSEO(prod) {
-            return `${SITE_BASE_URL}/#/produto/${getProductRouteKey(prod)}`;
+            return getProductPublicUrlSEO(prod);
         }
 
         function getProductImageSEO(prod) {
@@ -8942,7 +8964,7 @@ Por favor, podem incluir na minha entrega?`;
                         publisher: { '@id': `${SITE_BASE_URL}/#organization` },
                         potentialAction: {
                             '@type': 'SearchAction',
-                            target: `${SITE_BASE_URL}/#/buscar?q={search_term_string}`,
+                            target: `${SITE_BASE_URL}/?busca={search_term_string}`,
                             'query-input': 'required name=search_term_string'
                         }
                     },
