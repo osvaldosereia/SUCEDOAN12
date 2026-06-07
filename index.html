@@ -5210,7 +5210,7 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
 /* =========================================================
    HOME 2026-06-07: vitrines sem banners
    - mini cards: foto + preço + desconto
-   - mobile 3 colunas / desktop até 8 colunas
+   - 6 mini cards por seção no mobile e desktop
    ========================================================= */
 .home-shelves-da{
     display:flex;
@@ -5234,7 +5234,7 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
     margin-bottom:12px;
 }
 .home-shelf-title-da{
-    font-size:18px;
+    font-size:21px;
     line-height:1.08;
     font-weight:950;
     letter-spacing:-.045em;
@@ -5249,6 +5249,7 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
     max-width:680px;
 }
 .home-shelf-count-da{
+    display:none !important;
     flex-shrink:0;
     font-size:11px;
     font-weight:900;
@@ -5298,6 +5299,8 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
     object-fit:contain;
     padding:5px;
     display:block;
+    mix-blend-mode:multiply;
+    filter:contrast(1.04) saturate(1.03);
 }
 .home-mini-discount-da{
     position:absolute;
@@ -5361,9 +5364,9 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
 @media (min-width:768px){
     .home-shelves-da{gap:22px;}
     .home-shelf-da{padding:18px;border-radius:24px;}
-    .home-shelf-title-da{font-size:24px;}
+    .home-shelf-title-da{font-size:27px;}
     .home-shelf-subtitle-da{font-size:13px;}
-    .home-mini-grid-da{grid-template-columns:repeat(8,minmax(0,1fr));gap:10px;}
+    .home-mini-grid-da{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;}
     .home-mini-product-da{border-radius:18px;padding:8px;}
     .home-mini-product-da:hover{transform:translateY(-2px);border-color:#d0d5dd;box-shadow:0 10px 24px rgba(16,24,40,.08);}
     .home-mini-price-da{font-size:15px;}
@@ -12487,7 +12490,7 @@ function getDescontoProdutoHomeMiniDA(prod) {
     return 0;
 }
 
-function getProdutosOrdenadosHomeMiniDA(lista, limite = 8) {
+function getProdutosOrdenadosHomeMiniDA(lista, limite = 6) {
     return (lista || [])
         .filter(p => p && p.categoria !== 'Cestas' && Number(p.stock || 0) > 0 && getPrecoProdutoHomeMiniDA(p) > 0)
         .sort((a,b) => getDescontoProdutoHomeMiniDA(b) - getDescontoProdutoHomeMiniDA(a) || Number(b.stock || 0) - Number(a.stock || 0) || String(a.name || '').localeCompare(String(b.name || '')))
@@ -12540,7 +12543,6 @@ function getHomeCestasShelfDA() {
         subtitulo: 'Escolha uma cesta pronta ou personalize os itens.',
         href: '#/cestas',
         botao: 'Ver cestas',
-        contador: cestas.length ? `${cestas.length} opções` : '',
         cards: cestas.map(getHomeMiniCestaCardDA)
     });
 }
@@ -12556,7 +12558,7 @@ function getHomeDestinoBotaoSecaoJsonDA(cfg, index) {
 function getHomeJsonShelvesDA() {
     const secoes = getHomePromoBannersAtivosDA ? getHomePromoBannersAtivosDA() : [];
     return secoes.map((cfg, index) => {
-        const produtos = getProdutosOrdenadosHomeMiniDA(getProdutosBuscaBannerHomeDA(cfg), Number(cfg.quantidade || cfg.limite || 8));
+        const produtos = getProdutosOrdenadosHomeMiniDA(getProdutosBuscaBannerHomeDA(cfg), Math.min(6, Number(cfg.quantidade || cfg.limite || 6) || 6));
         if (!produtos.length) return '';
         const destino = getHomeDestinoBotaoSecaoJsonDA(cfg, index);
         return getHomeShelfSectionDA({
@@ -12565,26 +12567,24 @@ function getHomeJsonShelvesDA() {
             href: destino.href || '#/',
             onclick: destino.onclick || '',
             botao: cfg.textoBotao || 'Ver produtos',
-            contador: `${produtos.length} itens`,
             cards: produtos.map(getHomeMiniProdutoCardDA)
         });
     }).join('');
 }
 
 function getHomeOfertasShelfDA() {
-    const ofertas = getProdutosOrdenadosHomeMiniDA((STATE.prods || []).filter(p => Number(p.discountPercent || 0) > 0), 8);
+    const ofertas = getProdutosOrdenadosHomeMiniDA((STATE.prods || []).filter(p => Number(p.discountPercent || 0) > 0), 6);
     return getHomeShelfSectionDA({
         titulo: 'Economize com a compra do mês',
         subtitulo: 'Produtos com desconto para completar seu pedido.',
         href: '#/ofertas',
         botao: 'Ver produtos',
-        contador: ofertas.length ? `${ofertas.length} ofertas` : '',
         cards: ofertas.map(getHomeMiniProdutoCardDA)
     });
 }
 
 function getHomeCombosShelfDA() {
-    const combos = (dynamicCombos || []).filter(c => c && Number(c.preco || c.preco_combo || 0) > 0).slice(0, 8);
+    const combos = (dynamicCombos || []).filter(c => c && Number(c.preco || c.preco_combo || 0) > 0).slice(0, 6);
     const cards = combos.map(combo => {
         const preco = Number(combo.preco || combo.preco_combo || 0);
         const desconto = Number(combo.desconto_percentual || combo.desconto || 0);
@@ -12595,7 +12595,7 @@ function getHomeCombosShelfDA() {
             <strong class="home-mini-price-da">${fmt(preco)}</strong>
         </a>`;
     });
-    return getHomeShelfSectionDA({ titulo: 'Kits promocionais', subtitulo: 'Combos prontos com preço fechado.', href: '#/combos', botao: 'Ver produtos', contador: combos.length ? `${combos.length} kits` : '', cards });
+    return getHomeShelfSectionDA({ titulo: 'Kits promocionais', subtitulo: 'Combos prontos com preço fechado.', href: '#/combos', botao: 'Ver produtos', cards });
 }
 
 function getHomeCategoriaShelvesDA() {
@@ -12607,13 +12607,12 @@ function getHomeCategoriaShelvesDA() {
         return (ia > -1 ? ia : 999) - (ib > -1 ? ib : 999) || String(a).localeCompare(String(b));
     });
     return cats.map(cat => {
-        const produtos = getProdutosOrdenadosHomeMiniDA((STATE.prods || []).filter(p => p && p.categoria === cat), 8);
+        const produtos = getProdutosOrdenadosHomeMiniDA((STATE.prods || []).filter(p => p && p.categoria === cat), 6);
         if (!produtos.length) return '';
         return getHomeShelfSectionDA({
             titulo: cat,
             href: `#/departamento/${encodeHash(cat)}`,
             botao: 'Ver produtos',
-            contador: `${produtos.length} itens`,
             cards: produtos.map(getHomeMiniProdutoCardDA)
         });
     }).join('');
@@ -12629,7 +12628,6 @@ renderInicio = function() {
     htmlMercado += getHomeJsonShelvesDA();
     htmlMercado += getHomeOfertasShelfDA();
     htmlMercado += getHomeCombosShelfDA();
-    htmlMercado += `<a class="home-shelf-button-da home-catalog-shortcut-da" href="#/catalogo">Abrir catálogo rápido <span>›</span></a>`;
     htmlMercado += getHomeCategoriaShelvesDA();
     htmlMercado += `</div></div>`;
     htmlMercado += getMerchantTrustFooterHTML();
