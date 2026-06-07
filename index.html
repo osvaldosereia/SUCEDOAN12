@@ -6485,7 +6485,7 @@ let onClickAction = `onclick="window.location.hash='#/produto/${getProductRouteK
         function renderInformacoes() {
             let html = `
             <div style="padding: 15px 0 30px 0;">
-                <div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;">
+                <div class="ver-tudo-header" onclick="goBackSmart()" style="margin: -15px 0 0 0;">
                     <svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Informações da Loja
                 </div>
                 
@@ -13202,6 +13202,181 @@ renderInicio = function() {
     };
 })();
 
+
+
+/* =========================================================
+   PATCH FINAL - Botão Voltar da top bar com histórico interno real
+   Garante volta para a rota anterior da loja, mesmo em rotas SEO/query.
+   ========================================================= */
+(function() {
+    const DA_HOME_ROUTE = '#/';
+    const DA_MAX_ROUTE_HISTORY = 80;
+    let daRouteHistory = [];
+    let daIgnorarRegistroUmaVez = false;
+
+    function daNormalizarRota(route) {
+        let rota = String(route || '').trim();
+        if (!rota || rota === '#') rota = DA_HOME_ROUTE;
+        if (!rota.startsWith('#')) rota = '#' + rota.replace(/^#?/, '');
+        return rota;
+    }
+
+    function daRotaEfetivaAtual() {
+        let rota = window.location.hash || DA_HOME_ROUTE;
+        try {
+            if (typeof window.getRouteFromUrlForSEO === 'function') {
+                rota = window.getRouteFromUrlForSEO(rota) || rota;
+            } else if (typeof getRouteFromUrlForSEO === 'function') {
+                rota = getRouteFromUrlForSEO(rota) || rota;
+            }
+        } catch (e) {}
+        return daNormalizarRota(rota);
+    }
+
+    function daModalAberto() {
+        return !!(
+            ($('swapModal') && $('swapModal').classList.contains('active')) ||
+            ($('checkout-drawer') && $('checkout-drawer').classList.contains('open')) ||
+            ($('basketDetailModal') && $('basketDetailModal').classList.contains('active'))
+        );
+    }
+
+    function daRegistrarRota(route) {
+        if (daModalAberto()) return;
+
+        const rotaAtual = daNormalizarRota(route || daRotaEfetivaAtual());
+        const ultima = daRouteHistory[daRouteHistory.length - 1];
+
+        if (daIgnorarRegistroUmaVez) {
+            daIgnorarRegistroUmaVez = false;
+            return;
+        }
+
+        if (!ultima) {
+            daRouteHistory.push(rotaAtual);
+            return;
+        }
+
+        if (ultima === rotaAtual) return;
+
+        // Quando o usuário usa o botão nativo do navegador, a rota volta para a penúltima.
+        // Nesse caso removemos a última em vez de duplicar o histórico interno.
+        if (daRouteHistory.length > 1 && daRouteHistory[daRouteHistory.length - 2] === rotaAtual) {
+            daRouteHistory.pop();
+            return;
+        }
+
+        daRouteHistory.push(rotaAtual);
+        if (daRouteHistory.length > DA_MAX_ROUTE_HISTORY) daRouteHistory.shift();
+    }
+
+    function daExecutarHandleRoute() {
+        try {
+            if (typeof window.handleRoute === 'function') window.handleRoute();
+            else if (typeof handleRoute === 'function') handleRoute();
+        } catch (e) {}
+    }
+
+    function daIrParaRota(route) {
+        const destino = daNormalizarRota(route);
+        const hashAtualReal = daNormalizarRota(window.location.hash || DA_HOME_ROUTE);
+
+        // Rotas públicas por query string, como ?p=produto, podem renderizar produto mesmo com #/.
+        // Para voltar para início nesses casos, limpamos a query sem recarregar a página.
+        if (destino === DA_HOME_ROUTE && window.location.search) {
+            const urlHome = window.location.pathname + DA_HOME_ROUTE;
+            window.history.pushState({ donaAntoniaBase: true, rota: DA_HOME_ROUTE }, '', urlHome);
+            daExecutarHandleRoute();
+            return;
+        }
+
+        if (destino === hashAtualReal) {
+            daExecutarHandleRoute();
+            return;
+        }
+
+        window.location.hash = destino;
+    }
+
+    function daVoltarRotaAnterior() {
+        const rotaAtual = daRotaEfetivaAtual();
+        if (!daRouteHistory.length) daRouteHistory.push(rotaAtual);
+
+        while (daRouteHistory.length > 1 && daRouteHistory[daRouteHistory.length - 1] === rotaAtual) {
+            daRouteHistory.pop();
+            const destino = daRouteHistory[daRouteHistory.length - 1];
+            if (destino && destino !== rotaAtual) {
+                daIgnorarRegistroUmaVez = true;
+                daIrParaRota(destino);
+                return true;
+            }
+        }
+
+        const destino = daRouteHistory.length > 1 ? daRouteHistory[daRouteHistory.length - 2] : null;
+        if (destino && destino !== rotaAtual) {
+            daRouteHistory.pop();
+            daIgnorarRegistroUmaVez = true;
+            daIrParaRota(destino);
+            return true;
+        }
+
+        if (rotaAtual !== DA_HOME_ROUTE) {
+            daRouteHistory = [DA_HOME_ROUTE];
+            daIgnorarRegistroUmaVez = true;
+            daIrParaRota(DA_HOME_ROUTE);
+            return true;
+        }
+
+        return false;
+    }
+
+    window.goBackSmart = function() {
+        if ($('swapModal') && $('swapModal').classList.contains('active')) {
+            closeSwapModal();
+            return;
+        }
+
+        if ($('checkout-drawer') && $('checkout-drawer').classList.contains('open')) {
+            closeCheckout();
+            return;
+        }
+
+        if ($('basketDetailModal') && $('basketDetailModal').classList.contains('active')) {
+            closeBasketDetail();
+            return;
+        }
+
+        daVoltarRotaAnterior();
+    };
+
+    try { goBackSmart = window.goBackSmart; } catch (e) {}
+
+    const daHandleRouteOriginal = window.handleRoute || (typeof handleRoute === 'function' ? handleRoute : null);
+    if (typeof daHandleRouteOriginal === 'function' && !daHandleRouteOriginal.__daVoltarTopbarPatch) {
+        const daHandleRouteComHistorico = function() {
+            const resultado = daHandleRouteOriginal.apply(this, arguments);
+            setTimeout(() => daRegistrarRota(daRotaEfetivaAtual()), 0);
+            return resultado;
+        };
+        daHandleRouteComHistorico.__daVoltarTopbarPatch = true;
+        window.handleRoute = daHandleRouteComHistorico;
+        try { handleRoute = daHandleRouteComHistorico; } catch (e) {}
+    }
+
+    window.addEventListener('hashchange', function() {
+        setTimeout(() => daRegistrarRota(daRotaEfetivaAtual()), 0);
+    });
+
+    window.addEventListener('popstate', function() {
+        setTimeout(() => daRegistrarRota(daRotaEfetivaAtual()), 0);
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => daRegistrarRota(daRotaEfetivaAtual()), 0);
+    });
+
+    setTimeout(() => daRegistrarRota(daRotaEfetivaAtual()), 0);
+})();
 
 document.addEventListener('DOMContentLoaded', init);
 
