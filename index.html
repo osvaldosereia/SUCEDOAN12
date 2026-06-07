@@ -5466,6 +5466,20 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
     }
 }
 
+
+/* =========================================================
+   PATCH SÊNIOR FINAL - Grade de produtos 5 colunas no desktop
+   Mantém cestas/combos com regras próprias e força as seções de produtos.
+   ========================================================= */
+@media (min-width: 1024px) {
+    #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas),
+    #vitrine .related-products-grid,
+    #vitrine .grid-catalogo {
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 18px !important;
+    }
+}
+
     </style>
 </head>
 <body>
@@ -6312,7 +6326,7 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
             
             requestAnimationFrame(() => { vitrine.scrollTop = STATE.scrollMap[hash] || 0; });
         }
-        window.addEventListener('hashchange', handleRoute);
+        /* hashchange tratado pelo PATCH SÊNIOR FINAL DE ROTAS */
 
                 function renderCardHTML(prod, isBasketItem = false, index = null) {
             let q = isBasketItem ? prod.basketQty : (STATE.cart[prod.id] || 0);
@@ -12368,7 +12382,7 @@ handleRoute = function() {
     }
     return handleRouteTagsUniversaisDA.apply(this, arguments);
 };
-window.addEventListener('hashchange', handleRoute);
+/* hashchange tratado pelo PATCH SÊNIOR FINAL DE ROTAS */
 
 const atualizarTopbarTagsUniversaisDA = atualizarTopbarDaRota;
 atualizarTopbarDaRota = function(hash) {
@@ -12631,7 +12645,7 @@ handleRoute = function() {
     });
     return retorno;
 };
-window.addEventListener('hashchange', handleRoute);
+/* hashchange tratado pelo PATCH SÊNIOR FINAL DE ROTAS */
 
 
 const initCestasJsonDA = init;
@@ -13205,14 +13219,20 @@ renderInicio = function() {
 
 
 /* =========================================================
-   PATCH FINAL - Botão Voltar da top bar com histórico interno real
-   Garante volta para a rota anterior da loja, mesmo em rotas SEO/query.
+   PATCH SÊNIOR FINAL - Roteamento e botão Voltar da top bar
+   Correção estrutural: um único listener de rota, histórico interno confiável
+   e limpeza de query SEO ao voltar para rotas internas.
    ========================================================= */
 (function() {
     const DA_HOME_ROUTE = '#/';
-    const DA_MAX_ROUTE_HISTORY = 80;
+    const DA_MAX_ROUTE_HISTORY = 100;
+    const DA_SEO_QUERY_KEYS = ['p', 'produto', 'secao', 'categoria', 'marca', 'subcategoria', 'subsubcategoria', 'busca', 'q', 'cidade', 'local'];
     let daRouteHistory = [];
-    let daIgnorarRegistroUmaVez = false;
+    let daIsRendering = false;
+
+    const daRendererOriginal = (typeof window.handleRoute === 'function')
+        ? window.handleRoute
+        : (typeof handleRoute === 'function' ? handleRoute : null);
 
     function daNormalizarRota(route) {
         let rota = String(route || '').trim();
@@ -13221,19 +13241,7 @@ renderInicio = function() {
         return rota;
     }
 
-    function daRotaEfetivaAtual() {
-        let rota = window.location.hash || DA_HOME_ROUTE;
-        try {
-            if (typeof window.getRouteFromUrlForSEO === 'function') {
-                rota = window.getRouteFromUrlForSEO(rota) || rota;
-            } else if (typeof getRouteFromUrlForSEO === 'function') {
-                rota = getRouteFromUrlForSEO(rota) || rota;
-            }
-        } catch (e) {}
-        return daNormalizarRota(rota);
-    }
-
-    function daModalAberto() {
+    function daTemModalAberto() {
         return !!(
             ($('swapModal') && $('swapModal').classList.contains('active')) ||
             ($('checkout-drawer') && $('checkout-drawer').classList.contains('open')) ||
@@ -13241,16 +13249,32 @@ renderInicio = function() {
         );
     }
 
-    function daRegistrarRota(route) {
-        if (daModalAberto()) return;
+    function daTemQuerySeoAtiva() {
+        try {
+            const params = new URLSearchParams(window.location.search || '');
+            return DA_SEO_QUERY_KEYS.some(k => params.has(k));
+        } catch (e) {
+            return !!window.location.search;
+        }
+    }
+
+    function daRotaEfetivaAtual() {
+        let rota = window.location.hash || DA_HOME_ROUTE;
+        try {
+            if (typeof getRouteFromUrlForSEO === 'function') {
+                rota = getRouteFromUrlForSEO(rota) || rota;
+            } else if (typeof window.getRouteFromUrlForSEO === 'function') {
+                rota = window.getRouteFromUrlForSEO(rota) || rota;
+            }
+        } catch (e) {}
+        return daNormalizarRota(rota);
+    }
+
+    function daRegistrarRotaAtual(route) {
+        if (daTemModalAberto()) return;
 
         const rotaAtual = daNormalizarRota(route || daRotaEfetivaAtual());
         const ultima = daRouteHistory[daRouteHistory.length - 1];
-
-        if (daIgnorarRegistroUmaVez) {
-            daIgnorarRegistroUmaVez = false;
-            return;
-        }
 
         if (!ultima) {
             daRouteHistory.push(rotaAtual);
@@ -13259,8 +13283,7 @@ renderInicio = function() {
 
         if (ultima === rotaAtual) return;
 
-        // Quando o usuário usa o botão nativo do navegador, a rota volta para a penúltima.
-        // Nesse caso removemos a última em vez de duplicar o histórico interno.
+        // Se o usuário usou o botão nativo do navegador, sincroniza removendo a rota atual.
         if (daRouteHistory.length > 1 && daRouteHistory[daRouteHistory.length - 2] === rotaAtual) {
             daRouteHistory.pop();
             return;
@@ -13270,112 +13293,118 @@ renderInicio = function() {
         if (daRouteHistory.length > DA_MAX_ROUTE_HISTORY) daRouteHistory.shift();
     }
 
-    function daExecutarHandleRoute() {
+    function daExecutarRota() {
+        if (daIsRendering) return;
+        daIsRendering = true;
         try {
-            if (typeof window.handleRoute === 'function') window.handleRoute();
-            else if (typeof handleRoute === 'function') handleRoute();
-        } catch (e) {}
+            if (typeof daRendererOriginal === 'function') daRendererOriginal.apply(window, arguments);
+        } catch (e) {
+            console.error('Erro ao renderizar rota Dona Antônia:', e);
+        } finally {
+            daIsRendering = false;
+            setTimeout(function() {
+                daRegistrarRotaAtual(daRotaEfetivaAtual());
+            }, 0);
+        }
     }
 
-    function daIrParaRota(route) {
+    function daMontarUrlInterna(route) {
+        const rota = daNormalizarRota(route);
+        const path = window.location.pathname || '/';
+        return path + rota;
+    }
+
+    function daIrParaRotaInterna(route) {
         const destino = daNormalizarRota(route);
-        const hashAtualReal = daNormalizarRota(window.location.hash || DA_HOME_ROUTE);
+        const hashAtual = daNormalizarRota(window.location.hash || DA_HOME_ROUTE);
+        const querySeoAtiva = daTemQuerySeoAtiva();
 
-        // Rotas públicas por query string, como ?p=produto, podem renderizar produto mesmo com #/.
-        // Para voltar para início nesses casos, limpamos a query sem recarregar a página.
-        if (destino === DA_HOME_ROUTE && window.location.search) {
-            const urlHome = window.location.pathname + DA_HOME_ROUTE;
-            window.history.pushState({ donaAntoniaBase: true, rota: DA_HOME_ROUTE }, '', urlHome);
-            daExecutarHandleRoute();
-            return;
+        // Voltar dentro da loja deve sair de URLs públicas por query (?p=, ?marca= etc.).
+        // replaceState evita criar uma rota falsa no histórico do navegador.
+        if (querySeoAtiva || hashAtual !== destino) {
+            window.history.replaceState({ donaAntoniaBase: true, rota: destino }, '', daMontarUrlInterna(destino));
         }
 
-        if (destino === hashAtualReal) {
-            daExecutarHandleRoute();
-            return;
-        }
-
-        window.location.hash = destino;
+        daExecutarRota();
     }
 
-    function daVoltarRotaAnterior() {
-        const rotaAtual = daRotaEfetivaAtual();
-        if (!daRouteHistory.length) daRouteHistory.push(rotaAtual);
+    function daObterRotaAnterior() {
+        const atual = daRotaEfetivaAtual();
+        if (!daRouteHistory.length) daRouteHistory.push(atual);
+        if (daRouteHistory[daRouteHistory.length - 1] !== atual) daRouteHistory.push(atual);
 
-        while (daRouteHistory.length > 1 && daRouteHistory[daRouteHistory.length - 1] === rotaAtual) {
+        while (daRouteHistory.length && daRouteHistory[daRouteHistory.length - 1] === atual) {
             daRouteHistory.pop();
-            const destino = daRouteHistory[daRouteHistory.length - 1];
-            if (destino && destino !== rotaAtual) {
-                daIgnorarRegistroUmaVez = true;
-                daIrParaRota(destino);
-                return true;
-            }
         }
 
-        const destino = daRouteHistory.length > 1 ? daRouteHistory[daRouteHistory.length - 2] : null;
-        if (destino && destino !== rotaAtual) {
-            daRouteHistory.pop();
-            daIgnorarRegistroUmaVez = true;
-            daIrParaRota(destino);
-            return true;
-        }
-
-        if (rotaAtual !== DA_HOME_ROUTE) {
-            daRouteHistory = [DA_HOME_ROUTE];
-            daIgnorarRegistroUmaVez = true;
-            daIrParaRota(DA_HOME_ROUTE);
-            return true;
-        }
-
-        return false;
+        const anterior = daRouteHistory[daRouteHistory.length - 1];
+        if (anterior && anterior !== atual) return anterior;
+        return atual !== DA_HOME_ROUTE ? DA_HOME_ROUTE : null;
     }
 
     window.goBackSmart = function() {
-        if ($('swapModal') && $('swapModal').classList.contains('active')) {
-            closeSwapModal();
-            return;
-        }
+        try {
+            if ($('swapModal') && $('swapModal').classList.contains('active')) {
+                if (typeof closeSwapModal === 'function') closeSwapModal();
+                else $('swapModal').classList.remove('active');
+                return;
+            }
 
-        if ($('checkout-drawer') && $('checkout-drawer').classList.contains('open')) {
-            closeCheckout();
-            return;
-        }
+            if ($('checkout-drawer') && $('checkout-drawer').classList.contains('open')) {
+                if (typeof closeCheckout === 'function') closeCheckout();
+                else $('checkout-drawer').classList.remove('open');
+                return;
+            }
 
-        if ($('basketDetailModal') && $('basketDetailModal').classList.contains('active')) {
-            closeBasketDetail();
-            return;
-        }
+            if ($('basketDetailModal') && $('basketDetailModal').classList.contains('active')) {
+                if (typeof closeBasketDetail === 'function') closeBasketDetail();
+                else $('basketDetailModal').classList.remove('active');
+                return;
+            }
 
-        daVoltarRotaAnterior();
+            const destino = daObterRotaAnterior();
+            if (!destino) return;
+            daIrParaRotaInterna(destino);
+        } catch (e) {
+            console.error('Erro no botão voltar Dona Antônia:', e);
+            daIrParaRotaInterna(DA_HOME_ROUTE);
+        }
     };
 
     try { goBackSmart = window.goBackSmart; } catch (e) {}
 
-    const daHandleRouteOriginal = window.handleRoute || (typeof handleRoute === 'function' ? handleRoute : null);
-    if (typeof daHandleRouteOriginal === 'function' && !daHandleRouteOriginal.__daVoltarTopbarPatch) {
-        const daHandleRouteComHistorico = function() {
-            const resultado = daHandleRouteOriginal.apply(this, arguments);
-            setTimeout(() => daRegistrarRota(daRotaEfetivaAtual()), 0);
-            return resultado;
-        };
-        daHandleRouteComHistorico.__daVoltarTopbarPatch = true;
-        window.handleRoute = daHandleRouteComHistorico;
-        try { handleRoute = daHandleRouteComHistorico; } catch (e) {}
+    window.handleRoute = function() {
+        return daExecutarRota.apply(window, arguments);
+    };
+    try { handleRoute = window.handleRoute; } catch (e) {}
+
+    function daAoMudarRota() {
+        daExecutarRota();
     }
 
-    window.addEventListener('hashchange', function() {
-        setTimeout(() => daRegistrarRota(daRotaEfetivaAtual()), 0);
-    });
-
+    window.addEventListener('hashchange', daAoMudarRota);
     window.addEventListener('popstate', function() {
-        setTimeout(() => daRegistrarRota(daRotaEfetivaAtual()), 0);
+        setTimeout(daAoMudarRota, 0);
     });
 
     document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(() => daRegistrarRota(daRotaEfetivaAtual()), 0);
+        setTimeout(function() {
+            daRegistrarRotaAtual(daRotaEfetivaAtual());
+            const btn = document.querySelector('.compact-back-btn');
+            if (btn && !btn.__daVoltarSeniorBound) {
+                btn.__daVoltarSeniorBound = true;
+                btn.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    window.goBackSmart();
+                });
+            }
+        }, 0);
     });
 
-    setTimeout(() => daRegistrarRota(daRotaEfetivaAtual()), 0);
+    setTimeout(function() {
+        daRegistrarRotaAtual(daRotaEfetivaAtual());
+    }, 0);
 })();
 
 document.addEventListener('DOMContentLoaded', init);
