@@ -5114,54 +5114,232 @@ async function processarBaixaPedidoTexto() {
 }
 
         // ==========================================================
-        // LIMPEZA INTELIGENTE DE IMAGENS DO GITHUB (AJUSTADO PARA FILA)
+        // LIMPEZA INTELIGENTE DE IMAGENS DO GITHUB (SEGURA)
         // ==========================================================
-        async function executarLimpezaImagens() {
-            if(!confirm("AVISO: O sistema vai ler as pastas de imagens no GitHub e colocar na fila a exclusão dos ficheiros órfãos. Queres continuar?")) return;
-            
-            const cfg = await GitHubAPI.getConfig(); if(!cfg) return;
-            mostrarAlerta("Lendo o GitHub para criar a fila de limpeza. Aguarde...", "aviso");
-            
+        function normalizarCaminhoImagemGithub(urlImagem) {
+            if (!urlImagem || typeof urlImagem !== "string") return "";
+
+            let url = urlImagem.trim();
+            if (!url || url.startsWith("data:image")) return "";
+
             try {
-                const imagensEmUso = new Set(products.map(p => {
-                    if(!p.url_imagem) return null;
-                    const partes = p.url_imagem.split('?')[0].split('/');
-                    return partes[partes.length-1]; 
-                }).filter(x => x));
+                url = decodeURIComponent(url);
+            } catch (e) {}
 
-                let pastas = ["site/img/produtos"];
-                for(let i = 2; i <= 10; i++) pastas.push(`site/img/produtos_${i}`);
+            url = url.split("?")[0].split("#")[0].trim();
+            url = url.replace(/\\/g, "/");
 
-                let imagensParaApagar = 0;
-                
-                for(const pasta of pastas) {
+            // Converte caminhos locais usados no site: ../site/img/produtos/arquivo.webp
+            url = url.replace(/^\.\.\//, "").replace(/^\.\//, "").replace(/^\//, "");
+
+            // Converte domínio do site: https://donaantonia.com.br/site/img/produtos/arquivo.webp
+            const marcadorSite = "/site/img/";
+            if (url.includes(marcadorSite)) {
+                url = "site/img/" + url.split(marcadorSite).pop();
+            }
+
+            // Converte raw GitHub: https://raw.githubusercontent.com/user/repo/main/site/img/produtos/arquivo.webp
+            const marcadorRaw = "/main/site/img/";
+            if (url.includes(marcadorRaw)) {
+                url = "site/img/" + url.split(marcadorRaw).pop();
+            }
+
+            // Converte GitHub blob: https://github.com/user/repo/blob/main/site/img/produtos/arquivo.webp
+            const marcadorBlob = "/blob/main/site/img/";
+            if (url.includes(marcadorBlob)) {
+                url = "site/img/" + url.split(marcadorBlob).pop();
+            }
+
+            // Se ainda for URL externa, não entra na limpeza.
+            if (/^https?:\/\//i.test(url)) return "";
+
+            // Só protege/limpa imagens dentro da pasta oficial do projeto.
+            if (!url.startsWith("site/img/")) return "";
+
+            return url.replace(/\/+/g, "/");
+        }
+
+        function adicionarImagemEmUsoNoSet(set, urlImagem) {
+            const caminho = normalizarCaminhoImagemGithub(urlImagem);
+            if (caminho) set.add(caminho);
+        }
+
+        function coletarImagensUsadasEmCombos(listaCombos, produtosBase, imagensEmUso) {
+            if (!Array.isArray(listaCombos)) return;
+
+            const mapaProdutos = new Map();
+            (Array.isArray(produtosBase) ? produtosBase : []).forEach(p => {
+                const chaves = [p.firebaseKey, p.id, p.codigo, p.gtin].filter(Boolean).map(x => String(x));
+                chaves.forEach(chave => mapaProdutos.set(chave, p));
+            });
+
+            listaCombos.forEach(combo => {
+                if (!combo) return;
+
+                adicionarImagemEmUsoNoSet(imagensEmUso, combo.url_imagem);
+                adicionarImagemEmUsoNoSet(imagensEmUso, combo.imagem);
+                adicionarImagemEmUsoNoSet(imagensEmUso, combo.capa);
+
+                if (Array.isArray(combo.itens)) {
+                    combo.itens.forEach(item => {
+                        if (!item) return;
+
+                        adicionarImagemEmUsoNoSet(imagensEmUso, item.url_imagem);
+                        adicionarImagemEmUsoNoSet(imagensEmUso, item.imagem);
+
+                        const produtoRelacionado = mapaProdutos.get(String(item.firebaseKey || "")) ||
+                            mapaProdutos.get(String(item.sku || "")) ||
+                            mapaProdutos.get(String(item.codigo || ""));
+
+                        if (produtoRelacionado) {
+                            adicionarImagemEmUsoNoSet(imagensEmUso, produtoRelacionado.url_imagem);
+                        }
+                    });
+                }
+            });
+        }
+
+        async function apagarArquivoGithubSeguro(cfg, file) {
+            const res = await fetchComTimeout(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${file.path}`, {
+                method: 'DELETE',
+                headers: GitHubAPI.getHeaders(cfg),
+                body: JSON.stringify({
+                    message: `PIM Sync: Removendo imagem órfã ${file.path}`,
+                    sha: file.sha
+                })
+            }, 45000, "Apagar imagem órfã: " + file.path);
+
+            if (!res.ok) {
+                let detalhe = "";
+                try {
+                    const errJson = await res.json();
+                    detalhe = errJson && errJson.message ? " - " + errJson.message : "";
+                } catch (e) {}
+                throw new Error(`Erro ao apagar ${file.path}: HTTP ${res.status}${detalhe}`);
+            }
+        }
+
+        async function executarLimpezaImagens() {
+            if (!confirm("AVISO: a limpeza agora vai consultar o Firebase e o GitHub antes de apagar. Ela só apagará imagens que NÃO aparecem nos produtos nem nos combos. Deseja analisar agora?")) return;
+
+            const cfg = await GitHubAPI.getConfig();
+            if (!cfg) {
+                mostrarAlerta("Configure as credenciais do GitHub antes de limpar imagens.", "erro");
+                return;
+            }
+
+            mostrarAlerta("Analisando Firebase, combos e pastas de imagens do GitHub...", "aviso");
+
+            try {
+                const [produtosFirebase, exclusoesFirebase] = await Promise.all([
+                    FirebaseAPI.lerProdutos(),
+                    FirebaseAPI.lerExclusoesProdutos()
+                ]);
+
+                const produtosBase = Array.isArray(produtosFirebase) && produtosFirebase.length > 0
+                    ? produtosFirebase.filter(p =>
+                        p &&
+                        p._deleted !== true &&
+                        obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p)
+                    )
+                    : products.filter(p => p && p._deleted !== true);
+
+                let combosBase = [];
+                try {
+                    if (typeof carregarCombosDaNuvemSeExistir === "function") {
+                        await carregarCombosDaNuvemSeExistir();
+                    }
+                    combosBase = Array.isArray(combosDoSistema) ? combosDoSistema : [];
+                } catch (e) {
+                    console.warn("Não foi possível atualizar combos antes da limpeza. Usando combos locais.", e);
+                    combosBase = Array.isArray(combosDoSistema) ? combosDoSistema : [];
+                }
+
+                const imagensEmUso = new Set();
+
+                produtosBase.forEach(p => {
+                    adicionarImagemEmUsoNoSet(imagensEmUso, p.url_imagem);
+                    adicionarImagemEmUsoNoSet(imagensEmUso, p.imagem);
+                    adicionarImagemEmUsoNoSet(imagensEmUso, p.capa);
+                });
+
+                coletarImagensUsadasEmCombos(combosBase, produtosBase, imagensEmUso);
+
+                const pastas = ["site/img/produtos"];
+                for (let i = 2; i <= 10; i++) pastas.push(`site/img/produtos_${i}`);
+                pastas.push("site/img/combos");
+
+                const imagensParaApagar = [];
+                const errosPastas = [];
+                let totalArquivosLidos = 0;
+
+                for (const pasta of pastas) {
                     try {
                         const files = await GitHubAPI.getFileData(pasta);
-                        if(Array.isArray(files)) {
-                            for(const file of files) {
-                                if(!imagensEmUso.has(file.name)) {
-                                    enqueueTask(`Apagar Imagem: ${file.name}`, async () => {
-                                        await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${file.path}`, {
-                                            method: 'DELETE',
-                                            headers: GitHubAPI.getHeaders(cfg),
-                                            body: JSON.stringify({ message: `PIM Sync: Removendo imagem órfã ${file.name}`, sha: file.sha })
-                                        });
-                                    }, true);
-                                    imagensParaApagar++;
-                                }
+                        if (!Array.isArray(files)) continue;
+
+                        for (const file of files) {
+                            if (!file || file.type !== "file" || !file.path || !file.sha) continue;
+                            totalArquivosLidos++;
+
+                            const caminhoArquivo = String(file.path).replace(/\\/g, "/");
+                            const extensaoOk = /\.(webp|png|jpe?g|gif)$/i.test(caminhoArquivo);
+                            if (!extensaoOk) continue;
+
+                            if (!imagensEmUso.has(caminhoArquivo)) {
+                                imagensParaApagar.push(file);
                             }
                         }
-                    } catch(e) { } 
+                    } catch (e) {
+                        console.warn("Erro ao ler pasta de imagens:", pasta, e);
+                        errosPastas.push(`${pasta}: ${e.message || e}`);
+                    }
                 }
-                
-                if (imagensParaApagar > 0) {
-                    mostrarAlerta(`✅ Análise concluída! ${imagensParaApagar} imagens foram para a fila de exclusão.`, "sucesso");
-                } else {
-                    mostrarAlerta("Não foram encontradas imagens órfãs para limpar.", "sucesso");
+
+                const resumo = [
+                    `Produtos analisados: ${produtosBase.length}`,
+                    `Combos analisados: ${combosBase.length}`,
+                    `Imagens protegidas: ${imagensEmUso.size}`,
+                    `Arquivos lidos no GitHub: ${totalArquivosLidos}`,
+                    `Imagens órfãs encontradas: ${imagensParaApagar.length}`
+                ];
+
+                if (errosPastas.length > 0) {
+                    resumo.push(`Pastas com erro: ${errosPastas.length}`);
                 }
-            } catch(e) {
-                console.error(e);
-                mostrarAlerta("❌ Ocorreu um erro durante a leitura.", "erro");
+
+                if (imagensParaApagar.length === 0) {
+                    mostrarAlerta("✅ Limpeza concluída: nenhuma imagem órfã encontrada.", "sucesso");
+                    alert("✅ Nenhuma imagem órfã encontrada.\n\n" + resumo.join("\n"));
+                    return;
+                }
+
+                const amostra = imagensParaApagar.slice(0, 25).map(file => `- ${file.path}`).join("\n");
+                const restantes = imagensParaApagar.length > 25 ? `\n...e mais ${imagensParaApagar.length - 25} arquivo(s).` : "";
+
+                const confirmarExclusao = confirm(
+                    "Foram encontradas imagens aparentemente sem uso.\n\n" +
+                    resumo.join("\n") +
+                    "\n\nPrimeiros arquivos que serão apagados:\n" +
+                    amostra + restantes +
+                    "\n\nDeseja colocar essas imagens na fila de exclusão do GitHub?"
+                );
+
+                if (!confirmarExclusao) {
+                    mostrarAlerta("Limpeza cancelada. Nenhuma imagem foi apagada.", "aviso");
+                    return;
+                }
+
+                imagensParaApagar.forEach(file => {
+                    enqueueTask(`Apagar Imagem: ${file.path}`, async () => {
+                        await apagarArquivoGithubSeguro(cfg, file);
+                    }, false, 60000);
+                });
+
+                mostrarAlerta(`✅ ${imagensParaApagar.length} imagem(ns) órfã(s) foram colocadas na fila de exclusão.`, "sucesso");
+            } catch (e) {
+                console.error("Erro na limpeza segura de imagens:", e);
+                mostrarAlerta("❌ Erro durante a limpeza: " + e.message, "erro");
             }
         }
         
