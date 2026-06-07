@@ -5072,6 +5072,139 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
   .home-top-banners-da .home-featured-search-title,.home-top-banners-da .home-cestas-copy strong{font-size:22px!important;}
 }
 
+
+
+/* =========================================================
+   PATCH SÊNIOR 2026-06-07: banners profissionais + área segura
+   ========================================================= */
+.home-top-banners-da{
+  align-items:stretch!important;
+  gap:16px!important;
+  margin:10px 0 22px!important;
+}
+.home-top-banners-da .home-cestas-feature.home-cestas-feature-destaque,
+.home-top-banners-da .home-featured-search-banner{
+  min-height:186px!important;
+  border-radius:26px!important;
+  border:1px solid rgba(229,231,235,.96)!important;
+  box-shadow:0 14px 34px rgba(16,24,40,.10)!important;
+  overflow:hidden!important;
+}
+.home-top-banners-da .home-cestas-feature.home-cestas-feature-destaque{
+  background:
+    radial-gradient(circle at 88% 12%, rgba(22,163,74,.16), transparent 31%),
+    linear-gradient(135deg,#ffffff 0%,#f4fbf6 58%,#ecfdf3 100%)!important;
+  color:#101828!important;
+  border-color:#d1fae5!important;
+}
+.home-top-banners-da .home-cestas-feature.home-cestas-feature-destaque .home-cestas-copy span{
+  color:#047857!important;
+  background:#dcfce7!important;
+  border:1px solid #bbf7d0!important;
+  opacity:1!important;
+}
+.home-top-banners-da .home-cestas-feature.home-cestas-feature-destaque .home-cestas-copy strong{
+  color:#101828!important;
+  text-shadow:none!important;
+}
+.home-top-banners-da .home-cestas-feature.home-cestas-feature-destaque .home-cestas-copy small{
+  color:#475467!important;
+  opacity:1!important;
+}
+.home-top-banners-da .home-cestas-feature.home-cestas-feature-destaque .home-cestas-price{
+  color:#ffffff!important;
+  background:#14532d!important;
+  border:1px solid rgba(20,83,45,.12)!important;
+}
+.home-top-banners-da .home-cestas-feature.home-cestas-feature-destaque .home-cestas-imgbox,
+.home-top-banners-da .home-featured-search-imageframe{
+  background:#ffffff!important;
+  border:1px solid rgba(255,255,255,.82)!important;
+  box-shadow:0 10px 26px rgba(16,24,40,.12)!important;
+}
+.home-top-banners-da .home-featured-search-banner{
+  background:
+    radial-gradient(circle at 90% 15%, rgba(255,255,255,.16), transparent 30%),
+    linear-gradient(135deg,#0f172a 0%,#1e293b 58%,#334155 100%)!important;
+}
+.home-featured-search-slide{
+  grid-template-columns:minmax(0,1fr) minmax(112px,36%)!important;
+  column-gap:12px!important;
+  padding:0 44px!important;
+}
+.home-top-banners-da .home-featured-search-copy{
+  padding:18px 0!important;
+  min-width:0!important;
+}
+.home-top-banners-da .home-featured-search-imagebox{
+  padding:16px 0!important;
+  min-width:0!important;
+}
+.home-top-banners-da .home-featured-search-kicker{
+  color:#ffffff!important;
+  background:rgba(255,255,255,.16)!important;
+  border:1px solid rgba(255,255,255,.22)!important;
+  opacity:1!important;
+}
+.home-top-banners-da .home-featured-search-title{
+  color:#ffffff!important;
+  text-shadow:0 2px 10px rgba(0,0,0,.16)!important;
+}
+.home-top-banners-da .home-featured-search-subtitle{
+  color:rgba(255,255,255,.88)!important;
+  opacity:1!important;
+}
+.home-top-banners-da .home-featured-search-subtitle strong{color:#ffffff!important;}
+.home-top-banners-da .home-featured-search-cta{
+  background:#ffffff!important;
+  color:#0f172a!important;
+  border:1px solid rgba(255,255,255,.7)!important;
+}
+.home-featured-nav{
+  top:auto!important;
+  bottom:12px!important;
+  transform:none!important;
+  width:32px!important;
+  height:32px!important;
+  background:rgba(15,23,42,.52)!important;
+}
+.home-featured-prev{left:12px!important;}
+.home-featured-next{right:12px!important;}
+.home-featured-nav:active{transform:scale(.92)!important;}
+.home-featured-dots{
+  left:50%!important;
+  bottom:22px!important;
+  transform:translateX(-50%)!important;
+}
+.home-featured-search-banner[data-theme="chocolate"]{
+  background:radial-gradient(circle at 90% 15%,rgba(255,255,255,.18),transparent 30%),linear-gradient(135deg,#3b1d0d 0%,#7c2d12 58%,#f59e0b 100%)!important;
+}
+.home-featured-search-banner[data-theme="beleza"]{
+  background:radial-gradient(circle at 90% 15%,rgba(255,255,255,.20),transparent 30%),linear-gradient(135deg,#4a044e 0%,#be185d 58%,#f9a8d4 100%)!important;
+}
+.home-featured-search-banner[data-theme="limpeza"]{
+  background:radial-gradient(circle at 90% 15%,rgba(255,255,255,.20),transparent 30%),linear-gradient(135deg,#082f49 0%,#0284c7 58%,#67e8f9 100%)!important;
+}
+.home-featured-search-banner[data-theme="verde"],
+.home-featured-search-banner[data-theme="mercearia"]{
+  background:radial-gradient(circle at 90% 15%,rgba(255,255,255,.18),transparent 30%),linear-gradient(135deg,#052e16 0%,#15803d 58%,#84cc16 100%)!important;
+}
+@media (max-width:380px){
+  .home-featured-search-slide{grid-template-columns:minmax(0,1fr) 96px!important;padding:0 38px!important;}
+  .home-top-banners-da .home-featured-search-title,
+  .home-top-banners-da .home-cestas-copy strong{font-size:20px!important;}
+  .home-featured-nav{width:28px!important;height:28px!important;}
+}
+@media (min-width:768px){
+  .home-top-banners-da{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:18px!important;}
+  .home-top-banners-da .home-cestas-feature.home-cestas-feature-destaque,
+  .home-top-banners-da .home-featured-search-banner{min-height:220px!important;}
+  .home-featured-search-slide{grid-template-columns:minmax(0,1fr) minmax(170px,36%)!important;padding:0 58px!important;}
+  .home-featured-prev{left:16px!important;}
+  .home-featured-next{right:16px!important;}
+  .home-featured-dots{bottom:24px!important;}
+}
+
 </style>
 </head>
 <body>
@@ -11910,6 +12043,256 @@ atualizarTopbarDaRota = function(hash) {
         atualizarBuscaSecaoVisual();
     }
 };
+
+
+
+/* =========================================================
+   PATCH SÊNIOR 2026-06-07: inteligência de banners por JSON
+   Arquivo recomendado: /site/bannershome.json
+   ========================================================= */
+const HOME_BANNERS_JSON_URLS_DA = ['site/bannershome.json', 'bannershome.json'];
+let HOME_BANNERS_JSON_CARREGADO_DA = false;
+
+function normalizarListaTextoBannerDA(valor) {
+    if (Array.isArray(valor)) return valor.map(v => String(v || '').trim()).filter(Boolean);
+    return String(valor || '').split(/[;,|]/g).map(v => v.trim()).filter(Boolean);
+}
+
+function normalizarConfigBannerHomeDA(item, index) {
+    const destinoTipo = String(item.tipoDestino || item.tipo_destino || item.destino || item.tipo || 'busca').toLowerCase().trim();
+    const palavras = normalizarListaTextoBannerDA(item.palavras_chave || item.palavrasChave || item.termosBusca || item.termos_busca || item.termoBusca || item.palavra_chave);
+    const tag = String(item.tagUniversal || item.tag_universal || item.tag || '').trim();
+    const sessao = String(item.sessaoBusca || item.sessao_busca || item.categoria || item.secao || item.departamento || '').trim();
+    return {
+        ativo: item.ativo !== false,
+        id: String(item.id || `banner-${index + 1}`),
+        posicao: Number(item.posicao || item.ordem || index + 1),
+        tipoDestino: destinoTipo,
+        termoBusca: String(item.termoBusca || item.termo_busca || item.palavra_chave || palavras[0] || tag || '').trim(),
+        termosBusca: palavras,
+        sessaoBusca: sessao,
+        tagUniversal: tag,
+        produtos: normalizarListaTextoBannerDA(item.produtos || item.produtos_sessao || item.produtosDentroSessao || item.produtos_dentro_sessao),
+        produtoCapaCodigo: String(item.produtoCapaCodigo || item.produto_capa_codigo || item.codigoProdutoCapa || item.codigo_produto_capa || '').trim(),
+        produtoCapaPalavra: String(item.produtoCapaPalavra || item.produto_capa_palavra || item.palavraProdutoCapa || item.palavra_produto_capa || '').trim(),
+        chamadaPequena: String(item.chamadaPequena || item.chamada_pequena || item.kicker || item.etiqueta || 'Destaque').trim(),
+        titulo: String(item.titulo || item.title || item.termoBusca || item.palavra_chave || 'Produtos em destaque').trim(),
+        subtitulo: String(item.subtitulo || item.subtitle || item.descricao || '').trim(),
+        textoBotao: String(item.textoBotao || item.texto_botao || item.cta || 'Ver produtos').trim(),
+        tema: String(item.tema || item.theme || 'padrao').toLowerCase().replace(/[^a-z0-9_-]/g, ''),
+        imagemFallback: String(item.imagemFallback || item.imagem_fallback || item.imagem || item.foto || '').trim()
+    };
+}
+
+function aplicarBannersHomeJsonDA(lista) {
+    const origem = Array.isArray(lista) ? lista : (Array.isArray(lista && lista.banners) ? lista.banners : []);
+    const normalizados = origem.map(normalizarConfigBannerHomeDA).filter(b => b && b.ativo !== false).sort((a,b) => a.posicao - b.posicao);
+    if (!normalizados.length) return false;
+    HOME_PROMO_BANNERS.splice(0, HOME_PROMO_BANNERS.length, ...normalizados);
+    HOME_PROMO_BANNER_INDEX = 0;
+    HOME_BANNERS_JSON_CARREGADO_DA = true;
+    return true;
+}
+
+async function carregarBannersHomeJsonDA() {
+    if (HOME_BANNERS_JSON_CARREGADO_DA) return true;
+    for (const url of HOME_BANNERS_JSON_URLS_DA) {
+        try {
+            const resp = await fetch(url, { cache: 'no-store' });
+            if (!resp.ok) continue;
+            const dados = await resp.json();
+            if (aplicarBannersHomeJsonDA(dados)) return true;
+        } catch (e) {
+            console.warn('Banner JSON não carregou em', url, e);
+        }
+    }
+    return false;
+}
+
+function produtoCodigoOuNomeBannerDA(prod, valor) {
+    const alvo = norm(valor || '');
+    if (!alvo || !prod) return false;
+    return [prod.id, prod.codigo, prod.firebaseKey, prod.gtin, prod.name, prod.nome]
+        .some(campo => norm(campo || '') === alvo || norm(campo || '').includes(alvo));
+}
+
+function produtoTemTagUniversalBannerDA(prod, tag) {
+    if (typeof produtoTemTagUniversalDA === 'function') return produtoTemTagUniversalDA(prod, tag);
+    const alvo = norm(tag || '');
+    const valor = prod && (prod.tag_global || prod.tagGlobal || prod.tags || prod.tag || prod.global || '');
+    const lista = Array.isArray(valor) ? valor : String(valor).split(/[;,|]/g);
+    return lista.some(t => norm(String(t || '').trim()) === alvo);
+}
+
+function produtoPertenceSessaoBannerAvancadoDA(prod, cfg) {
+    const sessao = cfg.sessaoBusca || cfg.categoria || '';
+    const alvo = norm(sessao || '');
+    if (!alvo) return true;
+    const campos = [prod.categoria, prod.subcategoria, prod.subsubcategoria, prod.departamento, prod.sessao, prod.secao];
+    return campos.some(campo => norm(campo || '') === alvo);
+}
+
+function produtoCombinaTermosBannerAvancadoDA(prod, cfg) {
+    const listaTermos = Array.isArray(cfg.termosBusca) && cfg.termosBusca.length ? cfg.termosBusca : [cfg.termoBusca];
+    const termos = listaTermos.map(t => normalizarTermoBuscaSite(t || '').trim()).filter(Boolean);
+    if (!termos.length) return true;
+    const texto = montarTextoBuscaProdutoSite(prod);
+    return termos.some(termo => termo.split(' ').filter(Boolean).every(p => texto.includes(p)));
+}
+
+getHomePromoBannersAtivosDA = function() {
+    return (HOME_PROMO_BANNERS || [])
+        .map(normalizarConfigBannerHomeDA)
+        .filter(item => item && item.ativo !== false)
+        .sort((a,b) => a.posicao - b.posicao);
+};
+
+getProdutosBuscaBannerHomeDA = function(cfg) {
+    cfg = normalizarConfigBannerHomeDA(cfg || getHomePromoBannersAtivosDA()[HOME_PROMO_BANNER_INDEX] || {}, 0);
+    const produtosBase = (STATE.prods || []).filter(prod => prod && prod.categoria !== 'Cestas' && Number(prod.stock || 0) > 0);
+    const idsConfigurados = normalizarListaTextoBannerDA(cfg.produtos);
+
+    if (idsConfigurados.length) {
+        const escolhidos = [];
+        idsConfigurados.forEach(id => {
+            const p = produtosBase.find(prod => produtoCodigoOuNomeBannerDA(prod, id));
+            if (p && !escolhidos.some(x => String(x.id) === String(p.id))) escolhidos.push(p);
+        });
+        if (escolhidos.length) return escolhidos;
+    }
+
+    if (cfg.tipoDestino === 'tag' || cfg.tagUniversal) {
+        return produtosBase.filter(prod => produtoTemTagUniversalBannerDA(prod, cfg.tagUniversal || cfg.termoBusca));
+    }
+
+    return produtosBase.filter(prod => produtoPertenceSessaoBannerAvancadoDA(prod, cfg) && produtoCombinaTermosBannerAvancadoDA(prod, cfg));
+};
+
+function getProdutoCapaBannerHomeDA(cfg, produtos) {
+    const base = (STATE.prods || []).filter(prod => prod && prod.categoria !== 'Cestas');
+    if (cfg.produtoCapaCodigo) {
+        const p = base.find(prod => produtoCodigoOuNomeBannerDA(prod, cfg.produtoCapaCodigo));
+        if (p) return p;
+    }
+    if (cfg.produtoCapaPalavra) {
+        const termo = normalizarTermoBuscaSite(cfg.produtoCapaPalavra);
+        const p = base.find(prod => montarTextoBuscaProdutoSite(prod).includes(termo));
+        if (p) return p;
+    }
+    return (produtos || [])[0] || null;
+}
+
+getHomeFeaturedSearchBannerHTML = function() {
+    const banners = getHomePromoBannersAtivosDA();
+    if (!banners.length) return '';
+
+    const slides = banners.map((cfg, index) => {
+        const produtos = getProdutosBuscaBannerHomeDA(cfg);
+        const produtoCapa = getProdutoCapaBannerHomeDA(cfg, produtos);
+        const imagem = (produtoCapa && produtoCapa.img) || cfg.imagemFallback || errorImgFallback;
+        const alt = (produtoCapa && (produtoCapa.name || produtoCapa.nome)) || cfg.titulo || 'Produtos em destaque';
+        const totalTexto = produtos.length ? `${produtos.length} produto${produtos.length === 1 ? '' : 's'} selecionado${produtos.length === 1 ? '' : 's'}` : `Toque para abrir`;
+        const activeClass = index === HOME_PROMO_BANNER_INDEX ? 'active' : '';
+        const temaClass = cfg.tema ? `home-featured-theme-${cfg.tema}` : '';
+
+        return `<button type="button" class="home-featured-search-slide ${activeClass} ${temaClass}" data-banner-index="${index}" onclick="openHomeFeaturedSearchBanner(${index}); return false;" aria-label="Abrir ${escapeAttrDA(cfg.titulo)}">
+            <div class="home-featured-search-copy">
+                <div class="home-featured-search-kicker">${escapeAttrDA(cfg.chamadaPequena || 'Destaque')}</div>
+                <div class="home-featured-search-title">${escapeAttrDA(cfg.titulo || cfg.termoBusca)}</div>
+                <div class="home-featured-search-subtitle">${escapeAttrDA(cfg.subtitulo || '')}<br><strong>${escapeAttrDA(totalTexto)}</strong></div>
+                <div class="home-featured-search-cta">${escapeAttrDA(cfg.textoBotao || 'Ver produtos')} ›</div>
+            </div>
+            <div class="home-featured-search-imagebox">
+                <div class="home-featured-search-imageframe">
+                    ${produtoCapa ? `<img src="${escapeAttrDA(imagem)}" alt="${escapeAttrDA(alt)}" loading="${index === 0 ? 'eager' : 'lazy'}" decoding="async" ${index === 0 ? 'fetchpriority="high"' : ''} onerror="this.src='${errorImgFallback}'">` : `<div class="home-featured-search-empty">Configure produto_capa_codigo ou uma imagem fallback no JSON.</div>`}
+                </div>
+            </div>
+        </button>`;
+    }).join('');
+
+    const dots = banners.map((cfg, index) => `<button type="button" class="home-featured-dot ${index === HOME_PROMO_BANNER_INDEX ? 'active' : ''}" onclick="setHomeFeaturedSearchBanner(${index}, true); return false;" aria-label="Mostrar banner ${index + 1}"></button>`).join('');
+    const temaAtual = (banners[HOME_PROMO_BANNER_INDEX] && banners[HOME_PROMO_BANNER_INDEX].tema) || 'padrao';
+
+    return `<section class="home-featured-search-banner" data-theme="${escapeAttrDA(temaAtual)}" aria-label="Ofertas em destaque">
+                <div class="home-featured-search-track">${slides}</div>
+                <button type="button" class="home-featured-nav home-featured-prev" onclick="moveHomeFeaturedSearchBanner(-1); return false;" aria-label="Oferta anterior">‹</button>
+                <button type="button" class="home-featured-nav home-featured-next" onclick="moveHomeFeaturedSearchBanner(1); return false;" aria-label="Próxima oferta">›</button>
+                <div class="home-featured-dots">${dots}</div>
+            </section>`;
+};
+
+const setHomeFeaturedSearchBannerOriginalDA = window.setHomeFeaturedSearchBanner;
+window.setHomeFeaturedSearchBanner = function(index, manual) {
+    const banners = getHomePromoBannersAtivosDA();
+    if (!banners.length) return;
+    HOME_PROMO_BANNER_INDEX = ((Number(index) || 0) + banners.length) % banners.length;
+    const temaAtual = banners[HOME_PROMO_BANNER_INDEX] && banners[HOME_PROMO_BANNER_INDEX].tema ? banners[HOME_PROMO_BANNER_INDEX].tema : 'padrao';
+    const bannerEl = document.querySelector('.home-featured-search-banner');
+    if (bannerEl) bannerEl.setAttribute('data-theme', temaAtual);
+    document.querySelectorAll('.home-featured-search-slide').forEach((slide, i) => slide.classList.toggle('active', i === HOME_PROMO_BANNER_INDEX));
+    document.querySelectorAll('.home-featured-dot').forEach((dot, i) => dot.classList.toggle('active', i === HOME_PROMO_BANNER_INDEX));
+    if (manual) startHomeFeaturedSearchBannerAuto();
+};
+
+window.openHomeFeaturedSearchBanner = function(index) {
+    const banners = getHomePromoBannersAtivosDA();
+    const cfg = banners[((Number(index) || 0) + banners.length) % banners.length] || banners[0] || {};
+    const tipo = String(cfg.tipoDestino || 'busca').toLowerCase();
+
+    if (tipo === 'tag' || cfg.tagUniversal) {
+        window.location.hash = `#/selecionados/${encodeHash(cfg.tagUniversal || cfg.termoBusca || 'OFERTA')}`;
+        return;
+    }
+
+    if (tipo === 'categoria' || tipo === 'departamento') {
+        window.location.hash = `#/departamento/${encodeHash(cfg.sessaoBusca || cfg.termoBusca || '')}`;
+        return;
+    }
+
+    if (tipo === 'cestas') {
+        window.location.hash = '#/cestas';
+        return;
+    }
+
+    const termoPrincipal = String(cfg.termoBusca || (Array.isArray(cfg.termosBusca) ? cfg.termosBusca[0] : '') || '').replace(/\s+/g, ' ').trim();
+    STATE.searchQuery = termoPrincipal;
+    STATE.searchSection = String(cfg.sessaoBusca || '').trim();
+
+    const input = $('app-search-input');
+    const sectionInput = $('section-search-input');
+    if (input) input.value = STATE.searchQuery;
+    if (sectionInput) sectionInput.value = STATE.searchQuery;
+
+    if (window.location.hash !== '#/buscar') window.location.hash = '#/buscar';
+    else { renderSearch(); rolarPaginaParaTopoDA(); }
+};
+
+function rolarPaginaParaTopoDA() {
+    const vitrine = $('vitrine');
+    const main = document.querySelector('.main-container');
+    if (vitrine) vitrine.scrollTop = 0;
+    if (main) main.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+}
+
+const initBannersJsonOriginalDA = init;
+init = async function() {
+    await carregarBannersHomeJsonDA();
+    await initBannersJsonOriginalDA();
+};
+
+const handleRouteSempreTopoOriginalDA = handleRoute;
+handleRoute = function() {
+    const retorno = handleRouteSempreTopoOriginalDA.apply(this, arguments);
+    requestAnimationFrame(() => {
+        rolarPaginaParaTopoDA();
+        requestAnimationFrame(rolarPaginaParaTopoDA);
+    });
+    return retorno;
+};
+window.addEventListener('hashchange', handleRoute);
+
 
 const initCestasJsonDA = init;
 init = async function() {
