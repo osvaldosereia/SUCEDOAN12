@@ -5205,6 +5205,173 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
   .home-featured-dots{bottom:24px!important;}
 }
 
+
+
+/* =========================================================
+   HOME 2026-06-07: vitrines sem banners
+   - mini cards: foto + preço + desconto
+   - mobile 3 colunas / desktop até 8 colunas
+   ========================================================= */
+.home-shelves-da{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    padding:0 0 18px 0;
+}
+.home-shelf-da{
+    background:#ffffff;
+    border:1px solid rgba(229,231,235,.95);
+    border-radius:22px;
+    padding:14px;
+    box-shadow:0 1px 2px rgba(16,24,40,.035);
+    overflow:hidden;
+}
+.home-shelf-head-da{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+}
+.home-shelf-title-da{
+    font-size:18px;
+    line-height:1.08;
+    font-weight:950;
+    letter-spacing:-.045em;
+    color:#101828;
+}
+.home-shelf-subtitle-da{
+    font-size:12px;
+    line-height:1.35;
+    font-weight:750;
+    color:#667085;
+    margin-top:4px;
+    max-width:680px;
+}
+.home-shelf-count-da{
+    flex-shrink:0;
+    font-size:11px;
+    font-weight:900;
+    color:#14532d;
+    background:#ecfdf3;
+    border:1px solid #bbf7d0;
+    border-radius:999px;
+    padding:7px 9px;
+    white-space:nowrap;
+}
+.home-mini-grid-da{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px;
+}
+.home-mini-product-da{
+    position:relative;
+    min-width:0;
+    text-decoration:none;
+    color:#101828;
+    background:#ffffff;
+    border:1px solid #eef2f7;
+    border-radius:16px;
+    padding:7px;
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:6px;
+    transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.home-mini-product-da:active{transform:scale(.975);}
+.home-mini-img-da{
+    position:relative;
+    width:100%;
+    aspect-ratio:1/1;
+    border-radius:13px;
+    background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);
+    border:1px solid #f1f5f9;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+}
+.home-mini-img-da img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    padding:5px;
+    display:block;
+}
+.home-mini-discount-da{
+    position:absolute;
+    top:6px;
+    left:6px;
+    z-index:2;
+    background:#e11d48;
+    color:#ffffff;
+    border-radius:999px;
+    padding:4px 6px;
+    font-size:10px;
+    line-height:1;
+    font-weight:950;
+    box-shadow:0 6px 14px rgba(225,29,72,.20);
+}
+.home-mini-price-da{
+    min-height:24px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    color:#0f172a;
+    font-size:14px;
+    line-height:1;
+    font-weight:950;
+    letter-spacing:-.045em;
+    white-space:nowrap;
+}
+.home-shelf-button-da{
+    margin-top:12px;
+    width:100%;
+    min-height:46px;
+    border-radius:999px;
+    background:#0f172a;
+    color:#ffffff;
+    text-decoration:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    font-size:14px;
+    font-weight:950;
+    border:1px solid #0f172a;
+    box-shadow:0 8px 18px rgba(15,23,42,.14);
+    cursor:pointer;
+}
+.home-shelf-button-da:active{transform:scale(.985);}
+.home-shelf-empty-da{
+    border:1px dashed #d0d5dd;
+    border-radius:16px;
+    padding:18px;
+    color:#667085;
+    font-size:13px;
+    font-weight:800;
+    text-align:center;
+    background:#f8fafc;
+}
+.home-catalog-shortcut-da{
+    margin:2px 0 0 0;
+}
+@media (min-width:768px){
+    .home-shelves-da{gap:22px;}
+    .home-shelf-da{padding:18px;border-radius:24px;}
+    .home-shelf-title-da{font-size:24px;}
+    .home-shelf-subtitle-da{font-size:13px;}
+    .home-mini-grid-da{grid-template-columns:repeat(8,minmax(0,1fr));gap:10px;}
+    .home-mini-product-da{border-radius:18px;padding:8px;}
+    .home-mini-product-da:hover{transform:translateY(-2px);border-color:#d0d5dd;box-shadow:0 10px 24px rgba(16,24,40,.08);}
+    .home-mini-price-da{font-size:15px;}
+    .home-shelf-button-da{min-height:48px;font-size:15px;}
+}
+@media (min-width:768px) and (max-width:1050px){
+    .home-mini-grid-da{grid-template-columns:repeat(6,minmax(0,1fr));}
+}
 </style>
 </head>
 <body>
@@ -12299,6 +12466,177 @@ init = async function() {
     await carregarCestasBasicasDA();
     await initCestasJsonDA();
     if ((window.location.hash || '#/').startsWith('#/selecionados')) { handleRoute(); }
+};
+
+
+
+/* =========================================================
+   PATCH HOME SEM BANNERS 2026-06-07
+   O bannershome.json agora controla seções especiais da home.
+   ========================================================= */
+function getPrecoProdutoHomeMiniDA(prod) {
+    return Number((prod && (prod.price ?? prod.preco_oferta ?? prod.preco)) || 0);
+}
+
+function getDescontoProdutoHomeMiniDA(prod) {
+    const direto = Number((prod && prod.discountPercent) || 0);
+    if (direto > 0) return Math.round(direto);
+    const preco = getPrecoProdutoHomeMiniDA(prod);
+    const antigo = Number((prod && (prod.oldPrice ?? prod.preco_antigo ?? prod.preco_original)) || 0);
+    if (antigo > preco && preco > 0) return Math.round(((antigo - preco) / antigo) * 100);
+    return 0;
+}
+
+function getProdutosOrdenadosHomeMiniDA(lista, limite = 8) {
+    return (lista || [])
+        .filter(p => p && p.categoria !== 'Cestas' && Number(p.stock || 0) > 0 && getPrecoProdutoHomeMiniDA(p) > 0)
+        .sort((a,b) => getDescontoProdutoHomeMiniDA(b) - getDescontoProdutoHomeMiniDA(a) || Number(b.stock || 0) - Number(a.stock || 0) || String(a.name || '').localeCompare(String(b.name || '')))
+        .slice(0, limite);
+}
+
+function getHomeMiniProdutoCardDA(prod) {
+    const preco = getPrecoProdutoHomeMiniDA(prod);
+    const desconto = getDescontoProdutoHomeMiniDA(prod);
+    const rota = typeof getProductRouteKey === 'function' ? getProductRouteKey(prod) : encodeHash(prod.id || prod.codigo || prod.name || '');
+    return `<a class="home-mini-product-da" href="#/produto/${rota}" aria-label="${escapeAttrDA(prod.name || prod.nome || 'Produto')}">
+        ${desconto > 0 ? `<span class="home-mini-discount-da">-${desconto}%</span>` : ''}
+        <span class="home-mini-img-da"><img src="${escapeAttrDA(prod.img || errorImgFallback)}" alt="${escapeAttrDA(prod.name || prod.nome || 'Produto')}" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'"></span>
+        <strong class="home-mini-price-da">${fmt(preco)}</strong>
+    </a>`;
+}
+
+function getHomeMiniCestaCardDA(cesta) {
+    const prices = typeof calculateBasketPrices === 'function' ? calculateBasketPrices(cesta.id) : { original: Number(cesta.preco || 0), final: Number(cesta.preco || 0) };
+    const precoFinal = Number(prices.final || cesta.preco || 0);
+    const precoOriginal = Number(prices.original || 0);
+    const desconto = precoOriginal > precoFinal && precoFinal > 0 ? Math.round(((precoOriginal - precoFinal) / precoOriginal) * 100) : Number(cesta.desconto_percentual || cesta.desconto || 0);
+    return `<a class="home-mini-product-da" href="#/cestas" aria-label="${escapeAttrDA(cesta.nome || 'Cesta básica')}">
+        ${desconto > 0 ? `<span class="home-mini-discount-da">-${Math.round(desconto)}%</span>` : ''}
+        <span class="home-mini-img-da"><img src="${escapeAttrDA(cesta.imagem || errorImgFallback)}" alt="${escapeAttrDA(cesta.nome || 'Cesta básica')}" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'"></span>
+        <strong class="home-mini-price-da">${precoFinal > 0 ? fmt(precoFinal) : 'Ver preço'}</strong>
+    </a>`;
+}
+
+function getHomeShelfSectionDA({ titulo, subtitulo = '', href = '#/', onclick = '', botao = 'Ver produtos', cards = [], contador = '' }) {
+    if (!cards || !cards.length) return '';
+    const acao = onclick ? `href="javascript:void(0)" onclick="${onclick}; return false;"` : `href="${href}"`;
+    return `<section class="home-shelf-da">
+        <div class="home-shelf-head-da">
+            <div>
+                <h2 class="home-shelf-title-da">${escapeAttrDA(titulo || 'Produtos')}</h2>
+                ${subtitulo ? `<p class="home-shelf-subtitle-da">${escapeAttrDA(subtitulo)}</p>` : ''}
+            </div>
+            ${contador ? `<span class="home-shelf-count-da">${escapeAttrDA(contador)}</span>` : ''}
+        </div>
+        <div class="home-mini-grid-da">${cards.join('')}</div>
+        <a class="home-shelf-button-da" ${acao}>${escapeAttrDA(botao)} <span>›</span></a>
+    </section>`;
+}
+
+function getHomeCestasShelfDA() {
+    const cestas = (BASKETS || []).filter(c => c && c.ativo !== false).slice(0, 6);
+    return getHomeShelfSectionDA({
+        titulo: 'Cestas Básicas',
+        subtitulo: 'Escolha uma cesta pronta ou personalize os itens.',
+        href: '#/cestas',
+        botao: 'Ver cestas',
+        contador: cestas.length ? `${cestas.length} opções` : '',
+        cards: cestas.map(getHomeMiniCestaCardDA)
+    });
+}
+
+function getHomeDestinoBotaoSecaoJsonDA(cfg, index) {
+    const tipo = String(cfg.tipoDestino || 'busca').toLowerCase();
+    if (tipo === 'tag' || cfg.tagUniversal) return { onclick: `openHomeFeaturedSearchBanner(${index})`, href: '#/' };
+    if (tipo === 'categoria' || tipo === 'departamento') return { href: `#/departamento/${encodeHash(cfg.sessaoBusca || cfg.termoBusca || '')}` };
+    if (tipo === 'cestas') return { href: '#/cestas' };
+    return { onclick: `openHomeFeaturedSearchBanner(${index})`, href: '#/' };
+}
+
+function getHomeJsonShelvesDA() {
+    const secoes = getHomePromoBannersAtivosDA ? getHomePromoBannersAtivosDA() : [];
+    return secoes.map((cfg, index) => {
+        const produtos = getProdutosOrdenadosHomeMiniDA(getProdutosBuscaBannerHomeDA(cfg), Number(cfg.quantidade || cfg.limite || 8));
+        if (!produtos.length) return '';
+        const destino = getHomeDestinoBotaoSecaoJsonDA(cfg, index);
+        return getHomeShelfSectionDA({
+            titulo: cfg.titulo || cfg.termoBusca || 'Produtos selecionados',
+            subtitulo: cfg.subtitulo || '',
+            href: destino.href || '#/',
+            onclick: destino.onclick || '',
+            botao: cfg.textoBotao || 'Ver produtos',
+            contador: `${produtos.length} itens`,
+            cards: produtos.map(getHomeMiniProdutoCardDA)
+        });
+    }).join('');
+}
+
+function getHomeOfertasShelfDA() {
+    const ofertas = getProdutosOrdenadosHomeMiniDA((STATE.prods || []).filter(p => Number(p.discountPercent || 0) > 0), 8);
+    return getHomeShelfSectionDA({
+        titulo: 'Economize com a compra do mês',
+        subtitulo: 'Produtos com desconto para completar seu pedido.',
+        href: '#/ofertas',
+        botao: 'Ver produtos',
+        contador: ofertas.length ? `${ofertas.length} ofertas` : '',
+        cards: ofertas.map(getHomeMiniProdutoCardDA)
+    });
+}
+
+function getHomeCombosShelfDA() {
+    const combos = (dynamicCombos || []).filter(c => c && Number(c.preco || c.preco_combo || 0) > 0).slice(0, 8);
+    const cards = combos.map(combo => {
+        const preco = Number(combo.preco || combo.preco_combo || 0);
+        const desconto = Number(combo.desconto_percentual || combo.desconto || 0);
+        const imagem = combo.imagem || (Array.isArray(combo.imagensProdutos) ? combo.imagensProdutos[0] : '') || errorImgFallback;
+        return `<a class="home-mini-product-da" href="#/combos" aria-label="${escapeAttrDA(combo.nome || 'Kit promocional')}">
+            ${desconto > 0 ? `<span class="home-mini-discount-da">-${Math.round(desconto)}%</span>` : ''}
+            <span class="home-mini-img-da"><img src="${escapeAttrDA(imagem)}" alt="${escapeAttrDA(combo.nome || 'Kit promocional')}" loading="lazy" decoding="async" onerror="this.src='${errorImgFallback}'"></span>
+            <strong class="home-mini-price-da">${fmt(preco)}</strong>
+        </a>`;
+    });
+    return getHomeShelfSectionDA({ titulo: 'Kits promocionais', subtitulo: 'Combos prontos com preço fechado.', href: '#/combos', botao: 'Ver produtos', contador: combos.length ? `${combos.length} kits` : '', cards });
+}
+
+function getHomeCategoriaShelvesDA() {
+    const catMap = new Set();
+    (STATE.prods || []).forEach(p => { if (p && p.categoria && p.categoria !== 'Cestas') catMap.add(p.categoria); });
+    const cats = Array.from(catMap).sort((a,b) => {
+        const ia = ORDEM_CATEGORIAS.indexOf(norm(a));
+        const ib = ORDEM_CATEGORIAS.indexOf(norm(b));
+        return (ia > -1 ? ia : 999) - (ib > -1 ? ib : 999) || String(a).localeCompare(String(b));
+    });
+    return cats.map(cat => {
+        const produtos = getProdutosOrdenadosHomeMiniDA((STATE.prods || []).filter(p => p && p.categoria === cat), 8);
+        if (!produtos.length) return '';
+        return getHomeShelfSectionDA({
+            titulo: cat,
+            href: `#/departamento/${encodeHash(cat)}`,
+            botao: 'Ver produtos',
+            contador: `${produtos.length} itens`,
+            cards: produtos.map(getHomeMiniProdutoCardDA)
+        });
+    }).join('');
+}
+
+renderInicio = function() {
+    const vitrine = $('vitrine');
+    if (!vitrine) return;
+    let htmlMercado = '<div style="padding: 15px 10px 20px;">';
+    htmlMercado += `<div class="info-banner-home">Pedidos a partir de R$ 75 | Entrega Grátis em Cuiabá e VG.</div>`;
+    htmlMercado += `<div class="home-shelves-da">`;
+    htmlMercado += getHomeCestasShelfDA();
+    htmlMercado += getHomeJsonShelvesDA();
+    htmlMercado += getHomeOfertasShelfDA();
+    htmlMercado += getHomeCombosShelfDA();
+    htmlMercado += `<a class="home-shelf-button-da home-catalog-shortcut-da" href="#/catalogo">Abrir catálogo rápido <span>›</span></a>`;
+    htmlMercado += getHomeCategoriaShelvesDA();
+    htmlMercado += `</div></div>`;
+    htmlMercado += getMerchantTrustFooterHTML();
+    vitrine.innerHTML = htmlMercado;
+    updateHomeSeo();
+    lazyLoadImages();
+    if (typeof rolarPaginaParaTopoDA === 'function') requestAnimationFrame(rolarPaginaParaTopoDA);
 };
 
 document.addEventListener('DOMContentLoaded', init);
