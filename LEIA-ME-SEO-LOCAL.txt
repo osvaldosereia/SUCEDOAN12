@@ -1,0 +1,58 @@
+PACOTE SEO LOCAL - DONA ANTÔNIA
+
+Substituir/adicionar no GitHub:
+
+1) Substituir:
+   index.html
+
+2) Adicionar ou substituir na raiz:
+   robots.txt
+   sitemap.xml
+
+3) Adicionar ou substituir:
+   scripts/gerar-sitemap.js
+
+4) Adicionar ou substituir:
+   .github/workflows/atualizar-sitemap.yml
+
+Depois:
+- Entre no GitHub Actions e rode manualmente "Atualizar sitemap SEO local" uma vez.
+- Depois envie no Google Search Console:
+  sitemap.xml
+
+URLs SEO criadas/suportadas:
+
+Home:
+https://www.donaantonia.com.br/
+
+Local:
+https://www.donaantonia.com.br/?cidade=cuiaba
+https://www.donaantonia.com.br/?cidade=varzea-grande
+
+Seções:
+https://www.donaantonia.com.br/?secao=ofertas
+https://www.donaantonia.com.br/?secao=cestas-basicas
+https://www.donaantonia.com.br/?secao=combos
+
+Categorias:
+https://www.donaantonia.com.br/?categoria=limpeza
+https://www.donaantonia.com.br/?categoria=beleza
+
+Subcategorias:
+https://www.donaantonia.com.br/?subcategoria=desodorante
+https://www.donaantonia.com.br/?subcategoria=shampoo
+
+Marcas:
+https://www.donaantonia.com.br/?marca=nivea
+https://www.donaantonia.com.br/?marca=lola
+
+Produtos:
+https://www.donaantonia.com.br/?p=CODIGO-nome-do-produto
+
+Buscas locais:
+https://www.donaantonia.com.br/?busca=cesta%20basica
+https://www.donaantonia.com.br/?busca=produtos%20de%20limpeza
+
+IMPORTANTE:
+O sitemap.xml inicial tem apenas as páginas principais.
+Quando o GitHub Actions rodar, ele buscará os produtos no Firebase e vai gerar o sitemap completo com produtos, categorias, subcategorias e marcas reais.
