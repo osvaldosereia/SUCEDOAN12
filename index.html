@@ -5480,6 +5480,485 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
     }
 }
 
+    
+
+/* =========================================================
+   PATCH FINAL SÊNIOR - LARGURA PADRÃO, DESKTOP 5 COLUNAS E CESTAS
+   2026-06-07
+   ========================================================= */
+:root {
+    --page-max: 1440px !important;
+    --site-max-width: 1440px !important;
+    --modal-max-width: 1440px !important;
+}
+
+.header-home-content,
+.compact-route-header {
+    width: 100% !important;
+    max-width: var(--site-max-width) !important;
+}
+
+.main-container,
+#vitrine,
+#vitrine > div {
+    box-sizing: border-box !important;
+}
+
+#vitrine > div {
+    width: 100% !important;
+}
+
+#sum-atacado-row,
+.lmp-short-tag,
+.lmp-hero-info,
+.lmp-grid,
+.home-combos-hero {
+    display: none !important;
+}
+
+.prod-page-buy-row {
+    margin-top: 14px !important;
+}
+.prod-page-buy-row .prod-page-atacado-text {
+    color: var(--text-light) !important;
+    font-weight: 650 !important;
+}
+
+@media (min-width: 768px) {
+    .main-container {
+        width: 100% !important;
+        max-width: var(--site-max-width) !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        padding-left: 28px !important;
+        padding-right: 28px !important;
+    }
+
+    .route-compact .compact-route-header,
+    .header-home-content {
+        max-width: var(--site-max-width) !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas):not(#basket-items-container):not(#swap-items-container),
+    #vitrine .grid-catalogo,
+    #vitrine .related-products-grid {
+        display: grid !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 30px 20px !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas):not(#basket-items-container):not(#swap-items-container) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item),
+    #vitrine .grid-catalogo > .card-catalogo,
+    #vitrine .related-products-grid > .product-card-list {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+    #vitrine .products-grid:not(.cestas-grid-grande):not(.combos-grid-ofertas):not(#basket-items-container):not(#swap-items-container) > .product-card-list:not(.basket-card-clean):not(.combo-card-clean):not(.basket-item-card):not(.swap-option-card):not(.combo-locked-item) .img-wrapper,
+    #vitrine .grid-catalogo > .card-catalogo img,
+    #vitrine .related-products-grid > .product-card-list .img-wrapper {
+        width: 100% !important;
+        height: auto !important;
+        min-height: unset !important;
+        aspect-ratio: 1 / 1.04 !important;
+        margin: 0 0 10px 0 !important;
+    }
+
+    #vitrine .cestas-grid-grande {
+        display: grid !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 30px 20px !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 8px 0 34px 0 !important;
+        background: #ffffff !important;
+    }
+
+    #vitrine .cestas-grid-grande .basket-card-clean {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
+        gap: 12px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 356px !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: #ffffff !important;
+        overflow: visible !important;
+    }
+
+    #vitrine .cestas-grid-grande .basket-card-clean .basket-img-box {
+        width: 100% !important;
+        height: auto !important;
+        min-height: unset !important;
+        aspect-ratio: 4 / 3 !important;
+        border-radius: 20px !important;
+        background: #f3f4f6 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    #vitrine .cestas-grid-grande .basket-card-clean .basket-img-box img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        object-position: center center !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        mix-blend-mode: normal !important;
+        filter: none !important;
+        background: transparent !important;
+    }
+
+    #vitrine .cestas-grid-grande .basket-card-clean .product-details {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        align-items: stretch !important;
+        min-height: 138px !important;
+        padding: 0 2px !important;
+        text-align: left !important;
+    }
+
+    #vitrine .cestas-grid-grande .basket-card-clean .basket-title {
+        min-height: 46px !important;
+        font-size: 18px !important;
+        line-height: 1.18 !important;
+        font-weight: 750 !important;
+        letter-spacing: -0.035em !important;
+        color: #111827 !important;
+    }
+
+    #vitrine .cestas-grid-grande .basket-card-clean .basket-price {
+        font-size: 24px !important;
+        line-height: 1.08 !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.04em !important;
+        color: #111111 !important;
+    }
+
+    #vitrine .cestas-grid-grande .basket-card-clean .card-action-area {
+        width: 100% !important;
+        margin-top: 12px !important;
+    }
+
+    #vitrine .cestas-grid-grande .basket-card-clean .btn-quick-add-list {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: 46px !important;
+        border-radius: 999px !important;
+        background: #111111 !important;
+        color: #ffffff !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        font-size: 13px !important;
+        font-weight: 850 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+    }
+
+    #vitrine .cestas-grid-grande .basket-card-clean .btn-quick-add-list::after {
+        content: "Ver produtos" !important;
+        display: inline !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    #basketDetailModal.full-screen-detail,
+    #swapModal.full-screen-detail {
+        width: 100vw !important;
+        max-width: none !important;
+        height: 100dvh !important;
+        top: 0 !important;
+        left: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        transform: translateX(100%) !important;
+        background: #ffffff !important;
+    }
+
+    #basketDetailModal.full-screen-detail.active,
+    #swapModal.full-screen-detail.active {
+        transform: translateX(0) !important;
+    }
+
+    #basketDetailModal .detail-close,
+    #swapModal .detail-close {
+        position: fixed !important;
+        top: 18px !important;
+        right: 24px !important;
+        z-index: 5000 !important;
+    }
+
+    #basketDetailModal .modal-scroll-area {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow-y: auto !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+    }
+
+    #basketModalTopInfo {
+        width: 100% !important;
+        max-width: var(--modal-max-width) !important;
+        margin: 0 auto !important;
+        padding: 28px 28px 18px 28px !important;
+        display: grid !important;
+        grid-template-columns: 360px minmax(0, 1fr) !important;
+        gap: 28px !important;
+        align-items: center !important;
+        background: #ffffff !important;
+        border-bottom: 1px solid #f0f1f3 !important;
+    }
+
+    #basketModalTopInfo > div {
+        padding: 0 !important;
+    }
+
+    #basketModalImg {
+        width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        aspect-ratio: 4 / 3 !important;
+        object-fit: cover !important;
+        object-position: center center !important;
+        border-radius: 22px !important;
+        background: #f3f4f6 !important;
+        padding: 0 !important;
+        mix-blend-mode: normal !important;
+        filter: none !important;
+    }
+
+    #basketModalTitle {
+        font-size: 30px !important;
+        line-height: 1.08 !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.045em !important;
+        margin: 0 0 12px 0 !important;
+    }
+
+    #basketModalPrice {
+        font-size: 28px !important;
+        line-height: 1.1 !important;
+        font-weight: 800 !important;
+        margin: 0 !important;
+        color: #111111 !important;
+    }
+
+    #basketModalContentArea {
+        width: 100% !important;
+        max-width: var(--modal-max-width) !important;
+        margin: 0 auto !important;
+        flex: 1 1 auto !important;
+        min-height: calc(100dvh - 295px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        padding: 22px 28px 0 28px !important;
+        background: #ffffff !important;
+    }
+
+    #basket-items-container {
+        display: grid !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 26px 18px !important;
+        width: 100% !important;
+        max-width: none !important;
+        flex: 1 1 auto !important;
+        align-content: start !important;
+        padding: 0 0 22px 0 !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+
+    #basket-items-container .basket-item-card,
+    #basket-items-container .product-card-list.basket-item-card {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        min-height: 340px !important;
+        gap: 9px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+
+    #basket-items-container .basket-item-card .basket-item-main {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 9px !important;
+        width: 100% !important;
+        flex: 1 1 auto !important;
+    }
+
+    #basket-items-container .basket-item-card .basket-item-main .img-wrapper {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        min-height: unset !important;
+        aspect-ratio: 1 / 1.04 !important;
+        margin: 0 !important;
+        border: 0 !important;
+        border-radius: 18px !important;
+        background: #f3f4f6 !important;
+        overflow: hidden !important;
+    }
+
+    #basket-items-container .basket-item-card .basket-item-main .img-wrapper img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
+        padding: 5px !important;
+    }
+
+    #basket-items-container .basket-item-card .product-details {
+        width: 100% !important;
+        min-height: 112px !important;
+        padding: 0 2px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
+        text-align: left !important;
+    }
+
+    #basket-items-container .basket-item-card .product-name-list {
+        min-height: 38px !important;
+        font-size: 13px !important;
+        line-height: 1.32 !important;
+        font-weight: 650 !important;
+        color: #252525 !important;
+    }
+
+    #basket-items-container .basket-item-card .tag-preco-list {
+        font-size: 17px !important;
+        line-height: 1.08 !important;
+        font-weight: 760 !important;
+    }
+
+    #basket-items-container .basket-item-card .qty-controls-didatic {
+        width: 100% !important;
+        height: 38px !important;
+        margin-top: 8px !important;
+    }
+
+    #basket-items-container .basket-item-card .basket-item-actions {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 7px !important;
+        width: 100% !important;
+        margin-top: auto !important;
+    }
+
+    #basket-items-container .basket-item-card .btn-didatico {
+        width: 100% !important;
+        min-height: 38px !important;
+        padding: 8px 7px !important;
+        font-size: 11px !important;
+        line-height: 1.05 !important;
+        border-radius: 999px !important;
+    }
+
+    #basket-summary-container {
+        position: sticky !important;
+        bottom: 0 !important;
+        z-index: 60 !important;
+        width: 100% !important;
+        margin: auto 0 0 0 !important;
+        padding: 16px 0 calc(16px + env(safe-area-inset-bottom)) 0 !important;
+        background: rgba(255,255,255,.98) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 0 !important;
+        border-top: 1px solid #e5e7eb !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    #basket-summary-container > div:first-child,
+    #basket-diff-container,
+    #basket-summary-container .basket-summary-actions {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .basket-summary-actions {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 14px !important;
+        margin-top: 14px !important;
+    }
+
+    .basket-summary-actions .btn-send,
+    .basket-summary-actions .btn-basket-secondary {
+        min-height: 54px !important;
+        border-radius: 14px !important;
+        font-size: 13px !important;
+        font-weight: 850 !important;
+    }
+
+    #swapModal .modal-scroll-area {
+        width: 100% !important;
+        height: 100% !important;
+        padding: 24px 28px !important;
+        background: #ffffff !important;
+        overflow-y: auto !important;
+    }
+
+    #swapModal .swap-header,
+    #swap-items-container {
+        width: 100% !important;
+        max-width: var(--modal-max-width) !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    #swap-items-container {
+        display: grid !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 26px 18px !important;
+    }
+}
+
+@media (min-width: 1500px) {
+    :root {
+        --page-max: 1480px !important;
+        --site-max-width: 1480px !important;
+        --modal-max-width: 1480px !important;
+    }
+}
+
+
     </style>
 </head>
 <body>
@@ -13406,6 +13885,213 @@ renderInicio = function() {
         daRegistrarRotaAtual(daRotaEfetivaAtual());
     }, 0);
 })();
+
+
+
+/* =========================================================
+   PATCH FINAL SÊNIOR - REMOÇÃO TOTAL DO DESCONTO POR QUANTIDADE
+   Mantém combos, cestas, cupons e funções existentes.
+   ========================================================= */
+(function removerDescontoQuantidadeDA() {
+    window.DESCONTO_QUANTIDADE_REMOVIDO_DA = true;
+
+    function daProdutoPageActionHTML(prod, q) {
+        if (!prod) return '';
+        const prodId = String(prod.id || prod.codigo || prod.firebaseKey || '');
+        const safeId = prodId.replace(/'/g, "\\'");
+        return `
+            <div class="prod-page-promo-row prod-page-buy-row">
+                <div class="prod-page-atacado-text">Adicionar este produto à sua lista</div>
+                <div class="prod-page-inline-action" id="action-card-${prodId}">
+                    ${
+                        Number(q || 0) === 0
+                        ? `<button class="prod-page-add-round" onclick="quickAddToCart('${safeId}', event); event.stopPropagation();" aria-label="Adicionar produto">${iconPlus}</button>`
+                        : `<div class="qty-controls prod-page-qty-inline">
+                            <button class="qty-btn" onclick="updateCartItem('${safeId}', -1); event.stopPropagation();">${iconMinus}</button>
+                            <span class="qty-display">${Number(q || 0)}</span>
+                            <button class="qty-btn" onclick="updateCartItem('${safeId}', 1); event.stopPropagation();">${iconPlus}</button>
+                        </div>`
+                    }
+                </div>
+            </div>
+        `;
+    }
+
+    try { getLeveMaisPercent = function() { return 0; }; } catch (e) { window.getLeveMaisPercent = function() { return 0; }; }
+    try { getLeveMaisUnitPrice = function(prod) { return Number(prod && prod.price || 0); }; } catch (e) { window.getLeveMaisUnitPrice = function(prod) { return Number(prod && prod.price || 0); }; }
+    try { getLeveMaisDiscountValue = function() { return 0; }; } catch (e) { window.getLeveMaisDiscountValue = function() { return 0; }; }
+    try { getLeveMaisResumoCurto = function() { return ''; }; } catch (e) { window.getLeveMaisResumoCurto = function() { return ''; }; }
+    try { getLeveMaisResumoProdutoPage = daProdutoPageActionHTML; } catch (e) { window.getLeveMaisResumoProdutoPage = daProdutoPageActionHTML; }
+    try { produtoElegivelDescontoQuantidadeDA = function() { return false; }; } catch (e) { window.produtoElegivelDescontoQuantidadeDA = function() { return false; }; }
+    try { produtoElegivelLeveMais = function() { return false; }; } catch (e) { window.produtoElegivelLeveMais = function() { return false; }; }
+    try { getProdutosLeveMais = function() { return []; }; } catch (e) { window.getProdutosLeveMais = function() { return []; }; }
+    try { calcularDescontoAtacadoAtual = function() { return 0; }; } catch (e) { window.calcularDescontoAtacadoAtual = function() { return 0; }; }
+    try { getHomeCombosHeroHTML = function() { return ''; }; } catch (e) { window.getHomeCombosHeroHTML = function() { return ''; }; }
+
+    try {
+        renderCombos = function() {
+            window.location.hash = '#/';
+        };
+    } catch (e) {}
+
+    calculateBasketPrices = function(basketId) {
+        const basket = (BASKETS || []).find(b => String(b.id) === String(basketId)) || (dynamicCombos || []).find(c => String(c.id) === String(basketId));
+        if (!basket) return { original: 0, final: 0, atacado: 0 };
+
+        const dyn = getBasketDynamicPrice(basket);
+
+        if (basket.isCombo) {
+            const originalCombo = Number(basket.precoOriginal || dyn.valorFinal || dyn.valorPadrao || 0);
+            const finalCombo = Number(basket.preco || dyn.valorPadrao || dyn.valorFinal || 0);
+            return { original: originalCombo, final: finalCombo, atacado: 0 };
+        }
+
+        const valor = Number(dyn.valorFinal || basket.preco || dyn.valorPadrao || 0);
+        return { original: valor, final: valor, atacado: 0 };
+    };
+
+    calcularTotalPreviewSabado = function() {
+        const subtotal = typeof calcularSubtotalCarrinho === 'function' ? calcularSubtotalCarrinho() : 0;
+        return {
+            subtotal,
+            descontoAtacado: 0,
+            descontoSabado: 0,
+            totalSabado: Math.max(subtotal, 0)
+        };
+    };
+
+    atualizarPreviewSabadoAgendamento = function() {
+        const el = $('sabado-preview-total');
+        if (el) el.innerText = fmt(calcularTotalPreviewSabado().totalSabado);
+    };
+
+    calcularResumoCarrinhoSemAgendamentoDA = function() {
+        let sumBase = 0;
+        let count = 0;
+        let descontoCombo = 0;
+
+        Object.entries(STATE.cart || {}).forEach(([id, q]) => {
+            const key = String(id);
+            const prod = (STATE.prods || []).find(p => String(p.id) === key);
+            if (!prod) return;
+
+            const qtd = Number(q || 0);
+            if (qtd <= 0) return;
+
+            const valorLinha = Number(prod.price || 0) * qtd;
+
+            if (prod.isComboDiscount) {
+                descontoCombo += Math.abs(valorLinha);
+                return;
+            }
+
+            sumBase += valorLinha;
+            if (!key.startsWith('fee_')) count += qtd;
+        });
+
+        return { sumBase, count, descontoQuantidade: 0, descontoCombo };
+    };
+
+    renderBasketItemsList = function() {
+        let container = $('basket-items-container');
+        let totalItemsCount = 0;
+        const basket = (BASKETS || []).find(b => String(b.id) === String(window.currentBasketId)) || (dynamicCombos || []).find(c => String(c.id) === String(window.currentBasketId));
+        const isCombo = !!(basket && basket.isCombo);
+
+        if (!container) return;
+
+        if (currentBasketItems.length === 0) {
+            container.innerHTML = "<p style='grid-column:1/-1;color:#888;text-align:center;padding:20px;'>A cesta está vazia.</p>";
+            if ($('basket-total-items')) $('basket-total-items').innerText = 0;
+            if ($('basket-total-price')) $('basket-total-price').innerText = 'R$ 0,00';
+            return;
+        }
+
+        let html = '';
+        let valorSomaDosItensAtuais = 0;
+
+        currentBasketItems.forEach((item, index) => {
+            totalItemsCount += Number(item.qty || 0);
+            item.pObj.basketQty = item.qty;
+            valorSomaDosItensAtuais += (Number(item.qty || 0) * Number(item.pObj.price || 0));
+
+            if (isCombo) {
+                html += renderComboItemAmarradoHTML(item);
+            } else {
+                html += renderCardHTML(item.pObj, true, index);
+            }
+        });
+
+        container.innerHTML = html;
+
+        if (typeof lazyLoadImages === 'function') {
+            lazyLoadImages();
+        }
+
+        let dyn = getBasketDynamicPrice(basket);
+        let diferencaFixa = isCombo ? 0 : Number(dyn.taxaExtra || 0);
+        let precoDinamicoAtual = Math.ceil(valorSomaDosItensAtuais + diferencaFixa);
+
+        if (isCombo) {
+            const precoOriginal = Number(basket.precoOriginal || valorSomaDosItensAtuais || 0);
+            const precoCombo = Number(basket.preco || valorSomaDosItensAtuais || 0);
+            const economia = Math.max(0, precoOriginal - precoCombo);
+
+            if ($('basket-total-items')) $('basket-total-items').innerText = totalItemsCount;
+            if ($('basket-total-price')) {
+                $('basket-total-price').innerHTML = `
+                    ${precoOriginal > precoCombo ? `<span style="text-decoration:line-through;font-size:14px;color:#94a3b8;margin-right:8px;">${fmt(precoOriginal)}</span>` : ''}
+                    ${fmt(precoCombo)}
+                    ${economia > 0 ? `<div style="font-size:11px;color:#16a34a;font-weight:900;margin-top:3px;">Economia no combo: ${fmt(economia)}</div>` : ''}
+                `;
+            }
+            return;
+        }
+
+        if ($('basket-total-items')) $('basket-total-items').innerText = totalItemsCount;
+        if ($('basket-total-price')) $('basket-total-price').innerText = basket ? fmt(precoDinamicoAtual) : 'R$ 0,00';
+    };
+
+    const updateTotalsSemQuantidadeDA = updateTotals;
+    updateTotals = function() {
+        if (typeof updateTotalsSemQuantidadeDA === 'function') {
+            updateTotalsSemQuantidadeDA.apply(this, arguments);
+        }
+
+        STATE.atacadoDiscount = 0;
+
+        if ($('sum-atacado-desc')) $('sum-atacado-desc').innerText = '- R$ 0,00';
+        if ($('sum-atacado-row')) $('sum-atacado-row').style.display = 'none';
+
+        const resumo = calcularResumoCarrinhoSemAgendamentoDA();
+        const descontoCupom = STATE.cupomAplicadoResumo && STATE.cupomAplicadoResumo.valido ? Number(STATE.cupomAplicadoResumo.desconto || 0) : 0;
+        const finalTotal = Math.max(Number(resumo.sumBase || 0) - Number(resumo.descontoCombo || 0) - descontoCupom, 0);
+
+        if ($('sum-total')) $('sum-total').innerText = fmt(finalTotal);
+        if ($('bottom-send-total')) $('bottom-send-total').innerText = resumo.count > 0 ? fmt(finalTotal) : 'R$ 0,00';
+
+        return finalTotal;
+    };
+
+    const sendOrderSemQuantidadeDA = window.sendOrder;
+    if (typeof sendOrderSemQuantidadeDA === 'function') {
+        window.sendOrder = async function(btnOverride) {
+            STATE.atacadoDiscount = 0;
+            if ($('sum-atacado-row')) $('sum-atacado-row').style.display = 'none';
+            return sendOrderSemQuantidadeDA.call(this, btnOverride);
+        };
+        try { sendOrder = window.sendOrder; } catch (e) {}
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        STATE.atacadoDiscount = 0;
+        const row = $('sum-atacado-row');
+        if (row) row.style.display = 'none';
+        const desc = $('sum-atacado-desc');
+        if (desc) desc.innerText = '- R$ 0,00';
+    });
+})();
+
 
 document.addEventListener('DOMContentLoaded', init);
 
