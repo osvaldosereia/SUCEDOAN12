@@ -5959,7 +5959,104 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
 }
 
 
-    </style>
+    
+
+/* =========================================================
+   PATCH 2026-06-12 - CHECKOUT MAIS RÁPIDO E SEM VAZAR FUNDO
+   - deixa o checkout 100% opaco
+   - troca animação por transform, mais leve que animar right
+   - bloqueia rolagem/clique da vitrine enquanto checkout está aberto
+   ========================================================= */
+.overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(15, 23, 42, 0.28) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    z-index: 2400 !important;
+    transition: opacity .18s ease, visibility .18s ease !important;
+}
+
+.overlay.open {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+.checkout-drawer {
+    right: 0 !important;
+    left: auto !important;
+    top: 0 !important;
+    bottom: auto !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: translate3d(100%, 0, 0) !important;
+    transition: transform .28s cubic-bezier(.22, 1, .36, 1) !important;
+    will-change: transform !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    isolation: isolate !important;
+    contain: layout paint !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+.checkout-drawer.open {
+    transform: translate3d(0, 0, 0) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+.checkout-drawer::before {
+    content: "" !important;
+    position: fixed !important;
+    inset: 0 !important;
+    background: #ffffff !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+}
+
+.checkout-drawer .chk-header {
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    z-index: 120 !important;
+    transform: translateZ(0) !important;
+}
+
+.checkout-drawer .chk-body {
+    background: #ffffff !important;
+    min-height: calc(100dvh - 74px) !important;
+    isolation: isolate !important;
+}
+
+.checkout-drawer .chk-section,
+.checkout-drawer #chk-items-list,
+.checkout-drawer .cart-item-row,
+.checkout-drawer .chk-inline-summary {
+    background-color: #ffffff !important;
+}
+
+body.checkout-open .main-container {
+    overflow: hidden !important;
+    -webkit-overflow-scrolling: auto !important;
+    touch-action: none !important;
+}
+
+body.checkout-open .header-main,
+body.checkout-open .app-bottom-bar {
+    pointer-events: none !important;
+}
+
+</style>
 </head>
 <body>
 
@@ -14089,6 +14186,54 @@ renderInicio = function() {
         if (row) row.style.display = 'none';
         const desc = $('sum-atacado-desc');
         if (desc) desc.innerText = '- R$ 0,00';
+    });
+})();
+
+
+
+
+/* =========================================================
+   PATCH 2026-06-12 - SINCRONIZA ESTADO DO CHECKOUT
+   ========================================================= */
+(function() {
+    function syncCheckoutOpenStateDA() {
+        const drawer = document.getElementById('checkout-drawer');
+        const aberto = !!(drawer && drawer.classList.contains('open'));
+        document.body.classList.toggle('checkout-open', aberto);
+    }
+
+    const openCheckoutOriginalDA = window.openCheckout;
+    if (typeof openCheckoutOriginalDA === 'function') {
+        window.openCheckout = function() {
+            const resultado = openCheckoutOriginalDA.apply(this, arguments);
+            requestAnimationFrame(syncCheckoutOpenStateDA);
+            setTimeout(syncCheckoutOpenStateDA, 80);
+            return resultado;
+        };
+    }
+
+    const closeCheckoutOriginalDA = window.closeCheckout;
+    if (typeof closeCheckoutOriginalDA === 'function') {
+        window.closeCheckout = function() {
+            const resultado = closeCheckoutOriginalDA.apply(this, arguments);
+            requestAnimationFrame(syncCheckoutOpenStateDA);
+            setTimeout(syncCheckoutOpenStateDA, 120);
+            setTimeout(syncCheckoutOpenStateDA, 360);
+            return resultado;
+        };
+    }
+
+    window.addEventListener('popstate', function() {
+        setTimeout(syncCheckoutOpenStateDA, 80);
+        setTimeout(syncCheckoutOpenStateDA, 360);
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return;
+        const drawer = document.getElementById('checkout-drawer');
+        if (drawer && drawer.classList.contains('open') && typeof window.closeCheckout === 'function') {
+            window.closeCheckout();
+        }
     });
 })();
 
