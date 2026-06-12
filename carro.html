@@ -336,13 +336,37 @@
       repo: 'SUCEDOAN12',
       branch: 'main',
 
-      // Caminho informado: SUCEDOAN12/carrossel/
-      // Mantive carrosseis/ como fallback caso exista alguma pasta antiga no plural.
+      // O leitor tenta primeiro carrossel/ e depois carrosseis/.
+      // Também aceita JSONs com nomes diferentes dentro de cada pasta.
       rootPaths: ['carrossel', 'carrosseis'],
 
-      jpegQuality: 0.76,
-      maxImageWidth: 1280,
-      pauseBetweenDownloadsMs: 900
+      // Download leve para redes sociais: mantém largura ideal de feed e compacta em JPG.
+      jpegQuality: 0.82,
+      maxImageWidth: 1080,
+      pauseBetweenDownloadsMs: 900,
+
+      dataFilePriority: [
+        'dados.json',
+        'dados (1).json',
+        'dados(1).json',
+        'data.json',
+        'carousel.json',
+        'carrossel.json',
+        'post.json'
+      ],
+
+      imageFieldNames: [
+        'urls_imagens', 'url_imagens', 'imagens', 'images', 'slides', 'paginas', 'pages',
+        'arquivos', 'files', 'midias', 'media', 'carousel_images', 'carouselImages'
+      ],
+
+      captionFieldNames: [
+        'legenda_instagram', 'legenda', 'caption', 'caption_instagram', 'instagram_caption',
+        'texto_legenda', 'texto_post', 'texto_instagram', 'post_text', 'copy', 'conteudo',
+        'descricao_post', 'descricao', 'legenda_final'
+      ],
+
+      hashtagFieldNames: ['hashtags_texto', 'hashtags', 'tags', 'hash_tags']
     };
 
     const state = {
@@ -381,8 +405,6 @@
         setStatus(`Encontradas ${state.folders.length} pastas em ${state.rootPath}/. Carregando o carrossel mais recente...`, 'ok');
 
         await loadAndRender(0);
-
-        // Pré-carrega somente os DADOS do próximo carrossel, sem baixar imagens pesadas.
         warmNextCarouselData();
       } catch (error) {
         console.error(error);
@@ -466,49 +488,402 @@
     }
 
     async function fetchCarouselData(folder) {
-      const dadosPath = `${cleanPath(folder.path)}/dados.json`;
+      let folderItems = [];
+      let folderError = '';
       let json = {};
       let jsonError = '';
+      let dataFileName = '';
 
       try {
-        const res = await fetch(rawUrl(dadosPath), { cache: 'no-store' });
-        if (!res.ok) throw new Error(`dados.json retornou ${res.status}`);
-        json = await res.json();
+        folderItems = await fetchGithubContents(folder.path);
+      } catch (error) {
+        folderError = error.message;
+      }
+
+      const jsonFiles = folderItems
+        .filter(item => item && item.type === 'file' && /\.json$/i.test(item.name || ''))
+        .sort((a, b) => jsonPriority(a.name) - jsonPriority(b.name) || String(a.name).localeCompare(String(b.name)));
+
+      const preferredJson = jsonFiles[0] || { name: 'dados.json', path: `${cleanPath(folder.path)}/dados.json` };
+      dataFileName = preferredJson.name || 'dados.json';
+
+      try {
+        const res = await fetch(rawUrl(preferredJson.path || `${cleanPath(folder.path)}/${dataFileName}`), { cache: 'no-store' });
+        if (!res.ok) throw new Error(`${dataFileName} retornou ${res.status}`);
+        const rawText = await res.text();
+        json = safeJsonParse(rawText);
       } catch (error) {
         jsonError = error.message;
       }
 
-      // Lista apenas os nomes/links da pasta. Isso não baixa as imagens pesadas.
-      const folderItems = await fetchGithubContents(folder.path);
-      const imagesFromFolder = folderItems
-        .filter(item => item && item.type === 'file')
-        .filter(item => /\.(jpe?g|png|webp)$/i.test(item.name || ''))
-        .filter(item => !/^dados\.json$/i.test(item.name || ''))
-        .map(item => ({
-          numero: imageNumber(item.name),
-          url: item.download_url || rawUrl(item.path),
-          path: cleanPath(item.path || ''),
-          name: item.name || ''
-        }))
-        .sort((a, b) => a.numero - b.numero || a.name.localeCompare(b.name));
+      const imagesFromFolder = extractFolderImages(folderItems);
+      const imagesFromJson = extractImagesFromJson(json, folder);
+      const images = mergeImages(imagesFromFolder, imagesFromJson);
 
-      const imagesFromJson = Array.isArray(json.urls_imagens) ? json.urls_imagens
-        .map((item, i) => ({
-          numero: Number(item.numero || i + 1),
-          url: item.url,
-          path: item.url || '',
-          name: `pagina-${String(item.numero || i + 1).padStart(2, '0')}.jpg`
-        }))
-        .filter(item => item.url)
-        .sort((a, b) => a.numero - b.numero) : [];
+      const legendaLimpa = buildCleanCaption(json);
+      const title = firstCleanText(json, [
+        'titulo_carrossel', 'titulo', 'title', 'headline', 'nome', 'tema'
+      ], `Carrossel ${folder.id}`);
+      const theme = firstCleanText(json, ['tema', 'assunto', 'topic'], '');
 
       return {
         ...json,
-        id_carrossel: json.id_carrossel || folder.id,
+        id_carrossel: firstCleanText(json, ['id_carrossel', 'id', 'slug'], folder.id),
+        titulo_carrossel: title,
+        tema: theme,
+        legenda_instagram: legendaLimpa,
         __folder: folder.path,
+        __jsonFile: dataFileName,
         __jsonError: jsonError,
-        images: imagesFromFolder.length ? imagesFromFolder : imagesFromJson
+        __folderError: folderError,
+        images
       };
+    }
+
+    function jsonPriority(name) {
+      const lower = String(name || '').toLowerCase().trim();
+      const exact = CONFIG.dataFilePriority.findIndex(item => item.toLowerCase() === lower);
+      if (exact >= 0) return exact;
+      if (/^dados.*\.json$/i.test(lower)) return CONFIG.dataFilePriority.length + 1;
+      if (/^(data|carousel|carrossel|post).*\.json$/i.test(lower)) return CONFIG.dataFilePriority.length + 2;
+      return CONFIG.dataFilePriority.length + 10;
+    }
+
+    function safeJsonParse(text) {
+      const attempts = [];
+      const base = String(text || '')
+        .replace(/^\uFEFF/, '')
+        .trim()
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/```$/i, '')
+        .trim();
+
+      attempts.push(base);
+
+      const firstObject = base.indexOf('{');
+      const lastObject = base.lastIndexOf('}');
+      if (firstObject >= 0 && lastObject > firstObject) {
+        attempts.push(base.slice(firstObject, lastObject + 1));
+      }
+
+      const firstArray = base.indexOf('[');
+      const lastArray = base.lastIndexOf(']');
+      if (firstArray >= 0 && lastArray > firstArray) {
+        attempts.push(base.slice(firstArray, lastArray + 1));
+      }
+
+      for (const candidate of attempts) {
+        for (const variant of [candidate, candidate.replace(/,\s*([}\]])/g, '$1')]) {
+          try {
+            let parsed = JSON.parse(variant);
+            if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+            if (parsed && typeof parsed === 'object') return parsed;
+          } catch (_) {}
+        }
+      }
+
+      throw new Error('não consegui interpretar o JSON');
+    }
+
+    function extractFolderImages(folderItems) {
+      return (Array.isArray(folderItems) ? folderItems : [])
+        .filter(item => item && item.type === 'file')
+        .filter(item => /\.(jpe?g|png|webp)$/i.test(item.name || ''))
+        .filter(item => !/^dados.*\.json$/i.test(item.name || ''))
+        .map(item => ({
+          numero: imageNumber(item.name || item.path),
+          url: normalizeImageUrl(item.download_url || item.path || '', { path: dirname(item.path) }),
+          path: cleanPath(item.path || ''),
+          name: item.name || ''
+        }))
+        .filter(item => item.url)
+        .sort((a, b) => a.numero - b.numero || a.name.localeCompare(b.name));
+    }
+
+    function extractImagesFromJson(json, folder) {
+      const collected = [];
+
+      for (const field of CONFIG.imageFieldNames) {
+        const value = getDeepValue(json, field);
+        if (value) collectImages(value, collected, folder);
+      }
+
+      if (!collected.length) {
+        collectImagesFromDeepJson(json, collected, folder);
+      }
+
+      return collected
+        .filter(item => item.url)
+        .sort((a, b) => a.numero - b.numero || String(a.name).localeCompare(String(b.name)));
+    }
+
+    function collectImages(value, output, folder, inheritedNumber) {
+      if (!value) return;
+
+      if (typeof value === 'string') {
+        const urls = extractImageUrls(value);
+        if (urls.length) {
+          urls.forEach((url, i) => pushImage(output, url, inheritedNumber || i + 1, folder));
+        } else if (/\.(jpe?g|png|webp)(\?.*)?$/i.test(value) || !/^https?:/i.test(value)) {
+          pushImage(output, value, inheritedNumber || imageNumber(value), folder);
+        }
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        value.forEach((item, index) => collectImages(item, output, folder, index + 1));
+        return;
+      }
+
+      if (typeof value === 'object') {
+        const url = firstValue(value, ['url', 'src', 'href', 'download_url', 'raw_url', 'public_url', 'image_url', 'imagem_url', 'image', 'imagem', 'arquivo', 'file', 'path']);
+        const numero = Number(firstValue(value, ['numero', 'n', 'page', 'pagina', 'página', 'ordem', 'index'])) || inheritedNumber || imageNumber(url || value.name || value.path);
+        if (url) {
+          pushImage(output, url, numero, folder, value.name || value.filename || value.path || '');
+          return;
+        }
+
+        Object.entries(value).forEach(([key, item], index) => {
+          const n = Number(key.match(/\d+/)?.[0]) || inheritedNumber || index + 1;
+          collectImages(item, output, folder, n);
+        });
+      }
+    }
+
+    function collectImagesFromDeepJson(value, output, folder) {
+      const seen = new Set();
+
+      function walk(node, keyHint = '') {
+        if (!node) return;
+        if (typeof node === 'string') {
+          const urls = extractImageUrls(node).filter(url => /(pagina|página|page|slide|carrossel|carousel|\.jpe?g|\.png|\.webp)/i.test(url));
+          urls.forEach((url, i) => {
+            if (!seen.has(url)) {
+              seen.add(url);
+              pushImage(output, url, imageNumber(url) || i + 1, folder, keyHint);
+            }
+          });
+          return;
+        }
+        if (Array.isArray(node)) {
+          node.forEach((item, i) => walk(item, `${keyHint}-${i + 1}`));
+          return;
+        }
+        if (typeof node === 'object') {
+          Object.entries(node).forEach(([key, item]) => walk(item, key));
+        }
+      }
+
+      walk(value);
+    }
+
+    function pushImage(output, url, numero, folder, name = '') {
+      const normalized = normalizeImageUrl(url, folder);
+      if (!normalized) return;
+      output.push({
+        numero: Number(numero) || imageNumber(normalized) || output.length + 1,
+        url: normalized,
+        path: normalized,
+        name: name || basename(normalized)
+      });
+    }
+
+    function mergeImages(folderImages, jsonImages) {
+      const primary = Array.isArray(folderImages) && folderImages.length ? folderImages : [];
+      const fallback = Array.isArray(jsonImages) ? jsonImages : [];
+      const combined = primary.length ? primary : fallback;
+      const seen = new Set();
+
+      return combined.filter(item => {
+        const key = String(item.url || item.path || item.name || '').trim();
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function normalizeImageUrl(value, folder) {
+      let url = String(value || '').trim().replace(/^['"]|['"]$/g, '');
+      if (!url) return '';
+      url = url.replace(/\\/g, '/');
+
+      if (/^https?:\/\/github\.com\//i.test(url) && /\/blob\//i.test(url)) {
+        return url
+          .replace('https://github.com/', 'https://raw.githubusercontent.com/')
+          .replace('/blob/', '/');
+      }
+
+      if (/^https?:\/\//i.test(url)) return url;
+
+      if (url.startsWith('/')) return rawUrl(url.replace(/^\/+/, ''));
+
+      if (url.includes('/')) return rawUrl(url);
+
+      return rawUrl(`${cleanPath(folder.path || folder.__folder || '')}/${url}`);
+    }
+
+    function extractImageUrls(text) {
+      const found = String(text || '').match(/https?:\/\/[^\s"'<>]+?\.(?:jpe?g|png|webp)(?:\?[^\s"'<>]*)?/gi);
+      return found || [];
+    }
+
+    function buildCleanCaption(json) {
+      let caption = '';
+
+      for (const field of CONFIG.captionFieldNames) {
+        const value = getDeepValue(json, field);
+        if (value) {
+          caption = stringifyText(value);
+          break;
+        }
+      }
+
+      if (!caption) {
+        caption = findPossibleCaption(json) || '';
+      }
+
+      caption = cleanCaptionText(caption);
+
+      const hashtags = cleanHashtags(firstExistingValue(json, CONFIG.hashtagFieldNames));
+      if (hashtags && !captionHasSameHashtags(caption, hashtags)) {
+        caption = `${caption}\n\n${hashtags}`.trim();
+      }
+
+      return caption;
+    }
+
+    function findPossibleCaption(json) {
+      let best = '';
+
+      function walk(node, key = '') {
+        if (!node || best) return;
+        if (typeof node === 'string') {
+          const looksLikeCaption = node.length > 40 && !/\.(jpe?g|png|webp)(\?|$)/i.test(node);
+          const keyLooksRight = /(legenda|caption|texto|copy|post|conteudo|descri)/i.test(key);
+          if (looksLikeCaption && keyLooksRight) best = node;
+          return;
+        }
+        if (Array.isArray(node)) return node.forEach((item, i) => walk(item, `${key}_${i}`));
+        if (typeof node === 'object') Object.entries(node).forEach(([k, v]) => walk(v, k));
+      }
+
+      walk(json);
+      return best;
+    }
+
+    function cleanCaptionText(value) {
+      let text = stringifyText(value)
+        .replace(/^\uFEFF/, '')
+        .replace(/^```(?:json|text|txt|markdown|md)?\s*/i, '')
+        .replace(/```$/i, '')
+        .replace(/```/g, '')
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .trim();
+
+      text = decodeHtmlEntities(text);
+
+      // Se por algum motivo a legenda veio como uma linha JSON, extrai só o texto útil.
+      const embedded = text.match(/"(?:legenda_instagram|legenda|caption|texto_post|post_text)"\s*:\s*"([\s\S]*?)"\s*(?:,|})/i);
+      if (embedded && embedded[1]) {
+        text = embedded[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+      }
+
+      text = text
+        .replace(/^\s*(legenda_instagram|legenda|caption|texto_post|post_text)\s*[:=-]\s*/i, '')
+        .replace(/^['"]|['"]$/g, '')
+        .split('\n')
+        .map(line => line.replace(/[ \t]+$/g, '').replace(/^[ \t]+/g, ''))
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+
+      return text;
+    }
+
+    function cleanHashtags(value) {
+      if (!value) return '';
+      let raw = stringifyText(value)
+        .replace(/\\n/g, '\n')
+        .replace(/[\[\]"']/g, '')
+        .replace(/\n+/g, ',')
+        .trim();
+
+      if (!raw) return '';
+
+      return raw
+        .split(/[,#;|]+/)
+        .map(tag => tag.trim())
+        .filter(Boolean)
+        .map(tag => tag.startsWith('#') ? tag : `#${tag.replace(/^#+/, '')}`)
+        .filter((tag, index, arr) => arr.findIndex(x => x.toLowerCase() === tag.toLowerCase()) === index)
+        .join(' ');
+    }
+
+    function captionHasSameHashtags(caption, hashtags) {
+      const needed = hashtags.toLowerCase().match(/#[\p{L}\p{N}_]+/gu) || [];
+      if (!needed.length) return true;
+      const existing = caption.toLowerCase();
+      return needed.slice(0, 3).every(tag => existing.includes(tag));
+    }
+
+    function stringifyText(value) {
+      if (value == null) return '';
+      if (typeof value === 'string') return value;
+      if (Array.isArray(value)) return value.map(stringifyText).filter(Boolean).join('\n');
+      if (typeof value === 'object') {
+        const text = firstValue(value, ['text', 'texto', 'caption', 'legenda', 'value', 'content', 'conteudo']);
+        if (text) return stringifyText(text);
+        return '';
+      }
+      return String(value);
+    }
+
+    function firstCleanText(obj, fields, fallback = '') {
+      const value = firstExistingValue(obj, fields);
+      const clean = cleanCaptionText(value || '');
+      return clean || fallback;
+    }
+
+    function firstExistingValue(obj, fields) {
+      for (const field of fields) {
+        const value = getDeepValue(obj, field);
+        if (value !== undefined && value !== null && String(stringifyText(value)).trim() !== '') return value;
+      }
+      return '';
+    }
+
+    function firstValue(obj, fields) {
+      for (const field of fields) {
+        if (obj && Object.prototype.hasOwnProperty.call(obj, field) && obj[field] != null && obj[field] !== '') {
+          return obj[field];
+        }
+      }
+      return '';
+    }
+
+    function getDeepValue(obj, targetField) {
+      if (!obj || typeof obj !== 'object') return undefined;
+      if (Object.prototype.hasOwnProperty.call(obj, targetField)) return obj[targetField];
+
+      const target = String(targetField).toLowerCase();
+      const stack = [obj];
+      const seen = new Set();
+
+      while (stack.length) {
+        const current = stack.shift();
+        if (!current || typeof current !== 'object' || seen.has(current)) continue;
+        seen.add(current);
+
+        for (const [key, value] of Object.entries(current)) {
+          if (String(key).toLowerCase() === target) return value;
+          if (value && typeof value === 'object') stack.push(value);
+        }
+      }
+
+      return undefined;
     }
 
     function emptyCarousel(folder, error) {
@@ -537,7 +912,7 @@
       const images = Array.isArray(data.images) ? data.images : [];
       const page = images[state.pageIndex] || null;
       const total = images.length;
-      const legenda = data.legenda_instagram || '';
+      const legenda = cleanCaptionText(data.legenda_instagram || '');
       const title = data.titulo_carrossel || data.tema || `Carrossel ${folder.id}`;
       const theme = data.tema || '';
       const canNewer = state.index > 0;
@@ -548,7 +923,7 @@
           <div class="media" id="mediaBox">
             ${page
               ? `<img id="slideImg" src="${escapeAttr(page.url)}" alt="Página ${escapeAttr(page.numero || state.pageIndex + 1)}">`
-              : `<div class="media-empty">Nenhuma imagem encontrada nesta pasta.<br>Confira se existem arquivos como <code>pagina-1.jpg</code>, <code>pagina-2.jpg</code>...</div>`
+              : `<div class="media-empty">Nenhuma imagem encontrada nesta pasta.<br>Confira se existem arquivos como <code>pagina-1.jpg</code>, <code>pagina-2.jpg</code>... ou URLs de imagem no JSON.</div>`
             }
             <div class="badge counter">Página ${escapeHtml(total ? state.pageIndex + 1 : 0)} de ${escapeHtml(total)}</div>
             <div class="badge loader" id="loader">Carregando imagem...</div>
@@ -563,25 +938,27 @@
             <div class="meta">
               <span class="tag">${escapeHtml(folder.id)}</span>
               <span class="tag">${escapeHtml(folder.path)}</span>
+              ${data.__jsonFile ? `<span class="tag">${escapeHtml(data.__jsonFile)}</span>` : ''}
               ${data.status ? `<span class="tag">${escapeHtml(data.status)}</span>` : ''}
               ${data.categoria ? `<span class="tag">${escapeHtml(data.categoria)}</span>` : ''}
             </div>
 
             <h2 class="title">${escapeHtml(title)}</h2>
             ${theme && theme !== title ? `<p class="theme">${escapeHtml(theme)}</p>` : ''}
-            ${data.__jsonError ? `<p class="theme">Aviso: não consegui ler o dados.json: ${escapeHtml(data.__jsonError)}</p>` : ''}
+            ${data.__folderError ? `<p class="theme">Aviso: não consegui listar a pasta: ${escapeHtml(data.__folderError)}</p>` : ''}
+            ${data.__jsonError ? `<p class="theme">Aviso: não consegui ler o JSON: ${escapeHtml(data.__jsonError)}</p>` : ''}
 
             <div class="legend-box">
               <div class="legend-head">
-                <span>Legenda</span>
+                <span>Legenda pronta para copiar</span>
                 <span>${escapeHtml(legenda.length)} caracteres</span>
               </div>
-              <div class="legend" id="legendText">${escapeHtml(legenda || 'Sem legenda no dados.json.')}</div>
+              <div class="legend" id="legendText">${escapeHtml(legenda || 'Sem legenda no JSON.')}</div>
             </div>
 
             <div class="actions">
-              <button class="btn-dark" id="copyLegend">Copiar legenda</button>
-              <button class="btn-main" id="downloadAll" ${!total ? 'disabled' : ''}>Baixar páginas uma a uma</button>
+              <button class="btn-dark" id="copyLegend">Copiar legenda limpa</button>
+              <button class="btn-main" id="downloadAll" ${!total ? 'disabled' : ''}>Baixar páginas compactadas</button>
             </div>
 
             <div class="download-progress" id="downloadProgress">
@@ -594,12 +971,12 @@
               <button class="btn-soft" id="olderCarousel" ${!canOlder ? 'disabled' : ''}>Carrossel anterior</button>
             </div>
 
-            <p class="note">O botão “Carrossel anterior” troca para a próxima pasta da lista, sempre do mais recente para o mais antigo. As imagens pesadas só baixam quando aparecem no slide ou no botão de download.</p>
+            <p class="note">O download converte as imagens para JPG leve, com largura máxima de ${CONFIG.maxImageWidth}px e qualidade equilibrada para Instagram. A legenda copiada sai sem JSON, crases, aspas externas ou marcação técnica.</p>
           </div>
         </article>
       `;
 
-      bindEvents(folder, data);
+      bindEvents(folder, { ...data, legenda_instagram: legenda });
     }
 
     function bindEvents(folder, data) {
@@ -631,8 +1008,8 @@
       });
 
       document.getElementById('copyLegend')?.addEventListener('click', async event => {
-        await copyText(data.legenda_instagram || '');
-        flashButton(event.currentTarget, 'Legenda copiada');
+        await copyText(cleanCaptionText(data.legenda_instagram || ''));
+        flashButton(event.currentTarget, 'Legenda copiada limpa');
       });
 
       document.getElementById('downloadAll')?.addEventListener('click', async () => {
@@ -700,17 +1077,17 @@
           const item = images[i];
           const pageNumber = item.numero || i + 1;
 
-          if (text) text.textContent = `Baixando página ${i + 1} de ${images.length}...`;
+          if (text) text.textContent = `Compactando e baixando página ${i + 1} de ${images.length}...`;
           if (fill) fill.style.width = `${Math.round((i / images.length) * 100)}%`;
 
           const blob = await fetchAndCompressImage(item.url);
-          const filename = `${safeName(folder.id)}-pagina-${String(pageNumber).padStart(2, '0')}.jpg`;
+          const filename = `${safeName(data.id_carrossel || folder.id)}-pagina-${String(pageNumber).padStart(2, '0')}.jpg`;
           triggerDownload(blob, filename);
 
           await sleep(CONFIG.pauseBetweenDownloadsMs);
         }
 
-        if (text) text.textContent = `Concluído: ${images.length} imagens baixadas.`;
+        if (text) text.textContent = `Concluído: ${images.length} imagens compactadas e baixadas.`;
         if (fill) fill.style.width = '100%';
       } catch (error) {
         console.error(error);
@@ -722,7 +1099,7 @@
     }
 
     async function fetchAndCompressImage(url) {
-      const res = await fetch(url, { cache: 'no-store' });
+      const res = await fetch(url, { cache: 'no-store', mode: 'cors' });
       if (!res.ok) throw new Error(`Imagem retornou ${res.status}`);
 
       const inputBlob = await res.blob();
@@ -738,6 +1115,8 @@
       canvas.height = height;
 
       const ctx = canvas.getContext('2d', { alpha: false });
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);
       ctx.drawImage(img, 0, 0, width, height);
@@ -774,13 +1153,14 @@
     }
 
     async function copyText(text) {
+      const clean = cleanCaptionText(text || '');
       if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(clean);
         return;
       }
 
       const textarea = document.createElement('textarea');
-      textarea.value = text;
+      textarea.value = clean;
       textarea.style.position = 'fixed';
       textarea.style.left = '-9999px';
       textarea.style.top = '0';
@@ -793,7 +1173,7 @@
 
     function imageNumber(filename) {
       const name = String(filename || '');
-      const explicit = name.match(/(?:pagina|página|page|img|imagem)[-_ ]?(\d+)/i);
+      const explicit = name.match(/(?:pagina|página|page|img|imagem|slide)[-_ ]?(\d+)/i);
       if (explicit) return Number(explicit[1]);
 
       const any = name.match(/(\d+)/);
@@ -830,6 +1210,15 @@
       return String(path || '').replace(/^\/+|\/+$/g, '').replace(/\/+/g, '/');
     }
 
+    function dirname(path) {
+      const clean = cleanPath(path);
+      return clean.includes('/') ? clean.slice(0, clean.lastIndexOf('/')) : '';
+    }
+
+    function basename(path) {
+      return String(path || '').split(/[/?#]/)[0].split('/').pop() || '';
+    }
+
     function safeName(value) {
       return String(value || 'carrossel')
         .normalize('NFD')
@@ -837,7 +1226,7 @@
         .replace(/[^a-z0-9-_]+/gi, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '')
-        .toLowerCase();
+        .toLowerCase() || 'carrossel';
     }
 
     function sleep(ms) {
@@ -870,12 +1259,20 @@
           <strong>Nenhum carrossel encontrado.</strong><br><br>
           O site procura pastas dentro de:<br><br>
           ${CONFIG.rootPaths.map(path => `<code>${escapeHtml(path)}/</code>`).join('<br>')}<br><br>
-          E espera este padrão:<br><br>
+          E aceita JSONs como:<br><br>
+          ${CONFIG.dataFilePriority.map(path => `<code>${escapeHtml(path)}</code>`).join('<br>')}<br><br>
+          Exemplo esperado:<br><br>
           ${paths}<br><br>
-          Confira se o branch é <code>${escapeHtml(CONFIG.branch)}</code>, se o repositório é público e se cada carrossel é uma pasta dentro de <code>carrossel/</code>.
+          Confira se o branch é <code>${escapeHtml(CONFIG.branch)}</code>, se o repositório é público e se cada carrossel é uma pasta dentro de <code>carrossel/</code> ou <code>carrosseis/</code>.
           ${extra ? `<br><br>Detalhe: ${escapeHtml(extra)}` : ''}
         </div>
       `;
+    }
+
+    function decodeHtmlEntities(text) {
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = String(text || '');
+      return textarea.value;
     }
 
     function escapeHtml(value) {
