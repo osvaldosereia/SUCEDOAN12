@@ -341,6 +341,13 @@
       rootPaths: ['carrossel', 'carrosseis'],
 
       // Download leve para redes sociais: mantém largura ideal de feed e compacta em JPG.
+      // Preview leve: ao abrir cada página, o navegador tenta criar uma versão otimizada.
+      // Se falhar por CORS, memória ou formato, ele abre a original como fallback.
+      optimizePreviewOnOpen: true,
+      previewJpegQuality: 0.78,
+      previewMaxImageWidth: 900,
+
+      // Download leve para redes sociais: mantém largura ideal de feed e compacta em JPG.
       jpegQuality: 0.82,
       maxImageWidth: 1080,
       pauseBetweenDownloadsMs: 900,
@@ -375,6 +382,7 @@
       index: 0,
       pageIndex: 0,
       cache: new Map(),
+      previewObjectUrls: new Set(),
       loadingCarousel: false,
       downloading: false
     };
@@ -909,6 +917,7 @@
     }
 
     function renderCarousel(folder, data) {
+      releasePreviewObjectUrls();
       const images = Array.isArray(data.images) ? data.images : [];
       const page = images[state.pageIndex] || null;
       const total = images.length;
@@ -922,7 +931,7 @@
         <article class="card">
           <div class="media" id="mediaBox">
             ${page
-              ? `<img id="slideImg" src="${escapeAttr(page.url)}" alt="Página ${escapeAttr(page.numero || state.pageIndex + 1)}">`
+              ? `<img id="slideImg" data-original-src="${escapeAttr(page.url)}" alt="Página ${escapeAttr(page.numero || state.pageIndex + 1)}" loading="eager" decoding="async">`
               : `<div class="media-empty">Nenhuma imagem encontrada nesta pasta.<br>Confira se existem arquivos como <code>pagina-1.jpg</code>, <code>pagina-2.jpg</code>... ou URLs de imagem no JSON.</div>`
             }
             <div class="badge counter">Página ${escapeHtml(total ? state.pageIndex + 1 : 0)} de ${escapeHtml(total)}</div>
@@ -971,7 +980,7 @@
               <button class="btn-soft" id="olderCarousel" ${!canOlder ? 'disabled' : ''}>Carrossel anterior</button>
             </div>
 
-            <p class="note">O download converte as imagens para JPG leve, com largura máxima de ${CONFIG.maxImageWidth}px e qualidade equilibrada para Instagram. A legenda copiada sai sem JSON, crases, aspas externas ou marcação técnica.</p>
+            <p class="note">Ao abrir cada página, o leitor tenta mostrar uma prévia compactada para evitar travamentos. O download também converte para JPG leve, com largura máxima de ${CONFIG.maxImageWidth}px. A legenda copiada sai sem JSON, crases, aspas externas ou marcação técnica.</p>
           </div>
         </article>
       `;
@@ -986,13 +995,25 @@
       const mediaBox = document.getElementById('mediaBox');
 
       if (img && loader) {
+        const originalSrc = img.getAttribute('data-original-src') || img.src;
+        loader.textContent = CONFIG.optimizePreviewOnOpen ? 'Otimizando imagem...' : 'Carregando imagem...';
         loader.classList.add('active');
-        if (img.complete) loader.classList.remove('active');
+
         img.addEventListener('load', () => loader.classList.remove('active'), { once: true });
         img.addEventListener('error', () => {
-          loader.textContent = 'Erro na imagem';
-          loader.classList.add('active');
+          loader.textContent = 'Tentando imagem original...';
+          img.src = originalSrc;
         }, { once: true });
+
+        if (CONFIG.optimizePreviewOnOpen) {
+          loadOptimizedPreview(img, originalSrc, loader).catch(error => {
+            console.warn('Preview compactado falhou. Usando imagem original:', error);
+            loader.textContent = 'Abrindo imagem original...';
+            img.src = originalSrc;
+          });
+        } else {
+          img.src = originalSrc;
+        }
       }
 
       document.getElementById('prevPage')?.addEventListener('click', () => {
@@ -1058,6 +1079,32 @@
       }, { passive: true });
     }
 
+
+    async function loadOptimizedPreview(imgElement, url, loader) {
+      if (!url) return;
+
+      const blob = await fetchAndCompressImage(url, {
+        maxWidth: CONFIG.previewMaxImageWidth,
+        quality: CONFIG.previewJpegQuality
+      });
+
+      const optimizedUrl = URL.createObjectURL(blob);
+      state.previewObjectUrls.add(optimizedUrl);
+      imgElement.src = optimizedUrl;
+
+      if (loader) {
+        const kb = Math.max(1, Math.round(blob.size / 1024));
+        loader.textContent = `Prévia leve: ${kb} KB`;
+      }
+    }
+
+    function releasePreviewObjectUrls() {
+      for (const url of state.previewObjectUrls) {
+        URL.revokeObjectURL(url);
+      }
+      state.previewObjectUrls.clear();
+    }
+
     async function downloadImagesOneByOne(folder, data) {
       if (state.downloading) return;
       const images = Array.isArray(data.images) ? data.images : [];
@@ -1080,7 +1127,10 @@
           if (text) text.textContent = `Compactando e baixando página ${i + 1} de ${images.length}...`;
           if (fill) fill.style.width = `${Math.round((i / images.length) * 100)}%`;
 
-          const blob = await fetchAndCompressImage(item.url);
+          const blob = await fetchAndCompressImage(item.url, {
+            maxWidth: CONFIG.maxImageWidth,
+            quality: CONFIG.jpegQuality
+          });
           const filename = `${safeName(data.id_carrossel || folder.id)}-pagina-${String(pageNumber).padStart(2, '0')}.jpg`;
           triggerDownload(blob, filename);
 
@@ -1098,7 +1148,10 @@
       }
     }
 
-    async function fetchAndCompressImage(url) {
+    async function fetchAndCompressImage(url, options = {}) {
+      const maxWidth = Number(options.maxWidth || CONFIG.maxImageWidth || 1080);
+      const quality = Number(options.quality || CONFIG.jpegQuality || 0.82);
+
       const res = await fetch(url, { cache: 'no-store', mode: 'cors' });
       if (!res.ok) throw new Error(`Imagem retornou ${res.status}`);
 
@@ -1106,7 +1159,7 @@
       const img = await blobToImage(inputBlob);
       const originalWidth = img.naturalWidth || img.width;
       const originalHeight = img.naturalHeight || img.height;
-      const scale = Math.min(1, CONFIG.maxImageWidth / originalWidth);
+      const scale = Math.min(1, maxWidth / originalWidth);
       const width = Math.max(1, Math.round(originalWidth * scale));
       const height = Math.max(1, Math.round(originalHeight * scale));
 
@@ -1127,7 +1180,7 @@
         canvas.toBlob(blob => {
           if (blob) resolve(blob);
           else reject(new Error('Não foi possível compactar a imagem.'));
-        }, 'image/jpeg', CONFIG.jpegQuality);
+        }, 'image/jpeg', quality);
       });
     }
 
