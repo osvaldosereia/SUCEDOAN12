@@ -13,7 +13,6 @@
   --muted:#667085;
   --dark:#101828;
   --green:#16a34a;
-  --green2:#22c55e;
   --danger:#e11d48;
   --soft:#f3f4f6;
   --shadow:0 16px 40px rgba(16,24,40,.08);
@@ -35,7 +34,6 @@ p{margin:6px 0}
 .grid{display:grid;gap:10px}
 .grid.two{grid-template-columns:1fr 1fr}
 .grid.three{grid-template-columns:1fr 1fr 1fr}
-.grid.four{grid-template-columns:repeat(4,1fr)}
 label{display:grid;gap:5px;font-size:12px;font-weight:800;color:#475467}
 input[type="text"],input[type="number"],input[type="url"],select{
   width:100%;height:42px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;color:var(--text);padding:0 11px;outline:none;
@@ -79,8 +77,6 @@ canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
 .kpi span{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase}
 .range-read{font-size:11px;color:var(--muted);font-weight:800}
 .footer-note{font-size:11px;color:var(--muted);line-height:1.35}
-.target-box{display:flex;gap:8px;flex-wrap:wrap}
-.target-box label{display:flex;align-items:center;gap:6px;background:#f9fafb;border:1px solid var(--line);padding:8px 10px;border-radius:12px}
 @media(max-width:1120px){
   .app{grid-template-columns:1fr}
   .sidebar{max-height:none}
@@ -188,7 +184,22 @@ canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
     </div>
 
     <div class="card">
-      <h2>5) Editar rodapé linha por linha</h2>
+      <h2>5) Nome do produto acima do preço</h2>
+      <div class="grid two">
+        <label style="display:flex;align-items:center;gap:8px">
+          <input id="showName" type="checkbox" checked> Mostrar nome do produto
+        </label>
+        <label>Cor do nome
+          <input id="nameColor" type="color" value="#344054">
+        </label>
+        <label>Tamanho do nome
+          <input id="nameSize" type="number" min="18" max="42" step="1" value="24">
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>6) Editar rodapé linha por linha</h2>
       <div class="grid">
         <div class="grid three">
           <label>Texto 1
@@ -227,14 +238,8 @@ canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
     </div>
 
     <div class="card">
-      <h2>6) Edição individual da foto no slide atual</h2>
-      <p class="footer-note">Marque os produtos 1, 2, 3 e/ou 4 do slide que está em tela. A edição será aplicada só aos marcados desse slide.</p>
-      <div class="target-box" style="margin-bottom:10px">
-        <label><input class="targetSlot" type="checkbox" value="0" checked> Produto 1</label>
-        <label><input class="targetSlot" type="checkbox" value="1"> Produto 2</label>
-        <label><input class="targetSlot" type="checkbox" value="2"> Produto 3</label>
-        <label><input class="targetSlot" type="checkbox" value="3"> Produto 4</label>
-      </div>
+      <h2>7) Edição global da foto</h2>
+      <p class="footer-note">Essas configurações são aplicadas em todos os produtos de todos os cards.</p>
       <div class="grid two">
         <label style="display:flex;align-items:center;gap:8px">
           <input id="editRemoveWhite" type="checkbox" checked> Remover fundo branco
@@ -263,14 +268,10 @@ canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
           <span id="editHaloReduceTxt" class="range-read"></span>
         </label>
       </div>
-      <div class="row" style="margin-top:10px">
-        <button id="applyPhotoEdits" class="dark">Aplicar aos marcados</button>
-        <button id="resetPhotoEdits">Resetar marcados</button>
-      </div>
     </div>
 
     <div class="card">
-      <h2>7) Exportação</h2>
+      <h2>8) Exportação</h2>
       <div class="grid two">
         <label>Peso máximo por imagem
           <input id="maxKb" type="number" min="10" max="200" step="1" value="30">
@@ -338,24 +339,11 @@ const state = {
   preparedCache: new Map(),
 };
 
-function defaultEdit(){
-  return {
-    removeWhite: true,
-    multiply: true,
-    sharpen: 24,
-    threshold: 238,
-    satTolerance: 48,
-    edgeFeather: 2,
-    haloReduce: 55
-  };
-}
-
 function setStatus(msg, warn=false){
   const box = $('status');
   box.textContent = msg;
   box.classList.toggle('warn', warn);
 }
-
 function fmt(v){
   return Number(v || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
 }
@@ -392,7 +380,17 @@ function extractVolume(name){
 function escapeHtml(v){
   return String(v || '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
 }
-
+function globalEdit(){
+  return {
+    removeWhite: $('editRemoveWhite').checked,
+    multiply: $('editMultiply').checked,
+    sharpen: Number($('editSharpen').value),
+    threshold: Number($('editWhiteThreshold').value),
+    satTolerance: Number($('editSatTolerance').value),
+    edgeFeather: Number($('editEdgeFeather').value),
+    haloReduce: Number($('editHaloReduce').value),
+  };
+}
 function resolveImage(p){
   const value = p.url_imagem || p.imagem || p.image || p.img || p.foto || p.foto_url || p.urlImagem || p.imagem_url || '';
   const base = $('imageBase').value.trim().replace(/\/+$/,'');
@@ -411,12 +409,10 @@ function resolveImage(p){
   const codigo = String(p.codigo || p.id || p.firebaseKey || '').trim();
   return codigo ? `${base}/site/img/produtos/${codigo}.webp` : '';
 }
-
 function normalizeProducts(raw){
   const lista = Array.isArray(raw)
     ? raw.filter(Boolean).map((produto,index)=>({ ...produto, firebaseKey: produto.firebaseKey || produto.id || produto.codigo || String(index) }))
     : (raw ? Object.entries(raw).map(([firebaseKey, produto]) => ({ ...(produto || {}), firebaseKey })) : []);
-
   const hoje = new Date();
   hoje.setHours(0,0,0,0);
 
@@ -454,7 +450,6 @@ function normalizeProducts(raw){
       return produto;
     });
 }
-
 async function loadProducts(){
   try{
     setStatus('Carregando produtos...');
@@ -467,7 +462,6 @@ async function loadProducts(){
     setStatus('Não consegui carregar a URL. Use importar JSON ou confira a URL.', true);
   }
 }
-
 async function importJson(file){
   try{
     const text = await file.text();
@@ -477,7 +471,6 @@ async function importJson(file){
     setStatus('JSON inválido. Não consegui importar o arquivo.', true);
   }
 }
-
 function applyProducts(raw){
   state.imageCache.clear();
   state.preparedCache.clear();
@@ -491,13 +484,11 @@ function applyProducts(raw){
   buildSlides();
   setStatus(`Carregado: ${state.all.length} produtos ativos, ${state.offers.length} ofertas válidas.`);
 }
-
 function productMatches(p, q){
   if (!q) return true;
   const hay = norm([p.nome,p.codigo,p.ean,p.gtin,p.categoria,p.subcategoria,p.marca,p.embalagem].join(' '));
   return hay.includes(q);
 }
-
 function renderProductList(){
   const q = norm($('search').value);
   const base = $('mode').value === 'allOrder' || $('mode').value === 'allRandom' ? state.all : state.offers;
@@ -522,7 +513,6 @@ function renderProductList(){
   `).join('');
   updateSelectedInfo();
 }
-
 function updateSelectedInfo(){
   $('selectedInfo').textContent = `${state.selected.size} selecionado${state.selected.size === 1 ? '' : 's'}`;
   $('kpiManual').textContent = state.selected.size;
@@ -533,7 +523,6 @@ function updateKpis(){
   $('kpiSlides').textContent = state.slides.length;
   $('kpiManual').textContent = state.selected.size;
 }
-
 function getChosenProducts(){
   const mode = $('mode').value;
   const maxProducts = Number($('slideCount').value) * 4;
@@ -555,14 +544,11 @@ function getChosenProducts(){
   }
   return list.slice(0, maxProducts);
 }
-
 function buildSlides(){
   const chosen = getChosenProducts();
   state.slides = [];
   for (let i = 0; i < chosen.length; i += 4){
-    const products = chosen.slice(i, i + 4);
-    const edits = [defaultEdit(), defaultEdit(), defaultEdit(), defaultEdit()];
-    state.slides.push({ products, edits });
+    state.slides.push(chosen.slice(i, i + 4));
   }
   const targetSlides = Number($('slideCount').value);
   state.slides = state.slides.slice(0, targetSlides);
@@ -572,11 +558,6 @@ function buildSlides(){
   renderMiniSlides();
   setStatus(state.slides.length ? `Slides montados: ${state.slides.length}.` : 'Nenhum slide montado. Selecione produtos ou ajuste os filtros.', !state.slides.length);
 }
-
-function currentSlideObj(){
-  return state.slides[state.currentSlide] || null;
-}
-
 function shuffle(arr){
   for(let i=arr.length-1;i>0;i--){
     const j=Math.floor(Math.random()*(i+1));
@@ -584,7 +565,6 @@ function shuffle(arr){
   }
   return arr;
 }
-
 async function loadImage(src){
   if (!src) return null;
   if (state.imageCache.has(src)) return state.imageCache.get(src);
@@ -598,7 +578,6 @@ async function loadImage(src){
   state.imageCache.set(src, promise);
   return promise;
 }
-
 function isNearWhite(data, idx, threshold, satTol){
   const r=data[idx], g=data[idx+1], b=data[idx+2], a=data[idx+3];
   if (a < 10) return false;
@@ -606,7 +585,6 @@ function isNearWhite(data, idx, threshold, satTol){
   const avg = (r+g+b)/3;
   return avg >= threshold && (max-min) <= satTol;
 }
-
 function applySharpenToCanvas(sourceCanvas, amount){
   if (!amount || amount <= 0) return sourceCanvas;
   const w = sourceCanvas.width, h = sourceCanvas.height;
@@ -619,7 +597,6 @@ function applySharpenToCanvas(sourceCanvas, amount){
   const src = srcData.data;
   const dst = outData.data;
   const strength = Math.min(1.5, amount / 100 * 1.5);
-
   const idx = (x,y) => (y*w+x)*4;
   for(let y=0; y<h; y++){
     for(let x=0; x<w; x++){
@@ -645,11 +622,10 @@ function applySharpenToCanvas(sourceCanvas, amount){
   outCtx.putImageData(outData,0,0);
   return out;
 }
-
-async function getPrepared(product, edit){
+async function getPrepared(product){
+  const edit = globalEdit();
   const key = `${product.id}|${product.imagem}|${JSON.stringify(edit)}`;
   if (state.preparedCache.has(key)) return state.preparedCache.get(key);
-
   const img = await loadImage(product.imagem);
   if (!img) return null;
 
@@ -659,7 +635,6 @@ async function getPrepared(product, edit){
   const scale = Math.min(1, maxSide / Math.max(iw, ih));
   const cw = Math.max(1, Math.round(iw * scale));
   const ch = Math.max(1, Math.round(ih * scale));
-
   const off = document.createElement('canvas');
   off.width = cw; off.height = ch;
   const octx = off.getContext('2d', { willReadFrequently:true });
@@ -671,7 +646,6 @@ async function getPrepared(product, edit){
     const total = cw * ch;
     const visited = new Uint8Array(total);
     const stack = [];
-
     function pushPixel(x,y){
       if (x < 0 || y < 0 || x >= cw || y >= ch) return;
       const pos = y * cw + x;
@@ -681,21 +655,17 @@ async function getPrepared(product, edit){
       visited[pos] = 1;
       stack.push(pos);
     }
-
     for (let x=0; x<cw; x+=2){ pushPixel(x,0); pushPixel(x,ch-1); }
     for (let y=0; y<ch; y+=2){ pushPixel(0,y); pushPixel(cw-1,y); }
-
     while(stack.length){
       const pos = stack.pop();
       const x = pos % cw;
       const y = (pos / cw) | 0;
       pushPixel(x+1,y); pushPixel(x-1,y); pushPixel(x,y+1); pushPixel(x,y-1);
     }
-
     for (let pos=0; pos<total; pos++){
       if (visited[pos]) d[pos*4+3] = 0;
     }
-
     if (edit.edgeFeather > 0 || edit.haloReduce > 0){
       const copyAlpha = new Uint8Array(total);
       for (let pos=0; pos<total; pos++) copyAlpha[pos] = d[pos*4+3];
@@ -728,15 +698,13 @@ async function getPrepared(product, edit){
         }
       }
     }
-
     octx.putImageData(imageData,0,0);
   }
 
-  const sharpened = applySharpenToCanvas(off, edit.sharpen);
-  state.preparedCache.set(key, sharpened);
-  return sharpened;
+  const finalCanvas = applySharpenToCanvas(off, edit.sharpen);
+  state.preparedCache.set(key, finalCanvas);
+  return finalCanvas;
 }
-
 function drawRoundRect(c, x,y,w,h,r, fill, stroke){
   c.beginPath();
   c.moveTo(x+r,y);
@@ -769,7 +737,7 @@ function drawPrice(c, text, x, y, w, size, color, weight=950){
   c.textBaseline = 'alphabetic';
   c.fillText(text, x + w/2, y);
 }
-function drawWrappedCentered(c, text, centerX, y, maxWidth, fontSize, color, weight=900, lineHeight=1.15){
+function drawWrappedCentered(c, text, centerX, y, maxWidth, fontSize, color, weight=900, lineHeight=1.15, maxLines=2){
   c.fillStyle = color;
   c.font = `${weight} ${fontSize}px Inter, Arial, sans-serif`;
   c.textAlign = 'center';
@@ -782,15 +750,26 @@ function drawWrappedCentered(c, text, centerX, y, maxWidth, fontSize, color, wei
     if (c.measureText(test).width > maxWidth && line){
       lines.push(line.trim());
       line = words[n] + ' ';
+      if (lines.length >= maxLines - 1) break;
     } else {
       line = test;
     }
   }
-  if (line.trim()) lines.push(line.trim());
-  lines.forEach((ln, idx) => c.fillText(ln, centerX, y + idx * fontSize * lineHeight));
+  const remainingWordsStart = lines.join(' ').split(' ').filter(Boolean).length;
+  if (line.trim()) {
+    if (lines.length === maxLines - 1 && remainingWordsStart < words.length - 1) {
+      let rest = words.slice(remainingWordsStart).join(' ');
+      while (c.measureText(rest + '…').width > maxWidth && rest.includes(' ')) {
+        rest = rest.split(' ').slice(0,-1).join(' ');
+      }
+      lines.push(rest + (remainingWordsStart < words.length ? '…' : ''));
+    } else {
+      lines.push(line.trim());
+    }
+  }
+  lines.slice(0, maxLines).forEach((ln, idx) => c.fillText(ln, centerX, y + idx * fontSize * lineHeight));
 }
-
-async function drawSlide(slideObj, c=ctx, width=W, height=H){
+async function drawSlide(slideProducts, c=ctx, width=W, height=H){
   const sx = width / W, sy = height / H;
   c.save();
   c.scale(sx, sy);
@@ -806,13 +785,13 @@ async function drawSlide(slideObj, c=ctx, width=W, height=H){
   const radius = Number($('radius').value);
   const cardColor = $('cardColor').value;
   const priceColor = $('priceColor').value;
-
-  const products = slideObj?.products || [];
-  const edits = slideObj?.edits || [defaultEdit(), defaultEdit(), defaultEdit(), defaultEdit()];
+  const nameColor = $('nameColor').value;
+  const nameSize = Number($('nameSize').value);
+  const showName = $('showName').checked;
+  const edit = globalEdit();
 
   for (let i=0; i<4; i++){
-    const p = products[i];
-    const edit = edits[i] || defaultEdit();
+    const p = slideProducts?.[i];
     const col = i % 2;
     const row = Math.floor(i / 2);
     const x = marginX + col * (cardW + gap);
@@ -828,26 +807,18 @@ async function drawSlide(slideObj, c=ctx, width=W, height=H){
     }
 
     const discountText = p.temOferta ? `-${p.descontoReal}%` : 'OFERTA';
-    c.save();
-    c.shadowColor = 'rgba(225,29,72,.14)';
-    c.shadowBlur = 12;
     drawRoundRect(c, x+24, y+24, 132, 62, 31, '#fff1f2', null);
-    c.restore();
     drawTextCenter(c, discountText, x+24, y+56, 132, 28, '#e11d48', 950);
 
-    const img = await getPrepared(p, edit);
+    const img = await getPrepared(p);
     const imgX = x + 18;
     const imgY = y + 76;
     const imgW = cardW - 36;
-    const imgH = cardH - 250;
+    const imgH = showName ? cardH - 318 : cardH - 250;
+
     if (img){
       c.save();
-      c.shadowColor = 'rgba(0,0,0,.12)';
-      c.shadowBlur = 18;
-      c.shadowOffsetY = 10;
-      if (edit.multiply){
-        c.globalCompositeOperation = 'multiply';
-      }
+      if (edit.multiply) c.globalCompositeOperation = 'multiply';
       drawContain(c, img, imgX, imgY, imgW, imgH, Number($('imageZoom').value)/100);
       c.restore();
       c.globalCompositeOperation = 'source-over';
@@ -855,8 +826,12 @@ async function drawSlide(slideObj, c=ctx, width=W, height=H){
       drawTextCenter(c, 'sem imagem', imgX, imgY + imgH/2, imgW, 32, '#98a2b3', 900);
     }
 
-    const oldY = y + cardH - 116;
-    const newY = y + cardH - 52;
+    let oldPriceY = y + cardH - 108;
+    if (showName){
+      drawWrappedCentered(c, p.nome, x + cardW/2, y + cardH - 176, cardW - 44, nameSize, nameColor, 850, 1.1, 2);
+      oldPriceY = y + cardH - 100;
+    }
+
     if (p.temOferta){
       c.save();
       c.fillStyle = '#98a2b3';
@@ -864,23 +839,22 @@ async function drawSlide(slideObj, c=ctx, width=W, height=H){
       c.textAlign = 'center';
       c.textBaseline = 'alphabetic';
       const old = fmt(p.precoNormal);
-      c.fillText(old, x + cardW/2, oldY);
+      c.fillText(old, x + cardW/2, oldPriceY);
       const metrics = c.measureText(old);
       c.strokeStyle = '#98a2b3';
       c.lineWidth = 4;
       c.beginPath();
-      c.moveTo(x + cardW/2 - metrics.width/2 - 6, oldY - 12);
-      c.lineTo(x + cardW/2 + metrics.width/2 + 6, oldY - 12);
+      c.moveTo(x + cardW/2 - metrics.width/2 - 6, oldPriceY - 12);
+      c.lineTo(x + cardW/2 + metrics.width/2 + 6, oldPriceY - 12);
       c.stroke();
       c.restore();
     }
-    drawPrice(c, fmt(p.preco), x, newY, cardW, 56, priceColor, 950);
+    drawPrice(c, fmt(p.preco), x, y + cardH - 32, cardW, 56, priceColor, 950);
   }
 
   drawFooter(c);
   c.restore();
 }
-
 function drawFooter(c){
   const style = $('footerStyle').value;
   const y = 1668;
@@ -890,25 +864,22 @@ function drawFooter(c){
   } else if (style === 'green'){
     drawRoundRect(c, 42, 1660, W-84, 210, 38, '#ecfdf3', null);
   }
-
-  drawWrappedCentered(c, $('footer1Text').value, W/2, y + 4, 930, Number($('footer1Size').value), $('footer1Color').value, 950, 1.06);
-  drawWrappedCentered(c, $('footer2Text').value, W/2, y + 64, 980, Number($('footer2Size').value), $('footer2Color').value, 950, 1.06);
-  drawWrappedCentered(c, $('footer3Text').value, W/2, y + 134, 980, Number($('footer3Size').value), $('footer3Color').value, 900, 1.08);
+  drawWrappedCentered(c, $('footer1Text').value, W/2, y + 4, 930, Number($('footer1Size').value), $('footer1Color').value, 950, 1.06, 2);
+  drawWrappedCentered(c, $('footer2Text').value, W/2, y + 64, 980, Number($('footer2Size').value), $('footer2Color').value, 950, 1.06, 2);
+  drawWrappedCentered(c, $('footer3Text').value, W/2, y + 134, 980, Number($('footer3Size').value), $('footer3Color').value, 900, 1.08, 2);
 }
-
 async function renderCurrentSlide(){
-  const slide = currentSlideObj();
+  const slide = state.slides[state.currentSlide];
   if (!slide){
     ctx.fillStyle = '#fff';
     ctx.fillRect(0,0,W,H);
-    drawWrappedCentered(ctx, 'Monte os slides para ver a prévia.', W/2, H/2 - 30, 700, 44, '#98a2b3', 900, 1.2);
+    drawWrappedCentered(ctx, 'Monte os slides para ver a prévia.', W/2, H/2 - 30, 700, 44, '#98a2b3', 900, 1.2, 2);
     $('slideIndicator').textContent = '0/0';
     return;
   }
   await drawSlide(slide);
   $('slideIndicator').textContent = `${state.currentSlide+1}/${state.slides.length}`;
 }
-
 async function renderMiniSlides(){
   const box = $('miniSlides');
   if (!state.slides.length){
@@ -929,7 +900,6 @@ async function renderMiniSlides(){
     await drawSlide(state.slides[i], mctx, mini.width, mini.height);
   }
 }
-
 function syncRangeLabels(){
   $('editSharpenTxt').textContent = $('editSharpen').value;
   $('editWhiteThresholdTxt').textContent = $('editWhiteThreshold').value;
@@ -937,58 +907,14 @@ function syncRangeLabels(){
   $('editEdgeFeatherTxt').textContent = $('editEdgeFeather').value;
   $('editHaloReduceTxt').textContent = $('editHaloReduce').value + '%';
 }
-
-function editFormValues(){
-  return {
-    removeWhite: $('editRemoveWhite').checked,
-    multiply: $('editMultiply').checked,
-    sharpen: Number($('editSharpen').value),
-    threshold: Number($('editWhiteThreshold').value),
-    satTolerance: Number($('editSatTolerance').value),
-    edgeFeather: Number($('editEdgeFeather').value),
-    haloReduce: Number($('editHaloReduce').value),
-  };
-}
-
-function markedSlots(){
-  return [...document.querySelectorAll('.targetSlot:checked')].map(el => Number(el.value)).filter(v => v >= 0 && v <= 3);
-}
-
-function clearPreparedCache(){
-  state.preparedCache.clear();
-}
-
-function applyPhotoEdits(reset=false){
-  const slide = currentSlideObj();
-  if (!slide){
-    setStatus('Não há slide em tela para editar.', true);
-    return;
-  }
-  const targets = markedSlots();
-  if (!targets.length){
-    setStatus('Marque pelo menos um produto (1, 2, 3 ou 4).', true);
-    return;
-  }
-  const form = editFormValues();
-  targets.forEach(idx => {
-    if (!slide.products[idx]) return;
-    slide.edits[idx] = reset ? defaultEdit() : { ...slide.edits[idx], ...form };
-  });
-  clearPreparedCache();
-  renderCurrentSlide();
-  renderMiniSlides();
-  setStatus(reset ? 'Edição resetada para os produtos marcados.' : 'Edição aplicada aos produtos marcados do slide atual.');
-}
-
+function clearPreparedCache(){ state.preparedCache.clear(); }
 function canvasToBlob(cnv, type='image/webp', quality=.82){
   return new Promise(resolve => cnv.toBlob(resolve, type, quality));
 }
-
 async function encodeWebpUnderLimit(maxKb){
   const qualities = [.9,.82,.74,.66,.58,.5,.44,.38,.32,.26];
   const scales = [1,.9,.8,.7,.62,.56,.5];
   let best = null;
-
   for (const scale of scales){
     const out = document.createElement('canvas');
     out.width = Math.round(W * scale);
@@ -997,7 +923,6 @@ async function encodeWebpUnderLimit(maxKb){
     octx.fillStyle = '#fff';
     octx.fillRect(0,0,out.width,out.height);
     octx.drawImage(canvas,0,0,out.width,out.height);
-
     for (const q of qualities){
       const blob = await canvasToBlob(out, 'image/webp', q);
       if (!blob) continue;
@@ -1007,7 +932,6 @@ async function encodeWebpUnderLimit(maxKb){
   }
   return { blob: best, scale:.5, quality:.26, limited:false };
 }
-
 async function downloadCurrentSlide(){
   if (!state.slides.length) return;
   await renderCurrentSlide();
@@ -1016,7 +940,6 @@ async function downloadCurrentSlide(){
   downloadBlob(result.blob, `${$('filePrefix').value || 'status'}-slide-${String(state.currentSlide+1).padStart(2,'0')}.webp`);
   setStatus(`Slide atual baixado: ${(result.blob.size/1024).toFixed(1)}KB.`);
 }
-
 async function exportAll(){
   if (!state.slides.length){
     setStatus('Monte os slides antes de exportar.', true);
@@ -1026,7 +949,6 @@ async function exportAll(){
   setStatus('Exportando todos os slides em WebP...');
   const maxKb = Number($('maxKb').value || 30);
   const files = [];
-
   for (let i=0; i<state.slides.length; i++){
     state.currentSlide = i;
     await renderCurrentSlide();
@@ -1039,14 +961,12 @@ async function exportAll(){
     });
     setStatus(`Exportando ${i+1}/${state.slides.length}: ${(result.blob.size/1024).toFixed(1)}KB.`);
   }
-
   const zip = makeZip(files);
   downloadBlob(zip, `${$('filePrefix').value || 'status'}-${Date.now()}.zip`);
   $('exportBtn').disabled = false;
   await renderMiniSlides();
   setStatus(`ZIP pronto com ${files.length} imagens WebP.`);
 }
-
 function downloadBlob(blob, filename){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1057,8 +977,6 @@ function downloadBlob(blob, filename){
   a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 1500);
 }
-
-// ZIP simples, sem dependência externa
 const crcTable = (() => {
   const table = new Uint32Array(256);
   for(let i=0;i<256;i++){
@@ -1113,7 +1031,6 @@ function makeZip(files){
   ]);
   return new Blob([concatParts(localParts), central, end], { type:'application/zip' });
 }
-
 function bind(){
   $('loadBtn').addEventListener('click', loadProducts);
   $('jsonFile').addEventListener('change', e => { const f=e.target.files?.[0]; if(f) importJson(f); });
@@ -1135,7 +1052,6 @@ function bind(){
     updateSelectedInfo();
     if ($('mode').value === 'manual') buildSlides();
   });
-
   $('selectVisible').addEventListener('click', () => {
     state.filtered.forEach(p => state.selected.set(p.id, p));
     renderProductList();
@@ -1146,7 +1062,6 @@ function bind(){
     renderProductList();
     if ($('mode').value === 'manual') buildSlides();
   });
-
   $('prevSlide').addEventListener('click', () => {
     if (!state.slides.length) return;
     state.currentSlide = Math.max(0, state.currentSlide - 1);
@@ -1164,24 +1079,23 @@ function bind(){
     renderCurrentSlide(); renderMiniSlides();
   });
 
-  ['cardColor','priceColor','imageZoom','radius','gap','footerStyle',
-   'footer1Text','footer1Color','footer1Size','footer2Text','footer2Color','footer2Size','footer3Text','footer3Color','footer3Size'
+  [
+    'cardColor','priceColor','imageZoom','radius','gap','footerStyle',
+    'showName','nameColor','nameSize',
+    'footer1Text','footer1Color','footer1Size','footer2Text','footer2Color','footer2Size','footer3Text','footer3Color','footer3Size'
   ].forEach(id => {
     $(id).addEventListener('input', () => { renderCurrentSlide(); renderMiniSlides(); });
     $(id).addEventListener('change', () => { renderCurrentSlide(); renderMiniSlides(); });
   });
 
-  ['editSharpen','editWhiteThreshold','editSatTolerance','editEdgeFeather','editHaloReduce'].forEach(id => {
-    $(id).addEventListener('input', syncRangeLabels);
+  ['editRemoveWhite','editMultiply','editSharpen','editWhiteThreshold','editSatTolerance','editEdgeFeather','editHaloReduce'].forEach(id => {
+    $(id).addEventListener('input', () => { syncRangeLabels(); clearPreparedCache(); renderCurrentSlide(); renderMiniSlides(); });
+    $(id).addEventListener('change', () => { syncRangeLabels(); clearPreparedCache(); renderCurrentSlide(); renderMiniSlides(); });
   });
-
-  $('applyPhotoEdits').addEventListener('click', () => applyPhotoEdits(false));
-  $('resetPhotoEdits').addEventListener('click', () => applyPhotoEdits(true));
 
   $('downloadCurrent').addEventListener('click', downloadCurrentSlide);
   $('exportBtn').addEventListener('click', exportAll);
 }
-
 function init(){
   bind();
   syncRangeLabels();
@@ -1190,7 +1104,6 @@ function init(){
   renderCurrentSlide();
 }
 init();
-
 })();
 </script>
 </body>
