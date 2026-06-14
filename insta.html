@@ -146,6 +146,7 @@ canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
         <p class="small muted">Imagem 1080×1920, 4 produtos por slide.</p>
       </div>
       <div class="actions">
+        <button id="downloadAllSequential" class="primary">Baixar todas 1x1</button>
         <button id="prevSlide">←</button>
         <span id="slideIndicator" class="small muted">0/0</span>
         <button id="nextSlide">→</button>
@@ -387,12 +388,12 @@ canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
       const p = slideProducts?.[i], col = i % 2, row = Math.floor(i / 2), x = marginX + col * (cardW + gap), y = top + row * (cardH + gap);
       drawRoundRect(c, x, y, cardW, cardH, radius, cardColor);
       if (!p){ c.globalAlpha = .35; drawTextCenter(c, 'Produto', x, y + cardH/2, cardW, 42, '#98a2b3', 900); c.globalAlpha = 1; continue; }
-      drawRoundRect(c, x+24, y+24, 132, 62, 31, '#fff1f2'); drawTextCenter(c, p.temOferta ? `-${p.descontoReal}%` : 'OFERTA', x+24, y+56, 132, 28, '#e11d48', 950);
       const img = await getPrepared(p), imgX = x + 18, imgY = y + 76, imgW = cardW - 36, imgH = showName ? cardH - 318 : cardH - 250;
       if (img){ c.save(); if (edit.multiply) c.globalCompositeOperation = 'multiply'; drawContain(c, img, imgX, imgY, imgW, imgH, Number($('imageZoom').value)/100); c.restore(); c.globalCompositeOperation = 'source-over'; }
       else drawTextCenter(c, 'sem imagem', imgX, imgY + imgH/2, imgW, 32, '#98a2b3', 900);
+      drawRoundRect(c, x+18, y+18, 170, 84, 40, '#e11d48'); drawTextCenter(c, p.temOferta ? `-${p.descontoReal}%` : 'OFERTA', x+18, y+60, 170, 40, '#ffffff', 950);
       let oldPriceY = y + cardH - 108;
-      if (showName){ drawWrappedCentered(c, p.nome, x + cardW/2, y + cardH - 176, cardW - 44, nameSize, nameColor, 850, 1.1, 2); oldPriceY = y + cardH - 100; }
+      if (showName){ drawWrappedCentered(c, p.nome, x + cardW/2, y + cardH - 176, cardW - 44, nameSize, nameColor, 850, 1.1, 2); oldPriceY = y + cardH - 82; }
       if (p.temOferta){ c.save(); c.fillStyle = '#98a2b3'; c.font = '850 34px Inter, Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; const old = fmt(p.precoNormal); c.fillText(old, x + cardW/2, oldPriceY); const metrics = c.measureText(old); c.strokeStyle = '#98a2b3'; c.lineWidth = 4; c.beginPath(); c.moveTo(x + cardW/2 - metrics.width/2 - 6, oldPriceY - 12); c.lineTo(x + cardW/2 + metrics.width/2 + 6, oldPriceY - 12); c.stroke(); c.restore(); }
       drawPrice(c, fmt(p.preco), x, y + cardH - 32, cardW, 56, priceColor, 950);
     }
@@ -420,6 +421,38 @@ canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
       for (const q of qualities){ const blob = await canvasToBlob(out, 'image/webp', q); if (!blob) continue; best = blob; if (blob.size <= maxKb * 1024) return { blob, scale, quality: q, limited: true }; }
     }
     return { blob: best, scale:.5, quality:.26, limited:false };
+  }
+  function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2500);
+  }
+  async function downloadAllSequential(){
+    if (!state.slides.length){ setStatus('Monte os slides antes de baixar.', true); return; }
+    const originalSlide = state.currentSlide;
+    const total = state.slides.length;
+    setStatus('Baixando imagens uma por uma...');
+    for (let i=0; i<total; i++){
+      state.currentSlide = i;
+      await renderCurrentSlide();
+      const result = await encodeCanvasUnderLimit(canvas, 30);
+      if (result.blob){
+        const filename = `slide-${String(i+1).padStart(2,'0')}.webp`;
+        downloadBlob(result.blob, filename);
+        setStatus(`Baixando ${i+1}/${total}: ${filename}`);
+      }
+      if (i < total - 1) await wait(2000);
+    }
+    state.currentSlide = originalSlide;
+    await renderCurrentSlide();
+    await renderMiniSlides();
+    setStatus('Downloads iniciados. Se o navegador bloquear, permita múltiplos downloads para este site.');
   }
   async function runAutomatic(productsRaw, options = {}){
     if (options.imageBase) $('imageBase').value = options.imageBase;
@@ -462,6 +495,7 @@ canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
   async function loadAndBuild(){ try { await loadProducts(); buildSlides(); await renderCurrentSlide(); await renderMiniSlides(); } catch(err){ console.error(err); setStatus(err.message || 'Erro ao carregar', true); } }
 
   $('loadBtn').addEventListener('click', loadAndBuild);
+  $('downloadAllSequential').addEventListener('click', downloadAllSequential);
   $('prevSlide').addEventListener('click', async ()=>{ if (!state.slides.length) return; state.currentSlide = Math.max(0, state.currentSlide - 1); await renderCurrentSlide(); await renderMiniSlides(); });
   $('nextSlide').addEventListener('click', async ()=>{ if (!state.slides.length) return; state.currentSlide = Math.min(state.slides.length - 1, state.currentSlide + 1); await renderCurrentSlide(); await renderMiniSlides(); });
   $('miniSlides').addEventListener('click', async e => { const item = e.target.closest('[data-slide]'); if (!item) return; state.currentSlide = Number(item.dataset.slide); await renderCurrentSlide(); await renderMiniSlides(); });
