@@ -3,132 +3,67 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gerador de Status WhatsApp - Ofertas Dona Antônia</title>
+<title>Ofertas Zap Automático</title>
 <style>
 :root{
-  --bg:#f4f5f7;
-  --panel:#ffffff;
-  --line:#e5e7eb;
-  --text:#111827;
-  --muted:#667085;
-  --dark:#101828;
-  --green:#16a34a;
-  --danger:#e11d48;
-  --soft:#f3f4f6;
-  --shadow:0 16px 40px rgba(16,24,40,.08);
+  --bg:#f4f5f7; --panel:#fff; --line:#e5e7eb; --text:#111827; --muted:#667085;
+  --green:#16a34a; --danger:#e11d48; --soft:#f3f4f6; --shadow:0 16px 40px rgba(16,24,40,.08);
 }
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text)}
-button,input,select{font:inherit}
-button{border:0;cursor:pointer}
-.app{display:grid;grid-template-columns:430px 1fr;gap:16px;padding:16px;min-height:100vh}
-.sidebar,.main{background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.7);border-radius:24px;box-shadow:var(--shadow)}
+button,input,select{font:inherit} button{cursor:pointer}
+.app{display:grid;grid-template-columns:380px 1fr;gap:16px;padding:16px;min-height:100vh}
+.sidebar,.main{background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.7);border-radius:24px;box-shadow:var(--shadow)}
 .sidebar{padding:16px;max-height:calc(100vh - 32px);overflow:auto}
-.main{padding:16px;display:grid;grid-template-rows:auto 1fr;gap:14px;overflow:hidden}
+.main{padding:16px;display:grid;grid-template-rows:auto 1fr;gap:14px}
 h1{font-size:24px;line-height:1;margin:0 0 6px;font-weight:950;letter-spacing:-.04em}
 h2{font-size:15px;margin:0 0 10px;font-weight:950}
-p{margin:6px 0}
-.small{font-size:12px}
-.muted{color:var(--muted)}
+p{margin:6px 0}.small{font-size:12px}.muted{color:var(--muted)}
 .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:12px}
-.grid{display:grid;gap:10px}
-.grid.two{grid-template-columns:1fr 1fr}
-.grid.three{grid-template-columns:1fr 1fr 1fr}
+.grid{display:grid;gap:10px}.grid.two{grid-template-columns:1fr 1fr}
 label{display:grid;gap:5px;font-size:12px;font-weight:800;color:#475467}
-input[type="text"],input[type="number"],input[type="url"],select{
-  width:100%;height:42px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;color:var(--text);padding:0 11px;outline:none;
-}
-input[type="range"]{width:100%;accent-color:var(--green)}
-input[type="checkbox"]{accent-color:var(--green)}
-input[type="color"]{width:100%;height:42px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;padding:4px}
-button{
-  min-height:40px;border-radius:12px;background:#fff;color:var(--text);border:1px solid #d0d5dd;font-weight:900;padding:9px 12px;
-}
-button.primary{background:linear-gradient(135deg,#25D366,#16a34a);border-color:transparent;color:white}
-button.dark{background:#111827;border-color:#111827;color:white}
-button.danger{background:#fff1f2;border-color:#fecdd3;color:#be123c}
-button:disabled{opacity:.45;cursor:not-allowed}
-.row{display:flex;gap:8px;flex-wrap:wrap}
-.row>*{flex:1}
-.status{background:#ecfdf3;border:1px solid #bbf7d0;color:#14532d;border-radius:14px;padding:10px 12px;font-size:12px;font-weight:800;line-height:1.35}
-.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
-.list{display:grid;gap:8px;max-height:320px;overflow:auto;padding-right:4px}
-.prod{
-  display:grid;grid-template-columns:44px 1fr auto;gap:8px;align-items:center;padding:7px;border:1px solid var(--line);border-radius:14px;background:#fff;
-}
-.prod img{width:44px;height:44px;object-fit:contain;background:#f3f4f6;border-radius:10px}
-.prod .name{font-size:12px;font-weight:850;line-height:1.2}
-.prod .meta{font-size:11px;color:var(--muted);margin-top:2px}
-.prod .discount{font-size:12px;font-weight:950;color:var(--danger);white-space:nowrap}
-.topbar{display:flex;justify-content:space-between;gap:10px;align-items:center}
-.topbar .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type="text"],input[type="number"],input[type="url"],select{width:100%;height:42px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;color:var(--text);padding:0 11px;outline:none}
+input[type="range"]{width:100%;accent-color:var(--green)} input[type="checkbox"]{accent-color:var(--green)} input[type="color"]{width:100%;height:42px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;padding:4px}
+button{min-height:40px;border-radius:12px;background:#fff;color:var(--text);border:1px solid #d0d5dd;font-weight:900;padding:9px 12px}
+button.primary{background:linear-gradient(135deg,#25D366,#16a34a);border-color:transparent;color:#fff} button.dark{background:#111827;border-color:#111827;color:#fff}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
+.status{background:#ecfdf3;border:1px solid #bbf7d0;color:#14532d;border-radius:14px;padding:10px 12px;font-size:12px;font-weight:800;line-height:1.35}.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+.topbar{display:flex;justify-content:space-between;gap:10px;align-items:center}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .preview-wrap{display:grid;grid-template-columns:minmax(320px,430px) 1fr;gap:16px;align-items:start;min-height:0}
 .phone{width:min(430px,100%);aspect-ratio:9/16;background:#101010;border-radius:36px;padding:10px;box-shadow:0 20px 60px rgba(0,0,0,.22);margin:auto}
 canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
 .slides-panel{background:#fff;border:1px solid var(--line);border-radius:20px;padding:12px;min-height:0;overflow:auto}
 .slide-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;max-height:calc(100vh - 190px);overflow:auto;padding-right:4px}
-.slide-mini{border:1px solid var(--line);border-radius:14px;background:#fff;padding:6px;cursor:pointer}
-.slide-mini.active{outline:3px solid rgba(34,197,94,.3);border-color:#22c55e}
-.slide-mini canvas{border-radius:10px;background:#fff}
-.slide-mini span{display:block;font-size:11px;font-weight:900;text-align:center;margin-top:4px;color:#475467}
-.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
-.kpi div{background:#f9fafb;border:1px solid var(--line);border-radius:14px;padding:9px;text-align:center}
-.kpi b{display:block;font-size:16px}
-.kpi span{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase}
+.slide-mini{border:1px solid var(--line);border-radius:14px;background:#fff;padding:6px;cursor:pointer}.slide-mini.active{outline:3px solid rgba(34,197,94,.3);border-color:#22c55e}
+.slide-mini canvas{border-radius:10px;background:#fff}.slide-mini span{display:block;font-size:11px;font-weight:900;text-align:center;margin-top:4px;color:#475467}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.kpi div{background:#f9fafb;border:1px solid var(--line);border-radius:14px;padding:9px;text-align:center}.kpi b{display:block;font-size:16px}.kpi span{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase}
 .range-read{font-size:11px;color:var(--muted);font-weight:800}
-.footer-note{font-size:11px;color:var(--muted);line-height:1.35}
-@media(max-width:1120px){
-  .app{grid-template-columns:1fr}
-  .sidebar{max-height:none}
-  .preview-wrap{grid-template-columns:1fr}
-}
+@media(max-width:1120px){.app{grid-template-columns:1fr}.sidebar{max-height:none}.preview-wrap{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="app">
   <aside class="sidebar">
-    <h1>Status de ofertas</h1>
-    <p class="small muted">Gera imagens 9:16 para WhatsApp Status: 4 produtos por slide, fundo branco, cards cinza claro e rodapé fixo.</p>
+    <h1>Ofertas Zap</h1>
+    <p class="small muted">Gerador automático de 10 slides para Status do WhatsApp.</p>
 
     <div class="card">
-      <h2>1) Fonte dos produtos</h2>
-      <div class="grid">
-        <label>URL dos produtos
-          <input id="dataUrl" type="url" value="https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json">
-        </label>
-        <label>Base das imagens no GitHub/site
-          <input id="imageBase" type="url" value="https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main">
-        </label>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button id="loadBtn" class="primary">Carregar ofertas</button>
-        <label style="display:flex;align-items:center;justify-content:center;border:1px dashed #d0d5dd;border-radius:12px;font-size:12px;font-weight:900;cursor:pointer;background:#fff">
-          Importar JSON<input id="jsonFile" type="file" accept="application/json" hidden>
-        </label>
-      </div>
-      <p class="footer-note">Usa a mesma regra da página de descontos: produto ativo, estoque maior que zero, <b>preco_oferta</b> menor que o preço normal e <b>validade_oferta</b> válida.</p>
-    </div>
-
-    <div class="card">
-      <h2>2) Escolha dos produtos</h2>
+      <h2>Configuração padrão</h2>
       <div class="grid two">
-        <label>Modo
-          <select id="mode">
-            <option value="offersOrder">Ofertas em ordem</option>
-            <option value="offersRandom">Ofertas aleatórias</option>
-            <option value="discountRange">Por faixa de desconto</option>
-            <option value="manual">Selecionados manualmente</option>
-            <option value="allOrder">Todos os produtos em ordem</option>
-            <option value="allRandom">Todos os produtos aleatórios</option>
-          </select>
+        <label>Fonte dos produtos
+          <input id="dataUrl" type="url" value="site/produtos.json">
+        </label>
+        <label>Base das imagens
+          <input id="imageBase" type="url" value="">
         </label>
         <label>Quantidade de slides
-          <select id="slideCount">
-            <option value="1">1 slide</option>
-            <option value="5" selected>5 slides</option>
-            <option value="10">10 slides</option>
-            <option value="15">15 slides</option>
-            <option value="20">20 slides</option>
+          <input id="slideCount" type="number" min="1" max="20" value="10">
+        </label>
+        <label>Modo de escolha
+          <select id="mode">
+            <option value="offersRandom" selected>Ofertas aleatórias</option>
+            <option value="offersOrder">Ofertas em ordem</option>
+            <option value="discountRange">Faixa de desconto</option>
           </select>
         </label>
         <label>Desconto mínimo
@@ -139,30 +74,27 @@ canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
         </label>
       </div>
       <div class="row" style="margin-top:10px">
-        <button id="buildBtn" class="dark">Montar slides</button>
-        <button id="shuffleBtn">Embaralhar</button>
+        <button id="loadBtn" class="primary">Carregar e montar</button>
       </div>
     </div>
 
     <div class="card">
-      <h2>3) Buscar e selecionar manualmente</h2>
-      <input id="search" type="text" placeholder="Buscar por nome, marca, categoria, código...">
-      <div class="row" style="margin-top:8px">
-        <button id="selectVisible">Selecionar visíveis</button>
-        <button id="clearSelected" class="danger">Limpar seleção</button>
-      </div>
-      <p id="selectedInfo" class="small muted">0 selecionados</p>
-      <div id="productList" class="list"></div>
-    </div>
-
-    <div class="card">
-      <h2>4) Visual do slide</h2>
+      <h2>Aparência</h2>
       <div class="grid two">
         <label>Cor do card
           <input id="cardColor" type="color" value="#f3f4f6">
         </label>
         <label>Cor do preço
           <input id="priceColor" type="color" value="#101828">
+        </label>
+        <label>Mostrar nome
+          <select id="showName"><option value="1" selected>Sim</option><option value="0">Não</option></select>
+        </label>
+        <label>Cor do nome
+          <input id="nameColor" type="color" value="#344054">
+        </label>
+        <label>Tamanho do nome
+          <input id="nameSize" type="number" min="18" max="42" value="24">
         </label>
         <label>Zoom da foto
           <input id="imageZoom" type="range" min="90" max="145" step="1" value="118">
@@ -173,128 +105,45 @@ canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
         <label>Espaço entre cards
           <input id="gap" type="range" min="20" max="60" step="1" value="32">
         </label>
-        <label>Rodapé
-          <select id="footerStyle">
-            <option value="clean" selected>Limpo</option>
-            <option value="green">Verde destaque</option>
-            <option value="bar">Barra inferior</option>
-          </select>
-        </label>
       </div>
     </div>
 
     <div class="card">
-      <h2>5) Nome do produto acima do preço</h2>
+      <h2>Tratamento global da foto</h2>
       <div class="grid two">
-        <label style="display:flex;align-items:center;gap:8px">
-          <input id="showName" type="checkbox" checked> Mostrar nome do produto
-        </label>
-        <label>Cor do nome
-          <input id="nameColor" type="color" value="#344054">
-        </label>
-        <label>Tamanho do nome
-          <input id="nameSize" type="number" min="18" max="42" step="1" value="24">
-        </label>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>6) Editar rodapé linha por linha</h2>
-      <div class="grid">
-        <div class="grid three">
-          <label>Texto 1
-            <input id="footer1Text" type="text" value="Pedidos a partir de R$ 75">
-          </label>
-          <label>Cor 1
-            <input id="footer1Color" type="color" value="#101828">
-          </label>
-          <label>Tamanho 1
-            <input id="footer1Size" type="number" min="20" max="80" step="1" value="40">
-          </label>
-        </div>
-        <div class="grid three">
-          <label>Texto 2
-            <input id="footer2Text" type="text" value="Me chama aqui no WhatsApp para fazer seu pedido">
-          </label>
-          <label>Cor 2
-            <input id="footer2Color" type="color" value="#16a34a">
-          </label>
-          <label>Tamanho 2
-            <input id="footer2Size" type="number" min="20" max="80" step="1" value="42">
-          </label>
-        </div>
-        <div class="grid three">
-          <label>Texto 3
-            <input id="footer3Text" type="text" value="Entrega grátis em Cuiabá e VG">
-          </label>
-          <label>Cor 3
-            <input id="footer3Color" type="color" value="#344054">
-          </label>
-          <label>Tamanho 3
-            <input id="footer3Size" type="number" min="20" max="80" step="1" value="36">
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>7) Edição global da foto</h2>
-      <p class="footer-note">Essas configurações são aplicadas em todos os produtos de todos os cards.</p>
-      <div class="grid two">
-        <label style="display:flex;align-items:center;gap:8px">
-          <input id="editRemoveWhite" type="checkbox" checked> Remover fundo branco
-        </label>
-        <label style="display:flex;align-items:center;gap:8px">
-          <input id="editMultiply" type="checkbox" checked> Aplicar lente multiply
-        </label>
+        <label style="display:flex;align-items:center;gap:8px"><input id="removeWhite" type="checkbox" checked> Remover fundo branco</label>
+        <label style="display:flex;align-items:center;gap:8px"><input id="multiply" type="checkbox" checked> Lente multiply</label>
         <label>Nitidez
-          <input id="editSharpen" type="range" min="0" max="100" step="1" value="24">
-          <span id="editSharpenTxt" class="range-read"></span>
+          <input id="sharpen" type="range" min="0" max="100" step="1" value="24">
+          <span id="sharpenTxt" class="range-read"></span>
         </label>
         <label>Tolerância branco
-          <input id="editWhiteThreshold" type="range" min="210" max="255" step="1" value="238">
-          <span id="editWhiteThresholdTxt" class="range-read"></span>
+          <input id="whiteThreshold" type="range" min="210" max="255" step="1" value="238">
+          <span id="whiteThresholdTxt" class="range-read"></span>
         </label>
         <label>Saturação máxima
-          <input id="editSatTolerance" type="range" min="10" max="90" step="1" value="48">
-          <span id="editSatToleranceTxt" class="range-read"></span>
+          <input id="satTolerance" type="range" min="10" max="90" step="1" value="48">
+          <span id="satToleranceTxt" class="range-read"></span>
         </label>
         <label>Suavizar borda
-          <input id="editEdgeFeather" type="range" min="0" max="8" step="1" value="2">
-          <span id="editEdgeFeatherTxt" class="range-read"></span>
+          <input id="edgeFeather" type="range" min="0" max="8" step="1" value="2">
+          <span id="edgeFeatherTxt" class="range-read"></span>
         </label>
         <label>Reduzir halo branco
-          <input id="editHaloReduce" type="range" min="0" max="100" step="1" value="55">
-          <span id="editHaloReduceTxt" class="range-read"></span>
+          <input id="haloReduce" type="range" min="0" max="100" step="1" value="55">
+          <span id="haloReduceTxt" class="range-read"></span>
         </label>
       </div>
     </div>
 
-    <div class="card">
-      <h2>8) Exportação</h2>
-      <div class="grid two">
-        <label>Peso máximo por imagem
-          <input id="maxKb" type="number" min="10" max="200" step="1" value="30">
-        </label>
-        <label>Nome do arquivo
-          <input id="filePrefix" type="text" value="status-ofertas-dona-antonia">
-        </label>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button id="exportBtn" class="primary">Exportar todos em ZIP</button>
-        <button id="downloadCurrent">Baixar slide atual</button>
-      </div>
-      <p class="footer-note">O sistema tenta manter até 30KB por WebP. Se necessário, reduz qualidade e resolução automaticamente.</p>
-    </div>
-
-    <div id="status" class="status">Carregue as ofertas para começar.</div>
+    <div id="status" class="status">Pronto para montar.</div>
   </aside>
 
   <main class="main">
     <div class="topbar">
       <div>
-        <h1>Prévia do status</h1>
-        <p class="small muted">Imagem 1080×1920, 4 produtos por slide, sem título no topo.</p>
+        <h1>Prévia</h1>
+        <p class="small muted">Imagem 1080×1920, 4 produtos por slide.</p>
       </div>
       <div class="actions">
         <button id="prevSlide">←</button>
@@ -302,7 +151,6 @@ canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
         <button id="nextSlide">→</button>
       </div>
     </div>
-
     <div class="preview-wrap">
       <div class="phone"><canvas id="stage" width="1080" height="1920"></canvas></div>
       <section class="slides-panel">
@@ -310,7 +158,7 @@ canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
           <div><b id="kpiProducts">0</b><span>produtos</span></div>
           <div><b id="kpiOffers">0</b><span>ofertas</span></div>
           <div><b id="kpiSlides">0</b><span>slides</span></div>
-          <div><b id="kpiManual">0</b><span>selecionados</span></div>
+          <div><b id="kpiChosen">0</b><span>escolhidos</span></div>
         </div>
         <div id="miniSlides" class="slide-grid"></div>
       </section>
@@ -319,791 +167,311 @@ canvas{width:100%;height:100%;display:block;background:#fff;border-radius:28px}
 </div>
 
 <script>
-(function(){
-'use strict';
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const canvas = $('stage');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const W = canvas.width, H = canvas.height;
+  const FOOTER_LINES = [
+    { text: 'Pedidos apartir de R$ 75', size: 40, color: '#101828', weight: 950 },
+    { text: 'Entrega Grátis em Cuiabá e VG', size: 38, color: '#16a34a', weight: 950 }
+  ];
 
-const $ = id => document.getElementById(id);
-const canvas = $('stage');
-const ctx = canvas.getContext('2d', { willReadFrequently: true });
-const W = canvas.width;
-const H = canvas.height;
-
-const state = {
-  all: [],
-  offers: [],
-  filtered: [],
-  selected: new Map(),
-  slides: [],
-  currentSlide: 0,
-  imageCache: new Map(),
-  preparedCache: new Map(),
-};
-
-function setStatus(msg, warn=false){
-  const box = $('status');
-  box.textContent = msg;
-  box.classList.toggle('warn', warn);
-}
-function fmt(v){
-  return Number(v || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
-}
-function norm(s){
-  return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-}
-function toNumber(value){
-  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-  const str = String(value || '').trim().replace(/\./g, '').replace(',', '.');
-  const n = Number(str);
-  return Number.isFinite(n) ? n : 0;
-}
-function parseDateFlexible(value){
-  if (!value) return null;
-  if (value instanceof Date && !isNaN(value)) return value;
-  const raw = String(value).trim();
-  if (!raw) return null;
-  let m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]), 23, 59, 59, 999);
-  m = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  if (m) return new Date(Number(m[3]), Number(m[2])-1, Number(m[1]), 23, 59, 59, 999);
-  const d = new Date(raw);
-  return isNaN(d) ? null : d;
-}
-function formatName(name){
-  return String(name || '').trim().toLowerCase().split(/\s+/).map((w,i)=>{
-    return (w.length >= 4 || i === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w;
-  }).join(' ');
-}
-function extractVolume(name){
-  const match = String(name || '').match(/(?:\d+(?:,\d+)?\s*(?:kg|g|ml|l|litros|litro|unidades|unidade|un|rolos|folhas))/i);
-  return match ? match[0] : '';
-}
-function escapeHtml(v){
-  return String(v || '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
-}
-function globalEdit(){
-  return {
-    removeWhite: $('editRemoveWhite').checked,
-    multiply: $('editMultiply').checked,
-    sharpen: Number($('editSharpen').value),
-    threshold: Number($('editWhiteThreshold').value),
-    satTolerance: Number($('editSatTolerance').value),
-    edgeFeather: Number($('editEdgeFeather').value),
-    haloReduce: Number($('editHaloReduce').value),
+  const state = {
+    all: [], offers: [], slides: [], currentSlide: 0,
+    imageCache: new Map(), preparedCache: new Map(), chosenCount: 0
   };
-}
-function resolveImage(p){
-  const value = p.url_imagem || p.imagem || p.image || p.img || p.foto || p.foto_url || p.urlImagem || p.imagem_url || '';
-  const base = $('imageBase').value.trim().replace(/\/+$/,'');
-  if (value && typeof value === 'string'){
-    let img = value.trim();
-    if (/^https?:\/\//i.test(img) || img.startsWith('data:') || img.startsWith('blob:')) return img;
-    img = img.replace(/\\/g,'/');
-    if (img.startsWith('../site/')) return `${base}/${img.replace('../','')}`;
-    if (img.startsWith('/site/')) return `${base}${img}`;
-    if (img.startsWith('site/')) return `${base}/${img}`;
-    if (img.startsWith('./')) img = img.replace('./','');
-    if (img.startsWith('/')) img = img.slice(1);
-    if (img.startsWith('img/')) return `${base}/site/${img}`;
-    return `${base}/site/${img}`;
-  }
-  const codigo = String(p.codigo || p.id || p.firebaseKey || '').trim();
-  return codigo ? `${base}/site/img/produtos/${codigo}.webp` : '';
-}
-function normalizeProducts(raw){
-  const lista = Array.isArray(raw)
-    ? raw.filter(Boolean).map((produto,index)=>({ ...produto, firebaseKey: produto.firebaseKey || produto.id || produto.codigo || String(index) }))
-    : (raw ? Object.entries(raw).map(([firebaseKey, produto]) => ({ ...(produto || {}), firebaseKey })) : []);
-  const hoje = new Date();
-  hoje.setHours(0,0,0,0);
 
-  return lista
-    .filter(p => p && p.situacao !== 'I' && parseInt(p.estoque || 0, 10) > 0)
-    .map(p => {
-      const nome = formatName(p.nome || 'Produto');
+  function setStatus(msg, warn=false){ const box = $('status'); box.textContent = msg; box.classList.toggle('warn', warn); }
+  function fmt(v){ return Number(v || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); }
+  function norm(s){ return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
+  function toNumber(value){
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    const str = String(value || '').trim().replace(/\./g, '').replace(',', '.');
+    const n = Number(str); return Number.isFinite(n) ? n : 0;
+  }
+  function parseDateFlexible(value){
+    if (!value) return null;
+    const raw = String(value).trim(); if (!raw) return null;
+    let m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]), 23, 59, 59, 999);
+    m = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (m) return new Date(Number(m[3]), Number(m[2])-1, Number(m[1]), 23, 59, 59, 999);
+    const d = new Date(raw); return isNaN(d) ? null : d;
+  }
+  function formatName(name){ return String(name || '').trim().toLowerCase().split(/\s+/).map((w,i)=> (w.length >= 4 || i === 0) ? (w.charAt(0).toUpperCase()+w.slice(1)) : w).join(' '); }
+  function resolveImage(p){
+    const value = p.url_imagem || p.imagem || p.image || p.img || p.foto || p.foto_url || p.urlImagem || p.imagem_url || '';
+    const base = $('imageBase').value.trim().replace(/\/+$/,'');
+    if (value && typeof value === 'string'){
+      let img = value.trim();
+      if (/^https?:\/\//i.test(img) || img.startsWith('data:') || img.startsWith('blob:')) return img;
+      img = img.replace(/\\/g,'/');
+      if (img.startsWith('../site/')) return `${base}/${img.replace('../','')}`;
+      if (img.startsWith('/site/')) return `${base}${img}`;
+      if (img.startsWith('site/')) return `${base}/${img}`;
+      if (img.startsWith('./')) img = img.replace('./','');
+      if (img.startsWith('/')) img = img.slice(1);
+      if (img.startsWith('img/')) return `${base}/site/${img}`;
+      return `${base}/site/${img}`;
+    }
+    const codigo = String(p.codigo || p.id || p.firebaseKey || '').trim();
+    return codigo ? `${base}/site/img/produtos/${codigo}.webp` : '';
+  }
+  function normalizeProducts(raw){
+    const list = Array.isArray(raw)
+      ? raw.filter(Boolean).map((produto,index)=>({ ...produto, firebaseKey: produto.firebaseKey || produto.id || produto.codigo || String(index) }))
+      : (raw ? Object.entries(raw).map(([firebaseKey, produto]) => ({ ...(produto || {}), firebaseKey })) : []);
+    const today = new Date(); today.setHours(0,0,0,0);
+    return list.filter(p => p && p.situacao !== 'I' && parseInt(p.estoque || 0, 10) > 0).map(p => {
       const precoNormal = toNumber(p.preco);
       const precoOferta = toNumber(p.preco_oferta);
       const validadeOferta = parseDateFlexible(p.validade_oferta);
-      const temOferta = !!(precoOferta > 0 && precoNormal > 0 && precoOferta < precoNormal && validadeOferta && validadeOferta >= hoje);
+      const temOferta = !!(precoOferta > 0 && precoNormal > 0 && precoOferta < precoNormal && validadeOferta && validadeOferta >= today);
       const descontoReal = temOferta ? Math.round(((precoNormal - precoOferta) / precoNormal) * 100) : 0;
-      const precoFinal = temOferta ? precoOferta : precoNormal;
-      const produto = {
-        id: String(p.codigo || p.id || p.firebaseKey || nome),
-        firebaseKey: String(p.firebaseKey || p.id || p.codigo || ''),
-        codigo: String(p.codigo || p.id || p.firebaseKey || ''),
-        nome,
-        preco: precoFinal,
+      return {
+        id: String(p.codigo || p.id || p.firebaseKey || 'produto'),
+        nome: formatName(p.nome || 'Produto'),
         precoNormal,
         precoOferta,
-        validadeOferta,
+        preco: temOferta ? precoOferta : precoNormal,
         temOferta,
         descontoReal,
-        estoque: parseInt(p.estoque || 0,10) || 0,
         categoria: p.categoria || '',
-        subcategoria: p.subcategoria || '',
         marca: p.marca || '',
-        embalagem: p.embalagem || extractVolume(p.nome || nome),
-        ean: p.ean || p.gtin || '',
-        gtin: p.gtin || p.ean || '',
-        raw: p
+        imagem: resolveImage(p),
       };
-      produto.imagem = resolveImage({ ...p, codigo: produto.codigo, id: produto.id, firebaseKey: produto.firebaseKey });
-      return produto;
     });
-}
-async function loadProducts(){
-  try{
+  }
+  function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+  function updateKpis(){ $('kpiProducts').textContent = state.all.length; $('kpiOffers').textContent = state.offers.length; $('kpiSlides').textContent = state.slides.length; $('kpiChosen').textContent = state.chosenCount; }
+  async function loadProducts(){
     setStatus('Carregando produtos...');
-    const res = await fetch(`${$('dataUrl').value.trim()}?_=${Date.now()}`, { cache:'no-store', headers:{ Accept:'application/json' } });
+    const url = $('dataUrl').value.trim();
+    const res = await fetch(`${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const raw = await res.json();
-    applyProducts(raw);
-  }catch(err){
-    console.error(err);
-    setStatus('Não consegui carregar a URL. Use importar JSON ou confira a URL.', true);
+    state.all = normalizeProducts(raw);
+    state.offers = state.all.filter(p => p.temOferta).sort((a,b)=> Number(b.descontoReal || 0) - Number(a.descontoReal || 0) || a.nome.localeCompare(b.nome, 'pt-BR'));
+    updateKpis();
+    setStatus(`Carregado: ${state.all.length} ativos, ${state.offers.length} ofertas.`);
   }
-}
-async function importJson(file){
-  try{
-    const text = await file.text();
-    applyProducts(JSON.parse(text));
-  }catch(err){
-    console.error(err);
-    setStatus('JSON inválido. Não consegui importar o arquivo.', true);
+  function chooseProducts(){
+    const mode = $('mode').value;
+    const maxProducts = Number($('slideCount').value) * 4;
+    const minD = Number($('minDiscount').value || 0);
+    const maxD = Number($('maxDiscount').value || 100);
+    let list = [];
+    if (mode === 'discountRange') list = state.offers.filter(p => p.descontoReal >= minD && p.descontoReal <= maxD);
+    else if (mode === 'offersOrder') list = state.offers.slice();
+    else list = shuffle(state.offers.slice());
+    state.chosenCount = Math.min(list.length, maxProducts);
+    return list.slice(0, maxProducts);
   }
-}
-function applyProducts(raw){
-  state.imageCache.clear();
-  state.preparedCache.clear();
-  state.all = normalizeProducts(raw);
-  state.offers = state.all
-    .filter(p => p.temOferta && p.categoria !== 'Cestas')
-    .sort((a,b)=> Number(b.descontoReal || 0) - Number(a.descontoReal || 0) || a.nome.localeCompare(b.nome,'pt-BR'));
-  state.filtered = state.offers.slice();
-  renderProductList();
-  updateKpis();
-  buildSlides();
-  setStatus(`Carregado: ${state.all.length} produtos ativos, ${state.offers.length} ofertas válidas.`);
-}
-function productMatches(p, q){
-  if (!q) return true;
-  const hay = norm([p.nome,p.codigo,p.ean,p.gtin,p.categoria,p.subcategoria,p.marca,p.embalagem].join(' '));
-  return hay.includes(q);
-}
-function renderProductList(){
-  const q = norm($('search').value);
-  const base = $('mode').value === 'allOrder' || $('mode').value === 'allRandom' ? state.all : state.offers;
-  state.filtered = base.filter(p => productMatches(p, q)).slice(0, 250);
-  const box = $('productList');
-  if (!state.filtered.length){
-    box.innerHTML = '<div class="small muted">Nenhum produto encontrado.</div>';
-    return;
+  function buildSlides(){
+    const chosen = chooseProducts();
+    state.slides = [];
+    for (let i=0; i<chosen.length; i+=4) state.slides.push(chosen.slice(i, i+4));
+    state.currentSlide = 0;
+    updateKpis();
   }
-  box.innerHTML = state.filtered.map(p => `
-    <label class="prod">
-      <img src="${escapeHtml(p.imagem)}" loading="lazy" onerror="this.style.opacity=.15">
-      <div>
-        <div class="name">${escapeHtml(p.nome)}</div>
-        <div class="meta">${escapeHtml([p.marca,p.embalagem].filter(Boolean).join(' • '))}</div>
-      </div>
-      <div style="display:grid;justify-items:end;gap:4px">
-        <span class="discount">${p.temOferta ? '-' + p.descontoReal + '%' : 'sem oferta'}</span>
-        <input type="checkbox" data-select="${escapeHtml(p.id)}" ${state.selected.has(p.id) ? 'checked' : ''}>
-      </div>
-    </label>
-  `).join('');
-  updateSelectedInfo();
-}
-function updateSelectedInfo(){
-  $('selectedInfo').textContent = `${state.selected.size} selecionado${state.selected.size === 1 ? '' : 's'}`;
-  $('kpiManual').textContent = state.selected.size;
-}
-function updateKpis(){
-  $('kpiProducts').textContent = state.all.length;
-  $('kpiOffers').textContent = state.offers.length;
-  $('kpiSlides').textContent = state.slides.length;
-  $('kpiManual').textContent = state.selected.size;
-}
-function getChosenProducts(){
-  const mode = $('mode').value;
-  const maxProducts = Number($('slideCount').value) * 4;
-  const minD = Number($('minDiscount').value || 0);
-  const maxD = Number($('maxDiscount').value || 100);
-  let list = [];
-  if (mode === 'manual'){
-    list = [...state.selected.values()];
-  } else if (mode === 'discountRange'){
-    list = state.offers.filter(p => p.descontoReal >= minD && p.descontoReal <= maxD);
-  } else if (mode === 'offersRandom'){
-    list = shuffle(state.offers.slice());
-  } else if (mode === 'allOrder'){
-    list = state.all.slice().sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
-  } else if (mode === 'allRandom'){
-    list = shuffle(state.all.slice());
-  } else {
-    list = state.offers.slice();
+  async function loadImage(src){
+    if (!src) return null; if (state.imageCache.has(src)) return state.imageCache.get(src);
+    const promise = new Promise(resolve => {
+      const img = new Image(); img.crossOrigin = 'anonymous'; img.onload = () => resolve(img); img.onerror = () => resolve(null); img.src = src;
+    });
+    state.imageCache.set(src, promise); return promise;
   }
-  return list.slice(0, maxProducts);
-}
-function buildSlides(){
-  const chosen = getChosenProducts();
-  state.slides = [];
-  for (let i = 0; i < chosen.length; i += 4){
-    state.slides.push(chosen.slice(i, i + 4));
+  function isNearWhite(data, idx, threshold, satTol){
+    const r=data[idx], g=data[idx+1], b=data[idx+2], a=data[idx+3];
+    if (a < 10) return false;
+    const max = Math.max(r,g,b), min = Math.min(r,g,b), avg = (r+g+b)/3;
+    return avg >= threshold && (max-min) <= satTol;
   }
-  const targetSlides = Number($('slideCount').value);
-  state.slides = state.slides.slice(0, targetSlides);
-  state.currentSlide = Math.min(state.currentSlide, Math.max(0, state.slides.length - 1));
-  updateKpis();
-  renderCurrentSlide();
-  renderMiniSlides();
-  setStatus(state.slides.length ? `Slides montados: ${state.slides.length}.` : 'Nenhum slide montado. Selecione produtos ou ajuste os filtros.', !state.slides.length);
-}
-function shuffle(arr){
-  for(let i=arr.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]]=[arr[j],arr[i]];
-  }
-  return arr;
-}
-async function loadImage(src){
-  if (!src) return null;
-  if (state.imageCache.has(src)) return state.imageCache.get(src);
-  const promise = new Promise(resolve => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
-    img.src = src;
-  });
-  state.imageCache.set(src, promise);
-  return promise;
-}
-function isNearWhite(data, idx, threshold, satTol){
-  const r=data[idx], g=data[idx+1], b=data[idx+2], a=data[idx+3];
-  if (a < 10) return false;
-  const max = Math.max(r,g,b), min = Math.min(r,g,b);
-  const avg = (r+g+b)/3;
-  return avg >= threshold && (max-min) <= satTol;
-}
-function applySharpenToCanvas(sourceCanvas, amount){
-  if (!amount || amount <= 0) return sourceCanvas;
-  const w = sourceCanvas.width, h = sourceCanvas.height;
-  const srcCtx = sourceCanvas.getContext('2d', { willReadFrequently:true });
-  const srcData = srcCtx.getImageData(0,0,w,h);
-  const out = document.createElement('canvas');
-  out.width = w; out.height = h;
-  const outCtx = out.getContext('2d', { willReadFrequently:true });
-  const outData = outCtx.createImageData(w,h);
-  const src = srcData.data;
-  const dst = outData.data;
-  const strength = Math.min(1.5, amount / 100 * 1.5);
-  const idx = (x,y) => (y*w+x)*4;
-  for(let y=0; y<h; y++){
-    for(let x=0; x<w; x++){
-      const i = idx(x,y);
-      const a = src[i+3];
-      if (a === 0){
-        dst[i]=src[i]; dst[i+1]=src[i+1]; dst[i+2]=src[i+2]; dst[i+3]=0;
-        continue;
+  function applySharpenToCanvas(sourceCanvas, amount){
+    if (!amount || amount <= 0) return sourceCanvas;
+    const w = sourceCanvas.width, h = sourceCanvas.height;
+    const srcCtx = sourceCanvas.getContext('2d', { willReadFrequently:true });
+    const srcData = srcCtx.getImageData(0,0,w,h); const out = document.createElement('canvas'); out.width = w; out.height = h;
+    const outCtx = out.getContext('2d', { willReadFrequently:true }); const outData = outCtx.createImageData(w,h);
+    const src = srcData.data, dst = outData.data, strength = Math.min(1.5, amount / 100 * 1.5), idx = (x,y) => (y*w+x)*4;
+    for(let y=0; y<h; y++){
+      for(let x=0; x<w; x++){
+        const i = idx(x,y), a = src[i+3];
+        if (a === 0){ dst[i]=src[i]; dst[i+1]=src[i+1]; dst[i+2]=src[i+2]; dst[i+3]=0; continue; }
+        for(let c=0; c<3; c++){
+          const center = src[i+c], left = x>0 ? src[idx(x-1,y)+c] : center, right = x<w-1 ? src[idx(x+1,y)+c] : center, up = y>0 ? src[idx(x,y-1)+c] : center, down = y<h-1 ? src[idx(x,y+1)+c] : center;
+          const sharpened = center*5 - left - right - up - down; const mixed = center*(1-strength) + sharpened*strength;
+          dst[i+c] = Math.max(0, Math.min(255, Math.round(mixed)));
+        }
+        dst[i+3] = a;
       }
-      for(let c=0; c<3; c++){
-        const center = src[i+c];
-        const left = x>0 ? src[idx(x-1,y)+c] : center;
-        const right = x<w-1 ? src[idx(x+1,y)+c] : center;
-        const up = y>0 ? src[idx(x,y-1)+c] : center;
-        const down = y<h-1 ? src[idx(x,y+1)+c] : center;
-        const sharpened = center*5 - left - right - up - down;
-        const mixed = center*(1-strength) + sharpened*strength;
-        dst[i+c] = Math.max(0, Math.min(255, Math.round(mixed)));
-      }
-      dst[i+3] = a;
     }
+    outCtx.putImageData(outData,0,0); return out;
   }
-  outCtx.putImageData(outData,0,0);
-  return out;
-}
-async function getPrepared(product){
-  const edit = globalEdit();
-  const key = `${product.id}|${product.imagem}|${JSON.stringify(edit)}`;
-  if (state.preparedCache.has(key)) return state.preparedCache.get(key);
-  const img = await loadImage(product.imagem);
-  if (!img) return null;
-
-  const maxSide = 980;
-  const iw = img.naturalWidth || img.width;
-  const ih = img.naturalHeight || img.height;
-  const scale = Math.min(1, maxSide / Math.max(iw, ih));
-  const cw = Math.max(1, Math.round(iw * scale));
-  const ch = Math.max(1, Math.round(ih * scale));
-  const off = document.createElement('canvas');
-  off.width = cw; off.height = ch;
-  const octx = off.getContext('2d', { willReadFrequently:true });
-  octx.drawImage(img, 0, 0, cw, ch);
-
-  if (edit.removeWhite){
-    const imageData = octx.getImageData(0,0,cw,ch);
-    const d = imageData.data;
-    const total = cw * ch;
-    const visited = new Uint8Array(total);
-    const stack = [];
-    function pushPixel(x,y){
-      if (x < 0 || y < 0 || x >= cw || y >= ch) return;
-      const pos = y * cw + x;
-      if (visited[pos]) return;
-      const p4 = pos * 4;
-      if (!isNearWhite(d, p4, edit.threshold, edit.satTolerance)) return;
-      visited[pos] = 1;
-      stack.push(pos);
-    }
-    for (let x=0; x<cw; x+=2){ pushPixel(x,0); pushPixel(x,ch-1); }
-    for (let y=0; y<ch; y+=2){ pushPixel(0,y); pushPixel(cw-1,y); }
-    while(stack.length){
-      const pos = stack.pop();
-      const x = pos % cw;
-      const y = (pos / cw) | 0;
-      pushPixel(x+1,y); pushPixel(x-1,y); pushPixel(x,y+1); pushPixel(x,y-1);
-    }
-    for (let pos=0; pos<total; pos++){
-      if (visited[pos]) d[pos*4+3] = 0;
-    }
-    if (edit.edgeFeather > 0 || edit.haloReduce > 0){
-      const copyAlpha = new Uint8Array(total);
-      for (let pos=0; pos<total; pos++) copyAlpha[pos] = d[pos*4+3];
-      const radius = Math.max(1, edit.edgeFeather);
-      for (let y=1; y<ch-1; y++){
-        for (let x=1; x<cw-1; x++){
-          const pos = y*cw+x;
-          const i = pos*4;
-          if (copyAlpha[pos] === 0) continue;
-          let transparentNeighbors = 0;
-          for (let yy=-radius; yy<=radius; yy++){
-            for (let xx=-radius; xx<=radius; xx++){
-              const nx=x+xx, ny=y+yy;
-              if (nx<0||ny<0||nx>=cw||ny>=ch) continue;
-              if (copyAlpha[ny*cw+nx] === 0) transparentNeighbors++;
+  function currentEdit(){
+    return {
+      removeWhite: $('removeWhite').checked,
+      multiply: $('multiply').checked,
+      sharpen: Number($('sharpen').value),
+      threshold: Number($('whiteThreshold').value),
+      satTolerance: Number($('satTolerance').value),
+      edgeFeather: Number($('edgeFeather').value),
+      haloReduce: Number($('haloReduce').value),
+    };
+  }
+  async function getPrepared(product){
+    const edit = currentEdit(); const key = `${product.id}|${product.imagem}|${JSON.stringify(edit)}`;
+    if (state.preparedCache.has(key)) return state.preparedCache.get(key);
+    const img = await loadImage(product.imagem); if (!img) return null;
+    const maxSide = 980, iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    const scale = Math.min(1, maxSide / Math.max(iw, ih)); const cw = Math.max(1, Math.round(iw * scale)); const ch = Math.max(1, Math.round(ih * scale));
+    const off = document.createElement('canvas'); off.width = cw; off.height = ch; const octx = off.getContext('2d', { willReadFrequently:true }); octx.drawImage(img, 0, 0, cw, ch);
+    if (edit.removeWhite){
+      const imageData = octx.getImageData(0,0,cw,ch); const d = imageData.data; const total = cw * ch; const visited = new Uint8Array(total); const stack = [];
+      function pushPixel(x,y){
+        if (x < 0 || y < 0 || x >= cw || y >= ch) return; const pos = y * cw + x; if (visited[pos]) return; const p4 = pos * 4;
+        if (!isNearWhite(d, p4, edit.threshold, edit.satTolerance)) return; visited[pos] = 1; stack.push(pos);
+      }
+      for (let x=0; x<cw; x+=2){ pushPixel(x,0); pushPixel(x,ch-1); } for (let y=0; y<ch; y+=2){ pushPixel(0,y); pushPixel(cw-1,y); }
+      while(stack.length){ const pos = stack.pop(); const x = pos % cw; const y = (pos / cw) | 0; pushPixel(x+1,y); pushPixel(x-1,y); pushPixel(x,y+1); pushPixel(x,y-1); }
+      for (let pos=0; pos<total; pos++) if (visited[pos]) d[pos*4+3] = 0;
+      if (edit.edgeFeather > 0 || edit.haloReduce > 0){
+        const copyAlpha = new Uint8Array(total); for (let pos=0; pos<total; pos++) copyAlpha[pos] = d[pos*4+3]; const radius = Math.max(1, edit.edgeFeather);
+        for (let y=1; y<ch-1; y++){
+          for (let x=1; x<cw-1; x++){
+            const pos = y*cw+x, i = pos*4; if (copyAlpha[pos] === 0) continue; let transparentNeighbors = 0;
+            for (let yy=-radius; yy<=radius; yy++) for (let xx=-radius; xx<=radius; xx++){
+              const nx=x+xx, ny=y+yy; if (nx<0||ny<0||nx>=cw||ny>=ch) continue; if (copyAlpha[ny*cw+nx] === 0) transparentNeighbors++;
             }
-          }
-          if (transparentNeighbors > 0){
-            const r=d[i], g=d[i+1], b=d[i+2];
-            const avg = (r+g+b)/3;
-            if (avg > edit.threshold - 35){
-              const alphaMul = Math.max(.22, 1 - (edit.haloReduce/100) * .80);
-              d[i+3] = Math.round(d[i+3] * alphaMul);
-              const dark = 1 - (edit.haloReduce/100) * .10;
-              d[i] = Math.round(r * dark);
-              d[i+1] = Math.round(g * dark);
-              d[i+2] = Math.round(b * dark);
+            if (transparentNeighbors > 0){
+              const r=d[i], g=d[i+1], b=d[i+2], avg = (r+g+b)/3;
+              if (avg > edit.threshold - 35){ const alphaMul = Math.max(.22, 1 - (edit.haloReduce/100) * .80); d[i+3] = Math.round(d[i+3] * alphaMul); const dark = 1 - (edit.haloReduce/100) * .10; d[i] = Math.round(r * dark); d[i+1] = Math.round(g * dark); d[i+2] = Math.round(b * dark); }
             }
           }
         }
       }
+      octx.putImageData(imageData,0,0);
     }
-    octx.putImageData(imageData,0,0);
+    const finalCanvas = applySharpenToCanvas(off, edit.sharpen); state.preparedCache.set(key, finalCanvas); return finalCanvas;
   }
-
-  const finalCanvas = applySharpenToCanvas(off, edit.sharpen);
-  state.preparedCache.set(key, finalCanvas);
-  return finalCanvas;
-}
-function drawRoundRect(c, x,y,w,h,r, fill, stroke){
-  c.beginPath();
-  c.moveTo(x+r,y);
-  c.arcTo(x+w,y,x+w,y+h,r);
-  c.arcTo(x+w,y+h,x,y+h,r);
-  c.arcTo(x,y+h,x,y,r);
-  c.arcTo(x,y,x+w,y,r);
-  c.closePath();
-  if (fill){ c.fillStyle = fill; c.fill(); }
-  if (stroke){ c.strokeStyle = stroke; c.stroke(); }
-}
-function drawContain(c, img, x,y,w,h, zoom=1){
-  const iw = img.width || img.naturalWidth;
-  const ih = img.height || img.naturalHeight;
-  const r = Math.min(w/iw, h/ih) * zoom;
-  const nw = iw * r, nh = ih * r;
-  c.drawImage(img, x + (w-nw)/2, y + (h-nh)/2, nw, nh);
-}
-function drawTextCenter(c, text, x, y, w, size, color, weight=900){
-  c.fillStyle = color;
-  c.font = `${weight} ${size}px Inter, Arial, sans-serif`;
-  c.textAlign = 'center';
-  c.textBaseline = 'middle';
-  c.fillText(text, x + w/2, y);
-}
-function drawPrice(c, text, x, y, w, size, color, weight=950){
-  c.fillStyle = color;
-  c.font = `${weight} ${size}px Inter, Arial, sans-serif`;
-  c.textAlign = 'center';
-  c.textBaseline = 'alphabetic';
-  c.fillText(text, x + w/2, y);
-}
-function drawWrappedCentered(c, text, centerX, y, maxWidth, fontSize, color, weight=900, lineHeight=1.15, maxLines=2){
-  c.fillStyle = color;
-  c.font = `${weight} ${fontSize}px Inter, Arial, sans-serif`;
-  c.textAlign = 'center';
-  c.textBaseline = 'top';
-  const words = String(text || '').split(' ');
-  let line = '';
-  const lines = [];
-  for (let n=0; n<words.length; n++){
-    const test = line + words[n] + ' ';
-    if (c.measureText(test).width > maxWidth && line){
-      lines.push(line.trim());
-      line = words[n] + ' ';
-      if (lines.length >= maxLines - 1) break;
-    } else {
-      line = test;
+  function drawRoundRect(c, x,y,w,h,r, fill){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); if (fill){ c.fillStyle = fill; c.fill(); } }
+  function drawContain(c, img, x,y,w,h, zoom=1){ const iw = img.width || img.naturalWidth, ih = img.height || img.naturalHeight, r = Math.min(w/iw, h/ih) * zoom, nw = iw*r, nh = ih*r; c.drawImage(img, x + (w-nw)/2, y + (h-nh)/2, nw, nh); }
+  function drawTextCenter(c, text, x, y, w, size, color, weight=900){ c.fillStyle = color; c.font = `${weight} ${size}px Inter, Arial, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, x + w/2, y); }
+  function drawPrice(c, text, x, y, w, size, color, weight=950){ c.fillStyle = color; c.font = `${weight} ${size}px Inter, Arial, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(text, x + w/2, y); }
+  function drawWrappedCentered(c, text, centerX, y, maxWidth, fontSize, color, weight=900, lineHeight=1.1, maxLines=2){
+    c.fillStyle = color; c.font = `${weight} ${fontSize}px Inter, Arial, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'top';
+    const words = String(text || '').split(' '); let line = ''; const lines = [];
+    for (let n=0; n<words.length; n++){
+      const test = line + words[n] + ' ';
+      if (c.measureText(test).width > maxWidth && line){ lines.push(line.trim()); line = words[n] + ' '; if (lines.length >= maxLines - 1) break; }
+      else line = test;
     }
-  }
-  const remainingWordsStart = lines.join(' ').split(' ').filter(Boolean).length;
-  if (line.trim()) {
-    if (lines.length === maxLines - 1 && remainingWordsStart < words.length - 1) {
-      let rest = words.slice(remainingWordsStart).join(' ');
-      while (c.measureText(rest + '…').width > maxWidth && rest.includes(' ')) {
-        rest = rest.split(' ').slice(0,-1).join(' ');
-      }
-      lines.push(rest + (remainingWordsStart < words.length ? '…' : ''));
-    } else {
-      lines.push(line.trim());
+    const remainingWordsStart = lines.join(' ').split(' ').filter(Boolean).length;
+    if (line.trim()){
+      if (lines.length === maxLines - 1 && remainingWordsStart < words.length - 1){ let rest = words.slice(remainingWordsStart).join(' '); while (c.measureText(rest + '…').width > maxWidth && rest.includes(' ')) rest = rest.split(' ').slice(0,-1).join(' '); lines.push(rest + (remainingWordsStart < words.length ? '…' : '')); }
+      else lines.push(line.trim());
     }
+    lines.slice(0,maxLines).forEach((ln, idx) => c.fillText(ln, centerX, y + idx * fontSize * lineHeight));
   }
-  lines.slice(0, maxLines).forEach((ln, idx) => c.fillText(ln, centerX, y + idx * fontSize * lineHeight));
-}
-async function drawSlide(slideProducts, c=ctx, width=W, height=H){
-  const sx = width / W, sy = height / H;
-  c.save();
-  c.scale(sx, sy);
-  c.fillStyle = '#ffffff';
-  c.fillRect(0,0,W,H);
-
-  const gap = Number($('gap').value);
-  const marginX = 42;
-  const top = 46;
-  const footerTop = 1655;
-  const cardW = (W - marginX*2 - gap) / 2;
-  const cardH = (footerTop - top - gap) / 2;
-  const radius = Number($('radius').value);
-  const cardColor = $('cardColor').value;
-  const priceColor = $('priceColor').value;
-  const nameColor = $('nameColor').value;
-  const nameSize = Number($('nameSize').value);
-  const showName = $('showName').checked;
-  const edit = globalEdit();
-
-  for (let i=0; i<4; i++){
-    const p = slideProducts?.[i];
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    const x = marginX + col * (cardW + gap);
-    const y = top + row * (cardH + gap);
-
-    drawRoundRect(c, x, y, cardW, cardH, radius, cardColor, null);
-
-    if (!p){
-      c.globalAlpha = .35;
-      drawTextCenter(c, 'Produto', x, y + cardH/2, cardW, 42, '#98a2b3', 900);
-      c.globalAlpha = 1;
-      continue;
+  function drawFooter(c){
+    const footerY = 1686; drawWrappedCentered(c, FOOTER_LINES[0].text, W/2, footerY, 980, FOOTER_LINES[0].size, FOOTER_LINES[0].color, FOOTER_LINES[0].weight, 1.05, 1);
+    drawWrappedCentered(c, FOOTER_LINES[1].text, W/2, footerY + 58, 980, FOOTER_LINES[1].size, FOOTER_LINES[1].color, FOOTER_LINES[1].weight, 1.05, 1);
+  }
+  async function drawSlide(slideProducts, c=ctx, width=W, height=H){
+    const sx = width / W, sy = height / H; c.save(); c.scale(sx, sy); c.fillStyle = '#ffffff'; c.fillRect(0,0,W,H);
+    const gap = Number($('gap').value), marginX = 42, top = 46, footerTop = 1655, cardW = (W - marginX*2 - gap) / 2, cardH = (footerTop - top - gap) / 2;
+    const radius = Number($('radius').value), cardColor = $('cardColor').value, priceColor = $('priceColor').value, nameColor = $('nameColor').value, nameSize = Number($('nameSize').value), showName = $('showName').value === '1', edit = currentEdit();
+    for (let i=0; i<4; i++){
+      const p = slideProducts?.[i], col = i % 2, row = Math.floor(i / 2), x = marginX + col * (cardW + gap), y = top + row * (cardH + gap);
+      drawRoundRect(c, x, y, cardW, cardH, radius, cardColor);
+      if (!p){ c.globalAlpha = .35; drawTextCenter(c, 'Produto', x, y + cardH/2, cardW, 42, '#98a2b3', 900); c.globalAlpha = 1; continue; }
+      drawRoundRect(c, x+24, y+24, 132, 62, 31, '#fff1f2'); drawTextCenter(c, p.temOferta ? `-${p.descontoReal}%` : 'OFERTA', x+24, y+56, 132, 28, '#e11d48', 950);
+      const img = await getPrepared(p), imgX = x + 18, imgY = y + 76, imgW = cardW - 36, imgH = showName ? cardH - 318 : cardH - 250;
+      if (img){ c.save(); if (edit.multiply) c.globalCompositeOperation = 'multiply'; drawContain(c, img, imgX, imgY, imgW, imgH, Number($('imageZoom').value)/100); c.restore(); c.globalCompositeOperation = 'source-over'; }
+      else drawTextCenter(c, 'sem imagem', imgX, imgY + imgH/2, imgW, 32, '#98a2b3', 900);
+      let oldPriceY = y + cardH - 108;
+      if (showName){ drawWrappedCentered(c, p.nome, x + cardW/2, y + cardH - 176, cardW - 44, nameSize, nameColor, 850, 1.1, 2); oldPriceY = y + cardH - 100; }
+      if (p.temOferta){ c.save(); c.fillStyle = '#98a2b3'; c.font = '850 34px Inter, Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; const old = fmt(p.precoNormal); c.fillText(old, x + cardW/2, oldPriceY); const metrics = c.measureText(old); c.strokeStyle = '#98a2b3'; c.lineWidth = 4; c.beginPath(); c.moveTo(x + cardW/2 - metrics.width/2 - 6, oldPriceY - 12); c.lineTo(x + cardW/2 + metrics.width/2 + 6, oldPriceY - 12); c.stroke(); c.restore(); }
+      drawPrice(c, fmt(p.preco), x, y + cardH - 32, cardW, 56, priceColor, 950);
     }
-
-    const discountText = p.temOferta ? `-${p.descontoReal}%` : 'OFERTA';
-    drawRoundRect(c, x+24, y+24, 132, 62, 31, '#fff1f2', null);
-    drawTextCenter(c, discountText, x+24, y+56, 132, 28, '#e11d48', 950);
-
-    const img = await getPrepared(p);
-    const imgX = x + 18;
-    const imgY = y + 76;
-    const imgW = cardW - 36;
-    const imgH = showName ? cardH - 318 : cardH - 250;
-
-    if (img){
-      c.save();
-      if (edit.multiply) c.globalCompositeOperation = 'multiply';
-      drawContain(c, img, imgX, imgY, imgW, imgH, Number($('imageZoom').value)/100);
-      c.restore();
-      c.globalCompositeOperation = 'source-over';
-    } else {
-      drawTextCenter(c, 'sem imagem', imgX, imgY + imgH/2, imgW, 32, '#98a2b3', 900);
+    drawFooter(c); c.restore();
+  }
+  async function renderCurrentSlide(){
+    const slide = state.slides[state.currentSlide];
+    if (!slide){ ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H); $('slideIndicator').textContent = '0/0'; return; }
+    await drawSlide(slide); $('slideIndicator').textContent = `${state.currentSlide+1}/${state.slides.length}`;
+  }
+  async function renderMiniSlides(){
+    const box = $('miniSlides');
+    if (!state.slides.length){ box.innerHTML = '<p class="small muted">Nenhum slide montado.</p>'; return; }
+    box.innerHTML = state.slides.map((_,i)=> `<div class="slide-mini ${i===state.currentSlide?'active':''}" data-slide="${i}"><canvas width="108" height="192"></canvas><span>Slide ${i+1}</span></div>`).join('');
+    const canvases = [...box.querySelectorAll('canvas')];
+    for (let i=0; i<canvases.length; i++) await drawSlide(state.slides[i], canvases[i].getContext('2d', { willReadFrequently:true }), canvases[i].width, canvases[i].height);
+  }
+  function syncRangeLabels(){ $('sharpenTxt').textContent = $('sharpen').value; $('whiteThresholdTxt').textContent = $('whiteThreshold').value; $('satToleranceTxt').textContent = $('satTolerance').value; $('edgeFeatherTxt').textContent = $('edgeFeather').value; $('haloReduceTxt').textContent = $('haloReduce').value + '%'; }
+  function clearPreparedCache(){ state.preparedCache.clear(); }
+  function canvasToBlob(cnv, type='image/webp', quality=.82){ return new Promise(resolve => cnv.toBlob(resolve, type, quality)); }
+  async function encodeCanvasUnderLimit(cnv, maxKb){
+    const qualities = [.9,.82,.74,.66,.58,.5,.44,.38,.32,.26], scales = [1,.9,.8,.7,.62,.56,.5]; let best = null;
+    for (const scale of scales){
+      const out = document.createElement('canvas'); out.width = Math.round(cnv.width * scale); out.height = Math.round(cnv.height * scale); const octx = out.getContext('2d'); octx.fillStyle = '#fff'; octx.fillRect(0,0,out.width,out.height); octx.drawImage(cnv,0,0,out.width,out.height);
+      for (const q of qualities){ const blob = await canvasToBlob(out, 'image/webp', q); if (!blob) continue; best = blob; if (blob.size <= maxKb * 1024) return { blob, scale, quality: q, limited: true }; }
     }
+    return { blob: best, scale:.5, quality:.26, limited:false };
+  }
+  async function runAutomatic(productsRaw, options = {}){
+    if (options.imageBase) $('imageBase').value = options.imageBase;
+    if (options.slideCount) $('slideCount').value = String(options.slideCount);
+    if (options.mode) $('mode').value = String(options.mode);
+    if (options.minDiscount != null) $('minDiscount').value = String(options.minDiscount);
+    if (options.maxDiscount != null) $('maxDiscount').value = String(options.maxDiscount);
+    if (options.showName != null) $('showName').value = options.showName ? '1' : '0';
+    if (options.nameSize) $('nameSize').value = String(options.nameSize);
+    if (options.cardColor) $('cardColor').value = options.cardColor;
+    if (options.priceColor) $('priceColor').value = options.priceColor;
+    if (options.nameColor) $('nameColor').value = options.nameColor;
+    if (options.imageZoom) $('imageZoom').value = String(options.imageZoom);
+    if (options.radius) $('radius').value = String(options.radius);
+    if (options.gap) $('gap').value = String(options.gap);
+    if (options.removeWhite != null) $('removeWhite').checked = !!options.removeWhite;
+    if (options.multiply != null) $('multiply').checked = !!options.multiply;
+    if (options.sharpen != null) $('sharpen').value = String(options.sharpen);
+    if (options.whiteThreshold != null) $('whiteThreshold').value = String(options.whiteThreshold);
+    if (options.satTolerance != null) $('satTolerance').value = String(options.satTolerance);
+    if (options.edgeFeather != null) $('edgeFeather').value = String(options.edgeFeather);
+    if (options.haloReduce != null) $('haloReduce').value = String(options.haloReduce);
+    syncRangeLabels(); clearPreparedCache();
 
-    let oldPriceY = y + cardH - 108;
-    if (showName){
-      drawWrappedCentered(c, p.nome, x + cardW/2, y + cardH - 176, cardW - 44, nameSize, nameColor, 850, 1.1, 2);
-      oldPriceY = y + cardH - 100;
+    state.all = normalizeProducts(productsRaw);
+    state.offers = state.all.filter(p => p.temOferta).sort((a,b)=> Number(b.descontoReal || 0) - Number(a.descontoReal || 0) || a.nome.localeCompare(b.nome, 'pt-BR'));
+    buildSlides(); await renderCurrentSlide(); await renderMiniSlides(); updateKpis();
+
+    const maxKb = Number(options.maxKb || 30);
+    const files = [];
+    for (let i=0; i<state.slides.length; i++){
+      state.currentSlide = i; await renderCurrentSlide();
+      const result = await encodeCanvasUnderLimit(canvas, maxKb);
+      const arrayBuffer = await result.blob.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer); let binary = ''; for (let j=0; j<bytes.length; j++) binary += String.fromCharCode(bytes[j]);
+      files.push({ index: i+1, filename: `slide-${String(i+1).padStart(2,'0')}.webp`, size: result.blob.size, base64: btoa(binary) });
     }
+    return { totalSlides: state.slides.length, totalOffers: state.offers.length, files };
+  }
+  async function loadAndBuild(){ try { await loadProducts(); buildSlides(); await renderCurrentSlide(); await renderMiniSlides(); } catch(err){ console.error(err); setStatus(err.message || 'Erro ao carregar', true); } }
 
-    if (p.temOferta){
-      c.save();
-      c.fillStyle = '#98a2b3';
-      c.font = '850 34px Inter, Arial, sans-serif';
-      c.textAlign = 'center';
-      c.textBaseline = 'alphabetic';
-      const old = fmt(p.precoNormal);
-      c.fillText(old, x + cardW/2, oldPriceY);
-      const metrics = c.measureText(old);
-      c.strokeStyle = '#98a2b3';
-      c.lineWidth = 4;
-      c.beginPath();
-      c.moveTo(x + cardW/2 - metrics.width/2 - 6, oldPriceY - 12);
-      c.lineTo(x + cardW/2 + metrics.width/2 + 6, oldPriceY - 12);
-      c.stroke();
-      c.restore();
-    }
-    drawPrice(c, fmt(p.preco), x, y + cardH - 32, cardW, 56, priceColor, 950);
-  }
-
-  drawFooter(c);
-  c.restore();
-}
-function drawFooter(c){
-  const style = $('footerStyle').value;
-  const y = 1668;
-  if (style === 'bar'){
-    c.fillStyle = '#101828';
-    c.fillRect(0, 1648, W, 272);
-  } else if (style === 'green'){
-    drawRoundRect(c, 42, 1660, W-84, 210, 38, '#ecfdf3', null);
-  }
-  drawWrappedCentered(c, $('footer1Text').value, W/2, y + 4, 930, Number($('footer1Size').value), $('footer1Color').value, 950, 1.06, 2);
-  drawWrappedCentered(c, $('footer2Text').value, W/2, y + 64, 980, Number($('footer2Size').value), $('footer2Color').value, 950, 1.06, 2);
-  drawWrappedCentered(c, $('footer3Text').value, W/2, y + 134, 980, Number($('footer3Size').value), $('footer3Color').value, 900, 1.08, 2);
-}
-async function renderCurrentSlide(){
-  const slide = state.slides[state.currentSlide];
-  if (!slide){
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0,0,W,H);
-    drawWrappedCentered(ctx, 'Monte os slides para ver a prévia.', W/2, H/2 - 30, 700, 44, '#98a2b3', 900, 1.2, 2);
-    $('slideIndicator').textContent = '0/0';
-    return;
-  }
-  await drawSlide(slide);
-  $('slideIndicator').textContent = `${state.currentSlide+1}/${state.slides.length}`;
-}
-async function renderMiniSlides(){
-  const box = $('miniSlides');
-  if (!state.slides.length){
-    box.innerHTML = '<p class="small muted">Nenhum slide montado.</p>';
-    return;
-  }
-  box.innerHTML = state.slides.map((_,i)=>`
-    <div class="slide-mini ${i===state.currentSlide?'active':''}" data-slide="${i}">
-      <canvas width="108" height="192"></canvas>
-      <span>Slide ${i+1}</span>
-    </div>
-  `).join('');
-
-  const canvases = [...box.querySelectorAll('canvas')];
-  for (let i=0; i<canvases.length; i++){
-    const mini = canvases[i];
-    const mctx = mini.getContext('2d', { willReadFrequently:true });
-    await drawSlide(state.slides[i], mctx, mini.width, mini.height);
-  }
-}
-function syncRangeLabels(){
-  $('editSharpenTxt').textContent = $('editSharpen').value;
-  $('editWhiteThresholdTxt').textContent = $('editWhiteThreshold').value;
-  $('editSatToleranceTxt').textContent = $('editSatTolerance').value;
-  $('editEdgeFeatherTxt').textContent = $('editEdgeFeather').value;
-  $('editHaloReduceTxt').textContent = $('editHaloReduce').value + '%';
-}
-function clearPreparedCache(){ state.preparedCache.clear(); }
-function canvasToBlob(cnv, type='image/webp', quality=.82){
-  return new Promise(resolve => cnv.toBlob(resolve, type, quality));
-}
-async function encodeWebpUnderLimit(maxKb){
-  const qualities = [.9,.82,.74,.66,.58,.5,.44,.38,.32,.26];
-  const scales = [1,.9,.8,.7,.62,.56,.5];
-  let best = null;
-  for (const scale of scales){
-    const out = document.createElement('canvas');
-    out.width = Math.round(W * scale);
-    out.height = Math.round(H * scale);
-    const octx = out.getContext('2d');
-    octx.fillStyle = '#fff';
-    octx.fillRect(0,0,out.width,out.height);
-    octx.drawImage(canvas,0,0,out.width,out.height);
-    for (const q of qualities){
-      const blob = await canvasToBlob(out, 'image/webp', q);
-      if (!blob) continue;
-      best = blob;
-      if (blob.size <= maxKb * 1024) return { blob, scale, quality:q, limited:true };
-    }
-  }
-  return { blob: best, scale:.5, quality:.26, limited:false };
-}
-async function downloadCurrentSlide(){
-  if (!state.slides.length) return;
-  await renderCurrentSlide();
-  const result = await encodeWebpUnderLimit(Number($('maxKb').value || 30));
-  if (!result.blob) return setStatus('Não consegui gerar WebP neste navegador.', true);
-  downloadBlob(result.blob, `${$('filePrefix').value || 'status'}-slide-${String(state.currentSlide+1).padStart(2,'0')}.webp`);
-  setStatus(`Slide atual baixado: ${(result.blob.size/1024).toFixed(1)}KB.`);
-}
-async function exportAll(){
-  if (!state.slides.length){
-    setStatus('Monte os slides antes de exportar.', true);
-    return;
-  }
-  $('exportBtn').disabled = true;
-  setStatus('Exportando todos os slides em WebP...');
-  const maxKb = Number($('maxKb').value || 30);
-  const files = [];
-  for (let i=0; i<state.slides.length; i++){
-    state.currentSlide = i;
-    await renderCurrentSlide();
-    const result = await encodeWebpUnderLimit(maxKb);
-    if (!result.blob) continue;
-    const arr = new Uint8Array(await result.blob.arrayBuffer());
-    files.push({
-      name: `${$('filePrefix').value || 'status'}-slide-${String(i+1).padStart(2,'0')}.webp`,
-      data: arr
-    });
-    setStatus(`Exportando ${i+1}/${state.slides.length}: ${(result.blob.size/1024).toFixed(1)}KB.`);
-  }
-  const zip = makeZip(files);
-  downloadBlob(zip, `${$('filePrefix').value || 'status'}-${Date.now()}.zip`);
-  $('exportBtn').disabled = false;
-  await renderMiniSlides();
-  setStatus(`ZIP pronto com ${files.length} imagens WebP.`);
-}
-function downloadBlob(blob, filename){
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url), 1500);
-}
-const crcTable = (() => {
-  const table = new Uint32Array(256);
-  for(let i=0;i<256;i++){
-    let c = i;
-    for(let k=0;k<8;k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
-    table[i] = c >>> 0;
-  }
-  return table;
-})();
-function crc32(data){
-  let c = 0xffffffff;
-  for(let i=0;i<data.length;i++) c = crcTable[(c ^ data[i]) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
-}
-function u16(n){ return new Uint8Array([n & 255, (n>>>8)&255]); }
-function u32(n){ return new Uint8Array([n & 255, (n>>>8)&255, (n>>>16)&255, (n>>>24)&255]); }
-function strBytes(s){ return new TextEncoder().encode(s); }
-function concatParts(parts){
-  const total = parts.reduce((sum,p)=>sum+p.length,0);
-  const out = new Uint8Array(total);
-  let off=0;
-  for(const p of parts){ out.set(p,off); off+=p.length; }
-  return out;
-}
-function makeZip(files){
-  const localParts = [];
-  const centralParts = [];
-  let offset = 0;
-  for(const file of files){
-    const name = strBytes(file.name);
-    const data = file.data;
-    const crc = crc32(data);
-    const local = concatParts([
-      u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0),
-      u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0),
-      name, data
-    ]);
-    localParts.push(local);
-    const central = concatParts([
-      u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0),
-      u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0), u16(0),
-      u16(0), u16(0), u32(0), u32(offset), name
-    ]);
-    centralParts.push(central);
-    offset += local.length;
-  }
-  const centralStart = offset;
-  const central = concatParts(centralParts);
-  const end = concatParts([
-    u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length),
-    u32(central.length), u32(centralStart), u16(0)
-  ]);
-  return new Blob([concatParts(localParts), central, end], { type:'application/zip' });
-}
-function bind(){
-  $('loadBtn').addEventListener('click', loadProducts);
-  $('jsonFile').addEventListener('change', e => { const f=e.target.files?.[0]; if(f) importJson(f); });
-  $('mode').addEventListener('change', () => { renderProductList(); buildSlides(); });
-  $('slideCount').addEventListener('change', buildSlides);
-  $('minDiscount').addEventListener('input', buildSlides);
-  $('maxDiscount').addEventListener('input', buildSlides);
-  $('buildBtn').addEventListener('click', buildSlides);
-  $('shuffleBtn').addEventListener('click', () => { if ($('mode').value === 'offersOrder') $('mode').value = 'offersRandom'; buildSlides(); });
-  $('search').addEventListener('input', renderProductList);
-
-  $('productList').addEventListener('change', e => {
-    const cb = e.target.closest('[data-select]');
-    if (!cb) return;
-    const p = state.filtered.find(x => x.id === cb.dataset.select) || state.all.find(x => x.id === cb.dataset.select);
-    if (!p) return;
-    if (cb.checked) state.selected.set(p.id, p);
-    else state.selected.delete(p.id);
-    updateSelectedInfo();
-    if ($('mode').value === 'manual') buildSlides();
-  });
-  $('selectVisible').addEventListener('click', () => {
-    state.filtered.forEach(p => state.selected.set(p.id, p));
-    renderProductList();
-    if ($('mode').value === 'manual') buildSlides();
-  });
-  $('clearSelected').addEventListener('click', () => {
-    state.selected.clear();
-    renderProductList();
-    if ($('mode').value === 'manual') buildSlides();
-  });
-  $('prevSlide').addEventListener('click', () => {
-    if (!state.slides.length) return;
-    state.currentSlide = Math.max(0, state.currentSlide - 1);
-    renderCurrentSlide(); renderMiniSlides();
-  });
-  $('nextSlide').addEventListener('click', () => {
-    if (!state.slides.length) return;
-    state.currentSlide = Math.min(state.slides.length - 1, state.currentSlide + 1);
-    renderCurrentSlide(); renderMiniSlides();
-  });
-  $('miniSlides').addEventListener('click', e => {
-    const item = e.target.closest('[data-slide]');
-    if (!item) return;
-    state.currentSlide = Number(item.dataset.slide);
-    renderCurrentSlide(); renderMiniSlides();
+  $('loadBtn').addEventListener('click', loadAndBuild);
+  $('prevSlide').addEventListener('click', async ()=>{ if (!state.slides.length) return; state.currentSlide = Math.max(0, state.currentSlide - 1); await renderCurrentSlide(); await renderMiniSlides(); });
+  $('nextSlide').addEventListener('click', async ()=>{ if (!state.slides.length) return; state.currentSlide = Math.min(state.slides.length - 1, state.currentSlide + 1); await renderCurrentSlide(); await renderMiniSlides(); });
+  $('miniSlides').addEventListener('click', async e => { const item = e.target.closest('[data-slide]'); if (!item) return; state.currentSlide = Number(item.dataset.slide); await renderCurrentSlide(); await renderMiniSlides(); });
+  ['cardColor','priceColor','nameColor','nameSize','showName','imageZoom','radius','gap','removeWhite','multiply','sharpen','whiteThreshold','satTolerance','edgeFeather','haloReduce'].forEach(id => {
+    $(id).addEventListener('input', async () => { syncRangeLabels(); clearPreparedCache(); await renderCurrentSlide(); await renderMiniSlides(); });
+    $(id).addEventListener('change', async () => { syncRangeLabels(); clearPreparedCache(); await renderCurrentSlide(); await renderMiniSlides(); });
   });
 
-  [
-    'cardColor','priceColor','imageZoom','radius','gap','footerStyle',
-    'showName','nameColor','nameSize',
-    'footer1Text','footer1Color','footer1Size','footer2Text','footer2Color','footer2Size','footer3Text','footer3Color','footer3Size'
-  ].forEach(id => {
-    $(id).addEventListener('input', () => { renderCurrentSlide(); renderMiniSlides(); });
-    $(id).addEventListener('change', () => { renderCurrentSlide(); renderMiniSlides(); });
-  });
-
-  ['editRemoveWhite','editMultiply','editSharpen','editWhiteThreshold','editSatTolerance','editEdgeFeather','editHaloReduce'].forEach(id => {
-    $(id).addEventListener('input', () => { syncRangeLabels(); clearPreparedCache(); renderCurrentSlide(); renderMiniSlides(); });
-    $(id).addEventListener('change', () => { syncRangeLabels(); clearPreparedCache(); renderCurrentSlide(); renderMiniSlides(); });
-  });
-
-  $('downloadCurrent').addEventListener('click', downloadCurrentSlide);
-  $('exportBtn').addEventListener('click', exportAll);
-}
-function init(){
-  bind();
   syncRangeLabels();
-  renderProductList();
-  updateKpis();
-  renderCurrentSlide();
-}
-init();
+  window.statusApp = { runAutomatic, loadAndBuild, getState: () => ({ slides: state.slides.length, offers: state.offers.length }) };
 })();
 </script>
 </body>
