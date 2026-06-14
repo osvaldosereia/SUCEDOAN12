@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Gerador de Vídeo Dona Antônia — Single HTML</title>
+<title>Gerador de Vídeo Dona Antônia — Produto em Destaque</title>
 <style>
   :root{
-    --bg:#f5f1ea;
+    --bg:#f4efe7;
     --panel:#ffffff;
-    --panel-2:#fcfaf7;
-    --text:#251b15;
-    --muted:#746457;
-    --line:#dfd4c7;
-    --accent:#b4441f;
-    --accent-2:#f0c266;
-    --shadow:0 10px 30px rgba(37,27,21,.08);
+    --soft:#fbf8f3;
+    --text:#241a14;
+    --muted:#74665b;
+    --line:#ded3c7;
+    --accent:#b9431e;
+    --dark:#2b211b;
+    --shadow:0 12px 34px rgba(36,26,20,.10);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -23,328 +23,200 @@
     font-family:Inter,Arial,Helvetica,sans-serif;
     color:var(--text);
     background:
-      radial-gradient(circle at top left, rgba(240,194,102,.22), transparent 26vw),
-      radial-gradient(circle at bottom right, rgba(180,68,31,.13), transparent 28vw),
+      radial-gradient(circle at top left, rgba(238,186,100,.26), transparent 27vw),
+      radial-gradient(circle at bottom right, rgba(185,67,30,.13), transparent 30vw),
       var(--bg);
   }
-  .app{display:grid;grid-template-columns:440px 1fr;min-height:100vh;gap:16px;padding:16px}
-  .sidebar,.main{background:rgba(255,255,255,.7);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.6);border-radius:24px;box-shadow:var(--shadow)}
-  .sidebar{padding:14px;overflow:auto;max-height:calc(100vh - 32px)}
-  .main{padding:14px;display:grid;grid-template-rows:auto auto 1fr;gap:14px;overflow:hidden}
-  .header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:8px 10px 14px}
-  h1{margin:0;font-size:28px;line-height:1}
+  .app{display:grid;grid-template-columns:460px 1fr;gap:16px;padding:16px;min-height:100vh}
+  .sidebar,.main{background:rgba(255,255,255,.76);border:1px solid rgba(255,255,255,.65);border-radius:24px;box-shadow:var(--shadow);backdrop-filter:blur(12px)}
+  .sidebar{padding:14px;max-height:calc(100vh - 32px);overflow:auto}
+  .main{padding:14px;overflow:hidden}
+  .header{padding:8px 8px 14px}
+  h1{margin:0;font-size:29px;line-height:1;letter-spacing:-.04em}
   h2{margin:0 0 10px;font-size:16px}
   h3{margin:0 0 8px;font-size:14px}
-  p{margin:6px 0}
-  .muted{color:var(--muted)}
-  .tiny{font-size:12px}
-  .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#fff4e2;color:#6d4b2f;font-size:12px;font-weight:800;border:1px solid #f3dec0}
+  p{margin:6px 0}.tiny{font-size:12px}.muted{color:var(--muted)}
+  .badge{display:inline-flex;gap:7px;align-items:center;padding:6px 10px;border-radius:999px;background:#fff2dd;border:1px solid #efd9b9;color:#76522f;font-size:12px;font-weight:900;margin-bottom:8px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:12px}
-  .card.soft{background:var(--panel-2)}
-  .grid{display:grid;gap:10px}
-  .grid.two{grid-template-columns:1fr 1fr}
-  .grid.three{grid-template-columns:1fr 1fr 1fr}
-  label{display:grid;gap:5px;font-size:12px;font-weight:700;color:#5c493b}
-  input,select,button,textarea{
-    font:inherit;
-  }
-  input[type="text"],input[type="number"],input[type="color"],select,textarea,input[type="range"]{
-    width:100%;
-  }
-  input[type="text"],input[type="number"],select,textarea{
-    border:1px solid var(--line);
-    background:#fff;
-    border-radius:12px;
-    padding:10px 12px;
-    color:var(--text);
-    outline:none;
-  }
-  textarea{min-height:64px;resize:vertical}
-  input[type="color"]{height:42px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:4px}
-  input[type="range"]{accent-color:var(--accent)}
-  button{
-    border:1px solid var(--line);
-    background:#fff;
-    color:var(--text);
-    padding:10px 12px;
-    border-radius:12px;
-    cursor:pointer;
-    font-weight:800;
-  }
-  button.primary{background:var(--accent);color:#fff;border-color:transparent}
-  button.secondary{background:#2f241d;color:#fff;border-color:transparent}
-  button.ghost{background:#fff9f2}
-  button.small{padding:8px 10px;font-size:12px}
-  button:disabled{opacity:.45;cursor:not-allowed}
-  .row{display:flex;gap:8px;flex-wrap:wrap}
-  .row > *{flex:1}
-  .product-list{
-    display:grid;gap:8px;max-height:260px;overflow:auto;padding-right:2px;
-  }
-  .product-item{
-    display:grid;grid-template-columns:50px 1fr auto;gap:8px;align-items:center;
-    border:1px solid var(--line);background:#fff;border-radius:14px;padding:8px;
-  }
-  .product-thumb{width:50px;height:50px;border-radius:10px;background:#f4eee7;display:flex;align-items:center;justify-content:center;overflow:hidden}
-  .product-thumb img{width:100%;height:100%;object-fit:contain}
-  .product-name{font-weight:800;font-size:12px;line-height:1.2}
-  .timeline{
-    background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px;display:grid;gap:8px;max-height:290px;overflow:auto;
-  }
-  .timeline-item{
-    display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;
-    border:1px solid var(--line);background:#fff;border-radius:14px;padding:8px;cursor:pointer;
-  }
-  .timeline-item.active{outline:2px solid rgba(180,68,31,.35);background:#fffaf4}
-  .timeline-thumb{width:64px;height:64px;border-radius:12px;background:#f4eee7;display:flex;align-items:center;justify-content:center;overflow:hidden}
-  .timeline-thumb img{width:100%;height:100%;object-fit:contain}
-  .timeline-item .title{font-weight:900;font-size:12px;line-height:1.2}
-  .timeline-item .meta{font-size:11px;color:var(--muted);margin-top:2px}
-  .preview-top{display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:14px}
-  .phone-wrap{display:grid;justify-content:center}
-  .phone{
-    width:min(100%,420px);aspect-ratio:9/16;background:#17120f;border-radius:34px;padding:10px;box-shadow:0 18px 50px rgba(0,0,0,.25);
-  }
-  canvas{width:100%;height:100%;display:block;border-radius:26px;background:#f6efe5;touch-action:none}
-  .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:12px;overflow:auto}
-  .timeline-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-  .chips{display:flex;gap:8px;flex-wrap:wrap}
-  .chip{padding:4px 8px;border-radius:999px;background:#fff4e2;border:1px solid #f1dfc5;color:#7d5634;font-size:11px;font-weight:800}
-  .footer-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .status{padding:10px 12px;border-radius:14px;background:#fff8ef;border:1px solid #f2dfc4;font-size:13px;color:#67482d}
-  .separator{height:1px;background:var(--line);margin:10px 0}
-  .hidden{display:none !important}
-  .right-stack{display:grid;gap:14px;min-height:0;grid-template-rows:auto 1fr}
-  .script-preview{white-space:pre-wrap;background:#fffaf4;border:1px solid var(--line);border-radius:14px;padding:10px;max-height:180px;overflow:auto;font-size:12px;line-height:1.45}
-  @media (max-width:1200px){
-    .app{grid-template-columns:1fr}
-    .sidebar{max-height:none}
-    .preview-top{grid-template-columns:1fr}
-  }
+  .card.soft{background:var(--soft)}
+  .grid{display:grid;gap:10px}.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:1fr 1fr 1fr}
+  label{display:grid;gap:5px;font-size:12px;font-weight:800;color:#5b4a3e}
+  input,select,button,textarea{font:inherit}
+  input[type="text"],input[type="number"],select,textarea{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 11px;color:var(--text);outline:none}
+  textarea{min-height:60px;resize:vertical}
+  input[type="color"]{width:100%;height:42px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:4px}
+  input[type="range"]{width:100%;accent-color:var(--accent)}
+  button{border:1px solid var(--line);background:#fff;color:var(--text);padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:900}
+  button.primary{background:var(--accent);border-color:transparent;color:#fff}button.secondary{background:var(--dark);border-color:transparent;color:#fff}button.ghost{background:#fff9f2}button.small{padding:8px 10px;font-size:12px}button:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}.check{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:#5b4a3e}.check input{margin:0}
+  .product-list{display:grid;gap:8px;max-height:260px;overflow:auto;padding-right:2px}
+  .product-item{display:grid;grid-template-columns:52px 1fr auto;gap:9px;align-items:center;border:1px solid var(--line);background:#fff;border-radius:14px;padding:8px}
+  .product-thumb,.timeline-thumb{background:#f4eee7;display:flex;align-items:center;justify-content:center;overflow:hidden}.product-thumb{width:52px;height:52px;border-radius:11px}.product-thumb img,.timeline-thumb img{width:100%;height:100%;object-fit:contain}.product-name{font-size:12px;line-height:1.18;font-weight:900}
+  .preview-layout{display:grid;grid-template-columns:minmax(320px,430px) minmax(330px,1fr);gap:14px;align-items:start}.phone-wrap{display:grid;justify-content:center}.phone{width:min(100%,430px);aspect-ratio:9/16;background:#17120f;border-radius:34px;padding:10px;box-shadow:0 22px 60px rgba(0,0,0,.28)}canvas{width:100%;height:100%;display:block;border-radius:26px;background:#f8efe2;touch-action:none;cursor:grab}.phone canvas:active{cursor:grabbing}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:12px;overflow:auto}.right-stack{display:grid;gap:14px;grid-template-rows:auto auto 1fr;min-height:0}.timeline{display:grid;gap:8px;max-height:300px;overflow:auto}.timeline-item{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);background:#fff;border-radius:14px;padding:8px;cursor:pointer}.timeline-item.active{outline:2px solid rgba(185,67,30,.38);background:#fffaf3}.timeline-thumb{width:64px;height:64px;border-radius:12px}.timeline-title{font-size:12px;line-height:1.2;font-weight:900}.timeline-meta{font-size:11px;color:var(--muted);margin-top:3px}.timeline-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}.chip{display:inline-flex;padding:4px 8px;border-radius:999px;background:#fff3df;border:1px solid #eedabc;color:#76522f;font-size:11px;font-weight:900}.script-preview{white-space:pre-wrap;background:#fffaf3;border:1px solid var(--line);border-radius:14px;padding:10px;max-height:180px;overflow:auto;font-size:12px;line-height:1.45}.status{padding:10px 12px;border-radius:14px;background:#fff7ec;border:1px solid #efdcbf;color:#6b492c;font-size:13px}.hidden{display:none!important}.section-title{display:flex;justify-content:space-between;gap:8px;align-items:center}
+  @media (max-width:1250px){.app{grid-template-columns:1fr}.sidebar{max-height:none}.preview-layout{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="app">
   <aside class="sidebar">
     <div class="header">
-      <div>
-        <div class="pill">Single HTML • HTML + CSS + JS</div>
-        <h1>Gerador de vídeo</h1>
-        <p class="muted tiny">Sem IA, sem áudio, com produtos do GitHub, timeline manual, 10 modelos, transições e exportação em WEBM.</p>
-      </div>
+      <span class="badge">V2 • produto no centro • menos é mais</span>
+      <h1>Gerador de vídeo</h1>
+      <p class="tiny muted">Agora o produto é o protagonista: sem card grande, sem moldura no produto, poucos textos e mais controles de edição.</p>
     </div>
 
     <div class="card soft">
       <h2>1) Fonte de produtos</h2>
       <div class="grid two">
-        <label>Owner
-          <input id="owner" type="text" value="osvaldosereia" />
-        </label>
-        <label>Repositório
-          <input id="repo" type="text" value="SUCEDOAN12" />
-        </label>
-        <label>Branch
-          <input id="branch" type="text" value="main" />
-        </label>
-        <label>JSON
-          <input id="jsonPath" type="text" value="site/produtos.json" />
-        </label>
+        <label>Owner<input id="owner" type="text" value="osvaldosereia"></label>
+        <label>Repositório<input id="repo" type="text" value="SUCEDOAN12"></label>
+        <label>Branch<input id="branch" type="text" value="main"></label>
+        <label>JSON<input id="jsonPath" type="text" value="site/produtos.json"></label>
       </div>
       <div class="row" style="margin-top:8px">
         <button id="loadGithub" class="primary">Carregar do GitHub</button>
-        <label class="small" style="display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);border-radius:12px;padding:10px;background:#fff;cursor:pointer;font-weight:800">
-          Importar JSON<input id="jsonFile" type="file" accept="application/json" class="hidden" />
-        </label>
+        <label style="display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);border-radius:12px;padding:10px;background:#fff;cursor:pointer;font-weight:900">Importar JSON<input id="jsonFile" type="file" accept="application/json" class="hidden"></label>
       </div>
       <p id="githubHint" class="tiny muted"></p>
     </div>
 
     <div class="card">
-      <h2>2) Pesquisar e selecionar produtos</h2>
+      <h2>2) Produtos</h2>
       <div class="grid two">
-        <label>Pesquisar
-          <input id="searchProducts" type="text" placeholder="Nome, marca, categoria..." />
-        </label>
-        <label>Categoria
-          <select id="categoryFilter"><option value="">Todas</option></select>
-        </label>
+        <label>Pesquisar<input id="searchProducts" type="text" placeholder="Nome, marca, categoria..."></label>
+        <label>Categoria<select id="categoryFilter"><option value="">Todas</option></select></label>
       </div>
       <div class="row" style="margin-top:8px">
-        <button id="addFirstFiltered" class="ghost">Adicionar os 5 primeiros</button>
+        <button id="addFirstFiltered" class="ghost">Adicionar 5 primeiros</button>
         <button id="clearTimeline" class="ghost">Limpar timeline</button>
       </div>
       <div id="productList" class="product-list" style="margin-top:10px"></div>
     </div>
 
     <div class="card">
-      <h2>3) Inserir imagens manuais</h2>
-      <p class="tiny muted">Você pode inserir imagens manuais no final, antes ou depois do item selecionado na timeline.</p>
-      <div class="timeline-actions">
-        <button id="addImagesEnd" class="ghost">Adicionar ao final</button>
-        <button id="addImagesBefore" class="ghost">Inserir antes do selecionado</button>
-        <button id="addImagesAfter" class="ghost">Inserir depois do selecionado</button>
+      <h2>3) Imagens manuais</h2>
+      <p class="tiny muted">Insira fotos de cenário, banners, print de promoção ou qualquer imagem entre os produtos.</p>
+      <div class="row">
+        <button id="addImagesEnd" class="ghost">No final</button>
+        <button id="addImagesBefore" class="ghost">Antes</button>
+        <button id="addImagesAfter" class="ghost">Depois</button>
       </div>
-      <input id="imageFiles" type="file" accept="image/*" multiple class="hidden" />
+      <input id="imageFiles" type="file" accept="image/*" multiple class="hidden">
     </div>
 
     <div class="card">
-      <h2>4) Vídeo, modelo e transição</h2>
+      <h2>4) Vídeo minimalista</h2>
       <div class="grid two">
-        <label>Duração total
-          <select id="videoDuration">
-            <option value="10">10 segundos</option>
-            <option value="20" selected>20 segundos</option>
-            <option value="30">30 segundos</option>
-          </select>
-        </label>
-        <label>Modelo do vídeo
-          <select id="videoModel"></select>
-        </label>
-        <label>Transição
-          <select id="transitionMode"></select>
-        </label>
-        <label>Duração da transição
-          <select id="transitionSeconds">
-            <option value="0.25">0,25s</option>
-            <option value="0.4" selected>0,4s</option>
-            <option value="0.6">0,6s</option>
-            <option value="0.8">0,8s</option>
-          </select>
-        </label>
+        <label>Duração<select id="videoDuration"><option value="10">10 segundos</option><option value="20" selected>20 segundos</option><option value="30">30 segundos</option></select></label>
+        <label>Modelo<select id="videoModel"></select></label>
+        <label>Transição<select id="transitionMode"></select></label>
+        <label>Tempo da transição<select id="transitionSeconds"><option value="0.25">0,25s</option><option value="0.4" selected>0,4s</option><option value="0.6">0,6s</option><option value="0.8">0,8s</option></select></label>
       </div>
       <div class="grid two" style="margin-top:8px">
-        <label>Título/gancho
-          <input id="headline" type="text" value="Ofertas e achados que valem o clique" />
-        </label>
-        <label>CTA fixo
-          <input id="ctaText" type="text" value="Peça agora no site da Dona Antônia" />
-        </label>
-        <label>Subtexto
-          <input id="subheadline" type="text" value="Produtos reais do site com visual estilo TikTok commerce" />
-        </label>
-        <label>Texto final
-          <input id="outroText" type="text" value="Salve este vídeo e faça seu pedido" />
-        </label>
+        <label>Gancho curto<input id="headline" type="text" value="Achadinhos da Dona Antônia"></label>
+        <label>CTA fixo<input id="ctaText" type="text" value="Peça no site"></label>
+        <label>Texto final<input id="outroText" type="text" value="Salve e peça pelo site"></label>
+        <label>Posição dos textos<select id="textPosition"><option value="minimal" selected>Mínimo discreto</option><option value="bottom">Só embaixo</option><option value="topBottom">Topo + preço embaixo</option><option value="off">Sem textos</option></select></label>
       </div>
-      <div class="row" style="margin-top:8px">
-        <label style="display:flex;align-items:center;gap:8px"><input id="showPrices" type="checkbox" checked /> Mostrar preço</label>
-        <label style="display:flex;align-items:center;gap:8px"><input id="showBrand" type="checkbox" checked /> Mostrar marca</label>
-        <label style="display:flex;align-items:center;gap:8px"><input id="showPackaging" type="checkbox" checked /> Mostrar embalagem</label>
-        <label style="display:flex;align-items:center;gap:8px"><input id="showWheel" type="checkbox" checked /> Roda CTA</label>
+      <div class="grid two" style="margin-top:8px">
+        <label class="check"><input id="showTitle" type="checkbox" checked> Nome curto</label>
+        <label class="check"><input id="showPrices" type="checkbox" checked> Preço</label>
+        <label class="check"><input id="showBrand" type="checkbox"> Marca</label>
+        <label class="check"><input id="showPackaging" type="checkbox"> Embalagem</label>
+        <label class="check"><input id="showWheel" type="checkbox" checked> Roda CTA</label>
+        <label class="check"><input id="showProgress" type="checkbox" checked> Progresso</label>
       </div>
     </div>
 
     <div class="card">
-      <h2>5) Cenário e fundo</h2>
+      <h2>5) Cenário</h2>
       <div class="grid two">
-        <label>Modo de fundo
-          <select id="bgMode">
-            <option value="solid" selected>Fundo liso</option>
-            <option value="gradient">Gradiente</option>
-            <option value="image">Imagem de cenário</option>
-          </select>
-        </label>
-        <label>Cor do fundo
-          <input id="bgColor" type="color" value="#f7f0e6" />
-        </label>
-        <label>Cor 2 do gradiente
-          <input id="bgColor2" type="color" value="#edd0a0" />
-        </label>
-        <label>Imagem de fundo
-          <input id="bgImageFile" type="file" accept="image/*" />
-        </label>
-        <label>Desfoque do cenário
-          <input id="bgBlur" type="range" min="0" max="20" step="1" value="0" />
-        </label>
-        <label>Vinheta escura
-          <input id="vignette" type="range" min="0" max="100" step="1" value="22" />
-        </label>
-        <label>Escurecer fundo
-          <input id="bgDarken" type="range" min="0" max="100" step="1" value="0" />
-        </label>
-        <label>Ruído/textura leve
-          <input id="bgNoise" type="range" min="0" max="100" step="1" value="5" />
-        </label>
+        <label>Fundo<select id="bgMode"><option value="solid" selected>Liso</option><option value="gradient">Gradiente</option><option value="image">Imagem</option><option value="autoModel">Do modelo</option></select></label>
+        <label>Cor principal<input id="bgColor" type="color" value="#f6efe4"></label>
+        <label>Cor 2<input id="bgColor2" type="color" value="#ecd0a2"></label>
+        <label>Imagem de fundo<input id="bgImageFile" type="file" accept="image/*"></label>
+        <label>Blur do cenário<input id="bgBlur" type="range" min="0" max="24" value="0"></label>
+        <label>Vinheta<input id="vignette" type="range" min="0" max="100" value="18"></label>
+        <label>Escurecer<input id="bgDarken" type="range" min="0" max="100" value="0"></label>
+        <label>Textura<input id="bgNoise" type="range" min="0" max="100" value="3"></label>
+        <label>Spotlight no produto<input id="spotlight" type="range" min="0" max="100" value="40"></label>
+        <label>Elementos de fundo<select id="bgDecor"><option value="none">Nenhum</option><option value="blobs" selected>Manchas suaves</option><option value="lines">Linhas</option><option value="bokeh">Bokeh</option></select></label>
       </div>
     </div>
 
     <div class="card">
-      <h2>6) Item selecionado na timeline</h2>
-      <p id="selectedInfo" class="tiny muted">Selecione um item na timeline para personalizar.</p>
+      <div class="section-title"><h2>6) Produto/imagem selecionado</h2><span id="selectedInfo" class="chip">nada selecionado</span></div>
       <div class="grid two">
-        <label>Legenda do item
-          <input id="itemCaption" type="text" placeholder="Legenda opcional" />
-        </label>
-        <label>Duração relativa
-          <input id="itemDuration" type="range" min="1" max="8" step="0.5" value="1" />
-        </label>
-        <label>Escala da imagem
-          <input id="itemScale" type="range" min="30" max="220" step="1" value="100" />
-        </label>
-        <label>Rotação
-          <input id="itemRotate" type="range" min="-30" max="30" step="1" value="0" />
-        </label>
-        <label>Mover X
-          <input id="itemX" type="range" min="-350" max="350" step="1" value="0" />
-        </label>
-        <label>Mover Y
-          <input id="itemY" type="range" min="-700" max="700" step="1" value="0" />
-        </label>
-        <label>Desfoque do item
-          <input id="itemBlur" type="range" min="0" max="16" step="1" value="0" />
-        </label>
-        <label>Opacidade
-          <input id="itemOpacity" type="range" min="10" max="100" step="1" value="100" />
-        </label>
-        <label>Threshold branco transparente
-          <input id="whiteThreshold" type="range" min="200" max="255" step="1" value="242" />
-        </label>
-        <label>Suavidade do recorte
-          <input id="whiteSoftness" type="range" min="0" max="80" step="1" value="18" />
-        </label>
+        <label>Legenda opcional<input id="itemCaption" type="text" placeholder="curta, se precisar"></label>
+        <label>Duração relativa<input id="itemDuration" type="range" min="0.5" max="6" step="0.5" value="1"></label>
+        <label>Escala<input id="itemScale" type="range" min="30" max="260" value="128"></label>
+        <label>Rotação<input id="itemRotate" type="range" min="-35" max="35" value="0"></label>
+        <label>Mover X<input id="itemX" type="range" min="-420" max="420" value="0"></label>
+        <label>Mover Y<input id="itemY" type="range" min="-760" max="760" value="-80"></label>
+        <label>Opacidade<input id="itemOpacity" type="range" min="5" max="100" value="100"></label>
+        <label>Blur<input id="itemBlur" type="range" min="0" max="18" value="0"></label>
+        <label>Brilho<input id="itemBrightness" type="range" min="40" max="180" value="100"></label>
+        <label>Contraste<input id="itemContrast" type="range" min="40" max="190" value="108"></label>
+        <label>Saturação<input id="itemSaturate" type="range" min="0" max="220" value="112"></label>
+        <label>Temperatura<input id="itemWarmth" type="range" min="-80" max="80" value="0"></label>
+      </div>
+      <div class="grid two" style="margin-top:8px">
+        <label>Animação<select id="itemMotion"><option value="float" selected>Flutuar leve</option><option value="none">Nenhuma</option><option value="zoomIn">Zoom suave</option><option value="pulse">Pulse</option><option value="swing">Balanço</option><option value="slideUp">Subir entrando</option><option value="spinSoft">Giro suave</option></select></label>
+        <label>Força da animação<input id="motionPower" type="range" min="0" max="100" value="38"></label>
+        <label>Contorno<input id="outlineSize" type="range" min="0" max="28" value="0"></label>
+        <label>Cor do contorno<input id="outlineColor" type="color" value="#ffffff"></label>
+        <label>Glow<input id="glowSize" type="range" min="0" max="90" value="0"></label>
+        <label>Cor do glow<input id="glowColor" type="color" value="#f5b84b"></label>
+        <label>Sombra<input id="shadowSize" type="range" min="0" max="100" value="32"></label>
+        <label>Sombra Y<input id="shadowY" type="range" min="-30" max="120" value="36"></label>
+        <label>Reflexo<input id="reflection" type="range" min="0" max="60" value="0"></label>
+        <label>Inclinação fake 3D<input id="skewX" type="range" min="-25" max="25" value="0"></label>
+      </div>
+      <div class="grid two" style="margin-top:10px">
+        <label>Lente / recorte<select id="removeMode"><option value="off">Desligado</option><option value="white">Remover fundo branco</option><option value="light">Remover fundo claro</option><option value="corner">Remover cor dos cantos</option></select></label>
+        <label>Tolerância<input id="whiteThreshold" type="range" min="120" max="255" value="238"></label>
+        <label>Suavidade da borda<input id="whiteSoftness" type="range" min="0" max="100" value="34"></label>
+        <label>Limpeza de borda<input id="edgeClean" type="range" min="0" max="80" value="18"></label>
+        <label>Reduzir branco na borda<input id="spill" type="range" min="0" max="100" value="45"></label>
+        <label>Teste visual<select id="debugCut"><option value="off" selected>Normal</option><option value="checker">Xadrez transparente</option></select></label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="applyLensAll" class="ghost">Aplicar lente em todos</button>
+        <button id="removeLensAll" class="ghost">Remover lente de todos</button>
+        <button id="centerItem" class="ghost">Centralizar</button>
       </div>
       <div class="row" style="margin-top:8px">
-        <label style="display:flex;align-items:center;gap:8px"><input id="removeWhite" type="checkbox" /> Lente: fundo branco transparente</label>
-        <label style="display:flex;align-items:center;gap:8px"><input id="shadowToggle" type="checkbox" checked /> Sombra do produto</label>
-      </div>
-      <div class="timeline-actions" style="margin-top:10px">
         <button id="moveUp" class="ghost">Subir</button>
         <button id="moveDown" class="ghost">Descer</button>
         <button id="duplicateItem" class="ghost">Duplicar</button>
         <button id="removeItem" class="ghost">Remover</button>
-        <button id="centerItem" class="ghost">Centralizar</button>
       </div>
     </div>
 
     <div class="card">
-      <h2>7) Exportação</h2>
-      <div class="footer-actions">
+      <h2>7) Exportar sem áudio</h2>
+      <div class="row">
         <button id="togglePreview" class="secondary">Pausar preview</button>
-        <button id="refreshPreview" class="ghost">Atualizar preview</button>
+        <button id="refreshPreview" class="ghost">Atualizar</button>
         <button id="exportVideo" class="primary">Exportar vídeo</button>
         <button id="downloadVideo" disabled>Baixar WEBM</button>
       </div>
-      <p id="status" class="status">Pronto. Carregue os produtos, monte a timeline e exporte.</p>
+      <p id="status" class="status">Pronto. Carregue produtos, selecione e exporte.</p>
     </div>
   </aside>
 
   <main class="main">
-    <div class="preview-top">
-      <div class="phone-wrap">
-        <div class="phone"><canvas id="stage" width="1080" height="1920"></canvas></div>
-      </div>
+    <div class="preview-layout">
+      <div class="phone-wrap"><div class="phone"><canvas id="stage" width="1080" height="1920"></canvas></div></div>
       <div class="right-stack">
         <div class="panel">
-          <h2>Timeline do vídeo</h2>
-          <div class="timeline-actions">
-            <span class="chip">Clique no item para editar</span>
-            <span class="chip">Arraste no preview para mover</span>
-            <span class="chip">Wheel do mouse: escala</span>
-          </div>
+          <h2>Timeline</h2>
+          <div class="timeline-actions"><span class="chip">Arraste o produto no preview</span><span class="chip">Scroll no preview muda escala</span><span class="chip">Sem áudio</span></div>
           <div id="timeline" class="timeline"></div>
         </div>
         <div class="panel">
-          <h2>Roteiro visual automático</h2>
+          <h2>Roteiro visual enxuto</h2>
           <div id="scriptPreview" class="script-preview"></div>
         </div>
       </div>
@@ -356,1063 +228,424 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   const canvas = $('stage');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width;
-  const H = canvas.height;
+  const ctx = canvas.getContext('2d', { alpha:false });
+  const W = canvas.width, H = canvas.height;
 
   const MODELS = [
-    { id:'m1', name:'01 • Clean Commerce', theme:['#fff3df','#f2d0a6','#b9481d','#2f2118'], layout:'clean' },
-    { id:'m2', name:'02 • TikTok CTA Forte', theme:['#f8efe3','#f0b76d','#a53216','#241711'], layout:'tiktok' },
-    { id:'m3', name:'03 • Glass Premium', theme:['#faf4ed','#d9c0f5','#7d4db6','#25192e'], layout:'glass' },
-    { id:'m4', name:'04 • Oferta Vermelha', theme:['#fff0ef','#ffc6bd','#cf3422','#331713'], layout:'price' },
-    { id:'m5', name:'05 • Minimal Mercado', theme:['#f3f0e7','#d9ccb7','#7c5129','#23170d'], layout:'minimal' },
-    { id:'m6', name:'06 • Limpeza Fresh', theme:['#effbff','#b8e8f6','#12839a','#0d3942'], layout:'clean' },
-    { id:'m7', name:'07 • Beleza Soft', theme:['#fff1f7','#f8b9d2','#c02967','#331320'], layout:'glass' },
-    { id:'m8', name:'08 • Contraste Escuro', theme:['#25201d','#493428','#f3c47c','#fff7ea'], layout:'dark' },
-    { id:'m9', name:'09 • Story Catalog', theme:['#fff9ef','#f7d780','#8b5726','#22170f'], layout:'split' },
-    { id:'m10', name:'10 • Promo Vitrine', theme:['#eef6ff','#c8dcff','#2457a3','#11213b'], layout:'price' }
+    {id:'m1', name:'01 • Produto Limpo', colors:['#f8efe3','#ecd0a2','#b9431e','#241a14'], style:'clean'},
+    {id:'m2', name:'02 • TikTok Minimal', colors:['#f6ead8','#efba70','#d4441d','#21150f'], style:'tiktok'},
+    {id:'m3', name:'03 • Mercado Premium', colors:['#fbf6ed','#dcc6a4','#7f4f28','#24170e'], style:'premium'},
+    {id:'m4', name:'04 • Oferta Forte', colors:['#fff0ec','#ffc9bd','#cf2f1e','#30140f'], style:'offer'},
+    {id:'m5', name:'05 • Fresh Azul', colors:['#eefbff','#bfe8f5','#11839a','#0d3640'], style:'fresh'},
+    {id:'m6', name:'06 • Beleza Suave', colors:['#fff1f7','#f8bad2','#bf2866','#33131f'], style:'beauty'},
+    {id:'m7', name:'07 • Fundo Escuro', colors:['#1c1714','#443127','#f3bd6f','#fff5e8'], style:'dark'},
+    {id:'m8', name:'08 • Vitrine Clara', colors:['#f8f3ea','#ffffff','#a85a25','#241a14'], style:'vitrine'},
+    {id:'m9', name:'09 • Energia Laranja', colors:['#fff2d9','#ffbf57','#e5641a','#2d1709'], style:'energy'},
+    {id:'m10', name:'10 • Azul Promo', colors:['#edf5ff','#c8ddff','#2457a3','#10213d'], style:'promo'}
   ];
-
   const TRANSITIONS = [
-    { id:'fade', name:'Fade' },
-    { id:'slideLeft', name:'Deslizar à esquerda' },
-    { id:'slideUp', name:'Deslizar para cima' },
-    { id:'zoom', name:'Zoom' },
-    { id:'wipe', name:'Wipe lateral' },
-    { id:'blurFade', name:'Blur + fade' },
-    { id:'pop', name:'Pop' },
-    { id:'rotate', name:'Rotação leve' }
+    {id:'fade', name:'Fade'}, {id:'slideLeft', name:'Deslizar esquerda'}, {id:'slideUp', name:'Subir'}, {id:'zoom', name:'Zoom'},
+    {id:'wipe', name:'Wipe'}, {id:'blurFade', name:'Blur fade'}, {id:'pop', name:'Pop'}, {id:'rotate', name:'Rotação suave'}
   ];
 
   const state = {
-    products: [],
-    filtered: [],
-    timeline: [],
-    selectedIndex: -1,
-    playing: true,
-    previewStart: performance.now(),
-    raf: null,
-    lastBlob: null,
-    imageCache: new Map(),
-    preparedCache: new Map(),
-    insertionMode: 'end',
-    bgImageUrl: '',
-    exporting: false,
-    dragging:false,
-    dragStart:null,
-    dragOrigin:null,
+    products: [], filtered: [], timeline: [], selectedIndex: -1,
+    playing:true, previewStart:performance.now(), raf:null,
+    imageCache:new Map(), preparedCache:new Map(), bgImageUrl:'', insertionMode:'end',
+    lastBlob:null, dragging:false, dragStart:null, dragOrigin:null
   };
 
-  function setStatus(msg){ $('status').textContent = msg; }
-
-  function fillOptions() {
-    $('videoModel').innerHTML = MODELS.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-    $('transitionMode').innerHTML = TRANSITIONS.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-    $('videoModel').value = 'm2';
-    $('transitionMode').value = 'slideLeft';
-  }
-
-  function githubBase() {
-    return `https://raw.githubusercontent.com/${$('owner').value.trim()}/${$('repo').value.trim()}/${$('branch').value.trim()}`;
-  }
-  function githubJsonUrl() {
-    return `${githubBase()}/${$('jsonPath').value.trim().replace(/^\/+/, '')}`;
-  }
-  function updateGithubHint() { $('githubHint').textContent = githubJsonUrl(); }
-
-  function norm(str){ return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
-  function money(v){
-    const n = Number(v || 0);
-    if (!n) return 'Consulte';
-    return n.toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
-  }
-  function num(v){
-    if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
-    const n = Number(String(v ?? '').replace(/[^0-9,.-]/g,'').replace(',', '.'));
-    return Number.isFinite(n) ? n : 0;
-  }
+  function setStatus(text){ $('status').textContent = text; }
+  function esc(str){ return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function norm(str){ return String(str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
   function clean(v){ return String(v ?? '').replace(/\s+/g,' ').trim(); }
+  function num(v){ if(typeof v==='number') return Number.isFinite(v)?v:0; const n=Number(String(v??'').replace(/[^0-9,.-]/g,'').replace(',','.')); return Number.isFinite(n)?n:0; }
+  function money(v){ const n=Number(v||0); return n?n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'Consulte'; }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function ease(x){ return 1 - Math.pow(1 - clamp(x,0,1), 3); }
+  function lerp(a,b,t){ return a+(b-a)*t; }
 
-  function parseProducts(json){
-    let arr = [];
-    if (Array.isArray(json)) arr = json;
-    else if (json && Array.isArray(json.produtos)) arr = json.produtos;
-    else if (json && typeof json === 'object') arr = Object.values(json);
-
-    return arr.map((p, idx) => ({
-      id: String(p.id ?? p.codigo ?? p.gtin ?? idx),
-      codigo: String(p.codigo ?? ''),
-      nome: clean(p.nome ?? p.name ?? 'Produto'),
-      marca: clean(p.marca ?? ''),
-      categoria: clean(p.categoria ?? ''),
-      subcategoria: clean(p.subcategoria ?? ''),
-      embalagem: clean(p.embalagem ?? ''),
-      preco: num(p.preco ?? p.price),
-      preco_oferta: num(p.preco_oferta ?? p.sale_price),
-      estoque: num(p.estoque ?? 0),
-      situacao: String(p.situacao ?? 'A'),
-      url_imagem: clean(p.url_imagem ?? p.image ?? ''),
-      descricao: clean(p.descricao ?? ''),
-      raw: p
-    })).filter(p => p.nome && p.situacao !== 'I');
-  }
-
+  function githubBase(){ return `https://raw.githubusercontent.com/${$('owner').value.trim()}/${$('repo').value.trim()}/${$('branch').value.trim()}`; }
+  function githubJsonUrl(){ return `${githubBase()}/${$('jsonPath').value.trim().replace(/^\/+/, '')}`; }
+  function updateGithubHint(){ $('githubHint').textContent = githubJsonUrl(); }
   function resolveImageUrl(path){
-    const raw = String(path || '').trim();
-    if (!raw) return '';
-    if (/^https?:\/\//i.test(raw)) return raw;
-    let p = raw.replace(/\\/g,'/');
-    if (p.startsWith('../site/')) p = p.replace('../site/','site/');
-    if (p.startsWith('./')) p = p.slice(2);
-    if (p.startsWith('/')) p = p.slice(1);
+    const raw=String(path||'').trim(); if(!raw) return '';
+    if(/^https?:\/\//i.test(raw)) return raw;
+    let p=raw.replace(/\\/g,'/');
+    if(p.startsWith('../site/')) p=p.replace('../site/','site/');
+    if(p.startsWith('./')) p=p.slice(2);
+    if(p.startsWith('/')) p=p.slice(1);
     return `${githubBase()}/${p}`;
   }
 
-  function modelById(id){ return MODELS.find(m => m.id === id) || MODELS[0]; }
-  function transitionById(id){ return TRANSITIONS.find(t => t.id === id) || TRANSITIONS[0]; }
+  function parseProducts(json){
+    let arr=[];
+    if(Array.isArray(json)) arr=json; else if(json&&Array.isArray(json.produtos)) arr=json.produtos; else if(json&&typeof json==='object') arr=Object.values(json);
+    return arr.map((p,i)=>({
+      id:String(p.id??p.codigo??p.gtin??i), codigo:String(p.codigo??''), nome:clean(p.nome??p.name??'Produto'), marca:clean(p.marca??''),
+      categoria:clean(p.categoria??''), subcategoria:clean(p.subcategoria??''), embalagem:clean(p.embalagem??''),
+      preco:num(p.preco??p.price), preco_oferta:num(p.preco_oferta??p.sale_price), estoque:num(p.estoque??0), situacao:String(p.situacao??'A'),
+      url_imagem:clean(p.url_imagem??p.image??''), descricao:clean(p.descricao??''), raw:p
+    })).filter(p=>p.nome && p.situacao!=='I');
+  }
+  function displayPrice(p){ return p.preco_oferta && p.preco_oferta>0 && p.preco_oferta<p.preco ? p.preco_oferta : p.preco; }
+  function hasOffer(p){ return p.preco_oferta && p.preco_oferta>0 && p.preco_oferta<p.preco; }
+
+  function fillOptions(){
+    $('videoModel').innerHTML = MODELS.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+    $('transitionMode').innerHTML = TRANSITIONS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+    $('videoModel').value='m2'; $('transitionMode').value='slideLeft';
+  }
+  function model(){ return MODELS.find(m=>m.id===$('videoModel').value)||MODELS[0]; }
 
   async function loadGithub(){
-    try {
+    try{
       setStatus('Carregando produtos do GitHub...');
-      const res = await fetch(githubJsonUrl(), { cache:'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      state.products = parseProducts(json);
-      rebuildCategoryFilter();
-      applyFilters();
-      setStatus(`Produtos carregados: ${state.products.length}.`);
-    } catch(err) {
-      console.error(err);
-      setStatus('Erro ao carregar do GitHub. Confira owner, repositório, branch e caminho do JSON.');
-    }
+      const res=await fetch(githubJsonUrl(),{cache:'no-store'});
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      state.products=parseProducts(await res.json());
+      rebuildCats(); applyFilters(); setStatus(`Produtos carregados: ${state.products.length}.`);
+    }catch(e){ console.error(e); setStatus('Erro ao carregar do GitHub. Confira se o repo é público e se o caminho está certo.'); }
   }
-
-  async function loadLocalJson(file){
-    try {
-      const text = await file.text();
-      state.products = parseProducts(JSON.parse(text));
-      rebuildCategoryFilter();
-      applyFilters();
-      setStatus(`Produtos importados do arquivo: ${state.products.length}.`);
-    } catch(err) {
-      console.error(err);
-      setStatus('Não consegui ler o JSON importado.');
-    }
+  async function loadJsonFile(file){
+    try{ state.products=parseProducts(JSON.parse(await file.text())); rebuildCats(); applyFilters(); setStatus(`Produtos importados: ${state.products.length}.`); }
+    catch(e){ console.error(e); setStatus('Não consegui ler o JSON importado.'); }
   }
-
-  function rebuildCategoryFilter(){
-    const cats = [...new Set(state.products.map(p => p.categoria).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    $('categoryFilter').innerHTML = `<option value="">Todas</option>` + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  function rebuildCats(){
+    const cats=[...new Set(state.products.map(p=>p.categoria).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    $('categoryFilter').innerHTML='<option value="">Todas</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
   }
-
   function applyFilters(){
-    const q = norm($('searchProducts').value);
-    const cat = $('categoryFilter').value;
-    state.filtered = state.products.filter(p => {
-      const okCat = !cat || p.categoria === cat;
-      const blob = norm(`${p.nome} ${p.marca} ${p.categoria} ${p.subcategoria} ${p.embalagem} ${p.descricao}`);
-      const okQ = !q || blob.includes(q);
-      return okCat && okQ;
+    const q=norm($('searchProducts').value), cat=$('categoryFilter').value;
+    state.filtered=state.products.filter(p=>{
+      const blob=norm(`${p.nome} ${p.marca} ${p.categoria} ${p.subcategoria} ${p.embalagem} ${p.descricao}`);
+      return (!cat || p.categoria===cat) && (!q || blob.includes(q));
     });
     renderProductList();
   }
-
   function renderProductList(){
-    const box = $('productList');
-    if (!state.filtered.length) {
-      box.innerHTML = `<div class="tiny muted">Nenhum produto encontrado.</div>`;
-      return;
-    }
-    box.innerHTML = state.filtered.slice(0, 120).map((p, idx) => {
-      const price = money(displayPrice(p));
-      const imgUrl = resolveImageUrl(p.url_imagem);
-      return `
-        <div class="product-item">
-          <div class="product-thumb">${imgUrl ? `<img src="${imgUrl}" loading="lazy" />` : '<span class="tiny">sem img</span>'}</div>
-          <div>
-            <div class="product-name">${escapeHtml(p.nome)}</div>
-            <div class="tiny muted">${escapeHtml([p.marca, p.embalagem, p.categoria].filter(Boolean).join(' • '))}</div>
-            <div class="tiny"><strong>${escapeHtml(price)}</strong></div>
-          </div>
-          <div><button class="small" data-add-product="${idx}">Adicionar</button></div>
-        </div>`;
+    const box=$('productList');
+    if(!state.filtered.length){ box.innerHTML='<div class="tiny muted">Nenhum produto encontrado.</div>'; return; }
+    box.innerHTML=state.filtered.slice(0,140).map((p,i)=>{
+      const img=resolveImageUrl(p.url_imagem);
+      return `<div class="product-item"><div class="product-thumb">${img?`<img src="${img}" loading="lazy">`:'<span class="tiny">sem</span>'}</div><div><div class="product-name">${esc(p.nome)}</div><div class="tiny muted">${esc([p.marca,p.embalagem,p.categoria].filter(Boolean).join(' • '))}</div><div class="tiny"><strong>${money(displayPrice(p))}</strong></div></div><button class="small" data-add-product="${i}">Adicionar</button></div>`;
     }).join('');
   }
 
-  function displayPrice(p){ return p.preco_oferta && p.preco_oferta > 0 && p.preco_oferta < p.preco ? p.preco_oferta : p.preco; }
-
-  function createProductItem(product){
-    return {
-      type:'product',
-      uid: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-      product,
-      title: product.nome,
-      caption:'',
-      source: resolveImageUrl(product.url_imagem),
-      durationWeight:1,
-      scale:100,
-      x:0,
-      y:0,
-      rotate:0,
-      blur:0,
-      opacity:100,
-      removeWhite:false,
-      whiteThreshold:242,
-      whiteSoftness:18,
-      shadow:true,
-    };
+  function defaultItemBase(source,title){ return {
+    uid:(crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`), source, title, caption:'', durationWeight:1,
+    scale:128, x:0, y:-80, rotate:0, opacity:100, blur:0, brightness:100, contrast:108, saturate:112, warmth:0,
+    motion:'float', motionPower:38, outlineSize:0, outlineColor:'#ffffff', glowSize:0, glowColor:'#f5b84b',
+    shadowSize:32, shadowY:36, reflection:0, skewX:0, removeMode:'off', whiteThreshold:238, whiteSoftness:34, edgeClean:18, spill:45
+  }; }
+  function productItem(p){ return { type:'product', product:p, ...defaultItemBase(resolveImageUrl(p.url_imagem), p.nome) }; }
+  function imageItem(src,title){ return { type:'image', ...defaultItemBase(src,title||'Imagem manual') }; }
+  function addTimeline(item, mode='end'){
+    if(mode==='before' && state.selectedIndex>=0) state.timeline.splice(state.selectedIndex,0,item);
+    else if(mode==='after' && state.selectedIndex>=0){ state.timeline.splice(state.selectedIndex+1,0,item); state.selectedIndex++; }
+    else { state.timeline.push(item); state.selectedIndex=state.timeline.length-1; }
+    renderTimeline(); syncInspector(); buildScript();
   }
-
-  function createImageItem(source, title='Imagem manual'){
-    return {
-      type:'image',
-      uid: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-      title,
-      caption:'',
-      source,
-      durationWeight:1,
-      scale:100,
-      x:0,
-      y:0,
-      rotate:0,
-      blur:0,
-      opacity:100,
-      removeWhite:false,
-      whiteThreshold:242,
-      whiteSoftness:18,
-      shadow:true,
-    };
-  }
-
-  function addTimelineItem(item, mode='end'){
-    if (mode === 'before' && state.selectedIndex >= 0) {
-      state.timeline.splice(state.selectedIndex, 0, item);
-      state.selectedIndex = state.selectedIndex;
-    } else if (mode === 'after' && state.selectedIndex >= 0) {
-      state.timeline.splice(state.selectedIndex + 1, 0, item);
-      state.selectedIndex = state.selectedIndex + 1;
-    } else {
-      state.timeline.push(item);
-      state.selectedIndex = state.timeline.length - 1;
-    }
-    renderTimeline();
-    syncSelectedInspector();
-    buildScript();
-  }
-
   function renderTimeline(){
-    const box = $('timeline');
-    if (!state.timeline.length) {
-      box.innerHTML = `<div class="tiny muted">Sua timeline está vazia. Adicione produtos ou imagens manuais.</div>`;
-      buildScript();
+    const box=$('timeline');
+    if(!state.timeline.length){ box.innerHTML='<div class="tiny muted">Timeline vazia. Adicione produtos ou imagens.</div>'; return; }
+    box.innerHTML=state.timeline.map((it,i)=>`<div class="timeline-item ${i===state.selectedIndex?'active':''}" data-timeline-index="${i}"><div class="timeline-thumb">${it.source?`<img src="${it.source}" loading="lazy">`:''}</div><div><div class="timeline-title">${esc(it.title||'Item')}</div><div class="timeline-meta">${it.type==='product'?'produto':'imagem'} • ${it.durationWeight}x • ${it.removeMode!=='off'?'lente ativa':'sem lente'}</div></div><strong class="tiny">${i+1}</strong></div>`).join('');
+  }
+  function selected(){ return state.timeline[state.selectedIndex] || null; }
+  function invalidate(it){ if(!it) return; [...state.preparedCache.keys()].forEach(k=>{ if(k.startsWith(it.uid+':')) state.preparedCache.delete(k); }); }
+
+  function syncInspector(){
+    const it=selected();
+    $('selectedInfo').textContent = it ? `${state.selectedIndex+1}: ${it.type==='product'?'produto':'imagem'}` : 'nada selecionado';
+    const defaults = { itemCaption:'', itemDuration:1, itemScale:128, itemRotate:0, itemX:0, itemY:-80, itemOpacity:100, itemBlur:0, itemBrightness:100, itemContrast:108, itemSaturate:112, itemWarmth:0, itemMotion:'float', motionPower:38, outlineSize:0, outlineColor:'#ffffff', glowSize:0, glowColor:'#f5b84b', shadowSize:32, shadowY:36, reflection:0, skewX:0, removeMode:'off', whiteThreshold:238, whiteSoftness:34, edgeClean:18, spill:45 };
+    if(!it){
+      Object.entries(defaults).forEach(([id,val])=>{ if($(id)) $(id).value=val; });
       return;
     }
-    box.innerHTML = state.timeline.map((item, i) => {
-      const thumb = item.source ? `<img src="${item.source}" loading="lazy" />` : '<span class="tiny">sem</span>';
-      let meta = [];
-      if (item.type === 'product') meta.push(item.product.marca || 'Produto');
-      meta.push(`${item.durationWeight}x tempo`);
-      if (item.caption) meta.push('com legenda');
-      return `
-        <div class="timeline-item ${state.selectedIndex === i ? 'active' : ''}" data-timeline-index="${i}">
-          <div class="timeline-thumb">${thumb}</div>
-          <div>
-            <div class="title">${escapeHtml(item.title || 'Item')}</div>
-            <div class="meta">${escapeHtml(meta.join(' • '))}</div>
-          </div>
-          <div class="tiny"><strong>${i+1}</strong></div>
-        </div>`;
-    }).join('');
+    $('itemCaption').value=it.caption||''; $('itemDuration').value=it.durationWeight??1; $('itemScale').value=it.scale??128; $('itemRotate').value=it.rotate??0; $('itemX').value=it.x??0; $('itemY').value=it.y??-80; $('itemOpacity').value=it.opacity??100; $('itemBlur').value=it.blur??0; $('itemBrightness').value=it.brightness??100; $('itemContrast').value=it.contrast??108; $('itemSaturate').value=it.saturate??112; $('itemWarmth').value=it.warmth??0; $('itemMotion').value=it.motion??'float'; $('motionPower').value=it.motionPower??38; $('outlineSize').value=it.outlineSize??0; $('outlineColor').value=it.outlineColor??'#ffffff'; $('glowSize').value=it.glowSize??0; $('glowColor').value=it.glowColor??'#f5b84b'; $('shadowSize').value=it.shadowSize??32; $('shadowY').value=it.shadowY??36; $('reflection').value=it.reflection??0; $('skewX').value=it.skewX??0; $('removeMode').value=it.removeMode??'off'; $('whiteThreshold').value=it.whiteThreshold??238; $('whiteSoftness').value=it.whiteSoftness??34; $('edgeClean').value=it.edgeClean??18; $('spill').value=it.spill??45;
+  }
+  function updateSelectedFromInspector(){
+    const it=selected(); if(!it) return;
+    Object.assign(it, {
+      caption:$('itemCaption').value, durationWeight:Number($('itemDuration').value), scale:Number($('itemScale').value), rotate:Number($('itemRotate').value), x:Number($('itemX').value), y:Number($('itemY').value), opacity:Number($('itemOpacity').value), blur:Number($('itemBlur').value), brightness:Number($('itemBrightness').value), contrast:Number($('itemContrast').value), saturate:Number($('itemSaturate').value), warmth:Number($('itemWarmth').value), motion:$('itemMotion').value, motionPower:Number($('motionPower').value), outlineSize:Number($('outlineSize').value), outlineColor:$('outlineColor').value, glowSize:Number($('glowSize').value), glowColor:$('glowColor').value, shadowSize:Number($('shadowSize').value), shadowY:Number($('shadowY').value), reflection:Number($('reflection').value), skewX:Number($('skewX').value), removeMode:$('removeMode').value, whiteThreshold:Number($('whiteThreshold').value), whiteSoftness:Number($('whiteSoftness').value), edgeClean:Number($('edgeClean').value), spill:Number($('spill').value)
+    });
+    invalidate(it); renderTimeline(); buildScript();
   }
 
-  function selectTimeline(index){
-    state.selectedIndex = index;
-    renderTimeline();
-    syncSelectedInspector();
+  async function loadImage(src){
+    if(!src) return null; if(state.imageCache.has(src)) return state.imageCache.get(src);
+    const p=new Promise(resolve=>{ const img=new Image(); img.crossOrigin='anonymous'; img.onload=()=>resolve(img); img.onerror=()=>resolve(null); img.src=src; });
+    state.imageCache.set(src,p); return p;
   }
-
-  function selectedItem(){ return state.timeline[state.selectedIndex] || null; }
-
-  function syncSelectedInspector(){
-    const item = selectedItem();
-    if (!item) {
-      $('selectedInfo').textContent = 'Selecione um item na timeline para personalizar.';
-      $('itemCaption').value = '';
-      return;
+  function sampleCornerColor(data,w,h){
+    const pts=[[0,0],[w-1,0],[0,h-1],[w-1,h-1],[Math.floor(w/2),0],[0,Math.floor(h/2)]];
+    let r=0,g=0,b=0,n=0;
+    pts.forEach(([x,y])=>{ const i=(y*w+x)*4; r+=data[i]; g+=data[i+1]; b+=data[i+2]; n++; });
+    return [r/n,g/n,b/n];
+  }
+  async function preparedImage(it){
+    if(!it?.source) return null;
+    const key=[it.uid,it.source,it.removeMode,it.whiteThreshold,it.whiteSoftness,it.edgeClean,it.spill,it.brightness,it.contrast,it.saturate,it.warmth].join(':');
+    if(state.preparedCache.has(key)) return state.preparedCache.get(key);
+    const img=await loadImage(it.source); if(!img) return null;
+    const off=document.createElement('canvas'); off.width=img.naturalWidth||img.width; off.height=img.naturalHeight||img.height;
+    const o=off.getContext('2d',{willReadFrequently:true}); o.drawImage(img,0,0,off.width,off.height);
+    let data;
+    try{ data=o.getImageData(0,0,off.width,off.height); }catch(e){ state.preparedCache.set(key,img); return img; }
+    const d=data.data, w=off.width, h=off.height;
+    const mode=it.removeMode||'off', threshold=Number(it.whiteThreshold||238), soft=Number(it.whiteSoftness||34), edge=Number(it.edgeClean||18), spill=Number(it.spill||45)/100;
+    const corner=mode==='corner'?sampleCornerColor(d,w,h):[255,255,255];
+    for(let i=0;i<d.length;i+=4){
+      let r=d[i], g=d[i+1], b=d[i+2], a=d[i+3];
+      const avg=(r+g+b)/3, max=Math.max(r,g,b), min=Math.min(r,g,b), sat=max-min;
+      let removeScore=0;
+      if(mode==='white'){
+        const whiteness = Math.min(r,g,b);
+        removeScore = whiteness - threshold - sat*0.25;
+      } else if(mode==='light'){
+        removeScore = avg - threshold + (45 - sat)*0.25;
+      } else if(mode==='corner'){
+        const dist=Math.sqrt((r-corner[0])**2+(g-corner[1])**2+(b-corner[2])**2);
+        removeScore = threshold - dist;
+      }
+      if(mode!=='off' && removeScore>0){
+        const alphaFactor = soft>0 ? clamp(1 - removeScore/soft, 0, 1) : 0;
+        a = Math.round(a * alphaFactor);
+      }
+      if(mode!=='off' && a>0 && a<245){
+        const reduce=spill*(1-a/255);
+        d[i]=Math.round(r*(1-reduce)+Math.min(r,230)*reduce);
+        d[i+1]=Math.round(g*(1-reduce)+Math.min(g,230)*reduce);
+        d[i+2]=Math.round(b*(1-reduce)+Math.min(b,230)*reduce);
+      }
+      d[i+3]=a;
     }
-    $('selectedInfo').textContent = `${item.type === 'product' ? 'Produto' : 'Imagem'} selecionado: ${item.title}`;
-    $('itemCaption').value = item.caption || '';
-    $('itemDuration').value = item.durationWeight ?? 1;
-    $('itemScale').value = item.scale ?? 100;
-    $('itemRotate').value = item.rotate ?? 0;
-    $('itemX').value = item.x ?? 0;
-    $('itemY').value = item.y ?? 0;
-    $('itemBlur').value = item.blur ?? 0;
-    $('itemOpacity').value = item.opacity ?? 100;
-    $('removeWhite').checked = !!item.removeWhite;
-    $('whiteThreshold').value = item.whiteThreshold ?? 242;
-    $('whiteSoftness').value = item.whiteSoftness ?? 18;
-    $('shadowToggle').checked = item.shadow !== false;
+    if(mode!=='off' && edge>0){
+      for(let pass=0; pass<2; pass++){
+        for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){
+          const i=(y*w+x)*4+3;
+          if(d[i] > 0 && d[i] < edge*3){ d[i]=0; }
+        }
+      }
+    }
+    o.putImageData(data,0,0);
+    state.preparedCache.set(key,off); return off;
   }
 
-  function bindInspector(){
-    ['itemCaption','itemDuration','itemScale','itemRotate','itemX','itemY','itemBlur','itemOpacity','whiteThreshold','whiteSoftness'].forEach(id => {
-      $(id).addEventListener('input', () => {
-        const item = selectedItem();
-        if (!item) return;
-        item.caption = $('itemCaption').value;
-        item.durationWeight = Number($('itemDuration').value);
-        item.scale = Number($('itemScale').value);
-        item.rotate = Number($('itemRotate').value);
-        item.x = Number($('itemX').value);
-        item.y = Number($('itemY').value);
-        item.blur = Number($('itemBlur').value);
-        item.opacity = Number($('itemOpacity').value);
-        item.whiteThreshold = Number($('whiteThreshold').value);
-        item.whiteSoftness = Number($('whiteSoftness').value);
-        invalidatePrepared(item);
-        renderTimeline();
-        buildScript();
-      });
-    });
-    $('removeWhite').addEventListener('change', () => {
-      const item = selectedItem();
-      if (!item) return;
-      item.removeWhite = $('removeWhite').checked;
-      invalidatePrepared(item);
-    });
-    $('shadowToggle').addEventListener('change', () => {
-      const item = selectedItem();
-      if (!item) return;
-      item.shadow = $('shadowToggle').checked;
-    });
+  function scenes(){
+    const total=Number($('videoDuration').value), weight=state.timeline.reduce((s,it)=>s+Number(it.durationWeight||1),0)||1;
+    let cur=0; return state.timeline.map(it=>{ const dur=total*(Number(it.durationWeight||1)/weight); const s={item:it,start:cur,end:cur+dur,dur}; cur+=dur; return s; });
+  }
+  function sceneAt(t){ const ss=scenes(); return ss.find((s,i)=>t>=s.start && (t<s.end || i===ss.length-1))||null; }
+
+  async function drawFrame(t, exporting=false){
+    const m=model();
+    await drawBackground(m,t);
+    if(!state.timeline.length){ drawEmpty(m,t); return; }
+    const ss=scenes(), s=sceneAt(t), idx=ss.indexOf(s), trans=Math.min(Number($('transitionSeconds').value), s.dur*.45), local=t-s.start;
+    if(idx>0 && local<trans) await drawTransition(ss[idx-1],s,ease(local/trans),m,t); else await drawItemScene(s.item,m,t,1,{});
+    drawGlobalOverlay(m,t,exporting);
   }
 
-  function escapeHtml(str){
-    return String(str).replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
+  async function drawBackground(m,t){
+    const [c1,c2,accent,dark]=m.colors, mode=$('bgMode').value;
+    if(mode==='solid'){ ctx.fillStyle=$('bgColor').value; ctx.fillRect(0,0,W,H); }
+    else if(mode==='gradient'){ const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,$('bgColor').value); g.addColorStop(1,$('bgColor2').value); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); }
+    else if(mode==='image' && state.bgImageUrl){ const img=await loadImage(state.bgImageUrl); if(img){ ctx.save(); ctx.filter=`blur(${$('bgBlur').value}px)`; drawCover(img,0,0,W,H); ctx.restore(); } else { ctx.fillStyle=c1; ctx.fillRect(0,0,W,H); } }
+    else { const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,c1); g.addColorStop(1,c2); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); }
+
+    drawDecor(m,t);
+    const spotlight=Number($('spotlight').value)/100;
+    if(spotlight>0){ const rg=ctx.createRadialGradient(W/2,H*.44,80,W/2,H*.44,760); rg.addColorStop(0,`rgba(255,255,255,${0.46*spotlight})`); rg.addColorStop(1,'rgba(255,255,255,0)'); ctx.fillStyle=rg; ctx.fillRect(0,0,W,H); }
+    const darken=Number($('bgDarken').value)/100; if(darken>0){ ctx.fillStyle=`rgba(0,0,0,${darken})`; ctx.fillRect(0,0,W,H); }
+    const vig=Number($('vignette').value)/100; if(vig>0){ const rg=ctx.createRadialGradient(W/2,H/2,300,W/2,H/2,1120); rg.addColorStop(0,'rgba(0,0,0,0)'); rg.addColorStop(1,`rgba(0,0,0,${0.65*vig})`); ctx.fillStyle=rg; ctx.fillRect(0,0,W,H); }
+    const noise=Number($('bgNoise').value); if(noise>0){ ctx.save(); ctx.globalAlpha=noise/420; for(let i=0;i<1700;i++){ ctx.fillStyle=Math.random()>.5?'#fff':'#000'; ctx.fillRect(Math.random()*W,Math.random()*H,1,1); } ctx.restore(); }
+    if($('debugCut').value==='checker') drawChecker();
+  }
+  function drawDecor(m,t){
+    const decor=$('bgDecor').value, accent=m.colors[2];
+    ctx.save();
+    if(decor==='blobs'){
+      for(let i=0;i<4;i++){ ctx.globalAlpha=.09+i*.025; ctx.fillStyle=i%2?accent:'#fff'; ctx.beginPath(); ctx.ellipse(120+i*285+Math.sin(t+i)*20, 340+i*290, 220+i*18, 150+i*26, t*.05+i, 0, Math.PI*2); ctx.fill(); }
+    } else if(decor==='lines'){
+      ctx.globalAlpha=.12; ctx.strokeStyle=accent; ctx.lineWidth=7; for(let i=0;i<9;i++){ ctx.beginPath(); ctx.moveTo(-100,220+i*180+Math.sin(t+i)*20); ctx.lineTo(W+100,120+i*180); ctx.stroke(); }
+    } else if(decor==='bokeh'){
+      for(let i=0;i<20;i++){ ctx.globalAlpha=.08; ctx.fillStyle=i%2?accent:'#fff'; ctx.beginPath(); ctx.arc((i*137+Math.sin(t+i)*25)%W, (i*221+Math.cos(t+i)*20)%H, 22+(i%5)*14, 0, Math.PI*2); ctx.fill(); }
+    }
+    ctx.restore();
+  }
+  function drawChecker(){
+    ctx.save(); ctx.globalAlpha=.08; const s=40; for(let y=0;y<H;y+=s) for(let x=0;x<W;x+=s){ ctx.fillStyle=((x/s+y/s)%2)?'#000':'#fff'; ctx.fillRect(x,y,s,s); } ctx.restore();
+  }
+
+  async function drawTransition(prev,cur,p,m,t){
+    const mode=$('transitionMode').value;
+    if(mode==='fade'){ await drawItemScene(prev.item,m,t,1-p,{}); await drawItemScene(cur.item,m,t,p,{}); }
+    else if(mode==='slideLeft'){ await drawItemScene(prev.item,m,t,1,{dx:-W*p}); await drawItemScene(cur.item,m,t,1,{dx:W*(1-p)}); }
+    else if(mode==='slideUp'){ await drawItemScene(prev.item,m,t,1,{dy:-H*p}); await drawItemScene(cur.item,m,t,1,{dy:H*(1-p)}); }
+    else if(mode==='zoom'){ await drawItemScene(prev.item,m,t,1-p,{scaleMul:1+p*.2}); await drawItemScene(cur.item,m,t,p,{scaleMul:1.18-p*.18}); }
+    else if(mode==='wipe'){ await drawItemScene(prev.item,m,t,1,{}); ctx.save(); ctx.beginPath(); ctx.rect(0,0,W*p,H); ctx.clip(); await drawItemScene(cur.item,m,t,1,{}); ctx.restore(); }
+    else if(mode==='blurFade'){ await drawItemScene(prev.item,m,t,1-p,{filter:`blur(${p*12}px)`}); await drawItemScene(cur.item,m,t,p,{filter:`blur(${(1-p)*12}px)`}); }
+    else if(mode==='pop'){ await drawItemScene(prev.item,m,t,1-p,{scaleMul:1-p*.12}); await drawItemScene(cur.item,m,t,p,{scaleMul:.86+p*.14}); }
+    else if(mode==='rotate'){ await drawItemScene(prev.item,m,t,1-p,{rotateAdd:-10*p}); await drawItemScene(cur.item,m,t,p,{rotateAdd:10*(1-p)}); }
+    else await drawItemScene(cur.item,m,t,1,{});
+  }
+
+  async function drawItemScene(it,m,t,alpha=1,fx={}){
+    const textMode=$('textPosition').value;
+    ctx.save();
+    ctx.globalAlpha=alpha; ctx.translate(fx.dx||0, fx.dy||0); if(fx.filter) ctx.filter=fx.filter;
+
+    if(textMode!=='off') drawMinimalText(it,m,textMode);
+    await drawProductOnly(it,m,t,fx);
+    if(textMode==='minimal' || textMode==='bottom' || textMode==='topBottom') drawBottomInfo(it,m,textMode);
+    ctx.restore();
+  }
+  function titleShort(it){
+    if(it.type==='product') return it.product.nome.replace(/\s+/g,' ').replace(/\b(Piracanjuba|Italac|Unilever|Nestle|Nestlé)\b/gi, m=>m).slice(0,58);
+    return it.caption || it.title || 'Imagem';
+  }
+  function drawMinimalText(it,m,mode){
+    const dark=m.style==='dark', text=dark?'#fff8ee':m.colors[3], accent=m.colors[2];
+    ctx.save(); ctx.shadowColor=dark?'rgba(0,0,0,.75)':'rgba(255,255,255,.75)'; ctx.shadowBlur=12;
+    if(mode==='minimal' || mode==='topBottom'){
+      ctx.fillStyle=text; ctx.font='900 42px Inter,Arial'; ctx.textAlign='center';
+      if($('showTitle').checked) wrapText(ctx,titleShort(it),120,126,840,48);
+      const brandLine=[]; if(it.type==='product'){ if($('showBrand').checked&&it.product.marca) brandLine.push(it.product.marca); if($('showPackaging').checked&&it.product.embalagem) brandLine.push(it.product.embalagem); }
+      if(brandLine.length){ ctx.font='800 24px Inter,Arial'; ctx.fillStyle=accent; ctx.fillText(brandLine.join(' • ').toUpperCase(),W/2,245); }
+    }
+    ctx.restore();
+  }
+  function drawBottomInfo(it,m,mode){
+    if(mode==='off') return;
+    const dark=m.style==='dark', text=dark?'#fff8ee':m.colors[3], accent=m.colors[2];
+    ctx.save(); ctx.textAlign='center'; ctx.shadowColor=dark?'rgba(0,0,0,.85)':'rgba(255,255,255,.85)'; ctx.shadowBlur=18;
+    if(it.type==='product' && $('showPrices').checked){ ctx.fillStyle=accent; ctx.font='900 72px Inter,Arial'; ctx.fillText(money(displayPrice(it.product)),W/2,H-350); if(hasOffer(it.product)){ ctx.font='800 26px Inter,Arial'; ctx.fillStyle=text; ctx.fillText(`antes ${money(it.product.preco)}`,W/2,H-302); } }
+    if(it.caption){ ctx.fillStyle=text; ctx.font='800 30px Inter,Arial'; wrapText(ctx,it.caption,150,H-480,780,36); }
+    ctx.restore();
+  }
+  async function drawProductOnly(it,m,t,fx){
+    const img=await preparedImage(it); if(!img) return;
+    const power=Number(it.motionPower||0)/100;
+    const motion=motionTransform(it.motion,t,power);
+    const baseSize=680*(Number(it.scale||100)/100)*(fx.scaleMul||1)*motion.scale;
+    const cx=W/2+Number(it.x||0)+motion.x;
+    const cy=H*.49+Number(it.y||0)+motion.y;
+    const rot=((Number(it.rotate||0)+(fx.rotateAdd||0)+motion.rotate)*Math.PI)/180;
+
+    ctx.save();
+    ctx.translate(cx,cy); ctx.rotate(rot); ctx.transform(1,0,Math.tan((Number(it.skewX||0)*Math.PI)/180),1,0,0);
+    ctx.globalAlpha*=clamp(Number(it.opacity||100)/100,0,1);
+    const filt=[]; if(it.blur) filt.push(`blur(${it.blur}px)`); filt.push(`brightness(${it.brightness||100}%)`); filt.push(`contrast(${it.contrast||100}%)`); filt.push(`saturate(${it.saturate||100}%)`); ctx.filter=filt.join(' ');
+    if(Number(it.glowSize)>0){ ctx.shadowColor=it.glowColor||m.colors[2]; ctx.shadowBlur=Number(it.glowSize); }
+    if(Number(it.shadowSize)>0){ drawShadow(baseSize, Number(it.shadowSize), Number(it.shadowY||36)); }
+    if(Number(it.outlineSize)>0) drawImageOutline(img, -baseSize/2, -baseSize/2, baseSize, baseSize, Number(it.outlineSize), it.outlineColor||'#fff');
+    drawContain(img, -baseSize/2, -baseSize/2, baseSize, baseSize, Number(it.warmth||0));
+    ctx.restore();
+    if(Number(it.reflection)>0) drawReflection(img,cx,cy,baseSize,it,m);
+  }
+  function motionTransform(it,t,p){
+    const m=it.motion||'none';
+    if(m==='none') return {x:0,y:0,scale:1,rotate:0};
+    if(m==='float') return {x:0,y:Math.sin(t*2.3)*22*p,scale:1,rotate:Math.sin(t*1.7)*2.5*p};
+    if(m==='zoomIn') return {x:0,y:0,scale:1+((t%3)/3)*.08*p,rotate:0};
+    if(m==='pulse') return {x:0,y:0,scale:1+Math.sin(t*4)*.045*p,rotate:0};
+    if(m==='swing') return {x:0,y:Math.sin(t*2)*8*p,scale:1,rotate:Math.sin(t*2.2)*5*p};
+    if(m==='slideUp') return {x:0,y:Math.sin(t*1.5)*8*p-30*p,scale:1,rotate:0};
+    if(m==='spinSoft') return {x:0,y:0,scale:1,rotate:Math.sin(t*1.4)*10*p};
+    return {x:0,y:0,scale:1,rotate:0};
+  }
+  function drawShadow(size,blur,y){
+    ctx.save(); ctx.filter='none'; ctx.shadowColor='rgba(0,0,0,.34)'; ctx.shadowBlur=blur; ctx.fillStyle='rgba(0,0,0,.20)'; ctx.beginPath(); ctx.ellipse(0,size*.38+y,size*.34,size*.075,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+  }
+  function drawImageOutline(img,x,y,w,h,size,color){
+    ctx.save(); ctx.filter='none'; ctx.globalAlpha*=.95; ctx.shadowColor=color; ctx.shadowBlur=size; for(let a=0;a<Math.PI*2;a+=Math.PI/8){ drawContainRaw(img,x+Math.cos(a)*size*.25,y+Math.sin(a)*size*.25,w,h); } ctx.restore();
+  }
+  function drawReflection(img,cx,cy,size,it,m){
+    ctx.save(); ctx.translate(cx, cy+size*.55+Number(it.shadowY||36)); ctx.scale(1,-.32); ctx.globalAlpha=Number(it.reflection)/100*.28; ctx.filter='blur(2px)'; drawContainRaw(img,-size/2,-size/2,size,size); ctx.restore();
+  }
+  function drawContain(img,x,y,w,h,warmth=0){
+    drawContainRaw(img,x,y,w,h);
+    if(warmth!==0){ ctx.save(); ctx.globalCompositeOperation=warmth>0?'screen':'multiply'; ctx.globalAlpha=Math.abs(warmth)/260; ctx.fillStyle=warmth>0?'#ffb56c':'#7fb8ff'; roundRect(x,y,w,h,10); ctx.fill(); ctx.restore(); }
+  }
+  function drawContainRaw(img,x,y,w,h){
+    const iw=img.width||img.naturalWidth, ih=img.height||img.naturalHeight; const r=Math.min(w/iw,h/ih); const nw=iw*r, nh=ih*r; ctx.drawImage(img,x+(w-nw)/2,y+(h-nh)/2,nw,nh);
+  }
+  function drawCover(img,x,y,w,h){ const iw=img.width||img.naturalWidth, ih=img.height||img.naturalHeight; const r=Math.max(w/iw,h/ih); const nw=iw*r, nh=ih*r; ctx.drawImage(img,x+(w-nw)/2,y+(h-nh)/2,nw,nh); }
+
+  function drawGlobalOverlay(m,t,exporting){
+    const accent=m.colors[2], text=m.style==='dark'?'#fff8ee':m.colors[3];
+    if($('showWheel').checked){
+      ctx.save(); ctx.translate(W-150,H-140); ctx.rotate(t*.8); ctx.strokeStyle=accent; ctx.lineWidth=14; ctx.beginPath(); ctx.arc(0,0,78,0,Math.PI*2); ctx.stroke(); for(let i=0;i<12;i++){ ctx.rotate(Math.PI*2/12); ctx.fillStyle=i%2?accent:'#fff'; roundRect(62,-4,24,8,4); ctx.fill(); } ctx.rotate(-t*.8); ctx.fillStyle=accent; ctx.beginPath(); ctx.arc(0,0,58,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='900 19px Inter,Arial'; ctx.textAlign='center'; ctx.fillText('PEDIR',0,-1); ctx.fillText('AGORA',0,22); ctx.restore();
+    }
+    ctx.save(); ctx.textAlign='left'; ctx.shadowColor='rgba(0,0,0,.28)'; ctx.shadowBlur=10; ctx.fillStyle=text; ctx.font='900 26px Inter,Arial'; ctx.fillText('Dona Antônia',54,H-95); ctx.font='800 22px Inter,Arial'; ctx.fillText($('ctaText').value,54,H-62); ctx.restore();
+    if($('showProgress').checked){ ctx.save(); ctx.globalAlpha=.8; roundRect(52,46,W-104,8,6); ctx.fillStyle='rgba(255,255,255,.42)'; ctx.fill(); const r=(t/Number($('videoDuration').value))%1; roundRect(52,46,(W-104)*r,8,6); ctx.fillStyle=accent; ctx.fill(); ctx.restore(); }
+    if(exporting){ ctx.save(); ctx.fillStyle='rgba(255,255,255,.9)'; ctx.font='800 20px Inter,Arial'; ctx.textAlign='right'; ctx.fillText('EXPORTANDO',W-54,86); ctx.restore(); }
+  }
+  function drawEmpty(m,t){
+    const text=m.style==='dark'?'#fff8ee':m.colors[3];
+    ctx.save(); ctx.fillStyle=text; ctx.font='900 64px Inter,Arial'; ctx.textAlign='center'; wrapText(ctx,'Produto grande no centro. Sem card. Sem moldura.',120,360,840,74); ctx.font='760 34px Inter,Arial'; wrapText(ctx,'Adicione produtos na timeline e use a lente para remover fundo branco.',140,590,800,44); ctx.restore(); drawGlobalOverlay(m,t,false);
+  }
+
+  function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function wrapText(context,text,x,y,maxWidth,lineHeight){
+    const words=String(text||'').split(' '); let line='';
+    for(let i=0;i<words.length;i++){ const test=line+words[i]+' '; if(context.measureText(test).width>maxWidth && i>0){ context.fillText(line.trim(),x,y); line=words[i]+' '; y+=lineHeight; } else line=test; }
+    context.fillText(line.trim(),x,y);
   }
 
   function buildScript(){
-    const lines = [];
-    lines.push(`ABERTURA: ${$('headline').value}`);
-    state.timeline.forEach((item, i) => {
-      if (item.type === 'product') {
-        const p = item.product;
-        const meta = [p.marca, p.embalagem].filter(Boolean).join(' • ');
-        lines.push(`${i+1}. PRODUTO: ${p.nome}${meta ? ' — ' + meta : ''}${$('showPrices').checked ? ' — ' + money(displayPrice(p)) : ''}${item.caption ? ' — ' + item.caption : ''}`);
-      } else {
-        lines.push(`${i+1}. IMAGEM MANUAL${item.caption ? ' — ' + item.caption : ''}`);
-      }
-    });
-    lines.push(`FECHAMENTO: ${$('outroText').value}`);
-    lines.push(`CTA FIXO: ${$('ctaText').value}`);
-    $('scriptPreview').textContent = lines.join('\n');
+    const lines=[]; lines.push(`Abertura: ${$('headline').value}`);
+    state.timeline.forEach((it,i)=>{ if(it.type==='product') lines.push(`${i+1}. ${it.product.nome}${$('showPrices').checked?' — '+money(displayPrice(it.product)):''}${it.caption?' — '+it.caption:''}`); else lines.push(`${i+1}. Imagem manual${it.caption?' — '+it.caption:''}`); });
+    lines.push(`CTA: ${$('ctaText').value}`); $('scriptPreview').textContent=lines.join('\n');
   }
-
-  async function imagePromise(src){
-    if (!src) return null;
-    if (state.imageCache.has(src)) return state.imageCache.get(src);
-    const p = new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-      img.src = src;
-    });
-    state.imageCache.set(src, p);
-    return p;
-  }
-
-  function invalidatePrepared(item){
-    if (!item) return;
-    state.preparedCache.delete(item.uid);
-  }
-
-  async function getPreparedImage(item){
-    if (!item?.source) return null;
-    const key = `${item.uid}:${item.source}:${item.removeWhite}:${item.whiteThreshold}:${item.whiteSoftness}`;
-    if (state.preparedCache.has(key)) return state.preparedCache.get(key);
-    const original = await imagePromise(item.source);
-    if (!original) return null;
-    if (!item.removeWhite) {
-      state.preparedCache.set(key, original);
-      return original;
-    }
-    const off = document.createElement('canvas');
-    off.width = original.naturalWidth || original.width;
-    off.height = original.naturalHeight || original.height;
-    const octx = off.getContext('2d', { willReadFrequently:true });
-    octx.drawImage(original, 0, 0);
-    const imgData = octx.getImageData(0, 0, off.width, off.height);
-    const d = imgData.data;
-    const threshold = Number(item.whiteThreshold || 242);
-    const soft = Number(item.whiteSoftness || 18);
-    for (let i = 0; i < d.length; i += 4) {
-      const r = d[i], g = d[i+1], b = d[i+2];
-      const max = Math.max(r,g,b), min = Math.min(r,g,b);
-      const sat = max - min;
-      const avg = (r + g + b) / 3;
-      if (avg >= threshold && sat <= 42) {
-        const fade = soft > 0 ? Math.max(0, Math.min(1, (threshold + soft - avg) / soft)) : 0;
-        d[i+3] = Math.round(255 * fade);
-      }
-    }
-    octx.putImageData(imgData, 0, 0);
-    state.preparedCache.set(key, off);
-    return off;
-  }
-
-  function getScenePlan(){
-    if (!state.timeline.length) return [];
-    const total = Number($('videoDuration').value);
-    const weights = state.timeline.reduce((sum, item) => sum + Number(item.durationWeight || 1), 0) || 1;
-    let cursor = 0;
-    return state.timeline.map(item => {
-      const d = total * (Number(item.durationWeight || 1) / weights);
-      const start = cursor;
-      const end = cursor + d;
-      cursor = end;
-      return { item, start, end, duration: d };
-    });
-  }
-
-  function currentSceneAt(t){
-    const scenes = getScenePlan();
-    if (!scenes.length) return null;
-    return scenes.find((s, i) => (t >= s.start && t < s.end) || (i === scenes.length - 1 && t <= s.end)) || scenes[0];
-  }
-
-  function sceneIndexOf(scene){
-    const scenes = getScenePlan();
-    return scenes.findIndex(s => s.start === scene.start && s.end === scene.end && s.item.uid === scene.item.uid);
-  }
-
-  function ease(x){ return 1 - Math.pow(1 - x, 3); }
-  function lerp(a,b,t){ return a + (b-a)*t; }
-  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
-
-  async function drawFrame(t, forExport=false){
-    const model = modelById($('videoModel').value);
-    await drawBackground(model);
-    const scene = currentSceneAt(t);
-    if (!scene) {
-      drawEmpty(model);
-      return;
-    }
-    const scenes = getScenePlan();
-    const idx = sceneIndexOf(scene);
-    const transDur = Math.min(Number($('transitionSeconds').value), scene.duration * 0.45);
-    const local = t - scene.start;
-    const inProgress = transDur > 0 ? clamp(local / transDur, 0, 1) : 1;
-    const prev = idx > 0 ? scenes[idx - 1] : null;
-
-    if (prev && local < transDur) {
-      await drawTransition(prev, scene, inProgress, model);
-    } else {
-      await drawScene(scene.item, model, 1, 'none');
-    }
-
-    drawOverlay(model, t, forExport);
-    drawProgress(t / Number($('videoDuration').value), model);
-  }
-
-  async function drawBackground(model){
-    const mode = $('bgMode').value;
-    const c1 = $('bgColor').value;
-    const c2 = $('bgColor2').value;
-    ctx.clearRect(0,0,W,H);
-
-    if (mode === 'solid') {
-      ctx.fillStyle = c1;
-      ctx.fillRect(0,0,W,H);
-    } else if (mode === 'gradient') {
-      const g = ctx.createLinearGradient(0,0,W,H);
-      g.addColorStop(0,c1); g.addColorStop(1,c2);
-      ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-    } else if (mode === 'image' && state.bgImageUrl) {
-      const img = await imagePromise(state.bgImageUrl);
-      if (img) {
-        const blur = Number($('bgBlur').value);
-        ctx.save();
-        ctx.filter = `blur(${blur}px)`;
-        drawCover(img, 0, 0, W, H);
-        ctx.restore();
-      } else {
-        ctx.fillStyle = c1; ctx.fillRect(0,0,W,H);
-      }
-    } else {
-      const g = ctx.createLinearGradient(0,0,W,H);
-      g.addColorStop(0,model.theme[0]); g.addColorStop(1,model.theme[1]);
-      ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-    }
-
-    const darken = Number($('bgDarken').value) / 100;
-    if (darken > 0) {
-      ctx.fillStyle = `rgba(0,0,0,${darken})`;
-      ctx.fillRect(0,0,W,H);
-    }
-
-    const noise = Number($('bgNoise').value);
-    if (noise > 0) {
-      ctx.save();
-      ctx.globalAlpha = noise / 300;
-      for (let i=0;i<2600;i++) {
-        const x = Math.random() * W;
-        const y = Math.random() * H;
-        ctx.fillStyle = Math.random() > .5 ? '#fff' : '#000';
-        ctx.fillRect(x,y,1,1);
-      }
-      ctx.restore();
-    }
-
-    const vignette = Number($('vignette').value) / 100;
-    if (vignette > 0) {
-      const rg = ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.2,W/2,H/2,Math.max(W,H)*0.75);
-      rg.addColorStop(0, 'rgba(0,0,0,0)');
-      rg.addColorStop(1, `rgba(0,0,0,${0.78*vignette})`);
-      ctx.fillStyle = rg; ctx.fillRect(0,0,W,H);
-    }
-  }
-
-  async function drawTransition(prevScene, currentScene, p, model){
-    const mode = $('transitionMode').value;
-    const e = ease(p);
-    if (mode === 'fade') {
-      await drawScene(prevScene.item, model, 1-e, 'none');
-      await drawScene(currentScene.item, model, e, 'none');
-    } else if (mode === 'slideLeft') {
-      await drawScene(prevScene.item, model, 1, 'none', { dx: -W*e });
-      await drawScene(currentScene.item, model, 1, 'none', { dx: W*(1-e) });
-    } else if (mode === 'slideUp') {
-      await drawScene(prevScene.item, model, 1, 'none', { dy: -H*e });
-      await drawScene(currentScene.item, model, 1, 'none', { dy: H*(1-e) });
-    } else if (mode === 'zoom') {
-      await drawScene(prevScene.item, model, 1-e, 'none', { scaleMul: 1 + e*0.2 });
-      await drawScene(currentScene.item, model, e, 'none', { scaleMul: 1.15 - e*0.15 });
-    } else if (mode === 'wipe') {
-      await drawScene(prevScene.item, model, 1, 'none');
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0, 0, W*e, H);
-      ctx.clip();
-      await drawScene(currentScene.item, model, 1, 'none');
-      ctx.restore();
-    } else if (mode === 'blurFade') {
-      await drawScene(prevScene.item, model, 1-e, 'none', { filter:`blur(${e*10}px)` });
-      await drawScene(currentScene.item, model, e, 'none', { filter:`blur(${(1-e)*10}px)` });
-    } else if (mode === 'pop') {
-      await drawScene(prevScene.item, model, 1-e, 'none', { scaleMul: 1 - e*0.12 });
-      await drawScene(currentScene.item, model, e, 'none', { scaleMul: 0.88 + e*0.12 });
-    } else if (mode === 'rotate') {
-      await drawScene(prevScene.item, model, 1-e, 'none', { rotateMul: -8*e });
-      await drawScene(currentScene.item, model, e, 'none', { rotateMul: 8*(1-e) });
-    } else {
-      await drawScene(currentScene.item, model, 1, 'none');
-    }
-  }
-
-  async function drawScene(item, model, alpha=1, transition='none', fx={}){
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    if (fx.filter) ctx.filter = fx.filter;
-    ctx.translate(fx.dx || 0, fx.dy || 0);
-
-    const layout = model.layout;
-    if (layout === 'clean') await drawSceneClean(item, model, fx);
-    else if (layout === 'tiktok') await drawSceneTikTok(item, model, fx);
-    else if (layout === 'glass') await drawSceneGlass(item, model, fx);
-    else if (layout === 'price') await drawScenePrice(item, model, fx);
-    else if (layout === 'minimal') await drawSceneMinimal(item, model, fx);
-    else if (layout === 'dark') await drawSceneDark(item, model, fx);
-    else if (layout === 'split') await drawSceneSplit(item, model, fx);
-    else await drawSceneClean(item, model, fx);
-    ctx.restore();
-  }
-
-  async function drawSceneClean(item, model, fx){
-    drawHeaderChip(model, model.name.split('•')[1]?.trim() || 'MODELO');
-    await drawMainCard(item, model, { boxY:330, imageCx:540, imageCy:860, imageSize:620, textTop:170, metaAt:470, infoAt:1280, priceAt:[88,1210], fx });
-  }
-  async function drawSceneTikTok(item, model, fx){
-    drawHeaderChip(model, 'ESTILO TIKTOK');
-    await drawMainCard(item, model, { boxY:270, imageCx:520, imageCy:820, imageSize:680, textTop:165, metaAt:430, infoAt:1290, priceAt:[80,1170], tagSide:true, fx });
-  }
-  async function drawSceneGlass(item, model, fx){
-    drawHeaderChip(model, 'GLASS');
-    await drawMainCard(item, model, { boxY:290, imageCx:540, imageCy:780, imageSize:620, textTop:150, metaAt:420, infoAt:1220, priceAt:[86,1148], glass:true, fx });
-  }
-  async function drawScenePrice(item, model, fx){
-    drawHeaderChip(model, 'OFERTA');
-    await drawMainCard(item, model, { boxY:320, imageCx:690, imageCy:835, imageSize:520, textTop:190, metaAt:430, infoAt:1240, priceAt:[78,1110], leftInfo:true, fx });
-  }
-  async function drawSceneMinimal(item, model, fx){
-    drawHeaderChip(model, 'MERCADO');
-    await drawMainCard(item, model, { boxY:270, imageCx:540, imageCy:790, imageSize:560, textTop:170, metaAt:420, infoAt:1180, priceAt:[300,1120], minimal:true, fx });
-  }
-  async function drawSceneDark(item, model, fx){
-    drawHeaderChip(model, 'DARK');
-    await drawMainCard(item, model, { boxY:300, imageCx:540, imageCy:820, imageSize:600, textTop:165, metaAt:420, infoAt:1230, priceAt:[88,1140], dark:true, fx });
-  }
-  async function drawSceneSplit(item, model, fx){
-    drawHeaderChip(model, 'CATÁLOGO');
-    await drawMainCard(item, model, { boxY:285, imageCx:330, imageCy:860, imageSize:430, textTop:205, metaAt:420, infoAt:620, priceAt:[560,1075], rightText:true, fx });
-  }
-
-  async function drawMainCard(item, model, opts){
-    const [bg1,bg2,accent,dark] = model.theme;
-    const panelFill = opts.dark ? 'rgba(14,12,10,.62)' : opts.glass ? 'rgba(255,255,255,.24)' : 'rgba(255,251,245,.88)';
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,.16)';
-    ctx.shadowBlur = 34;
-    ctx.shadowOffsetY = 18;
-    fillRoundRect(60, opts.boxY, 960, 1220, 52, panelFill);
-    ctx.restore();
-
-    const title = item.type === 'product' ? item.product.nome : (item.caption || item.title || 'Imagem');
-    const metaArr = [];
-    if (item.type === 'product') {
-      if ($('showBrand').checked && item.product.marca) metaArr.push(item.product.marca);
-      if ($('showPackaging').checked && item.product.embalagem) metaArr.push(item.product.embalagem);
-      if (item.product.categoria) metaArr.push(item.product.categoria);
-    }
-    const meta = metaArr.join(' • ');
-    const caption = item.caption || (item.type === 'product' ? defaultBenefit(item.product) : $('subheadline').value);
-
-    const titleX = opts.rightText ? 560 : 90;
-    const titleW = opts.rightText ? 390 : 840;
-    const textColor = opts.dark ? '#fff8ef' : dark;
-    drawTextBlock(title, titleX, opts.textTop, titleW, 62, textColor, 900, 1.08);
-    if (meta) drawPill(titleX, opts.metaAt, Math.min(860, titleW), 52, opts.dark ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.94)', meta.toUpperCase(), textColor, 22);
-
-    const prepared = await getPreparedImage(item);
-    const scaleBase = (opts.imageSize * (item.scale || 100) / 100) * (opts.fx?.scaleMul || 1);
-    const finalX = (opts.imageCx + (item.x || 0));
-    const finalY = (opts.imageCy + (item.y || 0));
-    const rotation = ((item.rotate || 0) + (opts.fx?.rotateMul || 0)) * Math.PI / 180;
-    const opacity = clamp((item.opacity || 100) / 100, 0, 1);
-
-    ctx.save();
-    ctx.globalAlpha = opacity;
-    if (item.shadow !== false) {
-      ctx.shadowColor = 'rgba(0,0,0,.26)';
-      ctx.shadowBlur = 30;
-      ctx.shadowOffsetY = 16;
-      ctx.fillStyle = 'rgba(0,0,0,.18)';
-      ctx.beginPath(); ctx.ellipse(finalX, finalY + scaleBase*0.36, scaleBase*0.34, scaleBase*0.08, 0, 0, Math.PI*2); ctx.fill();
-      ctx.shadowBlur = 0;
-    }
-    ctx.translate(finalX, finalY);
-    ctx.rotate(rotation);
-    ctx.filter = item.blur ? `blur(${item.blur}px)` : 'none';
-    if (prepared) drawContainCentered(prepared, -scaleBase/2, -scaleBase/2, scaleBase, scaleBase);
-    else drawPlaceholder(-scaleBase/2, -scaleBase/2, scaleBase, scaleBase, accent);
-    ctx.restore();
-
-    drawTextBlock(caption, titleX, opts.infoAt, opts.rightText ? 390 : 840, 40, textColor, 780, 1.2);
-
-    if ($('showPrices').checked && item.type === 'product') {
-      const price = money(displayPrice(item.product));
-      const old = item.product.preco_oferta && item.product.preco_oferta > 0 && item.product.preco_oferta < item.product.preco ? money(item.product.preco) : '';
-      drawPriceTag(opts.priceAt[0], opts.priceAt[1], price, old, accent, opts.dark ? '#fff8ef' : '#fff');
-    }
-  }
-
-  function drawHeaderChip(model, label){
-    const accent = model.theme[2], text = model.layout === 'dark' ? '#1f150f' : '#fff';
-    drawPill(70, 88, 360, 58, accent, label, text, 26);
-    drawTextBlock($('headline').value, 70, 175, 900, 76, model.layout === 'dark' ? '#fff8ef' : model.theme[3], 900, 1.02);
-  }
-
-  function defaultBenefit(p){
-    const blob = norm(`${p.nome} ${p.categoria} ${p.subcategoria}`);
-    if (/(limpeza|sabao|amaciante|desinfetante|detergente|lava)/.test(blob)) return 'Uma escolha prática para facilitar a rotina e manter a casa em ordem.';
-    if (/(shampoo|condicionador|hidratante|sabonete|creme|beleza|facial|cabelo)/.test(blob)) return 'Cuidado diário com apresentação bonita e visual de produto em destaque.';
-    if (/(molho|macarrao|tempero|confeitaria|creme de leite|sobremesa)/.test(blob)) return 'Boa opção para receitas do dia a dia e compras inteligentes.';
-    return $('subheadline').value || 'Produto real do site apresentado em vídeo curto e objetivo.';
-  }
-
-  function drawOverlay(model, t, exporting){
-    const accent = model.theme[2], dark = model.layout === 'dark' ? '#15110e' : '#2a1e16';
-    ctx.save();
-    fillRoundRect(42, H-230, W-84, 168, 40, 'rgba(24,18,14,.88)');
-    ctx.fillStyle = '#fff';
-    ctx.font = '900 36px Inter, Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText('Dona Antônia', 78, H-164);
-    ctx.font = '700 28px Inter, Arial';
-    wrapText(ctx, $('ctaText').value, 78, H-126, 680, 36);
-
-    if ($('showWheel').checked) {
-      const cx = W - 160;
-      const cy = H - 147;
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(t * .75);
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = 16;
-      ctx.beginPath(); ctx.arc(0,0,82,0,Math.PI*2); ctx.stroke();
-      for (let i=0;i<14;i++) {
-        ctx.rotate((Math.PI*2)/14);
-        ctx.fillStyle = i % 2 ? accent : '#fff';
-        fillRoundRect(69,-4,25,8,4,ctx.fillStyle);
-      }
-      ctx.rotate(-t * .75);
-      ctx.fillStyle = accent;
-      ctx.beginPath(); ctx.arc(0,0,62,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.textAlign = 'center';
-      ctx.font = '900 22px Inter, Arial';
-      ctx.fillText('CLIQUE',0,-2);
-      ctx.fillText('AQUI',0,24);
-      ctx.restore();
-    }
-
-    if (exporting) {
-      ctx.fillStyle = 'rgba(255,255,255,.94)';
-      ctx.font = '800 20px Inter, Arial';
-      ctx.textAlign = 'right';
-      ctx.fillText('EXPORTANDO', W-70, 80);
-    }
-    ctx.restore();
-  }
-
-  function drawProgress(ratio, model){
-    ctx.save();
-    fillRoundRect(46, 40, W-92, 10, 7, 'rgba(255,255,255,.4)');
-    fillRoundRect(46, 40, (W-92)*clamp(ratio,0,1), 10, 7, model.theme[2]);
-    ctx.restore();
-  }
-
-  function drawTextBlock(text, x, y, maxWidth, fontSize, color, weight=800, lineHeight=1.12){
-    ctx.save();
-    ctx.fillStyle = color;
-    ctx.font = `${weight} ${fontSize}px Inter, Arial`;
-    ctx.textBaseline = 'top';
-    wrapText(ctx, String(text || ''), x, y, maxWidth, fontSize*lineHeight);
-    ctx.restore();
-  }
-
-  function wrapText(context, text, x, y, maxWidth, lineHeight){
-    const words = String(text).split(' ');
-    let line = '';
-    for (let n=0;n<words.length;n++) {
-      const testLine = line + words[n] + ' ';
-      if (context.measureText(testLine).width > maxWidth && n > 0) {
-        context.fillText(line.trim(), x, y);
-        line = words[n] + ' ';
-        y += lineHeight;
-      } else {
-        line = testLine;
-      }
-    }
-    context.fillText(line.trim(), x, y);
-  }
-
-  function fillRoundRect(x,y,w,h,r,fill){
-    ctx.save();
-    ctx.fillStyle = fill;
-    roundRectPath(x,y,w,h,r);
-    ctx.fill();
-    ctx.restore();
-  }
-  function roundRectPath(x,y,w,h,r){
-    ctx.beginPath();
-    ctx.moveTo(x+r,y);
-    ctx.arcTo(x+w,y,x+w,y+h,r);
-    ctx.arcTo(x+w,y+h,x,y+h,r);
-    ctx.arcTo(x,y+h,x,y,r);
-    ctx.arcTo(x,y,x+w,y,r);
-    ctx.closePath();
-  }
-  function drawPill(x,y,w,h,bg,text,color,fontSize=24){
-    fillRoundRect(x,y,w,h,h/2,bg);
-    ctx.save();
-    ctx.fillStyle = color;
-    ctx.font = `900 ${fontSize}px Inter, Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(String(text).slice(0,90), x+w/2, y+h/2+1);
-    ctx.restore();
-  }
-  function drawPriceTag(x,y,price,old,accent,textColor){
-    ctx.save();
-    fillRoundRect(x,y,420,132,32,accent);
-    ctx.fillStyle = textColor;
-    ctx.font = '900 56px Inter, Arial';
-    ctx.fillText(price, x+24, y+78);
-    if (old) {
-      ctx.font = '800 26px Inter, Arial';
-      ctx.globalAlpha = .9;
-      ctx.fillText(`antes ${old}`, x+26, y+114);
-    }
-    ctx.restore();
-  }
-  function drawContainCentered(img, x, y, w, h){
-    const iw = img.width || img.naturalWidth;
-    const ih = img.height || img.naturalHeight;
-    const r = Math.min(w/iw, h/ih);
-    const nw = iw*r, nh = ih*r;
-    ctx.drawImage(img, x+(w-nw)/2, y+(h-nh)/2, nw, nh);
-  }
-  function drawCover(img, x,y,w,h){
-    const iw = img.width || img.naturalWidth;
-    const ih = img.height || img.naturalHeight;
-    const r = Math.max(w/iw, h/ih);
-    const nw = iw*r, nh = ih*r;
-    ctx.drawImage(img, x+(w-nw)/2, y+(h-nh)/2, nw, nh);
-  }
-  function drawPlaceholder(x,y,w,h,accent){
-    fillRoundRect(x,y,w,h,36,'rgba(255,255,255,.8)');
-    ctx.save();
-    ctx.fillStyle = accent;
-    ctx.font = '900 34px Inter, Arial';
-    ctx.textAlign='center';
-    ctx.fillText('SEM IMAGEM', x+w/2, y+h/2);
-    ctx.restore();
-  }
-
-  function drawEmpty(model){
-    drawHeaderChip(model, 'PRONTO PARA MONTAR');
-    drawTextBlock('Adicione produtos ou imagens na timeline.', 72, 420, 820, 62, model.layout === 'dark' ? '#fff8ef' : model.theme[3], 900, 1.08);
-    drawTextBlock('Você pode pesquisar produtos, inserir imagens manuais, escolher um dos 10 modelos, mudar o fundo, aplicar lente de fundo branco transparente e exportar o vídeo.', 72, 630, 860, 40, model.layout === 'dark' ? '#fff8ef' : model.theme[3], 760, 1.2);
-    drawOverlay(model, 0, false);
-    drawProgress(0, model);
-  }
-
-  function previewLoop(now){
-    if (!state.playing) return;
-    const dur = Number($('videoDuration').value);
-    const elapsed = ((now - state.previewStart) / 1000) % dur;
-    drawFrame(elapsed).then(()=> {
-      state.raf = requestAnimationFrame(previewLoop);
-    });
-  }
-
-  function startPreview(){
-    cancelAnimationFrame(state.raf);
-    state.previewStart = performance.now();
-    state.playing = true;
-    $('togglePreview').textContent = 'Pausar preview';
-    state.raf = requestAnimationFrame(previewLoop);
-  }
-
-  function pausePreview(){
-    state.playing = false;
-    cancelAnimationFrame(state.raf);
-    $('togglePreview').textContent = 'Retomar preview';
-  }
-
+  function previewLoop(now){ if(!state.playing) return; const dur=Number($('videoDuration').value); const t=((now-state.previewStart)/1000)%dur; drawFrame(t).then(()=>state.raf=requestAnimationFrame(previewLoop)); }
+  function startPreview(){ cancelAnimationFrame(state.raf); state.playing=true; state.previewStart=performance.now(); $('togglePreview').textContent='Pausar preview'; state.raf=requestAnimationFrame(previewLoop); }
+  function pausePreview(){ state.playing=false; cancelAnimationFrame(state.raf); $('togglePreview').textContent='Retomar preview'; }
+  function pickMime(){ return ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t))||''; }
   async function exportVideo(){
-    if (!state.timeline.length) {
-      setStatus('Adicione itens na timeline antes de exportar.');
-      return;
-    }
-    setStatus('Exportando vídeo... aguarde.');
-    state.lastBlob = null;
-    $('downloadVideo').disabled = true;
-    $('exportVideo').disabled = true;
-    state.exporting = true;
-
-    const fps = 30;
-    const duration = Number($('videoDuration').value);
-    const stream = canvas.captureStream(fps);
-    const mime = pickMime();
-    const recorder = new MediaRecorder(stream, mime ? { mimeType:mime, videoBitsPerSecond:8_000_000 } : { videoBitsPerSecond:8_000_000 });
-    const chunks = [];
-    recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
-    recorder.onstop = () => {
-      state.lastBlob = new Blob(chunks, { type: chunks[0]?.type || 'video/webm' });
-      $('downloadVideo').disabled = false;
-      $('exportVideo').disabled = false;
-      state.exporting = false;
-      setStatus(`Vídeo pronto. Tamanho: ${(state.lastBlob.size/1024/1024).toFixed(1)} MB.`);
-      startPreview();
-    };
-    recorder.start(200);
-
-    pausePreview();
-    const start = performance.now();
-    async function renderStep(now){
-      const t = Math.min(duration, (now - start)/1000);
-      await drawFrame(t, true);
-      if (t < duration) {
-        requestAnimationFrame(renderStep);
-      } else {
-        recorder.stop();
-      }
-    }
-    requestAnimationFrame(renderStep);
+    if(!state.timeline.length){ setStatus('Adicione produtos ou imagens antes de exportar.'); return; }
+    setStatus('Exportando vídeo sem áudio...'); $('exportVideo').disabled=true; $('downloadVideo').disabled=true; pausePreview();
+    const duration=Number($('videoDuration').value), stream=canvas.captureStream(30), mime=pickMime();
+    const rec=new MediaRecorder(stream, mime?{mimeType:mime, videoBitsPerSecond:9000000}:{videoBitsPerSecond:9000000}); const chunks=[];
+    rec.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
+    rec.onstop=()=>{ state.lastBlob=new Blob(chunks,{type:chunks[0]?.type||'video/webm'}); $('downloadVideo').disabled=false; $('exportVideo').disabled=false; setStatus(`Vídeo pronto: ${(state.lastBlob.size/1024/1024).toFixed(1)} MB.`); startPreview(); };
+    rec.start(200); const start=performance.now();
+    async function step(now){ const t=Math.min(duration,(now-start)/1000); await drawFrame(t,true); if(t<duration) requestAnimationFrame(step); else rec.stop(); }
+    requestAnimationFrame(step);
   }
+  function downloadBlob(blob,name){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000); }
 
-  function pickMime(){
-    const types = [
-      'video/webm;codecs=vp9',
-      'video/webm;codecs=vp8',
-      'video/webm'
-    ];
-    return types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+  function bind(){
+    ['owner','repo','branch','jsonPath'].forEach(id=>$(id).addEventListener('input',updateGithubHint));
+    $('loadGithub').addEventListener('click',loadGithub); $('jsonFile').addEventListener('change',e=>{ const f=e.target.files?.[0]; if(f) loadJsonFile(f); });
+    $('searchProducts').addEventListener('input',applyFilters); $('categoryFilter').addEventListener('change',applyFilters);
+    $('productList').addEventListener('click',e=>{ const b=e.target.closest('[data-add-product]'); if(!b) return; const p=state.filtered[Number(b.dataset.addProduct)]; if(p) addTimeline(productItem(p)); });
+    $('addFirstFiltered').addEventListener('click',()=>{ state.filtered.slice(0,5).forEach(p=>addTimeline(productItem(p))); setStatus('5 produtos adicionados.'); });
+    $('clearTimeline').addEventListener('click',()=>{ state.timeline=[]; state.selectedIndex=-1; renderTimeline(); syncInspector(); buildScript(); });
+    function imageMode(mode){ state.insertionMode=mode; $('imageFiles').click(); }
+    $('addImagesEnd').addEventListener('click',()=>imageMode('end')); $('addImagesBefore').addEventListener('click',()=>imageMode('before')); $('addImagesAfter').addEventListener('click',()=>imageMode('after'));
+    $('imageFiles').addEventListener('change',e=>{ [...(e.target.files||[])].forEach(f=>addTimeline(imageItem(URL.createObjectURL(f),f.name),state.insertionMode)); e.target.value=''; });
+    $('timeline').addEventListener('click',e=>{ const row=e.target.closest('[data-timeline-index]'); if(row){ state.selectedIndex=Number(row.dataset.timelineIndex); renderTimeline(); syncInspector(); } });
+    ['itemCaption','itemDuration','itemScale','itemRotate','itemX','itemY','itemOpacity','itemBlur','itemBrightness','itemContrast','itemSaturate','itemWarmth','itemMotion','motionPower','outlineSize','outlineColor','glowSize','glowColor','shadowSize','shadowY','reflection','skewX','removeMode','whiteThreshold','whiteSoftness','edgeClean','spill'].forEach(id=>{ $(id).addEventListener('input',updateSelectedFromInspector); $(id).addEventListener('change',updateSelectedFromInspector); });
+    $('applyLensAll').addEventListener('click',()=>{ state.timeline.forEach(it=>{ it.removeMode='white'; it.whiteThreshold=Number($('whiteThreshold').value); it.whiteSoftness=Number($('whiteSoftness').value); it.edgeClean=Number($('edgeClean').value); it.spill=Number($('spill').value); invalidate(it); }); syncInspector(); renderTimeline(); setStatus('Lente aplicada em todos os itens.'); });
+    $('removeLensAll').addEventListener('click',()=>{ state.timeline.forEach(it=>{ it.removeMode='off'; invalidate(it); }); syncInspector(); renderTimeline(); setStatus('Lente removida de todos os itens.'); });
+    $('centerItem').addEventListener('click',()=>{ const it=selected(); if(!it)return; Object.assign(it,{x:0,y:-80,scale:128,rotate:0}); syncInspector(); });
+    $('moveUp').addEventListener('click',()=>{ const i=state.selectedIndex; if(i<=0)return; [state.timeline[i-1],state.timeline[i]]=[state.timeline[i],state.timeline[i-1]]; state.selectedIndex=i-1; renderTimeline(); buildScript(); });
+    $('moveDown').addEventListener('click',()=>{ const i=state.selectedIndex; if(i<0||i>=state.timeline.length-1)return; [state.timeline[i+1],state.timeline[i]]=[state.timeline[i],state.timeline[i+1]]; state.selectedIndex=i+1; renderTimeline(); buildScript(); });
+    $('duplicateItem').addEventListener('click',()=>{ const it=selected(); if(!it)return; const clone=JSON.parse(JSON.stringify(it)); clone.uid=crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`; state.timeline.splice(state.selectedIndex+1,0,clone); state.selectedIndex++; renderTimeline(); syncInspector(); buildScript(); });
+    $('removeItem').addEventListener('click',()=>{ if(state.selectedIndex<0)return; state.timeline.splice(state.selectedIndex,1); state.selectedIndex=Math.min(state.selectedIndex,state.timeline.length-1); renderTimeline(); syncInspector(); buildScript(); });
+    $('bgImageFile').addEventListener('change',e=>{ const f=e.target.files?.[0]; if(f){ state.bgImageUrl=URL.createObjectURL(f); $('bgMode').value='image'; setStatus('Imagem de fundo aplicada.'); } });
+    ['videoDuration','videoModel','transitionMode','transitionSeconds','headline','ctaText','outroText','textPosition','showTitle','showPrices','showBrand','showPackaging','showWheel','showProgress','bgMode','bgColor','bgColor2','bgBlur','vignette','bgDarken','bgNoise','spotlight','bgDecor','debugCut'].forEach(id=>{ $(id).addEventListener('input',buildScript); $(id).addEventListener('change',buildScript); });
+    $('togglePreview').addEventListener('click',()=>state.playing?pausePreview():startPreview()); $('refreshPreview').addEventListener('click',()=>drawFrame(0)); $('exportVideo').addEventListener('click',exportVideo); $('downloadVideo').addEventListener('click',()=>{ if(state.lastBlob) downloadBlob(state.lastBlob,`video-dona-antonia-${$('videoDuration').value}s.webm`); });
+    canvas.addEventListener('pointerdown',e=>{ const it=selected(); if(!it)return; state.dragging=true; state.dragStart=canvasPoint(e); state.dragOrigin={x:it.x||0,y:it.y||0}; canvas.setPointerCapture(e.pointerId); });
+    canvas.addEventListener('pointermove',e=>{ if(!state.dragging)return; const it=selected(); if(!it)return; const p=canvasPoint(e); it.x=Math.round(state.dragOrigin.x+p.x-state.dragStart.x); it.y=Math.round(state.dragOrigin.y+p.y-state.dragStart.y); $('itemX').value=it.x; $('itemY').value=it.y; });
+    canvas.addEventListener('pointerup',()=>state.dragging=false); canvas.addEventListener('pointercancel',()=>state.dragging=false);
+    canvas.addEventListener('wheel',e=>{ const it=selected(); if(!it)return; e.preventDefault(); it.scale=clamp((it.scale||128)+(e.deltaY<0?4:-4),30,260); $('itemScale').value=it.scale; },{passive:false});
   }
+  function canvasPoint(e){ const r=canvas.getBoundingClientRect(); return { x:(e.clientX-r.left)*(W/r.width)-W/2, y:(e.clientY-r.top)*(H/r.height)-H*.49 }; }
 
-  function downloadBlob(blob, filename){
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(()=> URL.revokeObjectURL(url), 2000);
-  }
-
-  function bindEvents(){
-    ['owner','repo','branch','jsonPath'].forEach(id => $(id).addEventListener('input', updateGithubHint));
-    $('loadGithub').addEventListener('click', loadGithub);
-    $('jsonFile').addEventListener('change', e => { const f = e.target.files?.[0]; if (f) loadLocalJson(f); });
-    $('searchProducts').addEventListener('input', applyFilters);
-    $('categoryFilter').addEventListener('change', applyFilters);
-    $('productList').addEventListener('click', e => {
-      const btn = e.target.closest('[data-add-product]');
-      if (!btn) return;
-      const p = state.filtered[Number(btn.dataset.addProduct)];
-      if (!p) return;
-      addTimelineItem(createProductItem(p), 'end');
-      setStatus(`Produto adicionado: ${p.nome}`);
-    });
-    $('addFirstFiltered').addEventListener('click', () => {
-      state.filtered.slice(0, 5).forEach(p => addTimelineItem(createProductItem(p), 'end'));
-      setStatus('Os 5 primeiros produtos filtrados foram adicionados.');
-    });
-    $('clearTimeline').addEventListener('click', () => {
-      state.timeline = [];
-      state.selectedIndex = -1;
-      renderTimeline();
-      syncSelectedInspector();
-      buildScript();
-    });
-
-    function chooseImageInsertion(mode){ state.insertionMode = mode; $('imageFiles').click(); }
-    $('addImagesEnd').addEventListener('click', ()=> chooseImageInsertion('end'));
-    $('addImagesBefore').addEventListener('click', ()=> chooseImageInsertion('before'));
-    $('addImagesAfter').addEventListener('click', ()=> chooseImageInsertion('after'));
-    $('imageFiles').addEventListener('change', e => {
-      const files = [...(e.target.files || [])];
-      files.forEach(file => addTimelineItem(createImageItem(URL.createObjectURL(file), file.name), state.insertionMode));
-      setStatus(`${files.length} imagem(ns) inserida(s) na timeline.`);
-      e.target.value = '';
-    });
-
-    $('timeline').addEventListener('click', e => {
-      const item = e.target.closest('[data-timeline-index]');
-      if (!item) return;
-      selectTimeline(Number(item.dataset.timelineIndex));
-    });
-
-    $('moveUp').addEventListener('click', () => {
-      if (state.selectedIndex <= 0) return;
-      const i = state.selectedIndex;
-      [state.timeline[i-1], state.timeline[i]] = [state.timeline[i], state.timeline[i-1]];
-      state.selectedIndex = i - 1;
-      renderTimeline(); buildScript();
-    });
-    $('moveDown').addEventListener('click', () => {
-      if (state.selectedIndex < 0 || state.selectedIndex >= state.timeline.length - 1) return;
-      const i = state.selectedIndex;
-      [state.timeline[i+1], state.timeline[i]] = [state.timeline[i], state.timeline[i+1]];
-      state.selectedIndex = i + 1;
-      renderTimeline(); buildScript();
-    });
-    $('duplicateItem').addEventListener('click', () => {
-      const item = selectedItem();
-      if (!item) return;
-      const clone = structuredClone ? structuredClone(item) : JSON.parse(JSON.stringify(item));
-      clone.uid = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
-      state.timeline.splice(state.selectedIndex + 1, 0, clone);
-      state.selectedIndex += 1;
-      renderTimeline(); syncSelectedInspector(); buildScript();
-    });
-    $('removeItem').addEventListener('click', () => {
-      if (state.selectedIndex < 0) return;
-      state.timeline.splice(state.selectedIndex, 1);
-      if (state.selectedIndex >= state.timeline.length) state.selectedIndex = state.timeline.length - 1;
-      renderTimeline(); syncSelectedInspector(); buildScript();
-    });
-    $('centerItem').addEventListener('click', () => {
-      const item = selectedItem();
-      if (!item) return;
-      item.x = 0; item.y = 0; item.scale = 100; item.rotate = 0;
-      syncSelectedInspector();
-    });
-
-    $('bgImageFile').addEventListener('change', e => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      state.bgImageUrl = URL.createObjectURL(file);
-      $('bgMode').value = 'image';
-      setStatus('Imagem de fundo carregada.');
-    });
-
-    ['videoDuration','videoModel','transitionMode','transitionSeconds','headline','subheadline','ctaText','outroText','showPrices','showBrand','showPackaging','showWheel','bgMode','bgColor','bgColor2','bgBlur','vignette','bgDarken','bgNoise'].forEach(id => {
-      $(id).addEventListener('input', buildScript);
-      $(id).addEventListener('change', buildScript);
-    });
-
-    $('togglePreview').addEventListener('click', () => {
-      if (state.playing) pausePreview(); else startPreview();
-    });
-    $('refreshPreview').addEventListener('click', () => drawFrame(0));
-    $('exportVideo').addEventListener('click', exportVideo);
-    $('downloadVideo').addEventListener('click', () => {
-      if (state.lastBlob) downloadBlob(state.lastBlob, `video-dona-antonia-${$('videoDuration').value}s.webm`);
-    });
-
-    bindInspector();
-
-    canvas.addEventListener('pointerdown', (e) => {
-      const item = selectedItem();
-      if (!item) return;
-      state.dragging = true;
-      state.dragStart = getCanvasPoint(e);
-      state.dragOrigin = { x:item.x || 0, y:item.y || 0 };
-      canvas.setPointerCapture(e.pointerId);
-    });
-    canvas.addEventListener('pointermove', (e) => {
-      if (!state.dragging) return;
-      const item = selectedItem();
-      if (!item) return;
-      const p = getCanvasPoint(e);
-      const dx = p.x - state.dragStart.x;
-      const dy = p.y - state.dragStart.y;
-      item.x = Math.round(state.dragOrigin.x + dx);
-      item.y = Math.round(state.dragOrigin.y + dy);
-      $('itemX').value = item.x;
-      $('itemY').value = item.y;
-    });
-    canvas.addEventListener('pointerup', () => state.dragging = false);
-    canvas.addEventListener('pointercancel', () => state.dragging = false);
-    canvas.addEventListener('wheel', (e) => {
-      const item = selectedItem();
-      if (!item) return;
-      e.preventDefault();
-      item.scale = clamp((item.scale || 100) + (e.deltaY < 0 ? 3 : -3), 30, 220);
-      $('itemScale').value = item.scale;
-    }, { passive:false });
-  }
-
-  function getCanvasPoint(e){
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width) - canvas.width/2;
-    const y = (e.clientY - rect.top) * (canvas.height / rect.height) - canvas.height/2;
-    return { x, y };
-  }
-
-  function init(){
-    fillOptions();
-    updateGithubHint();
-    bindEvents();
-    buildScript();
-    drawFrame(0).then(startPreview);
-  }
-
+  function init(){ fillOptions(); updateGithubHint(); bind(); renderTimeline(); buildScript(); drawFrame(0).then(startPreview); }
   init();
 })();
 </script>
