@@ -194,6 +194,145 @@
         @media (max-width: 820px) { .admin-dashboard { padding:0 10px 8px 10px; } .product-layout { grid-template-columns:1fr; } .product-media-panel { display:grid; grid-template-columns:118px minmax(0,1fr); align-items:start; } .product-photo-box { width:118px; height:118px; } .product-action-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } .product-header-row { grid-template-columns:1fr; } .product-fields-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
         @media (max-width: 520px) { .product-fields-grid { grid-template-columns:1fr; } .product-media-panel { grid-template-columns:1fr; } .product-photo-box { width:100%; height:180px; } }
 
+
+
+        /* =========================================================
+           AJUSTES 2026-06-16 - DASHBOARD, CARDS 2 COLUNAS E ENTRADA NF-e
+           ========================================================= */
+        .admin-dashboard {
+            display:flex !important;
+            flex-wrap:nowrap !important;
+            gap:10px !important;
+            padding:10px 20px 12px 20px !important;
+            overflow-x:auto !important;
+            overflow-y:hidden !important;
+            align-items:stretch !important;
+            min-height:82px !important;
+            background:transparent;
+        }
+        .admin-kpi {
+            flex:1 0 124px !important;
+            min-width:124px !important;
+            min-height:64px !important;
+            padding:10px 12px !important;
+            border-radius:12px !important;
+            display:flex !important;
+            flex-direction:column !important;
+            justify-content:center !important;
+            gap:5px !important;
+            white-space:nowrap !important;
+        }
+        .admin-kpi span {
+            font-size:10px !important;
+            line-height:1.1 !important;
+            letter-spacing:.35px !important;
+            overflow:visible !important;
+            text-overflow:clip !important;
+        }
+        .admin-kpi strong {
+            font-size:22px !important;
+            line-height:1 !important;
+            min-height:24px !important;
+            letter-spacing:-.6px !important;
+        }
+        .card-grid {
+            display:grid !important;
+            grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+            gap:14px !important;
+            align-items:start !important;
+        }
+        .product-card {
+            overflow:hidden !important;
+            min-width:0 !important;
+            padding:12px !important;
+            border-radius:14px !important;
+        }
+        .product-card * { min-width:0 !important; }
+        .product-layout {
+            display:grid !important;
+            grid-template-columns:118px minmax(0,1fr) !important;
+            gap:12px !important;
+            align-items:start !important;
+        }
+        .product-media-panel { gap:7px !important; }
+        .product-photo-box { width:118px !important; height:118px !important; }
+        .product-action-grid { grid-template-columns:1fr !important; gap:5px !important; }
+        .product-action-grid .nav-btn { min-height:30px !important; font-size:8.5px !important; padding:5px 6px !important; justify-content:center !important; }
+        .product-main-panel { gap:9px !important; }
+        .product-header-row { grid-template-columns:1fr !important; gap:7px !important; }
+        .product-mini-summary { justify-content:flex-start !important; max-width:none !important; gap:4px !important; }
+        .summary-pill { font-size:8.5px !important; padding:3px 6px !important; }
+        .quick-actions { display:grid !important; grid-template-columns:repeat(5, minmax(0,1fr)) !important; gap:4px !important; }
+        .quick-actions .nav-btn { width:100% !important; justify-content:center !important; padding:5px 4px !important; font-size:8px !important; min-height:27px !important; }
+        .product-name-input { min-height:36px !important; font-size:13px !important; }
+        .card-section { padding:9px !important; border-radius:10px !important; }
+        .card-section-title { font-size:8.5px !important; margin-bottom:7px !important; }
+        .product-fields-grid {
+            grid-template-columns:repeat(2, minmax(0,1fr)) !important;
+            gap:7px !important;
+        }
+        .product-fields-grid .field-group.full { grid-column:1 / -1 !important; }
+        .field-group label { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .card-mini-input { min-height:32px !important; font-size:10.5px !important; padding:6px 7px !important; }
+        .tag-editor-box { max-height:112px !important; }
+        .description-details summary { padding:8px 9px !important; font-size:9px !important; }
+
+        .nfe-page-header { background:#ffffff; border-bottom:1px solid var(--border); padding:14px 20px; display:flex; align-items:center; gap:12px; }
+        .nfe-page-title { font-weight:900; font-size:16px; letter-spacing:-.4px; margin-right:auto; display:flex; align-items:center; gap:8px; }
+        .nfe-layout { display:grid; grid-template-columns:360px minmax(0,1fr); gap:16px; padding:16px 20px 40px; }
+        .nfe-panel { background:#fff; border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); padding:14px; min-width:0; }
+        .nfe-panel-title { font-size:11px; font-weight:900; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        .nfe-scan-input { width:100%; border:2px dashed #94a3b8; background:#f8fafc; border-radius:12px; padding:14px; font-size:15px; font-weight:900; outline:none; letter-spacing:.5px; }
+        .nfe-scan-input:focus { border-color:#0f172a; background:#fff; }
+        .nfe-hint { font-size:11px; color:var(--text-secondary); font-weight:700; line-height:1.45; margin:8px 0 0; }
+        .nfe-meta-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:12px; }
+        .nfe-meta-card { background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:9px; }
+        .nfe-meta-card span { display:block; font-size:8px; font-weight:900; color:var(--text-secondary); text-transform:uppercase; }
+        .nfe-meta-card strong { display:block; margin-top:3px; font-size:12px; font-weight:900; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .nfe-items { display:flex; flex-direction:column; gap:10px; }
+        .nfe-item-card { border:1px solid var(--border); border-radius:12px; background:#fff; padding:12px; box-shadow:0 2px 10px rgba(15,23,42,.03); }
+        .nfe-item-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:start; margin-bottom:9px; }
+        .nfe-item-title { font-size:12px; font-weight:900; color:var(--text-primary); line-height:1.25; }
+        .nfe-status { display:inline-flex; align-items:center; gap:5px; border-radius:999px; padding:5px 8px; font-size:9px; font-weight:900; white-space:nowrap; border:1px solid var(--border); }
+        .nfe-status.existente { background:#ecfdf5; color:#047857; border-color:#bbf7d0; }
+        .nfe-status.novo { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+        .nfe-status.ignorado { background:#f4f4f5; color:#52525b; }
+        .nfe-fields { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:7px; }
+        .nfe-fields .wide { grid-column:span 2; }
+        .nfe-fields .full { grid-column:1 / -1; }
+        .nfe-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+        .nfe-empty { text-align:center; padding:36px 20px; border:1px dashed var(--border); border-radius:12px; color:var(--text-secondary); font-size:12px; font-weight:800; background:#fafafa; }
+        .nfe-warning-box { background:#fffbeb; border:1px solid #fde68a; color:#92400e; border-radius:10px; padding:10px; font-size:11px; font-weight:800; line-height:1.45; }
+        @media (max-width: 1500px) {
+            .quick-actions { grid-template-columns:repeat(3, minmax(0,1fr)) !important; }
+            .product-layout { grid-template-columns:104px minmax(0,1fr) !important; gap:10px !important; }
+            .product-photo-box { width:104px !important; height:104px !important; }
+        }
+        @media (max-width: 1180px) {
+            .card-grid { grid-template-columns:1fr !important; }
+            .product-layout { grid-template-columns:132px minmax(0,1fr) !important; }
+            .product-photo-box { width:132px !important; height:132px !important; }
+            .nfe-layout { grid-template-columns:1fr; }
+            .nfe-meta-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .nfe-fields { grid-template-columns:repeat(3,minmax(0,1fr)); }
+        }
+        @media (max-width: 720px) {
+            .admin-dashboard { padding:8px 10px 10px !important; min-height:76px !important; }
+            .admin-kpi { flex-basis:112px !important; min-width:112px !important; min-height:58px !important; }
+            .admin-kpi strong { font-size:19px !important; }
+            .product-layout { grid-template-columns:1fr !important; }
+            .product-media-panel { display:grid !important; grid-template-columns:112px minmax(0,1fr) !important; }
+            .product-photo-box { width:112px !important; height:112px !important; }
+            .product-action-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+            .quick-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+            .product-fields-grid { grid-template-columns:1fr !important; }
+            .nfe-page-header { padding:10px; }
+            .nfe-layout { padding:10px; }
+            .nfe-meta-grid { grid-template-columns:1fr; }
+            .nfe-fields { grid-template-columns:1fr; }
+            .nfe-fields .wide { grid-column:1 / -1; }
+        }
+
         /* =========================================================
            CSS DO EDITOR DE TEXTO RICO
            ========================================================= */
@@ -257,6 +396,7 @@
             
             <button class="nav-btn desktop-only success-btn" id="btn-enviar-pendentes-firebase" onclick="enviarPendentesFirebaseManual()" title="Envia todos os produtos editados que ainda não foram salvos individualmente no Firebase"><i data-lucide="cloud-upload" size="14"></i> ENVIAR PENDENTES</button>
             <button class="nav-btn desktop-only sync-btn" onclick="abrirModalBackupMetaManual()" title="Atualiza manualmente o backup produtos.json e os arquivos da Meta"><i data-lucide="database-backup" size="14"></i> BACKUP / META</button>
+            <button class="nav-btn desktop-only warning" onclick="abrirTelaNFe()" title="Entrada de produtos por XML de nota fiscal"><i data-lucide="file-scan" size="14"></i> ENTRADA XML/NF-e</button>
             <button class="nav-btn desktop-only" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DADOS DA NUVEM</button>
             
             <button class="btn-icon mobile-only" onclick="openSidebar('menu-sidebar')"><i data-lucide="menu" size="20"></i></button>
@@ -303,8 +443,56 @@
             <div class="card-grid" id="product-grid"></div>
             <div id="load-more-container" style="text-align: center; margin-top: 30px; margin-bottom: 20px; display: none;">
                 <button class="nav-btn primary" style="padding: 12px 30px; font-size: 14px; margin: 0 auto; min-width: 250px; justify-content: center;" onclick="carregarMaisCards()">
-                    <i data-lucide="chevron-down" size="18"></i> VER MAIS 3 PRODUTOS
+                    <i data-lucide="chevron-down" size="18"></i> VER MAIS 6 PRODUTOS
                 </button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="nfe-screen" class="app-screen">
+        <header class="nfe-page-header">
+            <div class="nfe-page-title"><i data-lucide="file-scan" size="21"></i> ENTRADA POR XML DE NOTA FISCAL</div>
+            <button class="nav-btn" onclick="voltarTelaPIM()"><i data-lucide="arrow-left" size="14"></i> VOLTAR AO PIM</button>
+            <button class="nav-btn sync-btn" onclick="document.getElementById('nfe-xml-file').click()"><i data-lucide="upload" size="14"></i> CARREGAR XML</button>
+            <button class="nav-btn primary" onclick="aplicarEntradaNFeFirebase()"><i data-lucide="cloud-upload" size="14"></i> APLICAR ENTRADA</button>
+        </header>
+        <div class="main-content" style="padding:0;">
+            <div class="nfe-layout">
+                <aside class="nfe-panel">
+                    <div class="nfe-panel-title">1. Leitura da nota</div>
+                    <input id="nfe-chave-input" class="nfe-scan-input" autocomplete="off" inputmode="numeric" placeholder="Leia a chave da NF-e com a pistola...">
+                    <p class="nfe-hint">Use a pistola no código de barras da DANFE. Ela normalmente digita a chave de 44 dígitos e aperta Enter. A chave identifica a nota, mas o XML precisa ser carregado por arquivo ou colado abaixo.</p>
+                    <div class="nfe-warning-box" style="margin-top:10px;">Importante: navegador não consegue baixar XML da SEFAZ só pela chave sem certificado/serviço autorizado. Por isso esta página lê a chave pela pistola e importa o XML salvo da nota.</div>
+
+                    <input type="file" id="nfe-xml-file" accept=".xml,text/xml,application/xml" style="display:none" onchange="carregarArquivoXMLNFe(this.files && this.files[0])">
+                    <button class="nav-btn sync-btn" style="width:100%; height:42px; justify-content:center; margin-top:12px;" onclick="document.getElementById('nfe-xml-file').click()"><i data-lucide="file-up" size="14"></i> SELECIONAR XML DA NOTA</button>
+
+                    <div class="form-section" style="margin-top:14px;">
+                        <div class="section-title">Ou cole o XML</div>
+                        <textarea id="nfe-xml-text" class="form-input" style="height:160px; font-family:monospace; font-size:11px;" placeholder="Cole aqui o conteúdo do XML da NF-e..."></textarea>
+                        <button class="nav-btn primary" style="width:100%; height:40px; justify-content:center;" onclick="processarXMLNFeTexto()"><i data-lucide="file-check" size="14"></i> LER XML COLADO</button>
+                    </div>
+
+                    <div class="form-section" style="margin-top:14px;">
+                        <div class="section-title">Validade em massa</div>
+                        <input type="date" id="nfe-validade-todos" class="form-input">
+                        <button class="nav-btn" style="width:100%; height:38px; justify-content:center;" onclick="aplicarValidadeTodosItensNFe()"><i data-lucide="calendar-check" size="14"></i> APLICAR VALIDADE EM TODOS</button>
+                    </div>
+                </aside>
+
+                <section class="nfe-panel">
+                    <div class="nfe-panel-title">2. Conferência e ajuste dos produtos <span id="nfe-total-itens-label"></span></div>
+                    <div id="nfe-meta" class="nfe-meta-grid"></div>
+                    <div id="nfe-itens-container" class="nfe-items">
+                        <div class="nfe-empty">Nenhum XML carregado ainda. Leia a chave da nota com a pistola e carregue o XML para conferir os produtos.</div>
+                    </div>
+                    <div class="nfe-actions">
+                        <button class="nav-btn" onclick="reidentificarItensNFe()"><i data-lucide="refresh-cw" size="14"></i> REIDENTIFICAR EAN</button>
+                        <button class="nav-btn warning" onclick="limparEntradaNFe()"><i data-lucide="trash-2" size="14"></i> LIMPAR NOTA</button>
+                        <button class="nav-btn primary" onclick="aplicarEntradaNFeFirebase()"><i data-lucide="cloud-upload" size="14"></i> CADASTRAR / ATUALIZAR NO FIREBASE</button>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -364,6 +552,7 @@
                 <button class="nav-btn primary menu-sidebar-btn" onclick="createNewProduct(); closeSidebar('menu-sidebar');"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
                 <button class="nav-btn success-btn menu-sidebar-btn" onclick="enviarPendentesFirebaseManual(); closeSidebar('menu-sidebar');"><i data-lucide="cloud-upload" size="14"></i> ENVIAR PENDENTES AO FIREBASE</button>
                 <button class="nav-btn sync-btn menu-sidebar-btn" onclick="abrirModalBackupMetaManual(); closeSidebar('menu-sidebar');"><i data-lucide="database-backup" size="14"></i> ATUALIZAR BACKUP / META</button>
+                <button class="nav-btn warning menu-sidebar-btn" onclick="abrirTelaNFe(); closeSidebar('menu-sidebar');"><i data-lucide="file-scan" size="14"></i> ENTRADA XML / NF-e</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="cloud" size="14"></i> DEFINIÇÕES E GITHUB</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="abrirGerenciadorExportacoes()"><i data-lucide="folder-open" size="14"></i> ARQUIVOS EXPORTADOS (NUVEM)</button>
             </div>
@@ -599,7 +788,7 @@
         // Variáveis de Paginação
         let produtosFiltrados = [];
         let itemsCarregados = 0;
-        const ITENS_POR_PAGINA = 3; 
+        const ITENS_POR_PAGINA = 6; 
 
         // ==========================================================
         // FUNÇÕES GERAIS E OPÇÕES
@@ -1154,7 +1343,7 @@ let finalBase64 = isBase64Ready
         function sanitizeProductsForExport(prods) {
     const camposPermitidos = [
         'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
-        'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
+        'estoque', 'estoques_lotes', 'ultima_entrada_nfe', 'data_ultima_entrada', 'situacao', 'ncm', 'validade', 'categoria', 
         'subcategoria', 'subsubcategoria', 'marca', 'embalagem', 'tag_global', 'tag_quantidades', 
         'link_youtube', 'last_update', 'url_imagem', 'gondola', 'prateleira', 'localizacao',
         'descricao', 'descricao_status', 'descricao_atualizada_em',
@@ -2378,6 +2567,548 @@ async function salvarProdutosJSON(opcoes = {}) {
     }
 }
 
+
+// ==========================================================
+// ENTRADA PROFISSIONAL POR XML DE NOTA FISCAL / NF-e
+// ==========================================================
+let nfeEntradaAtual = {
+    chave: "",
+    meta: {},
+    itens: []
+};
+
+function abrirTelaNFe() {
+    document.querySelectorAll('.app-screen').forEach(el => el.classList.remove('active'));
+    const tela = document.getElementById('nfe-screen');
+    if (tela) tela.classList.add('active');
+    closeAllSidebarsSemRender();
+    setTimeout(() => {
+        const input = document.getElementById('nfe-chave-input');
+        if (input) input.focus();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }, 120);
+}
+
+function voltarTelaPIM() {
+    document.querySelectorAll('.app-screen').forEach(el => el.classList.remove('active'));
+    const tela = document.getElementById('pim-screen');
+    if (tela) tela.classList.add('active');
+    renderGrid(ultimoTermoPesquisa, true);
+    atualizarDashboardResumo();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeAllSidebarsSemRender() {
+    document.querySelectorAll('.sidebar').forEach(el => el.classList.remove('open'));
+    const overlay = document.getElementById('sidebar-overlay');
+    if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.display = 'none';
+    }
+}
+
+function inicializarNFeEvents() {
+    const input = document.getElementById('nfe-chave-input');
+    if (input && !input.dataset.bound) {
+        input.dataset.bound = '1';
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nfeProcessarChaveLeitura();
+            }
+        });
+        input.addEventListener('input', function() {
+            const numeros = String(this.value || '').replace(/\D/g, '');
+            if (numeros.length >= 44) {
+                this.value = numeros.slice(0, 44);
+                nfeEntradaAtual.chave = this.value;
+                renderizarNFeEntrada();
+            }
+        });
+    }
+}
+
+function nfeProcessarChaveLeitura() {
+    const input = document.getElementById('nfe-chave-input');
+    const chave = String(input ? input.value : '').replace(/\D/g, '').slice(0, 44);
+    if (!chave || chave.length !== 44) {
+        mostrarAlerta('Leia ou digite uma chave NF-e válida com 44 dígitos.', 'erro');
+        return;
+    }
+    nfeEntradaAtual.chave = chave;
+    if (input) input.value = chave;
+    mostrarAlerta('Chave da NF-e lida. Agora carregue ou cole o XML da nota.', 'sucesso');
+    renderizarNFeEntrada();
+}
+
+async function carregarArquivoXMLNFe(file) {
+    if (!file) return;
+    try {
+        const texto = await file.text();
+        const area = document.getElementById('nfe-xml-text');
+        if (area) area.value = texto;
+        processarXMLNFe(texto);
+    } catch (e) {
+        mostrarAlerta('Erro ao ler arquivo XML: ' + e.message, 'erro');
+    }
+}
+
+function processarXMLNFeTexto() {
+    const area = document.getElementById('nfe-xml-text');
+    const texto = area ? area.value : '';
+    processarXMLNFe(texto);
+}
+
+function nfeTextoNo(parent, tag) {
+    if (!parent) return '';
+    const el = parent.getElementsByTagName(tag)[0];
+    return el ? String(el.textContent || '').trim() : '';
+}
+
+function nfeNumero(valor) {
+    const txt = String(valor || '').trim().replace(/\./g, '.').replace(',', '.');
+    const n = parseFloat(txt);
+    return Number.isFinite(n) ? n : 0;
+}
+
+function nfeDataISOParaBR(dataIso) {
+    if (!dataIso) return '';
+    const s = String(dataIso).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '';
+    const [a,m,d] = s.split('-');
+    return `${d}/${m}/${a}`;
+}
+
+function nfeDataBRParaISO(dataBR) {
+    const s = String(dataBR || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+    return '';
+}
+
+function nfeValidadeParaProduto(dataISO) {
+    const s = String(dataISO || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '';
+    const [a,m,d] = s.split('-');
+    return `${d}/${m}/${a}`;
+}
+
+function nfeEANValido(valor) {
+    const ean = String(valor || '').replace(/\D/g, '');
+    return /^\d{8,14}$/.test(ean) ? ean : '';
+}
+
+function encontrarProdutoPorEANouCodigoNFe(item) {
+    const ean = nfeEANValido(item.ean) || nfeEANValido(item.eanTrib);
+    const cod = String(item.codigoFornecedor || '').trim();
+    if (ean) {
+        const porEan = products.find(p => nfeEANValido(p.gtin || p.ean) === ean);
+        if (porEan) return porEan;
+    }
+    if (cod) {
+        const porCodigo = products.find(p => String(p.codigo || '').trim() === cod);
+        if (porCodigo) return porCodigo;
+    }
+    return null;
+}
+
+function processarXMLNFe(texto) {
+    try {
+        const bruto = String(texto || '').trim();
+        if (!bruto || !bruto.includes('<')) throw new Error('XML vazio ou inválido.');
+
+        const doc = new DOMParser().parseFromString(bruto, 'application/xml');
+        const parserError = doc.getElementsByTagName('parsererror')[0];
+        if (parserError) throw new Error('Não foi possível interpretar o XML. Verifique se o arquivo é uma NF-e válida.');
+
+        const infNFe = doc.getElementsByTagName('infNFe')[0];
+        const ide = doc.getElementsByTagName('ide')[0];
+        const emit = doc.getElementsByTagName('emit')[0];
+        const total = doc.getElementsByTagName('ICMSTot')[0];
+        const chProt = nfeTextoNo(doc, 'chNFe');
+        const chaveInf = infNFe ? String(infNFe.getAttribute('Id') || '').replace(/\D/g, '') : '';
+        const chave = chProt || chaveInf || nfeEntradaAtual.chave || '';
+
+        const dets = Array.from(doc.getElementsByTagName('det'));
+        if (!dets.length) throw new Error('Nenhum produto encontrado no XML.');
+
+        const meta = {
+            chave: String(chave || '').replace(/\D/g, '').slice(0, 44),
+            numero: nfeTextoNo(ide, 'nNF'),
+            serie: nfeTextoNo(ide, 'serie'),
+            emissao: nfeDataISOParaBR(nfeTextoNo(ide, 'dhEmi') || nfeTextoNo(ide, 'dEmi')),
+            fornecedor: nfeTextoNo(emit, 'xNome'),
+            cnpj: nfeTextoNo(emit, 'CNPJ'),
+            valorTotal: nfeNumero(nfeTextoNo(total, 'vNF'))
+        };
+
+        const itens = dets.map((det, idx) => {
+            const prod = det.getElementsByTagName('prod')[0];
+            const ean = nfeEANValido(nfeTextoNo(prod, 'cEAN')) || nfeEANValido(nfeTextoNo(prod, 'cEANTrib'));
+            const item = {
+                idx,
+                nItem: det.getAttribute('nItem') || String(idx + 1),
+                ignorar: false,
+                codigoFornecedor: nfeTextoNo(prod, 'cProd'),
+                ean,
+                eanTrib: nfeEANValido(nfeTextoNo(prod, 'cEANTrib')),
+                nome: nfeTextoNo(prod, 'xProd'),
+                ncm: String(nfeTextoNo(prod, 'NCM') || '').replace(/\D/g, '').slice(0, 8),
+                unidade: nfeTextoNo(prod, 'uCom') || nfeTextoNo(prod, 'uTrib'),
+                quantidade: nfeNumero(nfeTextoNo(prod, 'qCom') || nfeTextoNo(prod, 'qTrib')),
+                custo: nfeNumero(nfeTextoNo(prod, 'vUnCom') || nfeTextoNo(prod, 'vUnTrib')),
+                total: nfeNumero(nfeTextoNo(prod, 'vProd')),
+                validade: '',
+                precoVenda: '',
+                categoria: '',
+                subcategoria: '',
+                marca: '',
+                embalagem: nfeTextoNo(prod, 'uCom') || '',
+                matchCodigo: '',
+                matchNome: '',
+                status: 'novo'
+            };
+            const encontrado = encontrarProdutoPorEANouCodigoNFe(item);
+            if (encontrado) {
+                item.status = 'existente';
+                item.matchCodigo = String(encontrado.codigo || encontrado.id || encontrado.firebaseKey || '');
+                item.matchNome = String(encontrado.nome || '');
+                item.precoVenda = encontrado.preco || '';
+                item.categoria = encontrado.categoria || '';
+                item.subcategoria = encontrado.subcategoria || '';
+                item.marca = encontrado.marca || '';
+                item.embalagem = encontrado.embalagem || item.embalagem;
+            }
+            return item;
+        });
+
+        nfeEntradaAtual = { chave: meta.chave, meta, itens };
+        const chaveInput = document.getElementById('nfe-chave-input');
+        if (chaveInput && meta.chave) chaveInput.value = meta.chave;
+        renderizarNFeEntrada();
+        mostrarAlerta(`XML lido com sucesso: ${itens.length} item(ns) encontrado(s).`, 'sucesso');
+    } catch (e) {
+        console.error('Erro XML NF-e:', e);
+        mostrarAlerta('Erro ao ler XML: ' + e.message, 'erro');
+    }
+}
+
+function renderizarNFeEntrada() {
+    const metaEl = document.getElementById('nfe-meta');
+    const itensEl = document.getElementById('nfe-itens-container');
+    const totalLabel = document.getElementById('nfe-total-itens-label');
+    if (!itensEl) return;
+
+    const meta = nfeEntradaAtual.meta || {};
+    const itens = Array.isArray(nfeEntradaAtual.itens) ? nfeEntradaAtual.itens : [];
+
+    if (totalLabel) totalLabel.textContent = itens.length ? `${itens.length} item(ns)` : '';
+    if (metaEl) {
+        const cards = [
+            ['Chave', meta.chave || nfeEntradaAtual.chave || '-'],
+            ['Nota', meta.numero ? `Nº ${meta.numero}${meta.serie ? ' / Série ' + meta.serie : ''}` : '-'],
+            ['Fornecedor', meta.fornecedor || '-'],
+            ['Total XML', dinheiroBR(meta.valorTotal || 0)]
+        ];
+        metaEl.innerHTML = cards.map(([r,v]) => `<div class="nfe-meta-card"><span>${escaparHtmlSistema(r)}</span><strong title="${escaparAtributoSistema(v)}">${escaparHtmlSistema(v)}</strong></div>`).join('');
+    }
+
+    if (!itens.length) {
+        itensEl.innerHTML = '<div class="nfe-empty">Nenhum XML carregado ainda. Leia a chave da nota com a pistola e carregue o XML para conferir os produtos.</div>';
+        return;
+    }
+
+    itensEl.innerHTML = itens.map((item, i) => {
+        const statusClass = item.ignorar ? 'ignorado' : (item.status === 'existente' ? 'existente' : 'novo');
+        const statusTxt = item.ignorar ? 'Ignorado' : (item.status === 'existente' ? 'Já existe' : 'Novo cadastro');
+        const valorVenda = item.precoVenda === '' || item.precoVenda === null || item.precoVenda === undefined ? '' : item.precoVenda;
+        return `
+            <div class="nfe-item-card ${item.ignorar ? 'inactive' : ''}">
+                <div class="nfe-item-head">
+                    <div>
+                        <div class="nfe-item-title">${escaparHtmlSistema(item.nItem)}. ${escaparHtmlSistema(item.nome || 'Produto sem nome')}</div>
+                        <div class="card-alert-strip" style="margin-top:5px;">
+                            <span class="mini-badge">EAN ${escaparHtmlSistema(item.ean || 'sem EAN')}</span>
+                            <span class="mini-badge">Qtd ${escaparHtmlSistema(item.quantidade)}</span>
+                            <span class="mini-badge">Custo ${dinheiroBR(item.custo)}</span>
+                            ${item.matchNome ? `<span class="mini-badge success">Local: ${escaparHtmlSistema(item.matchNome).slice(0, 60)}</span>` : ''}
+                        </div>
+                    </div>
+                    <span class="nfe-status ${statusClass}">${statusTxt}</span>
+                </div>
+                <div class="nfe-fields">
+                    <div class="field-group wide"><label>Nome no cadastro</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.nome)}" onchange="nfeAtualizarItem(${i}, 'nome', this.value)"></div>
+                    <div class="field-group"><label>EAN / GTIN</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.ean)}" onchange="nfeAtualizarItem(${i}, 'ean', this.value)"></div>
+                    <div class="field-group"><label>NCM</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.ncm)}" onchange="nfeAtualizarItem(${i}, 'ncm', this.value)"></div>
+                    <div class="field-group"><label>Qtd entrada</label><input type="number" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.quantidade)}" onchange="nfeAtualizarItem(${i}, 'quantidade', this.value)"></div>
+                    <div class="field-group"><label>Custo unit.</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(item.custo)}" onchange="nfeAtualizarItem(${i}, 'custo', this.value)"></div>
+                    <div class="field-group"><label>Preço venda</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(valorVenda)}" onchange="nfeAtualizarItem(${i}, 'precoVenda', this.value)"></div>
+                    <div class="field-group"><label>Validade deste lote</label><input type="date" class="form-input card-mini-input" value="${escaparAtributoSistema(item.validade)}" onchange="nfeAtualizarItem(${i}, 'validade', this.value)"></div>
+                    <div class="field-group"><label>Unidade/embalagem</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.embalagem || item.unidade)}" onchange="nfeAtualizarItem(${i}, 'embalagem', this.value)"></div>
+                    <div class="field-group"><label>Marca</label><select class="form-input card-mini-input" onchange="nfeAtualizarItem(${i}, 'marca', this.value)">${gerarOptions(marcasDoSistema, item.marca, 'Sel. Marca')}</select></div>
+                    <div class="field-group"><label>Categoria</label><select class="form-input card-mini-input" onchange="nfeAtualizarItem(${i}, 'categoria', this.value); renderizarNFeEntrada();">${gerarOptionsCategorias(item.categoria)}</select></div>
+                    <div class="field-group"><label>Subcategoria</label><select class="form-input card-mini-input" onchange="nfeAtualizarItem(${i}, 'subcategoria', this.value)">${gerarOptionsSubcategorias(item.categoria, item.subcategoria)}</select></div>
+                </div>
+                <div class="nfe-actions">
+                    <button class="nav-btn ${item.ignorar ? '' : 'warning'}" onclick="nfeAlternarIgnorarItem(${i})"><i data-lucide="eye-off" size="12"></i> ${item.ignorar ? 'USAR ITEM' : 'IGNORAR ITEM'}</button>
+                    <button class="nav-btn" onclick="nfeForcarNovoCadastro(${i})"><i data-lucide="plus" size="12"></i> FORÇAR NOVO</button>
+                    <button class="nav-btn sync-btn" onclick="nfeReidentificarItem(${i})"><i data-lucide="scan-search" size="12"></i> BUSCAR EAN</button>
+                </div>
+            </div>`;
+    }).join('');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function nfeAtualizarItem(index, campo, valor) {
+    const item = nfeEntradaAtual.itens && nfeEntradaAtual.itens[index];
+    if (!item) return;
+    if (['quantidade','custo','precoVenda'].includes(campo)) item[campo] = nfeNumero(valor);
+    else if (campo === 'ean') item[campo] = nfeEANValido(valor) || String(valor || '').replace(/\D/g, '');
+    else if (campo === 'ncm') item[campo] = String(valor || '').replace(/\D/g, '').slice(0, 8);
+    else item[campo] = limparTextoSistema(valor);
+    if (campo === 'ean') nfeReidentificarItem(index, false);
+}
+
+function nfeReidentificarItem(index, rerender = true) {
+    const item = nfeEntradaAtual.itens && nfeEntradaAtual.itens[index];
+    if (!item) return;
+    if (item.forcarNovo === true) {
+        item.status = 'novo';
+        item.matchCodigo = '';
+        item.matchNome = '';
+        if (rerender) renderizarNFeEntrada();
+        return;
+    }
+    const encontrado = encontrarProdutoPorEANouCodigoNFe(item);
+    if (encontrado) {
+        item.status = 'existente';
+        item.matchCodigo = String(encontrado.codigo || encontrado.id || encontrado.firebaseKey || '');
+        item.matchNome = String(encontrado.nome || '');
+        if (!item.precoVenda) item.precoVenda = encontrado.preco || '';
+        if (!item.categoria) item.categoria = encontrado.categoria || '';
+        if (!item.subcategoria) item.subcategoria = encontrado.subcategoria || '';
+        if (!item.marca) item.marca = encontrado.marca || '';
+        if (!item.embalagem) item.embalagem = encontrado.embalagem || item.unidade || '';
+    } else {
+        item.status = 'novo';
+        item.matchCodigo = '';
+        item.matchNome = '';
+    }
+    if (rerender) renderizarNFeEntrada();
+}
+
+function reidentificarItensNFe() {
+    (nfeEntradaAtual.itens || []).forEach((_, idx) => nfeReidentificarItem(idx, false));
+    renderizarNFeEntrada();
+    mostrarAlerta('Itens reidentificados pelo EAN/código.', 'sucesso');
+}
+
+function nfeAlternarIgnorarItem(index) {
+    const item = nfeEntradaAtual.itens && nfeEntradaAtual.itens[index];
+    if (!item) return;
+    item.ignorar = !item.ignorar;
+    renderizarNFeEntrada();
+}
+
+function nfeForcarNovoCadastro(index) {
+    const item = nfeEntradaAtual.itens && nfeEntradaAtual.itens[index];
+    if (!item) return;
+    item.status = 'novo';
+    item.matchCodigo = '';
+    item.matchNome = '';
+    item.forcarNovo = true;
+    renderizarNFeEntrada();
+}
+
+function aplicarValidadeTodosItensNFe() {
+    const input = document.getElementById('nfe-validade-todos');
+    const data = input ? input.value : '';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+        mostrarAlerta('Escolha uma validade válida para aplicar.', 'erro');
+        return;
+    }
+    (nfeEntradaAtual.itens || []).forEach(item => { if (!item.ignorar) item.validade = data; });
+    renderizarNFeEntrada();
+    mostrarAlerta('Validade aplicada aos itens da nota.', 'sucesso');
+}
+
+function limparEntradaNFe() {
+    if (!confirm('Limpar a nota fiscal carregada na tela?')) return;
+    nfeEntradaAtual = { chave: '', meta: {}, itens: [] };
+    const input = document.getElementById('nfe-chave-input');
+    const area = document.getElementById('nfe-xml-text');
+    if (input) input.value = '';
+    if (area) area.value = '';
+    renderizarNFeEntrada();
+}
+
+function normalizarLotesProdutoNFe(produto) {
+    if (!produto) return [];
+    let lotes = Array.isArray(produto.estoques_lotes) ? produto.estoques_lotes.filter(Boolean) : [];
+    const estoqueAtual = parseFloat(produto.estoque) || 0;
+    if (!lotes.length && estoqueAtual > 0) {
+        lotes.push({
+            id: 'estoque_anterior_' + Date.now(),
+            origem: 'estoque_anterior',
+            quantidade_inicial: estoqueAtual,
+            quantidade_atual: estoqueAtual,
+            validade: nfeDataBRParaISO(produto.validade) || '',
+            custo_unitario: parseFloat(produto.preco_custo) || 0,
+            criado_em: new Date().toISOString(),
+            observacao: 'Lote gerado automaticamente a partir do estoque que já existia antes da entrada por NF-e.'
+        });
+    }
+    produto.estoques_lotes = lotes.map(l => ({
+        ...l,
+        quantidade_inicial: parseFloat(l.quantidade_inicial) || 0,
+        quantidade_atual: parseFloat(l.quantidade_atual) || 0,
+        custo_unitario: parseFloat(l.custo_unitario) || 0
+    }));
+    return produto.estoques_lotes;
+}
+
+function recalcularEstoquePorLotesNFe(produto) {
+    const lotes = normalizarLotesProdutoNFe(produto);
+    const ativos = lotes.filter(l => (parseFloat(l.quantidade_atual) || 0) > 0);
+    const soma = ativos.reduce((acc, l) => acc + (parseFloat(l.quantidade_atual) || 0), 0);
+    produto.estoque = Number(soma.toFixed(3));
+
+    const datas = ativos.map(l => String(l.validade || '')).filter(v => /^\d{4}-\d{2}-\d{2}$/.test(v)).sort();
+    produto.validade = datas.length ? nfeValidadeParaProduto(datas[0]) : (produto.validade || '');
+}
+
+function gerarCodigoProdutoNFe(item) {
+    const ean = nfeEANValido(item.ean);
+    if (ean && !products.some(p => String(p.codigo || '') === ean)) return ean;
+    const base = String(item.codigoFornecedor || ean || Date.now()).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 20) || String(Date.now());
+    let codigo = 'NF' + base;
+    let i = 1;
+    while (products.some(p => String(p.codigo || '') === codigo)) {
+        codigo = 'NF' + base + '-' + i++;
+    }
+    return codigo;
+}
+
+function criarProdutoNovoNFe(item) {
+    const codigo = gerarCodigoProdutoNFe(item);
+    return {
+        id: codigo,
+        firebaseKey: FirebaseAPI.sanitizarChave(codigo),
+        codigo,
+        nome: limparTextoSistema(item.nome || 'Produto sem nome'),
+        gtin: nfeEANValido(item.ean),
+        ncm: String(item.ncm || '').replace(/\D/g, '').slice(0, 8),
+        preco_custo: nfeNumero(item.custo),
+        preco: nfeNumero(item.precoVenda) || 0,
+        estoque: 0,
+        situacao: nfeNumero(item.precoVenda) > 0 ? 'A' : 'I',
+        validade: '',
+        categoria: item.categoria || '',
+        subcategoria: item.subcategoria || '',
+        subsubcategoria: '',
+        marca: limparMarcaProduto(item.marca || ''),
+        embalagem: limparTextoSistema(item.embalagem || item.unidade || ''),
+        tag_global: [],
+        tag_quantidades: {},
+        url_imagem: '',
+        descricao: '',
+        last_update: Date.now()
+    };
+}
+
+async function aplicarEntradaNFeFirebase() {
+    try {
+        const itens = (nfeEntradaAtual.itens || []).filter(item => !item.ignorar);
+        if (!itens.length) {
+            mostrarAlerta('Nenhum item válido para aplicar.', 'erro');
+            return;
+        }
+
+        const semValidade = itens.filter(item => !/^\d{4}-\d{2}-\d{2}$/.test(String(item.validade || '')));
+        if (semValidade.length) {
+            mostrarAlerta('Informe a validade do lote para todos os itens que serão usados. Itens sem validade: ' + semValidade.map(i => i.nItem).join(', '), 'erro');
+            return;
+        }
+
+        if (!confirm(`Aplicar entrada de ${itens.length} item(ns) no Firebase? Isso cria/atualiza produtos e registra novos lotes por validade.`)) return;
+
+        mostrarAlerta('Aplicando entrada da NF-e no Firebase...', 'aviso');
+        let criados = 0;
+        let atualizados = 0;
+
+        for (const item of itens) {
+            nfeReidentificarItem(item.idx, false);
+            let produto = null;
+            if (item.status === 'existente' && item.matchCodigo) {
+                produto = products.find(p => String(p.codigo || p.id || p.firebaseKey || '') === String(item.matchCodigo));
+            }
+            if (!produto) {
+                produto = criarProdutoNovoNFe(item);
+                products.unshift(produto);
+                criados++;
+            } else {
+                atualizados++;
+                if (item.nome && !produto.nome) produto.nome = limparTextoSistema(item.nome);
+                if (nfeEANValido(item.ean)) produto.gtin = nfeEANValido(item.ean);
+                if (item.ncm) produto.ncm = String(item.ncm).replace(/\D/g, '').slice(0, 8);
+                if (item.embalagem) produto.embalagem = limparTextoSistema(item.embalagem);
+                if (item.marca) produto.marca = limparMarcaProduto(item.marca);
+                if (item.categoria) produto.categoria = item.categoria;
+                if (item.subcategoria) produto.subcategoria = item.subcategoria;
+                if (nfeNumero(item.precoVenda) > 0) produto.preco = nfeNumero(item.precoVenda);
+                produto.preco_custo = nfeNumero(item.custo);
+            }
+
+            normalizarLotesProdutoNFe(produto);
+            const chaveNota = nfeEntradaAtual.meta.chave || nfeEntradaAtual.chave || '';
+            produto.estoques_lotes.push({
+                id: `nfe_${chaveNota || Date.now()}_${item.nItem}_${Math.floor(Math.random() * 100000)}`,
+                origem: 'nfe',
+                chave_nfe: chaveNota,
+                numero_nota: nfeEntradaAtual.meta.numero || '',
+                serie_nota: nfeEntradaAtual.meta.serie || '',
+                fornecedor: nfeEntradaAtual.meta.fornecedor || '',
+                cnpj_fornecedor: nfeEntradaAtual.meta.cnpj || '',
+                data_entrada: new Date().toISOString(),
+                validade: item.validade,
+                quantidade_inicial: nfeNumero(item.quantidade),
+                quantidade_atual: nfeNumero(item.quantidade),
+                custo_unitario: nfeNumero(item.custo),
+                unidade: item.unidade || item.embalagem || '',
+                nItem: item.nItem
+            });
+            recalcularEstoquePorLotesNFe(produto);
+            produto.ultima_entrada_nfe = {
+                chave_nfe: chaveNota,
+                numero_nota: nfeEntradaAtual.meta.numero || '',
+                fornecedor: nfeEntradaAtual.meta.fornecedor || '',
+                data_entrada: new Date().toISOString()
+            };
+            produto.data_ultima_entrada = new Date().toISOString();
+            produto.last_update = Date.now();
+            normalizarProdutoTagsQuantidade(produto);
+            atualizarIndiceBuscaProduto(produto);
+
+            const produtoLimpo = prepararProdutoParaFirebase(produto);
+            await FirebaseAPI.salvarProduto(produtoLimpo);
+            atualizarProdutoLocalComNuvem(produtoLimpo);
+        }
+
+        atualizarListasDoSistemaComProdutos();
+        atualizarIndiceBuscaTodosProdutos();
+        produtosPendentesSync.clear();
+        await saveDataLocally(false);
+        renderGrid(ultimoTermoPesquisa, true);
+        atualizarDashboardResumo();
+        renderizarNFeEntrada();
+        mostrarAlerta(`Entrada aplicada: ${criados} novo(s), ${atualizados} atualizado(s).`, 'sucesso');
+    } catch (e) {
+        console.error('Erro ao aplicar entrada NF-e:', e);
+        mostrarAlerta('Erro ao aplicar entrada NF-e: ' + e.message, 'erro');
+    }
+}
+
 window.onload = async function() { 
     lucide.createIcons(); 
     await loadData(); 
@@ -2400,6 +3131,8 @@ window.onload = async function() {
     }
 
     setupEditorEvents(); 
+    inicializarNFeEvents();
+    renderizarNFeEntrada();
     atualizarDashboardResumo();
 
     window.addEventListener('beforeunload', function(e) {
@@ -3810,6 +4543,7 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                                 <div class="product-mini-summary">
                                     <span class="summary-pill">SKU ${escaparHtmlSistema(p.codigo || '')}</span>
                                     <span class="summary-pill">Estoque ${escaparHtmlSistema(p.estoque || 0)}</span>
+                                    ${Array.isArray(p.estoques_lotes) && p.estoques_lotes.length ? `<span class="summary-pill" style="color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe;">Lotes ${p.estoques_lotes.filter(l => (parseFloat(l.quantidade_atual) || 0) > 0).length}</span>` : ''}
                                     <span class="summary-pill">Venda ${dinheiroBR(venda)}</span>
                                     ${p.preco_oferta ? `<span class="summary-pill" style="color:#92400e;background:#fffbeb;border-color:#fde68a;">Oferta ${dinheiroBR(p.preco_oferta)}</span>` : ''}
                                 </div>
