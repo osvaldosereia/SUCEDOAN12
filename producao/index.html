@@ -2873,13 +2873,6 @@ function nfeAtualizarItem(index, campo, valor) {
 function nfeReidentificarItem(index, rerender = true) {
     const item = nfeEntradaAtual.itens && nfeEntradaAtual.itens[index];
     if (!item) return;
-    if (item.forcarNovo === true) {
-        item.status = 'novo';
-        item.matchCodigo = '';
-        item.matchNome = '';
-        if (rerender) renderizarNFeEntrada();
-        return;
-    }
     const encontrado = encontrarProdutoPorEANouCodigoNFe(item);
     if (encontrado) {
         item.status = 'existente';
@@ -2917,7 +2910,6 @@ function nfeForcarNovoCadastro(index) {
     item.status = 'novo';
     item.matchCodigo = '';
     item.matchNome = '';
-    item.forcarNovo = true;
     renderizarNFeEntrada();
 }
 
@@ -4543,7 +4535,6 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                                 <div class="product-mini-summary">
                                     <span class="summary-pill">SKU ${escaparHtmlSistema(p.codigo || '')}</span>
                                     <span class="summary-pill">Estoque ${escaparHtmlSistema(p.estoque || 0)}</span>
-                                    ${Array.isArray(p.estoques_lotes) && p.estoques_lotes.length ? `<span class="summary-pill" style="color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe;">Lotes ${p.estoques_lotes.filter(l => (parseFloat(l.quantidade_atual) || 0) > 0).length}</span>` : ''}
                                     <span class="summary-pill">Venda ${dinheiroBR(venda)}</span>
                                     ${p.preco_oferta ? `<span class="summary-pill" style="color:#92400e;background:#fffbeb;border-color:#fde68a;">Oferta ${dinheiroBR(p.preco_oferta)}</span>` : ''}
                                 </div>
@@ -6156,5 +6147,661 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
     });
 });
     </script>
+
+<style>
+/* =========================================================
+   AJUSTE FINAL 2026-06-16 - LISTA RÁPIDA 6 COLUNAS + SIDEBAR
+   ========================================================= */
+.card-grid {
+    display:grid !important;
+    grid-template-columns:repeat(6, minmax(0, 1fr)) !important;
+    gap:10px !important;
+    align-items:stretch !important;
+}
+.product-tile {
+    background:#ffffff;
+    border:1px solid var(--border);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+    padding:8px;
+    min-width:0;
+    cursor:pointer;
+    transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    position:relative;
+    overflow:hidden;
+}
+.product-tile:hover { transform:translateY(-2px); border-color:#cbd5e1; box-shadow:0 10px 24px rgba(15,23,42,.08); }
+.product-tile.inactive { opacity:.55; filter:grayscale(1); }
+.product-tile.pending-save { border-color:#f59e0b; box-shadow:0 0 0 2px rgba(245,158,11,.14); }
+.product-tile-photo {
+    width:100%;
+    aspect-ratio:1/1;
+    border-radius:9px;
+    border:1px solid #eef2f7;
+    background:#f8fafc;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.product-tile-photo img { width:100%; height:100%; object-fit:contain; display:block; }
+.product-tile-name {
+    font-size:10.5px;
+    font-weight:900;
+    color:var(--text-primary);
+    line-height:1.18;
+    height:38px;
+    overflow:hidden;
+    display:-webkit-box;
+    -webkit-line-clamp:3;
+    -webkit-box-orient:vertical;
+}
+.product-tile-meta { display:flex; gap:4px; flex-wrap:wrap; min-height:17px; }
+.product-tile-badge { font-size:7px; font-weight:900; padding:3px 5px; border-radius:999px; background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; }
+.product-tile-badge.warn { background:#fffbeb; color:#92400e; border-color:#fde68a; }
+.product-tile-badge.danger { background:#fef2f2; color:#991b1b; border-color:#fecaca; }
+.product-tile-badge.ok { background:#ecfdf5; color:#047857; border-color:#bbf7d0; }
+.product-tile-actions { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.product-tile-actions .nav-btn { min-height:27px !important; padding:5px 4px !important; font-size:7.5px !important; justify-content:center !important; }
+#produto-sidebar { width:680px; z-index:1018; }
+.produto-sidebar-photo { width:118px; height:118px; border-radius:12px; border:1px solid var(--border); background:#fafafa; object-fit:contain; cursor:pointer; }
+.produto-editor-top { display:grid; grid-template-columns:128px minmax(0,1fr); gap:12px; align-items:start; }
+.produto-editor-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:8px; }
+.produto-editor-actions .nav-btn { min-height:34px !important; font-size:9px !important; justify-content:center !important; padding:6px !important; }
+.lotes-box { display:flex; flex-direction:column; gap:6px; max-height:160px; overflow:auto; }
+.lote-row { border:1px solid var(--border); background:#fff; border-radius:8px; padding:7px; font-size:10px; font-weight:800; color:var(--text-primary); display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+.lote-row span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.nfe-existing-box { border:1px solid #bbf7d0; background:#ecfdf5; color:#065f46; border-radius:10px; padding:9px; margin:8px 0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; }
+.nfe-existing-box div { min-width:0; }
+.nfe-existing-box span { display:block; font-size:8px; text-transform:uppercase; font-weight:900; color:#047857; }
+.nfe-existing-box strong { display:block; font-size:12px; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.nfe-cost-box { border:1px dashed #fde68a; background:#fffbeb; color:#92400e; border-radius:10px; padding:8px; margin:8px 0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; }
+.nfe-cost-box div { min-width:0; }
+.nfe-cost-box span { display:block; font-size:8px; text-transform:uppercase; font-weight:900; }
+.nfe-cost-box strong { display:block; font-size:12px; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+@media (max-width:1500px) { .card-grid { grid-template-columns:repeat(5, minmax(0,1fr)) !important; } }
+@media (max-width:1250px) { .card-grid { grid-template-columns:repeat(4, minmax(0,1fr)) !important; } }
+@media (max-width:980px) { .card-grid { grid-template-columns:repeat(3, minmax(0,1fr)) !important; } #produto-sidebar { width:94vw; } }
+@media (max-width:680px) { .card-grid { grid-template-columns:repeat(2, minmax(0,1fr)) !important; } .produto-editor-top { grid-template-columns:1fr; } .produto-sidebar-photo { width:100%; height:180px; } .produto-editor-actions { grid-template-columns:1fr 1fr; } .nfe-existing-box, .nfe-cost-box { grid-template-columns:1fr 1fr; } }
+</style>
+
+<div class="sidebar" id="produto-sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-title" id="produto-sidebar-title">Editar produto</div>
+        <button class="btn-icon" onclick="closeSidebar('produto-sidebar')"><i data-lucide="x" size="16"></i></button>
+    </div>
+    <div class="sidebar-body" id="produto-sidebar-body"></div>
+    <div class="sidebar-footer" id="produto-sidebar-footer"></div>
+</div>
+
+<script>
+/* =========================================================
+   OVERRIDES FINAIS - AGILIDADE, NF-e INTELIGENTE E EDIÇÃO LATERAL
+   ========================================================= */
+(function(){
+    function produtoPorCodigoRapido(sku) {
+        return products.find(p => String(p.codigo || p.id || p.firebaseKey || '') === String(sku));
+    }
+
+    function produtoImagemFinal(p) {
+        const local = typeof p.imagem_preview_local === 'string' && p.imagem_preview_local.startsWith('data:image') ? p.imagem_preview_local : '';
+        return local || ((p.url_imagem && String(p.url_imagem).length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO');
+    }
+
+    window.carregarMaisCards = function(quantidade = 6) {
+        const gridContainer = document.getElementById('product-grid');
+        if (!gridContainer) return;
+        const load = document.getElementById('load-more-container');
+        if (itemsCarregados >= produtosFiltrados.length) {
+            if (load) load.style.display = 'none';
+            return;
+        }
+        const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantidade);
+        nextBatch.forEach(p => {
+            normalizarProdutoTagsQuantidade(p);
+            const sku = String(p.codigo || p.id || p.firebaseKey || '');
+            const skuAttr = escaparAtributoSistema(sku);
+            const imgUrl = produtoImagemFinal(p);
+            const pendente = produtoEstaPendenteNoCard(p);
+            const semEstoque = (parseFloat(p.estoque) || 0) <= 0;
+            const semEAN = !String(p.gtin || p.ean || '').replace(/\D/g, '');
+            const ofertaAtiva = produtoTemOfertaAtiva(p);
+            const nome = p.nome || 'Produto sem nome';
+            const tile = document.createElement('div');
+            tile.className = `product-tile ${p.situacao === 'I' ? 'inactive' : ''} ${pendente ? 'pending-save' : ''}`;
+            tile.setAttribute('onclick', `abrirProdutoSidebar('${skuAttr}')`);
+            tile.innerHTML = `
+                <div class="product-tile-photo">
+                    <img loading="lazy" src="${escaparAtributoSistema(imgUrl)}" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'">
+                </div>
+                <div class="product-tile-name" title="${escaparAtributoSistema(nome)}">${escaparHtmlSistema(nome)}</div>
+                <div class="product-tile-meta">
+                    ${pendente ? '<span class="product-tile-badge warn">PENDENTE</span>' : ''}
+                    ${ofertaAtiva ? '<span class="product-tile-badge ok">OFERTA</span>' : ''}
+                    ${semEstoque ? '<span class="product-tile-badge danger">SEM EST.</span>' : ''}
+                    ${semEAN ? '<span class="product-tile-badge warn">SEM EAN</span>' : ''}
+                </div>
+                <div class="product-tile-actions" onclick="event.stopPropagation()">
+                    <button class="nav-btn ${pendente ? 'warning' : ''}" onclick="abrirProdutoSidebar('${skuAttr}')"><i data-lucide="edit-3" size="11"></i> EDITAR</button>
+                    <button class="nav-btn ${produtoPossuiImagemPendente(sku) ? 'warning' : ''}" onclick="openCanvasSidebar('${skuAttr}')"><i data-lucide="image" size="11"></i> FOTO</button>
+                </div>
+            `;
+            gridContainer.appendChild(tile);
+            itemsCarregados++;
+        });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        if (load) load.style.display = itemsCarregados >= produtosFiltrados.length ? 'none' : 'block';
+    };
+
+    function gerarResumoLotesProduto(p) {
+        const lotes = Array.isArray(p.estoques_lotes) ? p.estoques_lotes.filter(Boolean) : [];
+        if (!lotes.length) return '<div class="nfe-empty" style="padding:12px;">Este produto ainda não tem lotes por validade.</div>';
+        return `<div class="lotes-box">${lotes.map(l => `
+            <div class="lote-row">
+                <span title="${escaparAtributoSistema(l.origem || '')}">Origem: ${escaparHtmlSistema(l.origem || '-')}</span>
+                <span>Qtd: ${escaparHtmlSistema(l.quantidade_atual ?? l.quantidade_inicial ?? 0)}</span>
+                <span>Val.: ${escaparHtmlSistema(nfeValidadeParaProduto(l.validade) || l.validade || '-')}</span>
+                <span>Custo: ${dinheiroBR(l.custo_unitario || 0)}</span>
+            </div>`).join('')}</div>`;
+    }
+
+    window.abrirProdutoSidebar = function(sku) {
+        const p = produtoPorCodigoRapido(sku);
+        if (!p) {
+            mostrarAlerta('Produto não encontrado para edição.', 'erro');
+            return;
+        }
+        normalizarProdutoTagsQuantidade(p);
+        const titulo = document.getElementById('produto-sidebar-title');
+        const body = document.getElementById('produto-sidebar-body');
+        const footer = document.getElementById('produto-sidebar-footer');
+        const skuAttr = escaparAtributoSistema(p.codigo || '');
+        const imgUrl = produtoImagemFinal(p);
+        const safeNome = escaparAtributoSistema(p.nome || '');
+        const safeNomeGoogle = String(p.nome || '').split('\\').join('\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\s+/g, ' ');
+        const custo = parseFloat(p.preco_custo) || 0;
+        const venda = parseFloat(p.preco) || 0;
+        const markup = custo > 0 ? (((venda - custo) / custo) * 100).toFixed(1) : '0.0';
+        const pendencias = obterPendenciasProduto(p);
+        const imgPendente = produtoPossuiImagemPendente(p.codigo);
+        if (titulo) titulo.textContent = `Editar produto • ${p.codigo || ''}`;
+        if (body) body.innerHTML = `
+            <div class="produto-editor-top">
+                <div>
+                    <img class="produto-sidebar-photo" src="${escaparAtributoSistema(imgUrl)}" onclick="openCanvasSidebar('${skuAttr}')" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'">
+                    <div class="produto-editor-actions">
+                        <button class="nav-btn" onclick="openCanvasSidebar('${skuAttr}')"><i data-lucide="image" size="12"></i> FOTO</button>
+                        <button class="nav-btn ${imgPendente ? 'warning' : ''}" onclick="enviarImagemProdutoCardManual('${skuAttr}')"><i data-lucide="image-up" size="12"></i> ENVIAR</button>
+                        <button class="nav-btn bling-btn" onclick="exportarProdutoBling('${skuAttr}')"><i data-lucide="download" size="12"></i> BLING</button>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <div class="field-group"><label class="form-label">Nome do Produto</label><input type="text" class="form-input product-name-input" value="${safeNome}" onchange="updateField('${skuAttr}', 'nome', this.value)"></div>
+                    <div class="quick-actions" style="margin-top:8px;">
+                        <button class="nav-btn" onclick="searchGoogleNCM('${safeNomeGoogle}')"><i data-lucide="search" size="12"></i> NCM</button>
+                        <button class="nav-btn" onclick="searchGoogleHD('${safeNomeGoogle}')"><i data-lucide="image" size="12"></i> FOTO HD</button>
+                        <button class="nav-btn" onclick="searchGoogleShopping('${safeNomeGoogle}')"><i data-lucide="shopping-cart" size="12"></i> PREÇO</button>
+                        <button class="nav-btn" style="color:#ef4444; border-color:#fecaca;" onclick="searchYoutube('${safeNomeGoogle}')"><i data-lucide="youtube" size="12"></i> VÍDEO</button>
+                        <button class="nav-btn" style="color:#0284c7; border-color:#bae6fd; background:#e0f2fe;" onclick="searchGoogleInfo('${safeNomeGoogle}')"><i data-lucide="info" size="12"></i> INFO</button>
+                    </div>
+                    <div class="card-alert-strip" style="margin-top:8px;">
+                        <span class="mini-badge">SKU ${escaparHtmlSistema(p.codigo || '')}</span>
+                        <span class="mini-badge">Estoque ${escaparHtmlSistema(p.estoque || 0)}</span>
+                        <span class="mini-badge">Venda ${dinheiroBR(p.preco || 0)}</span>
+                        <span class="mini-badge">Markup ${markup}%</span>
+                        ${pendencias.length ? `<span class="mini-badge warn">Faltam: ${escaparHtmlSistema(pendencias.slice(0,4).join(', '))}</span>` : '<span class="mini-badge success">Cadastro OK</span>'}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-section"><div class="card-section-title">Classificação, localização e códigos</div>
+                <div class="product-fields-grid">
+                    <div class="field-group"><label>Categoria</label><select class="form-input card-mini-input" onchange="mudarCategoriaDoProduto('${skuAttr}', this.value); setTimeout(()=>abrirProdutoSidebar('${skuAttr}'),120)">${gerarOptionsCategorias(p.categoria)}</select></div>
+                    <div class="field-group"><label>Subcategoria</label><select class="form-input card-mini-input" onchange="mudarSubcategoriaDoProduto('${skuAttr}', this.value); setTimeout(()=>abrirProdutoSidebar('${skuAttr}'),120)">${gerarOptionsSubcategorias(p.categoria, p.subcategoria)}</select></div>
+                    <div class="field-group"><label>Sub-subcategoria</label><select class="form-input card-mini-input" onchange="updateField('${skuAttr}', 'subsubcategoria', this.value)">${gerarOptionsSubSundategorias(p.categoria, p.subcategoria, p.subsubcategoria)}</select></div>
+                    <div class="field-group"><label>Marca</label><select class="form-input card-mini-input" onchange="updateField('${skuAttr}', 'marca', this.value)">${gerarOptions(marcasDoSistema, p.marca, 'Sel. Marca')}</select></div>
+                    <div class="field-group"><label>EAN / GTIN</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(p.gtin || '')}" onchange="updateField('${skuAttr}', 'gtin', this.value)"></div>
+                    <div class="field-group"><label>NCM</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(p.ncm || '')}" onchange="updateField('${skuAttr}', 'ncm', this.value)"></div>
+                    <div class="field-group"><label>Gôndola</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(p.gondola || '')}" onchange="updateField('${skuAttr}', 'gondola', this.value)"></div>
+                    <div class="field-group"><label>Prateleira</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(p.prateleira || '')}" onchange="updateField('${skuAttr}', 'prateleira', this.value)"></div>
+                    <div class="field-group"><label>Embalagem</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(p.embalagem || '')}" onchange="updateField('${skuAttr}', 'embalagem', this.value)"></div>
+                    <div class="field-group"><label>Link YouTube</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(p.link_youtube || '')}" onchange="updateField('${skuAttr}', 'link_youtube', this.value)"></div>
+                </div>
+            </div>
+
+            <div class="card-section"><div class="card-section-title">Preço, estoque, validade e oferta</div>
+                <div class="product-fields-grid">
+                    <div class="field-group"><label>Estoque atual</label><input type="number" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(p.estoque || 0)}" onchange="updateField('${skuAttr}', 'estoque', this.value)"></div>
+                    <div class="field-group"><label>Custo R$</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(p.preco_custo || 0)}" onchange="updateField('${skuAttr}', 'preco_custo', this.value)"></div>
+                    <div class="field-group"><label>Venda R$</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(p.preco || 0)}" onchange="updateField('${skuAttr}', 'preco', this.value)"></div>
+                    <div class="field-group"><label>Validade principal</label><input type="date" class="form-input card-mini-input" value="${p.validade && String(p.validade).includes('/') ? String(p.validade).split('/').reverse().join('-') : (p.validade || '')}" onchange="updateField('${skuAttr}', 'validade', this.value)"></div>
+                    <div class="field-group"><label>Oferta R$</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(p.preco_oferta || '')}" onchange="updateField('${skuAttr}', 'preco_oferta', this.value)"></div>
+                    <div class="field-group"><label>Fim da oferta</label><input type="datetime-local" class="form-input card-mini-input" value="${escaparAtributoSistema(p.validade_oferta || '')}" onchange="updateField('${skuAttr}', 'validade_oferta', this.value)"></div>
+                    <div class="field-group full" style="border:1px dashed #fde68a; background:#fffbeb; border-radius:8px; padding:8px;">
+                        <label style="color:#92400e;">Oferta automática por vencimento simulado</label>
+                        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                            <select class="form-input card-mini-input" id="oferta-sim-${skuAttr}" style="flex:1 1 180px;">
+                                <option value="">Selecionar dias</option>
+                                <option value="120" ${String(p.oferta_validade_simulada_dias || '') === '120' ? 'selected' : ''}>120 dias para vencer</option>
+                                <option value="90" ${String(p.oferta_validade_simulada_dias || '') === '90' ? 'selected' : ''}>90 dias para vencer</option>
+                                <option value="60" ${String(p.oferta_validade_simulada_dias || '') === '60' ? 'selected' : ''}>60 dias para vencer</option>
+                                <option value="30" ${String(p.oferta_validade_simulada_dias || '') === '30' ? 'selected' : ''}>30 dias para vencer</option>
+                            </select>
+                            <button class="nav-btn warning" onclick="aplicarOfertaValidadeSimulada('${skuAttr}')">ATIVAR</button>
+                            <button class="nav-btn" style="color:var(--danger); border-color:#fecaca;" onclick="removerOfertaValidadeSimulada('${skuAttr}')">LIMPAR</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-section"><div class="card-section-title">Tags universais</div><div class="tag-editor-box">${gerarCheckboxes(tagsDoSistema, p.tag_global, p.codigo, 'tag_global')}</div></div>
+            <div class="card-section"><div class="card-section-title">Lotes de estoque por validade</div>${gerarResumoLotesProduto(p)}</div>
+            <div class="card-section"><div class="card-section-title">Descrição detalhada</div>
+                <div class="rich-text-toolbar">
+                    <button type="button" class="editor-btn" onclick="document.execCommand('bold', false, null)"><b>B</b></button>
+                    <button type="button" class="editor-btn" onclick="document.execCommand('insertUnorderedList', false, null)">Lista</button>
+                    <button type="button" class="editor-btn" onclick="addLink('${skuAttr}')">Link</button>
+                    <button type="button" class="editor-btn" onclick="addChip('${skuAttr}')">Chip</button>
+                </div>
+                <div class="rich-text-editor" id="desc-${skuAttr}" contenteditable="true" onblur="updateField('${skuAttr}', 'descricao', this.innerHTML)">${limparHtmlSeguroSistema(p.descricao || '')}</div>
+            </div>
+        `;
+        if (footer) footer.innerHTML = `
+            <button class="nav-btn warning" style="flex:1; justify-content:center;" onclick="duplicarProduto('${skuAttr}')"><i data-lucide="copy" size="14"></i> DUPLICAR</button>
+            <button class="nav-btn ${p.situacao === 'I' ? '' : 'primary'}" style="flex:1; justify-content:center;" onclick="toggleStatus('${skuAttr}'); setTimeout(()=>abrirProdutoSidebar('${skuAttr}'),150)"><i data-lucide="power" size="14"></i> ${p.situacao === 'I' ? 'ATIVAR' : 'INATIVAR'}</button>
+            <button class="nav-btn primary" style="flex:2; justify-content:center;" onclick="salvarProdutoCardManual('${skuAttr}')"><i data-lucide="save" size="14"></i> SALVAR NO FIREBASE</button>
+            <button class="nav-btn" style="color:var(--danger); border-color:#fecaca;" onclick="deleteProduct('${skuAttr}')"><i data-lucide="trash-2" size="14"></i></button>
+        `;
+        openSidebar('produto-sidebar');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    };
+
+    const toggleMultiSelectOriginal = window.toggleMultiSelect;
+    window.toggleMultiSelect = async function(sku, campo, valor, isChecked) {
+        await toggleMultiSelectOriginal(sku, campo, valor, isChecked);
+        const side = document.getElementById('produto-sidebar');
+        if (side && side.classList.contains('open')) setTimeout(() => abrirProdutoSidebar(sku), 80);
+    };
+
+    const salvarQuantidadeTagOriginal = window.salvarQuantidadeTagProduto;
+    if (typeof salvarQuantidadeTagOriginal === 'function') {
+        window.salvarQuantidadeTagProduto = async function(sku, tag, qtd) {
+            await salvarQuantidadeTagOriginal(sku, tag, qtd);
+            const side = document.getElementById('produto-sidebar');
+            if (side && side.classList.contains('open')) setTimeout(() => abrirProdutoSidebar(sku), 80);
+        };
+    }
+
+    const createNewProductOriginal = window.createNewProduct || createNewProduct;
+    window.createNewProduct = async function() {
+        await createNewProductOriginal();
+        const p = products && products[0];
+        if (p && p.codigo) setTimeout(() => abrirProdutoSidebar(p.codigo), 200);
+    };
+
+    function nfeChaveAgrupamento(item) {
+        const ean = nfeEANValido(item.ean || item.eanTrib);
+        if (ean) return 'ean:' + ean;
+        const cod = String(item.codigoFornecedor || '').trim();
+        if (cod) return 'cod:' + cod;
+        return 'nome:' + normalizarBuscaProduto((item.nome || '') + ' ' + (item.ncm || '') + ' ' + (item.unidade || ''));
+    }
+
+    function nfeInferirFatorDivisor(prod, item) {
+        const qCom = nfeNumero(nfeTextoNo(prod, 'qCom'));
+        const qTrib = nfeNumero(nfeTextoNo(prod, 'qTrib'));
+        if (qCom > 0 && qTrib > 0 && qTrib > qCom) {
+            const fator = qTrib / qCom;
+            if (Number.isFinite(fator) && fator > 1) return Number(fator.toFixed(3));
+        }
+        const unidade = String(nfeTextoNo(prod, 'uCom') || nfeTextoNo(prod, 'uTrib') || '').toUpperCase();
+        const nome = String(nfeTextoNo(prod, 'xProd') || '').toUpperCase();
+        const texto = `${unidade} ${nome}`;
+        const padroes = [
+            /(?:CX|CAIXA|FD|FARDO|DISPLAY|CARTELA|PCT|PACOTE)\s*(?:C\/|COM|C)?\s*(\d{1,3})\s*(?:UN|UND|UNID|UNIDADES)?/,
+            /(?:C\/|COM)\s*(\d{1,3})\s*(?:UN|UND|UNID|UNIDADES)/,
+            /(\d{1,3})\s*(?:UN|UND|UNID|UNIDADES)\b/
+        ];
+        for (const re of padroes) {
+            const m = texto.match(re);
+            if (m && parseInt(m[1], 10) > 1) return parseInt(m[1], 10);
+        }
+        if (/\b(CX|CAIXA|FD|FARDO)\b/.test(texto)) return 1;
+        return 1;
+    }
+
+    function nfeRecalcularCustosItem(item) {
+        item.fatorDivisor = Math.max(nfeNumero(item.fatorDivisor) || 1, 0.001);
+        item.quantidadeXml = nfeNumero(item.quantidadeXml || item.quantidade) || 0;
+        item.quantidade = Number((item.quantidadeXml * item.fatorDivisor).toFixed(3));
+        const totalBruto = nfeNumero(item.totalBruto || item.total || 0);
+        const desconto = nfeNumero(item.descontoRateado || 0);
+        const totalLiquido = Math.max(totalBruto - desconto, 0);
+        item.custoSemDesconto = item.quantidade > 0 ? Number((totalBruto / item.quantidade).toFixed(4)) : 0;
+        if (!item.custoManual) {
+            item.custo = item.quantidade > 0 ? Number((totalLiquido / item.quantidade).toFixed(4)) : 0;
+        }
+        item.totalLiquido = Number(totalLiquido.toFixed(4));
+    }
+
+    function preencherInfoProdutoExistenteNFe(item, produto) {
+        if (!item) return;
+        if (!produto) {
+            item.existente = null;
+            return;
+        }
+        const lotes = Array.isArray(produto.estoques_lotes) ? produto.estoques_lotes.filter(Boolean) : [];
+        const lotesAtivos = lotes.filter(l => (parseFloat(l.quantidade_atual) || 0) > 0);
+        item.existente = {
+            codigo: String(produto.codigo || produto.id || produto.firebaseKey || ''),
+            nome: String(produto.nome || ''),
+            estoque: parseFloat(produto.estoque) || 0,
+            validade: String(produto.validade || ''),
+            preco: parseFloat(produto.preco) || 0,
+            custo: parseFloat(produto.preco_custo) || 0,
+            lotesAtivos: lotesAtivos.length,
+            validadeMaisProxima: (lotesAtivos.map(l => String(l.validade || '')).filter(v => /^\d{4}-\d{2}-\d{2}$/.test(v)).sort()[0] || '')
+        };
+    }
+
+    window.processarXMLNFe = function(texto) {
+        try {
+            const bruto = String(texto || '').trim();
+            if (!bruto || !bruto.includes('<')) throw new Error('XML vazio ou inválido.');
+            const doc = new DOMParser().parseFromString(bruto, 'application/xml');
+            const parserError = doc.getElementsByTagName('parsererror')[0];
+            if (parserError) throw new Error('Não foi possível interpretar o XML. Verifique se o arquivo é uma NF-e válida.');
+            const infNFe = doc.getElementsByTagName('infNFe')[0];
+            const ide = doc.getElementsByTagName('ide')[0];
+            const emit = doc.getElementsByTagName('emit')[0];
+            const total = doc.getElementsByTagName('ICMSTot')[0];
+            const chProt = nfeTextoNo(doc, 'chNFe');
+            const chaveInf = infNFe ? String(infNFe.getAttribute('Id') || '').replace(/\D/g, '') : '';
+            const chave = chProt || chaveInf || nfeEntradaAtual.chave || '';
+            const dets = Array.from(doc.getElementsByTagName('det'));
+            if (!dets.length) throw new Error('Nenhum produto encontrado no XML.');
+            const meta = {
+                chave: String(chave || '').replace(/\D/g, '').slice(0, 44),
+                numero: nfeTextoNo(ide, 'nNF'),
+                serie: nfeTextoNo(ide, 'serie'),
+                emissao: nfeDataISOParaBR(nfeTextoNo(ide, 'dhEmi') || nfeTextoNo(ide, 'dEmi')),
+                fornecedor: nfeTextoNo(emit, 'xNome'),
+                cnpj: nfeTextoNo(emit, 'CNPJ'),
+                valorTotal: nfeNumero(nfeTextoNo(total, 'vNF')),
+                descontoTotal: nfeNumero(nfeTextoNo(total, 'vDesc'))
+            };
+            const mapa = new Map();
+            dets.forEach((det, idx) => {
+                const prod = det.getElementsByTagName('prod')[0];
+                if (!prod) return;
+                const itemBase = {
+                    idx: idx,
+                    nItem: det.getAttribute('nItem') || String(idx + 1),
+                    itensOriginais: [det.getAttribute('nItem') || String(idx + 1)],
+                    ignorar: false,
+                    codigoFornecedor: nfeTextoNo(prod, 'cProd'),
+                    ean: nfeEANValido(nfeTextoNo(prod, 'cEAN')) || nfeEANValido(nfeTextoNo(prod, 'cEANTrib')),
+                    eanTrib: nfeEANValido(nfeTextoNo(prod, 'cEANTrib')),
+                    nome: nfeTextoNo(prod, 'xProd'),
+                    ncm: String(nfeTextoNo(prod, 'NCM') || '').replace(/\D/g, '').slice(0, 8),
+                    unidade: nfeTextoNo(prod, 'uCom') || nfeTextoNo(prod, 'uTrib'),
+                    unidadeTrib: nfeTextoNo(prod, 'uTrib'),
+                    quantidadeXml: nfeNumero(nfeTextoNo(prod, 'qCom') || nfeTextoNo(prod, 'qTrib')),
+                    fatorDivisor: nfeInferirFatorDivisor(prod),
+                    totalBruto: nfeNumero(nfeTextoNo(prod, 'vProd')),
+                    descontoOriginal: nfeNumero(nfeTextoNo(prod, 'vDesc')),
+                    validade: '', precoVenda: '', categoria: '', subcategoria: '', marca: '', embalagem: nfeTextoNo(prod, 'uCom') || '', matchCodigo: '', matchNome: '', status: 'novo'
+                };
+                const chaveGrupo = nfeChaveAgrupamento(itemBase);
+                if (!mapa.has(chaveGrupo)) {
+                    mapa.set(chaveGrupo, itemBase);
+                } else {
+                    const g = mapa.get(chaveGrupo);
+                    g.itensOriginais.push(itemBase.nItem);
+                    g.quantidadeXml = Number((nfeNumero(g.quantidadeXml) + nfeNumero(itemBase.quantidadeXml)).toFixed(3));
+                    g.totalBruto = Number((nfeNumero(g.totalBruto) + nfeNumero(itemBase.totalBruto)).toFixed(4));
+                    g.descontoOriginal = Number((nfeNumero(g.descontoOriginal) + nfeNumero(itemBase.descontoOriginal)).toFixed(4));
+                    g.fatorDivisor = Math.max(nfeNumero(g.fatorDivisor) || 1, nfeNumero(itemBase.fatorDivisor) || 1);
+                    g.nItem = g.itensOriginais.join('+');
+                }
+            });
+            let itens = Array.from(mapa.values());
+            const descontoTotal = meta.descontoTotal > 0 ? meta.descontoTotal : itens.reduce((acc, i) => acc + nfeNumero(i.descontoOriginal), 0);
+            meta.descontoTotal = Number(descontoTotal.toFixed(2));
+            meta.itensOriginais = dets.length;
+            meta.itensAgrupados = itens.length;
+            const descontoPorProduto = itens.length ? descontoTotal / itens.length : 0;
+            itens.forEach((item, index) => {
+                item.idx = index;
+                item.descontoRateado = Number(descontoPorProduto.toFixed(4));
+                nfeRecalcularCustosItem(item);
+                const encontrado = encontrarProdutoPorEANouCodigoNFe(item);
+                if (encontrado) {
+                    item.status = 'existente';
+                    item.matchCodigo = String(encontrado.codigo || encontrado.id || encontrado.firebaseKey || '');
+                    item.matchNome = String(encontrado.nome || '');
+                    item.precoVenda = encontrado.preco || '';
+                    item.categoria = encontrado.categoria || '';
+                    item.subcategoria = encontrado.subcategoria || '';
+                    item.marca = encontrado.marca || '';
+                    item.embalagem = encontrado.embalagem || item.embalagem;
+                    preencherInfoProdutoExistenteNFe(item, encontrado);
+                }
+            });
+            nfeEntradaAtual = { chave: meta.chave, meta, itens };
+            const chaveInput = document.getElementById('nfe-chave-input');
+            if (chaveInput && meta.chave) chaveInput.value = meta.chave;
+            renderizarNFeEntrada();
+            mostrarAlerta(`XML lido: ${dets.length} linha(s) da nota agrupadas em ${itens.length} produto(s). Desconto rateado igualmente.`, 'sucesso');
+        } catch (e) {
+            console.error('Erro XML NF-e:', e);
+            mostrarAlerta('Erro ao ler XML: ' + e.message, 'erro');
+        }
+    };
+
+    window.renderizarNFeEntrada = function() {
+        const metaEl = document.getElementById('nfe-meta');
+        const itensEl = document.getElementById('nfe-itens-container');
+        const totalLabel = document.getElementById('nfe-total-itens-label');
+        if (!itensEl) return;
+        const meta = nfeEntradaAtual.meta || {};
+        const itens = Array.isArray(nfeEntradaAtual.itens) ? nfeEntradaAtual.itens : [];
+        if (totalLabel) totalLabel.textContent = itens.length ? `${itens.length} produto(s) agrupado(s)` : '';
+        if (metaEl) {
+            const cards = [
+                ['Chave', meta.chave || nfeEntradaAtual.chave || '-'],
+                ['Nota', meta.numero ? `Nº ${meta.numero}${meta.serie ? ' / Série ' + meta.serie : ''}` : '-'],
+                ['Fornecedor', meta.fornecedor || '-'],
+                ['Total XML', dinheiroBR(meta.valorTotal || 0)],
+                ['Desconto rateado', dinheiroBR(meta.descontoTotal || 0)],
+                ['Linhas → produtos', `${meta.itensOriginais || itens.length} → ${meta.itensAgrupados || itens.length}`]
+            ];
+            metaEl.innerHTML = cards.map(([r,v]) => `<div class="nfe-meta-card"><span>${escaparHtmlSistema(r)}</span><strong title="${escaparAtributoSistema(v)}">${escaparHtmlSistema(v)}</strong></div>`).join('');
+        }
+        if (!itens.length) {
+            itensEl.innerHTML = '<div class="nfe-empty">Nenhum XML carregado ainda. Leia a chave da nota com a pistola e carregue o XML para conferir os produtos.</div>';
+            return;
+        }
+        itensEl.innerHTML = itens.map((item, i) => {
+            nfeRecalcularCustosItem(item);
+            const statusClass = item.ignorar ? 'ignorado' : (item.status === 'existente' ? 'existente' : 'novo');
+            const statusTxt = item.ignorar ? 'Ignorado' : (item.status === 'existente' ? 'Já existe' : 'Novo cadastro');
+            const valorVenda = item.precoVenda === '' || item.precoVenda === null || item.precoVenda === undefined ? '' : item.precoVenda;
+            const ex = item.existente;
+            return `
+                <div class="nfe-item-card ${item.ignorar ? 'inactive' : ''}">
+                    <div class="nfe-item-head">
+                        <div>
+                            <div class="nfe-item-title">${escaparHtmlSistema(item.nItem)}. ${escaparHtmlSistema(item.nome || 'Produto sem nome')}</div>
+                            <div class="card-alert-strip" style="margin-top:5px;">
+                                <span class="mini-badge">EAN ${escaparHtmlSistema(item.ean || 'sem EAN')}</span>
+                                <span class="mini-badge">Linhas ${escaparHtmlSistema((item.itensOriginais || []).join(', ') || item.nItem)}</span>
+                                <span class="mini-badge">Qtd NF ${escaparHtmlSistema(item.quantidadeXml)}</span>
+                                <span class="mini-badge warn">Divisor ${escaparHtmlSistema(item.fatorDivisor || 1)}</span>
+                                <span class="mini-badge success">Estoque entra ${escaparHtmlSistema(item.quantidade)}</span>
+                            </div>
+                        </div>
+                        <span class="nfe-status ${statusClass}">${statusTxt}</span>
+                    </div>
+                    ${ex ? `<div class="nfe-existing-box">
+                        <div><span>Produto cadastrado</span><strong title="${escaparAtributoSistema(ex.nome)}">${escaparHtmlSistema(ex.nome)}</strong></div>
+                        <div><span>Estoque atual</span><strong>${escaparHtmlSistema(ex.estoque)}</strong></div>
+                        <div><span>Validade atual</span><strong>${escaparHtmlSistema(ex.validadeMaisProxima ? nfeValidadeParaProduto(ex.validadeMaisProxima) : (ex.validade || '-'))}</strong></div>
+                        <div><span>Lotes ativos</span><strong>${escaparHtmlSistema(ex.lotesAtivos || 0)}</strong></div>
+                    </div>` : ''}
+                    <div class="nfe-cost-box">
+                        <div><span>Total bruto</span><strong>${dinheiroBR(item.totalBruto || 0)}</strong></div>
+                        <div><span>Desconto rateado</span><strong>${dinheiroBR(item.descontoRateado || 0)}</strong></div>
+                        <div><span>Total líquido</span><strong>${dinheiroBR(item.totalLiquido || 0)}</strong></div>
+                        <div><span>Custo antes</span><strong>${dinheiroBR(item.custoSemDesconto || 0)}</strong></div>
+                        <div><span>Custo real un.</span><strong>${dinheiroBR(item.custo || 0)}</strong></div>
+                    </div>
+                    <div class="nfe-fields">
+                        <div class="field-group wide"><label>Nome no cadastro</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.nome)}" onchange="nfeAtualizarItem(${i}, 'nome', this.value)"></div>
+                        <div class="field-group"><label>EAN / GTIN</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.ean)}" onchange="nfeAtualizarItem(${i}, 'ean', this.value)"></div>
+                        <div class="field-group"><label>NCM</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.ncm)}" onchange="nfeAtualizarItem(${i}, 'ncm', this.value)"></div>
+                        <div class="field-group"><label>Qtd na NF</label><input type="number" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.quantidadeXml)}" onchange="nfeAtualizarItem(${i}, 'quantidadeXml', this.value)"></div>
+                        <div class="field-group"><label>Fator divisor / un. por cx</label><input type="number" min="0.001" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.fatorDivisor || 1)}" onchange="nfeAtualizarItem(${i}, 'fatorDivisor', this.value)"></div>
+                        <div class="field-group"><label>Estoque unitário</label><input type="number" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.quantidade)}" readonly style="background:#ecfdf5;color:#047857;font-weight:900;"></div>
+                        <div class="field-group"><label>Custo real unit.</label><input type="number" step="0.0001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.custo)}" onchange="nfeAtualizarItem(${i}, 'custo', this.value)"></div>
+                        <div class="field-group"><label>Preço venda</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(valorVenda)}" onchange="nfeAtualizarItem(${i}, 'precoVenda', this.value)"></div>
+                        <div class="field-group"><label>Validade deste lote</label><input type="date" class="form-input card-mini-input" value="${escaparAtributoSistema(item.validade)}" onchange="nfeAtualizarItem(${i}, 'validade', this.value)"></div>
+                        <div class="field-group"><label>Unidade/embalagem</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.embalagem || item.unidade)}" onchange="nfeAtualizarItem(${i}, 'embalagem', this.value)"></div>
+                        <div class="field-group"><label>Marca</label><select class="form-input card-mini-input" onchange="nfeAtualizarItem(${i}, 'marca', this.value)">${gerarOptions(marcasDoSistema, item.marca, 'Sel. Marca')}</select></div>
+                        <div class="field-group"><label>Categoria</label><select class="form-input card-mini-input" onchange="nfeAtualizarItem(${i}, 'categoria', this.value); renderizarNFeEntrada();">${gerarOptionsCategorias(item.categoria)}</select></div>
+                        <div class="field-group"><label>Subcategoria</label><select class="form-input card-mini-input" onchange="nfeAtualizarItem(${i}, 'subcategoria', this.value)">${gerarOptionsSubcategorias(item.categoria, item.subcategoria)}</select></div>
+                    </div>
+                    <div class="nfe-actions">
+                        <button class="nav-btn ${item.ignorar ? '' : 'warning'}" onclick="nfeAlternarIgnorarItem(${i})"><i data-lucide="eye-off" size="12"></i> ${item.ignorar ? 'USAR ITEM' : 'IGNORAR ITEM'}</button>
+                        <button class="nav-btn" onclick="nfeForcarNovoCadastro(${i})"><i data-lucide="plus" size="12"></i> FORÇAR NOVO</button>
+                        <button class="nav-btn sync-btn" onclick="nfeReidentificarItem(${i})"><i data-lucide="scan-search" size="12"></i> BUSCAR EAN</button>
+                    </div>
+                </div>`;
+        }).join('');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    };
+
+    window.nfeAtualizarItem = function(index, campo, valor) {
+        const item = nfeEntradaAtual.itens && nfeEntradaAtual.itens[index];
+        if (!item) return;
+        if (['quantidadeXml','fatorDivisor','custo','precoVenda','descontoRateado','totalBruto'].includes(campo)) item[campo] = nfeNumero(valor);
+        else if (campo === 'ean') item[campo] = nfeEANValido(valor) || String(valor || '').replace(/\D/g, '');
+        else if (campo === 'ncm') item[campo] = String(valor || '').replace(/\D/g, '').slice(0, 8);
+        else item[campo] = limparTextoSistema(valor);
+        if (['quantidadeXml','fatorDivisor','totalBruto','descontoRateado'].includes(campo)) {
+            item.custoManual = false;
+            nfeRecalcularCustosItem(item);
+        }
+        if (campo === 'custo') item.custoManual = true;
+        if (campo === 'ean') nfeReidentificarItem(index, false);
+    };
+
+    window.nfeReidentificarItem = function(index, rerender = true) {
+        const item = nfeEntradaAtual.itens && nfeEntradaAtual.itens[index];
+        if (!item) return;
+        const encontrado = encontrarProdutoPorEANouCodigoNFe(item);
+        if (encontrado) {
+            item.status = 'existente';
+            item.matchCodigo = String(encontrado.codigo || encontrado.id || encontrado.firebaseKey || '');
+            item.matchNome = String(encontrado.nome || '');
+            item.precoVenda = item.precoVenda || encontrado.preco || '';
+            item.categoria = item.categoria || encontrado.categoria || '';
+            item.subcategoria = item.subcategoria || encontrado.subcategoria || '';
+            item.marca = item.marca || encontrado.marca || '';
+            item.embalagem = item.embalagem || encontrado.embalagem || item.unidade || '';
+            preencherInfoProdutoExistenteNFe(item, encontrado);
+        } else {
+            item.status = 'novo';
+            item.matchCodigo = '';
+            item.matchNome = '';
+            item.existente = null;
+        }
+        if (rerender) renderizarNFeEntrada();
+    };
+
+    window.reidentificarItensNFe = function() {
+        (nfeEntradaAtual.itens || []).forEach((_, idx) => nfeReidentificarItem(idx, false));
+        renderizarNFeEntrada();
+        mostrarAlerta('Itens reidentificados pelo EAN/código e dados atuais exibidos.', 'sucesso');
+    };
+
+    window.aplicarEntradaNFeFirebase = async function() {
+        try {
+            const itens = (nfeEntradaAtual.itens || []).filter(item => !item.ignorar);
+            if (!itens.length) { mostrarAlerta('Nenhum item válido para aplicar.', 'erro'); return; }
+            const semValidade = itens.filter(item => !/^\d{4}-\d{2}-\d{2}$/.test(String(item.validade || '')));
+            if (semValidade.length) { mostrarAlerta('Informe a validade do lote para todos os itens usados. Itens sem validade: ' + semValidade.map(i => i.nItem).join(', '), 'erro'); return; }
+            if (!confirm(`Aplicar entrada de ${itens.length} produto(s) agrupado(s) no Firebase? O estoque será lançado em novos lotes por validade.`)) return;
+            mostrarAlerta('Aplicando entrada da NF-e no Firebase...', 'aviso');
+            let criados = 0, atualizados = 0;
+            for (let idx = 0; idx < nfeEntradaAtual.itens.length; idx++) {
+                const item = nfeEntradaAtual.itens[idx];
+                if (!item || item.ignorar) continue;
+                nfeRecalcularCustosItem(item);
+                nfeReidentificarItem(idx, false);
+                let produto = null;
+                if (item.status === 'existente' && item.matchCodigo) {
+                    produto = products.find(p => String(p.codigo || p.id || p.firebaseKey || '') === String(item.matchCodigo));
+                }
+                if (!produto) {
+                    produto = criarProdutoNovoNFe(item);
+                    products.unshift(produto);
+                    criados++;
+                } else {
+                    atualizados++;
+                    if (item.nome && !produto.nome) produto.nome = limparTextoSistema(item.nome);
+                    if (nfeEANValido(item.ean)) produto.gtin = nfeEANValido(item.ean);
+                    if (item.ncm) produto.ncm = String(item.ncm).replace(/\D/g, '').slice(0, 8);
+                    if (item.embalagem) produto.embalagem = limparTextoSistema(item.embalagem);
+                    if (item.marca) produto.marca = limparMarcaProduto(item.marca);
+                    if (item.categoria) produto.categoria = item.categoria;
+                    if (item.subcategoria) produto.subcategoria = item.subcategoria;
+                    if (nfeNumero(item.precoVenda) > 0) produto.preco = nfeNumero(item.precoVenda);
+                    produto.preco_custo = nfeNumero(item.custo);
+                }
+                normalizarLotesProdutoNFe(produto);
+                const chaveNota = nfeEntradaAtual.meta.chave || nfeEntradaAtual.chave || '';
+                produto.estoques_lotes.push({
+                    id: `nfe_${chaveNota || Date.now()}_${String(item.nItem).replace(/\W+/g,'_')}_${Math.floor(Math.random() * 100000)}`,
+                    origem: 'nfe', chave_nfe: chaveNota, numero_nota: nfeEntradaAtual.meta.numero || '', serie_nota: nfeEntradaAtual.meta.serie || '', fornecedor: nfeEntradaAtual.meta.fornecedor || '', cnpj_fornecedor: nfeEntradaAtual.meta.cnpj || '', data_entrada: new Date().toISOString(), validade: item.validade,
+                    quantidade_inicial: nfeNumero(item.quantidade), quantidade_atual: nfeNumero(item.quantidade), quantidade_xml: nfeNumero(item.quantidadeXml), fator_divisor: nfeNumero(item.fatorDivisor) || 1,
+                    custo_unitario: nfeNumero(item.custo), custo_unitario_sem_desconto: nfeNumero(item.custoSemDesconto), total_bruto_xml: nfeNumero(item.totalBruto), desconto_rateado: nfeNumero(item.descontoRateado), total_liquido: nfeNumero(item.totalLiquido), unidade: item.unidade || item.embalagem || '', nItem: item.nItem, itens_originais: item.itensOriginais || [item.nItem]
+                });
+                recalcularEstoquePorLotesNFe(produto);
+                produto.ultima_entrada_nfe = { chave_nfe: chaveNota, numero_nota: nfeEntradaAtual.meta.numero || '', fornecedor: nfeEntradaAtual.meta.fornecedor || '', data_entrada: new Date().toISOString() };
+                produto.data_ultima_entrada = new Date().toISOString();
+                produto.last_update = Date.now();
+                normalizarProdutoTagsQuantidade(produto);
+                atualizarIndiceBuscaProduto(produto);
+                const produtoLimpo = prepararProdutoParaFirebase(produto);
+                await FirebaseAPI.salvarProduto(produtoLimpo);
+                atualizarProdutoLocalComNuvem(produtoLimpo);
+            }
+            atualizarListasDoSistemaComProdutos();
+            atualizarIndiceBuscaTodosProdutos();
+            produtosPendentesSync.clear();
+            await saveDataLocally(false);
+            renderGrid(ultimoTermoPesquisa, true);
+            atualizarDashboardResumo();
+            renderizarNFeEntrada();
+            mostrarAlerta(`Entrada aplicada: ${criados} novo(s), ${atualizados} atualizado(s), desconto rateado e lotes criados.`, 'sucesso');
+        } catch (e) {
+            console.error('Erro ao aplicar entrada NF-e:', e);
+            mostrarAlerta('Erro ao aplicar entrada NF-e: ' + e.message, 'erro');
+        }
+    };
+
+    const saveImageToQueueOriginal = window.saveImageToQueue || saveImageToQueue;
+    window.saveImageToQueue = async function() {
+        await saveImageToQueueOriginal();
+        const side = document.getElementById('produto-sidebar');
+        if (currentEditingSku && side && side.classList.contains('open')) setTimeout(() => abrirProdutoSidebar(currentEditingSku), 180);
+    };
+})();
+</script>
+
 </body>
 </html>
