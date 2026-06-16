@@ -89,21 +89,12 @@
         #config-sidebar { z-index: 1012; width: 380px; }
         #menu-sidebar { z-index: 1014; width: 300px; }
         #categorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar, #exportacoes-sidebar { z-index: 1015; width: 450px; }
-        #combos-sidebar { z-index: 1016; width: 620px; }
 
         .card-alert-strip { display:flex; flex-wrap:wrap; gap:4px; margin-top:2px; }
         .mini-badge { display:inline-flex; align-items:center; gap:3px; font-size:8px; font-weight:900; padding:3px 6px; border-radius:999px; border:1px solid var(--border); background:#fafafa; color:var(--text-secondary); text-transform:uppercase; }
         .mini-badge.warn { background:#fffbeb; border-color:#fde68a; color:#92400e; }
         .mini-badge.danger { background:#fef2f2; border-color:#fecaca; color:#b91c1c; }
         .mini-badge.success { background:#ecfdf5; border-color:#bbf7d0; color:#047857; }
-        .combo-card { border:1px solid var(--border); background:#ffffff; border-radius:12px; padding:12px; display:flex; gap:12px; align-items:flex-start; box-shadow:var(--shadow); }
-        .combo-cover { width:86px; height:86px; border-radius:10px; border:1px solid var(--border); object-fit:contain; background:#fafafa; flex-shrink:0; cursor:pointer; }
-        .combo-line { display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px; border:1px solid var(--border); border-radius:8px; background:#fafafa; }
-        .combo-line small { color:var(--text-secondary); font-weight:800; }
-        .combo-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-        .combo-kpi { background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:10px; }
-        .combo-kpi label { display:block; font-size:9px; font-weight:900; color:var(--text-secondary); text-transform:uppercase; }
-        .combo-kpi strong { font-size:14px; font-weight:900; color:var(--text-primary); }
         .report-box { border:1px solid var(--border); border-radius:10px; background:#fafafa; padding:12px; }
         .report-metric { display:flex; justify-content:space-between; gap:10px; font-size:12px; font-weight:800; padding:7px 0; border-bottom:1px dashed var(--border); }
         .report-metric:last-child { border-bottom:none; }
@@ -143,7 +134,7 @@
 
         .mobile-only { display: none !important; }
 
-        @media (max-width: 1200px) { .card-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 1200px) { .card-grid { grid-template-columns: 1fr; } }
         @media (max-width: 768px) {
             .desktop-only { display: none !important; }
             .mobile-only { display: flex !important; }
@@ -162,20 +153,46 @@
         /* =========================================================
            AJUSTES PROFISSIONAIS 2026 - SEGURANÇA, TAGS E UX
            ========================================================= */
-        .admin-dashboard { display:grid; grid-template-columns:repeat(6, minmax(120px, 1fr)); gap:8px; padding:0 20px 8px 20px; }
-        .admin-kpi { background:#ffffff; border:1px solid var(--border); border-radius:10px; padding:9px 10px; box-shadow:var(--shadow); }
-        .admin-kpi span { display:block; font-size:8px; font-weight:900; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.4px; }
-        .admin-kpi strong { display:block; margin-top:2px; font-size:15px; font-weight:900; color:var(--text-primary); }
-        .tag-qtd-row { display:grid; grid-template-columns:18px 1fr 58px; gap:6px; align-items:center; padding:4px 0; border-bottom:1px dashed #ececef; }
+        .admin-dashboard { display:flex; flex-wrap:nowrap; gap:6px; padding:0 20px 8px 20px; overflow-x:auto; overflow-y:hidden; scrollbar-width:thin; }
+        .admin-kpi { background:#ffffff; border:1px solid var(--border); border-radius:9px; padding:7px 9px; box-shadow:var(--shadow); flex:1 0 92px; min-width:92px; white-space:nowrap; }
+        .admin-kpi span { display:block; font-size:7px; font-weight:900; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.3px; overflow:hidden; text-overflow:ellipsis; }
+        .admin-kpi strong { display:block; margin-top:1px; font-size:14px; font-weight:900; color:var(--text-primary); line-height:1; min-height:14px; }
+        .card-grid { grid-template-columns: 1fr !important; gap:12px; }
+        .product-card { overflow:visible; padding:14px; border-radius:14px; }
+        .product-card * { min-width:0; }
+        .product-layout { display:grid; grid-template-columns:132px minmax(0,1fr); gap:14px; align-items:start; }
+        .product-media-panel { display:flex; flex-direction:column; gap:7px; min-width:0; }
+        .product-photo-box { width:132px; height:132px; border-radius:10px; border:1px solid var(--border); background:#fafafa; overflow:hidden; cursor:pointer; }
+        .product-photo-box img { width:100%; height:100%; object-fit:contain; display:block; }
+        .product-action-grid { display:grid; grid-template-columns:1fr; gap:6px; }
+        .product-main-panel { display:flex; flex-direction:column; gap:10px; min-width:0; }
+        .product-header-row { display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:10px; align-items:start; }
+        .product-name-input { font-weight:900 !important; font-size:14px !important; min-height:38px; }
+        .product-mini-summary { display:flex; flex-wrap:wrap; gap:5px; justify-content:flex-end; max-width:360px; }
+        .summary-pill { display:inline-flex; align-items:center; gap:3px; border:1px solid var(--border); background:#f8fafc; border-radius:999px; padding:4px 7px; font-size:9px; font-weight:900; color:var(--text-secondary); white-space:nowrap; }
+        .quick-actions { display:flex; gap:5px; flex-wrap:wrap; }
+        .quick-actions .nav-btn { flex:0 0 auto; padding:5px 8px !important; min-height:28px !important; font-size:9px !important; }
+        .card-section { border:1px solid var(--border); border-radius:10px; background:#fbfbfc; padding:10px; }
+        .card-section-title { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; font-size:9px; font-weight:900; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.45px; }
+        .product-fields-grid { display:grid; grid-template-columns:repeat(4, minmax(135px, 1fr)); gap:8px; align-items:start; }
+        .product-fields-grid .field-group.full { grid-column:1 / -1; }
+        .tag-editor-box { height:auto; max-height:124px; overflow:auto; padding:7px; background:#fff; border:1px solid var(--border); border-radius:8px; }
+        .tag-qtd-row { display:grid; grid-template-columns:18px minmax(0,1fr) 58px; gap:6px; align-items:center; padding:4px 0; border-bottom:1px dashed #ececef; }
         .tag-qtd-row:last-child { border-bottom:none; }
-        .tag-qtd-row label { font-size:10px; font-weight:800; color:var(--text-primary); line-height:1.2; }
+        .tag-qtd-row label { font-size:10px; font-weight:800; color:var(--text-primary); line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .tag-qtd-input { width:58px; min-height:28px; padding:4px 5px; border:1px solid var(--border); border-radius:6px; font-size:10px; font-weight:900; text-align:center; background:#fff; }
         .tag-qtd-input:disabled { opacity:.45; background:#f4f4f5; }
-        .tag-qtd-help { display:block; margin-top:4px; font-size:8px; color:var(--text-secondary); font-weight:700; line-height:1.25; }
+        .tag-qtd-help { display:block; margin-top:5px; font-size:8px; color:var(--text-secondary); font-weight:700; line-height:1.25; }
+        .description-details { border:1px solid var(--border); border-radius:10px; background:#fff; overflow:hidden; }
+        .description-details summary { cursor:pointer; padding:10px; font-size:10px; font-weight:900; text-transform:uppercase; color:var(--text-secondary); list-style:none; }
+        .description-details summary::-webkit-details-marker { display:none; }
+        .description-body { padding:0 10px 10px 10px; }
         .modal-camera-box { background:white; width:95%; max-width:520px; border-radius:14px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.28); display:flex; flex-direction:column; }
         #camera-video { width:100%; max-height:55vh; background:#000; object-fit:cover; }
         .quality-warn { background:#fef2f2 !important; border-color:#fecaca !important; color:#991b1b !important; }
-        @media (max-width: 768px) { .admin-dashboard { grid-template-columns:repeat(2, 1fr); padding:0 10px 8px 10px; } }
+        @media (max-width: 1180px) { .product-fields-grid { grid-template-columns:repeat(3, minmax(135px, 1fr)); } .product-mini-summary { justify-content:flex-start; max-width:none; } }
+        @media (max-width: 820px) { .admin-dashboard { padding:0 10px 8px 10px; } .product-layout { grid-template-columns:1fr; } .product-media-panel { display:grid; grid-template-columns:118px minmax(0,1fr); align-items:start; } .product-photo-box { width:118px; height:118px; } .product-action-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } .product-header-row { grid-template-columns:1fr; } .product-fields-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+        @media (max-width: 520px) { .product-fields-grid { grid-template-columns:1fr; } .product-media-panel { grid-template-columns:1fr; } .product-photo-box { width:100%; height:180px; } }
 
         /* =========================================================
            CSS DO EDITOR DE TEXTO RICO
@@ -198,13 +215,10 @@
         const CATEGORIAS_KEY = 'sucedoan_categorias'; 
         const MARCAS_KEY = 'sucedoan_marcas';
         const TAGS_KEY = 'sucedoan_tags_globais'; 
-        const COMBOS_KEY = 'sucedoan_combos_v1'; 
         
         let categoriasDoSistema = []; 
         let marcasDoSistema = [];
         let tagsDoSistema = []; 
-        let combosDoSistema = []; 
-        let comboEditandoId = null;
         let filtroAtivo = { tipo: null, valor: null };
         let advancedFilters = { cat: '', sub: '', subsub: '', marca: '', tag: '', stock: '', oferta: '', vencimento: '', qualidade: '' };
         
@@ -243,7 +257,6 @@
             
             <button class="nav-btn desktop-only success-btn" id="btn-enviar-pendentes-firebase" onclick="enviarPendentesFirebaseManual()" title="Envia todos os produtos editados que ainda não foram salvos individualmente no Firebase"><i data-lucide="cloud-upload" size="14"></i> ENVIAR PENDENTES</button>
             <button class="nav-btn desktop-only sync-btn" onclick="abrirModalBackupMetaManual()" title="Atualiza manualmente o backup produtos.json e os arquivos da Meta"><i data-lucide="database-backup" size="14"></i> BACKUP / META</button>
-            <button class="nav-btn desktop-only warning" onclick="abrirModuloCombos()"><i data-lucide="package-plus" size="14"></i> COMBOS</button>
             <button class="nav-btn desktop-only" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DADOS DA NUVEM</button>
             
             <button class="btn-icon mobile-only" onclick="openSidebar('menu-sidebar')"><i data-lucide="menu" size="20"></i></button>
@@ -290,7 +303,7 @@
             <div class="card-grid" id="product-grid"></div>
             <div id="load-more-container" style="text-align: center; margin-top: 30px; margin-bottom: 20px; display: none;">
                 <button class="nav-btn primary" style="padding: 12px 30px; font-size: 14px; margin: 0 auto; min-width: 250px; justify-content: center;" onclick="carregarMaisCards()">
-                    <i data-lucide="chevron-down" size="18"></i> VER MAIS 12 PRODUTOS
+                    <i data-lucide="chevron-down" size="18"></i> VER MAIS 3 PRODUTOS
                 </button>
             </div>
         </div>
@@ -351,7 +364,6 @@
                 <button class="nav-btn primary menu-sidebar-btn" onclick="createNewProduct(); closeSidebar('menu-sidebar');"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
                 <button class="nav-btn success-btn menu-sidebar-btn" onclick="enviarPendentesFirebaseManual(); closeSidebar('menu-sidebar');"><i data-lucide="cloud-upload" size="14"></i> ENVIAR PENDENTES AO FIREBASE</button>
                 <button class="nav-btn sync-btn menu-sidebar-btn" onclick="abrirModalBackupMetaManual(); closeSidebar('menu-sidebar');"><i data-lucide="database-backup" size="14"></i> ATUALIZAR BACKUP / META</button>
-                <button class="nav-btn warning menu-sidebar-btn" onclick="abrirModuloCombos(); closeSidebar('menu-sidebar');"><i data-lucide="package-plus" size="14"></i> CRIAR / ADMINISTRAR COMBOS</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="cloud" size="14"></i> DEFINIÇÕES E GITHUB</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="abrirGerenciadorExportacoes()"><i data-lucide="folder-open" size="14"></i> ARQUIVOS EXPORTADOS (NUVEM)</button>
             </div>
@@ -460,51 +472,6 @@
     </div>
 
     
-
-    <div class="sidebar" id="combos-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Módulo de Combos Promocionais</div>
-            <button class="btn-icon" onclick="closeSidebar('combos-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body" style="gap:14px;">
-            <div class="form-section">
-                <div class="section-title">Criar / Editar Combo <span id="combo-status-label"></span></div>
-                <div style="display:flex; gap:12px; align-items:flex-start;">
-                    <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
-                        <div class="form-group"><label class="form-label">Nome do Combo</label><input type="text" id="combo-nome" class="form-input" placeholder="Ex: Combo Cesta Econômica" oninput="recalcularComboEmTela()"></div>
-                        <div class="form-grid">
-                            <div class="form-group"><label class="form-label">Desconto</label><select id="combo-desconto" class="form-input" onchange="recalcularComboEmTela()"></select></div>
-                            <div class="form-group"><label class="form-label">Fim da Oferta</label><input type="datetime-local" id="combo-validade" class="form-input" onchange="recalcularComboEmTela()"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="combo-summary">
-                    <div class="combo-kpi"><label>Soma dos Produtos</label><strong id="combo-soma">R$ 0,00</strong></div>
-                    <div class="combo-kpi"><label>Valor do Combo</label><strong id="combo-total">R$ 0,00</strong></div>
-                    <div class="combo-kpi"><label>Economia Cliente</label><strong id="combo-economia">R$ 0,00</strong></div>
-                </div>
-            </div>
-
-            <div class="form-section">
-                <div class="section-title">Adicionar Produtos ao Combo</div>
-                <div style="display:flex; gap:8px;">
-                    <input type="text" id="combo-busca-produto" class="form-input" placeholder="Buscar por nome, SKU ou EAN..." oninput="buscarProdutosParaCombo()">
-                </div>
-                <div id="combo-resultados-produtos" style="display:flex; flex-direction:column; gap:6px; max-height:180px; overflow:auto;"></div>
-                <div class="section-title" style="margin-top:8px;">Produtos do Combo</div>
-                <div id="combo-itens-lista" style="display:flex; flex-direction:column; gap:6px;"></div>
-            </div>
-
-            <div class="form-section">
-                <div class="section-title">Combos Criados</div>
-                <div id="lista-combos-criados" style="display:flex; flex-direction:column; gap:10px;"></div>
-            </div>
-        </div>
-        <div class="sidebar-footer" style="flex-direction:column; gap:8px;">
-            <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="salvarComboAtual()"><i data-lucide="save" size="14"></i> SALVAR COMBO</button>
-            <button class="nav-btn" style="width:100%; height:40px; justify-content:center;" onclick="novoComboEmBranco()"><i data-lucide="plus" size="14"></i> LIMPAR / NOVO COMBO</button>
-        </div>
-    </div>
 
     <div class="sidebar" id="editor-sidebar">
         <div class="sidebar-header">
@@ -632,7 +599,7 @@
         // Variáveis de Paginação
         let produtosFiltrados = [];
         let itemsCarregados = 0;
-        const ITENS_POR_PAGINA = 12; 
+        const ITENS_POR_PAGINA = 3; 
 
         // ==========================================================
         // FUNÇÕES GERAIS E OPÇÕES
@@ -1170,34 +1137,6 @@ let finalBase64 = isBase64Ready
     });
 }
 
-
-        function sanitizeCombosForExport(lista) {
-            if (!Array.isArray(lista)) return [];
-            return lista.map(c => ({
-                id: c.id || "",
-                nome: c.nome || "",
-                ativo: !!c.ativo,
-                motivo_desativacao: c.motivo_desativacao || "",
-                desconto_percentual: parseFloat(c.desconto_percentual) || 0,
-                soma_produtos: parseFloat(c.soma_produtos) || 0,
-                preco_combo: parseFloat(c.preco_combo) || 0,
-                economia: parseFloat(c.economia) || 0,
-                validade_combo: c.validade_combo || "",
-                url_imagem: (typeof c.url_imagem === 'string' && c.url_imagem.startsWith('data:image')) ? "" : ((c.url_imagem || "").split('?')[0]),
-                itens: Array.isArray(c.itens) ? c.itens.map(i => ({
-                    sku: i.sku || "",
-                    firebaseKey: i.firebaseKey || "",
-                    nome: i.nome || "",
-                    qtd: parseFloat(i.qtd) || 1,
-                    preco_unitario_original: parseFloat(i.preco_unitario_original) || 0,
-                    preco_unitario_combo: parseFloat(i.preco_unitario_combo) || 0,
-                    total_original: parseFloat(i.total_original) || 0,
-                    total_combo: parseFloat(i.total_combo) || 0
-                })) : [],
-                criado_em: c.criado_em || "",
-                last_update: c.last_update || Date.now()
-            }));
-        }
 
         // ==========================================================
         // INTEGRAÇÃO META ADS - MAPEAMENTO CENTRALIZADO
@@ -2151,16 +2090,19 @@ async function salvarProdutosJSON(opcoes = {}) {
     }
 }
 
-        async function getPastaUploadAtiva(tipo = 'produto') {
-            let limit = 990; let folderIndex = 1;
-            const base = tipo === 'combo' ? 'site/img/combos' : 'site/img/produtos';
+        async function getPastaUploadAtiva() {
+            let limit = 990;
+            let folderIndex = 1;
+            const base = 'site/img/produtos';
             while (true) {
-                let folderName = folderIndex === 1 ? base : `${base}_${folderIndex}`;
+                const folderName = folderIndex === 1 ? base : `${base}_${folderIndex}`;
                 try {
                     const files = await GitHubAPI.getFileData(folderName);
                     if (!files) return folderName;
                     if (Array.isArray(files) && files.length < limit) return folderName;
-                } catch (e) { return folderName; }
+                } catch (e) {
+                    return folderName;
+                }
                 folderIndex++;
             }
         }
@@ -2168,57 +2110,39 @@ async function salvarProdutosJSON(opcoes = {}) {
         async function uploadImagens() {
             if (imageQueue.length === 0) return alert('Não existem imagens na fila.');
 
-            const queueCopy = [...imageQueue]; 
-            imageQueue = []; 
+            const queueCopy = [...imageQueue].filter(img => (img.tipo || 'produto') === 'produto');
+            imageQueue = imageQueue.filter(img => (img.tipo || 'produto') !== 'produto');
+            await localforage.setItem('imageQueue', imageQueue);
             updateImageBadge();
 
-            mostrarAlerta('Enviando imagens da fila...', 'aviso');
+            if (queueCopy.length === 0) {
+                mostrarAlerta('Não há imagens de produto pendentes para enviar.', 'aviso');
+                return;
+            }
+
+            mostrarAlerta('Enviando imagens de produtos da fila...', 'aviso');
 
             queueCopy.forEach(img => {
-                const tipo = img.tipo || 'produto';
                 const chave = img.sku || img.id;
-                enqueueTask(`Imagem ${tipo} ${chave}`, async () => {
-                    const pastaDestinoGithub = await getPastaUploadAtiva(tipo === 'combo' ? 'combo' : 'produto');
-                    const pastaDestinoLocal = '../' + pastaDestinoGithub; 
-                    let fileName = `${chave}.webp`; 
+                enqueueTask(`Imagem produto ${chave}`, async () => {
+                    const pastaDestinoGithub = await getPastaUploadAtiva();
+                    const pastaDestinoLocal = '../' + pastaDestinoGithub;
+                    const fileName = `${chave}.webp`;
 
-                    if (tipo === 'combo') {
-                        const cRef = combosDoSistema.find(x => x.id === chave);
-                        if (!cRef) throw new Error('Combo não encontrado para atualizar capa.');
+                    await GitHubAPI.saveFile(
+                        `${pastaDestinoGithub}/${fileName}`,
+                        img.base64data,
+                        `PIM Sync: Imagem ${fileName}`,
+                        true
+                    );
 
-                        if (img.nome && !cRef.nome) cRef.nome = img.nome;
-                        fileName = getNomeArquivoImagemCombo(cRef);
-
-                        await GitHubAPI.saveFile(
-                            `${pastaDestinoGithub}/${fileName}`,
-                            img.base64data,
-                            `PIM Sync: Capa Combo ${fileName}`,
-                            true
-                        );
-
-                        cRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
-                        cRef.last_update = Date.now();
-
-                        await saveCombosLocally();
-                        await salvarCombosNaNuvemAgora();
-
-                        renderizarComboAtual();
-                        renderizarListaCombos();
-                    } else {
-                        await GitHubAPI.saveFile(
-                            `${pastaDestinoGithub}/${fileName}`,
-                            img.base64data,
-                            `PIM Sync: Imagem ${fileName}`,
-                            true
-                        );
-
-                        const pRef = products.find(x => x.codigo === chave); 
-                        if(pRef) { 
-                            pRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`; 
-                            pRef.last_update = Date.now(); 
-                            await saveDataLocally(false); 
-                            marcarProdutoParaSincronizacao(pRef, "upsert", 500); 
-                        }
+                    const pRef = products.find(x => x.codigo === chave);
+                    if (pRef) {
+                        pRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
+                        delete pRef.imagem_preview_local;
+                        pRef.last_update = Date.now();
+                        await saveDataLocally(false);
+                        marcarProdutoParaSincronizacao(pRef, 'upsert', 500);
                     }
                 }, true);
             });
@@ -3030,13 +2954,6 @@ function fecharLeitorEANCamera() {
     } catch (err) {
         console.warn("Não foi possível carregar tags locais:", err);
     }
-
-    try {
-        const cb = await localforage.getItem(COMBOS_KEY);
-        if (Array.isArray(cb)) combosDoSistema = cb;
-    } catch (err) {
-        console.warn("Não foi possível carregar combos locais:", err);
-    }
 }
 
 function atualizarListasDoSistemaComProdutos() {
@@ -3239,12 +3156,6 @@ async function loadData() {
     atualizarIndiceBuscaTodosProdutos();
     await salvarListasSistemaLocalmente();
 
-    try {
-        await processarStatusCombos();
-    } catch (e) {
-        console.warn("Falha ao processar combos:", e);
-    }
-
     modoCarregandoDados = false;
     renderGrid(ultimoTermoPesquisa, true);
     renderQueueStatus();
@@ -3285,10 +3196,6 @@ async function carregarCacheLocalProdutos() {
         return [];
     }
 }
-
-        async function saveCombosLocally() {
-            try { await localforage.setItem(COMBOS_KEY, combosDoSistema); } catch (err) {}
-        }
 
         // ==========================================================
         // GERAÇÃO DE OPÇÕES DE SELECTS E FUNÇÕES AUXILIARES EDITOR
@@ -3434,11 +3341,11 @@ async function carregarCacheLocalProdutos() {
                     <div class="tag-qtd-row">
                         <input type="checkbox" value="${itemSeguro}" ${isChecked ? 'checked' : ''} onchange="toggleMultiSelect('${escaparAtributoSistema(sku)}', '${escaparAtributoSistema(campo)}', this.value, this.checked)" style="cursor:pointer;">
                         <label title="${itemSeguro}">${escaparHtmlSistema(item)}</label>
-                        <input type="number" min="0.01" step="0.01" class="tag-qtd-input" value="${qtd}" ${isChecked ? '' : 'disabled'} onchange="salvarQuantidadeTagProduto('${escaparAtributoSistema(sku)}', '${itemSeguro}', this.value)" title="Quantidade deste item quando a tag for usada em combos">
+                        <input type="number" min="0.01" step="0.01" class="tag-qtd-input" value="${qtd}" ${isChecked ? '' : 'disabled'} onchange="salvarQuantidadeTagProduto('${escaparAtributoSistema(sku)}', '${itemSeguro}', this.value)" title="Quantidade deste item quando esta tag for usada no site">
                     </div>
                 `;
             });
-            html += '<span class="tag-qtd-help">Marque a tag e informe quantas unidades deste produto entram quando o site montar combo por tag.</span>';
+            html += '<span class="tag-qtd-help">Marque a tag e informe quantas unidades deste produto entram quando essa tag for usada no site.</span>';
             return html;
         }
 
@@ -3759,129 +3666,128 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
 
 
                 card.innerHTML = `
-                    <div style="display: flex; gap: 15px; align-items: stretch;">
-                        <div style="width: 100px; display: flex; flex-direction: column; gap: 8px;">
-                            <div style="width:100px; height:100px; cursor:pointer; border-radius: 6px; border: 1px solid var(--border); overflow:hidden;" onclick="openCanvasSidebar('${p.codigo}')" title="Clique para editar Foto">
-                                <img src="${imgUrlSeguro}" style="object-fit: contain; width: 100%; height: 100%;" onerror="this.src='https://placehold.co/100x100/f4f4f5/ef4444?text=ERRO'">
+                    <div class="product-layout">
+                        <aside class="product-media-panel">
+                            <div class="product-photo-box" onclick="openCanvasSidebar('${skuAttr}')" title="Clique para editar a foto">
+                                <img src="${imgUrlSeguro}" onerror="this.src='https://placehold.co/132x132/f4f4f5/ef4444?text=ERRO'">
                             </div>
-                            <button id="btn-salvar-card-${p.codigo}" class="nav-btn save-card-btn ${pendenteNoCard ? 'pending' : 'saved'}" onclick="salvarProdutoCardManual('${p.codigo}')" title="Salva este produto no Firebase e envia a foto nova/alterada ao GitHub">
-                                <i data-lucide="save" size="12"></i> ${pendenteNoCard ? 'SALVAR CARD' : 'SALVO'}
-                            </button>
-                            <button id="btn-enviar-foto-${p.codigo}" class="nav-btn save-card-btn ${temFotoPendenteCard ? 'pending' : 'saved'}" onclick="enviarImagemProdutoCardManual('${p.codigo}')" title="Envia somente a imagem pendente deste produto ao GitHub e atualiza o link no Firebase">
-    <i data-lucide="image-up" size="12"></i> ${temFotoPendenteCard ? 'ENVIAR FOTO' : 'FOTO OK'}
-</button>
-                            <button class="nav-btn bling-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="exportarProdutoBling('${p.codigo}')"><i data-lucide="download" size="12"></i> EXP. BLING</button>
-                            
-                            <button class="nav-btn warning" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="duplicarProduto('${p.codigo}')"><i data-lucide="copy" size="12"></i> DUPLICAR</button>
-                            
-                            <button class="nav-btn ${p.situacao === 'I' ? '' : 'primary'}" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="toggleStatus('${p.codigo}')"><i data-lucide="power" size="12"></i> ${p.situacao === 'I' ? 'INATIVO' : 'ATIVO'}</button>
-                            <button class="nav-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px; color:var(--danger); border-color:#fecaca;" onclick="deleteProduct('${p.codigo}')"><i data-lucide="trash-2" size="12"></i> APAGAR</button>
-                        </div>
-                        
-                        <div style="flex-grow:1; display:flex; flex-direction:column; gap:8px;">
-                            <div class="field-group">
-                                <label>Nome do Produto</label>
-                                <input type="text" class="form-input card-mini-input" style="font-weight:900; font-size:12px;" value="${safeNameForInput}" onchange="updateField('${p.codigo}', 'nome', this.value)">
-                                <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
-                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleNCM('${safeNomeGoogle}')" title="Buscar NCM no Google"><i data-lucide="search" size="12"></i> NCM</button>
-                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleHD('${safeNomeGoogle}')" title="Buscar Foto em Alta Resolução"><i data-lucide="image" size="12"></i> FOTO HD</button>
-                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleShopping('${safeNomeGoogle}')" title="Buscar Preço no Google Shopping"><i data-lucide="shopping-cart" size="12"></i> PREÇO</button>
-                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px; color: #ef4444; border-color: #fecaca;" onclick="searchYoutube('${safeNomeGoogle}')" title="Buscar Vídeo no YouTube"><i data-lucide="youtube" size="12"></i> VÍDEO</button>
-                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px; color: #0284c7; border-color: #bae6fd; background: #e0f2fe;" onclick="searchGoogleInfo('${safeNomeGoogle}')" title="Buscar informações, avaliações e especificações"><i data-lucide="info" size="12"></i> INFO</button>
+                            <div class="product-action-grid">
+                                <button id="btn-salvar-card-${skuAttr}" class="nav-btn save-card-btn ${pendenteNoCard ? 'pending' : 'saved'}" onclick="salvarProdutoCardManual('${skuAttr}')" title="Salva este produto no Firebase e envia a foto nova/alterada ao GitHub">
+                                    <i data-lucide="save" size="12"></i> ${pendenteNoCard ? 'SALVAR CARD' : 'SALVO'}
+                                </button>
+                                <button id="btn-enviar-foto-${skuAttr}" class="nav-btn save-card-btn ${temFotoPendenteCard ? 'pending' : 'saved'}" onclick="enviarImagemProdutoCardManual('${skuAttr}')" title="Envia somente a imagem pendente deste produto ao GitHub e atualiza o link no Firebase">
+                                    <i data-lucide="image-up" size="12"></i> ${temFotoPendenteCard ? 'ENVIAR FOTO' : 'FOTO OK'}
+                                </button>
+                                <button class="nav-btn bling-btn" onclick="exportarProdutoBling('${skuAttr}')"><i data-lucide="download" size="12"></i> BLING</button>
+                                <button class="nav-btn warning" onclick="duplicarProduto('${skuAttr}')"><i data-lucide="copy" size="12"></i> DUPLICAR</button>
+                                <button class="nav-btn ${p.situacao === 'I' ? '' : 'primary'}" onclick="toggleStatus('${skuAttr}')"><i data-lucide="power" size="12"></i> ${p.situacao === 'I' ? 'INATIVO' : 'ATIVO'}</button>
+                                <button class="nav-btn" style="color:var(--danger); border-color:#fecaca;" onclick="deleteProduct('${skuAttr}')"><i data-lucide="trash-2" size="12"></i> APAGAR</button>
+                            </div>
+                        </aside>
+
+                        <section class="product-main-panel">
+                            <div class="product-header-row">
+                                <div class="field-group">
+                                    <label>Nome do Produto</label>
+                                    <input type="text" class="form-input card-mini-input product-name-input" value="${safeNameForInput}" onchange="updateField('${skuAttr}', 'nome', this.value)">
+                                    <div class="quick-actions" style="margin-top:6px;">
+                                        <button class="nav-btn" onclick="searchGoogleNCM('${safeNomeGoogle}')" title="Buscar NCM no Google"><i data-lucide="search" size="12"></i> NCM</button>
+                                        <button class="nav-btn" onclick="searchGoogleHD('${safeNomeGoogle}')" title="Buscar Foto em Alta Resolução"><i data-lucide="image" size="12"></i> FOTO HD</button>
+                                        <button class="nav-btn" onclick="searchGoogleShopping('${safeNomeGoogle}')" title="Buscar Preço no Google Shopping"><i data-lucide="shopping-cart" size="12"></i> PREÇO</button>
+                                        <button class="nav-btn" style="color:#ef4444; border-color:#fecaca;" onclick="searchYoutube('${safeNomeGoogle}')" title="Buscar Vídeo no YouTube"><i data-lucide="youtube" size="12"></i> VÍDEO</button>
+                                        <button class="nav-btn" style="color:#0284c7; border-color:#bae6fd; background:#e0f2fe;" onclick="searchGoogleInfo('${safeNomeGoogle}')" title="Buscar informações, avaliações e especificações"><i data-lucide="info" size="12"></i> INFO</button>
+                                    </div>
+                                    <div class="card-alert-strip">${badges}</div>
                                 </div>
-                                <div class="card-alert-strip">${badges}</div>
+                                <div class="product-mini-summary">
+                                    <span class="summary-pill">SKU ${escaparHtmlSistema(p.codigo || '')}</span>
+                                    <span class="summary-pill">Estoque ${escaparHtmlSistema(p.estoque || 0)}</span>
+                                    <span class="summary-pill">Venda ${dinheiroBR(venda)}</span>
+                                    ${p.preco_oferta ? `<span class="summary-pill" style="color:#92400e;background:#fffbeb;border-color:#fde68a;">Oferta ${dinheiroBR(p.preco_oferta)}</span>` : ''}
+                                </div>
                             </div>
-                            <div class="field-group">
-                                <label>Link do YouTube</label>
-                                <input type="text" class="form-input card-mini-input" placeholder="Cole o link do vídeo aqui..." value="${safeYoutube}" onchange="updateField('${p.codigo}', 'link_youtube', this.value)">
+
+                            <div class="card-section">
+                                <div class="card-section-title">Classificação e localização</div>
+                                <div class="product-fields-grid">
+                                    <div class="field-group"><label>Categoria</label>
+                                        <select class="form-input card-mini-input" onchange="mudarCategoriaDoProduto('${skuAttr}', this.value)">${gerarOptionsCategorias(p.categoria)}</select></div>
+                                    <div class="field-group"><label>Subcategoria</label>
+                                        <select class="form-input card-mini-input" id="subcat-${skuAttr}" onchange="mudarSubcategoriaDoProduto('${skuAttr}', this.value)">${gerarOptionsSubcategorias(p.categoria, p.subcategoria)}</select></div>
+                                    <div class="field-group"><label>Sub-subcategoria</label>
+                                        <select class="form-input card-mini-input" id="subsubcat-${skuAttr}" onchange="updateField('${skuAttr}', 'subsubcategoria', this.value)">${gerarOptionsSubSundategorias(p.categoria, p.subcategoria, p.subsubcategoria)}</select></div>
+                                    <div class="field-group"><label>Marca</label>
+                                        <select class="form-input card-mini-input" onchange="updateField('${skuAttr}', 'marca', this.value)">${gerarOptions(marcasDoSistema, p.marca, 'Sel. Marca')}</select></div>
+                                    <div class="field-group"><label>Gôndola</label>
+                                        <input type="text" class="form-input card-mini-input" value="${safeGondola}" onchange="updateField('${skuAttr}', 'gondola', this.value)"></div>
+                                    <div class="field-group"><label>Prateleira</label>
+                                        <input type="text" class="form-input card-mini-input" value="${safePrateleira}" onchange="updateField('${skuAttr}', 'prateleira', this.value)"></div>
+                                    <div class="field-group"><label>Embalagem</label>
+                                        <input type="text" class="form-input card-mini-input" value="${safeEmbalagem}" onchange="updateField('${skuAttr}', 'embalagem', this.value)"></div>
+                                    <div class="field-group"><label>Link do YouTube</label>
+                                        <input type="text" class="form-input card-mini-input" placeholder="Cole o link do vídeo..." value="${safeYoutube}" onchange="updateField('${skuAttr}', 'link_youtube', this.value)"></div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div class="card-grid-fields">
-                        <div class="field-group"><label>Categoria</label>
-                            <select class="form-input card-mini-input" onchange="mudarCategoriaDoProduto('${p.codigo}', this.value)">${gerarOptionsCategorias(p.categoria)}</select></div>
-                        <div class="field-group"><label>Subcategoria</label>
-                            <select class="form-input card-mini-input" id="subcat-${p.codigo}" onchange="mudarSubcategoriaDoProduto('${p.codigo}', this.value)">${gerarOptionsSubcategorias(p.categoria, p.subcategoria)}</select></div>
-                        <div class="field-group"><label>Sub-subcategoria</label>
-                            <select class="form-input card-mini-input" id="subsubcat-${p.codigo}" onchange="updateField('${p.codigo}', 'subsubcategoria', this.value)">${gerarOptionsSubSundategorias(p.categoria, p.subcategoria, p.subsubcategoria)}</select></div>
-                        
-                        <div class="field-group"><label>Tags Globais</label>
-                            <div class="form-input card-mini-input" style="height: 65px; overflow-y: auto; padding: 6px; background: #fafafa;">
-                                ${gerarCheckboxes(tagsDoSistema, p.tag_global, p.codigo, 'tag_global')}
+                            <div class="card-section">
+                                <div class="card-section-title">Códigos, preço, estoque e oferta</div>
+                                <div class="product-fields-grid">
+                                    <div class="field-group"><label>SKU</label>
+                                        <input type="text" class="form-input card-mini-input" value="${escaparAtributoSistema(p.codigo || '')}" readonly style="background:#e4e4e7; cursor:not-allowed; color:var(--text-secondary);"></div>
+                                    <div class="field-group"><label>EAN / GTIN</label>
+                                        <input type="text" class="form-input card-mini-input" value="${safeGtin}" onchange="updateField('${skuAttr}', 'gtin', this.value)"></div>
+                                    <div class="field-group"><label>NCM</label>
+                                        <input type="text" class="form-input card-mini-input" value="${safeNcm}" onchange="updateField('${skuAttr}', 'ncm', this.value)"></div>
+                                    <div class="field-group"><label>Estoque</label>
+                                        <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${escaparAtributoSistema(p.estoque || 0)}" onchange="updateField('${skuAttr}', 'estoque', this.value)"></div>
+                                    <div class="field-group"><label>Custo (R$)</label>
+                                        <input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(p.preco_custo || 0)}" onchange="updateField('${skuAttr}', 'preco_custo', this.value)"></div>
+                                    <div class="field-group"><label style="display:flex; justify-content:space-between; gap:6px;">Venda (R$) <span style="color:var(--success);">Markup ${markup}%</span></label>
+                                        <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--success); font-weight:800;" value="${escaparAtributoSistema(p.preco || 0)}" onchange="updateField('${skuAttr}', 'preco', this.value)"></div>
+                                    <div class="field-group"><label>Oferta (R$)</label>
+                                        <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--warning); font-weight:800;" placeholder="Sem oferta" value="${escaparAtributoSistema(p.preco_oferta || '')}" onchange="updateField('${skuAttr}', 'preco_oferta', this.value)"></div>
+                                    <div class="field-group"><label>Fim da Oferta</label>
+                                        <input type="datetime-local" class="form-input card-mini-input" value="${escaparAtributoSistema(p.validade_oferta || '')}" onchange="updateField('${skuAttr}', 'validade_oferta', this.value)"></div>
+                                    <div class="field-group"><label>Validade</label>
+                                        <input type="date" class="form-input card-mini-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : (p.validade || '')}" onblur="updateField('${skuAttr}', 'validade', this.value)"></div>
+                                    <div class="field-group full" style="border:1px dashed #fde68a; background:#fffbeb; border-radius:8px; padding:8px;">
+                                        <label style="color:#92400e;">Oferta automática por vencimento simulado</label>
+                                        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                                            <select class="form-input card-mini-input" id="oferta-sim-${skuAttr}" style="flex:1 1 180px;">
+                                                <option value="">Selecionar dias</option>
+                                                <option value="120" ${String(p.oferta_validade_simulada_dias || '') === '120' ? 'selected' : ''}>120 dias para vencer</option>
+                                                <option value="90" ${String(p.oferta_validade_simulada_dias || '') === '90' ? 'selected' : ''}>90 dias para vencer</option>
+                                                <option value="60" ${String(p.oferta_validade_simulada_dias || '') === '60' ? 'selected' : ''}>60 dias para vencer</option>
+                                                <option value="30" ${String(p.oferta_validade_simulada_dias || '') === '30' ? 'selected' : ''}>30 dias para vencer</option>
+                                            </select>
+                                            <button class="nav-btn warning" style="min-height:32px; padding:6px 8px; font-size:9px;" onclick="aplicarOfertaValidadeSimulada('${skuAttr}')">ATIVAR</button>
+                                            <button class="nav-btn" style="min-height:32px; padding:6px 8px; font-size:9px; color:var(--danger); border-color:#fecaca;" onclick="removerOfertaValidadeSimulada('${skuAttr}')">LIMPAR</button>
+                                        </div>
+                                        <small style="font-size:9px; color:#92400e; font-weight:700;">Não altera a validade real. Apenas grava uma regra separada para simular o prazo da oferta.</small>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div class="field-group"><label>Marca</label>
-                            <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'marca', this.value)">${gerarOptions(marcasDoSistema, p.marca, 'Sel. Marca')}</select></div>
 
-                        <div class="field-group"><label>SKU (Código Automático)</label>
-                            <input type="text" class="form-input card-mini-input" value="${p.codigo || ''}" readonly style="background: #e4e4e7; cursor: not-allowed; color: var(--text-secondary);" title="Código gerado automaticamente"></div>
-                            
-                        <div class="field-group"><label>EAN / GTIN</label>
-                            <input type="text" class="form-input card-mini-input" value="${safeGtin}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
-                        
-                        <div class="field-group"><label>NCM</label>
-                            <input type="text" class="form-input card-mini-input" value="${safeNcm}" onchange="updateField('${p.codigo}', 'ncm', this.value)"></div>
-                        <div class="field-group"><label>Embalagem (Ex: 100ml)</label>
-                            <input type="text" class="form-input card-mini-input" value="${safeEmbalagem}" onchange="updateField('${p.codigo}', 'embalagem', this.value)"></div>
+                            <div class="card-section">
+                                <div class="card-section-title">Tags universais</div>
+                                <div class="tag-editor-box">
+                                    ${gerarCheckboxes(tagsDoSistema, p.tag_global, p.codigo, 'tag_global')}
+                                </div>
+                            </div>
 
-                        <div class="field-group"><label>Gôndola</label>
-                            <input type="text" class="form-input card-mini-input" value="${safeGondola}" onchange="updateField('${p.codigo}', 'gondola', this.value)"></div>
-                        <div class="field-group"><label>Prateleira</label>
-                            <input type="text" class="form-input card-mini-input" value="${safePrateleira}" onchange="updateField('${p.codigo}', 'prateleira', this.value)"></div>
-
-                        <div class="field-group"><label>Custo (R$)</label>
-                            <input type="number" step="0.01" class="form-input card-mini-input" value="${p.preco_custo || 0}" onchange="updateField('${p.codigo}', 'preco_custo', this.value)"></div>
-                        <div class="field-group">
-                            <label style="display:flex; justify-content:space-between;">Venda (R$) <span style="color:var(--success);">Markup: ${markup}%</span></label>
-                            <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--success); font-weight:800;" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)">
-                        </div>
-                       <div class="field-group">
-    <label>Oferta (R$)</label>
-    <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--warning); font-weight:800;" placeholder="Sem oferta" value="${p.preco_oferta || ''}" onchange="updateField('${p.codigo}', 'preco_oferta', this.value)">
-</div>
-
-<div class="field-group">
-    <label title="Se vazio, a oferta não tem fim">Fim da Oferta</label>
-    <input type="datetime-local" class="form-input card-mini-input" value="${p.validade_oferta || ''}" onchange="updateField('${p.codigo}', 'validade_oferta', this.value)">
-</div>
-
-<div class="field-group" style="grid-column: span 2; border:1px dashed #fde68a; background:#fffbeb; border-radius:8px; padding:8px;">
-    <label style="color:#92400e;">Oferta automática por vencimento simulado</label>
-    <div style="display:flex; gap:6px; align-items:center;">
-        <select class="form-input card-mini-input" id="oferta-sim-${p.codigo}" style="flex:1;">
-            <option value="">Selecionar dias</option>
-            <option value="120" ${String(p.oferta_validade_simulada_dias || '') === '120' ? 'selected' : ''}>120 dias para vencer</option>
-            <option value="90" ${String(p.oferta_validade_simulada_dias || '') === '90' ? 'selected' : ''}>90 dias para vencer</option>
-            <option value="60" ${String(p.oferta_validade_simulada_dias || '') === '60' ? 'selected' : ''}>60 dias para vencer</option>
-            <option value="30" ${String(p.oferta_validade_simulada_dias || '') === '30' ? 'selected' : ''}>30 dias para vencer</option>
-        </select>
-        <button class="nav-btn warning" style="min-height:32px; padding:6px 8px; font-size:9px;" onclick="aplicarOfertaValidadeSimulada('${p.codigo}')">ATIVAR</button>
-        <button class="nav-btn" style="min-height:32px; padding:6px 8px; font-size:9px; color:var(--danger); border-color:#fecaca;" onclick="removerOfertaValidadeSimulada('${p.codigo}')">LIMPAR</button>
-    </div>
-    <small style="font-size:9px; color:#92400e; font-weight:700;">Não altera a validade real. Apenas grava uma regra separada para simular o prazo da oferta.</small>
-</div>
-
-<div class="field-group">
-    <label>Validade</label>
-    <input type="date" class="form-input card-mini-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : (p.validade || '')}" onblur="updateField('${p.codigo}', 'validade', this.value)">
-</div>
-
-<div class="field-group">
-    <label>Estoque</label>
-    <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)">
-</div>
-
-                    <div style="display: flex; flex-direction: column; gap: 0; margin-top: 5px;">
-                        <label style="font-size: 9px; color: var(--text-secondary); font-weight: 800; text-transform: uppercase; margin-bottom: 4px;">Descrição Detalhada</label>
-                        <div class="rich-text-toolbar">
-                            <button type="button" class="editor-btn" onclick="document.execCommand('bold', false, null)" title="Negrito"><b>B</b></button>
-                            <button type="button" class="editor-btn" onclick="document.execCommand('insertUnorderedList', false, null)" title="Lista Indentada"><i data-lucide="list" size="10" style="margin-right:2px;"></i> Lista</button>
-                            <button type="button" class="editor-btn" onclick="addLink('${p.codigo}')" title="Adicionar Link"><i data-lucide="link" size="10" style="margin-right:2px;"></i> Link</button>
-                            <button type="button" class="editor-btn" onclick="addChip('${p.codigo}')" title="Adicionar Chip Linkado"><i data-lucide="tag" size="10" style="margin-right:2px;"></i> Chip</button>
-                        </div>
-                        <div class="rich-text-editor" id="desc-${p.codigo}" contenteditable="true" onblur="updateField('${p.codigo}', 'descricao', this.innerHTML)">${safeDescricao}</div>
+                            <details class="description-details">
+                                <summary>Descrição detalhada do produto</summary>
+                                <div class="description-body">
+                                    <div class="rich-text-toolbar">
+                                        <button type="button" class="editor-btn" onclick="document.execCommand('bold', false, null)" title="Negrito"><b>B</b></button>
+                                        <button type="button" class="editor-btn" onclick="document.execCommand('insertUnorderedList', false, null)" title="Lista Indentada"><i data-lucide="list" size="10" style="margin-right:2px;"></i> Lista</button>
+                                        <button type="button" class="editor-btn" onclick="addLink('${skuAttr}')" title="Adicionar Link"><i data-lucide="link" size="10" style="margin-right:2px;"></i> Link</button>
+                                        <button type="button" class="editor-btn" onclick="addChip('${skuAttr}')" title="Adicionar Chip Linkado"><i data-lucide="tag" size="10" style="margin-right:2px;"></i> Chip</button>
+                                    </div>
+                                    <div class="rich-text-editor" id="desc-${skuAttr}" contenteditable="true" onblur="updateField('${skuAttr}', 'descricao', this.innerHTML)">${safeDescricao}</div>
+                                </div>
+                            </details>
+                        </section>
                     </div>
                 `;
                 gridContainer.appendChild(card);
@@ -4154,849 +4060,31 @@ async function deleteProduct(sku) {
 
 
        // ==========================================================
-// MÓDULO PROFISSIONAL DE COMBOS PROMOCIONAIS
-// ==========================================================
-const DESCONTOS_COMBO = [20, 25, 30];
-function dinheiroBR(valor) {
-    return (parseFloat(valor) || 0).toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-    });
-}
-
-function escapeHTMLCombo(texto) {
-    return (texto || '').toString()
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-function gerarIdCombo(nome = '') {
-    const base = (nome || 'COMBO')
-        .toString()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toUpperCase()
-        .replace(/[^A-Z0-9]+/g, '_')
-        .replace(/^_+|_+$/g, '')
-        .slice(0, 28) || 'COMBO';
-
-    return `${base}_${Date.now().toString().slice(-8)}_${Math.floor(Math.random() * 9999)}`;
-}
-
-function normalizarIdFirebase(texto) {
-    return (texto || '')
-        .toString()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toUpperCase()
-        .replace(/[.#$/\[\]]/g, '_')
-        .replace(/[^A-Z0-9_-]+/g, '_')
-        .replace(/^_+|_+$/g, '')
-        .slice(0, 80) || gerarIdCombo('COMBO');
-}
-
-function slugArquivoCombo(texto) {
-    return (texto || 'combo')
-        .toString()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 80) || 'combo';
-}
-
-function getNomeArquivoImagemCombo(c) {
-    return `${slugArquivoCombo(c && c.nome ? c.nome : c && c.id ? c.id : 'combo')}.webp`;
-}
-
-
-function comboIdAttr(id) {
-    return encodeURIComponent(String(id || ''));
-}
-
-function decodeComboId(idCodificado) {
-    try {
-        return decodeURIComponent(idCodificado || '');
-    } catch (e) {
-        return idCodificado || '';
-    }
-}
-
-function prepararSelectDescontosCombo() {
-    const sel = document.getElementById('combo-desconto');
-    if (!sel || sel.dataset.ready === '1') return;
-
-    sel.innerHTML = DESCONTOS_COMBO
-        .map(d => `<option value="${d}">${d}% de desconto</option>`)
-        .join('');
-
-    sel.dataset.ready = '1';
-}
-
-function normalizarListaCombosEntrada(dados) {
-    if (!dados) return [];
-
-    let lista = [];
-
-    if (Array.isArray(dados)) {
-        lista = dados.filter(Boolean);
-    } else if (typeof dados === 'object') {
-        lista = Object.entries(dados).map(([key, value]) => ({
-            ...(value || {}),
-            id: (value && value.id) ? value.id : key
-        }));
-    }
-
-    return lista.map(c => {
-        const idFinal = normalizarIdFirebase(c.id || c.nome || 'COMBO');
-
-        return {
-            id: idFinal,
-            combo_legado_id: c.combo_legado_id || c.id_original || c.combo_id || '',
-            nome: c.nome || c.name || c.titulo || c.combo_id || 'Combo sem nome',
-            ativo: !!c.ativo,
-            motivo_desativacao: c.motivo_desativacao || '',
-            desconto_percentual: parseFloat(c.desconto_percentual || c.desconto || 10) || 10,
-            soma_produtos: parseFloat(c.soma_produtos) || 0,
-            preco_combo: parseFloat(c.preco_combo || c.valor_combo || c.valor) || 0,
-            economia: parseFloat(c.economia) || 0,
-            validade_combo: c.validade_combo || c.validade || c.fim_oferta || '',
-            url_imagem: c.url_imagem || c.imagem || c.capa || '',
-            itens: Array.isArray(c.itens) ? c.itens.map(i => ({
-                sku: i.sku || i.codigo || '',
-                firebaseKey: i.firebaseKey || i.firebase_key || '',
-                nome: i.nome || i.descricao || '',
-                qtd: parseFloat(i.qtd || i.quantidade || 1) || 1,
-                preco_unitario_original: parseFloat(i.preco_unitario_original || i.preco || i.valor || 0) || 0,
-                preco_unitario_combo: parseFloat(i.preco_unitario_combo || 0) || 0,
-                total_original: parseFloat(i.total_original || 0) || 0,
-                total_combo: parseFloat(i.total_combo || 0) || 0
-            })) : [],
-            criado_em: c.criado_em || new Date().toISOString(),
-            last_update: c.last_update || Date.now()
-        };
-    });
-}
-
-async function carregarCombosDaNuvemSeExistir() {
-    try {
-        let dados = null;
-        let origem = '';
-
-        // Novo padrão: combos ficam no GitHub, fora do Firebase.
-        const arquivoNovo = await GitHubAPI.getFileData('site/combo.json');
-        const arquivoLegado = arquivoNovo ? null : await GitHubAPI.getFileData('site/combos.json');
-        const arquivo = arquivoNovo || arquivoLegado;
-
-        if (arquivo && arquivo.content) {
-            const texto = GitHubAPI.decodeBase64toUTF8(arquivo.content);
-            dados = JSON.parse(texto);
-            origem = arquivoNovo ? 'site/combo.json' : 'site/combos.json';
-        }
-
-        if (!dados) return;
-
-        const combosNuvem = normalizarListaCombosEntrada(dados);
-        if (!combosNuvem.length) return;
-
-        const mapa = new Map();
-
-        combosNuvem.forEach(c => {
-            mapa.set(c.id, c);
-        });
-
-        combosDoSistema.forEach(c => {
-            const atual = mapa.get(c.id);
-            if (!atual || (parseFloat(c.last_update) || 0) >= (parseFloat(atual.last_update) || 0)) {
-                mapa.set(c.id, c);
-            }
-        });
-
-        combosDoSistema = Array.from(mapa.values());
-        await saveCombosLocally();
-        console.log('Combos carregados do GitHub:', origem, combosDoSistema.length);
-
-    } catch (e) {
-        console.warn('Não foi possível carregar combos do GitHub agora:', e);
-    }
-}
-
-function migrarCombosAntigosDosProdutos() {
-    const grupos = {};
-
-    products.forEach(p => {
-        const comboAntigo = (p.combo_id || '').toString().trim();
-        if (!comboAntigo) return;
-
-        const idSeguro = normalizarIdFirebase("LEGADO_" + comboAntigo);
-
-        if (!grupos[idSeguro]) {
-            grupos[idSeguro] = {
-                id: idSeguro,
-                combo_legado_id: comboAntigo,
-                nome: comboAntigo,
-                ativo: true,
-                motivo_desativacao: '',
-                desconto_percentual: 10,
-                soma_produtos: 0,
-                preco_combo: 0,
-                economia: 0,
-                validade_combo: p.validade_combo || '',
-                url_imagem: '',
-                itens: [],
-                criado_em: new Date().toISOString(),
-                last_update: Date.now()
-            };
-        }
-
-        grupos[idSeguro].itens.push(produtoResumoParaCombo(p, 1));
-
-        if (!grupos[idSeguro].validade_combo && p.validade_combo) {
-            grupos[idSeguro].validade_combo = p.validade_combo;
-        }
-    });
-
-    let migrou = false;
-
-    Object.values(grupos).forEach(comboMigrado => {
-        const jaExiste = combosDoSistema.some(c =>
-            c.id === comboMigrado.id ||
-            c.combo_legado_id === comboMigrado.combo_legado_id ||
-            c.nome === comboMigrado.nome
-        );
-
-        if (!jaExiste) {
-            recalcularCombo(comboMigrado);
-            combosDoSistema.push(comboMigrado);
-            migrou = true;
-        }
-    });
-
-    return migrou;
-}
-
-function getComboAtual() {
-    if (!comboEditandoId && combosDoSistema.length) {
-        comboEditandoId = combosDoSistema[0].id;
-    }
-
-    if (!comboEditandoId) {
-        novoComboEmBranco(false);
-    }
-
-    return combosDoSistema.find(c => c.id === comboEditandoId);
-}
-
-async function abrirModuloCombos() {
-    prepararSelectDescontosCombo();
-
-    await carregarCombosDaNuvemSeExistir();
-
-    const migrou = migrarCombosAntigosDosProdutos();
-    if (migrou) {
-        await saveCombosLocally();
-        mostrarAlerta("Combos antigos encontrados e migrados para o novo módulo.", "aviso");
-    }
-
-    await processarStatusCombos();
-
-    if (!comboEditandoId && combosDoSistema.length) {
-        comboEditandoId = combosDoSistema[0].id;
-    }
-
-    if (!comboEditandoId) {
-        novoComboEmBranco(false);
-    }
-
-    renderizarComboAtual();
-    renderizarListaCombos();
-    openSidebar('combos-sidebar');
-    lucide.createIcons();
-}
-
-function novoComboEmBranco(render = true) {
-    const id = gerarIdCombo('COMBO');
-
-    const novo = {
-        id,
-        combo_legado_id: '',
-        nome: '',
-        ativo: false,
-        motivo_desativacao: 'Rascunho ainda não ativado',
-        desconto_percentual: 20,
-        soma_produtos: 0,
-        preco_combo: 0,
-        economia: 0,
-        validade_combo: '',
-        url_imagem: '',
-        itens: [],
-        criado_em: new Date().toISOString(),
-        last_update: Date.now()
-    };
-
-    combosDoSistema.unshift(novo);
-    comboEditandoId = id;
-    saveCombosLocally();
-
-    if (render) {
-        renderizarComboAtual();
-        renderizarListaCombos();
-    }
-}
-
-function renderizarComboAtual() {
-    prepararSelectDescontosCombo();
-
-    const c = getComboAtual();
-    if (!c) return;
-
-    document.getElementById('combo-nome').value = c.nome || '';
-    document.getElementById('combo-desconto').value = String(c.desconto_percentual || 20);
-    document.getElementById('combo-validade').value = c.validade_combo || '';
-
-    document.getElementById('combo-status-label').innerHTML = c.ativo
-        ? '<span class="mini-badge success">ATIVO</span>'
-        : '<span class="mini-badge danger">INATIVO</span>';
-
-    renderizarItensCombo();
-    recalcularComboEmTela(false);
-}
-
-function produtoResumoParaCombo(p, qtd) {
-    const q = Math.max(1, parseFloat(qtd) || 1);
-    const preco = parseFloat(p.preco) || 0;
-
-    return {
-        sku: p.codigo || '',
-        firebaseKey: p.firebaseKey || p.id || p.codigo || '',
-        nome: p.nome || '',
-        qtd: q,
-        preco_unitario_original: preco,
-        preco_unitario_combo: preco,
-        total_original: preco * q,
-        total_combo: preco * q
-    };
-}
-
-function buscarProdutosParaCombo() {
-    const termo = limparTexto(document.getElementById('combo-busca-produto').value || '');
-    const box = document.getElementById('combo-resultados-produtos');
-
-    if (!box) return;
-
-    if (!termo || termo.length < 2) {
-        box.innerHTML = '<small style="font-size:10px;color:var(--text-secondary);font-weight:800;">Digite pelo menos 2 letras, SKU ou EAN.</small>';
-        return;
-    }
-
-    const resultados = products.filter(p => {
-        const hay = limparTexto(`${p.codigo || ''} ${p.nome || ''} ${p.gtin || ''}`);
-        return hay.includes(termo);
-    }).slice(0, 12);
-
-    if (!resultados.length) {
-        box.innerHTML = '<small style="font-size:10px;color:var(--danger);font-weight:800;">Nenhum produto encontrado.</small>';
-        return;
-    }
-
-    box.innerHTML = resultados.map(p => {
-        const estoque = parseFloat(p.estoque) || 0;
-        const skuSeguro = comboIdAttr(p.codigo);
-
-        return `<div class="combo-line">
-            <div style="min-width:0;">
-                <strong style="font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTMLCombo(p.nome || 'Sem nome')}</strong>
-                <small>SKU ${escapeHTMLCombo(p.codigo || '')} • ${dinheiroBR(p.preco)} • Estoque ${estoque}</small>
-            </div>
-            <button class="nav-btn primary" style="padding:6px 8px;font-size:10px;" onclick="adicionarProdutoAoCombo('${skuSeguro}')">ADD</button>
-        </div>`;
-    }).join('');
-
-    lucide.createIcons();
-}
-
-async function adicionarProdutoAoCombo(skuCodificado) {
-    const sku = decodeComboId(skuCodificado);
-    const c = getComboAtual();
-    const p = products.find(x => x.codigo === sku);
-
-    if (!c || !p) return;
-
-    c.itens = c.itens || [];
-
-    if (c.itens.some(i => i.sku === sku)) {
-        alert("Este produto já está no combo.");
-        return;
-    }
-
-    if (c.itens.length >= 2) {
-        alert("O combo deve ter somente 2 produtos. Remova um produto antes de adicionar outro.");
-        return;
-    }
-
-    c.itens.push(produtoResumoParaCombo(p, 1));
-
-    c.last_update = Date.now();
-    recalcularCombo(c);
-
-    await saveCombosLocally();
-
-    renderizarComboAtual();
-    renderizarListaCombos();
-}
-
-async function removerItemCombo(skuCodificado) {
-    const sku = decodeComboId(skuCodificado);
-    const c = getComboAtual();
-
-    if (!c) return;
-
-    c.itens = c.itens.filter(i => i.sku !== sku);
-    c.last_update = Date.now();
-
-    recalcularCombo(c);
-    await saveCombosLocally();
-
-    renderizarComboAtual();
-    renderizarListaCombos();
-}
-
-async function alterarQtdItemCombo(skuCodificado, qtd) {
-    alert("Este modelo de combo usa somente 2 produtos, com 1 unidade de cada.");
-    renderizarItensCombo();
-}
-
-    
-function recalcularCombo(combo) {
-    const c = combo || getComboAtual();
-    if (!c) return null;
-
-    const desconto = parseFloat(c.desconto_percentual) || 0;
-    if (!DESCONTOS_COMBO.includes(desconto)) {
-    c.desconto_percentual = 20;
-}
-
-c.itens = (c.itens || []).slice(0, 2);
-    
-    let soma = 0;
-
-    c.itens = (c.itens || []).map(item => {
-        const p = products.find(x => x.codigo === item.sku);
-        const precoAtual = p
-            ? (parseFloat(p.preco) || 0)
-            : (parseFloat(item.preco_unitario_original) || 0);
-
-const qtd = 1;
-        const totalOriginal = precoAtual * qtd;
-
-        soma += totalOriginal;
-
-        return {
-            ...item,
-            nome: p ? (p.nome || item.nome) : item.nome,
-            firebaseKey: p ? (p.firebaseKey || p.id || p.codigo || item.firebaseKey) : item.firebaseKey,
-            qtd,
-            preco_unitario_original: parseFloat(precoAtual.toFixed(2)),
-            total_original: parseFloat(totalOriginal.toFixed(2))
-        };
-    });
-
-    const precoCombo = Math.max(0, soma * (1 - desconto / 100));
-    const fator = soma > 0 ? (precoCombo / soma) : 0;
-
-    c.itens = c.itens.map(item => ({
-        ...item,
-        preco_unitario_combo: parseFloat(((parseFloat(item.preco_unitario_original) || 0) * fator).toFixed(2)),
-        total_combo: parseFloat(((parseFloat(item.total_original) || 0) * fator).toFixed(2))
-    }));
-
-    c.soma_produtos = parseFloat(soma.toFixed(2));
-    c.preco_combo = parseFloat(precoCombo.toFixed(2));
-    c.economia = parseFloat((soma - precoCombo).toFixed(2));
-const primeiroProduto = c.itens && c.itens[0]
-    ? products.find(x => x.codigo === c.itens[0].sku)
-    : null;
-
-c.url_imagem = primeiroProduto && primeiroProduto.url_imagem
-    ? primeiroProduto.url_imagem
-    : "";
-    return c;
-}
-
-function recalcularComboEmTela(atualizarModelo = true) {
-    const c = getComboAtual();
-    if (!c) return;
-
-    if (atualizarModelo) {
-        c.nome = document.getElementById('combo-nome').value.trim();
-        c.desconto_percentual = parseFloat(document.getElementById('combo-desconto').value) || 10;
-        c.validade_combo = document.getElementById('combo-validade').value || '';
-        c.last_update = Date.now();
-    }
-
-    recalcularCombo(c);
-
-    document.getElementById('combo-soma').innerText = dinheiroBR(c.soma_produtos);
-    document.getElementById('combo-total').innerText = dinheiroBR(c.preco_combo);
-    document.getElementById('combo-economia').innerText = dinheiroBR(c.economia);
-
-    saveCombosLocally();
-    renderizarItensCombo();
-}
-
-function renderizarItensCombo() {
-    const c = getComboAtual();
-    const box = document.getElementById('combo-itens-lista');
-
-    if (!box || !c) return;
-
-    if (!c.itens || !c.itens.length) {
-        box.innerHTML = '<small style="font-size:10px;color:var(--text-secondary);font-weight:800;">Nenhum produto adicionado ao combo.</small>';
-        return;
-    }
-
-    box.innerHTML = c.itens.map(item => {
-        const p = products.find(x => x.codigo === item.sku);
-        const estoque = p ? (parseFloat(p.estoque) || 0) : 0;
-        const semEstoque = estoque < (parseFloat(item.qtd) || 1);
-        const skuSeguro = comboIdAttr(item.sku);
-
-        return `<div class="combo-line" style="align-items:flex-start;${semEstoque ? 'border-color:#fecaca;background:#fef2f2;' : ''}">
-            <div style="min-width:0; flex:1;">
-                <strong style="font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTMLCombo(item.nome || item.sku)}</strong>
-                <small>Original: ${dinheiroBR(item.preco_unitario_original)} • No combo: ${dinheiroBR(item.preco_unitario_combo)} • Estoque: ${estoque}</small>
-                ${semEstoque ? '<div class="mini-badge danger" style="margin-top:4px;">Estoque insuficiente: combo será desativado</div>' : ''}
-            </div>
-            <input type="number" class="form-input" style="width:72px;padding:6px;" min="1" value="${item.qtd}" onchange="alterarQtdItemCombo('${skuSeguro}', this.value)">
-            <button class="btn-icon" style="width:32px;height:32px;color:var(--danger);" onclick="removerItemCombo('${skuSeguro}')"><i data-lucide="trash-2" size="14"></i></button>
-        </div>`;
-    }).join('');
-
-    lucide.createIcons();
-}
-
-async function salvarCombosNaNuvemAgora() {
-    await processarStatusCombos(false);
-    await saveCombosLocally();
-
-    const combosLimpos = sanitizeCombosForExport(combosDoSistema);
-    const combosPorId = {};
-
-    combosLimpos.forEach(c => {
-        if (!c.id) return;
-
-        const idSeguro = normalizarIdFirebase(c.id);
-
-        combosPorId[idSeguro] = {
-            ...c,
-            id: idSeguro,
-            last_update: c.last_update || Date.now()
-        };
-    });
-
-    // Por decisão operacional, combo agora salva somente no GitHub.
-    // Isso evita travar o módulo caso o Firebase recuse /combos.json.
-    await GitHubAPI.saveFile(
-        'site/combo.json',
-        combosPorId,
-        'PIM: Atualização de Combos Promocionais'
-    );
-
-    return combosPorId;
-}
-
-async function salvarComboAtual() {
-    const c = getComboAtual();
-    if (!c) return;
-
-    c.nome = document.getElementById("combo-nome").value.trim();
-c.desconto_percentual = parseFloat(document.getElementById("combo-desconto").value) || 20;
-    c.validade_combo = document.getElementById("combo-validade").value || "";
-
-    if (!c.nome) return alert("Informe o nome do combo.");
-if (!c.itens || c.itens.length !== 2) {
-    return alert("O combo deve ter obrigatoriamente 2 produtos.");
-}
-    if (!c.validade_combo) return alert("Informe a data final da oferta do combo.");
-
-    recalcularCombo(c);
-
-    const motivo = validarComboPodeAtivar(c);
-
-    if (motivo) {
-        c.ativo = false;
-        c.motivo_desativacao = motivo;
-    } else {
-        c.ativo = true;
-        c.motivo_desativacao = "";
-    }
-
-    c.last_update = Date.now();
-
-    await saveCombosLocally();
-
-    renderizarComboAtual();
-    renderizarListaCombos();
-
-    try {
-        await salvarCombosNaNuvemAgora();
-
-        if (c.ativo) {
-            mostrarAlerta("Combo salvo, ativado e enviado para a nuvem.", "sucesso");
-        } else {
-            mostrarAlerta("Combo salvo na nuvem, mas ficou inativo: " + c.motivo_desativacao, "aviso");
-        }
-    } catch (e) {
-        console.error(e);
-        mostrarAlerta("Combo salvo localmente, mas falhou ao enviar para a nuvem: " + e.message, "erro");
-    }
-}
-
-async function editarCombo(idCodificado) {
-    const id = decodeComboId(idCodificado);
-    const existe = combosDoSistema.some(c => c.id === id);
-
-    if (!existe) {
-        alert("Combo não encontrado para edição.");
-        return;
-    }
-
-    comboEditandoId = id;
-
-    renderizarComboAtual();
-    renderizarListaCombos();
-
-    const nomeInput = document.getElementById("combo-nome");
-    if (nomeInput) nomeInput.focus();
-}
-
-async function alternarStatusCombo(idCodificado) {
-    const id = decodeComboId(idCodificado);
-    const c = combosDoSistema.find(x => x.id === id);
-
-    if (!c) {
-        alert("Combo não encontrado.");
-        return;
-    }
-
-    if (!c.ativo) {
-        const motivo = validarComboPodeAtivar(c);
-        if (motivo) return alert(motivo);
-
-        c.ativo = true;
-        c.motivo_desativacao = "";
-    } else {
-        c.ativo = false;
-        c.motivo_desativacao = "Desativado manualmente";
-    }
-
-    c.last_update = Date.now();
-
-    await saveCombosLocally();
-
-    renderizarComboAtual();
-    renderizarListaCombos();
-
-    try {
-        await salvarCombosNaNuvemAgora();
-        mostrarAlerta("Status do combo atualizado na nuvem.", "sucesso");
-    } catch (e) {
-        console.error(e);
-        mostrarAlerta("Status alterado localmente, mas falhou ao enviar para a nuvem: " + e.message, "erro");
-    }
-}
-
-async function excluirCombo(idCodificado) {
-    const id = decodeComboId(idCodificado);
-    const c = combosDoSistema.find(x => x.id === id);
-
-    if (!c) {
-        alert("Combo não encontrado para excluir.");
-        return;
-    }
-
-    if (!confirm(`Excluir permanentemente o combo "${c.nome || c.id}"?`)) return;
-
-    combosDoSistema = combosDoSistema.filter(combo => combo.id !== id);
-
-    if (comboEditandoId === id) {
-        comboEditandoId = combosDoSistema.length ? combosDoSistema[0].id : null;
-    }
-
-    await saveCombosLocally();
-
-    if (!comboEditandoId) {
-        novoComboEmBranco(false);
-    }
-
-    renderizarComboAtual();
-    renderizarListaCombos();
-
-    try {
-        await salvarCombosNaNuvemAgora();
-        mostrarAlerta("Combo excluído da nuvem.", "sucesso");
-    } catch (e) {
-        console.error(e);
-        mostrarAlerta("Combo excluído localmente, mas falhou ao atualizar a nuvem: " + e.message, "erro");
-    }
-}
-
-function validarComboPodeAtivar(c) {
-    if (!c.nome) return "Informe o nome do combo antes de ativar.";
-
-    if (!c.itens || c.itens.length !== 2) {
-        return "O combo deve ter obrigatoriamente 2 produtos.";
-    }
-
-    if (!DESCONTOS_COMBO.includes(parseFloat(c.desconto_percentual))) {
-        return "O desconto do combo deve ser somente 20%, 25% ou 30%.";
-    }
-
-    if (!c.validade_combo) return "Informe a data final do combo.";
-
-    const fim = new Date(c.validade_combo);
-    if (isNaN(fim.getTime()) || fim.getTime() < Date.now()) {
-        return "A data final do combo já passou.";
-    }
-
-    for (const item of c.itens) {
-        const skuItem = String(item.sku || item.codigo || "");
-        const firebaseItem = String(item.firebaseKey || "");
-
-        const p = products.find(x =>
-            String(x.codigo || "") === skuItem ||
-            String(x.id || "") === skuItem ||
-            String(x.firebaseKey || "") === firebaseItem ||
-            String(x.firebaseKey || "") === skuItem
-        );
-
-        if (!p) return `Produto ${skuItem || item.nome || "sem código"} não encontrado.`;
-
-        if ((parseFloat(p.estoque) || 0) < 1) {
-            return `Produto sem estoque suficiente: ${p.nome || skuItem}`;
-        }
-
-        if (p.situacao === "I") {
-            return `Produto inativo: ${p.nome || skuItem}`;
-        }
-    }
-
-    return "";
-}
-
-async function processarStatusCombos(salvarLocal = true) {
-    let mudou = false;
-
-    combosDoSistema.forEach(c => {
-        recalcularCombo(c);
-
-        const motivo = validarComboPodeAtivar(c);
-
-        if (c.ativo && motivo) {
-            c.ativo = false;
-            c.motivo_desativacao = motivo;
-            c.last_update = Date.now();
-            mudou = true;
-        }
-
-        if (!motivo && c.motivo_desativacao && c.motivo_desativacao !== "Desativado manualmente") {
-            c.motivo_desativacao = "";
-            c.last_update = Date.now();
-            mudou = true;
-        }
-    });
-
-    if (mudou && salvarLocal) {
-        await saveCombosLocally();
-    }
-}
-
-function renderizarListaCombos() {
-    const box = document.getElementById("lista-combos-criados");
-    if (!box) return;
-
-    if (!combosDoSistema.length) {
-        box.innerHTML = '<small style="font-size:10px;color:var(--text-secondary);font-weight:800;">Nenhum combo criado ainda.</small>';
-        return;
-    }
-
-    box.innerHTML = combosDoSistema.map(c => {
-        recalcularCombo(c);
-
-        const img = c.url_imagem || "https://placehold.co/120x120/f4f4f5/a1a1aa?text=COMBO";
-        const idSeguro = comboIdAttr(c.id);
-
-        return `<div class="combo-card" style="${c.id === comboEditandoId ? "border-color:#0284c7;" : ""}">
-            <img class="combo-cover" src="${img}" onclick="editarCombo('${idSeguro}')">
-            <div style="flex:1; min-width:0;">
-                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-                    <strong style="font-size:13px;">${escapeHTMLCombo(c.nome || "Combo sem nome")}</strong>
-                    ${c.ativo ? '<span class="mini-badge success">ATIVO</span>' : '<span class="mini-badge danger">INATIVO</span>'}
-                </div>
-
-                <small style="display:block;color:var(--text-secondary);font-weight:800;margin-top:4px;">
-                    ${(c.itens && c.itens.length) || 0} produto(s) • ${c.desconto_percentual || 0}% off • ${dinheiroBR(c.preco_combo)} • Fim: ${escapeHTMLCombo(c.validade_combo || "sem data")}
-                </small>
-
-                ${c.combo_legado_id ? `<small style="display:block;color:#0369a1;font-weight:800;margin-top:4px;">Migrado do combo antigo: ${escapeHTMLCombo(c.combo_legado_id)}</small>` : ""}
-
-                ${c.motivo_desativacao ? `<small style="display:block;color:var(--danger);font-weight:800;margin-top:4px;">${escapeHTMLCombo(c.motivo_desativacao)}</small>` : ""}
-
-                <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
-                    <button class="nav-btn" style="padding:6px 8px;font-size:10px;" onclick="editarCombo('${idSeguro}')">EDITAR</button>
-                    <button class="nav-btn ${c.ativo ? "" : "primary"}" style="padding:6px 8px;font-size:10px;" onclick="alternarStatusCombo('${idSeguro}')">${c.ativo ? "DESATIVAR" : "ATIVAR"}</button>
-                    <button class="nav-btn" style="padding:6px 8px;font-size:10px;color:var(--danger);border-color:#fecaca;" onclick="excluirCombo('${idSeguro}')">EXCLUIR</button>
-                </div>
-            </div>
-        </div>`;
-    }).join("");
-
-    lucide.createIcons();
-}
-
-function abrirEditorImagemComboAtual() {
-    const c = getComboAtual();
-    if (!c) return;
-
-    openCanvasSidebar(c.id, "combo");
-}
-
-
         // ==========================================================
         // EDITOR DE CANVAS (NITIDEZ INCLUÍDA)
         // ==========================================================
         const canvas = document.getElementById('imageCanvas'); const ctx = canvas.getContext('2d'); let loadedImage = null; let imgOffsetX = 0; let imgOffsetY = 0; let isDragging = false; let startDragX = 0; let startDragY = 0;
 
-        window.openCanvasSidebar = function(chave, tipo = 'produto') {
+        window.openCanvasSidebar = function(chave) {
             currentEditingSku = chave;
-            currentEditingImageType = tipo || 'produto';
-            imgOffsetX = 0; imgOffsetY = 0; 
-            document.getElementById('zoomRange').value = 1; 
-            document.getElementById('brightnessRange').value = 1; 
+            currentEditingImageType = 'produto';
+            imgOffsetX = 0;
+            imgOffsetY = 0;
+            document.getElementById('zoomRange').value = 1;
+            document.getElementById('brightnessRange').value = 1;
             document.getElementById('sharpenRange').value = 0;
 
             const titulo = document.getElementById('editor-sidebar-title');
-            if (titulo) titulo.innerText = currentEditingImageType === 'combo' ? 'Ajuste de Imagem do Combo' : 'Ajuste de Imagem do Produto';
+            if (titulo) titulo.innerText = 'Ajuste de Imagem do Produto';
 
-            let src = '';
-            if (currentEditingImageType === 'combo') {
-                const c = combosDoSistema.find(x => x.id === chave); 
-                if(!c) return;
-                src = c.imagem_preview_local || c.url_imagem || '';
-            } else {
-                const p = products.find(x => x.codigo === chave); 
-                if(!p) return;
-                src = p.imagem_preview_local || p.url_imagem || '';
-            }
+            const p = products.find(x => x.codigo === chave);
+            if (!p) return;
+            const src = p.imagem_preview_local || p.url_imagem || '';
 
-            const img = new Image(); 
-            img.crossOrigin = "Anonymous"; 
-            img.src = src; 
-            img.onload = () => { loadedImage = img; drawCanvas(); openSidebar('editor-sidebar'); }; 
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.src = src;
+            img.onload = () => { loadedImage = img; drawCanvas(); openSidebar('editor-sidebar'); };
             img.onerror = () => { loadedImage = null; drawCanvas(); openSidebar('editor-sidebar'); };
         }
 
@@ -5175,10 +4263,9 @@ function abrirEditorImagemComboAtual() {
         }
 
        async function saveImageToQueue() {
-    if(!currentEditingSku) return; 
+    if (!currentEditingSku) return;
 
-    const chave = currentEditingSku; 
-    const tipo = currentEditingImageType || 'produto';
+    const chave = currentEditingSku;
     if (!loadedImage) {
         mostrarAlerta('Cole ou selecione uma imagem antes de aplicar.', 'aviso');
         return;
@@ -5193,81 +4280,11 @@ function abrirEditorImagemComboAtual() {
     }
 
     const base64data = base64full.split(',')[1];
-
-    if (tipo === 'combo') {
-        const c = combosDoSistema.find(x => x.id === chave);
-        if (!c) return;
-
-        const nomeDigitado = (document.getElementById('combo-nome')?.value || '').trim();
-        if (nomeDigitado) c.nome = nomeDigitado;
-
-        if (!c.nome) {
-            alert('Informe o nome do combo antes de aplicar a capa. A imagem será salva com o nome do combo.');
-            return;
-        }
-
-        c.url_imagem = base64full;
-        c.imagem_preview_local = base64full;
-        c.last_update = Date.now();
-        await saveCombosLocally();
-
-        closeSidebar('editor-sidebar');
-        renderizarComboAtual();
-        renderizarListaCombos();
-
-        try {
-            mostrarAlerta('Enviando capa do combo para o GitHub...', 'aviso');
-
-            const pastaDestinoGithub = await getPastaUploadAtiva('combo');
-            const pastaDestinoLocal = '../' + pastaDestinoGithub;
-            const fileName = getNomeArquivoImagemCombo(c);
-
-            await GitHubAPI.saveFile(
-                `${pastaDestinoGithub}/${fileName}`,
-                base64data,
-                `PIM Sync: Capa Combo ${fileName}`,
-                true
-            );
-
-            c.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`;
-            delete c.imagem_preview_local;
-            c.last_update = Date.now();
-
-            await saveCombosLocally();
-            await salvarCombosNaNuvemAgora();
-
-            renderizarComboAtual();
-            renderizarListaCombos();
-
-            mostrarAlerta('Capa do combo aplicada, enviada e combo salvo no GitHub.', 'sucesso');
-        } catch (e) {
-            console.error(e);
-
-            imageQueue = imageQueue.filter(img => !((img.tipo || 'produto') === 'combo' && img.id === chave));
-            imageQueue.push({
-                tipo: 'combo',
-                id: chave,
-                sku: chave,
-                nome: c.nome,
-                base64data: base64data,
-                base64full: base64full
-            });
-
-            await localforage.setItem('imageQueue', imageQueue);
-            updateImageBadge();
-            mostrarAlerta('A capa ficou salva localmente e entrou na fila de imagens: ' + e.message, 'aviso');
-        }
-
-        return;
-    }
-
-    const p = products.find(x => x.codigo === chave); 
+    const p = products.find(x => x.codigo === chave);
     if (!p) return;
 
     p.imagem_preview_local = base64full;
-    // Mantém p.url_imagem com o link antigo até o upload terminar.
-    // Isso evita mandar data:image ou URL vazia para o Firebase em caso de conflito/interrupção.
-    p.last_update = Date.now(); 
+    p.last_update = Date.now();
 
     imageQueue = imageQueue.filter(img => !((img.tipo || 'produto') === 'produto' && img.sku === chave));
     imageQueue.push({
@@ -5279,11 +4296,11 @@ function abrirEditorImagemComboAtual() {
     });
 
     await localforage.setItem('imageQueue', imageQueue);
-    await saveDataLocally(false); 
+    await saveDataLocally(false);
 
-    marcarProdutoParaSincronizacao(p, "upsert");
-    updateImageBadge(); 
-    closeSidebar('editor-sidebar'); 
+    marcarProdutoParaSincronizacao(p, 'upsert');
+    updateImageBadge();
+    closeSidebar('editor-sidebar');
     renderGrid(ultimoTermoPesquisa, true);
 
     mostrarAlerta('Foto salva localmente e aplicada no card. Use ENVIAR FOTO ou SALVAR CARD para mandar ao GitHub/Firebase.', 'aviso');
@@ -5598,42 +4615,6 @@ function abrirEditorImagemComboAtual() {
             const caminho = normalizarCaminhoImagemGithub(urlImagem);
             if (caminho) set.add(caminho);
         }
-
-        function coletarImagensUsadasEmCombos(listaCombos, produtosBase, imagensEmUso) {
-            if (!Array.isArray(listaCombos)) return;
-
-            const mapaProdutos = new Map();
-            (Array.isArray(produtosBase) ? produtosBase : []).forEach(p => {
-                const chaves = [p.firebaseKey, p.id, p.codigo, p.gtin].filter(Boolean).map(x => String(x));
-                chaves.forEach(chave => mapaProdutos.set(chave, p));
-            });
-
-            listaCombos.forEach(combo => {
-                if (!combo) return;
-
-                adicionarImagemEmUsoNoSet(imagensEmUso, combo.url_imagem);
-                adicionarImagemEmUsoNoSet(imagensEmUso, combo.imagem);
-                adicionarImagemEmUsoNoSet(imagensEmUso, combo.capa);
-
-                if (Array.isArray(combo.itens)) {
-                    combo.itens.forEach(item => {
-                        if (!item) return;
-
-                        adicionarImagemEmUsoNoSet(imagensEmUso, item.url_imagem);
-                        adicionarImagemEmUsoNoSet(imagensEmUso, item.imagem);
-
-                        const produtoRelacionado = mapaProdutos.get(String(item.firebaseKey || "")) ||
-                            mapaProdutos.get(String(item.sku || "")) ||
-                            mapaProdutos.get(String(item.codigo || ""));
-
-                        if (produtoRelacionado) {
-                            adicionarImagemEmUsoNoSet(imagensEmUso, produtoRelacionado.url_imagem);
-                        }
-                    });
-                }
-            });
-        }
-
         async function apagarArquivoGithubSeguro(cfg, file) {
             const res = await fetchComTimeout(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${file.path}`, {
                 method: 'DELETE',
@@ -5655,7 +4636,7 @@ function abrirEditorImagemComboAtual() {
         }
 
         async function executarLimpezaImagens() {
-            if (!confirm("AVISO: a limpeza agora vai consultar o Firebase e o GitHub antes de apagar. Ela só apagará imagens que NÃO aparecem nos produtos nem nos combos. Deseja analisar agora?")) return;
+            if (!confirm("AVISO: a limpeza agora vai consultar o Firebase e o GitHub antes de apagar. Ela só apagará imagens que NÃO aparecem nos produtos. Deseja analisar agora?")) return;
 
             const cfg = await GitHubAPI.getConfig();
             if (!cfg) {
@@ -5663,7 +4644,7 @@ function abrirEditorImagemComboAtual() {
                 return;
             }
 
-            mostrarAlerta("Analisando Firebase, combos e pastas de imagens do GitHub...", "aviso");
+            mostrarAlerta("Analisando Firebase e pastas de imagens do GitHub...", "aviso");
 
             try {
                 const [produtosFirebase, exclusoesFirebase] = await Promise.all([
@@ -5679,17 +4660,6 @@ function abrirEditorImagemComboAtual() {
                     )
                     : products.filter(p => p && p._deleted !== true);
 
-                let combosBase = [];
-                try {
-                    if (typeof carregarCombosDaNuvemSeExistir === "function") {
-                        await carregarCombosDaNuvemSeExistir();
-                    }
-                    combosBase = Array.isArray(combosDoSistema) ? combosDoSistema : [];
-                } catch (e) {
-                    console.warn("Não foi possível atualizar combos antes da limpeza. Usando combos locais.", e);
-                    combosBase = Array.isArray(combosDoSistema) ? combosDoSistema : [];
-                }
-
                 const imagensEmUso = new Set();
 
                 produtosBase.forEach(p => {
@@ -5698,11 +4668,8 @@ function abrirEditorImagemComboAtual() {
                     adicionarImagemEmUsoNoSet(imagensEmUso, p.capa);
                 });
 
-                coletarImagensUsadasEmCombos(combosBase, produtosBase, imagensEmUso);
-
                 const pastas = ["site/img/produtos"];
                 for (let i = 2; i <= 10; i++) pastas.push(`site/img/produtos_${i}`);
-                pastas.push("site/img/combos");
 
                 const imagensParaApagar = [];
                 const errosPastas = [];
@@ -5733,7 +4700,6 @@ function abrirEditorImagemComboAtual() {
 
                 const resumo = [
                     `Produtos analisados: ${produtosBase.length}`,
-                    `Combos analisados: ${combosBase.length}`,
                     `Imagens protegidas: ${imagensEmUso.size}`,
                     `Arquivos lidos no GitHub: ${totalArquivosLidos}`,
                     `Imagens órfãs encontradas: ${imagensParaApagar.length}`
@@ -5797,7 +4763,6 @@ function abrirEditorImagemComboAtual() {
     });
 
             await saveDataLocally();
-            await processarStatusCombos();
             renderGrid(ultimoTermoPesquisa);
 
             mostrarAlerta("✅ Tela atualizada com os dados oficiais do Firebase.", "sucesso");
