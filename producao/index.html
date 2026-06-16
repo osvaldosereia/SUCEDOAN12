@@ -6453,23 +6453,36 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
     function nfeInferirFatorDivisor(prod, item) {
         const qCom = nfeNumero(nfeTextoNo(prod, 'qCom'));
         const qTrib = nfeNumero(nfeTextoNo(prod, 'qTrib'));
+        const uCom = String(nfeTextoNo(prod, 'uCom') || '').toUpperCase().trim();
+        const uTrib = String(nfeTextoNo(prod, 'uTrib') || '').toUpperCase().trim();
+
+        // Só usa qTrib/qCom como divisor quando a própria NF-e indica unidade comercial de caixa/fardo/pacote
+        // e unidade tributável unitária. Isso evita erro em descrições como "CAIXA 2,2KG", onde 2,2 é peso, não 2 unidades.
         if (qCom > 0 && qTrib > 0 && qTrib > qCom) {
-            const fator = qTrib / qCom;
-            if (Number.isFinite(fator) && fator > 1) return Number(fator.toFixed(3));
+            const uComEhCaixa = /^(CX|CAIXA|FD|FARDO|PCT|PACOTE|DISPLAY|CARTELA|KIT)$/i.test(uCom);
+            const uTribEhUnidade = /^(UN|UND|UNID|UNIDADE|UNIDADES)$/i.test(uTrib);
+            if (uComEhCaixa && uTribEhUnidade) {
+                const fator = qTrib / qCom;
+                if (Number.isFinite(fator) && fator > 1) return Number(fator.toFixed(3));
+            }
         }
+
         const unidade = String(nfeTextoNo(prod, 'uCom') || nfeTextoNo(prod, 'uTrib') || '').toUpperCase();
         const nome = String(nfeTextoNo(prod, 'xProd') || '').toUpperCase();
         const texto = `${unidade} ${nome}`;
+
+        // Padrões aceitos: "caixa com 12 un", "cx c/12 und", "fardo 12 unidades", "pack com 6 un".
+        // Não aceita "caixa 2,2kg", "500g", "1L", "2,5L" como divisor.
         const padroes = [
-            /(?:CX|CAIXA|FD|FARDO|DISPLAY|CARTELA|PCT|PACOTE)\s*(?:C\/|COM|C)?\s*(\d{1,3})\s*(?:UN|UND|UNID|UNIDADES)?/,
-            /(?:C\/|COM)\s*(\d{1,3})\s*(?:UN|UND|UNID|UNIDADES)/,
-            /(\d{1,3})\s*(?:UN|UND|UNID|UNIDADES)\b/
+            /\b(?:CX|CAIXA|FD|FARDO|DISPLAY|CARTELA|PCT|PACOTE|PACK|KIT)\b\s*(?:C\/|COM|CONTENDO|DE)\s*(\d{1,3})\s*(?:UN|UND|UNID|UNIDADE|UNIDADES)\b/,
+            /\b(?:C\/|COM|CONTENDO)\s*(\d{1,3})\s*(?:UN|UND|UNID|UNIDADE|UNIDADES)\b/,
+            /\b(\d{1,3})\s*(?:UN|UND|UNID|UNIDADE|UNIDADES)\b/
         ];
         for (const re of padroes) {
             const m = texto.match(re);
-            if (m && parseInt(m[1], 10) > 1) return parseInt(m[1], 10);
+            const qtd = m ? parseInt(m[1], 10) : 0;
+            if (qtd > 1) return qtd;
         }
-        if (/\b(CX|CAIXA|FD|FARDO)\b/.test(texto)) return 1;
         return 1;
     }
 
@@ -6481,9 +6494,8 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
         const desconto = nfeNumero(item.descontoRateado || 0);
         const totalLiquido = Math.max(totalBruto - desconto, 0);
         item.custoSemDesconto = item.quantidade > 0 ? Number((totalBruto / item.quantidade).toFixed(4)) : 0;
-        if (!item.custoManual) {
-            item.custo = item.quantidade > 0 ? Number((totalLiquido / item.quantidade).toFixed(4)) : 0;
-        }
+        item.custoCalculado = item.quantidade > 0 ? Number((totalLiquido / item.quantidade).toFixed(4)) : 0;
+        if (!item.custoManual) item.custo = item.custoCalculado;
         item.totalLiquido = Number(totalLiquido.toFixed(4));
     }
 
@@ -6659,12 +6671,15 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
                         <div><span>Custo antes</span><strong>${dinheiroBR(item.custoSemDesconto || 0)}</strong></div>
                         <div><span>Custo real un.</span><strong>${dinheiroBR(item.custo || 0)}</strong></div>
                     </div>
+                    <div style="font-size:10px; color:#64748b; font-weight:800; margin-top:6px; line-height:1.35;">
+                        Fórmula: (${dinheiroBR(item.totalBruto || 0)} - ${dinheiroBR(item.descontoRateado || 0)}) ÷ estoque que entra (${escaparHtmlSistema(item.quantidade || 0)}). Use divisor 1 quando a NF já vende por unidade, mesmo que o nome tenha “caixa 2,2kg”.
+                    </div>
                     <div class="nfe-fields">
                         <div class="field-group wide"><label>Nome no cadastro</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.nome)}" onchange="nfeAtualizarItem(${i}, 'nome', this.value)"></div>
                         <div class="field-group"><label>EAN / GTIN</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.ean)}" onchange="nfeAtualizarItem(${i}, 'ean', this.value)"></div>
                         <div class="field-group"><label>NCM</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.ncm)}" onchange="nfeAtualizarItem(${i}, 'ncm', this.value)"></div>
                         <div class="field-group"><label>Qtd na NF</label><input type="number" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.quantidadeXml)}" onchange="nfeAtualizarItem(${i}, 'quantidadeXml', this.value)"></div>
-                        <div class="field-group"><label>Fator divisor / un. por cx</label><input type="number" min="0.001" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.fatorDivisor || 1)}" onchange="nfeAtualizarItem(${i}, 'fatorDivisor', this.value)"></div>
+                        <div class="field-group"><label>Unidades por caixa/fardo</label><input type="number" min="0.001" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.fatorDivisor || 1)}" onchange="nfeAtualizarItem(${i}, 'fatorDivisor', this.value)"></div>
                         <div class="field-group"><label>Estoque unitário</label><input type="number" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.quantidade)}" readonly style="background:#ecfdf5;color:#047857;font-weight:900;"></div>
                         <div class="field-group"><label>Custo real unit.</label><input type="number" step="0.0001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.custo)}" onchange="nfeAtualizarItem(${i}, 'custo', this.value)"></div>
                         <div class="field-group"><label>Preço venda</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(valorVenda)}" onchange="nfeAtualizarItem(${i}, 'precoVenda', this.value)"></div>
@@ -6687,16 +6702,21 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
     window.nfeAtualizarItem = function(index, campo, valor) {
         const item = nfeEntradaAtual.itens && nfeEntradaAtual.itens[index];
         if (!item) return;
-        if (['quantidadeXml','fatorDivisor','custo','precoVenda','descontoRateado','totalBruto'].includes(campo)) item[campo] = nfeNumero(valor);
+        const camposNumericos = ['quantidadeXml','fatorDivisor','custo','precoVenda','descontoRateado','totalBruto'];
+        const camposQueRecalculam = ['quantidadeXml','fatorDivisor','totalBruto','descontoRateado'];
+        if (camposNumericos.includes(campo)) item[campo] = nfeNumero(valor);
         else if (campo === 'ean') item[campo] = nfeEANValido(valor) || String(valor || '').replace(/\D/g, '');
         else if (campo === 'ncm') item[campo] = String(valor || '').replace(/\D/g, '').slice(0, 8);
         else item[campo] = limparTextoSistema(valor);
-        if (['quantidadeXml','fatorDivisor','totalBruto','descontoRateado'].includes(campo)) {
+
+        if (camposQueRecalculam.includes(campo)) {
             item.custoManual = false;
             nfeRecalcularCustosItem(item);
+            renderizarNFeEntrada();
+            return;
         }
         if (campo === 'custo') item.custoManual = true;
-        if (campo === 'ean') nfeReidentificarItem(index, false);
+        if (campo === 'ean') nfeReidentificarItem(index, true);
     };
 
     window.nfeReidentificarItem = function(index, rerender = true) {
