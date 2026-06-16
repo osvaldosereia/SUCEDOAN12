@@ -700,29 +700,55 @@
             objetoPorIdParaArray: function(dados) {
                 if (!dados) return [];
 
-                if (Array.isArray(dados)) {
-                    return dados.filter(Boolean);
+                // Aceita tanto /produtos direto quanto um objeto embrulhado por engano.
+                if (dados && typeof dados === "object" && dados.produtos) {
+                    return this.objetoPorIdParaArray(dados.produtos);
                 }
 
-                return Object.entries(dados).map(([firebaseKey, produto]) => ({
-                    ...produto,
-                    firebaseKey: firebaseKey,
-                    id: String(produto.id || firebaseKey)
-                }));
+                if (Array.isArray(dados)) {
+                    return dados
+                        .filter(item => item && typeof item === "object")
+                        .map((produto, idx) => ({
+                            ...produto,
+                            firebaseKey: String(produto.firebaseKey || produto.id || produto.codigo || idx),
+                            id: String(produto.id || produto.codigo || produto.firebaseKey || idx)
+                        }));
+                }
+
+                if (typeof dados !== "object") return [];
+
+                return Object.entries(dados)
+                    .filter(([firebaseKey, produto]) => firebaseKey && produto && typeof produto === "object")
+                    .map(([firebaseKey, produto]) => ({
+                        ...produto,
+                        firebaseKey: String(firebaseKey),
+                        id: String(produto.id || produto.codigo || firebaseKey)
+                    }));
+            },
+
+            lerProdutosObrigatorio: async function() {
+                const url = this.baseURL + "produtos.json?nocache=" + Date.now();
+                const res = await fetchComTimeout(url, {
+                    cache: "no-store"
+                }, 45000, "Leitura obrigatória do Firebase");
+
+                if (!res.ok) {
+                    throw new Error("Firebase retornou HTTP " + res.status + " ao ler /produtos.json");
+                }
+
+                const dados = await res.json();
+                const lista = this.objetoPorIdParaArray(dados);
+
+                if (!Array.isArray(lista)) {
+                    throw new Error("Resposta do Firebase não virou lista de produtos.");
+                }
+
+                return lista;
             },
 
             lerProdutos: async function() {
                 try {
-                    const res = await fetchComTimeout(this.baseURL + "produtos.json?nocache=" + Date.now(), {
-                        cache: "no-store"
-                    }, 30000, "Leitura Firebase");
-
-                    if (!res.ok) {
-                        throw new Error("Firebase retornou HTTP " + res.status);
-                    }
-
-                    const dados = await res.json();
-                    return this.objetoPorIdParaArray(dados);
+                    return await this.lerProdutosObrigatorio();
                 } catch (e) {
                     console.error("Erro ao ler Firebase:", e);
                     return [];
@@ -1253,6 +1279,74 @@ function obterMaiorTombstoneProduto(produto, exclusoes) {
     });
 
     return maior;
+}
+
+function prepararListaProdutosFirebase(produtosFirebase, exclusoesFirebase = {}) {
+    if (!Array.isArray(produtosFirebase)) {
+        throw new Error("Firebase não retornou uma lista válida de produtos.");
+    }
+
+    const lista = produtosFirebase
+        .filter(p => p && typeof p === "object" && p._deleted !== true)
+        .filter(p => obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p))
+        .map(p => {
+            const produto = { ...p };
+            const chave = FirebaseAPI.sanitizarChave(produto.firebaseKey || produto.id || produto.codigo || produto.gtin);
+            if (chave) {
+                produto.firebaseKey = chave;
+                produto.id = String(produto.id || chave);
+            }
+            produto.nome = String(produto.nome || "").trim();
+            produto.codigo = String(produto.codigo || produto.id || produto.firebaseKey || "").trim();
+            produto.descricao = produto.descricao || "";
+            produto.last_update = Number(produto.last_update) || 0;
+            produto.categoria = produto.categoria || "";
+            produto.subcategoria = produto.subcategoria || "";
+            produto.subsubcategoria = produto.subsubcategoria || "";
+            produto.marca = limparMarcaProduto(produto.marca);
+            if (produto.tag_global === undefined || produto.tag_global === null) produto.tag_global = [];
+            normalizarProdutoTagsQuantidade(produto);
+            atualizarIndiceBuscaProduto(produto);
+            return produto;
+        })
+        .filter(p => p.nome || p.codigo || p.id)
+        .sort((a, b) => {
+            const nomeA = (a.nome || "").toString().toLowerCase();
+            const nomeB = (b.nome || "").toString().toLowerCase();
+            return nomeA.localeCompare(nomeB, "pt-BR");
+        });
+
+    return lista;
+}
+
+async function puxarProdutosFirebaseObrigatorio() {
+    const [produtosFirebase, exclusoesFirebase] = await Promise.all([
+        FirebaseAPI.lerProdutosObrigatorio(),
+        FirebaseAPI.lerExclusoesProdutos()
+    ]);
+
+    const lista = prepararListaProdutosFirebase(produtosFirebase, exclusoesFirebase);
+
+    if (!lista.length) {
+        throw new Error("O Firebase respondeu, mas nenhum produto válido foi encontrado em /produtos.json.");
+    }
+
+    return lista;
+}
+
+async function aplicarProdutosFirebaseNaTela(mensagemSucesso = "✅ Produtos atualizados pelo Firebase.") {
+    mostrarAlerta("Lendo produtos oficiais do Firebase...", "aviso");
+    const lista = await puxarProdutosFirebaseObrigatorio();
+    products = lista;
+    produtosPendentesSync.clear();
+    atualizarListasDoSistemaComProdutos();
+    atualizarIndiceBuscaTodosProdutos();
+    await saveDataLocally(false);
+    await salvarListasSistemaLocalmente();
+    renderGrid(ultimoTermoPesquisa, true);
+    renderQueueStatus();
+    mostrarAlerta(mensagemSucesso + " Total: " + products.length + " produto(s).", "sucesso");
+    return products;
 }
 
 function registrarExclusaoProduto(exclusoes, produto, dataExclusao) {
@@ -2229,20 +2323,7 @@ async function salvarProdutosJSON(opcoes = {}) {
                 lucide.createIcons();
             }
 
-            mostrarAlerta("Buscando produtos atualizados no Firebase...", "aviso");
-
-            const [dadosFirebase, exclusoesFirebase] = await Promise.all([
-                FirebaseAPI.lerProdutos(),
-                FirebaseAPI.lerExclusoesProdutos()
-            ]);
-
-            if (Array.isArray(dadosFirebase) && dadosFirebase.length > 0) {
-                products = dadosFirebase
-                    .filter(p => p && p._deleted !== true && obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p))
-                    .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
-
-                await saveDataLocally(false);
-            }
+            await aplicarProdutosFirebaseNaTela("✅ Base recarregada pelo Firebase antes da busca.");
         }
 
         ultimoTermoPesquisa = termo;
@@ -3079,23 +3160,17 @@ async function loadData() {
             mostrarAlerta("Cache local carregado. Atualizando pelo Firebase...", "aviso");
         }
 
-        const [produtosFirebase, exclusoesFirebase] = await Promise.all([
-            FirebaseAPI.lerProdutos(),
-            FirebaseAPI.lerExclusoesProdutos()
-        ]);
-
-        if (Array.isArray(produtosFirebase) && produtosFirebase.length > 0) {
-            products = produtosFirebase
-    .filter(p => p && p._deleted !== true && obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p))
-    .sort((a, b) => {
-        const nomeA = (a.nome || "").toString().toLowerCase();
-        const nomeB = (b.nome || "").toString().toLowerCase();
-        return nomeA.localeCompare(nomeB, "pt-BR");
-    });
-
+        try {
+            products = await puxarProdutosFirebaseObrigatorio();
             await saveDataLocally(false);
-        } else if (cacheLocalProdutos.length === 0) {
-            products = [];
+        } catch (firebaseErr) {
+            console.warn("Falha ao puxar produtos oficiais do Firebase na abertura:", firebaseErr);
+            if (cacheLocalProdutos.length === 0) {
+                products = [];
+                mostrarAlerta("Não consegui puxar do Firebase: " + firebaseErr.message, "erro");
+            } else {
+                mostrarAlerta("Cache local carregado, mas o Firebase não respondeu: " + firebaseErr.message, "erro");
+            }
         }
     } catch (err) {
         console.warn("Não foi possível iniciar pelo Firebase. Usando cache local se existir:", err);
@@ -4746,35 +4821,17 @@ async function deleteProduct(sku) {
         
         async function fetchFromGithub() {
     try {
-        mostrarAlerta("Atualizando a tela pelo Firebase principal...", "aviso");
-
-        const [dadosFirebase, exclusoesFirebase] = await Promise.all([
-            FirebaseAPI.lerProdutos(),
-            FirebaseAPI.lerExclusoesProdutos()
-        ]);
-
-        if (Array.isArray(dadosFirebase) && dadosFirebase.length > 0) {
-            products = dadosFirebase
-    .filter(p => p && p._deleted !== true && obterMaiorTombstoneProduto(p, exclusoesFirebase) <= normalizarLastUpdateProduto(p))
-    .sort((a, b) => {
-        const nomeA = (a.nome || "").toString().toLowerCase();
-        const nomeB = (b.nome || "").toString().toLowerCase();
-        return nomeA.localeCompare(nomeB, "pt-BR");
-    });
-
-            await saveDataLocally();
-            renderGrid(ultimoTermoPesquisa);
-
-            mostrarAlerta("✅ Tela atualizada com os dados oficiais do Firebase.", "sucesso");
-            closeSidebar('config-sidebar');
-        } else {
-            alert("A base de dados do Firebase está vazia ou o formato está incorreto.");
-        }
+        await aplicarProdutosFirebaseNaTela("✅ Tela atualizada com os dados oficiais do Firebase.");
+        closeSidebar('config-sidebar');
     } catch(e) {
         console.error("Erro na atualização pelo Firebase:", e);
-        alert("Erro ao puxar do Firebase: " + e.message);
+        mostrarAlerta("Erro ao puxar do Firebase: " + e.message, "erro");
+        alert("Erro ao puxar do Firebase:\n\n" + e.message + "\n\nVerifique se /produtos.json está liberado nas regras do Firebase e se sua internet está carregando a URL do banco.");
     }
 }
+
+window.fetchFromGithub = fetchFromGithub;
+window.recarregarFirebaseOficial = fetchFromGithub;
 
         async function limparSistema() { if(confirm("Apagar base local? (Nuvem NÃO afetada)")) { await localforage.clear(); location.reload(); } }
 
