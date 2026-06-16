@@ -88,7 +88,7 @@
         #editor-sidebar { z-index: 1011; width: 420px; border-left: 1px solid var(--border); }
         #config-sidebar { z-index: 1012; width: 380px; }
         #menu-sidebar { z-index: 1014; width: 300px; }
-        #categorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar, #pedidos-sidebar, #exportacoes-sidebar { z-index: 1015; width: 450px; }
+        #categorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar, #exportacoes-sidebar { z-index: 1015; width: 450px; }
         #combos-sidebar { z-index: 1016; width: 620px; }
 
         .card-alert-strip { display:flex; flex-wrap:wrap; gap:4px; margin-top:2px; }
@@ -157,6 +157,26 @@
             .menu-sidebar-btn { width: 100%; height: 42px; margin-bottom: 8px; justify-content: flex-start; font-size: 12px; }
         }
 
+
+
+        /* =========================================================
+           AJUSTES PROFISSIONAIS 2026 - SEGURANÇA, TAGS E UX
+           ========================================================= */
+        .admin-dashboard { display:grid; grid-template-columns:repeat(6, minmax(120px, 1fr)); gap:8px; padding:0 20px 8px 20px; }
+        .admin-kpi { background:#ffffff; border:1px solid var(--border); border-radius:10px; padding:9px 10px; box-shadow:var(--shadow); }
+        .admin-kpi span { display:block; font-size:8px; font-weight:900; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.4px; }
+        .admin-kpi strong { display:block; margin-top:2px; font-size:15px; font-weight:900; color:var(--text-primary); }
+        .tag-qtd-row { display:grid; grid-template-columns:18px 1fr 58px; gap:6px; align-items:center; padding:4px 0; border-bottom:1px dashed #ececef; }
+        .tag-qtd-row:last-child { border-bottom:none; }
+        .tag-qtd-row label { font-size:10px; font-weight:800; color:var(--text-primary); line-height:1.2; }
+        .tag-qtd-input { width:58px; min-height:28px; padding:4px 5px; border:1px solid var(--border); border-radius:6px; font-size:10px; font-weight:900; text-align:center; background:#fff; }
+        .tag-qtd-input:disabled { opacity:.45; background:#f4f4f5; }
+        .tag-qtd-help { display:block; margin-top:4px; font-size:8px; color:var(--text-secondary); font-weight:700; line-height:1.25; }
+        .modal-camera-box { background:white; width:95%; max-width:520px; border-radius:14px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.28); display:flex; flex-direction:column; }
+        #camera-video { width:100%; max-height:55vh; background:#000; object-fit:cover; }
+        .quality-warn { background:#fef2f2 !important; border-color:#fecaca !important; color:#991b1b !important; }
+        @media (max-width: 768px) { .admin-dashboard { grid-template-columns:repeat(2, 1fr); padding:0 10px 8px 10px; } }
+
         /* =========================================================
            CSS DO EDITOR DE TEXTO RICO
            ========================================================= */
@@ -195,6 +215,20 @@
 
     <div id="alerta-customizado">Mensagem</div>
 
+    <div id="modal-camera-ean" class="sidebar-overlay" style="display:none; align-items:center; justify-content:center; z-index:10002; opacity:1;">
+        <div class="modal-camera-box">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Ler EAN / Código de Barras</div>
+                <button class="btn-icon" onclick="fecharLeitorEANCamera()"><i data-lucide="x" size="16"></i></button>
+            </div>
+            <video id="camera-video" playsinline muted></video>
+            <div style="padding:12px 16px; display:flex; flex-direction:column; gap:8px;">
+                <p id="camera-status" style="margin:0; font-size:12px; font-weight:800; color:var(--text-secondary);">Aponte a câmera para o código de barras do produto.</p>
+                <button class="nav-btn" style="height:42px; justify-content:center;" onclick="fecharLeitorEANCamera()">FECHAR LEITOR</button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-foto-full" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; padding:15px; box-sizing:border-box;">
         <div style="flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;">
             <img id="img-full" src="" style="max-width:100%; max-height:100%; object-fit:contain;">
@@ -209,7 +243,6 @@
             
             <button class="nav-btn desktop-only success-btn" id="btn-enviar-pendentes-firebase" onclick="enviarPendentesFirebaseManual()" title="Envia todos os produtos editados que ainda não foram salvos individualmente no Firebase"><i data-lucide="cloud-upload" size="14"></i> ENVIAR PENDENTES</button>
             <button class="nav-btn desktop-only sync-btn" onclick="abrirModalBackupMetaManual()" title="Atualiza manualmente o backup produtos.json e os arquivos da Meta"><i data-lucide="database-backup" size="14"></i> BACKUP / META</button>
-            <button class="nav-btn desktop-only success-btn" onclick="openSidebar('pedidos-sidebar')"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO</button>
             <button class="nav-btn desktop-only warning" onclick="abrirModuloCombos()"><i data-lucide="package-plus" size="14"></i> COMBOS</button>
             <button class="nav-btn desktop-only" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DADOS DA NUVEM</button>
             
@@ -225,6 +258,9 @@
     </div>
     <button class="nav-btn primary" id="btn-enviar-busca" style="height:40px; white-space:nowrap;" onclick="executarBuscaSistema(true)">
         <i data-lucide="search-check" size="14"></i> BUSCAR
+    </button>
+    <button class="nav-btn sync-btn" id="btn-camera-ean" style="height:40px; white-space:nowrap;" onclick="abrirLeitorEANCamera()" title="Ler EAN/GTIN pela câmera">
+        <i data-lucide="scan-barcode" size="14"></i> CÂMERA EAN
     </button>
 </div>
                 <button class="nav-btn" style="color: #0284c7; border-color: #bae6fd; background: #e0f2fe;" onclick="openSidebar('filtros-sidebar'); renderizarFiltrosAvancados();">
@@ -243,6 +279,8 @@
             </div>
         </div>
 
+        <div id="dashboard-resumo" class="admin-dashboard"></div>
+
         <div id="active-filter-banner">
             <span>Filtro Ativo: <span id="filter-text-display" style="text-transform: capitalize;"></span></span>
             <button class="nav-btn" style="height: 28px; border-color: #0284c7; color: #0284c7;" onclick="limparFiltroGrid()"><i data-lucide="x" size="12"></i> LIMPAR FILTRO</button>
@@ -252,7 +290,7 @@
             <div class="card-grid" id="product-grid"></div>
             <div id="load-more-container" style="text-align: center; margin-top: 30px; margin-bottom: 20px; display: none;">
                 <button class="nav-btn primary" style="padding: 12px 30px; font-size: 14px; margin: 0 auto; min-width: 250px; justify-content: center;" onclick="carregarMaisCards()">
-                    <i data-lucide="chevron-down" size="18"></i> VER MAIS 3 PRODUTOS
+                    <i data-lucide="chevron-down" size="18"></i> VER MAIS 12 PRODUTOS
                 </button>
             </div>
         </div>
@@ -262,14 +300,14 @@
 
     <div id="modal-backup-meta-manual" class="sidebar-overlay" style="display:none; align-items:center; justify-content:center; z-index: 10001; opacity:1;">
         <div style="background:white; padding:20px; border-radius:12px; width:95%; max-width:520px; display:flex; flex-direction:column; gap:14px; box-shadow:0 10px 40px rgba(0,0,0,0.25);">
-            <h3 style="margin:0; font-size:16px; color:var(--accent);">Atualizar Backup / Meta</h3>
+            <h3 style="margin:0; font-size:16px; color:var(--accent);">Atualizar Backup / Meta / Configurações</h3>
             <p style="margin:0; font-size:12px; color:var(--text-secondary); font-weight:700; line-height:1.45;">Essas ações são manuais. Antes de gerar arquivos, o sistema lê os produtos atuais direto do Firebase para evitar usar dados antigos da tela.</p>
             <button class="nav-btn primary" style="height:44px; justify-content:center;" onclick="atualizarBackupEMetaManual()">
-                <i data-lucide="refresh-cw" size="16"></i> ATUALIZAR PRODUTOS.JSON + META
+                <i data-lucide="refresh-cw" size="16"></i> ATUALIZAR PRODUTOS.JSON + META + CONFIG
             </button>
             <div style="display:flex; gap:8px;">
                 <button class="nav-btn sync-btn" style="flex:1; height:42px; justify-content:center;" onclick="atualizarProdutosJsonBackupManual()">
-                    <i data-lucide="file-json" size="15"></i> SÓ PRODUTOS.JSON
+                    <i data-lucide="file-json" size="15"></i> PRODUTOS.JSON + CONFIG
                 </button>
                 <button class="nav-btn success-btn" style="flex:1; height:42px; justify-content:center;" onclick="enviarMetaGithubManual()">
                     <i data-lucide="megaphone" size="15"></i> SÓ META
@@ -315,7 +353,6 @@
                 <button class="nav-btn sync-btn menu-sidebar-btn" onclick="abrirModalBackupMetaManual(); closeSidebar('menu-sidebar');"><i data-lucide="database-backup" size="14"></i> ATUALIZAR BACKUP / META</button>
                 <button class="nav-btn warning menu-sidebar-btn" onclick="abrirModuloCombos(); closeSidebar('menu-sidebar');"><i data-lucide="package-plus" size="14"></i> CRIAR / ADMINISTRAR COMBOS</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="cloud" size="14"></i> DEFINIÇÕES E GITHUB</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('pedidos-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="abrirGerenciadorExportacoes()"><i data-lucide="folder-open" size="14"></i> ARQUIVOS EXPORTADOS (NUVEM)</button>
             </div>
             <div class="form-section" style="margin-top: 15px;">
@@ -355,23 +392,6 @@
     
     <div class="sidebar" id="tags-sidebar"><div class="sidebar-header"><div class="sidebar-title">Gestão de Tags Globais</div><button class="btn-icon" onclick="closeSidebar('tags-sidebar')"><i data-lucide="x" size="16"></i></button></div><div class="sidebar-body" id="lista-tags-sidebar"></div><div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovoItem(tagsDoSistema, TAGS_KEY, 'tags-sidebar')"><i data-lucide="plus" size="14"></i> NOVA TAG GLOBAL</button></div></div>
     
-    <div class="sidebar" id="pedidos-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Baixar Pedido por Texto</div>
-            <button class="btn-icon" onclick="closeSidebar('pedidos-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body">
-            <div class="form-section">
-                <div class="section-title">Texto do Pedido</div>
-                <p style="font-size: 11px; color: var(--text-secondary);">Cole o texto do pedido abaixo. O sistema abaterá o estoque.</p>
-                <textarea id="order-text-input" class="form-input" style="height: 300px; font-family: monospace; font-size: 12px;"></textarea>
-            </div>
-        </div>
-        <div class="sidebar-footer">
-            <button class="nav-btn success-btn" style="width:100%; height:44px; justify-content:center;" onclick="processarBaixaPedidoTexto()">ABATER ESTOQUE</button>
-        </div>
-    </div>
-
     <div class="sidebar" id="filtros-sidebar">
         <div class="sidebar-header">
             <div class="sidebar-title">Filtros Avançados</div>
@@ -522,10 +542,6 @@
             <i data-lucide="upload-cloud" size="16"></i> IMPORTAR (ATUALIZAR / ADICIONAR)
         </button>
 
-        <input type="file" id="csv-file-substituir" accept=".csv" style="display:none">
-        <button class="nav-btn" style="height:40px; justify-content:center; color: var(--danger); border-color: #fecaca; margin-top:5px;" onclick="document.getElementById('csv-file-substituir').click()">
-            IMPORTAR CSV (SUBSTITUIR TUDO)
-        </button>
 
         <button class="nav-btn primary" style="height:40px; justify-content:center; margin-top:5px;" onclick="abrirModalExportacaoMeta()">
             EXPORTAR CATÁLOGO META
@@ -616,7 +632,7 @@
         // Variáveis de Paginação
         let produtosFiltrados = [];
         let itemsCarregados = 0;
-        const ITENS_POR_PAGINA = 3; 
+        const ITENS_POR_PAGINA = 12; 
 
         // ==========================================================
         // FUNÇÕES GERAIS E OPÇÕES
@@ -856,6 +872,61 @@
                     console.error("ERRO GRAVE DE COMUNICAÇÃO FIREBASE:", error);
                     throw error;
                 }
+            },
+
+            lerConfigPIM: async function() {
+                try {
+                    const res = await fetchComTimeout(this.baseURL + "config_pim.json?nocache=" + Date.now(), {
+                        cache: "no-store"
+                    }, 25000, "Leitura de configurações PIM no Firebase");
+
+                    if (res.status === 404) return null;
+                    if (!res.ok) throw new Error("Firebase retornou HTTP " + res.status + " ao ler config_pim");
+
+                    const dados = await res.json();
+                    return dados && typeof dados === "object" ? dados : null;
+                } catch (e) {
+                    console.warn("Não foi possível ler configurações PIM do Firebase:", e);
+                    return null;
+                }
+            },
+
+            salvarConfigPIM: async function(config) {
+                const dados = config && typeof config === "object" ? config : {};
+                dados.atualizado_em = new Date().toISOString();
+                dados.versao = dados.versao || 1;
+
+                const res = await fetchComTimeout(this.baseURL + "config_pim.json", {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dados)
+                }, 30000, "Salvar configurações PIM no Firebase");
+
+                if (!res.ok) {
+                    throw new Error("Erro ao gravar config_pim no Firebase: HTTP " + res.status);
+                }
+
+                return dados;
+            },
+
+            registrarLogAdmin: async function(acao, detalhes = {}) {
+                try {
+                    const chave = String(Date.now()) + "_" + Math.floor(Math.random() * 10000);
+                    const payload = {
+                        acao: String(acao || "acao"),
+                        detalhes: detalhes || {},
+                        criado_em: new Date().toISOString(),
+                        origem: "pim_html_admin"
+                    };
+
+                    await fetchComTimeout(this.baseURL + "logs_admin/" + chave + ".json", {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    }, 15000, "Registrar log administrativo");
+                } catch (e) {
+                    console.warn("Falha ao registrar log administrativo:", e);
+                }
             }
         };
 
@@ -965,6 +1036,7 @@ let finalBase64 = isBase64Ready
             } else {
                 el.style.display = 'none';
             }
+            atualizarDashboardResumo();
         }
 
         async function executeNextInQueue() {
@@ -1057,7 +1129,7 @@ let finalBase64 = isBase64Ready
     const camposPermitidos = [
         'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
         'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
-        'subcategoria', 'subsubcategoria', 'marca', 'embalagem', 'tag_global', 
+        'subcategoria', 'subsubcategoria', 'marca', 'embalagem', 'tag_global', 'tag_quantidades', 
         'link_youtube', 'last_update', 'url_imagem', 'gondola', 'prateleira', 'localizacao',
         'descricao', 'descricao_status', 'descricao_atualizada_em',
         'preco_oferta', 'validade_oferta',
@@ -1065,6 +1137,7 @@ let finalBase64 = isBase64Ready
     ];
 
     return prods.map(p => {
+        normalizarProdutoTagsQuantidade(p);
         let cleanP = {};
 
         camposPermitidos.forEach(campo => {
@@ -1089,6 +1162,9 @@ let finalBase64 = isBase64Ready
                 }
             }
         });
+
+        cleanP.tag_global = normalizarListaTagsProduto(cleanP.tag_global);
+        cleanP.tag_quantidades = normalizarQuantidadesTagsProduto(cleanP);
 
         return cleanP;
     });
@@ -1417,6 +1493,9 @@ async function salvarBackupProdutosJsonNoGithub(vitrineFinal) {
         `PIM: Backup produtos.json manual atualizado pelo Firebase`
     );
 
+    // Backup oficial das listas globais usadas pelo admin e pelo site.
+    await salvarBackupConfigPIMNoGithub();
+
     return lista.length;
 }
 
@@ -1478,7 +1557,7 @@ async function atualizarProdutosJsonBackupManual() {
         const vitrineFinal = await carregarProdutosFirebaseParaArquivoManual();
         mostrarAlerta(`Gerando produtos.json com ${vitrineFinal.length} produto(s)...`, "aviso");
         const total = await salvarBackupProdutosJsonNoGithub(vitrineFinal);
-        mostrarAlerta(`✅ produtos.json atualizado no GitHub com ${total} produto(s).`, "sucesso");
+        mostrarAlerta(`✅ produtos.json e configurações atualizados no GitHub com ${total} produto(s).`, "sucesso");
     } catch (e) {
         console.error("Erro ao atualizar produtos.json:", e);
         mostrarAlerta("❌ Erro ao atualizar produtos.json: " + e.message, "erro");
@@ -1499,11 +1578,11 @@ async function atualizarBackupEMetaManual() {
         const vitrineFinal = await carregarProdutosFirebaseParaArquivoManual();
         const ativos = vitrineFinal.filter(p => p && p.situacao !== "I");
 
-        mostrarAlerta(`Atualizando produtos.json e Meta com dados do Firebase...`, "aviso");
+        mostrarAlerta(`Atualizando produtos.json, Meta e configurações com dados do Firebase...`, "aviso");
         const totalBackup = await salvarBackupProdutosJsonNoGithub(vitrineFinal);
         await enviarArquivosMetaNoGithub(vitrineFinal);
 
-        mostrarAlerta(`✅ Backup e Meta atualizados. produtos.json: ${totalBackup} produto(s). Meta: ${ativos.length} ativo(s).`, "sucesso");
+        mostrarAlerta(`✅ Backup, Meta e configurações atualizados. produtos.json: ${totalBackup} produto(s). Meta: ${ativos.length} ativo(s).`, "sucesso");
     } catch (e) {
         console.error("Erro ao atualizar backup/meta:", e);
         mostrarAlerta("❌ Erro ao atualizar Backup/Meta: " + e.message, "erro");
@@ -1541,6 +1620,8 @@ async function enviarMetaGithubManual() {
 }
 
 function prepararProdutoParaFirebase(produto) {
+    normalizarProdutoTagsQuantidade(produto);
+    if (produto && produto.descricao) produto.descricao = limparHtmlSeguroSistema(produto.descricao);
     const lista = sanitizeProductsForExport([produto]);
     const limpo = lista[0] || { ...produto };
     limpo.id = String(limpo.id || produto.firebaseKey || produto.codigo || Date.now());
@@ -1890,6 +1971,12 @@ async function salvarProdutoCardManual(sku) {
 
     if (!produto) {
         mostrarAlerta("Produto não encontrado na tela.", "erro");
+        return;
+    }
+
+    const validacao = validarProdutoAntesSalvar(produto);
+    if (!validacao.ok) {
+        mostrarAlerta("❌ " + validacao.mensagem, "erro");
         return;
     }
 
@@ -2275,6 +2362,17 @@ window.onload = async function() {
     }
 
     setupEditorEvents(); 
+    atualizarDashboardResumo();
+
+    window.addEventListener('beforeunload', function(e) {
+        const pendentesProdutos = (typeof produtosPendentesSync !== "undefined" && produtosPendentesSync) ? produtosPendentesSync.size : 0;
+        const pendencias = pendentesProdutos + (Array.isArray(syncQueue) ? syncQueue.length : 0);
+        if (pendencias > 0) {
+            e.preventDefault();
+            e.returnValue = "Existem alterações pendentes que ainda não foram enviadas.";
+            return e.returnValue;
+        }
+    });
 };
         function normalizarBuscaProduto(valor) {
     return String(valor || "")
@@ -2289,9 +2387,10 @@ window.onload = async function() {
 function montarTextoBuscaProduto(p) {
     if (!p) return "";
 
-    const tags = Array.isArray(p.tag_global)
-        ? p.tag_global.join(" ")
-        : String(p.tag_global || "");
+    const tags = normalizarListaTagsProduto(p.tag_global).join(" ");
+    const tagQtds = p.tag_quantidades && typeof p.tag_quantidades === "object"
+        ? Object.entries(p.tag_quantidades).map(([tag, qtd]) => `${tag} ${qtd}`).join(" ")
+        : "";
 
     return normalizarBuscaProduto([
         p.codigo,
@@ -2309,7 +2408,8 @@ function montarTextoBuscaProduto(p) {
         p.prateleira,
         p.gondola,
         p.localizacao,
-        tags
+        tags,
+        tagQtds
     ].join(" "));
 }
         function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
@@ -2525,6 +2625,370 @@ function escaparHtmlSistema(valor) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 }
+
+
+function escaparAtributoSistema(valor) {
+    return escaparHtmlSistema(valor).replace(/`/g, "&#96;");
+}
+
+function limparHtmlSeguroSistema(html) {
+    const bruto = String(html || "");
+    if (!bruto) return "";
+
+    const template = document.createElement("template");
+    template.innerHTML = bruto;
+
+    const tagsPermitidas = new Set(["B", "STRONG", "I", "EM", "U", "BR", "P", "DIV", "SPAN", "UL", "OL", "LI", "A"]);
+    const attrsPermitidos = new Set(["href", "target", "rel", "class"]);
+
+    function limparNo(no) {
+        Array.from(no.children || []).forEach(child => {
+            if (!tagsPermitidas.has(child.tagName)) {
+                const texto = document.createTextNode(child.textContent || "");
+                child.replaceWith(texto);
+                return;
+            }
+
+            Array.from(child.attributes || []).forEach(attr => {
+                const nome = attr.name.toLowerCase();
+                const valor = String(attr.value || "");
+                if (nome.startsWith("on") || !attrsPermitidos.has(nome)) {
+                    child.removeAttribute(attr.name);
+                    return;
+                }
+                if (nome === "href" && !/^https?:\/\//i.test(valor) && !/^mailto:/i.test(valor) && !/^tel:/i.test(valor)) {
+                    child.removeAttribute(attr.name);
+                    return;
+                }
+                if (nome === "class" && !valor.split(/\s+/).every(c => c === "desc-chip")) {
+                    child.removeAttribute(attr.name);
+                }
+            });
+
+            if (child.tagName === "A") {
+                child.setAttribute("target", "_blank");
+                child.setAttribute("rel", "noopener noreferrer");
+            }
+
+            limparNo(child);
+        });
+    }
+
+    limparNo(template.content);
+    return template.innerHTML;
+}
+
+function normalizarTagNome(valor) {
+    return String(valor || "")
+        .replace(/\u00A0/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toUpperCase();
+}
+
+function normalizarListaTagsProduto(valor) {
+    const saida = [];
+    const adicionar = item => {
+        if (item && typeof item === "object") {
+            const tagObj = normalizarTagNome(item.tag || item.nome || item.name || item.valor || item.value);
+            if (tagObj && !saida.includes(tagObj)) saida.push(tagObj);
+            return;
+        }
+        const tag = normalizarTagNome(item);
+        if (tag && !saida.includes(tag)) saida.push(tag);
+    };
+
+    if (Array.isArray(valor)) valor.forEach(adicionar);
+    else if (valor && typeof valor === "string") valor.split(",").forEach(adicionar);
+    else if (valor && typeof valor === "object") Object.keys(valor).forEach(adicionar);
+
+    return saida;
+}
+
+function normalizarQuantidadesTagsProduto(produto) {
+    if (!produto || typeof produto !== "object") return {};
+    const tags = normalizarListaTagsProduto(produto.tag_global);
+    const base = produto.tag_quantidades && typeof produto.tag_quantidades === "object" && !Array.isArray(produto.tag_quantidades)
+        ? produto.tag_quantidades
+        : {};
+    const baseNormalizado = {};
+    Object.entries(base).forEach(([chave, qtd]) => {
+        const tagBase = normalizarTagNome(chave);
+        if (tagBase) baseNormalizado[tagBase] = qtd;
+    });
+
+    const qtds = {};
+    tags.forEach(tag => {
+        let qtd = parseFloat(baseNormalizado[normalizarTagNome(tag)] ?? 1);
+        if (!Number.isFinite(qtd) || qtd <= 0) qtd = 1;
+        qtds[tag] = qtd;
+    });
+    return qtds;
+}
+
+function normalizarProdutoTagsQuantidade(produto) {
+    if (!produto || typeof produto !== "object") return produto;
+    const tags = normalizarListaTagsProduto(produto.tag_global);
+    produto.tag_global = tags;
+    produto.tag_quantidades = normalizarQuantidadesTagsProduto({ ...produto, tag_global: tags });
+    return produto;
+}
+
+function produtoTemTag(produto, tag) {
+    const alvo = normalizarTagNome(tag);
+    return normalizarListaTagsProduto(produto ? produto.tag_global : []).includes(alvo);
+}
+
+function obterQuantidadeTagProduto(produto, tag) {
+    if (!produto) return 1;
+    normalizarProdutoTagsQuantidade(produto);
+    const alvo = normalizarTagNome(tag);
+    const qtd = parseFloat((produto.tag_quantidades || {})[alvo]);
+    return Number.isFinite(qtd) && qtd > 0 ? qtd : 1;
+}
+
+async function salvarQuantidadeTagProduto(sku, tag, quantidade) {
+    const p = products.find(x => x.codigo === sku);
+    if (!p) return;
+
+    const tagNormalizada = normalizarTagNome(tag);
+    if (!tagNormalizada) return;
+
+    normalizarProdutoTagsQuantidade(p);
+    if (!p.tag_global.includes(tagNormalizada)) p.tag_global.push(tagNormalizada);
+
+    let qtd = parseFloat(String(quantidade || "").replace(",", "."));
+    if (!Number.isFinite(qtd) || qtd <= 0) qtd = 1;
+    p.tag_quantidades[tagNormalizada] = qtd;
+    p.last_update = Date.now();
+
+    await saveDataLocally(false);
+    marcarProdutoParaSincronizacao(p, "upsert");
+    atualizarDashboardResumo();
+}
+
+function montarConfigPIMLocal() {
+    return {
+        versao: 1,
+        atualizado_em: new Date().toISOString(),
+        categorias: Array.isArray(categoriasDoSistema) ? categoriasDoSistema : [],
+        marcas: Array.isArray(marcasDoSistema) ? marcasDoSistema : [],
+        tags_globais: Array.isArray(tagsDoSistema) ? tagsDoSistema.map(normalizarTagNome).filter(Boolean) : []
+    };
+}
+
+async function aplicarConfigPIMRemota(config) {
+    if (!config || typeof config !== "object") return false;
+
+    if (Array.isArray(config.categorias)) {
+        categoriasDoSistema = config.categorias
+            .filter(item => item && typeof item === "object" && item.nome)
+            .map(cat => ({
+                nome: normalizarTagNome(cat.nome),
+                subcategorias: Array.isArray(cat.subcategorias)
+                    ? cat.subcategorias.map(sub => ({
+                        nome: normalizarTagNome(sub.nome),
+                        subsubcategorias: Array.isArray(sub.subsubcategorias)
+                            ? sub.subsubcategorias.map(normalizarTagNome).filter(Boolean)
+                            : []
+                    })).filter(sub => sub.nome)
+                    : []
+            })).filter(cat => cat.nome);
+    }
+
+    if (Array.isArray(config.marcas)) {
+        marcasDoSistema = deduplicarListaSistema(config.marcas.map(limparMarcaProduto).filter(Boolean));
+    }
+
+    if (Array.isArray(config.tags_globais)) {
+        tagsDoSistema = [...new Set(config.tags_globais.map(normalizarTagNome).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    }
+
+    await salvarListasSistemaLocalmente();
+    return true;
+}
+
+async function carregarConfigPIMFirebase() {
+    const config = await FirebaseAPI.lerConfigPIM();
+    if (config) await aplicarConfigPIMRemota(config);
+}
+
+async function salvarConfigPIMFirebaseEGithub(tambemGithub = false) {
+    const config = montarConfigPIMLocal();
+    await FirebaseAPI.salvarConfigPIM(config);
+    await salvarListasSistemaLocalmente();
+
+    if (tambemGithub) {
+        try {
+            await salvarArquivoGithubComRetry(
+                "site/configuracoes-pim.json",
+                JSON.stringify(config, null, 2),
+                "PIM: backup das configurações globais atualizado"
+            );
+        } catch (e) {
+            console.warn("Configurações foram salvas no Firebase, mas falharam no GitHub:", e);
+            mostrarAlerta("Configurações salvas no Firebase, mas o backup no GitHub falhou: " + e.message, "aviso");
+        }
+    }
+
+    return config;
+}
+
+async function salvarBackupConfigPIMNoGithub() {
+    const configFirebase = await FirebaseAPI.lerConfigPIM();
+    const config = configFirebase || montarConfigPIMLocal();
+    await salvarArquivoGithubComRetry(
+        "site/configuracoes-pim.json",
+        JSON.stringify(config, null, 2),
+        "PIM: backup das configurações globais atualizado pelo Firebase"
+    );
+}
+
+function atualizarDashboardResumo() {
+    const el = document.getElementById("dashboard-resumo");
+    if (!el) return;
+    const lista = Array.isArray(products) ? products.filter(p => p && p._deleted !== true) : [];
+    const ativos = lista.filter(p => p.situacao !== "I").length;
+    const semEstoque = lista.filter(p => (parseFloat(p.estoque) || 0) <= 0).length;
+    const semEAN = lista.filter(p => !String(p.gtin || p.ean || "").trim()).length;
+    const semFoto = lista.filter(p => !String(p.url_imagem || "").trim()).length;
+    const pendentes = (typeof produtosPendentesSync !== "undefined" && produtosPendentesSync) ? produtosPendentesSync.size : 0;
+    const tagsUsadas = new Set();
+    lista.forEach(p => normalizarListaTagsProduto(p.tag_global).forEach(t => tagsUsadas.add(t)));
+
+    const kpis = [
+        ["Produtos", lista.length],
+        ["Ativos", ativos],
+        ["Sem estoque", semEstoque],
+        ["Sem EAN", semEAN],
+        ["Sem foto", semFoto],
+        ["Pendentes", pendentes],
+        ["Tags criadas", tagsDoSistema.length],
+        ["Tags em uso", tagsUsadas.size]
+    ];
+
+    el.innerHTML = kpis.map(([rotulo, valor]) => `<div class="admin-kpi"><span>${escaparHtmlSistema(rotulo)}</span><strong>${escaparHtmlSistema(valor)}</strong></div>`).join("");
+}
+
+function atualizarIndiceBuscaProduto(produto) {
+    if (!produto) return;
+    normalizarProdutoTagsQuantidade(produto);
+    produto._searchText = montarTextoBuscaProduto(produto);
+}
+
+function atualizarIndiceBuscaTodosProdutos() {
+    (Array.isArray(products) ? products : []).forEach(atualizarIndiceBuscaProduto);
+}
+
+function validarProdutoAntesSalvar(produto) {
+    if (!produto) return { ok:false, mensagem:"Produto não encontrado." };
+    normalizarProdutoTagsQuantidade(produto);
+
+    if (!String(produto.nome || "").trim()) return { ok:false, mensagem:"Produto sem nome não pode ser salvo." };
+    if (!String(produto.codigo || "").trim()) return { ok:false, mensagem:"Produto sem SKU/código não pode ser salvo." };
+
+    const sku = String(produto.codigo || "").trim();
+    const duplicado = products.find(p => p !== produto && String(p.codigo || "").trim() === sku && p._deleted !== true);
+    if (duplicado) return { ok:false, mensagem:"Existe outro produto com o mesmo SKU/código." };
+
+    const ean = String(produto.gtin || produto.ean || "").replace(/\D/g, "");
+    if (String(produto.gtin || produto.ean || "").trim() && !/^\d{8,14}$/.test(ean)) {
+        return { ok:false, mensagem:"EAN/GTIN deve ter somente números, de 8 a 14 dígitos." };
+    }
+    if (produto.gtin) produto.gtin = ean;
+
+    const ncm = String(produto.ncm || "").replace(/\D/g, "");
+    if (String(produto.ncm || "").trim() && !/^\d{8}$/.test(ncm)) {
+        return { ok:false, mensagem:"NCM deve ter exatamente 8 dígitos numéricos." };
+    }
+    if (produto.ncm) produto.ncm = ncm;
+
+    const preco = parseFloat(produto.preco) || 0;
+    const custo = parseFloat(produto.preco_custo) || 0;
+    const oferta = parseFloat(produto.preco_oferta) || 0;
+    if (oferta > 0 && preco > 0 && oferta >= preco) {
+        return { ok:false, mensagem:"Preço de oferta precisa ser menor que o preço de venda." };
+    }
+    if (custo > 0 && preco > 0 && preco < custo) {
+        const prosseguir = confirm("Atenção: o preço de venda está abaixo do custo. Deseja salvar mesmo assim?");
+        if (!prosseguir) return { ok:false, mensagem:"Salvamento cancelado: venda abaixo do custo." };
+    }
+
+    if (typeof produto.url_imagem === "string" && produto.url_imagem.startsWith("data:image")) {
+        produto.url_imagem = "";
+    }
+
+    produto.descricao = limparHtmlSeguroSistema(produto.descricao || "");
+    atualizarIndiceBuscaProduto(produto);
+
+    return { ok:true };
+}
+
+let cameraEANStream = null;
+let cameraEANLoopAtivo = false;
+
+async function abrirLeitorEANCamera() {
+    const modal = document.getElementById("modal-camera-ean");
+    const video = document.getElementById("camera-video");
+    const status = document.getElementById("camera-status");
+
+    if (!modal || !video) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        mostrarAlerta("Este navegador não liberou acesso à câmera.", "erro");
+        return;
+    }
+    if (!("BarcodeDetector" in window)) {
+        mostrarAlerta("Seu navegador não suporta leitura nativa de código de barras. Use Chrome/Edge atualizado ou digite o EAN.", "aviso");
+        return;
+    }
+
+    try {
+        modal.style.display = "flex";
+        if (status) status.textContent = "Abrindo câmera...";
+        cameraEANStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+        video.srcObject = cameraEANStream;
+        await video.play();
+        cameraEANLoopAtivo = true;
+        if (status) status.textContent = "Aponte a câmera para o código de barras do produto.";
+
+        const detector = new BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"] });
+        const loop = async () => {
+            if (!cameraEANLoopAtivo) return;
+            try {
+                const codigos = await detector.detect(video);
+                if (codigos && codigos.length) {
+                    const valor = String(codigos[0].rawValue || "").replace(/\D/g, "");
+                    if (valor) {
+                        const input = document.getElementById("search-input");
+                        if (input) input.value = valor;
+                        fecharLeitorEANCamera();
+                        executarBuscaSistema(true);
+                        mostrarAlerta("EAN lido: " + valor, "sucesso");
+                        return;
+                    }
+                }
+            } catch (e) {}
+            requestAnimationFrame(loop);
+        };
+        loop();
+        if (typeof lucide !== "undefined") lucide.createIcons();
+    } catch (e) {
+        fecharLeitorEANCamera();
+        mostrarAlerta("Não foi possível abrir a câmera: " + e.message, "erro");
+    }
+}
+
+function fecharLeitorEANCamera() {
+    cameraEANLoopAtivo = false;
+    const modal = document.getElementById("modal-camera-ean");
+    const video = document.getElementById("camera-video");
+    if (cameraEANStream) {
+        cameraEANStream.getTracks().forEach(track => track.stop());
+        cameraEANStream = null;
+    }
+    if (video) video.srcObject = null;
+    if (modal) modal.style.display = "none";
+}
         
         async function carregarListasLocaisDoSistema() {
     try {
@@ -2561,7 +3025,7 @@ function escaparHtmlSistema(valor) {
     try {
         const tg = await localforage.getItem(TAGS_KEY);
         if (Array.isArray(tg)) {
-            tagsDoSistema = tg.map(x => String(x || "").trim().toUpperCase()).filter(Boolean);
+            tagsDoSistema = [...new Set(tg.map(normalizarTagNome).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
         }
     } catch (err) {
         console.warn("Não foi possível carregar tags locais:", err);
@@ -2652,17 +3116,11 @@ function atualizarListasDoSistemaComProdutos() {
 
         adicionarValorUnicoSistema(marcasDoSistema, limparMarcaProduto(p.marca));
 
-        if (Array.isArray(p.tag_global)) {
-            p.tag_global.forEach(tag => {
-                const t = String(tag || "").trim().toUpperCase();
-                if (t && !tagsDoSistema.includes(t)) tagsDoSistema.push(t);
-            });
-        } else if (typeof p.tag_global === "string") {
-            p.tag_global.split(",").forEach(tag => {
-                const t = String(tag || "").trim().toUpperCase();
-                if (t && !tagsDoSistema.includes(t)) tagsDoSistema.push(t);
-            });
-        }
+        normalizarProdutoTagsQuantidade(p);
+        normalizarListaTagsProduto(p.tag_global).forEach(tag => {
+            const t = normalizarTagNome(tag);
+            if (t && !tagsDoSistema.includes(t)) tagsDoSistema.push(t);
+        });
     });
 
     categoriasDoSistema = Array.from(mapaCategorias.values())
@@ -2678,11 +3136,11 @@ function atualizarListasDoSistemaComProdutos() {
         .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
     marcasDoSistema = deduplicarListaSistema(marcasDoSistema).sort((a, b) => a.localeCompare(b, "pt-BR"));
-    tagsDoSistema = [...new Set(tagsDoSistema)].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    tagsDoSistema = [...new Set(tagsDoSistema.map(normalizarTagNome).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
 }
 
 async function salvarListasSistemaLocalmente() {
-    try { await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); } catch (e) {}
+    try { await salvarConfigPIMFirebaseEGithub(false); } catch (e) {}
     try { await localforage.setItem(MARCAS_KEY, marcasDoSistema); } catch (e) {}
     try { await localforage.setItem(TAGS_KEY, tagsDoSistema); } catch (e) {}
 }
@@ -2691,8 +3149,9 @@ async function loadData() {
     modoCarregandoDados = true;
 
     try {
-        // Primeiro carrega listas. Assim os primeiros cards já renderizam com categorias.
+        // Primeiro carrega listas locais e depois tenta buscar a configuração oficial no Firebase.
         await carregarListasLocaisDoSistema();
+        await carregarConfigPIMFirebase();
 
         const cacheLocalProdutos = await carregarCacheLocalProdutos();
 
@@ -2726,6 +3185,7 @@ async function loadData() {
 
         try {
             await carregarListasLocaisDoSistema();
+            await carregarConfigPIMFirebase();
             const cacheLocalProdutos = await carregarCacheLocalProdutos();
             if (cacheLocalProdutos.length > 0) products = cacheLocalProdutos;
         } catch (cacheErr) {
@@ -2762,6 +3222,8 @@ async function loadData() {
         p.subsubcategoria = p.subsubcategoria || "";
         p.marca = limparMarcaProduto(p.marca);
         if (p.tag_global === undefined || p.tag_global === null) p.tag_global = [];
+        normalizarProdutoTagsQuantidade(p);
+        atualizarIndiceBuscaProduto(p);
     });
 
     try {
@@ -2774,6 +3236,7 @@ async function loadData() {
     updateImageBadge();
 
     atualizarListasDoSistemaComProdutos();
+    atualizarIndiceBuscaTodosProdutos();
     await salvarListasSistemaLocalmente();
 
     try {
@@ -2952,46 +3415,58 @@ async function carregarCacheLocalProdutos() {
         }
 
         function gerarCheckboxes(lista, selecionados, sku, campo) {
-            let selecoes = [];
-            if (Array.isArray(selecionados)) {
-                selecoes = selecionados;
-            } else if (selecionados && typeof selecionados === 'string') {
-                selecoes = selecionados.split(',').map(s => s.trim());
+            const produto = products.find(x => x.codigo === sku) || { tag_global: selecionados, tag_quantidades: {} };
+            normalizarProdutoTagsQuantidade(produto);
+            const tagsSelecionadas = normalizarListaTagsProduto(produto[campo]);
+            const listaNormalizada = [...new Set((Array.isArray(lista) ? lista : []).map(normalizarTagNome).filter(Boolean))]
+                .sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+            if (listaNormalizada.length === 0) {
+                return '<span style="font-size:9px; color:var(--text-secondary);">Nenhuma tag global cadastrada</span>';
             }
 
             let html = '';
-            lista.forEach(item => {
-                let isChecked = selecoes.includes(item) ? 'checked' : '';
+            listaNormalizada.forEach(item => {
+                const itemSeguro = escaparAtributoSistema(item);
+                const isChecked = tagsSelecionadas.includes(item);
+                const qtd = obterQuantidadeTagProduto(produto, item);
                 html += `
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; margin-bottom: 4px; cursor:pointer; font-weight: 600; text-transform:none; color: var(--text-primary);">
-                        <input type="checkbox" value="${item}" ${isChecked} onchange="toggleMultiSelect('${sku}', '${campo}', this.value, this.checked)" style="cursor:pointer;">
-                        ${item}
-                    </label>
+                    <div class="tag-qtd-row">
+                        <input type="checkbox" value="${itemSeguro}" ${isChecked ? 'checked' : ''} onchange="toggleMultiSelect('${escaparAtributoSistema(sku)}', '${escaparAtributoSistema(campo)}', this.value, this.checked)" style="cursor:pointer;">
+                        <label title="${itemSeguro}">${escaparHtmlSistema(item)}</label>
+                        <input type="number" min="0.01" step="0.01" class="tag-qtd-input" value="${qtd}" ${isChecked ? '' : 'disabled'} onchange="salvarQuantidadeTagProduto('${escaparAtributoSistema(sku)}', '${itemSeguro}', this.value)" title="Quantidade deste item quando a tag for usada em combos">
+                    </div>
                 `;
             });
-            if(lista.length === 0) html = '<span style="font-size:9px; color:var(--text-secondary);">Nenhuma cadastrada</span>';
+            html += '<span class="tag-qtd-help">Marque a tag e informe quantas unidades deste produto entram quando o site montar combo por tag.</span>';
             return html;
         }
 
         window.toggleMultiSelect = async function(sku, campo, valor, isChecked) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
-            
-            let atual = [];
-            if (Array.isArray(p[campo])) atual = p[campo];
-            else if (p[campo] && typeof p[campo] === 'string') atual = p[campo].split(',').map(s => s.trim());
-            
+
+            const tagNormalizada = normalizarTagNome(valor);
+            if (!tagNormalizada) return;
+
+            normalizarProdutoTagsQuantidade(p);
+            let atual = normalizarListaTagsProduto(p[campo]);
+
             if (isChecked) {
-                if (!atual.includes(valor)) atual.push(valor);
+                if (!atual.includes(tagNormalizada)) atual.push(tagNormalizada);
+                if (!p.tag_quantidades || typeof p.tag_quantidades !== "object") p.tag_quantidades = {};
+                if (!p.tag_quantidades[tagNormalizada]) p.tag_quantidades[tagNormalizada] = 1;
             } else {
-                atual = atual.filter(v => v !== valor);
+                atual = atual.filter(v => v !== tagNormalizada);
+                if (p.tag_quantidades && typeof p.tag_quantidades === "object") delete p.tag_quantidades[tagNormalizada];
             }
-            
-           p[campo] = atual;
-p.last_update = Date.now();
-await saveDataLocally(false);
-marcarProdutoParaSincronizacao(p, "upsert");
-renderGrid(ultimoTermoPesquisa, true);
+
+            p[campo] = atual;
+            normalizarProdutoTagsQuantidade(p);
+            p.last_update = Date.now();
+            await saveDataLocally(false);
+            marcarProdutoParaSincronizacao(p, "upsert");
+            renderGrid(ultimoTermoPesquisa, true);
         }
 
         // ==========================================================
@@ -3172,10 +3647,7 @@ function ordenarProdutosMaisRecentesPrimeiro(lista) {
                     if(advancedFilters.subsub && p.subsubcategoria !== advancedFilters.subsub) return false;
                     if(advancedFilters.marca && !valoresIguaisSistema(p.marca, advancedFilters.marca)) return false;
 
-                    if(advancedFilters.tag) {
-                        let pTags = Array.isArray(p.tag_global) ? p.tag_global : (p.tag_global ? p.tag_global.split(',').map(s=>s.trim()) : []);
-                        if(!pTags.includes(advancedFilters.tag)) return false;
-                    }
+                    if(advancedFilters.tag && !produtoTemTag(p, advancedFilters.tag)) return false;
 
                     const estoqueNum = parseFloat(p.estoque) || 0;
                     if(advancedFilters.stock === 'com_estoque' && estoqueNum <= 0) return false;
@@ -3208,7 +3680,7 @@ function ordenarProdutosMaisRecentesPrimeiro(lista) {
                 const termoNormalizado = normalizarBuscaProduto(searchTerm);
                 const tokens = termoNormalizado.split(' ').filter(Boolean);
                 filtered = filtered.filter(p => {
-                    const textoBusca = montarTextoBuscaProduto(p);
+                    const textoBusca = p._searchText || montarTextoBuscaProduto(p);
                     const codigoCompacto = normalizarBuscaProduto(p.codigo).replace(/\s/g, '');
                     const gtinCompacto = normalizarBuscaProduto(p.gtin || p.ean).replace(/\s/g, '');
                     const termoCompacto = termoNormalizado.replace(/\s/g, '');
@@ -3224,6 +3696,7 @@ function ordenarProdutosMaisRecentesPrimeiro(lista) {
 // A tela respeita a ordem atual do array.
 // Alterar/salvar produto NÃO joga o card para o início.
 produtosFiltrados = Array.isArray(filtered) ? [...filtered] : [];
+            atualizarDashboardResumo();
             gridContainer.innerHTML = "";
 itemsCarregados = 0;
             
@@ -3258,8 +3731,17 @@ const imgUrl = imgPreviewLocal || ((p.url_imagem && p.url_imagem.length > 5)
     : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO');
 
 const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
-                const safeNameForInput = (p.nome || '').replace(/"/g, '&quot;');
-                const safeNomeGoogle = (p.nome || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const skuAttr = escaparAtributoSistema(p.codigo || "");
+                const imgUrlSeguro = escaparAtributoSistema(imgUrl);
+                const safeNameForInput = escaparAtributoSistema(p.nome || "");
+                const safeNomeGoogle = String(p.nome || "").split("\\").join("\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\s+/g, " ");
+                const safeYoutube = escaparAtributoSistema(p.link_youtube || "");
+                const safeGtin = escaparAtributoSistema(p.gtin || "");
+                const safeNcm = escaparAtributoSistema(p.ncm || "");
+                const safeEmbalagem = escaparAtributoSistema(p.embalagem || "");
+                const safeGondola = escaparAtributoSistema(p.gondola || "");
+                const safePrateleira = escaparAtributoSistema(p.prateleira || "");
+                const safeDescricao = limparHtmlSeguroSistema(p.descricao || "");
                 
                 let custo = parseFloat(p.preco_custo) || 0;
                 let venda = parseFloat(p.preco) || 0;
@@ -3280,7 +3762,7 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                     <div style="display: flex; gap: 15px; align-items: stretch;">
                         <div style="width: 100px; display: flex; flex-direction: column; gap: 8px;">
                             <div style="width:100px; height:100px; cursor:pointer; border-radius: 6px; border: 1px solid var(--border); overflow:hidden;" onclick="openCanvasSidebar('${p.codigo}')" title="Clique para editar Foto">
-                                <img src="${imgUrl}" style="object-fit: contain; width: 100%; height: 100%;" onerror="this.src='https://placehold.co/100x100/f4f4f5/ef4444?text=ERRO'">
+                                <img src="${imgUrlSeguro}" style="object-fit: contain; width: 100%; height: 100%;" onerror="this.src='https://placehold.co/100x100/f4f4f5/ef4444?text=ERRO'">
                             </div>
                             <button id="btn-salvar-card-${p.codigo}" class="nav-btn save-card-btn ${pendenteNoCard ? 'pending' : 'saved'}" onclick="salvarProdutoCardManual('${p.codigo}')" title="Salva este produto no Firebase e envia a foto nova/alterada ao GitHub">
                                 <i data-lucide="save" size="12"></i> ${pendenteNoCard ? 'SALVAR CARD' : 'SALVO'}
@@ -3311,7 +3793,7 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                             </div>
                             <div class="field-group">
                                 <label>Link do YouTube</label>
-                                <input type="text" class="form-input card-mini-input" placeholder="Cole o link do vídeo aqui..." value="${p.link_youtube || ''}" onchange="updateField('${p.codigo}', 'link_youtube', this.value)">
+                                <input type="text" class="form-input card-mini-input" placeholder="Cole o link do vídeo aqui..." value="${safeYoutube}" onchange="updateField('${p.codigo}', 'link_youtube', this.value)">
                             </div>
                         </div>
                     </div>
@@ -3337,17 +3819,17 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                             <input type="text" class="form-input card-mini-input" value="${p.codigo || ''}" readonly style="background: #e4e4e7; cursor: not-allowed; color: var(--text-secondary);" title="Código gerado automaticamente"></div>
                             
                         <div class="field-group"><label>EAN / GTIN</label>
-                            <input type="text" class="form-input card-mini-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
+                            <input type="text" class="form-input card-mini-input" value="${safeGtin}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
                         
                         <div class="field-group"><label>NCM</label>
-                            <input type="text" class="form-input card-mini-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)"></div>
+                            <input type="text" class="form-input card-mini-input" value="${safeNcm}" onchange="updateField('${p.codigo}', 'ncm', this.value)"></div>
                         <div class="field-group"><label>Embalagem (Ex: 100ml)</label>
-                            <input type="text" class="form-input card-mini-input" value="${p.embalagem || ''}" onchange="updateField('${p.codigo}', 'embalagem', this.value)"></div>
+                            <input type="text" class="form-input card-mini-input" value="${safeEmbalagem}" onchange="updateField('${p.codigo}', 'embalagem', this.value)"></div>
 
                         <div class="field-group"><label>Gôndola</label>
-                            <input type="text" class="form-input card-mini-input" value="${p.gondola || ''}" onchange="updateField('${p.codigo}', 'gondola', this.value)"></div>
+                            <input type="text" class="form-input card-mini-input" value="${safeGondola}" onchange="updateField('${p.codigo}', 'gondola', this.value)"></div>
                         <div class="field-group"><label>Prateleira</label>
-                            <input type="text" class="form-input card-mini-input" value="${p.prateleira || ''}" onchange="updateField('${p.codigo}', 'prateleira', this.value)"></div>
+                            <input type="text" class="form-input card-mini-input" value="${safePrateleira}" onchange="updateField('${p.codigo}', 'prateleira', this.value)"></div>
 
                         <div class="field-group"><label>Custo (R$)</label>
                             <input type="number" step="0.01" class="form-input card-mini-input" value="${p.preco_custo || 0}" onchange="updateField('${p.codigo}', 'preco_custo', this.value)"></div>
@@ -3399,7 +3881,7 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                             <button type="button" class="editor-btn" onclick="addLink('${p.codigo}')" title="Adicionar Link"><i data-lucide="link" size="10" style="margin-right:2px;"></i> Link</button>
                             <button type="button" class="editor-btn" onclick="addChip('${p.codigo}')" title="Adicionar Chip Linkado"><i data-lucide="tag" size="10" style="margin-right:2px;"></i> Chip</button>
                         </div>
-                        <div class="rich-text-editor" id="desc-${p.codigo}" contenteditable="true" onblur="updateField('${p.codigo}', 'descricao', this.innerHTML)">${p.descricao || ''}</div>
+                        <div class="rich-text-editor" id="desc-${p.codigo}" contenteditable="true" onblur="updateField('${p.codigo}', 'descricao', this.innerHTML)">${safeDescricao}</div>
                     </div>
                 `;
                 gridContainer.appendChild(card);
@@ -3494,10 +3976,47 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
             }
             else if(field === 'marca') {
                 finalVal = limparMarcaProduto(value);
+                const antes = marcasDoSistema.length;
                 if (finalVal) adicionarValorUnicoSistema(marcasDoSistema, finalVal);
                 try { await localforage.setItem(MARCAS_KEY, marcasDoSistema); } catch (e) {}
+                if (marcasDoSistema.length !== antes) salvarConfigPIMFirebaseEGithub(false);
+            }
+            else if(field === 'descricao') {
+                finalVal = limparHtmlSeguroSistema(value);
+            }
+            else if(field === 'gtin') {
+                finalVal = String(value || "").replace(/\D/g, "");
+                if (String(value || "").trim() && !/^\d{8,14}$/.test(finalVal)) {
+                    mostrarAlerta("EAN/GTIN inválido. Use somente números, de 8 a 14 dígitos.", "erro");
+                    return;
+                }
+            }
+            else if(field === 'ncm') {
+                finalVal = String(value || "").replace(/\D/g, "");
+                if (String(value || "").trim() && !/^\d{8}$/.test(finalVal)) {
+                    mostrarAlerta("NCM inválido. Use exatamente 8 dígitos.", "erro");
+                    return;
+                }
+            }
+            else if(field === 'nome') {
+                finalVal = limparTextoSistema(value);
+                if (!finalVal) {
+                    mostrarAlerta("Produto sem nome não pode ser salvo.", "erro");
+                    return;
+                }
+            }
+            else if(typeof value === 'string') {
+                finalVal = limparTextoSistema(value);
             }
 
+            if (field === 'preco_oferta' && finalVal !== "" && parseFloat(p.preco) > 0 && parseFloat(finalVal) >= parseFloat(p.preco)) {
+                mostrarAlerta("A oferta precisa ser menor que o preço de venda.", "erro");
+                return;
+            }
+
+            if (field === 'preco' && parseFloat(finalVal) > 0 && parseFloat(p.preco_custo) > 0 && parseFloat(finalVal) < parseFloat(p.preco_custo)) {
+                if (!confirm("Atenção: o preço de venda ficou abaixo do custo. Deseja manter mesmo assim?")) return;
+            }
 
             if (field === 'preco_oferta') {
                 if (finalVal === "" || parseFloat(finalVal) <= 0) {
@@ -3513,6 +4032,8 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
             }
 
             p[field] = finalVal; 
+            normalizarProdutoTagsQuantidade(p);
+            atualizarIndiceBuscaProduto(p);
             p.last_update = Date.now(); 
             await saveDataLocally(false); 
 
@@ -3612,6 +4133,7 @@ async function deleteProduct(sku) {
         subsubcategoria: "",
         marca: "",
         tag_global: [],
+        tag_quantidades: {},
         url_imagem: "",
         last_update: timestamp
     };
@@ -4842,21 +5364,21 @@ function abrirEditorImagemComboAtual() {
         window.criarNovaCategoria = async function() { 
             const nome = prompt("Nova Categoria:"); if (!nome) return; const nm = nome.toUpperCase().trim(); 
             if(categoriasDoSistema.find(c => c.nome === nm)) return alert("Já existe!"); 
-            categoriasDoSistema.push({ nome: nm, subcategorias: [] }); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); 
+            categoriasDoSistema.push({ nome: nm, subcategorias: [] }); await salvarConfigPIMFirebaseEGithub(false); 
             renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true); 
         }
         window.editarCategoria = async function(cIndex) { 
             const novoNome = prompt("Renomear categoria para:", categoriasDoSistema[cIndex].nome); if (!novoNome) return; 
             const old = categoriasDoSistema[cIndex].nome; const nm = novoNome.toUpperCase().trim(); categoriasDoSistema[cIndex].nome = nm; 
-            products.forEach(p => { if(p.categoria === old) p.categoria = nm; }); 
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); 
+            products.forEach(p => { if(p.categoria === old) { p.categoria = nm; p.last_update = Date.now(); atualizarIndiceBuscaProduto(p); marcarProdutoParaSincronizacao(p, 'upsert'); } }); 
+            await saveDataLocally(); await salvarConfigPIMFirebaseEGithub(false); 
             renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true); 
         }
         window.removerCategoria = async function(cIndex) { 
             if (!confirm(`Apagar a categoria "${categoriasDoSistema[cIndex].nome}" e todos os seus níveis?`)) return; 
             const old = categoriasDoSistema[cIndex].nome; categoriasDoSistema.splice(cIndex, 1); 
-            products.forEach(p => { if(p.categoria === old) { p.categoria = ""; p.subcategoria = ""; p.subsubcategoria = ""; } }); 
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); 
+            products.forEach(p => { if(p.categoria === old) { p.categoria = ""; p.subcategoria = ""; p.subsubcategoria = ""; p.last_update = Date.now(); atualizarIndiceBuscaProduto(p); marcarProdutoParaSincronizacao(p, 'upsert'); } }); 
+            await saveDataLocally(); await salvarConfigPIMFirebaseEGithub(false); 
             renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true); 
         }
 
@@ -4866,19 +5388,19 @@ function abrirEditorImagemComboAtual() {
             if (!categoriasDoSistema[cIndex].subcategorias) categoriasDoSistema[cIndex].subcategorias = [];
             if (categoriasDoSistema[cIndex].subcategorias.find(s => s.nome === nm)) return alert("Já existe nesta categoria!");
             categoriasDoSistema[cIndex].subcategorias.push({ nome: nm, subsubcategorias: [] }); 
-            await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias();
+            await salvarConfigPIMFirebaseEGithub(false); renderizarSidebarCategorias();
         }
         window.editarSubcategoria = async function(cIndex, sIndex) {
             const old = categoriasDoSistema[cIndex].subcategorias[sIndex].nome; const novoNome = prompt("Renomear subcategoria para:", old); if (!novoNome) return;
             const nm = novoNome.toUpperCase().trim(); categoriasDoSistema[cIndex].subcategorias[sIndex].nome = nm; const catName = categoriasDoSistema[cIndex].nome;
-            products.forEach(p => { if(p.categoria === catName && p.subcategoria === old) p.subcategoria = nm; });
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
+            products.forEach(p => { if(p.categoria === catName && p.subcategoria === old) { p.subcategoria = nm; p.last_update = Date.now(); atualizarIndiceBuscaProduto(p); marcarProdutoParaSincronizacao(p, 'upsert'); } });
+            await saveDataLocally(); await salvarConfigPIMFirebaseEGithub(false); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
         }
         window.removerSubcategoria = async function(cIndex, sIndex) {
             const old = categoriasDoSistema[cIndex].subcategorias[sIndex].nome; if (!confirm(`Apagar a subcategoria "${old}" e seus níveis?`)) return;
             const catName = categoriasDoSistema[cIndex].nome; categoriasDoSistema[cIndex].subcategorias.splice(sIndex, 1);
-            products.forEach(p => { if(p.categoria === catName && p.subcategoria === old) { p.subcategoria = ""; p.subsubcategoria = ""; }});
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
+            products.forEach(p => { if(p.categoria === catName && p.subcategoria === old) { p.subcategoria = ""; p.subsubcategoria = ""; p.last_update = Date.now(); atualizarIndiceBuscaProduto(p); marcarProdutoParaSincronizacao(p, 'upsert'); }});
+            await saveDataLocally(); await salvarConfigPIMFirebaseEGithub(false); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
         }
 
         window.criarNovaSubSubcategoria = async function(cIndex, sIndex) {
@@ -4888,23 +5410,82 @@ function abrirEditorImagemComboAtual() {
             if (!pai.subsubcategorias) pai.subsubcategorias = [];
             if (pai.subsubcategorias.includes(nm)) return alert("Já existe nesta subcategoria!");
             pai.subsubcategorias.push(nm); 
-            await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias();
+            await salvarConfigPIMFirebaseEGithub(false); renderizarSidebarCategorias();
         }
         window.editarSubSubcategoria = async function(cIndex, sIndex, ssIndex) {
             const pai = categoriasDoSistema[cIndex].subcategorias[sIndex];
             const old = pai.subsubcategorias[ssIndex]; const novoNome = prompt("Renomear sub-subcategoria para:", old); if (!novoNome) return;
             const nm = novoNome.toUpperCase().trim(); pai.subsubcategorias[ssIndex] = nm; 
             const catName = categoriasDoSistema[cIndex].nome; const subName = pai.nome;
-            products.forEach(p => { if(p.categoria === catName && p.subcategoria === subName && p.subsubcategoria === old) p.subsubcategoria = nm; });
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
+            products.forEach(p => { if(p.categoria === catName && p.subcategoria === subName && p.subsubcategoria === old) { p.subsubcategoria = nm; p.last_update = Date.now(); atualizarIndiceBuscaProduto(p); marcarProdutoParaSincronizacao(p, 'upsert'); } });
+            await saveDataLocally(); await salvarConfigPIMFirebaseEGithub(false); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
         }
         window.removerSubSubcategoria = async function(cIndex, sIndex, ssIndex) {
             const pai = categoriasDoSistema[cIndex].subcategorias[sIndex];
             const old = pai.subsubcategorias[ssIndex]; if (!confirm(`Apagar a sub-subcategoria "${old}"?`)) return;
             const catName = categoriasDoSistema[cIndex].nome; const subName = pai.nome;
             pai.subsubcategorias.splice(ssIndex, 1);
-            products.forEach(p => { if(p.categoria === catName && p.subcategoria === subName && p.subsubcategoria === old) p.subsubcategoria = ""; });
-            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
+            products.forEach(p => { if(p.categoria === catName && p.subcategoria === subName && p.subsubcategoria === old) { p.subsubcategoria = ""; p.last_update = Date.now(); atualizarIndiceBuscaProduto(p); marcarProdutoParaSincronizacao(p, 'upsert'); } });
+            await saveDataLocally(); await salvarConfigPIMFirebaseEGithub(false); renderizarSidebarCategorias(); renderGrid(ultimoTermoPesquisa, true);
+        }
+
+
+        function registrarProdutosAlteradosPorSelector(produtosAlterados) {
+            const agora = Date.now();
+            (produtosAlterados || []).forEach(produto => {
+                if (!produto) return;
+                normalizarProdutoTagsQuantidade(produto);
+                atualizarIndiceBuscaProduto(produto);
+                produto.last_update = agora;
+                marcarProdutoParaSincronizacao(produto, "upsert");
+            });
+            atualizarDashboardResumo();
+        }
+
+        function aplicarAlteracaoSelectorNosProdutos(prop, antigo, novoValor, acao) {
+            const alterados = [];
+            const oldNorm = normalizarTagNome(antigo);
+            const novoNorm = normalizarTagNome(novoValor);
+
+            products.forEach(p => {
+                let mudou = false;
+
+                if (prop === "tag_global") {
+                    normalizarProdutoTagsQuantidade(p);
+                    let tags = normalizarListaTagsProduto(p.tag_global);
+                    if (acao === "remover") {
+                        if (tags.includes(oldNorm)) {
+                            tags = tags.filter(t => t !== oldNorm);
+                            if (p.tag_quantidades) delete p.tag_quantidades[oldNorm];
+                            mudou = true;
+                        }
+                    } else if (acao === "renomear" && oldNorm && novoNorm) {
+                        if (tags.includes(oldNorm)) {
+                            tags = tags.map(t => t === oldNorm ? novoNorm : t);
+                            p.tag_quantidades = p.tag_quantidades || {};
+                            const qtdAntiga = p.tag_quantidades[oldNorm] || 1;
+                            delete p.tag_quantidades[oldNorm];
+                            p.tag_quantidades[novoNorm] = qtdAntiga;
+                            mudou = true;
+                        }
+                    }
+                    p.tag_global = [...new Set(tags)];
+                    normalizarProdutoTagsQuantidade(p);
+                } else if (prop === "marca") {
+                    if (acao === "remover" && valoresIguaisSistema(p.marca, antigo)) {
+                        p.marca = "";
+                        mudou = true;
+                    } else if (acao === "renomear" && valoresIguaisSistema(p.marca, antigo)) {
+                        p.marca = limparMarcaProduto(novoValor);
+                        mudou = true;
+                    }
+                }
+
+                if (mudou) alterados.push(p);
+            });
+
+            registrarProdutosAlteradosPorSelector(alterados);
+            return alterados.length;
         }
 
         // ==========================================================
@@ -4914,7 +5495,7 @@ function abrirEditorImagemComboAtual() {
             const container = document.getElementById(`lista-${containerId}`); container.innerHTML = "";
             lista.sort((a, b) => a.localeCompare(b));
             lista.forEach((item, index) => {
-                container.innerHTML += `<div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; margin-bottom:8px;"><div style="display: flex; justify-content: space-between; align-items: center;"><strong style="color:var(--accent); font-size:13px; flex-grow:1;">${item}</strong><div style="display:flex; gap:6px;"><button class="btn-smart" style="height:28px; width:28px;" onclick="editarItem('${containerId}', ${index})"><i data-lucide="edit-2" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerItem('${containerId}', ${index})"><i data-lucide="trash-2" size="12"></i></button></div></div></div>`;
+                container.innerHTML += `<div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; margin-bottom:8px;"><div style="display: flex; justify-content: space-between; align-items: center;"><strong style="color:var(--accent); font-size:13px; flex-grow:1;">${escaparHtmlSistema(item)}</strong><div style="display:flex; gap:6px;"><button class="btn-smart" style="height:28px; width:28px;" onclick="editarItem('${containerId}', ${index})"><i data-lucide="edit-2" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerItem('${containerId}', ${index})"><i data-lucide="trash-2" size="12"></i></button></div></div></div>`;
             }); lucide.createIcons();
         }
 
@@ -4933,7 +5514,7 @@ function abrirEditorImagemComboAtual() {
                 : lista.includes(nm);
             if(jaExiste) return alert("Já existe!");
             if (isMarca) adicionarValorUnicoSistema(lista, nm); else lista.push(nm);
-            await localforage.setItem(storageKey, lista); renderizarCRUD(lista, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
+            await salvarConfigPIMFirebaseEGithub(false); renderizarCRUD(lista, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
         }
 
       window.editarItem = async function(sidebarId, index) { 
@@ -4945,281 +5526,27 @@ function abrirEditorImagemComboAtual() {
             if (!nm) return;
             obj.arr[index] = nm;
             obj.arr = deduplicarListaSistema(obj.arr);
-            if (isMarca) marcasDoSistema = obj.arr;
+            if (isMarca) marcasDoSistema = obj.arr; else tagsDoSistema = obj.arr;
+            const alterados = aplicarAlteracaoSelectorNosProdutos(obj.prop, old, nm, "renomear");
+            if (alterados > 0) mostrarAlerta(`${alterados} produto(s) marcados para sincronizar com a nova configuração.`, "aviso");
             
-            products.forEach(p => { 
-                if (Array.isArray(p[obj.prop])) {
-                    let idx = p[obj.prop].findIndex(valor => isMarca ? valoresIguaisSistema(valor, old) : valor === old);
-                    if (idx > -1) p[obj.prop][idx] = nm; 
-                } else if (isMarca ? valoresIguaisSistema(p[obj.prop], old) : p[obj.prop] === old) {
-                    p[obj.prop] = nm; 
-                }
-            }); 
-            
-            await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
+            await saveDataLocally(); await salvarConfigPIMFirebaseEGithub(false); renderizarCRUD(obj.arr, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
         }
 
         window.removerItem = async function(sidebarId, index) { 
             const obj = getListaByKey(sidebarId); if (!confirm(`Apagar "${obj.arr[index]}"?`)) return; 
             const isMarca = obj.prop === 'marca';
             const old = obj.arr[index]; obj.arr.splice(index, 1);
-            if (isMarca) marcasDoSistema = obj.arr;
+            if (isMarca) marcasDoSistema = obj.arr; else tagsDoSistema = obj.arr;
+            const alterados = aplicarAlteracaoSelectorNosProdutos(obj.prop, old, "", "remover");
+            if (alterados > 0) mostrarAlerta(`${alterados} produto(s) marcados para sincronizar após remover o item.`, "aviso");
             
-            products.forEach(p => { 
-                if (Array.isArray(p[obj.prop])) {
-                    p[obj.prop] = p[obj.prop].filter(t => isMarca ? !valoresIguaisSistema(t, old) : t !== old); 
-                } else if (isMarca ? valoresIguaisSistema(p[obj.prop], old) : p[obj.prop] === old) {
-                    p[obj.prop] = ""; 
-                }
-            }); 
-            
-            await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
+            await saveDataLocally(); await salvarConfigPIMFirebaseEGithub(false); renderizarCRUD(obj.arr, sidebarId); renderGrid(ultimoTermoPesquisa, true); 
         }
 
-      // ==========================================================
-// COLAR PEDIDO E ENVIAR PARA PEDIDOSEPARAR.JSON
-// NÃO ABATE ESTOQUE
-// NÃO GERA CSV DO BLING
-// MODELO COMPATÍVEL COM PEDIDO VIA WHATSAPP/SITE
-// ==========================================================
-async function processarBaixaPedidoTexto() {
-    const textarea = document.getElementById('order-text-input');
-    const textoOriginal = textarea ? textarea.value : "";
-
-    if (!textoOriginal || !textoOriginal.trim()) {
-        alert("Por favor, cole o texto do pedido primeiro.");
-        return;
-    }
-
-    function limparMarcacaoPedido(txt) {
-        return String(txt || "")
-            .replace(/\*/g, "")
-            .replace(/\u00A0/g, " ")
-            .trim();
-    }
-
-    function extrairCampoPedido(texto, rotulo) {
-        const regex = new RegExp("^" + rotulo + "\\s*:\\s*(.+)$", "im");
-        const match = texto.match(regex);
-        return match ? limparMarcacaoPedido(match[1]) : "";
-    }
-
-    function extrairLinhaPorRegex(texto, regex) {
-        const match = texto.match(regex);
-        return match ? limparMarcacaoPedido(match[1]) : "";
-    }
-
-    const textoLimpo = limparMarcacaoPedido(textoOriginal);
-
-    const numeroPedido = extrairLinhaPorRegex(
-        textoLimpo,
-        /PEDIDO\s*#?\s*(\d+)/i
-    ) || Date.now().toString().slice(-6);
-
-    const totalPedido = extrairLinhaPorRegex(
-        textoLimpo,
-        /TOTAL\s*:\s*R\$\s*([0-9.,]+)/i
-    );
-
-    const dadosCliente = {
-        nome: extrairCampoPedido(textoLimpo, "Nome"),
-        cpf: extrairCampoPedido(textoLimpo, "CPF"),
-        telefone: extrairCampoPedido(textoLimpo, "Telefone\\/WhatsApp"),
-        email: extrairCampoPedido(textoLimpo, "E-mail"),
-        endereco: extrairCampoPedido(textoLimpo, "Endereço"),
-        detalhes: extrairCampoPedido(textoLimpo, "Detalhes"),
-        agendamento: extrairLinhaPorRegex(textoLimpo, /Agendamento\s*:\s*(.+)$/im),
-        pagamento: extrairLinhaPorRegex(textoLimpo, /Pagamento\s*:\s*(.+)$/im)
-    };
-
-    const linhas = textoLimpo.split(/\r?\n/);
-
-    let dentroDosItens = false;
-    let encontrados = 0;
-    let falhas = [];
-    let itensParaSeparacao = [];
-
-    linhas.forEach(linha => {
-        const linhaLimpa = limparMarcacaoPedido(linha);
-
-        if (!linhaLimpa || linhaLimpa.includes("----------------")) {
-            return;
-        }
-
-        if (/ITENS SELECIONADOS/i.test(linhaLimpa)) {
-            dentroDosItens = true;
-            return;
-        }
-
-        if (/RESUMO DE VALORES/i.test(linhaLimpa)) {
-            dentroDosItens = false;
-            return;
-        }
-
-        if (!dentroDosItens) {
-            return;
-        }
-
-        // Aceita:
-        // 1x Arroz tio Alvino 5 kg
-        // 1 x Arroz tio Alvino 5 kg
-        // 1 Arroz tio Alvino 5 kg
-        const matchItem = linhaLimpa.match(/^(\d+)\s*x?\s+(.+)$/i);
-
-        if (!matchItem) {
-            return;
-        }
-
-        const quantidade = parseInt(matchItem[1], 10);
-        const nomeItemPedido = limparMarcacaoPedido(matchItem[2]);
-
-        if (!quantidade || quantidade <= 0 || !nomeItemPedido) {
-            return;
-        }
-
-        const nomeProcuradoNormalizado = limparTexto(nomeItemPedido);
-
-        let produtoEncontrado = products.find(prod => {
-            const nomeBancoNormalizado = limparTexto(prod.nome || "");
-            return nomeBancoNormalizado === nomeProcuradoNormalizado;
-        });
-
-        // Busca alternativa mais flexível:
-        // ajuda quando o pedido vem com pequenas diferenças de espaço, acento ou embalagem.
-        if (!produtoEncontrado) {
-            produtoEncontrado = products.find(prod => {
-                const nomeBancoNormalizado = limparTexto(prod.nome || "");
-                return (
-                    nomeBancoNormalizado.includes(nomeProcuradoNormalizado) ||
-                    nomeProcuradoNormalizado.includes(nomeBancoNormalizado)
-                );
-            });
-        }
-
-        if (produtoEncontrado) {
-            encontrados++;
-
-            itensParaSeparacao.push({
-                encontrado_no_banco: true,
-                id_produto: produtoEncontrado.id || "",
-                codigo: produtoEncontrado.codigo || "",
-                sku: produtoEncontrado.codigo || "",
-                nome: produtoEncontrado.nome || nomeItemPedido,
-                nome_digitado_no_pedido: nomeItemPedido,
-                quantidade: quantidade,
-                gtin: produtoEncontrado.gtin || "",
-                ean: produtoEncontrado.gtin || "",
-                url_imagem: produtoEncontrado.url_imagem || "",
-                gondola: produtoEncontrado.gondola || "Z-Sem Gôndola",
-                prateleira: produtoEncontrado.prateleira || "-",
-                localizacao: produtoEncontrado.localizacao || "",
-                categoria: produtoEncontrado.categoria || "",
-                subcategoria: produtoEncontrado.subcategoria || "",
-                subsubcategoria: produtoEncontrado.subsubcategoria || "",
-                marca: produtoEncontrado.marca || "",
-                embalagem: produtoEncontrado.embalagem || "",
-                status: "pendente"
-            });
-        } else {
-            falhas.push({
-                encontrado_no_banco: false,
-                nome_digitado_no_pedido: nomeItemPedido,
-                quantidade: quantidade,
-                status: "nao_encontrado"
-            });
-        }
-    });
-
-    if (itensParaSeparacao.length === 0 && falhas.length === 0) {
-        alert("❌ Nenhum item foi identificado no bloco *ITENS SELECIONADOS*.");
-        return;
-    }
-
-    try {
-        mostrarAlerta("Enviando pedido para separação...", "aviso");
-
-        await enqueueTask(`Lista de Separação #${numeroPedido}`, async () => {
-            const novoPedido = {
-                id: String(numeroPedido),
-                numero_pedido: String(numeroPedido),
-                origem: "pedido_colado_pim",
-                status: "pendente",
-                criado_em: new Date().toISOString(),
-
-                cliente: dadosCliente,
-
-                entrega: {
-                    endereco: dadosCliente.endereco,
-                    detalhes: dadosCliente.detalhes,
-                    agendamento: dadosCliente.agendamento
-                },
-
-                pagamento: {
-                    forma: dadosCliente.pagamento,
-                    total_texto: totalPedido ? "R$ " + totalPedido : "",
-                    total_numero: totalPedido
-                        ? parseFloat(totalPedido.replace(/\./g, "").replace(",", "."))
-                        : 0
-                },
-
-                resumo: {
-                    total_itens_lidos: itensParaSeparacao.length + falhas.length,
-                    total_itens_encontrados: itensParaSeparacao.length,
-                    total_itens_nao_encontrados: falhas.length
-                },
-
-                itens: itensParaSeparacao,
-                itens_nao_encontrados: falhas,
-
-                texto_original: textoOriginal
-            };
-
-            let pedidosSeparacao = [];
-
-            try {
-                const fileData = await GitHubAPI.getFileData('site/pedidoseparar.json');
-
-                if (fileData && fileData.content) {
-                    const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
-                    const dadosExistentes = JSON.parse(decodedStr);
-
-                    pedidosSeparacao = Array.isArray(dadosExistentes) ? dadosExistentes : [];
-                }
-            } catch (e) {
-                console.log("Arquivo pedidoseparar.json não encontrado ou inválido. Será criado um novo.");
-                pedidosSeparacao = [];
-            }
-
-            pedidosSeparacao.push(novoPedido);
-
-            await GitHubAPI.saveFile(
-                'site/pedidoseparar.json',
-                pedidosSeparacao,
-                `Adicionado Pedido #${numeroPedido} para separação`
-            );
-        }, true, 60000);
-
-        let msg = `✅ Pedido #${numeroPedido} enviado para separação.\n\n`;
-        msg += `Produtos encontrados: ${encontrados}\n`;
-        msg += `Itens não encontrados: ${falhas.length}\n\n`;
-        msg += `O estoque NÃO foi abatido.\n`;
-        msg += `CSV do Bling NÃO foi gerado.`;
-
-        if (falhas.length > 0) {
-            msg += `\n\n⚠️ Itens não encontrados:\n`;
-            msg += falhas.map(item => `- ${item.quantidade}x ${item.nome_digitado_no_pedido}`).join("\n");
-        }
-
-        alert(msg);
-
-        closeSidebar('pedidos-sidebar');
-        textarea.value = "";
-
-    } catch (error) {
-        console.error("Erro ao enviar pedido para separação:", error);
-        alert("❌ Erro ao enviar pedido para separação: " + error.message);
-    }
-}
+        // ==========================================================
+        // MÓDULO DE PEDIDO POR TEXTO REMOVIDO A PEDIDO DO USUÁRIO
+        // ==========================================================
 
         // ==========================================================
         // LIMPEZA INTELIGENTE DE IMAGENS DO GITHUB (SEGURA)
@@ -5509,8 +5836,9 @@ async function processarBaixaPedidoTexto() {
             ativos.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
             
             const catalogo = ativos.map(p => {
-                let tags = p.tag_global || "";
-                if (Array.isArray(tags)) tags = tags.join(", ");
+                normalizarProdutoTagsQuantidade(p);
+                let tags = normalizarListaTagsProduto(p.tag_global).join(", ");
+                let tagsQtd = Object.entries(p.tag_quantidades || {}).map(([tag, qtd]) => `${tag}:${qtd}`).join(", ");
 
                 return {
                     "NOME": p.nome || "",
@@ -5522,6 +5850,7 @@ async function processarBaixaPedidoTexto() {
                     "SUBCATEGORIA": p.subcategoria || "",
                     "SUBSUB CATEGORIA": p.subsubcategoria || "",
                     "TAG GLOBAL": tags,
+                    "TAG QUANTIDADES": tagsQtd,
                     "EMBALAGEM": p.embalagem || "",
                     "LINK DA IMAGEM": (p.url_imagem && typeof p.url_imagem === 'string' && p.url_imagem.includes('../')) ? p.url_imagem.split('?')[0].replace("../", "https://donaantonia.com.br/") : (p.url_imagem ? p.url_imagem.split('?')[0] : "")
                 };
