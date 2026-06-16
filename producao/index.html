@@ -609,6 +609,39 @@
             return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
         }
 
+        // Formatação padrão de valores em Real usada nos cards e relatórios.
+        // Mantida global para evitar erro de renderização quando a tela carrega produtos do Firebase.
+        function dinheiroBR(valor) {
+            let numero = 0;
+
+            if (typeof valor === "number") {
+                numero = valor;
+            } else if (typeof valor === "string") {
+                const limpo = valor
+                    .replace(/R\$/gi, "")
+                    .replace(/BRL/gi, "")
+                    .trim();
+
+                if (limpo.includes(",") && limpo.includes(".")) {
+                    numero = parseFloat(limpo.replace(/\./g, "").replace(",", "."));
+                } else if (limpo.includes(",")) {
+                    numero = parseFloat(limpo.replace(",", "."));
+                } else {
+                    numero = parseFloat(limpo);
+                }
+            } else {
+                numero = parseFloat(valor);
+            }
+
+            if (!Number.isFinite(numero)) numero = 0;
+
+            return numero.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL"
+            });
+        }
+        window.dinheiroBR = dinheiroBR;
+
         // Funções de Pesquisa no Google
         window.searchGoogleNCM = function(nome) { 
             if(!nome) return; 
