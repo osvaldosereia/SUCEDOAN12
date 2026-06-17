@@ -14261,6 +14261,465 @@ renderInicio = function() {
 })();
 
 
+
+
+
+/* =========================================================
+   PATCH 2026-06-17 - CAMPANHAS INTELIGENTES DE CUPOM
+   Gatilhos: beleza e café da manhã.
+   Não usa cookies de terceiros; usa somente comportamento dentro do site.
+   ========================================================= */
+(function campanhasInteligentesCupomDA() {
+    const SMART_COUPON_STORAGE_KEY_DA = 'dona_antonia_cupom_contextual_v2';
+    const SMART_COUPON_DISMISS_KEY_DA = 'dona_antonia_cupom_contextual_recusado_v2';
+    const SMART_COUPON_DISMISS_MS_DA = 1000 * 60 * 60 * 12;
+
+    const SMART_COUPON_CAMPAIGNS_DA = {
+        BELEZA20: {
+            codigo: 'BELEZA20',
+            desconto: 20,
+            grupo: 'beleza',
+            titulo: 'Você desbloqueou 20% OFF em beleza',
+            texto: 'Ative agora e veja produtos Nivea, Dove, Garnier, Monange, Lola, Enoar, Hidramais, Carmed, Niely e Seda com desconto no carrinho.',
+            botao: 'Ativar desconto',
+            rota: '#/campanha-cupom/BELEZA20',
+            marcas: ['Nivea', 'Dove', 'Garnier', 'Monange', 'Lola', 'Enoar', 'Inoar', 'Hidramais', 'Carmed', 'Niely', 'Seda'],
+            gatilhos: ['beleza', 'higiene', 'higiene pessoal', 'sabonete', 'shampoo', 'cabelo', 'condicionador', 'hidratante', 'creme', 'cosmetico', 'cosmeticos', 'perfumaria', 'facial', 'corporal', 'desodorante', 'tratamento']
+        },
+        CAFE20: {
+            codigo: 'CAFE20',
+            desconto: 20,
+            grupo: 'cafe_da_manha',
+            titulo: 'Você desbloqueou 20% OFF no café da manhã',
+            texto: 'Ative agora e veja produtos Nescau, Toddy, Nestlé e Lacta com desconto no carrinho.',
+            botao: 'Ativar desconto',
+            rota: '#/campanha-cupom/CAFE20',
+            marcas: ['Nescau', 'Toddy', 'Nestle', 'Nestlé', 'Lacta'],
+            gatilhos: ['cafe da manha', 'café da manhã', 'matinal', 'achocolatado', 'cereal', 'cereais', 'biscoito', 'bolacha', 'leite', 'chocolate em po', 'chocolate em pó']
+        }
+    };
+
+    window.SMART_COUPON_CAMPAIGNS_DA = SMART_COUPON_CAMPAIGNS_DA;
+
+    try { localStorage.removeItem('dona_antonia_cupons_ativos_v1'); } catch (e) {}
+
+    function normalizarSmartCupomDA(valor) {
+        return String(valor || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function codigoSmartCupomDA(valor) {
+        return String(valor || '').trim().toUpperCase().replace(/\s+/g, '');
+    }
+
+    function produtoTextoSmartCupomDA(prod) {
+        return normalizarSmartCupomDA([
+            prod && prod.categoria,
+            prod && prod.subcategoria,
+            prod && prod.subsubcategoria,
+            prod && prod.marca,
+            prod && (prod.name || prod.nome),
+            prod && prod.embalagem,
+            prod && prod.descricao
+        ].filter(Boolean).join(' '));
+    }
+
+    function produtoBateGatilhoSmartCupomDA(prod, campanha) {
+        if (!prod || !campanha) return false;
+        if (prod.categoria === 'Cestas' || prod.isComboDiscount || prod.hiddenFromCatalog) return false;
+        const texto = produtoTextoSmartCupomDA(prod);
+        return (campanha.gatilhos || []).some(gatilho => {
+            const termo = normalizarSmartCupomDA(gatilho);
+            return termo && texto.includes(termo);
+        });
+    }
+
+    function produtoBateMarcaSmartCupomDA(prod, campanha) {
+        if (!prod || !campanha) return false;
+        if (prod.categoria === 'Cestas' || prod.isComboDiscount || prod.hiddenFromCatalog) return false;
+        if (Number(prod.stock || 0) <= 0) return false;
+
+        const marcaProduto = normalizarSmartCupomDA(prod.marca || '');
+        const textoProduto = produtoTextoSmartCupomDA(prod);
+
+        return (campanha.marcas || []).some(marca => {
+            const termo = normalizarSmartCupomDA(marca);
+            if (!termo) return false;
+            return marcaProduto === termo || marcaProduto.includes(termo) || textoProduto.includes(termo);
+        });
+    }
+
+    function campanhaJaRecusadaSmartCupomDA(codigo) {
+        try {
+            const dados = JSON.parse(localStorage.getItem(SMART_COUPON_DISMISS_KEY_DA) || '{}');
+            const recusadoEm = Number(dados[codigo] || 0);
+            return recusadoEm && Date.now() - recusadoEm < SMART_COUPON_DISMISS_MS_DA;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function salvarRecusaSmartCupomDA(codigo) {
+        try {
+            const dados = JSON.parse(localStorage.getItem(SMART_COUPON_DISMISS_KEY_DA) || '{}');
+            dados[codigo] = Date.now();
+            localStorage.setItem(SMART_COUPON_DISMISS_KEY_DA, JSON.stringify(dados));
+        } catch (e) {}
+    }
+
+    function cupomAtualSmartCupomDA() {
+        return codigoSmartCupomDA(STATE && STATE.cupomAplicadoCodigo);
+    }
+
+    function existeCupomNoJsonSmartCupomDA(codigo) {
+        const alvo = codigoSmartCupomDA(codigo);
+        return (STATE.cuponsAtivos || []).some(c => codigoSmartCupomDA(c.codigo) === alvo && c.ativo !== false);
+    }
+
+    function garantirEstiloSmartCupomDA() {
+        if (document.getElementById('smart-coupon-style-da')) return;
+        const style = document.createElement('style');
+        style.id = 'smart-coupon-style-da';
+        style.textContent = `
+            .smart-coupon-banner-da {
+                position: fixed;
+                left: 12px;
+                right: 12px;
+                bottom: max(88px, calc(88px + env(safe-area-inset-bottom)));
+                z-index: 2600;
+                background: #0f172a;
+                color: #ffffff;
+                border-radius: 22px;
+                padding: 16px;
+                box-shadow: 0 18px 42px rgba(15, 23, 42, 0.30);
+                transform: translateY(140%);
+                opacity: 0;
+                pointer-events: none;
+                transition: transform .28s ease, opacity .28s ease;
+                border: 1px solid rgba(255,255,255,.12);
+            }
+            .smart-coupon-banner-da.active {
+                transform: translateY(0);
+                opacity: 1;
+                pointer-events: auto;
+            }
+            .smart-coupon-banner-da strong {
+                display:block;
+                font-size: 16px;
+                line-height: 1.2;
+                margin-bottom: 5px;
+                font-weight: 950;
+                letter-spacing: -0.03em;
+            }
+            .smart-coupon-banner-da p {
+                margin: 0;
+                color: rgba(255,255,255,.82);
+                font-size: 13px;
+                line-height: 1.38;
+                font-weight: 650;
+            }
+            .smart-coupon-actions-da {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 8px;
+                margin-top: 13px;
+            }
+            .smart-coupon-btn-da {
+                border: 0;
+                border-radius: 999px;
+                padding: 12px 14px;
+                font-weight: 950;
+                cursor: pointer;
+                font-size: 13px;
+            }
+            .smart-coupon-btn-da.primary {
+                background: #22c55e;
+                color: #052e16;
+            }
+            .smart-coupon-btn-da.secondary {
+                background: rgba(255,255,255,.10);
+                color: #ffffff;
+                min-width: 84px;
+            }
+            .smart-coupon-hero-da {
+                background: linear-gradient(135deg, #0f172a 0%, #14532d 100%);
+                color: #ffffff;
+                border-radius: 22px;
+                padding: 22px 18px;
+                margin: 0 0 12px 0;
+                box-shadow: 0 10px 28px rgba(15, 23, 42, .14);
+            }
+            .smart-coupon-hero-da h1 {
+                font-size: 22px;
+                line-height: 1.12;
+                margin: 0 0 8px;
+                letter-spacing: -0.04em;
+            }
+            .smart-coupon-hero-da p {
+                margin: 0;
+                color: rgba(255,255,255,.84);
+                font-weight: 700;
+                line-height: 1.42;
+                font-size: 13.5px;
+            }
+            .smart-coupon-pill-da {
+                display:inline-flex;
+                align-items:center;
+                gap:6px;
+                background:#dcfce7;
+                color:#14532d;
+                border-radius:999px;
+                padding:7px 11px;
+                font-weight:950;
+                font-size:12px;
+                margin-bottom:12px;
+            }
+            @media (min-width: 768px) {
+                .smart-coupon-banner-da {
+                    left: auto;
+                    right: 26px;
+                    bottom: 26px;
+                    width: 420px;
+                }
+                .smart-coupon-hero-da h1 { font-size: 28px; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function garantirBannerSmartCupomDA() {
+        garantirEstiloSmartCupomDA();
+        let banner = document.getElementById('smart-coupon-banner-da');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'smart-coupon-banner-da';
+            banner.className = 'smart-coupon-banner-da';
+            document.body.appendChild(banner);
+        }
+        return banner;
+    }
+
+    function mostrarBannerSmartCupomDA(campanha, produtoOrigem) {
+        if (!campanha || !campanha.codigo) return;
+        if (cupomAtualSmartCupomDA()) return;
+        if (campanhaJaRecusadaSmartCupomDA(campanha.codigo)) return;
+
+        const banner = garantirBannerSmartCupomDA();
+        const nomeProduto = produtoOrigem ? String(produtoOrigem.name || produtoOrigem.nome || '').trim() : '';
+        const complemento = nomeProduto ? `<p style="margin-top:6px;opacity:.75;">Oferta liberada após adicionar: ${nomeProduto}</p>` : '';
+        banner.innerHTML = `
+            <strong>${campanha.titulo}</strong>
+            <p>${campanha.texto}</p>
+            ${complemento}
+            <div class="smart-coupon-actions-da">
+                <button type="button" class="smart-coupon-btn-da primary" onclick="ativarCampanhaCupomDA('${campanha.codigo}')">${campanha.botao || 'Ativar desconto'}</button>
+                <button type="button" class="smart-coupon-btn-da secondary" onclick="recusarCampanhaCupomDA('${campanha.codigo}')">Agora não</button>
+            </div>
+        `;
+        requestAnimationFrame(() => banner.classList.add('active'));
+    }
+
+    window.recusarCampanhaCupomDA = function(codigo) {
+        const alvo = codigoSmartCupomDA(codigo);
+        salvarRecusaSmartCupomDA(alvo);
+        const banner = document.getElementById('smart-coupon-banner-da');
+        if (banner) banner.classList.remove('active');
+    };
+
+    window.ativarCampanhaCupomDA = async function(codigo) {
+        const alvo = codigoSmartCupomDA(codigo);
+        const campanha = SMART_COUPON_CAMPAIGNS_DA[alvo];
+        if (!campanha) return;
+
+        try { localStorage.removeItem('dona_antonia_cupons_ativos_v1'); } catch (e) {}
+
+        if (!existeCupomNoJsonSmartCupomDA(alvo) && typeof carregarCuponsAtivosDA === 'function') {
+            try { await carregarCuponsAtivosDA(); } catch (e) {}
+        }
+
+        STATE.cupomAplicadoCodigo = alvo;
+        try {
+            localStorage.setItem(SMART_COUPON_STORAGE_KEY_DA, JSON.stringify({ codigo: alvo, ativadoEm: Date.now() }));
+        } catch (e) {}
+
+        const input = document.getElementById('coupon-code-input');
+        if (input) input.value = alvo;
+
+        const banner = document.getElementById('smart-coupon-banner-da');
+        if (banner) banner.classList.remove('active');
+
+        if (typeof aplicarCupomCheckoutDA === 'function') aplicarCupomCheckoutDA();
+        else if (typeof updateTotals === 'function') updateTotals();
+
+        if (typeof showToast === 'function') showToast(`Cupom ${alvo} ativado.`);
+
+        if ((window.location.hash || '') !== campanha.rota) {
+            window.location.hash = campanha.rota;
+        } else {
+            renderCampanhaCupomSmartDA(alvo);
+        }
+    };
+
+    function restaurarCupomAtivoSmartCupomDA() {
+        try {
+            const dados = JSON.parse(localStorage.getItem(SMART_COUPON_STORAGE_KEY_DA) || 'null');
+            const codigo = codigoSmartCupomDA(dados && dados.codigo);
+            if (!codigo || !SMART_COUPON_CAMPAIGNS_DA[codigo]) return;
+            STATE.cupomAplicadoCodigo = codigo;
+            const input = document.getElementById('coupon-code-input');
+            if (input) input.value = codigo;
+            if (typeof updateTotals === 'function') updateTotals();
+        } catch (e) {}
+    }
+
+    function verificarCampanhaPorProdutoSmartCupomDA(prod) {
+        if (!prod || Number(prod.stock || 0) <= 0) return;
+        if (cupomAtualSmartCupomDA()) return;
+
+        const campanhas = Object.values(SMART_COUPON_CAMPAIGNS_DA);
+        const campanha = campanhas.find(c => produtoBateGatilhoSmartCupomDA(prod, c));
+        if (!campanha) return;
+
+        setTimeout(() => mostrarBannerSmartCupomDA(campanha, prod), 260);
+    }
+
+    function produtoPorIdSmartCupomDA(id) {
+        const key = String(id || '');
+        return (STATE.prods || []).find(p => String(p.id) === key);
+    }
+
+    function envolverFuncoesCarrinhoSmartCupomDA() {
+        if (window.__smartCouponCartWrappedDA) return;
+        window.__smartCouponCartWrappedDA = true;
+
+        const quickAddOriginal = window.quickAddToCart;
+        if (typeof quickAddOriginal === 'function') {
+            window.quickAddToCart = function(id, event) {
+                const prod = produtoPorIdSmartCupomDA(id);
+                const antes = Number((STATE.cart || {})[String(id)] || 0);
+                const retorno = quickAddOriginal.apply(this, arguments);
+                const depois = Number((STATE.cart || {})[String(id)] || 0);
+                if (depois > antes) verificarCampanhaPorProdutoSmartCupomDA(prod);
+                return retorno;
+            };
+            try { quickAddToCart = window.quickAddToCart; } catch (e) {}
+        }
+
+        const updateOriginal = window.updateCartItem;
+        if (typeof updateOriginal === 'function') {
+            window.updateCartItem = function(id, delta) {
+                const prod = produtoPorIdSmartCupomDA(id);
+                const antes = Number((STATE.cart || {})[String(id)] || 0);
+                const retorno = updateOriginal.apply(this, arguments);
+                const depois = Number((STATE.cart || {})[String(id)] || 0);
+                if (Number(delta || 0) > 0 && depois > antes) verificarCampanhaPorProdutoSmartCupomDA(prod);
+                return retorno;
+            };
+            try { updateCartItem = window.updateCartItem; } catch (e) {}
+        }
+
+        const leveMaisOriginal = window.addLeveMaisToCart;
+        if (typeof leveMaisOriginal === 'function') {
+            window.addLeveMaisToCart = function(prodId) {
+                const prod = produtoPorIdSmartCupomDA(prodId);
+                const antes = Number((STATE.cart || {})[String(prodId)] || 0);
+                const retorno = leveMaisOriginal.apply(this, arguments);
+                const depois = Number((STATE.cart || {})[String(prodId)] || 0);
+                if (depois > antes) verificarCampanhaPorProdutoSmartCupomDA(prod);
+                return retorno;
+            };
+            try { addLeveMaisToCart = window.addLeveMaisToCart; } catch (e) {}
+        }
+    }
+
+    function produtoComPrecoCampanhaSmartCupomDA(prod, campanha) {
+        const desconto = Number(campanha.desconto || 0);
+        const precoBase = Number(prod.price || 0);
+        const precoComCupom = Math.max(precoBase * (1 - desconto / 100), 0);
+        return {
+            ...prod,
+            oldPrice: precoBase,
+            price: precoComCupom,
+            discountPercent: desconto,
+            __smartCouponPreview: campanha.codigo
+        };
+    }
+
+    window.renderCampanhaCupomSmartDA = function(codigo) {
+        const alvo = codigoSmartCupomDA(codigo || (window.location.hash || '').split('/').pop());
+        const campanha = SMART_COUPON_CAMPAIGNS_DA[alvo];
+        if (!campanha || !document.getElementById('vitrine')) return false;
+
+        garantirEstiloSmartCupomDA();
+        try { if (typeof atualizarTopbarDaRota === 'function') atualizarTopbarDaRota(campanha.rota); } catch (e) {}
+
+        const produtos = (STATE.prods || [])
+            .filter(p => produtoBateMarcaSmartCupomDA(p, campanha))
+            .sort((a, b) => String(a.marca || '').localeCompare(String(b.marca || ''), 'pt-BR') || String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
+
+        const produtosPreview = produtos.map(p => produtoComPrecoCampanhaSmartCupomDA(p, campanha));
+        const marcasTexto = campanha.marcas.filter((m, i, arr) => arr.findIndex(x => normalizarSmartCupomDA(x) === normalizarSmartCupomDA(m)) === i).join(', ');
+
+        let html = `<div style="padding: 12px 0 24px;">
+            <div class="smart-coupon-hero-da">
+                <span class="smart-coupon-pill-da">Cupom ${campanha.codigo} ativado • ${campanha.desconto}% OFF</span>
+                <h1>${campanha.grupo === 'beleza' ? 'Produtos de beleza com desconto liberado' : 'Café da manhã com desconto liberado'}</h1>
+                <p>O desconto aparece no checkout para produtos participantes das marcas: ${marcasTexto}. Os preços abaixo já mostram uma prévia com o cupom aplicado.</p>
+            </div>`;
+
+        if (!produtosPreview.length) {
+            html += `<div style="padding:30px 20px;text-align:center;color:var(--text-light);font-weight:800;background:#fff;border:1px solid var(--border-light);border-radius:18px;">
+                Nenhum produto participante encontrado no momento.
+            </div>`;
+        } else {
+            html += `<div class="products-grid">${produtosPreview.map(p => renderCardHTML(p)).join('')}</div>`;
+        }
+        html += `</div>`;
+
+        document.getElementById('vitrine').innerHTML = html;
+        try { document.title = `${campanha.codigo} - Dona Antônia`; } catch (e) {}
+        try { if (typeof updateCollectionSeo === 'function') updateCollectionSeo(campanha.codigo, produtos); } catch (e) {}
+        try { if (typeof lazyLoadImages === 'function') lazyLoadImages(); } catch (e) {}
+        return true;
+    };
+
+    function rotaCampanhaCupomSmartDA() {
+        const hash = window.location.hash || '';
+        if (!hash.startsWith('#/campanha-cupom/')) return false;
+        const codigo = decodeURIComponent(hash.split('#/campanha-cupom/')[1] || '');
+        return renderCampanhaCupomSmartDA(codigo);
+    }
+
+    window.addEventListener('hashchange', function() {
+        setTimeout(rotaCampanhaCupomSmartDA, 0);
+    });
+
+    const initOriginalSmartCupomDA = typeof init === 'function' ? init : null;
+    if (initOriginalSmartCupomDA) {
+        init = async function() {
+            const retorno = await initOriginalSmartCupomDA.apply(this, arguments);
+            garantirEstiloSmartCupomDA();
+            restaurarCupomAtivoSmartCupomDA();
+            envolverFuncoesCarrinhoSmartCupomDA();
+            rotaCampanhaCupomSmartDA();
+            return retorno;
+        };
+    } else {
+        document.addEventListener('DOMContentLoaded', function() {
+            garantirEstiloSmartCupomDA();
+            restaurarCupomAtivoSmartCupomDA();
+            envolverFuncoesCarrinhoSmartCupomDA();
+            rotaCampanhaCupomSmartDA();
+        });
+    }
+})();
+
+
 document.addEventListener('DOMContentLoaded', init);
 
    
