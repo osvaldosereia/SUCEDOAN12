@@ -1,36 +1,65 @@
 [
   {
-    "codigo": "DESCONTO",
+    "codigo": "BELEZA20",
     "ativo": true,
-    "tipo": "valor",
-    "desconto": 3,
-    "valorMinimo": 75,
-    "validade": "2026-06-10",
-    "categorias": [],
-    "marcas": [],
-    "palavras_chave": []
-  },
-  {
-    "codigo": "LIMPEZA15",
-    "ativo": true,
-    "tipo": "valor",
-    "desconto": 15,
-    "valorMinimo": 120,
-    "validade": "2026-12-31",
-    "categorias": ["limpeza"],
-    "marcas": [],
-    "palavras_chave": ["sabão", "amaciante", "desinfetante", "lava", "detergente"]
-  },
-  {
-    "codigo": "MONANGE5",
-    "ativo": true,
-    "tipo": "valor",
-    "desconto": 5,
-    "valorMinimo": 50,
+    "tipo": "percentual",
+    "desconto": 20,
+    "valorMinimo": 0,
     "validade": "2026-12-31",
     "categorias": [],
-    "marcas": ["Monange"],
-    "palavras_chave": ["hidratante", "facial", "corporal"]
+    "marcas": [
+      "Nivea",
+      "Dove",
+      "Garnier",
+      "Monange",
+      "Lola",
+      "Enoar",
+      "Inoar",
+      "Hidramais",
+      "Carmed",
+      "Niely",
+      "Seda"
+    ],
+    "palavras_chave": [
+      "nivea",
+      "dove",
+      "garnier",
+      "monange",
+      "lola",
+      "enoar",
+      "inoar",
+      "hidramais",
+      "carmed",
+      "niely",
+      "seda"
+    ],
+    "campanhaAuto": true,
+    "descricao": "Liberado automaticamente após adicionar produto de beleza/higiene ao carrinho."
+  },
+  {
+    "codigo": "CAFE20",
+    "ativo": true,
+    "tipo": "percentual",
+    "desconto": 20,
+    "valorMinimo": 0,
+    "validade": "2026-12-31",
+    "categorias": [],
+    "marcas": [
+      "Nescau",
+      "Toddy",
+      "Nestle",
+      "Nestlé",
+      "Lacta"
+    ],
+    "palavras_chave": [
+      "nescau",
+      "toddy",
+      "nestle",
+      "nestlé",
+      "lacta"
+    ],
+    "campanhaAuto": true,
+    "descricao": "Liberado automaticamente após adicionar produto da categoria café da manhã ao carrinho."
   },
   {
     "codigo": "CLIENTENOVO",
