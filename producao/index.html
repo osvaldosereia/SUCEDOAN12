@@ -237,8 +237,8 @@
         }
         .card-grid {
             display:grid !important;
-            grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
-            gap:14px !important;
+            grid-template-columns:repeat(6, minmax(0, 1fr)) !important;
+            gap:12px !important;
             align-items:start !important;
         }
         .product-card {
@@ -309,7 +309,7 @@
             .product-photo-box { width:104px !important; height:104px !important; }
         }
         @media (max-width: 1180px) {
-            .card-grid { grid-template-columns:1fr !important; }
+            .card-grid { grid-template-columns:repeat(3, minmax(0,1fr)) !important; }
             .product-layout { grid-template-columns:132px minmax(0,1fr) !important; }
             .product-photo-box { width:132px !important; height:132px !important; }
             .nfe-layout { grid-template-columns:1fr; }
@@ -317,6 +317,7 @@
             .nfe-fields { grid-template-columns:repeat(3,minmax(0,1fr)); }
         }
         @media (max-width: 720px) {
+            .card-grid { grid-template-columns:repeat(2, minmax(0,1fr)) !important; }
             .admin-dashboard { padding:8px 10px 10px !important; min-height:76px !important; }
             .admin-kpi { flex-basis:112px !important; min-width:112px !important; min-height:58px !important; }
             .admin-kpi strong { font-size:19px !important; }
@@ -443,7 +444,7 @@
             <div class="card-grid" id="product-grid"></div>
             <div id="load-more-container" style="text-align: center; margin-top: 30px; margin-bottom: 20px; display: none;">
                 <button class="nav-btn primary" style="padding: 12px 30px; font-size: 14px; margin: 0 auto; min-width: 250px; justify-content: center;" onclick="carregarMaisCards()">
-                    <i data-lucide="chevron-down" size="18"></i> VER MAIS 6 PRODUTOS
+                    <i data-lucide="chevron-down" size="18"></i> VER MAIS 12 PRODUTOS
                 </button>
             </div>
         </div>
@@ -619,19 +620,20 @@
                         <option value="">Todos</option>
                         <option value="em_oferta">Produtos em oferta</option>
                         <option value="sem_oferta">Sem oferta</option>
-                        <option value="manual">Oferta manual</option>
-                        <option value="vencimento_simulado">Oferta por vencimento simulado</option>
                     </select>
                 </div>
                 <div class="form-group"><label class="form-label">Vencimento</label>
                     <select class="form-input" id="flt-vencimento">
                         <option value="">Todos</option>
                         <option value="vencido">Vencidos</option>
-                        <option value="30">Vence em até 30 dias</option>
-                        <option value="60">Vence em até 60 dias</option>
-                        <option value="90">Vence em até 90 dias</option>
-                        <option value="120">Vence em até 120 dias</option>
-                        <option value="180">Vence em até 180 dias</option>
+                        <option value="7">Sai do site em até 7 dias</option>
+                        <option value="15">Oferta até 15 dias</option>
+                        <option value="30">Oferta até 30 dias</option>
+                        <option value="45">Oferta até 45 dias</option>
+                        <option value="60">Oferta até 60 dias</option>
+                        <option value="90">Oferta até 90 dias</option>
+                        <option value="120">Oferta até 120 dias</option>
+                        <option value="150">Oferta até 150 dias</option>
                         <option value="sem_validade">Sem data de validade</option>
                     </select>
                 </div>
@@ -788,7 +790,7 @@
         // Variáveis de Paginação
         let produtosFiltrados = [];
         let itemsCarregados = 0;
-        const ITENS_POR_PAGINA = 6; 
+        const ITENS_POR_PAGINA = 12; 
 
         // ==========================================================
         // FUNÇÕES GERAIS E OPÇÕES
@@ -1347,8 +1349,7 @@ let finalBase64 = isBase64Ready
         'subcategoria', 'subsubcategoria', 'marca', 'embalagem', 'tag_global', 'tag_quantidades', 
         'link_youtube', 'last_update', 'url_imagem', 'gondola', 'prateleira', 'localizacao',
         'descricao', 'descricao_status', 'descricao_atualizada_em',
-        'preco_oferta', 'validade_oferta',
-        'oferta_validade_simulada_dias', 'oferta_validade_simulada_ativa', 'oferta_validade_simulada_em', 'oferta_origem'
+        'preco_oferta', 'inicio_oferta', 'validade_oferta', 'oferta_origem'
     ];
 
     return prods.map(p => {
@@ -1427,12 +1428,11 @@ let finalBase64 = isBase64Ready
                 "brand": p.marca || "Dona Antônia"
             };
 
-            if (p.preco_oferta && parseFloat(p.preco_oferta) > 0) {
-                objMeta["sale_price"] = `${parseFloat(p.preco_oferta).toFixed(2)} BRL`;
-                if (p.validade_oferta) {
-                    let hoje = new Date();
-                    let inicioOferta = new Date(hoje.getTime() - (hoje.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-                    objMeta["sale_price_effective_date"] = `${inicioOferta}-03:00/${p.validade_oferta}-03:00`;
+            const ofertaMeta = calcularOfertaAtualProduto(p);
+            if (ofertaMeta && ofertaMeta.ativo && numeroOfertaProduto(ofertaMeta.preco) > 0) {
+                objMeta["sale_price"] = `${numeroOfertaProduto(ofertaMeta.preco).toFixed(2)} BRL`;
+                if (ofertaMeta.inicio && ofertaMeta.fim) {
+                    objMeta["sale_price_effective_date"] = `${ofertaMeta.inicio}-03:00/${ofertaMeta.fim}-03:00`;
                 }
             }
 
@@ -1729,6 +1729,7 @@ async function carregarProdutosFirebaseParaArquivoManual() {
         .filter(p => p && p._deleted !== true)
         .sort((a, b) => normalizarLastUpdateProduto(b) - normalizarLastUpdateProduto(a));
 
+    await processarInteligenciaDeOfertas(null, true);
     await saveDataLocally();
     renderGrid(ultimoTermoPesquisa, true);
 
@@ -2229,6 +2230,7 @@ async function salvarProdutoCardManual(sku) {
         return;
     }
 
+    await processarInteligenciaDeOfertas(sku);
     const validacao = validarProdutoAntesSalvar(produto);
     if (!validacao.ok) {
         mostrarAlerta("❌ " + validacao.mensagem, "erro");
@@ -3178,131 +3180,275 @@ function montarTextoBuscaProduto(p) {
         function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
 
        // ==========================================================
-// INTELIGÊNCIA AUTÓNOMA DE OFERTAS POR VALIDADE
+// INTELIGÊNCIA AUTOMÁTICA DE OFERTAS POR VALIDADE
+// Regra oficial atual:
+// 1) preco = preço normal/base do produto.
+// 2) preco_oferta + inicio_oferta + validade_oferta = oferta efetiva calculada automaticamente.
+// 3) Não existe oferta manual no sistema.
+// 4) A oferta nasce somente pela validade real do produto.
+// 5) Produtos com 7 dias ou menos para vencer têm estoque zerado para sair do site.
 // ==========================================================
+function numeroOfertaProduto(valor) {
+    if (valor === "" || valor === null || valor === undefined) return 0;
+    if (typeof valor === "number") return Number.isFinite(valor) ? valor : 0;
+    const limpo = String(valor)
+        .replace(/R\$/gi, "")
+        .replace(/BRL/gi, "")
+        .replace(/\s+/g, "")
+        .replace(/\./g, "")
+        .replace(",", ".");
+    const n = parseFloat(limpo);
+    return Number.isFinite(n) ? n : 0;
+}
+
+function padOfertaProduto(n) {
+    return String(n).padStart(2, "0");
+}
+
+function dataParaInputOfertaProduto(dataObj, fimDoDia = false) {
+    if (!(dataObj instanceof Date) || isNaN(dataObj.getTime())) return "";
+    const d = new Date(dataObj);
+    if (fimDoDia) d.setHours(23, 59, 0, 0);
+    return `${d.getFullYear()}-${padOfertaProduto(d.getMonth() + 1)}-${padOfertaProduto(d.getDate())}T${padOfertaProduto(d.getHours())}:${padOfertaProduto(d.getMinutes())}`;
+}
+
+function adicionarDiasOfertaProduto(dataObj, dias) {
+    const d = new Date(dataObj);
+    d.setDate(d.getDate() + dias);
+    return d;
+}
+
+function parseDataOfertaProduto(valor, usarFimDoDia = false) {
+    if (!valor) return null;
+    const raw = String(valor).trim();
+    let data = null;
+
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(raw)) {
+        data = new Date(raw);
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        const [a, m, d] = raw.split("-").map(Number);
+        data = new Date(a, m - 1, d);
+    } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+        const [d, m, a] = raw.split("/").map(Number);
+        data = new Date(a, m - 1, d);
+    } else {
+        const tentativa = new Date(raw);
+        if (!isNaN(tentativa.getTime())) data = tentativa;
+    }
+
+    if (!data || isNaN(data.getTime())) return null;
+    if (usarFimDoDia && !/T\d{2}:\d{2}/.test(raw)) data.setHours(23, 59, 0, 0);
+    return data;
+}
+
+function parseValidadeProdutoOferta(dataString) {
+    if (!dataString) return null;
+    const raw = String(dataString).trim();
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+        const [d, m, a] = raw.split("/").map(Number);
+        return new Date(a, m - 1, d);
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+        const [a, m, d] = raw.slice(0, 10).split("-").map(Number);
+        return new Date(a, m - 1, d);
+    }
+
+    return null;
+}
+
+function regraAutomaticaOfertaPorValidade(diasRestantes) {
+    if (!Number.isFinite(diasRestantes)) return { percentual: 0, zerarEstoque: false, faixa: "" };
+    if (diasRestantes <= 7) return { percentual: 0, zerarEstoque: true, faixa: "Até 7 dias: sair do site" };
+    if (diasRestantes <= 15) return { percentual: 0.50, zerarEstoque: false, faixa: "8 a 15 dias" };
+    if (diasRestantes <= 30) return { percentual: 0.40, zerarEstoque: false, faixa: "16 a 30 dias" };
+    if (diasRestantes <= 45) return { percentual: 0.30, zerarEstoque: false, faixa: "31 a 45 dias" };
+    if (diasRestantes <= 60) return { percentual: 0.20, zerarEstoque: false, faixa: "46 a 60 dias" };
+    if (diasRestantes <= 90) return { percentual: 0.15, zerarEstoque: false, faixa: "61 a 90 dias" };
+    if (diasRestantes <= 120) return { percentual: 0.10, zerarEstoque: false, faixa: "91 a 120 dias" };
+    if (diasRestantes <= 150) return { percentual: 0.05, zerarEstoque: false, faixa: "121 a 150 dias" };
+    return { percentual: 0, zerarEstoque: false, faixa: "Acima de 150 dias" };
+}
+
+function percentualOfertaPorValidade(diasRestantes) {
+    return regraAutomaticaOfertaPorValidade(Number(diasRestantes)).percentual;
+}
+
+function normalizarCamposOfertaLegado(p) {
+    if (!p || typeof p !== "object") return false;
+
+    let alterou = false;
+    [
+        "oferta_manual_preco",
+        "oferta_manual_inicio",
+        "oferta_manual_fim",
+        "oferta_manual_status",
+        "oferta_validade_simulada_dias",
+        "oferta_validade_simulada_ativa",
+        "oferta_validade_simulada_em"
+    ].forEach(campo => {
+        if (p[campo] !== undefined && p[campo] !== null && p[campo] !== "") alterou = true;
+        delete p[campo];
+    });
+
+    const origem = String(p.oferta_origem || "");
+    if (origem === "manual" || origem === "manual_programada" || origem === "vencimento_simulado") {
+        p.oferta_origem = "";
+        alterou = true;
+    }
+
+    if (alterou) p.__ofertaCamposLegadoRemovidos = true;
+    return alterou;
+}
+
+function calcularOfertaAtualProduto(p, dataReferencia = new Date()) {
+    normalizarCamposOfertaLegado(p);
+
+    const base = numeroOfertaProduto(p && p.preco);
+    const custo = numeroOfertaProduto(p && p.preco_custo);
+    const estoque = numeroOfertaProduto(p && p.estoque);
+    const resultadoVazio = {
+        ativo: false,
+        preco: "",
+        inicio: "",
+        fim: "",
+        origem: "",
+        label: "Sem oferta ativa",
+        diasRestantes: null,
+        descontoPercentual: 0,
+        estoqueCalculado: estoque,
+        faixaValidade: "",
+        statusEstoque: ""
+    };
+
+    if (!p || p.situacao === "I" || base <= 0) return resultadoVazio;
+
+    const hoje = new Date(dataReferencia);
+    hoje.setHours(0, 0, 0, 0);
+
+    const dataValidade = parseValidadeProdutoOferta(p.validade);
+    if (!dataValidade) return resultadoVazio;
+
+    dataValidade.setHours(0, 0, 0, 0);
+    const diasRestantes = Math.ceil((dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+    const regra = regraAutomaticaOfertaPorValidade(diasRestantes);
+
+    if (regra.zerarEstoque) {
+        return {
+            ...resultadoVazio,
+            estoqueCalculado: 0,
+            diasRestantes,
+            faixaValidade: regra.faixa,
+            label: diasRestantes < 1 ? "Produto vencido: estoque zerado" : "7 dias ou menos: estoque zerado",
+            statusEstoque: "zerado_por_validade"
+        };
+    }
+
+    if (estoque <= 0) {
+        return {
+            ...resultadoVazio,
+            diasRestantes,
+            faixaValidade: regra.faixa,
+            estoqueCalculado: 0
+        };
+    }
+
+    if (regra.percentual > 0) {
+        const precoComDesconto = Number((base * (1 - regra.percentual)).toFixed(2));
+        const precoMinimo = custo > 0 ? custo : 0;
+        const precoFinal = Math.max(precoComDesconto, precoMinimo);
+
+        if (precoFinal > 0 && precoFinal < base) {
+            return {
+                ativo: true,
+                preco: Number(precoFinal.toFixed(2)),
+                inicio: dataParaInputOfertaProduto(hoje, false),
+                fim: dataParaInputOfertaProduto(dataValidade, true),
+                origem: "vencimento_real",
+                label: "Oferta automática por validade",
+                diasRestantes,
+                descontoPercentual: Math.round(regra.percentual * 100),
+                estoqueCalculado: estoque,
+                faixaValidade: regra.faixa,
+                statusEstoque: ""
+            };
+        }
+    }
+
+    return {
+        ...resultadoVazio,
+        diasRestantes,
+        faixaValidade: regra.faixa,
+        estoqueCalculado: estoque
+    };
+}
+
+function aplicarOfertaCalculadaNoProduto(p, oferta) {
+    if (!p || !oferta) return false;
+
+    const legadoAlterado = !!p.__ofertaCamposLegadoRemovidos;
+    delete p.__ofertaCamposLegadoRemovidos;
+
+    const antes = JSON.stringify({
+        preco_oferta: p.preco_oferta || "",
+        inicio_oferta: p.inicio_oferta || "",
+        validade_oferta: p.validade_oferta || "",
+        oferta_origem: p.oferta_origem || "",
+        estoque: numeroOfertaProduto(p.estoque)
+    });
+
+    p.estoque = Number(numeroOfertaProduto(oferta.estoqueCalculado).toFixed(3));
+
+    if (oferta.ativo) {
+        p.preco_oferta = Number(numeroOfertaProduto(oferta.preco).toFixed(2));
+        p.inicio_oferta = oferta.inicio || "";
+        p.validade_oferta = oferta.fim || "";
+        p.oferta_origem = oferta.origem || "vencimento_real";
+    } else {
+        p.preco_oferta = "";
+        p.inicio_oferta = "";
+        p.validade_oferta = "";
+        p.oferta_origem = "";
+    }
+
+    delete p.oferta_manual_preco;
+    delete p.oferta_manual_inicio;
+    delete p.oferta_manual_fim;
+    delete p.oferta_manual_status;
+    delete p.oferta_validade_simulada_dias;
+    delete p.oferta_validade_simulada_ativa;
+    delete p.oferta_validade_simulada_em;
+
+    const depois = JSON.stringify({
+        preco_oferta: p.preco_oferta || "",
+        inicio_oferta: p.inicio_oferta || "",
+        validade_oferta: p.validade_oferta || "",
+        oferta_origem: p.oferta_origem || "",
+        estoque: numeroOfertaProduto(p.estoque)
+    });
+
+    return legadoAlterado || antes !== depois;
+}
+
+function produtoTemOfertaAtiva(p) {
+    const oferta = calcularOfertaAtualProduto(p);
+    return !!(oferta && oferta.ativo && numeroOfertaProduto(oferta.preco) > 0);
+}
+
 async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync = false) {
     let houveMudanca = false;
 
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-
-    const dataParaInputFimOferta = (dataObj) => {
-        const d = new Date(dataObj);
-        d.setHours(23, 59, 0, 0);
-        const local = new Date(d.getTime() - (d.getTimezoneOffset() * 60000));
-        return local.toISOString().slice(0, 16);
-    };
-
-    const parseDataValidadeBR = (dataString) => {
-        if (!dataString) return null;
-        if (String(dataString).includes('/')) {
-            const partes = String(dataString).split('/');
-            if (partes.length !== 3) return null;
-            return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
-        }
-        if (String(dataString).includes('-')) {
-            const partes = String(dataString).split('-');
-            if (partes.length < 3) return null;
-            return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
-        }
-        return null;
-    };
-
     const itensParaAnalisar = skuEspecifico
-        ? products.filter(p => p.codigo === skuEspecifico)
+        ? products.filter(p => p.codigo === skuEspecifico || p.id === skuEspecifico || p.firebaseKey === skuEspecifico)
         : products;
 
     itensParaAnalisar.forEach(p => {
-        if (p.situacao === 'I') return;
-        if (!p.preco) return;
+        if (!p || typeof p !== "object") return;
+        const oferta = calcularOfertaAtualProduto(p);
+        const mudou = aplicarOfertaCalculadaNoProduto(p, oferta);
 
-        const regraSimuladaAtiva = !!p.oferta_validade_simulada_ativa && !!p.oferta_validade_simulada_dias;
-        const temOfertaManual =
-            !regraSimuladaAtiva &&
-            p.preco_oferta !== "" &&
-            p.preco_oferta !== null &&
-            p.preco_oferta !== undefined;
-
-        let novoPrecoOferta = p.preco_oferta;
-        let novaValidadeOferta = p.validade_oferta;
-        let novoEstoque = parseFloat(p.estoque) || 0;
-        let novaOrigemOferta = p.oferta_origem || "";
-
-        let diasRestantes = null;
-        let dataFimRegra = null;
-
-        if (regraSimuladaAtiva) {
-            diasRestantes = parseInt(p.oferta_validade_simulada_dias, 10);
-            dataFimRegra = new Date(hoje);
-            dataFimRegra.setDate(dataFimRegra.getDate() + diasRestantes);
-
-            // importante: esta simulação NÃO altera p.validade, apenas calcula a regra da oferta
-        } else if (p.validade) {
-            const dataValidade = parseDataValidadeBR(p.validade);
-            if (dataValidade) {
-                dataValidade.setHours(0, 0, 0, 0);
-                diasRestantes = Math.ceil((dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-                dataFimRegra = dataValidade;
-            }
-        }
-
-        if (diasRestantes !== null) {
-            const precoOriginal = parseFloat(p.preco) || 0;
-            const precoCusto = parseFloat(p.preco_custo) || 0;
-
-            // Produto com validade real vencida: zera estoque. A validade simulada nunca zera estoque.
-            if (!regraSimuladaAtiva && diasRestantes < 1) {
-                novoEstoque = 0;
-                novoPrecoOferta = "";
-                novaValidadeOferta = "";
-                novaOrigemOferta = "";
-            }
-
-            // Oferta automática por validade real ou simulada, somente se não houver oferta manual
-            if (!temOfertaManual && novoEstoque > 0 && diasRestantes >= 1 && diasRestantes <= 180) {
-                let percentualDesconto = 0;
-
-                if (diasRestantes >= 121 && diasRestantes <= 180) {
-                    percentualDesconto = 0.05;
-                } else if (diasRestantes >= 91 && diasRestantes <= 120) {
-                    percentualDesconto = 0.10;
-                } else if (diasRestantes >= 61 && diasRestantes <= 90) {
-                    percentualDesconto = 0.20;
-                } else if (diasRestantes >= 31 && diasRestantes <= 60) {
-                    percentualDesconto = 0.30;
-                } else if (diasRestantes >= 1 && diasRestantes <= 30) {
-                    percentualDesconto = 0.40;
-                }
-
-                if (percentualDesconto > 0) {
-                    const precoComDesconto = precoOriginal * (1 - percentualDesconto);
-                    novoPrecoOferta = Math.max(precoComDesconto, precoCusto);
-                    novaValidadeOferta = dataParaInputFimOferta(dataFimRegra);
-                    novaOrigemOferta = regraSimuladaAtiva ? "vencimento_simulado" : "vencimento_real";
-                }
-            }
-
-            if (!temOfertaManual && diasRestantes > 180) {
-                novoPrecoOferta = "";
-                novaValidadeOferta = "";
-                novaOrigemOferta = "";
-            }
-        }
-
-        if (novoPrecoOferta !== "") {
-            novoPrecoOferta = parseFloat(parseFloat(novoPrecoOferta).toFixed(2));
-        }
-
-        if (
-            parseFloat(p.estoque) !== novoEstoque ||
-            parseFloat(p.preco_oferta || 0) !== (novoPrecoOferta || 0) ||
-            p.validade_oferta !== novaValidadeOferta ||
-            (p.oferta_origem || "") !== novaOrigemOferta
-        ) {
-            p.estoque = novoEstoque;
-            p.preco_oferta = novoPrecoOferta;
-            p.validade_oferta = novaValidadeOferta;
-            p.oferta_origem = novaOrigemOferta;
+        if (mudou) {
             p.last_update = Date.now();
             houveMudanca = true;
         }
@@ -3312,13 +3458,13 @@ async function processarInteligenciaDeOfertas(skuEspecifico = null, preventSync 
         await saveDataLocally(false);
 
         if (skuEspecifico) {
-            const pAlterado = products.find(p => p.codigo === skuEspecifico);
+            const pAlterado = products.find(p => p.codigo === skuEspecifico || p.id === skuEspecifico || p.firebaseKey === skuEspecifico);
             if (pAlterado) marcarProdutoParaSincronizacao(pAlterado, "upsert");
         } else if (!preventSync) {
             salvarProdutosJSON();
         }
     }
- }
+}
 
 // ==========================================================
 // NORMALIZAÇÃO DE MARCAS E COMPARAÇÃO SEGURA
@@ -3666,9 +3812,10 @@ function validarProdutoAntesSalvar(produto) {
     }
     if (produto.ncm) produto.ncm = ncm;
 
-    const preco = parseFloat(produto.preco) || 0;
-    const custo = parseFloat(produto.preco_custo) || 0;
-    const oferta = parseFloat(produto.preco_oferta) || 0;
+    const preco = numeroOfertaProduto(produto.preco);
+    const custo = numeroOfertaProduto(produto.preco_custo);
+    const ofertaResumoValidacao = calcularOfertaAtualProduto(produto);
+    const oferta = ofertaResumoValidacao && ofertaResumoValidacao.ativo ? numeroOfertaProduto(ofertaResumoValidacao.preco) : 0;
     if (oferta > 0 && preco > 0 && oferta >= preco) {
         return { ok:false, mensagem:"Preço de oferta precisa ser menor que o preço de venda." };
     }
@@ -3985,6 +4132,8 @@ async function loadData() {
 
     updateImageBadge();
 
+    await processarInteligenciaDeOfertas(null, true);
+
     atualizarListasDoSistemaComProdutos();
     atualizarIndiceBuscaTodosProdutos();
     await salvarListasSistemaLocalmente();
@@ -4284,7 +4433,8 @@ async function carregarCacheLocalProdutos() {
         }
 
         function produtoTemOfertaAtiva(p) {
-            return p.preco_oferta !== "" && p.preco_oferta !== null && p.preco_oferta !== undefined && parseFloat(p.preco_oferta) > 0;
+            const oferta = calcularOfertaAtualProduto(p);
+            return !!(oferta && oferta.ativo && numeroOfertaProduto(oferta.preco) > 0);
         }
 
         function produtoTemCampoVazio(p, tipo) {
@@ -4398,14 +4548,12 @@ function ordenarProdutosMaisRecentesPrimeiro(lista) {
                     const temOferta = produtoTemOfertaAtiva(p);
                     if(advancedFilters.oferta === 'em_oferta' && !temOferta) return false;
                     if(advancedFilters.oferta === 'sem_oferta' && temOferta) return false;
-                    if(advancedFilters.oferta === 'manual' && (!temOferta || p.oferta_origem === 'vencimento_real' || p.oferta_origem === 'vencimento_simulado')) return false;
-                    if(advancedFilters.oferta === 'vencimento_simulado' && p.oferta_origem !== 'vencimento_simulado') return false;
 
                     if(advancedFilters.vencimento) {
                         const dias = calcularDiasParaVencimentoProduto(p);
                         if(advancedFilters.vencimento === 'sem_validade' && dias !== null) return false;
                         if(advancedFilters.vencimento === 'vencido' && !(dias !== null && dias < 1)) return false;
-                        if(['30','60','90','120','180'].includes(advancedFilters.vencimento)) {
+                        if(['7','15','30','45','60','90','120','150'].includes(advancedFilters.vencimento)) {
                             const limite = parseInt(advancedFilters.vencimento, 10);
                             if(!(dias !== null && dias >= 1 && dias <= limite)) return false;
                         }
@@ -4491,7 +4639,7 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                 const diasVencimento = calcularDiasParaVencimentoProduto(p);
                 const ofertaAtiva = produtoTemOfertaAtiva(p);
                 let badges = "";
-                if (ofertaAtiva) badges += `<span class="mini-badge success">Oferta${p.oferta_origem === 'vencimento_simulado' ? ' Simulada' : ''}</span>`;
+                if (ofertaAtiva) badges += `<span class="mini-badge success">Oferta automática</span>`;
                 if (diasVencimento !== null && diasVencimento < 1) badges += `<span class="mini-badge danger">Vencido</span>`;
                 else if (diasVencimento !== null && diasVencimento <= 30) badges += `<span class="mini-badge warn">Vence ${diasVencimento}d</span>`;
                 if ((parseFloat(p.estoque) || 0) <= 0) badges += `<span class="mini-badge danger">Sem estoque</span>`;
@@ -4577,27 +4725,12 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                                         <input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(p.preco_custo || 0)}" onchange="updateField('${skuAttr}', 'preco_custo', this.value)"></div>
                                     <div class="field-group"><label style="display:flex; justify-content:space-between; gap:6px;">Venda (R$) <span style="color:var(--success);">Markup ${markup}%</span></label>
                                         <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--success); font-weight:800;" value="${escaparAtributoSistema(p.preco || 0)}" onchange="updateField('${skuAttr}', 'preco', this.value)"></div>
-                                    <div class="field-group"><label>Oferta (R$)</label>
-                                        <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--warning); font-weight:800;" placeholder="Sem oferta" value="${escaparAtributoSistema(p.preco_oferta || '')}" onchange="updateField('${skuAttr}', 'preco_oferta', this.value)"></div>
-                                    <div class="field-group"><label>Fim da Oferta</label>
-                                        <input type="datetime-local" class="form-input card-mini-input" value="${escaparAtributoSistema(p.validade_oferta || '')}" onchange="updateField('${skuAttr}', 'validade_oferta', this.value)"></div>
+                                    <div class="field-group"><label>Oferta automática atual</label>
+                                        <input class="form-input card-mini-input" readonly style="background:#ecfdf5; color:#047857; font-weight:900;" value="${escaparAtributoSistema(p.preco_oferta ? dinheiroBR(p.preco_oferta) : 'Sem oferta')}"></div>
+                                    <div class="field-group"><label>Fim da oferta automática</label>
+                                        <input class="form-input card-mini-input" readonly value="${escaparAtributoSistema(p.validade_oferta || '-')}"></div>
                                     <div class="field-group"><label>Validade</label>
                                         <input type="date" class="form-input card-mini-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : (p.validade || '')}" onblur="updateField('${skuAttr}', 'validade', this.value)"></div>
-                                    <div class="field-group full" style="border:1px dashed #fde68a; background:#fffbeb; border-radius:8px; padding:8px;">
-                                        <label style="color:#92400e;">Oferta automática por vencimento simulado</label>
-                                        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-                                            <select class="form-input card-mini-input" id="oferta-sim-${skuAttr}" style="flex:1 1 180px;">
-                                                <option value="">Selecionar dias</option>
-                                                <option value="120" ${String(p.oferta_validade_simulada_dias || '') === '120' ? 'selected' : ''}>120 dias para vencer</option>
-                                                <option value="90" ${String(p.oferta_validade_simulada_dias || '') === '90' ? 'selected' : ''}>90 dias para vencer</option>
-                                                <option value="60" ${String(p.oferta_validade_simulada_dias || '') === '60' ? 'selected' : ''}>60 dias para vencer</option>
-                                                <option value="30" ${String(p.oferta_validade_simulada_dias || '') === '30' ? 'selected' : ''}>30 dias para vencer</option>
-                                            </select>
-                                            <button class="nav-btn warning" style="min-height:32px; padding:6px 8px; font-size:9px;" onclick="aplicarOfertaValidadeSimulada('${skuAttr}')">ATIVAR</button>
-                                            <button class="nav-btn" style="min-height:32px; padding:6px 8px; font-size:9px; color:var(--danger); border-color:#fecaca;" onclick="removerOfertaValidadeSimulada('${skuAttr}')">LIMPAR</button>
-                                        </div>
-                                        <small style="font-size:9px; color:#92400e; font-weight:700;">Não altera a validade real. Apenas grava uma regra separada para simular o prazo da oferta.</small>
-                                    </div>
                                 </div>
                             </div>
 
@@ -4634,61 +4767,32 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                 document.getElementById('load-more-container').style.display = 'block';
             }
         }
-
-        
         async function aplicarOfertaValidadeSimulada(sku) {
-            const p = products.find(x => x.codigo === sku);
+            mostrarAlerta("Simulação removida. Use a validade real do produto para a oferta automática.", "aviso");
+        }
+
+        async function removerOfertaValidadeSimulada(sku) {
+            const p = products.find(x => x.codigo === sku || x.id === sku || x.firebaseKey === sku);
             if (!p) return;
-
-            const select = document.getElementById(`oferta-sim-${sku}`);
-            const dias = select ? parseInt(select.value, 10) : 0;
-
-            if (![120, 90, 60, 30].includes(dias)) {
-                alert("Selecione 120, 90, 60 ou 30 dias para ativar a oferta simulada.");
-                return;
-            }
-
-            if (!p.preco || parseFloat(p.preco) <= 0) {
-                alert("Cadastre o preço de venda antes de ativar a oferta automática.");
-                return;
-            }
-
-            p.oferta_validade_simulada_ativa = true;
-            p.oferta_validade_simulada_dias = dias;
-            p.oferta_validade_simulada_em = new Date().toISOString();
-            p.oferta_origem = "vencimento_simulado";
-            p.last_update = Date.now();
-
+            delete p.oferta_validade_simulada_ativa;
+            delete p.oferta_validade_simulada_dias;
+            delete p.oferta_validade_simulada_em;
             await processarInteligenciaDeOfertas(sku);
             await saveDataLocally(false);
             marcarProdutoParaSincronizacao(p, "upsert");
             renderGrid(ultimoTermoPesquisa, true);
-            mostrarAlerta(`Oferta simulada ativada: ${dias} dias para vencer.`, "sucesso");
-        }
-
-        async function removerOfertaValidadeSimulada(sku) {
-            const p = products.find(x => x.codigo === sku);
-            if (!p) return;
-
-            p.oferta_validade_simulada_ativa = false;
-            p.oferta_validade_simulada_dias = "";
-            p.oferta_validade_simulada_em = "";
-            if (p.oferta_origem === "vencimento_simulado") {
-                p.preco_oferta = "";
-                p.validade_oferta = "";
-                p.oferta_origem = "";
-            }
-            p.last_update = Date.now();
-
-            await saveDataLocally(false);
-            marcarProdutoParaSincronizacao(p, "upsert");
-            renderGrid(ultimoTermoPesquisa, true);
-            mostrarAlerta("Oferta simulada removida sem alterar a validade real.", "aviso");
+            mostrarAlerta("Campos antigos removidos. A oferta agora depende somente da validade real.", "sucesso");
         }
 
         async function updateField(sku, field, value) { 
-            const p = products.find(x => x.codigo === sku); 
+            const p = products.find(x => x.codigo === sku || x.id === sku || x.firebaseKey === sku); 
             if(!p) return; 
+
+            // Campos de oferta são calculados automaticamente pela validade real do produto.
+            if (['preco_oferta','inicio_oferta','validade_oferta','oferta_manual_preco','oferta_manual_inicio','oferta_manual_fim'].includes(field)) {
+                mostrarAlerta("Campo de oferta removido. Altere preço normal e validade para o sistema calcular automaticamente.", "aviso");
+                return;
+            }
 
             let finalVal = value; 
             const valorAnterior = p[field];
@@ -4703,15 +4807,8 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                     finalVal = ""; 
                 }
             } 
-            else if(['preco','estoque','preco_custo', 'preco_oferta'].includes(field)) { 
-                if (field === 'preco_oferta' && (value === "" || value === null)) {
-                    finalVal = ""; 
-                } else {
-                    finalVal = parseFloat(value.toString().replace(',','.')) || 0; 
-                }
-            }
-            else if(field === 'validade_oferta') {
-                finalVal = value;
+            else if(['preco','estoque','preco_custo'].includes(field)) { 
+                finalVal = numeroOfertaProduto(value); 
             }
             else if(field === 'marca') {
                 finalVal = limparMarcaProduto(value);
@@ -4748,42 +4845,30 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                 finalVal = limparTextoSistema(value);
             }
 
-            if (field === 'preco_oferta' && finalVal !== "" && parseFloat(p.preco) > 0 && parseFloat(finalVal) >= parseFloat(p.preco)) {
-                mostrarAlerta("A oferta precisa ser menor que o preço de venda.", "erro");
-                return;
-            }
-
-            if (field === 'preco' && parseFloat(finalVal) > 0 && parseFloat(p.preco_custo) > 0 && parseFloat(finalVal) < parseFloat(p.preco_custo)) {
+            if (field === 'preco' && numeroOfertaProduto(finalVal) > 0 && numeroOfertaProduto(p.preco_custo) > 0 && numeroOfertaProduto(finalVal) < numeroOfertaProduto(p.preco_custo)) {
                 if (!confirm("Atenção: o preço de venda ficou abaixo do custo. Deseja manter mesmo assim?")) return;
             }
 
-            if (field === 'preco_oferta') {
-                if (finalVal === "" || parseFloat(finalVal) <= 0) {
-                    p.oferta_origem = "";
-                } else if (p.oferta_origem !== "vencimento_simulado" && p.oferta_origem !== "vencimento_real") {
-                    p.oferta_origem = "manual";
-                } else {
-                    // se o usuário alterou o preço diretamente, passa a ser oferta manual
-                    p.oferta_origem = "manual";
-                    p.oferta_validade_simulada_ativa = false;
-                    p.oferta_validade_simulada_dias = "";
-                }
-            }
-
             p[field] = finalVal; 
+
             normalizarProdutoTagsQuantidade(p);
             atualizarIndiceBuscaProduto(p);
             p.last_update = Date.now(); 
             await saveDataLocally(false); 
 
-            if (field === 'validade' || field === 'preco' || field === 'preco_custo') {
+            if (['validade','preco','preco_custo','estoque'].includes(field)) {
                 await processarInteligenciaDeOfertas(sku);
             }
 
             marcarProdutoParaSincronizacao(p, "upsert");
             renderGrid(ultimoTermoPesquisa, true); 
+
+            const side = document.getElementById('produto-sidebar');
+            if (side && side.classList.contains('open')) {
+                setTimeout(() => abrirProdutoSidebar(sku), 80);
+            }
         }
-        
+
         window.duplicarProduto = async function(sku) {
             const p = products.find(x => x.codigo === sku);
             if (!p) return;
@@ -6200,6 +6285,13 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
     -webkit-box-orient:vertical;
 }
 .product-tile-meta { display:flex; gap:4px; flex-wrap:wrap; min-height:17px; }
+.product-tile-info { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
+.product-tile-info span { background:#f8fafc; border:1px solid #eef2f7; border-radius:7px; padding:4px 5px; font-size:7.5px; font-weight:900; color:#64748b; line-height:1.1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.product-tile-info strong { display:block; margin-top:1px; font-size:9px; font-weight:900; color:#0f172a; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.product-tile-info .offer { background:#fffbeb; border-color:#fde68a; color:#92400e; }
+.product-tile-info .offer strong { color:#b45309; }
+.product-tile-photo { position:relative; }
+.product-tile-offer-flag { position:absolute; top:6px; left:6px; right:6px; background:#f59e0b; color:#111827; border-radius:999px; padding:4px 6px; font-size:8px; font-weight:900; text-align:center; box-shadow:0 3px 10px rgba(0,0,0,.12); }
 .product-tile-badge { font-size:7px; font-weight:900; padding:3px 5px; border-radius:999px; background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; }
 .product-tile-badge.warn { background:#fffbeb; color:#92400e; border-color:#fde68a; }
 .product-tile-badge.danger { background:#fef2f2; color:#991b1b; border-color:#fecaca; }
@@ -6222,8 +6314,8 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
 .nfe-cost-box div { min-width:0; }
 .nfe-cost-box span { display:block; font-size:8px; text-transform:uppercase; font-weight:900; }
 .nfe-cost-box strong { display:block; font-size:12px; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-@media (max-width:1500px) { .card-grid { grid-template-columns:repeat(5, minmax(0,1fr)) !important; } }
-@media (max-width:1250px) { .card-grid { grid-template-columns:repeat(4, minmax(0,1fr)) !important; } }
+@media (max-width:1500px) { .card-grid { grid-template-columns:repeat(6, minmax(0,1fr)) !important; } }
+@media (max-width:1180px) { .card-grid { grid-template-columns:repeat(4, minmax(0,1fr)) !important; } }
 @media (max-width:980px) { .card-grid { grid-template-columns:repeat(3, minmax(0,1fr)) !important; } #produto-sidebar { width:94vw; } }
 @media (max-width:680px) { .card-grid { grid-template-columns:repeat(2, minmax(0,1fr)) !important; } .produto-editor-top { grid-template-columns:1fr; } .produto-sidebar-photo { width:100%; height:180px; } .produto-editor-actions { grid-template-columns:1fr 1fr; } .nfe-existing-box, .nfe-cost-box { grid-template-columns:1fr 1fr; } }
 </style>
@@ -6251,7 +6343,7 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
         return local || ((p.url_imagem && String(p.url_imagem).length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO');
     }
 
-    window.carregarMaisCards = function(quantidade = 6) {
+    window.carregarMaisCards = function(quantidade = ITENS_POR_PAGINA) {
         const gridContainer = document.getElementById('product-grid');
         if (!gridContainer) return;
         const load = document.getElementById('load-more-container');
@@ -6259,6 +6351,7 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
             if (load) load.style.display = 'none';
             return;
         }
+
         const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantidade);
         nextBatch.forEach(p => {
             normalizarProdutoTagsQuantidade(p);
@@ -6268,21 +6361,35 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
             const pendente = produtoEstaPendenteNoCard(p);
             const semEstoque = (parseFloat(p.estoque) || 0) <= 0;
             const semEAN = !String(p.gtin || p.ean || '').replace(/\D/g, '');
-            const ofertaAtiva = produtoTemOfertaAtiva(p);
+            const ofertaResumo = calcularOfertaAtualProduto(p);
+            const ofertaAtiva = !!(ofertaResumo && ofertaResumo.ativo);
             const nome = p.nome || 'Produto sem nome';
+            const validadeCard = p.validade || '-';
+            const precoVendaCard = dinheiroBR(p.preco || 0);
+            const precoOfertaCard = ofertaAtiva ? dinheiroBR(ofertaResumo.preco) : '';
+            const origemOfertaCard = ofertaAtiva ? 'Validade' : '';
+            const descontoOfertaCard = ofertaAtiva && ofertaResumo.descontoPercentual ? `${ofertaResumo.descontoPercentual}% OFF` : '';
             const tile = document.createElement('div');
             tile.className = `product-tile ${p.situacao === 'I' ? 'inactive' : ''} ${pendente ? 'pending-save' : ''}`;
             tile.setAttribute('onclick', `abrirProdutoSidebar('${skuAttr}')`);
             tile.innerHTML = `
                 <div class="product-tile-photo">
                     <img loading="lazy" src="${escaparAtributoSistema(imgUrl)}" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'">
+                    ${ofertaAtiva ? `<div class="product-tile-offer-flag">${escaparHtmlSistema(descontoOfertaCard || 'OFERTA')}</div>` : ''}
                 </div>
                 <div class="product-tile-name" title="${escaparAtributoSistema(nome)}">${escaparHtmlSistema(nome)}</div>
+                <div class="product-tile-info">
+                    <span>Estoque <strong>${escaparHtmlSistema(p.estoque ?? 0)}</strong></span>
+                    <span>Val. <strong>${escaparHtmlSistema(validadeCard)}</strong></span>
+                    <span>Venda <strong>${escaparHtmlSistema(precoVendaCard)}</strong></span>
+                    ${ofertaAtiva ? `<span class="offer">Oferta <strong>${escaparHtmlSistema(precoOfertaCard)}</strong></span>` : '<span>Oferta <strong>-</strong></span>'}
+                </div>
                 <div class="product-tile-meta">
                     ${pendente ? '<span class="product-tile-badge warn">PENDENTE</span>' : ''}
-                    ${ofertaAtiva ? '<span class="product-tile-badge ok">OFERTA</span>' : ''}
+                    ${ofertaAtiva ? `<span class="product-tile-badge ok">${escaparHtmlSistema(origemOfertaCard)}</span>` : ''}
                     ${semEstoque ? '<span class="product-tile-badge danger">SEM EST.</span>' : ''}
                     ${semEAN ? '<span class="product-tile-badge warn">SEM EAN</span>' : ''}
+                    ${ofertaResumo && ofertaResumo.statusEstoque === 'zerado_por_validade' ? '<span class="product-tile-badge danger">SAI DO SITE</span>' : ''}
                 </div>
                 <div class="product-tile-actions" onclick="event.stopPropagation()">
                     <button class="nav-btn ${pendente ? 'warning' : ''}" onclick="abrirProdutoSidebar('${skuAttr}')"><i data-lucide="edit-3" size="11"></i> EDITAR</button>
@@ -6292,6 +6399,7 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
             gridContainer.appendChild(tile);
             itemsCarregados++;
         });
+
         if (typeof lucide !== 'undefined') lucide.createIcons();
         if (load) load.style.display = itemsCarregados >= produtosFiltrados.length ? 'none' : 'block';
     };
@@ -6327,6 +6435,11 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
         const markup = custo > 0 ? (((venda - custo) / custo) * 100).toFixed(1) : '0.0';
         const pendencias = obterPendenciasProduto(p);
         const imgPendente = produtoPossuiImagemPendente(p.codigo);
+        const ofertaResumo = calcularOfertaAtualProduto(p);
+        const ofertaAtiva = !!(ofertaResumo && ofertaResumo.ativo);
+        const ofertaLabel = ofertaAtiva
+            ? `${ofertaResumo.label} • ${dinheiroBR(ofertaResumo.preco)}${ofertaResumo.descontoPercentual ? ' • ' + ofertaResumo.descontoPercentual + '% OFF' : ''}${ofertaResumo.diasRestantes !== null ? ' • vence em ' + ofertaResumo.diasRestantes + 'd' : ''}`
+            : (ofertaResumo && ofertaResumo.statusEstoque === 'zerado_por_validade' ? ofertaResumo.label : 'Sem oferta ativa');
         if (titulo) titulo.textContent = `Editar produto • ${p.codigo || ''}`;
         if (body) body.innerHTML = `
             <div class="produto-editor-top">
@@ -6351,6 +6464,7 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
                         <span class="mini-badge">SKU ${escaparHtmlSistema(p.codigo || '')}</span>
                         <span class="mini-badge">Estoque ${escaparHtmlSistema(p.estoque || 0)}</span>
                         <span class="mini-badge">Venda ${dinheiroBR(p.preco || 0)}</span>
+                        ${ofertaAtiva ? `<span class="mini-badge success">${escaparHtmlSistema(ofertaLabel)}</span>` : '<span class="mini-badge">Sem oferta ativa</span>'}
                         <span class="mini-badge">Markup ${markup}%</span>
                         ${pendencias.length ? `<span class="mini-badge warn">Faltam: ${escaparHtmlSistema(pendencias.slice(0,4).join(', '))}</span>` : '<span class="mini-badge success">Cadastro OK</span>'}
                     </div>
@@ -6378,21 +6492,14 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
                     <div class="field-group"><label>Custo R$</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(p.preco_custo || 0)}" onchange="updateField('${skuAttr}', 'preco_custo', this.value)"></div>
                     <div class="field-group"><label>Venda R$</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(p.preco || 0)}" onchange="updateField('${skuAttr}', 'preco', this.value)"></div>
                     <div class="field-group"><label>Validade principal</label><input type="date" class="form-input card-mini-input" value="${p.validade && String(p.validade).includes('/') ? String(p.validade).split('/').reverse().join('-') : (p.validade || '')}" onchange="updateField('${skuAttr}', 'validade', this.value)"></div>
-                    <div class="field-group"><label>Oferta R$</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(p.preco_oferta || '')}" onchange="updateField('${skuAttr}', 'preco_oferta', this.value)"></div>
-                    <div class="field-group"><label>Fim da oferta</label><input type="datetime-local" class="form-input card-mini-input" value="${escaparAtributoSistema(p.validade_oferta || '')}" onchange="updateField('${skuAttr}', 'validade_oferta', this.value)"></div>
-                    <div class="field-group full" style="border:1px dashed #fde68a; background:#fffbeb; border-radius:8px; padding:8px;">
-                        <label style="color:#92400e;">Oferta automática por vencimento simulado</label>
-                        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-                            <select class="form-input card-mini-input" id="oferta-sim-${skuAttr}" style="flex:1 1 180px;">
-                                <option value="">Selecionar dias</option>
-                                <option value="120" ${String(p.oferta_validade_simulada_dias || '') === '120' ? 'selected' : ''}>120 dias para vencer</option>
-                                <option value="90" ${String(p.oferta_validade_simulada_dias || '') === '90' ? 'selected' : ''}>90 dias para vencer</option>
-                                <option value="60" ${String(p.oferta_validade_simulada_dias || '') === '60' ? 'selected' : ''}>60 dias para vencer</option>
-                                <option value="30" ${String(p.oferta_validade_simulada_dias || '') === '30' ? 'selected' : ''}>30 dias para vencer</option>
-                            </select>
-                            <button class="nav-btn warning" onclick="aplicarOfertaValidadeSimulada('${skuAttr}')">ATIVAR</button>
-                            <button class="nav-btn" style="color:var(--danger); border-color:#fecaca;" onclick="removerOfertaValidadeSimulada('${skuAttr}')">LIMPAR</button>
-                        </div>
+                    <div class="field-group"><label>Oferta efetiva atual</label><input class="form-input card-mini-input" readonly style="background:#ecfdf5; color:#047857; font-weight:900;" value="${escaparAtributoSistema(ofertaLabel)}"></div>
+                    <div class="field-group"><label>Fim efetivo publicado</label><input class="form-input card-mini-input" readonly value="${escaparAtributoSistema(p.validade_oferta || '')}"></div>
+                    <div class="field-group"><label>Origem da oferta</label><input class="form-input card-mini-input" readonly value="${escaparAtributoSistema(p.oferta_origem || '-')}"></div>
+                    <div class="field-group full" style="border:1px solid #bfdbfe; background:#eff6ff; border-radius:8px; padding:8px;">
+                        <label style="color:#1e3a8a;">Regra automática de oferta por validade</label>
+                        <small style="font-size:10px; color:#1e3a8a; font-weight:800; line-height:1.45;">
+                            O sistema calcula sozinho pela validade real: 121–150 dias 5%, 91–120 dias 10%, 61–90 dias 15%, 46–60 dias 20%, 31–45 dias 30%, 16–30 dias 40%, 8–15 dias 50%. Com 7 dias ou menos, o estoque é zerado para sair do site.
+                        </small>
                     </div>
                 </div>
             </div>
