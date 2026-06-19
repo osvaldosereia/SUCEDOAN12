@@ -3522,6 +3522,91 @@ body.route-compact.route-no-section-search .compact-title { grid-area: title; }
             font-weight: 450 !important;
         }
 
+
+        /* Banner compacto BELEZA20 - logo abaixo do aviso de entrega */
+        .beauty20-banner-da {
+            width: 100%;
+            margin: -12px 0 18px 0;
+            border: 0;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #831843 0%, #be185d 58%, #f9a8d4 100%);
+            color: #ffffff;
+            text-decoration: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 13px 14px;
+            box-shadow: 0 10px 22px rgba(190, 24, 93, 0.16);
+            overflow: hidden;
+            position: relative;
+        }
+        .beauty20-banner-da::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 92% 8%, rgba(255,255,255,.24), transparent 32%);
+            pointer-events: none;
+        }
+        .beauty20-banner-da:active { transform: scale(.985); }
+        .beauty20-copy-da {
+            position: relative;
+            z-index: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .beauty20-copy-da strong {
+            font-size: 18px;
+            line-height: 1.08;
+            font-weight: 950;
+            letter-spacing: -0.04em;
+            color: #ffffff;
+        }
+        .beauty20-copy-da span {
+            font-size: 12px;
+            line-height: 1.2;
+            font-weight: 750;
+            color: rgba(255,255,255,.86);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .beauty20-code-da {
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 36px;
+            padding: 0 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.96);
+            color: #9d174d;
+            font-size: 12px;
+            font-weight: 950;
+            letter-spacing: .04em;
+            box-shadow: 0 6px 14px rgba(76, 5, 25, .12);
+        }
+        @media (min-width: 768px) {
+            .beauty20-banner-da {
+                margin: -10px 0 22px 0;
+                padding: 15px 18px;
+                border-radius: 18px;
+            }
+            .beauty20-copy-da {
+                flex-direction: row;
+                align-items: baseline;
+                gap: 10px;
+            }
+            .beauty20-copy-da strong { font-size: 21px; }
+            .beauty20-copy-da span { font-size: 13px; }
+            .beauty20-code-da { min-height: 38px; padding: 0 16px; }
+        }
+
         .home-cestas-feature,
         .home-offers-hero,
         .home-combos-hero,
@@ -13401,11 +13486,23 @@ function getHomeCategoriaShelvesDA() {
     }).join('');
 }
 
+
+function getHomeBeauty20BannerDA() {
+    return `<a class="beauty20-banner-da" href="#/campanha-cupom/BELEZA20" aria-label="Ativar cupom BELEZA20 e ver produtos de beleza" onclick="if (typeof ativarCampanhaCupomDA === 'function') { event.preventDefault(); ativarCampanhaCupomDA('BELEZA20'); }">
+        <span class="beauty20-copy-da">
+            <strong>20% OFF em Beleza</strong>
+            <span>Ative o cupom e veja os produtos</span>
+        </span>
+        <span class="beauty20-code-da">BELEZA20</span>
+    </a>`;
+}
+
 renderInicio = function() {
     const vitrine = $('vitrine');
     if (!vitrine) return;
     let htmlMercado = '<div style="padding: 15px 10px 20px;">';
     htmlMercado += `<div class="info-banner-home">Pedidos a partir de R$ 75 | Entrega Grátis em Cuiabá e VG.</div>`;
+    htmlMercado += getHomeBeauty20BannerDA();
     htmlMercado += `<div class="home-shelves-da">`;
     htmlMercado += getHomeCestasShelfDA();
     htmlMercado += getHomeJsonShelvesDA();
