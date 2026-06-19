@@ -32,7 +32,7 @@
     }
 
     .app {
-      width: min(100%, 620px);
+      width: min(100%, 680px);
       margin: 0 auto;
       padding: 12px 12px 34px;
     }
@@ -49,7 +49,7 @@
     }
 
     .top-inner {
-      width: min(100%, 620px);
+      width: min(100%, 680px);
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -79,9 +79,6 @@
       border-radius: 999px;
       font-size: 12px;
       white-space: nowrap;
-      max-width: 210px;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     .status {
@@ -96,8 +93,45 @@
       line-height: 1.45;
     }
 
-    .status.ok { border-color: rgba(38, 117, 71, .24); }
+    .status.ok { border-color: rgba(38, 117, 71, .24); color: var(--ok); }
     .status.err { border-color: rgba(165, 59, 43, .28); color: var(--danger); }
+
+    .tools {
+      display: grid;
+      gap: 8px;
+      margin: 0 0 12px;
+      padding: 12px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .tools label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .manual-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    input {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0 12px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      font-size: 13px;
+      outline: none;
+    }
+
+    input:focus { border-color: rgba(123, 63, 25, .45); }
 
     .card {
       background: var(--card);
@@ -118,8 +152,7 @@
 
     .media img {
       width: 100%;
-      max-height: 620px;
-      object-fit: contain;
+      height: auto;
       display: block;
       background: #eadfd3;
     }
@@ -143,14 +176,23 @@
       padding: 6px 9px;
       font-size: 12px;
       backdrop-filter: blur(10px);
+    }
+
+    .counter {
+      left: 12px;
       background: rgba(33, 27, 22, .75);
       color: #fff;
-      left: 12px;
-      max-width: calc(100% - 24px);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
+
+    .loader {
+      right: 12px;
+      background: rgba(255, 250, 244, .9);
+      border: 1px solid rgba(255, 255, 255, .5);
+      color: var(--text);
+      display: none;
+    }
+
+    .loader.active { display: block; }
 
     .content { padding: 14px; }
 
@@ -167,12 +209,16 @@
       border-radius: 999px;
       padding: 6px 8px;
       font-size: 12px;
-      line-height: 1.1;
+      line-height: 1;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .title {
       margin: 0 0 8px;
-      font-size: 21px;
+      font-size: 20px;
       line-height: 1.14;
       letter-spacing: -.03em;
     }
@@ -184,38 +230,7 @@
       line-height: 1.42;
     }
 
-    .grid-info {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin: 12px 0;
-    }
-
-    .info-box {
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 10px;
-      min-width: 0;
-    }
-
-    .info-label {
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-      margin-bottom: 4px;
-    }
-
-    .info-value {
-      color: var(--text);
-      font-size: 13px;
-      line-height: 1.35;
-      overflow-wrap: anywhere;
-    }
-
-    .prompt-box {
+    .prompt-box, .json-box {
       background: #fff;
       border: 1px solid var(--line);
       border-radius: 18px;
@@ -223,7 +238,7 @@
       margin: 12px 0;
     }
 
-    .prompt-head {
+    .box-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -237,24 +252,40 @@
     .prompt {
       white-space: pre-wrap;
       color: var(--text);
-      font-size: 13px;
+      font-size: 14px;
       line-height: 1.48;
-      max-height: 420px;
+      max-height: 430px;
       overflow: auto;
-      padding: 2px 4px 2px 0;
+      padding-right: 2px;
     }
 
-    .actions,
-    .video-nav {
+    details summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 750;
+      font-size: 13px;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      overflow: auto;
+      max-height: 260px;
+      margin: 10px 0 0;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--text);
+    }
+
+    .actions, .nav {
       display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 9px;
       margin-top: 12px;
     }
 
-    .actions { grid-template-columns: 1fr; }
-    .video-nav { grid-template-columns: 1fr 1fr; }
+    .actions.single { grid-template-columns: 1fr; }
 
-    button {
+    button, a.btn {
       border: 0;
       border-radius: 15px;
       min-height: 46px;
@@ -265,21 +296,18 @@
       cursor: pointer;
       touch-action: manipulation;
       transition: transform .08s ease, opacity .14s ease;
+      text-align: center;
+      text-decoration: none;
+      display: inline-grid;
+      place-items: center;
     }
 
-    button:active { transform: scale(.985); }
+    button:active, a.btn:active { transform: scale(.985); }
     button:disabled { opacity: .45; cursor: not-allowed; }
 
     .btn-soft { background: var(--soft); color: var(--brand-dark); }
     .btn-main { background: var(--brand); color: white; }
     .btn-dark { background: var(--brand-dark); color: white; }
-
-    .note {
-      margin: 10px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.4;
-    }
 
     .empty {
       background: var(--card);
@@ -297,10 +325,20 @@
       padding: 2px 5px;
     }
 
-    @media (max-width: 420px) {
-      .grid-info { grid-template-columns: 1fr; }
-      .video-nav { grid-template-columns: 1fr; }
-      .media { min-height: 320px; }
+    .note {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    @media (min-width: 560px) {
+      .media { min-height: 520px; }
+    }
+
+    @media (max-width: 430px) {
+      .manual-row, .actions, .nav { grid-template-columns: 1fr; }
+      .top-inner { align-items: flex-start; flex-direction: column; }
     }
   </style>
 </head>
@@ -309,14 +347,24 @@
     <header class="top">
       <div class="top-inner">
         <div>
-          <h1>Leitor de Vídeos</h1>
-          <p class="sub">Lê as pastas dentro de <code>video/</code>, mostra a imagem e o prompt do Gemini.</p>
+          <h1>Leitor de Vídeos Dona Antônia</h1>
+          <p class="sub">Lê as pastas em video/, mostra a imagem e copia o prompt para Gemini.</p>
         </div>
         <div class="pill" id="repoPill">GitHub</div>
       </div>
     </header>
 
     <section class="status" id="status">Carregando...</section>
+
+    <section class="tools">
+      <label for="manualPath">Carregar caminho manual, se precisar</label>
+      <div class="manual-row">
+        <input id="manualPath" placeholder="Ex: video/20260619-nivea/videododia.json ou video/20260619-nivea" />
+        <button class="btn-soft" id="manualBtn">Abrir</button>
+      </div>
+      <p class="note">Este leitor agora usa a árvore completa do GitHub, então encontra arquivos mesmo quando a listagem simples de pastas falha.</p>
+    </section>
+
     <section id="viewer"></section>
   </main>
 
@@ -325,63 +373,37 @@
       owner: 'osvaldosereia',
       repo: 'SUCEDOAN12',
       branch: 'main',
-      rootPath: 'video',
-
-      dataFilePriority: [
+      rootPaths: ['video', 'videos'],
+      jsonNames: [
         'videododia.json',
         'video-do-dia.json',
         'video_do_dia.json',
+        'videodiatal.json',
+        'video-diatal.json',
         'dados.json',
         'data.json',
         'prompt.json'
       ],
-
-      imageFilePriority: [
-        'produto.webp',
-        'produto.jpg',
-        'produto.jpeg',
-        'produto.png',
-        'imagem.webp',
-        'imagem.jpg',
-        'imagem.jpeg',
-        'imagem.png'
+      imagePriority: [
+        'produto.webp', 'produto.jpg', 'produto.jpeg', 'produto.png',
+        'imagem.webp', 'imagem.jpg', 'imagem.jpeg', 'imagem.png',
+        'produto-1.webp', 'produto-1.jpg', 'produto-1.png'
       ],
-
-      promptFieldNames: [
-        'prompt_gemini',
-        'promptGemini',
-        'prompt_video',
-        'promptVideo',
-        'prompt',
-        'texto_prompt',
-        'conteudo_prompt',
-        'gemini_prompt',
-        'video_prompt',
-        'output_text',
-        'response',
-        'content'
+      promptFields: [
+        'prompt_gemini', 'promptGemini', 'gemini_prompt', 'prompt_video', 'prompt',
+        'video.prompt_gemini', 'video.prompt', 'conteudo.prompt_gemini', 'dados.prompt_gemini'
       ],
-
-      imageFieldNames: [
-        'imagem_github',
-        'url_imagem_github',
-        'imagem_produto_github',
-        'produto_imagem_github',
-        'produto_imagem',
-        'image_link',
-        'imagem',
-        'image',
-        'url_imagem',
-        'image_url',
-        'produto.image',
-        'produto.imagem',
-        'produto.image_link'
+      imageFields: [
+        'produto.imagem_github', 'produto.imagem_original', 'produto.image_link', 'produto.imagem',
+        'arquivos.imagem_produto', 'arquivos.produto', 'imagem_github', 'imagem_produto_github',
+        'produto_imagem_github', 'imagem_produto', 'image_link', 'imagem', 'image', 'url_imagem'
       ]
     };
 
     const state = {
-      folders: [],
+      entries: [],
       index: 0,
+      tree: [],
       cache: new Map(),
       loading: false
     };
@@ -389,339 +411,553 @@
     const $status = document.getElementById('status');
     const $viewer = document.getElementById('viewer');
     const $repoPill = document.getElementById('repoPill');
+    const $manualPath = document.getElementById('manualPath');
+    const $manualBtn = document.getElementById('manualBtn');
+
     $repoPill.textContent = `${CONFIG.owner}/${CONFIG.repo}`;
+    $manualBtn.addEventListener('click', loadManualPath);
+    $manualPath.addEventListener('keydown', event => {
+      if (event.key === 'Enter') loadManualPath();
+    });
 
     init();
 
     async function init() {
       try {
-        setStatus(`Procurando pastas dentro de ${CONFIG.rootPath}/...`);
-        const items = await fetchGithubContents(CONFIG.rootPath);
+        setStatus('Lendo a árvore do GitHub e procurando arquivos em video/...', 'ok');
+        state.tree = await fetchRepoTree();
+        state.entries = findVideoEntries(state.tree);
 
-        state.folders = items
-          .filter(item => item && item.type === 'dir')
-          .map(item => ({
-            id: item.name,
-            path: cleanPath(item.path || `${CONFIG.rootPath}/${item.name}`),
-            htmlUrl: item.html_url || ''
-          }))
-          .sort((a, b) => {
-            const tb = parseDateFromText(b.id);
-            const ta = parseDateFromText(a.id);
-            if (tb !== ta) return tb - ta;
-            return b.id.localeCompare(a.id);
-          });
+        if (!state.entries.length) {
+          await fallbackFindByContentsApi();
+        }
 
-        if (!state.folders.length) {
-          renderEmpty('Nenhuma pasta encontrada dentro de video/.');
-          setStatus('Nenhum vídeo encontrado.', 'err');
+        if (!state.entries.length) {
+          renderEmpty();
+          setStatus('Não encontrei videododia.json dentro de video/. Veja as instruções abaixo.', 'err');
           return;
         }
 
-        setStatus(`Encontradas ${state.folders.length} pastas em video/. Carregando a mais recente...`, 'ok');
+        state.entries.sort(sortEntriesNewestFirst);
+        state.index = 0;
+        setStatus(`Encontrei ${state.entries.length} conteúdo(s) de vídeo. Abrindo o mais recente...`, 'ok');
         await loadAndRender(0);
       } catch (error) {
         console.error(error);
-        setStatus(`Erro: ${error.message}`, 'err');
         renderEmpty(error.message);
+        setStatus(`Erro ao carregar: ${error.message}`, 'err');
       }
     }
 
-    async function loadAndRender(index) {
-      if (state.loading) return;
-      const folder = state.folders[index];
-      if (!folder) return;
+    async function fetchRepoTree() {
+      const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/git/trees/${encodeURIComponent(CONFIG.branch)}?recursive=1`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`GitHub tree retornou ${res.status}`);
+      const json = await res.json();
+      if (!json || !Array.isArray(json.tree)) throw new Error('A resposta da árvore do GitHub não veio no formato esperado.');
+      return json.tree.filter(item => item && item.path).map(item => ({ ...item, path: cleanPath(item.path) }));
+    }
+
+    function findVideoEntries(tree) {
+      const jsonNameSet = new Set(CONFIG.jsonNames.map(x => x.toLowerCase()));
+      const entries = [];
+
+      for (const item of tree) {
+        if (item.type !== 'blob') continue;
+        const path = cleanPath(item.path);
+        const parts = path.split('/');
+        if (!CONFIG.rootPaths.includes(parts[0])) continue;
+        const fileName = parts[parts.length - 1].toLowerCase();
+        const isJson = fileName.endsWith('.json');
+        if (!isJson) continue;
+
+        const looksRight = jsonNameSet.has(fileName) || /video.*dia.*\.json$/i.test(fileName) || /prompt.*\.json$/i.test(fileName);
+        if (!looksRight) continue;
+
+        const folderPath = dirname(path) || parts[0];
+        const folderId = basename(folderPath) || parts[0];
+        entries.push({
+          id: folderId,
+          folderPath,
+          jsonPath: path,
+          jsonName: basename(path),
+          htmlUrl: githubBlobUrl(path)
+        });
+      }
+
+      return dedupeEntries(entries);
+    }
+
+    async function fallbackFindByContentsApi() {
+      const entries = [];
+      for (const root of CONFIG.rootPaths) {
+        try {
+          const rootItems = await fetchGithubContents(root);
+          for (const item of rootItems) {
+            if (!item) continue;
+
+            if (item.type === 'file' && /\.json$/i.test(item.name || '')) {
+              const name = String(item.name || '').toLowerCase();
+              if (CONFIG.jsonNames.includes(name) || /video.*dia.*\.json$/i.test(name)) {
+                entries.push({ id: root, folderPath: root, jsonPath: cleanPath(item.path), jsonName: item.name, htmlUrl: item.html_url || githubBlobUrl(item.path) });
+              }
+            }
+
+            if (item.type === 'dir') {
+              try {
+                const folderItems = await fetchGithubContents(item.path);
+                const jsonItem = folderItems.find(file => file.type === 'file' && CONFIG.jsonNames.includes(String(file.name || '').toLowerCase()))
+                  || folderItems.find(file => file.type === 'file' && /video.*dia.*\.json$/i.test(file.name || ''));
+                if (jsonItem) {
+                  entries.push({ id: item.name, folderPath: cleanPath(item.path), jsonPath: cleanPath(jsonItem.path), jsonName: jsonItem.name, htmlUrl: jsonItem.html_url || githubBlobUrl(jsonItem.path) });
+                }
+              } catch (_) {}
+            }
+          }
+        } catch (_) {}
+      }
+      state.entries = dedupeEntries(entries);
+    }
+
+    async function fetchGithubContents(path) {
+      const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${encodePath(path)}?ref=${encodeURIComponent(CONFIG.branch)}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`GitHub contents retornou ${res.status} em ${path}`);
+      const json = await res.json();
+      return Array.isArray(json) ? json : [json];
+    }
+
+    function dedupeEntries(entries) {
+      const seen = new Set();
+      return entries.filter(entry => {
+        const key = entry.jsonPath;
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function sortEntriesNewestFirst(a, b) {
+      const ta = parseDateScore(`${a.id} ${a.folderPath} ${a.jsonPath}`);
+      const tb = parseDateScore(`${b.id} ${b.folderPath} ${b.jsonPath}`);
+      if (tb !== ta) return tb - ta;
+      return String(b.jsonPath).localeCompare(String(a.jsonPath));
+    }
+
+    async function loadManualPath() {
+      const value = cleanPath($manualPath.value || '');
+      if (!value) return;
+
+      let jsonPath = value;
+      let folderPath = value;
+
+      if (!/\.json$/i.test(value)) {
+        folderPath = value;
+        jsonPath = await findJsonInFolder(value) || `${value}/videododia.json`;
+      } else {
+        folderPath = dirname(value);
+      }
+
+      const entry = {
+        id: basename(folderPath) || 'video',
+        folderPath,
+        jsonPath,
+        jsonName: basename(jsonPath),
+        htmlUrl: githubBlobUrl(jsonPath)
+      };
+
+      state.entries.unshift(entry);
+      state.entries = dedupeEntries(state.entries);
+      state.index = 0;
+      await loadAndRender(0, true);
+    }
+
+    async function findJsonInFolder(folderPath) {
+      const clean = cleanPath(folderPath);
+      const candidatesFromTree = state.tree
+        .filter(item => item.type === 'blob')
+        .map(item => item.path)
+        .filter(path => dirname(path) === clean && /\.json$/i.test(path));
+
+      const priority = chooseBestJsonPath(candidatesFromTree);
+      if (priority) return priority;
+
+      try {
+        const items = await fetchGithubContents(clean);
+        const paths = items.filter(item => item.type === 'file' && /\.json$/i.test(item.name || '')).map(item => cleanPath(item.path));
+        return chooseBestJsonPath(paths);
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function chooseBestJsonPath(paths) {
+      if (!paths || !paths.length) return '';
+      return [...paths].sort((a, b) => jsonNamePriority(basename(a)) - jsonNamePriority(basename(b)) || a.localeCompare(b))[0];
+    }
+
+    function jsonNamePriority(name) {
+      const lower = String(name || '').toLowerCase();
+      const exact = CONFIG.jsonNames.findIndex(item => item === lower);
+      if (exact >= 0) return exact;
+      if (/video.*dia.*\.json$/i.test(lower)) return CONFIG.jsonNames.length + 1;
+      if (/prompt.*\.json$/i.test(lower)) return CONFIG.jsonNames.length + 2;
+      return CONFIG.jsonNames.length + 10;
+    }
+
+    async function loadAndRender(index, force = false) {
+      if (state.loading && !force) return;
+      const entry = state.entries[index];
+      if (!entry) return;
 
       state.loading = true;
       state.index = index;
 
       try {
-        setStatus(`Carregando vídeo ${folder.id}...`, 'ok');
-        const data = await getVideoData(folder);
-        renderVideo(folder, data);
-        setStatus(`Mostrando ${state.index + 1} de ${state.folders.length}: ${folder.id}`, 'ok');
+        setStatus(`Carregando ${entry.jsonPath}...`, 'ok');
+        const data = await getVideoData(entry, force);
+        renderVideo(entry, data);
+        setStatus(`Mostrando ${state.index + 1} de ${state.entries.length}: ${entry.folderPath}`, 'ok');
       } catch (error) {
         console.error(error);
-        setStatus(`Erro ao carregar ${folder.id}: ${error.message}`, 'err');
-        renderVideo(folder, emptyVideo(folder, error.message));
+        renderError(entry, error.message);
+        setStatus(`Erro ao carregar ${entry.jsonPath}: ${error.message}`, 'err');
       } finally {
         state.loading = false;
       }
     }
 
-    async function getVideoData(folder) {
-      if (state.cache.has(folder.path)) return state.cache.get(folder.path);
-      const data = await fetchVideoData(folder);
-      state.cache.set(folder.path, data);
+    async function getVideoData(entry, force = false) {
+      if (!force && state.cache.has(entry.jsonPath)) return state.cache.get(entry.jsonPath);
+
+      const rawJson = await fetchRawText(entry.jsonPath);
+      const json = safeJsonParse(rawJson);
+      const prompt = extractPrompt(json);
+      const image = await findImageForEntry(entry, json);
+      const product = extractProduct(json);
+
+      const data = {
+        json,
+        rawJson,
+        prompt,
+        image,
+        product,
+        title: buildTitle(entry, json, product),
+        subtitle: buildSubtitle(json),
+        tags: buildTags(entry, json, product)
+      };
+
+      state.cache.set(entry.jsonPath, data);
       return data;
     }
 
-    async function fetchVideoData(folder) {
-      const folderItems = await fetchGithubContents(folder.path);
-      const jsonFile = chooseJsonFile(folderItems, folder);
-      const json = await fetchJsonFile(jsonFile.path);
-      const image = chooseImage(folderItems, json, folder);
-      const prompt = extractPrompt(json);
-      const product = extractProduct(json);
-
-      return {
-        ...json,
-        __folder: folder.path,
-        __jsonFile: jsonFile.name,
-        __jsonPath: jsonFile.path,
-        __image: image,
-        __prompt: prompt,
-        __product: product
-      };
-    }
-
-    function chooseJsonFile(items, folder) {
-      const jsonFiles = (Array.isArray(items) ? items : [])
-        .filter(item => item && item.type === 'file' && /\.json$/i.test(item.name || ''))
-        .sort((a, b) => jsonPriority(a.name) - jsonPriority(b.name) || String(a.name).localeCompare(String(b.name)));
-
-      return jsonFiles[0] || {
-        name: 'videododia.json',
-        path: `${cleanPath(folder.path)}/videododia.json`
-      };
-    }
-
-    function jsonPriority(name) {
-      const lower = String(name || '').toLowerCase().trim();
-      const exact = CONFIG.dataFilePriority.findIndex(item => item.toLowerCase() === lower);
-      if (exact >= 0) return exact;
-      if (/video.*dia.*\.json$/i.test(lower)) return CONFIG.dataFilePriority.length + 1;
-      if (/prompt.*\.json$/i.test(lower)) return CONFIG.dataFilePriority.length + 2;
-      return CONFIG.dataFilePriority.length + 10;
-    }
-
-    async function fetchJsonFile(path) {
+    async function fetchRawText(path) {
       const res = await fetch(rawUrl(path), { cache: 'no-store' });
-      if (!res.ok) throw new Error(`${basename(path)} retornou ${res.status}`);
-      const text = await res.text();
-      return safeJsonParse(text);
+      if (!res.ok) throw new Error(`${path} retornou ${res.status}`);
+      return await res.text();
     }
 
-    function chooseImage(folderItems, json, folder) {
-      const imageFiles = (Array.isArray(folderItems) ? folderItems : [])
-        .filter(item => item && item.type === 'file')
-        .filter(item => /\.(jpe?g|png|webp)$/i.test(item.name || ''))
-        .sort((a, b) => imagePriority(a.name) - imagePriority(b.name) || String(a.name).localeCompare(String(b.name)));
+    function safeJsonParse(text) {
+      const base = String(text || '')
+        .replace(/^\uFEFF/, '')
+        .trim()
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/```$/i, '')
+        .trim();
 
-      if (imageFiles.length) {
-        const file = imageFiles[0];
-        return {
-          name: file.name || basename(file.path),
-          url: file.download_url || rawUrl(file.path),
-          path: file.path || `${cleanPath(folder.path)}/${file.name}`
-        };
-      }
+      const attempts = [base];
+      const objStart = base.indexOf('{');
+      const objEnd = base.lastIndexOf('}');
+      if (objStart >= 0 && objEnd > objStart) attempts.push(base.slice(objStart, objEnd + 1));
 
-      for (const field of CONFIG.imageFieldNames) {
-        const value = getPathValue(json, field) || getDeepValue(json, field);
-        if (typeof value === 'string' && value.trim()) {
-          const normalized = normalizeImageUrl(value, folder);
-          if (normalized) {
-            return {
-              name: basename(normalized) || 'produto',
-              url: normalized,
-              path: normalized
-            };
-          }
+      for (const candidate of attempts) {
+        for (const variant of [candidate, candidate.replace(/,\s*([}\]])/g, '$1')]) {
+          try {
+            let parsed = JSON.parse(variant);
+            if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+            if (parsed && typeof parsed === 'object') return parsed;
+          } catch (_) {}
         }
       }
 
-      const deepUrl = findFirstImageUrl(json);
-      if (deepUrl) {
-        return {
-          name: basename(deepUrl) || 'produto',
-          url: normalizeImageUrl(deepUrl, folder),
-          path: deepUrl
-        };
+      throw new Error('não consegui interpretar o JSON');
+    }
+
+    function extractPrompt(json) {
+      for (const field of CONFIG.promptFields) {
+        const value = getByPath(json, field);
+        if (isUsefulText(value)) return cleanPrompt(value);
       }
+
+      const deep = findDeepText(json, /(prompt_gemini|promptGemini|gemini_prompt|prompt_video|prompt)/i, 80);
+      if (deep) return cleanPrompt(deep);
+
+      return cleanPrompt(JSON.stringify(json, null, 2));
+    }
+
+    function cleanPrompt(value) {
+      return stringifyText(value)
+        .replace(/^```(?:text|txt|markdown|md|json)?\s*/i, '')
+        .replace(/```$/i, '')
+        .replace(/```/g, '')
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .trim();
+    }
+
+    async function findImageForEntry(entry, json) {
+      for (const field of CONFIG.imageFields) {
+        const value = getByPath(json, field);
+        if (isUsefulText(value)) {
+          const url = normalizePossibleImage(value, entry.folderPath);
+          if (url) return { url, source: field, name: basename(url) || 'produto' };
+        }
+      }
+
+      const deep = findDeepText(json, /(imagem|image|produto|arquivo|file)/i, 0, true);
+      if (deep) {
+        const url = normalizePossibleImage(deep, entry.folderPath);
+        if (url) return { url, source: 'json profundo', name: basename(url) || 'produto' };
+      }
+
+      const folderImages = findImagesInTreeFolder(entry.folderPath);
+      if (folderImages.length) {
+        const best = folderImages.sort((a, b) => imagePriority(a) - imagePriority(b) || a.localeCompare(b))[0];
+        return { url: rawUrl(best), source: 'arquivo na pasta', name: basename(best) };
+      }
+
+      try {
+        const items = await fetchGithubContents(entry.folderPath);
+        const files = items.filter(item => item.type === 'file' && /\.(jpe?g|png|webp)$/i.test(item.name || ''));
+        if (files.length) {
+          const best = files.sort((a, b) => imagePriority(a.name) - imagePriority(b.name))[0];
+          return { url: best.download_url || rawUrl(best.path), source: 'GitHub contents', name: best.name };
+        }
+      } catch (_) {}
 
       return null;
     }
 
-    function imagePriority(name) {
-      const lower = String(name || '').toLowerCase().trim();
-      const exact = CONFIG.imageFilePriority.findIndex(item => item.toLowerCase() === lower);
-      if (exact >= 0) return exact;
-      if (/produto/i.test(lower)) return CONFIG.imageFilePriority.length + 1;
-      if (/imagem|image/i.test(lower)) return CONFIG.imageFilePriority.length + 2;
-      return CONFIG.imageFilePriority.length + 10;
-    }
+    function normalizePossibleImage(value, folderPath) {
+      let text = stringifyText(value).trim().replace(/^['"]|['"]$/g, '');
+      if (!text) return '';
 
-    function extractPrompt(json) {
-      for (const field of CONFIG.promptFieldNames) {
-        const value = getPathValue(json, field) || getDeepValue(json, field);
-        const text = stringifyPrompt(value);
-        if (text) return cleanPrompt(text);
+      const foundUrl = text.match(/https?:\/\/[^\s"'<>]+?\.(?:jpe?g|png|webp)(?:\?[^\s"'<>]*)?/i);
+      if (foundUrl) text = foundUrl[0];
+
+      if (!/\.(jpe?g|png|webp)(\?|$)/i.test(text) && !/^https?:\/\//i.test(text)) return '';
+      text = text.replace(/\\/g, '/');
+
+      if (/^https?:\/\/github\.com\//i.test(text) && /\/blob\//i.test(text)) {
+        return text.replace('https://github.com/', 'https://raw.githubusercontent.com/').replace('/blob/', '/');
       }
 
-      const deep = findTextByKey(json, /(prompt|gemini|roteiro|video)/i);
-      if (deep) return cleanPrompt(deep);
+      if (/^https?:\/\//i.test(text)) return text;
+      if (text.startsWith('/')) return rawUrl(text.replace(/^\/+/, ''));
+      if (text.includes('/')) return rawUrl(text);
+      return rawUrl(`${cleanPath(folderPath)}/${text}`);
+    }
 
-      return JSON.stringify(json, null, 2);
+    function findImagesInTreeFolder(folderPath) {
+      const folder = cleanPath(folderPath);
+      return state.tree
+        .filter(item => item.type === 'blob')
+        .map(item => item.path)
+        .filter(path => dirname(path) === folder && /\.(jpe?g|png|webp)$/i.test(path));
+    }
+
+    function imagePriority(pathOrName) {
+      const name = basename(pathOrName).toLowerCase();
+      const exact = CONFIG.imagePriority.findIndex(item => item === name);
+      if (exact >= 0) return exact;
+      if (/produto/i.test(name)) return CONFIG.imagePriority.length + 1;
+      if (/imagem|image/i.test(name)) return CONFIG.imagePriority.length + 2;
+      return CONFIG.imagePriority.length + 20;
     }
 
     function extractProduct(json) {
-      const product = json.produto && typeof json.produto === 'object' ? json.produto : {};
+      const product = json && typeof json.produto === 'object' ? json.produto : {};
       return {
-        nome: firstText(product.nome, product.title, product.name, json.nome_produto, json.produto_nome, json.title, json.nome),
-        marca: firstText(product.marca, product.brand, json.marca, json.brand),
-        categoria: firstText(product.categoria, product.category, json.categoria, json.category),
-        tipoVideo: firstText(json.tipo_video, json.tipoVideo, json.estilo_video, json.estilo, json.video_tipo),
-        data: firstText(json.data, json.criado_em, json.created_at),
-        idVideo: firstText(json.id_video, json.id, json.slug)
+        nome: firstText(product.nome, product.title, product.name, json.nome_produto, json.produto_nome, json.nome, json.title),
+        marca: firstText(product.marca, product.brand, json.marca, json.marca_filtrada),
+        categoria: firstText(product.categoria, json.categoria),
+        embalagem: firstText(product.embalagem, json.embalagem),
+        link: firstText(product.link, json.link)
       };
     }
 
-    function renderVideo(folder, data) {
-      const image = data.__image;
-      const prompt = data.__prompt || '';
-      const product = data.__product || {};
+    function buildTitle(entry, json, product) {
+      return firstText(
+        product.nome,
+        json.titulo,
+        json.title,
+        json.nome,
+        json.id_video,
+        entry.id,
+        'Vídeo do dia'
+      );
+    }
+
+    function buildSubtitle(json) {
+      const video = json.video && typeof json.video === 'object' ? json.video : {};
+      return firstText(video.micro_historia, json.micro_historia, video.objetivo, json.objetivo, 'Prompt pronto para Gemini.');
+    }
+
+    function buildTags(entry, json, product) {
+      const video = json.video && typeof json.video === 'object' ? json.video : {};
+      return [
+        json.id_video || entry.id,
+        json.dia_semana,
+        json.status,
+        json.tipo,
+        product.marca,
+        video.tipo_video_escolhido,
+        entry.jsonName
+      ].filter(value => String(value || '').trim());
+    }
+
+    function renderVideo(entry, data) {
+      const image = data.image;
+      const prompt = data.prompt || '';
       const canNewer = state.index > 0;
-      const canOlder = state.index < state.folders.length - 1;
-      const title = product.nome || data.titulo || data.title || `Vídeo ${folder.id}`;
+      const canOlder = state.index < state.entries.length - 1;
 
       $viewer.innerHTML = `
         <article class="card">
           <div class="media">
             ${image
-              ? `<img id="productImage" src="${escapeAttr(image.url)}" alt="${escapeAttr(title)}" loading="eager" decoding="async">`
-              : `<div class="media-empty">Nenhuma imagem encontrada nesta pasta.<br>Confira se existe <code>produto.webp</code>, <code>produto.jpg</code> ou URL de imagem no JSON.</div>`
+              ? `<img id="productImg" src="${escapeAttr(image.url)}" alt="Imagem do produto" loading="eager" decoding="async">`
+              : `<div class="media-empty">Nenhuma imagem encontrada.<br>Confira se existe <code>produto.webp</code>, <code>produto.jpg</code> ou URL da imagem dentro do JSON.</div>`
             }
-            <div class="badge">${escapeHtml(folder.path)}</div>
+            <div class="badge counter">${escapeHtml(state.index + 1)} de ${escapeHtml(state.entries.length)}</div>
+            <div class="badge loader" id="loader">Carregando imagem...</div>
           </div>
 
           <div class="content">
             <div class="meta">
-              <span class="tag">${escapeHtml(folder.id)}</span>
-              <span class="tag">${escapeHtml(data.__jsonFile || 'videododia.json')}</span>
-              ${image ? `<span class="tag">${escapeHtml(image.name || 'imagem')}</span>` : ''}
-              ${product.tipoVideo ? `<span class="tag">${escapeHtml(product.tipoVideo)}</span>` : ''}
+              ${data.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
             </div>
 
-            <h2 class="title">${escapeHtml(title)}</h2>
-            <p class="theme">Conteúdo gerado para copiar o prompt no Gemini e baixar a imagem de referência do produto.</p>
-
-            <div class="grid-info">
-              <div class="info-box">
-                <div class="info-label">Marca</div>
-                <div class="info-value">${escapeHtml(product.marca || '-')}</div>
-              </div>
-              <div class="info-box">
-                <div class="info-label">Categoria</div>
-                <div class="info-value">${escapeHtml(product.categoria || '-')}</div>
-              </div>
-              <div class="info-box">
-                <div class="info-label">Tipo de vídeo</div>
-                <div class="info-value">${escapeHtml(product.tipoVideo || '-')}</div>
-              </div>
-              <div class="info-box">
-                <div class="info-label">ID</div>
-                <div class="info-value">${escapeHtml(product.idVideo || folder.id)}</div>
-              </div>
-            </div>
+            <h2 class="title">${escapeHtml(data.title)}</h2>
+            <p class="theme">${escapeHtml(data.subtitle)}</p>
 
             <div class="actions">
-              <button class="btn-main" id="downloadImage" ${image ? '' : 'disabled'}>Baixar imagem do produto</button>
-              <button class="btn-dark" id="copyPrompt" ${prompt ? '' : 'disabled'}>Copiar prompt para Gemini</button>
+              <button class="btn-main" id="copyPrompt" ${prompt ? '' : 'disabled'}>Copiar prompt para Gemini</button>
+              <button class="btn-dark" id="downloadImage" ${image ? '' : 'disabled'}>Baixar imagem</button>
             </div>
 
             <div class="prompt-box">
-              <div class="prompt-head">
-                <span>Prompt pronto para copiar</span>
+              <div class="box-head">
+                <span>Prompt para copiar no Gemini</span>
                 <span>${escapeHtml(prompt.length)} caracteres</span>
               </div>
-              <div class="prompt" id="promptText">${escapeHtml(prompt || 'Nenhum prompt encontrado no JSON.')}</div>
+              <div class="prompt" id="promptText">${escapeHtml(prompt || 'Sem prompt encontrado no JSON.')}</div>
             </div>
 
-            <div class="video-nav">
-              <button class="btn-soft" id="newerVideo" ${!canNewer ? 'disabled' : ''}>Vídeo mais novo</button>
-              <button class="btn-soft" id="olderVideo" ${!canOlder ? 'disabled' : ''}>Vídeo anterior</button>
+            <div class="actions">
+              <button class="btn-soft" id="copyJson">Copiar JSON</button>
+              <a class="btn btn-soft" href="${escapeAttr(rawUrl(entry.jsonPath))}" target="_blank" rel="noopener">Abrir JSON</a>
             </div>
 
-            <p class="note">O site procura automaticamente dentro de <code>video/</code>. Em cada pasta, ele lê primeiro <code>videododia.json</code> e usa a primeira imagem encontrada, priorizando <code>produto.webp</code>, <code>produto.jpg</code> ou <code>produto.png</code>.</p>
+            <details class="json-box">
+              <summary>Ver JSON completo</summary>
+              <pre id="jsonText">${escapeHtml(JSON.stringify(data.json, null, 2))}</pre>
+            </details>
+
+            <div class="nav">
+              <button class="btn-soft" id="newer" ${!canNewer ? 'disabled' : ''}>Mais novo</button>
+              <button class="btn-soft" id="older" ${!canOlder ? 'disabled' : ''}>Anterior</button>
+            </div>
+
+            <p class="note">
+              Caminho lido: <code>${escapeHtml(entry.jsonPath)}</code>${image ? `<br>Imagem: <code>${escapeHtml(image.name || image.source)}</code>` : ''}
+            </p>
           </div>
         </article>
       `;
 
-      bindEvents(folder, data);
-    }
-
-    function bindEvents(folder, data) {
-      const image = data.__image;
-      const prompt = data.__prompt || '';
-
-      document.getElementById('downloadImage')?.addEventListener('click', async event => {
-        if (!image) return;
-        const fileBase = safeName(`${folder.id}-${data.__product?.nome || 'produto'}`);
-        const ext = getImageExtension(image.name || image.url) || 'jpg';
-        await downloadUrlAsFile(image.url, `${fileBase}.${ext}`);
-        flashButton(event.currentTarget, 'Imagem baixada');
-      });
+      const img = document.getElementById('productImg');
+      const loader = document.getElementById('loader');
+      if (img && loader) {
+        loader.classList.add('active');
+        img.addEventListener('load', () => loader.classList.remove('active'), { once: true });
+        img.addEventListener('error', () => {
+          loader.textContent = 'Erro na imagem';
+          loader.classList.add('active');
+        }, { once: true });
+      }
 
       document.getElementById('copyPrompt')?.addEventListener('click', async event => {
         await copyText(prompt);
         flashButton(event.currentTarget, 'Prompt copiado');
       });
 
-      document.getElementById('olderVideo')?.addEventListener('click', async event => {
-        if (state.index >= state.folders.length - 1) return;
-        event.currentTarget.disabled = true;
-        await loadAndRender(state.index + 1);
-        scrollToViewer();
+      document.getElementById('copyJson')?.addEventListener('click', async event => {
+        await copyText(JSON.stringify(data.json, null, 2));
+        flashButton(event.currentTarget, 'JSON copiado');
       });
 
-      document.getElementById('newerVideo')?.addEventListener('click', async event => {
-        if (state.index <= 0) return;
+      document.getElementById('downloadImage')?.addEventListener('click', async event => {
+        if (!image) return;
         event.currentTarget.disabled = true;
-        await loadAndRender(state.index - 1);
-        scrollToViewer();
+        await downloadFile(image.url, `${safeName(data.title || entry.id)}-${safeName(image.name || 'produto')}`);
+        event.currentTarget.disabled = false;
       });
+
+      document.getElementById('newer')?.addEventListener('click', () => loadAndRender(state.index - 1));
+      document.getElementById('older')?.addEventListener('click', () => loadAndRender(state.index + 1));
     }
 
-    async function fetchGithubContents(path) {
-      const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${encodePath(path)}?ref=${encodeURIComponent(CONFIG.branch)}`;
-      const res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`${path}: GitHub retornou ${res.status}`);
-      const json = await res.json();
-      return Array.isArray(json) ? json : [];
+    function renderError(entry, message) {
+      $viewer.innerHTML = `
+        <div class="empty">
+          <strong>Não consegui abrir este conteúdo.</strong><br><br>
+          Caminho tentado:<br>
+          <code>${escapeHtml(entry.jsonPath)}</code><br><br>
+          Erro:<br>
+          <code>${escapeHtml(message)}</code><br><br>
+          Teste no campo manual outro caminho, por exemplo:<br>
+          <code>video/NOME-DA-PASTA/videododia.json</code>
+        </div>
+      `;
     }
 
-    function rawUrl(path) {
-      return `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${encodeURIComponent(CONFIG.branch)}/${encodePath(path)}`;
+    function renderEmpty(extra = '') {
+      const videoFiles = state.tree
+        .filter(item => item.type === 'blob' && CONFIG.rootPaths.includes(cleanPath(item.path).split('/')[0]))
+        .map(item => item.path)
+        .slice(0, 30);
+
+      $viewer.innerHTML = `
+        <div class="empty">
+          <strong>Nenhum conteúdo de vídeo encontrado.</strong><br><br>
+          O site procura arquivos como:<br><br>
+          <code>video/20260619-nivea/videododia.json</code><br>
+          <code>video/20260619-nivea/produto.webp</code><br><br>
+          Também aceita:<br>
+          <code>video-do-dia.json</code>, <code>video_do_dia.json</code>, <code>videodiatal.json</code>, <code>dados.json</code> e <code>prompt.json</code>.<br><br>
+          ${videoFiles.length ? `Arquivos que encontrei dentro de video/videos:<br><br>${videoFiles.map(path => `<code>${escapeHtml(path)}</code>`).join('<br>')}` : `Não encontrei nenhum arquivo dentro de <code>video/</code> ou <code>videos/</code>. Isso indica que o cenário provavelmente ainda não salvou os arquivos nessa pasta, ou salvou em outro caminho.`}
+          ${extra ? `<br><br>Detalhe: <code>${escapeHtml(extra)}</code>` : ''}
+        </div>
+      `;
     }
 
-    function normalizeImageUrl(value, folder) {
-      let url = String(value || '').trim().replace(/^['"]|['"]$/g, '').replace(/\\/g, '/');
-      if (!url) return '';
-
-      if (/^https?:\/\/github\.com\//i.test(url) && /\/blob\//i.test(url)) {
-        return url.replace('https://github.com/', 'https://raw.githubusercontent.com/').replace('/blob/', '/');
-      }
-
-      if (/^https?:\/\//i.test(url)) return url;
-      if (url.startsWith('/')) return rawUrl(url.replace(/^\/+/, ''));
-      if (url.includes('/')) return rawUrl(url);
-      return rawUrl(`${cleanPath(folder.path || '')}/${url}`);
-    }
-
-    async function downloadUrlAsFile(url, filename) {
+    async function downloadFile(url, filename) {
       try {
         const res = await fetch(url, { cache: 'no-store', mode: 'cors' });
-        if (!res.ok) throw new Error(`Imagem retornou ${res.status}`);
+        if (!res.ok) throw new Error(`download retornou ${res.status}`);
         const blob = await res.blob();
-        triggerDownload(blob, filename);
+        const ext = extensionFromUrl(url) || extensionFromType(blob.type) || 'jpg';
+        triggerDownload(blob, filename.endsWith(`.${ext}`) ? filename : `${filename}.${ext}`);
       } catch (error) {
-        console.warn('Download por fetch falhou. Tentando link direto:', error);
+        console.warn('Download via blob falhou. Abrindo link direto:', error);
         const a = document.createElement('a');
         a.href = url;
-        a.download = filename;
-        a.rel = 'noopener';
+        a.download = filename || 'produto';
         a.target = '_blank';
+        a.rel = 'noopener';
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -759,133 +995,72 @@
       textarea.remove();
     }
 
-    function safeJsonParse(text) {
-      const base = String(text || '')
-        .replace(/^\uFEFF/, '')
-        .trim()
-        .replace(/^```(?:json)?\s*/i, '')
-        .replace(/```$/i, '')
-        .trim();
-
-      const attempts = [base];
-      const firstObj = base.indexOf('{');
-      const lastObj = base.lastIndexOf('}');
-      if (firstObj >= 0 && lastObj > firstObj) attempts.push(base.slice(firstObj, lastObj + 1));
-
-      for (const candidate of attempts) {
-        try {
-          let parsed = JSON.parse(candidate.replace(/,\s*([}\]])/g, '$1'));
-          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
-          if (parsed && typeof parsed === 'object') return parsed;
-        } catch (_) {}
+    function getByPath(obj, path) {
+      if (!obj || !path) return undefined;
+      const parts = String(path).split('.');
+      let current = obj;
+      for (const part of parts) {
+        if (!current || typeof current !== 'object' || !Object.prototype.hasOwnProperty.call(current, part)) return undefined;
+        current = current[part];
       }
-
-      throw new Error('não consegui interpretar o JSON');
+      return current;
     }
 
-    function stringifyPrompt(value) {
-      if (value == null) return '';
-      if (typeof value === 'string') return value;
-      if (Array.isArray(value)) return value.map(stringifyPrompt).filter(Boolean).join('\n');
-      if (typeof value === 'object') {
-        const direct = firstText(value.text, value.content, value.value, value.prompt, value.output_text);
-        if (direct) return direct;
-        if (Array.isArray(value.choices) && value.choices[0]) {
-          return stringifyPrompt(value.choices[0]?.message?.content || value.choices[0]?.text);
-        }
-      }
-      return '';
-    }
-
-    function cleanPrompt(text) {
-      return String(text || '')
-        .replace(/^\uFEFF/, '')
-        .replace(/^```(?:text|txt|markdown|md|json)?\s*/i, '')
-        .replace(/```$/i, '')
-        .replace(/```/g, '')
-        .replace(/\\n/g, '\n')
-        .replace(/\\r/g, '')
-        .replace(/^['"]|['"]$/g, '')
-        .trim();
-    }
-
-    function getDeepValue(obj, targetField) {
-      if (!obj || typeof obj !== 'object') return undefined;
-      if (Object.prototype.hasOwnProperty.call(obj, targetField)) return obj[targetField];
-
-      const target = String(targetField).toLowerCase();
-      const stack = [obj];
+    function findDeepText(obj, keyRegex, minLength = 0, imageOnly = false) {
+      const stack = [{ key: '', value: obj }];
       const seen = new Set();
 
       while (stack.length) {
-        const current = stack.shift();
-        if (!current || typeof current !== 'object' || seen.has(current)) continue;
-        seen.add(current);
+        const { key, value } = stack.shift();
+        if (!value) continue;
 
-        for (const [key, value] of Object.entries(current)) {
-          if (String(key).toLowerCase() === target) return value;
-          if (value && typeof value === 'object') stack.push(value);
+        if (typeof value === 'string') {
+          const text = value.trim();
+          if (keyRegex.test(key) && text.length >= minLength) {
+            if (!imageOnly || /\.(jpe?g|png|webp)(\?|$)/i.test(text) || /^https?:\/\//i.test(text)) return text;
+          }
+          continue;
+        }
+
+        if (typeof value === 'object') {
+          if (seen.has(value)) continue;
+          seen.add(value);
+          Object.entries(value).forEach(([childKey, childValue]) => stack.push({ key: childKey, value: childValue }));
         }
       }
 
-      return undefined;
+      return '';
     }
 
-    function getPathValue(obj, path) {
-      if (!obj || !path || !String(path).includes('.')) return undefined;
-      return String(path).split('.').reduce((acc, key) => {
-        if (acc && typeof acc === 'object' && Object.prototype.hasOwnProperty.call(acc, key)) return acc[key];
-        return undefined;
-      }, obj);
+    function isUsefulText(value) {
+      return value !== undefined && value !== null && String(stringifyText(value)).trim() !== '';
     }
 
-    function findTextByKey(obj, pattern) {
-      let best = '';
-
-      function walk(node, key = '') {
-        if (!node || best) return;
-        if (typeof node === 'string') {
-          if (pattern.test(key) && node.length > 40) best = node;
-          return;
+    function stringifyText(value) {
+      if (value == null) return '';
+      if (typeof value === 'string') return value;
+      if (Array.isArray(value)) return value.map(stringifyText).filter(Boolean).join('\n');
+      if (typeof value === 'object') {
+        for (const key of ['text', 'texto', 'content', 'conteudo', 'value', 'prompt_gemini', 'prompt']) {
+          if (value[key]) return stringifyText(value[key]);
         }
-        if (Array.isArray(node)) return node.forEach((item, i) => walk(item, `${key}_${i}`));
-        if (typeof node === 'object') Object.entries(node).forEach(([k, v]) => walk(v, k));
+        return JSON.stringify(value, null, 2);
       }
-
-      walk(obj);
-      return best;
-    }
-
-    function findFirstImageUrl(obj) {
-      let found = '';
-
-      function walk(node) {
-        if (!node || found) return;
-        if (typeof node === 'string') {
-          const match = node.match(/https?:\/\/[^\s'"<>]+?\.(?:jpe?g|png|webp)(?:\?[^\s'"<>]*)?/i);
-          if (match) found = match[0];
-          return;
-        }
-        if (Array.isArray(node)) return node.forEach(walk);
-        if (typeof node === 'object') Object.values(node).forEach(walk);
-      }
-
-      walk(obj);
-      return found;
+      return String(value);
     }
 
     function firstText(...values) {
       for (const value of values) {
-        if (value !== undefined && value !== null && String(value).trim() !== '') return String(value).trim();
+        const text = stringifyText(value).trim();
+        if (text) return text;
       }
       return '';
     }
 
-    function parseDateFromText(id) {
-      const text = String(id || '');
-      const match = text.match(/(\d{4})(\d{2})(\d{2})[-_ ]?(\d{2})?(\d{2})?(\d{2})?/);
+    function parseDateScore(text) {
+      const value = String(text || '');
+      const match = value.match(/(20\d{2})[-_ ]?(\d{2})[-_ ]?(\d{2})[-_ ]?(\d{2})?(\d{2})?(\d{2})?/);
       if (!match) return 0;
-
       const year = Number(match[1]);
       const month = Number(match[2]) - 1;
       const day = Number(match[3]);
@@ -896,11 +1071,12 @@
       return Number.isFinite(time) ? time : 0;
     }
 
-    function getImageExtension(value) {
-      const clean = String(value || '').split('?')[0].split('#')[0];
-      const match = clean.match(/\.([a-z0-9]+)$/i);
-      const ext = match ? match[1].toLowerCase() : '';
-      return ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? ext : '';
+    function rawUrl(path) {
+      return `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${encodeURIComponent(CONFIG.branch)}/${encodePath(path)}`;
+    }
+
+    function githubBlobUrl(path) {
+      return `https://github.com/${CONFIG.owner}/${CONFIG.repo}/blob/${encodeURIComponent(CONFIG.branch)}/${encodePath(path)}`;
     }
 
     function encodePath(path) {
@@ -911,22 +1087,35 @@
       return String(path || '').replace(/^\/+|\/+$/g, '').replace(/\/+/g, '/');
     }
 
+    function dirname(path) {
+      const clean = cleanPath(path);
+      return clean.includes('/') ? clean.slice(0, clean.lastIndexOf('/')) : '';
+    }
+
     function basename(path) {
       return String(path || '').split(/[?#]/)[0].split('/').pop() || '';
     }
 
-    function safeName(value) {
-      return String(value || 'video')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9-_]+/gi, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '')
-        .toLowerCase() || 'video';
+    function extensionFromUrl(url) {
+      const match = String(url || '').split(/[?#]/)[0].match(/\.([a-z0-9]+)$/i);
+      return match ? match[1].toLowerCase().replace('jpeg', 'jpg') : '';
     }
 
-    function scrollToViewer() {
-      $viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    function extensionFromType(type) {
+      if (/png/i.test(type)) return 'png';
+      if (/webp/i.test(type)) return 'webp';
+      if (/jpe?g/i.test(type)) return 'jpg';
+      return '';
+    }
+
+    function safeName(value) {
+      return String(value || 'arquivo')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9-_\.]+/gi, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .toLowerCase() || 'arquivo';
     }
 
     function flashButton(button, message) {
@@ -942,23 +1131,6 @@
     function setStatus(message, type) {
       $status.className = `status${type ? ` ${type}` : ''}`;
       $status.innerHTML = escapeHtml(message);
-    }
-
-    function renderEmpty(extra) {
-      $viewer.innerHTML = `
-        <div class="empty">
-          <strong>Nenhum conteúdo encontrado.</strong><br><br>
-          Este leitor procura pastas dentro de:<br>
-          <code>video/</code><br><br>
-          Dentro de cada pasta, o esperado é ter pelo menos estes arquivos:<br><br>
-          <code>videododia.json</code><br>
-          <code>produto.webp</code>, <code>produto.jpg</code> ou <code>produto.png</code><br><br>
-          Exemplo:<br>
-          <code>video/20260619-nivea/videododia.json</code><br>
-          <code>video/20260619-nivea/produto.webp</code>
-          ${extra ? `<br><br>Detalhe: ${escapeHtml(extra)}` : ''}
-        </div>
-      `;
     }
 
     function escapeHtml(value) {
