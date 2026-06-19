@@ -3,6 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <link rel="preconnect" href="https://api.github.com" />
+  <link rel="preconnect" href="https://raw.githubusercontent.com" />
+  <link rel="dns-prefetch" href="https://api.github.com" />
+  <link rel="dns-prefetch" href="https://raw.githubusercontent.com" />
   <title>Leitor de Vídeos Dona Antônia</title>
   <style>
     :root {
@@ -32,7 +37,7 @@
     }
 
     .app {
-      width: min(100%, 680px);
+      width: min(100%, 720px);
       margin: 0 auto;
       padding: 12px 12px 34px;
     }
@@ -49,7 +54,7 @@
     }
 
     .top-inner {
-      width: min(100%, 680px);
+      width: min(100%, 720px);
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -115,7 +120,7 @@
 
     .manual-row {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr auto auto;
       gap: 8px;
     }
 
@@ -143,7 +148,7 @@
 
     .media {
       position: relative;
-      min-height: 360px;
+      min-height: 340px;
       background: #eadfd3;
       display: grid;
       place-items: center;
@@ -155,10 +160,14 @@
       height: auto;
       display: block;
       background: #eadfd3;
+      opacity: 0;
+      transition: opacity .18s ease;
     }
 
+    .media img.ready { opacity: 1; }
+
     .media-empty {
-      min-height: 360px;
+      min-height: 340px;
       display: grid;
       place-items: center;
       padding: 24px;
@@ -166,6 +175,19 @@
       color: var(--muted);
       font-size: 14px;
       line-height: 1.45;
+    }
+
+    .skeleton {
+      width: 100%;
+      min-height: 340px;
+      background: linear-gradient(90deg, #eadfd3 0%, #f4eadf 45%, #eadfd3 85%);
+      background-size: 220% 100%;
+      animation: shine 1.1s linear infinite;
+    }
+
+    @keyframes shine {
+      from { background-position: 200% 0; }
+      to { background-position: -20% 0; }
     }
 
     .badge {
@@ -189,10 +211,7 @@
       background: rgba(255, 250, 244, .9);
       border: 1px solid rgba(255, 255, 255, .5);
       color: var(--text);
-      display: none;
     }
-
-    .loader.active { display: block; }
 
     .content { padding: 14px; }
 
@@ -253,10 +272,15 @@
       white-space: pre-wrap;
       color: var(--text);
       font-size: 14px;
-      line-height: 1.48;
-      max-height: 430px;
-      overflow: auto;
+      line-height: 1.5;
+      max-height: none;
+      overflow: visible;
       padding-right: 2px;
+    }
+
+    .prompt.collapsed {
+      max-height: 440px;
+      overflow: auto;
     }
 
     details summary {
@@ -283,7 +307,7 @@
       margin-top: 12px;
     }
 
-    .actions.single { grid-template-columns: 1fr; }
+    .actions.three { grid-template-columns: 1fr 1fr 1fr; }
 
     button, a.btn {
       border: 0;
@@ -333,11 +357,11 @@
     }
 
     @media (min-width: 560px) {
-      .media { min-height: 520px; }
+      .media, .skeleton { min-height: 520px; }
     }
 
-    @media (max-width: 430px) {
-      .manual-row, .actions, .nav { grid-template-columns: 1fr; }
+    @media (max-width: 520px) {
+      .manual-row, .actions, .actions.three, .nav { grid-template-columns: 1fr; }
       .top-inner { align-items: flex-start; flex-direction: column; }
     }
   </style>
@@ -348,7 +372,7 @@
       <div class="top-inner">
         <div>
           <h1>Leitor de Vídeos Dona Antônia</h1>
-          <p class="sub">Lê as pastas em video/, mostra a imagem e copia o prompt para Gemini.</p>
+          <p class="sub">Carrega automaticamente a imagem e o prompt da pasta video/.</p>
         </div>
         <div class="pill" id="repoPill">GitHub</div>
       </div>
@@ -357,12 +381,13 @@
     <section class="status" id="status">Carregando...</section>
 
     <section class="tools">
-      <label for="manualPath">Carregar caminho manual, se precisar</label>
+      <label for="manualPath">Caminho manual, se quiser abrir uma pasta específica</label>
       <div class="manual-row">
-        <input id="manualPath" placeholder="Ex: video/20260619-nivea/videododia.json ou video/20260619-nivea" />
+        <input id="manualPath" placeholder="Ex: video/20260619-174524-video-nivea ou video/20260619-174524-video-nivea/videododia.json" />
         <button class="btn-soft" id="manualBtn">Abrir</button>
+        <button class="btn-dark" id="refreshBtn">Atualizar</button>
       </div>
-      <p class="note">Este leitor agora usa a árvore completa do GitHub, então encontra arquivos mesmo quando a listagem simples de pastas falha.</p>
+      <p class="note">Agora o leitor primeiro abre rapidamente a pasta mais recente de <code>video/</code>. A busca pesada pela árvore completa só roda como reserva.</p>
     </section>
 
     <section id="viewer"></section>
@@ -391,21 +416,27 @@
       ],
       promptFields: [
         'prompt_gemini', 'promptGemini', 'gemini_prompt', 'prompt_video', 'prompt',
-        'video.prompt_gemini', 'video.prompt', 'conteudo.prompt_gemini', 'dados.prompt_gemini'
+        'video.prompt_gemini', 'video.prompt', 'conteudo.prompt_gemini', 'dados.prompt_gemini',
+        'result.prompt_gemini', 'result.prompt', 'output.prompt_gemini'
       ],
       imageFields: [
         'produto.imagem_github', 'produto.imagem_original', 'produto.image_link', 'produto.imagem',
         'arquivos.imagem_produto', 'arquivos.produto', 'imagem_github', 'imagem_produto_github',
         'produto_imagem_github', 'imagem_produto', 'image_link', 'imagem', 'image', 'url_imagem'
-      ]
+      ],
+      autoLoadLatest: true
     };
 
     const state = {
       entries: [],
       index: 0,
+      rootItemsCache: new Map(),
+      folderItemsCache: new Map(),
+      dataCache: new Map(),
+      imageCache: new Map(),
       tree: [],
-      cache: new Map(),
-      loading: false
+      loading: false,
+      forceFresh: false
     };
 
     const $status = document.getElementById('status');
@@ -413,35 +444,41 @@
     const $repoPill = document.getElementById('repoPill');
     const $manualPath = document.getElementById('manualPath');
     const $manualBtn = document.getElementById('manualBtn');
+    const $refreshBtn = document.getElementById('refreshBtn');
 
     $repoPill.textContent = `${CONFIG.owner}/${CONFIG.repo}`;
-    $manualBtn.addEventListener('click', loadManualPath);
+    $manualBtn.addEventListener('click', () => loadManualPath(false));
+    $refreshBtn.addEventListener('click', refreshAll);
     $manualPath.addEventListener('keydown', event => {
-      if (event.key === 'Enter') loadManualPath();
+      if (event.key === 'Enter') loadManualPath(false);
     });
 
     init();
 
     async function init() {
+      renderLoadingCard('Procurando a pasta mais recente em video/...');
+
       try {
-        setStatus('Lendo a árvore do GitHub e procurando arquivos em video/...', 'ok');
-        state.tree = await fetchRepoTree();
-        state.entries = findVideoEntries(state.tree);
+        setStatus('Abrindo video/ do GitHub...', 'ok');
+        state.entries = await fastFindEntriesFromRoot();
 
         if (!state.entries.length) {
-          await fallbackFindByContentsApi();
+          setStatus('Não encontrei pelo modo rápido. Tentando busca completa no repositório...', 'ok');
+          state.entries = await fallbackFindEntriesFromTree();
         }
 
         if (!state.entries.length) {
           renderEmpty();
-          setStatus('Não encontrei videododia.json dentro de video/. Veja as instruções abaixo.', 'err');
+          setStatus('Não encontrei videododia.json dentro de video/.', 'err');
           return;
         }
 
         state.entries.sort(sortEntriesNewestFirst);
         state.index = 0;
-        setStatus(`Encontrei ${state.entries.length} conteúdo(s) de vídeo. Abrindo o mais recente...`, 'ok');
-        await loadAndRender(0);
+
+        setStatus(`Encontrei ${state.entries.length} conteúdo(s). Carregando automaticamente o mais recente...`, 'ok');
+        await loadAndRender(0, false);
+        preloadNeighborEntries();
       } catch (error) {
         console.error(error);
         renderEmpty(error.message);
@@ -449,17 +486,74 @@
       }
     }
 
-    async function fetchRepoTree() {
-      const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/git/trees/${encodeURIComponent(CONFIG.branch)}?recursive=1`;
-      const res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`GitHub tree retornou ${res.status}`);
-      const json = await res.json();
-      if (!json || !Array.isArray(json.tree)) throw new Error('A resposta da árvore do GitHub não veio no formato esperado.');
-      return json.tree.filter(item => item && item.path).map(item => ({ ...item, path: cleanPath(item.path) }));
+    async function refreshAll() {
+      state.forceFresh = true;
+      state.rootItemsCache.clear();
+      state.folderItemsCache.clear();
+      state.dataCache.clear();
+      state.imageCache.clear();
+      state.entries = [];
+      state.index = 0;
+      await init();
+      state.forceFresh = false;
     }
 
-    function findVideoEntries(tree) {
-      const jsonNameSet = new Set(CONFIG.jsonNames.map(x => x.toLowerCase()));
+    async function fastFindEntriesFromRoot() {
+      const entries = [];
+
+      for (const root of CONFIG.rootPaths) {
+        try {
+          const rootItems = await fetchGithubContents(root);
+
+          const directJsons = rootItems
+            .filter(item => item.type === 'file' && isJsonCandidate(item.name))
+            .map(item => ({
+              id: root,
+              folderPath: root,
+              jsonPath: cleanPath(item.path),
+              jsonName: item.name,
+              imagePath: '',
+              mode: 'direct-json'
+            }));
+          entries.push(...directJsons);
+
+          const dirs = rootItems
+            .filter(item => item.type === 'dir')
+            .map(item => ({ id: item.name, folderPath: cleanPath(item.path) }))
+            .sort(sortEntriesNewestFirst);
+
+          for (const dir of dirs) {
+            const entry = await entryFromFolder(dir.folderPath, dir.id).catch(() => null);
+            if (entry) entries.push(entry);
+          }
+        } catch (error) {
+          console.warn(`Falha lendo ${root}/`, error);
+        }
+      }
+
+      return dedupeEntries(entries);
+    }
+
+    async function entryFromFolder(folderPath, folderId = '') {
+      const items = await fetchGithubContents(folderPath);
+      const jsonItem = chooseBestJsonItem(items);
+      if (!jsonItem) return null;
+
+      const imageItem = chooseBestImageItem(items);
+      return {
+        id: folderId || basename(folderPath),
+        folderPath: cleanPath(folderPath),
+        jsonPath: cleanPath(jsonItem.path),
+        jsonName: jsonItem.name,
+        imagePath: imageItem ? cleanPath(imageItem.path) : '',
+        imageDownloadUrl: imageItem ? imageItem.download_url : '',
+        mode: 'folder-fast'
+      };
+    }
+
+    async function fallbackFindEntriesFromTree() {
+      const tree = await fetchRepoTree();
+      state.tree = tree;
       const entries = [];
 
       for (const item of tree) {
@@ -467,64 +561,100 @@
         const path = cleanPath(item.path);
         const parts = path.split('/');
         if (!CONFIG.rootPaths.includes(parts[0])) continue;
-        const fileName = parts[parts.length - 1].toLowerCase();
-        const isJson = fileName.endsWith('.json');
-        if (!isJson) continue;
-
-        const looksRight = jsonNameSet.has(fileName) || /video.*dia.*\.json$/i.test(fileName) || /prompt.*\.json$/i.test(fileName);
-        if (!looksRight) continue;
+        if (!isJsonCandidate(basename(path))) continue;
 
         const folderPath = dirname(path) || parts[0];
-        const folderId = basename(folderPath) || parts[0];
+        const imagePath = findBestImagePathInTree(folderPath);
         entries.push({
-          id: folderId,
+          id: basename(folderPath) || parts[0],
           folderPath,
           jsonPath: path,
           jsonName: basename(path),
-          htmlUrl: githubBlobUrl(path)
+          imagePath,
+          imageDownloadUrl: imagePath ? rawUrl(imagePath) : '',
+          mode: 'tree-fallback'
         });
       }
 
       return dedupeEntries(entries);
     }
 
-    async function fallbackFindByContentsApi() {
-      const entries = [];
-      for (const root of CONFIG.rootPaths) {
-        try {
-          const rootItems = await fetchGithubContents(root);
-          for (const item of rootItems) {
-            if (!item) continue;
-
-            if (item.type === 'file' && /\.json$/i.test(item.name || '')) {
-              const name = String(item.name || '').toLowerCase();
-              if (CONFIG.jsonNames.includes(name) || /video.*dia.*\.json$/i.test(name)) {
-                entries.push({ id: root, folderPath: root, jsonPath: cleanPath(item.path), jsonName: item.name, htmlUrl: item.html_url || githubBlobUrl(item.path) });
-              }
-            }
-
-            if (item.type === 'dir') {
-              try {
-                const folderItems = await fetchGithubContents(item.path);
-                const jsonItem = folderItems.find(file => file.type === 'file' && CONFIG.jsonNames.includes(String(file.name || '').toLowerCase()))
-                  || folderItems.find(file => file.type === 'file' && /video.*dia.*\.json$/i.test(file.name || ''));
-                if (jsonItem) {
-                  entries.push({ id: item.name, folderPath: cleanPath(item.path), jsonPath: cleanPath(jsonItem.path), jsonName: jsonItem.name, htmlUrl: jsonItem.html_url || githubBlobUrl(jsonItem.path) });
-                }
-              } catch (_) {}
-            }
-          }
-        } catch (_) {}
-      }
-      state.entries = dedupeEntries(entries);
+    async function fetchRepoTree() {
+      const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/git/trees/${encodeURIComponent(CONFIG.branch)}?recursive=1`;
+      const res = await fetch(url, fetchOptions());
+      if (!res.ok) throw new Error(`GitHub tree retornou ${res.status}`);
+      const json = await res.json();
+      if (!json || !Array.isArray(json.tree)) throw new Error('A árvore do GitHub não veio no formato esperado.');
+      return json.tree.filter(item => item && item.path).map(item => ({ ...item, path: cleanPath(item.path) }));
     }
 
     async function fetchGithubContents(path) {
-      const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${encodePath(path)}?ref=${encodeURIComponent(CONFIG.branch)}`;
-      const res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`GitHub contents retornou ${res.status} em ${path}`);
+      const clean = cleanPath(path);
+      const key = `${clean}::${state.forceFresh ? Date.now() : 'cache'}`;
+      if (!state.forceFresh && state.rootItemsCache.has(clean)) return state.rootItemsCache.get(clean);
+
+      const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${encodePath(clean)}?ref=${encodeURIComponent(CONFIG.branch)}`;
+      const res = await fetch(url, fetchOptions());
+      if (!res.ok) throw new Error(`GitHub contents retornou ${res.status} em ${clean}`);
       const json = await res.json();
-      return Array.isArray(json) ? json : [json];
+      const items = Array.isArray(json) ? json : [json];
+      if (!state.forceFresh) state.rootItemsCache.set(clean, items);
+      return items;
+    }
+
+    function fetchOptions() {
+      return state.forceFresh
+        ? { cache: 'no-store' }
+        : { cache: 'default' };
+    }
+
+    function isJsonCandidate(name) {
+      const lower = String(name || '').toLowerCase();
+      return lower.endsWith('.json') && (
+        CONFIG.jsonNames.includes(lower) ||
+        /video.*dia.*\.json$/i.test(lower) ||
+        /prompt.*\.json$/i.test(lower)
+      );
+    }
+
+    function chooseBestJsonItem(items) {
+      return (items || [])
+        .filter(item => item.type === 'file' && isJsonCandidate(item.name))
+        .sort((a, b) => jsonNamePriority(a.name) - jsonNamePriority(b.name) || String(a.name).localeCompare(String(b.name)))[0] || null;
+    }
+
+    function chooseBestImageItem(items) {
+      return (items || [])
+        .filter(item => item.type === 'file' && /\.(jpe?g|png|webp)$/i.test(item.name || ''))
+        .sort((a, b) => imagePriority(a.name) - imagePriority(b.name) || String(a.name).localeCompare(String(b.name)))[0] || null;
+    }
+
+    function jsonNamePriority(name) {
+      const lower = String(name || '').toLowerCase();
+      const exact = CONFIG.jsonNames.findIndex(item => item === lower);
+      if (exact >= 0) return exact;
+      if (/video.*dia.*\.json$/i.test(lower)) return CONFIG.jsonNames.length + 1;
+      if (/prompt.*\.json$/i.test(lower)) return CONFIG.jsonNames.length + 2;
+      return CONFIG.jsonNames.length + 10;
+    }
+
+    function imagePriority(pathOrName) {
+      const name = basename(pathOrName).toLowerCase();
+      const exact = CONFIG.imagePriority.findIndex(item => item === name);
+      if (exact >= 0) return exact;
+      if (/produto/i.test(name)) return CONFIG.imagePriority.length + 1;
+      if (/imagem|image/i.test(name)) return CONFIG.imagePriority.length + 2;
+      return CONFIG.imagePriority.length + 20;
+    }
+
+    function findBestImagePathInTree(folderPath) {
+      const folder = cleanPath(folderPath);
+      const images = state.tree
+        .filter(item => item.type === 'blob')
+        .map(item => item.path)
+        .filter(path => dirname(path) === folder && /\.(jpe?g|png|webp)$/i.test(path))
+        .sort((a, b) => imagePriority(a) - imagePriority(b) || a.localeCompare(b));
+      return images[0] || '';
     }
 
     function dedupeEntries(entries) {
@@ -538,71 +668,57 @@
     }
 
     function sortEntriesNewestFirst(a, b) {
-      const ta = parseDateScore(`${a.id} ${a.folderPath} ${a.jsonPath}`);
-      const tb = parseDateScore(`${b.id} ${b.folderPath} ${b.jsonPath}`);
+      const ta = parseDateScore(`${a.id || ''} ${a.folderPath || ''} ${a.jsonPath || ''}`);
+      const tb = parseDateScore(`${b.id || ''} ${b.folderPath || ''} ${b.jsonPath || ''}`);
       if (tb !== ta) return tb - ta;
-      return String(b.jsonPath).localeCompare(String(a.jsonPath));
+      return String(b.folderPath || b.jsonPath).localeCompare(String(a.folderPath || a.jsonPath));
     }
 
-    async function loadManualPath() {
+    async function loadManualPath(force = true) {
       const value = cleanPath($manualPath.value || '');
       if (!value) return;
 
-      let jsonPath = value;
       let folderPath = value;
+      let jsonPath = value;
+      let imagePath = '';
 
-      if (!/\.json$/i.test(value)) {
-        folderPath = value;
-        jsonPath = await findJsonInFolder(value) || `${value}/videododia.json`;
-      } else {
+      if (/\.json$/i.test(value)) {
         folderPath = dirname(value);
+      } else {
+        const entry = await entryFromFolder(value, basename(value)).catch(() => null);
+        if (entry) {
+          prependAndOpenEntry(entry, true);
+          return;
+        }
+        jsonPath = `${value}/videododia.json`;
       }
 
+      imagePath = await findImagePathFast(folderPath);
       const entry = {
         id: basename(folderPath) || 'video',
         folderPath,
         jsonPath,
         jsonName: basename(jsonPath),
-        htmlUrl: githubBlobUrl(jsonPath)
+        imagePath,
+        imageDownloadUrl: imagePath ? rawUrl(imagePath) : '',
+        mode: 'manual'
       };
 
+      prependAndOpenEntry(entry, force);
+    }
+
+    async function findImagePathFast(folderPath) {
+      const entry = await entryFromFolder(folderPath, basename(folderPath)).catch(() => null);
+      if (entry && entry.imagePath) return entry.imagePath;
+      if (state.tree.length) return findBestImagePathInTree(folderPath);
+      return '';
+    }
+
+    function prependAndOpenEntry(entry, force) {
       state.entries.unshift(entry);
       state.entries = dedupeEntries(state.entries);
       state.index = 0;
-      await loadAndRender(0, true);
-    }
-
-    async function findJsonInFolder(folderPath) {
-      const clean = cleanPath(folderPath);
-      const candidatesFromTree = state.tree
-        .filter(item => item.type === 'blob')
-        .map(item => item.path)
-        .filter(path => dirname(path) === clean && /\.json$/i.test(path));
-
-      const priority = chooseBestJsonPath(candidatesFromTree);
-      if (priority) return priority;
-
-      try {
-        const items = await fetchGithubContents(clean);
-        const paths = items.filter(item => item.type === 'file' && /\.json$/i.test(item.name || '')).map(item => cleanPath(item.path));
-        return chooseBestJsonPath(paths);
-      } catch (_) {
-        return '';
-      }
-    }
-
-    function chooseBestJsonPath(paths) {
-      if (!paths || !paths.length) return '';
-      return [...paths].sort((a, b) => jsonNamePriority(basename(a)) - jsonNamePriority(basename(b)) || a.localeCompare(b))[0];
-    }
-
-    function jsonNamePriority(name) {
-      const lower = String(name || '').toLowerCase();
-      const exact = CONFIG.jsonNames.findIndex(item => item === lower);
-      if (exact >= 0) return exact;
-      if (/video.*dia.*\.json$/i.test(lower)) return CONFIG.jsonNames.length + 1;
-      if (/prompt.*\.json$/i.test(lower)) return CONFIG.jsonNames.length + 2;
-      return CONFIG.jsonNames.length + 10;
+      loadAndRender(0, force);
     }
 
     async function loadAndRender(index, force = false) {
@@ -612,12 +728,13 @@
 
       state.loading = true;
       state.index = index;
+      renderLoadingCard(`Carregando ${entry.folderPath || entry.jsonPath}...`);
 
       try {
-        setStatus(`Carregando ${entry.jsonPath}...`, 'ok');
         const data = await getVideoData(entry, force);
         renderVideo(entry, data);
-        setStatus(`Mostrando ${state.index + 1} de ${state.entries.length}: ${entry.folderPath}`, 'ok');
+        setStatus(`Pronto: ${state.index + 1} de ${state.entries.length} — ${entry.folderPath}`, 'ok');
+        preloadNeighborEntries();
       } catch (error) {
         console.error(error);
         renderError(entry, error.message);
@@ -628,13 +745,40 @@
     }
 
     async function getVideoData(entry, force = false) {
-      if (!force && state.cache.has(entry.jsonPath)) return state.cache.get(entry.jsonPath);
+      if (!force && state.dataCache.has(entry.jsonPath)) return state.dataCache.get(entry.jsonPath);
 
-      const rawJson = await fetchRawText(entry.jsonPath);
+      const imageUrlFromFolder = entry.imageDownloadUrl || (entry.imagePath ? rawUrl(entry.imagePath) : '');
+      const rawJsonPromise = fetchRawText(entry.jsonPath, force);
+      const initialImagePromise = imageUrlFromFolder ? preloadImage(imageUrlFromFolder).catch(() => null) : Promise.resolve(null);
+
+      const rawJson = await rawJsonPromise;
       const json = safeJsonParse(rawJson);
       const prompt = extractPrompt(json);
-      const image = await findImageForEntry(entry, json);
       const product = extractProduct(json);
+      let image = null;
+
+      const loadedFolderImage = await initialImagePromise;
+      if (loadedFolderImage) {
+        image = {
+          url: imageUrlFromFolder,
+          name: basename(entry.imagePath || imageUrlFromFolder),
+          source: 'arquivo da pasta',
+          width: loadedFolderImage.naturalWidth || 0,
+          height: loadedFolderImage.naturalHeight || 0
+        };
+      }
+
+      if (!image) {
+        const imageFromJson = await findImageFromJsonOrFolder(entry, json, force);
+        if (imageFromJson && imageFromJson.url) {
+          const loaded = await preloadImage(imageFromJson.url).catch(() => null);
+          image = {
+            ...imageFromJson,
+            width: loaded ? loaded.naturalWidth || 0 : 0,
+            height: loaded ? loaded.naturalHeight || 0 : 0
+          };
+        }
+      }
 
       const data = {
         json,
@@ -647,18 +791,41 @@
         tags: buildTags(entry, json, product)
       };
 
-      state.cache.set(entry.jsonPath, data);
+      if (!force) state.dataCache.set(entry.jsonPath, data);
       return data;
     }
 
-    async function fetchRawText(path) {
-      const res = await fetch(rawUrl(path), { cache: 'no-store' });
+    async function fetchRawText(path, force = false) {
+      const url = rawUrl(path);
+      const res = await fetch(url, force || state.forceFresh ? { cache: 'no-store' } : { cache: 'default' });
       if (!res.ok) throw new Error(`${path} retornou ${res.status}`);
       return await res.text();
     }
 
+    function preloadImage(url) {
+      if (!url) return Promise.resolve(null);
+      if (state.imageCache.has(url)) return state.imageCache.get(url);
+
+      const promise = new Promise((resolve, reject) => {
+        const img = new Image();
+        img.decoding = 'async';
+        img.fetchPriority = 'high';
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('imagem não carregou'));
+        img.src = url;
+      });
+
+      state.imageCache.set(url, promise);
+      return promise;
+    }
+
     function safeJsonParse(text) {
-      const base = String(text || '')
+      const raw = String(text || '').trim();
+      if (!raw || raw === '[object Object]' || raw === '{object}' || raw === 'object') {
+        throw new Error('O JSON salvo no GitHub veio vazio ou como {object}. Corrija o módulo que salva o videododia.json no Make.');
+      }
+
+      const base = raw
         .replace(/^\uFEFF/, '')
         .trim()
         .replace(/^```(?:json)?\s*/i, '')
@@ -692,11 +859,14 @@
       const deep = findDeepText(json, /(prompt_gemini|promptGemini|gemini_prompt|prompt_video|prompt)/i, 80);
       if (deep) return cleanPrompt(deep);
 
+      const textCandidate = firstText(json.text, json.output_text, json.result, json.content, json.message);
+      if (textCandidate && textCandidate.length > 80) return cleanPrompt(textCandidate);
+
       return cleanPrompt(JSON.stringify(json, null, 2));
     }
 
     function cleanPrompt(value) {
-      return stringifyText(value)
+      let text = stringifyText(value)
         .replace(/^```(?:text|txt|markdown|md|json)?\s*/i, '')
         .replace(/```$/i, '')
         .replace(/```/g, '')
@@ -705,9 +875,20 @@
         .replace(/\r\n/g, '\n')
         .replace(/\r/g, '\n')
         .trim();
+
+      const embedded = extractEmbeddedPrompt(text);
+      if (embedded) text = embedded;
+      return text.trim();
     }
 
-    async function findImageForEntry(entry, json) {
+    function extractEmbeddedPrompt(text) {
+      const value = String(text || '').trim();
+      const match = value.match(/"prompt_gemini"\s*:\s*"([\s\S]*?)"\s*(?:,|})/i);
+      if (!match || !match[1]) return '';
+      return match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').trim();
+    }
+
+    async function findImageFromJsonOrFolder(entry, json, force = false) {
       for (const field of CONFIG.imageFields) {
         const value = getByPath(json, field);
         if (isUsefulText(value)) {
@@ -722,20 +903,14 @@
         if (url) return { url, source: 'json profundo', name: basename(url) || 'produto' };
       }
 
-      const folderImages = findImagesInTreeFolder(entry.folderPath);
-      if (folderImages.length) {
-        const best = folderImages.sort((a, b) => imagePriority(a) - imagePriority(b) || a.localeCompare(b))[0];
-        return { url: rawUrl(best), source: 'arquivo na pasta', name: basename(best) };
+      const folderEntry = await entryFromFolder(entry.folderPath, entry.id).catch(() => null);
+      if (folderEntry && folderEntry.imagePath) {
+        return {
+          url: folderEntry.imageDownloadUrl || rawUrl(folderEntry.imagePath),
+          source: 'pasta',
+          name: basename(folderEntry.imagePath)
+        };
       }
-
-      try {
-        const items = await fetchGithubContents(entry.folderPath);
-        const files = items.filter(item => item.type === 'file' && /\.(jpe?g|png|webp)$/i.test(item.name || ''));
-        if (files.length) {
-          const best = files.sort((a, b) => imagePriority(a.name) - imagePriority(b.name))[0];
-          return { url: best.download_url || rawUrl(best.path), source: 'GitHub contents', name: best.name };
-        }
-      } catch (_) {}
 
       return null;
     }
@@ -760,23 +935,6 @@
       return rawUrl(`${cleanPath(folderPath)}/${text}`);
     }
 
-    function findImagesInTreeFolder(folderPath) {
-      const folder = cleanPath(folderPath);
-      return state.tree
-        .filter(item => item.type === 'blob')
-        .map(item => item.path)
-        .filter(path => dirname(path) === folder && /\.(jpe?g|png|webp)$/i.test(path));
-    }
-
-    function imagePriority(pathOrName) {
-      const name = basename(pathOrName).toLowerCase();
-      const exact = CONFIG.imagePriority.findIndex(item => item === name);
-      if (exact >= 0) return exact;
-      if (/produto/i.test(name)) return CONFIG.imagePriority.length + 1;
-      if (/imagem|image/i.test(name)) return CONFIG.imagePriority.length + 2;
-      return CONFIG.imagePriority.length + 20;
-    }
-
     function extractProduct(json) {
       const product = json && typeof json.produto === 'object' ? json.produto : {};
       return {
@@ -789,15 +947,7 @@
     }
 
     function buildTitle(entry, json, product) {
-      return firstText(
-        product.nome,
-        json.titulo,
-        json.title,
-        json.nome,
-        json.id_video,
-        entry.id,
-        'Vídeo do dia'
-      );
+      return firstText(product.nome, json.titulo, json.title, json.nome, json.id_video, entry.id, 'Vídeo do dia');
     }
 
     function buildSubtitle(json) {
@@ -813,9 +963,28 @@
         json.status,
         json.tipo,
         product.marca,
-        video.tipo_video_escolhido,
+        video.tipo_video_escolhido || json.tipo_video_escolhido,
         entry.jsonName
       ].filter(value => String(value || '').trim());
+    }
+
+    function renderLoadingCard(message) {
+      $viewer.innerHTML = `
+        <article class="card">
+          <div class="media">
+            <div class="skeleton"></div>
+            <div class="badge loader">Carregando...</div>
+          </div>
+          <div class="content">
+            <h2 class="title">Abrindo automaticamente</h2>
+            <p class="theme">${escapeHtml(message)}</p>
+            <div class="prompt-box">
+              <div class="box-head"><span>Prompt</span><span>aguarde</span></div>
+              <div class="prompt collapsed">Assim que o JSON carregar, o prompt aparece aqui automaticamente.</div>
+            </div>
+          </div>
+        </article>
+      `;
     }
 
     function renderVideo(entry, data) {
@@ -823,16 +992,17 @@
       const prompt = data.prompt || '';
       const canNewer = state.index > 0;
       const canOlder = state.index < state.entries.length - 1;
+      const promptClass = prompt.length > 5000 ? 'prompt collapsed' : 'prompt';
 
       $viewer.innerHTML = `
         <article class="card">
           <div class="media">
             ${image
-              ? `<img id="productImg" src="${escapeAttr(image.url)}" alt="Imagem do produto" loading="eager" decoding="async">`
+              ? `<img id="productImg" src="${escapeAttr(image.url)}" alt="Imagem do produto" loading="eager" decoding="async" fetchpriority="high">`
               : `<div class="media-empty">Nenhuma imagem encontrada.<br>Confira se existe <code>produto.webp</code>, <code>produto.jpg</code> ou URL da imagem dentro do JSON.</div>`
             }
             <div class="badge counter">${escapeHtml(state.index + 1)} de ${escapeHtml(state.entries.length)}</div>
-            <div class="badge loader" id="loader">Carregando imagem...</div>
+            ${image ? `<div class="badge loader" id="loader">Imagem pronta</div>` : ''}
           </div>
 
           <div class="content">
@@ -843,17 +1013,18 @@
             <h2 class="title">${escapeHtml(data.title)}</h2>
             <p class="theme">${escapeHtml(data.subtitle)}</p>
 
-            <div class="actions">
-              <button class="btn-main" id="copyPrompt" ${prompt ? '' : 'disabled'}>Copiar prompt para Gemini</button>
+            <div class="actions three">
+              <button class="btn-main" id="copyPrompt" ${prompt ? '' : 'disabled'}>Copiar prompt</button>
               <button class="btn-dark" id="downloadImage" ${image ? '' : 'disabled'}>Baixar imagem</button>
+              <button class="btn-soft" id="reloadThis">Recarregar este</button>
             </div>
 
             <div class="prompt-box">
               <div class="box-head">
-                <span>Prompt para copiar no Gemini</span>
+                <span>Prompt para Gemini</span>
                 <span>${escapeHtml(prompt.length)} caracteres</span>
               </div>
-              <div class="prompt" id="promptText">${escapeHtml(prompt || 'Sem prompt encontrado no JSON.')}</div>
+              <div class="${promptClass}" id="promptText">${escapeHtml(prompt || 'Sem prompt encontrado no JSON.')}</div>
             </div>
 
             <div class="actions">
@@ -880,13 +1051,21 @@
 
       const img = document.getElementById('productImg');
       const loader = document.getElementById('loader');
-      if (img && loader) {
-        loader.classList.add('active');
-        img.addEventListener('load', () => loader.classList.remove('active'), { once: true });
-        img.addEventListener('error', () => {
-          loader.textContent = 'Erro na imagem';
-          loader.classList.add('active');
-        }, { once: true });
+      if (img) {
+        if (img.complete && img.naturalWidth) {
+          img.classList.add('ready');
+          if (loader) loader.textContent = 'Imagem carregada';
+        } else {
+          if (loader) loader.textContent = 'Carregando imagem...';
+          img.addEventListener('load', () => {
+            img.classList.add('ready');
+            if (loader) loader.textContent = 'Imagem carregada';
+          }, { once: true });
+          img.addEventListener('error', () => {
+            img.classList.add('ready');
+            if (loader) loader.textContent = 'Erro na imagem';
+          }, { once: true });
+        }
       }
 
       document.getElementById('copyPrompt')?.addEventListener('click', async event => {
@@ -904,6 +1083,12 @@
         event.currentTarget.disabled = true;
         await downloadFile(image.url, `${safeName(data.title || entry.id)}-${safeName(image.name || 'produto')}`);
         event.currentTarget.disabled = false;
+      });
+
+      document.getElementById('reloadThis')?.addEventListener('click', async event => {
+        event.currentTarget.disabled = true;
+        state.dataCache.delete(entry.jsonPath);
+        await loadAndRender(state.index, true);
       });
 
       document.getElementById('newer')?.addEventListener('click', () => loadAndRender(state.index - 1));
@@ -925,28 +1110,30 @@
     }
 
     function renderEmpty(extra = '') {
-      const videoFiles = state.tree
-        .filter(item => item.type === 'blob' && CONFIG.rootPaths.includes(cleanPath(item.path).split('/')[0]))
-        .map(item => item.path)
-        .slice(0, 30);
-
       $viewer.innerHTML = `
         <div class="empty">
           <strong>Nenhum conteúdo de vídeo encontrado.</strong><br><br>
-          O site procura arquivos como:<br><br>
-          <code>video/20260619-nivea/videododia.json</code><br>
-          <code>video/20260619-nivea/produto.webp</code><br><br>
-          Também aceita:<br>
-          <code>video-do-dia.json</code>, <code>video_do_dia.json</code>, <code>videodiatal.json</code>, <code>dados.json</code> e <code>prompt.json</code>.<br><br>
-          ${videoFiles.length ? `Arquivos que encontrei dentro de video/videos:<br><br>${videoFiles.map(path => `<code>${escapeHtml(path)}</code>`).join('<br>')}` : `Não encontrei nenhum arquivo dentro de <code>video/</code> ou <code>videos/</code>. Isso indica que o cenário provavelmente ainda não salvou os arquivos nessa pasta, ou salvou em outro caminho.`}
-          ${extra ? `<br><br>Detalhe: <code>${escapeHtml(extra)}</code>` : ''}
+          O site procura automaticamente:<br><br>
+          <code>video/20260619-174524-video-nivea/videododia.json</code><br>
+          <code>video/20260619-174524-video-nivea/produto.webp</code><br><br>
+          Também aceita nomes de JSON como <code>dados.json</code>, <code>prompt.json</code>, <code>video-do-dia.json</code> e <code>video_do_dia.json</code>.<br><br>
+          ${extra ? `Detalhe: <code>${escapeHtml(extra)}</code>` : ''}
         </div>
       `;
     }
 
+    async function preloadNeighborEntries() {
+      const neighbors = [state.index + 1, state.index - 1].filter(i => i >= 0 && i < state.entries.length);
+      for (const index of neighbors) {
+        const entry = state.entries[index];
+        if (!entry || state.dataCache.has(entry.jsonPath)) continue;
+        getVideoData(entry, false).catch(() => {});
+      }
+    }
+
     async function downloadFile(url, filename) {
       try {
-        const res = await fetch(url, { cache: 'no-store', mode: 'cors' });
+        const res = await fetch(url, { cache: 'default', mode: 'cors' });
         if (!res.ok) throw new Error(`download retornou ${res.status}`);
         const blob = await res.blob();
         const ext = extensionFromUrl(url) || extensionFromType(blob.type) || 'jpg';
@@ -1041,7 +1228,7 @@
       if (typeof value === 'string') return value;
       if (Array.isArray(value)) return value.map(stringifyText).filter(Boolean).join('\n');
       if (typeof value === 'object') {
-        for (const key of ['text', 'texto', 'content', 'conteudo', 'value', 'prompt_gemini', 'prompt']) {
+        for (const key of ['text', 'texto', 'content', 'conteudo', 'value', 'prompt_gemini', 'prompt', 'result', 'output_text']) {
           if (value[key]) return stringifyText(value[key]);
         }
         return JSON.stringify(value, null, 2);
@@ -1073,10 +1260,6 @@
 
     function rawUrl(path) {
       return `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${encodeURIComponent(CONFIG.branch)}/${encodePath(path)}`;
-    }
-
-    function githubBlobUrl(path) {
-      return `https://github.com/${CONFIG.owner}/${CONFIG.repo}/blob/${encodeURIComponent(CONFIG.branch)}/${encodePath(path)}`;
     }
 
     function encodePath(path) {
