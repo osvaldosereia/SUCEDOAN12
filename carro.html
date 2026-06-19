@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Leitor de Carrosséis</title>
+  <title>Leitor de Vídeos Dona Antônia</title>
   <style>
     :root {
       --bg: #f7f3ed;
@@ -32,9 +32,9 @@
     }
 
     .app {
-      width: min(100%, 560px);
+      width: min(100%, 620px);
       margin: 0 auto;
-      padding: 12px 12px 32px;
+      padding: 12px 12px 34px;
     }
 
     .top {
@@ -49,7 +49,7 @@
     }
 
     .top-inner {
-      width: min(100%, 560px);
+      width: min(100%, 620px);
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -79,6 +79,9 @@
       border-radius: 999px;
       font-size: 12px;
       white-space: nowrap;
+      max-width: 210px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .status {
@@ -106,23 +109,23 @@
 
     .media {
       position: relative;
-      min-height: 400px;
+      min-height: 360px;
       background: #eadfd3;
       display: grid;
       place-items: center;
       overflow: hidden;
-      touch-action: pan-y;
     }
 
     .media img {
       width: 100%;
-      height: auto;
+      max-height: 620px;
+      object-fit: contain;
       display: block;
       background: #eadfd3;
     }
 
     .media-empty {
-      min-height: 420px;
+      min-height: 360px;
       display: grid;
       place-items: center;
       padding: 24px;
@@ -140,32 +143,13 @@
       padding: 6px 9px;
       font-size: 12px;
       backdrop-filter: blur(10px);
-    }
-
-    .counter {
-      left: 12px;
       background: rgba(33, 27, 22, .75);
       color: #fff;
-    }
-
-    .loader {
-      right: 12px;
-      background: rgba(255, 250, 244, .9);
-      border: 1px solid rgba(255, 255, 255, .5);
-      color: var(--text);
-      display: none;
-    }
-
-    .loader.active { display: block; }
-
-    .slide-nav,
-    .carousel-nav {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      padding: 10px;
-      background: rgba(255, 250, 244, .98);
-      border-top: 1px solid var(--line);
+      left: 12px;
+      max-width: calc(100% - 24px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .content { padding: 14px; }
@@ -183,12 +167,12 @@
       border-radius: 999px;
       padding: 6px 8px;
       font-size: 12px;
-      line-height: 1;
+      line-height: 1.1;
     }
 
     .title {
       margin: 0 0 8px;
-      font-size: 20px;
+      font-size: 21px;
       line-height: 1.14;
       letter-spacing: -.03em;
     }
@@ -200,7 +184,38 @@
       line-height: 1.42;
     }
 
-    .legend-box {
+    .grid-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .info-box {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .info-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .prompt-box {
       background: #fff;
       border: 1px solid var(--line);
       border-radius: 18px;
@@ -208,7 +223,7 @@
       margin: 12px 0;
     }
 
-    .legend-head {
+    .prompt-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -219,21 +234,25 @@
       font-weight: 750;
     }
 
-    .legend {
+    .prompt {
       white-space: pre-wrap;
       color: var(--text);
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1.48;
-      max-height: 230px;
+      max-height: 420px;
       overflow: auto;
-      padding-right: 2px;
+      padding: 2px 4px 2px 0;
     }
 
-    .actions {
+    .actions,
+    .video-nav {
       display: grid;
       gap: 9px;
       margin-top: 12px;
     }
+
+    .actions { grid-template-columns: 1fr; }
+    .video-nav { grid-template-columns: 1fr 1fr; }
 
     button {
       border: 0;
@@ -254,37 +273,6 @@
     .btn-soft { background: var(--soft); color: var(--brand-dark); }
     .btn-main { background: var(--brand); color: white; }
     .btn-dark { background: var(--brand-dark); color: white; }
-
-    .download-progress {
-      display: none;
-      margin-top: 10px;
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 10px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .download-progress.active { display: block; }
-
-    .bar {
-      width: 100%;
-      height: 8px;
-      background: var(--soft);
-      border-radius: 999px;
-      overflow: hidden;
-      margin-top: 8px;
-    }
-
-    .fill {
-      height: 100%;
-      width: 0%;
-      background: var(--brand);
-      border-radius: 999px;
-      transition: width .2s ease;
-    }
 
     .note {
       margin: 10px 0 0;
@@ -309,8 +297,10 @@
       padding: 2px 5px;
     }
 
-    @media (min-width: 560px) {
-      .media { min-height: 560px; }
+    @media (max-width: 420px) {
+      .grid-info { grid-template-columns: 1fr; }
+      .video-nav { grid-template-columns: 1fr; }
+      .media { min-height: 320px; }
     }
   </style>
 </head>
@@ -319,8 +309,8 @@
     <header class="top">
       <div class="top-inner">
         <div>
-          <h1>Leitor de Carrosséis</h1>
-          <p class="sub">Cada pasta é um carrossel. As imagens só carregam quando usadas.</p>
+          <h1>Leitor de Vídeos</h1>
+          <p class="sub">Lê as pastas dentro de <code>video/</code>, mostra a imagem e o prompt do Gemini.</p>
         </div>
         <div class="pill" id="repoPill">GitHub</div>
       </div>
@@ -335,56 +325,65 @@
       owner: 'osvaldosereia',
       repo: 'SUCEDOAN12',
       branch: 'main',
-
-      // O leitor tenta primeiro carrossel/ e depois carrosseis/.
-      // Também aceita JSONs com nomes diferentes dentro de cada pasta.
-      rootPaths: ['carrossel', 'carrosseis'],
-
-      // Download leve para redes sociais: mantém largura ideal de feed e compacta em JPG.
-      // Preview leve: ao abrir cada página, o navegador tenta criar uma versão otimizada.
-      // Se falhar por CORS, memória ou formato, ele abre a original como fallback.
-      optimizePreviewOnOpen: true,
-      previewJpegQuality: 0.78,
-      previewMaxImageWidth: 900,
-
-      // Download leve para redes sociais: mantém largura ideal de feed e compacta em JPG.
-      jpegQuality: 0.82,
-      maxImageWidth: 1080,
-      pauseBetweenDownloadsMs: 900,
+      rootPath: 'video',
 
       dataFilePriority: [
+        'videododia.json',
+        'video-do-dia.json',
+        'video_do_dia.json',
         'dados.json',
-        'dados (1).json',
-        'dados(1).json',
         'data.json',
-        'carousel.json',
-        'carrossel.json',
-        'post.json'
+        'prompt.json'
+      ],
+
+      imageFilePriority: [
+        'produto.webp',
+        'produto.jpg',
+        'produto.jpeg',
+        'produto.png',
+        'imagem.webp',
+        'imagem.jpg',
+        'imagem.jpeg',
+        'imagem.png'
+      ],
+
+      promptFieldNames: [
+        'prompt_gemini',
+        'promptGemini',
+        'prompt_video',
+        'promptVideo',
+        'prompt',
+        'texto_prompt',
+        'conteudo_prompt',
+        'gemini_prompt',
+        'video_prompt',
+        'output_text',
+        'response',
+        'content'
       ],
 
       imageFieldNames: [
-        'urls_imagens', 'url_imagens', 'imagens', 'images', 'slides', 'paginas', 'pages',
-        'arquivos', 'files', 'midias', 'media', 'carousel_images', 'carouselImages'
-      ],
-
-      captionFieldNames: [
-        'legenda_instagram', 'legenda', 'caption', 'caption_instagram', 'instagram_caption',
-        'texto_legenda', 'texto_post', 'texto_instagram', 'post_text', 'copy', 'conteudo',
-        'descricao_post', 'descricao', 'legenda_final'
-      ],
-
-      hashtagFieldNames: ['hashtags_texto', 'hashtags', 'tags', 'hash_tags']
+        'imagem_github',
+        'url_imagem_github',
+        'imagem_produto_github',
+        'produto_imagem_github',
+        'produto_imagem',
+        'image_link',
+        'imagem',
+        'image',
+        'url_imagem',
+        'image_url',
+        'produto.image',
+        'produto.imagem',
+        'produto.image_link'
+      ]
     };
 
     const state = {
-      rootPath: '',
       folders: [],
       index: 0,
-      pageIndex: 0,
       cache: new Map(),
-      previewObjectUrls: new Set(),
-      loadingCarousel: false,
-      downloading: false
+      loading: false
     };
 
     const $status = document.getElementById('status');
@@ -396,24 +395,31 @@
 
     async function init() {
       try {
-        setStatus('Procurando pastas de carrosséis no GitHub...');
+        setStatus(`Procurando pastas dentro de ${CONFIG.rootPath}/...`);
+        const items = await fetchGithubContents(CONFIG.rootPath);
 
-        const found = await findRootAndFolders();
-        state.rootPath = found.rootPath;
-        state.folders = found.folders;
+        state.folders = items
+          .filter(item => item && item.type === 'dir')
+          .map(item => ({
+            id: item.name,
+            path: cleanPath(item.path || `${CONFIG.rootPath}/${item.name}`),
+            htmlUrl: item.html_url || ''
+          }))
+          .sort((a, b) => {
+            const tb = parseDateFromText(b.id);
+            const ta = parseDateFromText(a.id);
+            if (tb !== ta) return tb - ta;
+            return b.id.localeCompare(a.id);
+          });
 
         if (!state.folders.length) {
-          renderEmpty();
+          renderEmpty('Nenhuma pasta encontrada dentro de video/.');
+          setStatus('Nenhum vídeo encontrado.', 'err');
           return;
         }
 
-        state.index = 0;
-        state.pageIndex = 0;
-
-        setStatus(`Encontradas ${state.folders.length} pastas em ${state.rootPath}/. Carregando o carrossel mais recente...`, 'ok');
-
+        setStatus(`Encontradas ${state.folders.length} pastas em video/. Carregando a mais recente...`, 'ok');
         await loadAndRender(0);
-        warmNextCarouselData();
       } catch (error) {
         console.error(error);
         setStatus(`Erro: ${error.message}`, 'err');
@@ -421,130 +427,62 @@
       }
     }
 
-    async function findRootAndFolders() {
-      const errors = [];
-
-      for (const root of CONFIG.rootPaths) {
-        try {
-          const items = await fetchGithubContents(root);
-          const folders = items
-            .filter(item => item && item.type === 'dir')
-            .map(item => ({
-              id: item.name,
-              path: cleanPath(item.path || `${root}/${item.name}`),
-              htmlUrl: item.html_url || ''
-            }))
-            .sort((a, b) => {
-              const tb = parseCarouselDate(b.id);
-              const ta = parseCarouselDate(a.id);
-              if (tb !== ta) return tb - ta;
-              return b.id.localeCompare(a.id);
-            });
-
-          if (folders.length) return { rootPath: cleanPath(root), folders };
-        } catch (error) {
-          errors.push(`${root}/: ${error.message}`);
-        }
-      }
-
-      throw new Error(`Nenhuma pasta encontrada. Tentativas: ${errors.join(' | ')}`);
-    }
-
-    async function fetchGithubContents(path) {
-      const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${encodePath(path)}?ref=${encodeURIComponent(CONFIG.branch)}`;
-      const res = await fetch(url, { cache: 'no-store' });
-
-      if (!res.ok) {
-        throw new Error(`GitHub retornou ${res.status}`);
-      }
-
-      const json = await res.json();
-      return Array.isArray(json) ? json : [];
-    }
-
     async function loadAndRender(index) {
-      if (state.loadingCarousel) return;
+      if (state.loading) return;
       const folder = state.folders[index];
       if (!folder) return;
 
-      state.loadingCarousel = true;
+      state.loading = true;
       state.index = index;
-      state.pageIndex = 0;
 
       try {
-        setStatus(`Carregando carrossel ${folder.id}...`, 'ok');
-        const data = await getCarousel(folder);
-        renderCarousel(folder, data);
+        setStatus(`Carregando vídeo ${folder.id}...`, 'ok');
+        const data = await getVideoData(folder);
+        renderVideo(folder, data);
         setStatus(`Mostrando ${state.index + 1} de ${state.folders.length}: ${folder.id}`, 'ok');
       } catch (error) {
         console.error(error);
         setStatus(`Erro ao carregar ${folder.id}: ${error.message}`, 'err');
-        renderCarousel(folder, emptyCarousel(folder, error.message));
+        renderVideo(folder, emptyVideo(folder, error.message));
       } finally {
-        state.loadingCarousel = false;
+        state.loading = false;
       }
     }
 
-    async function getCarousel(folder) {
-      if (state.cache.has(folder.path)) {
-        return state.cache.get(folder.path);
-      }
-
-      const data = await fetchCarouselData(folder);
+    async function getVideoData(folder) {
+      if (state.cache.has(folder.path)) return state.cache.get(folder.path);
+      const data = await fetchVideoData(folder);
       state.cache.set(folder.path, data);
       return data;
     }
 
-    async function fetchCarouselData(folder) {
-      let folderItems = [];
-      let folderError = '';
-      let json = {};
-      let jsonError = '';
-      let dataFileName = '';
-
-      try {
-        folderItems = await fetchGithubContents(folder.path);
-      } catch (error) {
-        folderError = error.message;
-      }
-
-      const jsonFiles = folderItems
-        .filter(item => item && item.type === 'file' && /\.json$/i.test(item.name || ''))
-        .sort((a, b) => jsonPriority(a.name) - jsonPriority(b.name) || String(a.name).localeCompare(String(b.name)));
-
-      const preferredJson = jsonFiles[0] || { name: 'dados.json', path: `${cleanPath(folder.path)}/dados.json` };
-      dataFileName = preferredJson.name || 'dados.json';
-
-      try {
-        const res = await fetch(rawUrl(preferredJson.path || `${cleanPath(folder.path)}/${dataFileName}`), { cache: 'no-store' });
-        if (!res.ok) throw new Error(`${dataFileName} retornou ${res.status}`);
-        const rawText = await res.text();
-        json = safeJsonParse(rawText);
-      } catch (error) {
-        jsonError = error.message;
-      }
-
-      const imagesFromFolder = extractFolderImages(folderItems);
-      const imagesFromJson = extractImagesFromJson(json, folder);
-      const images = mergeImages(imagesFromFolder, imagesFromJson);
-
-      const legendaLimpa = buildCleanCaption(json);
-      const title = firstCleanText(json, [
-        'titulo_carrossel', 'titulo', 'title', 'headline', 'nome', 'tema'
-      ], `Carrossel ${folder.id}`);
-      const theme = firstCleanText(json, ['tema', 'assunto', 'topic'], '');
+    async function fetchVideoData(folder) {
+      const folderItems = await fetchGithubContents(folder.path);
+      const jsonFile = chooseJsonFile(folderItems, folder);
+      const json = await fetchJsonFile(jsonFile.path);
+      const image = chooseImage(folderItems, json, folder);
+      const prompt = extractPrompt(json);
+      const product = extractProduct(json);
 
       return {
         ...json,
-        id_carrossel: firstCleanText(json, ['id_carrossel', 'id', 'slug'], folder.id),
-        titulo_carrossel: title,
-        tema: theme,
-        legenda_instagram: legendaLimpa,
         __folder: folder.path,
-        __jsonFile: dataFileName,
-        __jsonError: jsonError,
-        __folderError: folderError,
-        images
+        __jsonFile: jsonFile.name,
+        __jsonPath: jsonFile.path,
+        __image: image,
+        __prompt: prompt,
+        __product: product
+      };
+    }
+
+    function chooseJsonFile(items, folder) {
+      const jsonFiles = (Array.isArray(items) ? items : [])
+        .filter(item => item && item.type === 'file' && /\.json$/i.test(item.name || ''))
+        .sort((a, b) => jsonPriority(a.name) - jsonPriority(b.name) || String(a.name).localeCompare(String(b.name)));
+
+      return jsonFiles[0] || {
+        name: 'videododia.json',
+        path: `${cleanPath(folder.path)}/videododia.json`
       };
     }
 
@@ -552,13 +490,276 @@
       const lower = String(name || '').toLowerCase().trim();
       const exact = CONFIG.dataFilePriority.findIndex(item => item.toLowerCase() === lower);
       if (exact >= 0) return exact;
-      if (/^dados.*\.json$/i.test(lower)) return CONFIG.dataFilePriority.length + 1;
-      if (/^(data|carousel|carrossel|post).*\.json$/i.test(lower)) return CONFIG.dataFilePriority.length + 2;
+      if (/video.*dia.*\.json$/i.test(lower)) return CONFIG.dataFilePriority.length + 1;
+      if (/prompt.*\.json$/i.test(lower)) return CONFIG.dataFilePriority.length + 2;
       return CONFIG.dataFilePriority.length + 10;
     }
 
+    async function fetchJsonFile(path) {
+      const res = await fetch(rawUrl(path), { cache: 'no-store' });
+      if (!res.ok) throw new Error(`${basename(path)} retornou ${res.status}`);
+      const text = await res.text();
+      return safeJsonParse(text);
+    }
+
+    function chooseImage(folderItems, json, folder) {
+      const imageFiles = (Array.isArray(folderItems) ? folderItems : [])
+        .filter(item => item && item.type === 'file')
+        .filter(item => /\.(jpe?g|png|webp)$/i.test(item.name || ''))
+        .sort((a, b) => imagePriority(a.name) - imagePriority(b.name) || String(a.name).localeCompare(String(b.name)));
+
+      if (imageFiles.length) {
+        const file = imageFiles[0];
+        return {
+          name: file.name || basename(file.path),
+          url: file.download_url || rawUrl(file.path),
+          path: file.path || `${cleanPath(folder.path)}/${file.name}`
+        };
+      }
+
+      for (const field of CONFIG.imageFieldNames) {
+        const value = getPathValue(json, field) || getDeepValue(json, field);
+        if (typeof value === 'string' && value.trim()) {
+          const normalized = normalizeImageUrl(value, folder);
+          if (normalized) {
+            return {
+              name: basename(normalized) || 'produto',
+              url: normalized,
+              path: normalized
+            };
+          }
+        }
+      }
+
+      const deepUrl = findFirstImageUrl(json);
+      if (deepUrl) {
+        return {
+          name: basename(deepUrl) || 'produto',
+          url: normalizeImageUrl(deepUrl, folder),
+          path: deepUrl
+        };
+      }
+
+      return null;
+    }
+
+    function imagePriority(name) {
+      const lower = String(name || '').toLowerCase().trim();
+      const exact = CONFIG.imageFilePriority.findIndex(item => item.toLowerCase() === lower);
+      if (exact >= 0) return exact;
+      if (/produto/i.test(lower)) return CONFIG.imageFilePriority.length + 1;
+      if (/imagem|image/i.test(lower)) return CONFIG.imageFilePriority.length + 2;
+      return CONFIG.imageFilePriority.length + 10;
+    }
+
+    function extractPrompt(json) {
+      for (const field of CONFIG.promptFieldNames) {
+        const value = getPathValue(json, field) || getDeepValue(json, field);
+        const text = stringifyPrompt(value);
+        if (text) return cleanPrompt(text);
+      }
+
+      const deep = findTextByKey(json, /(prompt|gemini|roteiro|video)/i);
+      if (deep) return cleanPrompt(deep);
+
+      return JSON.stringify(json, null, 2);
+    }
+
+    function extractProduct(json) {
+      const product = json.produto && typeof json.produto === 'object' ? json.produto : {};
+      return {
+        nome: firstText(product.nome, product.title, product.name, json.nome_produto, json.produto_nome, json.title, json.nome),
+        marca: firstText(product.marca, product.brand, json.marca, json.brand),
+        categoria: firstText(product.categoria, product.category, json.categoria, json.category),
+        tipoVideo: firstText(json.tipo_video, json.tipoVideo, json.estilo_video, json.estilo, json.video_tipo),
+        data: firstText(json.data, json.criado_em, json.created_at),
+        idVideo: firstText(json.id_video, json.id, json.slug)
+      };
+    }
+
+    function renderVideo(folder, data) {
+      const image = data.__image;
+      const prompt = data.__prompt || '';
+      const product = data.__product || {};
+      const canNewer = state.index > 0;
+      const canOlder = state.index < state.folders.length - 1;
+      const title = product.nome || data.titulo || data.title || `Vídeo ${folder.id}`;
+
+      $viewer.innerHTML = `
+        <article class="card">
+          <div class="media">
+            ${image
+              ? `<img id="productImage" src="${escapeAttr(image.url)}" alt="${escapeAttr(title)}" loading="eager" decoding="async">`
+              : `<div class="media-empty">Nenhuma imagem encontrada nesta pasta.<br>Confira se existe <code>produto.webp</code>, <code>produto.jpg</code> ou URL de imagem no JSON.</div>`
+            }
+            <div class="badge">${escapeHtml(folder.path)}</div>
+          </div>
+
+          <div class="content">
+            <div class="meta">
+              <span class="tag">${escapeHtml(folder.id)}</span>
+              <span class="tag">${escapeHtml(data.__jsonFile || 'videododia.json')}</span>
+              ${image ? `<span class="tag">${escapeHtml(image.name || 'imagem')}</span>` : ''}
+              ${product.tipoVideo ? `<span class="tag">${escapeHtml(product.tipoVideo)}</span>` : ''}
+            </div>
+
+            <h2 class="title">${escapeHtml(title)}</h2>
+            <p class="theme">Conteúdo gerado para copiar o prompt no Gemini e baixar a imagem de referência do produto.</p>
+
+            <div class="grid-info">
+              <div class="info-box">
+                <div class="info-label">Marca</div>
+                <div class="info-value">${escapeHtml(product.marca || '-')}</div>
+              </div>
+              <div class="info-box">
+                <div class="info-label">Categoria</div>
+                <div class="info-value">${escapeHtml(product.categoria || '-')}</div>
+              </div>
+              <div class="info-box">
+                <div class="info-label">Tipo de vídeo</div>
+                <div class="info-value">${escapeHtml(product.tipoVideo || '-')}</div>
+              </div>
+              <div class="info-box">
+                <div class="info-label">ID</div>
+                <div class="info-value">${escapeHtml(product.idVideo || folder.id)}</div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn-main" id="downloadImage" ${image ? '' : 'disabled'}>Baixar imagem do produto</button>
+              <button class="btn-dark" id="copyPrompt" ${prompt ? '' : 'disabled'}>Copiar prompt para Gemini</button>
+            </div>
+
+            <div class="prompt-box">
+              <div class="prompt-head">
+                <span>Prompt pronto para copiar</span>
+                <span>${escapeHtml(prompt.length)} caracteres</span>
+              </div>
+              <div class="prompt" id="promptText">${escapeHtml(prompt || 'Nenhum prompt encontrado no JSON.')}</div>
+            </div>
+
+            <div class="video-nav">
+              <button class="btn-soft" id="newerVideo" ${!canNewer ? 'disabled' : ''}>Vídeo mais novo</button>
+              <button class="btn-soft" id="olderVideo" ${!canOlder ? 'disabled' : ''}>Vídeo anterior</button>
+            </div>
+
+            <p class="note">O site procura automaticamente dentro de <code>video/</code>. Em cada pasta, ele lê primeiro <code>videododia.json</code> e usa a primeira imagem encontrada, priorizando <code>produto.webp</code>, <code>produto.jpg</code> ou <code>produto.png</code>.</p>
+          </div>
+        </article>
+      `;
+
+      bindEvents(folder, data);
+    }
+
+    function bindEvents(folder, data) {
+      const image = data.__image;
+      const prompt = data.__prompt || '';
+
+      document.getElementById('downloadImage')?.addEventListener('click', async event => {
+        if (!image) return;
+        const fileBase = safeName(`${folder.id}-${data.__product?.nome || 'produto'}`);
+        const ext = getImageExtension(image.name || image.url) || 'jpg';
+        await downloadUrlAsFile(image.url, `${fileBase}.${ext}`);
+        flashButton(event.currentTarget, 'Imagem baixada');
+      });
+
+      document.getElementById('copyPrompt')?.addEventListener('click', async event => {
+        await copyText(prompt);
+        flashButton(event.currentTarget, 'Prompt copiado');
+      });
+
+      document.getElementById('olderVideo')?.addEventListener('click', async event => {
+        if (state.index >= state.folders.length - 1) return;
+        event.currentTarget.disabled = true;
+        await loadAndRender(state.index + 1);
+        scrollToViewer();
+      });
+
+      document.getElementById('newerVideo')?.addEventListener('click', async event => {
+        if (state.index <= 0) return;
+        event.currentTarget.disabled = true;
+        await loadAndRender(state.index - 1);
+        scrollToViewer();
+      });
+    }
+
+    async function fetchGithubContents(path) {
+      const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${encodePath(path)}?ref=${encodeURIComponent(CONFIG.branch)}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`${path}: GitHub retornou ${res.status}`);
+      const json = await res.json();
+      return Array.isArray(json) ? json : [];
+    }
+
+    function rawUrl(path) {
+      return `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${encodeURIComponent(CONFIG.branch)}/${encodePath(path)}`;
+    }
+
+    function normalizeImageUrl(value, folder) {
+      let url = String(value || '').trim().replace(/^['"]|['"]$/g, '').replace(/\\/g, '/');
+      if (!url) return '';
+
+      if (/^https?:\/\/github\.com\//i.test(url) && /\/blob\//i.test(url)) {
+        return url.replace('https://github.com/', 'https://raw.githubusercontent.com/').replace('/blob/', '/');
+      }
+
+      if (/^https?:\/\//i.test(url)) return url;
+      if (url.startsWith('/')) return rawUrl(url.replace(/^\/+/, ''));
+      if (url.includes('/')) return rawUrl(url);
+      return rawUrl(`${cleanPath(folder.path || '')}/${url}`);
+    }
+
+    async function downloadUrlAsFile(url, filename) {
+      try {
+        const res = await fetch(url, { cache: 'no-store', mode: 'cors' });
+        if (!res.ok) throw new Error(`Imagem retornou ${res.status}`);
+        const blob = await res.blob();
+        triggerDownload(blob, filename);
+      } catch (error) {
+        console.warn('Download por fetch falhou. Tentando link direto:', error);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.rel = 'noopener';
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+    }
+
+    function triggerDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    async function copyText(text) {
+      const clean = String(text || '').trim();
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(clean);
+        return;
+      }
+
+      const textarea = document.createElement('textarea');
+      textarea.value = clean;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand('copy');
+      textarea.remove();
+    }
+
     function safeJsonParse(text) {
-      const attempts = [];
       const base = String(text || '')
         .replace(/^\uFEFF/, '')
         .trim()
@@ -566,310 +767,46 @@
         .replace(/```$/i, '')
         .trim();
 
-      attempts.push(base);
-
-      const firstObject = base.indexOf('{');
-      const lastObject = base.lastIndexOf('}');
-      if (firstObject >= 0 && lastObject > firstObject) {
-        attempts.push(base.slice(firstObject, lastObject + 1));
-      }
-
-      const firstArray = base.indexOf('[');
-      const lastArray = base.lastIndexOf(']');
-      if (firstArray >= 0 && lastArray > firstArray) {
-        attempts.push(base.slice(firstArray, lastArray + 1));
-      }
+      const attempts = [base];
+      const firstObj = base.indexOf('{');
+      const lastObj = base.lastIndexOf('}');
+      if (firstObj >= 0 && lastObj > firstObj) attempts.push(base.slice(firstObj, lastObj + 1));
 
       for (const candidate of attempts) {
-        for (const variant of [candidate, candidate.replace(/,\s*([}\]])/g, '$1')]) {
-          try {
-            let parsed = JSON.parse(variant);
-            if (typeof parsed === 'string') parsed = JSON.parse(parsed);
-            if (parsed && typeof parsed === 'object') return parsed;
-          } catch (_) {}
-        }
+        try {
+          let parsed = JSON.parse(candidate.replace(/,\s*([}\]])/g, '$1'));
+          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+          if (parsed && typeof parsed === 'object') return parsed;
+        } catch (_) {}
       }
 
       throw new Error('não consegui interpretar o JSON');
     }
 
-    function extractFolderImages(folderItems) {
-      return (Array.isArray(folderItems) ? folderItems : [])
-        .filter(item => item && item.type === 'file')
-        .filter(item => /\.(jpe?g|png|webp)$/i.test(item.name || ''))
-        .filter(item => !/^dados.*\.json$/i.test(item.name || ''))
-        .map(item => ({
-          numero: imageNumber(item.name || item.path),
-          url: normalizeImageUrl(item.download_url || item.path || '', { path: dirname(item.path) }),
-          path: cleanPath(item.path || ''),
-          name: item.name || ''
-        }))
-        .filter(item => item.url)
-        .sort((a, b) => a.numero - b.numero || a.name.localeCompare(b.name));
-    }
-
-    function extractImagesFromJson(json, folder) {
-      const collected = [];
-
-      for (const field of CONFIG.imageFieldNames) {
-        const value = getDeepValue(json, field);
-        if (value) collectImages(value, collected, folder);
-      }
-
-      if (!collected.length) {
-        collectImagesFromDeepJson(json, collected, folder);
-      }
-
-      return collected
-        .filter(item => item.url)
-        .sort((a, b) => a.numero - b.numero || String(a.name).localeCompare(String(b.name)));
-    }
-
-    function collectImages(value, output, folder, inheritedNumber) {
-      if (!value) return;
-
-      if (typeof value === 'string') {
-        const urls = extractImageUrls(value);
-        if (urls.length) {
-          urls.forEach((url, i) => pushImage(output, url, inheritedNumber || i + 1, folder));
-        } else if (/\.(jpe?g|png|webp)(\?.*)?$/i.test(value) || !/^https?:/i.test(value)) {
-          pushImage(output, value, inheritedNumber || imageNumber(value), folder);
-        }
-        return;
-      }
-
-      if (Array.isArray(value)) {
-        value.forEach((item, index) => collectImages(item, output, folder, index + 1));
-        return;
-      }
-
+    function stringifyPrompt(value) {
+      if (value == null) return '';
+      if (typeof value === 'string') return value;
+      if (Array.isArray(value)) return value.map(stringifyPrompt).filter(Boolean).join('\n');
       if (typeof value === 'object') {
-        const url = firstValue(value, ['url', 'src', 'href', 'download_url', 'raw_url', 'public_url', 'image_url', 'imagem_url', 'image', 'imagem', 'arquivo', 'file', 'path']);
-        const numero = Number(firstValue(value, ['numero', 'n', 'page', 'pagina', 'página', 'ordem', 'index'])) || inheritedNumber || imageNumber(url || value.name || value.path);
-        if (url) {
-          pushImage(output, url, numero, folder, value.name || value.filename || value.path || '');
-          return;
-        }
-
-        Object.entries(value).forEach(([key, item], index) => {
-          const n = Number(key.match(/\d+/)?.[0]) || inheritedNumber || index + 1;
-          collectImages(item, output, folder, n);
-        });
-      }
-    }
-
-    function collectImagesFromDeepJson(value, output, folder) {
-      const seen = new Set();
-
-      function walk(node, keyHint = '') {
-        if (!node) return;
-        if (typeof node === 'string') {
-          const urls = extractImageUrls(node).filter(url => /(pagina|página|page|slide|carrossel|carousel|\.jpe?g|\.png|\.webp)/i.test(url));
-          urls.forEach((url, i) => {
-            if (!seen.has(url)) {
-              seen.add(url);
-              pushImage(output, url, imageNumber(url) || i + 1, folder, keyHint);
-            }
-          });
-          return;
-        }
-        if (Array.isArray(node)) {
-          node.forEach((item, i) => walk(item, `${keyHint}-${i + 1}`));
-          return;
-        }
-        if (typeof node === 'object') {
-          Object.entries(node).forEach(([key, item]) => walk(item, key));
+        const direct = firstText(value.text, value.content, value.value, value.prompt, value.output_text);
+        if (direct) return direct;
+        if (Array.isArray(value.choices) && value.choices[0]) {
+          return stringifyPrompt(value.choices[0]?.message?.content || value.choices[0]?.text);
         }
       }
-
-      walk(value);
+      return '';
     }
 
-    function pushImage(output, url, numero, folder, name = '') {
-      const normalized = normalizeImageUrl(url, folder);
-      if (!normalized) return;
-      output.push({
-        numero: Number(numero) || imageNumber(normalized) || output.length + 1,
-        url: normalized,
-        path: normalized,
-        name: name || basename(normalized)
-      });
-    }
-
-    function mergeImages(folderImages, jsonImages) {
-      const primary = Array.isArray(folderImages) && folderImages.length ? folderImages : [];
-      const fallback = Array.isArray(jsonImages) ? jsonImages : [];
-      const combined = primary.length ? primary : fallback;
-      const seen = new Set();
-
-      return combined.filter(item => {
-        const key = String(item.url || item.path || item.name || '').trim();
-        if (!key || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-    }
-
-    function normalizeImageUrl(value, folder) {
-      let url = String(value || '').trim().replace(/^['"]|['"]$/g, '');
-      if (!url) return '';
-      url = url.replace(/\\/g, '/');
-
-      if (/^https?:\/\/github\.com\//i.test(url) && /\/blob\//i.test(url)) {
-        return url
-          .replace('https://github.com/', 'https://raw.githubusercontent.com/')
-          .replace('/blob/', '/');
-      }
-
-      if (/^https?:\/\//i.test(url)) return url;
-
-      if (url.startsWith('/')) return rawUrl(url.replace(/^\/+/, ''));
-
-      if (url.includes('/')) return rawUrl(url);
-
-      return rawUrl(`${cleanPath(folder.path || folder.__folder || '')}/${url}`);
-    }
-
-    function extractImageUrls(text) {
-      const found = String(text || '').match(/https?:\/\/[^\s"'<>]+?\.(?:jpe?g|png|webp)(?:\?[^\s"'<>]*)?/gi);
-      return found || [];
-    }
-
-    function buildCleanCaption(json) {
-      let caption = '';
-
-      for (const field of CONFIG.captionFieldNames) {
-        const value = getDeepValue(json, field);
-        if (value) {
-          caption = stringifyText(value);
-          break;
-        }
-      }
-
-      if (!caption) {
-        caption = findPossibleCaption(json) || '';
-      }
-
-      caption = cleanCaptionText(caption);
-
-      const hashtags = cleanHashtags(firstExistingValue(json, CONFIG.hashtagFieldNames));
-      if (hashtags && !captionHasSameHashtags(caption, hashtags)) {
-        caption = `${caption}\n\n${hashtags}`.trim();
-      }
-
-      return caption;
-    }
-
-    function findPossibleCaption(json) {
-      let best = '';
-
-      function walk(node, key = '') {
-        if (!node || best) return;
-        if (typeof node === 'string') {
-          const looksLikeCaption = node.length > 40 && !/\.(jpe?g|png|webp)(\?|$)/i.test(node);
-          const keyLooksRight = /(legenda|caption|texto|copy|post|conteudo|descri)/i.test(key);
-          if (looksLikeCaption && keyLooksRight) best = node;
-          return;
-        }
-        if (Array.isArray(node)) return node.forEach((item, i) => walk(item, `${key}_${i}`));
-        if (typeof node === 'object') Object.entries(node).forEach(([k, v]) => walk(v, k));
-      }
-
-      walk(json);
-      return best;
-    }
-
-    function cleanCaptionText(value) {
-      let text = stringifyText(value)
+    function cleanPrompt(text) {
+      return String(text || '')
         .replace(/^\uFEFF/, '')
-        .replace(/^```(?:json|text|txt|markdown|md)?\s*/i, '')
+        .replace(/^```(?:text|txt|markdown|md|json)?\s*/i, '')
         .replace(/```$/i, '')
         .replace(/```/g, '')
         .replace(/\\n/g, '\n')
         .replace(/\\r/g, '')
-        .replace(/\r\n/g, '\n')
-        .replace(/\r/g, '\n')
-        .trim();
-
-      text = decodeHtmlEntities(text);
-
-      // Se por algum motivo a legenda veio como uma linha JSON, extrai só o texto útil.
-      const embedded = text.match(/"(?:legenda_instagram|legenda|caption|texto_post|post_text)"\s*:\s*"([\s\S]*?)"\s*(?:,|})/i);
-      if (embedded && embedded[1]) {
-        text = embedded[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
-      }
-
-      text = text
-        .replace(/^\s*(legenda_instagram|legenda|caption|texto_post|post_text)\s*[:=-]\s*/i, '')
         .replace(/^['"]|['"]$/g, '')
-        .split('\n')
-        .map(line => line.replace(/[ \t]+$/g, '').replace(/^[ \t]+/g, ''))
-        .join('\n')
-        .replace(/\n{3,}/g, '\n\n')
         .trim();
-
-      return text;
-    }
-
-    function cleanHashtags(value) {
-      if (!value) return '';
-      let raw = stringifyText(value)
-        .replace(/\\n/g, '\n')
-        .replace(/[\[\]"']/g, '')
-        .replace(/\n+/g, ',')
-        .trim();
-
-      if (!raw) return '';
-
-      return raw
-        .split(/[,#;|]+/)
-        .map(tag => tag.trim())
-        .filter(Boolean)
-        .map(tag => tag.startsWith('#') ? tag : `#${tag.replace(/^#+/, '')}`)
-        .filter((tag, index, arr) => arr.findIndex(x => x.toLowerCase() === tag.toLowerCase()) === index)
-        .join(' ');
-    }
-
-    function captionHasSameHashtags(caption, hashtags) {
-      const needed = hashtags.toLowerCase().match(/#[\p{L}\p{N}_]+/gu) || [];
-      if (!needed.length) return true;
-      const existing = caption.toLowerCase();
-      return needed.slice(0, 3).every(tag => existing.includes(tag));
-    }
-
-    function stringifyText(value) {
-      if (value == null) return '';
-      if (typeof value === 'string') return value;
-      if (Array.isArray(value)) return value.map(stringifyText).filter(Boolean).join('\n');
-      if (typeof value === 'object') {
-        const text = firstValue(value, ['text', 'texto', 'caption', 'legenda', 'value', 'content', 'conteudo']);
-        if (text) return stringifyText(text);
-        return '';
-      }
-      return String(value);
-    }
-
-    function firstCleanText(obj, fields, fallback = '') {
-      const value = firstExistingValue(obj, fields);
-      const clean = cleanCaptionText(value || '');
-      return clean || fallback;
-    }
-
-    function firstExistingValue(obj, fields) {
-      for (const field of fields) {
-        const value = getDeepValue(obj, field);
-        if (value !== undefined && value !== null && String(stringifyText(value)).trim() !== '') return value;
-      }
-      return '';
-    }
-
-    function firstValue(obj, fields) {
-      for (const field of fields) {
-        if (obj && Object.prototype.hasOwnProperty.call(obj, field) && obj[field] != null && obj[field] !== '') {
-          return obj[field];
-        }
-      }
-      return '';
     }
 
     function getDeepValue(obj, targetField) {
@@ -894,348 +831,57 @@
       return undefined;
     }
 
-    function emptyCarousel(folder, error) {
-      return {
-        id_carrossel: folder.id,
-        titulo_carrossel: `Carrossel ${folder.id}`,
-        tema: '',
-        legenda_instagram: '',
-        __folder: folder.path,
-        __jsonError: error || '',
-        images: []
-      };
+    function getPathValue(obj, path) {
+      if (!obj || !path || !String(path).includes('.')) return undefined;
+      return String(path).split('.').reduce((acc, key) => {
+        if (acc && typeof acc === 'object' && Object.prototype.hasOwnProperty.call(acc, key)) return acc[key];
+        return undefined;
+      }, obj);
     }
 
-    function warmNextCarouselData() {
-      const nextIndex = state.index + 1;
-      const folder = state.folders[nextIndex];
-      if (!folder || state.cache.has(folder.path)) return;
+    function findTextByKey(obj, pattern) {
+      let best = '';
 
-      getCarousel(folder).catch(error => {
-        console.warn('Não foi possível pré-carregar o próximo carrossel:', error);
-      });
-    }
-
-    function renderCarousel(folder, data) {
-      releasePreviewObjectUrls();
-      const images = Array.isArray(data.images) ? data.images : [];
-      const page = images[state.pageIndex] || null;
-      const total = images.length;
-      const legenda = cleanCaptionText(data.legenda_instagram || '');
-      const title = data.titulo_carrossel || data.tema || `Carrossel ${folder.id}`;
-      const theme = data.tema || '';
-      const canNewer = state.index > 0;
-      const canOlder = state.index < state.folders.length - 1;
-
-      $viewer.innerHTML = `
-        <article class="card">
-          <div class="media" id="mediaBox">
-            ${page
-              ? `<img id="slideImg" data-original-src="${escapeAttr(page.url)}" alt="Página ${escapeAttr(page.numero || state.pageIndex + 1)}" loading="eager" decoding="async">`
-              : `<div class="media-empty">Nenhuma imagem encontrada nesta pasta.<br>Confira se existem arquivos como <code>pagina-1.jpg</code>, <code>pagina-2.jpg</code>... ou URLs de imagem no JSON.</div>`
-            }
-            <div class="badge counter">Página ${escapeHtml(total ? state.pageIndex + 1 : 0)} de ${escapeHtml(total)}</div>
-            <div class="badge loader" id="loader">Carregando imagem...</div>
-          </div>
-
-          <div class="slide-nav">
-            <button class="btn-soft" id="prevPage" ${state.pageIndex <= 0 ? 'disabled' : ''}>Página anterior</button>
-            <button class="btn-soft" id="nextPage" ${state.pageIndex >= total - 1 ? 'disabled' : ''}>Próxima página</button>
-          </div>
-
-          <div class="content">
-            <div class="meta">
-              <span class="tag">${escapeHtml(folder.id)}</span>
-              <span class="tag">${escapeHtml(folder.path)}</span>
-              ${data.__jsonFile ? `<span class="tag">${escapeHtml(data.__jsonFile)}</span>` : ''}
-              ${data.status ? `<span class="tag">${escapeHtml(data.status)}</span>` : ''}
-              ${data.categoria ? `<span class="tag">${escapeHtml(data.categoria)}</span>` : ''}
-            </div>
-
-            <h2 class="title">${escapeHtml(title)}</h2>
-            ${theme && theme !== title ? `<p class="theme">${escapeHtml(theme)}</p>` : ''}
-            ${data.__folderError ? `<p class="theme">Aviso: não consegui listar a pasta: ${escapeHtml(data.__folderError)}</p>` : ''}
-            ${data.__jsonError ? `<p class="theme">Aviso: não consegui ler o JSON: ${escapeHtml(data.__jsonError)}</p>` : ''}
-
-            <div class="legend-box">
-              <div class="legend-head">
-                <span>Legenda pronta para copiar</span>
-                <span>${escapeHtml(legenda.length)} caracteres</span>
-              </div>
-              <div class="legend" id="legendText">${escapeHtml(legenda || 'Sem legenda no JSON.')}</div>
-            </div>
-
-            <div class="actions">
-              <button class="btn-dark" id="copyLegend">Copiar legenda limpa</button>
-              <button class="btn-main" id="downloadAll" ${!total ? 'disabled' : ''}>Baixar páginas compactadas</button>
-            </div>
-
-            <div class="download-progress" id="downloadProgress">
-              <div id="downloadText">Preparando...</div>
-              <div class="bar"><div class="fill" id="downloadFill"></div></div>
-            </div>
-
-            <div class="carousel-nav">
-              <button class="btn-soft" id="newerCarousel" ${!canNewer ? 'disabled' : ''}>Carrossel mais novo</button>
-              <button class="btn-soft" id="olderCarousel" ${!canOlder ? 'disabled' : ''}>Carrossel anterior</button>
-            </div>
-
-            <p class="note">Ao abrir cada página, o leitor tenta mostrar uma prévia compactada para evitar travamentos. O download também converte para JPG leve, com largura máxima de ${CONFIG.maxImageWidth}px. A legenda copiada sai sem JSON, crases, aspas externas ou marcação técnica.</p>
-          </div>
-        </article>
-      `;
-
-      bindEvents(folder, { ...data, legenda_instagram: legenda });
-    }
-
-    function bindEvents(folder, data) {
-      const images = Array.isArray(data.images) ? data.images : [];
-      const img = document.getElementById('slideImg');
-      const loader = document.getElementById('loader');
-      const mediaBox = document.getElementById('mediaBox');
-
-      if (img && loader) {
-        const originalSrc = img.getAttribute('data-original-src') || img.src;
-        loader.textContent = CONFIG.optimizePreviewOnOpen ? 'Otimizando imagem...' : 'Carregando imagem...';
-        loader.classList.add('active');
-
-        img.addEventListener('load', () => loader.classList.remove('active'), { once: true });
-        img.addEventListener('error', () => {
-          loader.textContent = 'Tentando imagem original...';
-          img.src = originalSrc;
-        }, { once: true });
-
-        if (CONFIG.optimizePreviewOnOpen) {
-          loadOptimizedPreview(img, originalSrc, loader).catch(error => {
-            console.warn('Preview compactado falhou. Usando imagem original:', error);
-            loader.textContent = 'Abrindo imagem original...';
-            img.src = originalSrc;
-          });
-        } else {
-          img.src = originalSrc;
+      function walk(node, key = '') {
+        if (!node || best) return;
+        if (typeof node === 'string') {
+          if (pattern.test(key) && node.length > 40) best = node;
+          return;
         }
+        if (Array.isArray(node)) return node.forEach((item, i) => walk(item, `${key}_${i}`));
+        if (typeof node === 'object') Object.entries(node).forEach(([k, v]) => walk(v, k));
       }
 
-      document.getElementById('prevPage')?.addEventListener('click', () => {
-        if (state.pageIndex <= 0) return;
-        state.pageIndex -= 1;
-        renderCarousel(folder, data);
-      });
+      walk(obj);
+      return best;
+    }
 
-      document.getElementById('nextPage')?.addEventListener('click', () => {
-        if (state.pageIndex >= images.length - 1) return;
-        state.pageIndex += 1;
-        renderCarousel(folder, data);
-      });
+    function findFirstImageUrl(obj) {
+      let found = '';
 
-      document.getElementById('copyLegend')?.addEventListener('click', async event => {
-        await copyText(cleanCaptionText(data.legenda_instagram || ''));
-        flashButton(event.currentTarget, 'Legenda copiada limpa');
-      });
-
-      document.getElementById('downloadAll')?.addEventListener('click', async () => {
-        await downloadImagesOneByOne(folder, data);
-      });
-
-      document.getElementById('olderCarousel')?.addEventListener('click', async event => {
-        if (state.index >= state.folders.length - 1) return;
-        event.currentTarget.disabled = true;
-        await loadAndRender(state.index + 1);
-        warmNextCarouselData();
-        scrollToViewer();
-      });
-
-      document.getElementById('newerCarousel')?.addEventListener('click', async event => {
-        if (state.index <= 0) return;
-        event.currentTarget.disabled = true;
-        await loadAndRender(state.index - 1);
-        warmNextCarouselData();
-        scrollToViewer();
-      });
-
-      let startX = 0;
-      let startY = 0;
-      mediaBox?.addEventListener('touchstart', event => {
-        const t = event.changedTouches[0];
-        startX = t.clientX;
-        startY = t.clientY;
-      }, { passive: true });
-
-      mediaBox?.addEventListener('touchend', event => {
-        const t = event.changedTouches[0];
-        const dx = t.clientX - startX;
-        const dy = t.clientY - startY;
-        if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy)) return;
-
-        if (dx < 0 && state.pageIndex < images.length - 1) {
-          state.pageIndex += 1;
-          renderCarousel(folder, data);
+      function walk(node) {
+        if (!node || found) return;
+        if (typeof node === 'string') {
+          const match = node.match(/https?:\/\/[^\s'"<>]+?\.(?:jpe?g|png|webp)(?:\?[^\s'"<>]*)?/i);
+          if (match) found = match[0];
+          return;
         }
-
-        if (dx > 0 && state.pageIndex > 0) {
-          state.pageIndex -= 1;
-          renderCarousel(folder, data);
-        }
-      }, { passive: true });
-    }
-
-
-    async function loadOptimizedPreview(imgElement, url, loader) {
-      if (!url) return;
-
-      const blob = await fetchAndCompressImage(url, {
-        maxWidth: CONFIG.previewMaxImageWidth,
-        quality: CONFIG.previewJpegQuality
-      });
-
-      const optimizedUrl = URL.createObjectURL(blob);
-      state.previewObjectUrls.add(optimizedUrl);
-      imgElement.src = optimizedUrl;
-
-      if (loader) {
-        const kb = Math.max(1, Math.round(blob.size / 1024));
-        loader.textContent = `Prévia leve: ${kb} KB`;
-      }
-    }
-
-    function releasePreviewObjectUrls() {
-      for (const url of state.previewObjectUrls) {
-        URL.revokeObjectURL(url);
-      }
-      state.previewObjectUrls.clear();
-    }
-
-    async function downloadImagesOneByOne(folder, data) {
-      if (state.downloading) return;
-      const images = Array.isArray(data.images) ? data.images : [];
-      if (!images.length) return;
-
-      const progress = document.getElementById('downloadProgress');
-      const text = document.getElementById('downloadText');
-      const fill = document.getElementById('downloadFill');
-      const btn = document.getElementById('downloadAll');
-
-      state.downloading = true;
-      if (btn) btn.disabled = true;
-      if (progress) progress.classList.add('active');
-
-      try {
-        for (let i = 0; i < images.length; i++) {
-          const item = images[i];
-          const pageNumber = item.numero || i + 1;
-
-          if (text) text.textContent = `Compactando e baixando página ${i + 1} de ${images.length}...`;
-          if (fill) fill.style.width = `${Math.round((i / images.length) * 100)}%`;
-
-          const blob = await fetchAndCompressImage(item.url, {
-            maxWidth: CONFIG.maxImageWidth,
-            quality: CONFIG.jpegQuality
-          });
-          const filename = `${safeName(data.id_carrossel || folder.id)}-pagina-${String(pageNumber).padStart(2, '0')}.jpg`;
-          triggerDownload(blob, filename);
-
-          await sleep(CONFIG.pauseBetweenDownloadsMs);
-        }
-
-        if (text) text.textContent = `Concluído: ${images.length} imagens compactadas e baixadas.`;
-        if (fill) fill.style.width = '100%';
-      } catch (error) {
-        console.error(error);
-        if (text) text.textContent = `Erro no download: ${error.message}`;
-      } finally {
-        state.downloading = false;
-        if (btn) btn.disabled = false;
-      }
-    }
-
-    async function fetchAndCompressImage(url, options = {}) {
-      const maxWidth = Number(options.maxWidth || CONFIG.maxImageWidth || 1080);
-      const quality = Number(options.quality || CONFIG.jpegQuality || 0.82);
-
-      const res = await fetch(url, { cache: 'no-store', mode: 'cors' });
-      if (!res.ok) throw new Error(`Imagem retornou ${res.status}`);
-
-      const inputBlob = await res.blob();
-      const img = await blobToImage(inputBlob);
-      const originalWidth = img.naturalWidth || img.width;
-      const originalHeight = img.naturalHeight || img.height;
-      const scale = Math.min(1, maxWidth / originalWidth);
-      const width = Math.max(1, Math.round(originalWidth * scale));
-      const height = Math.max(1, Math.round(originalHeight * scale));
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext('2d', { alpha: false });
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, width, height);
-      ctx.drawImage(img, 0, 0, width, height);
-
-      URL.revokeObjectURL(img.src);
-
-      return await new Promise((resolve, reject) => {
-        canvas.toBlob(blob => {
-          if (blob) resolve(blob);
-          else reject(new Error('Não foi possível compactar a imagem.'));
-        }, 'image/jpeg', quality);
-      });
-    }
-
-    function blobToImage(blob) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error('Não foi possível abrir a imagem.'));
-        img.src = URL.createObjectURL(blob);
-      });
-    }
-
-    function triggerDownload(blob, filename) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.rel = 'noopener';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-    }
-
-    async function copyText(text) {
-      const clean = cleanCaptionText(text || '');
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(clean);
-        return;
+        if (Array.isArray(node)) return node.forEach(walk);
+        if (typeof node === 'object') Object.values(node).forEach(walk);
       }
 
-      const textarea = document.createElement('textarea');
-      textarea.value = clean;
-      textarea.style.position = 'fixed';
-      textarea.style.left = '-9999px';
-      textarea.style.top = '0';
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      document.execCommand('copy');
-      textarea.remove();
+      walk(obj);
+      return found;
     }
 
-    function imageNumber(filename) {
-      const name = String(filename || '');
-      const explicit = name.match(/(?:pagina|página|page|img|imagem|slide)[-_ ]?(\d+)/i);
-      if (explicit) return Number(explicit[1]);
-
-      const any = name.match(/(\d+)/);
-      if (any) return Number(any[1]);
-
-      return 9999;
+    function firstText(...values) {
+      for (const value of values) {
+        if (value !== undefined && value !== null && String(value).trim() !== '') return String(value).trim();
+      }
+      return '';
     }
 
-    function parseCarouselDate(id) {
+    function parseDateFromText(id) {
       const text = String(id || '');
       const match = text.match(/(\d{4})(\d{2})(\d{2})[-_ ]?(\d{2})?(\d{2})?(\d{2})?/);
       if (!match) return 0;
@@ -1247,12 +893,14 @@
       const minute = Number(match[5] || 0);
       const second = Number(match[6] || 0);
       const time = Date.UTC(year, month, day, hour, minute, second);
-
       return Number.isFinite(time) ? time : 0;
     }
 
-    function rawUrl(path) {
-      return `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${encodeURIComponent(CONFIG.branch)}/${encodePath(path)}`;
+    function getImageExtension(value) {
+      const clean = String(value || '').split('?')[0].split('#')[0];
+      const match = clean.match(/\.([a-z0-9]+)$/i);
+      const ext = match ? match[1].toLowerCase() : '';
+      return ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? ext : '';
     }
 
     function encodePath(path) {
@@ -1263,27 +911,18 @@
       return String(path || '').replace(/^\/+|\/+$/g, '').replace(/\/+/g, '/');
     }
 
-    function dirname(path) {
-      const clean = cleanPath(path);
-      return clean.includes('/') ? clean.slice(0, clean.lastIndexOf('/')) : '';
-    }
-
     function basename(path) {
-      return String(path || '').split(/[/?#]/)[0].split('/').pop() || '';
+      return String(path || '').split(/[?#]/)[0].split('/').pop() || '';
     }
 
     function safeName(value) {
-      return String(value || 'carrossel')
+      return String(value || 'video')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9-_]+/gi, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '')
-        .toLowerCase() || 'carrossel';
-    }
-
-    function sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
+        .toLowerCase() || 'video';
     }
 
     function scrollToViewer() {
@@ -1306,26 +945,20 @@
     }
 
     function renderEmpty(extra) {
-      const paths = CONFIG.rootPaths.map(path => `<code>${escapeHtml(path)}/20260604-103104/dados.json</code>`).join('<br>');
       $viewer.innerHTML = `
         <div class="empty">
-          <strong>Nenhum carrossel encontrado.</strong><br><br>
-          O site procura pastas dentro de:<br><br>
-          ${CONFIG.rootPaths.map(path => `<code>${escapeHtml(path)}/</code>`).join('<br>')}<br><br>
-          E aceita JSONs como:<br><br>
-          ${CONFIG.dataFilePriority.map(path => `<code>${escapeHtml(path)}</code>`).join('<br>')}<br><br>
-          Exemplo esperado:<br><br>
-          ${paths}<br><br>
-          Confira se o branch é <code>${escapeHtml(CONFIG.branch)}</code>, se o repositório é público e se cada carrossel é uma pasta dentro de <code>carrossel/</code> ou <code>carrosseis/</code>.
+          <strong>Nenhum conteúdo encontrado.</strong><br><br>
+          Este leitor procura pastas dentro de:<br>
+          <code>video/</code><br><br>
+          Dentro de cada pasta, o esperado é ter pelo menos estes arquivos:<br><br>
+          <code>videododia.json</code><br>
+          <code>produto.webp</code>, <code>produto.jpg</code> ou <code>produto.png</code><br><br>
+          Exemplo:<br>
+          <code>video/20260619-nivea/videododia.json</code><br>
+          <code>video/20260619-nivea/produto.webp</code>
           ${extra ? `<br><br>Detalhe: ${escapeHtml(extra)}` : ''}
         </div>
       `;
-    }
-
-    function decodeHtmlEntities(text) {
-      const textarea = document.createElement('textarea');
-      textarea.innerHTML = String(text || '');
-      return textarea.value;
     }
 
     function escapeHtml(value) {
