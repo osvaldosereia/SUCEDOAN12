@@ -3,68 +3,103 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gerador de Prompts Reels - Dona Antônia</title>
+  <title>Prompts Gemini Reels - Dona Antônia</title>
   <style>
     :root {
-      --bg: #f6f7fb;
+      --bg: #f5f6fb;
       --card: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --line: #e5e7eb;
+      --text: #172033;
+      --muted: #687083;
+      --line: #e6e8ef;
       --brand: #e11d48;
-      --brand-2: #7c3aed;
+      --brand2: #7c3aed;
       --ok: #059669;
-      --shadow: 0 10px 30px rgba(0,0,0,.08);
-      --radius: 18px;
+      --warn: #f59e0b;
+      --shadow: 0 14px 35px rgba(20, 24, 40, .08);
+      --radius: 20px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
-      background: var(--bg);
       color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(225, 29, 72, .10), transparent 34%),
+        radial-gradient(circle at top right, rgba(124, 58, 237, .10), transparent 30%),
+        var(--bg);
     }
 
+    button, input, textarea, select { font-family: inherit; }
+
     .topbar {
-      background: linear-gradient(135deg, #e11d48, #7c3aed);
       color: #fff;
-      padding: 20px;
-      box-shadow: var(--shadow);
+      background: linear-gradient(135deg, #e11d48 0%, #7c3aed 100%);
+      padding: 22px 18px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      box-shadow: 0 10px 28px rgba(20, 24, 40, .14);
+    }
+
+    .topbar-inner {
+      max-width: 1540px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
     }
 
     .topbar h1 {
-      margin: 0 0 8px;
-      font-size: 26px;
+      margin: 0 0 6px;
+      font-size: 25px;
+      line-height: 1.1;
     }
 
     .topbar p {
       margin: 0;
-      opacity: 0.95;
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.45;
+      opacity: .95;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.18);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+      backdrop-filter: blur(8px);
     }
 
     .wrap {
-      max-width: 1500px;
+      max-width: 1540px;
       margin: 0 auto;
-      padding: 20px;
+      padding: 18px;
     }
 
     .panel {
-      background: var(--card);
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(255,255,255,.65);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 16px;
-      margin-bottom: 20px;
     }
 
-    .controls {
+    .setup {
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+
+    .setup-grid {
       display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr auto;
+      grid-template-columns: 1.4fr 1fr 1fr auto;
       gap: 12px;
       align-items: end;
     }
@@ -72,262 +107,281 @@
     .field {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 7px;
     }
 
     .field label {
-      font-size: 13px;
+      font-size: 12px;
+      font-weight: 800;
       color: var(--muted);
-      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .03em;
     }
 
-    .field input,
-    .field textarea,
-    .field select {
+    input, select, textarea {
       width: 100%;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 14px;
+      border-radius: 14px;
       background: #fff;
       color: var(--text);
+      padding: 12px 13px;
+      font-size: 14px;
       outline: none;
+      transition: .18s ease;
     }
 
-    .field textarea {
-      min-height: 92px;
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(225, 29, 72, .55);
+      box-shadow: 0 0 0 4px rgba(225, 29, 72, .08);
+    }
+
+    textarea {
       resize: vertical;
-      line-height: 1.45;
+      line-height: 1.55;
     }
 
     .btn {
       border: 0;
-      border-radius: 12px;
-      padding: 12px 16px;
+      border-radius: 14px;
+      padding: 12px 15px;
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 900;
       cursor: pointer;
-      transition: .2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform .15s ease, filter .15s ease;
+      white-space: nowrap;
     }
 
-    .btn:hover {
-      transform: translateY(-1px);
+    .btn:hover { transform: translateY(-1px); filter: brightness(.98); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-dark { background: #121827; color: #fff; }
+    .btn-light { background: #eef1f7; color: #172033; }
+    .btn-green { background: var(--ok); color: #fff; }
+
+    .hint {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.5;
     }
 
-    .btn-primary {
-      background: var(--brand);
-      color: #fff;
-    }
-
-    .btn-secondary {
-      background: #111827;
-      color: #fff;
-    }
-
-    .btn-light {
-      background: #f3f4f6;
-      color: #111827;
-    }
-
-    .grid-main {
+    .main-grid {
       display: grid;
-      grid-template-columns: 420px 1fr;
-      gap: 20px;
+      grid-template-columns: 430px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
     }
 
-    .list-panel {
-      min-height: 600px;
-    }
+    .list-panel, .work-panel { padding: 16px; }
 
-    .list-head {
+    .panel-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 14px;
       gap: 12px;
-      flex-wrap: wrap;
+      margin-bottom: 14px;
     }
 
-    .list-head h2,
-    .content-panel h2 {
+    .panel-head h2 {
       margin: 0;
-      font-size: 20px;
+      font-size: 19px;
+      line-height: 1.2;
     }
 
     .counter {
-      font-size: 13px;
       color: var(--muted);
-      font-weight: 700;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
     }
 
-    .product-list {
+    .filters {
       display: grid;
-      gap: 12px;
-      max-height: 78vh;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .products {
+      display: grid;
+      gap: 10px;
+      max-height: calc(100vh - 285px);
       overflow: auto;
-      padding-right: 4px;
+      padding-right: 3px;
     }
 
     .product-card {
       display: grid;
-      grid-template-columns: 74px 1fr;
+      grid-template-columns: 78px 1fr;
       gap: 12px;
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 14px;
       padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
       cursor: pointer;
-      transition: .2s ease;
+      transition: .16s ease;
     }
 
     .product-card:hover {
-      border-color: #d1d5db;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 16px rgba(0,0,0,.05);
+      border-color: #cfd5e1;
+      box-shadow: 0 8px 20px rgba(20, 24, 40, .06);
     }
 
     .product-card.active {
       border: 2px solid var(--brand);
-      background: #fff8fb;
+      background: #fff7fb;
     }
 
-    .product-card img {
-      width: 74px;
-      height: 74px;
+    .product-img {
+      width: 78px;
+      height: 78px;
       object-fit: contain;
-      border-radius: 10px;
+      border-radius: 13px;
+      border: 1px solid #eef1f7;
       background: #fff;
-      border: 1px solid #f1f5f9;
     }
 
-    .product-card .name {
-      margin: 0 0 6px;
+    .product-name {
+      margin: 0 0 7px;
       font-size: 14px;
-      line-height: 1.35;
-      font-weight: 700;
+      line-height: 1.32;
+      font-weight: 900;
     }
 
-    .meta {
+    .tags {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 6px;
+      gap: 5px;
+      margin-bottom: 7px;
     }
 
-    .badge {
+    .tag {
       display: inline-flex;
-      align-items: center;
-      padding: 4px 8px;
       border-radius: 999px;
-      background: #f3f4f6;
-      color: #374151;
+      background: #f0f2f7;
+      color: #40495d;
+      padding: 4px 8px;
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 800;
+      max-width: 145px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    .price-line {
-      font-size: 13px;
-      font-weight: 700;
+    .price {
       color: var(--ok);
-    }
-
-    .content-panel {
-      min-height: 600px;
-    }
-
-    .selected-grid {
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      gap: 20px;
-      margin-top: 14px;
-      margin-bottom: 20px;
-    }
-
-    .preview {
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .preview img {
-      width: 100%;
-      height: 260px;
-      object-fit: contain;
-      background: #fff;
-      border-radius: 14px;
-      border: 1px solid #eef2f7;
-    }
-
-    .preview .title {
-      margin: 0;
-      font-size: 18px;
-      line-height: 1.35;
-    }
-
-    .preview .small {
+      font-weight: 950;
       font-size: 13px;
+    }
+
+    .price small {
       color: var(--muted);
+      text-decoration: line-through;
+      font-weight: 700;
+      margin-left: 4px;
+    }
+
+    .empty {
+      padding: 34px 18px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed #cfd5e1;
+      border-radius: 16px;
+      background: #fbfcff;
       line-height: 1.5;
     }
 
-    .info-box {
-      background: #f9fafb;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px;
-    }
-
-    .info-box h3 {
-      margin: 0 0 10px;
-      font-size: 15px;
-    }
-
-    .info-grid {
+    .selected-area {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px 12px;
-    }
-
-    .info-item {
-      font-size: 13px;
-      line-height: 1.45;
-    }
-
-    .info-item strong {
-      display: block;
-      color: #111827;
-    }
-
-    .prompt-section {
-      display: grid;
+      grid-template-columns: 310px minmax(0, 1fr);
       gap: 16px;
+      align-items: start;
+    }
+
+    .preview-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      padding: 13px;
+      position: sticky;
+      top: 104px;
+    }
+
+    .preview-card img {
+      width: 100%;
+      height: 295px;
+      object-fit: contain;
+      border-radius: 15px;
+      background: #fff;
+      border: 1px solid #eef1f7;
+    }
+
+    .preview-card h3 {
+      margin: 12px 0 8px;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .data-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .data-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid #eef1f7;
+      padding-bottom: 7px;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .data-line strong { color: #111827; }
+    .data-line span { color: var(--muted); text-align: right; }
+
+    .prompt-stack {
+      display: grid;
+      gap: 14px;
+      min-width: 0;
     }
 
     .prompt-box {
       border: 1px solid var(--line);
-      border-radius: 16px;
+      border-radius: 18px;
       background: #fff;
       overflow: hidden;
     }
 
-    .prompt-head {
+    .prompt-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 16px;
-      background: #f9fafb;
-      border-bottom: 1px solid var(--line);
       gap: 10px;
+      padding: 13px;
+      border-bottom: 1px solid var(--line);
+      background: #fafbfe;
       flex-wrap: wrap;
     }
 
-    .prompt-head h3 {
+    .prompt-top h3 {
       margin: 0;
       font-size: 16px;
+      line-height: 1.25;
+    }
+
+    .prompt-top p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.35;
     }
 
     .prompt-actions {
@@ -336,758 +390,809 @@
       flex-wrap: wrap;
     }
 
-    .prompt-body {
-      padding: 16px;
-    }
-
-    .prompt-body textarea {
-      width: 100%;
-      min-height: 320px;
+    .prompt-textarea {
+      min-height: 390px;
       border: 0;
-      resize: vertical;
+      border-radius: 0;
+      box-shadow: none !important;
       font-size: 14px;
-      line-height: 1.6;
+      line-height: 1.58;
+      padding: 15px;
+      background: #fff;
       color: #111827;
-      outline: none;
-      font-family: Arial, Helvetica, sans-serif;
     }
 
-    .empty-state {
-      padding: 40px 20px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 15px;
-    }
-
-    .status {
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      background: #111827;
+      color: #fff;
+      padding: 12px 15px;
+      border-radius: 999px;
       font-size: 13px;
-      font-weight: 700;
-      color: var(--muted);
+      font-weight: 900;
+      box-shadow: 0 14px 30px rgba(0,0,0,.18);
+      transition: .2s ease;
+      z-index: 99;
     }
 
-    .footer-note {
-      margin-top: 10px;
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.5;
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
 
     @media (max-width: 1180px) {
-      .grid-main {
-        grid-template-columns: 1fr;
-      }
-
-      .selected-grid {
-        grid-template-columns: 1fr;
-      }
+      .main-grid { grid-template-columns: 1fr; }
+      .products { max-height: 530px; }
+      .preview-card { position: static; }
     }
 
-    @media (max-width: 760px) {
-      .controls {
-        grid-template-columns: 1fr;
-      }
-
-      .topbar h1 {
-        font-size: 22px;
-      }
-
-      .product-list {
-        max-height: none;
-      }
-
-      .info-grid {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width: 880px) {
+      .setup-grid { grid-template-columns: 1fr; }
+      .selected-area { grid-template-columns: 1fr; }
+      .filters { grid-template-columns: 1fr; }
+      .topbar-inner { align-items: flex-start; flex-direction: column; }
+      .topbar h1 { font-size: 21px; }
+      .pill { white-space: normal; }
     }
   </style>
 </head>
 <body>
   <header class="topbar">
-    <h1>Gerador de Prompts Reels - Dona Antônia</h1>
-    <p>
-      Busca produtos no Firebase, mostra a imagem e gera automaticamente:
-      <strong>prompt da imagem vertical</strong> + <strong>prompt da animação em loop</strong>.
-    </p>
+    <div class="topbar-inner">
+      <div>
+        <h1>Gerador de Prompts Gemini para Reels</h1>
+        <p>Escolha um produto do Firebase e gere 2 prompts prontos: imagem vertical e animação em loop sem “pulinho”.</p>
+      </div>
+      <div class="pill">Modo Gemini • Imagem + Vídeo</div>
+    </div>
   </header>
 
-  <div class="wrap">
-    <section class="panel">
-      <div class="controls">
+  <main class="wrap">
+    <section class="panel setup">
+      <div class="setup-grid">
         <div class="field">
           <label for="searchInput">Buscar produto</label>
-          <input id="searchInput" type="text" placeholder="Digite nome, marca, categoria, embalagem, EAN..." />
+          <input id="searchInput" placeholder="Nome, marca, categoria, EAN, embalagem..." />
         </div>
 
         <div class="field">
-          <label for="extraInfo">Informações extras para aparecer na imagem</label>
-          <input id="extraInfo" type="text" placeholder="Ex.: 3x sem juros | Pague na entrega | Oferta limitada" />
+          <label for="extraInfoInput">Informação extra para a arte</label>
+          <input id="extraInfoInput" placeholder="Ex.: Oferta por tempo limitado | Só hoje | Últimas unidades" />
         </div>
 
         <div class="field">
-          <label for="ctaInfo">CTA / rodapé da arte</label>
-          <input id="ctaInfo" type="text" value="Peça no WhatsApp 65 99815-0975 • Cuiabá e Várzea Grande" />
+          <label for="ctaInput">CTA / rodapé</label>
+          <input id="ctaInput" value="Peça pelo WhatsApp 65 99815-0975 • Cuiabá e Várzea Grande" />
         </div>
 
-        <button class="btn btn-primary" id="reloadBtn">Recarregar produtos</button>
+        <button class="btn btn-primary" id="reloadBtn">Recarregar Firebase</button>
       </div>
 
-      <div class="footer-note">
-        Firebase atual:
-        <strong>https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json</strong>
+      <div class="hint">
+        Uso no Gemini: no Prompt 1, anexe a imagem original do produto. Depois, gere a imagem vertical. No Prompt 2, anexe a imagem vertical gerada e peça a animação.
       </div>
     </section>
 
-    <div class="grid-main">
-      <section class="panel list-panel">
-        <div class="list-head">
+    <section class="main-grid">
+      <aside class="panel list-panel">
+        <div class="panel-head">
           <h2>Produtos</h2>
           <div class="counter" id="counterText">Carregando...</div>
         </div>
 
-        <div class="product-list" id="productList"></div>
-      </section>
-
-      <section class="panel content-panel">
-        <div class="list-head">
-          <h2>Produto selecionado + prompts</h2>
-          <div class="status" id="statusText">Nenhum produto selecionado</div>
-        </div>
-
-        <div id="selectedContent">
-          <div class="empty-state">
-            Selecione um produto à esquerda para gerar os prompts automaticamente.
+        <div class="filters">
+          <div class="field">
+            <label for="categoryFilter">Categoria</label>
+            <select id="categoryFilter">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="stockFilter">Estoque</label>
+            <select id="stockFilter">
+              <option value="all">Todos</option>
+              <option value="stock">Com estoque</option>
+              <option value="offer">Com oferta</option>
+            </select>
           </div>
         </div>
+
+        <div class="products" id="productsList"></div>
+      </aside>
+
+      <section class="panel work-panel">
+        <div class="panel-head">
+          <h2>Prompts Gemini</h2>
+          <div class="counter" id="selectedStatus">Nenhum produto selecionado</div>
+        </div>
+
+        <div id="workArea" class="empty">
+          Selecione um produto para gerar automaticamente o prompt da imagem e o prompt da animação em loop.
+        </div>
       </section>
-    </div>
-  </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast">Copiado</div>
 
   <script>
     const FIREBASE_URL = "https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json";
 
-    const STORE_CONFIG = {
-      nomeLoja: "Dona Antônia",
+    const STORE = {
+      name: "Dona Antônia",
       site: "www.donaantonia.com.br",
       whatsapp: "65 99815-0975",
-      regiao: "Cuiabá e Várzea Grande",
-      entrega: "Entrega rápida",
-      pagamento: "Pague só na entrega",
-      frete: "Frete grátis a partir de R$ 75"
+      region: "Cuiabá e Várzea Grande",
+      delivery: "Entrega grátis a partir de R$ 75",
+      payment: "pague só na entrega"
     };
 
-    let products = [];
+    let allProducts = [];
     let filteredProducts = [];
-    let selectedProductKey = null;
+    let selectedKey = null;
 
-    const productList = document.getElementById("productList");
-    const counterText = document.getElementById("counterText");
-    const selectedContent = document.getElementById("selectedContent");
-    const statusText = document.getElementById("statusText");
-    const searchInput = document.getElementById("searchInput");
-    const extraInfoInput = document.getElementById("extraInfo");
-    const ctaInfoInput = document.getElementById("ctaInfo");
-    const reloadBtn = document.getElementById("reloadBtn");
+    const $ = (id) => document.getElementById(id);
 
-    function normalizeText(text) {
-      return String(text || "")
+    const productsList = $("productsList");
+    const counterText = $("counterText");
+    const selectedStatus = $("selectedStatus");
+    const workArea = $("workArea");
+    const searchInput = $("searchInput");
+    const extraInfoInput = $("extraInfoInput");
+    const ctaInput = $("ctaInput");
+    const categoryFilter = $("categoryFilter");
+    const stockFilter = $("stockFilter");
+    const reloadBtn = $("reloadBtn");
+    const toast = $("toast");
+
+    function normalize(value) {
+      return String(value || "")
         .toLowerCase()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
     }
 
-    function escapeHtml(str) {
-      return String(str || "")
+    function escapeHtml(value) {
+      return String(value ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;");
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
-    function formatCurrency(value) {
+    function brl(value) {
       const number = Number(value || 0);
-      return number.toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL"
-      });
+      if (!number) return "R$ 0,00";
+      return number.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
     }
 
-    function getPrice(product) {
+    function productImage(product) {
+      return product.url_imagem || product.imagem || product.image || product.foto || "";
+    }
+
+    function productPrice(product) {
+      const normal = Number(product.preco || product.preco_venda || 0);
       const offer = Number(product.preco_oferta || 0);
-      const normal = Number(product.preco || 0);
-
-      if (offer > 0 && offer < normal) {
-        return {
-          normal,
-          final: offer,
-          hasOffer: true
-        };
-      }
-
+      const hasOffer = offer > 0 && normal > 0 && offer < normal;
       return {
         normal,
-        final: normal,
-        hasOffer: false
+        final: hasOffer ? offer : normal,
+        hasOffer
       };
     }
 
-    function getImage(product) {
-      return product.url_imagem || "";
+    function cleanLine(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
     }
 
-    function analyzeProduct(product) {
-      const text = normalizeText([
+    function productText(product) {
+      return normalize([
         product.nome,
         product.marca,
         product.categoria,
         product.subcategoria,
         product.subsubcategoria,
-        product.embalagem
+        product.embalagem,
+        product.descricao
       ].join(" "));
+    }
 
-      const rules = [
+    function detectCreativeProfile(product) {
+      const text = productText(product);
+
+      const profiles = [
         {
-          key: "beleza",
-          match: ["shampoo", "condicionador", "hidratante", "sabonete", "labial", "facial", "creme", "beleza", "cosmetico", "cosmético", "desodorante", "cabelo", "pentear", "skincare", "maquiagem", "lola", "garnier", "monange", "dove", "nivea", "novex", "seda", "niely", "hidramais"],
-          palette: "rosa vibrante, lilás, magenta, roxo neon, dourado suave e branco",
-          ambience: "premium, bonito, desejável, feminino ou unissex, com brilho comercial e sensação de autocuidado",
-          graphics: "strokes pop, brilhos, fitas, etiquetas promocionais, shapes fluidos, partículas luminosas",
-          benefitTone: "valorize beleza, cuidado, praticidade, autoestima e resultado visível",
-          motion: "movimento elegante e comercial, com leve flutuação e rotação suave"
+          name: "beleza e autocuidado",
+          terms: ["shampoo", "condicionador", "creme", "pentear", "hidratante", "facial", "labial", "sabonete", "desodorante", "beleza", "cabelo", "nivea", "nívea", "dove", "garnier", "monange", "lola", "seda", "novex", "skala", "niely", "elseve", "hidramais", "carmed", "pantene"],
+          palette: "rosa vibrante, lilás, roxo, magenta, branco luminoso e detalhes dourados suaves",
+          mood: "bonito, desejável, moderno, de autocuidado, com brilho de produto premium",
+          props: "brilhos, fitas, etiquetas arredondadas, partículas luminosas, reflexos suaves, formas fluidas e selos pop",
+          copyAngle: "fale de cuidado, beleza, praticidade, autoestima e oportunidade de compra",
+          animation: "movimento elegante de vitrine, com rotação suave, micro flutuação e brilho delicado"
         },
         {
-          key: "limpeza",
-          match: ["sabao", "sabão", "amaciante", "detergente", "limpeza", "desinfetante", "veja", "omo", "brilhante", "lava", "cloro", "multiuso"],
-          palette: "azul vibrante, ciano, verde água, branco e toques neon",
-          ambience: "sensação de limpeza, frescor, brilho e eficiência",
-          graphics: "bolhas, faixas de movimento, brilhos, splash limpo, selos de oferta",
-          benefitTone: "valorize limpeza, rendimento, praticidade e frescor",
-          motion: "movimento energético, limpo e fluido, com sensação de frescor"
+          name: "limpeza e lavanderia",
+          terms: ["sabao", "sabão", "lava", "amaciante", "detergente", "desinfetante", "limpeza", "multiuso", "veja", "omo", "brilhante", "ype", "ypê", "cloro", "agua sanitaria", "água sanitária", "bucha", "esponja"],
+          palette: "azul vibrante, ciano, verde água, branco, prata e pontos neon",
+          mood: "limpo, fresco, eficiente, brilhante e prático",
+          props: "bolhas, splash limpo, reflexos, raios de limpeza, placas de oferta, faixas dinâmicas e brilhos",
+          copyAngle: "fale de limpeza, rendimento, frescor, praticidade e casa bem cuidada",
+          animation: "movimento fluido, refrescante, com micro bolhas, brilho e produto central respirando levemente"
         },
         {
-          key: "pet",
-          match: ["racao", "ração", "pet", "cachorro", "gato", "bifinho", "areia"],
-          palette: "laranja vibrante, amarelo, azul forte, vermelho e branco",
-          ambience: "alegre, carismático, divertido, confiável e afetuoso",
-          graphics: "patinhas, shapes pop, etiquetas, elementos amigáveis e dinâmicos",
-          benefitTone: "valorize cuidado, carinho, praticidade e bem-estar do pet",
-          motion: "movimento leve, divertido e simpático"
+          name: "alimentos e mercearia",
+          terms: ["macarrao", "macarrão", "molho", "biscoito", "bolacha", "cereal", "nescau", "toddy", "nestle", "nestlé", "lacta", "suco", "tempero", "caldo", "maionese", "catchup", "ketchup", "mostarda", "chocolate", "salgadinho", "cafe", "café", "achocolatado", "mercearia", "arroz", "feijao", "feijão", "oleo", "óleo", "acucar", "açúcar", "farinha"],
+          palette: "vermelho, amarelo, laranja, dourado, branco e contraste forte",
+          mood: "apetitoso, popular, vibrante, gostoso, familiar e de compra rápida",
+          props: "explosões pop, raios, setas, etiquetas de preço, respingos gráficos, formas de sabor e cartazes de oferta",
+          copyAngle: "fale de sabor, praticidade, economia, reposição da casa e desejo imediato",
+          animation: "movimento mais energético, com rotação central suave e elementos pop pulsando discretamente"
         },
         {
-          key: "alimento",
-          match: ["macarrao", "macarrão", "molho", "biscoito", "bolacha", "cereal", "nescau", "toddy", "nestle", "lacta", "suco", "tempero", "alimento", "mercearia", "snack", "cafe", "café", "achocolatado", "chocolate", "salgadinho"],
-          palette: "vermelho, amarelo, laranja, dourado e branco",
-          ambience: "apetitoso, vibrante, desejável, gostoso e rápido de entender",
-          graphics: "explosões pop, splash, etiquetas de preço, raios, setas e elementos de sabor",
-          benefitTone: "valorize sabor, praticidade, momento de consumo e desejo imediato",
-          motion: "movimento mais energético e comercial, com rotação suave e presença forte"
+          name: "pet",
+          terms: ["racao", "ração", "pet", "cachorro", "gato", "areia", "bifinho", "coleira", "granulado"],
+          palette: "laranja, amarelo, azul vibrante, vermelho e branco",
+          mood: "alegre, carinhoso, divertido, amigável e confiável",
+          props: "patinhas, corações discretos, etiquetas, shapes pop, setas divertidas e pequenos elementos lúdicos",
+          copyAngle: "fale de cuidado, carinho, bem-estar do pet e praticidade de receber em casa",
+          animation: "movimento simpático, com leve balanço, flutuação e detalhes fofos ao redor"
         },
         {
-          key: "default",
-          match: [],
-          palette: "cores vibrantes baseadas nas cores reais da embalagem, com contraste alto e apoio de branco",
-          ambience: "moderno, pop, comercial, vibrante e muito legível",
-          graphics: "formas geométricas, selos, placas, cartazes, etiquetas e elementos de urgência",
-          benefitTone: "valorize praticidade, confiança e oportunidade de compra",
-          motion: "movimento sutil e elegante, com sensação de vitrine 3D"
+          name: "bebidas e café da manhã",
+          terms: ["leite", "cafe", "café", "achocolatado", "suco", "refresco", "bebida", "cha", "chá", "biscoito", "cereal", "nescau", "toddy"],
+          palette: "amarelo, marrom, creme, laranja, azul e branco",
+          mood: "aconchegante, gostoso, familiar, matinal e convidativo",
+          props: "ondas, selos arredondados, raios suaves, ícones abstratos de energia e etiquetas de oferta",
+          copyAngle: "fale de praticidade, café da manhã, sabor e reposição da despensa",
+          animation: "movimento caloroso, com micro flutuação e elementos rítmicos leves"
+        },
+        {
+          name: "geral",
+          terms: [],
+          palette: "cores vibrantes extraídas da embalagem real, com branco, contraste alto e detalhes neon controlados",
+          mood: "moderno, pop, comercial, urgente, limpo e muito chamativo",
+          props: "selos promocionais, placas, cartazes, etiquetas, setas, raios, formas geométricas e brilho comercial",
+          copyAngle: "fale de praticidade, preço, oportunidade e compra fácil pelo WhatsApp",
+          animation: "movimento de vitrine 3D, com produto central girando suavemente e detalhes pop discretos"
         }
       ];
 
-      for (const rule of rules) {
-        if (rule.key === "default") continue;
-        if (rule.match.some(term => text.includes(normalizeText(term)))) {
-          return rule;
-        }
+      for (const profile of profiles) {
+        if (profile.name === "geral") continue;
+        if (profile.terms.some(term => text.includes(normalize(term)))) return profile;
       }
-
-      return rules.find(r => r.key === "default");
+      return profiles[profiles.length - 1];
     }
 
-    function buildProductFacts(product) {
-      const price = getPrice(product);
-      const facts = [];
-
-      facts.push(`Nome do produto: ${product.nome || "Não informado"}`);
-      if (product.marca) facts.push(`Marca: ${product.marca}`);
-      if (product.categoria) facts.push(`Categoria: ${product.categoria}`);
-      if (product.subcategoria) facts.push(`Subcategoria: ${product.subcategoria}`);
-      if (product.embalagem) facts.push(`Embalagem / volume / peso: ${product.embalagem}`);
-      if (product.gtin) facts.push(`EAN/GTIN: ${product.gtin}`);
-      if (price.final > 0) facts.push(`Preço atual: ${formatCurrency(price.final)}`);
-      if (price.hasOffer && price.normal > 0) facts.push(`Preço original: ${formatCurrency(price.normal)}`);
+    function productFacts(product) {
+      const price = productPrice(product);
+      const rows = [];
+      rows.push(`Produto: ${cleanLine(product.nome) || "não informado"}`);
+      if (product.marca) rows.push(`Marca: ${cleanLine(product.marca)}`);
+      if (product.embalagem) rows.push(`Embalagem/volume/peso: ${cleanLine(product.embalagem)}`);
+      if (product.categoria) rows.push(`Categoria: ${cleanLine(product.categoria)}`);
+      if (product.subcategoria) rows.push(`Subcategoria: ${cleanLine(product.subcategoria)}`);
+      if (product.gtin) rows.push(`EAN/GTIN: ${cleanLine(product.gtin)}`);
+      if (price.hasOffer) {
+        rows.push(`Preço original: ${brl(price.normal)}`);
+        rows.push(`Preço promocional: ${brl(price.final)}`);
+      } else {
+        rows.push(`Preço: ${brl(price.final)}`);
+      }
       if (product.estoque !== undefined && product.estoque !== null && String(product.estoque) !== "") {
-        facts.push(`Estoque: ${product.estoque}`);
+        rows.push(`Estoque: ${product.estoque}`);
       }
-
-      return facts.join("\n");
+      return rows.join("\n");
     }
 
-    function buildImagePrompt(product) {
-      const style = analyzeProduct(product);
-      const price = getPrice(product);
-      const extraInfo = extraInfoInput.value.trim();
-      const ctaInfo = ctaInfoInput.value.trim();
+    function buildGeminiImagePrompt(product) {
+      const profile = detectCreativeProfile(product);
+      const price = productPrice(product);
+      const cta = cleanLine(ctaInput.value) || `Peça pelo WhatsApp ${STORE.whatsapp}`;
+      const extra = cleanLine(extraInfoInput.value);
+      const offerLine = price.hasOffer
+        ? `Preço original: ${brl(price.normal)}\nPreço promocional em destaque: ${brl(price.final)}`
+        : `Preço em destaque: ${brl(price.final)}`;
 
-      const priceBlock = price.hasOffer
-        ? `- preço original: ${formatCurrency(price.normal)}
-- preço promocional: ${formatCurrency(price.final)}`
-        : `- preço: ${formatCurrency(price.final)}`;
+      return `PROMPT PARA GEMINI — CRIAR IMAGEM VERTICAL 9:16 PARA REELS
 
-      return `Atue como uma equipe sênior formada por: estrategista de marketing, diretor de criação, diretor de arte, designer gráfico, especialista em performance para redes sociais, artista 3D de produto e redator publicitário. Sua missão é criar uma imagem única e altamente profissional para Reels, feita para vender rápido e também para servir como frame-base de uma animação em looping perfeito.
+Você é uma equipe completa e sênior de marketing, direção de arte, design gráfico, fotografia publicitária, composição 3D, copywriting de performance e criação para TikTok/Reels.
 
-OBJETIVO:
-Criar uma imagem vertical 9:16, extremamente chamativa, com visual pop comercial e estética de urgência inspirada em TikTok Shop, mantendo um sistema visual fixo e consistente, porém adaptado de forma inteligente às características do produto.
+TAREFA:
+Crie UMA imagem vertical 9:16 para Reels, pronta para ser usada como imagem-base de uma animação posterior. A imagem deve ter estética pop comercial, vibrante, moderna, com energia de urgência estilo TikTok Shop, mas mantendo aparência profissional, limpa e muito legível.
 
-REFERÊNCIA OBRIGATÓRIA:
-Use a imagem anexada do produto como referência principal obrigatória.
-Preserve fielmente:
-- embalagem real
-- nome real
-- marca real
-- rótulo real
-- formato real
-- cores reais da embalagem
-- proporção real do produto
+IMAGEM ANEXADA:
+Vou anexar a imagem real do produto. Use essa imagem como referência obrigatória para o produto.
 
-NÃO:
-- não invente embalagem
-- não altere rótulo
-- não troque marca
-- não crie textos errados na embalagem
-- não deforme o produto
-- não mude o produto para outro item
+REGRA DE FIDELIDADE DO PRODUTO:
+Preserve fielmente o produto anexado:
+- mesma embalagem
+- mesma marca
+- mesmo rótulo
+- mesmas cores principais
+- mesma proporção
+- mesmo formato
+- sem deformar
+- sem inventar nova embalagem
+- sem trocar marca
+- sem trocar produto
+- sem mudar textos do rótulo
 
-ESTILO VISUAL FIXO DA CAMPANHA:
-- formato vertical 9:16
-- estética pop comercial
-- cores vibrantes
-- visual de oferta e urgência
-- aparência profissional para redes sociais
-- tipografia forte, grande e extremamente legível no celular
-- composição premium, limpa e impactante
-- clima de vitrine digital moderna
-- linguagem visual com energia de TikTok Shop
-- todos os elementos devem parecer pensados por uma equipe profissional
+O produto deve ficar no CENTRO da composição, grande, nítido, valorizado e com aparência de vitrine 3D comercial.
+
+DADOS REAIS DO PRODUTO:
+${productFacts(product)}
+
+INFORMAÇÕES COMERCIAIS QUE DEVEM APARECER NA IMAGEM:
+Loja: ${STORE.name}
+${offerLine}
+Região: ${STORE.region}
+Condição: ${STORE.payment}
+Entrega: ${STORE.delivery}
+CTA: ${cta}
+${extra ? `Informação extra: ${extra}` : ""}
+
+ESTILO FIXO DA CAMPANHA:
+- imagem vertical 9:16
+- produto obrigatoriamente no centro
+- visual pop, vibrante, colorido e comercial
+- sensação de urgência e oferta rápida
+- estilo TikTok Shop, vitrine promocional e motion poster
+- elementos gráficos com aparência 3D/cartoon publicitário refinado
+- cores fortes, contraste alto e leitura perfeita no celular
+- não parecer arte amadora
+- não parecer panfleto poluído
+- não parecer anúncio parado sem energia
 
 ADAPTAÇÃO INTELIGENTE AO PRODUTO:
-Analise o produto e adapte a direção de arte com inteligência, mantendo o mesmo estilo-base da campanha.
-Direção visual sugerida para este produto:
-- paleta dominante: ${style.palette}
-- atmosfera: ${style.ambience}
-- elementos gráficos de apoio: ${style.graphics}
-- linha de comunicação: ${style.benefitTone}
+Analise o produto e adapte a cena, mantendo o estilo fixo acima.
+Categoria criativa detectada: ${profile.name}
+Paleta sugerida: ${profile.palette}
+Atmosfera: ${profile.mood}
+Elementos gráficos: ${profile.props}
+Ângulo da comunicação: ${profile.copyAngle}
 
-COMPOSIÇÃO:
-- o produto deve ficar obrigatoriamente no centro da arte
-- o produto deve ser o protagonista absoluto
-- o produto deve aparecer grande, nítido, bonito e muito valorizado
-- usar fundo criativo, vibrante e coerente com a categoria do produto
-- o fundo pode ter formas pop, explosões gráficas, selos, placas, setas, raios, brilhos, etiquetas e cartazes
-- tudo deve reforçar a venda, sem poluir
-- a composição deve ser estável e bem organizada, pois esta imagem será usada depois em uma animação com looping
-- não encostar informações importantes nas bordas
-- manter excelente área de respiro e leitura
-- a imagem precisa funcionar perfeitamente como frame inicial e final de um vídeo em loop
+COMPOSIÇÃO OBRIGATÓRIA:
+- produto no centro, como protagonista absoluto
+- fundo vibrante combinando com as cores reais da embalagem
+- profundidade visual, luz de estúdio, sombras suaves e reflexos controlados
+- placas, cartazes, selos ou etiquetas promocionais ao redor do produto
+- todas as informações importantes já devem estar na imagem
+- textos grandes, curtos e muito legíveis
+- hierarquia clara: produto > preço > nome/benefício > entrega/CTA
+- manter margens seguras para Reels, sem texto grudado nas bordas
+- criar uma imagem estável, pois ela será o frame inicial e final de um vídeo em loop
 
-INFORMAÇÕES QUE DEVEM APARECER NA IMAGEM:
-Use somente informações verdadeiras do produto e da oferta. Não invente nada.
-Dados do produto:
-${buildProductFacts(product)}
+INFORMAÇÕES VISUAIS:
+Use elementos como:
+- selo de oferta
+- placa de preço
+- etiqueta de entrega
+- cartaz de CTA
+- pequenos raios, setas, brilhos, formas geométricas, confetes ou partículas
+Tudo deve combinar com o produto e não pode atrapalhar a leitura.
 
-Informações comerciais obrigatórias para aparecer na arte:
-- loja: ${STORE_CONFIG.nomeLoja}
-${priceBlock}
-- contato/CTA: ${ctaInfo || `Peça no WhatsApp ${STORE_CONFIG.whatsapp}`}
-- região: ${STORE_CONFIG.regiao}
-- condição comercial: ${STORE_CONFIG.pagamento}
-- benefício de entrega: ${STORE_CONFIG.frete}
-${extraInfo ? `- informações extras: ${extraInfo}` : ""}
+TEXTO NA ARTE:
+Use PT-BR correto, com acentos corretos.
+Não invente informações.
+Não crie preço diferente.
+Não escreva textos pequenos demais.
+Não escreva textos borrados.
+Não altere telefone, região ou condição.
 
-HIERARQUIA VISUAL SUGERIDA:
-1. produto ao centro
-2. nome do produto em destaque
-3. preço em destaque forte
-4. selo de oferta / urgência
-5. marca / embalagem / benefício rápido
-6. CTA final
-7. informações extras de apoio
-
-TEXTO E ELEMENTOS:
-- as informações devem aparecer já totalmente resolvidas na imagem
-- usar placas, cartazes, etiquetas, faixas e selos promocionais integrados à arte
-- os textos devem ser curtos, fortes e muito legíveis
-- criar contraste alto entre texto e fundo
-- valorizar preço e benefício principal
-
-RESULTADO ESPERADO:
-Uma imagem vertical profissional de anúncio, com o produto centralizado, visual pop vibrante, urgência comercial, leitura impecável no celular, identidade consistente de campanha e pronta para ser animada depois sem precisar mudar layout.
+A imagem deve mostrar claramente:
+1. produto
+2. nome do produto ou descrição curta fiel
+3. preço
+4. loja Dona Antônia
+5. compra pelo WhatsApp/site quando informado
+6. Cuiabá e Várzea Grande
+7. pague só na entrega
+8. entrega grátis a partir de R$ 75
+${extra ? "9. informação extra fornecida" : ""}
 
 REGRAS NEGATIVAS:
 - não criar pessoas
-- não criar locução
+- não criar mãos humanas
+- não criar cenas realistas com pessoas
+- não trocar o produto
+- não deformar a embalagem
 - não esconder o produto
-- não cortar partes importantes do produto
-- não poluir a arte
-- não usar letras pequenas
-- não inventar promoções falsas
-- não inventar logotipo
-- não usar visual genérico demais
-- não tirar o produto do centro
-- não fazer composição fraca
-- não comprometer a leitura dos textos`;
+- não cortar o produto
+- não poluir a imagem
+- não usar texto ilegível
+- não inventar logo
+- não inventar promoção
+- não inventar marca
+- não inventar produto adicional
+- não mudar o preço
+- não colocar marca d’água
+
+RESULTADO FINAL:
+Uma imagem vertical 9:16, vibrante, pop, profissional, com o produto centralizado e todas as informações comerciais visíveis. A imagem precisa estar pronta para virar um vídeo curto em loop, então a composição deve ser clara, estável e bem organizada.`;
     }
 
-    function buildAnimationPrompt(product) {
-      const style = analyzeProduct(product);
-      const ctaInfo = ctaInfoInput.value.trim();
-      const extraInfo = extraInfoInput.value.trim();
+    function buildGeminiAnimationPrompt(product) {
+      const profile = detectCreativeProfile(product);
+      const cta = cleanLine(ctaInput.value) || `Peça pelo WhatsApp ${STORE.whatsapp}`;
+      const extra = cleanLine(extraInfoInput.value);
 
-      return `Atue como uma equipe sênior de direção, animação, motion design, edição de vídeo, sound design e pós-produção. Sua missão é transformar a imagem vertical já criada em um vídeo curto de 10 segundos com looping infinito perfeito, sem alterar a composição-base.
+      return `PROMPT PARA GEMINI — ANIMAR A IMAGEM EM VÍDEO DE 10 SEGUNDOS COM LOOP PERFEITO
 
-OBJETIVO:
-Criar uma animação vertical 9:16, com 10 segundos de duração, altamente profissional, estilosa, comercial e preparada para looping infinito perfeito.
+Você é uma equipe profissional de direção de vídeo, animação 3D, motion design, edição, pós-produção, sound design e criação de anúncios para Reels/TikTok.
 
-BASE OBRIGATÓRIA:
-Use a imagem estática fornecida como frame-base oficial.
-A composição, o layout, os textos, as informações e a identidade visual devem ser preservados.
+TAREFA:
+Transforme a imagem vertical anexada em um vídeo vertical de exatamente 10 segundos, sem locução, com trilha sonora instrumental e efeitos sonoros, preparado para rodar em looping infinito perfeito.
 
-REGRA MAIS IMPORTANTE DO LOOP:
-O frame inicial (0s) e o frame final (10s) devem ser visualmente idênticos à imagem original estática.
-Repito:
-- o primeiro frame deve ser igual à imagem original
-- o último frame deve retornar exatamente à mesma imagem original
-- isso é obrigatório para evitar o “pulinho” no loop
-- todo o movimento deve acontecer entre o início e o final, mas fechando perfeitamente no mesmo ponto
+A imagem anexada é a ARTE FINAL APROVADA. Não recrie a arte. Não refaça o layout. Não troque elementos. Apenas anime com sutileza e profissionalismo.
 
-ESTILO DA ANIMAÇÃO:
-- manter o mesmo estilo-base da imagem
-- estética pop comercial
-- vibração de oferta moderna
-- movimento controlado e elegante
-- nada exagerado a ponto de atrapalhar a leitura
-- o vídeo deve parecer um anúncio profissional pronto para Reels
+REGRA MAIS IMPORTANTE — LOOP SEM “PULINHO”:
+O frame 0s deve ser exatamente igual à imagem original anexada.
+O frame 10s deve voltar exatamente para a mesma composição da imagem original anexada.
+O primeiro e o último frame precisam ser visualmente idênticos.
+Isso é obrigatório para evitar o “pulinho” quando o vídeo repetir em loop.
 
-O QUE PODE ANIMAR:
-1. O produto central
-- deve ser o principal elemento animado
-- pode fazer rotação suave em torno do próprio eixo
-- pode fazer micro flutuação
-- pode fazer leve aproximação e retorno
-- pode ter leve balanço ou inclinação sutil
-- o movimento deve ser bonito, comercial e contínuo
-- referência de linguagem de movimento para este produto: ${style.motion}
+NÃO FAÇA:
+- não comece com transição
+- não termine com fade
+- não termine em tela preta
+- não termine com zoom diferente
+- não termine com produto em outro ângulo
+- não termine com textos em outra posição
+- não termine com luz diferente
+- não termine com partículas em posição chamativa diferente
+- não crie corte seco
 
-2. Pequenos elementos secundários da arte
-- brilhos leves
-- selos com micro pulso
-- partículas discretas
-- pequenos deslocamentos quase imperceptíveis em elementos gráficos de fundo
-- efeitos sutis de pop ou energia
-- pequenos movimentos de profundidade, se necessário
-- nunca tirar atenção do produto
+O vídeo deve começar na imagem original, criar movimento no meio e retornar exatamente para a imagem original no final.
 
-O QUE NÃO DEVE ANIMAR DE FORMA AGRESSIVA:
+DURAÇÃO E FORMATO:
+- duração: exatamente 10 segundos
+- formato: vertical 9:16
+- sem locução
+- trilha instrumental em loop
+- efeitos sonoros em loop
+- sem cortes de cena
+- sem mudança de layout
+
+O QUE DEVE ANIMAR:
+1. Produto central
+- o produto deve ser o principal elemento animado
+- pode girar suavemente em torno do próprio eixo, mas deve completar o ciclo e voltar ao mesmo ângulo inicial aos 10 segundos
+- pode fazer micro flutuação vertical, mas deve voltar exatamente à posição inicial no último frame
+- pode fazer leve inclinação ou balanço, mas deve retornar ao estado original
+- movimento sugerido para este produto: ${profile.animation}
+
+2. Elementos gráficos secundários
+- pequenos brilhos podem piscar suavemente
+- selos podem ter micro pulso
+- partículas podem se mover em ciclo discreto
+- fundo pode ter parallax mínimo
+- placas/cartazes podem ter vibração sutil, mas sem sair da posição original no final
+
+3. Câmera virtual
+- usar no máximo micro zoom ou micro parallax
+- se houver câmera, ela deve retornar exatamente ao enquadramento inicial no segundo 10
+- não mudar a composição da arte
+- não cortar produto nem textos
+
+O QUE DEVE FICAR PRATICAMENTE FIXO:
 - textos principais
 - preço
-- nome do produto
 - CTA
-- cartazes e informações
-Esses elementos devem permanecer estáveis, legíveis e praticamente fixos.
-Se houver movimento, deve ser mínimo, sutil e sem comprometer a leitura.
+- telefone
+- informações de entrega
+- nome da loja
+- informações comerciais
+Essas informações precisam continuar legíveis o tempo todo.
+
+INFORMAÇÕES IMPORTANTES QUE NÃO PODEM SER ALTERADAS:
+Produto: ${cleanLine(product.nome) || "produto da imagem"}
+Marca: ${cleanLine(product.marca) || "manter a marca que aparece na imagem"}
+Loja: ${STORE.name}
+Região: ${STORE.region}
+CTA: ${cta}
+${extra ? `Informação extra: ${extra}` : ""}
+
+ESTILO DO MOVIMENTO:
+- pop comercial
+- TikTok Shop
+- vitrine 3D promocional
+- energia de oferta
+- movimentos leves, bonitos e profissionais
+- nada caótico
+- nada que atrapalhe a leitura
+- tudo em ciclo contínuo
 
 ÁUDIO:
-- sem locução
-- criar somente trilha instrumental e efeitos sonoros
-- a trilha deve ser moderna, comercial, energética e curta
-- os efeitos devem combinar com estética pop de oferta
-- tudo também deve fechar em looping perfeito
-- o áudio não pode ter corte brusco
-- pode usar pequenos efeitos de whoosh, pop, sparkle, click e impactos leves
-- o áudio deve acompanhar a energia visual sem ficar agressivo
+Criar uma trilha instrumental curta, moderna e comercial, em loop perfeito.
+Não usar voz.
+Não usar locução.
+Não usar fala.
+Adicionar efeitos sonoros discretos e sincronizados com micro movimentos:
+- pop suave
+- whoosh leve
+- sparkle
+- click promocional
+- bounce sutil
+O áudio também deve fechar perfeitamente em loop, sem corte brusco no final.
 
-CÂMERA:
-- evitar mudanças radicais
-- se usar câmera, que seja apenas micro movimento
-- leve sensação de profundidade
-- sem cortes
-- sem trocar cena
-- sem mudar enquadramento de forma que quebre o loop
-
-ESTRUTURA IDEAL DA ANIMAÇÃO:
+ROTEIRO DE MOVIMENTO DOS 10 SEGUNDOS:
 0s:
-- começar exatamente com a imagem original estática
+A imagem começa exatamente igual à imagem original anexada.
 
 0s a 2s:
-- iniciar movimento muito suave do produto
-- pequenos detalhes secundários ganham vida
-- manter leitura intacta
+O produto inicia movimento muito suave. Pequenos brilhos e partículas começam a aparecer de forma discreta.
 
-2s a 8s:
-- desenvolver a animação com micro movimentos fluidos
-- o produto continua protagonista
-- brilho, pulso e ambientação reforçam a oferta
-- sem alterar layout
+2s a 5s:
+Produto faz movimento principal: rotação suave, micro flutuação ou leve balanço. Elementos pop dão vida à cena sem tirar legibilidade.
+
+5s a 8s:
+Movimento continua em ciclo. Selos e detalhes podem pulsar levemente. Textos seguem fixos e legíveis.
 
 8s a 10s:
-- desacelerar e retornar com precisão absoluta ao frame inicial
-- fechar exatamente na imagem original
-- o último frame deve casar perfeitamente com o primeiro
+Todos os elementos retornam gradualmente para a posição exata da imagem original. O produto volta ao mesmo ângulo, mesmo tamanho, mesma posição, mesma iluminação e mesmo enquadramento.
 
-INFORMAÇÕES IMPORTANTES A PRESERVAR:
-- nome do produto: ${product.nome || "Não informado"}
-- marca: ${product.marca || "Não informada"}
-- CTA: ${ctaInfo || `Peça no WhatsApp ${STORE_CONFIG.whatsapp}`}
-- informações extras: ${extraInfo || "manter as informações da arte base"}
-- região: ${STORE_CONFIG.regiao}
-- estilo visual fixo da campanha: pop, vibrante, comercial, urgência de venda, legibilidade máxima
+FRAME FINAL:
+O último frame deve ser idêntico ao primeiro frame e idêntico à imagem original anexada.
 
 REGRAS NEGATIVAS:
-- não criar cena nova
+- não recriar a arte
+- não modificar textos
+- não mudar preço
+- não mudar telefone
+- não mudar embalagem
+- não distorcer produto
 - não trocar fundo
-- não reposicionar o layout
-- não alterar os textos
-- não inventar novas informações
-- não criar locução
-- não usar cortes
-- não dar zoom exagerado
-- não deixar o produto sair do centro
-- não criar movimento caótico
-- não comprometer a leitura
-- não alterar a identidade da embalagem
-- não terminar em frame diferente do inicial
+- não adicionar pessoa
+- não adicionar mão
+- não adicionar locução
+- não fazer corte
+- não fazer transição de cena
+- não usar zoom agressivo
+- não deixar textos tremendo
+- não deixar textos ilegíveis
+- não terminar diferente do início
+- não criar “pulinho” no loop
 
-RESULTADO FINAL ESPERADO:
-Um vídeo vertical de 10 segundos, com visual profissional, movimento elegante, produto central animado, elementos secundários discretamente vivos, trilha instrumental em loop e, principalmente, início e fim idênticos à imagem estática original, garantindo looping infinito sem qualquer “pulinho”.`;
+RESULTADO FINAL:
+Um vídeo vertical de 10 segundos, profissional, com o produto central ganhando vida, pequenos elementos gráficos em movimento, trilha instrumental e efeitos sonoros em loop, começando e terminando exatamente na imagem original para rodar infinitamente sem pulinho.`;
     }
 
-    function renderProducts(list) {
-      productList.innerHTML = "";
+    function renderCategories() {
+      const previous = categoryFilter.value;
+      const categories = [...new Set(allProducts.map(p => cleanLine(p.categoria)).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, "pt-BR"));
 
-      if (!list.length) {
-        productList.innerHTML = `<div class="empty-state">Nenhum produto encontrado.</div>`;
-        counterText.textContent = "0 produtos";
+      categoryFilter.innerHTML = `<option value="">Todas</option>` + categories.map(cat => {
+        return `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`;
+      }).join("");
+
+      if (previous && categories.includes(previous)) categoryFilter.value = previous;
+    }
+
+    function renderProducts() {
+      productsList.innerHTML = "";
+      counterText.textContent = `${filteredProducts.length} produto(s)`;
+
+      if (!filteredProducts.length) {
+        productsList.innerHTML = `<div class="empty">Nenhum produto encontrado com os filtros atuais.</div>`;
         return;
       }
 
-      counterText.textContent = `${list.length} produto(s)`;
+      const fragment = document.createDocumentFragment();
 
-      for (const product of list) {
-        const price = getPrice(product);
-        const image = getImage(product);
-        const active = selectedProductKey === product.firebaseKey ? "active" : "";
-
-        const card = document.createElement("div");
-        card.className = `product-card ${active}`;
+      filteredProducts.forEach(product => {
+        const price = productPrice(product);
+        const img = productImage(product) || "https://dummyimage.com/160x160/f3f4f6/6b7280.png&text=Sem+imagem";
+        const card = document.createElement("article");
+        card.className = `product-card ${selectedKey === product.firebaseKey ? "active" : ""}`;
         card.innerHTML = `
-          <img src="${escapeHtml(image || "https://via.placeholder.com/160x160?text=Sem+Imagem")}" alt="${escapeHtml(product.nome || "Produto")}" loading="lazy">
+          <img class="product-img" src="${escapeHtml(img)}" alt="${escapeHtml(product.nome || "Produto")}" loading="lazy" onerror="this.src='https://dummyimage.com/160x160/f3f4f6/6b7280.png&text=Sem+imagem'" />
           <div>
-            <p class="name">${escapeHtml(product.nome || "Sem nome")}</p>
-            <div class="meta">
-              ${product.marca ? `<span class="badge">${escapeHtml(product.marca)}</span>` : ""}
-              ${product.categoria ? `<span class="badge">${escapeHtml(product.categoria)}</span>` : ""}
-              ${product.embalagem ? `<span class="badge">${escapeHtml(product.embalagem)}</span>` : ""}
+            <p class="product-name">${escapeHtml(product.nome || "Sem nome")}</p>
+            <div class="tags">
+              ${product.marca ? `<span class="tag">${escapeHtml(product.marca)}</span>` : ""}
+              ${product.categoria ? `<span class="tag">${escapeHtml(product.categoria)}</span>` : ""}
+              ${product.embalagem ? `<span class="tag">${escapeHtml(product.embalagem)}</span>` : ""}
             </div>
-            <div class="price-line">
-              ${price.hasOffer
-                ? `${formatCurrency(price.final)} <span style="color:#6b7280;font-weight:600;">de ${formatCurrency(price.normal)}</span>`
-                : `${formatCurrency(price.final)}`
-              }
+            <div class="price">
+              ${price.final ? brl(price.final) : "Sem preço"}
+              ${price.hasOffer ? `<small>${brl(price.normal)}</small>` : ""}
             </div>
           </div>
         `;
+        card.addEventListener("click", () => selectProduct(product.firebaseKey));
+        fragment.appendChild(card);
+      });
 
-        card.addEventListener("click", () => {
-          selectedProductKey = product.firebaseKey;
-          renderProducts(filteredProducts);
-          renderSelectedProduct(product);
-        });
+      productsList.appendChild(fragment);
+    }
 
-        productList.appendChild(card);
+    function applyFilters() {
+      const search = normalize(searchInput.value);
+      const cat = categoryFilter.value;
+      const stock = stockFilter.value;
+
+      filteredProducts = allProducts.filter(product => {
+        const haystack = normalize([
+          product.nome,
+          product.marca,
+          product.categoria,
+          product.subcategoria,
+          product.subsubcategoria,
+          product.embalagem,
+          product.gtin,
+          product.codigo,
+          product.descricao
+        ].join(" "));
+
+        const matchesSearch = !search || haystack.includes(search);
+        const matchesCat = !cat || cleanLine(product.categoria) === cat;
+        const price = productPrice(product);
+        const matchesStock = stock === "all"
+          || (stock === "stock" && Number(product.estoque || 0) > 0)
+          || (stock === "offer" && price.hasOffer);
+
+        return matchesSearch && matchesCat && matchesStock;
+      });
+
+      renderProducts();
+
+      if (selectedKey) {
+        const product = allProducts.find(p => p.firebaseKey === selectedKey);
+        if (product) renderSelected(product);
       }
     }
 
-    function renderSelectedProduct(product) {
-      statusText.textContent = product.nome || "Produto selecionado";
+    function selectProduct(firebaseKey) {
+      selectedKey = firebaseKey;
+      const product = allProducts.find(p => p.firebaseKey === firebaseKey);
+      renderProducts();
+      if (product) renderSelected(product);
+    }
 
-      const imagePrompt = buildImagePrompt(product);
-      const animationPrompt = buildAnimationPrompt(product);
-      const price = getPrice(product);
+    function renderSelected(product) {
+      const img = productImage(product) || "https://dummyimage.com/500x500/f3f4f6/6b7280.png&text=Sem+imagem";
+      const price = productPrice(product);
+      const profile = detectCreativeProfile(product);
+      const imagePrompt = buildGeminiImagePrompt(product);
+      const animationPrompt = buildGeminiAnimationPrompt(product);
 
-      selectedContent.innerHTML = `
-        <div class="selected-grid">
-          <div class="preview">
-            <img src="${escapeHtml(getImage(product) || "https://via.placeholder.com/500x500?text=Sem+Imagem")}" alt="${escapeHtml(product.nome || "Produto")}">
-            <div>
-              <h3 class="title">${escapeHtml(product.nome || "Sem nome")}</h3>
-              <div class="small">
-                ${product.marca ? `<strong>Marca:</strong> ${escapeHtml(product.marca)}<br>` : ""}
-                ${product.categoria ? `<strong>Categoria:</strong> ${escapeHtml(product.categoria)}<br>` : ""}
-                ${product.subcategoria ? `<strong>Subcategoria:</strong> ${escapeHtml(product.subcategoria)}<br>` : ""}
-                ${product.embalagem ? `<strong>Embalagem:</strong> ${escapeHtml(product.embalagem)}<br>` : ""}
-                ${product.gtin ? `<strong>EAN:</strong> ${escapeHtml(product.gtin)}<br>` : ""}
-              </div>
-            </div>
+      selectedStatus.textContent = product.nome || "Produto selecionado";
 
-            <div class="info-box">
-              <h3>Resumo</h3>
-              <div class="info-grid">
-                <div class="info-item">
-                  <strong>Preço final</strong>
-                  ${formatCurrency(price.final)}
-                </div>
-                <div class="info-item">
-                  <strong>Preço original</strong>
-                  ${price.hasOffer ? formatCurrency(price.normal) : "—"}
-                </div>
-                <div class="info-item">
-                  <strong>Estoque</strong>
-                  ${product.estoque ?? "—"}
-                </div>
-                <div class="info-item">
-                  <strong>Marca</strong>
-                  ${escapeHtml(product.marca || "—")}
-                </div>
-              </div>
-            </div>
+      workArea.className = "selected-area";
+      workArea.innerHTML = `
+        <aside class="preview-card">
+          <img src="${escapeHtml(img)}" alt="${escapeHtml(product.nome || "Produto")}" onerror="this.src='https://dummyimage.com/500x500/f3f4f6/6b7280.png&text=Sem+imagem'" />
+          <h3>${escapeHtml(product.nome || "Sem nome")}</h3>
+          <div class="tags">
+            <span class="tag">${escapeHtml(profile.name)}</span>
+            ${product.marca ? `<span class="tag">${escapeHtml(product.marca)}</span>` : ""}
+            ${product.categoria ? `<span class="tag">${escapeHtml(product.categoria)}</span>` : ""}
           </div>
-
-          <div class="prompt-section">
-            <div class="prompt-box">
-              <div class="prompt-head">
-                <h3>Prompt 1 — Gerar a imagem vertical para Reels</h3>
-                <div class="prompt-actions">
-                  <button class="btn btn-secondary" onclick="copyPrompt('imagePromptText')">Copiar prompt</button>
-                </div>
-              </div>
-              <div class="prompt-body">
-                <textarea id="imagePromptText" readonly>${imagePrompt}</textarea>
-              </div>
-            </div>
-
-            <div class="prompt-box">
-              <div class="prompt-head">
-                <h3>Prompt 2 — Animar a imagem em looping perfeito</h3>
-                <div class="prompt-actions">
-                  <button class="btn btn-secondary" onclick="copyPrompt('animationPromptText')">Copiar prompt</button>
-                </div>
-              </div>
-              <div class="prompt-body">
-                <textarea id="animationPromptText" readonly>${animationPrompt}</textarea>
-              </div>
-            </div>
+          <div class="data-list">
+            <div class="data-line"><strong>Preço</strong><span>${price.final ? brl(price.final) : "—"}</span></div>
+            <div class="data-line"><strong>Oferta</strong><span>${price.hasOffer ? `de ${brl(price.normal)}` : "não"}</span></div>
+            <div class="data-line"><strong>Estoque</strong><span>${product.estoque ?? "—"}</span></div>
+            <div class="data-line"><strong>Embalagem</strong><span>${escapeHtml(product.embalagem || "—")}</span></div>
+            <div class="data-line"><strong>EAN</strong><span>${escapeHtml(product.gtin || product.codigo || "—")}</span></div>
           </div>
+        </aside>
+
+        <div class="prompt-stack">
+          <section class="prompt-box">
+            <div class="prompt-top">
+              <div>
+                <h3>Prompt 1 — Gemini Imagem</h3>
+                <p>Anexe a foto original do produto no Gemini e cole este prompt.</p>
+              </div>
+              <div class="prompt-actions">
+                <button class="btn btn-dark" onclick="copyFrom('imagePrompt')">Copiar</button>
+              </div>
+            </div>
+            <textarea class="prompt-textarea" id="imagePrompt" readonly>${escapeHtml(imagePrompt)}</textarea>
+          </section>
+
+          <section class="prompt-box">
+            <div class="prompt-top">
+              <div>
+                <h3>Prompt 2 — Gemini Animação</h3>
+                <p>Anexe a imagem vertical gerada e cole este prompt para criar o vídeo em loop.</p>
+              </div>
+              <div class="prompt-actions">
+                <button class="btn btn-dark" onclick="copyFrom('animationPrompt')">Copiar</button>
+              </div>
+            </div>
+            <textarea class="prompt-textarea" id="animationPrompt" readonly>${escapeHtml(animationPrompt)}</textarea>
+          </section>
         </div>
       `;
     }
 
-    function filterProducts() {
-      const term = normalizeText(searchInput.value);
-      if (!term) {
-        filteredProducts = [...products];
-      } else {
-        filteredProducts = products.filter(product => {
-          const hay = normalizeText([
-            product.nome,
-            product.marca,
-            product.categoria,
-            product.subcategoria,
-            product.subsubcategoria,
-            product.embalagem,
-            product.codigo,
-            product.gtin
-          ].join(" "));
-          return hay.includes(term);
-        });
-      }
-
-      renderProducts(filteredProducts);
-
-      if (selectedProductKey) {
-        const selected = filteredProducts.find(p => p.firebaseKey === selectedProductKey)
-          || products.find(p => p.firebaseKey === selectedProductKey);
-
-        if (selected) {
-          renderSelectedProduct(selected);
-        }
-      }
-    }
-
     async function loadProducts() {
+      selectedKey = null;
+      selectedStatus.textContent = "Carregando produtos...";
+      counterText.textContent = "Carregando...";
+      productsList.innerHTML = `<div class="empty">Buscando produtos no Firebase...</div>`;
+      workArea.className = "empty";
+      workArea.innerHTML = "Carregando produtos. Depois selecione um item para gerar os prompts Gemini.";
+
       try {
-        counterText.textContent = "Carregando produtos...";
-        productList.innerHTML = `<div class="empty-state">Carregando produtos do Firebase...</div>`;
+        const res = await fetch(FIREBASE_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
+        const data = await res.json();
 
-        const response = await fetch(FIREBASE_URL);
-        if (!response.ok) {
-          throw new Error("Falha ao buscar dados do Firebase.");
-        }
+        allProducts = Object.entries(data || {})
+          .map(([firebaseKey, product]) => ({ firebaseKey, ...(product || {}) }))
+          .filter(product => cleanLine(product.nome))
+          .sort((a, b) => cleanLine(a.nome).localeCompare(cleanLine(b.nome), "pt-BR"));
 
-        const data = await response.json();
+        renderCategories();
+        applyFilters();
 
-        products = Object.entries(data || {}).map(([firebaseKey, product]) => ({
-          firebaseKey,
-          ...product
-        }))
-        .filter(product => product && product.nome)
-        .sort((a, b) => String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR"));
-
-        filteredProducts = [...products];
-        selectedProductKey = null;
-        renderProducts(filteredProducts);
-
-        selectedContent.innerHTML = `
-          <div class="empty-state">
-            Produtos carregados com sucesso. Agora selecione um produto para gerar os prompts.
-          </div>
-        `;
-
-        statusText.textContent = "Produtos carregados";
+        selectedStatus.textContent = "Produtos carregados";
+        workArea.className = "empty";
+        workArea.innerHTML = "Produtos carregados. Selecione um produto para gerar os prompts Gemini.";
       } catch (error) {
         console.error(error);
-        productList.innerHTML = `
-          <div class="empty-state">
-            Erro ao carregar os produtos do Firebase.<br><br>
-            Verifique a URL, as permissões do banco e o campo <strong>url_imagem</strong> dos produtos.
-          </div>
-        `;
+        allProducts = [];
+        filteredProducts = [];
+        productsList.innerHTML = `<div class="empty">Não foi possível carregar os produtos.<br>Verifique se o Firebase está público para leitura e se o caminho <strong>/produtos.json</strong> está correto.</div>`;
         counterText.textContent = "Erro";
-        statusText.textContent = "Falha no carregamento";
+        selectedStatus.textContent = "Falha ao carregar";
+        workArea.className = "empty";
+        workArea.innerHTML = `Erro ao carregar Firebase: ${escapeHtml(error.message)}`;
       }
     }
 
-    function copyPrompt(textareaId) {
-      const textarea = document.getElementById(textareaId);
-      if (!textarea) return;
+    async function copyFrom(id) {
+      const el = $(id);
+      if (!el) return;
+      const text = el.value;
 
-      textarea.select();
-      textarea.setSelectionRange(0, 999999);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        el.focus();
+        el.select();
+        document.execCommand("copy");
+      }
 
-      navigator.clipboard.writeText(textarea.value)
-        .then(() => {
-          alert("Prompt copiado com sucesso.");
-        })
-        .catch(() => {
-          document.execCommand("copy");
-          alert("Prompt copiado com sucesso.");
-        });
+      showToast("Prompt copiado");
     }
 
-    window.copyPrompt = copyPrompt;
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => toast.classList.remove("show"), 1700);
+    }
 
-    searchInput.addEventListener("input", filterProducts);
+    window.copyFrom = copyFrom;
+
+    searchInput.addEventListener("input", applyFilters);
+    categoryFilter.addEventListener("change", applyFilters);
+    stockFilter.addEventListener("change", applyFilters);
+    reloadBtn.addEventListener("click", loadProducts);
 
     extraInfoInput.addEventListener("input", () => {
-      if (!selectedProductKey) return;
-      const product = products.find(p => p.firebaseKey === selectedProductKey);
-      if (product) renderSelectedProduct(product);
+      if (!selectedKey) return;
+      const product = allProducts.find(p => p.firebaseKey === selectedKey);
+      if (product) renderSelected(product);
     });
 
-    ctaInfoInput.addEventListener("input", () => {
-      if (!selectedProductKey) return;
-      const product = products.find(p => p.firebaseKey === selectedProductKey);
-      if (product) renderSelectedProduct(product);
+    ctaInput.addEventListener("input", () => {
+      if (!selectedKey) return;
+      const product = allProducts.find(p => p.firebaseKey === selectedKey);
+      if (product) renderSelected(product);
     });
-
-    reloadBtn.addEventListener("click", loadProducts);
 
     loadProducts();
   </script>
