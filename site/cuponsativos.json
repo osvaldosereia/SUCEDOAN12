@@ -6,7 +6,21 @@
     "desconto": 20,
     "valorMinimo": 0,
     "validade": "2026-12-31",
-    "categorias": [],
+    "posicao": 1,
+    "campanhaAuto": true,
+    "grupo": "beleza",
+    "tema": "beleza",
+    "tituloBanner": "20% OFF em Beleza",
+    "subtituloBanner": "Nivea, Dove, Garnier, Monange, Lola, Hidramais, Carmed, Niely e Seda.",
+    "chamadaPequena": "Beleza e cuidados",
+    "textoBotao": "Ativar beleza",
+    "rotaDestino": "#/campanha-cupom/BELEZA20",
+    "descricao": "Cupom percentual para produtos participantes de beleza, higiene e cuidados pessoais. Não acumula com desconto de validade; sempre prevalece o maior desconto por produto.",
+    "categorias": [
+      "Beleza",
+      "Higiene Pessoal",
+      "Perfumaria"
+    ],
     "marcas": [
       "Nivea",
       "Dove",
@@ -31,10 +45,18 @@
       "hidramais",
       "carmed",
       "niely",
-      "seda"
-    ],
-    "campanhaAuto": true,
-    "descricao": "Liberado automaticamente após adicionar produto de beleza/higiene ao carrinho."
+      "seda",
+      "beleza",
+      "higiene",
+      "shampoo",
+      "condicionador",
+      "hidratante",
+      "creme",
+      "sabonete",
+      "desodorante",
+      "facial",
+      "corporal"
+    ]
   },
   {
     "codigo": "CAFE20",
@@ -43,6 +65,16 @@
     "desconto": 20,
     "valorMinimo": 0,
     "validade": "2026-12-31",
+    "posicao": 2,
+    "campanhaAuto": true,
+    "grupo": "cafe_da_manha",
+    "tema": "cafe",
+    "tituloBanner": "20% OFF no Café",
+    "subtituloBanner": "Nescau, Toddy, Nestlé e Lacta para completar o café da manhã.",
+    "chamadaPequena": "Café da manhã",
+    "textoBotao": "Ativar café",
+    "rotaDestino": "#/campanha-cupom/CAFE20",
+    "descricao": "Cupom percentual para produtos participantes de café da manhã. Não acumula com desconto de validade; sempre prevalece o maior desconto por produto.",
     "categorias": [],
     "marcas": [
       "Nescau",
@@ -56,10 +88,17 @@
       "toddy",
       "nestle",
       "nestlé",
-      "lacta"
-    ],
-    "campanhaAuto": true,
-    "descricao": "Liberado automaticamente após adicionar produto da categoria café da manhã ao carrinho."
+      "lacta",
+      "cafe da manha",
+      "café da manhã",
+      "achocolatado",
+      "chocolate em po",
+      "chocolate em pó",
+      "cereal",
+      "biscoito",
+      "bolacha",
+      "leite"
+    ]
   },
   {
     "codigo": "CLIENTENOVO",
@@ -68,6 +107,16 @@
     "desconto": 10,
     "valorMinimo": 75,
     "validade": "2026-12-31",
+    "posicao": 3,
+    "campanhaAuto": false,
+    "grupo": "cliente_novo",
+    "tema": "cliente",
+    "tituloBanner": "10% OFF 1ª compra",
+    "subtituloBanner": "Para clientes novos em pedidos a partir de R$ 75.",
+    "chamadaPequena": "Primeira compra",
+    "textoBotao": "Ativar cupom",
+    "rotaDestino": "#/campanha-cupom/CLIENTENOVO",
+    "descricao": "Cupom de primeira compra para clientes novos. Pedido mínimo de R$ 75. Não acumula com desconto de validade; sempre prevalece o maior desconto por produto.",
     "categorias": [],
     "marcas": [],
     "palavras_chave": []
