@@ -14,6 +14,7 @@
       --accent:#0f3d4c;
       --line:#e5ddcf;
       --danger:#b54835;
+      --soft:#fffaf1;
     }
     *{box-sizing:border-box}
     body{
@@ -23,8 +24,7 @@
       background:linear-gradient(180deg,#fffaf1 0%,#eee4d6 100%);
     }
     header{
-      position:sticky;
-      top:0;
+      position:relative;
       z-index:20;
       display:flex;
       align-items:center;
@@ -33,7 +33,6 @@
       padding:14px 18px;
       background:rgba(255,250,241,.94);
       border-bottom:1px solid var(--line);
-      backdrop-filter:blur(12px);
     }
     header .title{
       display:flex;
@@ -65,10 +64,10 @@
     header small{display:block;color:var(--muted);font-weight:600;margin-top:2px}
     .app{
       display:grid;
-      grid-template-columns:minmax(320px,440px) minmax(320px,1fr);
+      grid-template-columns:minmax(320px,470px) minmax(320px,1fr);
       gap:18px;
       padding:18px;
-      max-width:1500px;
+      max-width:1560px;
       margin:0 auto;
     }
     .panel{
@@ -79,7 +78,7 @@
       overflow:hidden;
     }
     .controls{
-      max-height:calc(100vh - 92px);
+      max-height:calc(100vh - 36px);
       overflow:auto;
     }
     .section{
@@ -98,6 +97,7 @@
       gap:10px;
     }
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
     label{display:block;font-size:12px;color:#5d5d5d;font-weight:800;margin:0 0 6px}
     input[type="text"],input[type="number"],select,textarea{
       width:100%;
@@ -127,7 +127,9 @@
       background:#fffdf8;
     }
     input[type="range"]{width:100%;accent-color:#5e3927}
-    .rangeRow{display:grid;grid-template-columns:1fr 58px;gap:10px;align-items:center}
+    input[type="checkbox"]{width:18px;height:18px;accent-color:#5e3927}
+    .checkLine{display:flex;gap:9px;align-items:center;margin-top:10px;color:#3f3f3f;font-size:13px;font-weight:800}
+    .rangeRow{display:grid;grid-template-columns:1fr 62px;gap:10px;align-items:center}
     .hint{
       margin-top:8px;
       color:#6e6e6e;
@@ -161,12 +163,13 @@
     button.secondary{background:#0f3d4c}
     button.light{background:#ead7b9;color:#5e3927;box-shadow:none}
     button.danger{background:#a14d3a}
+    button.small{font-size:11px;padding:7px 9px;border-radius:999px;box-shadow:none;white-space:nowrap}
     button:disabled{opacity:.45;cursor:not-allowed}
     .previewBox{
       display:grid;
       place-items:center;
       padding:14px;
-      min-height:calc(100vh - 170px);
+      min-height:calc(100vh - 120px);
     }
     .phoneFrame{
       position:relative;
@@ -222,6 +225,24 @@
       font-weight:900;
     }
     .miniBtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .palette{
+      display:grid;
+      grid-template-columns:repeat(10,1fr);
+      gap:8px;
+      margin-top:10px;
+    }
+    .swatch{
+      width:100%;
+      aspect-ratio:1;
+      border-radius:10px;
+      border:2px solid rgba(0,0,0,.08);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.55);
+      cursor:pointer;
+      min-height:30px;
+    }
+    .swatch.active{outline:3px solid #5e3927;outline-offset:2px}
+    .presetRow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+    .divider{height:1px;background:#efe7dc;margin:12px 0}
     @media(max-width:980px){
       .app{grid-template-columns:1fr;padding:12px}
       .controls{max-height:none}
@@ -231,6 +252,8 @@
       h1{white-space:normal;font-size:16px}
       .previewBox{min-height:auto;padding:10px}
       .phoneFrame{width:min(100%,390px)}
+      .palette{grid-template-columns:repeat(6,1fr)}
+      .grid3{grid-template-columns:1fr 1fr}
     }
   </style>
 </head>
@@ -240,7 +263,7 @@
     <div class="mark">DA</div>
     <div>
       <h1>Editor vertical Reels — Dona Antônia</h1>
-      <small>Modelo igual ao anexo, com textos editáveis e exportação em vídeo</small>
+      <small>Modelo igual ao anexo, com presets, áudio e exportação em vídeo</small>
     </div>
   </div>
   <span class="pill">1080 × 1920</span>
@@ -249,7 +272,7 @@
 <main class="app">
   <aside class="panel controls">
     <div class="section">
-      <h2>1. Vídeo base</h2>
+      <h2>1. Vídeo base <button class="light small" data-reset-section="video" type="button">Redefinir</button></h2>
       <label for="videoFile">Subir vídeo vertical</label>
       <input id="videoFile" type="file" accept="video/*" />
       <div class="grid" style="margin-top:10px">
@@ -299,11 +322,28 @@
           <div class="rangeRow"><input type="range" min="60" max="180" value="105" data-key="contrast"><output id="contrastOut">105%</output></div>
         </div>
       </div>
-      <div class="hint">Dica: para vídeo de Reels, grave ou exporte em 9:16. O editor renderiza tudo em 1080×1920.</div>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Velocidade do vídeo</label>
+          <div class="rangeRow"><input type="range" min="0.50" max="2.00" step="0.05" value="1" data-key="playbackRate"><output id="playbackRateOut">1x</output></div>
+        </div>
+        <div>
+          <label>Duplicar na exportação</label>
+          <select data-key="duplicateCount">
+            <option value="1">1x — normal</option>
+            <option value="2">2x — repetir uma vez</option>
+            <option value="3">3x</option>
+            <option value="4">4x</option>
+            <option value="5">5x</option>
+            <option value="6">6x</option>
+          </select>
+        </div>
+      </div>
+      <div class="hint" id="durationHint">Dica: para vídeo de Reels, grave ou exporte em 9:16. O editor renderiza tudo em 1080×1920.</div>
     </div>
 
     <div class="section">
-      <h2>2. Marca superior</h2>
+      <h2>2. Marca superior <button class="light small" data-reset-section="brand" type="button">Redefinir</button></h2>
       <label for="avatarFile">Avatar/logo redondo opcional</label>
       <input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp" />
       <div class="grid" style="margin-top:10px">
@@ -339,7 +379,7 @@
     </div>
 
     <div class="section">
-      <h2>3. Textos da oferta</h2>
+      <h2>3. Textos da oferta <button class="light small" data-reset-section="text" type="button">Redefinir</button></h2>
       <label>Título do kit/produto</label>
       <input type="text" value="Kit Vanish - 2 itens" data-key="productTitle" />
       <div class="grid" style="margin-top:10px">
@@ -385,7 +425,7 @@
     </div>
 
     <div class="section">
-      <h2>4. Layout e cores da faixa</h2>
+      <h2>4. Layout e cores da faixa <button class="light small" data-reset-section="layout" type="button">Redefinir</button></h2>
       <div class="grid">
         <div>
           <label>Altura da faixa inferior</label>
@@ -396,23 +436,105 @@
           <div class="rangeRow"><input type="range" min="42" max="62" value="51.5" step="0.5" data-key="splitPercent"><output id="splitPercentOut">51.5%</output></div>
         </div>
       </div>
-      <div class="grid" style="margin-top:10px">
-        <div><label>Vermelho queimado</label><input type="color" value="#a14d3a" data-key="rustColor" /></div>
-        <div><label>Azul petróleo</label><input type="color" value="#0f3d4c" data-key="tealColor" /></div>
-        <div><label>Creme</label><input type="color" value="#e9e4d4" data-key="creamColor" /></div>
-        <div><label>Azul WhatsApp fundo</label><input type="color" value="#68869a" data-key="blueColor" /></div>
-        <div><label>Rodapé escuro</label><input type="color" value="#2e2e2e" data-key="darkColor" /></div>
-        <div><label>Texto claro</label><input type="color" value="#f4ead8" data-key="lightText" /></div>
+      <div class="divider"></div>
+      <div class="grid">
+        <div>
+          <label>Barra que receberá a cor</label>
+          <select id="colorTarget">
+            <option value="rustColor">Título/produto</option>
+            <option value="tealColor">Preço/desconto</option>
+            <option value="creamColor">Entrega</option>
+            <option value="blueColor">WhatsApp</option>
+            <option value="darkColor">Rodapé/site</option>
+            <option value="lightText">Texto claro</option>
+          </select>
+        </div>
+        <div>
+          <label>Cor atual</label>
+          <span class="pill" id="activeColorLabel">Modelo do anexo</span>
+        </div>
       </div>
-      <div class="miniBtns">
-        <button class="light" id="resetLayout" type="button">Restaurar modelo do anexo</button>
-        <button class="light" id="savePreset" type="button">Salvar preset</button>
-        <button class="light" id="loadPreset" type="button">Carregar preset</button>
-      </div>
+      <div id="pastelPalette" class="palette" aria-label="Paleta de cores pastéis"></div>
+      <div class="hint">A paleta tem 30 cores pastéis em sequência: neutros, rosados, pêssegos, amarelos, verdes, azuis e lilases. Para voltar ao visual original, use Redefinir.</div>
     </div>
 
     <div class="section">
-      <h2>5. Exportar</h2>
+      <h2>5. Áudio <button class="light small" data-reset-section="audio" type="button">Redefinir</button></h2>
+      <label>Trilha de fundo livre do editor</label>
+      <select id="bgTrack" data-key="bgTrack"></select>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Volume áudio original</label>
+          <div class="rangeRow"><input type="range" min="0" max="150" value="100" data-key="originalVolume"><output id="originalVolumeOut">100%</output></div>
+        </div>
+        <div>
+          <label>Volume trilha de fundo</label>
+          <div class="rangeRow"><input type="range" min="0" max="130" value="35" data-key="bgVolume"><output id="bgVolumeOut">35%</output></div>
+        </div>
+      </div>
+      <label class="checkLine"><input type="checkbox" data-key="removeOriginalAudio"> Remover áudio original do vídeo</label>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Fade de entrada/saída</label>
+          <div class="rangeRow"><input type="range" min="0" max="4" step="0.25" value="0.75" data-key="audioFade"><output id="audioFadeOut">0.75s</output></div>
+        </div>
+        <div>
+          <label>Redução simples de ruído</label>
+          <select data-key="noiseReduction">
+            <option value="off">Desligada</option>
+            <option value="light">Leve</option>
+            <option value="medium">Média</option>
+            <option value="strong">Forte</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Graves</label>
+          <div class="rangeRow"><input type="range" min="-12" max="12" value="0" data-key="audioBass"><output id="audioBassOut">0dB</output></div>
+        </div>
+        <div>
+          <label>Agudos</label>
+          <div class="rangeRow"><input type="range" min="-12" max="12" value="0" data-key="audioTreble"><output id="audioTrebleOut">0dB</output></div>
+        </div>
+      </div>
+      <label class="checkLine"><input type="checkbox" data-key="audioCompressor" checked> Normalizar/comprimir levemente</label>
+      <div class="miniBtns">
+        <button class="light" id="playBgPreview" type="button">Testar trilha</button>
+        <button class="light" id="stopBgPreview" type="button">Parar trilha</button>
+      </div>
+      <div class="hint">As 20 trilhas são loops instrumentais sintéticos gerados dentro do próprio editor, sem arquivo externo. A redução de ruído é básica: corta graves/chiados e comprime o áudio; não é uma remoção neural profissional.</div>
+    </div>
+
+    <div class="section">
+      <h2>6. Presets <button class="light small" data-reset-section="all" type="button">Redefinir tudo</button></h2>
+      <div class="presetRow">
+        <div>
+          <label>Nome do preset</label>
+          <input type="text" id="presetName" placeholder="Ex.: Vanish Azul, Beleza, Mercado..." />
+        </div>
+        <button id="savePresetNew" class="secondary" type="button">Salvar novo</button>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Presets salvos</label>
+          <select id="presetSelect"></select>
+        </div>
+        <div>
+          <label>Ações</label>
+          <div class="miniBtns" style="margin-top:0">
+            <button class="light" id="loadPreset" type="button">Carregar</button>
+            <button class="light" id="updatePreset" type="button">Atualizar</button>
+            <button class="light" id="renamePreset" type="button">Renomear</button>
+            <button class="danger" id="deletePreset" type="button">Apagar</button>
+          </div>
+        </div>
+      </div>
+      <div class="hint">O preset salva as configurações visuais, áudio e também a logo/avatar do topo.</div>
+    </div>
+
+    <div class="section">
+      <h2>7. Exportar</h2>
       <button id="exportBtn" class="secondary" type="button" disabled>Exportar vídeo</button>
       <button id="snapshotBtn" class="light" type="button">Baixar frame PNG</button>
       <div class="progressOuter" id="progressOuter"><div class="progressInner" id="progressInner"></div></div>
@@ -446,6 +568,7 @@
 
   const W = 1080;
   const H = 1920;
+  const PRESETS_KEY = 'donaAntoniaVideoPresetsV2';
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d', { alpha:false });
   const video = document.getElementById('video');
@@ -459,11 +582,18 @@
   const timeLabel = document.getElementById('timeLabel');
   const progressOuter = document.getElementById('progressOuter');
   const progressInner = document.getElementById('progressInner');
+  const presetName = document.getElementById('presetName');
+  const presetSelect = document.getElementById('presetSelect');
+  const durationHint = document.getElementById('durationHint');
+  const colorTarget = document.getElementById('colorTarget');
+  const activeColorLabel = document.getElementById('activeColorLabel');
+  const paletteBox = document.getElementById('pastelPalette');
 
   const defaults = {
     fitMode:'cover', fps:'30',
     videoZoom:100, videoX:0, videoY:0,
     brightness:100, contrast:105, vignette:10,
+    playbackRate:1, duplicateCount:1,
     brandText:'DONA ANTONIA', topY:86, topCardW:630, brandFont:58,
     topBrown:'#5e3927', topTextColor:'#e9e4d4',
     productTitle:'Kit Vanish - 2 itens',
@@ -471,12 +601,70 @@
     deliveryText:'Entrega grátis em Cuiabá e VG', phoneText:'99815-0975', siteText:'www.donaantonia.com.br',
     titleFont:53, priceFont:64,
     bottomHeight:276, splitPercent:51.5,
-    rustColor:'#a14d3a', tealColor:'#0f3d4c', creamColor:'#e9e4d4', blueColor:'#68869a', darkColor:'#2e2e2e', lightText:'#f4ead8'
+    rustColor:'#a14d3a', tealColor:'#0f3d4c', creamColor:'#e9e4d4', blueColor:'#68869a', darkColor:'#2e2e2e', lightText:'#f4ead8',
+    bgTrack:'none', originalVolume:100, bgVolume:35, removeOriginalAudio:false, audioFade:0.75, noiseReduction:'off', audioBass:0, audioTreble:0, audioCompressor:true
   };
+  const sectionKeys = {
+    video:['fitMode','fps','videoZoom','videoX','videoY','brightness','contrast','vignette','playbackRate','duplicateCount'],
+    brand:['brandText','topY','topCardW','brandFont','topBrown','topTextColor'],
+    text:['productTitle','discountText','oldPriceText','priceText','deliveryText','phoneText','siteText','titleFont','priceFont'],
+    layout:['bottomHeight','splitPercent','rustColor','tealColor','creamColor','blueColor','darkColor','lightText'],
+    audio:['bgTrack','originalVolume','bgVolume','removeOriginalAudio','audioFade','noiseReduction','audioBass','audioTreble','audioCompressor']
+  };
+  const pastelPalette = [
+    '#F8F1E7','#EFE1D1','#E7D0BD','#D8C2A8','#CBB79E',
+    '#F7DCE2','#F3C6D3','#EFB6C1','#F4C7B8','#F8D4BF',
+    '#FADFC7','#F7E4B2','#F5EDC4','#E9E8B8','#DDE7C7',
+    '#CFE6D8','#BFE5D2','#B8E0D2','#C8E6E2','#CFEAF0',
+    '#BBD9EA','#AFCBE3','#C8D4F0','#D9D2EF','#E8D5F0',
+    '#E7D8C9','#D6C7B5','#C9D3C2','#C2D2D8','#D7D7D7'
+  ];
+  const colorTargetLabels = {
+    rustColor:'Título/produto', tealColor:'Preço/desconto', creamColor:'Entrega', blueColor:'WhatsApp', darkColor:'Rodapé/site', lightText:'Texto claro'
+  };
+  const bgTracks = [
+    {id:'none', name:'Sem trilha de fundo'},
+    {id:'pop_shop', name:'01. Pop comercial leve', bpm:118, mood:'pop', key:0},
+    {id:'tiktok_bounce', name:'02. TikTok bounce', bpm:126, mood:'bounce', key:2},
+    {id:'lofi_market', name:'03. Lo-fi mercado', bpm:84, mood:'lofi', key:5},
+    {id:'bossa_leve', name:'04. Bossa leve', bpm:96, mood:'bossa', key:7},
+    {id:'clay_fun', name:'05. Massinha divertida', bpm:110, mood:'toy', key:9},
+    {id:'fresh_clean', name:'06. Limpeza fresh', bpm:120, mood:'fresh', key:4},
+    {id:'soft_corporate', name:'07. Institucional suave', bpm:100, mood:'soft', key:0},
+    {id:'happy_ukulele', name:'08. Ukulele feliz', bpm:116, mood:'uke', key:7},
+    {id:'retro_cartoon', name:'09. Cartoon retrô', bpm:132, mood:'cartoon', key:3},
+    {id:'beauty_glow', name:'10. Beauty glow', bpm:104, mood:'beauty', key:8},
+    {id:'summer_delivery', name:'11. Entrega verão', bpm:122, mood:'summer', key:5},
+    {id:'minimal_clicks', name:'12. Minimal clicks', bpm:92, mood:'minimal', key:1},
+    {id:'funky_store', name:'13. Loja funky', bpm:112, mood:'funky', key:10},
+    {id:'calm_morning', name:'14. Manhã calma', bpm:78, mood:'calm', key:2},
+    {id:'promo_energy', name:'15. Promo energia', bpm:128, mood:'promo', key:6},
+    {id:'cute_pets', name:'16. Pets fofo', bpm:108, mood:'pets', key:11},
+    {id:'tech_clean', name:'17. Tech clean', bpm:120, mood:'tech', key:4},
+    {id:'perc_light', name:'18. Percussão leve', bpm:102, mood:'perc', key:9},
+    {id:'warm_home', name:'19. Casa aconchegante', bpm:88, mood:'home', key:5},
+    {id:'closing_cta', name:'20. CTA final alegre', bpm:124, mood:'cta', key:0}
+  ];
+
   let state = { ...defaults };
   let avatarImg = null;
+  let avatarDataUrl = null;
   let videoURL = null;
   let isExporting = false;
+  let audioCtx = null;
+  let videoSource = null;
+  let bgAudio = null;
+  let bgSource = null;
+  let audioDestination = null;
+  let finalGain = null;
+  let originalGain = null;
+  let bgGain = null;
+  let highPass = null;
+  let lowPass = null;
+  let bassFilter = null;
+  let trebleFilter = null;
+  let compressor = null;
+  const bgUrlCache = new Map();
 
   function setStatus(msg){ statusEl.textContent = msg; }
   function fmtTime(sec){
@@ -487,6 +675,14 @@
   }
   function updateTimeLabel(){
     timeLabel.textContent = `${fmtTime(video.currentTime)} / ${fmtTime(video.duration)}`;
+    updateDurationHint();
+  }
+  function updateDurationHint(){
+    if (!video.duration || !Number.isFinite(video.duration)) return;
+    const rate = Math.max(0.1, Number(state.playbackRate) || 1);
+    const dup = Math.max(1, parseInt(state.duplicateCount, 10) || 1);
+    const estimated = (video.duration * dup) / rate;
+    durationHint.textContent = `Duração original: ${fmtTime(video.duration)}. Exportação estimada com velocidade e duplicação: ${fmtTime(estimated)}.`;
   }
   function roundRect(ctx, x, y, w, h, r){
     r = Math.min(r, w/2, h/2);
@@ -498,13 +694,8 @@
     ctx.arcTo(x, y, x+w, y, r);
     ctx.closePath();
   }
-  function drawCoverImage(img, x, y, w, h, radius=0){
-    ctx.save();
-    if(radius){ roundRect(ctx,x,y,w,h,radius); ctx.clip(); }
-    ctx.drawImage(img,x,y,w,h);
-    ctx.restore();
-  }
   function fitText(text, x, y, maxW, maxFont, minFont, fontFamily, weight, color, align='left'){
+    text = String(text || '');
     let size = maxFont;
     do {
       ctx.font = `${weight} ${size}px ${fontFamily}`;
@@ -524,7 +715,7 @@
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     let cursor = x;
-    for (const ch of text) {
+    for (const ch of String(text || '')) {
       ctx.fillText(ch, cursor, y);
       cursor += ctx.measureText(ch).width + spacing;
     }
@@ -533,7 +724,7 @@
   function measureLetterSpaced(text, spacing, font){
     ctx.font = font;
     let total = 0;
-    for (const ch of text) total += ctx.measureText(ch).width + spacing;
+    for (const ch of String(text || '')) total += ctx.measureText(ch).width + spacing;
     return Math.max(0, total - spacing);
   }
   function drawPlaceholder(){
@@ -549,7 +740,7 @@
     ctx.textAlign = 'center';
     ctx.fillText('SUBA UM VÍDEO VERTICAL', W/2, H/2 - 30);
     ctx.font = '700 28px Arial, sans-serif';
-    ctx.fillText('O texto e a faixa já estão prontos para editar', W/2, H/2 + 20);
+    ctx.fillText('O texto, o áudio e a faixa já estão prontos para editar', W/2, H/2 + 20);
     ctx.textAlign = 'left';
   }
   function drawVideoFrame(){
@@ -680,13 +871,10 @@
     fitText(state.productTitle, 45, y + 72*scale, split - 70, Number(state.titleFont)*scale, 30*scale, '"Arial Rounded MT Bold", "Trebuchet MS", Arial, sans-serif', '900', light);
 
     const rx = split + 25;
-    ctx.fillStyle = light;
-    ctx.textAlign = 'left'; ctx.textBaseline='alphabetic';
     fitText(state.discountText, rx, y + 41*scale, (W-split)*.44, 30*scale, 18*scale, '"Trebuchet MS", Arial, sans-serif', '900', light);
     fitText(state.oldPriceText, rx, y + 79*scale, (W-split)*.45, 30*scale, 18*scale, '"Trebuchet MS", Arial, sans-serif', '500', light);
     fitText(state.priceText, split + (W-split)*.46, y + 75*scale, (W-split)*.50, Number(state.priceFont)*scale, 42*scale, '"Trebuchet MS", Arial, sans-serif', '900', light);
 
-    ctx.fillStyle = '#111111';
     fitText(state.deliveryText, 35, y + row1 + 69*scale, split - 65, 38*scale, 24*scale, '"Trebuchet MS", Arial, sans-serif', '500', '#111111');
 
     const iconR = 25 * scale;
@@ -702,26 +890,52 @@
     drawVideoFrame();
     drawTopBrand();
     drawBottomPanel();
+    updateDynamicAudioGain();
     updateTimeLabel();
     requestAnimationFrame(render);
   }
 
-  function updateOutputs(){
+  function inputValue(el){
+    if (el.type === 'checkbox') return Boolean(el.checked);
+    if (el.type === 'range' || el.type === 'number') return Number(el.value);
+    return el.value;
+  }
+  function setInputValue(el, value){
+    if (el.type === 'checkbox') el.checked = Boolean(value);
+    else el.value = value;
+  }
+  function outputText(key, value){
     const suffix = {
-      videoZoom:'%', brightness:'%', contrast:'%', vignette:'%', splitPercent:'%'
+      videoZoom:'%', brightness:'%', contrast:'%', vignette:'%', splitPercent:'%', originalVolume:'%', bgVolume:'%',
+      playbackRate:'x', audioFade:'s', audioBass:'dB', audioTreble:'dB'
     };
+    if (key === 'playbackRate') return `${Number(value).toFixed(2).replace(/\.00$/,'')}x`;
+    if (key === 'audioFade') return `${Number(value).toFixed(2).replace(/0$/,'').replace(/\.$/,'')}s`;
+    if (key === 'audioBass' || key === 'audioTreble') return `${Number(value)}dB`;
+    return `${value}${suffix[key] || ''}`;
+  }
+  function updateOutputs(){
     document.querySelectorAll('input[type="range"][data-key]').forEach(el => {
       const out = document.getElementById(el.dataset.key + 'Out');
-      if(out) out.textContent = `${el.value}${suffix[el.dataset.key] || ''}`;
+      if(out) out.textContent = outputText(el.dataset.key, el.value);
     });
+    video.playbackRate = Number(state.playbackRate) || 1;
+    updateDurationHint();
+    syncAudioSettings();
+    updatePaletteActive();
   }
   function bindControls(){
     document.querySelectorAll('[data-key]').forEach(el => {
       const key = el.dataset.key;
-      if (key in state) el.value = state[key];
-      const eventName = el.type === 'range' || el.type === 'color' ? 'input' : 'input';
-      el.addEventListener(eventName, () => {
-        state[key] = el.value;
+      if (key in state) setInputValue(el, state[key]);
+      el.addEventListener('input', () => {
+        state[key] = inputValue(el);
+        if (key === 'bgTrack') loadBackgroundTrack(state.bgTrack, false);
+        updateOutputs();
+      });
+      el.addEventListener('change', () => {
+        state[key] = inputValue(el);
+        if (key === 'bgTrack') loadBackgroundTrack(state.bgTrack, false);
         updateOutputs();
       });
     });
@@ -730,9 +944,83 @@
   function applyStateToInputs(){
     document.querySelectorAll('[data-key]').forEach(el => {
       const key = el.dataset.key;
-      if (key in state) el.value = state[key];
+      if (key in state) setInputValue(el, state[key]);
     });
+    loadBackgroundTrack(state.bgTrack, false);
     updateOutputs();
+  }
+  function resetSection(name){
+    if (name === 'all') {
+      state = { ...defaults };
+      avatarImg = null;
+      avatarDataUrl = null;
+      avatarFile.value = '';
+      applyStateToInputs();
+      setStatus('Todas as configurações foram redefinidas.');
+      return;
+    }
+    const keys = sectionKeys[name] || [];
+    keys.forEach(key => state[key] = defaults[key]);
+    if (name === 'brand') {
+      avatarImg = null;
+      avatarDataUrl = null;
+      avatarFile.value = '';
+    }
+    applyStateToInputs();
+    const label = {video:'Vídeo', brand:'Marca superior', text:'Textos', layout:'Layout', audio:'Áudio'}[name] || 'Seção';
+    setStatus(`${label} redefinido.`);
+  }
+
+  function renderBgTrackOptions(){
+    const select = document.getElementById('bgTrack');
+    select.innerHTML = '';
+    bgTracks.forEach(track => {
+      const opt = document.createElement('option');
+      opt.value = track.id;
+      opt.textContent = track.name;
+      select.appendChild(opt);
+    });
+  }
+  function renderPalette(){
+    paletteBox.innerHTML = '';
+    pastelPalette.forEach(color => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'swatch';
+      b.style.background = color;
+      b.title = color;
+      b.addEventListener('click', () => {
+        const key = colorTarget.value;
+        state[key] = color;
+        applyStateToInputs();
+        setStatus(`Cor aplicada em ${colorTargetLabels[key]}.`);
+      });
+      paletteBox.appendChild(b);
+    });
+    updatePaletteActive();
+  }
+  function updatePaletteActive(){
+    const key = colorTarget.value;
+    const color = state[key];
+    activeColorLabel.textContent = `${colorTargetLabels[key]}: ${color}`;
+    activeColorLabel.style.background = color;
+    activeColorLabel.style.color = contrastColor(color);
+    [...paletteBox.children].forEach(btn => {
+      btn.classList.toggle('active', normalizeHex(btn.style.backgroundColor) === normalizeHex(color) || btn.title.toLowerCase() === String(color).toLowerCase());
+    });
+  }
+  function normalizeHex(color){
+    if (!color) return '';
+    if (color.startsWith('#')) return color.toLowerCase();
+    const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (!m) return color.toLowerCase();
+    return '#' + [m[1],m[2],m[3]].map(n => Number(n).toString(16).padStart(2,'0')).join('');
+  }
+  function contrastColor(hex){
+    const c = normalizeHex(hex).replace('#','');
+    if (c.length !== 6) return '#2b2b2b';
+    const r = parseInt(c.slice(0,2),16), g = parseInt(c.slice(2,4),16), b = parseInt(c.slice(4,6),16);
+    return (r*299 + g*587 + b*114) / 1000 > 160 ? '#2b2b2b' : '#fffaf1';
   }
 
   videoFile.addEventListener('change', () => {
@@ -749,22 +1037,295 @@
     exportBtn.disabled = false;
     playBtn.disabled = false;
     pauseBtn.disabled = false;
+    video.playbackRate = Number(state.playbackRate) || 1;
     setStatus(`Vídeo carregado: ${video.videoWidth}×${video.videoHeight}, duração ${fmtTime(video.duration)}.`);
     updateTimeLabel();
   });
   video.addEventListener('error', () => setStatus('Não foi possível abrir esse vídeo. Tente outro arquivo MP4/MOV/WebM.'));
   video.addEventListener('timeupdate', updateTimeLabel);
-  playBtn.addEventListener('click', () => video.play());
-  pauseBtn.addEventListener('click', () => video.pause());
+  video.addEventListener('ended', () => {
+    if (bgAudio && !isExporting) bgAudio.pause();
+  });
+
+  playBtn.addEventListener('click', async () => {
+    await setupAudioGraph();
+    await resumeAudio();
+    video.playbackRate = Number(state.playbackRate) || 1;
+    if (state.bgTrack !== 'none') {
+      loadBackgroundTrack(state.bgTrack, false);
+      try { await bgAudio.play(); } catch(err) { console.warn(err); }
+    }
+    video.play();
+  });
+  pauseBtn.addEventListener('click', () => {
+    video.pause();
+    if (bgAudio) bgAudio.pause();
+  });
 
   avatarFile.addEventListener('change', () => {
     const file = avatarFile.files && avatarFile.files[0];
     if(!file) return;
-    const url = URL.createObjectURL(file);
+    const reader = new FileReader();
+    reader.onload = () => setAvatarFromDataUrl(String(reader.result || ''), 'Avatar/logo carregado.');
+    reader.onerror = () => setStatus('Não foi possível carregar a imagem do avatar.');
+    reader.readAsDataURL(file);
+  });
+  function setAvatarFromDataUrl(dataUrl, msg){
+    avatarDataUrl = dataUrl || null;
+    if (!avatarDataUrl) { avatarImg = null; return; }
     const img = new Image();
-    img.onload = () => { avatarImg = img; URL.revokeObjectURL(url); setStatus('Avatar/logo carregado.'); };
-    img.onerror = () => { URL.revokeObjectURL(url); setStatus('Não foi possível carregar a imagem do avatar.'); };
-    img.src = url;
+    img.onload = () => { avatarImg = img; if (msg) setStatus(msg); };
+    img.onerror = () => { avatarImg = null; setStatus('Não foi possível carregar a logo salva neste preset.'); };
+    img.src = avatarDataUrl;
+  }
+
+  async function setupAudioGraph(){
+    if (audioCtx) return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      setStatus('Este navegador não tem Web Audio API para mixagem de áudio.');
+      return;
+    }
+    audioCtx = new AudioContextClass();
+    bgAudio = new Audio();
+    bgAudio.loop = true;
+    bgAudio.crossOrigin = 'anonymous';
+    bgAudio.preload = 'auto';
+
+    try {
+      videoSource = audioCtx.createMediaElementSource(video);
+    } catch(err) {
+      console.warn('Fonte de áudio do vídeo já criada ou indisponível.', err);
+    }
+    try {
+      bgSource = audioCtx.createMediaElementSource(bgAudio);
+    } catch(err) {
+      console.warn('Fonte de áudio da trilha indisponível.', err);
+    }
+
+    highPass = audioCtx.createBiquadFilter();
+    highPass.type = 'highpass';
+    lowPass = audioCtx.createBiquadFilter();
+    lowPass.type = 'lowpass';
+    bassFilter = audioCtx.createBiquadFilter();
+    bassFilter.type = 'lowshelf';
+    bassFilter.frequency.value = 180;
+    trebleFilter = audioCtx.createBiquadFilter();
+    trebleFilter.type = 'highshelf';
+    trebleFilter.frequency.value = 3200;
+    compressor = audioCtx.createDynamicsCompressor();
+    originalGain = audioCtx.createGain();
+    bgGain = audioCtx.createGain();
+    finalGain = audioCtx.createGain();
+    finalGain.gain.value = 1;
+    audioDestination = audioCtx.createMediaStreamDestination();
+
+    if (videoSource) {
+      videoSource.connect(highPass);
+      highPass.connect(lowPass);
+      lowPass.connect(bassFilter);
+      bassFilter.connect(trebleFilter);
+      trebleFilter.connect(compressor);
+      compressor.connect(originalGain);
+      originalGain.connect(finalGain);
+    }
+    if (bgSource) {
+      bgSource.connect(bgGain);
+      bgGain.connect(finalGain);
+    }
+    finalGain.connect(audioCtx.destination);
+    finalGain.connect(audioDestination);
+    syncAudioSettings();
+    loadBackgroundTrack(state.bgTrack, false);
+  }
+  async function resumeAudio(){
+    if (audioCtx && audioCtx.state === 'suspended') {
+      try { await audioCtx.resume(); } catch(err) { console.warn(err); }
+    }
+  }
+  function syncAudioSettings(){
+    if (!audioCtx || !originalGain || !bgGain) return;
+    const nr = state.noiseReduction;
+    const map = {
+      off:{hp:20, lp:20000}, light:{hp:80, lp:15500}, medium:{hp:135, lp:12000}, strong:{hp:210, lp:9000}
+    }[nr] || {hp:20, lp:20000};
+    highPass.frequency.setTargetAtTime(map.hp, audioCtx.currentTime, 0.03);
+    lowPass.frequency.setTargetAtTime(map.lp, audioCtx.currentTime, 0.03);
+    bassFilter.gain.setTargetAtTime(Number(state.audioBass) || 0, audioCtx.currentTime, 0.03);
+    trebleFilter.gain.setTargetAtTime(Number(state.audioTreble) || 0, audioCtx.currentTime, 0.03);
+    if (state.audioCompressor) {
+      compressor.threshold.setTargetAtTime(-20, audioCtx.currentTime, 0.03);
+      compressor.knee.setTargetAtTime(24, audioCtx.currentTime, 0.03);
+      compressor.ratio.setTargetAtTime(3, audioCtx.currentTime, 0.03);
+      compressor.attack.setTargetAtTime(0.004, audioCtx.currentTime, 0.03);
+      compressor.release.setTargetAtTime(0.18, audioCtx.currentTime, 0.03);
+    } else {
+      compressor.threshold.setTargetAtTime(0, audioCtx.currentTime, 0.03);
+      compressor.knee.setTargetAtTime(0, audioCtx.currentTime, 0.03);
+      compressor.ratio.setTargetAtTime(1, audioCtx.currentTime, 0.03);
+      compressor.attack.setTargetAtTime(0.003, audioCtx.currentTime, 0.03);
+      compressor.release.setTargetAtTime(0.25, audioCtx.currentTime, 0.03);
+    }
+    updateDynamicAudioGain();
+  }
+  function getFadeFactor(){
+    if (!video.duration || !Number.isFinite(video.duration)) return 1;
+    const fade = Math.max(0, Number(state.audioFade) || 0);
+    if (fade <= 0) return 1;
+    const t = video.currentTime || 0;
+    const d = video.duration || 0;
+    return Math.max(0, Math.min(1, t / fade, (d - t) / fade));
+  }
+  function updateDynamicAudioGain(){
+    if (!audioCtx || !originalGain || !bgGain) return;
+    const f = getFadeFactor();
+    const ov = state.removeOriginalAudio ? 0 : (Number(state.originalVolume) || 0) / 100;
+    const bv = state.bgTrack === 'none' ? 0 : (Number(state.bgVolume) || 0) / 100;
+    const now = audioCtx.currentTime;
+    originalGain.gain.setTargetAtTime(ov * f, now, 0.015);
+    bgGain.gain.setTargetAtTime(bv * f, now, 0.015);
+  }
+  function loadBackgroundTrack(id, autoplay){
+    if (!bgAudio) return;
+    if (!id || id === 'none') {
+      bgAudio.pause();
+      bgAudio.removeAttribute('src');
+      bgAudio.load();
+      return;
+    }
+    const url = getTrackUrl(id);
+    if (bgAudio.src !== url) {
+      bgAudio.src = url;
+      bgAudio.currentTime = 0;
+      bgAudio.load();
+    }
+    syncAudioSettings();
+    if (autoplay) bgAudio.play().catch(err => console.warn(err));
+  }
+  function getTrackUrl(id){
+    if (bgUrlCache.has(id)) return bgUrlCache.get(id);
+    const track = bgTracks.find(t => t.id === id) || bgTracks[1];
+    const blob = createLoopWav(track);
+    const url = URL.createObjectURL(blob);
+    bgUrlCache.set(id, url);
+    return url;
+  }
+  function midiToFreq(n){ return 440 * Math.pow(2, (n - 69) / 12); }
+  function envPulse(x, width){
+    const p = x % 1;
+    if (p > width) return 0;
+    return Math.pow(1 - p / width, 3);
+  }
+  function addTone(data, sr, start, dur, freq, gain, type='sine'){
+    const a = Math.max(0, Math.floor(start*sr));
+    const b = Math.min(data.length, Math.floor((start+dur)*sr));
+    for (let i=a; i<b; i++) {
+      const t = (i/sr) - start;
+      const e = Math.min(1, t/0.025) * Math.min(1, (dur-t)/0.06);
+      let v = Math.sin(2*Math.PI*freq*t);
+      if (type === 'square') v = v > 0 ? 1 : -1;
+      if (type === 'triangle') v = 2 * Math.asin(Math.sin(2*Math.PI*freq*t)) / Math.PI;
+      data[i] += v * gain * e;
+    }
+  }
+  function createLoopWav(track){
+    const sr = 44100;
+    const seconds = 8;
+    const len = sr * seconds;
+    const data = new Float32Array(len);
+    const bpm = track.bpm || 110;
+    const beatDur = 60 / bpm;
+    const root = 57 + (track.key || 0);
+    const chordSets = {
+      pop:[[0,4,7],[7,11,14],[9,12,16],[5,9,12]],
+      bounce:[[0,3,7],[10,14,17],[5,8,12],[7,10,14]],
+      lofi:[[0,3,7,10],[5,8,12,15],[7,10,14,17],[3,7,10,14]],
+      bossa:[[0,4,7,11],[5,9,12,16],[2,5,9,12],[7,11,14,17]],
+      toy:[[0,7,12],[4,7,11],[5,9,12],[7,12,16]],
+      fresh:[[0,5,7],[7,12,14],[9,14,16],[5,9,12]],
+      soft:[[0,4,7],[5,9,12],[9,12,16],[7,11,14]],
+      uke:[[0,4,7,12],[7,11,14,19],[5,9,12,17],[7,12,16,19]],
+      cartoon:[[0,4,7],[3,7,10],[5,9,12],[8,12,15]],
+      beauty:[[0,4,9],[7,11,16],[5,9,14],[9,12,16]],
+      summer:[[0,4,7],[5,9,12],[7,11,14],[2,6,9]],
+      minimal:[[0,7],[5,12],[9,16],[7,14]],
+      funky:[[0,3,7,10],[7,10,14,17],[5,8,12,15],[10,14,17,21]],
+      calm:[[0,4,7],[5,9,12],[2,5,9],[7,11,14]],
+      promo:[[0,4,7],[7,11,14],[9,12,16],[4,7,11]],
+      pets:[[0,4,7,12],[5,9,12,17],[7,11,14,19],[12,16,19,24]],
+      tech:[[0,7,12],[2,9,14],[5,12,17],[7,14,19]],
+      perc:[[0,5,7],[5,10,12],[7,12,14],[10,15,17]],
+      home:[[0,4,7,11],[5,9,12,16],[7,11,14,18],[0,4,9,12]],
+      cta:[[0,4,7,12],[7,11,14,19],[9,12,16,21],[5,9,12,17]]
+    };
+    const chords = chordSets[track.mood] || chordSets.pop;
+    const melody = [0,4,7,12,7,4,9,7, 0,5,9,14,12,9,7,4];
+    const tone = ['toy','cartoon','pets'].includes(track.mood) ? 'triangle' : (['tech','minimal'].includes(track.mood) ? 'square' : 'sine');
+    const chordGain = ['promo','bounce','cta'].includes(track.mood) ? 0.035 : 0.025;
+    const melodyGain = ['calm','lofi','soft'].includes(track.mood) ? 0.025 : 0.045;
+    for (let bar=0; bar<4; bar++) {
+      const chord = chords[bar % chords.length];
+      const start = bar * 4 * beatDur;
+      chord.forEach((semi, idx) => addTone(data, sr, start, 4*beatDur, midiToFreq(root + semi + (idx>2?12:0)), chordGain, 'sine'));
+    }
+    for (let step=0; step<16; step++) {
+      const start = step * beatDur / 2;
+      const note = root + 12 + melody[(step + (track.key || 0)) % melody.length];
+      if (!['minimal','perc'].includes(track.mood) || step % 2 === 0) addTone(data, sr, start, beatDur*.42, midiToFreq(note), melodyGain, tone);
+    }
+    for (let i=0; i<len; i++) {
+      const t = i / sr;
+      const beat = t / beatDur;
+      const kick = envPulse(beat, .08) * Math.sin(2*Math.PI*(70 - 28*Math.min(.08, beat%1)/.08)*t) * 0.16;
+      const snarePulse = envPulse(beat - 2, .055) + envPulse(beat - 6, .055) + envPulse(beat - 10, .055) + envPulse(beat - 14, .055);
+      const hatPulse = envPulse(beat*2 + .18, .035);
+      const pseudoNoise = Math.sin(i*12.9898 + Math.sin(i*.021)*78.233) % 1;
+      const percGain = ['calm','soft','bossa'].includes(track.mood) ? .035 : .07;
+      data[i] += kick + pseudoNoise * snarePulse * percGain + pseudoNoise * hatPulse * percGain*.55;
+      data[i] *= 0.82;
+    }
+    for (let i=0; i<sr*.08; i++) {
+      const f = i / (sr*.08);
+      data[i] *= f;
+      data[len - 1 - i] *= f;
+    }
+    return encodeWav(data, sr);
+  }
+  function encodeWav(samples, sampleRate){
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+    const writeString = (offset, str) => { for (let i=0; i<str.length; i++) view.setUint8(offset+i, str.charCodeAt(i)); };
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, samples.length * 2, true);
+    let offset = 44;
+    for (let i=0; i<samples.length; i++, offset += 2) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+    return new Blob([view], { type:'audio/wav' });
+  }
+
+  document.getElementById('playBgPreview').addEventListener('click', async () => {
+    if (state.bgTrack === 'none') { setStatus('Escolha uma trilha de fundo primeiro.'); return; }
+    await setupAudioGraph();
+    await resumeAudio();
+    loadBackgroundTrack(state.bgTrack, true);
+    setStatus('Tocando prévia da trilha.');
+  });
+  document.getElementById('stopBgPreview').addEventListener('click', () => {
+    if (bgAudio) { bgAudio.pause(); bgAudio.currentTime = 0; }
+    setStatus('Prévia da trilha parada.');
   });
 
   function getBestMime(){
@@ -791,6 +1352,27 @@
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
+  function waitSeek(time){
+    return new Promise(resolve => {
+      let done = false;
+      const finish = () => { if(done) return; done = true; video.removeEventListener('seeked', finish); resolve(); };
+      video.addEventListener('seeked', finish);
+      video.currentTime = time;
+      setTimeout(finish, 400);
+    });
+  }
+  function waitForVideoEnd(progressBase, totalMediaDuration){
+    return new Promise(resolve => {
+      const tick = () => {
+        if (!isExporting) return resolve();
+        const pct = Math.min(100, ((progressBase + video.currentTime) / totalMediaDuration) * 100);
+        progressInner.style.width = `${pct}%`;
+        if (video.ended || video.currentTime >= video.duration - .05) resolve();
+        else requestAnimationFrame(tick);
+      };
+      tick();
+    });
+  }
   async function exportVideo(){
     if (!video.src || !video.duration || isExporting) return;
     if (!window.MediaRecorder || !canvas.captureStream) {
@@ -804,6 +1386,8 @@
     progressOuter.style.display = 'block';
     progressInner.style.width = '0%';
 
+    await setupAudioGraph();
+    await resumeAudio();
     const fps = Number(state.fps) || 30;
     const mimeType = getBestMime();
     const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
@@ -811,17 +1395,16 @@
     const canvasStream = canvas.captureStream(fps);
 
     try {
-      const sourceStream = video.captureStream ? video.captureStream() : (video.mozCaptureStream ? video.mozCaptureStream() : null);
-      if (sourceStream) {
-        sourceStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+      if (audioDestination && audioDestination.stream.getAudioTracks().length) {
+        audioDestination.stream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
       }
     } catch(err) {
-      console.warn('Audio capture indisponível', err);
+      console.warn('Mixagem de áudio indisponível', err);
     }
 
     let recorder;
     try {
-      recorder = new MediaRecorder(canvasStream, mimeType ? { mimeType, videoBitsPerSecond: 9000000 } : { videoBitsPerSecond: 9000000 });
+      recorder = new MediaRecorder(canvasStream, mimeType ? { mimeType, videoBitsPerSecond: 10000000, audioBitsPerSecond: 192000 } : { videoBitsPerSecond: 10000000, audioBitsPerSecond: 192000 });
     } catch(err) {
       setStatus('Não foi possível iniciar a gravação neste navegador.');
       isExporting = false;
@@ -835,28 +1418,25 @@
     const stopped = new Promise(resolve => recorder.onstop = resolve);
 
     video.pause();
-    video.currentTime = 0;
-    await new Promise(resolve => {
-      const done = () => { video.removeEventListener('seeked', done); resolve(); };
-      video.addEventListener('seeked', done);
-    });
+    if (bgAudio) bgAudio.pause();
+    video.playbackRate = Number(state.playbackRate) || 1;
+    const duplicates = Math.max(1, Math.min(6, parseInt(state.duplicateCount, 10) || 1));
+    const totalMediaDuration = video.duration * duplicates;
+    await waitSeek(0);
+    if (state.bgTrack !== 'none' && bgAudio) {
+      loadBackgroundTrack(state.bgTrack, false);
+      try { bgAudio.currentTime = 0; await bgAudio.play(); } catch(err) { console.warn(err); }
+    }
 
-    setStatus(`Exportando em ${ext.toUpperCase()}... não feche esta aba.`);
+    setStatus(`Exportando em ${ext.toUpperCase()}... velocidade ${video.playbackRate}x, repetição ${duplicates}x.`);
     recorder.start(250);
-    await video.play();
-
-    await new Promise(resolve => {
-      const tick = () => {
-        if (!isExporting) return resolve();
-        const pct = Math.min(100, (video.currentTime / video.duration) * 100);
-        progressInner.style.width = `${pct}%`;
-        if (video.ended || video.currentTime >= video.duration - .05) resolve();
-        else requestAnimationFrame(tick);
-      };
-      tick();
-    });
-
-    video.pause();
+    for (let i=0; i<duplicates; i++) {
+      await waitSeek(0);
+      await video.play();
+      await waitForVideoEnd(i * video.duration, totalMediaDuration);
+      video.pause();
+    }
+    if (bgAudio) bgAudio.pause();
     if (recorder.state !== 'inactive') recorder.stop();
     await stopped;
     progressInner.style.width = '100%';
@@ -865,8 +1445,8 @@
     const fileName = `video-dona-antonia-${new Date().toISOString().slice(0,19).replace(/[T:]/g,'-')}.${ext}`;
     downloadBlob(blob, fileName);
     const msg = ext === 'mp4'
-      ? 'Vídeo MP4 exportado com o layout da Dona Antônia.'
-      : 'Seu navegador não liberou MP4 pelo MediaRecorder; baixei em WebM com a mesma qualidade visual.';
+      ? 'Vídeo MP4 exportado com layout, velocidade, duplicação e mixagem de áudio.'
+      : 'Seu navegador não liberou MP4 pelo MediaRecorder; baixei em WebM com o mesmo visual e mixagem de áudio.';
     setStatus(msg);
 
     isExporting = false;
@@ -882,28 +1462,110 @@
     }, 'image/png', 1);
   });
 
-  document.getElementById('resetLayout').addEventListener('click', () => {
-    state = { ...defaults };
-    applyStateToInputs();
-    setStatus('Modelo do anexo restaurado.');
-  });
-  document.getElementById('savePreset').addEventListener('click', () => {
-    localStorage.setItem('donaAntoniaVideoPreset', JSON.stringify(state));
-    setStatus('Preset salvo neste navegador.');
+  function loadPresets(){
+    try { return JSON.parse(localStorage.getItem(PRESETS_KEY) || '[]'); }
+    catch(err) { return []; }
+  }
+  function savePresets(list){
+    localStorage.setItem(PRESETS_KEY, JSON.stringify(list));
+    renderPresetSelect();
+  }
+  function renderPresetSelect(){
+    const list = loadPresets();
+    presetSelect.innerHTML = '';
+    if (!list.length) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'Nenhum preset salvo';
+      presetSelect.appendChild(opt);
+      return;
+    }
+    list.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      presetSelect.appendChild(opt);
+    });
+  }
+  function selectedPreset(){
+    const id = presetSelect.value;
+    return loadPresets().find(p => p.id === id) || null;
+  }
+  function currentPresetPayload(name){
+    return {
+      id: `preset_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+      name: name || `Preset ${new Date().toLocaleString('pt-BR')}`,
+      state:{ ...state },
+      avatarDataUrl: avatarDataUrl || null,
+      updatedAt: new Date().toISOString()
+    };
+  }
+  document.getElementById('savePresetNew').addEventListener('click', () => {
+    const name = presetName.value.trim() || `Preset ${new Date().toLocaleString('pt-BR')}`;
+    const list = loadPresets();
+    const payload = currentPresetPayload(name);
+    list.push(payload);
+    savePresets(list);
+    presetSelect.value = payload.id;
+    setStatus(`Preset "${name}" salvo com a logo do topo.`);
   });
   document.getElementById('loadPreset').addEventListener('click', () => {
-    const raw = localStorage.getItem('donaAntoniaVideoPreset');
-    if (!raw) { setStatus('Nenhum preset salvo neste navegador.'); return; }
-    try {
-      state = { ...defaults, ...JSON.parse(raw) };
-      applyStateToInputs();
-      setStatus('Preset carregado.');
-    } catch(err) {
-      setStatus('Preset salvo está inválido.');
-    }
+    const p = selectedPreset();
+    if (!p) { setStatus('Nenhum preset selecionado.'); return; }
+    state = { ...defaults, ...(p.state || {}) };
+    setAvatarFromDataUrl(p.avatarDataUrl || null, '');
+    avatarFile.value = '';
+    presetName.value = p.name || '';
+    applyStateToInputs();
+    setStatus(`Preset "${p.name}" carregado.`);
   });
+  document.getElementById('updatePreset').addEventListener('click', () => {
+    const id = presetSelect.value;
+    if (!id) { setStatus('Nenhum preset selecionado para atualizar.'); return; }
+    const list = loadPresets();
+    const idx = list.findIndex(p => p.id === id);
+    if (idx < 0) return;
+    const name = presetName.value.trim() || list[idx].name;
+    list[idx] = { ...currentPresetPayload(name), id };
+    savePresets(list);
+    presetSelect.value = id;
+    setStatus(`Preset "${name}" atualizado.`);
+  });
+  document.getElementById('renamePreset').addEventListener('click', () => {
+    const id = presetSelect.value;
+    const name = presetName.value.trim();
+    if (!id || !name) { setStatus('Selecione um preset e digite o novo nome.'); return; }
+    const list = loadPresets();
+    const p = list.find(x => x.id === id);
+    if (!p) return;
+    p.name = name;
+    p.updatedAt = new Date().toISOString();
+    savePresets(list);
+    presetSelect.value = id;
+    setStatus(`Preset renomeado para "${name}".`);
+  });
+  document.getElementById('deletePreset').addEventListener('click', () => {
+    const p = selectedPreset();
+    if (!p) { setStatus('Nenhum preset selecionado para apagar.'); return; }
+    const ok = confirm(`Apagar o preset "${p.name}"?`);
+    if (!ok) return;
+    savePresets(loadPresets().filter(x => x.id !== p.id));
+    presetName.value = '';
+    setStatus(`Preset "${p.name}" apagado.`);
+  });
+  presetSelect.addEventListener('change', () => {
+    const p = selectedPreset();
+    presetName.value = p ? p.name : '';
+  });
+  document.querySelectorAll('[data-reset-section]').forEach(btn => {
+    btn.addEventListener('click', () => resetSection(btn.dataset.resetSection));
+  });
+  colorTarget.addEventListener('change', updatePaletteActive);
 
+  renderBgTrackOptions();
+  renderPalette();
   bindControls();
+  renderPresetSelect();
   render();
 })();
 </script>
