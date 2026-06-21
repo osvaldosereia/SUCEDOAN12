@@ -6141,7 +6141,192 @@ body.checkout-open .app-bottom-bar {
     pointer-events: none !important;
 }
 
-</style>
+
+
+/* =========================================================
+   CUPONS NA HOME - carrossel automático por cuponsativos.json
+   ========================================================= */
+.coupon-home-carousel-da {
+    margin: -10px 0 22px 0;
+    width: 100%;
+}
+.coupon-home-head-da {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 10px 0;
+    padding: 0 2px;
+}
+.coupon-home-title-da {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.1;
+    font-weight: 950;
+    letter-spacing: -0.04em;
+    color: var(--text-dark);
+}
+.coupon-home-subtitle-da {
+    margin: 3px 0 0 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-light);
+    line-height: 1.25;
+}
+.coupon-home-count-da {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 900;
+    color: #14532d;
+    background: #dcfce7;
+    border: 1px solid #bbf7d0;
+    border-radius: 999px;
+    padding: 6px 9px;
+}
+.coupon-home-track-da {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 2px 2px 12px 2px;
+}
+.coupon-home-track-da::-webkit-scrollbar { display: none; }
+.coupon-home-card-da {
+    position: relative;
+    flex: 0 0 calc((100% - 20px) / 2.5);
+    min-width: 128px;
+    min-height: 185px;
+    border: 0;
+    border-radius: 22px;
+    padding: 14px 12px;
+    scroll-snap-align: start;
+    text-align: left;
+    color: #ffffff;
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+    touch-action: manipulation;
+}
+.coupon-home-card-da::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 88% 8%, rgba(255,255,255,.34), transparent 34%),
+        radial-gradient(circle at 4% 100%, rgba(255,255,255,.18), transparent 36%);
+    pointer-events: none;
+}
+.coupon-home-card-da::after {
+    content: attr(data-code);
+    position: absolute;
+    right: -26px;
+    bottom: 24px;
+    transform: rotate(-90deg);
+    font-size: 28px;
+    font-weight: 950;
+    letter-spacing: .08em;
+    color: rgba(255,255,255,.10);
+    pointer-events: none;
+    white-space: nowrap;
+}
+.coupon-home-card-da:active { transform: scale(.985); }
+.coupon-home-card-da.tema-beleza { background: linear-gradient(145deg, #831843 0%, #be185d 58%, #f9a8d4 100%); }
+.coupon-home-card-da.tema-cafe { background: linear-gradient(145deg, #7c2d12 0%, #c2410c 58%, #fed7aa 100%); }
+.coupon-home-card-da.tema-cliente { background: linear-gradient(145deg, #064e3b 0%, #16a34a 58%, #bbf7d0 100%); }
+.coupon-home-card-da.tema-padrao { background: linear-gradient(145deg, #0f172a 0%, #334155 60%, #cbd5e1 100%); }
+.coupon-home-card-top-da,
+.coupon-home-card-bottom-da {
+    position: relative;
+    z-index: 1;
+}
+.coupon-home-pill-da {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 5px 8px;
+    background: rgba(255,255,255,.94);
+    color: #0f172a;
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: .035em;
+    margin-bottom: 10px;
+}
+.coupon-home-card-title-da {
+    display: block;
+    color: #ffffff;
+    font-size: 19px;
+    line-height: .98;
+    font-weight: 950;
+    letter-spacing: -0.06em;
+    max-width: 92%;
+}
+.coupon-home-card-text-da {
+    margin: 8px 0 0 0;
+    color: rgba(255,255,255,.86);
+    font-size: 11.2px;
+    line-height: 1.25;
+    font-weight: 760;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.coupon-home-code-da {
+    display: inline-flex;
+    width: max-content;
+    max-width: 100%;
+    border-radius: 999px;
+    padding: 7px 9px;
+    background: rgba(255,255,255,.95);
+    color: #111827;
+    font-size: 11px;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: .045em;
+    box-shadow: 0 8px 18px rgba(15,23,42,.12);
+}
+.coupon-home-cta-da {
+    margin-top: 8px;
+    font-size: 10.5px;
+    font-weight: 900;
+    color: rgba(255,255,255,.9);
+}
+@media (min-width: 768px) {
+    .coupon-home-carousel-da { margin: -6px 0 28px 0; }
+    .coupon-home-title-da { font-size: 21px; }
+    .coupon-home-subtitle-da { font-size: 13px; }
+    .coupon-home-track-da {
+        gap: 14px;
+        padding-bottom: 14px;
+    }
+    .coupon-home-card-da {
+        flex: 0 0 calc((100% - 42px) / 4);
+        min-width: 240px;
+        min-height: 168px;
+        border-radius: 24px;
+        padding: 18px;
+    }
+    .coupon-home-card-title-da { font-size: 24px; max-width: 88%; }
+    .coupon-home-card-text-da { font-size: 13px; max-width: 82%; }
+    .coupon-home-pill-da { font-size: 11px; padding: 6px 10px; }
+    .coupon-home-code-da { font-size: 12px; padding: 8px 11px; }
+}
+@media (max-width: 390px) {
+    .coupon-home-card-da {
+        flex-basis: calc((100% - 18px) / 2.35);
+        min-width: 122px;
+    }
+    .coupon-home-card-title-da { font-size: 17px; }
+}
+
+        </style>
     <!-- Meta Pixel Code -->
     <script>
     !function(f,b,e,v,n,t,s)
@@ -14816,6 +15001,389 @@ renderInicio = function() {
     }
 })();
 
+
+
+/* =========================================================
+   PATCH 2026-06-21 - cupons como banners + maior desconto por produto
+   Regras:
+   1) Todo cupom ativo do cuponsativos.json vira banner na home.
+   2) Clique ativa o cupom e abre a rota da campanha do cupom.
+   3) Cupom percentual não acumula com desconto/preço_oferta do JSON.
+      O item usa sempre o maior percentual entre oferta do produto e cupom.
+   ========================================================= */
+(function cuponsHomeMaiorDescontoDA() {
+    const CUPOM_ATIVO_STORAGE_DA = 'dona_antonia_cupom_contextual_v2';
+
+    function escDA(valor) {
+        if (typeof escapeAttrDA === 'function') return escapeAttrDA(valor);
+        return String(valor ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    }
+
+    function codigoCupomHomeDA(valor) {
+        if (typeof normalizarCodigoCupomDA === 'function') return normalizarCodigoCupomDA(valor);
+        return String(valor || '').trim().toUpperCase().replace(/\s+/g, '');
+    }
+
+    function textoCupomNormHomeDA(valor) {
+        if (typeof normalizarCupomTextoDA === 'function') return normalizarCupomTextoDA(valor);
+        return String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function listaCupomHomeDA(valor) {
+        if (typeof listaCupomDA === 'function') return listaCupomDA(valor);
+        if (Array.isArray(valor)) return valor.map(v => String(v || '').trim()).filter(Boolean);
+        return String(valor || '').split(/[;,|]/g).map(v => v.trim()).filter(Boolean);
+    }
+
+    function cupomValidoHomeDA(cupom) {
+        if (!cupom || cupom.ativo === false) return false;
+        if (typeof cupomDentroDaValidadeDA === 'function') return cupomDentroDaValidadeDA(cupom);
+        return true;
+    }
+
+    function temaCupomHomeDA(cupom) {
+        const codigo = codigoCupomHomeDA(cupom && cupom.codigo);
+        const tema = String((cupom && (cupom.tema || cupom.theme || cupom.grupo)) || '').toLowerCase();
+        if (tema) return tema.replace(/[^a-z0-9_-]/g, '');
+        if (codigo.includes('BELEZA')) return 'beleza';
+        if (codigo.includes('CAFE') || codigo.includes('CAFÉ')) return 'cafe';
+        if (codigo.includes('CLIENTE')) return 'cliente';
+        return 'padrao';
+    }
+
+    function tituloCupomHomeDA(cupom) {
+        const pct = Math.round(Number(cupom && cupom.desconto || 0));
+        return String(cupom?.tituloBanner || cupom?.titulo_banner || cupom?.titulo || (pct ? `${pct}% OFF` : 'Cupom ativo')).trim();
+    }
+
+    function subtituloCupomHomeDA(cupom) {
+        return String(cupom?.subtituloBanner || cupom?.subtitulo_banner || cupom?.subtitulo || cupom?.descricao || 'Toque para ativar o cupom e ver os produtos participantes.').trim();
+    }
+
+    function chamadaCupomHomeDA(cupom) {
+        return String(cupom?.chamadaPequena || cupom?.chamada_pequena || cupom?.kicker || 'Cupom liberado').trim();
+    }
+
+    function botaoCupomHomeDA(cupom) {
+        return String(cupom?.textoBotao || cupom?.texto_botao || cupom?.botao || 'Ativar e ver produtos').trim();
+    }
+
+    function rotaCupomHomeDA(cupom) {
+        const codigo = codigoCupomHomeDA(cupom && cupom.codigo);
+        return String(cupom?.rotaDestino || cupom?.rota_destino || cupom?.rota || cupom?.link || `#/campanha-cupom/${encodeURIComponent(codigo)}`).trim();
+    }
+
+    function getCuponsAtivosHomeDA() {
+        return (STATE.cuponsAtivos || [])
+            .filter(cupomValidoHomeDA)
+            .sort((a, b) => Number(a.posicao || a.ordem || 999) - Number(b.posicao || b.ordem || 999) || codigoCupomHomeDA(a.codigo).localeCompare(codigoCupomHomeDA(b.codigo)));
+    }
+
+    window.getHomeCuponsCarouselDA = function() {
+        const cupons = getCuponsAtivosHomeDA();
+        if (!cupons.length) return '';
+        const cards = cupons.map(cupom => {
+            const codigo = codigoCupomHomeDA(cupom.codigo);
+            const desconto = Math.round(Number(cupom.desconto || 0));
+            const tipo = String(cupom.tipo || 'percentual').toLowerCase();
+            const labelDesconto = tipo.includes('percent') ? `${desconto}% OFF` : (typeof fmt === 'function' ? `${fmt(desconto)} OFF` : `${desconto} OFF`);
+            const valorMinimo = Number(cupom.valorMinimo || 0);
+            const minimo = valorMinimo > 0 ? `Mínimo ${typeof fmt === 'function' ? fmt(valorMinimo) : valorMinimo}` : 'Sem mínimo';
+            const tema = temaCupomHomeDA(cupom);
+            return `<button type="button" class="coupon-home-card-da tema-${escDA(tema)}" data-code="${escDA(codigo)}" onclick="ativarCampanhaCupomDA('${escDA(codigo)}'); return false;" aria-label="Ativar cupom ${escDA(codigo)}">
+                <span class="coupon-home-card-top-da">
+                    <span class="coupon-home-pill-da">${escDA(labelDesconto)}</span>
+                    <strong class="coupon-home-card-title-da">${escDA(tituloCupomHomeDA(cupom))}</strong>
+                    <span class="coupon-home-card-text-da">${escDA(subtituloCupomHomeDA(cupom))}</span>
+                </span>
+                <span class="coupon-home-card-bottom-da">
+                    <span class="coupon-home-code-da">${escDA(codigo)}</span>
+                    <span class="coupon-home-cta-da">${escDA(botaoCupomHomeDA(cupom))} • ${escDA(minimo)}</span>
+                </span>
+            </button>`;
+        }).join('');
+        return `<section class="coupon-home-carousel-da" aria-label="Cupons de desconto ativos">
+            <div class="coupon-home-head-da">
+                <div>
+                    <h2 class="coupon-home-title-da">Cupons ativos</h2>
+                    <p class="coupon-home-subtitle-da">Ative o cupom e o site abre a seção certa automaticamente.</p>
+                </div>
+                <span class="coupon-home-count-da">${cupons.length} ativo${cupons.length === 1 ? '' : 's'}</span>
+            </div>
+            <div class="coupon-home-track-da">${cards}</div>
+        </section>`;
+    };
+
+    // Mantém compatibilidade com a chamada antiga usada no renderInicio final.
+    window.getHomeBeauty20BannerDA = getHomeCuponsCarouselDA;
+    try { getHomeBeauty20BannerDA = window.getHomeCuponsCarouselDA; } catch (e) {}
+
+    function percentualOfertaAtualProdutoDA(prod) {
+        const precoAtual = Number(prod && prod.price || 0);
+        const precoOriginal = Number(prod && (prod.oldPrice || prod.preco_original || prod.preco_regular || prod.preco_de || 0));
+        const direto = Number(prod && (prod.discountPercent || prod.desconto_percentual || prod.percentual_desconto || 0));
+        let pct = Number.isFinite(direto) ? direto : 0;
+        if (precoOriginal > precoAtual && precoAtual > 0) {
+            pct = Math.max(pct, ((precoOriginal - precoAtual) / precoOriginal) * 100);
+        }
+        return Math.max(0, pct || 0);
+    }
+
+    function precoOriginalComparacaoCupomDA(prod) {
+        const precoAtual = Number(prod && prod.price || 0);
+        const candidatos = [prod && prod.oldPrice, prod && prod.preco_original, prod && prod.preco_regular, prod && prod.preco_de]
+            .map(Number)
+            .filter(n => Number.isFinite(n) && n > 0);
+        const maior = candidatos.length ? Math.max(...candidatos) : 0;
+        return Math.max(precoAtual, maior || precoAtual);
+    }
+
+    function descontoCupomPercentualSemAcumularItemDA(prod, qtd, cupom) {
+        const precoAtual = Number(prod && prod.price || 0);
+        const quantidade = Math.max(Number(qtd || 0), 0);
+        if (!precoAtual || !quantidade) return 0;
+        const pctCupom = Math.max(Number(cupom && cupom.desconto || 0), 0);
+        const pctProduto = percentualOfertaAtualProdutoDA(prod);
+        if (pctCupom <= pctProduto + 0.0001) return 0;
+        const baseOriginal = precoOriginalComparacaoCupomDA(prod);
+        const precoComMaiorDesconto = Math.max(baseOriginal * (1 - (Math.max(pctCupom, pctProduto) / 100)), 0);
+        return Math.max(precoAtual - precoComMaiorDesconto, 0) * quantidade;
+    }
+
+    window.calcularResumoCupomDA = function(codigoInformado) {
+        const codigo = codigoCupomHomeDA(codigoInformado || STATE.cupomAplicadoCodigo);
+        if (!codigo) return { valido: false, codigo: '', desconto: 0, motivo: 'Digite um cupom para aplicar.' };
+
+        const cupom = (STATE.cuponsAtivos || []).find(c => codigoCupomHomeDA(c.codigo) === codigo);
+        if (!cupom) return { valido: false, codigo, desconto: 0, motivo: 'Cupom não encontrado.' };
+        if (cupom.ativo === false) return { valido: false, codigo, cupom, desconto: 0, motivo: 'Este cupom está desativado.' };
+        if (!cupomValidoHomeDA(cupom)) return { valido: false, codigo, cupom, desconto: 0, motivo: 'Este cupom está vencido.' };
+
+        const resumo = typeof calcularResumoCarrinhoSemAgendamentoDA === 'function'
+            ? calcularResumoCarrinhoSemAgendamentoDA()
+            : { sumBase: 0, descontoCombo: 0, descontoQuantidade: 0 };
+
+        const totalAntesCupom = Math.max(Number(resumo.sumBase || 0) - Number(resumo.descontoCombo || 0) - Number(resumo.descontoQuantidade || 0), 0);
+        if (totalAntesCupom < Number(cupom.valorMinimo || 0)) {
+            return { valido: false, codigo, cupom, desconto: 0, motivo: `Este cupom exige compra mínima de ${typeof fmt === 'function' ? fmt(cupom.valorMinimo) : cupom.valorMinimo}.` };
+        }
+
+        const itensElegiveis = (typeof getProdutosCarrinhoCupomDA === 'function' ? getProdutosCarrinhoCupomDA() : [])
+            .filter(item => typeof produtoElegivelCupomDA === 'function' ? produtoElegivelCupomDA(item.prod, cupom) : true);
+
+        const subtotalElegivel = itensElegiveis.reduce((soma, item) => soma + Number(item.total || 0), 0);
+        if (subtotalElegivel <= 0) {
+            return { valido: false, codigo, cupom, desconto: 0, motivo: 'Nenhum item do carrinho atende às regras deste cupom.' };
+        }
+
+        let desconto = 0;
+        const tipo = String(cupom.tipo || '').toLowerCase();
+        if (tipo.includes('percent')) {
+            desconto = itensElegiveis.reduce((soma, item) => soma + descontoCupomPercentualSemAcumularItemDA(item.prod, item.qtd, cupom), 0);
+        } else {
+            // Cupom de valor fixo não entra em produtos que já têm oferta/preço especial.
+            const subtotalSemOferta = itensElegiveis
+                .filter(item => percentualOfertaAtualProdutoDA(item.prod) <= 0.0001)
+                .reduce((soma, item) => soma + Number(item.total || 0), 0);
+            desconto = Math.min(Number(cupom.desconto || 0), subtotalSemOferta);
+        }
+
+        desconto = Math.min(Math.max(desconto, 0), subtotalElegivel, totalAntesCupom);
+        if (desconto <= 0) {
+            return { valido: false, codigo, cupom, desconto: 0, motivo: 'Os produtos elegíveis já têm desconto igual ou maior que este cupom.' };
+        }
+
+        return { valido: true, codigo, cupom, desconto, subtotalElegivel, motivo: `Cupom ${codigo} aplicado: -${typeof fmt === 'function' ? fmt(desconto) : desconto}.` };
+    };
+    try { calcularResumoCupomDA = window.calcularResumoCupomDA; } catch (e) {}
+
+    function produtoElegivelPorCupomDinamicoDA(prod, cupom) {
+        if (!prod || prod.categoria === 'Cestas' || prod.isComboDiscount || prod.hiddenFromCatalog) return false;
+        if (Number(prod.stock || 0) <= 0) return false;
+        if (typeof produtoElegivelCupomDA === 'function') return produtoElegivelCupomDA(prod, cupom);
+        const categorias = listaCupomHomeDA(cupom.categorias).map(textoCupomNormHomeDA);
+        const marcas = listaCupomHomeDA(cupom.marcas).map(textoCupomNormHomeDA);
+        const palavras = listaCupomHomeDA(cupom.palavras_chave).map(textoCupomNormHomeDA);
+        if (!categorias.length && !marcas.length && !palavras.length) return true;
+        const textoCategoria = textoCupomNormHomeDA(`${prod.categoria || ''} ${prod.subcategoria || ''} ${prod.subsubcategoria || ''}`);
+        const textoMarca = textoCupomNormHomeDA(prod.marca || '');
+        const textoProduto = textoCupomNormHomeDA(`${prod.name || prod.nome || ''} ${prod.marca || ''} ${prod.categoria || ''} ${prod.subcategoria || ''} ${prod.embalagem || ''}`);
+        return categorias.some(cat => cat && textoCategoria.includes(cat)) || marcas.some(m => m && textoMarca.includes(m)) || palavras.some(p => p && textoProduto.includes(p));
+    }
+
+    function previewProdutoCupomMaiorDA(prod, cupom) {
+        const tipo = String(cupom && cupom.tipo || '').toLowerCase();
+        if (!tipo.includes('percent')) return { ...prod };
+        const pctCupom = Math.max(Number(cupom.desconto || 0), 0);
+        const pctProduto = percentualOfertaAtualProdutoDA(prod);
+        const pctFinal = Math.max(pctProduto, pctCupom);
+        const baseOriginal = precoOriginalComparacaoCupomDA(prod);
+        const precoFinal = Math.max(baseOriginal * (1 - pctFinal / 100), 0);
+        return {
+            ...prod,
+            oldPrice: pctFinal > 0 ? baseOriginal : prod.oldPrice,
+            price: pctCupom > pctProduto ? precoFinal : Number(prod.price || 0),
+            discountPercent: Math.round(pctFinal),
+            __couponPreview: codigoCupomHomeDA(cupom.codigo),
+            __couponNoStack: true
+        };
+    }
+
+    function getCupomPorCodigoDinamicoDA(codigo) {
+        const alvo = codigoCupomHomeDA(codigo);
+        return (STATE.cuponsAtivos || []).find(c => codigoCupomHomeDA(c.codigo) === alvo) || null;
+    }
+
+    function carregarCupomDeFallbackSmartDA(codigo) {
+        const alvo = codigoCupomHomeDA(codigo);
+        const campanhas = window.SMART_COUPON_CAMPAIGNS_DA || {};
+        const campanha = campanhas[alvo];
+        if (!campanha) return null;
+        return {
+            codigo: campanha.codigo,
+            ativo: true,
+            tipo: 'percentual',
+            desconto: campanha.desconto,
+            valorMinimo: 0,
+            validade: '',
+            marcas: campanha.marcas || [],
+            palavras_chave: campanha.gatilhos || [],
+            tituloBanner: campanha.titulo,
+            subtituloBanner: campanha.texto,
+            textoBotao: campanha.botao,
+            tema: campanha.grupo === 'cafe_da_manha' ? 'cafe' : campanha.grupo,
+            rotaDestino: campanha.rota
+        };
+    }
+
+    window.renderCampanhaCupomSmartDA = function(codigo) {
+        const alvo = codigoCupomHomeDA(codigo || (window.location.hash || '').split('/').pop());
+        const cupom = getCupomPorCodigoDinamicoDA(alvo) || carregarCupomDeFallbackSmartDA(alvo);
+        const vitrine = document.getElementById('vitrine');
+        if (!cupom || !vitrine) return false;
+
+        try { if (typeof atualizarTopbarDaRota === 'function') atualizarTopbarDaRota(`#/campanha-cupom/${encodeURIComponent(alvo)}`); } catch (e) {}
+
+        const produtos = (STATE.prods || [])
+            .filter(p => produtoElegivelPorCupomDinamicoDA(p, cupom))
+            .sort((a, b) => String(a.marca || '').localeCompare(String(b.marca || ''), 'pt-BR') || String(a.name || a.nome || '').localeCompare(String(b.name || b.nome || ''), 'pt-BR'));
+        const produtosPreview = produtos.map(p => previewProdutoCupomMaiorDA(p, cupom));
+        const marcas = listaCupomHomeDA(cupom.marcas);
+        const categorias = listaCupomHomeDA(cupom.categorias);
+        const escopo = marcas.length ? `marcas: ${marcas.join(', ')}` : (categorias.length ? `categorias: ${categorias.join(', ')}` : 'produtos participantes do site');
+        const descontoTxt = String(cupom.tipo || '').toLowerCase().includes('percent') ? `${Math.round(Number(cupom.desconto || 0))}% OFF` : `${typeof fmt === 'function' ? fmt(cupom.desconto || 0) : cupom.desconto} OFF`;
+        const minimo = Number(cupom.valorMinimo || 0) > 0 ? `<p class="smart-coupon-note-da">Compra mínima: ${typeof fmt === 'function' ? fmt(cupom.valorMinimo) : cupom.valorMinimo}.</p>` : '';
+
+        let html = `<div style="padding: 12px 0 24px;">
+            <div class="smart-coupon-hero-da">
+                <span class="smart-coupon-pill-da">Cupom ${escDA(alvo)} ativado • ${escDA(descontoTxt)}</span>
+                <h1>${escDA(tituloCupomHomeDA(cupom))}</h1>
+                <p>${escDA(subtituloCupomHomeDA(cupom))}</p>
+                <p style="margin-top:10px;">O site não acumula desconto do cupom com oferta de validade: em cada produto vale sempre o maior desconto.</p>
+                <p style="margin-top:10px;">Aplicável em ${escDA(escopo)}.</p>
+                ${minimo}
+            </div>`;
+
+        if (!produtosPreview.length) {
+            html += `<div style="padding:30px 20px;text-align:center;color:var(--text-light);font-weight:800;background:#fff;border:1px solid var(--border-light);border-radius:18px;">Nenhum produto participante encontrado no momento.</div>`;
+        } else {
+            html += `<div class="products-grid">${produtosPreview.map(p => renderCardHTML(p)).join('')}</div>`;
+        }
+        html += `</div>`;
+
+        vitrine.innerHTML = html;
+        try { document.title = `${alvo} - Dona Antônia`; } catch (e) {}
+        try { if (typeof updateCollectionSeo === 'function') updateCollectionSeo(alvo, produtos); } catch (e) {}
+        try { if (typeof lazyLoadImages === 'function') lazyLoadImages(); } catch (e) {}
+        return true;
+    };
+    try { renderCampanhaCupomSmartDA = window.renderCampanhaCupomSmartDA; } catch (e) {}
+
+    window.ativarCampanhaCupomDA = async function(codigo) {
+        const alvo = codigoCupomHomeDA(codigo);
+        if (!alvo) return;
+        try { localStorage.removeItem('dona_antonia_cupons_ativos_v1'); } catch (e) {}
+        if (typeof carregarCuponsAtivosDA === 'function') {
+            try { await carregarCuponsAtivosDA(); } catch (e) {}
+        }
+        const cupom = getCupomPorCodigoDinamicoDA(alvo) || carregarCupomDeFallbackSmartDA(alvo);
+        if (!cupom) {
+            if (typeof showToast === 'function') showToast(`Cupom ${alvo} não encontrado.`);
+            return;
+        }
+
+        STATE.cupomAplicadoCodigo = alvo;
+        STATE.cupomAplicadoResumo = null;
+        try { localStorage.setItem(CUPOM_ATIVO_STORAGE_DA, JSON.stringify({ codigo: alvo, ativadoEm: Date.now() })); } catch (e) {}
+        const input = document.getElementById('coupon-code-input');
+        if (input) input.value = alvo;
+        const banner = document.getElementById('smart-coupon-banner-da');
+        if (banner) banner.classList.remove('active');
+        if (typeof updateTotals === 'function') updateTotals();
+        if (typeof showToast === 'function') showToast(`Cupom ${alvo} ativado.`);
+
+        const rota = rotaCupomHomeDA(cupom);
+        if ((window.location.hash || '') !== rota) window.location.hash = rota;
+        else window.renderCampanhaCupomSmartDA(alvo);
+    };
+
+    function restaurarCupomHomeDA() {
+        try {
+            const dados = JSON.parse(localStorage.getItem(CUPOM_ATIVO_STORAGE_DA) || 'null');
+            const codigo = codigoCupomHomeDA(dados && dados.codigo);
+            if (!codigo) return;
+            STATE.cupomAplicadoCodigo = codigo;
+            const input = document.getElementById('coupon-code-input');
+            if (input) input.value = codigo;
+            if (typeof updateTotals === 'function') updateTotals();
+        } catch (e) {}
+    }
+
+    const getRouteTitleAntesCupomHomeDA = typeof getRouteTitle === 'function' ? getRouteTitle : null;
+    window.getRouteTitle = function(hash) {
+        const h = hash || window.location.hash || '';
+        if (String(h).startsWith('#/campanha-cupom/')) return `Cupom ${codigoCupomHomeDA(String(h).split('#/campanha-cupom/')[1] || '')}`;
+        return getRouteTitleAntesCupomHomeDA ? getRouteTitleAntesCupomHomeDA(hash) : 'Dona Antônia';
+    };
+    try { getRouteTitle = window.getRouteTitle; } catch (e) {}
+
+    const handleRouteAntesCupomHomeDA = typeof handleRoute === 'function' ? handleRoute : null;
+    window.handleRoute = function() {
+        const hash = window.location.hash || '#/';
+        if (hash.startsWith('#/campanha-cupom/')) {
+            const vitrine = document.getElementById('vitrine');
+            if (vitrine && STATE.currentRoute) STATE.scrollMap[STATE.currentRoute] = vitrine.scrollTop;
+            STATE.currentRoute = hash;
+            try { document.getElementById('header-main').style.display = 'flex'; } catch (e) {}
+            try { if (typeof atualizarTopbarDaRota === 'function') atualizarTopbarDaRota(hash); } catch (e) {}
+            document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active'));
+            window.renderCampanhaCupomSmartDA(decodeURIComponent(hash.split('#/campanha-cupom/')[1] || ''));
+            requestAnimationFrame(() => { if (vitrine) vitrine.scrollTop = 0; });
+            return;
+        }
+        return handleRouteAntesCupomHomeDA ? handleRouteAntesCupomHomeDA.apply(this, arguments) : undefined;
+    };
+    try { handleRoute = window.handleRoute; } catch (e) {}
+
+    window.addEventListener('hashchange', function() {
+        const hash = window.location.hash || '';
+        if (hash.startsWith('#/campanha-cupom/')) {
+            setTimeout(() => window.renderCampanhaCupomSmartDA(decodeURIComponent(hash.split('#/campanha-cupom/')[1] || '')), 0);
+        }
+    });
+
+    const initAntesCupomHomeDA = typeof init === 'function' ? init : null;
+    if (initAntesCupomHomeDA) {
+        init = async function() {
+            const retorno = await initAntesCupomHomeDA.apply(this, arguments);
+            restaurarCupomHomeDA();
+            if ((window.location.hash || '').startsWith('#/campanha-cupom/')) {
+                window.renderCampanhaCupomSmartDA(decodeURIComponent((window.location.hash || '').split('#/campanha-cupom/')[1] || ''));
+            }
+            return retorno;
+        };
+    }
+})();
 
 document.addEventListener('DOMContentLoaded', init);
 
