@@ -1,1092 +1,911 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#09090b" />
-  <title>Editor Mobile de Reels | Dona Antônia</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor de Vídeo - Dona Antônia</title>
   <style>
     :root{
-      --bg:#09090b;
-      --panel:#121216;
-      --panel2:#18181d;
-      --card:#202027;
-      --line:rgba(255,255,255,.10);
-      --text:#f8fafc;
-      --muted:#a1a1aa;
-      --brand:#ffcc00;
-      --brand2:#ff3b30;
-      --ok:#22c55e;
-      --danger:#ef4444;
-      --radius:18px;
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --bg:#f5efe5;
+      --panel:#ffffff;
+      --ink:#2b2b2b;
+      --muted:#6e6e6e;
+      --brand:#5e3927;
+      --accent:#0f3d4c;
+      --line:#e5ddcf;
+      --danger:#b54835;
     }
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;overscroll-behavior:none}
-    body{display:flex;justify-content:center}
-    button,input,textarea,select{font:inherit}
-    button{border:0;cursor:pointer;color:inherit}
-    .app{width:100%;max-width:520px;min-height:100vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#101015 0%,#09090b 42%,#09090b 100%)}
-    .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:rgba(9,9,11,.88);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
-    .brand{display:flex;align-items:center;gap:10px;min-width:0}
-    .brandMark{width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,var(--brand),#fff2a7);display:grid;place-items:center;color:#171717;font-weight:900;box-shadow:0 10px 25px rgba(255,204,0,.25)}
-    .brandText{line-height:1.05;min-width:0}
-    .brandText strong{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .brandText span{display:block;color:var(--muted);font-size:11px;margin-top:2px}
-    .miniActions{display:flex;gap:8px;align-items:center}
-    .iconBtn,.pillBtn{height:36px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:800;font-size:12px}
-    .pillBtn.primary{background:linear-gradient(135deg,var(--brand),#ffe76a);color:#171717;border-color:rgba(255,204,0,.55);box-shadow:0 12px 30px rgba(255,204,0,.20)}
-    .pillBtn.danger{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.38);color:#fecaca}
-    .workspace{display:grid;grid-template-columns:1fr;gap:12px;padding:12px 12px 0;flex:1;min-height:0}
-    .stageWrap{position:relative;margin:auto;width:min(100%,390px);aspect-ratio:9/16;border-radius:28px;background:#000;box-shadow:0 18px 60px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.08);overflow:hidden;touch-action:none}
-    #stage{width:100%;height:100%;display:block;background:#111;touch-action:none;user-select:none}
-    .emptyState{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px;pointer-events:none;background:radial-gradient(circle at 50% 15%,rgba(255,204,0,.14),transparent 35%),linear-gradient(180deg,#16161d,#070709)}
-    .emptyState.hidden{display:none}
-    .emptyState h1{font-size:22px;line-height:1.02;margin:0 0 10px;font-weight:950;letter-spacing:-.05em}
-    .emptyState p{font-size:13px;line-height:1.38;margin:0;color:var(--muted)}
-    .timelineCard{border:1px solid var(--line);background:rgba(18,18,22,.86);border-radius:var(--radius);padding:10px 12px;display:grid;gap:9px;box-shadow:0 12px 30px rgba(0,0,0,.18)}
-    .transport{display:flex;align-items:center;gap:10px}
-    .playBtn{width:42px;height:42px;border-radius:999px;background:var(--text);color:#09090b;font-weight:950;display:grid;place-items:center;flex:0 0 auto}
-    .timeText{font-variant-numeric:tabular-nums;color:#d4d4d8;font-size:12px;font-weight:800;min-width:86px;text-align:right}
-    input[type="range"]{width:100%;accent-color:var(--brand)}
-    .sheet{position:sticky;bottom:0;z-index:20;background:rgba(9,9,11,.96);backdrop-filter:blur(18px);border-top:1px solid var(--line);padding:10px 10px calc(10px + var(--safe-bottom));max-height:52vh;overflow:auto;scrollbar-width:none}
-    .sheet::-webkit-scrollbar{display:none}
-    .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px}
-    .tab{height:38px;border-radius:13px;background:var(--panel2);border:1px solid var(--line);font-size:11px;font-weight:900;color:#d4d4d8}
-    .tab.active{background:#fff;color:#09090b;border-color:#fff}
-    .panel{display:none;animation:rise .16s ease-out}
-    .panel.active{display:block}
-    @keyframes rise{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-    .full{grid-column:1 / -1}
-    .toolBtn{min-height:44px;border-radius:15px;background:var(--panel2);border:1px solid var(--line);padding:10px;font-size:12px;font-weight:900;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px}
-    .toolBtn.brand{background:linear-gradient(135deg,var(--brand),#fff08c);color:#151515;border-color:rgba(255,204,0,.55)}
-    .toolBtn.red{background:rgba(255,59,48,.13);border-color:rgba(255,59,48,.28);color:#fecaca}
-    .toolBtn.green{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.32);color:#bbf7d0}
-    .field{display:grid;gap:6px;margin-bottom:10px}
-    .field label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;font-weight:900;color:#d4d4d8;text-transform:uppercase;letter-spacing:.03em}
-    .field output{font-size:11px;color:var(--brand);font-weight:950;text-transform:none;letter-spacing:0}
-    .input,.textarea,.select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:14px;color:var(--text);padding:12px;outline:none;font-size:14px}
-    .textarea{min-height:74px;resize:vertical;line-height:1.35}
-    .colorRow{display:grid;grid-template-columns:1fr 52px;gap:8px;align-items:center}
-    input[type="color"]{width:52px;height:42px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);padding:5px}
-    .hint{color:var(--muted);font-size:12px;line-height:1.38;margin:8px 2px 0}
-    .status{font-size:12px;color:#e4e4e7;line-height:1.35;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.055);border:1px solid var(--line);margin-top:10px;white-space:pre-wrap}
-    .status.ok{border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.12);color:#dcfce7}
-    .status.err{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.12);color:#fee2e2}
-    .layersList{display:grid;gap:8px;margin-top:10px}
-    .layerItem{border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .layerItem.active{border-color:rgba(255,204,0,.75);box-shadow:0 0 0 2px rgba(255,204,0,.12)}
-    .layerName{min-width:0;font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .layerMeta{color:var(--muted);font-size:11px;margin-top:2px}
-    .smallBtn{height:30px;padding:0 9px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid var(--line);font-size:11px;font-weight:900;flex:0 0 auto}
-    .switchRow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:10px}
-    .switchRow span{font-size:12px;font-weight:900;color:#e4e4e7}
-    .switchRow input{width:20px;height:20px;accent-color:var(--brand)}
-    input[type="file"]{position:absolute;left:-9999px;opacity:0}
-    .desktopNotice{display:none}
-    .downloadLink{display:inline-flex;margin-top:10px;align-items:center;justify-content:center;min-height:44px;width:100%;border-radius:15px;background:var(--ok);color:#052e16;font-weight:950;text-decoration:none}
-    .disabled{opacity:.5;pointer-events:none}
-    .progressBar{width:100%;height:8px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden;margin-top:8px}
-    .progressFill{height:100%;width:0%;background:linear-gradient(90deg,var(--brand),#fff);transition:width .2s linear}
-    @media (min-width:900px){
-      body{align-items:flex-start;background:#050506}
-      .app{max-width:1180px;display:grid;grid-template-columns:minmax(360px,440px) minmax(400px,1fr);grid-template-rows:auto 1fr;background:#09090b}
-      .topbar{grid-column:1 / -1}
-      .workspace{padding:18px;align-content:start}
-      .stageWrap{width:min(100%,420px)}
-      .sheet{position:static;max-height:calc(100vh - 70px);padding:18px;border-left:1px solid var(--line);border-top:0;grid-column:2;grid-row:2;background:rgba(14,14,18,.95)}
-      .desktopNotice{display:block;color:var(--muted);font-size:12px;margin-top:8px}
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+      color:var(--ink);
+      background:linear-gradient(180deg,#fffaf1 0%,#eee4d6 100%);
+    }
+    header{
+      position:sticky;
+      top:0;
+      z-index:20;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 18px;
+      background:rgba(255,250,241,.94);
+      border-bottom:1px solid var(--line);
+      backdrop-filter:blur(12px);
+    }
+    header .title{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .mark{
+      width:38px;
+      height:38px;
+      border-radius:50%;
+      background:#ead7b9;
+      color:#5e3927;
+      display:grid;
+      place-items:center;
+      font-weight:900;
+      border:2px solid #5e3927;
+      flex:0 0 auto;
+    }
+    h1{
+      font-size:18px;
+      line-height:1.1;
+      margin:0;
+      color:#5e3927;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    header small{display:block;color:var(--muted);font-weight:600;margin-top:2px}
+    .app{
+      display:grid;
+      grid-template-columns:minmax(320px,440px) minmax(320px,1fr);
+      gap:18px;
+      padding:18px;
+      max-width:1500px;
+      margin:0 auto;
+    }
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:0 16px 45px rgba(94,57,39,.12);
+      overflow:hidden;
+    }
+    .controls{
+      max-height:calc(100vh - 92px);
+      overflow:auto;
+    }
+    .section{
+      padding:16px;
+      border-bottom:1px solid var(--line);
+    }
+    .section:last-child{border-bottom:0}
+    .section h2{
+      margin:0 0 12px;
+      font-size:15px;
+      letter-spacing:.02em;
+      color:#5e3927;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    label{display:block;font-size:12px;color:#5d5d5d;font-weight:800;margin:0 0 6px}
+    input[type="text"],input[type="number"],select,textarea{
+      width:100%;
+      border:1px solid #d8cebf;
+      border-radius:12px;
+      padding:11px 12px;
+      font:700 14px/1.2 inherit;
+      background:#fffdf8;
+      color:#2b2b2b;
+      outline:none;
+    }
+    textarea{min-height:70px;resize:vertical}
+    input[type="file"]{
+      width:100%;
+      border:1px dashed #cbbca9;
+      border-radius:14px;
+      padding:12px;
+      background:#fffdf8;
+      font-weight:700;
+    }
+    input[type="color"]{
+      width:100%;
+      height:42px;
+      border:1px solid #d8cebf;
+      border-radius:12px;
+      padding:4px;
+      background:#fffdf8;
+    }
+    input[type="range"]{width:100%;accent-color:#5e3927}
+    .rangeRow{display:grid;grid-template-columns:1fr 58px;gap:10px;align-items:center}
+    .hint{
+      margin-top:8px;
+      color:#6e6e6e;
+      font-size:12px;
+      line-height:1.35;
+    }
+    .stageWrap{
+      display:grid;
+      grid-template-rows:auto 1fr;
+      gap:12px;
+    }
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      padding:12px;
+    }
+    .toolbar .left,.toolbar .right{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    button{
+      border:0;
+      border-radius:13px;
+      padding:11px 14px;
+      font-weight:900;
+      cursor:pointer;
+      color:#fff;
+      background:#5e3927;
+      box-shadow:0 8px 18px rgba(94,57,39,.2);
+    }
+    button.secondary{background:#0f3d4c}
+    button.light{background:#ead7b9;color:#5e3927;box-shadow:none}
+    button.danger{background:#a14d3a}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    .previewBox{
+      display:grid;
+      place-items:center;
+      padding:14px;
+      min-height:calc(100vh - 170px);
+    }
+    .phoneFrame{
+      position:relative;
+      width:min(100%,430px);
+      aspect-ratio:9/16;
+      border-radius:24px;
+      overflow:hidden;
+      background:#111;
+      box-shadow:0 24px 70px rgba(0,0,0,.28);
+      border:8px solid #1b1b1b;
+    }
+    canvas{
+      width:100%;
+      height:100%;
+      display:block;
+      background:#151515;
+    }
+    video{display:none}
+    .status{
+      padding:10px 12px;
+      border-radius:12px;
+      background:#fff7e8;
+      color:#5e3927;
+      font-size:12px;
+      font-weight:800;
+      border:1px solid #ead7b9;
+    }
+    .progressOuter{
+      width:100%;
+      height:9px;
+      background:#e8dfd0;
+      border-radius:999px;
+      overflow:hidden;
+      display:none;
+      margin-top:10px;
+    }
+    .progressInner{
+      height:100%;
+      width:0%;
+      background:#0f3d4c;
+      border-radius:999px;
+      transition:width .1s linear;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 9px;
+      border-radius:999px;
+      background:#f2ead7;
+      color:#5e3927;
+      font-size:12px;
+      font-weight:900;
+    }
+    .miniBtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    @media(max-width:980px){
+      .app{grid-template-columns:1fr;padding:12px}
+      .controls{max-height:none}
+      .stageWrap{order:-1}
+      header{align-items:flex-start}
+      header .title{align-items:flex-start}
+      h1{white-space:normal;font-size:16px}
+      .previewBox{min-height:auto;padding:10px}
+      .phoneFrame{width:min(100%,390px)}
     }
   </style>
 </head>
 <body>
-  <main class="app">
-    <header class="topbar">
-      <div class="brand">
-        <div class="brandMark">DA</div>
-        <div class="brandText">
-          <strong>Editor de Reels</strong>
-          <span>vídeo vertical 9:16 · MP4</span>
-        </div>
-      </div>
-      <div class="miniActions">
-        <label for="videoInput" class="pillBtn primary">Subir vídeo</label>
-        <button id="exportTopBtn" class="iconBtn">Exportar</button>
-      </div>
-    </header>
+<header>
+  <div class="title">
+    <div class="mark">DA</div>
+    <div>
+      <h1>Editor vertical Reels — Dona Antônia</h1>
+      <small>Modelo igual ao anexo, com textos editáveis e exportação em vídeo</small>
+    </div>
+  </div>
+  <span class="pill">1080 × 1920</span>
+</header>
 
-    <section class="workspace">
-      <div class="stageWrap" id="stageWrap">
-        <canvas id="stage" width="1080" height="1920"></canvas>
-        <div class="emptyState" id="emptyState">
-          <div>
-            <h1>Suba um vídeo vertical</h1>
-            <p>Depois edite luz, nitidez, vinheta, imagem, preço, título, subtítulo e textos como em um story.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="timelineCard">
-        <div class="transport">
-          <button id="playBtn" class="playBtn">▶</button>
-          <input id="seek" type="range" min="0" max="1000" value="0" />
-          <div id="timeText" class="timeText">00:00 / 00:00</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="sheet">
-      <nav class="tabs">
-        <button class="tab active" data-tab="media">Mídia</button>
-        <button class="tab" data-tab="adjust">Ajustes</button>
-        <button class="tab" data-tab="layers">Camadas</button>
-        <button class="tab" data-tab="export">Exportar</button>
-      </nav>
-
-      <div class="panel active" id="panel-media">
-        <div class="grid2">
-          <label for="videoInput" class="toolBtn brand">📹 Subir vídeo</label>
-          <label for="imageInput" class="toolBtn">🖼️ Incluir imagem</label>
-          <button id="addPriceBtn" class="toolBtn">🏷️ Etiqueta valor</button>
-          <button id="addTitleBtn" class="toolBtn">✨ Título</button>
-          <button id="addSubtitleBtn" class="toolBtn">📝 Subtítulo</button>
-          <button id="addTextBtn" class="toolBtn">💬 Texto</button>
-        </div>
-        <input id="videoInput" type="file" accept="video/*" />
-        <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" />
-        <p class="hint">Dica: toque em qualquer item no vídeo para selecionar. Arraste para mover. Puxe o quadradinho amarelo para redimensionar imagens e a largura dos textos.</p>
-        <p class="desktopNotice">No computador, o layout abre com o painel à direita. No celular, o painel fica como uma gaveta inferior.</p>
-      </div>
-
-      <div class="panel" id="panel-adjust">
-        <div class="field">
-          <label>Iluminação <output id="brightnessOut">100%</output></label>
-          <input id="brightness" type="range" min="40" max="180" value="100" />
-        </div>
-        <div class="field">
-          <label>Contraste <output id="contrastOut">100%</output></label>
-          <input id="contrast" type="range" min="50" max="180" value="100" />
-        </div>
-        <div class="field">
-          <label>Saturação <output id="saturationOut">100%</output></label>
-          <input id="saturation" type="range" min="0" max="200" value="100" />
-        </div>
-        <div class="field">
-          <label>Nitidez <output id="sharpnessOut">0%</output></label>
-          <input id="sharpness" type="range" min="0" max="100" value="0" />
-        </div>
-        <div class="field">
-          <label>Vinheta escura <output id="vignetteOut">0%</output></label>
-          <input id="vignette" type="range" min="0" max="100" value="0" />
-        </div>
-        <div class="field">
-          <label>Abertura da vinheta <output id="vignetteSizeOut">58%</output></label>
-          <input id="vignetteSize" type="range" min="25" max="90" value="58" />
-        </div>
-        <div class="field">
-          <label>Zoom do vídeo <output id="videoZoomOut">100%</output></label>
-          <input id="videoZoom" type="range" min="100" max="170" value="100" />
-        </div>
-        <div class="grid2">
-          <div class="field">
-            <label>Vídeo X <output id="videoXOut">0</output></label>
-            <input id="videoX" type="range" min="-500" max="500" value="0" />
-          </div>
-          <div class="field">
-            <label>Vídeo Y <output id="videoYOut">0</output></label>
-            <input id="videoY" type="range" min="-800" max="800" value="0" />
-          </div>
-        </div>
-        <button id="resetAdjustBtn" class="toolBtn red full">Resetar ajustes do vídeo</button>
-      </div>
-
-      <div class="panel" id="panel-layers">
-        <div class="grid3">
-          <button id="frontBtn" class="toolBtn">⬆️ Frente</button>
-          <button id="backBtn" class="toolBtn">⬇️ Trás</button>
-          <button id="deleteBtn" class="toolBtn red">Excluir</button>
-        </div>
-
-        <div id="selectedEditor" style="margin-top:12px"></div>
-        <div class="layersList" id="layersList"></div>
-      </div>
-
-      <div class="panel" id="panel-export">
-        <div class="grid2">
-          <div class="field">
-            <label>Resolução</label>
-            <select id="resolution" class="select">
-              <option value="1080" selected>1080 × 1920</option>
-              <option value="720">720 × 1280</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>FPS</label>
-            <select id="fps" class="select">
-              <option value="24">24 fps</option>
-              <option value="30" selected>30 fps</option>
-            </select>
-          </div>
-        </div>
-        <div class="field">
-          <label>Qualidade MP4</label>
-          <select id="quality" class="select">
-            <option value="18">Alta / arquivo maior</option>
-            <option value="21" selected>Ótima / equilibrada</option>
-            <option value="25">Leve / arquivo menor</option>
+<main class="app">
+  <aside class="panel controls">
+    <div class="section">
+      <h2>1. Vídeo base</h2>
+      <label for="videoFile">Subir vídeo vertical</label>
+      <input id="videoFile" type="file" accept="video/*" />
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label for="fitMode">Encaixe do vídeo</label>
+          <select id="fitMode" data-key="fitMode">
+            <option value="cover">Preencher tela/cortar</option>
+            <option value="contain">Mostrar inteiro</option>
           </select>
         </div>
-        <label class="switchRow">
-          <span>Preservar áudio original</span>
-          <input id="keepAudio" type="checkbox" checked />
-        </label>
-        <button id="exportBtn" class="toolBtn brand full">Exportar MP4</button>
-        <div class="progressBar"><div class="progressFill" id="progressFill"></div></div>
-        <div id="exportStatus" class="status">O MP4 será gerado no próprio navegador. Para melhor resultado, use vídeos de até 60 segundos no celular.</div>
-        <div id="downloadBox"></div>
+        <div>
+          <label for="fps">FPS exportação</label>
+          <select id="fps" data-key="fps">
+            <option value="30">30 fps</option>
+            <option value="24">24 fps</option>
+            <option value="60">60 fps</option>
+          </select>
+        </div>
       </div>
-    </section>
-  </main>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Zoom do vídeo</label>
+          <div class="rangeRow"><input type="range" min="80" max="180" value="100" data-key="videoZoom"><output id="videoZoomOut">100%</output></div>
+        </div>
+        <div>
+          <label>Posição vertical</label>
+          <div class="rangeRow"><input type="range" min="-300" max="300" value="0" data-key="videoY"><output id="videoYOut">0</output></div>
+        </div>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Posição horizontal</label>
+          <div class="rangeRow"><input type="range" min="-300" max="300" value="0" data-key="videoX"><output id="videoXOut">0</output></div>
+        </div>
+        <div>
+          <label>Vinheta escura</label>
+          <div class="rangeRow"><input type="range" min="0" max="65" value="10" data-key="vignette"><output id="vignetteOut">10%</output></div>
+        </div>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Iluminação</label>
+          <div class="rangeRow"><input type="range" min="60" max="160" value="100" data-key="brightness"><output id="brightnessOut">100%</output></div>
+        </div>
+        <div>
+          <label>Contraste</label>
+          <div class="rangeRow"><input type="range" min="60" max="180" value="105" data-key="contrast"><output id="contrastOut">105%</output></div>
+        </div>
+      </div>
+      <div class="hint">Dica: para vídeo de Reels, grave ou exporte em 9:16. O editor renderiza tudo em 1080×1920.</div>
+    </div>
 
-  <script type="module">
-    import { FFmpeg } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js';
-    import { fetchFile, toBlobURL } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js';
+    <div class="section">
+      <h2>2. Marca superior</h2>
+      <label for="avatarFile">Avatar/logo redondo opcional</label>
+      <input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp" />
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Texto da marca</label>
+          <input type="text" value="DONA ANTONIA" data-key="brandText" />
+        </div>
+        <div>
+          <label>Posição do topo</label>
+          <div class="rangeRow"><input type="range" min="30" max="220" value="86" data-key="topY"><output id="topYOut">86</output></div>
+        </div>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Cor barra superior</label>
+          <input type="color" value="#5e3927" data-key="topBrown" />
+        </div>
+        <div>
+          <label>Texto superior</label>
+          <input type="color" value="#e9e4d4" data-key="topTextColor" />
+        </div>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Tamanho texto marca</label>
+          <div class="rangeRow"><input type="range" min="34" max="72" value="58" data-key="brandFont"><output id="brandFontOut">58</output></div>
+        </div>
+        <div>
+          <label>Largura da barra</label>
+          <div class="rangeRow"><input type="range" min="480" max="820" value="630" data-key="topCardW"><output id="topCardWOut">630</output></div>
+        </div>
+      </div>
+    </div>
 
-    const BASE_W = 1080;
-    const BASE_H = 1920;
+    <div class="section">
+      <h2>3. Textos da oferta</h2>
+      <label>Título do kit/produto</label>
+      <input type="text" value="Kit Vanish - 2 itens" data-key="productTitle" />
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Desconto</label>
+          <input type="text" value="30% de Desconto" data-key="discountText" />
+        </div>
+        <div>
+          <label>Preço antigo</label>
+          <input type="text" value="De R$ 58,90 por" data-key="oldPriceText" />
+        </div>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Preço principal</label>
+          <input type="text" value="R$ 41,90" data-key="priceText" />
+        </div>
+        <div>
+          <label>Telefone WhatsApp</label>
+          <input type="text" value="99815-0975" data-key="phoneText" />
+        </div>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Entrega</label>
+          <input type="text" value="Entrega grátis em Cuiabá e VG" data-key="deliveryText" />
+        </div>
+        <div>
+          <label>Site</label>
+          <input type="text" value="www.donaantonia.com.br" data-key="siteText" />
+        </div>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label>Tamanho título</label>
+          <div class="rangeRow"><input type="range" min="34" max="66" value="53" data-key="titleFont"><output id="titleFontOut">53</output></div>
+        </div>
+        <div>
+          <label>Tamanho preço</label>
+          <div class="rangeRow"><input type="range" min="48" max="82" value="64" data-key="priceFont"><output id="priceFontOut">64</output></div>
+        </div>
+      </div>
+    </div>
 
-    const $ = (sel) => document.querySelector(sel);
-    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+    <div class="section">
+      <h2>4. Layout e cores da faixa</h2>
+      <div class="grid">
+        <div>
+          <label>Altura da faixa inferior</label>
+          <div class="rangeRow"><input type="range" min="230" max="420" value="276" data-key="bottomHeight"><output id="bottomHeightOut">276</output></div>
+        </div>
+        <div>
+          <label>Divisão esquerda/direita</label>
+          <div class="rangeRow"><input type="range" min="42" max="62" value="51.5" step="0.5" data-key="splitPercent"><output id="splitPercentOut">51.5%</output></div>
+        </div>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <div><label>Vermelho queimado</label><input type="color" value="#a14d3a" data-key="rustColor" /></div>
+        <div><label>Azul petróleo</label><input type="color" value="#0f3d4c" data-key="tealColor" /></div>
+        <div><label>Creme</label><input type="color" value="#e9e4d4" data-key="creamColor" /></div>
+        <div><label>Azul WhatsApp fundo</label><input type="color" value="#68869a" data-key="blueColor" /></div>
+        <div><label>Rodapé escuro</label><input type="color" value="#2e2e2e" data-key="darkColor" /></div>
+        <div><label>Texto claro</label><input type="color" value="#f4ead8" data-key="lightText" /></div>
+      </div>
+      <div class="miniBtns">
+        <button class="light" id="resetLayout" type="button">Restaurar modelo do anexo</button>
+        <button class="light" id="savePreset" type="button">Salvar preset</button>
+        <button class="light" id="loadPreset" type="button">Carregar preset</button>
+      </div>
+    </div>
 
-    const stage = $('#stage');
-    const ctx = stage.getContext('2d', { alpha:false, willReadFrequently:false });
-    const stageWrap = $('#stageWrap');
-    const emptyState = $('#emptyState');
-    const videoInput = $('#videoInput');
-    const imageInput = $('#imageInput');
-    const playBtn = $('#playBtn');
-    const seek = $('#seek');
-    const timeText = $('#timeText');
-    const selectedEditor = $('#selectedEditor');
-    const layersList = $('#layersList');
-    const exportStatus = $('#exportStatus');
-    const downloadBox = $('#downloadBox');
-    const progressFill = $('#progressFill');
+    <div class="section">
+      <h2>5. Exportar</h2>
+      <button id="exportBtn" class="secondary" type="button" disabled>Exportar vídeo</button>
+      <button id="snapshotBtn" class="light" type="button">Baixar frame PNG</button>
+      <div class="progressOuter" id="progressOuter"><div class="progressInner" id="progressInner"></div></div>
+      <p class="hint" id="exportHint">O app tenta exportar em MP4. Se o navegador não permitir MP4 pelo MediaRecorder, ele baixa em WebM automaticamente.</p>
+      <div class="status" id="status">Suba um vídeo para começar.</div>
+    </div>
+  </aside>
 
-    const video = document.createElement('video');
-    video.playsInline = true;
-    video.preload = 'auto';
-    video.loop = true;
-    video.muted = false;
+  <section class="panel stageWrap">
+    <div class="toolbar">
+      <div class="left">
+        <button id="playBtn" type="button" disabled>▶ Reproduzir</button>
+        <button id="pauseBtn" class="light" type="button" disabled>⏸ Pausar</button>
+      </div>
+      <div class="right">
+        <span class="status" id="timeLabel">00:00 / 00:00</span>
+      </div>
+    </div>
+    <div class="previewBox">
+      <div class="phoneFrame">
+        <canvas id="canvas" width="1080" height="1920"></canvas>
+      </div>
+      <video id="video" playsinline crossorigin="anonymous"></video>
+    </div>
+  </section>
+</main>
 
-    let ffmpeg = null;
-    let ffmpegLoaded = false;
-    let raf = null;
-    let dragState = null;
-    let audioCtx = null;
-    let audioSource = null;
-    let audioDestination = null;
+<script>
+(() => {
+  'use strict';
 
-    const state = {
-      videoReady:false,
-      selectedId:null,
-      nextId:1,
-      settings:{
-        brightness:100,
-        contrast:100,
-        saturation:100,
-        sharpness:0,
-        vignette:0,
-        vignetteSize:58,
-        videoZoom:100,
-        videoX:0,
-        videoY:0,
-      },
-      layers:[]
+  const W = 1080;
+  const H = 1920;
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d', { alpha:false });
+  const video = document.getElementById('video');
+  const videoFile = document.getElementById('videoFile');
+  const avatarFile = document.getElementById('avatarFile');
+  const playBtn = document.getElementById('playBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  const snapshotBtn = document.getElementById('snapshotBtn');
+  const statusEl = document.getElementById('status');
+  const timeLabel = document.getElementById('timeLabel');
+  const progressOuter = document.getElementById('progressOuter');
+  const progressInner = document.getElementById('progressInner');
+
+  const defaults = {
+    fitMode:'cover', fps:'30',
+    videoZoom:100, videoX:0, videoY:0,
+    brightness:100, contrast:105, vignette:10,
+    brandText:'DONA ANTONIA', topY:86, topCardW:630, brandFont:58,
+    topBrown:'#5e3927', topTextColor:'#e9e4d4',
+    productTitle:'Kit Vanish - 2 itens',
+    discountText:'30% de Desconto', oldPriceText:'De R$ 58,90 por', priceText:'R$ 41,90',
+    deliveryText:'Entrega grátis em Cuiabá e VG', phoneText:'99815-0975', siteText:'www.donaantonia.com.br',
+    titleFont:53, priceFont:64,
+    bottomHeight:276, splitPercent:51.5,
+    rustColor:'#a14d3a', tealColor:'#0f3d4c', creamColor:'#e9e4d4', blueColor:'#68869a', darkColor:'#2e2e2e', lightText:'#f4ead8'
+  };
+  let state = { ...defaults };
+  let avatarImg = null;
+  let videoURL = null;
+  let isExporting = false;
+
+  function setStatus(msg){ statusEl.textContent = msg; }
+  function fmtTime(sec){
+    if (!Number.isFinite(sec)) sec = 0;
+    const m = Math.floor(sec/60).toString().padStart(2,'0');
+    const s = Math.floor(sec%60).toString().padStart(2,'0');
+    return `${m}:${s}`;
+  }
+  function updateTimeLabel(){
+    timeLabel.textContent = `${fmtTime(video.currentTime)} / ${fmtTime(video.duration)}`;
+  }
+  function roundRect(ctx, x, y, w, h, r){
+    r = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+  function drawCoverImage(img, x, y, w, h, radius=0){
+    ctx.save();
+    if(radius){ roundRect(ctx,x,y,w,h,radius); ctx.clip(); }
+    ctx.drawImage(img,x,y,w,h);
+    ctx.restore();
+  }
+  function fitText(text, x, y, maxW, maxFont, minFont, fontFamily, weight, color, align='left'){
+    let size = maxFont;
+    do {
+      ctx.font = `${weight} ${size}px ${fontFamily}`;
+      if (ctx.measureText(text).width <= maxW || size <= minFont) break;
+      size -= 2;
+    } while(size > minFont);
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(text, x, y);
+    ctx.textAlign = 'left';
+  }
+  function drawLetterSpaced(text, x, y, spacing, color, font){
+    ctx.save();
+    ctx.font = font;
+    ctx.fillStyle = color;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    let cursor = x;
+    for (const ch of text) {
+      ctx.fillText(ch, cursor, y);
+      cursor += ctx.measureText(ch).width + spacing;
+    }
+    ctx.restore();
+  }
+  function measureLetterSpaced(text, spacing, font){
+    ctx.font = font;
+    let total = 0;
+    for (const ch of text) total += ctx.measureText(ch).width + spacing;
+    return Math.max(0, total - spacing);
+  }
+  function drawPlaceholder(){
+    ctx.fillStyle = '#202020';
+    ctx.fillRect(0,0,W,H);
+    const grd = ctx.createLinearGradient(0,0,W,H);
+    grd.addColorStop(0,'#353535');
+    grd.addColorStop(1,'#111111');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = '#e9e4d4';
+    ctx.font = '900 44px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('SUBA UM VÍDEO VERTICAL', W/2, H/2 - 30);
+    ctx.font = '700 28px Arial, sans-serif';
+    ctx.fillText('O texto e a faixa já estão prontos para editar', W/2, H/2 + 20);
+    ctx.textAlign = 'left';
+  }
+  function drawVideoFrame(){
+    if (!video.videoWidth || !video.videoHeight) {
+      drawPlaceholder();
+      return;
+    }
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    const zoom = Number(state.videoZoom) / 100;
+    const canvasRatio = W/H;
+    const videoRatio = vw/vh;
+    let dw, dh;
+    if (state.fitMode === 'contain') {
+      if (videoRatio > canvasRatio) { dw = W * zoom; dh = dw / videoRatio; }
+      else { dh = H * zoom; dw = dh * videoRatio; }
+    } else {
+      if (videoRatio > canvasRatio) { dh = H * zoom; dw = dh * videoRatio; }
+      else { dw = W * zoom; dh = dw / videoRatio; }
+    }
+    const dx = (W - dw)/2 + Number(state.videoX);
+    const dy = (H - dh)/2 + Number(state.videoY);
+
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0,0,W,H);
+    ctx.save();
+    ctx.filter = `brightness(${state.brightness}%) contrast(${state.contrast}%)`;
+    ctx.drawImage(video, dx, dy, dw, dh);
+    ctx.restore();
+
+    const vig = Number(state.vignette) / 100;
+    if (vig > 0) {
+      const g = ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*.24,W/2,H/2,Math.max(W,H)*.64);
+      g.addColorStop(0,`rgba(0,0,0,0)`);
+      g.addColorStop(1,`rgba(0,0,0,${vig})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,W,H);
+    }
+  }
+  function drawAvatar(cx, cy, r){
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.clip();
+    ctx.fillStyle = '#ead7b9'; ctx.fillRect(cx-r,cy-r,r*2,r*2);
+    if (avatarImg) {
+      const ratio = avatarImg.width/avatarImg.height;
+      let sw, sh;
+      if (ratio > 1) { sh = r*2; sw = sh*ratio; }
+      else { sw = r*2; sh = sw/ratio; }
+      ctx.drawImage(avatarImg, cx - sw/2, cy - sh/2, sw, sh);
+    } else {
+      ctx.fillStyle = '#5e3927';
+      ctx.font = `900 ${Math.round(r*.58)}px Georgia, serif`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('DA',cx,cy+2);
+      ctx.textAlign='left';
+    }
+    ctx.restore();
+    ctx.strokeStyle = '#ead7b9'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+  }
+  function drawTopBrand(){
+    const cardW = Number(state.topCardW);
+    const cardH = 94;
+    const x = (W-cardW)/2 + 70;
+    const y = Number(state.topY);
+    const avatarR = 61;
+    const avatarCx = x - 16;
+    const avatarCy = y + cardH/2;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.20)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 5;
+    roundRect(ctx, x, y, cardW, cardH, 18);
+    ctx.fillStyle = state.topBrown;
+    ctx.fill();
+    ctx.restore();
+
+    drawAvatar(avatarCx, avatarCy, avatarR);
+
+    let fontSize = Number(state.brandFont);
+    let font = `900 ${fontSize}px Georgia, 'Times New Roman', serif`;
+    const spacing = 7;
+    const maxW = cardW - 126;
+    while (measureLetterSpaced(state.brandText, spacing, font) > maxW && fontSize > 32) {
+      fontSize -= 2;
+      font = `900 ${fontSize}px Georgia, 'Times New Roman', serif`;
+    }
+    const textW = measureLetterSpaced(state.brandText, spacing, font);
+    const tx = x + 118 + Math.max(0, (maxW - textW)/2);
+    drawLetterSpaced(state.brandText, tx, y + cardH/2 + 1, spacing, state.topTextColor, font);
+  }
+  function drawWhatsIcon(cx, cy, r){
+    ctx.save();
+    ctx.fillStyle = '#25d366';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#25d366';
+    ctx.beginPath();
+    ctx.moveTo(cx - r*.35, cy + r*.72);
+    ctx.lineTo(cx - r*.48, cy + r*1.02);
+    ctx.lineTo(cx - r*.12, cy + r*.82);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = `900 ${Math.round(r*1.15)}px Arial, sans-serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('☎', cx, cy + 2);
+    ctx.restore();
+  }
+  function drawBottomPanel(){
+    const bh = Number(state.bottomHeight);
+    const y = H - bh;
+    const split = W * (Number(state.splitPercent) / 100);
+    const row1 = Math.round(bh * 0.405);
+    const row2 = Math.round(bh * 0.39);
+    const row3 = bh - row1 - row2;
+
+    ctx.save();
+    ctx.fillStyle = state.rustColor; ctx.fillRect(0,y,split,row1);
+    ctx.fillStyle = state.tealColor; ctx.fillRect(split,y,W-split,row1);
+    ctx.fillStyle = state.creamColor; ctx.fillRect(0,y+row1,split,row2);
+    ctx.fillStyle = state.blueColor; ctx.fillRect(split,y+row1,W-split,row2);
+    ctx.fillStyle = state.darkColor; ctx.fillRect(0,y+row1+row2,W,row3);
+
+    const scale = bh / 276;
+    const light = state.lightText;
+    fitText(state.productTitle, 45, y + 72*scale, split - 70, Number(state.titleFont)*scale, 30*scale, '"Arial Rounded MT Bold", "Trebuchet MS", Arial, sans-serif', '900', light);
+
+    const rx = split + 25;
+    ctx.fillStyle = light;
+    ctx.textAlign = 'left'; ctx.textBaseline='alphabetic';
+    fitText(state.discountText, rx, y + 41*scale, (W-split)*.44, 30*scale, 18*scale, '"Trebuchet MS", Arial, sans-serif', '900', light);
+    fitText(state.oldPriceText, rx, y + 79*scale, (W-split)*.45, 30*scale, 18*scale, '"Trebuchet MS", Arial, sans-serif', '500', light);
+    fitText(state.priceText, split + (W-split)*.46, y + 75*scale, (W-split)*.50, Number(state.priceFont)*scale, 42*scale, '"Trebuchet MS", Arial, sans-serif', '900', light);
+
+    ctx.fillStyle = '#111111';
+    fitText(state.deliveryText, 35, y + row1 + 69*scale, split - 65, 38*scale, 24*scale, '"Trebuchet MS", Arial, sans-serif', '500', '#111111');
+
+    const iconR = 25 * scale;
+    const iconCx = split + 130 * scale;
+    const iconCy = y + row1 + row2/2;
+    drawWhatsIcon(iconCx, iconCy, iconR);
+    fitText(state.phoneText, iconCx + 45*scale, y + row1 + 72*scale, W - iconCx - 75*scale, 47*scale, 28*scale, '"Trebuchet MS", Arial, sans-serif', '900', light);
+
+    fitText(state.siteText, W/2, H - row3/2 + 16*scale, W - 70, 42*scale, 24*scale, '"Arial Rounded MT Bold", "Trebuchet MS", Arial, sans-serif', '900', light, 'center');
+    ctx.restore();
+  }
+  function render(){
+    drawVideoFrame();
+    drawTopBrand();
+    drawBottomPanel();
+    updateTimeLabel();
+    requestAnimationFrame(render);
+  }
+
+  function updateOutputs(){
+    const suffix = {
+      videoZoom:'%', brightness:'%', contrast:'%', vignette:'%', splitPercent:'%'
     };
-
-    const defaultFonts = 'Inter, Arial, Helvetica, sans-serif';
-
-    function id(prefix){
-      return `${prefix}-${state.nextId++}`;
-    }
-
-    function fmtTime(seconds){
-      if(!Number.isFinite(seconds)) return '00:00';
-      const s = Math.max(0, Math.floor(seconds));
-      const m = Math.floor(s / 60);
-      const r = s % 60;
-      return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
-    }
-
-    function safeFileName(name){
-      return (name || 'video-editado').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,48) || 'video-editado';
-    }
-
-    function roundedRect(c, x, y, w, h, r){
-      const rr = Math.min(r, w/2, h/2);
-      c.beginPath();
-      c.moveTo(x+rr,y);
-      c.arcTo(x+w,y,x+w,y+h,rr);
-      c.arcTo(x+w,y+h,x,y+h,rr);
-      c.arcTo(x,y+h,x,y,rr);
-      c.arcTo(x,y,x+w,y,rr);
-      c.closePath();
-    }
-
-    function hexToRgba(hex, alpha){
-      let h = String(hex || '#000000').replace('#','');
-      if(h.length === 3) h = h.split('').map(ch => ch + ch).join('');
-      const n = parseInt(h, 16);
-      const r = (n >> 16) & 255;
-      const g = (n >> 8) & 255;
-      const b = n & 255;
-      return `rgba(${r},${g},${b},${alpha})`;
-    }
-
-    function getVideoDrawRect(w=BASE_W,h=BASE_H){
-      const vw = video.videoWidth || BASE_W;
-      const vh = video.videoHeight || BASE_H;
-      const baseScale = Math.max(w / vw, h / vh);
-      const scale = baseScale * (state.settings.videoZoom / 100);
-      const dw = vw * scale;
-      const dh = vh * scale;
-      const dx = (w - dw) / 2 + state.settings.videoX * (w / BASE_W);
-      const dy = (h - dh) / 2 + state.settings.videoY * (h / BASE_H);
-      return { dx, dy, dw, dh };
-    }
-
-    function drawVideoLayer(c, w, h){
-      c.fillStyle = '#0b0b0d';
-      c.fillRect(0,0,w,h);
-      if(!state.videoReady || !video.videoWidth) return;
-
-      const { dx, dy, dw, dh } = getVideoDrawRect(w,h);
-      c.save();
-      c.filter = `brightness(${state.settings.brightness}%) contrast(${state.settings.contrast}%) saturate(${state.settings.saturation}%)`;
-      c.drawImage(video, dx, dy, dw, dh);
-      c.restore();
-
-      const s = Number(state.settings.sharpness) || 0;
-      if(s > 0){
-        c.save();
-        c.globalCompositeOperation = 'overlay';
-        c.globalAlpha = Math.min(.26, s / 100 * .26);
-        c.filter = `contrast(${100 + s}%) saturate(${state.settings.saturation}%)`;
-        const off = Math.max(.5, s / 100 * 1.6);
-        c.drawImage(video, dx - off, dy, dw, dh);
-        c.drawImage(video, dx + off, dy, dw, dh);
-        c.drawImage(video, dx, dy - off, dw, dh);
-        c.drawImage(video, dx, dy + off, dw, dh);
-        c.restore();
-      }
-
-      const vig = Number(state.settings.vignette) || 0;
-      if(vig > 0){
-        const inner = Math.min(w,h) * (Number(state.settings.vignetteSize) / 100);
-        const outer = Math.max(w,h) * .76;
-        const grad = c.createRadialGradient(w/2, h/2, inner, w/2, h/2, outer);
-        grad.addColorStop(0, 'rgba(0,0,0,0)');
-        grad.addColorStop(.72, `rgba(0,0,0,${vig/100*.22})`);
-        grad.addColorStop(1, `rgba(0,0,0,${vig/100*.86})`);
-        c.fillStyle = grad;
-        c.fillRect(0,0,w,h);
-      }
-    }
-
-    function wrapText(c, text, maxWidth){
-      const raw = String(text || '').split('\n');
-      const lines = [];
-      raw.forEach(paragraph => {
-        const words = paragraph.split(/\s+/).filter(Boolean);
-        if(words.length === 0){ lines.push(''); return; }
-        let line = '';
-        words.forEach(word => {
-          const test = line ? `${line} ${word}` : word;
-          if(c.measureText(test).width <= maxWidth || !line){
-            line = test;
-          }else{
-            lines.push(line);
-            line = word;
-          }
-        });
-        lines.push(line);
+    document.querySelectorAll('input[type="range"][data-key]').forEach(el => {
+      const out = document.getElementById(el.dataset.key + 'Out');
+      if(out) out.textContent = `${el.value}${suffix[el.dataset.key] || ''}`;
+    });
+  }
+  function bindControls(){
+    document.querySelectorAll('[data-key]').forEach(el => {
+      const key = el.dataset.key;
+      if (key in state) el.value = state[key];
+      const eventName = el.type === 'range' || el.type === 'color' ? 'input' : 'input';
+      el.addEventListener(eventName, () => {
+        state[key] = el.value;
+        updateOutputs();
       });
-      return lines;
-    }
+    });
+    updateOutputs();
+  }
+  function applyStateToInputs(){
+    document.querySelectorAll('[data-key]').forEach(el => {
+      const key = el.dataset.key;
+      if (key in state) el.value = state[key];
+    });
+    updateOutputs();
+  }
 
-    function measureTextLayer(layer, c=ctx){
-      const pad = Number(layer.padding ?? 24);
-      const fontSize = Number(layer.fontSize ?? 64);
-      const lineHeight = Number(layer.lineHeight ?? 1.12) * fontSize;
-      const width = Math.max(80, Number(layer.w || 700));
-      c.save();
-      c.font = `${layer.weight || 800} ${fontSize}px ${defaultFonts}`;
-      const text = layer.uppercase ? String(layer.text || '').toUpperCase() : String(layer.text || '');
-      const lines = wrapText(c, text, Math.max(30, width - pad*2));
-      c.restore();
-      const height = Math.max(fontSize + pad*2, lines.length * lineHeight + pad*2);
-      return { x:layer.x, y:layer.y, w:width, h:height, lines, lineHeight, pad };
-    }
+  videoFile.addEventListener('change', () => {
+    const file = videoFile.files && videoFile.files[0];
+    if(!file) return;
+    if(videoURL) URL.revokeObjectURL(videoURL);
+    videoURL = URL.createObjectURL(file);
+    video.src = videoURL;
+    video.muted = false;
+    video.load();
+    setStatus('Carregando vídeo...');
+  });
+  video.addEventListener('loadedmetadata', () => {
+    exportBtn.disabled = false;
+    playBtn.disabled = false;
+    pauseBtn.disabled = false;
+    setStatus(`Vídeo carregado: ${video.videoWidth}×${video.videoHeight}, duração ${fmtTime(video.duration)}.`);
+    updateTimeLabel();
+  });
+  video.addEventListener('error', () => setStatus('Não foi possível abrir esse vídeo. Tente outro arquivo MP4/MOV/WebM.'));
+  video.addEventListener('timeupdate', updateTimeLabel);
+  playBtn.addEventListener('click', () => video.play());
+  pauseBtn.addEventListener('click', () => video.pause());
 
-    function layerBounds(layer){
-      if(layer.type === 'image') return { x:layer.x, y:layer.y, w:layer.w, h:layer.h };
-      return measureTextLayer(layer);
-    }
+  avatarFile.addEventListener('change', () => {
+    const file = avatarFile.files && avatarFile.files[0];
+    if(!file) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { avatarImg = img; URL.revokeObjectURL(url); setStatus('Avatar/logo carregado.'); };
+    img.onerror = () => { URL.revokeObjectURL(url); setStatus('Não foi possível carregar a imagem do avatar.'); };
+    img.src = url;
+  });
 
-    function drawTextLayer(c, layer){
-      const box = measureTextLayer(layer, c);
-      const alpha = Number(layer.bgOpacity ?? 0);
-      if(alpha > 0){
-        c.save();
-        c.fillStyle = hexToRgba(layer.bgColor || '#000000', alpha);
-        roundedRect(c, box.x, box.y, box.w, box.h, Number(layer.radius ?? 24));
-        c.fill();
-        c.restore();
+  function getBestMime(){
+    const options = [
+      'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+      'video/mp4;codecs="h264,aac"',
+      'video/mp4',
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm'
+    ];
+    for (const type of options) {
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported(type)) return type;
+    }
+    return '';
+  }
+  function downloadBlob(blob, name){
+    const a = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+  async function exportVideo(){
+    if (!video.src || !video.duration || isExporting) return;
+    if (!window.MediaRecorder || !canvas.captureStream) {
+      setStatus('Este navegador não permite exportar vídeo direto pelo canvas. Use Chrome, Edge ou Safari atualizado.');
+      return;
+    }
+    isExporting = true;
+    exportBtn.disabled = true;
+    playBtn.disabled = true;
+    pauseBtn.disabled = true;
+    progressOuter.style.display = 'block';
+    progressInner.style.width = '0%';
+
+    const fps = Number(state.fps) || 30;
+    const mimeType = getBestMime();
+    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    const chunks = [];
+    const canvasStream = canvas.captureStream(fps);
+
+    try {
+      const sourceStream = video.captureStream ? video.captureStream() : (video.mozCaptureStream ? video.mozCaptureStream() : null);
+      if (sourceStream) {
+        sourceStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
       }
-
-      c.save();
-      c.font = `${layer.weight || 800} ${layer.fontSize}px ${defaultFonts}`;
-      c.textBaseline = 'top';
-      c.fillStyle = layer.color || '#ffffff';
-      c.textAlign = layer.align || 'left';
-      if(layer.shadow){
-        c.shadowColor = 'rgba(0,0,0,.55)';
-        c.shadowBlur = Number(layer.shadowBlur ?? 12);
-        c.shadowOffsetY = Number(layer.shadowY ?? 4);
-      }
-      let tx = box.x + box.pad;
-      if(layer.align === 'center') tx = box.x + box.w/2;
-      if(layer.align === 'right') tx = box.x + box.w - box.pad;
-      box.lines.forEach((line, index) => {
-        c.fillText(line, tx, box.y + box.pad + index * box.lineHeight);
-      });
-      c.restore();
+    } catch(err) {
+      console.warn('Audio capture indisponível', err);
     }
 
-    function drawImageLayer(c, layer){
-      if(!layer.img) return;
-      c.save();
-      c.globalAlpha = Number(layer.opacity ?? 1);
-      if(layer.multiplyWhite){
-        c.globalCompositeOperation = 'multiply';
-      }
-      c.drawImage(layer.img, layer.x, layer.y, layer.w, layer.h);
-      c.restore();
+    let recorder;
+    try {
+      recorder = new MediaRecorder(canvasStream, mimeType ? { mimeType, videoBitsPerSecond: 9000000 } : { videoBitsPerSecond: 9000000 });
+    } catch(err) {
+      setStatus('Não foi possível iniciar a gravação neste navegador.');
+      isExporting = false;
+      exportBtn.disabled = false;
+      playBtn.disabled = false;
+      pauseBtn.disabled = false;
+      return;
     }
 
-    function drawSelection(c, layer){
-      const b = layerBounds(layer);
-      c.save();
-      c.lineWidth = 5;
-      c.strokeStyle = '#ffcc00';
-      c.setLineDash([18,12]);
-      roundedRect(c, b.x, b.y, b.w, b.h, 12);
-      c.stroke();
-      c.setLineDash([]);
-      c.fillStyle = '#ffcc00';
-      c.strokeStyle = '#111';
-      c.lineWidth = 3;
-      const size = 40;
-      c.fillRect(b.x + b.w - size/2, b.y + b.h - size/2, size, size);
-      c.strokeRect(b.x + b.w - size/2, b.y + b.h - size/2, size, size);
-      c.restore();
-    }
+    recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise(resolve => recorder.onstop = resolve);
 
-    function renderComposite(c=ctx, w=BASE_W, h=BASE_H, opts={}){
-      c.save();
-      c.setTransform(1,0,0,1,0,0);
-      c.clearRect(0,0,w,h);
-      c.scale(w / BASE_W, h / BASE_H);
-      drawVideoLayer(c, BASE_W, BASE_H);
-      state.layers.forEach(layer => {
-        if(layer.type === 'image') drawImageLayer(c, layer);
-        else drawTextLayer(c, layer);
-      });
-      if(opts.showSelection && state.selectedId){
-        const selected = getSelectedLayer();
-        if(selected) drawSelection(c, selected);
-      }
-      c.restore();
-    }
+    video.pause();
+    video.currentTime = 0;
+    await new Promise(resolve => {
+      const done = () => { video.removeEventListener('seeked', done); resolve(); };
+      video.addEventListener('seeked', done);
+    });
 
-    function renderLoop(){
-      renderComposite(ctx, BASE_W, BASE_H, { showSelection:true });
-      updateTimelineUI();
-      raf = requestAnimationFrame(renderLoop);
-    }
+    setStatus(`Exportando em ${ext.toUpperCase()}... não feche esta aba.`);
+    recorder.start(250);
+    await video.play();
 
-    function startRender(){
-      if(raf) cancelAnimationFrame(raf);
-      renderLoop();
-    }
-
-    function updateTimelineUI(){
-      const dur = video.duration || 0;
-      const cur = video.currentTime || 0;
-      if(!seek.matches(':active')) seek.value = dur ? String(Math.round(cur / dur * 1000)) : '0';
-      timeText.textContent = `${fmtTime(cur)} / ${fmtTime(dur)}`;
-      playBtn.textContent = video.paused ? '▶' : 'Ⅱ';
-    }
-
-    function selectLayer(layerId){
-      state.selectedId = layerId;
-      renderComposite(ctx, BASE_W, BASE_H, { showSelection:true });
-      renderSelectedEditor();
-      renderLayersList();
-      switchTab('layers');
-    }
-
-    function getSelectedLayer(){
-      return state.layers.find(l => l.id === state.selectedId) || null;
-    }
-
-    function createTextLayer(kind){
-      const common = {
-        id:id(kind),
-        type:'text',
-        x:90,
-        y:kind === 'title' ? 170 : kind === 'subtitle' ? 330 : kind === 'price' ? 1460 : 1220,
-        w:900,
-        color:'#ffffff',
-        bgColor:'#000000',
-        bgOpacity:0,
-        radius:28,
-        padding:22,
-        align:'left',
-        weight:900,
-        shadow:true,
-        shadowBlur:16,
-        shadowY:5,
-        uppercase:false,
-        lineHeight:1.12
+    await new Promise(resolve => {
+      const tick = () => {
+        if (!isExporting) return resolve();
+        const pct = Math.min(100, (video.currentTime / video.duration) * 100);
+        progressInner.style.width = `${pct}%`;
+        if (video.ended || video.currentTime >= video.duration - .05) resolve();
+        else requestAnimationFrame(tick);
       };
-      if(kind === 'price'){
-        Object.assign(common, {
-          name:'Etiqueta de valor', text:'R$ 9,99', x:84, y:1440, w:430, fontSize:82,
-          color:'#111111', bgColor:'#ffcc00', bgOpacity:1, radius:34, padding:24, align:'center', shadow:false, uppercase:true
-        });
-      } else if(kind === 'title'){
-        Object.assign(common, { name:'Título', text:'OFERTA DO DIA', fontSize:82, uppercase:true });
-      } else if(kind === 'subtitle'){
-        Object.assign(common, { name:'Subtítulo', text:'Peça hoje e receba amanhã', fontSize:50, y:330, weight:800 });
-      } else {
-        Object.assign(common, { name:'Texto', text:'Entrega grátis em Cuiabá e VG a partir de R$ 75', fontSize:42, y:1280, weight:750, w:850 });
-      }
-      state.layers.push(common);
-      selectLayer(common.id);
-    }
-
-    function createImageLayer(img, name='Imagem'){
-      const ratio = img.naturalHeight / img.naturalWidth || 1;
-      const w = 520;
-      const h = w * ratio;
-      const layer = { id:id('image'), type:'image', name, img, x:(BASE_W-w)/2, y:1040-h/2, w, h, opacity:1, multiplyWhite:false };
-      state.layers.push(layer);
-      selectLayer(layer.id);
-    }
-
-    async function handleVideoFile(file){
-      if(!file) return;
-      const url = URL.createObjectURL(file);
-      video.src = url;
-      video.loop = true;
-      video.dataset.fileName = file.name || 'video.mp4';
-      await new Promise((resolve, reject) => {
-        video.onloadedmetadata = resolve;
-        video.onerror = reject;
-      });
-      state.videoReady = true;
-      emptyState.classList.add('hidden');
-      video.currentTime = 0;
-      renderComposite(ctx, BASE_W, BASE_H, { showSelection:true });
-      updateTimelineUI();
-    }
-
-    async function handleImageFile(file){
-      if(!file) return;
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      await img.decode();
-      createImageLayer(img, file.name || 'Imagem');
-    }
-
-    function pointerToCanvas(e){
-      const rect = stage.getBoundingClientRect();
-      return {
-        x:(e.clientX - rect.left) * BASE_W / rect.width,
-        y:(e.clientY - rect.top) * BASE_H / rect.height
-      };
-    }
-
-    function pointInBounds(p,b){
-      return p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
-    }
-
-    function pointInResizeHandle(p,b){
-      const size = 70;
-      return p.x >= b.x + b.w - size && p.x <= b.x + b.w + size && p.y >= b.y + b.h - size && p.y <= b.y + b.h + size;
-    }
-
-    stage.addEventListener('pointerdown', (e) => {
-      stage.setPointerCapture(e.pointerId);
-      const p = pointerToCanvas(e);
-      let hit = null;
-      for(let i = state.layers.length - 1; i >= 0; i--){
-        const layer = state.layers[i];
-        const b = layerBounds(layer);
-        if(pointInBounds(p,b) || pointInResizeHandle(p,b)){
-          hit = { layer, bounds:b };
-          break;
-        }
-      }
-      if(!hit){
-        state.selectedId = null;
-        dragState = null;
-        renderSelectedEditor();
-        renderLayersList();
-        renderComposite(ctx, BASE_W, BASE_H, { showSelection:true });
-        return;
-      }
-      selectLayer(hit.layer.id);
-      const selected = hit.layer;
-      const b = layerBounds(selected);
-      dragState = {
-        mode: pointInResizeHandle(p,b) ? 'resize' : 'move',
-        id:selected.id,
-        startX:p.x,
-        startY:p.y,
-        origX:selected.x,
-        origY:selected.y,
-        origW:b.w,
-        origH:b.h
-      };
+      tick();
     });
 
-    stage.addEventListener('pointermove', (e) => {
-      if(!dragState) return;
-      e.preventDefault();
-      const p = pointerToCanvas(e);
-      const layer = state.layers.find(l => l.id === dragState.id);
-      if(!layer) return;
-      const dx = p.x - dragState.startX;
-      const dy = p.y - dragState.startY;
-      if(dragState.mode === 'move'){
-        layer.x = Math.round(dragState.origX + dx);
-        layer.y = Math.round(dragState.origY + dy);
-      }else{
-        const newW = Math.max(110, dragState.origW + dx);
-        if(layer.type === 'image'){
-          const ratio = dragState.origH / dragState.origW;
-          layer.w = Math.round(newW);
-          layer.h = Math.round(newW * ratio);
-        }else{
-          layer.w = Math.round(Math.max(180, newW));
-        }
-      }
-      renderComposite(ctx, BASE_W, BASE_H, { showSelection:true });
-      renderSelectedEditor(false);
-      renderLayersList();
-    }, { passive:false });
+    video.pause();
+    if (recorder.state !== 'inactive') recorder.stop();
+    await stopped;
+    progressInner.style.width = '100%';
 
-    stage.addEventListener('pointerup', () => { dragState = null; });
-    stage.addEventListener('pointercancel', () => { dragState = null; });
+    const blob = new Blob(chunks, { type: mimeType || `video/${ext}` });
+    const fileName = `video-dona-antonia-${new Date().toISOString().slice(0,19).replace(/[T:]/g,'-')}.${ext}`;
+    downloadBlob(blob, fileName);
+    const msg = ext === 'mp4'
+      ? 'Vídeo MP4 exportado com o layout da Dona Antônia.'
+      : 'Seu navegador não liberou MP4 pelo MediaRecorder; baixei em WebM com a mesma qualidade visual.';
+    setStatus(msg);
 
-    function switchTab(name){
-      $$('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
-      $$('.panel').forEach(panel => panel.classList.toggle('active', panel.id === `panel-${name}`));
+    isExporting = false;
+    exportBtn.disabled = false;
+    playBtn.disabled = false;
+    pauseBtn.disabled = false;
+  }
+  exportBtn.addEventListener('click', exportVideo);
+
+  snapshotBtn.addEventListener('click', () => {
+    canvas.toBlob(blob => {
+      if (blob) downloadBlob(blob, `frame-dona-antonia-${Date.now()}.png`);
+    }, 'image/png', 1);
+  });
+
+  document.getElementById('resetLayout').addEventListener('click', () => {
+    state = { ...defaults };
+    applyStateToInputs();
+    setStatus('Modelo do anexo restaurado.');
+  });
+  document.getElementById('savePreset').addEventListener('click', () => {
+    localStorage.setItem('donaAntoniaVideoPreset', JSON.stringify(state));
+    setStatus('Preset salvo neste navegador.');
+  });
+  document.getElementById('loadPreset').addEventListener('click', () => {
+    const raw = localStorage.getItem('donaAntoniaVideoPreset');
+    if (!raw) { setStatus('Nenhum preset salvo neste navegador.'); return; }
+    try {
+      state = { ...defaults, ...JSON.parse(raw) };
+      applyStateToInputs();
+      setStatus('Preset carregado.');
+    } catch(err) {
+      setStatus('Preset salvo está inválido.');
     }
+  });
 
-    $$('.tab').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
-
-    videoInput.addEventListener('change', e => handleVideoFile(e.target.files[0]));
-    imageInput.addEventListener('change', e => handleImageFile(e.target.files[0]));
-    $('#addPriceBtn').addEventListener('click', () => createTextLayer('price'));
-    $('#addTitleBtn').addEventListener('click', () => createTextLayer('title'));
-    $('#addSubtitleBtn').addEventListener('click', () => createTextLayer('subtitle'));
-    $('#addTextBtn').addEventListener('click', () => createTextLayer('text'));
-
-    playBtn.addEventListener('click', async () => {
-      if(!state.videoReady) return;
-      if(video.paused){
-        try{ await video.play(); }catch(err){ console.warn(err); }
-      }else video.pause();
-      updateTimelineUI();
-    });
-
-    seek.addEventListener('input', () => {
-      if(!state.videoReady || !video.duration) return;
-      video.currentTime = Number(seek.value) / 1000 * video.duration;
-      renderComposite(ctx, BASE_W, BASE_H, { showSelection:true });
-    });
-
-    function bindAdjustment(idName, key, suffix=''){
-      const input = $('#' + idName);
-      const out = $('#' + idName + 'Out');
-      const update = () => {
-        state.settings[key] = Number(input.value);
-        out.textContent = `${input.value}${suffix}`;
-        renderComposite(ctx, BASE_W, BASE_H, { showSelection:true });
-      };
-      input.addEventListener('input', update);
-      update();
-    }
-
-    bindAdjustment('brightness','brightness','%');
-    bindAdjustment('contrast','contrast','%');
-    bindAdjustment('saturation','saturation','%');
-    bindAdjustment('sharpness','sharpness','%');
-    bindAdjustment('vignette','vignette','%');
-    bindAdjustment('vignetteSize','vignetteSize','%');
-    bindAdjustment('videoZoom','videoZoom','%');
-    bindAdjustment('videoX','videoX','');
-    bindAdjustment('videoY','videoY','');
-
-    $('#resetAdjustBtn').addEventListener('click', () => {
-      const defaults = {brightness:100,contrast:100,saturation:100,sharpness:0,vignette:0,vignetteSize:58,videoZoom:100,videoX:0,videoY:0};
-      Object.assign(state.settings, defaults);
-      Object.entries(defaults).forEach(([key,val]) => {
-        const map = { saturation:'saturation', brightness:'brightness', contrast:'contrast', sharpness:'sharpness', vignette:'vignette', vignetteSize:'vignetteSize', videoZoom:'videoZoom', videoX:'videoX', videoY:'videoY' };
-        const el = $('#' + map[key]);
-        if(el) el.value = val;
-      });
-      ['brightness','contrast','saturation','sharpness','vignette','vignetteSize','videoZoom','videoX','videoY'].forEach(el => $('#' + el).dispatchEvent(new Event('input')));
-    });
-
-    function renderSelectedEditor(refreshInputs=true){
-      const layer = getSelectedLayer();
-      if(!layer){
-        selectedEditor.innerHTML = `<div class="status">Nenhuma camada selecionada. Toque em uma imagem, etiqueta ou texto no vídeo.</div>`;
-        return;
-      }
-      const b = layerBounds(layer);
-      if(layer.type === 'image'){
-        selectedEditor.innerHTML = `
-          <div class="status ok">Selecionado: ${escapeHtml(layer.name || 'Imagem')}</div>
-          <div class="grid2">
-            <div class="field"><label>Posição X <output>${Math.round(layer.x)}</output></label><input data-prop="x" type="range" min="-300" max="1100" value="${Math.round(layer.x)}"></div>
-            <div class="field"><label>Posição Y <output>${Math.round(layer.y)}</output></label><input data-prop="y" type="range" min="-400" max="2000" value="${Math.round(layer.y)}"></div>
-            <div class="field"><label>Tamanho <output>${Math.round(layer.w)}</output></label><input data-prop="w" type="range" min="80" max="1200" value="${Math.round(layer.w)}"></div>
-            <div class="field"><label>Opacidade <output>${Math.round((layer.opacity ?? 1)*100)}%</output></label><input data-prop="opacity" type="range" min="0" max="100" value="${Math.round((layer.opacity ?? 1)*100)}"></div>
-          </div>
-          <label class="switchRow"><span>Suavizar fundo branco da imagem</span><input data-prop="multiplyWhite" type="checkbox" ${layer.multiplyWhite ? 'checked' : ''}></label>
-        `;
-      }else{
-        selectedEditor.innerHTML = `
-          <div class="status ok">Selecionado: ${escapeHtml(layer.name || 'Texto')}</div>
-          <div class="field"><label>Conteúdo</label><textarea class="textarea" data-prop="text">${escapeHtml(layer.text || '')}</textarea></div>
-          <div class="grid2">
-            <div class="field"><label>Posição X <output>${Math.round(layer.x)}</output></label><input data-prop="x" type="range" min="-200" max="1080" value="${Math.round(layer.x)}"></div>
-            <div class="field"><label>Posição Y <output>${Math.round(layer.y)}</output></label><input data-prop="y" type="range" min="-200" max="1900" value="${Math.round(layer.y)}"></div>
-            <div class="field"><label>Largura <output>${Math.round(layer.w)}</output></label><input data-prop="w" type="range" min="180" max="1050" value="${Math.round(layer.w)}"></div>
-            <div class="field"><label>Tamanho fonte <output>${Math.round(layer.fontSize)}</output></label><input data-prop="fontSize" type="range" min="22" max="132" value="${Math.round(layer.fontSize)}"></div>
-            <div class="field"><label>Peso fonte</label><select class="select" data-prop="weight"><option value="600" ${layer.weight==600?'selected':''}>Médio</option><option value="800" ${layer.weight==800?'selected':''}>Forte</option><option value="900" ${layer.weight==900?'selected':''}>Extra forte</option></select></div>
-            <div class="field"><label>Alinhamento</label><select class="select" data-prop="align"><option value="left" ${layer.align==='left'?'selected':''}>Esquerda</option><option value="center" ${layer.align==='center'?'selected':''}>Centro</option><option value="right" ${layer.align==='right'?'selected':''}>Direita</option></select></div>
-          </div>
-          <div class="grid2">
-            <div class="field"><label>Cor do texto</label><input data-prop="color" type="color" value="${layer.color || '#ffffff'}"></div>
-            <div class="field"><label>Cor do fundo</label><input data-prop="bgColor" type="color" value="${layer.bgColor || '#000000'}"></div>
-          </div>
-          <div class="field"><label>Opacidade do fundo <output>${Math.round((layer.bgOpacity ?? 0)*100)}%</output></label><input data-prop="bgOpacity" type="range" min="0" max="100" value="${Math.round((layer.bgOpacity ?? 0)*100)}"></div>
-          <div class="grid2">
-            <label class="switchRow"><span>Sombra</span><input data-prop="shadow" type="checkbox" ${layer.shadow ? 'checked' : ''}></label>
-            <label class="switchRow"><span>Maiúsculo</span><input data-prop="uppercase" type="checkbox" ${layer.uppercase ? 'checked' : ''}></label>
-          </div>
-        `;
-      }
-
-      selectedEditor.querySelectorAll('input, textarea, select').forEach(input => {
-        input.addEventListener('input', () => {
-          const prop = input.dataset.prop;
-          if(!prop) return;
-          if(input.type === 'checkbox'){
-            layer[prop] = input.checked;
-          }else if(prop === 'text' || prop === 'color' || prop === 'bgColor' || prop === 'align'){
-            layer[prop] = input.value;
-          }else if(prop === 'weight'){
-            layer[prop] = Number(input.value);
-          }else if(prop === 'opacity'){
-            layer[prop] = Number(input.value) / 100;
-          }else if(prop === 'bgOpacity'){
-            layer[prop] = Number(input.value) / 100;
-          }else if(prop === 'w' && layer.type === 'image'){
-            const ratio = layer.h / layer.w;
-            layer.w = Number(input.value);
-            layer.h = Math.round(layer.w * ratio);
-          }else{
-            layer[prop] = Number(input.value);
-          }
-          renderComposite(ctx, BASE_W, BASE_H, { showSelection:true });
-          renderLayersList();
-          if(input.type === 'range'){
-            const output = input.closest('.field')?.querySelector('output');
-            if(output){
-              let val = input.value;
-              if(prop === 'opacity' || prop === 'bgOpacity') val += '%';
-              output.textContent = val;
-            }
-          }
-        });
-      });
-    }
-
-    function renderLayersList(){
-      if(state.layers.length === 0){
-        layersList.innerHTML = `<div class="status">Adicione imagem, etiqueta, título, subtítulo ou texto.</div>`;
-        return;
-      }
-      layersList.innerHTML = state.layers.slice().reverse().map(layer => {
-        const active = layer.id === state.selectedId;
-        const label = layer.type === 'image' ? 'Imagem' : 'Texto';
-        const text = layer.type === 'image' ? layer.name : layer.text;
-        return `
-          <div class="layerItem ${active ? 'active' : ''}" data-layer-id="${layer.id}">
-            <div style="min-width:0">
-              <div class="layerName">${escapeHtml(text || layer.name || label)}</div>
-              <div class="layerMeta">${label} · toque para editar</div>
-            </div>
-            <button class="smallBtn" data-layer-id="${layer.id}">Editar</button>
-          </div>
-        `;
-      }).join('');
-      layersList.querySelectorAll('[data-layer-id]').forEach(el => {
-        el.addEventListener('click', () => selectLayer(el.dataset.layerId));
-      });
-    }
-
-    function escapeHtml(str){
-      return String(str ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
-    }
-
-    function moveSelected(direction){
-      const index = state.layers.findIndex(l => l.id === state.selectedId);
-      if(index < 0) return;
-      const newIndex = direction === 'front' ? Math.min(state.layers.length - 1, index + 1) : Math.max(0, index - 1);
-      if(newIndex === index) return;
-      const [item] = state.layers.splice(index,1);
-      state.layers.splice(newIndex,0,item);
-      renderComposite(ctx, BASE_W, BASE_H, { showSelection:true });
-      renderLayersList();
-    }
-
-    $('#frontBtn').addEventListener('click', () => moveSelected('front'));
-    $('#backBtn').addEventListener('click', () => moveSelected('back'));
-    $('#deleteBtn').addEventListener('click', () => {
-      if(!state.selectedId) return;
-      state.layers = state.layers.filter(l => l.id !== state.selectedId);
-      state.selectedId = null;
-      renderComposite(ctx, BASE_W, BASE_H, { showSelection:true });
-      renderSelectedEditor();
-      renderLayersList();
-    });
-
-    function chooseMime(){
-      const options = [
-        'video/webm;codecs=vp9,opus',
-        'video/webm;codecs=vp8,opus',
-        'video/webm'
-      ];
-      return options.find(m => MediaRecorder.isTypeSupported(m)) || '';
-    }
-
-    async function waitForSeek(target){
-      return new Promise((resolve) => {
-        const done = () => { video.removeEventListener('seeked', done); resolve(); };
-        video.addEventListener('seeked', done, { once:true });
-        video.currentTime = target;
-        setTimeout(done, 900);
-      });
-    }
-
-    async function ensureFFmpeg(){
-      if(ffmpegLoaded) return;
-      setExportStatus('Carregando motor de conversão MP4...', '');
-      ffmpeg = new FFmpeg();
-      ffmpeg.on('log', ({ message }) => {
-        if(/frame=|time=|speed=/.test(message)) setExportStatus('Convertendo para MP4...\n' + message, '');
-      });
-      ffmpeg.on('progress', ({ progress }) => {
-        const p = Math.max(0, Math.min(100, Math.round(progress * 100)));
-        progressFill.style.width = `${p}%`;
-      });
-      const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm';
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm')
-      });
-      ffmpegLoaded = true;
-    }
-
-    function setExportStatus(message, type=''){
-      exportStatus.textContent = message;
-      exportStatus.className = `status ${type}`.trim();
-    }
-
-    function getAudioDestinationStream(){
-      if(!audioCtx){
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if(!AC) return null;
-        audioCtx = new AC();
-        audioSource = audioCtx.createMediaElementSource(video);
-        audioDestination = audioCtx.createMediaStreamDestination();
-        audioSource.connect(audioDestination);
-      }
-      return audioDestination.stream;
-    }
-
-    async function exportVideo(){
-      if(!state.videoReady){
-        setExportStatus('Suba um vídeo antes de exportar.', 'err');
-        switchTab('media');
-        return;
-      }
-      if(typeof MediaRecorder === 'undefined'){
-        setExportStatus('Este navegador não tem MediaRecorder. Use Chrome, Edge ou outro navegador moderno.', 'err');
-        return;
-      }
-
-      downloadBox.innerHTML = '';
-      progressFill.style.width = '0%';
-      $('#exportBtn').classList.add('disabled');
-      $('#exportTopBtn').classList.add('disabled');
-
-      const oldLoop = video.loop;
-      const oldMuted = video.muted;
-      const oldVolume = video.volume;
-      const wasPaused = video.paused;
-      const oldTime = video.currentTime;
-      const selected = state.selectedId;
-      state.selectedId = null;
-
-      try{
-        const exportW = Number($('#resolution').value);
-        const exportH = Math.round(exportW * 16 / 9);
-        const fps = Number($('#fps').value);
-        const crf = String($('#quality').value);
-        const exportCanvas = document.createElement('canvas');
-        exportCanvas.width = exportW;
-        exportCanvas.height = exportH;
-        const exportCtx = exportCanvas.getContext('2d', { alpha:false, desynchronized:false });
-        const stream = exportCanvas.captureStream(fps);
-
-        if($('#keepAudio').checked){
-          try{
-            const audioStream = getAudioDestinationStream();
-            if(audioStream){
-              await audioCtx.resume();
-              audioStream.getAudioTracks().forEach(track => stream.addTrack(track));
-            }
-          }catch(audioErr){
-            console.warn('Áudio não pôde ser preservado:', audioErr);
-          }
-        }
-
-        const mimeType = chooseMime();
-        const recorder = new MediaRecorder(stream, {
-          mimeType,
-          videoBitsPerSecond: exportW >= 1080 ? 12000000 : 7000000,
-          audioBitsPerSecond: 128000
-        });
-        const chunks = [];
-        recorder.ondataavailable = ev => { if(ev.data && ev.data.size) chunks.push(ev.data); };
-
-        video.pause();
-        video.loop = false;
-        video.muted = true;
-        video.volume = 0;
-        await waitForSeek(0);
-        await new Promise(resolve => setTimeout(resolve, 150));
-
-        setExportStatus('Renderizando vídeo editado...', '');
-        recorder.start(500);
-
-        let stopRequested = false;
-        const drawForRecord = () => {
-          renderComposite(exportCtx, exportW, exportH, { showSelection:false });
-          if(!video.ended && !stopRequested){
-            requestAnimationFrame(drawForRecord);
-          }
-        };
-        drawForRecord();
-
-        await video.play();
-        await new Promise(resolve => {
-          const stop = () => {
-            if(stopRequested) return;
-            stopRequested = true;
-            setTimeout(resolve, 350);
-          };
-          video.addEventListener('ended', stop, { once:true });
-          setTimeout(stop, Math.max(2000, (video.duration || 0) * 1000 + 2000));
-        });
-
-        if(recorder.state !== 'inactive'){
-          await new Promise(resolve => {
-            recorder.onstop = resolve;
-            recorder.stop();
-          });
-        }
-
-        const webmBlob = new Blob(chunks, { type:mimeType || 'video/webm' });
-        if(!webmBlob.size) throw new Error('A gravação WebM saiu vazia. Tente novamente em Chrome ou Edge.');
-
-        setExportStatus('Preparando conversão para MP4...', '');
-        await ensureFFmpeg();
-
-        try{ await ffmpeg.deleteFile('input.webm'); }catch(_){ }
-        try{ await ffmpeg.deleteFile('output.mp4'); }catch(_){ }
-
-        await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob));
-        progressFill.style.width = '10%';
-        setExportStatus('Convertendo para MP4 em alta resolução...', '');
-        await ffmpeg.exec([
-          '-i','input.webm',
-          '-c:v','libx264',
-          '-preset','veryfast',
-          '-crf', crf,
-          '-pix_fmt','yuv420p',
-          '-c:a','aac',
-          '-b:a','128k',
-          '-movflags','faststart',
-          'output.mp4'
-        ]);
-        const data = await ffmpeg.readFile('output.mp4');
-        const mp4Blob = new Blob([data.buffer], { type:'video/mp4' });
-        const url = URL.createObjectURL(mp4Blob);
-        const name = `${safeFileName(video.dataset.fileName)}-editado.mp4`;
-        downloadBox.innerHTML = `<a class="downloadLink" download="${name}" href="${url}">Baixar MP4 pronto</a>`;
-        progressFill.style.width = '100%';
-        setExportStatus(`Pronto! MP4 exportado em ${exportW} × ${exportH}.`, 'ok');
-      }catch(err){
-        console.error(err);
-        setExportStatus('Não consegui finalizar o MP4 neste navegador/celular. Erro: ' + (err?.message || err), 'err');
-      }finally{
-        state.selectedId = selected;
-        video.loop = oldLoop;
-        video.muted = oldMuted;
-        video.volume = oldVolume;
-        if(Number.isFinite(oldTime)){
-          try{ await waitForSeek(Math.min(oldTime, video.duration || oldTime)); }catch(_){ }
-        }
-        if(!wasPaused){
-          try{ await video.play(); }catch(_){ }
-        }
-        renderComposite(ctx, BASE_W, BASE_H, { showSelection:true });
-        renderSelectedEditor();
-        renderLayersList();
-        $('#exportBtn').classList.remove('disabled');
-        $('#exportTopBtn').classList.remove('disabled');
-      }
-    }
-
-    $('#exportBtn').addEventListener('click', exportVideo);
-    $('#exportTopBtn').addEventListener('click', () => { switchTab('export'); exportVideo(); });
-
-    renderSelectedEditor();
-    renderLayersList();
-    startRender();
-  </script>
+  bindControls();
+  render();
+})();
+</script>
 </body>
 </html>
