@@ -6145,43 +6145,11 @@ body.checkout-open .app-bottom-bar {
 
 /* =========================================================
    CUPONS NA HOME - carrossel automático por cuponsativos.json
+   Visual limpo: desconto grande + seção + clique para ativar.
    ========================================================= */
 .coupon-home-carousel-da {
-    margin: -10px 0 22px 0;
+    margin: -8px 0 22px 0;
     width: 100%;
-}
-.coupon-home-head-da {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 12px;
-    margin: 0 0 10px 0;
-    padding: 0 2px;
-}
-.coupon-home-title-da {
-    margin: 0;
-    font-size: 16px;
-    line-height: 1.1;
-    font-weight: 950;
-    letter-spacing: -0.04em;
-    color: var(--text-dark);
-}
-.coupon-home-subtitle-da {
-    margin: 3px 0 0 0;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text-light);
-    line-height: 1.25;
-}
-.coupon-home-count-da {
-    flex-shrink: 0;
-    font-size: 11px;
-    font-weight: 900;
-    color: #14532d;
-    background: #dcfce7;
-    border: 1px solid #bbf7d0;
-    border-radius: 999px;
-    padding: 6px 9px;
 }
 .coupon-home-track-da {
     display: flex;
@@ -6198,10 +6166,10 @@ body.checkout-open .app-bottom-bar {
     position: relative;
     flex: 0 0 calc((100% - 20px) / 2.5);
     min-width: 128px;
-    min-height: 185px;
+    min-height: 178px;
     border: 0;
     border-radius: 22px;
-    padding: 14px 12px;
+    padding: 15px 12px;
     scroll-snap-align: start;
     text-align: left;
     color: #ffffff;
@@ -6210,120 +6178,91 @@ body.checkout-open .app-bottom-bar {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
     touch-action: manipulation;
+    isolation: isolate;
 }
 .coupon-home-card-da::before {
     content: "";
     position: absolute;
     inset: 0;
-    background:
-        radial-gradient(circle at 88% 8%, rgba(255,255,255,.34), transparent 34%),
-        radial-gradient(circle at 4% 100%, rgba(255,255,255,.18), transparent 36%);
+    background: radial-gradient(circle at 92% 8%, rgba(255,255,255,.26), transparent 32%);
     pointer-events: none;
+    z-index: 0;
 }
-.coupon-home-card-da::after {
-    content: attr(data-code);
-    position: absolute;
-    right: -26px;
-    bottom: 24px;
-    transform: rotate(-90deg);
-    font-size: 28px;
-    font-weight: 950;
-    letter-spacing: .08em;
-    color: rgba(255,255,255,.10);
-    pointer-events: none;
-    white-space: nowrap;
-}
+.coupon-home-card-da::after { display: none !important; content: none !important; }
 .coupon-home-card-da:active { transform: scale(.985); }
-.coupon-home-card-da.tema-beleza { background: linear-gradient(145deg, #831843 0%, #be185d 58%, #f9a8d4 100%); }
-.coupon-home-card-da.tema-cafe { background: linear-gradient(145deg, #7c2d12 0%, #c2410c 58%, #fed7aa 100%); }
-.coupon-home-card-da.tema-cliente { background: linear-gradient(145deg, #064e3b 0%, #16a34a 58%, #bbf7d0 100%); }
-.coupon-home-card-da.tema-padrao { background: linear-gradient(145deg, #0f172a 0%, #334155 60%, #cbd5e1 100%); }
+.coupon-home-card-da.tema-beleza { background: linear-gradient(145deg, #be185d 0%, #ec4899 100%); }
+.coupon-home-card-da.tema-cafe { background: linear-gradient(145deg, #9a3412 0%, #f97316 100%); }
+.coupon-home-card-da.tema-cliente { background: linear-gradient(145deg, #047857 0%, #22c55e 100%); }
+.coupon-home-card-da.tema-padrao { background: linear-gradient(145deg, #0f172a 0%, #334155 100%); }
 .coupon-home-card-top-da,
 .coupon-home-card-bottom-da {
     position: relative;
     z-index: 1;
 }
-.coupon-home-pill-da {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 999px;
-    padding: 5px 8px;
-    background: rgba(255,255,255,.94);
-    color: #0f172a;
-    font-size: 10px;
-    line-height: 1;
-    font-weight: 950;
-    letter-spacing: .035em;
-    margin-bottom: 10px;
-}
+.coupon-home-pill-da,
+.coupon-home-code-da { display: none !important; }
 .coupon-home-card-title-da {
     display: block;
     color: #ffffff;
-    font-size: 19px;
-    line-height: .98;
-    font-weight: 950;
-    letter-spacing: -0.06em;
-    max-width: 92%;
+    font-size: 31px;
+    line-height: .9;
+    font-weight: 1000;
+    letter-spacing: -0.085em;
+    max-width: 100%;
+    text-transform: uppercase;
 }
 .coupon-home-card-text-da {
-    margin: 8px 0 0 0;
-    color: rgba(255,255,255,.86);
-    font-size: 11.2px;
-    line-height: 1.25;
-    font-weight: 760;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    display: block;
+    margin: 10px 0 0 0;
+    color: rgba(255,255,255,.94);
+    font-size: 13px;
+    line-height: 1.12;
+    font-weight: 900;
+    letter-spacing: -0.025em;
 }
-.coupon-home-code-da {
+.coupon-home-cta-da {
     display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: max-content;
     max-width: 100%;
     border-radius: 999px;
-    padding: 7px 9px;
-    background: rgba(255,255,255,.95);
-    color: #111827;
+    padding: 8px 10px;
+    background: rgba(255,255,255,.96);
+    color: #0f172a;
     font-size: 11px;
     line-height: 1;
     font-weight: 950;
-    letter-spacing: .045em;
-    box-shadow: 0 8px 18px rgba(15,23,42,.12);
-}
-.coupon-home-cta-da {
-    margin-top: 8px;
-    font-size: 10.5px;
-    font-weight: 900;
-    color: rgba(255,255,255,.9);
+    letter-spacing: -0.01em;
+    box-shadow: none;
 }
 @media (min-width: 768px) {
-    .coupon-home-carousel-da { margin: -6px 0 28px 0; }
-    .coupon-home-title-da { font-size: 21px; }
-    .coupon-home-subtitle-da { font-size: 13px; }
+    .coupon-home-carousel-da { margin: -4px 0 28px 0; }
     .coupon-home-track-da {
         gap: 14px;
         padding-bottom: 14px;
     }
     .coupon-home-card-da {
         flex: 0 0 calc((100% - 42px) / 4);
-        min-width: 240px;
-        min-height: 168px;
+        min-width: 230px;
+        min-height: 158px;
         border-radius: 24px;
         padding: 18px;
     }
-    .coupon-home-card-title-da { font-size: 24px; max-width: 88%; }
-    .coupon-home-card-text-da { font-size: 13px; max-width: 82%; }
-    .coupon-home-pill-da { font-size: 11px; padding: 6px 10px; }
-    .coupon-home-code-da { font-size: 12px; padding: 8px 11px; }
+    .coupon-home-card-title-da { font-size: 40px; }
+    .coupon-home-card-text-da { font-size: 15px; max-width: 92%; }
+    .coupon-home-cta-da { font-size: 12px; padding: 9px 13px; }
 }
 @media (max-width: 390px) {
     .coupon-home-card-da {
         flex-basis: calc((100% - 18px) / 2.35);
         min-width: 122px;
+        min-height: 170px;
     }
-    .coupon-home-card-title-da { font-size: 17px; }
+    .coupon-home-card-title-da { font-size: 27px; }
+    .coupon-home-card-text-da { font-size: 12px; }
 }
 
         </style>
@@ -13088,7 +13027,7 @@ updateTotals = function() {
     if ($('sum-agendamento-desc')) $('sum-agendamento-desc').innerText = '- R$ 0,00';
     if ($('sum-agendamento-row')) $('sum-agendamento-row').style.display = 'none';
 
-    if ($('sum-cupom-label')) $('sum-cupom-label').innerText = cupomResumo.codigo ? `Cupom ${cupomResumo.codigo}` : 'Desconto do Cupom';
+    if ($('sum-cupom-label')) $('sum-cupom-label').innerText = cupomResumo.valido ? 'Desconto ativado' : 'Desconto do Cupom';
     if ($('sum-cupom-desc')) $('sum-cupom-desc').innerText = `- ${fmt(descontoCupom)}`;
     if ($('sum-cupom-row')) $('sum-cupom-row').style.display = descontoCupom > 0 ? 'flex' : 'none';
 
@@ -14761,6 +14700,24 @@ renderInicio = function() {
                 font-size:12px;
                 margin-bottom:12px;
             }
+            .smart-coupon-hero-da.smart-coupon-hero-min-da {
+                background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
+                padding: 16px 16px;
+                margin-bottom: 14px;
+                border-radius: 20px;
+                box-shadow: none;
+            }
+            .smart-coupon-hero-da.smart-coupon-hero-min-da h1 {
+                margin: 0;
+                font-size: 24px;
+                line-height: 1.05;
+                letter-spacing: -0.055em;
+                color: #ffffff;
+            }
+            .smart-coupon-hero-da.smart-coupon-hero-min-da p,
+            .smart-coupon-hero-da.smart-coupon-hero-min-da .smart-coupon-pill-da {
+                display: none !important;
+            }
             @media (min-width: 768px) {
                 .smart-coupon-banner-da {
                     left: auto;
@@ -14838,7 +14795,7 @@ renderInicio = function() {
         if (typeof aplicarCupomCheckoutDA === 'function') aplicarCupomCheckoutDA();
         else if (typeof updateTotals === 'function') updateTotals();
 
-        if (typeof showToast === 'function') showToast(`Cupom ${alvo} ativado.`);
+        if (typeof showToast === 'function') showToast('Desconto ativado.');
 
         if ((window.location.hash || '') !== campanha.rota) {
             window.location.hash = campanha.rota;
@@ -14860,6 +14817,9 @@ renderInicio = function() {
     }
 
     function verificarCampanhaPorProdutoSmartCupomDA(prod) {
+        // Cupons promocionais agora são ativados somente pelos banners da home/campanha.
+        // Isso evita que o desconto apareça ao navegar por outras abas.
+        return;
         if (!prod || Number(prod.stock || 0) <= 0) return;
         if (cupomAtualSmartCupomDA()) return;
 
@@ -15013,6 +14973,7 @@ renderInicio = function() {
    ========================================================= */
 (function cuponsHomeMaiorDescontoDA() {
     const CUPOM_ATIVO_STORAGE_DA = 'dona_antonia_cupom_contextual_v2';
+    const CUPOM_ITENS_STORAGE_DA = 'dona_antonia_cupom_itens_contextuais_v1';
 
     function escDA(valor) {
         if (typeof escapeAttrDA === 'function') return escapeAttrDA(valor);
@@ -15051,6 +15012,28 @@ renderInicio = function() {
         return 'padrao';
     }
 
+    function areaCupomHomeDA(cupom, modo) {
+        const codigo = codigoCupomHomeDA(cupom && cupom.codigo);
+        const tema = temaCupomHomeDA(cupom);
+        const cats = listaCupomHomeDA(cupom && cupom.categorias).filter(Boolean);
+        if (tema === 'beleza' || codigo.includes('BELEZA')) return modo === 'home' ? 'produtos de beleza' : 'Beleza';
+        if (tema === 'cafe' || codigo.includes('CAFE') || codigo.includes('CAFÉ')) return modo === 'home' ? 'café da manhã' : 'Café da manhã';
+        if (tema === 'cliente' || codigo.includes('CLIENTE')) return modo === 'home' ? 'primeira compra' : 'Primeira compra';
+        if (cats.length) return modo === 'home' ? cats[0].toLowerCase() : cats[0];
+        return modo === 'home' ? 'produtos selecionados' : 'Produtos selecionados';
+    }
+
+    function descontoTextoCupomHomeDA(cupom) {
+        const tipo = String(cupom && cupom.tipo || 'percentual').toLowerCase();
+        const desconto = Math.round(Number(cupom && cupom.desconto || 0));
+        if (tipo.includes('percent')) return `${desconto}% OFF`;
+        return typeof fmt === 'function' ? `${fmt(desconto)} OFF` : `${desconto} OFF`;
+    }
+
+    function textoHeroCupomHomeDA(cupom) {
+        return `${descontoTextoCupomHomeDA(cupom)} em ${areaCupomHomeDA(cupom, 'hero')}. Aproveite.`;
+    }
+
     function tituloCupomHomeDA(cupom) {
         const pct = Math.round(Number(cupom && cupom.desconto || 0));
         return String(cupom?.tituloBanner || cupom?.titulo_banner || cupom?.titulo || (pct ? `${pct}% OFF` : 'Cupom ativo')).trim();
@@ -15084,32 +15067,20 @@ renderInicio = function() {
         if (!cupons.length) return '';
         const cards = cupons.map(cupom => {
             const codigo = codigoCupomHomeDA(cupom.codigo);
-            const desconto = Math.round(Number(cupom.desconto || 0));
-            const tipo = String(cupom.tipo || 'percentual').toLowerCase();
-            const labelDesconto = tipo.includes('percent') ? `${desconto}% OFF` : (typeof fmt === 'function' ? `${fmt(desconto)} OFF` : `${desconto} OFF`);
-            const valorMinimo = Number(cupom.valorMinimo || 0);
-            const minimo = valorMinimo > 0 ? `Mínimo ${typeof fmt === 'function' ? fmt(valorMinimo) : valorMinimo}` : 'Sem mínimo';
             const tema = temaCupomHomeDA(cupom);
-            return `<button type="button" class="coupon-home-card-da tema-${escDA(tema)}" data-code="${escDA(codigo)}" onclick="ativarCampanhaCupomDA('${escDA(codigo)}'); return false;" aria-label="Ativar cupom ${escDA(codigo)}">
+            const descontoTxt = descontoTextoCupomHomeDA(cupom);
+            const areaTxt = areaCupomHomeDA(cupom, 'home');
+            return `<button type="button" class="coupon-home-card-da tema-${escDA(tema)}" data-code="${escDA(codigo)}" onclick="ativarCampanhaCupomDA('${escDA(codigo)}'); return false;" aria-label="Ativar desconto em ${escDA(areaTxt)}">
                 <span class="coupon-home-card-top-da">
-                    <span class="coupon-home-pill-da">${escDA(labelDesconto)}</span>
-                    <strong class="coupon-home-card-title-da">${escDA(tituloCupomHomeDA(cupom))}</strong>
-                    <span class="coupon-home-card-text-da">${escDA(subtituloCupomHomeDA(cupom))}</span>
+                    <strong class="coupon-home-card-title-da">${escDA(descontoTxt)}</strong>
+                    <span class="coupon-home-card-text-da">em ${escDA(areaTxt)}</span>
                 </span>
                 <span class="coupon-home-card-bottom-da">
-                    <span class="coupon-home-code-da">${escDA(codigo)}</span>
-                    <span class="coupon-home-cta-da">${escDA(botaoCupomHomeDA(cupom))} • ${escDA(minimo)}</span>
+                    <span class="coupon-home-cta-da">Clique para ativar</span>
                 </span>
             </button>`;
         }).join('');
         return `<section class="coupon-home-carousel-da" aria-label="Cupons de desconto ativos">
-            <div class="coupon-home-head-da">
-                <div>
-                    <h2 class="coupon-home-title-da">Cupons ativos</h2>
-                    <p class="coupon-home-subtitle-da">Ative o cupom e o site abre a seção certa automaticamente.</p>
-                </div>
-                <span class="coupon-home-count-da">${cupons.length} ativo${cupons.length === 1 ? '' : 's'}</span>
-            </div>
             <div class="coupon-home-track-da">${cards}</div>
         </section>`;
     };
@@ -15150,9 +15121,121 @@ renderInicio = function() {
         return Math.max(precoAtual - precoComMaiorDesconto, 0) * quantidade;
     }
 
+    function rotaAtualCupomHomeDA(codigo) {
+        const hash = String(window.location.hash || '');
+        if (!hash.startsWith('#/campanha-cupom/')) return false;
+        const rotaCodigo = codigoCupomHomeDA(decodeURIComponent(hash.split('#/campanha-cupom/')[1] || ''));
+        return rotaCodigo && rotaCodigo === codigoCupomHomeDA(codigo);
+    }
+
+    function limparCupomContextualHomeDA() {
+        if (!STATE.cupomAplicadoCodigo) return;
+        STATE.cupomAplicadoCodigo = '';
+        STATE.cupomAplicadoResumo = null;
+        try { localStorage.removeItem(CUPOM_ATIVO_STORAGE_DA); } catch (e) {}
+        const input = document.getElementById('coupon-code-input');
+        if (input) input.value = '';
+        try { if (typeof updateTotals === 'function') updateTotals(); } catch (e) {}
+    }
+
+    function carregarItensContextuaisCupomDA() {
+        try {
+            const dados = JSON.parse(localStorage.getItem(CUPOM_ITENS_STORAGE_DA) || '{}');
+            STATE.cupomContextualItens = dados && typeof dados === 'object' ? dados : {};
+        } catch (e) {
+            STATE.cupomContextualItens = {};
+        }
+    }
+
+    function salvarItensContextuaisCupomDA() {
+        try { localStorage.setItem(CUPOM_ITENS_STORAGE_DA, JSON.stringify(STATE.cupomContextualItens || {})); } catch (e) {}
+    }
+
+    function codigoCupomDaRotaAtualDA() {
+        const hash = String(window.location.hash || '');
+        if (!hash.startsWith('#/campanha-cupom/')) return '';
+        return codigoCupomHomeDA(decodeURIComponent(hash.split('#/campanha-cupom/')[1] || ''));
+    }
+
+    function qtdContextualCupomItemDA(codigo, id) {
+        const mapaCodigo = (STATE.cupomContextualItens || {})[codigoCupomHomeDA(codigo)] || {};
+        return Math.max(0, Number(mapaCodigo[String(id)] || 0));
+    }
+
+    function registrarDeltaContextualCupomDA(id, delta) {
+        const codigo = codigoCupomDaRotaAtualDA();
+        const d = Number(delta || 0);
+        if (!codigo || d <= 0) return;
+        const cupom = getCupomPorCodigoDinamicoDA(codigo) || carregarCupomDeFallbackSmartDA(codigo);
+        const prod = (STATE.prods || []).find(p => String(p.id) === String(id));
+        if (!cupom || !prod || !produtoElegivelPorCupomDinamicoDA(prod, cupom)) return;
+        STATE.cupomContextualItens = STATE.cupomContextualItens || {};
+        STATE.cupomContextualItens[codigo] = STATE.cupomContextualItens[codigo] || {};
+        const key = String(id);
+        const qtdCarrinho = Math.max(0, Number((STATE.cart || {})[key] || 0));
+        const atual = Math.max(0, Number(STATE.cupomContextualItens[codigo][key] || 0));
+        STATE.cupomContextualItens[codigo][key] = Math.min(qtdCarrinho, atual + d);
+        salvarItensContextuaisCupomDA();
+    }
+
+    function sincronizarQtdContextualComCarrinhoDA(id) {
+        const key = String(id);
+        const qtdCarrinho = Math.max(0, Number((STATE.cart || {})[key] || 0));
+        let mudou = false;
+        const mapas = STATE.cupomContextualItens || {};
+        Object.keys(mapas).forEach(codigo => {
+            if (!mapas[codigo] || mapas[codigo][key] == null) return;
+            if (qtdCarrinho <= 0) {
+                delete mapas[codigo][key];
+                mudou = true;
+            } else if (Number(mapas[codigo][key] || 0) > qtdCarrinho) {
+                mapas[codigo][key] = qtdCarrinho;
+                mudou = true;
+            }
+        });
+        if (mudou) salvarItensContextuaisCupomDA();
+    }
+
+    function envolverCarrinhoContextualCupomDA() {
+        if (window.__couponContextCartWrappedDA) return;
+        window.__couponContextCartWrappedDA = true;
+        carregarItensContextuaisCupomDA();
+
+        const quickOriginal = window.quickAddToCart;
+        if (typeof quickOriginal === 'function') {
+            window.quickAddToCart = function(id, event) {
+                const key = String(id);
+                const antes = Math.max(0, Number((STATE.cart || {})[key] || 0));
+                const retorno = quickOriginal.apply(this, arguments);
+                const depois = Math.max(0, Number((STATE.cart || {})[key] || 0));
+                if (depois > antes) registrarDeltaContextualCupomDA(key, depois - antes);
+                sincronizarQtdContextualComCarrinhoDA(key);
+                return retorno;
+            };
+            try { quickAddToCart = window.quickAddToCart; } catch (e) {}
+        }
+
+        const updateOriginal = window.updateCartItem;
+        if (typeof updateOriginal === 'function') {
+            window.updateCartItem = function(id, delta) {
+                const key = String(id);
+                const antes = Math.max(0, Number((STATE.cart || {})[key] || 0));
+                const retorno = updateOriginal.apply(this, arguments);
+                const depois = Math.max(0, Number((STATE.cart || {})[key] || 0));
+                if (depois > antes) registrarDeltaContextualCupomDA(key, depois - antes);
+                sincronizarQtdContextualComCarrinhoDA(key);
+                return retorno;
+            };
+            try { updateCartItem = window.updateCartItem; } catch (e) {}
+        }
+    }
+
     window.calcularResumoCupomDA = function(codigoInformado) {
         const codigo = codigoCupomHomeDA(codigoInformado || STATE.cupomAplicadoCodigo);
         if (!codigo) return { valido: false, codigo: '', desconto: 0, motivo: 'Digite um cupom para aplicar.' };
+        if (!rotaAtualCupomHomeDA(codigo)) {
+            return { valido: false, codigo, desconto: 0, motivo: 'Este cupom só vale dentro da vitrine ativada pelo banner.' };
+        }
 
         const cupom = (STATE.cuponsAtivos || []).find(c => codigoCupomHomeDA(c.codigo) === codigo);
         if (!cupom) return { valido: false, codigo, desconto: 0, motivo: 'Cupom não encontrado.' };
@@ -15169,11 +15252,16 @@ renderInicio = function() {
         }
 
         const itensElegiveis = (typeof getProdutosCarrinhoCupomDA === 'function' ? getProdutosCarrinhoCupomDA() : [])
-            .filter(item => typeof produtoElegivelCupomDA === 'function' ? produtoElegivelCupomDA(item.prod, cupom) : true);
+            .filter(item => typeof produtoElegivelCupomDA === 'function' ? produtoElegivelCupomDA(item.prod, cupom) : true)
+            .map(item => {
+                const qtdLiberada = Math.min(Number(item.qtd || 0), qtdContextualCupomItemDA(codigo, item.prod && item.prod.id));
+                return { ...item, qtd: qtdLiberada, total: Number(item.prod && item.prod.price || 0) * qtdLiberada };
+            })
+            .filter(item => Number(item.qtd || 0) > 0);
 
         const subtotalElegivel = itensElegiveis.reduce((soma, item) => soma + Number(item.total || 0), 0);
         if (subtotalElegivel <= 0) {
-            return { valido: false, codigo, cupom, desconto: 0, motivo: 'Nenhum item do carrinho atende às regras deste cupom.' };
+            return { valido: false, codigo, cupom, desconto: 0, motivo: 'Adicione os produtos por esta vitrine para liberar o desconto.' };
         }
 
         let desconto = 0;
@@ -15193,7 +15281,7 @@ renderInicio = function() {
             return { valido: false, codigo, cupom, desconto: 0, motivo: 'Os produtos elegíveis já têm desconto igual ou maior que este cupom.' };
         }
 
-        return { valido: true, codigo, cupom, desconto, subtotalElegivel, motivo: `Cupom ${codigo} aplicado: -${typeof fmt === 'function' ? fmt(desconto) : desconto}.` };
+        return { valido: true, codigo, cupom, desconto, subtotalElegivel, motivo: `Desconto ativado: -${typeof fmt === 'function' ? fmt(desconto) : desconto}.` };
     };
     try { calcularResumoCupomDA = window.calcularResumoCupomDA; } catch (e) {}
 
@@ -15268,20 +15356,11 @@ renderInicio = function() {
             .filter(p => produtoElegivelPorCupomDinamicoDA(p, cupom))
             .sort((a, b) => String(a.marca || '').localeCompare(String(b.marca || ''), 'pt-BR') || String(a.name || a.nome || '').localeCompare(String(b.name || b.nome || ''), 'pt-BR'));
         const produtosPreview = produtos.map(p => previewProdutoCupomMaiorDA(p, cupom));
-        const marcas = listaCupomHomeDA(cupom.marcas);
-        const categorias = listaCupomHomeDA(cupom.categorias);
-        const escopo = marcas.length ? `marcas: ${marcas.join(', ')}` : (categorias.length ? `categorias: ${categorias.join(', ')}` : 'produtos participantes do site');
-        const descontoTxt = String(cupom.tipo || '').toLowerCase().includes('percent') ? `${Math.round(Number(cupom.desconto || 0))}% OFF` : `${typeof fmt === 'function' ? fmt(cupom.desconto || 0) : cupom.desconto} OFF`;
-        const minimo = Number(cupom.valorMinimo || 0) > 0 ? `<p class="smart-coupon-note-da">Compra mínima: ${typeof fmt === 'function' ? fmt(cupom.valorMinimo) : cupom.valorMinimo}.</p>` : '';
+        const heroTxt = textoHeroCupomHomeDA(cupom);
 
-        let html = `<div style="padding: 12px 0 24px;">
-            <div class="smart-coupon-hero-da">
-                <span class="smart-coupon-pill-da">Cupom ${escDA(alvo)} ativado • ${escDA(descontoTxt)}</span>
-                <h1>${escDA(tituloCupomHomeDA(cupom))}</h1>
-                <p>${escDA(subtituloCupomHomeDA(cupom))}</p>
-                <p style="margin-top:10px;">O site não acumula desconto do cupom com oferta de validade: em cada produto vale sempre o maior desconto.</p>
-                <p style="margin-top:10px;">Aplicável em ${escDA(escopo)}.</p>
-                ${minimo}
+        let html = `<div style="padding: 10px 0 24px;">
+            <div class="smart-coupon-hero-da smart-coupon-hero-min-da">
+                <h1>${escDA(heroTxt)}</h1>
             </div>`;
 
         if (!produtosPreview.length) {
@@ -15314,13 +15393,13 @@ renderInicio = function() {
 
         STATE.cupomAplicadoCodigo = alvo;
         STATE.cupomAplicadoResumo = null;
-        try { localStorage.setItem(CUPOM_ATIVO_STORAGE_DA, JSON.stringify({ codigo: alvo, ativadoEm: Date.now() })); } catch (e) {}
+        try { localStorage.setItem(CUPOM_ATIVO_STORAGE_DA, JSON.stringify({ codigo: alvo, rota: `#/campanha-cupom/${encodeURIComponent(alvo)}`, ativadoEm: Date.now() })); } catch (e) {}
         const input = document.getElementById('coupon-code-input');
         if (input) input.value = alvo;
         const banner = document.getElementById('smart-coupon-banner-da');
         if (banner) banner.classList.remove('active');
         if (typeof updateTotals === 'function') updateTotals();
-        if (typeof showToast === 'function') showToast(`Cupom ${alvo} ativado.`);
+        if (typeof showToast === 'function') showToast('Desconto ativado.');
 
         const rota = rotaCupomHomeDA(cupom);
         if ((window.location.hash || '') !== rota) window.location.hash = rota;
@@ -15331,7 +15410,10 @@ renderInicio = function() {
         try {
             const dados = JSON.parse(localStorage.getItem(CUPOM_ATIVO_STORAGE_DA) || 'null');
             const codigo = codigoCupomHomeDA(dados && dados.codigo);
-            if (!codigo) return;
+            if (!codigo || !rotaAtualCupomHomeDA(codigo)) {
+                try { localStorage.removeItem(CUPOM_ATIVO_STORAGE_DA); } catch (e) {}
+                return;
+            }
             STATE.cupomAplicadoCodigo = codigo;
             const input = document.getElementById('coupon-code-input');
             if (input) input.value = codigo;
@@ -15342,7 +15424,7 @@ renderInicio = function() {
     const getRouteTitleAntesCupomHomeDA = typeof getRouteTitle === 'function' ? getRouteTitle : null;
     window.getRouteTitle = function(hash) {
         const h = hash || window.location.hash || '';
-        if (String(h).startsWith('#/campanha-cupom/')) return `Cupom ${codigoCupomHomeDA(String(h).split('#/campanha-cupom/')[1] || '')}`;
+        if (String(h).startsWith('#/campanha-cupom/')) return 'Desconto ativo';
         return getRouteTitleAntesCupomHomeDA ? getRouteTitleAntesCupomHomeDA(hash) : 'Dona Antônia';
     };
     try { getRouteTitle = window.getRouteTitle; } catch (e) {}
@@ -15350,6 +15432,7 @@ renderInicio = function() {
     const handleRouteAntesCupomHomeDA = typeof handleRoute === 'function' ? handleRoute : null;
     window.handleRoute = function() {
         const hash = window.location.hash || '#/';
+        if (!hash.startsWith('#/campanha-cupom/')) limparCupomContextualHomeDA();
         if (hash.startsWith('#/campanha-cupom/')) {
             const vitrine = document.getElementById('vitrine');
             if (vitrine && STATE.currentRoute) STATE.scrollMap[STATE.currentRoute] = vitrine.scrollTop;
@@ -15369,6 +15452,8 @@ renderInicio = function() {
         const hash = window.location.hash || '';
         if (hash.startsWith('#/campanha-cupom/')) {
             setTimeout(() => window.renderCampanhaCupomSmartDA(decodeURIComponent(hash.split('#/campanha-cupom/')[1] || '')), 0);
+        } else {
+            setTimeout(limparCupomContextualHomeDA, 0);
         }
     });
 
@@ -15376,12 +15461,18 @@ renderInicio = function() {
     if (initAntesCupomHomeDA) {
         init = async function() {
             const retorno = await initAntesCupomHomeDA.apply(this, arguments);
+            envolverCarrinhoContextualCupomDA();
             restaurarCupomHomeDA();
             if ((window.location.hash || '').startsWith('#/campanha-cupom/')) {
                 window.renderCampanhaCupomSmartDA(decodeURIComponent((window.location.hash || '').split('#/campanha-cupom/')[1] || ''));
             }
             return retorno;
         };
+    } else {
+        document.addEventListener('DOMContentLoaded', function() {
+            envolverCarrinhoContextualCupomDA();
+            restaurarCupomHomeDA();
+        });
     }
 })();
 
