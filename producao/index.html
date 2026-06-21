@@ -1006,7 +1006,9 @@
                 }, 30000, "Salvar histórico de exclusões no Firebase");
 
                 if (!res.ok) {
-                    throw new Error("Erro ao gravar exclusões no Firebase: HTTP " + res.status);
+                    let detalhe = "";
+                    try { detalhe = await res.text(); } catch (e) {}
+                    throw new Error("Erro ao gravar exclusões no Firebase: HTTP " + res.status + (detalhe ? " - " + detalhe : ""));
                 }
             },
 
@@ -1041,7 +1043,7 @@
 
             salvarProduto: async function(produto) {
                 const chave = this.obterChaveProduto(produto);
-                const produtoLimpo = { ...produto };
+                const produtoLimpo = normalizarProdutoNumericosFirebase({ ...produto });
                 delete produtoLimpo.firebaseKey;
                 delete produtoLimpo._deleted;
                 produtoLimpo.id = String(produtoLimpo.id || chave);
@@ -1053,7 +1055,9 @@
                 }, 30000, "Salvar produto individual no Firebase");
 
                 if (!res.ok) {
-                    throw new Error("Erro ao gravar produto individual no Firebase: HTTP " + res.status);
+                    let detalhe = "";
+                    try { detalhe = await res.text(); } catch (e) {}
+                    throw new Error("Erro ao gravar produto individual no Firebase: HTTP " + res.status + (detalhe ? " - " + detalhe : ""));
                 }
 
                 return chave;
@@ -1068,7 +1072,9 @@
                 }, 30000, "Apagar produto individual no Firebase");
 
                 if (!res.ok) {
-                    throw new Error("Erro ao apagar produto individual no Firebase: HTTP " + res.status);
+                    let detalhe = "";
+                    try { detalhe = await res.text(); } catch (e) {}
+                    throw new Error("Erro ao apagar produto individual no Firebase: HTTP " + res.status + (detalhe ? " - " + detalhe : ""));
                 }
             },
 
@@ -1381,6 +1387,7 @@ let finalBase64 = isBase64Ready
 
         cleanP.tag_global = normalizarListaTagsProduto(cleanP.tag_global);
         cleanP.tag_quantidades = normalizarQuantidadesTagsProduto(cleanP);
+        normalizarProdutoNumericosFirebase(cleanP);
 
         return cleanP;
     });
@@ -1412,7 +1419,7 @@ let finalBase64 = isBase64Ready
                 slug = p.codigo || "";
             }
 
-            let estoqueNum = parseFloat(p.estoque) || 0;
+            let estoqueNum = numeroOfertaProduto(p.estoque) || 0;
             let disponibilidade = estoqueNum > 0 ? "in stock" : "out of stock";
             let descricaoLimpa = p.nome + (p.embalagem ? " - " + p.embalagem : "");
 
@@ -1422,7 +1429,7 @@ let finalBase64 = isBase64Ready
                 "description": AntiXSS(descricaoLimpa),
                 "availability": disponibilidade,
                 "condition": "new",
-                "price": `${p.preco || "0.00"} BRL`,
+                "price": `${numeroOfertaProduto(p.preco || 0).toFixed(2)} BRL`,
                 "link": `https://donaantonia.com.br/#/produto/${slug}`,
                 "image_link": urlFoto,
                 "brand": p.marca || "Dona Antônia"
@@ -1884,6 +1891,7 @@ function prepararProdutoParaFirebase(produto) {
     limpo.codigo = String(limpo.codigo || produto.codigo || limpo.id);
     limpo.last_update = normalizarLastUpdateProduto(limpo) || Date.now();
     limpo.marca = limparMarcaProduto(limpo.marca);
+    normalizarProdutoNumericosFirebase(limpo);
     limpo.firebaseKey = FirebaseAPI.sanitizarChave(produto.firebaseKey || limpo.id || limpo.codigo);
     return limpo;
 }
@@ -1968,7 +1976,11 @@ async function salvarProdutoIndividualSeguro(produtoOriginal, tipo = "upsert", o
             registrarExclusaoProduto(exclusoes, { ...produtoOriginal, firebaseKey: chaveExclusao, id: produtoOriginal.id || chaveExclusao }, dataExclusao);
         });
 
-        await FirebaseAPI.salvarExclusoesProdutos(exclusoes);
+        try {
+            await FirebaseAPI.salvarExclusoesProdutos(exclusoes);
+        } catch (erroHistoricoExclusao) {
+            console.warn("Não consegui salvar produtos_excluidos. Vou continuar a exclusão real do produto:", erroHistoricoExclusao);
+        }
 
         const errosDelete = [];
         let apagouOuMarcou = 0;
@@ -2254,10 +2266,17 @@ async function salvarProdutoCardManual(sku) {
             lucide.createIcons();
         }
 
-        mostrarAlerta("Salvando produto e verificando imagem...", "aviso");
+        mostrarAlerta("Salvando produto no Firebase...", "aviso");
 
-        const upload = await uploadImagemProdutoPendenteSeNecessario(produto);
+        let upload = { enviada: false };
+        const temImagemPendenteParaSalvar = produtoPossuiImagemPendente(produto.codigo) ||
+            (typeof produto.imagem_preview_local === "string" && produto.imagem_preview_local.startsWith("data:image")) ||
+            (typeof produto.url_imagem === "string" && produto.url_imagem.startsWith("data:image"));
+        if (temImagemPendenteParaSalvar) {
+            upload = await uploadImagemProdutoPendenteSeNecessario(produto);
+        }
 
+        normalizarProdutoNumericosFirebase(produto);
         produto.last_update = Date.now();
         await saveDataLocally(false);
 
@@ -2319,7 +2338,10 @@ async function processarProdutosPendentesSync() {
         for (const [, item] of pendentes) {
             try {
                 if (item.tipo !== "delete" && item.produto) {
-                    await uploadImagemProdutoPendenteSeNecessario(item.produto);
+                    const temImagemPendente = produtoPossuiImagemPendente(item.produto.codigo) ||
+                        (typeof item.produto.imagem_preview_local === "string" && item.produto.imagem_preview_local.startsWith("data:image")) ||
+                        (typeof item.produto.url_imagem === "string" && item.produto.url_imagem.startsWith("data:image"));
+                    if (temImagemPendente) await uploadImagemProdutoPendenteSeNecessario(item.produto);
                 }
 
                 const resultado = await salvarProdutoIndividualSeguro(item.produto, item.tipo);
@@ -2668,9 +2690,8 @@ function nfeTextoNo(parent, tag) {
 }
 
 function nfeNumero(valor) {
-    const txt = String(valor || '').trim().replace(/\./g, '.').replace(',', '.');
-    const n = parseFloat(txt);
-    return Number.isFinite(n) ? n : 0;
+    // NF-e normalmente usa ponto decimal (12.90), mas campos editáveis podem receber vírgula (12,90).
+    return numeroOfertaProduto(valor);
 }
 
 function nfeDataISOParaBR(dataIso) {
@@ -2843,9 +2864,9 @@ function renderizarNFeEntrada() {
                     <div class="field-group wide"><label>Nome no cadastro</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.nome)}" onchange="nfeAtualizarItem(${i}, 'nome', this.value)"></div>
                     <div class="field-group"><label>EAN / GTIN</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.ean)}" onchange="nfeAtualizarItem(${i}, 'ean', this.value)"></div>
                     <div class="field-group"><label>NCM</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.ncm)}" onchange="nfeAtualizarItem(${i}, 'ncm', this.value)"></div>
-                    <div class="field-group"><label>Qtd entrada</label><input type="number" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.quantidade)}" onchange="nfeAtualizarItem(${i}, 'quantidade', this.value)"></div>
-                    <div class="field-group"><label>Custo unit.</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(item.custo)}" onchange="nfeAtualizarItem(${i}, 'custo', this.value)"></div>
-                    <div class="field-group"><label>Preço venda</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(valorVenda)}" onchange="nfeAtualizarItem(${i}, 'precoVenda', this.value)"></div>
+                    <div class="field-group"><label>Qtd entrada</label><input type="text" inputmode="decimal" class="form-input card-mini-input" value="${escaparAtributoSistema(formatarQuantidadeInputBR(item.quantidade))}" onchange="nfeAtualizarItem(${i}, 'quantidade', this.value)"></div>
+                    <div class="field-group"><label>Custo unit.</label><input type="text" inputmode="decimal" class="form-input card-mini-input" value="${escaparAtributoSistema(formatarNumeroInputBR(item.custo, 4))}" onchange="nfeAtualizarItem(${i}, 'custo', this.value)"></div>
+                    <div class="field-group"><label>Preço venda</label><input type="text" inputmode="decimal" class="form-input card-mini-input" value="${escaparAtributoSistema(valorVenda === '' ? '' : formatarNumeroInputBR(valorVenda, 2))}" onchange="nfeAtualizarItem(${i}, 'precoVenda', this.value)"></div>
                     <div class="field-group"><label>Validade deste lote</label><input type="date" class="form-input card-mini-input" value="${escaparAtributoSistema(item.validade)}" onchange="nfeAtualizarItem(${i}, 'validade', this.value)"></div>
                     <div class="field-group"><label>Unidade/embalagem</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.embalagem || item.unidade)}" onchange="nfeAtualizarItem(${i}, 'embalagem', this.value)"></div>
                     <div class="field-group"><label>Marca</label><select class="form-input card-mini-input" onchange="nfeAtualizarItem(${i}, 'marca', this.value)">${gerarOptions(marcasDoSistema, item.marca, 'Sel. Marca')}</select></div>
@@ -2940,7 +2961,7 @@ function limparEntradaNFe() {
 function normalizarLotesProdutoNFe(produto) {
     if (!produto) return [];
     let lotes = Array.isArray(produto.estoques_lotes) ? produto.estoques_lotes.filter(Boolean) : [];
-    const estoqueAtual = parseFloat(produto.estoque) || 0;
+    const estoqueAtual = numeroOfertaProduto(produto.estoque) || 0;
     if (!lotes.length && estoqueAtual > 0) {
         lotes.push({
             id: 'estoque_anterior_' + Date.now(),
@@ -2948,24 +2969,24 @@ function normalizarLotesProdutoNFe(produto) {
             quantidade_inicial: estoqueAtual,
             quantidade_atual: estoqueAtual,
             validade: nfeDataBRParaISO(produto.validade) || '',
-            custo_unitario: parseFloat(produto.preco_custo) || 0,
+            custo_unitario: numeroOfertaProduto(produto.preco_custo) || 0,
             criado_em: new Date().toISOString(),
             observacao: 'Lote gerado automaticamente a partir do estoque que já existia antes da entrada por NF-e.'
         });
     }
     produto.estoques_lotes = lotes.map(l => ({
         ...l,
-        quantidade_inicial: parseFloat(l.quantidade_inicial) || 0,
-        quantidade_atual: parseFloat(l.quantidade_atual) || 0,
-        custo_unitario: parseFloat(l.custo_unitario) || 0
+        quantidade_inicial: numeroOfertaProduto(l.quantidade_inicial) || 0,
+        quantidade_atual: numeroOfertaProduto(l.quantidade_atual) || 0,
+        custo_unitario: numeroOfertaProduto(l.custo_unitario) || 0
     }));
     return produto.estoques_lotes;
 }
 
 function recalcularEstoquePorLotesNFe(produto) {
     const lotes = normalizarLotesProdutoNFe(produto);
-    const ativos = lotes.filter(l => (parseFloat(l.quantidade_atual) || 0) > 0);
-    const soma = ativos.reduce((acc, l) => acc + (parseFloat(l.quantidade_atual) || 0), 0);
+    const ativos = lotes.filter(l => (numeroOfertaProduto(l.quantidade_atual) || 0) > 0);
+    const soma = ativos.reduce((acc, l) => acc + (numeroOfertaProduto(l.quantidade_atual) || 0), 0);
     produto.estoque = Number(soma.toFixed(3));
 
     const datas = ativos.map(l => String(l.validade || '')).filter(v => /^\d{4}-\d{2}-\d{2}$/.test(v)).sort();
@@ -3189,16 +3210,95 @@ function montarTextoBuscaProduto(p) {
 // 5) Produtos com 7 dias ou menos para vencer têm estoque zerado para sair do site.
 // ==========================================================
 function numeroOfertaProduto(valor) {
+    // Aceita valores digitados no padrão brasileiro (12,90), valores com moeda
+    // (R$ 1.234,56) e valores decimais técnicos vindos de CSV/XML/Firebase (12.90).
     if (valor === "" || valor === null || valor === undefined) return 0;
     if (typeof valor === "number") return Number.isFinite(valor) ? valor : 0;
-    const limpo = String(valor)
+
+    let texto = String(valor)
         .replace(/R\$/gi, "")
         .replace(/BRL/gi, "")
         .replace(/\s+/g, "")
-        .replace(/\./g, "")
-        .replace(",", ".");
-    const n = parseFloat(limpo);
+        .trim();
+
+    if (!texto) return 0;
+
+    // Mantém apenas dígitos, sinal e separadores.
+    texto = texto.replace(/[^0-9,.-]/g, "");
+
+    const temVirgula = texto.includes(",");
+    const temPonto = texto.includes(".");
+
+    if (temVirgula && temPonto) {
+        // Ex.: 1.234,56
+        texto = texto.replace(/\./g, "").replace(",", ".");
+    } else if (temVirgula) {
+        // Ex.: 12,90
+        texto = texto.replace(",", ".");
+    } else if (temPonto) {
+        // Ex.: 12.90 deve continuar 12.90; 1.234 pode ser milhar.
+        const partes = texto.split(".");
+        const ehMilharBR = partes.length > 1 && partes.slice(1).every(parte => /^\d{3}$/.test(parte));
+        if (ehMilharBR && partes.length > 2) {
+            texto = texto.replace(/\./g, "");
+        }
+    }
+
+    const n = Number(texto);
     return Number.isFinite(n) ? n : 0;
+}
+
+function formatarNumeroInputBR(valor, casas = 2) {
+    const n = numeroOfertaProduto(valor);
+    if (!Number.isFinite(n)) return "";
+    return n.toLocaleString("pt-BR", {
+        minimumFractionDigits: casas,
+        maximumFractionDigits: casas
+    });
+}
+
+function formatarQuantidadeInputBR(valor, casasMax = 3) {
+    const n = numeroOfertaProduto(valor);
+    if (!Number.isFinite(n)) return "";
+    return n.toLocaleString("pt-BR", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: casasMax
+    });
+}
+
+function normalizarProdutoNumericosFirebase(produto) {
+    if (!produto || typeof produto !== "object") return produto;
+
+    ["preco", "preco_custo", "preco_oferta", "estoque"].forEach(campo => {
+        if (produto[campo] !== undefined && produto[campo] !== null && String(produto[campo]).trim() !== "") {
+            produto[campo] = numeroOfertaProduto(produto[campo]);
+        }
+    });
+
+    if (Array.isArray(produto.estoques_lotes)) {
+        produto.estoques_lotes = produto.estoques_lotes.map(lote => {
+            if (!lote || typeof lote !== "object") return lote;
+            const limpo = { ...lote };
+            [
+                "quantidade_inicial",
+                "quantidade_atual",
+                "quantidade_xml",
+                "fator_divisor",
+                "custo_unitario",
+                "custo_unitario_sem_desconto",
+                "total_bruto_xml",
+                "desconto_rateado",
+                "total_liquido"
+            ].forEach(campo => {
+                if (limpo[campo] !== undefined && limpo[campo] !== null && String(limpo[campo]).trim() !== "") {
+                    limpo[campo] = numeroOfertaProduto(limpo[campo]);
+                }
+            });
+            return limpo;
+        });
+    }
+
+    return produto;
 }
 
 function padOfertaProduto(n) {
@@ -3628,7 +3728,7 @@ function normalizarQuantidadesTagsProduto(produto) {
 
     const qtds = {};
     tags.forEach(tag => {
-        let qtd = parseFloat(baseNormalizado[normalizarTagNome(tag)] ?? 1);
+        let qtd = numeroOfertaProduto(baseNormalizado[normalizarTagNome(tag)] ?? 1);
         if (!Number.isFinite(qtd) || qtd <= 0) qtd = 1;
         qtds[tag] = qtd;
     });
@@ -3652,7 +3752,7 @@ function obterQuantidadeTagProduto(produto, tag) {
     if (!produto) return 1;
     normalizarProdutoTagsQuantidade(produto);
     const alvo = normalizarTagNome(tag);
-    const qtd = parseFloat((produto.tag_quantidades || {})[alvo]);
+    const qtd = numeroOfertaProduto((produto.tag_quantidades || {})[alvo]);
     return Number.isFinite(qtd) && qtd > 0 ? qtd : 1;
 }
 
@@ -3666,7 +3766,7 @@ async function salvarQuantidadeTagProduto(sku, tag, quantidade) {
     normalizarProdutoTagsQuantidade(p);
     if (!p.tag_global.includes(tagNormalizada)) p.tag_global.push(tagNormalizada);
 
-    let qtd = parseFloat(String(quantidade || "").replace(",", "."));
+    let qtd = numeroOfertaProduto(quantidade);
     if (!Number.isFinite(qtd) || qtd <= 0) qtd = 1;
     p.tag_quantidades[tagNormalizada] = qtd;
     p.last_update = Date.now();
@@ -3758,7 +3858,7 @@ function atualizarDashboardResumo() {
     if (!el) return;
     const lista = Array.isArray(products) ? products.filter(p => p && p._deleted !== true) : [];
     const ativos = lista.filter(p => p.situacao !== "I").length;
-    const semEstoque = lista.filter(p => (parseFloat(p.estoque) || 0) <= 0).length;
+    const semEstoque = lista.filter(p => (numeroOfertaProduto(p.estoque) || 0) <= 0).length;
     const semEAN = lista.filter(p => !String(p.gtin || p.ean || "").trim()).length;
     const semFoto = lista.filter(p => !String(p.url_imagem || "").trim()).length;
     const pendentes = (typeof produtosPendentesSync !== "undefined" && produtosPendentesSync) ? produtosPendentesSync.size : 0;
@@ -4323,7 +4423,7 @@ async function carregarCacheLocalProdutos() {
                     <div class="tag-qtd-row">
                         <input type="checkbox" value="${itemSeguro}" ${isChecked ? 'checked' : ''} onchange="toggleMultiSelect('${escaparAtributoSistema(sku)}', '${escaparAtributoSistema(campo)}', this.value, this.checked)" style="cursor:pointer;">
                         <label title="${itemSeguro}">${escaparHtmlSistema(item)}</label>
-                        <input type="number" min="0.01" step="0.01" class="tag-qtd-input" value="${qtd}" ${isChecked ? '' : 'disabled'} onchange="salvarQuantidadeTagProduto('${escaparAtributoSistema(sku)}', '${itemSeguro}', this.value)" title="Quantidade deste item quando esta tag for usada no site">
+                        <input type="text" inputmode="decimal" class="tag-qtd-input" value="${formatarQuantidadeInputBR(qtd)}" ${isChecked ? '' : 'disabled'} onchange="salvarQuantidadeTagProduto('${escaparAtributoSistema(sku)}', '${itemSeguro}', this.value)" title="Quantidade deste item quando esta tag for usada no site">
                     </div>
                 `;
             });
@@ -4439,7 +4539,7 @@ async function carregarCacheLocalProdutos() {
 
         function produtoTemCampoVazio(p, tipo) {
             const vazio = (v) => v === undefined || v === null || String(v).trim() === "";
-            const precoCustoVazio = vazio(p.preco_custo) || parseFloat(p.preco_custo) <= 0;
+            const precoCustoVazio = vazio(p.preco_custo) || numeroOfertaProduto(p.preco_custo) <= 0;
 
             const mapa = {
                 sem_ean: vazio(p.gtin),
@@ -4539,7 +4639,7 @@ function ordenarProdutosMaisRecentesPrimeiro(lista) {
 
                     if(advancedFilters.tag && !produtoTemTag(p, advancedFilters.tag)) return false;
 
-                    const estoqueNum = parseFloat(p.estoque) || 0;
+                    const estoqueNum = numeroOfertaProduto(p.estoque) || 0;
                     if(advancedFilters.stock === 'com_estoque' && estoqueNum <= 0) return false;
                     if(advancedFilters.stock === 'zero' && estoqueNum !== 0) return false;
                     if(advancedFilters.stock === 'negativo' && estoqueNum >= 0) return false;
@@ -4631,8 +4731,8 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                 const safePrateleira = escaparAtributoSistema(p.prateleira || "");
                 const safeDescricao = limparHtmlSeguroSistema(p.descricao || "");
                 
-                let custo = parseFloat(p.preco_custo) || 0;
-                let venda = parseFloat(p.preco) || 0;
+                let custo = numeroOfertaProduto(p.preco_custo) || 0;
+                let venda = numeroOfertaProduto(p.preco) || 0;
                 let markup = custo > 0 ? (((venda - custo) / custo) * 100).toFixed(1) : 0;
 
                 const pendencias = obterPendenciasProduto(p);
@@ -4642,7 +4742,7 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                 if (ofertaAtiva) badges += `<span class="mini-badge success">Oferta automática</span>`;
                 if (diasVencimento !== null && diasVencimento < 1) badges += `<span class="mini-badge danger">Vencido</span>`;
                 else if (diasVencimento !== null && diasVencimento <= 30) badges += `<span class="mini-badge warn">Vence ${diasVencimento}d</span>`;
-                if ((parseFloat(p.estoque) || 0) <= 0) badges += `<span class="mini-badge danger">Sem estoque</span>`;
+                if ((numeroOfertaProduto(p.estoque) || 0) <= 0) badges += `<span class="mini-badge danger">Sem estoque</span>`;
                 if (pendencias.length) badges += `<span class="mini-badge warn">Faltam: ${pendencias.slice(0, 4).join(', ')}${pendencias.length > 4 ? ' +' + (pendencias.length - 4) : ''}</span>`;
 
 
@@ -4720,11 +4820,11 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
                                     <div class="field-group"><label>NCM</label>
                                         <input type="text" class="form-input card-mini-input" value="${safeNcm}" onchange="updateField('${skuAttr}', 'ncm', this.value)"></div>
                                     <div class="field-group"><label>Estoque</label>
-                                        <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${escaparAtributoSistema(p.estoque || 0)}" onchange="updateField('${skuAttr}', 'estoque', this.value)"></div>
+                                        <input type="text" inputmode="decimal" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${escaparAtributoSistema(formatarQuantidadeInputBR(p.estoque || 0))}" onchange="updateField('${skuAttr}', 'estoque', this.value)"></div>
                                     <div class="field-group"><label>Custo (R$)</label>
-                                        <input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(p.preco_custo || 0)}" onchange="updateField('${skuAttr}', 'preco_custo', this.value)"></div>
+                                        <input type="text" inputmode="decimal" class="form-input card-mini-input" value="${escaparAtributoSistema(formatarNumeroInputBR(p.preco_custo || 0, 2))}" onchange="updateField('${skuAttr}', 'preco_custo', this.value)"></div>
                                     <div class="field-group"><label style="display:flex; justify-content:space-between; gap:6px;">Venda (R$) <span style="color:var(--success);">Markup ${markup}%</span></label>
-                                        <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--success); font-weight:800;" value="${escaparAtributoSistema(p.preco || 0)}" onchange="updateField('${skuAttr}', 'preco', this.value)"></div>
+                                        <input type="text" inputmode="decimal" class="form-input card-mini-input" style="color:var(--success); font-weight:800;" value="${escaparAtributoSistema(formatarNumeroInputBR(p.preco || 0, 2))}" onchange="updateField('${skuAttr}', 'preco', this.value)"></div>
                                     <div class="field-group"><label>Oferta automática atual</label>
                                         <input class="form-input card-mini-input" readonly style="background:#ecfdf5; color:#047857; font-weight:900;" value="${escaparAtributoSistema(p.preco_oferta ? dinheiroBR(p.preco_oferta) : 'Sem oferta')}"></div>
                                     <div class="field-group"><label>Fim da oferta automática</label>
@@ -4857,6 +4957,7 @@ const temFotoPendenteCard = produtoPossuiImagemPendente(p.codigo);
             await saveDataLocally(false); 
 
             if (['validade','preco','preco_custo','estoque'].includes(field)) {
+                normalizarProdutoNumericosFirebase(p);
                 await processarInteligenciaDeOfertas(sku);
             }
 
@@ -5676,6 +5777,30 @@ async function deleteProduct(sku) {
 window.fetchFromGithub = fetchFromGithub;
 window.recarregarFirebaseOficial = fetchFromGithub;
 
+window.testarPermissoesFirebasePIM = async function() {
+    const chaveTeste = "_teste_permissao_pim";
+    const url = FirebaseAPI.baseURL + "produtos/" + chaveTeste + ".json";
+    try {
+        const payload = { teste: true, criado_em: new Date().toISOString(), origem: "pim_admin" };
+        let res = await fetchComTimeout(url, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        }, 15000, "Teste de escrita no Firebase");
+        if (!res.ok) throw new Error("PUT HTTP " + res.status + " - " + await res.text());
+
+        res = await fetchComTimeout(url, { method: "DELETE" }, 15000, "Teste de exclusão no Firebase");
+        if (!res.ok) throw new Error("DELETE HTTP " + res.status + " - " + await res.text());
+
+        mostrarAlerta("✅ Firebase liberado para salvar, editar e apagar produtos.", "sucesso");
+        return true;
+    } catch (e) {
+        console.error("Falha no teste de permissões Firebase:", e);
+        mostrarAlerta("❌ Firebase sem permissão de escrita/exclusão: " + e.message, "erro");
+        return false;
+    }
+};
+
         async function limparSistema() { if(confirm("Apagar base local? (Nuvem NÃO afetada)")) { await localforage.clear(); location.reload(); } }
 
         // ==========================================================
@@ -6013,19 +6138,7 @@ window.exportarCategoriaBling = async function() {
 }
 
 function normalizarNumeroCSV(valor) {
-    if (valor === undefined || valor === null) return 0;
-
-    let texto = String(valor).trim();
-
-    if (!texto) return 0;
-
-    texto = texto
-        .replace(/[R$\s]/g, "")
-        .replace(/\./g, "")
-        .replace(",", ".");
-
-    const numero = parseFloat(texto);
-    return Number.isFinite(numero) ? numero : 0;
+    return numeroOfertaProduto(valor);
 }
 
 function limparChaveComparacao(valor) {
@@ -6359,7 +6472,7 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
             const skuAttr = escaparAtributoSistema(sku);
             const imgUrl = produtoImagemFinal(p);
             const pendente = produtoEstaPendenteNoCard(p);
-            const semEstoque = (parseFloat(p.estoque) || 0) <= 0;
+            const semEstoque = (numeroOfertaProduto(p.estoque) || 0) <= 0;
             const semEAN = !String(p.gtin || p.ean || '').replace(/\D/g, '');
             const ofertaResumo = calcularOfertaAtualProduto(p);
             const ofertaAtiva = !!(ofertaResumo && ofertaResumo.ativo);
@@ -6430,8 +6543,8 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
         const imgUrl = produtoImagemFinal(p);
         const safeNome = escaparAtributoSistema(p.nome || '');
         const safeNomeGoogle = String(p.nome || '').split('\\').join('\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\s+/g, ' ');
-        const custo = parseFloat(p.preco_custo) || 0;
-        const venda = parseFloat(p.preco) || 0;
+        const custo = numeroOfertaProduto(p.preco_custo) || 0;
+        const venda = numeroOfertaProduto(p.preco) || 0;
         const markup = custo > 0 ? (((venda - custo) / custo) * 100).toFixed(1) : '0.0';
         const pendencias = obterPendenciasProduto(p);
         const imgPendente = produtoPossuiImagemPendente(p.codigo);
@@ -6488,9 +6601,9 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
 
             <div class="card-section"><div class="card-section-title">Preço, estoque, validade e oferta</div>
                 <div class="product-fields-grid">
-                    <div class="field-group"><label>Estoque atual</label><input type="number" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(p.estoque || 0)}" onchange="updateField('${skuAttr}', 'estoque', this.value)"></div>
-                    <div class="field-group"><label>Custo R$</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(p.preco_custo || 0)}" onchange="updateField('${skuAttr}', 'preco_custo', this.value)"></div>
-                    <div class="field-group"><label>Venda R$</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(p.preco || 0)}" onchange="updateField('${skuAttr}', 'preco', this.value)"></div>
+                    <div class="field-group"><label>Estoque atual</label><input type="text" inputmode="decimal" class="form-input card-mini-input" value="${escaparAtributoSistema(formatarQuantidadeInputBR(p.estoque || 0))}" onchange="updateField('${skuAttr}', 'estoque', this.value)"></div>
+                    <div class="field-group"><label>Custo R$</label><input type="text" inputmode="decimal" class="form-input card-mini-input" value="${escaparAtributoSistema(formatarNumeroInputBR(p.preco_custo || 0, 2))}" onchange="updateField('${skuAttr}', 'preco_custo', this.value)"></div>
+                    <div class="field-group"><label>Venda R$</label><input type="text" inputmode="decimal" class="form-input card-mini-input" value="${escaparAtributoSistema(formatarNumeroInputBR(p.preco || 0, 2))}" onchange="updateField('${skuAttr}', 'preco', this.value)"></div>
                     <div class="field-group"><label>Validade principal</label><input type="date" class="form-input card-mini-input" value="${p.validade && String(p.validade).includes('/') ? String(p.validade).split('/').reverse().join('-') : (p.validade || '')}" onchange="updateField('${skuAttr}', 'validade', this.value)"></div>
                     <div class="field-group"><label>Oferta efetiva atual</label><input class="form-input card-mini-input" readonly style="background:#ecfdf5; color:#047857; font-weight:900;" value="${escaparAtributoSistema(ofertaLabel)}"></div>
                     <div class="field-group"><label>Fim efetivo publicado</label><input class="form-input card-mini-input" readonly value="${escaparAtributoSistema(p.validade_oferta || '')}"></div>
@@ -6613,14 +6726,14 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
             return;
         }
         const lotes = Array.isArray(produto.estoques_lotes) ? produto.estoques_lotes.filter(Boolean) : [];
-        const lotesAtivos = lotes.filter(l => (parseFloat(l.quantidade_atual) || 0) > 0);
+        const lotesAtivos = lotes.filter(l => (numeroOfertaProduto(l.quantidade_atual) || 0) > 0);
         item.existente = {
             codigo: String(produto.codigo || produto.id || produto.firebaseKey || ''),
             nome: String(produto.nome || ''),
-            estoque: parseFloat(produto.estoque) || 0,
+            estoque: numeroOfertaProduto(produto.estoque) || 0,
             validade: String(produto.validade || ''),
-            preco: parseFloat(produto.preco) || 0,
-            custo: parseFloat(produto.preco_custo) || 0,
+            preco: numeroOfertaProduto(produto.preco) || 0,
+            custo: numeroOfertaProduto(produto.preco_custo) || 0,
             lotesAtivos: lotesAtivos.length,
             validadeMaisProxima: (lotesAtivos.map(l => String(l.validade || '')).filter(v => /^\d{4}-\d{2}-\d{2}$/.test(v)).sort()[0] || '')
         };
@@ -6785,11 +6898,11 @@ document.getElementById('csv-file-atualizar').addEventListener('change', functio
                         <div class="field-group wide"><label>Nome no cadastro</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.nome)}" onchange="nfeAtualizarItem(${i}, 'nome', this.value)"></div>
                         <div class="field-group"><label>EAN / GTIN</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.ean)}" onchange="nfeAtualizarItem(${i}, 'ean', this.value)"></div>
                         <div class="field-group"><label>NCM</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.ncm)}" onchange="nfeAtualizarItem(${i}, 'ncm', this.value)"></div>
-                        <div class="field-group"><label>Qtd na NF</label><input type="number" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.quantidadeXml)}" onchange="nfeAtualizarItem(${i}, 'quantidadeXml', this.value)"></div>
-                        <div class="field-group"><label>Unidades por caixa/fardo</label><input type="number" min="0.001" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.fatorDivisor || 1)}" onchange="nfeAtualizarItem(${i}, 'fatorDivisor', this.value)"></div>
-                        <div class="field-group"><label>Estoque unitário</label><input type="number" step="0.001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.quantidade)}" readonly style="background:#ecfdf5;color:#047857;font-weight:900;"></div>
-                        <div class="field-group"><label>Custo real unit.</label><input type="number" step="0.0001" class="form-input card-mini-input" value="${escaparAtributoSistema(item.custo)}" onchange="nfeAtualizarItem(${i}, 'custo', this.value)"></div>
-                        <div class="field-group"><label>Preço venda</label><input type="number" step="0.01" class="form-input card-mini-input" value="${escaparAtributoSistema(valorVenda)}" onchange="nfeAtualizarItem(${i}, 'precoVenda', this.value)"></div>
+                        <div class="field-group"><label>Qtd na NF</label><input type="text" inputmode="decimal" class="form-input card-mini-input" value="${escaparAtributoSistema(formatarQuantidadeInputBR(item.quantidadeXml))}" onchange="nfeAtualizarItem(${i}, 'quantidadeXml', this.value)"></div>
+                        <div class="field-group"><label>Unidades por caixa/fardo</label><input type="text" inputmode="decimal" class="form-input card-mini-input" value="${escaparAtributoSistema(formatarQuantidadeInputBR(item.fatorDivisor || 1))}" onchange="nfeAtualizarItem(${i}, 'fatorDivisor', this.value)"></div>
+                        <div class="field-group"><label>Estoque unitário</label><input type="text" inputmode="decimal" class="form-input card-mini-input" value="${escaparAtributoSistema(formatarQuantidadeInputBR(item.quantidade))}" readonly style="background:#ecfdf5;color:#047857;font-weight:900;"></div>
+                        <div class="field-group"><label>Custo real unit.</label><input type="text" inputmode="decimal" class="form-input card-mini-input" value="${escaparAtributoSistema(formatarNumeroInputBR(item.custo, 4))}" onchange="nfeAtualizarItem(${i}, 'custo', this.value)"></div>
+                        <div class="field-group"><label>Preço venda</label><input type="text" inputmode="decimal" class="form-input card-mini-input" value="${escaparAtributoSistema(valorVenda === '' ? '' : formatarNumeroInputBR(valorVenda, 2))}" onchange="nfeAtualizarItem(${i}, 'precoVenda', this.value)"></div>
                         <div class="field-group"><label>Validade deste lote</label><input type="date" class="form-input card-mini-input" value="${escaparAtributoSistema(item.validade)}" onchange="nfeAtualizarItem(${i}, 'validade', this.value)"></div>
                         <div class="field-group"><label>Unidade/embalagem</label><input class="form-input card-mini-input" value="${escaparAtributoSistema(item.embalagem || item.unidade)}" onchange="nfeAtualizarItem(${i}, 'embalagem', this.value)"></div>
                         <div class="field-group"><label>Marca</label><select class="form-input card-mini-input" onchange="nfeAtualizarItem(${i}, 'marca', this.value)">${gerarOptions(marcasDoSistema, item.marca, 'Sel. Marca')}</select></div>
