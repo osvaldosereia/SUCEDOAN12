@@ -410,7 +410,7 @@
         <i data-lucide="search" class="search-icon"></i>
         <input type="text" class="search-input" id="search-input" placeholder="Procurar por SKU, Nome, EAN, marca ou categoria...">
     </div>
-    <button class="nav-btn primary" id="btn-enviar-busca" style="height:40px; white-space:nowrap;" onclick="executarBuscaSistema(true)">
+    <button class="nav-btn primary" id="btn-enviar-busca" style="height:40px; white-space:nowrap;" onclick="executarBuscaSistema(false)">
         <i data-lucide="search-check" size="14"></i> BUSCAR
     </button>
     <button class="nav-btn sync-btn" id="btn-camera-ean" style="height:40px; white-space:nowrap;" onclick="abrirLeitorEANCamera()" title="Ler EAN/GTIN pela câmera">
@@ -2550,8 +2550,13 @@ async function salvarProdutosJSON(opcoes = {}) {
 
       async function executarBuscaSistema(forcarFirebase = false) {
     const searchInput = document.getElementById('search-input');
-    const termo = searchInput ? (searchInput.value || "").trim() : "";
+    const termo = searchInput ? (searchInput.value || "").replace(/\s+/g, " ").trim() : "";
 
+    if (searchInput) searchInput.value = termo;
+
+    // Busca não deve recarregar o Firebase a cada clique.
+    // O Firebase já é carregado ao abrir a tela e pelo botão "ATUALIZAR TELA PELO FIREBASE".
+    // Recarregar /produtos.json em toda busca deixa o botão preso em "BUSCANDO" quando a base está grande.
     if (termo !== "") {
         filtroAtivo = { tipo: null, valor: null };
         const banner = document.getElementById('active-filter-banner');
@@ -2560,33 +2565,41 @@ async function salvarProdutosJSON(opcoes = {}) {
 
     const botao = document.getElementById('btn-enviar-busca');
     const htmlOriginal = botao ? botao.innerHTML : "";
+    const precisaCarregarFirebase = Boolean(forcarFirebase) || !Array.isArray(products) || products.length === 0;
 
     try {
-        if (forcarFirebase) {
+        if (precisaCarregarFirebase) {
             if (botao) {
                 botao.disabled = true;
-                botao.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> BUSCANDO`;
-                lucide.createIcons();
+                botao.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> CARREGANDO`;
+                if (typeof lucide !== "undefined") lucide.createIcons();
             }
 
-            await aplicarProdutosFirebaseNaTela("✅ Base recarregada pelo Firebase antes da busca.");
+            await aplicarProdutosFirebaseNaTela(
+                forcarFirebase
+                    ? "✅ Base recarregada pelo Firebase antes da busca."
+                    : "✅ Base carregada pelo Firebase para iniciar a busca."
+            );
         }
 
         ultimoTermoPesquisa = termo;
-        renderGrid(termo);
+        renderGrid(termo, false);
 
         if (termo) {
             mostrarAlerta(`Busca concluída: ${produtosFiltrados.length} produto(s) encontrado(s).`, "sucesso");
+        } else {
+            mostrarAlerta(`Exibindo produtos carregados: ${Array.isArray(products) ? products.length : 0}.`, "sucesso");
         }
     } catch (e) {
         console.error("Erro na busca:", e);
-        mostrarAlerta("Erro ao buscar no Firebase. Mostrando cache local: " + e.message, "erro");
-        renderGrid(termo);
+        mostrarAlerta("Erro ao buscar. Usando o que já está na tela/cache: " + (e && e.message ? e.message : e), "erro");
+        ultimoTermoPesquisa = termo;
+        renderGrid(termo, false);
     } finally {
         if (botao) {
             botao.disabled = false;
             botao.innerHTML = htmlOriginal;
-            lucide.createIcons();
+            if (typeof lucide !== "undefined") lucide.createIcons();
         }
     }
 }
@@ -3134,7 +3147,7 @@ window.onload = async function() {
         searchInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                executarBuscaSistema(true);
+                executarBuscaSistema(false);
             }
 
             if (e.key === 'Escape') {
@@ -3728,7 +3741,7 @@ function normalizarQuantidadesTagsProduto(produto) {
 
     const qtds = {};
     tags.forEach(tag => {
-        let qtd = numeroOfertaProduto(baseNormalizado[normalizarTagNome(tag)] ?? 1);
+        let qtd = parseFloat(baseNormalizado[normalizarTagNome(tag)] ?? 1);
         if (!Number.isFinite(qtd) || qtd <= 0) qtd = 1;
         qtds[tag] = qtd;
     });
@@ -3752,7 +3765,7 @@ function obterQuantidadeTagProduto(produto, tag) {
     if (!produto) return 1;
     normalizarProdutoTagsQuantidade(produto);
     const alvo = normalizarTagNome(tag);
-    const qtd = numeroOfertaProduto((produto.tag_quantidades || {})[alvo]);
+    const qtd = parseFloat((produto.tag_quantidades || {})[alvo]);
     return Number.isFinite(qtd) && qtd > 0 ? qtd : 1;
 }
 
@@ -3766,7 +3779,7 @@ async function salvarQuantidadeTagProduto(sku, tag, quantidade) {
     normalizarProdutoTagsQuantidade(p);
     if (!p.tag_global.includes(tagNormalizada)) p.tag_global.push(tagNormalizada);
 
-    let qtd = numeroOfertaProduto(quantidade);
+    let qtd = parseFloat(String(quantidade || "").replace(",", "."));
     if (!Number.isFinite(qtd) || qtd <= 0) qtd = 1;
     p.tag_quantidades[tagNormalizada] = qtd;
     p.last_update = Date.now();
@@ -3972,7 +3985,7 @@ async function abrirLeitorEANCamera() {
                         const input = document.getElementById("search-input");
                         if (input) input.value = valor;
                         fecharLeitorEANCamera();
-                        executarBuscaSistema(true);
+                        executarBuscaSistema(false);
                         mostrarAlerta("EAN lido: " + valor, "sucesso");
                         return;
                     }
@@ -4423,7 +4436,7 @@ async function carregarCacheLocalProdutos() {
                     <div class="tag-qtd-row">
                         <input type="checkbox" value="${itemSeguro}" ${isChecked ? 'checked' : ''} onchange="toggleMultiSelect('${escaparAtributoSistema(sku)}', '${escaparAtributoSistema(campo)}', this.value, this.checked)" style="cursor:pointer;">
                         <label title="${itemSeguro}">${escaparHtmlSistema(item)}</label>
-                        <input type="text" inputmode="decimal" class="tag-qtd-input" value="${formatarQuantidadeInputBR(qtd)}" ${isChecked ? '' : 'disabled'} onchange="salvarQuantidadeTagProduto('${escaparAtributoSistema(sku)}', '${itemSeguro}', this.value)" title="Quantidade deste item quando esta tag for usada no site">
+                        <input type="number" min="0.01" step="0.01" class="tag-qtd-input" value="${qtd}" ${isChecked ? '' : 'disabled'} onchange="salvarQuantidadeTagProduto('${escaparAtributoSistema(sku)}', '${itemSeguro}', this.value)" title="Quantidade deste item quando esta tag for usada no site">
                     </div>
                 `;
             });
@@ -6138,7 +6151,19 @@ window.exportarCategoriaBling = async function() {
 }
 
 function normalizarNumeroCSV(valor) {
-    return numeroOfertaProduto(valor);
+    if (valor === undefined || valor === null) return 0;
+
+    let texto = String(valor).trim();
+
+    if (!texto) return 0;
+
+    texto = texto
+        .replace(/[R$\s]/g, "")
+        .replace(/\./g, "")
+        .replace(",", ".");
+
+    const numero = parseFloat(texto);
+    return Number.isFinite(numero) ? numero : 0;
 }
 
 function limparChaveComparacao(valor) {
