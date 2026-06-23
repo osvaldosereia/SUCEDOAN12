@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Imagem/SVG para STL HD - Bambu AMS</title>
+  <title>Ímã/Chaveiro JPG → STL HD - Anycubic Kobra</title>
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <style>
@@ -175,8 +175,8 @@
       <div class="brand">
         <div class="logo"></div>
         <div>
-          <h1>Imagem/SVG → STL HD</h1>
-          <p>Camadas por cor para Bambu Studio/AMS</p>
+          <h1>Ímã/Chaveiro → STL HD</h1>
+          <p>Preparado para Anycubic Kobra e troca de cor por altura</p>
         </div>
         <button class="btn ghost mobileToggle" onclick="togglePanel('leftPanel')">Abrir</button>
       </div>
@@ -193,7 +193,7 @@
           <h2>1. Preparar imagem</h2>
           <div class="grid2">
             <label class="field"><span>Cores AMS</span><select id="colorCount"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>8</option></select></label>
-            <label class="field"><span>Perfil</span><select id="qualityProfile"><option value="custom">Personalizado</option><option value="magnet40" selected>Ímã 4 cm / bico 0,2</option><option value="magnet50">Ímã 5 cm / bico 0,2</option><option value="logoHD">Logo/SVG HD</option><option value="fast">Rápido/teste</option></select></label>
+            <label class="field"><span>Perfil</span><select id="qualityProfile"><option value="custom">Personalizado</option><option value="magnet40" selected>Ímã 4 cm / detalhado</option><option value="magnet50">Ímã 5 cm / detalhado</option><option value="keychain50">Chaveiro 5 cm com furo</option><option value="logoHD">Arte/SVG HD</option><option value="fast">Rápido/teste</option></select></label>
           </div>
           <div class="grid2">
             <label class="field"><span>Resolução interna</span><select id="workSize"><option value="256">256 px</option><option value="384">384 px</option><option value="512">512 px</option><option value="768" selected>768 px</option><option value="1024">1024 px</option><option value="1536">1536 px</option><option value="2048">2048 px pesado</option></select></label>
@@ -223,7 +223,25 @@
         </div>
 
         <div class="section">
-          <h2>3. Ferramentas de edição</h2>
+          <h2>3. Produto e estratégia de impressão</h2>
+          <div class="grid2">
+            <label class="field"><span>Produto</span><select id="productMode"><option value="magnet" selected>Ímã de geladeira</option><option value="keychain">Chaveiro</option><option value="badge">Plaquinha / tag</option></select></label>
+            <label class="field"><span>Estratégia</span><select id="printStrategy"><option value="stacked" selected>Empilhado por cor (1 extrusor)</option><option value="separate">Partes independentes</option></select></label>
+          </div>
+          <div class="grid2">
+            <label class="field"><span>Altura de camada no fatiador (mm)</span><input id="slicerLayerHeight" type="number" min="0.05" max="0.32" step="0.01" value="0.12" /></label>
+            <label class="field"><span>Diâmetro do furo (mm)</span><input id="holeDiameter" type="number" min="1" max="12" step="0.1" value="4.2" /></label>
+          </div>
+          <div class="grid2">
+            <label class="field"><span>Posição do furo</span><select id="holePosition"><option value="top-center" selected>Topo central</option><option value="top-left">Topo esquerdo</option><option value="top-right">Topo direito</option></select></label>
+            <label class="field"><span>Margem do furo até a borda (mm)</span><input id="holeOffset" type="number" min="1" max="20" step="0.1" value="3.2" /></label>
+          </div>
+          <label class="check"><input id="holeEnabled" type="checkbox" /> Criar furo passante para chaveiro</label>
+          <div class="notice">Modo recomendado para sua Kobra: <b>Empilhado por cor</b>. O app ordena as cores por etapa e calcula os pontos de troca de filamento para imprimir tudo em uma única peça, trocando a cor apenas quando muda a altura.</div>
+        </div>
+
+        <div class="section">
+          <h2>4. Ferramentas de edição</h2>
           <div class="toolGrid">
             <button class="btn ghost" data-tool="pick">Selecionar cor</button>
             <button class="btn ghost" data-tool="paint">Pintar</button>
@@ -267,7 +285,7 @@
           <canvas id="editCanvas" width="900" height="900"></canvas>
           <div class="empty" id="emptyState">
             <h3>Suba uma imagem para começar</h3>
-            <p>O app separa por cores em alta definição, cria camadas editáveis, gera SVG e exporta STLs alinhados para importar no Bambu Studio.</p>
+            <p>Suba um JPG já preparado, separe as 4 cores, ajuste alturas, crie chaveiro/ímã e exporte o STL final pronto para imprimir por etapas de cor na Anycubic.</p>
           </div>
           <div id="threeHost"></div>
         </div>
@@ -284,8 +302,8 @@
     <aside class="rightbar" id="rightPanel">
       <div class="brand" style="margin-bottom:8px">
         <div>
-          <h1>Camadas e exportação</h1>
-          <p>Edite cada cor e baixe os arquivos.</p>
+          <h1>Camadas, etapas e exportação</h1>
+          <p>Edite cada cor e gere a peça o mais próxima possível do resultado final.</p>
         </div>
         <button class="btn ghost mobileToggle" onclick="togglePanel('rightPanel')">Abrir</button>
       </div>
@@ -305,10 +323,10 @@
           <h2>Exportar</h2>
           <div class="grid2">
             <button class="btn full" id="exportSvgBtn">Baixar SVG</button>
-            <button class="btn full" id="exportSingleStlBtn">STL único</button>
+            <button class="btn full" id="exportSingleStlBtn">STL final</button>
           </div>
           <div class="grid2" style="margin-top:8px">
-            <button class="btn secondary full" id="exportPartsBtn">STLs separados</button>
+            <button class="btn secondary full" id="exportPartsBtn">STLs por etapa</button>
             <button class="btn secondary full" id="exportZipBtn">Pacote ZIP</button>
           </div>
           <button class="btn ghost full" style="margin-top:8px" id="saveProjectBtn">Salvar projeto editável JSON</button>
@@ -317,7 +335,7 @@
             <strong>Reabrir projeto JSON</strong>
             <p>Carrega camadas, medidas e edições.</p>
           </label>
-          <div class="notice">No Bambu Studio: importe os STLs separados juntos, mantenha a mesma origem e atribua um filamento AMS para cada peça.</div>
+          <div class="notice">Na Anycubic Kobra com extrusor único, prefira o modo <b>Empilhado por cor</b>: a cor 1 imprime inteira, depois a cor 2, depois a 3 e depois a 4. O ZIP já sai com o plano de trocas de filamento.</div>
         </div>
 
         <div class="section">
@@ -328,7 +346,7 @@
             • Resolução interna até 2048 px para preservar detalhes pequenos.<br>
             • STL separado por cor é exportado em binário para reduzir tamanho.<br>
             • Quanto maior a resolução, mais pesado fica o navegador e o arquivo final.<br>
-            • 3MF real com materiais ainda pode ser adicionado depois.
+            • O modo principal desta versão é <b>empilhado por cor</b>, ideal para extrusor único com troca manual de filamento.<br>• Também exporta STLs separados caso você queira montar ou testar as peças individualmente.
           </div>
         </div>
       </div>
@@ -372,6 +390,7 @@
     layersList: $('#layersList'), activeLayerPill: $('#activeLayerPill'), sizePill: $('#sizePill'), cellPill: $('#cellPill'),
     colorCount: $('#colorCount'), workSize: $('#workSize'), qualityProfile: $('#qualityProfile'), sharpen: $('#sharpen'), smoothPreview: $('#smoothPreview'), removeBg: $('#removeBg'), bgThreshold: $('#bgThreshold'), alphaOnly: $('#alphaOnly'),
     finalWidth: $('#finalWidth'), nozzle: $('#nozzle'), baseThickness: $('#baseThickness'), baseMargin: $('#baseMargin'), defaultHeight: $('#defaultHeight'),
+    productMode: $('#productMode'), printStrategy: $('#printStrategy'), slicerLayerHeight: $('#slicerLayerHeight'), holeEnabled: $('#holeEnabled'), holeDiameter: $('#holeDiameter'), holePosition: $('#holePosition'), holeOffset: $('#holeOffset'),
     brushSize: $('#brushSize'), analysisBox: $('#analysisBox')
   };
   const ctx = els.editCanvas.getContext('2d');
@@ -389,6 +408,87 @@
   function saturation(r,g,b){ const max=Math.max(r,g,b), min=Math.min(r,g,b); return max-min; }
   function slug(s){ return (s||'modelo').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,60) || 'modelo'; }
   function safeName(){ return slug(state.fileName.replace(/\.[^.]+$/,'')) || 'imagem_para_stl'; }
+
+
+  function getPrintStrategy(){ return els.printStrategy ? els.printStrategy.value : 'stacked'; }
+  function isStackMode(){ return getPrintStrategy() === 'stacked'; }
+  function getProductMode(){ return els.productMode ? els.productMode.value : 'magnet'; }
+  function useHole(){ return !!(els.holeEnabled && els.holeEnabled.checked); }
+  function syncStackHeights(){
+    if(!state.layers || !state.layers.length) return;
+    if(!isStackMode()) return;
+    let z = parseFloat(els.baseThickness.value)||0;
+    state.layers.forEach(l => {
+      l.z = Number(z.toFixed(3));
+      z += Math.max(0.01, parseFloat(l.height)||0.01);
+    });
+  }
+  function holeMask(){
+    const mask = new Uint8Array((state.w||0)*(state.h||0));
+    if(!state.w || !state.h || !useHole()) return mask;
+    const cell = (parseFloat(els.finalWidth.value)||50) / state.w;
+    const diameter = Math.max(1, parseFloat(els.holeDiameter.value)||4.2);
+    const radiusPx = Math.max(1, (diameter / cell) / 2);
+    const offsetPx = Math.max(radiusPx + 1, (parseFloat(els.holeOffset.value)||3.2) / cell);
+    let cx = state.w / 2, cy = offsetPx;
+    const pos = els.holePosition ? els.holePosition.value : 'top-center';
+    if(pos === 'top-left') cx = offsetPx + radiusPx;
+    else if(pos === 'top-right') cx = state.w - offsetPx - radiusPx;
+    else cx = state.w / 2;
+    cy = offsetPx + radiusPx;
+    for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++){
+      const dx = (x+0.5)-cx, dy=(y+0.5)-cy;
+      if(dx*dx + dy*dy <= radiusPx*radiusPx) mask[idx(x,y)] = 1;
+    }
+    return mask;
+  }
+  function applyHoleCutout(mask){
+    if(!useHole()) return mask;
+    const hmask = holeMask();
+    for(let i=0;i<mask.length;i++) if(hmask[i]) mask[i]=0;
+    return mask;
+  }
+  function getLayerPlan(){
+    const plan = [];
+    const exported = state.layers.map((l,i)=>({layerIndex:i, ...l})).filter(l=>l.export);
+    if(isStackMode()){
+      let z = parseFloat(els.baseThickness.value)||0;
+      exported.forEach((l,order)=>{
+        const h = Math.max(0.01, parseFloat(l.height)||0.01);
+        plan.push({...l, order, z0:Number(z.toFixed(3)), z1:Number((z+h).toFixed(3)), h});
+        z += h;
+      });
+    } else {
+      exported.forEach((l,order)=>{
+        const h = Math.max(0.01, parseFloat(l.height)||0.01);
+        const z0 = parseFloat(l.z)||0;
+        plan.push({...l, order, z0:Number(z0.toFixed(3)), z1:Number((z0+h).toFixed(3)), h});
+      });
+    }
+    return plan;
+  }
+  function moveLayer(from,to){
+    if(from===to || from<0 || to<0 || from>=state.layers.length || to>=state.layers.length) return;
+    const oldIds = state.layers.map(l=>l.id);
+    const moved = state.layers.slice();
+    const [item] = moved.splice(from,1);
+    moved.splice(to,0,item);
+    const idToNew = new Map(moved.map((l,i)=>[l.id,i]));
+    const remap = oldIds.map(id => idToNew.get(id));
+    const out = new Int16Array(state.labels);
+    for(let i=0;i<out.length;i++){
+      const lab = out[i];
+      if(lab >= 0 && remap[lab] !== undefined) out[i] = remap[lab];
+    }
+    state.layers = moved;
+    state.labels = out;
+    state.activeLayer = clamp(to,0,state.layers.length-1);
+    syncStackHeights();
+    rebuildPreviewRGBA();
+    renderLayers();
+    draw2D();
+    updatePills();
+  }
 
   function togglePanel(id){ document.getElementById(id).classList.toggle('collapsed'); }
   window.togglePanel = togglePanel;
@@ -503,6 +603,7 @@
       };
     });
     state.activeLayer = 0;
+    syncStackHeights();
     state.zoom = 1; state.panX = 0; state.panY = 0;
     state.undo.length = 0; state.redo.length = 0;
     rebuildPreviewRGBA();
@@ -518,11 +619,13 @@
   function applyQualityProfile(){
     if(!els.qualityProfile) return;
     const v = els.qualityProfile.value;
-    const set = (id,val)=>{ const el=document.getElementById(id); if(el) el.value=val; };
+    const set = (id,val)=>{ const el=document.getElementById(id); if(!el) return; if(el.type==='checkbox') el.checked = !!val; else el.value=val; };
     if(v==='magnet40'){
       set('finalWidth','40'); set('workSize','768'); set('colorCount','4'); set('baseThickness','1.0'); set('defaultHeight','0.55'); set('nozzle','0.2'); set('sharpen','30');
     } else if(v==='magnet50'){
       set('finalWidth','50'); set('workSize','1024'); set('colorCount','4'); set('baseThickness','1.1'); set('defaultHeight','0.6'); set('nozzle','0.2'); set('sharpen','25');
+    } else if(v==='keychain50'){
+      set('productMode','keychain'); set('holeEnabled', true); set('holeDiameter','4.2'); set('holeOffset','3.2'); set('finalWidth','50'); set('workSize','1024'); set('colorCount','4'); set('baseThickness','1.6'); set('defaultHeight','0.5'); set('nozzle','0.2'); set('sharpen','25');
     } else if(v==='logoHD'){
       set('finalWidth','50'); set('workSize','1536'); set('colorCount','4'); set('baseThickness','1.0'); set('defaultHeight','0.65'); set('nozzle','0.2'); set('sharpen','15');
     } else if(v==='fast'){
@@ -649,19 +752,20 @@
     els.sizePill.textContent = `${width.toFixed(1)} × ${height.toFixed(1)} mm`;
     els.cellPill.textContent = `célula: ${cell.toFixed(3)} mm`;
     const layer = state.layers[state.activeLayer];
-    els.activeLayerPill.innerHTML = layer ? `<span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${layer.color};border:1px solid #bbb"></span> ${layer.name}` : 'sem camada';
+    els.activeLayerPill.innerHTML = layer ? `<span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${layer.color};border:1px solid #bbb"></span> ${isStackMode()?'etapa':'camada'}: ${layer.name}` : 'sem camada';
   }
 
   function renderLayers(){
     if(!state.layers.length){ els.layersList.innerHTML = '<p>Nenhuma camada ainda.</p>'; return; }
     updateLayerPixelCounts();
+    syncStackHeights();
     els.layersList.innerHTML = state.layers.map((l,i)=>`
       <div class="layer ${i===state.activeLayer?'active':''}" data-layer="${i}">
         <div class="layerHead">
           <div class="swatch" style="background:${l.color}"></div>
           <div>
-            <div class="layerTitle">${escapeHtml(l.name)}</div>
-            <div class="layerMeta">${l.pixels||0} células • ${(pixelAreaMm(l.pixels||0)).toFixed(1)} mm²</div>
+            <div class="layerTitle">${isStackMode() ? 'Etapa ' + (i+1) + ' · ' : ''}${escapeHtml(l.name)}</div>
+            <div class="layerMeta">${l.pixels||0} células • ${(pixelAreaMm(l.pixels||0)).toFixed(1)} mm²${isStackMode() ? ' • troca #' + (i+1) : ''}</div>
           </div>
           <input class="colorInput" type="color" value="${l.color}" data-action="color" data-i="${i}">
         </div>
@@ -671,8 +775,12 @@
           <label class="check" style="margin:0"><input type="checkbox" ${l.export?'checked':''} data-action="export" data-i="${i}"> exportar</label>
         </div>
         <div class="miniGrid">
-          <label><span>Z inicial</span><input type="number" step="0.05" value="${l.z}" data-action="z" data-i="${i}"></label>
+          <label><span>${isStackMode() ? 'Z automático' : 'Z inicial'}</span><input type="number" step="0.05" value="${l.z}" data-action="z" data-i="${i}" ${isStackMode() ? 'readonly' : ''}></label>
           <label><span>Altura</span><input type="number" step="0.05" value="${l.height}" data-action="height" data-i="${i}"></label>
+        </div>
+        <div class="grid2" style="margin-top:8px">
+          <button class="btn ghost" data-action="moveup" data-i="${i}">Subir etapa</button>
+          <button class="btn ghost" data-action="movedown" data-i="${i}">Descer etapa</button>
         </div>
       </div>`).join('');
   }
@@ -682,6 +790,12 @@
   function pixelAreaMm(px){ if(!state.w) return 0; const cell = (parseFloat(els.finalWidth.value)||50)/state.w; return px*cell*cell; }
 
   els.layersList.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-action]');
+    if(btn){
+      const i = parseInt(btn.dataset.i,10);
+      if(btn.dataset.action==='moveup'){ saveUndo(); moveLayer(i, Math.max(0, i-1)); return; }
+      if(btn.dataset.action==='movedown'){ saveUndo(); moveLayer(i, Math.min(state.layers.length-1, i+1)); return; }
+    }
     const card = e.target.closest('.layer');
     if(!card) return;
     const input = e.target.closest('input');
@@ -696,7 +810,8 @@
     if(a==='name') l.name = e.target.value;
     if(a==='z') l.z = parseFloat(e.target.value)||0;
     if(a==='height') l.height = Math.max(0.01, parseFloat(e.target.value)||0.01);
-    rebuildPreviewRGBA(); draw2D(); updatePills();
+    syncStackHeights();
+    rebuildPreviewRGBA(); draw2D(); updatePills(); renderLayers();
   });
   els.layersList.addEventListener('change', e => {
     const a = e.target.dataset.action; if(!a) return;
@@ -788,11 +903,17 @@
   $('#fitBtn').addEventListener('click', () => { state.zoom=1;state.panX=0;state.panY=0;draw2D(); });
   els.processBtn.addEventListener('click', processImage);
   if(els.qualityProfile){ els.qualityProfile.addEventListener('change', applyQualityProfile); applyQualityProfile(); }
-  ['finalWidth','baseThickness','baseMargin','nozzle'].forEach(id => document.getElementById(id).addEventListener('input', () => { updatePills(); renderLayers(); }));
+  ['finalWidth','baseThickness','baseMargin','nozzle','slicerLayerHeight','holeDiameter','holeOffset'].forEach(id => document.getElementById(id).addEventListener('input', () => { syncStackHeights(); updatePills(); renderLayers(); analyze(false); }));
+  ['productMode','printStrategy','holePosition'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+    if(id==='productMode' && els.productMode.value==='keychain' && els.holeEnabled) els.holeEnabled.checked = true;
+    syncStackHeights(); rebuildPreviewRGBA(); draw2D(); renderLayers(); updatePills(); analyze(false);
+  }));
+  if(els.holeEnabled) els.holeEnabled.addEventListener('change', () => { rebuildPreviewRGBA(); draw2D(); analyze(false); });
   $('#applyDefaultHeights').addEventListener('click', () => {
     const h = parseFloat(els.defaultHeight.value)||0.6;
     const z = parseFloat(els.baseThickness.value)||0;
-    state.layers.forEach(l => { l.height=h; l.z=z; });
+    state.layers.forEach(l => { l.height=h; if(!isStackMode()) l.z=z; });
+    syncStackHeights();
     renderLayers(); updatePills();
   });
 
@@ -863,12 +984,12 @@
       }
       mask=out;
     }
-    return mask;
+    return applyHoleCutout(mask);
   }
   function layerMask(layerIndex){
     const mask = new Uint8Array(state.w*state.h);
     for(let i=0;i<state.labels.length;i++) if(state.labels[i] === layerIndex) mask[i]=1;
-    return mask;
+    return applyHoleCutout(mask);
   }
 
   function getScale(){ const width=parseFloat(els.finalWidth.value)||50; const cell=width/state.w; return {cell, width, height: state.h*cell}; }
@@ -961,20 +1082,19 @@
 
   function generateParts(){
     if(!state.labels) throw new Error('Sem imagem processada.');
+    syncStackHeights();
     const parts = [];
     const base = parseFloat(els.baseThickness.value)||0;
     if(base > 0){
       const mask = makeBaseMask();
       const tris = trianglesForMask(mask, 0, base);
-      if(tris.length) parts.push({name:'base_suporte', color:'#1f2937', tris});
+      if(tris.length) parts.push({name:'base_suporte', color:'#1f2937', tris, type:'base', z0:0, z1:base});
     }
-    state.layers.forEach((l,i) => {
-      if(!l.export) return;
-      const mask = layerMask(i);
-      const z0 = parseFloat(l.z)||0;
-      const z1 = z0 + Math.max(0.01, parseFloat(l.height)||0.01);
-      const tris = trianglesForMask(mask, z0, z1);
-      if(tris.length) parts.push({name: slug(l.name || ('cor_'+(i+1))), color:l.color, tris, layer:i});
+    const plan = getLayerPlan();
+    plan.forEach(p => {
+      const mask = layerMask(p.layerIndex);
+      const tris = trianglesForMask(mask, p.z0, p.z1);
+      if(tris.length) parts.push({name: slug(p.name || ('cor_'+(p.layerIndex+1))), displayName:p.name, color:p.color, tris, layer:p.layerIndex, z0:p.z0, z1:p.z1, order:p.order, type:'color'});
     });
     return parts;
   }
@@ -995,14 +1115,15 @@
     downloadBlob(`${safeName()}_camadas.svg`, new Blob([svg], {type:'image/svg+xml'}));
   }
   function pathRunsForLayer(lab){
+    const mask = layerMask(lab);
     let d='';
     for(let y=0;y<state.h;y++){
       let x=0;
       while(x<state.w){
-        while(x<state.w && state.labels[idx(x,y)]!==lab) x++;
+        while(x<state.w && !mask[idx(x,y)]) x++;
         if(x>=state.w) break;
         const x0=x;
-        while(x<state.w && state.labels[idx(x,y)]===lab) x++;
+        while(x<state.w && mask[idx(x,y)]) x++;
         const x1=x;
         d += `M${x0} ${y}H${x1}V${y+1}H${x0}Z`;
       }
@@ -1035,7 +1156,7 @@
       parts.forEach((p,i)=> folder.file(`${String(i+1).padStart(2,'0')}_${p.name}_HD_binario.stl`, trianglesToBinarySTL(p.tris,p.name)));
       folder.file(`${safeName()}_unico_HD_binario.stl`, trianglesToBinarySTL(mergeTriangles(parts), safeName() + '_unico'));
       folder.file('configuracoes_projeto.json', JSON.stringify(projectJSON(), null, 2));
-      folder.file('instrucoes_bambu.txt', bambuInstructions(parts));
+      folder.file('guia_impressao_anycubic.txt', printPlanText(parts));
       folder.file(`${safeName()}_camadas.svg`, svgTextOnly());
       const blob = await zip.generateAsync({type:'blob'});
       downloadBlob(`${safeName()}_pacote_bambu.zip`, blob);
@@ -1047,13 +1168,58 @@
     state.layers.forEach((l,i)=>{ const d=pathRunsForLayer(i); if(d) svg += `<g id="${escapeAttr(slug(l.name))}" fill="${l.color}" data-z-mm="${l.z}" data-altura-mm="${l.height}"><path d="${d}"/></g>\n`; });
     return svg + '</svg>';
   }
+  function printPlanText(parts){
+    const lh = Math.max(0.01, parseFloat(els.slicerLayerHeight.value)||0.12);
+    const product = getProductMode();
+    const plan = parts.filter(p=>p.type==='color').sort((a,b)=>a.z0-b.z0);
+    const totalH = parts.reduce((m,p)=>Math.max(m,p.z1||0),0);
+    let txt = `GUIA DE IMPRESSÃO - ANYCUBIC KOBRA
+
+`;
+    txt += `Produto: ${product==='keychain'?'Chaveiro':product==='magnet'?'Ímã de geladeira':'Plaquinha/tag'}
+`;
+    txt += `Estratégia: ${isStackMode()?'Empilhado por cor (troca manual de filamento por altura)':'Partes independentes'}
+`;
+    txt += `Largura final: ${(parseFloat(els.finalWidth.value)||50).toFixed(1)} mm
+`;
+    txt += `Base: ${(parseFloat(els.baseThickness.value)||0).toFixed(2)} mm
+`;
+    txt += `Altura de camada do fatiador: ${lh.toFixed(2)} mm
+`;
+    txt += `Altura total aproximada: ${totalH.toFixed(2)} mm
+`;
+    if(useHole()) txt += `Furo passante: ${parseFloat(els.holeDiameter.value)||4.2} mm (${els.holePosition.value})
+`;
+    txt += `
+ORDEM DAS CORES / ETAPAS:
+`;
+    plan.forEach((p,i)=>{
+      const pauseLayer = Math.max(1, Math.round(p.z1 / lh));
+      txt += `${i+1}. ${p.displayName || p.name} | cor sugerida ${p.color} | imprime de Z ${p.z0.toFixed(2)} até ${p.z1.toFixed(2)} mm | trocar filamento após a camada ${pauseLayer} (aprox. Z ${p.z1.toFixed(2)} mm)
+`;
+    });
+    txt += `
+COMO FATIAR:
+`;
+    txt += `1. Importe o STL final único no Anycubic Slicer / Orca / PrusaSlicer.
+`;
+    txt += `2. Defina a altura de camada exatamente como ${lh.toFixed(2)} mm para que as pausas batam com o plano.
+`;
+    txt += `3. Insira pausas/trocas de filamento nas alturas finais de cada etapa de cor.
+`;
+    txt += `4. Troque para a próxima cor e continue a impressão.
+`;
+    txt += `5. Para ímã, cole manta magnética ou ímã pronto no verso. Para chaveiro, use argola metálica no furo passante.
+`;
+    return txt;
+  }
   function bambuInstructions(parts){
-    return `INSTRUÇÕES PARA BAMBU STUDIO / AMS\n\n1. Importe todos os STLs separados ao mesmo tempo.\n2. Se o Bambu Studio perguntar, carregue como um único objeto com múltiplas partes.\n3. Mantenha todos na mesma origem, sem mover individualmente.\n4. Atribua cada parte a um filamento AMS.\n5. Use bico 0,2 mm para detalhes pequenos.\n6. Confira a prévia de fatiamento antes de imprimir.\n\nPARTES EXPORTADAS:\n${parts.map((p,i)=>`${i+1}. ${p.name} - cor sugerida ${p.color}`).join('\n')}\n`;
+    return printPlanText(parts);
   }
 
   function projectJSON(){
     return {
-      app:'Imagem SVG STL Bambu HTML HD', version:2,
+      app:'Ima Chaveiro STL Anycubic HTML HD', version:3,
       fileName: state.fileName,
       originalW: state.originalW, originalH: state.originalH,
       w: state.w, h: state.h,
@@ -1061,7 +1227,7 @@
       layers: state.layers,
       settings:{
         finalWidth: els.finalWidth.value, nozzle: els.nozzle.value, baseThickness: els.baseThickness.value, baseMargin: els.baseMargin.value,
-        defaultHeight: els.defaultHeight.value
+        defaultHeight: els.defaultHeight.value, productMode: els.productMode.value, printStrategy: els.printStrategy.value, slicerLayerHeight: els.slicerLayerHeight.value, holeEnabled: els.holeEnabled.checked, holeDiameter: els.holeDiameter.value, holePosition: els.holePosition.value, holeOffset: els.holeOffset.value
       }
     };
   }
@@ -1077,7 +1243,8 @@
       state.originalW = obj.originalW || 0; state.originalH = obj.originalH || 0; state.w=obj.w; state.h=obj.h;
       state.labels = new Int16Array(obj.labels || []);
       state.layers = obj.layers || [];
-      if(obj.settings){ Object.entries(obj.settings).forEach(([k,v])=>{ if(els[k]) els[k].value = v; }); }
+      if(obj.settings){ Object.entries(obj.settings).forEach(([k,v])=>{ if(!els[k]) return; if(els[k].type==='checkbox') els[k].checked = !!v; else els[k].value = v; }); }
+      syncStackHeights();
       state.activeLayer=0; state.undo.length=0; state.redo.length=0;
       rebuildPreviewRGBA(); renderLayers(); draw2D(); updatePills(); analyze(false);
       els.emptyState.classList.add('hidden'); els.currentFile.textContent = state.fileName + ' (projeto reaberto)';
@@ -1096,6 +1263,8 @@
     updateLayerPixelCounts();
     const {cell,width,height} = getScale();
     const nozzle = parseFloat(els.nozzle.value)||0.2;
+    const lh = Math.max(0.01, parseFloat(els.slicerLayerHeight.value)||0.12);
+    syncStackHeights();
     const minRecommended = nozzle * 1.2;
     const comps = connectedComponents();
     const tiny = comps.filter(c=>c.lab>=0 && c.cells.length <= 3).length;
@@ -1115,7 +1284,15 @@
     const base = parseFloat(els.baseThickness.value)||0;
     if(base <= 0) html += `<span class="warnText">⚠ Sem base sólida. Algumas partes podem ficar soltas se as cores não encostarem.</span><br>`;
     else html += `<span class="ok">✓ Base sólida ativa com borda de ${els.baseMargin.value}px.</span><br>`;
-    html += `<br><b>Sugestão:</b> para ímã de 4–5 cm em AMS, use 512–1024 px, base entre 0,8 e 1,4 mm e relevos entre 0,4 e 1,2 mm.`;
+    html += `<br><b>Sugestão:</b> para ímã de 4–5 cm na Anycubic Kobra, use 512–1024 px, base entre 0,8 e 1,6 mm e relevos entre 0,4 e 1,2 mm.`;
+    const plan = getLayerPlan();
+    if(plan.length){
+      html += '<br><b>Plano de etapas:</b><br>';
+      plan.forEach((p,i)=>{
+        const pauseLayer = Math.max(1, Math.round(p.z1 / lh));
+        html += `${i+1}. ${escapeHtml(p.name)} — Z ${p.z0.toFixed(2)} → ${p.z1.toFixed(2)} mm — trocar após camada ${pauseLayer}<br>`;
+      });
+    }
     els.analysisBox.innerHTML = html;
     if(showAlert) updatePreview3D();
   }
