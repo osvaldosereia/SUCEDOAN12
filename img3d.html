@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Imagem para SVG/STL - Bambu AMS</title>
+  <title>Imagem/SVG para STL HD - Bambu AMS</title>
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <style>
@@ -127,7 +127,7 @@
       display:flex;align-items:center;justify-content:center;overflow:hidden;
     }
     .canvasBox{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:18px}
-    canvas#editCanvas{max-width:100%;max-height:100%;image-rendering:pixelated;border-radius:10px;box-shadow:0 16px 50px rgba(22,32,51,.12);background:white}
+    canvas#editCanvas{max-width:100%;max-height:100%;image-rendering:auto;border-radius:10px;box-shadow:0 16px 50px rgba(22,32,51,.12);background:white}
     .empty{
       max-width:520px;text-align:center;padding:32px;background:rgba(255,255,255,.86);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)
     }
@@ -175,16 +175,16 @@
       <div class="brand">
         <div class="logo"></div>
         <div>
-          <h1>Imagem → SVG/STL</h1>
+          <h1>Imagem/SVG → STL HD</h1>
           <p>Camadas por cor para Bambu Studio/AMS</p>
         </div>
         <button class="btn ghost mobileToggle" onclick="togglePanel('leftPanel')">Abrir</button>
       </div>
       <div class="collapseBody">
         <label class="upload" id="dropZone">
-          <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" />
+          <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,image/svg+xml" />
           <strong>Subir imagem</strong>
-          <p>PNG, JPG ou WebP. Arraste aqui ou clique.</p>
+          <p>PNG, JPG, WebP, BMP ou SVG. Arraste aqui ou clique.</p>
           <div style="margin-top:12px"><span class="btn secondary">Escolher arquivo</span></div>
         </label>
         <div class="statusBox" id="fileInfo">Nenhuma imagem carregada.</div>
@@ -193,14 +193,19 @@
           <h2>1. Preparar imagem</h2>
           <div class="grid2">
             <label class="field"><span>Cores AMS</span><select id="colorCount"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>8</option></select></label>
-            <label class="field"><span>Resolução interna</span><select id="workSize"><option value="64">64 px</option><option value="96" selected>96 px</option><option value="128">128 px</option><option value="160">160 px</option><option value="192">192 px</option></select></label>
+            <label class="field"><span>Perfil</span><select id="qualityProfile"><option value="custom">Personalizado</option><option value="magnet40" selected>Ímã 4 cm / bico 0,2</option><option value="magnet50">Ímã 5 cm / bico 0,2</option><option value="logoHD">Logo/SVG HD</option><option value="fast">Rápido/teste</option></select></label>
+          </div>
+          <div class="grid2">
+            <label class="field"><span>Resolução interna</span><select id="workSize"><option value="256">256 px</option><option value="384">384 px</option><option value="512">512 px</option><option value="768" selected>768 px</option><option value="1024">1024 px</option><option value="1536">1536 px</option><option value="2048">2048 px pesado</option></select></label>
+            <label class="field"><span>Nitidez da imagem</span><input id="sharpen" type="range" min="0" max="100" value="25" /></label>
           </div>
           <label class="check"><input id="removeBg" type="checkbox" checked /> Remover fundo claro/branco</label>
           <label class="field"><span>Sensibilidade do fundo claro</span><input id="bgThreshold" type="range" min="180" max="252" value="235" /></label>
           <label class="check"><input id="alphaOnly" type="checkbox" /> Usar transparência como fundo, sem remover branco</label>
-          <button class="btn full" id="processBtn">Processar imagem em camadas</button>
+          <label class="check"><input id="smoothPreview" type="checkbox" checked /> Mostrar preview suavizado na tela</label>
+          <button class="btn full" id="processBtn">Processar em alta definição</button>
           <div class="progress"><i id="progressBar"></i></div>
-          <div class="notice warn">Para peças pequenas, use 4 cores, detalhes grossos e resolução entre 96 e 128 px. Resoluções altas geram STL mais pesado.</div>
+          <div class="notice warn">Modo HD: para ímãs de 4–5 cm use 512–1024 px. 1536–2048 px preserva mais detalhes, mas gera STL/ZIP maior e pode travar celulares.</div>
         </div>
 
         <div class="section">
@@ -262,7 +267,7 @@
           <canvas id="editCanvas" width="900" height="900"></canvas>
           <div class="empty" id="emptyState">
             <h3>Suba uma imagem para começar</h3>
-            <p>O app separa por cores, cria camadas editáveis, gera SVG e exporta STLs alinhados para importar no Bambu Studio.</p>
+            <p>O app separa por cores em alta definição, cria camadas editáveis, gera SVG e exporta STLs alinhados para importar no Bambu Studio.</p>
           </div>
           <div id="threeHost"></div>
         </div>
@@ -318,11 +323,12 @@
         <div class="section">
           <h2>Limitações desta versão</h2>
           <div class="statusBox">
-            <b>Esta é uma versão MVP em HTML único.</b><br>
-            • O SVG é gerado por áreas rasterizadas em paths compactos por cor.<br>
-            • O STL é sólido e imprimível, mas pode ficar com bordas pixeladas dependendo da resolução.<br>
-            • Para artes muito detalhadas, simplifique para 4 cores e use resolução moderada.<br>
-            • 3MF real com materiais pode ser adicionado depois como módulo avançado.
+            <b>Esta é uma versão HD em HTML único.</b><br>
+            • Aceita imagem e SVG, processando tudo no navegador.<br>
+            • Resolução interna até 2048 px para preservar detalhes pequenos.<br>
+            • STL separado por cor é exportado em binário para reduzir tamanho.<br>
+            • Quanto maior a resolução, mais pesado fica o navegador e o arquivo final.<br>
+            • 3MF real com materiais ainda pode ser adicionado depois.
           </div>
         </div>
       </div>
@@ -364,7 +370,7 @@
     processBtn: $('#processBtn'), progressBar: $('#progressBar'), fileInfo: $('#fileInfo'), currentFile: $('#currentFile'),
     editCanvas: $('#editCanvas'), emptyState: $('#emptyState'), threeHost: $('#threeHost'),
     layersList: $('#layersList'), activeLayerPill: $('#activeLayerPill'), sizePill: $('#sizePill'), cellPill: $('#cellPill'),
-    colorCount: $('#colorCount'), workSize: $('#workSize'), removeBg: $('#removeBg'), bgThreshold: $('#bgThreshold'), alphaOnly: $('#alphaOnly'),
+    colorCount: $('#colorCount'), workSize: $('#workSize'), qualityProfile: $('#qualityProfile'), sharpen: $('#sharpen'), smoothPreview: $('#smoothPreview'), removeBg: $('#removeBg'), bgThreshold: $('#bgThreshold'), alphaOnly: $('#alphaOnly'),
     finalWidth: $('#finalWidth'), nozzle: $('#nozzle'), baseThickness: $('#baseThickness'), baseMargin: $('#baseMargin'), defaultHeight: $('#defaultHeight'),
     brushSize: $('#brushSize'), analysisBox: $('#analysisBox')
   };
@@ -414,7 +420,7 @@
       els.emptyState.classList.remove('hidden');
       URL.revokeObjectURL(url);
     };
-    img.onerror = () => alert('Não consegui abrir essa imagem. Tente PNG, JPG ou WebP.');
+    img.onerror = () => alert('Não consegui abrir esse arquivo. Tente PNG, JPG, WebP, BMP ou SVG simples.');
     img.src = url;
   }
 
@@ -426,6 +432,7 @@
 
   async function processImage(){
     if(!state.image){ alert('Suba uma imagem primeiro.'); return; }
+    if(!maybeWarnHeavy()) return;
     setProgress(5);
     await waitFrame();
 
@@ -440,7 +447,9 @@
     const octx = off.getContext('2d', { willReadFrequently:true });
     octx.imageSmoothingEnabled = true;
     octx.drawImage(state.image, 0, 0, w, h);
-    const imgData = octx.getImageData(0,0,w,h);
+    let imgData = octx.getImageData(0,0,w,h);
+    const sharp = els.sharpen ? parseInt(els.sharpen.value,10) : 0;
+    if(sharp > 0){ imgData = sharpenImageData(imgData, sharp/100); }
     const data = imgData.data;
 
     const removeBg = els.removeBg.checked && !els.alphaOnly.checked;
@@ -506,6 +515,54 @@
     setTimeout(()=>setProgress(0), 700);
   }
 
+  function applyQualityProfile(){
+    if(!els.qualityProfile) return;
+    const v = els.qualityProfile.value;
+    const set = (id,val)=>{ const el=document.getElementById(id); if(el) el.value=val; };
+    if(v==='magnet40'){
+      set('finalWidth','40'); set('workSize','768'); set('colorCount','4'); set('baseThickness','1.0'); set('defaultHeight','0.55'); set('nozzle','0.2'); set('sharpen','30');
+    } else if(v==='magnet50'){
+      set('finalWidth','50'); set('workSize','1024'); set('colorCount','4'); set('baseThickness','1.1'); set('defaultHeight','0.6'); set('nozzle','0.2'); set('sharpen','25');
+    } else if(v==='logoHD'){
+      set('finalWidth','50'); set('workSize','1536'); set('colorCount','4'); set('baseThickness','1.0'); set('defaultHeight','0.65'); set('nozzle','0.2'); set('sharpen','15');
+    } else if(v==='fast'){
+      set('workSize','384'); set('sharpen','10');
+    }
+    updatePills();
+  }
+
+  function sharpenImageData(imgData, amount){
+    const w=imgData.width,h=imgData.height,src=imgData.data;
+    const out = new ImageData(w,h);
+    const dst = out.data;
+    const a = Math.max(0, Math.min(1, amount));
+    // unsharp mask simples: centro mais forte e vizinhos negativos, preservando alpha.
+    const c = 1 + 4*a;
+    const n = -a;
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const p=(y*w+x)*4;
+        for(let ch=0; ch<3; ch++){
+          const v = src[p+ch]*c
+            + src[((Math.max(0,y-1)*w+x)*4)+ch]*n
+            + src[((Math.min(h-1,y+1)*w+x)*4)+ch]*n
+            + src[((y*w+Math.max(0,x-1))*4)+ch]*n
+            + src[((y*w+Math.min(w-1,x+1))*4)+ch]*n;
+          dst[p+ch] = clamp(Math.round(v),0,255);
+        }
+        dst[p+3]=src[p+3];
+      }
+    }
+    return out;
+  }
+
+  function maybeWarnHeavy(){
+    const size = parseInt(els.workSize.value,10)||768;
+    if(size >= 1536){
+      return confirm('Você escolheu resolução muito alta. A qualidade melhora, mas o STL/ZIP pode ficar pesado e o navegador pode demorar. Continuar?');
+    }
+    return true;
+  }
   function waitFrame(){ return new Promise(r => requestAnimationFrame(r)); }
 
   function kmeans(pixels, k, iterations){
@@ -570,7 +627,7 @@
     const scale = Math.min((cssW-28)/state.w, (cssH-28)/state.h) * state.zoom;
     const x = cssW/2 - state.w*scale/2 + state.panX;
     const y = cssH/2 - state.h*scale/2 + state.panY;
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = !!(els.smoothPreview && els.smoothPreview.checked && scale < 12);
     ctx.drawImage(temp, x, y, state.w*scale, state.h*scale);
 
     // grid / active layer outline effect
@@ -730,6 +787,7 @@
   $('#redoBtn').addEventListener('click', () => { if(!state.redo.length) return; state.undo.push({labels:new Int16Array(state.labels), layers:JSON.parse(JSON.stringify(state.layers))}); restoreSnapshot(state.redo.pop()); });
   $('#fitBtn').addEventListener('click', () => { state.zoom=1;state.panX=0;state.panY=0;draw2D(); });
   els.processBtn.addEventListener('click', processImage);
+  if(els.qualityProfile){ els.qualityProfile.addEventListener('change', applyQualityProfile); applyQualityProfile(); }
   ['finalWidth','baseThickness','baseMargin','nozzle'].forEach(id => document.getElementById(id).addEventListener('input', () => { updatePills(); renderLayers(); }));
   $('#applyDefaultHeights').addEventListener('click', () => {
     const h = parseFloat(els.defaultHeight.value)||0.6;
@@ -874,6 +932,28 @@
     s += `endsolid ${name}\n`;
     return s;
   }
+  function trianglesToBinarySTL(tris, name){
+    const buffer = new ArrayBuffer(84 + tris.length * 50);
+    const view = new DataView(buffer);
+    const enc = new TextEncoder();
+    const header = enc.encode(('STL gerado por Dona Antonia HD - ' + name).slice(0,78));
+    new Uint8Array(buffer,0,header.length).set(header);
+    view.setUint32(80, tris.length, true);
+    let o = 84;
+    for(const t of tris){
+      const n = normal(t[0],t[1],t[2]);
+      view.setFloat32(o, n[0], true); view.setFloat32(o+4, n[1], true); view.setFloat32(o+8, n[2], true); o+=12;
+      for(let vi=0; vi<3; vi++){
+        view.setFloat32(o, t[vi][0], true); view.setFloat32(o+4, t[vi][1], true); view.setFloat32(o+8, t[vi][2], true); o+=12;
+      }
+      view.setUint16(o, 0, true); o+=2;
+    }
+    return buffer;
+  }
+
+  function mergeTriangles(parts){
+    const all=[]; parts.forEach(p=>all.push(...p.tris)); return all;
+  }
   function fmt(n){ return Number(n).toFixed(5).replace(/\.0+$/,'').replace(/(\.\d*?)0+$/,'$1'); }
   function downloadBlob(name, blob){
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
@@ -934,15 +1014,15 @@
     try{
       const parts = generateParts();
       if(!parts.length){ alert('Nada para exportar.'); return; }
-      const content = parts.map(p=>trianglesToSTL(p.tris, p.name)).join('\n');
-      downloadBlob(`${safeName()}_unico.stl`, new Blob([content], {type:'model/stl'}));
+      const content = trianglesToBinarySTL(mergeTriangles(parts), safeName() + '_unico');
+      downloadBlob(`${safeName()}_unico_HD_binario.stl`, new Blob([content], {type:'model/stl'}));
     }catch(e){ alert(e.message); }
   }
   function exportParts(){
     try{
       const parts = generateParts();
       if(!parts.length){ alert('Nada para exportar.'); return; }
-      parts.forEach((p,i)=> downloadBlob(`${safeName()}_${String(i+1).padStart(2,'0')}_${p.name}.stl`, new Blob([trianglesToSTL(p.tris,p.name)], {type:'model/stl'})) );
+      parts.forEach((p,i)=> downloadBlob(`${safeName()}_${String(i+1).padStart(2,'0')}_${p.name}_HD_binario.stl`, new Blob([trianglesToBinarySTL(p.tris,p.name)], {type:'model/stl'})) );
     }catch(e){ alert(e.message); }
   }
   async function exportZip(){
@@ -952,7 +1032,8 @@
       if(!window.JSZip){ exportParts(); alert('JSZip não carregou. Baixei os STLs separados diretamente.'); return; }
       const zip = new JSZip();
       const folder = zip.folder(safeName() + '_stl');
-      parts.forEach((p,i)=> folder.file(`${String(i+1).padStart(2,'0')}_${p.name}.stl`, trianglesToSTL(p.tris,p.name)));
+      parts.forEach((p,i)=> folder.file(`${String(i+1).padStart(2,'0')}_${p.name}_HD_binario.stl`, trianglesToBinarySTL(p.tris,p.name)));
+      folder.file(`${safeName()}_unico_HD_binario.stl`, trianglesToBinarySTL(mergeTriangles(parts), safeName() + '_unico'));
       folder.file('configuracoes_projeto.json', JSON.stringify(projectJSON(), null, 2));
       folder.file('instrucoes_bambu.txt', bambuInstructions(parts));
       folder.file(`${safeName()}_camadas.svg`, svgTextOnly());
@@ -972,7 +1053,7 @@
 
   function projectJSON(){
     return {
-      app:'Imagem SVG STL Bambu HTML MVP', version:1,
+      app:'Imagem SVG STL Bambu HTML HD', version:2,
       fileName: state.fileName,
       originalW: state.originalW, originalH: state.originalH,
       w: state.w, h: state.h,
@@ -1026,14 +1107,15 @@
     html += `<b>Grade interna:</b> ${state.w} × ${state.h} células (${totalCells} preenchidas)<br>`;
     html += `<b>Tamanho de cada célula:</b> ${cell.toFixed(3)} mm<br>`;
     html += `<b>Camadas:</b> ${state.layers.length} cores + ${parseFloat(els.baseThickness.value)>0?'base':'sem base'}<br>`;
-    if(cell < minRecommended) html += `<span class="warnText">⚠ Cada célula tem ${cell.toFixed(3)} mm, menor que a referência mínima de ${minRecommended.toFixed(3)} mm para bico ${nozzle} mm. Detalhes podem ficar frágeis ou desaparecer.</span><br>`;
-    else html += `<span class="ok">✓ Resolução física compatível com o bico informado.</span><br>`;
+    if(cell > nozzle*0.75) html += `<span class="warnText">⚠ Cada célula tem ${cell.toFixed(3)} mm. Para peça pequena e bico ${nozzle} mm, aumente a resolução interna para bordas mais finas.</span><br>`;
+    else html += `<span class="ok">✓ Resolução interna alta: cada célula tem ${cell.toFixed(3)} mm.</span><br>`;
+    if(cell < nozzle*0.18) html += `<span class="warnText">⚠ Resolução extremamente fina. A impressora pode não reproduzir detalhes menores que o bico, mesmo que o STL tenha geometria.</span><br>`;
     if(tiny) html += `<span class="warnText">⚠ ${tiny} ilhas com até 3 células. Recomendo remover ilhas pequenas.</span><br>`;
     if(small) html += `<span class="warnText">⚠ ${small} regiões pequenas com até 8 células.</span><br>`;
     const base = parseFloat(els.baseThickness.value)||0;
     if(base <= 0) html += `<span class="warnText">⚠ Sem base sólida. Algumas partes podem ficar soltas se as cores não encostarem.</span><br>`;
     else html += `<span class="ok">✓ Base sólida ativa com borda de ${els.baseMargin.value}px.</span><br>`;
-    html += `<br><b>Sugestão:</b> para ímã de 4–5 cm em AMS, use base entre 0,8 e 1,4 mm e relevos entre 0,4 e 1,2 mm.`;
+    html += `<br><b>Sugestão:</b> para ímã de 4–5 cm em AMS, use 512–1024 px, base entre 0,8 e 1,4 mm e relevos entre 0,4 e 1,2 mm.`;
     els.analysisBox.innerHTML = html;
     if(showAlert) updatePreview3D();
   }
