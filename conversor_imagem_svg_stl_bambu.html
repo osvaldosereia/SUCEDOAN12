@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Imagem para SVG/STL - Bambu AMS</title>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <style>
+    :root{
+      --bg:#f7f8fb;
+      --panel:#ffffff;
+      --text:#162033;
+      --muted:#667085;
+      --line:#e6e9ef;
+      --accent:#315cfd;
+      --accent2:#152c91;
+      --ok:#11845b;
+      --warn:#b54708;
+      --danger:#b42318;
+      --shadow:0 14px 38px rgba(22,32,51,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color:var(--text);
+      background:linear-gradient(180deg,#f9fbff 0%,var(--bg) 100%);
+    }
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .app{
+      display:grid;
+      grid-template-columns:360px minmax(0,1fr) 390px;
+      min-height:100vh;
+      gap:18px;
+      padding:18px;
+    }
+    .sidebar,.rightbar,.stage{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+    .sidebar,.rightbar{
+      height:calc(100vh - 36px);
+      overflow:auto;
+      padding:18px;
+    }
+    .stage{
+      height:calc(100vh - 36px);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    .brand{display:flex;gap:12px;align-items:center;margin-bottom:18px}
+    .logo{
+      width:44px;height:44px;border-radius:14px;
+      background:radial-gradient(circle at 30% 30%,#fff 0,#e8edff 28%,#315cfd 29%,#152c91 100%);
+      box-shadow:0 8px 20px rgba(49,92,253,.22);
+    }
+    h1{font-size:18px;line-height:1.1;margin:0}
+    h2{font-size:15px;margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+    p{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
+    .small{font-size:12px;color:var(--muted)}
+    .section{border-top:1px solid var(--line);padding-top:16px;margin-top:16px}
+    .upload{
+      border:1.5px dashed #bac4d4;
+      border-radius:16px;
+      padding:16px;
+      text-align:center;
+      background:#fbfcff;
+      transition:.2s ease;
+    }
+    .upload.drag{border-color:var(--accent);background:#eef3ff}
+    .upload strong{display:block;margin-bottom:6px}
+    .upload input{display:none}
+    .btn{
+      border:0;
+      background:var(--accent);
+      color:white;
+      border-radius:12px;
+      padding:11px 13px;
+      font-weight:750;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      min-height:42px;
+      box-shadow:0 10px 22px rgba(49,92,253,.22);
+    }
+    .btn:hover{background:var(--accent2)}
+    .btn.secondary{background:#eef2ff;color:#263ea8;box-shadow:none}
+    .btn.ghost{background:white;color:#24314a;border:1px solid var(--line);box-shadow:none}
+    .btn.warn{background:#fff4e6;color:#9a3412;box-shadow:none;border:1px solid #fed7aa}
+    .btn.danger{background:#fff1f0;color:var(--danger);box-shadow:none;border:1px solid #ffdad6}
+    .btn.full{width:100%}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    label.field{display:block;margin:10px 0 0}
+    label.field span{display:block;font-size:12px;color:#475467;margin-bottom:6px;font-weight:700}
+    input[type="number"], input[type="text"], select{
+      width:100%;border:1px solid var(--line);border-radius:11px;padding:10px 11px;background:white;color:var(--text);outline:none;
+    }
+    input[type="number"]:focus,input[type="text"]:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(49,92,253,.12)}
+    input[type="range"]{width:100%}
+    .check{display:flex;align-items:center;gap:8px;font-size:13px;color:#344054;margin:9px 0}
+    .topbar{
+      min-height:64px;border-bottom:1px solid var(--line);
+      display:flex;align-items:center;justify-content:space-between;padding:13px 16px;gap:12px;background:#fff;
+    }
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{
+      border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 12px;font-weight:800;color:#475467;
+    }
+    .tab.active{background:#162033;color:white;border-color:#162033}
+    .canvasWrap{
+      position:relative;flex:1;background:
+      linear-gradient(45deg,#f1f3f8 25%,transparent 25%),
+      linear-gradient(-45deg,#f1f3f8 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#f1f3f8 75%),
+      linear-gradient(-45deg,transparent 75%,#f1f3f8 75%);
+      background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0;
+      display:flex;align-items:center;justify-content:center;overflow:hidden;
+    }
+    .canvasBox{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:18px}
+    canvas#editCanvas{max-width:100%;max-height:100%;image-rendering:pixelated;border-radius:10px;box-shadow:0 16px 50px rgba(22,32,51,.12);background:white}
+    .empty{
+      max-width:520px;text-align:center;padding:32px;background:rgba(255,255,255,.86);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)
+    }
+    .empty h3{font-size:28px;margin:0 0 8px}.empty p{font-size:15px}
+    #threeHost{position:absolute;inset:0;background:#f7f8fb;display:none}
+    #threeHost.active{display:block}
+    #threeHost canvas{width:100%!important;height:100%!important;display:block}
+    .layer{
+      border:1px solid var(--line);border-radius:15px;padding:11px;margin:10px 0;background:#fff;transition:.15s;
+    }
+    .layer.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(49,92,253,.1)}
+    .layerHead{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center;margin-bottom:9px}
+    .swatch{width:34px;height:34px;border-radius:10px;border:1px solid rgba(0,0,0,.12);overflow:hidden;background:#eee}
+    .layerTitle{font-size:13px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .layerMeta{font-size:11px;color:var(--muted);margin-top:2px}
+    .miniGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+    .miniGrid label span{font-size:11px;color:#667085;font-weight:750;margin-bottom:4px;display:block}
+    .miniGrid input{padding:8px;border-radius:10px;border:1px solid var(--line);width:100%}
+    .colorInput{width:42px;height:34px;border:0;background:transparent;padding:0}
+    .toolGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .toolGrid .btn{min-height:38px;padding:8px;font-size:12px}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;color:#475467;font-weight:700}
+    .statusBox{border:1px solid var(--line);border-radius:14px;background:#fbfcff;padding:12px;margin-top:10px;font-size:12px;color:#475467;line-height:1.5;max-height:210px;overflow:auto}
+    .statusBox b{color:#162033}.ok{color:var(--ok)}.warnText{color:var(--warn)}.dangerText{color:var(--danger)}
+    .progress{height:8px;background:#edf1f7;border-radius:99px;overflow:hidden;margin-top:10px}
+    .progress i{display:block;height:100%;width:0;background:var(--accent);transition:.25s}
+    .notice{background:#eef8f3;border:1px solid #b7e2cd;color:#087443;border-radius:14px;padding:10px 12px;font-size:12px;line-height:1.45;margin-top:10px}
+    .notice.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+    .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#f1f3f8;border:1px solid #d9dee8;border-radius:6px;padding:1px 5px;color:#344054}
+    .footerHint{padding:10px 16px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;justify-content:space-between;background:#fff;flex-wrap:wrap}
+    .fileName{font-size:12px;color:#667085;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .mobileToggle{display:none}
+    .hidden{display:none!important}
+    @media(max-width:1180px){
+      .app{grid-template-columns:320px 1fr}.rightbar{grid-column:1 / -1;height:auto;max-height:none}.sidebar,.stage{height:calc(100vh - 36px)}
+    }
+    @media(max-width:820px){
+      .app{display:block;padding:10px}.sidebar,.rightbar,.stage{height:auto;margin-bottom:10px;border-radius:16px}.stage{height:68vh}.mobileToggle{display:inline-flex}.sidebar.collapsed .collapseBody,.rightbar.collapsed .collapseBody{display:none}.topbar{align-items:flex-start;flex-direction:column}.empty h3{font-size:21px}.canvasBox{padding:8px}.grid2,.grid3{grid-template-columns:1fr}.toolGrid{grid-template-columns:1fr 1fr}.sidebar,.rightbar{padding:14px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="leftPanel">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Imagem → SVG/STL</h1>
+          <p>Camadas por cor para Bambu Studio/AMS</p>
+        </div>
+        <button class="btn ghost mobileToggle" onclick="togglePanel('leftPanel')">Abrir</button>
+      </div>
+      <div class="collapseBody">
+        <label class="upload" id="dropZone">
+          <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" />
+          <strong>Subir imagem</strong>
+          <p>PNG, JPG ou WebP. Arraste aqui ou clique.</p>
+          <div style="margin-top:12px"><span class="btn secondary">Escolher arquivo</span></div>
+        </label>
+        <div class="statusBox" id="fileInfo">Nenhuma imagem carregada.</div>
+
+        <div class="section">
+          <h2>1. Preparar imagem</h2>
+          <div class="grid2">
+            <label class="field"><span>Cores AMS</span><select id="colorCount"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>8</option></select></label>
+            <label class="field"><span>Resolução interna</span><select id="workSize"><option value="64">64 px</option><option value="96" selected>96 px</option><option value="128">128 px</option><option value="160">160 px</option><option value="192">192 px</option></select></label>
+          </div>
+          <label class="check"><input id="removeBg" type="checkbox" checked /> Remover fundo claro/branco</label>
+          <label class="field"><span>Sensibilidade do fundo claro</span><input id="bgThreshold" type="range" min="180" max="252" value="235" /></label>
+          <label class="check"><input id="alphaOnly" type="checkbox" /> Usar transparência como fundo, sem remover branco</label>
+          <button class="btn full" id="processBtn">Processar imagem em camadas</button>
+          <div class="progress"><i id="progressBar"></i></div>
+          <div class="notice warn">Para peças pequenas, use 4 cores, detalhes grossos e resolução entre 96 e 128 px. Resoluções altas geram STL mais pesado.</div>
+        </div>
+
+        <div class="section">
+          <h2>2. Medidas da peça</h2>
+          <div class="grid2">
+            <label class="field"><span>Largura final (mm)</span><input id="finalWidth" type="number" min="5" max="400" step="1" value="50" /></label>
+            <label class="field"><span>Bico/nozzle (mm)</span><input id="nozzle" type="number" min="0.1" max="1" step="0.05" value="0.2" /></label>
+          </div>
+          <div class="grid2">
+            <label class="field"><span>Base sólida (mm)</span><input id="baseThickness" type="number" min="0" max="10" step="0.1" value="1.0" /></label>
+            <label class="field"><span>Borda da base (px)</span><input id="baseMargin" type="number" min="0" max="12" step="1" value="2" /></label>
+          </div>
+          <label class="field"><span>Altura padrão novas camadas (mm)</span><input id="defaultHeight" type="number" min="0.05" max="10" step="0.05" value="0.6" /></label>
+          <button class="btn secondary full" id="applyDefaultHeights">Aplicar altura padrão nas camadas</button>
+        </div>
+
+        <div class="section">
+          <h2>3. Ferramentas de edição</h2>
+          <div class="toolGrid">
+            <button class="btn ghost" data-tool="pick">Selecionar cor</button>
+            <button class="btn ghost" data-tool="paint">Pintar</button>
+            <button class="btn ghost" data-tool="erase">Apagar</button>
+            <button class="btn ghost" data-tool="pan">Mover tela</button>
+          </div>
+          <label class="field"><span>Tamanho do pincel</span><input id="brushSize" type="range" min="1" max="12" value="3" /></label>
+          <div class="grid2">
+            <button class="btn secondary" id="dilateBtn">Engrossar camada</button>
+            <button class="btn warn" id="erodeBtn">Afinar camada</button>
+          </div>
+          <div class="grid2" style="margin-top:8px">
+            <button class="btn ghost" id="removeIslandsBtn">Remover ilhas pequenas</button>
+            <button class="btn ghost" id="fillHolesBtn">Preencher furos</button>
+          </div>
+          <div class="grid2" style="margin-top:8px">
+            <button class="btn ghost" id="undoBtn">Desfazer</button>
+            <button class="btn ghost" id="redoBtn">Refazer</button>
+          </div>
+          <p class="small" style="margin-top:8px">Dica: use <span class="kbd">Selecionar cor</span> e clique na imagem. Depois use <span class="kbd">Pintar</span> ou <span class="kbd">Apagar</span>.</p>
+        </div>
+      </div>
+    </aside>
+
+    <main class="stage">
+      <div class="topbar">
+        <div>
+          <div class="tabs">
+            <button class="tab active" data-view="edit">Editor 2D</button>
+            <button class="tab" data-view="preview3d">Preview 3D</button>
+          </div>
+        </div>
+        <div class="row">
+          <span class="pill" id="sizePill">0 × 0 mm</span>
+          <span class="pill" id="cellPill">célula: -</span>
+          <span class="pill" id="activeLayerPill">sem camada</span>
+        </div>
+      </div>
+      <div class="canvasWrap" id="canvasWrap">
+        <div class="canvasBox">
+          <canvas id="editCanvas" width="900" height="900"></canvas>
+          <div class="empty" id="emptyState">
+            <h3>Suba uma imagem para começar</h3>
+            <p>O app separa por cores, cria camadas editáveis, gera SVG e exporta STLs alinhados para importar no Bambu Studio.</p>
+          </div>
+          <div id="threeHost"></div>
+        </div>
+      </div>
+      <div class="footerHint">
+        <div class="fileName" id="currentFile">Projeto vazio</div>
+        <div class="row">
+          <button class="btn ghost" id="fitBtn">Ajustar tela</button>
+          <button class="btn secondary" id="updatePreviewBtn">Atualizar 3D</button>
+        </div>
+      </div>
+    </main>
+
+    <aside class="rightbar" id="rightPanel">
+      <div class="brand" style="margin-bottom:8px">
+        <div>
+          <h1>Camadas e exportação</h1>
+          <p>Edite cada cor e baixe os arquivos.</p>
+        </div>
+        <button class="btn ghost mobileToggle" onclick="togglePanel('rightPanel')">Abrir</button>
+      </div>
+      <div class="collapseBody">
+        <div class="section" style="border-top:0;margin-top:0;padding-top:0">
+          <h2>Camadas por cor</h2>
+          <div id="layersList"><p>Nenhuma camada ainda.</p></div>
+        </div>
+
+        <div class="section">
+          <h2>Análise para impressão</h2>
+          <button class="btn secondary full" id="analyzeBtn">Analisar peça</button>
+          <div class="statusBox" id="analysisBox">Faça o processamento da imagem para ver a análise.</div>
+        </div>
+
+        <div class="section">
+          <h2>Exportar</h2>
+          <div class="grid2">
+            <button class="btn full" id="exportSvgBtn">Baixar SVG</button>
+            <button class="btn full" id="exportSingleStlBtn">STL único</button>
+          </div>
+          <div class="grid2" style="margin-top:8px">
+            <button class="btn secondary full" id="exportPartsBtn">STLs separados</button>
+            <button class="btn secondary full" id="exportZipBtn">Pacote ZIP</button>
+          </div>
+          <button class="btn ghost full" style="margin-top:8px" id="saveProjectBtn">Salvar projeto editável JSON</button>
+          <label class="upload" style="margin-top:10px;padding:10px">
+            <input id="projectInput" type="file" accept="application/json" />
+            <strong>Reabrir projeto JSON</strong>
+            <p>Carrega camadas, medidas e edições.</p>
+          </label>
+          <div class="notice">No Bambu Studio: importe os STLs separados juntos, mantenha a mesma origem e atribua um filamento AMS para cada peça.</div>
+        </div>
+
+        <div class="section">
+          <h2>Limitações desta versão</h2>
+          <div class="statusBox">
+            <b>Esta é uma versão MVP em HTML único.</b><br>
+            • O SVG é gerado por áreas rasterizadas em paths compactos por cor.<br>
+            • O STL é sólido e imprimível, mas pode ficar com bordas pixeladas dependendo da resolução.<br>
+            • Para artes muito detalhadas, simplifique para 4 cores e use resolução moderada.<br>
+            • 3MF real com materiais pode ser adicionado depois como módulo avançado.
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+<script>
+(() => {
+  'use strict';
+
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+  const state = {
+    image: null,
+    fileName: '',
+    originalW: 0,
+    originalH: 0,
+    w: 0,
+    h: 0,
+    labels: null,
+    previewRGBA: null,
+    layers: [],
+    activeLayer: 0,
+    tool: 'pick',
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+    isDrawing: false,
+    lastPoint: null,
+    undo: [],
+    redo: [],
+    view: 'edit',
+    three: null
+  };
+
+  const els = {
+    fileInput: $('#fileInput'), projectInput: $('#projectInput'), dropZone: $('#dropZone'),
+    processBtn: $('#processBtn'), progressBar: $('#progressBar'), fileInfo: $('#fileInfo'), currentFile: $('#currentFile'),
+    editCanvas: $('#editCanvas'), emptyState: $('#emptyState'), threeHost: $('#threeHost'),
+    layersList: $('#layersList'), activeLayerPill: $('#activeLayerPill'), sizePill: $('#sizePill'), cellPill: $('#cellPill'),
+    colorCount: $('#colorCount'), workSize: $('#workSize'), removeBg: $('#removeBg'), bgThreshold: $('#bgThreshold'), alphaOnly: $('#alphaOnly'),
+    finalWidth: $('#finalWidth'), nozzle: $('#nozzle'), baseThickness: $('#baseThickness'), baseMargin: $('#baseMargin'), defaultHeight: $('#defaultHeight'),
+    brushSize: $('#brushSize'), analysisBox: $('#analysisBox')
+  };
+  const ctx = els.editCanvas.getContext('2d');
+
+  function setProgress(p){ els.progressBar.style.width = Math.max(0, Math.min(100, p)) + '%'; }
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+  function idx(x,y){ return y * state.w + x; }
+  function hexToRgb(hex){
+    const h = hex.replace('#','').trim();
+    const n = parseInt(h.length===3 ? h.split('').map(c=>c+c).join('') : h, 16);
+    return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};
+  }
+  function rgbToHex(r,g,b){ return '#' + [r,g,b].map(v => clamp(Math.round(v),0,255).toString(16).padStart(2,'0')).join(''); }
+  function luminance(r,g,b){ return 0.2126*r + 0.7152*g + 0.0722*b; }
+  function saturation(r,g,b){ const max=Math.max(r,g,b), min=Math.min(r,g,b); return max-min; }
+  function slug(s){ return (s||'modelo').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,60) || 'modelo'; }
+  function safeName(){ return slug(state.fileName.replace(/\.[^.]+$/,'')) || 'imagem_para_stl'; }
+
+  function togglePanel(id){ document.getElementById(id).classList.toggle('collapsed'); }
+  window.togglePanel = togglePanel;
+
+  function saveUndo(){
+    if(!state.labels) return;
+    state.undo.push({ labels: new Int16Array(state.labels), layers: JSON.parse(JSON.stringify(state.layers)) });
+    if(state.undo.length > 30) state.undo.shift();
+    state.redo.length = 0;
+  }
+  function restoreSnapshot(snap){
+    state.labels = new Int16Array(snap.labels);
+    state.layers = JSON.parse(JSON.stringify(snap.layers));
+    state.activeLayer = clamp(state.activeLayer, 0, Math.max(0,state.layers.length-1));
+    rebuildPreviewRGBA();
+    renderLayers();
+    draw2D();
+    updatePills();
+  }
+
+  function loadFile(file){
+    if(!file) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      state.image = img; state.fileName = file.name; state.originalW = img.naturalWidth; state.originalH = img.naturalHeight;
+      els.fileInfo.innerHTML = `<b>Arquivo:</b> ${file.name}<br><b>Tamanho original:</b> ${img.naturalWidth} × ${img.naturalHeight}px<br><span class="warnText">Clique em processar para gerar as camadas.</span>`;
+      els.currentFile.textContent = file.name;
+      els.emptyState.classList.remove('hidden');
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => alert('Não consegui abrir essa imagem. Tente PNG, JPG ou WebP.');
+    img.src = url;
+  }
+
+  els.fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
+  els.projectInput.addEventListener('change', e => loadProject(e.target.files[0]));
+  ['dragenter','dragover'].forEach(ev => els.dropZone.addEventListener(ev, e => { e.preventDefault(); els.dropZone.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev => els.dropZone.addEventListener(ev, e => { e.preventDefault(); els.dropZone.classList.remove('drag'); }));
+  els.dropZone.addEventListener('drop', e => loadFile(e.dataTransfer.files[0]));
+
+  async function processImage(){
+    if(!state.image){ alert('Suba uma imagem primeiro.'); return; }
+    setProgress(5);
+    await waitFrame();
+
+    const maxSide = parseInt(els.workSize.value, 10);
+    const ratio = state.image.naturalWidth / state.image.naturalHeight;
+    let w,h;
+    if(ratio >= 1){ w = maxSide; h = Math.max(1, Math.round(maxSide / ratio)); }
+    else { h = maxSide; w = Math.max(1, Math.round(maxSide * ratio)); }
+    state.w = w; state.h = h;
+
+    const off = document.createElement('canvas'); off.width = w; off.height = h;
+    const octx = off.getContext('2d', { willReadFrequently:true });
+    octx.imageSmoothingEnabled = true;
+    octx.drawImage(state.image, 0, 0, w, h);
+    const imgData = octx.getImageData(0,0,w,h);
+    const data = imgData.data;
+
+    const removeBg = els.removeBg.checked && !els.alphaOnly.checked;
+    const bgThr = parseInt(els.bgThreshold.value,10);
+    const pixels = [];
+    const mapValid = new Uint8Array(w*h);
+    for(let i=0, p=0; i<data.length; i+=4, p++){
+      const r=data[i], g=data[i+1], b=data[i+2], a=data[i+3];
+      let valid = a > 20;
+      if(valid && removeBg){
+        const isLight = luminance(r,g,b) >= bgThr && saturation(r,g,b) <= 38;
+        if(isLight) valid = false;
+      }
+      if(valid){ mapValid[p]=1; pixels.push([r,g,b]); }
+    }
+    if(pixels.length < 4){ alert('A imagem ficou quase vazia depois da remoção de fundo. Desative a remoção de fundo ou reduza a sensibilidade.'); return; }
+    setProgress(25); await waitFrame();
+
+    const k = Math.min(parseInt(els.colorCount.value,10), pixels.length);
+    const centroids = kmeans(pixels, k, 10);
+    setProgress(55); await waitFrame();
+
+    const labels = new Int16Array(w*h); labels.fill(-1);
+    const counts = Array(k).fill(0);
+    for(let p=0; p<w*h; p++){
+      if(!mapValid[p]) continue;
+      const di = p*4;
+      const lab = nearestColor([data[di], data[di+1], data[di+2]], centroids);
+      labels[p] = lab; counts[lab]++;
+    }
+
+    const order = counts.map((c,i)=>({c,i})).filter(o=>o.c>0).sort((a,b)=>b.c-a.c);
+    const remap = new Map(order.map((o,ni)=>[o.i,ni]));
+    const newLabels = new Int16Array(w*h); newLabels.fill(-1);
+    for(let p=0; p<labels.length; p++) if(labels[p] >= 0) newLabels[p] = remap.get(labels[p]);
+
+    state.labels = newLabels;
+    const baseZ = parseFloat(els.baseThickness.value) || 0;
+    const defaultH = parseFloat(els.defaultHeight.value) || 0.6;
+    state.layers = order.map((o, i) => {
+      const c = centroids[o.i];
+      return {
+        id: 'layer_' + Date.now() + '_' + i,
+        name: 'Cor ' + (i+1),
+        color: rgbToHex(c[0],c[1],c[2]),
+        visible: true,
+        export: true,
+        z: baseZ,
+        height: defaultH,
+        pixels: o.c
+      };
+    });
+    state.activeLayer = 0;
+    state.zoom = 1; state.panX = 0; state.panY = 0;
+    state.undo.length = 0; state.redo.length = 0;
+    rebuildPreviewRGBA();
+    renderLayers();
+    draw2D();
+    updatePills();
+    analyze(false);
+    setProgress(100);
+    els.emptyState.classList.add('hidden');
+    setTimeout(()=>setProgress(0), 700);
+  }
+
+  function waitFrame(){ return new Promise(r => requestAnimationFrame(r)); }
+
+  function kmeans(pixels, k, iterations){
+    const sample = pixels.length > 24000 ? [] : pixels;
+    if(sample.length === 0){
+      const step = Math.ceil(pixels.length / 24000);
+      for(let i=0;i<pixels.length;i+=step) sample.push(pixels[i]);
+    }
+    const cents = [];
+    cents.push(sample[Math.floor(sample.length/2)].slice());
+    while(cents.length < k){
+      let best = sample[0], bestD = -1;
+      for(let i=0;i<sample.length;i+=Math.max(1, Math.floor(sample.length/6000))){
+        const px = sample[i];
+        let dmin = Infinity;
+        for(const c of cents) dmin = Math.min(dmin, dist2(px,c));
+        if(dmin > bestD){ bestD = dmin; best = px; }
+      }
+      cents.push(best.slice());
+    }
+    for(let it=0; it<iterations; it++){
+      const sum = Array.from({length:k},()=>[0,0,0,0]);
+      for(let i=0;i<sample.length;i++){
+        const lab = nearestColor(sample[i], cents);
+        sum[lab][0]+=sample[i][0]; sum[lab][1]+=sample[i][1]; sum[lab][2]+=sample[i][2]; sum[lab][3]++;
+      }
+      for(let j=0;j<k;j++) if(sum[j][3]) cents[j]=[sum[j][0]/sum[j][3], sum[j][1]/sum[j][3], sum[j][2]/sum[j][3]];
+    }
+    return cents;
+  }
+  function dist2(a,b){ const dr=a[0]-b[0], dg=a[1]-b[1], db=a[2]-b[2]; return dr*dr+dg*dg+db*db; }
+  function nearestColor(px, cents){ let best=0,bestD=Infinity; for(let i=0;i<cents.length;i++){ const d=dist2(px,cents[i]); if(d<bestD){bestD=d; best=i;} } return best; }
+
+  function rebuildPreviewRGBA(){
+    if(!state.labels) return;
+    const out = new Uint8ClampedArray(state.w*state.h*4);
+    for(let p=0;p<state.labels.length;p++){
+      const lab = state.labels[p]; const o=p*4;
+      if(lab < 0 || !state.layers[lab] || !state.layers[lab].visible){ out[o]=0;out[o+1]=0;out[o+2]=0;out[o+3]=0; continue; }
+      const c = hexToRgb(state.layers[lab].color);
+      out[o]=c.r;out[o+1]=c.g;out[o+2]=c.b;out[o+3]=255;
+    }
+    state.previewRGBA = out;
+  }
+
+  function draw2D(){
+    const canvas = els.editCanvas;
+    const wrap = $('#canvasWrap').getBoundingClientRect();
+    canvas.width = Math.max(300, Math.floor(wrap.width*devicePixelRatio));
+    canvas.height = Math.max(300, Math.floor((wrap.height-2)*devicePixelRatio));
+    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const cssW = canvas.width / devicePixelRatio, cssH = canvas.height / devicePixelRatio;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,cssW,cssH);
+
+    if(!state.labels){ return; }
+    const img = new ImageData(state.previewRGBA, state.w, state.h);
+    const temp = document.createElement('canvas'); temp.width=state.w; temp.height=state.h;
+    temp.getContext('2d').putImageData(img,0,0);
+
+    const scale = Math.min((cssW-28)/state.w, (cssH-28)/state.h) * state.zoom;
+    const x = cssW/2 - state.w*scale/2 + state.panX;
+    const y = cssH/2 - state.h*scale/2 + state.panY;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(temp, x, y, state.w*scale, state.h*scale);
+
+    // grid / active layer outline effect
+    if(scale >= 7){
+      ctx.strokeStyle = 'rgba(22,32,51,.07)'; ctx.lineWidth = 1;
+      for(let i=0;i<=state.w;i++){ ctx.beginPath(); ctx.moveTo(x+i*scale,y); ctx.lineTo(x+i*scale,y+state.h*scale); ctx.stroke(); }
+      for(let j=0;j<=state.h;j++){ ctx.beginPath(); ctx.moveTo(x,y+j*scale); ctx.lineTo(x+state.w*scale,y+j*scale); ctx.stroke(); }
+    }
+    ctx.strokeStyle = '#315cfd'; ctx.lineWidth = 2;
+    ctx.strokeRect(x,y,state.w*scale,state.h*scale);
+    canvas._imgBox = {x,y,scale};
+  }
+
+  function updatePills(){
+    if(!state.labels){ els.sizePill.textContent='0 × 0 mm'; els.cellPill.textContent='célula: -'; els.activeLayerPill.textContent='sem camada'; return; }
+    const width = parseFloat(els.finalWidth.value)||50;
+    const cell = width / state.w;
+    const height = state.h * cell;
+    els.sizePill.textContent = `${width.toFixed(1)} × ${height.toFixed(1)} mm`;
+    els.cellPill.textContent = `célula: ${cell.toFixed(3)} mm`;
+    const layer = state.layers[state.activeLayer];
+    els.activeLayerPill.innerHTML = layer ? `<span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${layer.color};border:1px solid #bbb"></span> ${layer.name}` : 'sem camada';
+  }
+
+  function renderLayers(){
+    if(!state.layers.length){ els.layersList.innerHTML = '<p>Nenhuma camada ainda.</p>'; return; }
+    updateLayerPixelCounts();
+    els.layersList.innerHTML = state.layers.map((l,i)=>`
+      <div class="layer ${i===state.activeLayer?'active':''}" data-layer="${i}">
+        <div class="layerHead">
+          <div class="swatch" style="background:${l.color}"></div>
+          <div>
+            <div class="layerTitle">${escapeHtml(l.name)}</div>
+            <div class="layerMeta">${l.pixels||0} células • ${(pixelAreaMm(l.pixels||0)).toFixed(1)} mm²</div>
+          </div>
+          <input class="colorInput" type="color" value="${l.color}" data-action="color" data-i="${i}">
+        </div>
+        <input type="text" value="${escapeAttr(l.name)}" data-action="name" data-i="${i}" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px">
+        <div class="row" style="justify-content:space-between">
+          <label class="check" style="margin:0"><input type="checkbox" ${l.visible?'checked':''} data-action="visible" data-i="${i}"> visível</label>
+          <label class="check" style="margin:0"><input type="checkbox" ${l.export?'checked':''} data-action="export" data-i="${i}"> exportar</label>
+        </div>
+        <div class="miniGrid">
+          <label><span>Z inicial</span><input type="number" step="0.05" value="${l.z}" data-action="z" data-i="${i}"></label>
+          <label><span>Altura</span><input type="number" step="0.05" value="${l.height}" data-action="height" data-i="${i}"></label>
+        </div>
+      </div>`).join('');
+  }
+
+  function escapeHtml(s){ return String(s).replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+  function escapeAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
+  function pixelAreaMm(px){ if(!state.w) return 0; const cell = (parseFloat(els.finalWidth.value)||50)/state.w; return px*cell*cell; }
+
+  els.layersList.addEventListener('click', e => {
+    const card = e.target.closest('.layer');
+    if(!card) return;
+    const input = e.target.closest('input');
+    if(input && input.dataset.action) return;
+    state.activeLayer = parseInt(card.dataset.layer,10);
+    renderLayers(); updatePills();
+  });
+  els.layersList.addEventListener('input', e => {
+    const a = e.target.dataset.action; if(!a) return;
+    const i = parseInt(e.target.dataset.i,10); const l = state.layers[i]; if(!l) return;
+    if(a==='color') l.color = e.target.value;
+    if(a==='name') l.name = e.target.value;
+    if(a==='z') l.z = parseFloat(e.target.value)||0;
+    if(a==='height') l.height = Math.max(0.01, parseFloat(e.target.value)||0.01);
+    rebuildPreviewRGBA(); draw2D(); updatePills();
+  });
+  els.layersList.addEventListener('change', e => {
+    const a = e.target.dataset.action; if(!a) return;
+    const i = parseInt(e.target.dataset.i,10); const l = state.layers[i]; if(!l) return;
+    if(a==='visible') l.visible = e.target.checked;
+    if(a==='export') l.export = e.target.checked;
+    rebuildPreviewRGBA(); draw2D(); updatePills(); renderLayers();
+  });
+
+  function updateLayerPixelCounts(){
+    if(!state.labels) return;
+    const counts = Array(state.layers.length).fill(0);
+    for(const lab of state.labels) if(lab>=0 && counts[lab] !== undefined) counts[lab]++;
+    state.layers.forEach((l,i)=>l.pixels=counts[i]||0);
+  }
+
+  function screenToPixel(e){
+    if(!els.editCanvas._imgBox || !state.labels) return null;
+    const rect = els.editCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const box = els.editCanvas._imgBox;
+    const px = Math.floor((x - box.x) / box.scale);
+    const py = Math.floor((y - box.y) / box.scale);
+    if(px<0||py<0||px>=state.w||py>=state.h) return null;
+    return {x:px,y:py, sx:x, sy:y};
+  }
+
+  els.editCanvas.addEventListener('pointerdown', e => {
+    if(!state.labels) return;
+    els.editCanvas.setPointerCapture(e.pointerId);
+    const p = screenToPixel(e); if(!p) return;
+    state.isDrawing = true; state.lastPoint = p;
+    if(state.tool === 'pick'){
+      const lab = state.labels[idx(p.x,p.y)];
+      if(lab >= 0){ state.activeLayer = lab; renderLayers(); updatePills(); }
+      return;
+    }
+    if(state.tool === 'pan'){ state.lastPoint = {sx:e.clientX, sy:e.clientY}; return; }
+    saveUndo();
+    paintAt(p.x,p.y,state.tool === 'erase' ? -1 : state.activeLayer);
+    rebuildPreviewRGBA(); draw2D(); renderLayers();
+  });
+  els.editCanvas.addEventListener('pointermove', e => {
+    if(!state.isDrawing || !state.labels) return;
+    if(state.tool === 'pan'){
+      const last = state.lastPoint;
+      state.panX += e.clientX - last.sx; state.panY += e.clientY - last.sy;
+      state.lastPoint = {sx:e.clientX, sy:e.clientY}; draw2D(); return;
+    }
+    if(state.tool !== 'paint' && state.tool !== 'erase') return;
+    const p = screenToPixel(e); if(!p) return;
+    paintLine(state.lastPoint.x, state.lastPoint.y, p.x, p.y, state.tool === 'erase' ? -1 : state.activeLayer);
+    state.lastPoint = p;
+    rebuildPreviewRGBA(); draw2D();
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(ev => els.editCanvas.addEventListener(ev, () => { state.isDrawing=false; state.lastPoint=null; }));
+  els.editCanvas.addEventListener('wheel', e => {
+    if(!state.labels) return;
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 1.1 : 0.9;
+    state.zoom = clamp(state.zoom * delta, 0.25, 16);
+    draw2D();
+  }, {passive:false});
+
+  function paintAt(cx,cy,lab){
+    const r = parseInt(els.brushSize.value,10);
+    for(let y=cy-r+1;y<=cy+r-1;y++) for(let x=cx-r+1;x<=cx+r-1;x++){
+      if(x<0||y<0||x>=state.w||y>=state.h) continue;
+      const dx=x-cx, dy=y-cy; if(dx*dx+dy*dy <= r*r) state.labels[idx(x,y)] = lab;
+    }
+  }
+  function paintLine(x0,y0,x1,y1,lab){
+    const dx=Math.abs(x1-x0), dy=Math.abs(y1-y0), sx=x0<x1?1:-1, sy=y0<y1?1:-1;
+    let err=dx-dy, x=x0, y=y0;
+    while(true){ paintAt(x,y,lab); if(x===x1&&y===y1) break; const e2=2*err; if(e2>-dy){err-=dy;x+=sx;} if(e2<dx){err+=dx;y+=sy;} }
+  }
+
+  $$('.toolGrid [data-tool]').forEach(btn => btn.addEventListener('click', () => {
+    state.tool = btn.dataset.tool;
+    $$('.toolGrid [data-tool]').forEach(b=>b.classList.toggle('secondary', b===btn));
+    $$('.toolGrid [data-tool]').forEach(b=>b.classList.toggle('ghost', b!==btn));
+  }));
+  $$('.toolGrid [data-tool]')[0].classList.add('secondary');
+  $$('.toolGrid [data-tool]')[0].classList.remove('ghost');
+
+  $('#undoBtn').addEventListener('click', () => { if(!state.undo.length) return; state.redo.push({labels:new Int16Array(state.labels), layers:JSON.parse(JSON.stringify(state.layers))}); restoreSnapshot(state.undo.pop()); });
+  $('#redoBtn').addEventListener('click', () => { if(!state.redo.length) return; state.undo.push({labels:new Int16Array(state.labels), layers:JSON.parse(JSON.stringify(state.layers))}); restoreSnapshot(state.redo.pop()); });
+  $('#fitBtn').addEventListener('click', () => { state.zoom=1;state.panX=0;state.panY=0;draw2D(); });
+  els.processBtn.addEventListener('click', processImage);
+  ['finalWidth','baseThickness','baseMargin','nozzle'].forEach(id => document.getElementById(id).addEventListener('input', () => { updatePills(); renderLayers(); }));
+  $('#applyDefaultHeights').addEventListener('click', () => {
+    const h = parseFloat(els.defaultHeight.value)||0.6;
+    const z = parseFloat(els.baseThickness.value)||0;
+    state.layers.forEach(l => { l.height=h; l.z=z; });
+    renderLayers(); updatePills();
+  });
+
+  function morphLayer(type){
+    if(!state.labels || !state.layers[state.activeLayer]) return;
+    saveUndo();
+    const lab = state.activeLayer;
+    const old = state.labels;
+    const out = new Int16Array(old);
+    for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++){
+      const p = idx(x,y);
+      if(type==='dilate'){
+        if(old[p] === lab) continue;
+        let near=false;
+        for(let yy=-1; yy<=1; yy++) for(let xx=-1; xx<=1; xx++){
+          const nx=x+xx, ny=y+yy; if(nx>=0&&ny>=0&&nx<state.w&&ny<state.h&&old[idx(nx,ny)]===lab) near=true;
+        }
+        if(near) out[p] = lab;
+      } else {
+        if(old[p] !== lab) continue;
+        let edge=false;
+        for(let yy=-1; yy<=1; yy++) for(let xx=-1; xx<=1; xx++){
+          const nx=x+xx, ny=y+yy; if(nx<0||ny<0||nx>=state.w||ny>=state.h||old[idx(nx,ny)]!==lab) edge=true;
+        }
+        if(edge) out[p] = -1;
+      }
+    }
+    state.labels = out; rebuildPreviewRGBA(); renderLayers(); draw2D(); analyze(false);
+  }
+  $('#dilateBtn').addEventListener('click', () => morphLayer('dilate'));
+  $('#erodeBtn').addEventListener('click', () => morphLayer('erode'));
+
+  $('#removeIslandsBtn').addEventListener('click', () => {
+    if(!state.labels) return;
+    const minPx = 4;
+    saveUndo();
+    const comps = connectedComponents();
+    for(const c of comps){ if(c.lab>=0 && c.cells.length < minPx){ for(const p of c.cells) state.labels[p] = -1; } }
+    rebuildPreviewRGBA(); renderLayers(); draw2D(); analyze(false);
+  });
+  $('#fillHolesBtn').addEventListener('click', () => {
+    if(!state.labels) return;
+    saveUndo();
+    const old = state.labels, out = new Int16Array(old);
+    for(let y=1;y<state.h-1;y++) for(let x=1;x<state.w-1;x++){
+      const p=idx(x,y); if(old[p] >= 0) continue;
+      const counts = new Map();
+      for(let yy=-1; yy<=1; yy++) for(let xx=-1; xx<=1; xx++){
+        if(!xx && !yy) continue; const lab=old[idx(x+xx,y+yy)]; if(lab>=0) counts.set(lab,(counts.get(lab)||0)+1);
+      }
+      let best=-1,n=0; counts.forEach((v,k)=>{ if(v>n){n=v;best=k;} });
+      if(n>=6) out[p]=best;
+    }
+    state.labels=out; rebuildPreviewRGBA(); renderLayers(); draw2D(); analyze(false);
+  });
+
+  function makeBaseMask(){
+    const n = state.w*state.h;
+    let mask = new Uint8Array(n);
+    for(let i=0;i<n;i++) if(state.labels[i] >= 0) mask[i]=1;
+    const margin = Math.max(0, parseInt(els.baseMargin.value,10)||0);
+    for(let m=0;m<margin;m++){
+      const out = new Uint8Array(mask);
+      for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++) if(mask[idx(x,y)]){
+        for(let yy=-1; yy<=1; yy++) for(let xx=-1; xx<=1; xx++){
+          const nx=x+xx, ny=y+yy; if(nx>=0&&ny>=0&&nx<state.w&&ny<state.h) out[idx(nx,ny)]=1;
+        }
+      }
+      mask=out;
+    }
+    return mask;
+  }
+  function layerMask(layerIndex){
+    const mask = new Uint8Array(state.w*state.h);
+    for(let i=0;i<state.labels.length;i++) if(state.labels[i] === layerIndex) mask[i]=1;
+    return mask;
+  }
+
+  function getScale(){ const width=parseFloat(els.finalWidth.value)||50; const cell=width/state.w; return {cell, width, height: state.h*cell}; }
+
+  function trianglesForMask(mask, z0, z1){
+    const {cell} = getScale();
+    const tris = [];
+    const W=state.w,H=state.h;
+    const has = (x,y) => x>=0&&y>=0&&x<W&&y<H&&mask[idx(x,y)];
+    function v(x,y,z){ return [x*cell, (H-y)*cell, z]; }
+    function add(a,b,c){ tris.push([a,b,c]); }
+    function addRect(x0,y0,x1,y1,z,top){
+      const A=v(x0,y1,z), B=v(x1,y1,z), C=v(x1,y0,z), D=v(x0,y0,z);
+      if(top){ add(A,B,C); add(A,C,D); }
+      else { add(A,C,B); add(A,D,C); }
+    }
+    // top and bottom as merged horizontal runs
+    for(let y=0;y<H;y++){
+      let x=0;
+      while(x<W){
+        while(x<W && !has(x,y)) x++;
+        if(x>=W) break;
+        const x0=x;
+        while(x<W && has(x,y)) x++;
+        const x1=x;
+        addRect(x0,y,x1,y+1,z1,true);
+        addRect(x0,y,x1,y+1,z0,false);
+      }
+    }
+    // sides for boundary edges
+    function quad(a,b,c,d){ add(a,b,c); add(a,c,d); }
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(has(x,y)){
+      // north (top screen)
+      if(!has(x,y-1)) quad(v(x,y,z0), v(x+1,y,z0), v(x+1,y,z1), v(x,y,z1));
+      // south
+      if(!has(x,y+1)) quad(v(x+1,y+1,z0), v(x,y+1,z0), v(x,y+1,z1), v(x+1,y+1,z1));
+      // west
+      if(!has(x-1,y)) quad(v(x,y+1,z0), v(x,y,z0), v(x,y,z1), v(x,y+1,z1));
+      // east
+      if(!has(x+1,y)) quad(v(x+1,y,z0), v(x+1,y+1,z0), v(x+1,y+1,z1), v(x+1,y,z1));
+    }
+    return tris;
+  }
+
+  function normal(a,b,c){
+    const ux=b[0]-a[0], uy=b[1]-a[1], uz=b[2]-a[2];
+    const vx=c[0]-a[0], vy=c[1]-a[1], vz=c[2]-a[2];
+    let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+    const len=Math.hypot(nx,ny,nz)||1; return [nx/len,ny/len,nz/len];
+  }
+  function trianglesToSTL(tris, name){
+    let s = `solid ${name}\n`;
+    for(const t of tris){
+      const n=normal(t[0],t[1],t[2]);
+      s += ` facet normal ${fmt(n[0])} ${fmt(n[1])} ${fmt(n[2])}\n  outer loop\n`;
+      s += `   vertex ${fmt(t[0][0])} ${fmt(t[0][1])} ${fmt(t[0][2])}\n`;
+      s += `   vertex ${fmt(t[1][0])} ${fmt(t[1][1])} ${fmt(t[1][2])}\n`;
+      s += `   vertex ${fmt(t[2][0])} ${fmt(t[2][1])} ${fmt(t[2][2])}\n`;
+      s += `  endloop\n endfacet\n`;
+    }
+    s += `endsolid ${name}\n`;
+    return s;
+  }
+  function fmt(n){ return Number(n).toFixed(5).replace(/\.0+$/,'').replace(/(\.\d*?)0+$/,'$1'); }
+  function downloadBlob(name, blob){
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+  }
+
+  function generateParts(){
+    if(!state.labels) throw new Error('Sem imagem processada.');
+    const parts = [];
+    const base = parseFloat(els.baseThickness.value)||0;
+    if(base > 0){
+      const mask = makeBaseMask();
+      const tris = trianglesForMask(mask, 0, base);
+      if(tris.length) parts.push({name:'base_suporte', color:'#1f2937', tris});
+    }
+    state.layers.forEach((l,i) => {
+      if(!l.export) return;
+      const mask = layerMask(i);
+      const z0 = parseFloat(l.z)||0;
+      const z1 = z0 + Math.max(0.01, parseFloat(l.height)||0.01);
+      const tris = trianglesForMask(mask, z0, z1);
+      if(tris.length) parts.push({name: slug(l.name || ('cor_'+(i+1))), color:l.color, tris, layer:i});
+    });
+    return parts;
+  }
+
+  function exportSVG(){
+    if(!state.labels){ alert('Processe uma imagem primeiro.'); return; }
+    const {width,height} = getScale();
+    let svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${width.toFixed(3)}mm" height="${height.toFixed(3)}mm" viewBox="0 0 ${state.w} ${state.h}">\n`;
+    svg += `<title>${escapeHtml(state.fileName || 'imagem para svg')}</title>\n`;
+    svg += `<desc>SVG separado por camadas de cor para edição e extrusão 3D.</desc>\n`;
+    state.layers.forEach((l,i)=>{
+      const d = pathRunsForLayer(i);
+      if(!d) return;
+      svg += `<g id="${escapeAttr(slug(l.name))}" data-altura-mm="${l.height}" data-z-mm="${l.z}" fill="${l.color}">\n`;
+      svg += `<path d="${d}"/>\n</g>\n`;
+    });
+    svg += `</svg>`;
+    downloadBlob(`${safeName()}_camadas.svg`, new Blob([svg], {type:'image/svg+xml'}));
+  }
+  function pathRunsForLayer(lab){
+    let d='';
+    for(let y=0;y<state.h;y++){
+      let x=0;
+      while(x<state.w){
+        while(x<state.w && state.labels[idx(x,y)]!==lab) x++;
+        if(x>=state.w) break;
+        const x0=x;
+        while(x<state.w && state.labels[idx(x,y)]===lab) x++;
+        const x1=x;
+        d += `M${x0} ${y}H${x1}V${y+1}H${x0}Z`;
+      }
+    }
+    return d;
+  }
+
+  function exportSingleSTL(){
+    try{
+      const parts = generateParts();
+      if(!parts.length){ alert('Nada para exportar.'); return; }
+      const content = parts.map(p=>trianglesToSTL(p.tris, p.name)).join('\n');
+      downloadBlob(`${safeName()}_unico.stl`, new Blob([content], {type:'model/stl'}));
+    }catch(e){ alert(e.message); }
+  }
+  function exportParts(){
+    try{
+      const parts = generateParts();
+      if(!parts.length){ alert('Nada para exportar.'); return; }
+      parts.forEach((p,i)=> downloadBlob(`${safeName()}_${String(i+1).padStart(2,'0')}_${p.name}.stl`, new Blob([trianglesToSTL(p.tris,p.name)], {type:'model/stl'})) );
+    }catch(e){ alert(e.message); }
+  }
+  async function exportZip(){
+    try{
+      const parts = generateParts();
+      if(!parts.length){ alert('Nada para exportar.'); return; }
+      if(!window.JSZip){ exportParts(); alert('JSZip não carregou. Baixei os STLs separados diretamente.'); return; }
+      const zip = new JSZip();
+      const folder = zip.folder(safeName() + '_stl');
+      parts.forEach((p,i)=> folder.file(`${String(i+1).padStart(2,'0')}_${p.name}.stl`, trianglesToSTL(p.tris,p.name)));
+      folder.file('configuracoes_projeto.json', JSON.stringify(projectJSON(), null, 2));
+      folder.file('instrucoes_bambu.txt', bambuInstructions(parts));
+      folder.file(`${safeName()}_camadas.svg`, svgTextOnly());
+      const blob = await zip.generateAsync({type:'blob'});
+      downloadBlob(`${safeName()}_pacote_bambu.zip`, blob);
+    }catch(e){ alert(e.message); }
+  }
+  function svgTextOnly(){
+    const {width,height} = getScale();
+    let svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${width.toFixed(3)}mm" height="${height.toFixed(3)}mm" viewBox="0 0 ${state.w} ${state.h}">\n`;
+    state.layers.forEach((l,i)=>{ const d=pathRunsForLayer(i); if(d) svg += `<g id="${escapeAttr(slug(l.name))}" fill="${l.color}" data-z-mm="${l.z}" data-altura-mm="${l.height}"><path d="${d}"/></g>\n`; });
+    return svg + '</svg>';
+  }
+  function bambuInstructions(parts){
+    return `INSTRUÇÕES PARA BAMBU STUDIO / AMS\n\n1. Importe todos os STLs separados ao mesmo tempo.\n2. Se o Bambu Studio perguntar, carregue como um único objeto com múltiplas partes.\n3. Mantenha todos na mesma origem, sem mover individualmente.\n4. Atribua cada parte a um filamento AMS.\n5. Use bico 0,2 mm para detalhes pequenos.\n6. Confira a prévia de fatiamento antes de imprimir.\n\nPARTES EXPORTADAS:\n${parts.map((p,i)=>`${i+1}. ${p.name} - cor sugerida ${p.color}`).join('\n')}\n`;
+  }
+
+  function projectJSON(){
+    return {
+      app:'Imagem SVG STL Bambu HTML MVP', version:1,
+      fileName: state.fileName,
+      originalW: state.originalW, originalH: state.originalH,
+      w: state.w, h: state.h,
+      labels: state.labels ? Array.from(state.labels) : [],
+      layers: state.layers,
+      settings:{
+        finalWidth: els.finalWidth.value, nozzle: els.nozzle.value, baseThickness: els.baseThickness.value, baseMargin: els.baseMargin.value,
+        defaultHeight: els.defaultHeight.value
+      }
+    };
+  }
+  function saveProject(){
+    if(!state.labels){ alert('Processe uma imagem primeiro.'); return; }
+    downloadBlob(`${safeName()}_projeto.json`, new Blob([JSON.stringify(projectJSON())], {type:'application/json'}));
+  }
+  async function loadProject(file){
+    if(!file) return;
+    try{
+      const obj = JSON.parse(await file.text());
+      state.fileName = obj.fileName || file.name;
+      state.originalW = obj.originalW || 0; state.originalH = obj.originalH || 0; state.w=obj.w; state.h=obj.h;
+      state.labels = new Int16Array(obj.labels || []);
+      state.layers = obj.layers || [];
+      if(obj.settings){ Object.entries(obj.settings).forEach(([k,v])=>{ if(els[k]) els[k].value = v; }); }
+      state.activeLayer=0; state.undo.length=0; state.redo.length=0;
+      rebuildPreviewRGBA(); renderLayers(); draw2D(); updatePills(); analyze(false);
+      els.emptyState.classList.add('hidden'); els.currentFile.textContent = state.fileName + ' (projeto reaberto)';
+      els.fileInfo.innerHTML = `<b>Projeto carregado:</b> ${file.name}<br><b>Grade:</b> ${state.w} × ${state.h}px`;
+    }catch(e){ alert('Não consegui abrir o projeto JSON.'); }
+  }
+
+  $('#exportSvgBtn').addEventListener('click', exportSVG);
+  $('#exportSingleStlBtn').addEventListener('click', exportSingleSTL);
+  $('#exportPartsBtn').addEventListener('click', exportParts);
+  $('#exportZipBtn').addEventListener('click', exportZip);
+  $('#saveProjectBtn').addEventListener('click', saveProject);
+
+  function analyze(showAlert=true){
+    if(!state.labels){ els.analysisBox.textContent='Faça o processamento da imagem para ver a análise.'; return; }
+    updateLayerPixelCounts();
+    const {cell,width,height} = getScale();
+    const nozzle = parseFloat(els.nozzle.value)||0.2;
+    const minRecommended = nozzle * 1.2;
+    const comps = connectedComponents();
+    const tiny = comps.filter(c=>c.lab>=0 && c.cells.length <= 3).length;
+    const small = comps.filter(c=>c.lab>=0 && c.cells.length <= 8).length;
+    const totalCells = Array.from(state.labels).filter(v=>v>=0).length;
+    const maxZ = Math.max(parseFloat(els.baseThickness.value)||0, ...state.layers.map(l=>(parseFloat(l.z)||0)+(parseFloat(l.height)||0)));
+    let html = '';
+    html += `<b>Dimensão final:</b> ${width.toFixed(1)} × ${height.toFixed(1)} × ${maxZ.toFixed(2)} mm<br>`;
+    html += `<b>Grade interna:</b> ${state.w} × ${state.h} células (${totalCells} preenchidas)<br>`;
+    html += `<b>Tamanho de cada célula:</b> ${cell.toFixed(3)} mm<br>`;
+    html += `<b>Camadas:</b> ${state.layers.length} cores + ${parseFloat(els.baseThickness.value)>0?'base':'sem base'}<br>`;
+    if(cell < minRecommended) html += `<span class="warnText">⚠ Cada célula tem ${cell.toFixed(3)} mm, menor que a referência mínima de ${minRecommended.toFixed(3)} mm para bico ${nozzle} mm. Detalhes podem ficar frágeis ou desaparecer.</span><br>`;
+    else html += `<span class="ok">✓ Resolução física compatível com o bico informado.</span><br>`;
+    if(tiny) html += `<span class="warnText">⚠ ${tiny} ilhas com até 3 células. Recomendo remover ilhas pequenas.</span><br>`;
+    if(small) html += `<span class="warnText">⚠ ${small} regiões pequenas com até 8 células.</span><br>`;
+    const base = parseFloat(els.baseThickness.value)||0;
+    if(base <= 0) html += `<span class="warnText">⚠ Sem base sólida. Algumas partes podem ficar soltas se as cores não encostarem.</span><br>`;
+    else html += `<span class="ok">✓ Base sólida ativa com borda de ${els.baseMargin.value}px.</span><br>`;
+    html += `<br><b>Sugestão:</b> para ímã de 4–5 cm em AMS, use base entre 0,8 e 1,4 mm e relevos entre 0,4 e 1,2 mm.`;
+    els.analysisBox.innerHTML = html;
+    if(showAlert) updatePreview3D();
+  }
+  $('#analyzeBtn').addEventListener('click', () => analyze(true));
+
+  function connectedComponents(){
+    const comps=[]; if(!state.labels) return comps;
+    const seen=new Uint8Array(state.labels.length);
+    const q=[];
+    for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++){
+      const p=idx(x,y); if(seen[p]) continue; const lab=state.labels[p]; if(lab<0){seen[p]=1; continue;}
+      seen[p]=1; q.length=0; q.push(p);
+      const cells=[]; let qi=0;
+      while(qi<q.length){
+        const cp=q[qi++]; cells.push(cp); const cx=cp%state.w, cy=Math.floor(cp/state.w);
+        [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{
+          const nx=cx+dx, ny=cy+dy; if(nx<0||ny<0||nx>=state.w||ny>=state.h) return;
+          const np=idx(nx,ny); if(!seen[np] && state.labels[np]===lab){seen[np]=1; q.push(np);} else if(!seen[np] && state.labels[np]<0){ /* leave */ }
+        });
+      }
+      comps.push({lab,cells});
+    }
+    return comps;
+  }
+
+  function updatePreview3D(){
+    if(!state.labels){ alert('Processe a imagem primeiro.'); return; }
+    if(!window.THREE){ alert('A biblioteca Three.js não carregou. Verifique a internet/CDN.'); return; }
+    els.threeHost.classList.add('active');
+    state.view='preview3d'; updateTabs();
+    const host=els.threeHost;
+    if(!state.three){
+      const scene = new THREE.Scene(); scene.background = new THREE.Color(0xf7f8fb);
+      const camera = new THREE.PerspectiveCamera(42, host.clientWidth/host.clientHeight, 0.1, 2000);
+      const renderer = new THREE.WebGLRenderer({antialias:true});
+      renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setSize(host.clientWidth, host.clientHeight);
+      host.appendChild(renderer.domElement);
+      const group = new THREE.Group(); scene.add(group);
+      const amb = new THREE.AmbientLight(0xffffff, 0.78); scene.add(amb);
+      const dir = new THREE.DirectionalLight(0xffffff, 0.9); dir.position.set(50,-60,80); scene.add(dir);
+      const grid = new THREE.GridHelper(120, 24, 0xd0d5dd, 0xe5e7eb); grid.rotation.x = Math.PI/2; grid.visible=false; scene.add(grid);
+      state.three = {scene,camera,renderer,group,rotX:-0.9,rotZ:0.55,drag:false,last:null};
+      renderer.domElement.addEventListener('pointerdown', e=>{state.three.drag=true;state.three.last={x:e.clientX,y:e.clientY};});
+      window.addEventListener('pointerup',()=>{ if(state.three) state.three.drag=false; });
+      renderer.domElement.addEventListener('pointermove', e=>{ const t=state.three; if(!t.drag) return; t.rotZ += (e.clientX-t.last.x)*0.01; t.rotX += (e.clientY-t.last.y)*0.01; t.last={x:e.clientX,y:e.clientY}; renderThree(); });
+      renderer.domElement.addEventListener('wheel', e=>{ e.preventDefault(); const t=state.three; t.camera.position.multiplyScalar(e.deltaY<0?0.9:1.1); renderThree(); }, {passive:false});
+    }
+    const t=state.three;
+    while(t.group.children.length) t.group.remove(t.group.children[0]);
+    const parts = generateParts();
+    parts.forEach(p=>{
+      const positions = [];
+      p.tris.forEach(tri => tri.forEach(v => positions.push(v[0],v[1],v[2])));
+      const geom = new THREE.BufferGeometry();
+      geom.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
+      geom.computeVertexNormals();
+      const mat = new THREE.MeshStandardMaterial({color:p.color || '#999999', roughness:.7, metalness:0});
+      const mesh = new THREE.Mesh(geom, mat); t.group.add(mesh);
+    });
+    const {width,height}=getScale();
+    t.group.position.set(-width/2, -height/2, 0);
+    const maxDim=Math.max(width,height,30);
+    t.camera.position.set(maxDim*0.55, -maxDim*1.25, maxDim*0.85);
+    t.camera.lookAt(0,0,0);
+    renderThree();
+  }
+  function renderThree(){
+    const t=state.three; if(!t) return;
+    t.group.rotation.x = t.rotX; t.group.rotation.z = t.rotZ;
+    t.renderer.setSize(els.threeHost.clientWidth, els.threeHost.clientHeight);
+    t.camera.aspect = els.threeHost.clientWidth/els.threeHost.clientHeight; t.camera.updateProjectionMatrix();
+    t.renderer.render(t.scene,t.camera);
+  }
+  $('#updatePreviewBtn').addEventListener('click', updatePreview3D);
+
+  $$('[data-view]').forEach(btn => btn.addEventListener('click', () => {
+    state.view = btn.dataset.view;
+    if(state.view==='preview3d') updatePreview3D(); else { els.threeHost.classList.remove('active'); updateTabs(); draw2D(); }
+  }));
+  function updateTabs(){
+    $$('[data-view]').forEach(btn => btn.classList.toggle('active', btn.dataset.view === state.view));
+    if(state.view !== 'preview3d') els.threeHost.classList.remove('active');
+  }
+
+  window.addEventListener('resize', () => { draw2D(); renderThree(); });
+
+  document.addEventListener('keydown', e => {
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z'){ e.preventDefault(); $('#undoBtn').click(); }
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='y'){ e.preventDefault(); $('#redoBtn').click(); }
+    if(e.key==='1') setTool('pick'); if(e.key==='2') setTool('paint'); if(e.key==='3') setTool('erase'); if(e.key==='4') setTool('pan');
+  });
+  function setTool(tool){ const b = $(`[data-tool="${tool}"]`); if(b) b.click(); }
+
+  draw2D(); updatePills();
+})();
+</script>
+</body>
+</html>
