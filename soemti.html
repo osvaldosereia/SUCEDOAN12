@@ -3,345 +3,282 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#6F3D2A" />
+  <meta name="theme-color" content="#6E4A2E" />
   <meta name="robots" content="index,follow,max-image-preview:large" />
-  <meta name="description" content="Canecas católicas, terços e rosários com artes devocionais, presentes religiosos e personalização guiada por WhatsApp." />
+  <meta name="description" content="Só em Ti: canecas católicas, terços e rosários com arte devocional autoral. Escolha seu presente religioso e faça o pedido pelo WhatsApp." />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Loja Católica | Canecas, Terços e Rosários" />
-  <meta property="og:description" content="Escolha uma arte católica, personalize nome e mensagem curta, veja a prévia e envie o pedido pelo WhatsApp." />
+  <meta property="og:site_name" content="Só em Ti" />
+  <meta property="og:title" content="Só em Ti | Canecas Católicas, Terços e Rosários" />
+  <meta property="og:description" content="Presentes católicos com arte devocional autoral. Canecas, terços e rosários para presentear com fé." />
   <meta property="og:image" content="" />
   <meta name="twitter:card" content="summary_large_image" />
-  <title>Loja Católica | Canecas, Terços e Rosários</title>
+  <title>Só em Ti | Canecas Católicas, Terços e Rosários</title>
 
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
       --bg:#FFFCF7;
-      --surface:#FFFFFF;
-      --surface-2:#F8EFE6;
-      --surface-3:#F3E3D2;
-      --ink:#251813;
-      --muted:#74655C;
-      --soft:#A68B78;
-      --brand:#6F3D2A;
-      --brand-2:#A86C43;
-      --gold:#C99A3B;
-      --green:#526548;
-      --danger:#A33434;
-      --line:#E7D7C8;
-      --shadow:0 18px 50px rgba(77,45,28,.10);
-      --radius:22px;
-      --radius-sm:14px;
+      --paper:#FFFFFF;
+      --paper-2:#F8F0E6;
+      --paper-3:#EFE1CF;
+      --ink:#241812;
+      --muted:#77675D;
+      --soft:#9B8371;
+      --brand:#6E4A2E;
+      --brand-2:#A06A3D;
+      --gold:#C89A3B;
+      --olive:#59684A;
+      --line:#E8D9C9;
+      --danger:#A23A32;
+      --shadow:0 18px 48px rgba(73,45,28,.11);
+      --radius:24px;
+      --radius-sm:16px;
       --max:1180px;
-      --focus:0 0 0 4px rgba(201,154,59,.28);
+      --focus:0 0 0 4px rgba(200,154,59,.28);
     }
     *{box-sizing:border-box}
     html{scroll-behavior:smooth}
-    body{
-      margin:0;background:var(--bg);color:var(--ink);
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
-    }
-    body.menu-open{overflow:hidden}
-    img,video,canvas,iframe{max-width:100%;display:block}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+    body.menu-open,body.lightbox-open{overflow:hidden}
+    img,video,iframe{max-width:100%;display:block}
     a{color:inherit;text-decoration:none}
-    button,input,select,textarea{font:inherit;color:inherit}
+    button,input,select{font:inherit;color:inherit}
     button{cursor:pointer}
     :focus-visible{outline:none;box-shadow:var(--focus)}
     .skip-link{position:absolute;left:12px;top:-80px;background:var(--ink);color:#fff;padding:12px 14px;border-radius:12px;z-index:9999}
     .skip-link:focus{top:12px}
     .container{width:min(var(--max),calc(100% - 32px));margin:0 auto}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-    .top-note{background:var(--brand);color:#fff;font-size:.86rem;text-align:center;padding:8px 16px}
-    .top-note strong{font-weight:800;color:#FFE7B0}
-    .header{position:sticky;top:0;z-index:80;background:rgba(255,252,247,.92);backdrop-filter:blur(16px);border-bottom:1px solid rgba(231,215,200,.8)}
-    .nav{height:76px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+    .top-note{background:var(--brand);color:#fff;font-size:.88rem;text-align:center;padding:8px 14px}
+    .top-note strong{color:#FFE7B0}
+    header{position:sticky;top:0;z-index:70;background:rgba(255,252,247,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(232,217,201,.82)}
+    .nav{height:74px;display:flex;align-items:center;justify-content:space-between;gap:16px}
     .brand{display:flex;align-items:center;gap:12px;min-width:0}
-    .brand-mark{width:44px;height:44px;border-radius:16px;background:linear-gradient(135deg,var(--brand),var(--gold));display:grid;place-items:center;color:#fff;font-weight:900;box-shadow:0 10px 25px rgba(111,61,42,.18)}
-    .brand-name{display:flex;flex-direction:column;line-height:1.1;min-width:0}
-    .brand-name strong{font-family:"Cormorant Garamond",serif;font-size:1.32rem;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .brand-name span{font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .nav-links{display:flex;align-items:center;gap:6px}
-    .nav-links a,.nav-links button{border:0;background:transparent;padding:10px 12px;border-radius:999px;font-weight:700;color:var(--muted);font-size:.92rem}
-    .nav-links a:hover,.nav-links button:hover{background:var(--surface-2);color:var(--brand)}
-    .nav-actions{display:flex;align-items:center;gap:10px}
-    .icon-btn{width:42px;height:42px;border:1px solid var(--line);background:#fff;border-radius:50%;display:grid;place-items:center;color:var(--brand);font-weight:900}
-    .menu-btn{display:none}
-    .search-wrap{position:relative;flex:1;max-width:360px}
-    .search-wrap input{width:100%;border:1px solid var(--line);background:#fff;border-radius:999px;padding:12px 44px 12px 16px;outline:none}
-    .search-wrap input:focus{border-color:rgba(201,154,59,.75);box-shadow:var(--focus)}
-    .search-wrap .search-ico{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--soft)}
-    .mobile-panel{display:none}
-    .btn{border:0;border-radius:999px;padding:12px 18px;font-weight:800;background:var(--brand);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:46px;box-shadow:0 10px 24px rgba(111,61,42,.18)}
-    .btn:hover{background:#5B2F20}
-    .btn.secondary{background:#fff;color:var(--brand);border:1px solid var(--line);box-shadow:none}
-    .btn.secondary:hover{background:var(--surface-2)}
-    .btn.ghost{background:transparent;color:var(--brand);border:1px solid transparent;box-shadow:none}
+    .brand-mark{width:44px;height:44px;border-radius:16px;background:linear-gradient(145deg,var(--brand),var(--brand-2));color:#fff;display:grid;place-items:center;font-family:"Cormorant Garamond",serif;font-size:1.55rem;font-weight:700;box-shadow:0 10px 24px rgba(110,74,46,.2)}
+    .brand-title{display:flex;flex-direction:column;min-width:0}
+    .brand-title strong{font-family:"Cormorant Garamond",serif;font-size:1.55rem;line-height:1;color:var(--brand)}
+    .brand-title span{font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .nav-links{display:flex;align-items:center;gap:4px}
+    .nav-links a,.nav-links button{border:0;background:transparent;padding:10px 12px;border-radius:999px;color:var(--muted);font-weight:650;font-size:.92rem}
+    .nav-links a:hover,.nav-links button:hover{background:var(--paper-2);color:var(--ink)}
+    .menu-btn{display:none;border:1px solid var(--line);background:#fff;border-radius:14px;padding:10px 12px;font-weight:800;color:var(--brand)}
+    main{min-height:70vh}
+    .hero{padding:42px 0 30px}
+    .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:28px;align-items:center}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--brand);background:var(--paper-2);border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-weight:800;font-size:.86rem}
+    .hero h1,.section-head h2,.page-title h1{font-family:"Cormorant Garamond",serif;margin:16px 0 12px;line-height:.98;color:var(--ink)}
+    .hero h1{font-size:clamp(2.7rem,7vw,5.7rem);letter-spacing:-.045em;max-width:820px}
+    .hero p{font-size:1.08rem;color:var(--muted);max-width:650px;margin:0 0 22px}
+    .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{border:0;border-radius:999px;padding:12px 18px;min-height:46px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:9px;text-align:center;transition:.18s transform,.18s box-shadow,.18s background}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.primary{background:var(--brand);color:#fff;box-shadow:0 12px 26px rgba(110,74,46,.22)}
+    .btn.primary:hover{background:#5E3E27}
+    .btn.secondary{background:#fff;color:var(--brand);border:1px solid var(--line)}
+    .btn.ghost{background:var(--paper-2);color:var(--brand)}
     .btn.full{width:100%}
-    .btn[disabled]{opacity:.6;cursor:not-allowed}
-    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:rgba(255,255,255,.72);border-radius:999px;padding:8px 12px;color:var(--muted);font-size:.86rem;font-weight:700}
-    .section{padding:44px 0}
-    .section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:20px}
-    .eyebrow{font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-size:.76rem}
-    h1,h2,h3{margin:0;line-height:1.05}
-    h1,.display{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:clamp(2.6rem,6vw,5.9rem);letter-spacing:-.035em}
-    h2{font-family:"Cormorant Garamond",serif;font-size:clamp(2rem,4vw,3.3rem);letter-spacing:-.02em}
-    h3{font-size:1.05rem}
-    p{margin:0;color:var(--muted)}
-    .hero{padding:44px 0 28px;position:relative;overflow:hidden}
-    .hero:before{content:"";position:absolute;inset:-220px -160px auto auto;width:520px;height:520px;background:radial-gradient(circle,rgba(201,154,59,.24),transparent 65%);pointer-events:none}
-    .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:center}
-    .hero-copy{position:relative;z-index:1}
-    .hero-copy p{font-size:1.08rem;max-width:680px;margin:18px 0 24px}
-    .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}
-    .trust-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
-    .hero-card{background:linear-gradient(145deg,#fff,var(--surface-2));border:1px solid var(--line);border-radius:32px;padding:16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
-    .hero-card img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:24px;background:var(--surface-3)}
-    .hero-card .floating{position:absolute;left:28px;bottom:28px;background:rgba(255,255,255,.86);backdrop-filter:blur(10px);border:1px solid rgba(231,215,200,.85);border-radius:20px;padding:14px;max-width:260px;box-shadow:0 12px 30px rgba(37,24,19,.12)}
-    .floating strong{display:block;margin-bottom:4px}
-    .grid{display:grid;gap:18px}
-    .grid.cols-4{grid-template-columns:repeat(4,1fr)}
-    .grid.cols-3{grid-template-columns:repeat(3,1fr)}
-    .grid.cols-2{grid-template-columns:repeat(2,1fr)}
-    .category-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px;min-height:150px;display:flex;flex-direction:column;justify-content:space-between;transition:.2s transform,.2s box-shadow}
-    .category-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
-    .category-card .ico{width:48px;height:48px;border-radius:18px;display:grid;place-items:center;background:var(--surface-2);color:var(--brand);font-size:1.35rem}
+    .hero-media{position:relative;background:linear-gradient(145deg,#fff,var(--paper-2));border:1px solid var(--line);border-radius:34px;padding:14px;box-shadow:var(--shadow);overflow:hidden}
+    .hero-media img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:26px;background:var(--paper-3)}
+    .hero-float{position:absolute;left:26px;right:26px;bottom:24px;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border:1px solid rgba(232,217,201,.9);border-radius:22px;padding:14px;box-shadow:0 12px 30px rgba(36,24,18,.12)}
+    .hero-float strong{display:block;color:var(--brand);font-size:.95rem}
+    .hero-float span{font-size:.84rem;color:var(--muted)}
+    section{padding:22px 0}
+    .section-head{display:flex;justify-content:space-between;align-items:end;gap:18px;margin-bottom:16px}
+    .section-head h2{font-size:clamp(2rem,4vw,3.3rem);letter-spacing:-.03em;margin:0}
+    .section-head p{margin:6px 0 0;color:var(--muted);max-width:720px}
+    .grid-cats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .category-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px;min-height:148px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s transform,.18s box-shadow}
+    .category-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+    .category-card .ico{width:50px;height:50px;border-radius:18px;display:grid;place-items:center;background:var(--paper-2);color:var(--brand);font-size:1.4rem}
+    .category-card h3{margin:14px 0 4px;font-size:1rem}
     .category-card span{color:var(--muted);font-size:.88rem}
-    .product-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;min-width:0;transition:.2s transform,.2s box-shadow}
+    .filters{display:grid;grid-template-columns:1fr 190px 190px;gap:10px;background:#fff;border:1px solid var(--line);border-radius:24px;padding:10px;margin:12px 0 18px}
+    .field{position:relative}
+    .field label{position:absolute;left:14px;top:7px;font-size:.72rem;font-weight:800;color:var(--soft);text-transform:uppercase;letter-spacing:.05em}
+    .field input,.field select{width:100%;border:0;background:var(--paper-2);border-radius:16px;padding:28px 14px 10px;min-height:58px;color:var(--ink)}
+    .products-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+    .product-card{background:#fff;border:1px solid var(--line);border-radius:26px;overflow:hidden;display:flex;flex-direction:column;min-width:0;transition:.2s transform,.2s box-shadow;position:relative}
     .product-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
-    .product-media{position:relative;background:var(--surface-2)}
-    .product-media img{width:100%;aspect-ratio:1/1;object-fit:cover}
-    .badges{position:absolute;left:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap}
-    .badge{border-radius:999px;padding:6px 9px;font-weight:900;font-size:.72rem;color:#fff;background:rgba(111,61,42,.92);box-shadow:0 6px 15px rgba(0,0,0,.12)}
-    .badge.gold{background:rgba(201,154,59,.94)}
-    .product-body{padding:14px;display:flex;flex-direction:column;gap:10px;flex:1}
-    .product-title{font-weight:900;line-height:1.2}
-    .product-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
-    .price{font-weight:900;color:var(--brand);font-size:1.08rem}
-    .tiny{font-size:.8rem;color:var(--muted)}
-    .card-actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:4px}
-    .card-actions .btn{padding:10px 12px;min-height:40px;font-size:.9rem}
-    .filters{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 20px}
-    .filter-btn{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:999px;padding:10px 13px;font-weight:800}
-    .filter-btn.active,.filter-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
-    .page-shell{padding:28px 0 64px}
-    .breadcrumb{display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:var(--muted);font-size:.88rem;margin-bottom:18px}
-    .breadcrumb a{text-decoration:underline;text-underline-offset:3px}
-    .product-page{display:grid;grid-template-columns:minmax(0,1.04fr) minmax(330px,.78fr);gap:28px;align-items:start}
-    .gallery-panel,.buy-panel,.info-card{background:#fff;border:1px solid var(--line);border-radius:26px;padding:16px;box-shadow:0 10px 35px rgba(77,45,28,.05)}
-    .main-preview{border-radius:22px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line);position:relative}
-    .main-preview img,.main-preview video,.main-preview canvas{width:100%;aspect-ratio:1/1;object-fit:cover;background:#fff}
-    .main-preview.wide img{aspect-ratio:2/1;object-fit:cover}
+    .product-media{position:relative;background:#F5EBDD;overflow:hidden}
+    .product-media img{width:100%;aspect-ratio:1/1;object-fit:cover;transition:.25s transform}
+    .product-card:hover .product-media img{transform:scale(1.03)}
+    .product-badges{position:absolute;left:10px;top:10px;right:10px;display:flex;gap:6px;flex-wrap:wrap;z-index:2}
+    .badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid rgba(232,217,201,.88);border-radius:999px;padding:6px 9px;font-size:.72rem;font-weight:900;color:var(--brand)}
+    .badge.gold{background:rgba(255,246,220,.94);color:#7F571A;border-color:#E7CC83}
+    .product-body{padding:13px 13px 14px;display:flex;flex-direction:column;gap:8px;flex:1}
+    .product-title{font-weight:850;letter-spacing:-.015em;line-height:1.16;min-height:2.35em}
+    .product-summary{color:var(--muted);font-size:.84rem;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.3em}
+    .price-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
+    .price{font-size:1.12rem;font-weight:900;color:var(--brand)}
+    .tiny{font-size:.78rem;color:var(--muted)}
+    .card-actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:4px}
+    .page{padding:26px 0 34px}
+    .breadcrumbs{display:flex;gap:7px;flex-wrap:wrap;color:var(--muted);font-size:.88rem;margin-bottom:16px}
+    .breadcrumbs a{text-decoration:underline;text-underline-offset:3px}
+    .product-layout{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(330px,.92fr);gap:22px;align-items:start}
+    .gallery-panel,.buy-panel,.info-card{background:#fff;border:1px solid var(--line);border-radius:28px;padding:16px;box-shadow:0 10px 34px rgba(73,45,28,.055)}
+    .main-preview{border-radius:24px;overflow:hidden;border:1px solid var(--line);background:var(--paper-2);position:relative}
+    .main-preview img,.main-preview video{width:100%;aspect-ratio:1/1;object-fit:cover;background:#fff}
+    .main-preview.horizontal img{aspect-ratio:2/1}
+    .main-preview.vertical video,.main-preview.vertical img{aspect-ratio:9/16;max-height:76vh;object-fit:cover;margin:0 auto;background:#000}
+    .expand-hint{position:absolute;right:12px;bottom:12px;background:rgba(36,24,18,.72);color:#fff;border-radius:999px;padding:8px 11px;font-size:.78rem;font-weight:800;backdrop-filter:blur(8px)}
     .thumbs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px}
-    .thumb{border:1px solid var(--line);background:#fff;border-radius:14px;overflow:hidden;padding:0;position:relative;min-height:62px}
-    .thumb img,.thumb video{width:100%;height:100%;aspect-ratio:1/1;object-fit:cover}
+    .thumb{border:1px solid var(--line);background:#fff;border-radius:16px;padding:4px;overflow:hidden;min-height:72px;display:grid;place-items:center;position:relative}
     .thumb.active{border-color:var(--brand);box-shadow:var(--focus)}
-    .thumb span{position:absolute;inset:auto 4px 4px 4px;background:rgba(37,24,19,.62);color:#fff;border-radius:999px;font-size:.62rem;padding:3px;text-align:center;font-weight:900}
-    .form-group{display:grid;gap:7px;margin-top:14px}
-    label{font-weight:900;font-size:.92rem}
-    input,select,textarea{border:1px solid var(--line);background:#fff;border-radius:14px;padding:13px 14px;outline:none;width:100%}
-    textarea{resize:vertical;min-height:82px}
-    input:focus,select:focus,textarea:focus{border-color:rgba(201,154,59,.75);box-shadow:var(--focus)}
-    .helper{font-size:.78rem;color:var(--muted);display:flex;justify-content:space-between;gap:12px}
-    .error{color:var(--danger);font-size:.82rem;font-weight:800;margin-top:6px;display:none}
-    .preview-box{margin-top:16px;border:1px dashed var(--line);background:var(--surface-2);border-radius:20px;padding:12px}
-    .preview-box h3{margin-bottom:10px}
-    .preview-box canvas{width:100%;border-radius:16px;background:#fff;border:1px solid var(--line)}
-    .summary-list{display:grid;gap:10px;margin:18px 0;padding:0;list-style:none}
-    .summary-list li{display:flex;align-items:flex-start;gap:10px;color:var(--muted);font-size:.93rem}
-    .summary-list strong{color:var(--ink)}
-    .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);margin-top:8px;flex:0 0 auto}
-    .status-box{margin-top:14px;border-radius:18px;padding:12px;background:var(--surface-2);color:var(--muted);font-size:.88rem}
-    .share-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    .content-page{background:#fff;border:1px solid var(--line);border-radius:28px;padding:clamp(20px,4vw,38px);box-shadow:var(--shadow);max-width:900px;margin:0 auto}
-    .content-page h1{font-size:clamp(2rem,5vw,4rem);margin-bottom:16px}
-    .content-page h2{font-size:1.7rem;margin:28px 0 10px}
-    .content-page p,.content-page li{color:var(--muted)}
-    .content-page ul{padding-left:20px}
-    .reels-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-    .reel-card{background:#fff;border:1px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(77,45,28,.06)}
-    .reel-frame{aspect-ratio:9/16;background:var(--surface-2);display:grid;place-items:center;overflow:hidden}
-    .reel-frame iframe,.reel-frame video{width:100%;height:100%;object-fit:cover;border:0}
+    .thumb img,.thumb video{width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;border-radius:12px;background:var(--paper-2)}
+    .thumb.video-thumb::after{content:"▶";position:absolute;inset:auto 8px 8px auto;background:rgba(36,24,18,.76);color:#fff;border-radius:999px;width:28px;height:28px;display:grid;place-items:center;font-size:.8rem}
+    .buy-panel{position:sticky;top:96px}
+    .page-title h1{font-size:clamp(2.2rem,4.6vw,4.2rem);letter-spacing:-.04em;margin-top:0}
+    .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}
+    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--paper-2);border-radius:999px;padding:8px 10px;color:var(--brand);font-weight:800;font-size:.82rem}
+    .product-desc{color:var(--muted)}
+    .benefits{display:grid;gap:10px;margin:18px 0;padding:0;list-style:none}
+    .benefits li{display:flex;gap:10px;align-items:flex-start;color:var(--muted);font-size:.93rem}
+    .dot{width:9px;height:9px;border-radius:999px;background:var(--gold);flex:0 0 auto;margin-top:7px}
+    .order-box{background:var(--paper-2);border:1px solid var(--line);border-radius:22px;padding:14px;margin:16px 0}
+    .qty-row{display:flex;align-items:center;gap:10px;margin:10px 0}
+    .qty-row button{width:38px;height:38px;border-radius:14px;border:1px solid var(--line);background:#fff;font-weight:900;color:var(--brand)}
+    .qty-row input{width:70px;text-align:center;border:1px solid var(--line);border-radius:14px;padding:10px;background:#fff;font-weight:800}
+    .share-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .media-section{margin-top:18px;display:grid;gap:16px}
+    .wide-art{background:#fff;border:1px solid var(--line);border-radius:26px;padding:14px}
+    .wide-art img{width:100%;aspect-ratio:2/1;object-fit:cover;border-radius:20px;background:var(--paper-2);cursor:zoom-in}
+    .vertical-video-box{background:#fff;border:1px solid var(--line);border-radius:26px;padding:14px}
+    .vertical-video-wrap{max-width:420px;margin:0 auto;background:#000;border-radius:22px;overflow:hidden}
+    .vertical-video-wrap video,.vertical-video-wrap iframe{width:100%;aspect-ratio:9/16;height:auto;border:0;background:#000;object-fit:cover}
+    .related-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .reels-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .reel-card{background:#fff;border:1px solid var(--line);border-radius:26px;overflow:hidden;box-shadow:0 10px 30px rgba(73,45,28,.055)}
+    .reel-frame{aspect-ratio:9/16;background:#16100D;display:grid;place-items:center;overflow:hidden}
+    .reel-frame iframe,.reel-frame video,.reel-frame img{width:100%;height:100%;object-fit:cover;border:0}
     .reel-card-body{padding:12px}
-    .embed-wrap{width:100%;height:100%;overflow:auto;background:#fff}
-    .horizontal-art{margin-top:20px;background:#fff;border:1px solid var(--line);border-radius:24px;padding:14px}
-    .horizontal-art img{width:100%;aspect-ratio:2/1;object-fit:cover;border-radius:18px;background:var(--surface-2)}
-    .related{margin-top:34px}
-    .footer{background:#2A1B14;color:#F8EFE6;margin-top:42px;padding:44px 0 24px}
-    .footer-grid{display:grid;grid-template-columns:1.25fr repeat(3,1fr);gap:22px}
-    .footer p,.footer a{color:#D8C5B4}
-    .footer h3{color:#fff;margin-bottom:12px}
-    .footer-links{display:grid;gap:9px}
-    .footer-bottom{border-top:1px solid rgba(255,255,255,.12);margin-top:26px;padding-top:18px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#D8C5B4;font-size:.86rem}
-    .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 16px;border-radius:999px;box-shadow:0 14px 40px rgba(0,0,0,.22);opacity:0;pointer-events:none;transition:.2s;z-index:200;font-weight:800;font-size:.9rem}
+    .reel-card-body h3{font-size:.95rem;margin:0 0 4px;line-height:1.25}
+    .static-page{max-width:860px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:30px;padding:24px;box-shadow:0 10px 34px rgba(73,45,28,.05)}
+    .static-page h1{font-family:"Cormorant Garamond",serif;font-size:clamp(2.4rem,5vw,4rem);margin:0 0 10px;letter-spacing:-.04em}
+    .static-page h2{margin-top:24px;color:var(--brand)}
+    .static-page p,.static-page li{color:var(--muted)}
+    footer{margin-top:36px;background:#211612;color:#fff;padding:34px 0 22px}
+    .footer-grid{display:grid;grid-template-columns:1.1fr .8fr .8fr .8fr;gap:20px}
+    footer h3,footer h4{margin:0 0 10px;color:#fff}
+    footer h3{font-family:"Cormorant Garamond",serif;font-size:2rem}
+    footer p,footer a{color:rgba(255,255,255,.74);font-size:.92rem}
+    footer a{display:block;padding:4px 0}
+    .socials{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .socials a{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:8px 10px;color:#fff;background:rgba(255,255,255,.06)}
+    .copyright{border-top:1px solid rgba(255,255,255,.12);margin-top:24px;padding-top:16px;color:rgba(255,255,255,.58);font-size:.82rem}
+    .empty{background:#fff;border:1px dashed var(--line);border-radius:24px;padding:28px;text-align:center;color:var(--muted)}
+    .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;padding:12px 16px;border-radius:999px;z-index:200;box-shadow:0 16px 36px rgba(0,0,0,.22);transition:.2s}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-    .loading{display:grid;place-items:center;min-height:280px;color:var(--muted)}
-    .empty{background:#fff;border:1px dashed var(--line);border-radius:24px;padding:30px;text-align:center;color:var(--muted)}
-    @media (max-width: 1000px){
-      .hero-grid,.product-page{grid-template-columns:1fr}
-      .grid.cols-4{grid-template-columns:repeat(2,1fr)}
+    .lightbox{position:fixed;inset:0;background:rgba(24,15,11,.86);display:none;z-index:150;align-items:center;justify-content:center;padding:18px}
+    .lightbox.open{display:flex}
+    .lightbox-inner{width:min(1100px,100%);max-height:94vh;display:grid;gap:12px}
+    .lightbox-bar{display:flex;justify-content:space-between;align-items:center;color:#fff;gap:12px}
+    .lightbox-title{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .lightbox-close{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:10px 13px;font-weight:900}
+    .lightbox-stage{display:grid;place-items:center;max-height:84vh;overflow:auto}
+    .lightbox-stage img,.lightbox-stage video{max-height:84vh;max-width:100%;border-radius:18px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    .lightbox-stage video{background:#000}
+    @media (max-width:980px){
+      .hero-grid,.product-layout,.footer-grid{grid-template-columns:1fr}
+      .grid-cats{grid-template-columns:repeat(2,1fr)}
+      .products-grid,.related-grid{grid-template-columns:repeat(3,1fr)}
       .reels-grid{grid-template-columns:repeat(3,1fr)}
-      .footer-grid{grid-template-columns:1fr 1fr}
-      .search-wrap{max-width:280px}
+      .buy-panel{position:static}
+      .filters{grid-template-columns:1fr 1fr}
+      .filters .field:first-child{grid-column:1/-1}
     }
-    @media (max-width: 760px){
+    @media (max-width:760px){
       .container{width:min(100% - 24px,var(--max))}
       .nav{height:66px}
       .brand-mark{width:40px;height:40px;border-radius:14px}
-      .brand-name strong{font-size:1.1rem;max-width:185px}
-      .brand-name span{display:none}
-      .nav-links,.search-wrap.desktop-search{display:none}
-      .menu-btn{display:grid}
-      .mobile-panel{display:block;position:fixed;inset:0 0 auto auto;top:0;width:min(390px,92vw);height:100dvh;background:#fff;z-index:150;transform:translateX(105%);transition:.25s;box-shadow:-20px 0 60px rgba(0,0,0,.15);padding:20px;border-left:1px solid var(--line)}
-      .mobile-panel.open{transform:translateX(0)}
-      .mobile-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-      .mobile-panel .mobile-search{display:block;max-width:none;margin:12px 0 18px}
-      .mobile-menu{display:grid;gap:8px}
-      .mobile-menu a{padding:13px 12px;border-radius:14px;background:var(--surface-2);font-weight:900;color:var(--brand)}
-      .hero{padding-top:28px}
-      h1,.display{font-size:clamp(2.45rem,12vw,4rem)}
-      .hero-actions .btn{width:100%}
-      .grid.cols-4,.grid.cols-3,.grid.cols-2{grid-template-columns:1fr 1fr;gap:12px}
-      .product-body{padding:12px}
-      .product-title{font-size:.94rem}
-      .section{padding:32px 0}
-      .section-head{align-items:flex-start;flex-direction:column}
-      .thumbs{grid-template-columns:repeat(3,1fr)}
-      .buy-panel{padding:14px;border-radius:22px}
-      .reels-grid{grid-template-columns:repeat(2,1fr);gap:12px}
-      .footer-grid{grid-template-columns:1fr}
-      .footer-bottom{flex-direction:column}
-      .top-note{font-size:.78rem}
+      .brand-title strong{font-size:1.35rem}
+      .brand-title span{display:none}
+      .menu-btn{display:inline-flex}
+      .nav-links{position:fixed;left:12px;right:12px;top:76px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:10px;display:none;flex-direction:column;align-items:stretch;box-shadow:var(--shadow)}
+      body.menu-open .nav-links{display:flex}
+      .nav-links a,.nav-links button{text-align:left;border-radius:14px}
+      .hero{padding-top:26px}
+      .hero h1{font-size:3.15rem}
+      .section-head{align-items:start;flex-direction:column}
+      .filters{grid-template-columns:1fr;padding:8px}
+      .products-grid{grid-template-columns:repeat(2,1fr);gap:12px}
+      .product-card{border-radius:22px}
+      .product-body{padding:11px}
+      .product-title{font-size:.94rem;min-height:2.2em}
+      .product-summary{display:none}
+      .price{font-size:1rem}
+      .card-actions .btn{min-height:39px;padding:9px 10px;font-size:.86rem}
+      .thumbs{grid-template-columns:repeat(4,1fr)}
+      .reels-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+      .reel-card{min-width:78%;scroll-snap-align:start}
+      .related-grid{grid-template-columns:repeat(2,1fr)}
+      .page{padding-top:18px}
+      .gallery-panel,.buy-panel,.info-card{border-radius:24px;padding:12px}
+      .footer-grid{gap:10px}
     }
-    @media (max-width: 430px){
-      .grid.cols-4,.grid.cols-3,.grid.cols-2{grid-template-columns:1fr}
-      .product-card{display:grid;grid-template-columns:112px 1fr;align-items:stretch}
-      .product-media img{height:100%;aspect-ratio:auto}
-      .card-actions{grid-template-columns:1fr}
-      .reels-grid{grid-template-columns:1fr}
+    @media (max-width:390px){
+      .products-grid{gap:9px}
+      .product-body{padding:10px}
+      .btn{padding:11px 13px}
     }
   </style>
 </head>
 <body>
-  <a class="skip-link" href="#app">Pular para o conteúdo</a>
-  <div class="top-note" id="topNote">Produtos católicos personalizados · Pedido rápido pelo <strong>WhatsApp</strong></div>
-
-  <header class="header" role="banner">
-    <div class="container nav">
-      <a href="./" class="brand" aria-label="Ir para a página inicial">
-        <div class="brand-mark" aria-hidden="true">✦</div>
-        <div class="brand-name">
-          <strong id="brandName">Loja Católica</strong>
-          <span id="brandTagline">Canecas, terços e rosários</span>
-        </div>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <div class="top-note" id="topNote">Canecas católicas, terços e rosários · Pedido pelo <strong>WhatsApp</strong></div>
+  <header>
+    <div class="container nav" aria-label="Navegação principal">
+      <a class="brand" href="./" aria-label="Só em Ti - início">
+        <span class="brand-mark">S</span>
+        <span class="brand-title"><strong id="brandName">Só em Ti</strong><span>Presentes católicos com fé</span></span>
       </a>
-
-      <nav class="nav-links" aria-label="Menu principal">
+      <button class="menu-btn" type="button" id="menuBtn" aria-expanded="false" aria-controls="navLinks">Menu</button>
+      <nav class="nav-links" id="navLinks">
         <a href="./">Início</a>
-        <a href="?categoria=canecas">Canecas</a>
-        <a href="?categoria=tercos-rosarios">Terços e Rosários</a>
-        <a href="?pagina=reels">Reels</a>
-        <a href="?pagina=quem-somos">Quem somos</a>
+        <a href="?view=catalogo">Produtos</a>
+        <a href="?view=reels">Vídeos</a>
+        <a href="?page=envio">Envio</a>
+        <a href="?page=quem-somos">Quem somos</a>
+        <a href="?page=privacidade">Privacidade</a>
+        <a href="?page=contato">Contato</a>
       </nav>
-
-      <div class="search-wrap desktop-search">
-        <label class="sr-only" for="searchInput">Buscar produtos</label>
-        <input id="searchInput" type="search" placeholder="Buscar canecas, santos, terços..." autocomplete="off" />
-        <span class="search-ico" aria-hidden="true">⌕</span>
-      </div>
-
-      <div class="nav-actions">
-        <a class="icon-btn" id="instagramTop" href="#" target="_blank" rel="noopener" aria-label="Instagram">◎</a>
-        <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Abrir menu">☰</button>
-      </div>
     </div>
   </header>
-
-  <aside class="mobile-panel" id="mobilePanel" aria-hidden="true">
-    <div class="mobile-panel-head">
-      <strong>Menu</strong>
-      <button class="icon-btn" id="closeMenuBtn" type="button" aria-label="Fechar menu">×</button>
-    </div>
-    <div class="search-wrap mobile-search">
-      <label class="sr-only" for="mobileSearchInput">Buscar produtos</label>
-      <input id="mobileSearchInput" type="search" placeholder="Buscar produtos..." autocomplete="off" />
-      <span class="search-ico" aria-hidden="true">⌕</span>
-    </div>
-    <nav class="mobile-menu" aria-label="Menu mobile">
-      <a href="./">Início</a>
-      <a href="?categoria=canecas">Canecas</a>
-      <a href="?categoria=tercos-rosarios">Terços e Rosários</a>
-      <a href="?pagina=reels">Reels</a>
-      <a href="?pagina=envio">Regras de envio</a>
-      <a href="?pagina=privacidade">Sigilo de dados</a>
-      <a href="?pagina=quem-somos">Quem somos</a>
-      <a href="?pagina=contato">Contato</a>
-    </nav>
-  </aside>
-
-  <main id="app" tabindex="-1">
-    <div class="loading">Carregando a loja...</div>
-  </main>
-
-  <footer class="footer" role="contentinfo">
-    <div class="container">
-      <div class="footer-grid">
-        <div>
-          <div class="brand" style="margin-bottom:14px">
-            <div class="brand-mark" aria-hidden="true">✦</div>
-            <div class="brand-name">
-              <strong id="footerBrandName" style="color:#fff">Loja Católica</strong>
-              <span id="footerTagline" style="color:#D8C5B4">Canecas, terços e rosários</span>
-            </div>
-          </div>
-          <p id="footerText">Presentes católicos com arte autoral, personalização guiada e atendimento humano pelo WhatsApp.</p>
-        </div>
-        <div>
-          <h3>Loja</h3>
-          <div class="footer-links">
-            <a href="?categoria=canecas">Canecas católicas</a>
-            <a href="?categoria=tercos-rosarios">Terços e rosários</a>
-            <a href="?pagina=reels">Reels e vídeos</a>
-          </div>
-        </div>
-        <div>
-          <h3>Ajuda</h3>
-          <div class="footer-links">
-            <a href="?pagina=envio">Regras de envio</a>
-            <a href="?pagina=privacidade">Sigilo de dados</a>
-            <a href="?pagina=contato">Contato</a>
-          </div>
-        </div>
-        <div>
-          <h3>Redes sociais</h3>
-          <div class="footer-links">
-            <a id="footerInstagram" href="#" target="_blank" rel="noopener">Instagram</a>
-            <a id="footerTikTok" href="#" target="_blank" rel="noopener">TikTok</a>
-            <a id="footerWhatsApp" href="#" target="_blank" rel="noopener">WhatsApp</a>
-          </div>
-        </div>
+  <main id="conteudo"></main>
+  <footer>
+    <div class="container footer-grid">
+      <div>
+        <h3>Só em Ti</h3>
+        <p id="footerText">Canecas católicas, terços e rosários com arte devocional autoral, atendimento humano e pedido pelo WhatsApp.</p>
+        <div class="socials" id="footerSocials"></div>
       </div>
-      <div class="footer-bottom">
-        <span id="copyright">© 2026 Loja Católica. Todos os direitos reservados.</span>
-        <span>Site preparado para SEO, mobile e pedidos por WhatsApp.</span>
-      </div>
+      <div><h4>Produtos</h4><a href="?categoria=canecas">Canecas Católicas</a><a href="?categoria=tercos">Terços</a><a href="?categoria=rosarios">Rosários</a><a href="?view=reels">Vídeos</a></div>
+      <div><h4>Atendimento</h4><a href="?page=envio">Regras de envio</a><a href="?page=contato">Contato</a><a href="?page=privacidade">Sigilo de dados</a></div>
+      <div><h4>Institucional</h4><a href="?page=quem-somos">Quem somos</a><a href="?page=trocas">Trocas e cuidados</a><a href="?view=catalogo">Catálogo completo</a></div>
     </div>
+    <div class="container copyright">© <span id="year"></span> Só em Ti. Produtos religiosos autorais. Atendimento e confirmação de pedido via WhatsApp.</div>
   </footer>
-
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="lightbox" id="lightbox" aria-hidden="true" role="dialog" aria-label="Imagem ampliada">
+    <div class="lightbox-inner">
+      <div class="lightbox-bar"><div class="lightbox-title" id="lightboxTitle">Visualização</div><button class="lightbox-close" type="button" id="lightboxClose">Fechar ✕</button></div>
+      <div class="lightbox-stage" id="lightboxStage"></div>
+    </div>
+  </div>
 
-  <script type="module">
-    /**********************************************************************
-     * CONFIGURAÇÃO RÁPIDA
-     * 1) Cole aqui as credenciais do seu Firebase Web App.
-     * 2) No Firebase, crie Realtime Database e Storage.
-     * 3) Importe os JSONs modelo entregues junto deste arquivo.
-     **********************************************************************/
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+
+  <script>
+    /*
+      COLE AQUI AS CONFIGURAÇÕES DO SEU FIREBASE.
+      O site funciona em modo demonstração enquanto databaseURL/projectId não forem configurados.
+    */
     const firebaseConfig = {
       apiKey: "COLE_AQUI",
       authDomain: "SEU-PROJETO.firebaseapp.com",
@@ -352,753 +289,287 @@
       appId: "1:000000000000:web:0000000000000000000000"
     };
 
-    const DEFAULT_WHATSAPP = "5565999999999"; // troque pelo número real com DDI + DDD
-    const FIREBASE_ENABLED = firebaseConfig.apiKey && firebaseConfig.apiKey !== "COLE_AQUI";
-
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import { getDatabase, ref, onValue, push, set, get, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
-    import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-
-    const DEMO_DATA = {
-      config: {
-        nomeLoja: "Loja Católica",
-        subtitulo: "Canecas, terços e rosários",
-        whatsappNumero: DEFAULT_WHATSAPP,
-        instagramUrl: "https://instagram.com/",
-        tiktokUrl: "https://www.tiktok.com/",
-        avisoTopo: "Produtos católicos personalizados · Pedido rápido pelo WhatsApp",
-        hero: {
-          titulo: "Presentes católicos que falam ao coração.",
-          texto: "Escolha uma caneca, terço ou rosário. Em modelos selecionados, personalize nome e mensagem curta, veja a prévia e envie seu pedido pelo WhatsApp.",
-          imagem: "https://images.unsplash.com/photo-1518190171695-bbbb69c4a901?auto=format&fit=crop&w=1200&q=80"
+    const DEMO = {
+      config:{
+        lojaNome:"Só em Ti",
+        whatsapp:"5565999999999",
+        avisoTopo:"Canecas católicas, terços e rosários · Pedido pelo WhatsApp",
+        footerTexto:"Canecas católicas, terços e rosários com arte devocional autoral, atendimento humano e pedido pelo WhatsApp.",
+        hero:{
+          etiqueta:"Presentes católicos autorais",
+          titulo:"Canecas, terços e rosários para presentear com fé.",
+          texto:"Escolha seu modelo, veja fotos, vídeo vertical e arte aberta. Envie o pedido pelo WhatsApp para confirmar disponibilidade, pagamento e envio.",
+          imagem:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=1400&q=80"
         },
-        paginas: {
-          envio: { titulo: "Regras de envio", html: "<p>Os pedidos são confirmados pelo WhatsApp. O prazo de produção e envio é informado no atendimento, conforme disponibilidade e endereço.</p><h2>Produtos personalizados</h2><p>Produtos personalizados são produzidos conforme a prévia aprovada pelo cliente. Confira nomes, datas e mensagens antes de enviar.</p>" },
-          privacidade: { titulo: "Sigilo de dados", html: "<p>Usamos seus dados apenas para atendimento, produção e envio do pedido. Não vendemos dados pessoais.</p><h2>Dados coletados</h2><p>Podemos solicitar nome, WhatsApp, endereço de entrega e informações do pedido.</p>" },
-          "quem-somos": { titulo: "Quem somos", html: "<p>Somos uma loja de presentes católicos com artes autorais, foco em devoção, respeito e acabamento bonito para presentear.</p>" },
-          contato: { titulo: "Contato", html: "<p>Fale conosco pelo WhatsApp, Instagram ou TikTok. Será uma alegria atender você.</p>" }
+        sociais:{ instagram:"https://instagram.com/", tiktok:"https://www.tiktok.com/", whatsapp:"https://wa.me/5565999999999" },
+        paginas:{
+          envio:{titulo:"Regras de envio", html:"<p>Os pedidos são confirmados pelo WhatsApp. Após a confirmação do pagamento, informamos prazo de produção, postagem e rastreio conforme o endereço informado.</p><h2>Produção</h2><p>As canecas são produzidas sob demanda ou enviadas conforme estoque disponível. O prazo exato é confirmado no atendimento.</p>"},
+          privacidade:{titulo:"Sigilo de dados", html:"<p>Usamos seus dados somente para atendimento, confirmação do pedido, pagamento, emissão de comprovantes quando necessário e envio do produto. Não vendemos seus dados.</p>"},
+          "quem-somos":{titulo:"Quem somos", html:"<p>A Só em Ti nasceu para criar presentes católicos com beleza, respeito e devoção. Nosso foco é oferecer canecas, terços e rosários com visual delicado, autoral e pronto para presentear.</p>"},
+          contato:{titulo:"Contato", html:"<p>Fale conosco pelo WhatsApp, Instagram ou TikTok. Atendemos pedidos, dúvidas sobre envio e encomendas em quantidade.</p>"},
+          trocas:{titulo:"Trocas e cuidados", html:"<p>Conferimos cada produto antes do envio. Ao receber sua caneca, evite quedas e impactos. Para maior durabilidade da estampa, lave com esponja macia.</p>"}
         }
       },
-      categorias: {
-        canecas: { id:"canecas", nome:"Canecas Católicas", slug:"canecas", icone:"☕", ordem:1, descricao:"Canecas devocionais, personalizadas ou prontas para presente.", subcategorias:{ nossa_senhora:"Nossa Senhora", santos:"Santos", jesus:"Jesus", frases:"Frases de fé" } },
-        "tercos-rosarios": { id:"tercos-rosarios", nome:"Terços e Rosários", slug:"tercos-rosarios", icone:"✟", ordem:2, descricao:"Terços, rosários e lembranças de fé.", subcategorias:{ tercos:"Terços", rosarios:"Rosários", kits:"Kits religiosos" } }
+      categorias:{
+        canecas:{id:"canecas",nome:"Canecas Católicas",slug:"canecas",icone:"☕",ordem:1,descricao:"Canecas devocionais prontas para presentear.",subcategorias:{nossa_senhora:"Nossa Senhora",jesus:"Jesus",santos:"Santos",frases:"Frases de fé"}},
+        tercos:{id:"tercos",nome:"Terços",slug:"tercos",icone:"📿",ordem:2,descricao:"Terços para oração, presente e devoção.",subcategorias:{madeira:"Madeira",perola:"Pérola",santos:"Santos"}},
+        rosarios:{id:"rosarios",nome:"Rosários",slug:"rosarios",icone:"✦",ordem:3,descricao:"Rosários e itens devocionais selecionados.",subcategorias:{tradicional:"Tradicional",presente:"Presente"}},
+        kits:{id:"kits",nome:"Kits de Presente",slug:"kits",icone:"🎁",ordem:4,descricao:"Combinações de caneca, terço, oração e embalagem.",subcategorias:{maes:"Mães",catequese:"Catequese",familia:"Família"}}
       },
-      produtos: {
-        caneca_aparecida_nome: {
-          id:"caneca_aparecida_nome", slug:"caneca-nossa-senhora-aparecida-personalizada", tipo:"caneca", status:"ativo", destaque:true, ordem:1,
-          titulo:"Caneca Nossa Senhora Aparecida personalizada", categoriaSlug:"canecas", subcategoriaSlug:"nossa_senhora", preco:39.9, precoTexto:"R$ 39,90",
-          resumo:"Caneca católica com nome e mensagem curta.", descricao:"Arte devocional de Nossa Senhora Aparecida com espaço discreto para personalização.",
-          tags:["Nossa Senhora Aparecida","caneca católica","presente católico","personalizada"],
+      produtos:{
+        caneca_aparecida:{
+          id:"caneca_aparecida", slug:"caneca-nossa-senhora-aparecida", status:"ativo", destaque:true, ordem:1,
+          titulo:"Caneca Nossa Senhora Aparecida", categoriaSlug:"canecas", subcategoriaSlug:"nossa_senhora", preco:39.9, precoTexto:"R$ 39,90",
+          resumo:"Caneca católica pronta para presente, com arte devocional de Nossa Senhora Aparecida.",
+          descricao:"Caneca branca com arte autoral inspirada na devoção a Nossa Senhora Aparecida. Ideal para presentear mães, avós, madrinhas, catequistas e pessoas especiais de fé.",
+          tags:["Nossa Senhora Aparecida","caneca católica","presente católico"], estoqueTexto:"Produção sob demanda", selo:"Mais pedido",
           midias:{
-            mockupEsquerdaUrl:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=900&q=80",
-            mockupFrenteUrl:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=900&q=80",
-            mockupDireitaUrl:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=900&q=80",
-            mockupPersonalizavelBaseUrl:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=900&q=80",
-            arteAbertaUrl:"https://images.unsplash.com/photo-1605379399642-870262d3d051?auto=format&fit=crop&w=1400&q=80",
-            videoUrl:""
-          },
-          personalizacao:{
-            ativa:true,
-            frasesProntas:["Que Maria te proteja","Com carinho e fé","Sob o manto de Maria","Jesus te abençoe"],
-            campos:[
-              { id:"nome", label:"Nome", tipo:"texto", obrigatorio:true, maxCaracteres:22, render:{ mockup:{x:.50,y:.72,font:"Playfair Display",size:.055,color:"#6F3D2A",align:"center",maxWidth:.56}, arte:{x:.50,y:.64,font:"Playfair Display",size:.072,color:"#6F3D2A",align:"center",maxWidth:.46} } },
-              { id:"mensagem", label:"Mensagem curta", tipo:"mensagem", obrigatorio:false, maxCaracteres:34, render:{ mockup:{x:.50,y:.79,font:"Inter",size:.024,color:"#6F3D2A",align:"center",maxWidth:.58}, arte:{x:.50,y:.73,font:"Inter",size:.036,color:"#6F3D2A",align:"center",maxWidth:.52} } }
-            ]
+            principalUrl:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=1200&q=80",
+            mockupEsquerdaUrl:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=1200&q=80",
+            mockupFrenteUrl:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=1200&q=80",
+            mockupDireitaUrl:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=1200&q=80",
+            arteAbertaUrl:"https://images.unsplash.com/photo-1521120098171-0409205f17a0?auto=format&fit=crop&w=1600&q=80",
+            videoVerticalUrl:""
           }
         },
-        caneca_sagrado_coracao: {
-          id:"caneca_sagrado_coracao", slug:"caneca-sagrado-coracao-de-jesus", tipo:"caneca", status:"ativo", destaque:true, ordem:2,
-          titulo:"Caneca Sagrado Coração de Jesus", categoriaSlug:"canecas", subcategoriaSlug:"jesus", preco:34.9, precoTexto:"R$ 34,90",
-          resumo:"Caneca pronta com arte devocional.", descricao:"Modelo sem personalização, pronto para presente.", tags:["Sagrado Coração","Jesus","caneca católica"],
-          midias:{ mockupEsquerdaUrl:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80", mockupFrenteUrl:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80", mockupDireitaUrl:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80", mockupPersonalizavelBaseUrl:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80", arteAbertaUrl:"https://images.unsplash.com/photo-1521120098171-0409205f17a0?auto=format&fit=crop&w=1400&q=80", videoUrl:"" },
-          personalizacao:{ ativa:false, campos:[] }
+        caneca_sagrado_coracao:{
+          id:"caneca_sagrado_coracao", slug:"caneca-sagrado-coracao-de-jesus", status:"ativo", destaque:true, ordem:2,
+          titulo:"Caneca Sagrado Coração de Jesus", categoriaSlug:"canecas", subcategoriaSlug:"jesus", preco:39.9, precoTexto:"R$ 39,90",
+          resumo:"Arte devocional do Sagrado Coração em caneca branca.",
+          descricao:"Modelo pronto para presentear com fé, delicadeza e devoção ao Sagrado Coração de Jesus.",
+          tags:["Sagrado Coração","Jesus","caneca católica"], estoqueTexto:"Produção sob demanda", selo:"Devocional",
+          midias:{
+            principalUrl:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80",
+            mockupEsquerdaUrl:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80",
+            mockupFrenteUrl:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80",
+            mockupDireitaUrl:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80",
+            arteAbertaUrl:"https://images.unsplash.com/photo-1521120098171-0409205f17a0?auto=format&fit=crop&w=1600&q=80",
+            videoVerticalUrl:""
+          }
         },
-        terco_maria: {
-          id:"terco_maria", slug:"terco-de-nossa-senhora", tipo:"terco", status:"ativo", destaque:false, ordem:3,
-          titulo:"Terço de Nossa Senhora", categoriaSlug:"tercos-rosarios", subcategoriaSlug:"tercos", preco:29.9, precoTexto:"R$ 29,90",
-          resumo:"Terço católico para oração e presente.", descricao:"Produto físico enviado após confirmação pelo WhatsApp.", tags:["terço","Nossa Senhora","oração"],
-          midias:{ mockupEsquerdaUrl:"https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=900&q=80", mockupFrenteUrl:"https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=900&q=80", mockupDireitaUrl:"https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=900&q=80", mockupPersonalizavelBaseUrl:"https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=900&q=80", arteAbertaUrl:"", videoUrl:"" },
-          personalizacao:{ ativa:false, campos:[] }
+        terco_perola:{
+          id:"terco_perola", slug:"terco-catolico-perola", status:"ativo", destaque:false, ordem:3,
+          titulo:"Terço Católico Pérola", categoriaSlug:"tercos", subcategoriaSlug:"perola", preco:29.9, precoTexto:"R$ 29,90",
+          resumo:"Terço delicado para oração e presente religioso.", descricao:"Terço com visual delicado, ideal para presente devocional.", tags:["terço","católico","presente"], estoqueTexto:"Consultar disponibilidade", selo:"Presente",
+          midias:{principalUrl:"https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=1200&q=80", mockupEsquerdaUrl:"https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=1200&q=80", mockupFrenteUrl:"https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=1200&q=80", mockupDireitaUrl:"https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=1200&q=80", arteAbertaUrl:"", videoVerticalUrl:""}
         }
       },
-      reels: {
-        demo1:{ id:"demo1", status:"ativo", titulo:"Caneca girando - demonstração", plataforma:"arquivo", videoUrl:"", thumbnailUrl:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=900&q=80", ordem:1, descricao:"Cadastre aqui vídeos do Instagram, TikTok ou arquivos MP4." }
+      reels:{
+        demo1:{id:"demo1",status:"ativo",titulo:"Caneca católica em vídeo",plataforma:"arquivo",videoVerticalUrl:"",thumbnailUrl:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=900&q=80",ordem:1,descricao:"Vídeo vertical 9:16 gerado pela automação do Make."}
       }
     };
 
-    let appFB, db, storage, auth;
-    let state = {
-      config: DEMO_DATA.config,
-      categorias: DEMO_DATA.categorias,
-      produtos: DEMO_DATA.produtos,
-      reels: DEMO_DATA.reels,
-      firebaseReady: false,
-      search: ""
-    };
+    const $ = (s,root=document)=>root.querySelector(s);
+    const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
+    const state = {config:null,categorias:{},produtos:{},reels:{},db:null,params:new URLSearchParams(location.search)};
+    const isConfigured = firebaseConfig.databaseURL && !firebaseConfig.databaseURL.includes("SEU-PROJETO") && firebaseConfig.apiKey !== "COLE_AQUI";
 
-    const $ = (sel, root=document) => root.querySelector(sel);
-    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-    const appEl = $("#app");
-    const toastEl = $("#toast");
+    function esc(v=""){return String(v ?? "").replace(/[&<>'"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[m]))}
+    function brl(v){return typeof v === "number" ? v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}) : (v||"")}
+    function slugify(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")}
+    function arrObj(o){return Object.values(o||{}).filter(Boolean)}
+    function activeProducts(){return arrObj(state.produtos).filter(p=>p.status !== "inativo").sort((a,b)=>(a.ordem||99)-(b.ordem||99)||String(a.titulo).localeCompare(String(b.titulo)))}
+    function findProduct(slugOrId){return activeProducts().find(p=>p.slug===slugOrId || p.id===slugOrId)}
+    function catBySlug(slug){return arrObj(state.categorias).find(c=>c.slug===slug || c.id===slug)}
+    function subName(catSlug,subSlug){const c=catBySlug(catSlug);return c?.subcategorias?.[subSlug] || subSlug || ""}
+    function imageOf(p){return p?.midias?.principalUrl || p?.midias?.mockupFrenteUrl || p?.midias?.mockupEsquerdaUrl || p?.midias?.mockupDireitaUrl || ""}
+    function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("show"),2600)}
+    function currentUrl(extra={}){const url = new URL(location.href);Object.entries(extra).forEach(([k,v])=> v == null ? url.searchParams.delete(k) : url.searchParams.set(k,v));return url.toString()}
 
-    const money = (v) => Number(v || 0).toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
-    const slugify = (text="") => text.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
-    const esc = (s="") => String(s).replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
-    const objValues = (o) => Object.values(o || {});
-    const activeProducts = () => objValues(state.produtos).filter(p => (p.status || "ativo") === "ativo").sort((a,b)=>(a.ordem||999)-(b.ordem||999));
-    const categories = () => objValues(state.categorias).sort((a,b)=>(a.ordem||999)-(b.ordem||999));
-    const config = () => state.config || DEMO_DATA.config;
-
-    function showToast(msg){
-      toastEl.textContent = msg;
-      toastEl.classList.add("show");
-      clearTimeout(showToast.t);
-      showToast.t = setTimeout(()=>toastEl.classList.remove("show"), 2800);
+    async function loadData(){
+      if(isConfigured){
+        try{
+          firebase.initializeApp(firebaseConfig);
+          state.db = firebase.database();
+          const snap = await state.db.ref("/").once("value");
+          const v = snap.val() || {};
+          state.config = v.config || DEMO.config;
+          state.categorias = v.categorias || DEMO.categorias;
+          state.produtos = v.produtos || DEMO.produtos;
+          state.reels = v.reels || DEMO.reels;
+        }catch(e){console.warn(e);useDemo();toast("Firebase não carregou. Exibindo demonstração.")}
+      }else useDemo();
+      applyConfig();render();
     }
-
-    function pageParams(){ return new URLSearchParams(location.search); }
-    function navigate(url){ history.pushState({}, "", url); renderRoute(); window.scrollTo({top:0,behavior:"smooth"}); }
-    window.addEventListener("popstate", renderRoute);
-    document.addEventListener("click", e => {
-      const a = e.target.closest("a[href]");
-      if(!a) return;
-      const href = a.getAttribute("href");
-      if(href && (href.startsWith("?") || href === "./")){
-        e.preventDefault();
-        closeMenu();
-        navigate(href === "./" ? location.pathname : href);
-      }
-    });
-
-    function updateShell(){
-      const c = config();
-      document.title = `${c.nomeLoja || "Loja Católica"} | Canecas, Terços e Rosários`;
-      $("#brandName").textContent = c.nomeLoja || "Loja Católica";
-      $("#footerBrandName").textContent = c.nomeLoja || "Loja Católica";
-      $("#brandTagline").textContent = c.subtitulo || "Canecas, terços e rosários";
-      $("#footerTagline").textContent = c.subtitulo || "Canecas, terços e rosários";
-      $("#topNote").innerHTML = esc(c.avisoTopo || "Produtos católicos personalizados · Pedido rápido pelo WhatsApp").replace("WhatsApp","<strong>WhatsApp</strong>");
-      $("#footerText").textContent = c.footerTexto || "Presentes católicos com arte autoral, personalização guiada e atendimento humano pelo WhatsApp.";
-      $("#copyright").textContent = `© ${new Date().getFullYear()} ${c.nomeLoja || "Loja Católica"}. Todos os direitos reservados.`;
-      const insta = c.instagramUrl || "#";
-      const tiktok = c.tiktokUrl || "#";
-      const whats = `https://wa.me/${onlyDigits(c.whatsappNumero || DEFAULT_WHATSAPP)}`;
-      $("#instagramTop").href = insta;
-      $("#footerInstagram").href = insta;
-      $("#footerTikTok").href = tiktok;
-      $("#footerWhatsApp").href = whats;
+    function useDemo(){state.config=DEMO.config;state.categorias=DEMO.categorias;state.produtos=DEMO.produtos;state.reels=DEMO.reels}
+    function applyConfig(){
+      const c=state.config||{};
+      document.title = `${c.lojaNome || "Só em Ti"} | Canecas Católicas, Terços e Rosários`;
+      $("#brandName").textContent = c.lojaNome || "Só em Ti";
+      $("#topNote").innerHTML = esc(c.avisoTopo || "Canecas católicas, terços e rosários · Pedido pelo WhatsApp").replace("WhatsApp","<strong>WhatsApp</strong>");
+      $("#footerText").textContent = c.footerTexto || DEMO.config.footerTexto;
+      $("#year").textContent = new Date().getFullYear();
+      const soc=c.sociais||{};
+      $("#footerSocials").innerHTML = [soc.instagram&&["Instagram",soc.instagram],soc.tiktok&&["TikTok",soc.tiktok],soc.whatsapp&&["WhatsApp",soc.whatsapp]].filter(Boolean).map(([n,u])=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(n)}</a>`).join("");
     }
-
-    function onlyDigits(s=""){ return String(s).replace(/\D/g,""); }
-
-    async function initFirebase(){
-      if(!FIREBASE_ENABLED){
-        state.firebaseReady = false;
-        updateShell();
-        renderRoute();
-        showToast("Modo demonstração: configure o Firebase no index.html.");
-        return;
-      }
-      try{
-        appFB = initializeApp(firebaseConfig);
-        db = getDatabase(appFB);
-        storage = getStorage(appFB);
-        auth = getAuth(appFB);
-        await signInAnonymously(auth);
-        state.firebaseReady = true;
-        subscribeData();
-      }catch(err){
-        console.error(err);
-        state.firebaseReady = false;
-        updateShell();
-        renderRoute();
-        showToast("Não foi possível conectar ao Firebase. Usando dados demo.");
-      }
-    }
-
-    function subscribeData(){
-      const paths = ["config", "categorias", "produtos", "reels"];
-      paths.forEach(path => {
-        onValue(ref(db, path), snap => {
-          const val = snap.val();
-          if(val) state[path] = val;
-          updateShell();
-          renderRoute();
-        }, err => console.error(`Erro em ${path}`, err));
-      });
-    }
-
-    function renderRoute(){
-      updateShell();
-      const p = pageParams();
-      const produtoSlug = p.get("produto");
-      const categoriaSlug = p.get("categoria");
-      const pagina = p.get("pagina");
-      const q = p.get("busca") || state.search || "";
-      if(produtoSlug) return renderProduct(produtoSlug);
-      if(categoriaSlug) return renderCategory(categoriaSlug, q);
-      if(pagina === "reels") return renderReels();
-      if(pagina) return renderStaticPage(pagina);
-      if(q) return renderCategory("todos", q);
+    function route(){state.params = new URLSearchParams(location.search);return {page:state.params.get("page"),view:state.params.get("view"),produto:state.params.get("produto"),categoria:state.params.get("categoria"),sub:state.params.get("sub"),q:state.params.get("q")||""}}
+    function render(){
+      document.body.classList.remove("menu-open");
+      $("#menuBtn").setAttribute("aria-expanded","false");
+      const r=route();
+      if(r.produto) return renderProduct(r.produto);
+      if(r.page) return renderStaticPage(r.page);
+      if(r.view === "reels") return renderReelsPage();
+      if(r.view === "catalogo" || r.categoria || r.q) return renderCatalog();
       return renderHome();
     }
+    function setMain(html){$("#conteudo").innerHTML=html;window.scrollTo({top:0,behavior:"instant"})}
 
     function renderHome(){
-      const c = config();
-      const products = activeProducts();
-      const featured = products.filter(p=>p.destaque).slice(0,8);
-      const latest = products.slice(0,8);
-      appEl.innerHTML = `
+      const c=state.config||{};
+      const featured=activeProducts().filter(p=>p.destaque).slice(0,8);
+      setMain(`
         <section class="hero">
           <div class="container hero-grid">
-            <div class="hero-copy">
-              <span class="pill">✦ Fé, presente e cuidado</span>
-              <h1>${esc(c.hero?.titulo || "Presentes católicos que falam ao coração.")}</h1>
-              <p>${esc(c.hero?.texto || "Escolha canecas, terços e rosários com atendimento pelo WhatsApp.")}</p>
-              <div class="hero-actions">
-                <a href="?categoria=canecas" class="btn">Ver canecas</a>
-                <a href="?categoria=tercos-rosarios" class="btn secondary">Terços e rosários</a>
-              </div>
-              <div class="trust-row">
-                <span class="pill">✓ Personalização guiada</span>
-                <span class="pill">✓ Prévia antes de fechar</span>
-                <span class="pill">✓ Atendimento humano</span>
-              </div>
+            <div>
+              <span class="eyebrow">✦ ${esc(c.hero?.etiqueta || "Presentes católicos autorais")}</span>
+              <h1>${esc(c.hero?.titulo || "Canecas, terços e rosários para presentear com fé.")}</h1>
+              <p>${esc(c.hero?.texto || "Escolha seu modelo, veja fotos, vídeo vertical e arte aberta. Envie o pedido pelo WhatsApp.")}</p>
+              <div class="hero-actions"><a class="btn primary" href="?view=catalogo">Ver produtos</a><a class="btn secondary" href="?view=reels">Ver vídeos</a></div>
             </div>
-            <div class="hero-card" aria-label="Destaque da loja">
-              <img src="${esc(c.hero?.imagem || heroFallback())}" alt="Caneca católica personalizada" loading="eager">
-              <div class="floating"><strong>Pedido pelo WhatsApp</strong><p>Você vê a prévia, envia o pedido e combina pagamento e entrega conosco.</p></div>
-            </div>
+            <div class="hero-media"><img src="${esc(c.hero?.imagem || imageOf(featured[0]))}" alt="Produtos católicos Só em Ti" loading="eager"><div class="hero-float"><strong>Pedido simples pelo WhatsApp</strong><span>Você escolhe o produto, chama no atendimento e confirma pagamento, frete e prazo.</span></div></div>
           </div>
         </section>
-
-        <section class="section">
-          <div class="container">
-            <div class="section-head"><div><div class="eyebrow">Categorias</div><h2>Escolha por devoção ou presente</h2></div></div>
-            <div class="grid cols-4">${categories().map(categoryCard).join("")}</div>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="container">
-            <div class="section-head"><div><div class="eyebrow">Destaques</div><h2>Mais indicados para presentear</h2></div><a class="btn secondary" href="?categoria=todos">Ver todos</a></div>
-            ${featured.length ? `<div class="grid cols-4">${featured.map(productCard).join("")}</div>` : `<div class="empty">Cadastre produtos em /produtos no Firebase.</div>`}
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="container">
-            <div class="section-head"><div><div class="eyebrow">Novidades</div><h2>Recém-cadastrados</h2></div></div>
-            ${latest.length ? `<div class="grid cols-4">${latest.map(productCard).join("")}</div>` : `<div class="empty">Nenhum produto ativo.</div>`}
-          </div>
-        </section>
-      `;
+        <section><div class="container"><div class="section-head"><div><h2>Categorias</h2><p>Produtos organizados para facilitar a escolha do presente católico.</p></div><a class="btn secondary" href="?view=catalogo">Catálogo completo</a></div><div class="grid-cats">${renderCategories()}</div></div></section>
+        <section><div class="container"><div class="section-head"><div><h2>Destaques</h2><p>Modelos selecionados para presentear com fé, carinho e devoção.</p></div></div><div class="products-grid">${featured.map(renderProductCard).join("") || empty("Cadastre produtos em destaque no Firebase.")}</div></div></section>
+        ${renderReelsBlock()}
+      `);
+      bindProductButtons();
     }
-
-    function heroFallback(){ return "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=1200&q=80"; }
-
-    function categoryCard(cat){
-      return `<a class="category-card" href="?categoria=${esc(cat.slug || cat.id)}">
-        <div class="ico" aria-hidden="true">${esc(cat.icone || "✦")}</div>
-        <div><h3>${esc(cat.nome || cat.id)}</h3><span>${esc(cat.descricao || "Ver produtos")}</span></div>
-      </a>`;
+    function renderCategories(){return arrObj(state.categorias).sort((a,b)=>(a.ordem||99)-(b.ordem||99)).map(cat=>`<a class="category-card" href="?categoria=${esc(cat.slug||cat.id)}"><span class="ico">${esc(cat.icone||"✦")}</span><div><h3>${esc(cat.nome)}</h3><span>${esc(cat.descricao||"Ver produtos")}</span></div></a>`).join("")}
+    function filtersProducts(){
+      const r=route(); const q=slugify(r.q); let list=activeProducts();
+      if(r.categoria) list=list.filter(p=>p.categoriaSlug===r.categoria);
+      if(r.sub) list=list.filter(p=>p.subcategoriaSlug===r.sub);
+      if(q) list=list.filter(p=>slugify([p.titulo,p.resumo,p.descricao,(p.tags||[]).join(" ")].join(" ")).includes(q));
+      return list;
     }
-
-    function productCard(p){
-      const img = p.midias?.mockupFrenteUrl || p.midias?.mockupPersonalizavelBaseUrl || p.midias?.mockupEsquerdaUrl || "";
-      const personalized = p.personalizacao?.ativa;
+    function renderCatalog(){
+      const r=route(); const cat=catBySlug(r.categoria); const list=filtersProducts();
+      setMain(`<section class="page"><div class="container">
+        <div class="section-head"><div><h2>${cat?esc(cat.nome):"Todos os produtos"}</h2><p>${cat?esc(cat.descricao||""):"Canecas católicas, terços, rosários e kits de presente."}</p></div></div>
+        ${renderFilters(r)}
+        ${cat ? renderSubcats(cat,r.sub) : ""}
+        <div class="products-grid">${list.map(renderProductCard).join("") || empty("Nenhum produto encontrado.")}</div>
+      </div></section>`);
+      bindFilters();bindProductButtons();
+    }
+    function renderFilters(r){
+      const cats=arrObj(state.categorias).sort((a,b)=>(a.ordem||99)-(b.ordem||99));
+      return `<form class="filters" id="filtersForm">
+        <div class="field"><label for="q">Buscar</label><input id="q" name="q" value="${esc(r.q||"")}" placeholder="Nossa Senhora, terço, rosário..."></div>
+        <div class="field"><label for="categoria">Categoria</label><select id="categoria" name="categoria"><option value="">Todas</option>${cats.map(c=>`<option value="${esc(c.slug||c.id)}" ${r.categoria===(c.slug||c.id)?"selected":""}>${esc(c.nome)}</option>`).join("")}</select></div>
+        <div class="field"><label for="sub">Subcategoria</label><select id="sub" name="sub"><option value="">Todas</option>${r.categoria ? Object.entries(catBySlug(r.categoria)?.subcategorias||{}).map(([k,v])=>`<option value="${esc(k)}" ${r.sub===k?"selected":""}>${esc(v)}</option>`).join("") : ""}</select></div>
+      </form>`
+    }
+    function renderSubcats(cat,active){
+      const entries=Object.entries(cat.subcategorias||{}); if(!entries.length) return "";
+      return `<div class="pill-row"><a class="pill" href="?categoria=${esc(cat.slug||cat.id)}">Todas</a>${entries.map(([k,v])=>`<a class="pill" style="${active===k?'background:#fff;border-color:var(--brand)':''}" href="?categoria=${esc(cat.slug||cat.id)}&sub=${esc(k)}">${esc(v)}</a>`).join("")}</div>`
+    }
+    function bindFilters(){const f=$("#filtersForm"); if(!f)return; f.addEventListener("change",()=>submitFilters(f)); f.addEventListener("submit",e=>{e.preventDefault();submitFilters(f)}); $("#q")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();submitFilters(f)}})}
+    function submitFilters(f){const fd=new FormData(f); const url=new URL(location.href); url.search=""; url.searchParams.set("view","catalogo"); for(const [k,v] of fd.entries()) if(v) url.searchParams.set(k,v); history.pushState(null,"",url); render()}
+    function renderProductCard(p){
       return `<article class="product-card">
-        <a class="product-media" href="?produto=${esc(p.slug || p.id)}" aria-label="Ver ${esc(p.titulo)}">
-          <img src="${esc(img || heroFallback())}" alt="${esc(p.titulo)}" loading="lazy">
-          <div class="badges">${personalized ? `<span class="badge gold">Personalizável</span>` : `<span class="badge">Pronta entrega</span>`}</div>
+        <a class="product-media" href="?produto=${esc(p.slug||p.id)}" aria-label="Ver ${esc(p.titulo)}">
+          <img src="${esc(imageOf(p))}" alt="${esc(p.titulo)}" loading="lazy">
+          <div class="product-badges">${p.selo?`<span class="badge gold">${esc(p.selo)}</span>`:""}<span class="badge">${esc(subName(p.categoriaSlug,p.subcategoriaSlug)||"Produto")}</span></div>
         </a>
-        <div class="product-body">
-          <div class="tiny">${esc(categoryName(p.categoriaSlug))}${p.subcategoriaSlug ? ` · ${esc(subcategoryName(p.categoriaSlug,p.subcategoriaSlug))}` : ""}</div>
-          <a class="product-title" href="?produto=${esc(p.slug || p.id)}">${esc(p.titulo)}</a>
-          <p class="tiny">${esc(p.resumo || "Produto católico para presentear.")}</p>
-          <div class="product-meta"><span class="price">${esc(p.precoTexto || money(p.preco))}</span></div>
-          <div class="card-actions">
-            <a class="btn" href="?produto=${esc(p.slug || p.id)}">Ver produto</a>
-            <button class="btn secondary" type="button" data-share="${esc(p.slug || p.id)}" aria-label="Compartilhar ${esc(p.titulo)}">↗</button>
-          </div>
-        </div>
-      </article>`;
+        <div class="product-body"><a class="product-title" href="?produto=${esc(p.slug||p.id)}">${esc(p.titulo)}</a><div class="product-summary">${esc(p.resumo||"")}</div><div class="price-row"><span class="price">${esc(p.precoTexto || brl(p.preco))}</span><span class="tiny">${esc(p.estoqueTexto||"Sob demanda")}</span></div><div class="card-actions"><a class="btn primary" href="?produto=${esc(p.slug||p.id)}">Ver produto</a></div></div>
+      </article>`
     }
-
-    function categoryName(slug){ return categories().find(c => c.slug === slug || c.id === slug)?.nome || "Produtos"; }
-    function subcategoryName(catSlug, subSlug){
-      const cat = categories().find(c => c.slug === catSlug || c.id === catSlug);
-      return cat?.subcategorias?.[subSlug] || subSlug || "";
-    }
-
-    function filterProducts(categoriaSlug, q=""){
-      q = normalize(q);
-      return activeProducts().filter(p => {
-        const catOk = categoriaSlug === "todos" || !categoriaSlug || p.categoriaSlug === categoriaSlug;
-        const text = normalize([p.titulo,p.resumo,p.descricao,p.categoriaSlug,p.subcategoriaSlug,...(p.tags||[])].join(" "));
-        return catOk && (!q || text.includes(q));
-      });
-    }
-    function normalize(s=""){ return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
-
-    function renderCategory(categoriaSlug="todos", q=""){
-      const cat = categories().find(c => c.slug === categoriaSlug || c.id === categoriaSlug);
-      const products = filterProducts(categoriaSlug, q);
-      const title = q ? `Busca por “${esc(q)}”` : (cat?.nome || "Todos os produtos");
-      appEl.innerHTML = `<div class="container page-shell">
-        <div class="breadcrumb"><a href="./">Início</a><span>›</span><span>${title}</span></div>
-        <div class="section-head"><div><div class="eyebrow">Catálogo</div><h1>${title}</h1><p style="margin-top:10px">${esc(cat?.descricao || "Canecas, terços, rosários e presentes católicos.")}</p></div></div>
-        <div class="filters">
-          <a class="filter-btn ${categoriaSlug==='todos'?'active':''}" href="?categoria=todos">Todos</a>
-          ${categories().map(c=>`<a class="filter-btn ${categoriaSlug===c.slug?'active':''}" href="?categoria=${esc(c.slug)}">${esc(c.nome)}</a>`).join("")}
-        </div>
-        ${products.length ? `<div class="grid cols-4">${products.map(productCard).join("")}</div>` : `<div class="empty">Nenhum produto encontrado.</div>`}
-      </div>`;
-    }
-
-    function findProduct(slug){ return activeProducts().find(p => p.slug === slug || p.id === slug); }
-
+    function bindProductButtons(){}
     function renderProduct(slug){
-      const p = findProduct(slug);
-      if(!p){ appEl.innerHTML = `<div class="container page-shell"><div class="empty">Produto não encontrado. <a href="./">Voltar ao início</a>.</div></div>`; return; }
-      const related = activeProducts().filter(x => x.id !== p.id && x.subcategoriaSlug === p.subcategoriaSlug).slice(0,4);
-      const personalized = !!p.personalizacao?.ativa;
-      const mediaItems = getMediaItems(p);
-      const firstMedia = mediaItems[0];
-      setMetaProduct(p);
-      appEl.innerHTML = `<div class="container page-shell">
-        <div class="breadcrumb"><a href="./">Início</a><span>›</span><a href="?categoria=${esc(p.categoriaSlug)}">${esc(categoryName(p.categoriaSlug))}</a><span>›</span><span>${esc(p.titulo)}</span></div>
-        <div class="product-page">
-          <section class="gallery-panel" aria-label="Galeria do produto">
-            <div class="main-preview ${firstMedia?.kind === 'wide' ? 'wide' : ''}" id="mainPreview">${renderMainMedia(firstMedia, p)}</div>
-            <div class="thumbs" id="thumbs">${mediaItems.map((m,i)=>renderThumb(m,i)).join("")}</div>
-            ${p.midias?.arteAbertaUrl ? `<div class="horizontal-art"><h3>Arte aberta da caneca</h3><p class="tiny" style="margin:6px 0 12px">Visual 2:1 para entender a composição completa.</p><img src="${esc(p.midias.arteAbertaUrl)}" alt="Arte aberta de ${esc(p.titulo)}" loading="lazy"></div>` : ""}
-          </section>
-
+      const p=findProduct(slug); if(!p){setMain(`<section class="page"><div class="container">${empty("Produto não encontrado.")}<p><a class="btn secondary" href="?view=catalogo">Voltar ao catálogo</a></p></div></section>`);return}
+      updateSeoProduct(p);
+      const cat=catBySlug(p.categoriaSlug); const related=activeProducts().filter(x=>x.id!==p.id && x.subcategoriaSlug===p.subcategoriaSlug).slice(0,4);
+      setMain(`<section class="page"><div class="container">
+        <nav class="breadcrumbs"><a href="./">Início</a><span>/</span><a href="?categoria=${esc(p.categoriaSlug)}">${esc(cat?.nome||"Produtos")}</a><span>/</span><span>${esc(p.titulo)}</span></nav>
+        <div class="product-layout">
+          <section class="gallery-panel" aria-label="Galeria do produto">${renderGallery(p)}</section>
           <aside class="buy-panel">
-            <span class="pill">${personalized ? "Personalizável" : "Produto pronto"}</span>
-            <h1 style="font-size:clamp(2rem,4vw,3.6rem);margin-top:12px">${esc(p.titulo)}</h1>
-            <p style="margin-top:12px">${esc(p.descricao || p.resumo || "Produto católico para presentear.")}</p>
-            <div style="margin-top:18px" class="price">${esc(p.precoTexto || money(p.preco))}</div>
-
-            ${personalized ? renderPersonalizationForm(p) : renderSimpleOrderBox(p)}
-
-            <ul class="summary-list">
-              <li><span class="dot"></span><span><strong>Pedido pelo WhatsApp:</strong> você confirma pagamento, produção e entrega no atendimento.</span></li>
-              <li><span class="dot"></span><span><strong>Produto físico:</strong> caneca/terço/rosário enviado conforme combinado.</span></li>
-              <li><span class="dot"></span><span><strong>Prévia salva:</strong> em modelos personalizados, o sistema salva a imagem aprovada.</span></li>
+            <div class="page-title"><h1>${esc(p.titulo)}</h1></div>
+            <div class="pill-row"><span class="pill">${esc(cat?.nome||"Produto católico")}</span><span class="pill">${esc(subName(p.categoriaSlug,p.subcategoriaSlug)||"Devocional")}</span></div>
+            <div class="price" style="font-size:1.65rem">${esc(p.precoTexto || brl(p.preco))}</div>
+            <p class="product-desc">${esc(p.descricao || p.resumo || "Produto católico pronto para presente.")}</p>
+            <ul class="benefits">
+              <li><span class="dot"></span><span><strong>Pedido pelo WhatsApp:</strong> confirme disponibilidade, pagamento, frete e prazo direto no atendimento.</span></li>
+              <li><span class="dot"></span><span><strong>Produto pronto:</strong> este modelo inicial não possui personalização no site.</span></li>
+              <li><span class="dot"></span><span><strong>Visual completo:</strong> veja mockups, arte aberta e vídeo vertical do produto.</span></li>
             </ul>
-            <div class="share-row">
-              <button class="btn secondary" type="button" data-share="${esc(p.slug || p.id)}">Compartilhar produto</button>
-            </div>
+            <div class="order-box"><label class="tiny" for="qty">Quantidade</label><div class="qty-row"><button type="button" id="minusQty">−</button><input id="qty" value="1" inputmode="numeric" pattern="[0-9]*" aria-label="Quantidade"><button type="button" id="plusQty">+</button></div><button class="btn primary full" id="whatsBtn">Enviar pedido pelo WhatsApp</button><div class="share-row"><button class="btn secondary" id="shareBtn" type="button">Compartilhar</button><button class="btn ghost" id="copyBtn" type="button">Copiar link</button></div></div>
           </aside>
         </div>
-        <section class="related">
-          <div class="section-head"><div><div class="eyebrow">Relacionados</div><h2>Veja também</h2></div></div>
-          ${related.length ? `<div class="grid cols-4">${related.map(productCard).join("")}</div>` : `<div class="empty">Cadastre mais produtos nesta subcategoria para aparecerem aqui.</div>`}
-        </section>
-      </div>`;
-      bindGallery(p, mediaItems);
-      if(personalized) bindPersonalization(p);
+        <div class="media-section">${p.midias?.arteAbertaUrl?`<section class="wide-art"><div class="section-head"><div><h2>Arte aberta da caneca</h2><p>Imagem horizontal 2:1 para ver o desenho completo aplicado na caneca.</p></div></div><img src="${esc(p.midias.arteAbertaUrl)}" alt="Arte aberta ${esc(p.titulo)}" data-lightbox="image" data-title="Arte aberta - ${esc(p.titulo)}"></section>`:""}${renderVerticalProductVideo(p)}</div>
+        ${related.length?`<section><div class="section-head"><div><h2>Relacionados</h2><p>Produtos da mesma subcategoria.</p></div></div><div class="related-grid">${related.map(renderProductCard).join("")}</div></section>`:""}
+      </div></section>`);
+      bindGallery(p);bindOrder(p);bindLightboxTriggers();bindProductButtons();
     }
-
-    function setMetaProduct(p){
-      document.title = `${p.titulo} | ${config().nomeLoja || "Loja Católica"}`;
-      const desc = p.resumo || p.descricao || "Produto católico personalizado.";
-      upsertMeta("description", desc);
-      upsertMetaProp("og:title", p.titulo);
-      upsertMetaProp("og:description", desc);
-      const img = p.midias?.mockupFrenteUrl || p.midias?.mockupPersonalizavelBaseUrl || "";
-      if(img) upsertMetaProp("og:image", img);
-      const jsonLd = {
-        "@context":"https://schema.org",
-        "@type":"Product",
-        name:p.titulo,
-        description:desc,
-        image:img ? [img] : undefined,
-        brand:{"@type":"Brand", name:config().nomeLoja || "Loja Católica"},
-        offers:{"@type":"Offer", priceCurrency:"BRL", price:String(p.preco||0), availability:"https://schema.org/InStock"}
-      };
-      let ld = $("#productJsonLd"); if(!ld){ ld = document.createElement("script"); ld.type="application/ld+json"; ld.id="productJsonLd"; document.head.appendChild(ld); }
-      ld.textContent = JSON.stringify(jsonLd);
+    function renderGallery(p){
+      const m=p.midias||{};
+      const items=[];
+      if(m.mockupEsquerdaUrl) items.push({type:"image",label:"Lado esquerdo",url:m.mockupEsquerdaUrl});
+      if(m.mockupFrenteUrl) items.push({type:"image",label:"Frente",url:m.mockupFrenteUrl});
+      if(m.mockupDireitaUrl) items.push({type:"image",label:"Lado direito",url:m.mockupDireitaUrl});
+      if(m.principalUrl && !items.some(i=>i.url===m.principalUrl)) items.unshift({type:"image",label:"Principal",url:m.principalUrl});
+      if(m.arteAbertaUrl) items.push({type:"image",label:"Arte aberta",url:m.arteAbertaUrl,wide:true});
+      if(m.videoVerticalUrl) items.push({type:"video",label:"Vídeo 9:16",url:m.videoVerticalUrl,vertical:true,poster:m.videoPosterUrl||m.principalUrl});
+      const first=items[0];
+      return `<div class="main-preview ${first?.wide?'horizontal':''} ${first?.vertical?'vertical':''}" id="mainPreview">${renderMedia(first,p.titulo,true)}</div><div class="thumbs">${items.map((it,i)=>`<button class="thumb ${i===0?'active':''} ${it.type==='video'?'video-thumb':''}" type="button" data-index="${i}" aria-label="Ver ${esc(it.label)}">${it.type==='video'?`<video src="${esc(it.url)}" poster="${esc(it.poster||'')}" muted playsinline></video>`:`<img src="${esc(it.url)}" alt="${esc(it.label)}" loading="lazy">`}</button>`).join("")}</div><script type="application/json" id="galleryData">${JSON.stringify(items).replace(/<\//g,"<\\/")}</script>`
     }
-    function upsertMeta(name, content){ let m = document.querySelector(`meta[name="${name}"]`); if(!m){ m=document.createElement("meta"); m.name=name; document.head.appendChild(m);} m.content=content; }
-    function upsertMetaProp(prop, content){ let m = document.querySelector(`meta[property="${prop}"]`); if(!m){ m=document.createElement("meta"); m.setAttribute("property",prop); document.head.appendChild(m);} m.content=content; }
-
-    function getMediaItems(p){
-      const m = p.midias || {};
-      const items = [];
-      if(m.mockupEsquerdaUrl) items.push({type:"image", label:"Lado", url:m.mockupEsquerdaUrl});
-      if(m.mockupFrenteUrl) items.push({type:"image", label:"Frente", url:m.mockupFrenteUrl});
-      if(m.mockupDireitaUrl) items.push({type:"image", label:"Outro lado", url:m.mockupDireitaUrl});
-      if(m.mockupPersonalizavelBaseUrl) items.push({type:"personalized", label:"Personalizar", url:m.mockupPersonalizavelBaseUrl});
-      if(m.arteAbertaUrl) items.push({type:"image", kind:"wide", label:"Arte aberta", url:m.arteAbertaUrl});
-      if(m.videoUrl) items.push({type:"video", label:"Vídeo", url:m.videoUrl});
-      if(!items.length) items.push({type:"image", label:"Produto", url:heroFallback()});
-      return items;
+    function renderMedia(it,title,main=false){
+      if(!it) return `<div class="empty">Sem mídia cadastrada.</div>`;
+      const titleAttr=esc(`${it.label} - ${title}`);
+      if(it.type==="video") return `<video src="${esc(it.url)}" poster="${esc(it.poster||'')}" muted playsinline loop controls ${main?'autoplay':''} data-lightbox="video" data-title="${titleAttr}"></video><span class="expand-hint">ampliar</span>`;
+      return `<img src="${esc(it.url)}" alt="${titleAttr}" data-lightbox="image" data-title="${titleAttr}" style="cursor:zoom-in"><span class="expand-hint">ampliar</span>`;
     }
-    function renderMainMedia(m,p){
-      if(!m) return "";
-      if(m.type === "video") return `<video src="${esc(m.url)}" autoplay muted playsinline loop controls></video>`;
-      if(m.type === "personalized") return `<canvas id="mainPersonalCanvas" width="1080" height="1080" aria-label="Prévia personalizada"></canvas>`;
-      return `<img src="${esc(m.url)}" alt="${esc(m.label)} - ${esc(p.titulo)}" loading="eager">`;
+    function bindGallery(p){
+      const dataEl=$("#galleryData"); if(!dataEl)return; const items=JSON.parse(dataEl.textContent||"[]"); const main=$("#mainPreview");
+      $$(".thumb").forEach(btn=>btn.addEventListener("click",()=>{const it=items[Number(btn.dataset.index)]; $$(".thumb").forEach(b=>b.classList.remove("active")); btn.classList.add("active"); main.className=`main-preview ${it.wide?'horizontal':''} ${it.vertical?'vertical':''}`; main.innerHTML=renderMedia(it,p.titulo,true); bindLightboxTriggers(main)}));
+      bindLightboxTriggers(main);
     }
-    function renderThumb(m,i){
-      const content = m.type === "video" ? `<video src="${esc(m.url)}" muted playsinline></video>` : `<img src="${esc(m.url)}" alt="${esc(m.label)}" loading="lazy">`;
-      return `<button class="thumb ${i===0?'active':''}" type="button" data-media-index="${i}" aria-label="Ver ${esc(m.label)}">${content}<span>${esc(m.label)}</span></button>`;
+    function renderVerticalProductVideo(p){
+      const m=p.midias||{}; if(!m.videoVerticalUrl && !m.videoEmbedHtml) return "";
+      return `<section class="vertical-video-box"><div class="section-head"><div><h2>Vídeo do produto</h2><p>Vídeo vertical 9:16 gerado para mostrar a caneca em movimento.</p></div></div><div class="vertical-video-wrap">${m.videoEmbedHtml || `<video src="${esc(m.videoVerticalUrl)}" poster="${esc(m.videoPosterUrl||imageOf(p))}" muted playsinline autoplay loop controls data-lightbox="video" data-title="Vídeo - ${esc(p.titulo)}"></video>`}</div></section>`
     }
-    function bindGallery(p, items){
-      $("#thumbs")?.addEventListener("click", e=>{
-        const btn = e.target.closest("[data-media-index]"); if(!btn) return;
-        $$(".thumb").forEach(b=>b.classList.remove("active")); btn.classList.add("active");
-        const item = items[Number(btn.dataset.mediaIndex)];
-        const main = $("#mainPreview"); main.classList.toggle("wide", item.kind === "wide");
-        main.innerHTML = renderMainMedia(item,p);
-        if(item.type === "personalized") renderCanvasPreview(p, "mainPersonalCanvas", collectPersonalization(p), "mockup");
-      });
+    function bindOrder(p){
+      const q=$("#qty"), minus=$("#minusQty"), plus=$("#plusQty");
+      const clean=()=>{q.value=Math.max(1,parseInt(q.value||"1",10)||1)};
+      minus?.addEventListener("click",()=>{q.value=Math.max(1,(parseInt(q.value||"1",10)||1)-1)}); plus?.addEventListener("click",()=>{q.value=(parseInt(q.value||"1",10)||1)+1}); q?.addEventListener("input",clean);
+      $("#whatsBtn")?.addEventListener("click",()=>sendWhats(p, parseInt(q.value||"1",10)||1));
+      $("#shareBtn")?.addEventListener("click",()=>shareProduct(p));
+      $("#copyBtn")?.addEventListener("click",async()=>{await navigator.clipboard?.writeText(currentUrl({produto:p.slug||p.id})); toast("Link copiado.")});
     }
-
-    function renderPersonalizationForm(p){
-      const fields = p.personalizacao?.campos || [];
-      return `<form id="personalForm" novalidate>
-        <div class="status-box">Personalize apenas os campos abaixo. A fonte, cor e posição já foram pensadas para manter a arte bonita.</div>
-        ${fields.map(field => fieldInput(p, field)).join("")}
-        <div class="preview-box">
-          <h3>Prévia personalizada</h3>
-          <canvas id="customPreviewCanvas" width="1080" height="1080"></canvas>
-          <p class="tiny" style="margin-top:8px">Confira nome e mensagem antes de enviar. A produção seguirá a prévia aprovada.</p>
-        </div>
-        <button class="btn full" id="sendOrderBtn" type="submit" style="margin-top:16px">Enviar pedido pelo WhatsApp</button>
-        <div class="error" id="formError"></div>
-      </form>`;
+    async function sendWhats(p,qty){
+      const orderId = `SETI_${Date.now()}`;
+      const order={id:orderId,produtoId:p.id,produtoSlug:p.slug,titulo:p.titulo,quantidade:qty,preco:p.preco||null,precoTexto:p.precoTexto||brl(p.preco),status:"novo_whatsapp",origem:"site",criadoEm:new Date().toISOString()};
+      if(state.db){try{await state.db.ref(`pedidos/${orderId}`).set(order)}catch(e){console.warn(e);toast("Não consegui salvar no Firebase, mas vou abrir o WhatsApp.")}}
+      const c=state.config||{}; const phone=(c.whatsapp||"5565999999999").replace(/\D/g,"");
+      const msg = `Olá! Quero fazer este pedido na Só em Ti.\n\nProduto: ${p.titulo}\nQuantidade: ${qty}\nValor unitário: ${p.precoTexto || brl(p.preco)}\nCódigo do pedido: ${orderId}\nLink do produto: ${currentUrl({produto:p.slug||p.id})}\n\nPode me passar disponibilidade, pagamento, frete e prazo?`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank','noopener');
     }
-
-    function fieldInput(p, field){
-      const max = field.maxCaracteres || 30;
-      if(field.tipo === "mensagem"){
-        const opts = p.personalizacao?.frasesProntas || field.opcoes || [];
-        return `<div class="form-group">
-          <label for="field_${esc(field.id)}">${esc(field.label)}</label>
-          <select id="preset_${esc(field.id)}" data-preset-for="${esc(field.id)}">
-            <option value="">Escolher uma mensagem pronta</option>
-            ${opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("")}
-            <option value="__custom">Escrever minha própria mensagem</option>
-          </select>
-          <input id="field_${esc(field.id)}" name="${esc(field.id)}" data-field="${esc(field.id)}" type="text" maxlength="${max}" placeholder="Digite uma mensagem curta" />
-          <div class="helper"><span>Máximo ${max} caracteres</span><span data-counter-for="${esc(field.id)}">0/${max}</span></div>
-        </div>`;
-      }
-      return `<div class="form-group">
-        <label for="field_${esc(field.id)}">${esc(field.label)}${field.obrigatorio ? " *" : ""}</label>
-        <input id="field_${esc(field.id)}" name="${esc(field.id)}" data-field="${esc(field.id)}" type="text" maxlength="${max}" placeholder="Ex.: Maria Clara" ${field.obrigatorio ? "required" : ""} />
-        <div class="helper"><span>Máximo ${max} caracteres</span><span data-counter-for="${esc(field.id)}">0/${max}</span></div>
-      </div>`;
+    async function shareProduct(p){const data={title:p.titulo,text:p.resumo||"Produto católico Só em Ti",url:currentUrl({produto:p.slug||p.id})}; if(navigator.share){try{await navigator.share(data)}catch(e){}} else {await navigator.clipboard?.writeText(data.url);toast("Link copiado para compartilhar.")}}
+    function updateSeoProduct(p){
+      const desc=p.resumo||p.descricao||"Produto católico Só em Ti";
+      document.title=`${p.titulo} | Só em Ti`;
+      setMeta("description",desc); setOg("og:title",`${p.titulo} | Só em Ti`); setOg("og:description",desc); setOg("og:image",imageOf(p));
+      let ld=$("#productLd"); if(!ld){ld=document.createElement("script");ld.type="application/ld+json";ld.id="productLd";document.head.appendChild(ld)}
+      ld.textContent=JSON.stringify({"@context":"https://schema.org","@type":"Product",name:p.titulo,description:desc,image:[imageOf(p)].filter(Boolean),brand:{"@type":"Brand",name:"Só em Ti"},offers:{"@type":"Offer",priceCurrency:"BRL",price:p.preco||undefined,availability:"https://schema.org/InStock",url:currentUrl({produto:p.slug||p.id})}});
     }
-
-    function renderSimpleOrderBox(p){
-      return `<div class="status-box">Este modelo não possui personalização. Clique abaixo para enviar o pedido pelo WhatsApp.</div>
-      <button class="btn full" id="simpleOrderBtn" type="button" style="margin-top:16px">Pedir pelo WhatsApp</button>`;
-    }
-
-    function bindPersonalization(p){
-      const form = $("#personalForm");
-      const update = () => {
-        const data = collectPersonalization(p);
-        renderCanvasPreview(p, "customPreviewCanvas", data, "mockup");
-        renderCanvasPreview(p, "mainPersonalCanvas", data, "mockup");
-        updateCounters(p);
-      };
-      $$('[data-field]').forEach(input => input.addEventListener("input", update));
-      $$('[data-preset-for]').forEach(sel => sel.addEventListener("change", () => {
-        const id = sel.dataset.presetFor;
-        const input = $(`#field_${CSS.escape(id)}`);
-        if(!input) return;
-        if(sel.value && sel.value !== "__custom") input.value = sel.value;
-        if(sel.value === "__custom") input.focus();
-        update();
-      }));
-      update();
-      form?.addEventListener("submit", async e => {
-        e.preventDefault();
-        const data = collectPersonalization(p);
-        const err = validatePersonalization(p, data);
-        if(err){ showFormError(err); return; }
-        await createPersonalizedOrder(p, data);
-      });
-    }
-
-    document.addEventListener("click", async e => {
-      const share = e.target.closest("[data-share]");
-      if(share){
-        const p = findProduct(share.dataset.share);
-        if(p) await shareProduct(p);
-      }
-      const simple = e.target.closest("#simpleOrderBtn");
-      if(simple){
-        const slug = pageParams().get("produto");
-        const p = findProduct(slug);
-        if(p) await createSimpleOrder(p);
-      }
-    });
-
-    function collectPersonalization(p){
-      const data = {};
-      (p.personalizacao?.campos || []).forEach(f => {
-        const input = $(`#field_${CSS.escape(f.id)}`);
-        data[f.id] = (input?.value || "").trim();
-      });
-      return data;
-    }
-    function validatePersonalization(p,data){
-      for(const f of (p.personalizacao?.campos || [])){
-        const v = data[f.id] || "";
-        if(f.obrigatorio && !v) return `Preencha o campo: ${f.label}.`;
-        if(v.length > (f.maxCaracteres || 999)) return `${f.label} ultrapassou o limite de caracteres.`;
-      }
-      return "";
-    }
-    function updateCounters(p){
-      (p.personalizacao?.campos || []).forEach(f => {
-        const v = $(`#field_${CSS.escape(f.id)}`)?.value || "";
-        const c = $(`[data-counter-for="${CSS.escape(f.id)}"]`);
-        if(c) c.textContent = `${v.length}/${f.maxCaracteres || 30}`;
-      });
-    }
-    function showFormError(msg){ const el = $("#formError"); if(el){ el.textContent=msg; el.style.display="block"; } showToast(msg); }
-
-    async function renderCanvasPreview(p, canvasId, data, mode="mockup"){
-      const canvas = $("#"+canvasId); if(!canvas) return;
-      const ctx = canvas.getContext("2d");
-      const baseUrl = mode === "arte" ? (p.midias?.arteBaseProducaoUrl || p.midias?.arteAbertaUrl || p.midias?.mockupPersonalizavelBaseUrl) : (p.midias?.mockupPersonalizavelBaseUrl || p.midias?.mockupFrenteUrl);
-      const isArt = mode === "arte";
-      canvas.width = isArt ? (p.dadosImpressao?.larguraPx || 2700) : 1080;
-      canvas.height = isArt ? (p.dadosImpressao?.alturaPx || 1200) : 1080;
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.fillStyle = "#fff"; ctx.fillRect(0,0,canvas.width,canvas.height);
-      try{
-        const img = await loadImage(baseUrl || heroFallback());
-        ctx.drawImage(img,0,0,canvas.width,canvas.height);
-      }catch(err){
-        ctx.fillStyle="#F8EFE6"; ctx.fillRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle="#6F3D2A"; ctx.font="700 44px Inter"; ctx.textAlign="center"; ctx.fillText(p.titulo || "Produto", canvas.width/2, canvas.height/2);
-      }
-      (p.personalizacao?.campos || []).forEach(f => drawField(ctx, canvas, f, data[f.id] || "", isArt ? "arte" : "mockup"));
-    }
-
-    function drawField(ctx, canvas, field, value, mode){
-      if(!value) return;
-      const r = field.render?.[mode] || field.render?.mockup;
-      if(!r) return;
-      const x = (r.x || .5) * canvas.width;
-      const y = (r.y || .5) * canvas.height;
-      const size = Math.max(12, (r.size || .04) * canvas.width);
-      const maxWidth = (r.maxWidth || .6) * canvas.width;
-      const fontFamily = r.font || "Inter";
-      ctx.save();
-      ctx.textAlign = r.align || "center";
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = r.color || "#6F3D2A";
-      ctx.font = `${field.id === "nome" ? 700 : 600} ${size}px '${fontFamily}', Inter, sans-serif`;
-      ctx.shadowColor = "rgba(255,255,255,.65)";
-      ctx.shadowBlur = 3;
-      wrapText(ctx, value, x, y, maxWidth, size * 1.18, field.maxLinhas || 2);
-      ctx.restore();
-    }
-    function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines=2){
-      const words = String(text).split(/\s+/);
-      const lines = [];
-      let line = "";
-      for(const w of words){
-        const test = line ? line + " " + w : w;
-        if(ctx.measureText(test).width > maxWidth && line){ lines.push(line); line = w; }
-        else line = test;
-      }
-      if(line) lines.push(line);
-      const final = lines.slice(0,maxLines);
-      const startY = y - ((final.length-1)*lineHeight)/2;
-      final.forEach((l,i)=>ctx.fillText(l,x,startY+i*lineHeight,maxWidth));
-    }
-    function loadImage(src){
-      return new Promise((resolve,reject)=>{
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload=()=>resolve(img);
-        img.onerror=reject;
-        img.src=src;
-      });
-    }
-    function canvasToBlob(canvas, type="image/png", quality=.92){
-      return new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("Falha ao gerar imagem")), type, quality));
-    }
-
-    async function createPersonalizedOrder(p,data){
-      const btn = $("#sendOrderBtn");
-      const old = btn?.textContent;
-      if(btn){ btn.disabled=true; btn.textContent="Salvando pedido..."; }
-      try{
-        const err = validatePersonalization(p,data); if(err) throw new Error(err);
-        const orderId = makeOrderId();
-        const mockCanvas = document.createElement("canvas"); mockCanvas.width=1080; mockCanvas.height=1080; mockCanvas.id="tempMock"; mockCanvas.style.display="none"; document.body.appendChild(mockCanvas);
-        await renderCanvasToElement(p, mockCanvas, data, "mockup");
-        const printCanvas = document.createElement("canvas"); printCanvas.width=p.dadosImpressao?.larguraPx || 2700; printCanvas.height=p.dadosImpressao?.alturaPx || 1200; printCanvas.id="tempPrint"; printCanvas.style.display="none"; document.body.appendChild(printCanvas);
-        await renderCanvasToElement(p, printCanvas, data, "arte");
-        const mockupBlob = await canvasToBlob(mockCanvas,"image/webp",.9);
-        const finalBlob = await canvasToBlob(printCanvas,"image/png",1);
-        mockCanvas.remove(); printCanvas.remove();
-        let mockupUrl = "", finalUrl = "";
-        if(state.firebaseReady){
-          mockupUrl = await uploadOrderFile(orderId, "mockup-cliente.webp", mockupBlob, "image/webp");
-          finalUrl = await uploadOrderFile(orderId, "arte-final-impressao.png", finalBlob, "image/png");
-          await saveOrder(orderId, p, data, mockupUrl, finalUrl, true);
-        } else {
-          mockupUrl = URL.createObjectURL(mockupBlob);
-          finalUrl = "Arquivo final não salvo: configure Firebase Storage.";
-          showToast("Configure Firebase para salvar imagens reais.");
-        }
-        openWhatsApp(p, orderId, data, mockupUrl);
-      }catch(err){
-        console.error(err); showFormError(err.message || "Erro ao salvar pedido.");
-      }finally{
-        if(btn){ btn.disabled=false; btn.textContent=old; }
-      }
-    }
-
-    async function renderCanvasToElement(p, canvas, data, mode){
-      const ctx = canvas.getContext("2d");
-      const baseUrl = mode === "arte" ? (p.midias?.arteBaseProducaoUrl || p.midias?.arteAbertaUrl || p.midias?.mockupPersonalizavelBaseUrl) : (p.midias?.mockupPersonalizavelBaseUrl || p.midias?.mockupFrenteUrl);
-      ctx.fillStyle="#fff"; ctx.fillRect(0,0,canvas.width,canvas.height);
-      try{ const img = await loadImage(baseUrl || heroFallback()); ctx.drawImage(img,0,0,canvas.width,canvas.height); }catch(e){ console.warn(e); }
-      (p.personalizacao?.campos || []).forEach(f => drawField(ctx, canvas, f, data[f.id] || "", mode));
-    }
-
-    async function uploadOrderFile(orderId, filename, blob, contentType){
-      const fileRef = storageRef(storage, `pedidos/${orderId}/${filename}`);
-      await uploadBytes(fileRef, blob, {contentType, customMetadata:{orderId}});
-      return await getDownloadURL(fileRef);
-    }
-    async function saveOrder(orderId,p,data,mockupUrl,finalUrl,personalizado=false){
-      const payload = {
-        id: orderId,
-        produtoId: p.id,
-        produtoSlug: p.slug,
-        produtoTitulo: p.titulo,
-        categoriaSlug: p.categoriaSlug || "",
-        subcategoriaSlug: p.subcategoriaSlug || "",
-        preco: Number(p.preco || 0),
-        precoTexto: p.precoTexto || money(p.preco),
-        status: "novo",
-        statusProducao: "aguardando_confirmacao_whatsapp",
-        origem: "site_whatsapp",
-        personalizado,
-        personalizacao: data || {},
-        arquivos: { mockupClienteUrl: mockupUrl || "", arteFinalPngUrl: finalUrl || "" },
-        criadoEm: serverTimestamp()
-      };
-      await set(ref(db, `pedidos/${orderId}`), payload);
-    }
-    function makeOrderId(){
-      const d = new Date();
-      const pad = n => String(n).padStart(2,"0");
-      return `PED_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}_${Math.random().toString(36).slice(2,6).toUpperCase()}`;
-    }
-    async function createSimpleOrder(p){
-      const orderId = makeOrderId();
-      try{
-        if(state.firebaseReady) await saveOrder(orderId,p,{},"","",false);
-        openWhatsApp(p, orderId, {}, "");
-      }catch(err){ console.error(err); showToast("Não foi possível salvar. Abrindo WhatsApp mesmo assim."); openWhatsApp(p, orderId, {}, ""); }
-    }
-    function openWhatsApp(p, orderId, data, mockupUrl){
-      const c = config();
-      const lines = [
-        `Olá! Quero fazer este pedido:`,
-        ``,
-        `Produto: ${p.titulo}`,
-        `Valor: ${p.precoTexto || money(p.preco)}`,
-        `Pedido: ${orderId}`
-      ];
-      const filled = Object.entries(data || {}).filter(([,v])=>v);
-      if(filled.length){
-        lines.push(``, `Personalização:`);
-        filled.forEach(([k,v]) => lines.push(`${labelForField(p,k)}: ${v}`));
-      }
-      if(mockupUrl) lines.push(``, `Mockup aprovado: ${mockupUrl}`);
-      lines.push(``, `Gostaria de confirmar pagamento, prazo e entrega.`);
-      const url = `https://wa.me/${onlyDigits(c.whatsappNumero || DEFAULT_WHATSAPP)}?text=${encodeURIComponent(lines.join("\n"))}`;
-      window.open(url, "_blank", "noopener");
-    }
-    function labelForField(p,id){ return (p.personalizacao?.campos || []).find(f=>f.id===id)?.label || id; }
-
-    async function shareProduct(p){
-      const url = `${location.origin}${location.pathname}?produto=${encodeURIComponent(p.slug || p.id)}`;
-      const text = p.resumo || p.descricao || "Veja este produto católico.";
-      try{
-        if(navigator.share) await navigator.share({title:p.titulo,text,url});
-        else { await navigator.clipboard.writeText(url); showToast("Link copiado."); }
-      }catch(e){ /* usuário cancelou */ }
-    }
-
-    function renderReels(){
-      const reels = objValues(state.reels).filter(r=>(r.status||"ativo")==="ativo").sort((a,b)=>(a.ordem||999)-(b.ordem||999));
-      appEl.innerHTML = `<div class="container page-shell">
-        <div class="breadcrumb"><a href="./">Início</a><span>›</span><span>Reels</span></div>
-        <div class="section-head"><div><div class="eyebrow">Vídeos</div><h1>Reels, TikToks e bastidores</h1><p style="margin-top:10px">Veja canecas girando, modelos impressos, bastidores e novidades em um só lugar.</p></div></div>
-        ${reels.length ? `<div class="reels-grid">${reels.map(reelCard).join("")}</div>` : `<div class="empty">Cadastre vídeos em /reels no Firebase.</div>`}
-      </div>`;
-      loadEmbedScripts();
-    }
-    function reelCard(r){
-      return `<article class="reel-card">
-        <div class="reel-frame">${renderReelFrame(r)}</div>
-        <div class="reel-card-body"><h3>${esc(r.titulo || "Vídeo")}</h3><p class="tiny">${esc(r.descricao || r.plataforma || "")}</p></div>
-      </article>`;
-    }
-    function renderReelFrame(r){
-      if(r.embedHtml) return `<div class="embed-wrap">${r.embedHtml}</div>`;
-      if(r.plataforma === "tiktok" && r.postId) return `<iframe title="TikTok" src="https://www.tiktok.com/player/v1/${esc(r.postId)}?autoplay=0" allow="encrypted-media; fullscreen" loading="lazy"></iframe>`;
-      if(r.plataforma === "instagram" && r.url) return `<blockquote class="instagram-media" data-instgrm-permalink="${esc(r.url)}" data-instgrm-version="14" style="background:#fff;border:0;margin:0;max-width:100%;min-width:0;width:100%;height:100%"></blockquote>`;
-      if(r.videoUrl) return `<video src="${esc(r.videoUrl)}" poster="${esc(r.thumbnailUrl || "")}" muted playsinline loop controls></video>`;
-      if(r.thumbnailUrl) return `<img src="${esc(r.thumbnailUrl)}" alt="${esc(r.titulo || "Vídeo")}" loading="lazy" style="width:100%;height:100%;object-fit:cover">`;
-      return `<span class="tiny">Vídeo não configurado</span>`;
-    }
-    function loadEmbedScripts(){
-      if(!$("script[src='https://www.instagram.com/embed.js']")){
-        const s=document.createElement("script"); s.async=true; s.src="https://www.instagram.com/embed.js"; document.body.appendChild(s);
-      } else if(window.instgrm?.Embeds) window.instgrm.Embeds.process();
-      if(!$("script[src='https://www.tiktok.com/embed.js']")){
-        const s=document.createElement("script"); s.async=true; s.src="https://www.tiktok.com/embed.js"; document.body.appendChild(s);
-      }
-    }
-
-    function renderStaticPage(slug){
-      const pg = config().paginas?.[slug];
-      const fallback = {
-        envio:{titulo:"Regras de envio",html:"<p>Cadastre este conteúdo em /config/paginas/envio.</p>"},
-        privacidade:{titulo:"Sigilo de dados",html:"<p>Cadastre este conteúdo em /config/paginas/privacidade.</p>"},
-        "quem-somos":{titulo:"Quem somos",html:"<p>Cadastre a história da marca em /config/paginas/quem-somos.</p>"},
-        contato:{titulo:"Contato",html:"<p>Cadastre contatos e redes sociais em /config.</p>"}
-      }[slug] || {titulo:"Página",html:"<p>Conteúdo não encontrado.</p>"};
-      const page = pg || fallback;
-      appEl.innerHTML = `<div class="container page-shell"><div class="breadcrumb"><a href="./">Início</a><span>›</span><span>${esc(page.titulo)}</span></div><article class="content-page"><h1>${esc(page.titulo)}</h1>${page.html || ""}</article></div>`;
-      document.title = `${page.titulo} | ${config().nomeLoja || "Loja Católica"}`;
-    }
-
-    function bindSearch(){
-      const handler = (value) => { state.search = value.trim(); if(value.trim()) navigate(`?categoria=todos&busca=${encodeURIComponent(value.trim())}`); };
-      [$("#searchInput"), $("#mobileSearchInput")].forEach(input => {
-        if(!input) return;
-        input.addEventListener("keydown", e => { if(e.key === "Enter") handler(input.value); });
-      });
-    }
-    function bindMenu(){
-      const panel = $("#mobilePanel");
-      $("#menuBtn")?.addEventListener("click",()=>{ panel.classList.add("open"); panel.setAttribute("aria-hidden","false"); document.body.classList.add("menu-open"); });
-      $("#closeMenuBtn")?.addEventListener("click", closeMenu);
-    }
-    function closeMenu(){ const panel=$("#mobilePanel"); panel?.classList.remove("open"); panel?.setAttribute("aria-hidden","true"); document.body.classList.remove("menu-open"); }
-
-    bindSearch(); bindMenu(); initFirebase();
+    function setMeta(n,v){let el=document.querySelector(`meta[name="${n}"]`); if(el) el.setAttribute("content",v||"")}
+    function setOg(n,v){let el=document.querySelector(`meta[property="${n}"]`); if(el) el.setAttribute("content",v||"")}
+    function renderReelsBlock(){const reels=arrObj(state.reels).filter(r=>r.status!=="inativo").sort((a,b)=>(a.ordem||99)-(b.ordem||99)).slice(0,4); return `<section><div class="container"><div class="section-head"><div><h2>Vídeos</h2><p>Canecas e produtos em vídeo vertical, prontos para divulgação em Instagram, TikTok e Reels.</p></div><a class="btn secondary" href="?view=reels">Ver todos</a></div><div class="reels-grid">${reels.map(renderReelCard).join("") || empty("Cadastre vídeos no Firebase pelo Make.")}</div></div></section>`}
+    function renderReelsPage(){setMain(`<section class="page"><div class="container"><div class="section-head"><div><h2>Vídeos da Só em Ti</h2><p>Uma seção estilo Reels com vídeos verticais 9:16 dos produtos. O Make pode cadastrar arquivos MP4/WebM, links do Instagram/TikTok ou embeds.</p></div></div><div class="reels-grid">${arrObj(state.reels).filter(r=>r.status!=="inativo").sort((a,b)=>(a.ordem||99)-(b.ordem||99)).map(renderReelCard).join("") || empty("Nenhum vídeo cadastrado.")}</div></div></section>`)}
+    function renderReelCard(r){return `<article class="reel-card"><div class="reel-frame">${renderReelMedia(r)}</div><div class="reel-card-body"><h3>${esc(r.titulo||"Vídeo")}</h3><p class="tiny">${esc(r.descricao||r.plataforma||"")}</p></div></article>`}
+    function renderReelMedia(r){if(r.embedHtml)return r.embedHtml; if(r.videoVerticalUrl||r.videoUrl)return `<video src="${esc(r.videoVerticalUrl||r.videoUrl)}" poster="${esc(r.thumbnailUrl||"")}" muted playsinline loop controls></video>`; if(r.tiktokUrl)return `<iframe src="${esc(r.tiktokUrl)}" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>`; if(r.instagramUrl)return `<iframe src="${esc(r.instagramUrl)}embed" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>`; return `<img src="${esc(r.thumbnailUrl||"")}" alt="${esc(r.titulo||"Vídeo")}">`}
+    function renderStaticPage(key){const pg=state.config?.paginas?.[key]; setMain(`<section class="page"><div class="container"><article class="static-page"><h1>${esc(pg?.titulo||"Página")}</h1>${pg?.html||"<p>Conteúdo em construção.</p>"}<p style="margin-top:24px"><a class="btn primary" href="?view=catalogo">Ver produtos</a></p></article></div></section>`)}
+    function empty(msg){return `<div class="empty">${esc(msg)}</div>`}
+    function bindLightboxTriggers(root=document){$$('[data-lightbox]',root).forEach(el=>{if(el.dataset.bound)return;el.dataset.bound="1";el.addEventListener("click",()=>openLightbox(el))})}
+    function openLightbox(el){const type=el.dataset.lightbox, title=el.dataset.title||"Visualização"; const src=el.currentSrc||el.src; $("#lightboxTitle").textContent=title; $("#lightboxStage").innerHTML = type==="video" ? `<video src="${esc(src)}" controls autoplay playsinline loop></video>` : `<img src="${esc(src)}" alt="${esc(title)}">`; $("#lightbox").classList.add("open"); $("#lightbox").setAttribute("aria-hidden","false"); document.body.classList.add("lightbox-open")}
+    function closeLightbox(){ $("#lightbox").classList.remove("open"); $("#lightbox").setAttribute("aria-hidden","true"); $("#lightboxStage").innerHTML=""; document.body.classList.remove("lightbox-open")}
+    $("#lightboxClose").addEventListener("click",closeLightbox); $("#lightbox").addEventListener("click",e=>{if(e.target.id==="lightbox") closeLightbox()}); document.addEventListener("keydown",e=>{if(e.key==="Escape") closeLightbox()});
+    $("#menuBtn").addEventListener("click",()=>{const open=!document.body.classList.contains("menu-open");document.body.classList.toggle("menu-open",open);$("#menuBtn").setAttribute("aria-expanded",String(open))});
+    window.addEventListener("popstate",render); document.addEventListener("click",e=>{const a=e.target.closest('a[href^="?"] , a[href="./"]'); if(!a || a.target) return; const href=a.getAttribute("href"); e.preventDefault(); history.pushState(null,"",href); render()});
+    loadData();
   </script>
 </body>
 </html>
