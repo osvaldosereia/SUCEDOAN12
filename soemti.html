@@ -503,24 +503,62 @@
       });
     }
 
+    async function readFirebaseNode(path){
+      const clean = String(path || "").replace(/^\/+|\/+$/g, "");
+      try{
+        if(canUseFirebaseSdk){
+          if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+          state.db = firebase.database();
+          const snap = await state.db.ref(clean).once("value");
+          return snap.val() || null;
+        }
+        const res = await fetch(`${FIREBASE_DATABASE_URL}/${clean}.json?ts=${Date.now()}`, {cache:"no-store"});
+        if(!res.ok){
+          console.warn(`Firebase node /${clean} não carregou: ${res.status}`);
+          return null;
+        }
+        return await res.json() || null;
+      }catch(e){
+        console.warn(`Firebase node /${clean} falhou`, e);
+        return null;
+      }
+    }
+
     async function loadData(){
       try{
-        let v = null;
-        if(canUseFirebaseSdk){
-          firebase.initializeApp(firebaseConfig);
-          state.db = firebase.database();
-          const snap = await state.db.ref("/").once("value");
-          v = snap.val() || {};
-        }else{
-          const res = await fetch(`${FIREBASE_DATABASE_URL}/.json?ts=${Date.now()}`, {cache:"no-store"});
-          if(!res.ok) throw new Error(`Firebase REST ${res.status}`);
-          v = await res.json() || {};
+        /*
+          Importante: suas regras do Realtime Database deixam a raiz bloqueada:
+          ".read": false. Por isso o site NÃO pode mais ler /.json.
+          Ele precisa buscar cada pasta liberada separadamente.
+        */
+        const [canecas, produtosAntigos, categorias, reels, config, configPim] = await Promise.all([
+          readFirebaseNode("canecas"),
+          readFirebaseNode("produtos"),
+          readFirebaseNode("categorias"),
+          readFirebaseNode("reels"),
+          readFirebaseNode("config"),
+          readFirebaseNode("config_pim")
+        ]);
+
+        state.config = config || configPim || DEMO.config;
+        state.categorias = hasEntries(categorias) ? categorias : DEMO.categorias;
+
+        const produtosDoFirebase = {
+          ...(produtosAntigos || {}),
+          ...(canecas || {})
+        };
+
+        state.produtos = hasActiveProducts(produtosDoFirebase) ? produtosDoFirebase : DEMO.produtos;
+        state.reels = hasActiveItems(reels) ? reels : DEMO.reels;
+
+        if(!hasActiveProducts(produtosDoFirebase)){
+          toast("Nenhuma caneca ativa encontrada no Firebase. Exibindo demonstração.");
         }
-        state.config = v.config || DEMO.config;
-        state.categorias = hasEntries(v.categorias) ? v.categorias : DEMO.categorias;
-        state.produtos = hasActiveProducts(v.produtos) ? v.produtos : DEMO.produtos;
-        state.reels = hasActiveItems(v.reels) ? v.reels : DEMO.reels;
-      }catch(e){console.warn(e);useDemo();toast("Firebase não carregou. Exibindo demonstração.")}
+      }catch(e){
+        console.warn(e);
+        useDemo();
+        toast("Firebase não carregou. Exibindo demonstração.");
+      }
       normalizeCatalog();applyConfig();render();
     }
     function hasEntries(obj){return Object.keys(obj||{}).length>0}
