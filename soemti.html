@@ -3,47 +3,48 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#6E4A2E" />
+  <meta name="theme-color" content="#ffffff" />
   <meta name="robots" content="index,follow,max-image-preview:large" />
-  <meta name="description" content="Só em Ti: canecas católicas, terços e rosários com arte devocional autoral. Escolha seu presente religioso e faça o pedido pelo WhatsApp." />
+  <meta name="description" content="Só em Ti: canecas católicas e presentes devocionais com arte autoral. Escolha seu produto e faça o pedido pelo WhatsApp." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Só em Ti" />
-  <meta property="og:title" content="Só em Ti | Canecas Católicas, Terços e Rosários" />
-  <meta property="og:description" content="Presentes católicos com arte devocional autoral. Canecas, terços e rosários para presentear com fé." />
+  <meta property="og:title" content="Só em Ti | Presentes Católicos" />
+  <meta property="og:description" content="Presentes católicos com arte devocional autoral. Produtos para presentear com fé." />
   <meta property="og:image" content="" />
   <meta name="twitter:card" content="summary_large_image" />
-  <title>Só em Ti | Canecas Católicas, Terços e Rosários</title>
+  <title>Só em Ti | Presentes Católicos</title>
 
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg:#FFFCF7;
-      --paper:#FFFFFF;
-      --paper-2:#F8F0E6;
-      --paper-3:#EFE1CF;
-      --ink:#241812;
-      --muted:#77675D;
-      --soft:#9B8371;
-      --brand:#6E4A2E;
-      --brand-2:#A06A3D;
-      --gold:#C89A3B;
-      --olive:#59684A;
-      --line:#E8D9C9;
-      --danger:#A23A32;
-      --shadow:0 18px 48px rgba(73,45,28,.11);
-      --radius:24px;
-      --radius-sm:16px;
-      --max:1180px;
-      --focus:0 0 0 4px rgba(200,154,59,.28);
+      --bg:#ffffff;
+      --surface:#f7f7f4;
+      --surface-2:#f1f0ec;
+      --surface-3:#ebe8df;
+      --ink:#201f1c;
+      --muted:#78736b;
+      --soft:#a29a8f;
+      --brand:#9b762d;
+      --brand-dark:#6f5320;
+      --gold:#c7a45a;
+      --gold-soft:#f1e8d2;
+      --line:#ebe8e0;
+      --danger:#9e3b33;
+      --shadow:0 18px 42px rgba(34,30,24,.07);
+      --shadow-soft:0 10px 26px rgba(34,30,24,.045);
+      --radius:28px;
+      --radius-sm:18px;
+      --max:1220px;
+      --focus:0 0 0 4px rgba(199,164,90,.25);
     }
     *{box-sizing:border-box}
     html{scroll-behavior:smooth}
-    body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-weight:400}
     body.menu-open,body.lightbox-open{overflow:hidden}
     img,video,iframe{max-width:100%;display:block}
     a{color:inherit;text-decoration:none}
@@ -52,141 +53,153 @@
     :focus-visible{outline:none;box-shadow:var(--focus)}
     .skip-link{position:absolute;left:12px;top:-80px;background:var(--ink);color:#fff;padding:12px 14px;border-radius:12px;z-index:9999}
     .skip-link:focus{top:12px}
-    .container{width:min(var(--max),calc(100% - 32px));margin:0 auto}
+    .container{width:min(var(--max),calc(100% - 40px));margin:0 auto}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-    .top-note{background:var(--brand);color:#fff;font-size:.88rem;text-align:center;padding:8px 14px}
-    .top-note strong{color:#FFE7B0}
-    header{position:sticky;top:0;z-index:70;background:rgba(255,252,247,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(232,217,201,.82)}
-    .nav{height:74px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+
+    .top-note{background:#fff;color:var(--muted);font-size:.82rem;text-align:center;padding:9px 14px;border-bottom:1px solid var(--line);letter-spacing:.01em}
+    .top-note strong{color:var(--brand);font-weight:600}
+    header{position:sticky;top:0;z-index:70;background:rgba(255,255,255,.92);backdrop-filter:blur(18px);border-bottom:1px solid rgba(235,232,224,.86)}
+    .nav{height:72px;display:flex;align-items:center;justify-content:space-between;gap:18px}
     .brand{display:flex;align-items:center;gap:12px;min-width:0}
-    .brand-mark{width:44px;height:44px;border-radius:16px;background:linear-gradient(145deg,var(--brand),var(--brand-2));color:#fff;display:grid;place-items:center;font-family:"Cormorant Garamond",serif;font-size:1.55rem;font-weight:700;box-shadow:0 10px 24px rgba(110,74,46,.2)}
+    .brand-mark{width:42px;height:42px;border-radius:50%;background:var(--gold-soft);color:var(--brand);display:grid;place-items:center;font-size:1.05rem;font-weight:700;letter-spacing:-.04em;border:1px solid rgba(199,164,90,.28)}
     .brand-title{display:flex;flex-direction:column;min-width:0}
-    .brand-title strong{font-family:"Cormorant Garamond",serif;font-size:1.55rem;line-height:1;color:var(--brand)}
-    .brand-title span{font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .nav-links{display:flex;align-items:center;gap:4px}
-    .nav-links a,.nav-links button{border:0;background:transparent;padding:10px 12px;border-radius:999px;color:var(--muted);font-weight:650;font-size:.92rem}
-    .nav-links a:hover,.nav-links button:hover{background:var(--paper-2);color:var(--ink)}
-    .menu-btn{display:none;border:1px solid var(--line);background:#fff;border-radius:14px;padding:10px 12px;font-weight:800;color:var(--brand)}
+    .brand-title strong{font-size:1.1rem;line-height:1.05;color:var(--ink);font-weight:650;letter-spacing:-.035em}
+    .brand-title span{font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:400}
+    .nav-links{display:flex;align-items:center;gap:2px}
+    .nav-links a,.nav-links button{border:0;background:transparent;padding:10px 12px;border-radius:999px;color:var(--muted);font-weight:500;font-size:.9rem}
+    .nav-links a:hover,.nav-links button:hover{background:var(--surface);color:var(--ink)}
+    .menu-btn{display:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:600;color:var(--ink)}
+
     main{min-height:70vh}
-    .hero{padding:42px 0 30px}
-    .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:28px;align-items:center}
-    .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--brand);background:var(--paper-2);border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-weight:800;font-size:.86rem}
-    .hero h1,.section-head h2,.page-title h1{font-family:"Cormorant Garamond",serif;margin:16px 0 12px;line-height:.98;color:var(--ink)}
-    .hero h1{font-size:clamp(2.7rem,7vw,5.7rem);letter-spacing:-.045em;max-width:820px}
-    .hero p{font-size:1.08rem;color:var(--muted);max-width:650px;margin:0 0 22px}
+    section{padding:28px 0}
+    .hero{padding:54px 0 34px}
+    .hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,.72fr);gap:42px;align-items:center}
+    .hero-grid.no-media{grid-template-columns:minmax(0,900px)}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--brand);background:var(--gold-soft);padding:8px 12px;border-radius:999px;font-weight:600;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase}
+    .hero h1,.section-head h2,.page-title h1{font-family:Inter,system-ui,sans-serif;color:var(--ink);letter-spacing:-.065em;margin:0;line-height:.98;font-weight:350}
+    .hero h1{font-size:clamp(3rem,7vw,6.5rem);max-width:860px;margin:18px 0 18px}
+    .hero p{font-size:clamp(1rem,1.8vw,1.18rem);color:var(--muted);max-width:660px;margin:0 0 26px;font-weight:400}
     .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
-    .btn{border:0;border-radius:999px;padding:12px 18px;min-height:46px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:9px;text-align:center;transition:.18s transform,.18s box-shadow,.18s background}
+    .hero-media{background:var(--surface);border-radius:36px;padding:10px;box-shadow:var(--shadow-soft)}
+    .hero-media img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:28px;background:var(--surface-2)}
+
+    .btn{border:0;border-radius:999px;padding:12px 18px;min-height:46px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:9px;text-align:center;transition:.18s transform,.18s box-shadow,.18s background,.18s color}
     .btn:hover{transform:translateY(-1px)}
-    .btn.primary{background:var(--brand);color:#fff;box-shadow:0 12px 26px rgba(110,74,46,.22)}
-    .btn.primary:hover{background:#5E3E27}
-    .btn.secondary{background:#fff;color:var(--brand);border:1px solid var(--line)}
-    .btn.ghost{background:var(--paper-2);color:var(--brand)}
+    .btn.primary{background:var(--ink);color:#fff;box-shadow:0 12px 24px rgba(32,31,28,.12)}
+    .btn.primary:hover{background:var(--brand-dark)}
+    .btn.secondary{background:var(--surface);color:var(--ink)}
+    .btn.secondary:hover{background:var(--surface-2)}
+    .btn.ghost{background:#fff;color:var(--brand);box-shadow:inset 0 0 0 1px var(--line)}
     .btn.full{width:100%}
-    .hero-media{position:relative;background:linear-gradient(145deg,#fff,var(--paper-2));border:1px solid var(--line);border-radius:34px;padding:14px;box-shadow:var(--shadow);overflow:hidden}
-    .hero-media img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:26px;background:var(--paper-3)}
-    .hero-float{position:absolute;left:26px;right:26px;bottom:24px;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border:1px solid rgba(232,217,201,.9);border-radius:22px;padding:14px;box-shadow:0 12px 30px rgba(36,24,18,.12)}
-    .hero-float strong{display:block;color:var(--brand);font-size:.95rem}
-    .hero-float span{font-size:.84rem;color:var(--muted)}
-    section{padding:22px 0}
-    .section-head{display:flex;justify-content:space-between;align-items:end;gap:18px;margin-bottom:16px}
-    .section-head h2{font-size:clamp(2rem,4vw,3.3rem);letter-spacing:-.03em;margin:0}
-    .section-head p{margin:6px 0 0;color:var(--muted);max-width:720px}
+
+    .section-head{display:flex;justify-content:space-between;align-items:end;gap:18px;margin-bottom:20px}
+    .section-head h2{font-size:clamp(2rem,4.2vw,4rem)}
+    .section-head p{margin:8px 0 0;color:var(--muted);max-width:760px;font-weight:400}
+
     .grid-cats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    .category-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px;min-height:148px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s transform,.18s box-shadow}
-    .category-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
-    .category-card .ico{width:50px;height:50px;border-radius:18px;display:grid;place-items:center;background:var(--paper-2);color:var(--brand);font-size:1.4rem}
-    .category-card h3{margin:14px 0 4px;font-size:1rem}
+    .category-card{background:var(--surface);border-radius:var(--radius);padding:20px;min-height:150px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s transform,.18s box-shadow,.18s background}
+    .category-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-soft);background:#fff}
+    .category-card .ico{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#fff;color:var(--brand);font-size:1.3rem}
+    .category-card h3{margin:16px 0 4px;font-size:1rem;font-weight:600;letter-spacing:-.02em}
     .category-card span{color:var(--muted);font-size:.88rem}
-    .filters{display:grid;grid-template-columns:1fr 190px 190px;gap:10px;background:#fff;border:1px solid var(--line);border-radius:24px;padding:10px;margin:12px 0 18px}
+
+    .filters{display:grid;grid-template-columns:1fr 190px 190px;gap:10px;background:var(--surface);border-radius:26px;padding:10px;margin:12px 0 18px}
     .field{position:relative}
-    .field label{position:absolute;left:14px;top:7px;font-size:.72rem;font-weight:800;color:var(--soft);text-transform:uppercase;letter-spacing:.05em}
-    .field input,.field select{width:100%;border:0;background:var(--paper-2);border-radius:16px;padding:28px 14px 10px;min-height:58px;color:var(--ink)}
-    .products-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-    .product-card{background:#fff;border:1px solid var(--line);border-radius:26px;overflow:hidden;display:flex;flex-direction:column;min-width:0;transition:.2s transform,.2s box-shadow;position:relative}
-    .product-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
-    .product-media{position:relative;background:#F5EBDD;overflow:hidden}
-    .product-media img{width:100%;aspect-ratio:4/5;object-fit:cover;transition:.25s transform}
-    .product-card:hover .product-media img{transform:scale(1.03)}
-    .product-badges{position:absolute;left:10px;top:10px;right:10px;display:flex;gap:6px;flex-wrap:wrap;z-index:2}
-    .badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid rgba(232,217,201,.88);border-radius:999px;padding:6px 9px;font-size:.72rem;font-weight:900;color:var(--brand)}
-    .badge.gold{background:rgba(255,246,220,.94);color:#7F571A;border-color:#E7CC83}
-    .product-body{padding:13px 13px 14px;display:flex;flex-direction:column;gap:8px;flex:1}
-    .product-title{font-weight:850;letter-spacing:-.015em;line-height:1.16;min-height:2.35em}
-    .product-summary{color:var(--muted);font-size:.84rem;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.3em}
+    .field label{position:absolute;left:14px;top:8px;font-size:.68rem;font-weight:650;color:var(--soft);text-transform:uppercase;letter-spacing:.08em}
+    .field input,.field select{width:100%;border:0;background:#fff;border-radius:18px;padding:28px 14px 10px;min-height:58px;color:var(--ink);outline:none}
+    .field input::placeholder{color:#b4aea6}
+
+    .products-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+    .product-card{background:#fff;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;min-width:0;transition:.2s transform,.2s box-shadow;position:relative;box-shadow:0 0 0 1px rgba(235,232,224,.72)}
+    .product-card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+    .product-media{display:block;background:var(--surface);overflow:hidden}
+    .product-media img{width:100%;aspect-ratio:1/1;object-fit:cover;transition:.28s transform;background:var(--surface-2)}
+    .product-card:hover .product-media img{transform:scale(1.025)}
+    .image-missing{width:100%;aspect-ratio:1/1;display:grid;place-items:center;background:var(--surface);color:var(--soft);font-size:.88rem}
+    .product-body{padding:16px 16px 17px;display:flex;flex-direction:column;gap:10px;flex:1}
+    .card-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+    .chip,.pill{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--surface);border-radius:999px;padding:7px 10px;color:var(--muted);font-weight:500;font-size:.76rem;line-height:1}
+    .chip.gold,.pill.gold{background:var(--gold-soft);color:var(--brand-dark)}
+    .product-title{font-weight:600;letter-spacing:-.025em;line-height:1.18;font-size:1.04rem;min-height:2.35em}
+    .product-summary{color:var(--muted);font-size:.88rem;line-height:1.42;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em}
     .price-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
-    .price{font-size:1.12rem;font-weight:900;color:var(--brand)}
-    .tiny{font-size:.78rem;color:var(--muted)}
+    .price{font-size:1.12rem;font-weight:650;color:var(--ink);letter-spacing:-.025em}
+    .tiny{font-size:.8rem;color:var(--muted)}
     .card-actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:4px}
-    .page{padding:26px 0 34px}
-    .breadcrumbs{display:flex;gap:7px;flex-wrap:wrap;color:var(--muted);font-size:.88rem;margin-bottom:16px}
-    .breadcrumbs a{text-decoration:underline;text-underline-offset:3px}
-    .product-layout{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(330px,.92fr);gap:22px;align-items:start}
-    .gallery-panel,.buy-panel,.info-card{background:#fff;border:1px solid var(--line);border-radius:28px;padding:16px;box-shadow:0 10px 34px rgba(73,45,28,.055)}
-    .main-preview{border-radius:24px;overflow:hidden;border:1px solid var(--line);background:var(--paper-2);position:relative}
+
+    .page{padding:30px 0 40px}
+    .breadcrumbs{display:flex;gap:7px;flex-wrap:wrap;color:var(--muted);font-size:.88rem;margin-bottom:18px}
+    .breadcrumbs a{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
+    .product-layout{display:grid;grid-template-columns:minmax(0,1.04fr) minmax(330px,.88fr);gap:28px;align-items:start}
+    .gallery-panel,.buy-panel,.info-card{background:#fff;border-radius:32px;padding:0;box-shadow:none}
+    .main-preview{border-radius:32px;overflow:hidden;background:var(--surface);position:relative;box-shadow:0 0 0 1px rgba(235,232,224,.86)}
     .main-preview img,.main-preview video,.main-preview iframe{width:100%;aspect-ratio:1/1;object-fit:cover;background:#fff;border:0}
     .main-preview.horizontal img{aspect-ratio:2/1}
-    .main-preview.vertical video,.main-preview.vertical img,.main-preview.vertical iframe{aspect-ratio:9/16;max-height:76vh;object-fit:cover;margin:0 auto;background:#000;border:0}
-    .expand-hint{position:absolute;right:12px;bottom:12px;background:rgba(36,24,18,.72);color:#fff;border-radius:999px;padding:8px 11px;font-size:.78rem;font-weight:800;backdrop-filter:blur(8px)}
-    .thumbs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px}
-    .thumb{border:1px solid var(--line);background:#fff;border-radius:16px;padding:4px;overflow:hidden;min-height:72px;display:grid;place-items:center;position:relative}
-    .thumb.active{border-color:var(--brand);box-shadow:var(--focus)}
-    .thumb img,.thumb video{width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;border-radius:12px;background:var(--paper-2)}
-    .thumb.video-thumb::after{content:"▶";position:absolute;inset:auto 8px 8px auto;background:rgba(36,24,18,.76);color:#fff;border-radius:999px;width:28px;height:28px;display:grid;place-items:center;font-size:.8rem}
-    .buy-panel{position:sticky;top:96px}
-    .page-title h1{font-size:clamp(2.2rem,4.6vw,4.2rem);letter-spacing:-.04em;margin-top:0}
+    .main-preview.vertical video,.main-preview.vertical img,.main-preview.vertical iframe{aspect-ratio:9/16;max-height:78vh;object-fit:cover;margin:0 auto;background:#000;border:0}
+    .thumbs{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-top:12px}
+    .thumb{border:0;background:var(--surface);border-radius:18px;padding:4px;overflow:hidden;min-height:78px;display:grid;place-items:center;position:relative;box-shadow:inset 0 0 0 1px rgba(235,232,224,.8)}
+    .thumb.active{box-shadow:inset 0 0 0 2px var(--gold)}
+    .thumb img,.thumb video{width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;border-radius:14px;background:var(--surface-2)}
+    .buy-panel{position:sticky;top:100px;background:#fff;border-radius:32px;padding:24px;box-shadow:0 0 0 1px rgba(235,232,224,.82),var(--shadow-soft)}
+    .page-title h1{font-size:clamp(2.2rem,4.5vw,4.6rem);margin:0 0 14px}
     .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}
-    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--paper-2);border-radius:999px;padding:8px 10px;color:var(--brand);font-weight:800;font-size:.82rem}
-    .product-desc{color:var(--muted)}
-    .benefits{display:grid;gap:10px;margin:18px 0;padding:0;list-style:none}
-    .benefits li{display:flex;gap:10px;align-items:flex-start;color:var(--muted);font-size:.93rem}
-    .dot{width:9px;height:9px;border-radius:999px;background:var(--gold);flex:0 0 auto;margin-top:7px}
-    .order-box{background:var(--paper-2);border:1px solid var(--line);border-radius:22px;padding:14px;margin:16px 0}
+    .product-desc{color:var(--muted);margin:16px 0 0}
+    .benefits{display:grid;gap:11px;margin:20px 0;padding:0;list-style:none}
+    .benefits li{display:flex;gap:10px;align-items:flex-start;color:var(--muted);font-size:.94rem}
+    .dot{width:7px;height:7px;border-radius:999px;background:var(--gold);flex:0 0 auto;margin-top:8px}
+    .order-box{background:var(--surface);border-radius:24px;padding:15px;margin:18px 0 0}
     .qty-row{display:flex;align-items:center;gap:10px;margin:10px 0}
-    .qty-row button{width:38px;height:38px;border-radius:14px;border:1px solid var(--line);background:#fff;font-weight:900;color:var(--brand)}
-    .qty-row input{width:70px;text-align:center;border:1px solid var(--line);border-radius:14px;padding:10px;background:#fff;font-weight:800}
+    .qty-row button{width:40px;height:40px;border-radius:50%;border:0;background:#fff;font-weight:650;color:var(--ink)}
+    .qty-row input{width:74px;text-align:center;border:0;border-radius:18px;padding:10px;background:#fff;font-weight:600}
     .share-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-    .media-section{margin-top:18px;display:grid;gap:16px}
-    .wide-art{background:#fff;border:1px solid var(--line);border-radius:26px;padding:14px}
-    .wide-art img{width:100%;aspect-ratio:2/1;object-fit:cover;border-radius:20px;background:var(--paper-2);cursor:zoom-in}
-    .vertical-video-box{background:#fff;border:1px solid var(--line);border-radius:26px;padding:14px}
-    .vertical-video-wrap{max-width:420px;margin:0 auto;background:#000;border-radius:22px;overflow:hidden}
+
+    .media-section{margin-top:26px;display:grid;gap:18px}
+    .wide-art,.vertical-video-box{background:#fff;border-radius:32px;padding:0}
+    .wide-art img{width:100%;aspect-ratio:2/1;object-fit:cover;border-radius:28px;background:var(--surface);cursor:zoom-in;box-shadow:0 0 0 1px rgba(235,232,224,.86)}
+    .vertical-video-wrap{max-width:440px;margin:0 auto;background:#000;border-radius:28px;overflow:hidden;box-shadow:0 0 0 1px rgba(235,232,224,.86)}
     .vertical-video-wrap video,.vertical-video-wrap iframe{width:100%;aspect-ratio:9/16;height:auto;border:0;background:#000;object-fit:cover}
-    .related-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-    .reels-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-    .reel-card{background:#fff;border:1px solid var(--line);border-radius:26px;overflow:hidden;box-shadow:0 10px 30px rgba(73,45,28,.055)}
-    .reel-frame{aspect-ratio:9/16;background:#16100D;display:grid;place-items:center;overflow:hidden}
+
+    .related-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+    .reels-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+    .reel-card{background:#fff;border-radius:30px;overflow:hidden;box-shadow:0 0 0 1px rgba(235,232,224,.75),var(--shadow-soft)}
+    .reel-frame{aspect-ratio:9/16;background:#161513;display:grid;place-items:center;overflow:hidden}
     .reel-frame iframe,.reel-frame video,.reel-frame img{width:100%;height:100%;object-fit:cover;border:0}
-    .reel-card-body{padding:12px}
-    .reel-card-body h3{font-size:.95rem;margin:0 0 4px;line-height:1.25}
-    .static-page{max-width:860px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:30px;padding:24px;box-shadow:0 10px 34px rgba(73,45,28,.05)}
-    .static-page h1{font-family:"Cormorant Garamond",serif;font-size:clamp(2.4rem,5vw,4rem);margin:0 0 10px;letter-spacing:-.04em}
-    .static-page h2{margin-top:24px;color:var(--brand)}
+    .reel-card-body{padding:14px}
+    .reel-card-body h3{font-size:.96rem;margin:0 0 4px;line-height:1.25;font-weight:600;letter-spacing:-.02em}
+
+    .static-page{max-width:900px;margin:0 auto;background:#fff;border-radius:32px;padding:28px;box-shadow:0 0 0 1px rgba(235,232,224,.82),var(--shadow-soft)}
+    .static-page h1{font-size:clamp(2.4rem,5vw,4.4rem);margin:0 0 12px;letter-spacing:-.065em;line-height:1;font-weight:350}
+    .static-page h2{margin-top:24px;color:var(--ink);font-weight:600;letter-spacing:-.03em}
     .static-page p,.static-page li{color:var(--muted)}
-    footer{margin-top:36px;background:#211612;color:#fff;padding:34px 0 22px}
-    .footer-grid{display:grid;grid-template-columns:1.1fr .8fr .8fr .8fr;gap:20px}
-    footer h3,footer h4{margin:0 0 10px;color:#fff}
-    footer h3{font-family:"Cormorant Garamond",serif;font-size:2rem}
-    footer p,footer a{color:rgba(255,255,255,.74);font-size:.92rem}
+
+    footer{margin-top:44px;background:#1f1d1a;color:#fff;padding:38px 0 22px}
+    .footer-grid{display:grid;grid-template-columns:1.1fr .8fr .8fr .8fr;gap:24px}
+    footer h3,footer h4{margin:0 0 10px;color:#fff;font-weight:600;letter-spacing:-.03em}
+    footer h3{font-size:1.8rem;font-weight:350}
+    footer p,footer a{color:rgba(255,255,255,.68);font-size:.92rem}
     footer a{display:block;padding:4px 0}
     .socials{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    .socials a{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:8px 10px;color:#fff;background:rgba(255,255,255,.06)}
-    .copyright{border-top:1px solid rgba(255,255,255,.12);margin-top:24px;padding-top:16px;color:rgba(255,255,255,.58);font-size:.82rem}
-    .empty{background:#fff;border:1px dashed var(--line);border-radius:24px;padding:28px;text-align:center;color:var(--muted)}
-    .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;padding:12px 16px;border-radius:999px;z-index:200;box-shadow:0 16px 36px rgba(0,0,0,.22);transition:.2s}
+    .socials a{border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:8px 10px;color:#fff;background:rgba(255,255,255,.04)}
+    .copyright{border-top:1px solid rgba(255,255,255,.1);margin-top:26px;padding-top:16px;color:rgba(255,255,255,.52);font-size:.82rem}
+
+    .empty{background:var(--surface);border-radius:26px;padding:32px;text-align:center;color:var(--muted);grid-column:1/-1}
+    .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;padding:12px 16px;border-radius:999px;z-index:200;box-shadow:0 16px 36px rgba(0,0,0,.22);transition:.2s;font-size:.9rem}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-    .lightbox{position:fixed;inset:0;background:rgba(24,15,11,.86);display:none;z-index:150;align-items:center;justify-content:center;padding:18px}
+    .lightbox{position:fixed;inset:0;background:rgba(24,22,19,.88);display:none;z-index:150;align-items:center;justify-content:center;padding:18px}
     .lightbox.open{display:flex}
-    .lightbox-inner{width:min(1100px,100%);max-height:94vh;display:grid;gap:12px}
+    .lightbox-inner{width:min(1120px,100%);max-height:94vh;display:grid;gap:12px}
     .lightbox-bar{display:flex;justify-content:space-between;align-items:center;color:#fff;gap:12px}
-    .lightbox-title{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .lightbox-close{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:10px 13px;font-weight:900}
+    .lightbox-title{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .lightbox-close{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1);color:#fff;border-radius:999px;padding:10px 13px;font-weight:600}
     .lightbox-stage{display:grid;place-items:center;max-height:84vh;overflow:auto}
-    .lightbox-stage img,.lightbox-stage video{max-height:84vh;max-width:100%;border-radius:18px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    .lightbox-stage img,.lightbox-stage video{max-height:84vh;max-width:100%;border-radius:20px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.35)}
     .lightbox-stage video{background:#000}
-    @media (max-width:980px){
+
+    @media (max-width:1080px){
       .hero-grid,.product-layout,.footer-grid{grid-template-columns:1fr}
       .grid-cats{grid-template-columns:repeat(2,1fr)}
-      .products-grid,.related-grid{grid-template-columns:repeat(3,1fr)}
+      .products-grid{grid-template-columns:repeat(2,1fr)}
+      .related-grid{grid-template-columns:repeat(3,1fr)}
       .reels-grid{grid-template-columns:repeat(3,1fr)}
       .buy-panel{position:static}
       .filters{grid-template-columns:1fr 1fr}
@@ -194,35 +207,40 @@
     }
     @media (max-width:760px){
       .container{width:min(100% - 24px,var(--max))}
+      .top-note{font-size:.78rem;padding:8px 10px}
       .nav{height:66px}
-      .brand-mark{width:40px;height:40px;border-radius:14px}
-      .brand-title strong{font-size:1.35rem}
+      .brand-mark{width:38px;height:38px}
+      .brand-title strong{font-size:1rem}
       .brand-title span{display:none}
       .menu-btn{display:inline-flex}
-      .nav-links{position:fixed;left:12px;right:12px;top:76px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:10px;display:none;flex-direction:column;align-items:stretch;box-shadow:var(--shadow)}
+      .nav-links{position:fixed;left:12px;right:12px;top:76px;background:#fff;border:1px solid var(--line);border-radius:24px;padding:10px;display:none;flex-direction:column;align-items:stretch;box-shadow:var(--shadow)}
       body.menu-open .nav-links{display:flex}
-      .nav-links a,.nav-links button{text-align:left;border-radius:14px}
-      .hero{padding-top:26px}
-      .hero h1{font-size:3.15rem}
+      .nav-links a,.nav-links button{text-align:left;border-radius:16px}
+      .hero{padding-top:32px}
+      .hero h1{font-size:3.1rem}
       .section-head{align-items:start;flex-direction:column}
       .filters{grid-template-columns:1fr;padding:8px}
       .products-grid{grid-template-columns:repeat(2,1fr);gap:12px}
-      .product-card{border-radius:22px}
-      .product-body{padding:11px}
-      .product-title{font-size:.94rem;min-height:2.2em}
+      .product-card{border-radius:24px}
+      .product-body{padding:12px}
+      .card-meta{gap:6px}
+      .chip{font-size:.68rem;padding:6px 8px}
+      .product-title{font-size:.94rem;min-height:2.24em}
       .product-summary{display:none}
       .price{font-size:1rem}
+      .tiny{font-size:.72rem}
       .card-actions .btn{min-height:39px;padding:9px 10px;font-size:.86rem}
       .thumbs{grid-template-columns:repeat(4,1fr)}
+      .related-grid{grid-template-columns:repeat(2,1fr);gap:12px}
       .reels-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
       .reel-card{min-width:78%;scroll-snap-align:start}
-      .related-grid{grid-template-columns:repeat(2,1fr)}
       .page{padding-top:18px}
-      .gallery-panel,.buy-panel,.info-card{border-radius:24px;padding:12px}
-      .footer-grid{gap:10px}
+      .buy-panel{padding:18px;border-radius:28px}
+      .main-preview,.wide-art img,.vertical-video-wrap{border-radius:24px}
+      .footer-grid{gap:14px}
     }
     @media (max-width:390px){
-      .products-grid{gap:9px}
+      .products-grid{gap:10px}
       .product-body{padding:10px}
       .btn{padding:11px 13px}
     }
@@ -230,7 +248,7 @@
 </head>
 <body>
   <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
-  <div class="top-note" id="topNote">Canecas católicas, terços e rosários · Pedido pelo <strong>WhatsApp</strong></div>
+  <div class="top-note" id="topNote">Canecas católicas e presentes devocionais · Pedido pelo <strong>WhatsApp</strong></div>
   <header>
     <div class="container nav" aria-label="Navegação principal">
       <a class="brand" href="./" aria-label="Só em Ti - início">
@@ -253,11 +271,11 @@
   <footer>
     <div class="container footer-grid">
       <div>
-        <h3>Só em Ti</h3>
-        <p id="footerText">Canecas católicas, terços e rosários com arte devocional autoral, atendimento humano e pedido pelo WhatsApp.</p>
+        <h3 id="footerBrandName">Só em Ti</h3>
+        <p id="footerText">Canecas católicas e presentes devocionais com arte autoral, atendimento humano e pedido pelo WhatsApp.</p>
         <div class="socials" id="footerSocials"></div>
       </div>
-      <div><h4>Produtos</h4><a href="?categoria=canecas">Canecas Católicas</a><a href="?categoria=tercos">Terços</a><a href="?categoria=rosarios">Rosários</a><a href="?view=reels">Vídeos</a></div>
+      <div><h4>Produtos</h4><a href="?categoria=canecas">Canecas Católicas</a><a href="?view=catalogo">Catálogo completo</a><a href="?view=reels">Vídeos</a></div>
       <div><h4>Atendimento</h4><a href="?page=envio">Regras de envio</a><a href="?page=contato">Contato</a><a href="?page=privacidade">Sigilo de dados</a></div>
       <div><h4>Institucional</h4><a href="?page=quem-somos">Quem somos</a><a href="?page=trocas">Trocas e cuidados</a><a href="?view=catalogo">Catálogo completo</a></div>
     </div>
@@ -275,10 +293,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 
   <script>
-    /*
-      COLE AQUI AS CONFIGURAÇÕES DO SEU FIREBASE.
-      O site funciona em modo demonstração enquanto databaseURL/projectId não forem configurados.
-    */
     const firebaseConfig = {
       apiKey: "COLE_AQUI_SE_QUISER_USAR_SDK",
       authDomain: "cedar-chemist-310801.firebaseapp.com",
@@ -290,218 +304,123 @@
     };
     const FIREBASE_DATABASE_URL = (firebaseConfig.databaseURL || "https://cedar-chemist-310801-default-rtdb.firebaseio.com").replace(/\/$/, "");
 
-    const DEMO_VIDEO = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
-    function demoImg(titulo, subtitulo, emoji, c1="#F8F0E6", c2="#FFFFFF", accent="#6E4A2E"){
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
-        <defs>
-          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
-          <filter id="s"><feDropShadow dx="0" dy="28" stdDeviation="24" flood-color="#3b2518" flood-opacity=".16"/></filter>
-        </defs>
-        <rect width="1200" height="1200" fill="url(#g)"/>
-        <circle cx="1050" cy="120" r="160" fill="#ffffff" opacity=".42"/>
-        <circle cx="110" cy="1030" r="230" fill="#ffffff" opacity=".32"/>
-        <rect x="112" y="112" width="976" height="976" rx="62" fill="#ffffff" opacity=".68"/>
-        <g filter="url(#s)">
-          <rect x="250" y="250" width="700" height="610" rx="70" fill="#fff"/>
-          <circle cx="600" cy="500" r="150" fill="${accent}" opacity=".12"/>
-          <text x="600" y="530" text-anchor="middle" font-size="150" font-family="Arial, sans-serif">${emoji}</text>
-          <rect x="360" y="700" width="480" height="86" rx="43" fill="${accent}" opacity=".92"/>
-          <text x="600" y="756" text-anchor="middle" font-size="33" font-weight="700" font-family="Arial, sans-serif" fill="#fff">SÓ EM TI</text>
-        </g>
-        <text x="600" y="944" text-anchor="middle" font-size="50" font-weight="800" font-family="Arial, sans-serif" fill="#241812">${titulo}</text>
-        <text x="600" y="1008" text-anchor="middle" font-size="30" font-family="Arial, sans-serif" fill="#77675D">${subtitulo}</text>
-      </svg>`;
-      return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
-    }
-    function demoWide(titulo, subtitulo, emoji, c1="#F8F0E6", c2="#FFFFFF", accent="#6E4A2E"){
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="900" viewBox="0 0 1800 900">
-        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>
-        <rect width="1800" height="900" fill="url(#g)"/>
-        <rect x="70" y="70" width="1660" height="760" rx="58" fill="#fff" opacity=".68"/>
-        <circle cx="300" cy="450" r="185" fill="${accent}" opacity=".12"/>
-        <circle cx="1500" cy="450" r="185" fill="${accent}" opacity=".12"/>
-        <text x="300" y="500" text-anchor="middle" font-size="164" font-family="Arial, sans-serif">${emoji}</text>
-        <text x="1500" y="500" text-anchor="middle" font-size="164" font-family="Arial, sans-serif">${emoji}</text>
-        <text x="900" y="370" text-anchor="middle" font-size="64" font-weight="800" font-family="Arial, sans-serif" fill="#241812">${titulo}</text>
-        <text x="900" y="452" text-anchor="middle" font-size="34" font-family="Arial, sans-serif" fill="#77675D">${subtitulo}</text>
-        <rect x="650" y="555" width="500" height="78" rx="39" fill="${accent}" opacity=".94"/>
-        <text x="900" y="607" text-anchor="middle" font-size="30" font-weight="800" font-family="Arial, sans-serif" fill="#fff">ARTE ABERTA 2:1</text>
-      </svg>`;
-      return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
-    }
-
-    const DEMO = {
-      config:{
-        lojaNome:"Só em Ti",
-        whatsapp:"5565999999999",
-        avisoTopo:"Canecas católicas, terços e rosários · Pedido pelo WhatsApp",
-        footerTexto:"Canecas católicas, terços e rosários com arte devocional autoral, atendimento humano e pedido pelo WhatsApp.",
-        hero:{
-          etiqueta:"Presentes católicos autorais",
-          titulo:"Canecas e terços para presentear com fé.",
-          texto:"Modo demonstração ativo: veja produtos, fotos ampliáveis, vídeo vertical do YouTube, arte aberta, categorias e pedido pelo WhatsApp, mesmo sem Firebase cadastrado.",
-          imagem:demoImg("Só em Ti", "presentes católicos", "✦", "#F1E0CD", "#FFF9F0", "#6E4A2E")
-        },
-        sociais:{ instagram:"https://instagram.com/", tiktok:"https://www.tiktok.com/", whatsapp:"https://wa.me/5565999999999" },
-        paginas:{
-          envio:{titulo:"Regras de envio", html:"<p>Os pedidos são confirmados pelo WhatsApp. Após a confirmação do pagamento, informamos prazo de produção, postagem e rastreio conforme o endereço informado.</p><h2>Produção</h2><p>As canecas são produzidas sob demanda ou enviadas conforme estoque disponível. O prazo exato é confirmado no atendimento.</p>"},
-          privacidade:{titulo:"Sigilo de dados", html:"<p>Usamos seus dados somente para atendimento, confirmação do pedido, pagamento, emissão de comprovantes quando necessário e envio do produto. Não vendemos seus dados.</p>"},
-          "quem-somos":{titulo:"Quem somos", html:"<p>A Só em Ti nasceu para criar presentes católicos com beleza, respeito e devoção. Nosso foco é oferecer canecas, terços e rosários com visual delicado, autoral e pronto para presentear.</p>"},
-          contato:{titulo:"Contato", html:"<p>Fale conosco pelo WhatsApp, Instagram ou TikTok. Atendemos pedidos, dúvidas sobre envio e encomendas em quantidade.</p>"},
-          trocas:{titulo:"Trocas e cuidados", html:"<p>Conferimos cada produto antes do envio. Ao receber sua caneca, evite quedas e impactos. Para maior durabilidade da estampa, lave com esponja macia.</p>"}
-        }
+    const DEFAULT_CONFIG = {
+      lojaNome:"Só em Ti",
+      whatsapp:"5565999999999",
+      avisoTopo:"Canecas católicas e presentes devocionais · Pedido pelo WhatsApp",
+      footerTexto:"Canecas católicas e presentes devocionais com arte autoral, atendimento humano e pedido pelo WhatsApp.",
+      hero:{
+        etiqueta:"Presentes católicos autorais",
+        titulo:"Presentes católicos com visual leve, bonito e cheio de fé.",
+        texto:"Escolha seu modelo, veja as fotos do produto e envie o pedido pelo WhatsApp."
       },
-      categorias:{
-        canecas:{id:"canecas",nome:"Canecas Católicas",slug:"canecas",icone:"☕",ordem:1,descricao:"Canecas devocionais prontas para presentear.",subcategorias:{nossa_senhora:"Nossa Senhora",jesus:"Jesus",santos:"Santos",frases:"Frases de fé"}},
-        tercos:{id:"tercos",nome:"Terços",slug:"tercos",icone:"📿",ordem:2,descricao:"Terços para oração, presente e devoção.",subcategorias:{madeira:"Madeira",perola:"Pérola",sao_bento:"São Bento",fatima:"Fátima"}},
-        rosarios:{id:"rosarios",nome:"Rosários",slug:"rosarios",icone:"✦",ordem:3,descricao:"Rosários e itens devocionais selecionados.",subcategorias:{tradicional:"Tradicional",presente:"Presente"}},
-        kits:{id:"kits",nome:"Kits de Presente",slug:"kits",icone:"🎁",ordem:4,descricao:"Combinações de caneca, terço, oração e embalagem.",subcategorias:{maes:"Mães",catequese:"Catequese",familia:"Família"}}
-      },
-      produtos:{
-        caneca_aparecida:{
-          id:"caneca_aparecida", slug:"caneca-nossa-senhora-aparecida", status:"ativo", destaque:true, ordem:1,
-          titulo:"Caneca Nossa Senhora Aparecida", categoriaSlug:"canecas", subcategoriaSlug:"nossa_senhora", preco:39.9, precoTexto:"R$ 39,90",
-          resumo:"Caneca católica pronta para presente, com arte devocional de Nossa Senhora Aparecida.",
-          descricao:"Caneca branca com arte autoral inspirada na devoção a Nossa Senhora Aparecida. Ideal para presentear mães, avós, madrinhas, catequistas e pessoas especiais de fé.",
-          tags:["Nossa Senhora Aparecida","caneca católica","presente católico"], estoqueTexto:"Produção sob demanda", selo:"Mais pedido",
-          midias:{
-            principalUrl:demoImg("N. Sra. Aparecida", "caneca católica", "☕", "#E9D7BE", "#FFF7EA", "#6E4A2E"),
-            mockupEsquerdaUrl:demoImg("Lado esquerdo", "Nossa Senhora Aparecida", "☕", "#EFE1CF", "#FFFFFF", "#6E4A2E"),
-            mockupFrenteUrl:demoImg("Frente", "Nossa Senhora Aparecida", "☕", "#F6EAD9", "#FFFFFF", "#A06A3D"),
-            mockupDireitaUrl:demoImg("Lado direito", "Nossa Senhora Aparecida", "☕", "#E9DCC9", "#FFF8ED", "#59684A"),
-            arteAbertaUrl:demoWide("Nossa Senhora Aparecida", "arte aberta da caneca", "✦", "#F4E5CF", "#FFF8ED", "#6E4A2E"),
-            videoVerticalUrl:DEMO_VIDEO,
-            videoPosterUrl:demoImg("Vídeo 9:16", "caneca girando", "▶", "#E9D7BE", "#FFF7EA", "#6E4A2E")
-          }
-        },
-        caneca_sagrado_coracao:{
-          id:"caneca_sagrado_coracao", slug:"caneca-sagrado-coracao-de-jesus", status:"ativo", destaque:true, ordem:2,
-          titulo:"Caneca Sagrado Coração de Jesus", categoriaSlug:"canecas", subcategoriaSlug:"jesus", preco:39.9, precoTexto:"R$ 39,90",
-          resumo:"Arte devocional do Sagrado Coração em caneca branca.",
-          descricao:"Modelo pronto para presentear com fé, delicadeza e devoção ao Sagrado Coração de Jesus.",
-          tags:["Sagrado Coração","Jesus","caneca católica"], estoqueTexto:"Produção sob demanda", selo:"Devocional",
-          midias:{
-            principalUrl:demoImg("Sagrado Coração", "caneca católica", "☕", "#F1DDCF", "#FFF7F2", "#8A3D31"),
-            mockupEsquerdaUrl:demoImg("Lado esquerdo", "Sagrado Coração", "☕", "#F2E1D6", "#FFFFFF", "#8A3D31"),
-            mockupFrenteUrl:demoImg("Frente", "Sagrado Coração", "☕", "#F5E5DC", "#FFFFFF", "#A06A3D"),
-            mockupDireitaUrl:demoImg("Lado direito", "Sagrado Coração", "☕", "#EFE1CF", "#FFF8ED", "#6E4A2E"),
-            arteAbertaUrl:demoWide("Sagrado Coração de Jesus", "arte aberta da caneca", "✦", "#F2E1D6", "#FFF8F3", "#8A3D31"),
-            videoVerticalUrl:DEMO_VIDEO,
-            videoPosterUrl:demoImg("Vídeo 9:16", "caneca girando", "▶", "#F1DDCF", "#FFF7F2", "#8A3D31")
-          }
-        },
-        caneca_sao_bento:{
-          id:"caneca_sao_bento", slug:"caneca-sao-bento", status:"ativo", destaque:true, ordem:3,
-          titulo:"Caneca São Bento", categoriaSlug:"canecas", subcategoriaSlug:"santos", preco:39.9, precoTexto:"R$ 39,90",
-          resumo:"Caneca com arte sóbria inspirada na medalha de São Bento.",
-          descricao:"Produto pronto, com visual devocional e clássico para presente católico.",
-          tags:["São Bento","caneca católica","santos"], estoqueTexto:"Produção sob demanda", selo:"Clássica",
-          midias:{
-            principalUrl:demoImg("São Bento", "caneca católica", "☕", "#E8E2D7", "#FFFDF7", "#59684A"),
-            mockupEsquerdaUrl:demoImg("Lado esquerdo", "São Bento", "☕", "#EEE6D8", "#FFFFFF", "#59684A"),
-            mockupFrenteUrl:demoImg("Frente", "São Bento", "☕", "#F6EFE4", "#FFFFFF", "#6E4A2E"),
-            mockupDireitaUrl:demoImg("Lado direito", "São Bento", "☕", "#E8E2D7", "#FFFDF7", "#59684A"),
-            arteAbertaUrl:demoWide("São Bento", "arte aberta da caneca", "✦", "#EEE6D8", "#FFFDF7", "#59684A"),
-            videoVerticalUrl:DEMO_VIDEO,
-            videoPosterUrl:demoImg("Vídeo 9:16", "caneca girando", "▶", "#E8E2D7", "#FFFDF7", "#59684A")
-          }
-        },
-        terco_perola:{
-          id:"terco_perola", slug:"terco-catolico-perola", status:"ativo", destaque:true, ordem:4,
-          titulo:"Terço Católico Pérola", categoriaSlug:"tercos", subcategoriaSlug:"perola", preco:29.9, precoTexto:"R$ 29,90",
-          resumo:"Terço delicado para oração e presente religioso.",
-          descricao:"Terço com visual delicado, ideal para presente devocional, lembrancinhas e uso diário de oração.",
-          tags:["terço","católico","pérola","presente"], estoqueTexto:"Consultar disponibilidade", selo:"Presente",
-          midias:{
-            principalUrl:demoImg("Terço Pérola", "presente católico", "📿", "#EFE9DD", "#FFFFFF", "#C89A3B"),
-            mockupEsquerdaUrl:demoImg("Detalhe", "contas em pérola", "📿", "#F6EFE4", "#FFFFFF", "#C89A3B"),
-            mockupFrenteUrl:demoImg("Frente", "Terço Pérola", "📿", "#EFE9DD", "#FFFFFF", "#6E4A2E"),
-            mockupDireitaUrl:demoImg("Embalagem", "pronto para presente", "📿", "#F6EFE4", "#FFFFFF", "#A06A3D"),
-            arteAbertaUrl:demoWide("Terço Católico Pérola", "postagem horizontal / banner", "📿", "#EFE9DD", "#FFFFFF", "#C89A3B"),
-            videoVerticalUrl:DEMO_VIDEO,
-            videoPosterUrl:demoImg("Vídeo 9:16", "detalhes do terço", "▶", "#EFE9DD", "#FFFFFF", "#C89A3B")
-          }
-        },
-        terco_madeira:{
-          id:"terco_madeira", slug:"terco-madeira-sao-bento", status:"ativo", destaque:true, ordem:5,
-          titulo:"Terço de Madeira São Bento", categoriaSlug:"tercos", subcategoriaSlug:"madeira", preco:34.9, precoTexto:"R$ 34,90",
-          resumo:"Terço de madeira com visual tradicional e medalha de São Bento.",
-          descricao:"Um modelo clássico para oração, presente e devoção diária.",
-          tags:["terço de madeira","São Bento","católico"], estoqueTexto:"Consultar disponibilidade", selo:"Tradicional",
-          midias:{
-            principalUrl:demoImg("Terço Madeira", "São Bento", "📿", "#E6D2BE", "#FFF8EE", "#6E4A2E"),
-            mockupEsquerdaUrl:demoImg("Detalhe", "contas de madeira", "📿", "#E6D2BE", "#FFF8EE", "#6E4A2E"),
-            mockupFrenteUrl:demoImg("Frente", "Terço de Madeira", "📿", "#ECDCCB", "#FFFFFF", "#A06A3D"),
-            mockupDireitaUrl:demoImg("Medalha", "São Bento", "📿", "#E6D2BE", "#FFF8EE", "#59684A"),
-            arteAbertaUrl:demoWide("Terço de Madeira São Bento", "postagem horizontal / banner", "📿", "#E6D2BE", "#FFF8EE", "#6E4A2E"),
-            videoVerticalUrl:DEMO_VIDEO,
-            videoPosterUrl:demoImg("Vídeo 9:16", "detalhes do terço", "▶", "#E6D2BE", "#FFF8EE", "#6E4A2E")
-          }
-        },
-        terco_fatima:{
-          id:"terco_fatima", slug:"terco-azul-nossa-senhora-de-fatima", status:"ativo", destaque:true, ordem:6,
-          titulo:"Terço Azul Nossa Senhora de Fátima", categoriaSlug:"tercos", subcategoriaSlug:"fatima", preco:32.9, precoTexto:"R$ 32,90",
-          resumo:"Terço azul inspirado na devoção a Nossa Senhora de Fátima.",
-          descricao:"Modelo delicado para oração mariana, presente religioso e lembranças católicas.",
-          tags:["terço azul","Nossa Senhora de Fátima","católico"], estoqueTexto:"Consultar disponibilidade", selo:"Mariano",
-          midias:{
-            principalUrl:demoImg("Terço Azul", "Nossa Senhora de Fátima", "📿", "#DDEAF3", "#FFFFFF", "#51728A"),
-            mockupEsquerdaUrl:demoImg("Detalhe", "contas azuis", "📿", "#DDEAF3", "#FFFFFF", "#51728A"),
-            mockupFrenteUrl:demoImg("Frente", "Terço de Fátima", "📿", "#E9F2F8", "#FFFFFF", "#6E4A2E"),
-            mockupDireitaUrl:demoImg("Presente", "devoção mariana", "📿", "#DDEAF3", "#FFFFFF", "#51728A"),
-            arteAbertaUrl:demoWide("Terço Azul Nossa Senhora de Fátima", "postagem horizontal / banner", "📿", "#DDEAF3", "#FFFFFF", "#51728A"),
-            videoVerticalUrl:DEMO_VIDEO,
-            videoPosterUrl:demoImg("Vídeo 9:16", "detalhes do terço", "▶", "#DDEAF3", "#FFFFFF", "#51728A")
-          }
-        }
-      },
-      reels:{
-        reel_caneca_aparecida:{id:"reel_caneca_aparecida",status:"ativo",titulo:"Caneca Nossa Senhora Aparecida",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Caneca Aparecida", "▶", "#E9D7BE", "#FFF7EA", "#6E4A2E"),ordem:1,descricao:"Vídeo vertical de demonstração."},
-        reel_caneca_sagrado:{id:"reel_caneca_sagrado",status:"ativo",titulo:"Caneca Sagrado Coração",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Sagrado Coração", "▶", "#F1DDCF", "#FFF7F2", "#8A3D31"),ordem:2,descricao:"Vídeo vertical de demonstração."},
-        reel_caneca_bento:{id:"reel_caneca_bento",status:"ativo",titulo:"Caneca São Bento",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "São Bento", "▶", "#E8E2D7", "#FFFDF7", "#59684A"),ordem:3,descricao:"Vídeo vertical de demonstração."},
-        reel_terco_perola:{id:"reel_terco_perola",status:"ativo",titulo:"Terço Pérola",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Terço Pérola", "▶", "#EFE9DD", "#FFFFFF", "#C89A3B"),ordem:4,descricao:"Vídeo vertical de demonstração."},
-        reel_terco_madeira:{id:"reel_terco_madeira",status:"ativo",titulo:"Terço de Madeira",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Terço Madeira", "▶", "#E6D2BE", "#FFF8EE", "#6E4A2E"),ordem:5,descricao:"Vídeo vertical de demonstração."},
-        reel_terco_fatima:{id:"reel_terco_fatima",status:"ativo",titulo:"Terço Azul de Fátima",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Terço de Fátima", "▶", "#DDEAF3", "#FFFFFF", "#51728A"),ordem:6,descricao:"Vídeo vertical de demonstração."}
+      sociais:{},
+      paginas:{
+        envio:{titulo:"Regras de envio", html:"<p>Os pedidos são confirmados pelo WhatsApp. Após a confirmação do pagamento, informamos prazo de produção, postagem e rastreio conforme o endereço informado.</p><h2>Produção</h2><p>Os produtos são produzidos sob demanda ou enviados conforme estoque disponível. O prazo exato é confirmado no atendimento.</p>"},
+        privacidade:{titulo:"Sigilo de dados", html:"<p>Usamos seus dados somente para atendimento, confirmação do pedido, pagamento, emissão de comprovantes quando necessário e envio do produto. Não vendemos seus dados.</p>"},
+        "quem-somos":{titulo:"Quem somos", html:"<p>A Só em Ti nasceu para criar presentes católicos com beleza, respeito e devoção. Nosso foco é oferecer produtos com visual delicado, autoral e pronto para presentear.</p>"},
+        contato:{titulo:"Contato", html:"<p>Fale conosco pelo WhatsApp, Instagram ou TikTok. Atendemos pedidos, dúvidas sobre envio e encomendas em quantidade.</p>"},
+        trocas:{titulo:"Trocas e cuidados", html:"<p>Conferimos cada produto antes do envio. Ao receber sua peça, evite quedas e impactos. Para maior durabilidade da estampa, lave com esponja macia quando aplicável.</p>"}
       }
     };
 
     const $ = (s,root=document)=>root.querySelector(s);
     const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
-    const state = {config:null,categorias:{},produtos:{},reels:{},db:null,params:new URLSearchParams(location.search)};
+    const state = {config:null,categorias:{},produtos:{},reels:{},db:null,params:new URLSearchParams(location.search),galleryItems:[]};
     const canUseFirebaseSdk = firebaseConfig.databaseURL && !firebaseConfig.databaseURL.includes("SEU-PROJETO") && firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("COLE_AQUI");
 
     function esc(v=""){return String(v ?? "").replace(/[&<>'"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[m]))}
-    function brl(v){return typeof v === "number" ? v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}) : (v||"")}
-    function slugify(v){return String(v||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")}
-    function titleFromSlug(v){return String(v||"").replace(/[_-]+/g," ").replace(/\w/g,m=>m.toUpperCase()).replace(/Sao/g,"São").replace(/Maria Santissima/g,"Maria Santíssima")}
+    function slugify(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")}
+    function titleFromSlug(v){return String(v||"").replace(/[_-]+/g," ").replace(/\b\w/g,m=>m.toUpperCase()).replace(/\bSao\b/g,"São").replace(/Maria Santissima/g,"Maria Santíssima")}
     function arrObj(o){return Object.values(o||{}).filter(Boolean)}
-    function activeProducts(){return arrObj(state.produtos).filter(p=>p.status !== "inativo").sort((a,b)=>(a.ordem||99)-(b.ordem||99)||String(a.titulo).localeCompare(String(b.titulo)))}
-    function findProduct(slugOrId){return activeProducts().find(p=>p.slug===slugOrId || p.id===slugOrId)}
-    function catBySlug(slug){return arrObj(state.categorias).find(c=>c.slug===slug || c.id===slug)}
-    function subName(catSlug,subSlug){const c=catBySlug(catSlug);return c?.subcategorias?.[subSlug] || titleFromSlug(subSlug) || ""}
-    function imageOf(p){return p?.midias?.principalUrl || p?.midias?.mockupFrenteUrl || p?.midias?.mockupEsquerdaUrl || p?.midias?.mockupDireitaUrl || ""}
+    function deepMerge(...objs){const out={};objs.forEach(obj=>{Object.entries(obj||{}).forEach(([k,v])=>{if(v&&typeof v==="object"&&!Array.isArray(v)){out[k]=deepMerge(out[k],v)}else if(v!==undefined&&v!==null){out[k]=v}})});return out}
+    function parsePrice(v){
+      if(typeof v==="number"&&Number.isFinite(v)) return v;
+      let s=String(v??"").trim().replace(/[^\d,.-]/g,"");
+      if(!s) return null;
+      const comma=s.lastIndexOf(","), dot=s.lastIndexOf(".");
+      if(comma>-1 && dot>-1) s = comma>dot ? s.replace(/\./g,"").replace(",",".") : s.replace(/,/g,"");
+      else if(comma>-1) s=s.replace(/\./g,"").replace(",",".");
+      const n=Number(s);
+      return Number.isFinite(n)?n:null;
+    }
+    function brl(v){const n=parsePrice(v);return n!==null?n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}):(v||"")}
+    function normalizeTags(tags){if(Array.isArray(tags)) return tags.filter(Boolean); if(typeof tags==="string") return tags.split(/[,;|]/).map(t=>t.trim()).filter(Boolean); return []}
+    function imageOf(p){return p?.midias?.principalUrl || p?.midias?.mockupFrenteUrl || p?.midias?.mockupEsquerdaUrl || p?.midias?.mockupDireitaUrl || p?.url_imagem || p?.imagem || ""}
     function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("show"),2600)}
     function currentUrl(extra={}){const url = new URL(location.href);Object.entries(extra).forEach(([k,v])=> v == null ? url.searchParams.delete(k) : url.searchParams.set(k,v));return url.toString()}
     function productYoutubeUrl(p){const m=p?.midias||{}; return m.videoYoutubeUrl || m.youtubeUrl || p.youtubeUrl || p.videoYoutubeUrl || ""}
-    function youtubeId(url=""){
-      const u=String(url||"").trim(); if(!u) return "";
-      const m=u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
-      return m ? m[1] : "";
+    function youtubeId(url=""){const u=String(url||"").trim(); if(!u) return ""; const m=u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/); return m ? m[1] : ""}
+    function youtubeEmbedUrl(url=""){const id=youtubeId(url); return id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1` : ""}
+    function youtubeThumb(url=""){const id=youtubeId(url); return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : ""}
+
+    function normalizeProducts(obj){
+      const out={};
+      Object.entries(obj||{}).forEach(([key,value])=>{
+        if(!value || typeof value!=="object") return;
+        const p={...value};
+        p.id = p.id || key;
+        p.titulo = p.titulo || p.nome || p.title || p.nomeProduto || "Produto";
+        p.slug = p.slug || slugify(`${p.titulo}-${p.id}`);
+        p.status = p.status || p.situacao || "ativo";
+        p.categoriaSlug = slugify(p.categoriaSlug || p.categoria_slug || p.categoria || "canecas") || "canecas";
+        p.subcategoriaSlug = slugify(p.subcategoriaSlug || p.subcategoria_slug || p.subcategoria || p.tema || "devocional") || "devocional";
+        p.subcategoriaNome = p.subcategoriaNome || p.subcategoria || p.tema || titleFromSlug(p.subcategoriaSlug);
+        const preco = parsePrice(p.preco ?? p.valor ?? p.price);
+        if(preco!==null) p.preco = preco;
+        p.precoTexto = p.precoTexto || p.preco_texto || (preco!==null ? brl(preco) : "");
+        p.resumo = p.resumo || p.descricaoCurta || p.descricao_curta || p.descricao_site || p.descricao || "";
+        p.descricao = p.descricaoCompleta || p.descricao_completa || p.descricao || p.resumo || "";
+        p.tags = normalizeTags(p.tags || p.tag || p.etiquetas);
+        p.midias = {...(p.midias||{})};
+        p.midias.principalUrl = p.midias.principalUrl || p.principalUrl || p.url_imagem || p.imagem || p.image || p.foto || "";
+        p.midias.mockupEsquerdaUrl = p.midias.mockupEsquerdaUrl || p.mockupEsquerdaUrl || p.mockup_esquerda_url || "";
+        p.midias.mockupFrenteUrl = p.midias.mockupFrenteUrl || p.mockupFrenteUrl || p.mockup_frente_url || "";
+        p.midias.mockupDireitaUrl = p.midias.mockupDireitaUrl || p.mockupDireitaUrl || p.mockup_direita_url || "";
+        p.midias.arteAbertaUrl = p.midias.arteAbertaUrl || p.arteAbertaUrl || p.arte_aberta_url || "";
+        p.midias.videoVerticalUrl = p.midias.videoVerticalUrl || p.videoVerticalUrl || p.video_vertical_url || p.videoUrl || "";
+        p.midias.videoPosterUrl = p.midias.videoPosterUrl || p.videoPosterUrl || p.posterUrl || p.thumbnailUrl || p.midias.principalUrl || "";
+        p.midias.videoYoutubeUrl = p.midias.videoYoutubeUrl || p.videoYoutubeUrl || p.youtubeUrl || "";
+        out[p.id]=p;
+      });
+      return out;
     }
-    function youtubeEmbedUrl(url=""){
-      const id=youtubeId(url); return id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1` : "";
+    function normalizeCategories(obj){
+      const out={};
+      Object.entries(obj||{}).forEach(([key,value])=>{
+        if(!value || typeof value!=="object") return;
+        const c={...value};
+        c.id=c.id||key;
+        c.nome=c.nome||c.titulo||titleFromSlug(c.id);
+        c.slug=slugify(c.slug||c.id||c.nome);
+        c.subcategorias=c.subcategorias||{};
+        out[c.slug]=c;
+      });
+      return out;
+    }
+    function normalizeReels(obj){
+      const out={};
+      Object.entries(obj||{}).forEach(([key,value])=>{if(value&&typeof value==="object"){out[key]={id:value.id||key,...value}}});
+      return out;
     }
     function normalizeCatalog(){
-      state.categorias = {...DEMO.categorias, ...(state.categorias||{})};
+      state.categorias = normalizeCategories(state.categorias);
       arrObj(state.produtos).forEach(p=>{
-        p.categoriaSlug = p.categoriaSlug || "canecas";
-        p.subcategoriaSlug = p.subcategoriaSlug || "santos";
-        p.subcategoriaNome = p.subcategoriaNome || titleFromSlug(p.subcategoriaSlug);
-        if(!state.categorias[p.categoriaSlug]) state.categorias[p.categoriaSlug]={id:p.categoriaSlug,slug:p.categoriaSlug,nome:titleFromSlug(p.categoriaSlug),icone:"✦",ordem:99,descricao:"Produtos devocionais.",subcategorias:{}};
+        if(!state.categorias[p.categoriaSlug]) state.categorias[p.categoriaSlug]={id:p.categoriaSlug,slug:p.categoriaSlug,nome:titleFromSlug(p.categoriaSlug),icone:"",ordem:99,descricao:"",subcategorias:{}};
         state.categorias[p.categoriaSlug].subcategorias = state.categorias[p.categoriaSlug].subcategorias || {};
-        state.categorias[p.categoriaSlug].subcategorias[p.subcategoriaSlug] = state.categorias[p.categoriaSlug].subcategorias[p.subcategoriaSlug] || p.subcategoriaNome;
+        state.categorias[p.categoriaSlug].subcategorias[p.subcategoriaSlug] = state.categorias[p.categoriaSlug].subcategorias[p.subcategoriaSlug] || p.subcategoriaNome || titleFromSlug(p.subcategoriaSlug);
       });
     }
+    function isActiveStatus(item){
+      const st=String(item?.status ?? item?.situacao ?? "ativo").toLowerCase();
+      return item && item.visivel !== false && item.ativo !== false && !["inativo","rascunho","excluido","excluído","false","0"].includes(st);
+    }
+    function activeProducts(){return arrObj(state.produtos).filter(isActiveStatus).sort((a,b)=>(a.ordem||99)-(b.ordem||99)||String(a.titulo||"").localeCompare(String(b.titulo||"")))}
+    function activeReels(){return arrObj(state.reels).filter(isActiveStatus).sort((a,b)=>(a.ordem||99)-(b.ordem||99)||String(a.titulo||"").localeCompare(String(b.titulo||"")))}
+    function findProduct(slugOrId){return activeProducts().find(p=>p.slug===slugOrId || p.id===slugOrId)}
+    function catBySlug(slug){return arrObj(state.categorias).find(c=>c.slug===slug || c.id===slug)}
+    function subName(catSlug,subSlug){const c=catBySlug(catSlug);return c?.subcategorias?.[subSlug] || titleFromSlug(subSlug) || ""}
+    function hasEntries(obj){return Object.keys(obj||{}).length>0}
 
     async function readFirebaseNode(path){
       const clean = String(path || "").replace(/^\/+|\/+$/g, "");
@@ -513,67 +432,51 @@
           return snap.val() || null;
         }
         const res = await fetch(`${FIREBASE_DATABASE_URL}/${clean}.json?ts=${Date.now()}`, {cache:"no-store"});
-        if(!res.ok){
-          console.warn(`Firebase node /${clean} não carregou: ${res.status}`);
-          return null;
-        }
+        if(!res.ok){console.warn(`Firebase node /${clean} não carregou: ${res.status}`);return null;}
         return await res.json() || null;
-      }catch(e){
-        console.warn(`Firebase node /${clean} falhou`, e);
-        return null;
-      }
+      }catch(e){console.warn(`Firebase node /${clean} falhou`, e);return null;}
     }
 
     async function loadData(){
       try{
         /*
-          Importante: suas regras do Realtime Database deixam a raiz bloqueada:
-          ".read": false. Por isso o site NÃO pode mais ler /.json.
-          Ele precisa buscar cada pasta liberada separadamente.
+          O catálogo público deste site deve ler somente o nó /canecas.
+          A pasta /produtos pertence a outro uso e não é consultada aqui.
         */
-        const [canecas, produtosAntigos, categorias, reels, config, configPim] = await Promise.all([
+        const [canecas, categorias, reels, config, configPim] = await Promise.all([
           readFirebaseNode("canecas"),
-          readFirebaseNode("produtos"),
           readFirebaseNode("categorias"),
           readFirebaseNode("reels"),
           readFirebaseNode("config"),
           readFirebaseNode("config_pim")
         ]);
-
-        state.config = config || configPim || DEMO.config;
-        state.categorias = hasEntries(categorias) ? categorias : DEMO.categorias;
-
-        const produtosDoFirebase = {
-          ...(produtosAntigos || {}),
-          ...(canecas || {})
-        };
-
-        state.produtos = hasActiveProducts(produtosDoFirebase) ? produtosDoFirebase : DEMO.produtos;
-        state.reels = hasActiveItems(reels) ? reels : DEMO.reels;
-
-        if(!hasActiveProducts(produtosDoFirebase)){
-          toast("Nenhuma caneca ativa encontrada no Firebase. Exibindo demonstração.");
-        }
+        state.config = deepMerge(DEFAULT_CONFIG, configPim || {}, config || {});
+        state.categorias = categorias || {};
+        state.produtos = normalizeProducts(canecas || {});
+        state.reels = normalizeReels(reels || {});
+        if(!activeProducts().length) toast("Nenhuma caneca ativa encontrada no Firebase.");
       }catch(e){
         console.warn(e);
-        useDemo();
-        toast("Firebase não carregou. Exibindo demonstração.");
+        state.config = DEFAULT_CONFIG;
+        state.categorias = {};
+        state.produtos = {};
+        state.reels = {};
+        toast("Firebase não carregou. Verifique as regras e o nó /canecas.");
       }
       normalizeCatalog();applyConfig();render();
     }
-    function hasEntries(obj){return Object.keys(obj||{}).length>0}
-    function hasActiveItems(obj){return arrObj(obj).some(item=>item && item.status !== "inativo")}
-    function hasActiveProducts(obj){return arrObj(obj).some(p=>p && p.status !== "inativo")}
-    function useDemo(){state.config=DEMO.config;state.categorias=DEMO.categorias;state.produtos=DEMO.produtos;state.reels=DEMO.reels}
     function applyConfig(){
-      const c=state.config||{};
-      document.title = `${c.lojaNome || "Só em Ti"} | Canecas Católicas, Terços e Rosários`;
-      $("#brandName").textContent = c.lojaNome || "Só em Ti";
-      $("#topNote").innerHTML = esc(c.avisoTopo || "Canecas católicas, terços e rosários · Pedido pelo WhatsApp").replace("WhatsApp","<strong>WhatsApp</strong>");
-      $("#footerText").textContent = c.footerTexto || DEMO.config.footerTexto;
+      const c=state.config||DEFAULT_CONFIG;
+      const name=c.lojaNome || "Só em Ti";
+      document.title = `${name} | Presentes Católicos`;
+      $("#brandName").textContent = name;
+      $("#footerBrandName").textContent = name;
+      $("#topNote").innerHTML = esc(c.avisoTopo || DEFAULT_CONFIG.avisoTopo).replace("WhatsApp","<strong>WhatsApp</strong>");
+      $("#footerText").textContent = c.footerTexto || DEFAULT_CONFIG.footerTexto;
       $("#year").textContent = new Date().getFullYear();
       const soc=c.sociais||{};
       $("#footerSocials").innerHTML = [soc.instagram&&["Instagram",soc.instagram],soc.tiktok&&["TikTok",soc.tiktok],soc.whatsapp&&["WhatsApp",soc.whatsapp]].filter(Boolean).map(([n,u])=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(n)}</a>`).join("");
+      document.querySelector(".copyright").innerHTML = `© <span id="year">${new Date().getFullYear()}</span> ${esc(name)}. Produtos religiosos autorais. Atendimento e confirmação de pedido via WhatsApp.`;
     }
     function route(){state.params = new URLSearchParams(location.search);return {page:state.params.get("page"),view:state.params.get("view"),produto:state.params.get("produto"),categoria:state.params.get("categoria"),sub:state.params.get("sub"),q:state.params.get("q")||""}}
     function render(){
@@ -589,27 +492,30 @@
     function setMain(html){$("#conteudo").innerHTML=html;window.scrollTo({top:0,behavior:"instant"})}
 
     function renderHome(){
-      const c=state.config||{};
-      const featured=activeProducts().filter(p=>p.destaque).slice(0,8);
+      const c=state.config||DEFAULT_CONFIG;
+      const picked=activeProducts().filter(p=>p.destaque);
+      const featured=(picked.length?picked:activeProducts()).slice(0,12);
+      const catsHtml=renderCategories();
+      const heroImg=c.hero?.imagem || imageOf(featured[0]);
+      const heroMedia=heroImg?`<div class="hero-media"><img src="${esc(heroImg)}" alt="${esc(c.lojaNome||"Só em Ti")}" loading="eager"></div>`:"";
       setMain(`
         <section class="hero">
-          <div class="container hero-grid">
+          <div class="container hero-grid ${heroImg?'':'no-media'}">
             <div>
-              <span class="eyebrow">✦ ${esc(c.hero?.etiqueta || "Presentes católicos autorais")}</span>
-              <h1>${esc(c.hero?.titulo || "Canecas, terços e rosários para presentear com fé.")}</h1>
-              <p>${esc(c.hero?.texto || "Escolha seu modelo, veja fotos, vídeo vertical e arte aberta. Envie o pedido pelo WhatsApp.")}</p>
+              <span class="eyebrow">${esc(c.hero?.etiqueta || "Presentes católicos autorais")}</span>
+              <h1>${esc(c.hero?.titulo || DEFAULT_CONFIG.hero.titulo)}</h1>
+              <p>${esc(c.hero?.texto || DEFAULT_CONFIG.hero.texto)}</p>
               <div class="hero-actions"><a class="btn primary" href="?view=catalogo">Ver produtos</a><a class="btn secondary" href="?view=reels">Ver vídeos</a></div>
             </div>
-            <div class="hero-media"><img src="${esc(c.hero?.imagem || imageOf(featured[0]))}" alt="Produtos católicos Só em Ti" loading="eager"><div class="hero-float"><strong>Pedido simples pelo WhatsApp</strong><span>Você escolhe o produto, chama no atendimento e confirma pagamento, frete e prazo.</span></div></div>
+            ${heroMedia}
           </div>
         </section>
-        <section><div class="container"><div class="section-head"><div><h2>Categorias</h2><p>Produtos organizados para facilitar a escolha do presente católico.</p></div><a class="btn secondary" href="?view=catalogo">Catálogo completo</a></div><div class="grid-cats">${renderCategories()}</div></div></section>
-        <section><div class="container"><div class="section-head"><div><h2>Destaques</h2><p>Modelos selecionados para presentear com fé, carinho e devoção.</p></div></div><div class="products-grid">${featured.map(renderProductCard).join("") || empty("Cadastre produtos em destaque no Firebase.")}</div></div></section>
+        ${catsHtml?`<section><div class="container"><div class="section-head"><div><h2>Categorias</h2><p>Produtos organizados para facilitar a escolha do presente católico.</p></div><a class="btn secondary" href="?view=catalogo">Catálogo completo</a></div><div class="grid-cats">${catsHtml}</div></div></section>`:""}
+        <section><div class="container"><div class="section-head"><div><h2>Destaques</h2><p>Modelos selecionados para presentear com fé, carinho e devoção.</p></div></div><div class="products-grid">${featured.map(renderProductCard).join("") || empty("Nenhum produto ativo encontrado.")}</div></div></section>
         ${renderReelsBlock()}
       `);
-      bindProductButtons();
     }
-    function renderCategories(){return arrObj(state.categorias).sort((a,b)=>(a.ordem||99)-(b.ordem||99)).map(cat=>`<a class="category-card" href="?categoria=${esc(cat.slug||cat.id)}"><span class="ico">${esc(cat.icone||"✦")}</span><div><h3>${esc(cat.nome)}</h3><span>${esc(cat.descricao||"Ver produtos")}</span></div></a>`).join("")}
+    function renderCategories(){return arrObj(state.categorias).sort((a,b)=>(a.ordem||99)-(b.ordem||99)||String(a.nome||"").localeCompare(String(b.nome||""))).map(cat=>`<a class="category-card" href="?categoria=${esc(cat.slug||cat.id)}"><span class="ico">${esc(cat.icone||"✦")}</span><div><h3>${esc(cat.nome)}</h3><span>${esc(cat.descricao||"Ver produtos")}</span></div></a>`).join("")}
     function filtersProducts(){
       const r=route(); const q=slugify(r.q); let list=activeProducts();
       if(r.categoria) list=list.filter(p=>p.categoriaSlug===r.categoria);
@@ -620,62 +526,75 @@
     function renderCatalog(){
       const r=route(); const cat=catBySlug(r.categoria); const list=filtersProducts();
       setMain(`<section class="page"><div class="container">
-        <div class="section-head"><div><h2>${cat?esc(cat.nome):"Todos os produtos"}</h2><p>${cat?esc(cat.descricao||""):"Canecas católicas, terços, rosários e kits de presente."}</p></div></div>
+        <div class="section-head"><div><h2>${cat?esc(cat.nome):"Todos os produtos"}</h2><p>${cat?esc(cat.descricao||""):"Produtos católicos com fotos em destaque e pedido pelo WhatsApp."}</p></div></div>
         ${renderFilters(r)}
         ${cat ? renderSubcats(cat,r.sub) : ""}
         <div class="products-grid">${list.map(renderProductCard).join("") || empty("Nenhum produto encontrado.")}</div>
       </div></section>`);
-      bindFilters();bindProductButtons();
+      bindFilters();
     }
     function renderFilters(r){
-      const cats=arrObj(state.categorias).sort((a,b)=>(a.ordem||99)-(b.ordem||99));
+      const cats=arrObj(state.categorias).sort((a,b)=>(a.ordem||99)-(b.ordem||99)||String(a.nome||"").localeCompare(String(b.nome||"")));
       return `<form class="filters" id="filtersForm">
-        <div class="field"><label for="q">Buscar</label><input id="q" name="q" value="${esc(r.q||"")}" placeholder="Nossa Senhora, terço, rosário..."></div>
+        <div class="field"><label for="q">Buscar</label><input id="q" name="q" value="${esc(r.q||"")}" placeholder="Nossa Senhora, santo, oração..."></div>
         <div class="field"><label for="categoria">Categoria</label><select id="categoria" name="categoria"><option value="">Todas</option>${cats.map(c=>`<option value="${esc(c.slug||c.id)}" ${r.categoria===(c.slug||c.id)?"selected":""}>${esc(c.nome)}</option>`).join("")}</select></div>
         <div class="field"><label for="sub">Subcategoria</label><select id="sub" name="sub"><option value="">Todas</option>${r.categoria ? Object.entries(catBySlug(r.categoria)?.subcategorias||{}).map(([k,v])=>`<option value="${esc(k)}" ${r.sub===k?"selected":""}>${esc(v)}</option>`).join("") : ""}</select></div>
       </form>`
     }
     function renderSubcats(cat,active){
       const entries=Object.entries(cat.subcategorias||{}); if(!entries.length) return "";
-      return `<div class="pill-row"><a class="pill" href="?categoria=${esc(cat.slug||cat.id)}">Todas</a>${entries.map(([k,v])=>`<a class="pill" style="${active===k?'background:#fff;border-color:var(--brand)':''}" href="?categoria=${esc(cat.slug||cat.id)}&sub=${esc(k)}">${esc(v)}</a>`).join("")}</div>`
+      return `<div class="pill-row"><a class="pill ${!active?'gold':''}" href="?categoria=${esc(cat.slug||cat.id)}">Todas</a>${entries.map(([k,v])=>`<a class="pill ${active===k?'gold':''}" href="?categoria=${esc(cat.slug||cat.id)}&sub=${esc(k)}">${esc(v)}</a>`).join("")}</div>`
     }
     function bindFilters(){const f=$("#filtersForm"); if(!f)return; f.addEventListener("change",()=>submitFilters(f)); f.addEventListener("submit",e=>{e.preventDefault();submitFilters(f)}); $("#q")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();submitFilters(f)}})}
     function submitFilters(f){const fd=new FormData(f); const url=new URL(location.href); url.search=""; url.searchParams.set("view","catalogo"); for(const [k,v] of fd.entries()) if(v) url.searchParams.set(k,v); history.pushState(null,"",url); render()}
+    function productChips(p){
+      const chips=[];
+      if(p.selo) chips.push(`<span class="chip gold">${esc(p.selo)}</span>`);
+      const sub=subName(p.categoriaSlug,p.subcategoriaSlug);
+      if(sub) chips.push(`<span class="chip">${esc(sub)}</span>`);
+      (p.tags||[]).slice(0,2).forEach(t=>chips.push(`<span class="chip">${esc(t)}</span>`));
+      return chips.join("");
+    }
     function renderProductCard(p){
+      const img=imageOf(p);
       return `<article class="product-card">
         <a class="product-media" href="?produto=${esc(p.slug||p.id)}" aria-label="Ver ${esc(p.titulo)}">
-          <img src="${esc(imageOf(p))}" alt="${esc(p.titulo)}" loading="lazy">
-          <div class="product-badges">${p.selo?`<span class="badge gold">${esc(p.selo)}</span>`:""}<span class="badge">${esc(subName(p.categoriaSlug,p.subcategoriaSlug)||"Produto")}</span></div>
+          ${img?`<img src="${esc(img)}" alt="${esc(p.titulo)}" loading="lazy">`:`<div class="image-missing">Sem foto</div>`}
         </a>
-        <div class="product-body"><a class="product-title" href="?produto=${esc(p.slug||p.id)}">${esc(p.titulo)}</a><div class="product-summary">${esc(p.resumo||"")}</div><div class="price-row"><span class="price">${esc(p.precoTexto || brl(p.preco))}</span><span class="tiny">${esc(p.estoqueTexto||"Sob demanda")}</span></div><div class="card-actions"><a class="btn primary" href="?produto=${esc(p.slug||p.id)}">Ver produto</a></div></div>
+        <div class="product-body"><div class="card-meta">${productChips(p)}</div><a class="product-title" href="?produto=${esc(p.slug||p.id)}">${esc(p.titulo)}</a><div class="product-summary">${esc(p.resumo||"")}</div><div class="price-row"><span class="price">${esc(p.precoTexto || brl(p.preco))}</span><span class="tiny">${esc(p.estoqueTexto||p.estoque_texto||"Sob demanda")}</span></div><div class="card-actions"><a class="btn primary" href="?produto=${esc(p.slug||p.id)}">Ver produto</a></div></div>
       </article>`
     }
-    function bindProductButtons(){}
+    function findRelatedProducts(p){
+      const all=activeProducts().filter(x=>x.id!==p.id);
+      const sameCategoryAndSub=all.filter(x=>x.categoriaSlug===p.categoriaSlug && x.subcategoriaSlug===p.subcategoriaSlug);
+      const sameSub=all.filter(x=>x.subcategoriaSlug===p.subcategoriaSlug && !sameCategoryAndSub.some(y=>y.id===x.id));
+      return [...sameCategoryAndSub,...sameSub].slice(0,16);
+    }
     function renderProduct(slug){
       const p=findProduct(slug); if(!p){setMain(`<section class="page"><div class="container">${empty("Produto não encontrado.")}<p><a class="btn secondary" href="?view=catalogo">Voltar ao catálogo</a></p></div></section>`);return}
       updateSeoProduct(p);
-      const cat=catBySlug(p.categoriaSlug); const related=activeProducts().filter(x=>x.id!==p.id && x.subcategoriaSlug===p.subcategoriaSlug).slice(0,4);
+      const cat=catBySlug(p.categoriaSlug); const related=findRelatedProducts(p); const relatedSub=subName(p.categoriaSlug,p.subcategoriaSlug);
       setMain(`<section class="page"><div class="container">
         <nav class="breadcrumbs"><a href="./">Início</a><span>/</span><a href="?categoria=${esc(p.categoriaSlug)}">${esc(cat?.nome||"Produtos")}</a><span>/</span><span>${esc(p.titulo)}</span></nav>
         <div class="product-layout">
           <section class="gallery-panel" aria-label="Galeria do produto">${renderGallery(p)}</section>
           <aside class="buy-panel">
             <div class="page-title"><h1>${esc(p.titulo)}</h1></div>
-            <div class="pill-row"><span class="pill">${esc(cat?.nome||"Produto católico")}</span><span class="pill">${esc(subName(p.categoriaSlug,p.subcategoriaSlug)||"Devocional")}</span></div>
+            <div class="pill-row"><span class="pill gold">${esc(cat?.nome||"Produto católico")}</span>${relatedSub?`<span class="pill">${esc(relatedSub)}</span>`:""}</div>
             <div class="price" style="font-size:1.65rem">${esc(p.precoTexto || brl(p.preco))}</div>
             <p class="product-desc">${esc(p.descricaoCompleta || p.descricao || p.descricaoCurta || p.resumo || "Produto católico pronto para presente.")}</p>
             <ul class="benefits">
               <li><span class="dot"></span><span><strong>Pedido pelo WhatsApp:</strong> confirme disponibilidade, pagamento, frete e prazo direto no atendimento.</span></li>
-              <li><span class="dot"></span><span><strong>Produto pronto:</strong> este modelo inicial não possui personalização no site.</span></li>
-              <li><span class="dot"></span><span><strong>Visual completo:</strong> veja mockups, arte aberta e vídeo vertical do produto.</span></li>
+              <li><span class="dot"></span><span><strong>Fotos em destaque:</strong> veja a galeria com imagens grandes, sem informações cobrindo a foto.</span></li>
+              <li><span class="dot"></span><span><strong>Produto devocional:</strong> pensado para presentear com fé, cuidado e beleza.</span></li>
             </ul>
             <div class="order-box"><label class="tiny" for="qty">Quantidade</label><div class="qty-row"><button type="button" id="minusQty">−</button><input id="qty" value="1" inputmode="numeric" pattern="[0-9]*" aria-label="Quantidade"><button type="button" id="plusQty">+</button></div><button class="btn primary full" id="whatsBtn">Enviar pedido pelo WhatsApp</button><div class="share-row"><button class="btn secondary" id="shareBtn" type="button">Compartilhar</button><button class="btn ghost" id="copyBtn" type="button">Copiar link</button></div></div>
           </aside>
         </div>
-        <div class="media-section">${p.midias?.arteAbertaUrl?`<section class="wide-art"><div class="section-head"><div><h2>Arte aberta da caneca</h2><p>Imagem horizontal 2:1 para ver o desenho completo aplicado na caneca.</p></div></div><img src="${esc(p.midias.arteAbertaUrl)}" alt="Arte aberta ${esc(p.titulo)}" data-lightbox="image" data-title="Arte aberta - ${esc(p.titulo)}"></section>`:""}${renderVerticalProductVideo(p)}</div>
-        ${related.length?`<section><div class="section-head"><div><h2>Relacionados</h2><p>Produtos da mesma subcategoria.</p></div></div><div class="related-grid">${related.map(renderProductCard).join("")}</div></section>`:""}
+        <div class="media-section">${p.midias?.arteAbertaUrl?`<section class="wide-art"><div class="section-head"><div><h2>Arte aberta</h2><p>Imagem horizontal para ver o desenho completo do produto.</p></div></div><img src="${esc(p.midias.arteAbertaUrl)}" alt="Arte aberta ${esc(p.titulo)}" data-lightbox="image" data-title="Arte aberta - ${esc(p.titulo)}"></section>`:""}${renderVerticalProductVideo(p)}</div>
+        ${related.length?`<section><div class="section-head"><div><h2>Produtos relacionados</h2><p>Até 16 opções selecionadas pela mesma subcategoria${relatedSub?`: ${esc(relatedSub)}`:""}.</p></div></div><div class="related-grid">${related.map(renderProductCard).join("")}</div></section>`:""}
       </div></section>`);
-      bindGallery(p);bindOrder(p);bindLightboxTriggers();bindProductButtons();
+      bindGallery(p);bindOrder(p);bindLightboxTriggers();
     }
     function renderGallery(p){
       const m=p.midias||{};
@@ -686,18 +605,18 @@
       if(m.principalUrl && !items.some(i=>i.url===m.principalUrl)) items.unshift({type:"image",label:"Principal",url:m.principalUrl});
       if(m.arteAbertaUrl) items.push({type:"image",label:"Arte aberta",url:m.arteAbertaUrl,wide:true});
       const yurl = productYoutubeUrl(p);
-      if(yurl) items.push({type:"youtube",label:"Vídeo YouTube",url:yurl,vertical:true,poster:m.videoPosterUrl||m.principalUrl});
+      if(yurl) items.push({type:"youtube",label:"Vídeo YouTube",url:yurl,vertical:true,poster:m.videoPosterUrl||m.principalUrl||youtubeThumb(yurl)});
       else if(m.videoVerticalUrl) items.push({type:"video",label:"Vídeo 9:16",url:m.videoVerticalUrl,vertical:true,poster:m.videoPosterUrl||m.principalUrl});
       const first=items[0];
       state.galleryItems = items;
-      return `<div class="main-preview ${first?.wide?'horizontal':''} ${first?.vertical?'vertical':''}" id="mainPreview">${renderMedia(first,p.titulo,true)}</div><div class="thumbs">${items.map((it,i)=>`<button class="thumb ${i===0?'active':''} ${(it.type==='video'||it.type==='youtube')?'video-thumb':''}" type="button" data-index="${i}" aria-label="Ver ${esc(it.label)}">${it.type==='video'?`<video src="${esc(it.url)}" poster="${esc(it.poster||'')}" muted playsinline></video>`:`<img src="${esc(it.poster||it.url)}" alt="${esc(it.label)}" loading="lazy">`}</button>`).join("")}</div>`
+      return `<div class="main-preview ${first?.wide?'horizontal':''} ${first?.vertical?'vertical':''}" id="mainPreview">${renderMedia(first,p.titulo,true)}</div><div class="thumbs">${items.map((it,i)=>`<button class="thumb ${i===0?'active':''}" type="button" data-index="${i}" aria-label="Ver ${esc(it.label)}">${it.type==='video'?`<video src="${esc(it.url)}" poster="${esc(it.poster||'')}" muted playsinline></video>`:`<img src="${esc(it.poster||it.url)}" alt="${esc(it.label)}" loading="lazy">`}</button>`).join("")}</div>`
     }
     function renderMedia(it,title,main=false){
       if(!it) return `<div class="empty">Sem mídia cadastrada.</div>`;
       const titleAttr=esc(`${it.label} - ${title}`);
       if(it.type==="youtube") return `<iframe src="${esc(youtubeEmbedUrl(it.url))}" title="${titleAttr}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
-      if(it.type==="video") return `<video src="${esc(it.url)}" poster="${esc(it.poster||'')}" muted playsinline loop controls ${main?'autoplay':''} data-lightbox="video" data-title="${titleAttr}"></video><span class="expand-hint">ampliar</span>`;
-      return `<img src="${esc(it.url)}" alt="${titleAttr}" data-lightbox="image" data-title="${titleAttr}" style="cursor:zoom-in"><span class="expand-hint">ampliar</span>`;
+      if(it.type==="video") return `<video src="${esc(it.url)}" poster="${esc(it.poster||'')}" muted playsinline loop controls ${main?'autoplay':''} data-lightbox="video" data-title="${titleAttr}"></video>`;
+      return `<img src="${esc(it.url)}" alt="${titleAttr}" data-lightbox="image" data-title="${titleAttr}" style="cursor:zoom-in">`;
     }
     function bindGallery(p){
       const items=state.galleryItems||[]; const main=$("#mainPreview"); if(!main || !items.length) return;
@@ -708,7 +627,7 @@
       const m=p.midias||{}; const yurl=productYoutubeUrl(p);
       if(!yurl && !m.videoVerticalUrl && !m.videoEmbedHtml) return "";
       const media = m.videoEmbedHtml || (yurl ? `<iframe src="${esc(youtubeEmbedUrl(yurl))}" title="Vídeo - ${esc(p.titulo)}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>` : `<video src="${esc(m.videoVerticalUrl)}" poster="${esc(m.videoPosterUrl||imageOf(p))}" muted playsinline autoplay loop controls data-lightbox="video" data-title="Vídeo - ${esc(p.titulo)}"></video>`);
-      return `<section class="vertical-video-box"><div class="section-head"><div><h2>Vídeo do produto</h2><p>Vídeo vertical 9:16 incorporado do YouTube quando o link estiver cadastrado no JSON do produto.</p></div></div><div class="vertical-video-wrap">${media}</div></section>`
+      return `<section class="vertical-video-box"><div class="section-head"><div><h2>Vídeo do produto</h2><p>Vídeo vertical 9:16 quando estiver cadastrado no produto.</p></div></div><div class="vertical-video-wrap">${media}</div></section>`
     }
     function bindOrder(p){
       const q=$("#qty"), minus=$("#minusQty"), plus=$("#plusQty");
@@ -725,22 +644,22 @@
         if(state.db) await state.db.ref(`pedidos/${orderId}`).set(order);
         else await fetch(`${FIREBASE_DATABASE_URL}/pedidos/${orderId}.json`, {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(order)});
       }catch(e){console.warn(e);toast("Não consegui salvar no Firebase, mas vou abrir o WhatsApp.")}
-      const c=state.config||{}; const phone=(c.whatsapp||"5565999999999").replace(/\D/g,"");
+      const c=state.config||DEFAULT_CONFIG; const phone=(c.whatsapp||"5565999999999").replace(/\D/g,"");
       const msg = `Olá! Quero fazer este pedido na Só em Ti.\n\nProduto: ${p.titulo}\nQuantidade: ${qty}\nValor unitário: ${p.precoTexto || brl(p.preco)}\nCódigo do pedido: ${orderId}\nLink do produto: ${currentUrl({produto:p.slug||p.id})}\n\nPode me passar disponibilidade, pagamento, frete e prazo?`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank','noopener');
     }
     async function shareProduct(p){const data={title:p.titulo,text:p.resumo||"Produto católico Só em Ti",url:currentUrl({produto:p.slug||p.id})}; if(navigator.share){try{await navigator.share(data)}catch(e){}} else {await navigator.clipboard?.writeText(data.url);toast("Link copiado para compartilhar.")}}
     function updateSeoProduct(p){
       const desc=p.seo?.description || p.resumo || p.descricaoCurta || p.descricao || "Produto católico Só em Ti";
-      document.title=`${p.titulo} | Só em Ti`;
-      setMeta("description",desc); setOg("og:title",`${p.titulo} | Só em Ti`); setOg("og:description",desc); setOg("og:image",imageOf(p));
+      document.title=`${p.titulo} | ${state.config?.lojaNome || "Só em Ti"}`;
+      setMeta("description",desc); setOg("og:title",`${p.titulo} | ${state.config?.lojaNome || "Só em Ti"}`); setOg("og:description",desc); setOg("og:image",imageOf(p));
       let ld=$("#productLd"); if(!ld){ld=document.createElement("script");ld.type="application/ld+json";ld.id="productLd";document.head.appendChild(ld)}
-      ld.textContent=JSON.stringify({"@context":"https://schema.org","@type":"Product",name:p.titulo,description:desc,image:[imageOf(p)].filter(Boolean),brand:{"@type":"Brand",name:"Só em Ti"},offers:{"@type":"Offer",priceCurrency:"BRL",price:p.preco||undefined,availability:"https://schema.org/InStock",url:currentUrl({produto:p.slug||p.id})}});
+      ld.textContent=JSON.stringify({"@context":"https://schema.org","@type":"Product",name:p.titulo,description:desc,image:[imageOf(p)].filter(Boolean),brand:{"@type":"Brand",name:state.config?.lojaNome||"Só em Ti"},offers:{"@type":"Offer",priceCurrency:"BRL",price:p.preco||undefined,availability:"https://schema.org/InStock",url:currentUrl({produto:p.slug||p.id})}});
     }
     function setMeta(n,v){let el=document.querySelector(`meta[name="${n}"]`); if(el) el.setAttribute("content",v||"")}
     function setOg(n,v){let el=document.querySelector(`meta[property="${n}"]`); if(el) el.setAttribute("content",v||"")}
-    function renderReelsBlock(){const reels=arrObj(state.reels).filter(r=>r.status!=="inativo").sort((a,b)=>(a.ordem||99)-(b.ordem||99)).slice(0,4); return `<section><div class="container"><div class="section-head"><div><h2>Vídeos</h2><p>Vídeos verticais incorporados do YouTube para demonstrar produtos.</p></div><a class="btn secondary" href="?view=reels">Ver todos</a></div><div class="reels-grid">${reels.map(renderReelCard).join("") || empty("Cadastre vídeos no Firebase pelo Make.")}</div></div></section>`}
-    function renderReelsPage(){setMain(`<section class="page"><div class="container"><div class="section-head"><div><h2>Vídeos da Só em Ti</h2><p>Uma seção estilo Reels com vídeos verticais dos produtos. Cadastre links do YouTube, Shorts, Instagram/TikTok ou embeds.</p></div></div><div class="reels-grid">${arrObj(state.reels).filter(r=>r.status!=="inativo").sort((a,b)=>(a.ordem||99)-(b.ordem||99)).map(renderReelCard).join("") || empty("Nenhum vídeo cadastrado.")}</div></div></section>`)}
+    function renderReelsBlock(){const reels=activeReels().slice(0,4); if(!reels.length) return ""; return `<section><div class="container"><div class="section-head"><div><h2>Vídeos</h2><p>Vídeos verticais para demonstrar os produtos.</p></div><a class="btn secondary" href="?view=reels">Ver todos</a></div><div class="reels-grid">${reels.map(renderReelCard).join("")}</div></div></section>`}
+    function renderReelsPage(){setMain(`<section class="page"><div class="container"><div class="section-head"><div><h2>Vídeos da Só em Ti</h2><p>Uma seção estilo Reels com vídeos verticais dos produtos.</p></div></div><div class="reels-grid">${activeReels().map(renderReelCard).join("") || empty("Nenhum vídeo cadastrado.")}</div></div></section>`)}
     function renderReelCard(r){return `<article class="reel-card"><div class="reel-frame">${renderReelMedia(r)}</div><div class="reel-card-body"><h3>${esc(r.titulo||"Vídeo")}</h3><p class="tiny">${esc(r.descricao||r.plataforma||"")}</p></div></article>`}
     function renderReelMedia(r){if(r.embedHtml)return r.embedHtml; const yurl=r.youtubeUrl||r.videoYoutubeUrl||""; if(yurl)return `<iframe src="${esc(youtubeEmbedUrl(yurl))}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`; if(r.videoVerticalUrl||r.videoUrl)return `<video src="${esc(r.videoVerticalUrl||r.videoUrl)}" poster="${esc(r.thumbnailUrl||"")}" muted playsinline loop controls></video>`; if(r.tiktokUrl)return `<iframe src="${esc(r.tiktokUrl)}" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>`; if(r.instagramUrl)return `<iframe src="${esc(r.instagramUrl)}embed" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>`; return `<img src="${esc(r.thumbnailUrl||"")}" alt="${esc(r.titulo||"Vídeo")}">`}
     function renderStaticPage(key){const pg=state.config?.paginas?.[key]; setMain(`<section class="page"><div class="container"><article class="static-page"><h1>${esc(pg?.titulo||"Página")}</h1>${pg?.html||"<p>Conteúdo em construção.</p>"}<p style="margin-top:24px"><a class="btn primary" href="?view=catalogo">Ver produtos</a></p></article></div></section>`)}
