@@ -625,7 +625,7 @@
             <div class="page-title"><h1>${esc(p.titulo)}</h1></div>
             <div class="pill-row"><span class="pill">${esc(cat?.nome||"Produto católico")}</span><span class="pill">${esc(subName(p.categoriaSlug,p.subcategoriaSlug)||"Devocional")}</span></div>
             <div class="price" style="font-size:1.65rem">${esc(p.precoTexto || brl(p.preco))}</div>
-            <p class="product-desc">${esc(p.descricao || p.resumo || "Produto católico pronto para presente.")}</p>
+            <p class="product-desc">${esc(p.descricaoCompleta || p.descricao || p.descricaoCurta || p.resumo || "Produto católico pronto para presente.")}</p>
             <ul class="benefits">
               <li><span class="dot"></span><span><strong>Pedido pelo WhatsApp:</strong> confirme disponibilidade, pagamento, frete e prazo direto no atendimento.</span></li>
               <li><span class="dot"></span><span><strong>Produto pronto:</strong> este modelo inicial não possui personalização no site.</span></li>
@@ -693,7 +693,7 @@
     }
     async function shareProduct(p){const data={title:p.titulo,text:p.resumo||"Produto católico Só em Ti",url:currentUrl({produto:p.slug||p.id})}; if(navigator.share){try{await navigator.share(data)}catch(e){}} else {await navigator.clipboard?.writeText(data.url);toast("Link copiado para compartilhar.")}}
     function updateSeoProduct(p){
-      const desc=p.resumo||p.descricao||"Produto católico Só em Ti";
+      const desc=p.seo?.description || p.resumo || p.descricaoCurta || p.descricao || "Produto católico Só em Ti";
       document.title=`${p.titulo} | Só em Ti`;
       setMeta("description",desc); setOg("og:title",`${p.titulo} | Só em Ti`); setOg("og:description",desc); setOg("og:image",imageOf(p));
       let ld=$("#productLd"); if(!ld){ld=document.createElement("script");ld.type="application/ld+json";ld.id="productLd";document.head.appendChild(ld)}
