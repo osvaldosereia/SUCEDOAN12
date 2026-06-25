@@ -123,9 +123,9 @@
     .product-layout{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(330px,.92fr);gap:22px;align-items:start}
     .gallery-panel,.buy-panel,.info-card{background:#fff;border:1px solid var(--line);border-radius:28px;padding:16px;box-shadow:0 10px 34px rgba(73,45,28,.055)}
     .main-preview{border-radius:24px;overflow:hidden;border:1px solid var(--line);background:var(--paper-2);position:relative}
-    .main-preview img,.main-preview video{width:100%;aspect-ratio:1/1;object-fit:cover;background:#fff}
+    .main-preview img,.main-preview video,.main-preview iframe{width:100%;aspect-ratio:1/1;object-fit:cover;background:#fff;border:0}
     .main-preview.horizontal img{aspect-ratio:2/1}
-    .main-preview.vertical video,.main-preview.vertical img{aspect-ratio:9/16;max-height:76vh;object-fit:cover;margin:0 auto;background:#000}
+    .main-preview.vertical video,.main-preview.vertical img,.main-preview.vertical iframe{aspect-ratio:9/16;max-height:76vh;object-fit:cover;margin:0 auto;background:#000;border:0}
     .expand-hint{position:absolute;right:12px;bottom:12px;background:rgba(36,24,18,.72);color:#fff;border-radius:999px;padding:8px 11px;font-size:.78rem;font-weight:800;backdrop-filter:blur(8px)}
     .thumbs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px}
     .thumb{border:1px solid var(--line);background:#fff;border-radius:16px;padding:4px;overflow:hidden;min-height:72px;display:grid;place-items:center;position:relative}
@@ -280,14 +280,15 @@
       O site funciona em modo demonstração enquanto databaseURL/projectId não forem configurados.
     */
     const firebaseConfig = {
-      apiKey: "COLE_AQUI",
-      authDomain: "SEU-PROJETO.firebaseapp.com",
-      databaseURL: "https://SEU-PROJETO-default-rtdb.firebaseio.com",
-      projectId: "SEU-PROJETO",
-      storageBucket: "SEU-PROJETO.appspot.com",
+      apiKey: "COLE_AQUI_SE_QUISER_USAR_SDK",
+      authDomain: "cedar-chemist-310801.firebaseapp.com",
+      databaseURL: "https://cedar-chemist-310801-default-rtdb.firebaseio.com",
+      projectId: "cedar-chemist-310801",
+      storageBucket: "cedar-chemist-310801.appspot.com",
       messagingSenderId: "000000000000",
       appId: "1:000000000000:web:0000000000000000000000"
     };
+    const FIREBASE_DATABASE_URL = (firebaseConfig.databaseURL || "https://cedar-chemist-310801-default-rtdb.firebaseio.com").replace(/\/$/, "");
 
     const DEMO_VIDEO = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
     function demoImg(titulo, subtitulo, emoji, c1="#F8F0E6", c2="#FFFFFF", accent="#6E4A2E"){
@@ -338,7 +339,7 @@
         hero:{
           etiqueta:"Presentes católicos autorais",
           titulo:"Canecas e terços para presentear com fé.",
-          texto:"Modo demonstração ativo: veja produtos, fotos ampliáveis, vídeo vertical 9:16, arte aberta, categorias e pedido pelo WhatsApp, mesmo sem Firebase cadastrado.",
+          texto:"Modo demonstração ativo: veja produtos, fotos ampliáveis, vídeo vertical do YouTube, arte aberta, categorias e pedido pelo WhatsApp, mesmo sem Firebase cadastrado.",
           imagem:demoImg("Só em Ti", "presentes católicos", "✦", "#F1E0CD", "#FFF9F0", "#6E4A2E")
         },
         sociais:{ instagram:"https://instagram.com/", tiktok:"https://www.tiktok.com/", whatsapp:"https://wa.me/5565999999999" },
@@ -455,46 +456,72 @@
         }
       },
       reels:{
-        reel_caneca_aparecida:{id:"reel_caneca_aparecida",status:"ativo",titulo:"Caneca Nossa Senhora Aparecida",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Caneca Aparecida", "▶", "#E9D7BE", "#FFF7EA", "#6E4A2E"),ordem:1,descricao:"Vídeo vertical 9:16 de demonstração."},
-        reel_caneca_sagrado:{id:"reel_caneca_sagrado",status:"ativo",titulo:"Caneca Sagrado Coração",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Sagrado Coração", "▶", "#F1DDCF", "#FFF7F2", "#8A3D31"),ordem:2,descricao:"Vídeo vertical 9:16 de demonstração."},
-        reel_caneca_bento:{id:"reel_caneca_bento",status:"ativo",titulo:"Caneca São Bento",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "São Bento", "▶", "#E8E2D7", "#FFFDF7", "#59684A"),ordem:3,descricao:"Vídeo vertical 9:16 de demonstração."},
-        reel_terco_perola:{id:"reel_terco_perola",status:"ativo",titulo:"Terço Pérola",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Terço Pérola", "▶", "#EFE9DD", "#FFFFFF", "#C89A3B"),ordem:4,descricao:"Vídeo vertical 9:16 de demonstração."},
-        reel_terco_madeira:{id:"reel_terco_madeira",status:"ativo",titulo:"Terço de Madeira",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Terço Madeira", "▶", "#E6D2BE", "#FFF8EE", "#6E4A2E"),ordem:5,descricao:"Vídeo vertical 9:16 de demonstração."},
-        reel_terco_fatima:{id:"reel_terco_fatima",status:"ativo",titulo:"Terço Azul de Fátima",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Terço de Fátima", "▶", "#DDEAF3", "#FFFFFF", "#51728A"),ordem:6,descricao:"Vídeo vertical 9:16 de demonstração."}
+        reel_caneca_aparecida:{id:"reel_caneca_aparecida",status:"ativo",titulo:"Caneca Nossa Senhora Aparecida",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Caneca Aparecida", "▶", "#E9D7BE", "#FFF7EA", "#6E4A2E"),ordem:1,descricao:"Vídeo vertical de demonstração."},
+        reel_caneca_sagrado:{id:"reel_caneca_sagrado",status:"ativo",titulo:"Caneca Sagrado Coração",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Sagrado Coração", "▶", "#F1DDCF", "#FFF7F2", "#8A3D31"),ordem:2,descricao:"Vídeo vertical de demonstração."},
+        reel_caneca_bento:{id:"reel_caneca_bento",status:"ativo",titulo:"Caneca São Bento",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "São Bento", "▶", "#E8E2D7", "#FFFDF7", "#59684A"),ordem:3,descricao:"Vídeo vertical de demonstração."},
+        reel_terco_perola:{id:"reel_terco_perola",status:"ativo",titulo:"Terço Pérola",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Terço Pérola", "▶", "#EFE9DD", "#FFFFFF", "#C89A3B"),ordem:4,descricao:"Vídeo vertical de demonstração."},
+        reel_terco_madeira:{id:"reel_terco_madeira",status:"ativo",titulo:"Terço de Madeira",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Terço Madeira", "▶", "#E6D2BE", "#FFF8EE", "#6E4A2E"),ordem:5,descricao:"Vídeo vertical de demonstração."},
+        reel_terco_fatima:{id:"reel_terco_fatima",status:"ativo",titulo:"Terço Azul de Fátima",plataforma:"arquivo",videoVerticalUrl:DEMO_VIDEO,thumbnailUrl:demoImg("Reel", "Terço de Fátima", "▶", "#DDEAF3", "#FFFFFF", "#51728A"),ordem:6,descricao:"Vídeo vertical de demonstração."}
       }
     };
 
     const $ = (s,root=document)=>root.querySelector(s);
     const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
     const state = {config:null,categorias:{},produtos:{},reels:{},db:null,params:new URLSearchParams(location.search)};
-    const isConfigured = firebaseConfig.databaseURL && !firebaseConfig.databaseURL.includes("SEU-PROJETO") && firebaseConfig.apiKey !== "COLE_AQUI";
+    const canUseFirebaseSdk = firebaseConfig.databaseURL && !firebaseConfig.databaseURL.includes("SEU-PROJETO") && firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("COLE_AQUI");
 
     function esc(v=""){return String(v ?? "").replace(/[&<>'"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[m]))}
     function brl(v){return typeof v === "number" ? v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}) : (v||"")}
-    function slugify(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")}
+    function slugify(v){return String(v||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")}
+    function titleFromSlug(v){return String(v||"").replace(/[_-]+/g," ").replace(/\w/g,m=>m.toUpperCase()).replace(/Sao/g,"São").replace(/Maria Santissima/g,"Maria Santíssima")}
     function arrObj(o){return Object.values(o||{}).filter(Boolean)}
     function activeProducts(){return arrObj(state.produtos).filter(p=>p.status !== "inativo").sort((a,b)=>(a.ordem||99)-(b.ordem||99)||String(a.titulo).localeCompare(String(b.titulo)))}
     function findProduct(slugOrId){return activeProducts().find(p=>p.slug===slugOrId || p.id===slugOrId)}
     function catBySlug(slug){return arrObj(state.categorias).find(c=>c.slug===slug || c.id===slug)}
-    function subName(catSlug,subSlug){const c=catBySlug(catSlug);return c?.subcategorias?.[subSlug] || subSlug || ""}
+    function subName(catSlug,subSlug){const c=catBySlug(catSlug);return c?.subcategorias?.[subSlug] || titleFromSlug(subSlug) || ""}
     function imageOf(p){return p?.midias?.principalUrl || p?.midias?.mockupFrenteUrl || p?.midias?.mockupEsquerdaUrl || p?.midias?.mockupDireitaUrl || ""}
     function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("show"),2600)}
     function currentUrl(extra={}){const url = new URL(location.href);Object.entries(extra).forEach(([k,v])=> v == null ? url.searchParams.delete(k) : url.searchParams.set(k,v));return url.toString()}
+    function productYoutubeUrl(p){const m=p?.midias||{}; return m.videoYoutubeUrl || m.youtubeUrl || p.youtubeUrl || p.videoYoutubeUrl || ""}
+    function youtubeId(url=""){
+      const u=String(url||"").trim(); if(!u) return "";
+      const m=u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+      return m ? m[1] : "";
+    }
+    function youtubeEmbedUrl(url=""){
+      const id=youtubeId(url); return id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1` : "";
+    }
+    function normalizeCatalog(){
+      state.categorias = {...DEMO.categorias, ...(state.categorias||{})};
+      arrObj(state.produtos).forEach(p=>{
+        p.categoriaSlug = p.categoriaSlug || "canecas";
+        p.subcategoriaSlug = p.subcategoriaSlug || "santos";
+        p.subcategoriaNome = p.subcategoriaNome || titleFromSlug(p.subcategoriaSlug);
+        if(!state.categorias[p.categoriaSlug]) state.categorias[p.categoriaSlug]={id:p.categoriaSlug,slug:p.categoriaSlug,nome:titleFromSlug(p.categoriaSlug),icone:"✦",ordem:99,descricao:"Produtos devocionais.",subcategorias:{}};
+        state.categorias[p.categoriaSlug].subcategorias = state.categorias[p.categoriaSlug].subcategorias || {};
+        state.categorias[p.categoriaSlug].subcategorias[p.subcategoriaSlug] = state.categorias[p.categoriaSlug].subcategorias[p.subcategoriaSlug] || p.subcategoriaNome;
+      });
+    }
 
     async function loadData(){
-      if(isConfigured){
-        try{
+      try{
+        let v = null;
+        if(canUseFirebaseSdk){
           firebase.initializeApp(firebaseConfig);
           state.db = firebase.database();
           const snap = await state.db.ref("/").once("value");
-          const v = snap.val() || {};
-          state.config = v.config || DEMO.config;
-          state.categorias = hasEntries(v.categorias) ? v.categorias : DEMO.categorias;
-          state.produtos = hasActiveProducts(v.produtos) ? v.produtos : DEMO.produtos;
-          state.reels = hasActiveItems(v.reels) ? v.reels : DEMO.reels;
-        }catch(e){console.warn(e);useDemo();toast("Firebase não carregou. Exibindo demonstração.")}
-      }else useDemo();
-      applyConfig();render();
+          v = snap.val() || {};
+        }else{
+          const res = await fetch(`${FIREBASE_DATABASE_URL}/.json?ts=${Date.now()}`, {cache:"no-store"});
+          if(!res.ok) throw new Error(`Firebase REST ${res.status}`);
+          v = await res.json() || {};
+        }
+        state.config = v.config || DEMO.config;
+        state.categorias = hasEntries(v.categorias) ? v.categorias : DEMO.categorias;
+        state.produtos = hasActiveProducts(v.produtos) ? v.produtos : DEMO.produtos;
+        state.reels = hasActiveItems(v.reels) ? v.reels : DEMO.reels;
+      }catch(e){console.warn(e);useDemo();toast("Firebase não carregou. Exibindo demonstração.")}
+      normalizeCatalog();applyConfig();render();
     }
     function hasEntries(obj){return Object.keys(obj||{}).length>0}
     function hasActiveItems(obj){return arrObj(obj).some(item=>item && item.status !== "inativo")}
@@ -620,14 +647,17 @@
       if(m.mockupDireitaUrl) items.push({type:"image",label:"Lado direito",url:m.mockupDireitaUrl});
       if(m.principalUrl && !items.some(i=>i.url===m.principalUrl)) items.unshift({type:"image",label:"Principal",url:m.principalUrl});
       if(m.arteAbertaUrl) items.push({type:"image",label:"Arte aberta",url:m.arteAbertaUrl,wide:true});
-      if(m.videoVerticalUrl) items.push({type:"video",label:"Vídeo 9:16",url:m.videoVerticalUrl,vertical:true,poster:m.videoPosterUrl||m.principalUrl});
+      const yurl = productYoutubeUrl(p);
+      if(yurl) items.push({type:"youtube",label:"Vídeo YouTube",url:yurl,vertical:true,poster:m.videoPosterUrl||m.principalUrl});
+      else if(m.videoVerticalUrl) items.push({type:"video",label:"Vídeo 9:16",url:m.videoVerticalUrl,vertical:true,poster:m.videoPosterUrl||m.principalUrl});
       const first=items[0];
       state.galleryItems = items;
-      return `<div class="main-preview ${first?.wide?'horizontal':''} ${first?.vertical?'vertical':''}" id="mainPreview">${renderMedia(first,p.titulo,true)}</div><div class="thumbs">${items.map((it,i)=>`<button class="thumb ${i===0?'active':''} ${it.type==='video'?'video-thumb':''}" type="button" data-index="${i}" aria-label="Ver ${esc(it.label)}">${it.type==='video'?`<video src="${esc(it.url)}" poster="${esc(it.poster||'')}" muted playsinline></video>`:`<img src="${esc(it.url)}" alt="${esc(it.label)}" loading="lazy">`}</button>`).join("")}</div>`
+      return `<div class="main-preview ${first?.wide?'horizontal':''} ${first?.vertical?'vertical':''}" id="mainPreview">${renderMedia(first,p.titulo,true)}</div><div class="thumbs">${items.map((it,i)=>`<button class="thumb ${i===0?'active':''} ${(it.type==='video'||it.type==='youtube')?'video-thumb':''}" type="button" data-index="${i}" aria-label="Ver ${esc(it.label)}">${it.type==='video'?`<video src="${esc(it.url)}" poster="${esc(it.poster||'')}" muted playsinline></video>`:`<img src="${esc(it.poster||it.url)}" alt="${esc(it.label)}" loading="lazy">`}</button>`).join("")}</div>`
     }
     function renderMedia(it,title,main=false){
       if(!it) return `<div class="empty">Sem mídia cadastrada.</div>`;
       const titleAttr=esc(`${it.label} - ${title}`);
+      if(it.type==="youtube") return `<iframe src="${esc(youtubeEmbedUrl(it.url))}" title="${titleAttr}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
       if(it.type==="video") return `<video src="${esc(it.url)}" poster="${esc(it.poster||'')}" muted playsinline loop controls ${main?'autoplay':''} data-lightbox="video" data-title="${titleAttr}"></video><span class="expand-hint">ampliar</span>`;
       return `<img src="${esc(it.url)}" alt="${titleAttr}" data-lightbox="image" data-title="${titleAttr}" style="cursor:zoom-in"><span class="expand-hint">ampliar</span>`;
     }
@@ -637,8 +667,10 @@
       bindLightboxTriggers(main);
     }
     function renderVerticalProductVideo(p){
-      const m=p.midias||{}; if(!m.videoVerticalUrl && !m.videoEmbedHtml) return "";
-      return `<section class="vertical-video-box"><div class="section-head"><div><h2>Vídeo do produto</h2><p>Vídeo vertical 9:16 gerado para mostrar a caneca em movimento.</p></div></div><div class="vertical-video-wrap">${m.videoEmbedHtml || `<video src="${esc(m.videoVerticalUrl)}" poster="${esc(m.videoPosterUrl||imageOf(p))}" muted playsinline autoplay loop controls data-lightbox="video" data-title="Vídeo - ${esc(p.titulo)}"></video>`}</div></section>`
+      const m=p.midias||{}; const yurl=productYoutubeUrl(p);
+      if(!yurl && !m.videoVerticalUrl && !m.videoEmbedHtml) return "";
+      const media = m.videoEmbedHtml || (yurl ? `<iframe src="${esc(youtubeEmbedUrl(yurl))}" title="Vídeo - ${esc(p.titulo)}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>` : `<video src="${esc(m.videoVerticalUrl)}" poster="${esc(m.videoPosterUrl||imageOf(p))}" muted playsinline autoplay loop controls data-lightbox="video" data-title="Vídeo - ${esc(p.titulo)}"></video>`);
+      return `<section class="vertical-video-box"><div class="section-head"><div><h2>Vídeo do produto</h2><p>Vídeo vertical 9:16 incorporado do YouTube quando o link estiver cadastrado no JSON do produto.</p></div></div><div class="vertical-video-wrap">${media}</div></section>`
     }
     function bindOrder(p){
       const q=$("#qty"), minus=$("#minusQty"), plus=$("#plusQty");
@@ -651,7 +683,10 @@
     async function sendWhats(p,qty){
       const orderId = `SETI_${Date.now()}`;
       const order={id:orderId,produtoId:p.id,produtoSlug:p.slug,titulo:p.titulo,quantidade:qty,preco:p.preco||null,precoTexto:p.precoTexto||brl(p.preco),status:"novo_whatsapp",origem:"site",criadoEm:new Date().toISOString()};
-      if(state.db){try{await state.db.ref(`pedidos/${orderId}`).set(order)}catch(e){console.warn(e);toast("Não consegui salvar no Firebase, mas vou abrir o WhatsApp.")}}
+      try{
+        if(state.db) await state.db.ref(`pedidos/${orderId}`).set(order);
+        else await fetch(`${FIREBASE_DATABASE_URL}/pedidos/${orderId}.json`, {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(order)});
+      }catch(e){console.warn(e);toast("Não consegui salvar no Firebase, mas vou abrir o WhatsApp.")}
       const c=state.config||{}; const phone=(c.whatsapp||"5565999999999").replace(/\D/g,"");
       const msg = `Olá! Quero fazer este pedido na Só em Ti.\n\nProduto: ${p.titulo}\nQuantidade: ${qty}\nValor unitário: ${p.precoTexto || brl(p.preco)}\nCódigo do pedido: ${orderId}\nLink do produto: ${currentUrl({produto:p.slug||p.id})}\n\nPode me passar disponibilidade, pagamento, frete e prazo?`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank','noopener');
@@ -666,10 +701,10 @@
     }
     function setMeta(n,v){let el=document.querySelector(`meta[name="${n}"]`); if(el) el.setAttribute("content",v||"")}
     function setOg(n,v){let el=document.querySelector(`meta[property="${n}"]`); if(el) el.setAttribute("content",v||"")}
-    function renderReelsBlock(){const reels=arrObj(state.reels).filter(r=>r.status!=="inativo").sort((a,b)=>(a.ordem||99)-(b.ordem||99)).slice(0,4); return `<section><div class="container"><div class="section-head"><div><h2>Vídeos</h2><p>Canecas e produtos em vídeo vertical, prontos para divulgação em Instagram, TikTok e Reels.</p></div><a class="btn secondary" href="?view=reels">Ver todos</a></div><div class="reels-grid">${reels.map(renderReelCard).join("") || empty("Cadastre vídeos no Firebase pelo Make.")}</div></div></section>`}
-    function renderReelsPage(){setMain(`<section class="page"><div class="container"><div class="section-head"><div><h2>Vídeos da Só em Ti</h2><p>Uma seção estilo Reels com vídeos verticais 9:16 dos produtos. O Make pode cadastrar arquivos MP4/WebM, links do Instagram/TikTok ou embeds.</p></div></div><div class="reels-grid">${arrObj(state.reels).filter(r=>r.status!=="inativo").sort((a,b)=>(a.ordem||99)-(b.ordem||99)).map(renderReelCard).join("") || empty("Nenhum vídeo cadastrado.")}</div></div></section>`)}
+    function renderReelsBlock(){const reels=arrObj(state.reels).filter(r=>r.status!=="inativo").sort((a,b)=>(a.ordem||99)-(b.ordem||99)).slice(0,4); return `<section><div class="container"><div class="section-head"><div><h2>Vídeos</h2><p>Vídeos verticais incorporados do YouTube para demonstrar produtos.</p></div><a class="btn secondary" href="?view=reels">Ver todos</a></div><div class="reels-grid">${reels.map(renderReelCard).join("") || empty("Cadastre vídeos no Firebase pelo Make.")}</div></div></section>`}
+    function renderReelsPage(){setMain(`<section class="page"><div class="container"><div class="section-head"><div><h2>Vídeos da Só em Ti</h2><p>Uma seção estilo Reels com vídeos verticais dos produtos. Cadastre links do YouTube, Shorts, Instagram/TikTok ou embeds.</p></div></div><div class="reels-grid">${arrObj(state.reels).filter(r=>r.status!=="inativo").sort((a,b)=>(a.ordem||99)-(b.ordem||99)).map(renderReelCard).join("") || empty("Nenhum vídeo cadastrado.")}</div></div></section>`)}
     function renderReelCard(r){return `<article class="reel-card"><div class="reel-frame">${renderReelMedia(r)}</div><div class="reel-card-body"><h3>${esc(r.titulo||"Vídeo")}</h3><p class="tiny">${esc(r.descricao||r.plataforma||"")}</p></div></article>`}
-    function renderReelMedia(r){if(r.embedHtml)return r.embedHtml; if(r.videoVerticalUrl||r.videoUrl)return `<video src="${esc(r.videoVerticalUrl||r.videoUrl)}" poster="${esc(r.thumbnailUrl||"")}" muted playsinline loop controls></video>`; if(r.tiktokUrl)return `<iframe src="${esc(r.tiktokUrl)}" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>`; if(r.instagramUrl)return `<iframe src="${esc(r.instagramUrl)}embed" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>`; return `<img src="${esc(r.thumbnailUrl||"")}" alt="${esc(r.titulo||"Vídeo")}">`}
+    function renderReelMedia(r){if(r.embedHtml)return r.embedHtml; const yurl=r.youtubeUrl||r.videoYoutubeUrl||""; if(yurl)return `<iframe src="${esc(youtubeEmbedUrl(yurl))}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`; if(r.videoVerticalUrl||r.videoUrl)return `<video src="${esc(r.videoVerticalUrl||r.videoUrl)}" poster="${esc(r.thumbnailUrl||"")}" muted playsinline loop controls></video>`; if(r.tiktokUrl)return `<iframe src="${esc(r.tiktokUrl)}" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>`; if(r.instagramUrl)return `<iframe src="${esc(r.instagramUrl)}embed" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>`; return `<img src="${esc(r.thumbnailUrl||"")}" alt="${esc(r.titulo||"Vídeo")}">`}
     function renderStaticPage(key){const pg=state.config?.paginas?.[key]; setMain(`<section class="page"><div class="container"><article class="static-page"><h1>${esc(pg?.titulo||"Página")}</h1>${pg?.html||"<p>Conteúdo em construção.</p>"}<p style="margin-top:24px"><a class="btn primary" href="?view=catalogo">Ver produtos</a></p></article></div></section>`)}
     function empty(msg){return `<div class="empty">${esc(msg)}</div>`}
     function bindLightboxTriggers(root=document){$$('[data-lightbox]',root).forEach(el=>{if(el.dataset.bound)return;el.dataset.bound="1";el.addEventListener("click",()=>openLightbox(el))})}
