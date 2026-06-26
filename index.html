@@ -19,6 +19,36 @@
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
 
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "OnlineStore",
+    "name": "Dona Antônia",
+    "legalName": "Super Cestas Básicas Dona Antônia",
+    "url": "https://www.donaantonia.com.br/",
+    "email": "atendimento@donaantonia.com.br",
+    "telephone": "+55 65 99815-0975",
+    "areaServed": ["Cuiabá - MT", "Várzea Grande - MT"],
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "R. Trinta, 105 - Jardim Nossa Sra. Aparecida",
+      "addressLocality": "Cuiabá",
+      "addressRegion": "MT",
+      "postalCode": "78090-660",
+      "addressCountry": "BR"
+    },
+    "hasMerchantReturnPolicy": {
+      "@type": "MerchantReturnPolicy",
+      "applicableCountry": "BR",
+      "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      "merchantReturnDays": 7,
+      "returnMethod": "https://schema.org/ReturnByMail",
+      "returnFees": "https://schema.org/FreeReturn"
+    }
+  }
+  </script>
+
   <style>
     :root {
       --bg: #f7f8f5;
@@ -207,7 +237,7 @@
     .toast.show { transform: translate(-50%, 0); opacity: 1; }
 
     .bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; height: calc(var(--bottom-h) + var(--safe-bottom)); padding: 6px 10px calc(6px + var(--safe-bottom)); background: rgba(255,255,255,.96); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(229,231,235,.95); box-shadow: 0 -8px 28px rgba(16,24,40,.08); display: flex; align-items: center; gap: 8px; }
-    .bottom-nav { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; }
+    .bottom-nav { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; }
     .nav-item { position: relative; height: 58px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--muted); font-size: 9.5px; font-weight: 850; }
     .nav-item.active { color: var(--brand); background: #ecfdf3; }
     .nav-item .svg-icon { width: 22px; height: 22px; }
@@ -262,6 +292,28 @@
     .detail-price { font-size: 31px; font-weight: 950; letter-spacing: -.05em; }
     .desc { color: var(--muted); font-size: 14px; line-height: 1.55; font-weight: 650; }
 
+
+    .info-hero { background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%); border: 1px solid var(--line); border-radius: 26px; padding: 18px; box-shadow: var(--shadow); margin-bottom: 12px; }
+    .info-hero h2 { font-size: 22px; line-height: 1.1; letter-spacing: -.04em; font-weight: 950; margin-bottom: 10px; }
+    .info-hero p { color: var(--muted); font-size: 14px; line-height: 1.5; font-weight: 700; margin-top: 7px; }
+    .info-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .info-badge { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 7px 11px; border-radius: 999px; background: #fff; border: 1px solid var(--line); color: var(--ink); font-size: 12px; font-weight: 900; }
+    .info-accordion { display: grid; gap: 10px; }
+    .info-accordion details { background: #fff; border: 1px solid var(--line); border-radius: 20px; overflow: hidden; box-shadow: 0 1px 2px rgba(16,24,40,.035); }
+    .info-accordion summary { list-style: none; min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 15px 16px; font-size: 15px; font-weight: 950; cursor: pointer; }
+    .info-accordion summary::-webkit-details-marker { display: none; }
+    .info-accordion summary::after { content: '＋'; color: var(--brand); font-size: 18px; font-weight: 950; }
+    .info-accordion details[open] summary::after { content: '−'; }
+    .info-panel { padding: 0 16px 16px; color: var(--muted); font-size: 14px; font-weight: 700; line-height: 1.55; }
+    .info-panel p { margin-top: 8px; }
+    .info-panel ul { padding-left: 18px; margin-top: 8px; display: grid; gap: 6px; }
+    .policy-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 12px; }
+    .policy-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--line); border-radius: 15px; background: #f8fafc; padding: 12px; font-size: 13px; font-weight: 950; color: var(--ink); }
+    .merchant-footer { margin: 16px 0 4px; padding: 14px; border-radius: 18px; background: #fff; border: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.45; font-weight: 750; }
+    .merchant-footer strong { display: block; color: var(--ink); font-size: 13px; font-weight: 950; margin-bottom: 4px; }
+    .month-group { margin-top: 16px; }
+    .month-group-title { font-size: 17px; font-weight: 950; letter-spacing: -.03em; margin: 0 2px 10px; }
+
     @media (min-width: 768px) {
       :root { --header-h: 78px; --bottom-h: 0px; }
       .header { padding: calc(10px + var(--safe-top)) 28px 10px; }
@@ -285,6 +337,7 @@
       .basket-editor-row img { width: 86px; height: 86px; }
       .product-imgbox { height: 150px; }
       .product-list { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .policy-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
       .drawer { border-radius: 24px 0 0 24px; }
       .product-detail { display: grid; grid-template-columns: 48% 1fr; }
       .detail-imgbox { height: auto; min-height: 440px; border-bottom: none; border-right: 1px solid #eef2f7; }
@@ -316,6 +369,7 @@
       <a class="nav-item" id="nav-home" href="#/"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><path d="M9 22V12h6v10"></path></svg><span>Início</span></a>
       <a class="nav-item" id="nav-categorias" href="#/categorias"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"></path></svg><span>Categorias</span></a>
       <a class="nav-item" id="nav-ofertas" href="#/ofertas"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg><span>Ofertas</span></a>
+      <a class="nav-item" id="nav-info" href="#/informacoes"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 17h.01M12 13v-2a4 4 0 10-4-4"></path><circle cx="12" cy="12" r="10"></circle></svg><span>Info</span></a>
       <button class="nav-item" id="nav-cart" type="button"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg><span>Compra</span><span class="cart-badge" id="cart-badge">0</span></button>
     </div>
     <button class="checkout-cta" id="bottom-cta" type="button" disabled><small>Monte a compra</small><strong id="bottom-total">R$ 0,00</strong></button>
@@ -719,6 +773,29 @@
       renderBasketDetail(key);
     }
 
+    function basketDefaultProductTotal(basketId) {
+      const { rows } = getBasketLines(basketId);
+      return rows.reduce((sum, row) => sum + Number(row.product.price || 0) * Number(row.qty || 0), 0);
+    }
+
+    function basketFixedAdjustment(basketId) {
+      const basket = state.cestas.find(c => String(c.id) === String(basketId));
+      if (!basket || !basket.preco) return 0;
+      const defaultTotal = basketDefaultProductTotal(basketId);
+      return Math.round((Number(basket.preco || 0) - defaultTotal + Number.EPSILON) * 100) / 100;
+    }
+
+    function addBasketFeeToCart(basket, changed) {
+      const fee = basketFixedAdjustment(basket.id);
+      const feeId = 'fee_' + basket.id;
+      state.basketCustomizations[basket.id] = { name: basket.nome, changed: !!changed, fee };
+      if (fee !== 0) {
+        state.virtualFees[feeId] = { id: feeId, name: 'Ajuste de valor da cesta', price: fee, img: basket.imagem || 'img/logoantonia5.png', isFee: true, categoria: 'Cestas', stock: 999 };
+        if (!state.cartOrder.includes(feeId)) state.cartOrder.push(feeId);
+        state.cart[feeId] = Number(state.cart[feeId] || 0) + 1;
+      }
+    }
+
     function addBasketCustomToCart(basketId) {
       const basket = state.cestas.find(c => String(c.id) === String(basketId));
       const draft = ensureBasketDraft(basketId);
@@ -734,7 +811,7 @@
         added += amount;
       });
       if (!added) { showToast('Escolha pelo menos um produto da cesta.'); return; }
-      state.basketCustomizations[basket.id] = { name: basket.nome, changed: true, fee: 0 };
+      addBasketFeeToCart(basket, true);
       saveCart();
       updateCartUI();
       syncVisibleCards();
@@ -746,7 +823,6 @@
       const basket = state.cestas.find(c => String(c.id) === String(basketId));
       if (!basket) return;
       let added = 0;
-      let sum = 0;
       (basket.produtos || []).forEach(line => {
         const parsed = parseBasketItem(line);
         const p = findProductByCode(parsed.code);
@@ -755,18 +831,10 @@
         const key = String(p.id);
         if (!state.cartOrder.includes(key)) state.cartOrder.push(key);
         state.cart[key] = Number(state.cart[key] || 0) + qty;
-        sum += Number(p.price || 0) * qty;
         added += qty;
       });
       if (!added) { showToast('Não consegui localizar os itens dessa cesta.'); return; }
-      if (basket.preco && basket.preco > sum) {
-        const fee = Math.round((basket.preco - sum + Number.EPSILON) * 100) / 100;
-        const feeId = 'fee_' + basket.id;
-        state.basketCustomizations[basket.id] = { name: basket.nome, changed: false, fee };
-        state.virtualFees[feeId] = { id: feeId, name: 'Ajuste de valor da cesta', price: fee, img: basket.imagem || 'img/logoantonia5.png', isFee: true, categoria: 'Cestas', stock: 999 };
-        if (!state.cartOrder.includes(feeId)) state.cartOrder.push(feeId);
-        state.cart[feeId] = 1;
-      }
+      addBasketFeeToCart(basket, false);
       saveCart();
       updateCartUI();
       syncVisibleCards();
@@ -815,6 +883,24 @@
         return { p, score };
       }).filter(x => x.score > 0).sort((a,b) => b.score - a.score || a.p.price - b.p.price).map(x => x.p);
       return scored.slice(0, limit || 24);
+    }
+
+    function productsByCategoryForMonth(limitPerCategory) {
+      const grouped = new Map();
+      state.products.filter(isAvailable).forEach(p => {
+        const cat = p.categoria || 'Outros';
+        if (!grouped.has(cat)) grouped.set(cat, []);
+        grouped.get(cat).push(p);
+      });
+      return Array.from(grouped.entries())
+        .sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'))
+        .map(([category, list]) => ({
+          category,
+          products: list
+            .sort((a,b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || a.price - b.price || a.name.localeCompare(b.name, 'pt-BR'))
+            .slice(0, limitPerCategory || 8)
+        }))
+        .filter(group => group.products.length);
     }
 
     function getCategories() {
@@ -951,7 +1037,7 @@
 
     function renderHome() {
       const offers = getTopOffers(10);
-      const compraMes = productsByRoutine('compra-mes', 10);
+      const compraMes = productsByCategoryForMonth(1).flatMap(group => group.products).slice(0, 12);
       const limpeza = productsByRoutine('limpeza', 10);
       const quicks = [
         { href: '#/cestas', title: 'Cestas básicas', cls: 'primary', img: cestasThumb() },
@@ -1011,8 +1097,13 @@
 
     function renderRoutine(key) {
       const routine = ROUTINES[key] || ROUTINES['compra-mes'];
-      const products = productsByRoutine(key, 200);
-      app.innerHTML = `<div class="container">${pageHeader(routine.title, '', '#/')}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
+      if (key === 'compra-mes') {
+        const groups = productsByCategoryForMonth(8);
+        app.innerHTML = `<div class="container">${pageHeader('Compra do mês', '', '#/')}${groups.length ? groups.map(group => `<section class="month-group"><h2 class="month-group-title">${escapeHtml(group.category)}</h2><div class="product-grid">${group.products.map(p => productCard(p)).join('')}</div></section>`).join('') : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
+      } else {
+        const products = productsByRoutine(key, 200);
+        app.innerHTML = `<div class="container">${pageHeader(routine.title, '', '#/')}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
+      }
       setActiveNav('home');
     }
 
@@ -1042,12 +1133,19 @@
       return state.basketDrafts[key];
     }
 
-    function basketDraftTotal(basketId) {
+    function basketDraftProductTotal(basketId) {
       const draft = ensureBasketDraft(basketId);
       return Object.entries(draft).reduce((sum, [id, qty]) => {
         const p = getProductById(id);
         return p ? sum + Number(p.price || 0) * Number(qty || 0) : sum;
       }, 0);
+    }
+
+    function basketDraftTotal(basketId) {
+      const basket = state.cestas.find(c => String(c.id) === String(basketId));
+      const currentProducts = basketDraftProductTotal(basketId);
+      if (!basket || !basket.preco) return currentProducts;
+      return Math.round((currentProducts + basketFixedAdjustment(basketId) + Number.EPSILON) * 100) / 100;
     }
 
     function renderBasketDetail(basketId) {
@@ -1074,7 +1172,9 @@
           }).join('')}</div>` : `<div class="empty"><strong>Itens não localizados</strong>Não conseguimos relacionar os produtos dessa cesta ao cadastro atual.</div>`}
         </section>
         <section class="basket-total-card">
-          <div class="summary-row total"><span>Total dos produtos editados</span><span>${fmt(total)}</span></div>
+          <div class="summary-row"><span>Valor da cesta padrão</span><span>${basket.preco ? fmt(basket.preco) : fmt(basketDefaultProductTotal(basket.id))}</span></div>
+          <div class="summary-row total"><span>Total da cesta editada</span><span>${fmt(total)}</span></div>
+          <div class="desc">O total mantém o valor predefinido da cesta. Se retirar produto, o valor do item é abatido; se adicionar, o valor do item é somado.</div>
           <button class="send-btn" type="button" data-action="add-basket-custom" data-id="${escapeHtml(basket.id)}" ${rows.length ? '' : 'disabled'}>Adicionar cesta editada</button>
         </section>
       </div>`;
@@ -1113,16 +1213,83 @@
     }
 
     function renderInfo() {
-      app.innerHTML = `<div class="container">${pageHeader('Informações', 'Como funciona o pedido.', '#/')}
-        <section class="checkout-section">
-          <div class="checkout-title">Dona Antônia</div>
-          <p class="desc"><strong>Atendimento:</strong> segunda a sábado, das 08h às 18h. Atendimento somente por delivery.</p>
-          <p class="desc" style="margin-top:8px"><strong>WhatsApp:</strong> (65) 99815-0975.</p>
-          <p class="desc" style="margin-top:8px"><strong>Pedido mínimo:</strong> ${fmt(CONFIG.MIN_ORDER)} para entrega.</p>
+      app.innerHTML = `<div class="container">${pageHeader('Informações da loja', '', '#/')}
+        <section class="info-hero">
+          <h2>Super Cestas Básicas Dona Antônia</h2>
+          <p><strong>Tipo de loja:</strong> loja on-line de supermercado, cestas básicas, combos e produtos alimentícios, com atendimento por delivery para Cuiabá e Várzea Grande - MT.</p>
+          <p><strong>Área de atendimento:</strong> Cuiabá e Várzea Grande - MT.</p>
+          <p><strong>Endereço comercial:</strong> R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT, 78090-660.</p>
+          <p><strong>CNPJ:</strong> 51.385.335/0001-06.</p>
+          <p><strong>E-mail:</strong> atendimento@donaantonia.com.br.</p>
+          <p><strong>WhatsApp:</strong> (65) 99815-0975.</p>
+          <p><strong>Horário de atendimento:</strong> segunda a sábado, das 08h às 18h.</p>
+          <div class="info-badges"><span class="info-badge">Pedido mínimo ${fmt(CONFIG.MIN_ORDER)}</span><span class="info-badge">Delivery local</span><span class="info-badge">WhatsApp oficial</span></div>
           <a class="send-btn" style="margin-top:14px" href="https://api.whatsapp.com/send?phone=${CONFIG.WHATSAPP_NUMBER}" target="_blank" rel="noopener">Falar pelo WhatsApp</a>
         </section>
+
+        <section class="info-accordion" aria-label="Informações comerciais e políticas da loja">
+          <details open>
+            <summary>Como funciona o pedido</summary>
+            <div class="info-panel">
+              <ul>
+                <li>O cliente escolhe os produtos no site e envia a lista pelo WhatsApp.</li>
+                <li>A equipe confirma disponibilidade, valores, endereço, forma de pagamento e prazo de entrega antes de finalizar o atendimento.</li>
+                <li>Caso algum produto esteja indisponível, o cliente é avisado antes da entrega para escolher substituição, remoção do item ou ajuste do pedido.</li>
+                <li>As informações de preço e estoque exibidas no site devem permanecer alinhadas com as informações enviadas ao Google Merchant Center.</li>
+              </ul>
+            </div>
+          </details>
+          <details>
+            <summary>Entrega</summary>
+            <div class="info-panel">
+              <p><strong>Área de entrega:</strong> Cuiabá e Várzea Grande - MT.</p>
+              <p><strong>Pedido mínimo:</strong> ${fmt(CONFIG.MIN_ORDER)}.</p>
+              <p>Os pedidos são agendados conforme disponibilidade operacional. Pedidos feitos após 10h podem ficar para o próximo dia útil de entrega. Domingo não temos entrega.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Pagamento</summary>
+            <div class="info-panel">
+              <p>Formas aceitas: dinheiro, Pix, cartão de débito, cartão de crédito, vale alimentação e vale refeição.</p>
+              <p>A forma de pagamento é confirmada no WhatsApp antes da finalização do atendimento.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Trocas e devoluções</summary>
+            <div class="info-panel">
+              <p>Produtos errados, avariados ou em desacordo com o pedido podem ser analisados pelo atendimento, conforme a política publicada da loja.</p>
+              <p>Quando houver indisponibilidade, o cliente pode escolher substituição, remoção do item ou ajuste do valor do pedido.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Privacidade e uso dos dados</summary>
+            <div class="info-panel">
+              <p>Os dados informados no pedido são usados para identificação do cliente, emissão fiscal, atendimento, entrega e confirmação pelo WhatsApp.</p>
+              <p>O site mantém links públicos para política de privacidade e termos de uso.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Links e políticas da loja</summary>
+            <div class="info-panel">
+              <p>Estes links precisam ficar publicados e com as mesmas informações cadastradas no Google Merchant Center.</p>
+              <div class="policy-grid">
+                <a class="policy-link" href="sobre-nos.html">Sobre nós <span>›</span></a>
+                <a class="policy-link" href="contato.html">Contato <span>›</span></a>
+                <a class="policy-link" href="politica-de-entrega.html">Política de entrega <span>›</span></a>
+                <a class="policy-link" href="politica-de-troca.html">Trocas e devoluções <span>›</span></a>
+                <a class="policy-link" href="politica-de-privacidade.html">Política de privacidade <span>›</span></a>
+                <a class="policy-link" href="termos-de-uso.html">Termos de uso <span>›</span></a>
+              </div>
+            </div>
+          </details>
+        </section>
+        <footer class="merchant-footer">
+          <strong>Super Cestas Básicas Dona Antônia</strong>
+          Loja on-line de supermercado, cestas básicas, combos e produtos alimentícios com atendimento em Cuiabá e Várzea Grande - MT.
+        </footer>
       </div>`;
-      setActiveNav('home');
+      updateMeta('Informações da loja - Dona Antônia', 'Dados comerciais, atendimento, entrega, formas de pagamento e políticas da Super Cestas Básicas Dona Antônia.', '/#/informacoes');
+      setActiveNav('info');
     }
 
     function handleRoute() {
@@ -1182,7 +1349,7 @@
     }
 
     function setActiveNav(name) {
-      ['home','categorias','ofertas'].forEach(k => {
+      ['home','categorias','ofertas','info'].forEach(k => {
         const el = $('nav-' + k);
         if (el) el.classList.toggle('active', k === name);
       });
@@ -1222,7 +1389,7 @@
           ${items.length ? items.map(({id, product, qty}) => `
             <div class="cart-row">
               <img class="cart-img" src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
-              <div><div class="cart-name">${escapeHtml(product.name)}</div><div class="cart-price">${qty} x ${fmt(product.price)} = ${fmt(product.price * qty)}</div></div>
+              <div><div class="cart-name">${escapeHtml(product.name)}</div><div class="cart-price">${fmt(product.price)} cada</div></div>
               <div class="cart-qty"><button type="button" data-action="dec" data-id="${escapeHtml(id)}">−</button><span>${qty}</span><button type="button" data-action="inc" data-id="${escapeHtml(id)}">+</button></div>
             </div>`).join('') : `<div class="empty"><strong>Sua compra está vazia</strong>Adicione produtos para enviar o pedido.</div>`}
           <div class="summary-row total"><span>Total</span><span>${fmt(total)}</span></div>
