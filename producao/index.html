@@ -2,2788 +2,330 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dona Antônia — Administração de Cestas Básicas</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dona Antônia — Admin Produtos, Cestas e Integrações</title>
+  <meta name="robots" content="noindex,nofollow" />
   <style>
-    :root {
-      --bg: #f7f7f5;
-      --card: #ffffff;
-      --card-2: #fafafa;
-      --text: #1f1f1f;
-      --muted: #6f6f6f;
-      --line: #e9e5dc;
-      --gold: #c7a24a;
-      --gold-soft: #fff7df;
-      --danger: #b42318;
-      --danger-soft: #fff1ef;
-      --success: #157347;
-      --success-soft: #edf8f1;
-      --shadow: 0 18px 50px rgba(0,0,0,.06);
-      --radius: 18px;
-      --radius-sm: 12px;
-      --max: 1360px;
-      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font);
-      -webkit-font-smoothing: antialiased;
-    }
-
-    button,
-    input,
-    select,
-    textarea {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    img {
-      max-width: 100%;
-      display: block;
-    }
-
-    .app-shell {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 22px;
-    }
-
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 30;
-      background: rgba(247,247,245,.92);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--line);
-    }
-
-    .topbar-inner {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 14px 22px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 0;
-    }
-
-    .brand-mark {
-      width: 42px;
-      height: 42px;
-      border-radius: 14px;
-      background: linear-gradient(145deg, #fff, #f2e7c4);
-      border: 1px solid var(--line);
-      display: grid;
-      place-items: center;
-      color: #8b6b19;
-      font-weight: 900;
-      box-shadow: 0 10px 28px rgba(199,162,74,.18);
-      flex: 0 0 auto;
-    }
-
-    .brand h1 {
-      margin: 0;
-      font-size: 18px;
-      line-height: 1.15;
-    }
-
-    .brand p {
-      margin: 2px 0 0;
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .top-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 8px 11px;
-      color: var(--muted);
-      background: #fff;
-      font-size: 12px;
-      white-space: nowrap;
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--muted);
-    }
-
-    .status-dot.ok { background: var(--success); }
-    .status-dot.warn { background: var(--gold); }
-    .status-dot.error { background: var(--danger); }
-
-    .btn {
-      border: 1px solid var(--line);
-      background: #fff;
-      color: var(--text);
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-weight: 700;
-      font-size: 13px;
-      line-height: 1;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: transform .12s ease, border-color .12s ease, background .12s ease;
-    }
-
-    .btn:hover {
-      transform: translateY(-1px);
-      border-color: #d8c994;
-    }
-
-    .btn-primary {
-      background: #111;
-      color: #fff;
-      border-color: #111;
-    }
-
-    .btn-gold {
-      background: var(--gold-soft);
-      color: #725612;
-      border-color: #ead492;
-    }
-
-    .btn-danger {
-      background: var(--danger-soft);
-      color: var(--danger);
-      border-color: #ffd4cf;
-    }
-
-    .btn-success {
-      background: var(--success-soft);
-      color: var(--success);
-      border-color: #caead7;
-    }
-
-    .btn-small {
-      padding: 8px 10px;
-      border-radius: 10px;
-      font-size: 12px;
-    }
-
-    .tabs {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 0 22px 14px;
-      display: flex;
-      gap: 8px;
-      overflow: auto;
-    }
-
-    .tab-btn {
-      border: 1px solid var(--line);
-      background: #fff;
-      color: #3d3d3d;
-      border-radius: 999px;
-      padding: 9px 14px;
-      font-weight: 800;
-      font-size: 13px;
-      white-space: nowrap;
-    }
-
-    .tab-btn.active {
-      background: #111;
-      color: #fff;
-      border-color: #111;
-    }
-
-    .panel {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .panel-head {
-      padding: 20px;
-      display: flex;
-      justify-content: space-between;
-      gap: 18px;
-      align-items: flex-start;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .panel-title h2 {
-      margin: 0 0 5px;
-      font-size: 24px;
-      letter-spacing: -.02em;
-    }
-
-    .panel-title p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .toolbar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: flex-end;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .field label {
-      font-size: 12px;
-      color: var(--muted);
-      font-weight: 800;
-    }
-
-    .input,
-    .select,
-    .textarea {
-      width: 100%;
-      border: 1px solid var(--line);
-      background: #fff;
-      color: var(--text);
-      border-radius: 13px;
-      padding: 11px 12px;
-      outline: none;
-      min-height: 42px;
-      transition: border-color .12s ease, box-shadow .12s ease;
-    }
-
-    .input:focus,
-    .select:focus,
-    .textarea:focus {
-      border-color: var(--gold);
-      box-shadow: 0 0 0 4px rgba(199,162,74,.12);
-    }
-
-    .textarea {
-      min-height: 120px;
-      resize: vertical;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-size: 12px;
-      line-height: 1.45;
-    }
-
-    .searchbar {
-      padding: 18px 20px;
-      border-bottom: 1px solid var(--line);
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      align-items: center;
-      background: #fff;
-    }
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      padding: 18px 20px;
-      border-bottom: 1px solid var(--line);
-      background: #fffdfa;
-    }
-
-    .summary-card {
-      border: 1px solid var(--line);
-      background: #fff;
-      border-radius: 16px;
-      padding: 14px;
-    }
-
-    .summary-card strong {
-      display: block;
-      font-size: 22px;
-      line-height: 1;
-      margin-bottom: 6px;
-    }
-
-    .summary-card span {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .product-grid {
-      padding: 20px;
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .product-card {
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      background: #fff;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      min-height: 100%;
-    }
-
-    .product-image-wrap {
-      background: #fbfbfb;
-      border-bottom: 1px solid var(--line);
-      aspect-ratio: 1 / 1;
-      display: grid;
-      place-items: center;
-      padding: 18px;
-    }
-
-    .product-image-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-
-    .product-body {
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      flex: 1;
-    }
-
-    .product-name {
-      margin: 0;
-      font-size: 14px;
-      line-height: 1.25;
-      min-height: 36px;
-    }
-
-    .product-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .product-price {
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing: -.02em;
-    }
-
-    .basket-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      min-height: 24px;
-    }
-
-    .basket-badge {
-      display: inline-flex;
-      align-items: center;
-      max-width: 100%;
-      padding: 6px 8px;
-      border-radius: 999px;
-      background: var(--gold-soft);
-      border: 1px solid #f0d98c;
-      color: #71540d;
-      font-size: 11px;
-      font-weight: 800;
-      line-height: 1;
-    }
-
-    .basket-badge.empty {
-      background: #f5f5f5;
-      color: #777;
-      border-color: #eee;
-      font-weight: 700;
-    }
-
-    .product-actions {
-      margin-top: auto;
-      display: grid;
-      gap: 8px;
-    }
-
-    .cestas-layout {
-      display: grid;
-      grid-template-columns: 340px 1fr;
-      min-height: 650px;
-    }
-
-    .cestas-sidebar {
-      border-right: 1px solid var(--line);
-      background: #fffdfa;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .cestas-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      overflow: auto;
-      max-height: 720px;
-      padding-right: 4px;
-    }
-
-    .cesta-nav-card {
-      width: 100%;
-      border: 1px solid var(--line);
-      background: #fff;
-      border-radius: 18px;
-      padding: 10px;
-      display: grid;
-      grid-template-columns: 58px 1fr;
-      gap: 12px;
-      text-align: left;
-      align-items: center;
-    }
-
-    .cesta-nav-card.active {
-      border-color: var(--gold);
-      background: var(--gold-soft);
-      box-shadow: 0 12px 32px rgba(199,162,74,.16);
-    }
-
-    .cesta-nav-card img {
-      width: 58px;
-      height: 58px;
-      object-fit: cover;
-      border-radius: 14px;
-      background: #f2f2f2;
-    }
-
-    .cesta-nav-card strong {
-      display: block;
-      font-size: 13px;
-      margin-bottom: 5px;
-    }
-
-    .cesta-nav-card small {
-      display: block;
-      color: var(--muted);
-      font-size: 11px;
-      line-height: 1.35;
-    }
-
-    .cesta-editor {
-      padding: 20px;
-      min-width: 0;
-    }
-
-    .cesta-editor-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 18px;
-      margin-bottom: 18px;
-    }
-
-    .cesta-editor-head h3 {
-      margin: 0 0 4px;
-      font-size: 23px;
-      letter-spacing: -.02em;
-    }
-
-    .cesta-editor-head p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .form-grid .span-2 { grid-column: span 2; }
-
-    .editor-box {
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      background: #fff;
-      overflow: hidden;
-      margin-bottom: 18px;
-    }
-
-    .editor-box-head {
-      padding: 14px;
-      border-bottom: 1px solid var(--line);
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      background: #fafafa;
-    }
-
-    .editor-box-head strong {
-      font-size: 14px;
-    }
-
-    .editor-box-body {
-      padding: 14px;
-    }
-
-    .basket-product-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .basket-product-row {
-      display: grid;
-      grid-template-columns: 64px 1fr 86px auto auto;
-      gap: 12px;
-      align-items: center;
-      border: 1px solid var(--line);
-      background: #fff;
-      border-radius: 18px;
-      padding: 10px;
-    }
-
-    .basket-product-row img {
-      width: 64px;
-      height: 64px;
-      object-fit: contain;
-      border-radius: 14px;
-      background: #fafafa;
-      border: 1px solid #f2f2f2;
-    }
-
-    .basket-product-info strong {
-      display: block;
-      font-size: 14px;
-      margin-bottom: 4px;
-      line-height: 1.25;
-    }
-
-    .basket-product-info small {
-      display: block;
-      color: var(--muted);
-      font-size: 11px;
-      line-height: 1.35;
-    }
-
-    .qty-field {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .qty-field span {
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .qty-field input {
-      width: 78px;
-      text-align: center;
-    }
-
-    .search-results {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .search-result-row {
-      display: grid;
-      grid-template-columns: 54px 1fr auto;
-      gap: 10px;
-      align-items: center;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 9px;
-      background: #fff;
-    }
-
-    .search-result-row img {
-      width: 54px;
-      height: 54px;
-      object-fit: contain;
-      border-radius: 12px;
-      background: #fafafa;
-      border: 1px solid #f2f2f2;
-    }
-
-    .search-result-row strong {
-      display: block;
-      font-size: 13px;
-      line-height: 1.25;
-      margin-bottom: 4px;
-    }
-
-    .search-result-row small {
-      display: block;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .notice {
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 13px;
-      background: #fff;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.45;
-    }
-
-    .notice.gold {
-      border-color: #f0d98c;
-      background: var(--gold-soft);
-      color: #71540d;
-      font-weight: 700;
-    }
-
-    .notice.danger {
-      border-color: #ffd4cf;
-      background: var(--danger-soft);
-      color: var(--danger);
-      font-weight: 700;
-    }
-
-    .empty-state {
-      padding: 42px 20px;
-      text-align: center;
-      color: var(--muted);
-    }
-
-    .json-tools {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      background: rgba(0,0,0,.48);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .modal-overlay.open {
-      display: flex;
-    }
-
-    .modal {
-      width: min(620px, 100%);
-      max-height: 90vh;
-      overflow: auto;
-      background: #fff;
-      border-radius: 24px;
-      box-shadow: 0 26px 100px rgba(0,0,0,.24);
-      border: 1px solid var(--line);
-    }
-
-    .modal-head {
-      padding: 18px;
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      border-bottom: 1px solid var(--line);
-      align-items: flex-start;
-    }
-
-    .modal-head h3 {
-      margin: 0 0 4px;
-      font-size: 19px;
-    }
-
-    .modal-head p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.35;
-    }
-
-    .modal-body {
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .check-row {
-      display: grid;
-      grid-template-columns: 22px 1fr auto;
-      gap: 10px;
-      align-items: center;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 12px;
-      background: #fff;
-    }
-
-    .check-row input {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--gold);
-    }
-
-    .check-row strong {
-      display: block;
-      font-size: 13px;
-    }
-
-    .check-row small {
-      display: block;
-      margin-top: 3px;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    @media (max-width: 1180px) {
-      .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .summary-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-
-    @media (max-width: 900px) {
-      .topbar-inner,
-      .panel-head,
-      .searchbar,
-      .cesta-editor-head {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .top-actions,
-      .toolbar {
-        justify-content: stretch;
-      }
-
-      .top-actions .btn,
-      .toolbar .btn {
-        flex: 1;
-      }
-
-      .cestas-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .cestas-sidebar {
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-      }
-
-      .cestas-list {
-        max-height: none;
-      }
-
-      .product-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        padding: 14px;
-        gap: 12px;
-      }
-
-      .basket-product-row {
-        grid-template-columns: 58px 1fr;
-      }
-
-      .basket-product-row .qty-field,
-      .basket-product-row .btn {
-        grid-column: span 2;
-        width: 100%;
-      }
-
-      .searchbar {
-        display: flex;
-      }
-    }
-
-    @media (max-width: 560px) {
-      .app-shell { padding: 14px; }
-      .topbar-inner { padding: 12px 14px; }
-      .tabs { padding: 0 14px 12px; }
-      .product-grid { grid-template-columns: 1fr; }
-      .summary-grid { grid-template-columns: 1fr; }
-      .form-grid { grid-template-columns: 1fr; }
-      .form-grid .span-2 { grid-column: span 1; }
-      .search-result-row { grid-template-columns: 50px 1fr; }
-      .search-result-row .btn { grid-column: span 2; width: 100%; }
-    }
-
-    /* =========================================================
-       PRODUTOS — CRUD COMPLETO PRESERVADO
-       ========================================================= */
-    .product-card-admin-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .product-editor-modal {
-      width: min(1080px, 96vw);
-    }
-
-    .product-editor-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .product-editor-grid .span-2 { grid-column: span 2; }
-    .product-editor-grid .span-4 { grid-column: span 4; }
-
-    .field-check {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 0;
-      font-size: 13px;
-      font-weight: 800;
-      color: var(--text);
-    }
-
-    .field-check input {
-      width: 18px;
-      height: 18px;
-      accent-color: #111;
-    }
-
-    .textarea-json-produto {
-      min-height: 220px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 12px;
-      line-height: 1.45;
-    }
-
-    .product-editor-preview {
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: #fff;
-      padding: 12px;
-      display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 14px;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-
-    .product-editor-preview img {
-      width: 120px;
-      height: 120px;
-      object-fit: contain;
-      border-radius: 14px;
-      background: #fafafa;
-      border: 1px solid var(--line);
-    }
-
-    .admin-info-line {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .admin-info-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: #fff;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .danger-zone {
-      margin-top: 16px;
-      padding-top: 14px;
-      border-top: 1px solid var(--line);
-    }
-
-    @media (max-width: 900px) {
-      .product-editor-grid { grid-template-columns: 1fr; }
-      .product-editor-grid .span-2,
-      .product-editor-grid .span-4 { grid-column: span 1; }
-      .product-card-admin-actions { grid-template-columns: 1fr; }
-      .product-editor-preview { grid-template-columns: 1fr; }
-      .product-editor-preview img { width: 100%; height: 180px; }
-    }
+    :root{--bg:#f7f7f4;--card:#fff;--soft:#faf9f6;--ink:#191919;--muted:#6b7280;--line:#e7e2d7;--gold:#c9a349;--gold2:#fff7df;--green:#157347;--green2:#edf8f1;--red:#b42318;--red2:#fff1ef;--blue:#175cd3;--blue2:#eff6ff;--radius:18px;--shadow:0 18px 48px rgba(0,0,0,.065);--max:1480px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}button,input,select,textarea{font:inherit}button{cursor:pointer}img{display:block;max-width:100%}.hidden{display:none!important}.muted{color:var(--muted)}.tiny{font-size:12px;color:var(--muted)}
+    .topbar{position:sticky;top:0;z-index:40;background:rgba(247,247,244,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}.topbar-inner{max-width:var(--max);margin:auto;padding:14px 20px;display:flex;justify-content:space-between;gap:16px;align-items:center}.brand{display:flex;gap:12px;align-items:center;min-width:260px}.brand-mark{width:44px;height:44px;border-radius:15px;background:linear-gradient(145deg,#fff,#f3e4b5);display:grid;place-items:center;font-weight:900;color:#7b5b14;border:1px solid var(--line);box-shadow:0 10px 24px rgba(201,163,73,.16)}.brand h1{font-size:18px;margin:0;line-height:1.1}.brand p{margin:3px 0 0;font-size:12px;color:var(--muted)}.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.status{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 11px;font-size:12px;color:var(--muted);white-space:nowrap}.dot{width:8px;height:8px;border-radius:50%;background:var(--gold)}.dot.ok{background:var(--green)}.dot.err{background:var(--red)}
+    .btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:10px 13px;font-size:13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:7px;line-height:1;transition:.12s}.btn:hover{transform:translateY(-1px);border-color:#d6c58c}.btn.primary{background:#111;color:#fff;border-color:#111}.btn.gold{background:var(--gold2);color:#705512;border-color:#ead493}.btn.green{background:var(--green2);color:var(--green);border-color:#caead7}.btn.red{background:var(--red2);color:var(--red);border-color:#ffd3cf}.btn.blue{background:var(--blue2);color:var(--blue);border-color:#cfe1ff}.btn.small{padding:7px 9px;border-radius:10px;font-size:12px}.btn.block{width:100%}.tabs{max-width:var(--max);margin:auto;padding:0 20px 12px;display:flex;gap:8px;overflow:auto}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-size:13px;font-weight:900;white-space:nowrap;color:#3d3d3d}.tab.active{background:#111;color:#fff;border-color:#111}.app{max-width:var(--max);margin:auto;padding:20px}.panel{background:transparent}.panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:16px}.panel-title h2{font-size:24px;margin:0}.panel-title p{margin:5px 0 0;color:var(--muted);font-size:13px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}.pad{padding:16px}.notice{border-radius:14px;padding:12px 14px;font-size:13px;border:1px solid var(--line);background:#fff;color:var(--muted)}.notice.gold{background:var(--gold2);color:#73570f;border-color:#ecd898}.notice.red{background:var(--red2);color:var(--red);border-color:#ffd3cf}.notice.green{background:var(--green2);color:var(--green);border-color:#caead7}
+    .summary{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;margin-bottom:16px}.summary-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px}.summary-card strong{font-size:22px;display:block}.summary-card span{font-size:12px;color:var(--muted);font-weight:700}.filters{display:grid;grid-template-columns:2fr repeat(5,1fr);gap:10px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:16px}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:12px;color:var(--muted);font-weight:800}.input,.select,.textarea{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 11px;outline:none;color:var(--ink)}.input:focus,.select:focus,.textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,163,73,.16)}.textarea{min-height:110px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;font-size:12px}.checkline{display:flex;align-items:center;gap:8px;font-size:13px;color:#333}.filter-actions{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+    .products-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.product-card{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;min-height:100%;box-shadow:0 10px 24px rgba(0,0,0,.035)}.product-img{height:160px;background:#fbfbfa;display:grid;place-items:center;border-bottom:1px solid var(--line)}.product-img img{width:100%;height:100%;object-fit:contain;padding:12px}.product-body{padding:13px;display:flex;flex-direction:column;gap:8px;flex:1}.product-name{font-size:14px;margin:0;line-height:1.28;min-height:36px}.meta-line{display:flex;flex-wrap:wrap;gap:5px}.chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 7px;font-size:11px;color:#555;font-weight:800}.chip.gold{background:var(--gold2);color:#705512;border-color:#ecd898}.chip.green{background:var(--green2);color:var(--green);border-color:#caead7}.chip.red{background:var(--red2);color:var(--red);border-color:#ffd3cf}.chip.empty{background:#f5f5f5;color:#888}.price-row{display:flex;justify-content:space-between;align-items:center;gap:8px}.price{font-size:18px;font-weight:950}.stock{font-size:12px;color:var(--muted);font-weight:800}.card-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto}.pagination{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:16px}.pagination span{font-size:13px;color:var(--muted);font-weight:800}.empty{padding:24px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:18px;background:#fff;grid-column:1/-1}
+    .split{display:grid;grid-template-columns:330px 1fr;gap:16px}.side-list{display:flex;flex-direction:column;gap:8px}.side-card{width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:16px;padding:10px;display:grid;grid-template-columns:54px 1fr;gap:10px;align-items:center}.side-card.active{background:var(--gold2);border-color:#e2ca83}.side-card img{width:54px;height:54px;object-fit:contain;background:#fafafa;border-radius:12px;border:1px solid var(--line)}.side-card strong{display:block;font-size:13px}.side-card small{display:block;color:var(--muted);font-size:11px}.basket-editor{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px}.form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.form-grid .span-2{grid-column:span 2}.form-grid .span-3{grid-column:span 3}.form-grid .span-4{grid-column:span 4}.basket-list{display:flex;flex-direction:column;gap:9px;margin-top:14px}.basket-row{display:grid;grid-template-columns:58px 1fr 78px auto auto;gap:10px;align-items:center;background:#fafafa;border:1px solid var(--line);border-radius:16px;padding:9px}.basket-row img{width:58px;height:58px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:12px}.search-results{display:flex;flex-direction:column;gap:8px;margin-top:10px;max-height:420px;overflow:auto}.result-row{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px}.result-row img{width:48px;height:48px;object-fit:contain;background:#fafafa;border-radius:10px;border:1px solid var(--line)}
+    .catalog-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.catalog-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}.catalog-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:14px;background:#fff}.catalog-row.multi{grid-template-columns:1fr 1fr 1fr auto}.settings-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.json-grid{display:grid;grid-template-columns:1fr;gap:16px}.json-panel textarea{min-height:240px}.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:90;display:none;align-items:center;justify-content:center;padding:18px}.modal-overlay.open{display:flex}.modal{background:#fff;border-radius:22px;width:min(980px,100%);max-height:92vh;overflow:auto;border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.18)}.modal-head{position:sticky;top:0;background:#fff;z-index:3;padding:15px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.modal-head h3{margin:0}.modal-head p{margin:4px 0 0;color:var(--muted);font-size:13px}.modal-body{padding:16px}.editor-preview{display:grid;grid-template-columns:130px 1fr;gap:14px;align-items:center;margin-bottom:14px}.editor-preview img{width:130px;height:130px;object-fit:contain;background:#fafafa;border-radius:16px;border:1px solid var(--line)}.danger-zone{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}.tabs-sub{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.subtab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 10px;font-weight:900;font-size:12px}.subtab.active{background:#111;color:#fff;border-color:#111}
+    @media(max-width:1200px){.summary{grid-template-columns:repeat(4,1fr)}.products-grid{grid-template-columns:repeat(3,1fr)}.filters{grid-template-columns:repeat(3,1fr)}.settings-grid,.catalog-grid{grid-template-columns:1fr}}@media(max-width:850px){.topbar-inner{align-items:flex-start;flex-direction:column}.summary{grid-template-columns:repeat(2,1fr)}.products-grid{grid-template-columns:repeat(2,1fr)}.filters{grid-template-columns:1fr}.split{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.form-grid .span-2,.form-grid .span-3,.form-grid .span-4{grid-column:span 1}.basket-row{grid-template-columns:58px 1fr}.basket-row .btn,.basket-row .field{grid-column:span 2;width:100%}.card-actions{grid-template-columns:1fr}.editor-preview{grid-template-columns:1fr}.editor-preview img{width:100%;height:180px}.catalog-row.multi{grid-template-columns:1fr}}@media(max-width:560px){.products-grid{grid-template-columns:1fr}.summary{grid-template-columns:1fr}.app{padding:14px}.topbar-inner{padding:12px 14px}.tabs{padding:0 14px 10px}}
+  
+    /* Topbar compacta + menu retrátil */
+    .compact-topbar{display:grid;grid-template-columns:minmax(210px,320px) minmax(260px,1fr) auto;align-items:center;padding:10px 20px}.compact-topbar .brand{min-width:0}.compact-topbar .brand p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.top-search-wrap{min-width:0}.top-search{height:42px;border-radius:999px;background:#fff}.menu-toggle{height:42px;white-space:nowrap}.admin-drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.34);z-index:70;opacity:0;pointer-events:none;transition:.16s}.admin-drawer-overlay.open{opacity:1;pointer-events:auto}.admin-drawer{position:fixed;top:0;right:0;width:min(520px,96vw);height:100vh;overflow:auto;background:#fff;z-index:80;border-left:1px solid var(--line);box-shadow:-24px 0 70px rgba(0,0,0,.18);transform:translateX(104%);transition:.18s ease;padding:16px}.admin-drawer.open{transform:translateX(0)}.drawer-head{position:sticky;top:0;background:#fff;z-index:2;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px}.drawer-head strong{display:block;font-size:18px}.drawer-head p{margin:4px 0 0;color:var(--muted);font-size:12px}.drawer-block{border:1px solid var(--line);background:#fafafa;border-radius:18px;padding:14px;margin-bottom:12px}.drawer-block h3{margin:0 0 10px;font-size:14px}.drawer-actions{display:flex;flex-wrap:wrap;gap:8px}.drawer-tabs{padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px;overflow:visible}.drawer-summary{grid-template-columns:repeat(2,1fr);margin:0}.drawer-filters{display:grid;grid-template-columns:1fr 1fr;background:transparent;border:none;border-radius:0;padding:0;margin:0}.drawer-filters .filter-actions{grid-column:1/-1}.app{padding-top:14px}.compact-section-title{margin-bottom:14px}.compact-section-title h2{margin:0;font-size:22px}.compact-section-title p{margin:5px 0 0;color:var(--muted);font-size:13px}
+    @media(max-width:850px){.topbar-inner.compact-topbar{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px}.compact-topbar .brand h1{font-size:14px}.compact-topbar .brand p{display:none}.brand-mark{width:38px;height:38px;border-radius:13px}.top-search{height:38px;padding:8px 10px;font-size:13px}.menu-toggle{height:38px;padding:8px 10px}.drawer-filters{grid-template-columns:1fr}.drawer-summary{grid-template-columns:1fr}.admin-drawer{width:96vw}}
 
   </style>
 </head>
 <body>
   <header class="topbar">
-    <div class="topbar-inner">
-      <div class="brand">
-        <div class="brand-mark">DA</div>
-        <div>
-          <h1>Dona Antônia — Cestas Básicas</h1>
-          <p>Marcação de produtos, edição rápida das cestas e geração do JSON atualizado.</p>
-        </div>
+    <div class="topbar-inner compact-topbar">
+      <div class="brand"><div class="brand-mark">DA</div><div><h1>Dona Antônia — Admin completo</h1><p>Produtos, cestas e integrações.</p></div></div>
+      <div class="top-search-wrap">
+        <input class="input top-search" id="f-q" placeholder="Buscar produto por nome, código, GTIN, marca..." autocomplete="off">
       </div>
+      <button class="btn primary menu-toggle" type="button" data-action="toggle-admin-menu" aria-controls="adminDrawer" aria-expanded="false">☰ Menu</button>
+    </div>
+  </header>
 
-      <div class="top-actions">
-        <span class="status-pill" id="statusPill"><span class="status-dot warn"></span><span>Carregando...</span></span>
-        <button class="btn" type="button" data-action="new-product">Novo produto</button>
-        <button class="btn btn-gold" type="button" data-action="export-products-json">Exportar produtos</button>
-        <button class="btn btn-success" type="button" data-action="save-products">Salvar produtos</button>
-        <button class="btn btn-gold" type="button" data-action="export-json">Exportar cestas</button>
-        <button class="btn btn-primary" type="button" data-action="save-cestas">Salvar cestas</button>
+  <div class="admin-drawer-overlay" id="adminDrawerOverlay" data-action="close-admin-menu"></div>
+  <aside class="admin-drawer" id="adminDrawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <strong>Menu administrativo</strong>
+        <p>Botões, filtros, abas, exportações e informações.</p>
+      </div>
+      <button class="btn small" type="button" data-action="close-admin-menu">Fechar</button>
+    </div>
+
+    <div class="drawer-block">
+      <span class="status" id="status"><span class="dot" id="statusDot"></span><span id="statusText">Carregando...</span></span>
+    </div>
+
+    <div class="drawer-block">
+      <h3>Ações rápidas</h3>
+      <div class="drawer-actions">
+        <button class="btn" type="button" data-action="reload">Recarregar</button>
+        <button class="btn green" type="button" data-action="new-product">Novo produto</button>
+        <button class="btn primary" type="button" data-action="save-products">Salvar produtos</button>
+        <button class="btn gold" type="button" data-action="save-cestas">Salvar cestas</button>
+        <button class="btn green" type="button" data-action="save-all">Salvar tudo</button>
+        <button class="btn blue" type="button" data-action="open-settings">Configurações</button>
       </div>
     </div>
 
-    <nav class="tabs">
-      <button class="tab-btn active" type="button" data-tab="produtos">Produtos</button>
-      <button class="tab-btn" type="button" data-tab="cestas">Cestas básicas</button>
-      <button class="tab-btn" type="button" data-tab="json">JSON</button>
-    </nav>
-  </header>
+    <div class="drawer-block">
+      <h3>Abas do sistema</h3>
+      <nav class="tabs drawer-tabs">
+        <button class="tab active" type="button" data-tab="produtos">Produtos</button>
+        <button class="tab" type="button" data-tab="cestas">Cestas básicas</button>
+        <button class="tab" type="button" data-tab="cadastros">Categorias, tags e fornecedores</button>
+        <button class="tab" type="button" data-tab="integracoes">Integrações e exportações</button>
+        <button class="tab" type="button" data-tab="json">JSON</button>
+      </nav>
+    </div>
 
-  <main class="app-shell">
-    <section id="tab-produtos" class="panel">
-      <div class="panel-head">
-        <div class="panel-title">
-          <h2>Produtos</h2>
-          <p>Em cada card aparece automaticamente em quais cestas o produto está. Clique em “Editar cestas” para marcar ou desmarcar.</p>
-        </div>
-        <div class="toolbar">
-          <button class="btn" type="button" data-action="reload-data">Recarregar</button>
-          <button class="btn btn-success" type="button" data-action="new-product">Criar produto</button>
-          <button class="btn btn-gold" type="button" data-action="export-products-json">Exportar produtos</button>
-          <label class="btn">
-            Importar produtos
-            <input id="productsFileInput" type="file" accept="application/json,.json" hidden />
-          </label>
-          <button class="btn btn-primary" type="button" data-action="save-products">Salvar produtos</button>
-          <button class="btn btn-gold" type="button" data-action="open-cestas-tab">Editar cestas</button>
-        </div>
+    <div class="drawer-block">
+      <h3>Resumo</h3>
+      <div class="summary drawer-summary" id="summary"></div>
+    </div>
+
+    <div class="drawer-block">
+      <h3>Filtros de produtos</h3>
+      <form class="filters drawer-filters" id="productFilters">
+        <div class="field"><label>Categoria</label><select class="select" id="f-categoria"><option value="">Todas</option></select></div>
+        <div class="field"><label>Subcategoria</label><select class="select" id="f-subcategoria"><option value="">Todas</option></select></div>
+        <div class="field"><label>Subsubcategoria</label><select class="select" id="f-subsubcategoria"><option value="">Todas</option></select></div>
+        <div class="field"><label>Marca</label><select class="select" id="f-marca"><option value="">Todas</option></select></div>
+        <div class="field"><label>Fornecedor</label><select class="select" id="f-fornecedor"><option value="">Todos</option></select></div>
+        <div class="field"><label>Tag</label><select class="select" id="f-tag"><option value="">Todas</option></select></div>
+        <div class="field"><label>Situação</label><select class="select" id="f-situacao"><option value="">Todas</option><option value="A">Ativos</option><option value="I">Inativos</option><option value="sem_estoque">Sem estoque</option><option value="com_estoque">Com estoque</option></select></div>
+        <div class="field"><label>Foto / GTIN</label><select class="select" id="f-qualidade"><option value="">Todos</option><option value="sem_foto">Sem foto</option><option value="sem_gtin">Sem GTIN</option><option value="sem_descricao">Sem descrição</option><option value="com_oferta">Com oferta</option></select></div>
+        <div class="field"><label>Cestas</label><select class="select" id="f-cesta"><option value="">Todos</option><option value="em_cesta">Em alguma cesta</option><option value="fora_cesta">Fora das cestas</option></select></div>
+        <div class="field"><label>Ordenar</label><select class="select" id="f-sort"><option value="nome">Nome</option><option value="codigo">Código</option><option value="preco_desc">Maior preço</option><option value="preco_asc">Menor preço</option><option value="estoque_desc">Maior estoque</option><option value="atualizado_desc">Mais atualizados</option></select></div>
+        <div class="field"><label>Itens por página</label><select class="select" id="f-page-size"><option>24</option><option>48</option><option>96</option><option>200</option><option value="999999">Todos</option></select></div>
+        <div class="filter-actions"><button class="btn" type="button" data-action="clear-filters">Limpar filtros</button><button class="btn gold" type="button" data-action="rebuild-meta">Atualizar cadastros</button></div>
+      </form>
+    </div>
+
+    <div class="drawer-block">
+      <h3>Produtos, cestas e arquivos</h3>
+      <div class="drawer-actions">
+        <button class="btn green" type="button" data-action="new-product">Criar produto</button>
+        <button class="btn primary" type="button" data-action="save-products">Salvar produtos</button>
+        <button class="btn gold" type="button" data-action="export-products-json">Exportar produtos.json</button>
+        <label class="btn">Importar produtos<input id="productsFile" hidden type="file" accept=".json,application/json"></label>
+        <button class="btn blue" type="button" data-action="export-bling-csv">Exportar para Bling</button>
+        <button class="btn green" type="button" data-action="new-cesta">Nova cesta</button>
+        <button class="btn primary" type="button" data-action="save-cestas">Salvar cestas</button>
+        <button class="btn gold" type="button" data-action="export-cestas-json">Exportar cestas.json</button>
+        <label class="btn">Importar cestas<input id="cestasFile" hidden type="file" accept=".json,application/json"></label>
+        <button class="btn gold" type="button" data-action="export-meta-json">Baixar produtos_meta.json</button>
+        <button class="btn blue" type="button" data-action="export-bling-json">Exportar Bling JSON</button>
+        <button class="btn" type="button" data-action="copy-report">Copiar relatório</button>
       </div>
+    </div>
+  </aside>
 
-      <div class="summary-grid" id="summaryGrid"></div>
-
-      <div class="searchbar">
-        <input class="input" id="productSearch" placeholder="Buscar por nome, código, GTIN, marca ou categoria..." autocomplete="off" />
-        <button class="btn" type="button" data-action="clear-product-search">Limpar</button>
-      </div>
-
-      <div class="product-grid" id="productGrid"></div>
+  <main class="app">
+    <section class="panel" id="tab-produtos">
+      <div class="products-grid" id="productsGrid"></div>
+      <div class="pagination" id="pagination"></div>
     </section>
 
-    <section id="tab-cestas" class="panel hidden">
-      <div class="panel-head">
-        <div class="panel-title">
-          <h2>Administração das cestas</h2>
-          <p>Selecione uma cesta, veja a lista de produtos, substitua itens, altere quantidades, adicione, remova ou crie uma nova cesta.</p>
-        </div>
-        <div class="toolbar">
-          <button class="btn btn-success" type="button" data-action="new-cesta">Criar nova cesta</button>
-          <button class="btn btn-gold" type="button" data-action="export-json">Exportar JSON</button>
-          <button class="btn btn-primary" type="button" data-action="save-cestas">Salvar</button>
-        </div>
-      </div>
+    <section class="panel hidden" id="tab-cestas">
+      <div class="compact-section-title"><h2>Cestas básicas</h2><p>Editar produtos das cestas, substituir itens, mudar quantidades e criar novas cestas.</p></div>
+      <div class="split"><aside><input class="input" id="basketSearch" placeholder="Buscar cesta..."><div class="side-list" id="basketsList" style="margin-top:10px"></div></aside><section class="basket-editor" id="basketEditor"></section></div>
+    </section>
 
-      <div class="cestas-layout">
-        <aside class="cestas-sidebar">
-          <input class="input" id="cestaSearch" placeholder="Buscar cesta..." autocomplete="off" />
-          <div class="cestas-list" id="cestasList"></div>
-        </aside>
-        <section class="cesta-editor" id="cestaEditor"></section>
+    <section class="panel hidden" id="tab-cadastros">
+      <div class="panel-head"><div class="panel-title"><h2>Categorias, tags e fornecedores</h2><p>Cadastros auxiliares salvos no produtos_meta.json e usados nos filtros/editores.</p></div><div class="toolbar"><button class="btn gold" data-action="rebuild-meta">Reconstruir a partir dos produtos</button><button class="btn primary" data-action="save-meta">Salvar produtos_meta</button></div></div>
+      <div class="catalog-grid">
+        <div class="card pad"><h3>Categorias</h3><div class="form-grid"><div class="field"><label>Categoria</label><input class="input" id="newCat"></div><div class="field"><label>Subcategoria</label><input class="input" id="newSub"></div><div class="field"><label>Subsubcategoria</label><input class="input" id="newSubSub"></div><div class="field"><label>&nbsp;</label><button class="btn green" data-action="add-category">Adicionar</button></div></div><div class="catalog-list" id="categoriesList"></div></div>
+        <div class="card pad"><h3>Tags</h3><div class="form-grid"><div class="field span-3"><label>Nova tag</label><input class="input" id="newTag"></div><div class="field"><label>&nbsp;</label><button class="btn green" data-action="add-tag">Adicionar</button></div></div><div class="catalog-list" id="tagsList"></div></div>
+        <div class="card pad"><h3>Fornecedores</h3><div class="form-grid"><div class="field"><label>Nome</label><input class="input" id="newFornecedorNome"></div><div class="field"><label>Telefone</label><input class="input" id="newFornecedorTel"></div><div class="field"><label>Observação</label><input class="input" id="newFornecedorObs"></div><div class="field"><label>&nbsp;</label><button class="btn green" data-action="add-fornecedor">Adicionar</button></div></div><div class="catalog-list" id="fornecedoresList"></div></div>
+        <div class="card pad"><h3>Marcas</h3><div class="form-grid"><div class="field span-3"><label>Nova marca</label><input class="input" id="newMarca"></div><div class="field"><label>&nbsp;</label><button class="btn green" data-action="add-marca">Adicionar</button></div></div><div class="catalog-list" id="marcasList"></div></div>
       </div>
     </section>
 
-    <section id="tab-json" class="panel hidden">
-      <div class="panel-head">
-        <div class="panel-title">
-          <h2>JSON das cestas</h2>
-          <p>Área para conferir, copiar, importar ou exportar o JSON final das cestas básicas.</p>
-        </div>
-        <div class="toolbar">
-          <button class="btn btn-gold" type="button" data-action="refresh-json-text">Atualizar visualização</button>
-          <button class="btn btn-primary" type="button" data-action="apply-json-text">Aplicar JSON editado</button>
-        </div>
+    <section class="panel hidden" id="tab-integracoes">
+      <div class="panel-head"><div class="panel-title"><h2>Integrações e exportações</h2><p>Campos administrativos para Firebase, GitHub, Bling e geração de arquivos.</p></div><div class="toolbar"><button class="btn primary" data-action="save-settings">Salvar configurações</button><button class="btn green" data-action="save-all">Salvar tudo</button></div></div>
+      <div class="notice red" style="margin-bottom:14px"><strong>Atenção:</strong> tokens no navegador só devem ser usados em arquivo administrativo privado. Não publique esse HTML com token em site público.</div>
+      <div class="settings-grid">
+        <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó produtos_meta</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div></div>
+        <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.json</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho cestas.json</label><input class="input" id="setGithubCestasPath"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar no GitHub junto com Firebase</label><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar JSONs ao GitHub agora</button></div></div>
+        <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
-      <div class="editor-box-body json-tools">
-        <textarea class="textarea" id="jsonTextarea" spellcheck="false"></textarea>
-        <div class="toolbar" style="justify-content:flex-start">
-          <button class="btn" type="button" data-action="copy-json">Copiar JSON</button>
-          <button class="btn" type="button" data-action="download-json">Baixar cestas.json</button>
-          <label class="btn">
-            Importar arquivo JSON
-            <input id="jsonFileInput" type="file" accept="application/json,.json" hidden />
-          </label>
-        </div>
-        <div class="notice gold">
-          Atenção: a fonte da verdade das cestas é este JSON. Os cards dos produtos apenas leem o JSON para mostrar as marcações.
-        </div>
+      <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar cestas.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
+    </section>
+
+    <section class="panel hidden" id="tab-json">
+      <div class="panel-head"><div class="panel-title"><h2>JSON completo</h2><p>Visualização e edição manual de produtos, produtos_meta e cestas.</p></div><div class="toolbar"><button class="btn gold" data-action="refresh-json">Atualizar JSON</button><button class="btn primary" data-action="apply-json">Aplicar JSON editado</button></div></div>
+      <div class="json-grid">
+        <div class="card pad json-panel"><h3>produtos.json</h3><textarea class="textarea" id="jsonProdutos"></textarea></div>
+        <div class="card pad json-panel"><h3>produtos_meta.json</h3><textarea class="textarea" id="jsonMeta"></textarea></div>
+        <div class="card pad json-panel"><h3>cestas.json</h3><textarea class="textarea" id="jsonCestas"></textarea></div>
       </div>
     </section>
   </main>
 
-
-  <div class="modal-overlay" id="productEditorModal" aria-hidden="true">
-    <div class="modal product-editor-modal" role="dialog" aria-modal="true" aria-labelledby="productEditorTitle">
-      <div class="modal-head">
-        <div>
-          <h3 id="productEditorTitle">Editar produto</h3>
-          <p id="productEditorSubtitle">Edite todos os campos do produto sem perder as funções de cestas.</p>
-        </div>
-        <button class="btn btn-small" type="button" data-action="close-product-editor">Fechar</button>
-      </div>
-      <div class="modal-body" id="productEditorBody"></div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="productCestasModal" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-head">
-        <div>
-          <h3 id="modalTitle">Editar cestas do produto</h3>
-          <p id="modalSubtitle"></p>
-        </div>
-        <button class="btn btn-small" type="button" data-action="close-product-modal">Fechar</button>
-      </div>
-      <div class="modal-body" id="modalBody"></div>
-    </div>
-  </div>
-
-  <script>
-    /* =========================================================
-       CONFIGURAÇÃO
-       ========================================================= */
-
-    const CONFIG = {
-      PRODUTOS_URL: "https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json",
-      CESTAS_URL: "https://cedar-chemist-310801-default-rtdb.firebaseio.com/cestas.json",
-      PRODUTOS_POR_PAGINA_VISUAL: 240,
-      USAR_LOCALSTORAGE_BACKUP: true
-    };
-
-    const DEFAULT_CESTAS = [
-      {
-        "id": "cesta1",
-        "nome": "Economica Bonini",
-        "codigo": "cestaeconomicacomarroztiobonini",
-        "preco": 85,
-        "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif",
-        "produtos": [
-          "1x P0026",
-          "1x P490",
-          "1x P426",
-          "1x P0248",
-          "1x P0304",
-          "1x P0151",
-          "1x P434",
-          "1x P435",
-          "1x P433",
-          "1x 76685539",
-          "1x P0244",
-          "1x P0239",
-          "1x P0060",
-          "1x P0309"
-        ]
-      },
-      {
-        "id": "cesta2",
-        "nome": "Mini Bonini",
-        "codigo": "cestaminicomarroztiobonini",
-        "preco": 165,
-        "imagem": "img/CESTA-MINI-BONINI.webp",
-        "produtos": [
-          "1x P0026",
-          "2x P490",
-          "1x P426",
-          "2x P0248",
-          "1x P0304",
-          "1x C0067",
-          "1x P497",
-          "1x 76409162",
-          "1x P0244",
-          "1x P0239",
-          "1x P0060",
-          "2x P0311",
-          "1x A102",
-          "2x P0283",
-          "1x P0105",
-          "1x P430",
-          "1x P491",
-          "1x P0018",
-          "1x P0015",
-          "1x P447",
-          "1x P498",
-          "1x 16109433",
-          "1x P0144"
-        ]
-      },
-      {
-        "id": "cesta3",
-        "nome": "Mini Koblenz",
-        "codigo": "cestaminicomarrozkoblenz",
-        "preco": 170,
-        "imagem": "img/CESTA-MINI-KOBLENZ.webp",
-        "produtos": [
-          "1x P500",
-          "2x P490",
-          "1x P426",
-          "2x P0248",
-          "1x P0304",
-          "1x C0067",
-          "1x P497",
-          "1x 76409162",
-          "1x P0244",
-          "1x P0239",
-          "1x P0060",
-          "2x P0311",
-          "1x A102",
-          "2x P0283",
-          "1x P0105",
-          "1x P430",
-          "1x P491",
-          "1x P0018",
-          "1x P0015",
-          "1x P447",
-          "1x P498",
-          "1x 16109433",
-          "1x P0144"
-        ]
-      },
-      {
-        "id": "cesta4",
-        "nome": "Pequena Bonini",
-        "codigo": "cestapequenacomarroztiobonini",
-        "preco": 215,
-        "imagem": "img/CESTA-PEQUENA-BONINI.webp",
-        "produtos": [
-          "2x P0026",
-          "2x P490",
-          "1x P426",
-          "2x P0248",
-          "1x P0304",
-          "1x P0151",
-          "1x C0067",
-          "1x P497",
-          "2x 76409162",
-          "1x P0244",
-          "1x P0239",
-          "1x 77293314",
-          "1x 15026198",
-          "1x P481",
-          "2x P0060",
-          "2x P0311",
-          "1x A102",
-          "2x P0283",
-          "1x P0105",
-          "1x P430",
-          "1x P491",
-          "1x P0018",
-          "1x P0015",
-          "1x P447",
-          "2x P498",
-          "1x 16109433",
-          "1x P0144"
-        ]
-      },
-      {
-        "id": "cesta5",
-        "nome": "Pequena Koblenz",
-        "codigo": "cestapequenacomarrozkoblenz",
-        "preco": 220,
-        "imagem": "img/CESTA-PEQUENA-KOBLENZ.webp",
-        "produtos": [
-          "2x P500",
-          "2x P490",
-          "1x P426",
-          "2x P0248",
-          "1x P0304",
-          "1x P0151",
-          "1x C0067",
-          "1x P497",
-          "2x 76409162",
-          "1x P0244",
-          "1x P0239",
-          "1x 77293314",
-          "1x 15026198",
-          "1x P481",
-          "2x P0060",
-          "2x P0311",
-          "1x A102",
-          "2x P0283",
-          "1x P0105",
-          "1x P430",
-          "1x P491",
-          "1x P0018",
-          "1x P0015",
-          "1x P447",
-          "2x P498",
-          "1x 16109433",
-          "1x P0144"
-        ]
-      },
-      {
-        "id": "cesta6",
-        "nome": "Média Koblenz",
-        "codigo": "cestamediacomarrozkoblenz",
-        "preco": 325,
-        "imagem": "img/CESTA-MEDIA-KOBLENZ.webp",
-        "produtos": [
-          "3x P500",
-          "3x P490",
-          "2x P426",
-          "3x P0248",
-          "1x P0304",
-          "1x P0151",
-          "2x C0067",
-          "2x P497",
-          "2x 76409162",
-          "2x P0244",
-          "1x P0239",
-          "1x 77293314",
-          "1x 15026198",
-          "1x P481",
-          "2x P0060",
-          "3x P0311",
-          "2x A102",
-          "3x P0283",
-          "2x P0105",
-          "1x P430",
-          "1x P491",
-          "1x P0018",
-          "1x P0015",
-          "1x P447",
-          "2x P498",
-          "1x 16109433",
-          "1x P0144"
-        ]
-      },
-      {
-        "id": "cesta7",
-        "nome": "Média Bonini",
-        "codigo": "cestamediacomarroztiobonini",
-        "preco": 320,
-        "imagem": "img/CESTA-MEDIA-BONINI.webp",
-        "produtos": [
-          "3x P0026",
-          "3x P490",
-          "2x P426",
-          "3x P0248",
-          "1x P0304",
-          "1x P0151",
-          "2x C0067",
-          "2x P497",
-          "2x 76409162",
-          "2x P0244",
-          "1x P0239",
-          "1x 77293314",
-          "1x 15026198",
-          "1x P481",
-          "2x P0060",
-          "3x P0311",
-          "2x A102",
-          "3x P0283",
-          "2x P0105",
-          "1x P430",
-          "1x P491",
-          "1x P0018",
-          "1x P0015",
-          "1x P447",
-          "2x P498",
-          "1x 16109433",
-          "1x P0144"
-        ]
-      },
-      {
-        "id": "cesta8",
-        "nome": "Grande Koblenz",
-        "codigo": "cestagrandecomarrozkoblenz",
-        "preco": 390,
-        "imagem": "img/CESTA-GRANDE-KOBLENZ.webp",
-        "produtos": [
-          "4x P500",
-          "4x P490",
-          "3x P426",
-          "4x P0248",
-          "1x P0304",
-          "1x P0151",
-          "2x C0067",
-          "3x P497",
-          "2x 76409162",
-          "2x P0244",
-          "1x P0239",
-          "1x 77293314",
-          "1x 15026198",
-          "1x P481",
-          "2x P0060",
-          "4x P0311",
-          "2x A102",
-          "4x P0283",
-          "2x P0105",
-          "1x P430",
-          "1x P491",
-          "1x P0018",
-          "1x P0015",
-          "1x P447",
-          "2x P498",
-          "1x 16109433",
-          "1x P0144"
-        ]
-      },
-      {
-        "id": "cesta9",
-        "nome": "Grande Bonini",
-        "codigo": "cestagrandecomarroztiobonini",
-        "preco": 380,
-        "imagem": "img/CESTA-GRANDE-ALVINO.webp",
-        "produtos": [
-          "4x P440",
-          "4x P490",
-          "3x P426",
-          "4x P0248",
-          "1x P0304",
-          "1x P0151",
-          "2x C0067",
-          "3x P497",
-          "2x 76409162",
-          "2x P0244",
-          "1x P0239",
-          "1x 77293314",
-          "1x 15026198",
-          "1x P481",
-          "2x P0060",
-          "4x P0311",
-          "2x A102",
-          "4x P0283",
-          "2x P0105",
-          "1x P430",
-          "1x P491",
-          "1x P0018",
-          "1x P0015",
-          "1x P447",
-          "2x P498",
-          "1x 16109433",
-          "1x P0144"
-        ]
-      }
-    ];
-
-    /* =========================================================
-       ESTADO
-       ========================================================= */
-
-    const state = {
-      produtos: [],
-      produtosByCode: new Map(),
-      cestas: [],
-      selectedCestaId: null,
-      activeTab: "produtos",
-      productSearch: "",
-      cestaSearch: "",
-      cestaProductSearch: "",
-      substitute: null,
-      modalProductCode: null,
-      productEditorKey: null,
-      produtosDirty: false,
-      cestasDirty: false,
-      isDirty: false,
-      isLoading: false,
-      lastStatus: ""
-    };
-
-    const PLACEHOLDER_IMG = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
-        <rect width="400" height="400" fill="#f7f7f7"/>
-        <circle cx="200" cy="170" r="58" fill="#e9e5dc"/>
-        <rect x="86" y="245" width="228" height="34" rx="17" fill="#e9e5dc"/>
-        <text x="200" y="326" text-anchor="middle" font-family="Arial" font-size="22" fill="#999">sem foto</text>
-      </svg>
-    `);
-
-    /* =========================================================
-       HELPERS
-       ========================================================= */
-
-    const $ = (selector, root = document) => root.querySelector(selector);
-    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
-
-    function escapeHtml(value) {
-      return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    function normalizeCode(value) {
-      return String(value ?? "")
-        .trim()
-        .replace(/\s+/g, "")
-        .toUpperCase();
-    }
-
-    function slugify(value) {
-      return String(value ?? "")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "") || "nova-cesta";
-    }
-
-    function money(value) {
-      const n = Number(String(value ?? 0).replace(",", ".")) || 0;
-      return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-    }
-
-    function toNumber(value) {
-      return Number(String(value ?? 0).replace(",", ".")) || 0;
-    }
-
-    function parseItemCesta(item) {
-      const text = String(item ?? "").trim();
-      const match = text.match(/^(\d+)\s*x\s*(.+)$/i);
-      if (!match) return { quantidade: 1, codigo: normalizeCode(text) };
-      return { quantidade: Math.max(1, Number(match[1]) || 1), codigo: normalizeCode(match[2]) };
-    }
-
-    function formatItemCesta(quantidade, codigo) {
-      return `${Math.max(1, Number(quantidade) || 1)}x ${normalizeCode(codigo)}`;
-    }
-
-    function getProductPrimaryCode(produto) {
-      return normalizeCode(
-        produto?.codigo ||
-        produto?.sku ||
-        produto?.id ||
-        produto?.gtin ||
-        produto?.ean ||
-        produto?.firebaseKey ||
-        ""
-      );
-    }
-
-    function getProductCodes(produto) {
-      const values = [
-        produto?.codigo,
-        produto?.sku,
-        produto?.id,
-        produto?.gtin,
-        produto?.ean,
-        produto?.firebaseKey,
-        produto?.codigo_barras
-      ];
-      return [...new Set(values.map(normalizeCode).filter(Boolean))];
-    }
-
-    function getProductImage(produto) {
-      return produto?.url_imagem || produto?.imagem || produto?.image || produto?.foto || PLACEHOLDER_IMG;
-    }
-
-    function getProductName(produto) {
-      return produto?.nome || produto?.descricao || getProductPrimaryCode(produto) || "Produto sem nome";
-    }
-
-    function getProductPrice(produto) {
-      return toNumber(produto?.preco_oferta || produto?.preco || produto?.price || 0);
-    }
-
-    function setStatus(text, type = "warn") {
-      state.lastStatus = text;
-      const pill = $("#statusPill");
-      if (!pill) return;
-      pill.innerHTML = `<span class="status-dot ${escapeHtml(type)}"></span><span>${escapeHtml(text)}</span>`;
-    }
-
-    function markDirty() {
-      state.cestasDirty = true;
-      state.isDirty = state.cestasDirty || state.produtosDirty;
-      setStatus("Alterações não salvas", "warn");
-      refreshJsonTextarea();
-    }
-
-    function markProductsDirty() {
-      state.produtosDirty = true;
-      state.isDirty = state.cestasDirty || state.produtosDirty;
-      rebuildProductIndex();
-      setStatus("Produtos com alterações não salvas", "warn");
-    }
-
-    function refreshDirtyState() {
-      state.isDirty = state.cestasDirty || state.produtosDirty;
-      if (!state.isDirty) {
-        setStatus(`Carregado: ${state.produtos.length} produtos e ${state.cestas.length} cestas`, "ok");
-      }
-    }
-
-    function normalizeProdutosResponse(data) {
-      if (Array.isArray(data)) {
-        return data.filter(Boolean).map((produto, index) => ({
-          firebaseKey: produto.firebaseKey || produto.id || `produto_${index}`,
-          ...produto
-        }));
-      }
-
-      if (data && typeof data === "object") {
-        return Object.entries(data).map(([firebaseKey, produto]) => ({
-          firebaseKey,
-          ...(produto || {})
-        }));
-      }
-
-      return [];
-    }
-
-    function normalizeCestasResponse(data) {
-      let lista = [];
-
-      if (Array.isArray(data)) {
-        lista = data.filter(Boolean);
-      } else if (data && Array.isArray(data.cestas)) {
-        lista = data.cestas.filter(Boolean);
-      } else if (data && typeof data === "object") {
-        lista = Object.values(data).filter(item => item && typeof item === "object" && item.id);
-      }
-
-      return lista.map((cesta, index) => ({
-        id: String(cesta.id || `cesta${index + 1}`),
-        nome: String(cesta.nome || `Cesta ${index + 1}`).trim(),
-        codigo: String(cesta.codigo || slugify(cesta.nome || `cesta-${index + 1}`)).trim(),
-        preco: toNumber(cesta.preco),
-        imagem: String(cesta.imagem || "img/cesta-padrao.webp").trim(),
-        produtos: Array.isArray(cesta.produtos) ? cesta.produtos.map(String) : []
-      }));
-    }
-
-    function rebuildProductIndex() {
-      state.produtosByCode = new Map();
-      for (const produto of state.produtos) {
-        for (const code of getProductCodes(produto)) {
-          if (!state.produtosByCode.has(code)) {
-            state.produtosByCode.set(code, produto);
-          }
-        }
-      }
-    }
-
-    function findProductByCode(code) {
-      return state.produtosByCode.get(normalizeCode(code)) || null;
-    }
-
-    function getCestaById(id) {
-      return state.cestas.find(cesta => cesta.id === id) || null;
-    }
-
-    function getCestasByProduct(produtoOrCode) {
-      const codes = typeof produtoOrCode === "string"
-        ? [normalizeCode(produtoOrCode)]
-        : getProductCodes(produtoOrCode);
-
-      const codeSet = new Set(codes);
-
-      return state.cestas.filter(cesta => {
-        return (cesta.produtos || []).some(item => codeSet.has(parseItemCesta(item).codigo));
-      });
-    }
-
-    function productIsInCesta(cestaId, produtoOrCode) {
-      const cesta = getCestaById(cestaId);
-      if (!cesta) return false;
-
-      const codes = typeof produtoOrCode === "string"
-        ? [normalizeCode(produtoOrCode)]
-        : getProductCodes(produtoOrCode);
-
-      const codeSet = new Set(codes);
-      return (cesta.produtos || []).some(item => codeSet.has(parseItemCesta(item).codigo));
-    }
-
-    function getTotalItensCesta(cesta) {
-      return (cesta.produtos || []).reduce((sum, item) => sum + parseItemCesta(item).quantidade, 0);
-    }
-
-    function getUniqueProductCodesInCestas() {
-      const set = new Set();
-      for (const cesta of state.cestas) {
-        for (const item of cesta.produtos || []) {
-          const parsed = parseItemCesta(item);
-          if (parsed.codigo) set.add(parsed.codigo);
-        }
-      }
-      return set;
-    }
-
-    function getMissingProductsInCestas() {
-      const missing = [];
-      for (const cesta of state.cestas) {
-        for (const item of cesta.produtos || []) {
-          const parsed = parseItemCesta(item);
-          if (parsed.codigo && !findProductByCode(parsed.codigo)) {
-            missing.push({ cesta, codigo: parsed.codigo });
-          }
-        }
-      }
-      return missing;
-    }
-
-    function saveLocalBackup() {
-      if (!CONFIG.USAR_LOCALSTORAGE_BACKUP) return;
-      localStorage.setItem("dona_antonia_cestas_backup", JSON.stringify(state.cestas));
-    }
-
-    function loadLocalBackup() {
-      if (!CONFIG.USAR_LOCALSTORAGE_BACKUP) return null;
-      try {
-        const raw = localStorage.getItem("dona_antonia_cestas_backup");
-        return raw ? normalizeCestasResponse(JSON.parse(raw)) : null;
-      } catch {
-        return null;
-      }
-    }
-
-
-
-    function saveLocalProductsBackup() {
-      if (!CONFIG.USAR_LOCALSTORAGE_BACKUP) return;
-      localStorage.setItem("dona_antonia_produtos_backup", JSON.stringify(toFirebaseProdutosObject()));
-    }
-
-    function loadLocalProductsBackup() {
-      if (!CONFIG.USAR_LOCALSTORAGE_BACKUP) return null;
-      try {
-        const raw = localStorage.getItem("dona_antonia_produtos_backup");
-        return raw ? normalizeProdutosResponse(JSON.parse(raw)) : null;
-      } catch {
-        return null;
-      }
-    }
-
-    function getProductFirebaseKey(produto) {
-      return String(produto?.firebaseKey || produto?.id || produto?.codigo || `produto_${Date.now()}`);
-    }
-
-    function toFirebaseProdutosObject() {
-      const out = {};
-      state.produtos.forEach((produto, index) => {
-        const key = getProductFirebaseKey(produto) || `produto_${index}`;
-        out[key] = { ...produto, firebaseKey: key };
-      });
-      return out;
-    }
-
-
-    /* =========================================================
-       API / CARREGAMENTO / SALVAMENTO
-       ========================================================= */
-
-    async function fetchJson(url) {
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) throw new Error(`Erro ${response.status} ao carregar ${url}`);
-      return response.json();
-    }
-
-    async function loadData() {
-      state.isLoading = true;
-      setStatus("Carregando dados...", "warn");
-      renderLoading();
-
-      try {
-        const [produtosData, cestasData] = await Promise.allSettled([
-          fetchJson(CONFIG.PRODUTOS_URL),
-          fetchJson(CONFIG.CESTAS_URL)
-        ]);
-
-        if (produtosData.status === "fulfilled") {
-          state.produtos = normalizeProdutosResponse(produtosData.value);
-        } else {
-          const produtosBackup = loadLocalProductsBackup();
-          state.produtos = produtosBackup?.length ? produtosBackup : [];
-          console.warn(produtosData.reason);
-        }
-
-        rebuildProductIndex();
-
-        if (cestasData.status === "fulfilled") {
-          const cestasFirebase = normalizeCestasResponse(cestasData.value);
-          state.cestas = cestasFirebase.length ? cestasFirebase : normalizeCestasResponse(DEFAULT_CESTAS);
-        } else {
-          const backup = loadLocalBackup();
-          state.cestas = backup?.length ? backup : normalizeCestasResponse(DEFAULT_CESTAS);
-          console.warn(cestasData.reason);
-        }
-
-        if (!state.selectedCestaId && state.cestas[0]) {
-          state.selectedCestaId = state.cestas[0].id;
-        }
-
-        state.produtosDirty = false;
-        state.cestasDirty = false;
-        state.isDirty = false;
-        setStatus(`Carregado: ${state.produtos.length} produtos e ${state.cestas.length} cestas`, "ok");
-      } catch (error) {
-        console.error(error);
-        const backup = loadLocalBackup();
-        state.cestas = backup?.length ? backup : normalizeCestasResponse(DEFAULT_CESTAS);
-        setStatus("Falha ao carregar. Usando dados locais.", "error");
-      } finally {
-        state.isLoading = false;
-        renderAll();
-      }
-    }
-
-    async function saveCestas() {
-      try {
-        setStatus("Salvando cestas...", "warn");
-
-        const response = await fetch(CONFIG.CESTAS_URL, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(state.cestas, null, 2)
-        });
-
-        if (!response.ok) {
-          throw new Error(`Erro ${response.status} ao salvar no Firebase.`);
-        }
-
-        saveLocalBackup();
-        state.cestasDirty = false;
-        refreshDirtyState();
-        setStatus("Cestas salvas com sucesso", "ok");
-        alert("Cestas salvas com sucesso.");
-      } catch (error) {
-        console.error(error);
-        saveLocalBackup();
-        setStatus("Erro ao salvar no Firebase. Backup local salvo.", "error");
-        alert("Não consegui salvar no Firebase. Verifique as regras do Firebase. Um backup local foi salvo neste navegador.");
-      }
-    }
-
-
-
-    async function saveProducts() {
-      try {
-        setStatus("Salvando produtos...", "warn");
-        rebuildProductIndex();
-        const payload = toFirebaseProdutosObject();
-
-        const response = await fetch(CONFIG.PRODUTOS_URL, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload, null, 2)
-        });
-
-        if (!response.ok) {
-          throw new Error(`Erro ${response.status} ao salvar produtos no Firebase.`);
-        }
-
-        saveLocalProductsBackup();
-        state.produtosDirty = false;
-        refreshDirtyState();
-        setStatus("Produtos salvos com sucesso", "ok");
-        alert("Produtos salvos com sucesso.");
-      } catch (error) {
-        console.error(error);
-        saveLocalProductsBackup();
-        setStatus("Erro ao salvar produtos. Backup local salvo.", "error");
-        alert("Não consegui salvar os produtos no Firebase. Verifique as regras do Firebase. Um backup local foi salvo neste navegador.");
-      }
-    }
-
-
-
-
-    /* =========================================================
-       AÇÕES DE PRODUTOS — CRUD COMPLETO
-       ========================================================= */
-
-    function getProductByFirebaseKey(key) {
-      return state.produtos.find(produto => getProductFirebaseKey(produto) === String(key)) || null;
-    }
-
-    function createNewProduct() {
-      const timestamp = Date.now();
-      const key = `produto_${timestamp}`;
-      const novoProduto = {
-        firebaseKey: key,
-        id: key,
-        codigo: `NOVO${String(timestamp).slice(-6)}`,
-        nome: "Novo produto",
-        gtin: "",
-        preco: 0,
-        preco_custo: 0,
-        estoque: 0,
-        situacao: "ativo",
-        categoria: "",
-        subcategoria: "",
-        marca: "",
-        embalagem: "",
-        ncm: "",
-        validade: "",
-        gondola: "",
-        prateleira: "",
-        url_imagem: "",
-        descricao: "",
-        last_update: new Date().toISOString()
-      };
-      state.produtos.unshift(novoProduto);
-      state.productEditorKey = key;
-      markProductsDirty();
-      renderAll();
-      openProductEditor(key);
-    }
-
-    function deleteProduct(key) {
-      const produto = getProductByFirebaseKey(key);
-      if (!produto) return;
-      const nome = getProductName(produto);
-      const code = getProductPrimaryCode(produto);
-      const cestas = getCestasByProduct(produto);
-      const msgCestas = cestas.length ? `
-
-Atenção: este produto está em ${cestas.length} cesta(s). O código continuará no JSON das cestas até você remover ou substituir.` : "";
-      if (!confirm(`Excluir o produto "${nome}"?${msgCestas}`)) return;
-      state.produtos = state.produtos.filter(item => getProductFirebaseKey(item) !== String(key));
-      rebuildProductIndex();
-      markProductsDirty();
-      closeProductEditor(false);
-      renderAll();
-      alert(`Produto excluído da lista. Código principal: ${code}. Clique em Salvar produtos para gravar no Firebase.`);
-    }
-
-    function duplicateProduct(key) {
-      const produto = getProductByFirebaseKey(key);
-      if (!produto) return;
-      const newKey = `produto_${Date.now()}`;
-      const copy = {
-        ...JSON.parse(JSON.stringify(produto)),
-        firebaseKey: newKey,
-        id: newKey,
-        codigo: `${String(produto.codigo || "COPIA").trim()}-COPIA`,
-        nome: `${getProductName(produto)} - cópia`,
-        last_update: new Date().toISOString()
-      };
-      state.produtos.unshift(copy);
-      markProductsDirty();
-      renderAll();
-      openProductEditor(newKey);
-    }
-
-    function updateProductField(key, field, value) {
-      const produto = getProductByFirebaseKey(key);
-      if (!produto) return;
-      if (["preco", "preco_custo", "estoque", "preco_oferta"].includes(field)) {
-        produto[field] = toNumber(value);
-      } else if (["ativo", "visivel"].includes(field)) {
-        produto[field] = Boolean(value);
-      } else {
-        produto[field] = String(value ?? "");
-      }
-      produto.last_update = new Date().toISOString();
-      markProductsDirty();
-      renderProducts();
-      renderSummary();
-    }
-
-    function applyProductAdvancedJson(key) {
-      const produto = getProductByFirebaseKey(key);
-      if (!produto) return;
-      const textarea = $("#productAdvancedJson");
-      if (!textarea) return;
-      try {
-        const parsed = JSON.parse(textarea.value);
-        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-          throw new Error("o JSON precisa ser um objeto de produto");
-        }
-        const firebaseKey = getProductFirebaseKey(produto);
-        Object.keys(produto).forEach(k => delete produto[k]);
-        Object.assign(produto, parsed, { firebaseKey: parsed.firebaseKey || firebaseKey });
-        if (!produto.id) produto.id = produto.firebaseKey;
-        produto.last_update = new Date().toISOString();
-        markProductsDirty();
-        renderAll();
-        openProductEditor(produto.firebaseKey);
-        alert("JSON avançado aplicado. Clique em Salvar produtos para gravar no Firebase.");
-      } catch (error) {
-        alert("JSON do produto inválido: " + error.message);
-      }
-    }
-
-    function openProductEditor(key) {
-      state.productEditorKey = String(key);
-      renderProductEditorBody(key);
-      const modal = $("#productEditorModal");
-      modal.classList.add("open");
-      modal.setAttribute("aria-hidden", "false");
-    }
-
-    function closeProductEditor(shouldRender = true) {
-      const modal = $("#productEditorModal");
-      modal.classList.remove("open");
-      modal.setAttribute("aria-hidden", "true");
-      state.productEditorKey = null;
-      if (shouldRender) renderAll();
-    }
-
-    function renderProductEditorBody(key) {
-      const produto = getProductByFirebaseKey(key);
-      const body = $("#productEditorBody");
-      if (!produto || !body) return;
-      const firebaseKey = getProductFirebaseKey(produto);
-      const code = getProductPrimaryCode(produto);
-      const cestas = getCestasByProduct(produto);
-      $("#productEditorTitle").textContent = `Editar produto — ${getProductName(produto)}`;
-      $("#productEditorSubtitle").innerHTML = `Chave Firebase: <strong>${escapeHtml(firebaseKey)}</strong> · Código principal: <strong>${escapeHtml(code)}</strong>`;
-
-      const field = (label, name, extra = "") => `
-        <div class="field ${extra}">
-          <label>${label}</label>
-          <input class="input" value="${escapeHtml(produto[name] ?? "")}" data-action="update-product-field" data-key="${escapeHtml(firebaseKey)}" data-field="${escapeHtml(name)}">
-        </div>
-      `;
-
-      body.innerHTML = `
-        <div class="product-editor-preview">
-          <img src="${escapeHtml(getProductImage(produto))}" alt="${escapeHtml(getProductName(produto))}" onerror="this.src='${PLACEHOLDER_IMG}'">
-          <div>
-            <strong>${escapeHtml(getProductName(produto))}</strong>
-            <div class="admin-info-line">
-              <span class="admin-info-chip">Código: ${escapeHtml(produto.codigo || code)}</span>
-              ${produto.gtin ? `<span class="admin-info-chip">GTIN: ${escapeHtml(produto.gtin)}</span>` : ""}
-              ${produto.marca ? `<span class="admin-info-chip">Marca: ${escapeHtml(produto.marca)}</span>` : ""}
-              <span class="admin-info-chip">Preço: ${money(getProductPrice(produto))}</span>
-              <span class="admin-info-chip">Estoque: ${escapeHtml(produto.estoque ?? produto.stock ?? 0)}</span>
-            </div>
-            <div class="basket-badges" style="margin-top:10px;">
-              ${cestas.length ? cestas.map(cesta => `<span class="basket-badge">${escapeHtml(cesta.nome)}</span>`).join("") : `<span class="basket-badge empty">Não está em cesta</span>`}
-            </div>
-          </div>
-        </div>
-
-        <div class="product-editor-grid">
-          ${field("Nome", "nome", "span-2")}
-          ${field("Código interno", "codigo")}
-          ${field("GTIN / EAN", "gtin")}
-          ${field("Preço venda", "preco")}
-          ${field("Preço custo", "preco_custo")}
-          ${field("Preço oferta", "preco_oferta")}
-          ${field("Validade oferta", "validade_oferta")}
-          ${field("Estoque", "estoque")}
-          ${field("Situação", "situacao")}
-          ${field("Categoria", "categoria")}
-          ${field("Subcategoria", "subcategoria")}
-          ${field("Subsubcategoria", "subsubcategoria")}
-          ${field("Marca", "marca")}
-          ${field("Embalagem", "embalagem")}
-          ${field("NCM", "ncm")}
-          ${field("Validade", "validade")}
-          ${field("Gôndola", "gondola")}
-          ${field("Prateleira", "prateleira")}
-          ${field("URL da imagem", "url_imagem", "span-4")}
-          <div class="field span-4">
-            <label>Descrição</label>
-            <textarea class="textarea" data-action="update-product-field" data-key="${escapeHtml(firebaseKey)}" data-field="descricao">${escapeHtml(produto.descricao ?? "")}</textarea>
-          </div>
-        </div>
-
-        <div class="editor-box" style="margin-top:16px;">
-          <div class="editor-box-head">
-            <strong>Cestas deste produto</strong>
-            <button class="btn btn-small btn-gold" type="button" data-action="edit-product-cestas" data-code="${escapeHtml(code)}">Marcar/desmarcar cestas</button>
-          </div>
-          <div class="editor-box-body">
-            ${state.cestas.map(cesta => {
-              const checked = productIsInCesta(cesta.id, produto);
-              return `
-                <label class="check-row">
-                  <input type="checkbox" ${checked ? "checked" : ""} data-action="toggle-product-cesta" data-cesta-id="${escapeHtml(cesta.id)}" data-code="${escapeHtml(code)}">
-                  <span><strong>${escapeHtml(cesta.nome)}</strong><small>${money(cesta.preco)} · ${getTotalItensCesta(cesta)} itens</small></span>
-                </label>
-              `;
-            }).join("")}
-          </div>
-        </div>
-
-        <div class="editor-box" style="margin-top:16px;">
-          <div class="editor-box-head">
-            <strong>JSON avançado do produto</strong>
-            <button class="btn btn-small" type="button" data-action="apply-product-json" data-key="${escapeHtml(firebaseKey)}">Aplicar JSON do produto</button>
-          </div>
-          <div class="editor-box-body">
-            <textarea id="productAdvancedJson" class="textarea textarea-json-produto" spellcheck="false">${escapeHtml(JSON.stringify(produto, null, 2))}</textarea>
-          </div>
-        </div>
-
-        <div class="danger-zone toolbar" style="justify-content:space-between;">
-          <div class="toolbar">
-            <button class="btn btn-success" type="button" data-action="save-products">Salvar produtos</button>
-            <button class="btn btn-gold" type="button" data-action="duplicate-product" data-key="${escapeHtml(firebaseKey)}">Duplicar produto</button>
-          </div>
-          <button class="btn btn-danger" type="button" data-action="delete-product" data-key="${escapeHtml(firebaseKey)}">Excluir produto</button>
-        </div>
-      `;
-    }
-
-    function exportProductsJson() {
-      const blob = new Blob([JSON.stringify(toFirebaseProdutosObject(), null, 2)], { type: "application/json;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "produtos.json";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    function handleProductsFile(file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const parsed = JSON.parse(reader.result);
-          const produtos = normalizeProdutosResponse(parsed);
-          if (!produtos.length) throw new Error("arquivo sem produtos válidos");
-          state.produtos = produtos;
-          rebuildProductIndex();
-          markProductsDirty();
-          renderAll();
-          alert("Produtos importados. Clique em Salvar produtos para gravar no Firebase.");
-        } catch (error) {
-          alert("Não consegui importar os produtos: " + error.message);
-        }
-      };
-      reader.readAsText(file, "utf-8");
-    }
-
-
-    /* =========================================================
-       AÇÕES DE CESTAS
-       ========================================================= */
-
-    function addProductToCesta(cestaId, codigoProduto, quantidade = 1) {
-      const cesta = getCestaById(cestaId);
-      if (!cesta) return;
-
-      const code = normalizeCode(codigoProduto);
-      if (!code) return;
-
-      const index = cesta.produtos.findIndex(item => parseItemCesta(item).codigo === code);
-      if (index >= 0) {
-        const current = parseItemCesta(cesta.produtos[index]);
-        cesta.produtos[index] = formatItemCesta(current.quantidade + (Number(quantidade) || 1), code);
-      } else {
-        cesta.produtos.push(formatItemCesta(quantidade, code));
-      }
-
-      markDirty();
-      renderAll();
-    }
-
-    function removeProductFromCesta(cestaId, produtoOrCode) {
-      const cesta = getCestaById(cestaId);
-      if (!cesta) return;
-
-      const codes = typeof produtoOrCode === "string"
-        ? [normalizeCode(produtoOrCode)]
-        : getProductCodes(produtoOrCode);
-      const codeSet = new Set(codes);
-
-      cesta.produtos = (cesta.produtos || []).filter(item => !codeSet.has(parseItemCesta(item).codigo));
-      markDirty();
-      renderAll();
-    }
-
-    function setProductCestaMembership(cestaId, produtoOrCode, checked) {
-      const produto = typeof produtoOrCode === "string" ? findProductByCode(produtoOrCode) : produtoOrCode;
-      const codeToAdd = produto ? getProductPrimaryCode(produto) : normalizeCode(produtoOrCode);
-
-      if (checked) {
-        if (!productIsInCesta(cestaId, produto || codeToAdd)) {
-          addProductToCesta(cestaId, codeToAdd, 1);
-        }
-      } else {
-        removeProductFromCesta(cestaId, produto || codeToAdd);
-      }
-    }
-
-    function updateItemQuantity(cestaId, codigoProduto, quantidade) {
-      const cesta = getCestaById(cestaId);
-      if (!cesta) return;
-
-      const code = normalizeCode(codigoProduto);
-      const qty = Math.max(1, Number(quantidade) || 1);
-
-      cesta.produtos = (cesta.produtos || []).map(item => {
-        const parsed = parseItemCesta(item);
-        return parsed.codigo === code ? formatItemCesta(qty, code) : item;
-      });
-
-      markDirty();
-      renderAll();
-    }
-
-    function replaceProductInCesta(cestaId, oldCode, newCode) {
-      const cesta = getCestaById(cestaId);
-      if (!cesta) return;
-
-      const oldNormalized = normalizeCode(oldCode);
-      const newNormalized = normalizeCode(newCode);
-      if (!oldNormalized || !newNormalized) return;
-
-      cesta.produtos = (cesta.produtos || []).map(item => {
-        const parsed = parseItemCesta(item);
-        if (parsed.codigo === oldNormalized) {
-          return formatItemCesta(parsed.quantidade, newNormalized);
-        }
-        return item;
-      });
-
-      state.substitute = null;
-      state.cestaProductSearch = "";
-      markDirty();
-      renderAll();
-    }
-
-    function createNewCesta() {
-      const nextNumber = state.cestas.length + 1;
-      let id = `cesta${nextNumber}`;
-      let count = nextNumber;
-
-      while (state.cestas.some(cesta => cesta.id === id)) {
-        count++;
-        id = `cesta${count}`;
-      }
-
-      const nova = {
-        id,
-        nome: `Nova Cesta ${count}`,
-        codigo: `nova-cesta-${count}`,
-        preco: 0,
-        imagem: "img/cesta-padrao.webp",
-        produtos: []
-      };
-
-      state.cestas.push(nova);
-      state.selectedCestaId = nova.id;
-      state.activeTab = "cestas";
-      markDirty();
-      renderAll();
-    }
-
-    function deleteSelectedCesta() {
-      const cesta = getCestaById(state.selectedCestaId);
-      if (!cesta) return;
-
-      const ok = confirm(`Tem certeza que deseja excluir a cesta "${cesta.nome}"?`);
-      if (!ok) return;
-
-      state.cestas = state.cestas.filter(item => item.id !== cesta.id);
-      state.selectedCestaId = state.cestas[0]?.id || null;
-      markDirty();
-      renderAll();
-    }
-
-    function updateCestaField(cestaId, field, value) {
-      const cesta = getCestaById(cestaId);
-      if (!cesta) return;
-
-      if (field === "preco") {
-        cesta.preco = toNumber(value);
-      } else if (["nome", "codigo", "imagem"].includes(field)) {
-        cesta[field] = String(value ?? "");
-        if (field === "nome" && !cesta.codigo) cesta.codigo = slugify(value);
-      }
-
-      markDirty();
-      renderCestasList();
-      refreshJsonTextarea();
-    }
-
-    /* =========================================================
-       RENDERIZAÇÃO
-       ========================================================= */
-
-    function renderLoading() {
-      $("#productGrid").innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">Carregando produtos e cestas...</div>`;
-      $("#cestasList").innerHTML = "";
-      $("#cestaEditor").innerHTML = `<div class="empty-state">Carregando...</div>`;
-    }
-
-    function renderAll() {
-      renderTabs();
-      renderSummary();
-      renderProducts();
-      renderCestasList();
-      renderCestaEditor();
-      refreshJsonTextarea();
-    }
-
-    function renderTabs() {
-      $$(".tab-btn").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.tab === state.activeTab);
-      });
-
-      ["produtos", "cestas", "json"].forEach(tab => {
-        const el = $(`#tab-${tab}`);
-        if (el) el.classList.toggle("hidden", tab !== state.activeTab);
-      });
-    }
-
-    function renderSummary() {
-      const uniqueCodes = getUniqueProductCodesInCestas();
-      const missing = getMissingProductsInCestas();
-      const totalItens = state.cestas.reduce((sum, cesta) => sum + getTotalItensCesta(cesta), 0);
-
-      $("#summaryGrid").innerHTML = `
-        <div class="summary-card"><strong>${state.produtos.length}</strong><span>Produtos carregados</span></div>
-        <div class="summary-card"><strong>${state.cestas.length}</strong><span>Cestas cadastradas</span></div>
-        <div class="summary-card"><strong>${uniqueCodes.size}</strong><span>Produtos diferentes em cestas</span></div>
-        <div class="summary-card"><strong>${missing.length}</strong><span>Códigos de cesta não encontrados</span></div>
-        <div class="summary-card"><strong>${state.produtosDirty ? "Sim" : "Não"}</strong><span>Produtos pendentes</span></div>
-        <div class="summary-card"><strong>${state.cestasDirty ? "Sim" : "Não"}</strong><span>Cestas pendentes</span></div>
-      `;
-    }
-
-    function renderProducts() {
-      const grid = $("#productGrid");
-      const search = state.productSearch.trim().toLowerCase();
-
-      let lista = state.produtos;
-      if (search) {
-        lista = lista.filter(produto => {
-          const text = [
-            produto.nome,
-            produto.descricao,
-            produto.codigo,
-            produto.gtin,
-            produto.ean,
-            produto.marca,
-            produto.categoria,
-            produto.subcategoria,
-            produto.firebaseKey
-          ].map(v => String(v ?? "").toLowerCase()).join(" ");
-          return text.includes(search);
-        });
-      }
-
-      lista = lista.slice(0, CONFIG.PRODUTOS_POR_PAGINA_VISUAL);
-
-      if (!lista.length) {
-        grid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">Nenhum produto encontrado.</div>`;
-        return;
-      }
-
-      grid.innerHTML = lista.map(renderProductCard).join("");
-    }
-
-    function renderProductCard(produto) {
-      const primaryCode = getProductPrimaryCode(produto);
-      const cestas = getCestasByProduct(produto);
-      const badges = cestas.length
-        ? cestas.map(cesta => `<span class="basket-badge">${escapeHtml(cesta.nome)}</span>`).join("")
-        : `<span class="basket-badge empty">Não está em cesta</span>`;
-
-      return `
-        <article class="product-card">
-          <div class="product-image-wrap">
-            <img src="${escapeHtml(getProductImage(produto))}" alt="${escapeHtml(getProductName(produto))}" loading="lazy" onerror="this.src='${PLACEHOLDER_IMG}'">
-          </div>
-          <div class="product-body">
-            <h3 class="product-name">${escapeHtml(getProductName(produto))}</h3>
-            <div class="product-meta">
-              <span>Cód: ${escapeHtml(produto.codigo || produto.firebaseKey || primaryCode)}</span>
-              ${produto.gtin ? `<span>GTIN: ${escapeHtml(produto.gtin)}</span>` : ""}
-              ${produto.marca ? `<span>${escapeHtml(produto.marca)}</span>` : ""}
-            </div>
-            <div class="product-price">${money(getProductPrice(produto))}</div>
-            <div class="basket-badges">${badges}</div>
-            <div class="product-actions product-card-admin-actions">
-              <button class="btn" type="button" data-action="edit-product" data-key="${escapeHtml(getProductFirebaseKey(produto))}">
-                Editar produto
-              </button>
-              <button class="btn btn-gold" type="button" data-action="edit-product-cestas" data-code="${escapeHtml(primaryCode)}">
-                Editar cestas
-              </button>
-            </div>
-          </div>
-        </article>
-      `;
-    }
-
-    function renderCestasList() {
-      const container = $("#cestasList");
-      const search = state.cestaSearch.trim().toLowerCase();
-      let lista = state.cestas;
-
-      if (search) {
-        lista = lista.filter(cesta => {
-          return `${cesta.nome} ${cesta.codigo} ${cesta.id}`.toLowerCase().includes(search);
-        });
-      }
-
-      if (!lista.length) {
-        container.innerHTML = `<div class="notice">Nenhuma cesta encontrada.</div>`;
-        return;
-      }
-
-      container.innerHTML = lista.map(cesta => `
-        <button class="cesta-nav-card ${cesta.id === state.selectedCestaId ? "active" : ""}" type="button" data-action="select-cesta" data-id="${escapeHtml(cesta.id)}">
-          <img src="${escapeHtml(cesta.imagem || PLACEHOLDER_IMG)}" alt="${escapeHtml(cesta.nome)}" loading="lazy" onerror="this.src='${PLACEHOLDER_IMG}'">
-          <span>
-            <strong>${escapeHtml(cesta.nome)}</strong>
-            <small>${money(cesta.preco)} · ${getTotalItensCesta(cesta)} itens</small>
-            <small>${escapeHtml(cesta.codigo)}</small>
-          </span>
-        </button>
-      `).join("");
-    }
-
-    function renderCestaEditor() {
-      const editor = $("#cestaEditor");
-      const cesta = getCestaById(state.selectedCestaId);
-
-      if (!cesta) {
-        editor.innerHTML = `
-          <div class="empty-state">
-            Nenhuma cesta selecionada.
-            <br><br>
-            <button class="btn btn-success" type="button" data-action="new-cesta">Criar primeira cesta</button>
-          </div>
-        `;
-        return;
-      }
-
-      const productsHtml = cesta.produtos.length
-        ? cesta.produtos.map(item => renderBasketProductRow(cesta, item)).join("")
-        : `<div class="notice">Esta cesta ainda não possui produtos. Use a busca abaixo para adicionar.</div>`;
-
-      editor.innerHTML = `
-        <div class="cesta-editor-head">
-          <div>
-            <h3>${escapeHtml(cesta.nome)}</h3>
-            <p>${escapeHtml(cesta.codigo)} · ${getTotalItensCesta(cesta)} itens · ${money(cesta.preco)}</p>
-          </div>
-          <div class="toolbar">
-            <button class="btn btn-danger" type="button" data-action="delete-cesta">Excluir cesta</button>
-          </div>
-        </div>
-
-        <div class="form-grid">
-          <div class="field span-2">
-            <label>Nome da cesta</label>
-            <input class="input" value="${escapeHtml(cesta.nome)}" data-action="update-cesta-field" data-field="nome" data-id="${escapeHtml(cesta.id)}">
-          </div>
-          <div class="field">
-            <label>Código da cesta</label>
-            <input class="input" value="${escapeHtml(cesta.codigo)}" data-action="update-cesta-field" data-field="codigo" data-id="${escapeHtml(cesta.id)}">
-          </div>
-          <div class="field">
-            <label>Preço</label>
-            <input class="input" value="${escapeHtml(cesta.preco)}" data-action="update-cesta-field" data-field="preco" data-id="${escapeHtml(cesta.id)}">
-          </div>
-          <div class="field span-2">
-            <label>Imagem da cesta</label>
-            <input class="input" value="${escapeHtml(cesta.imagem)}" data-action="update-cesta-field" data-field="imagem" data-id="${escapeHtml(cesta.id)}">
-          </div>
-        </div>
-
-        <div class="editor-box">
-          <div class="editor-box-head">
-            <strong>${state.substitute ? `Substituir produto ${escapeHtml(state.substitute.oldCode)}` : "Adicionar produto na cesta"}</strong>
-            ${state.substitute ? `<button class="btn btn-small" type="button" data-action="cancel-substitute">Cancelar substituição</button>` : ""}
-          </div>
-          <div class="editor-box-body">
-            <input class="input" id="cestaProductSearch" value="${escapeHtml(state.cestaProductSearch)}" placeholder="Buscar produto por nome, código, GTIN ou marca..." autocomplete="off">
-            <div id="cestaProductSearchResults" class="search-results">${renderCestaProductSearchResults()}</div>
-          </div>
-        </div>
-
-        <div class="editor-box">
-          <div class="editor-box-head">
-            <strong>Produtos desta cesta</strong>
-            <span class="status-pill"><span class="status-dot ok"></span><span>${getTotalItensCesta(cesta)} itens</span></span>
-          </div>
-          <div class="editor-box-body">
-            <div class="basket-product-list">${productsHtml}</div>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderBasketProductRow(cesta, item) {
-      const parsed = parseItemCesta(item);
-      const produto = findProductByCode(parsed.codigo);
-      const nome = produto ? getProductName(produto) : "Produto não encontrado no Firebase";
-      const img = produto ? getProductImage(produto) : PLACEHOLDER_IMG;
-      const price = produto ? money(getProductPrice(produto)) : "Sem preço";
-
-      return `
-        <div class="basket-product-row">
-          <img src="${escapeHtml(img)}" alt="${escapeHtml(nome)}" loading="lazy" onerror="this.src='${PLACEHOLDER_IMG}'">
-          <div class="basket-product-info">
-            <strong>${escapeHtml(nome)}</strong>
-            <small>Código na cesta: ${escapeHtml(parsed.codigo)}</small>
-            <small>${escapeHtml(price)} ${produto?.marca ? `· ${escapeHtml(produto.marca)}` : ""}</small>
-            ${!produto ? `<small style="color:#b42318;font-weight:800;">Esse código está no JSON, mas não foi localizado nos produtos.</small>` : ""}
-          </div>
-          <label class="qty-field">
-            <span>Qtd.</span>
-            <input class="input" type="number" min="1" value="${parsed.quantidade}" data-action="update-item-qty" data-cesta-id="${escapeHtml(cesta.id)}" data-code="${escapeHtml(parsed.codigo)}">
-          </label>
-          <button class="btn btn-gold" type="button" data-action="start-substitute" data-cesta-id="${escapeHtml(cesta.id)}" data-code="${escapeHtml(parsed.codigo)}">Substituir</button>
-          <button class="btn btn-danger" type="button" data-action="remove-from-cesta" data-cesta-id="${escapeHtml(cesta.id)}" data-code="${escapeHtml(parsed.codigo)}">Remover</button>
-        </div>
-      `;
-    }
-
-    function renderCestaProductSearchResults() {
-      const term = state.cestaProductSearch.trim().toLowerCase();
-      if (term.length < 2) {
-        return `<div class="notice">Digite pelo menos 2 letras ou números para buscar um produto.</div>`;
-      }
-
-      const results = state.produtos.filter(produto => {
-        const text = [
-          produto.nome,
-          produto.descricao,
-          produto.codigo,
-          produto.gtin,
-          produto.ean,
-          produto.marca,
-          produto.categoria,
-          produto.subcategoria,
-          produto.firebaseKey
-        ].map(v => String(v ?? "").toLowerCase()).join(" ");
-        return text.includes(term);
-      }).slice(0, 25);
-
-      if (!results.length) {
-        return `<div class="notice danger">Nenhum produto encontrado para esta busca.</div>`;
-      }
-
-      return results.map(produto => {
-        const code = getProductPrimaryCode(produto);
-        const label = state.substitute ? "Usar como substituto" : "Adicionar";
-        const action = state.substitute ? "confirm-substitute" : "add-to-selected-cesta";
-
-        return `
-          <div class="search-result-row">
-            <img src="${escapeHtml(getProductImage(produto))}" alt="${escapeHtml(getProductName(produto))}" loading="lazy" onerror="this.src='${PLACEHOLDER_IMG}'">
-            <div>
-              <strong>${escapeHtml(getProductName(produto))}</strong>
-              <small>Cód: ${escapeHtml(code)} ${produto.gtin ? `· GTIN: ${escapeHtml(produto.gtin)}` : ""}</small>
-              <small>${money(getProductPrice(produto))} ${produto.marca ? `· ${escapeHtml(produto.marca)}` : ""}</small>
-            </div>
-            <button class="btn btn-small ${state.substitute ? "btn-gold" : "btn-success"}" type="button" data-action="${action}" data-code="${escapeHtml(code)}">${label}</button>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function openProductCestasModal(code) {
-      const normalizedCode = normalizeCode(code);
-      const produto = findProductByCode(normalizedCode);
-      const title = produto ? getProductName(produto) : normalizedCode;
-      state.modalProductCode = normalizedCode;
-
-      $("#modalSubtitle").innerHTML = `${escapeHtml(title)}<br><small>Código: ${escapeHtml(normalizedCode)}</small>`;
-
-      const html = state.cestas.map(cesta => {
-        const checked = produto ? productIsInCesta(cesta.id, produto) : productIsInCesta(cesta.id, normalizedCode);
-        return `
-          <label class="check-row">
-            <input type="checkbox" ${checked ? "checked" : ""} data-action="toggle-product-cesta" data-cesta-id="${escapeHtml(cesta.id)}" data-code="${escapeHtml(normalizedCode)}">
-            <span>
-              <strong>${escapeHtml(cesta.nome)}</strong>
-              <small>${money(cesta.preco)} · ${getTotalItensCesta(cesta)} itens</small>
-            </span>
-            <span class="basket-badge ${checked ? "" : "empty"}">${checked ? "Marcado" : "Não marcado"}</span>
-          </label>
-        `;
-      }).join("");
-
-      $("#modalBody").innerHTML = html || `<div class="notice">Nenhuma cesta cadastrada.</div>`;
-      $("#productCestasModal").classList.add("open");
-      $("#productCestasModal").setAttribute("aria-hidden", "false");
-    }
-
-    function closeProductCestasModal() {
-      $("#productCestasModal").classList.remove("open");
-      $("#productCestasModal").setAttribute("aria-hidden", "true");
-      state.modalProductCode = null;
-      renderAll();
-    }
-
-    function refreshJsonTextarea() {
-      const textarea = $("#jsonTextarea");
-      if (textarea) textarea.value = JSON.stringify(state.cestas, null, 2);
-    }
-
-    /* =========================================================
-       JSON TOOLS
-       ========================================================= */
-
-    function downloadJson() {
-      const blob = new Blob([JSON.stringify(state.cestas, null, 2)], { type: "application/json;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "cestas.json";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    async function copyJson() {
-      await navigator.clipboard.writeText(JSON.stringify(state.cestas, null, 2));
-      alert("JSON copiado.");
-    }
-
-    function applyJsonText() {
-      try {
-        const parsed = JSON.parse($("#jsonTextarea").value);
-        const cestas = normalizeCestasResponse(parsed);
-        if (!cestas.length) throw new Error("JSON sem cestas válidas.");
-        state.cestas = cestas;
-        state.selectedCestaId = state.cestas[0]?.id || null;
-        markDirty();
-        renderAll();
-        alert("JSON aplicado com sucesso. Clique em Salvar para gravar no Firebase.");
-      } catch (error) {
-        alert("JSON inválido: " + error.message);
-      }
-    }
-
-    function handleJsonFile(file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const parsed = JSON.parse(reader.result);
-          const cestas = normalizeCestasResponse(parsed);
-          if (!cestas.length) throw new Error("arquivo sem cestas válidas");
-          state.cestas = cestas;
-          state.selectedCestaId = state.cestas[0]?.id || null;
-          markDirty();
-          renderAll();
-          alert("Arquivo importado. Clique em Salvar para gravar no Firebase.");
-        } catch (error) {
-          alert("Não consegui importar o JSON: " + error.message);
-        }
-      };
-      reader.readAsText(file, "utf-8");
-    }
-
-    /* =========================================================
-       EVENTOS
-       ========================================================= */
-
-    document.addEventListener("click", (event) => {
-      const target = event.target.closest("[data-action], [data-tab]");
-      if (!target) return;
-
-      if (target.dataset.tab) {
-        state.activeTab = target.dataset.tab;
-        renderAll();
-        return;
-      }
-
-      const action = target.dataset.action;
-
-      if (action === "reload-data") loadData();
-      if (action === "save-cestas") saveCestas();
-      if (action === "save-products") saveProducts();
-      if (action === "new-product") createNewProduct();
-      if (action === "export-products-json") exportProductsJson();
-      if (action === "export-json" || action === "download-json") downloadJson();
-      if (action === "copy-json") copyJson();
-      if (action === "refresh-json-text") refreshJsonTextarea();
-      if (action === "apply-json-text") applyJsonText();
-
-      if (action === "open-cestas-tab") {
-        state.activeTab = "cestas";
-        renderAll();
-      }
-
-      if (action === "new-cesta") createNewCesta();
-      if (action === "delete-cesta") deleteSelectedCesta();
-
-      if (action === "select-cesta") {
-        state.selectedCestaId = target.dataset.id;
-        state.substitute = null;
-        state.cestaProductSearch = "";
-        renderAll();
-      }
-
-      if (action === "edit-product") {
-        openProductEditor(target.dataset.key);
-      }
-
-      if (action === "close-product-editor") {
-        closeProductEditor();
-      }
-
-      if (action === "delete-product") {
-        deleteProduct(target.dataset.key);
-      }
-
-      if (action === "duplicate-product") {
-        duplicateProduct(target.dataset.key);
-      }
-
-      if (action === "apply-product-json") {
-        applyProductAdvancedJson(target.dataset.key);
-      }
-
-      if (action === "edit-product-cestas") {
-        openProductCestasModal(target.dataset.code);
-      }
-
-      if (action === "close-product-modal") {
-        closeProductCestasModal();
-      }
-
-      if (action === "clear-product-search") {
-        state.productSearch = "";
-        $("#productSearch").value = "";
-        renderProducts();
-      }
-
-      if (action === "remove-from-cesta") {
-        removeProductFromCesta(target.dataset.cestaId, target.dataset.code);
-      }
-
-      if (action === "start-substitute") {
-        state.substitute = {
-          cestaId: target.dataset.cestaId,
-          oldCode: normalizeCode(target.dataset.code)
-        };
-        state.cestaProductSearch = "";
-        renderCestaEditor();
-        setTimeout(() => $("#cestaProductSearch")?.focus(), 40);
-      }
-
-      if (action === "cancel-substitute") {
-        state.substitute = null;
-        state.cestaProductSearch = "";
-        renderCestaEditor();
-      }
-
-      if (action === "add-to-selected-cesta") {
-        addProductToCesta(state.selectedCestaId, target.dataset.code, 1);
-      }
-
-      if (action === "confirm-substitute") {
-        if (!state.substitute) return;
-        replaceProductInCesta(state.substitute.cestaId, state.substitute.oldCode, target.dataset.code);
-      }
-    });
-
-    document.addEventListener("input", (event) => {
-      const target = event.target;
-
-      if (target.id === "productSearch") {
-        state.productSearch = target.value;
-        renderProducts();
-      }
-
-      if (target.id === "cestaSearch") {
-        state.cestaSearch = target.value;
-        renderCestasList();
-      }
-
-      if (target.id === "cestaProductSearch") {
-        state.cestaProductSearch = target.value;
-        const results = $("#cestaProductSearchResults");
-        if (results) results.innerHTML = renderCestaProductSearchResults();
-      }
-
-      if (target.dataset.action === "update-cesta-field") {
-        updateCestaField(target.dataset.id, target.dataset.field, target.value);
-      }
-
-      if (target.dataset.action === "update-product-field") {
-        updateProductField(target.dataset.key, target.dataset.field, target.value);
-      }
-    });
-
-    document.addEventListener("change", (event) => {
-      const target = event.target;
-
-      if (target.dataset.action === "update-item-qty") {
-        updateItemQuantity(target.dataset.cestaId, target.dataset.code, target.value);
-      }
-
-      if (target.dataset.action === "toggle-product-cesta") {
-        const produto = findProductByCode(target.dataset.code);
-        setProductCestaMembership(target.dataset.cestaId, produto || target.dataset.code, target.checked);
-        if ($("#productCestasModal")?.classList.contains("open")) openProductCestasModal(target.dataset.code);
-        if ($("#productEditorModal")?.classList.contains("open") && state.productEditorKey) renderProductEditorBody(state.productEditorKey);
-      }
-
-      if (target.id === "productsFileInput" && target.files?.[0]) {
-        handleProductsFile(target.files[0]);
-        target.value = "";
-      }
-
-      if (target.id === "jsonFileInput" && target.files?.[0]) {
-        handleJsonFile(target.files[0]);
-        target.value = "";
-      }
-    });
-
-    $("#productEditorModal").addEventListener("click", (event) => {
-      if (event.target.id === "productEditorModal") closeProductEditor();
-    });
-
-    $("#productCestasModal").addEventListener("click", (event) => {
-      if (event.target.id === "productCestasModal") closeProductCestasModal();
-    });
-
-    window.addEventListener("beforeunload", (event) => {
-      if (!state.isDirty) return;
-      event.preventDefault();
-      event.returnValue = "";
-    });
-
-    /* =========================================================
-       INICIAR
-       ========================================================= */
-
-    loadData();
-  </script>
+  <div class="modal-overlay" id="productModal"><div class="modal"><div class="modal-head"><div><h3 id="productModalTitle">Editar produto</h3><p id="productModalSub">Todos os campos administrativos do produto.</p></div><button class="btn small" data-action="close-product-modal">Fechar</button></div><div class="modal-body" id="productModalBody"></div></div></div>
+  <div class="modal-overlay" id="membershipModal"><div class="modal"><div class="modal-head"><div><h3>Editar cestas do produto</h3><p id="membershipSub"></p></div><button class="btn small" data-action="close-membership-modal">Fechar</button></div><div class="modal-body" id="membershipBody"></div></div></div>
+
+<script>
+(() => {
+  "use strict";
+
+  const DEFAULT_CESTAS = [
+    {"id":"cesta1","nome":"Economica Bonini","codigo":"cestaeconomicacomarroztiobonini","preco":85,"imagem":"img/cesta-basica-cuiaba-varzea-grande-economica.avif","produtos":["1x P0026","1x P490","1x P426","1x P0248","1x P0304","1x P0151","1x P434","1x P435","1x P433","1x 76685539","1x P0244","1x P0239","1x P0060","1x P0309"]},
+    {"id":"cesta2","nome":"Mini Bonini","codigo":"cestaminicomarroztiobonini","preco":165,"imagem":"img/CESTA-MINI-BONINI.webp","produtos":["1x P0026","2x P490","1x P426","2x P0248","1x P0304","1x C0067","1x P497","1x 76409162","1x P0244","1x P0239","1x P0060","2x P0311","1x A102","2x P0283","1x P0105","1x P430","1x P491","1x P0018","1x P0015","1x P447","1x P498","1x 16109433","1x P0144"]},
+    {"id":"cesta3","nome":"Mini Koblenz","codigo":"cestaminicomarrozkoblenz","preco":170,"imagem":"img/CESTA-MINI-KOBLENZ.webp","produtos":["1x P500","2x P490","1x P426","2x P0248","1x P0304","1x C0067","1x P497","1x 76409162","1x P0244","1x P0239","1x P0060","2x P0311","1x A102","2x P0283","1x P0105","1x P430","1x P491","1x P0018","1x P0015","1x P447","1x P498","1x 16109433","1x P0144"]},
+    {"id":"cesta4","nome":"Pequena Bonini","codigo":"cestapequenacomarroztiobonini","preco":215,"imagem":"img/CESTA-PEQUENA-BONINI.webp","produtos":["2x P0026","2x P490","1x P426","2x P0248","1x P0304","1x P0151","1x C0067","1x P497","2x 76409162","1x P0244","1x P0239","1x 77293314","1x 15026198","1x P481","2x P0060","2x P0311","1x A102","2x P0283","1x P0105","1x P430","1x P491","1x P0018","1x P0015","1x P447","2x P498","1x 16109433","1x P0144"]},
+    {"id":"cesta5","nome":"Pequena Koblenz","codigo":"cestapequenacomarrozkoblenz","preco":220,"imagem":"img/CESTA-PEQUENA-KOBLENZ.webp","produtos":["2x P500","2x P490","1x P426","2x P0248","1x P0304","1x P0151","1x C0067","1x P497","2x 76409162","1x P0244","1x P0239","1x 77293314","1x 15026198","1x P481","2x P0060","2x P0311","1x A102","2x P0283","1x P0105","1x P430","1x P491","1x P0018","1x P0015","1x P447","2x P498","1x 16109433","1x P0144"]},
+    {"id":"cesta6","nome":"Média Koblenz","codigo":"cestamediacomarrozkoblenz","preco":325,"imagem":"img/CESTA-MEDIA-KOBLENZ.webp","produtos":["3x P500","3x P490","2x P426","3x P0248","1x P0304","1x P0151","2x C0067","2x P497","2x 76409162","2x P0244","1x P0239","1x 77293314","1x 15026198","1x P481","2x P0060","3x P0311","2x A102","3x P0283","2x P0105","1x P430","1x P491","1x P0018","1x P0015","1x P447","2x P498","1x 16109433","1x P0144"]},
+    {"id":"cesta7","nome":"Média Bonini","codigo":"cestamediacomarroztiobonini","preco":320,"imagem":"img/CESTA-MEDIA-BONINI.webp","produtos":["3x P0026","3x P490","2x P426","3x P0248","1x P0304","1x P0151","2x C0067","2x P497","2x 76409162","2x P0244","1x P0239","1x 77293314","1x 15026198","1x P481","2x P0060","3x P0311","2x A102","3x P0283","2x P0105","1x P430","1x P491","1x P0018","1x P0015","1x P447","2x P498","1x 16109433","1x P0144"]},
+    {"id":"cesta8","nome":"Grande Koblenz","codigo":"cestagrandecomarrozkoblenz","preco":390,"imagem":"img/CESTA-GRANDE-KOBLENZ.webp","produtos":["4x P500","4x P490","3x P426","4x P0248","1x P0304","1x P0151","2x C0067","3x P497","2x 76409162","2x P0244","1x P0239","1x 77293314","1x 15026198","1x P481","2x P0060","4x P0311","2x A102","4x P0283","2x P0105","1x P430","1x P491","1x P0018","1x P0015","1x P447","2x P498","1x 16109433","1x P0144"]},
+    {"id":"cesta9","nome":"Grande Bonini","codigo":"cestagrandecomarroztiobonini","preco":380,"imagem":"img/CESTA-GRANDE-ALVINO.webp","produtos":["4x P440","4x P490","3x P426","4x P0248","1x P0304","1x P0151","2x C0067","3x P497","2x 76409162","2x P0244","1x P0239","1x 77293314","1x 15026198","1x P481","2x P0060","4x P0311","2x A102","4x P0283","2x P0105","1x P430","1x P491","1x P0018","1x P0015","1x P447","2x P498","1x 16109433","1x P0144"]}
+  ];
+
+  const LS_SETTINGS = "da_admin_settings_v4";
+  const LS_PRODUCTS = "da_produtos_backup_v4";
+  const LS_CESTAS = "da_cestas_backup_v4";
+  const LS_META = "da_produtos_meta_backup_v4";
+  const PLACEHOLDER = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><rect width='100%' height='100%' fill='#f4f4f4'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#999' font-family='Arial' font-size='18'>sem foto</text></svg>`);
+
+  const defaultSettings = {
+    firebaseUrl: "https://cedar-chemist-310801-default-rtdb.firebaseio.com",
+    produtosNode: "produtos",
+    metaNode: "produtos_meta",
+    cestasNode: "cestas",
+    githubToken: "",
+    githubOwner: "osvaldosereia",
+    githubRepo: "SUCEDOAN12",
+    githubBranch: "main",
+    githubProdutosPath: "site/produtos.json",
+    githubMetaPath: "site/produtos_meta.json",
+    githubCestasPath: "site/cestas.json",
+    autoGithub: false,
+    blingToken: "",
+    blingDeposito: "",
+    blingUnidade: "UN"
+  };
+
+  const state = {
+    produtos: [], cestas: [], meta: makeEmptyMeta(), settings: loadSettings(),
+    activeTab: "produtos", productPage: 1, selectedBasketId: null, editingProductKey: null,
+    basketProductSearch: "", basketReplace: null, membershipProductCode: "", dirtyProducts: false, dirtyCestas: false, dirtyMeta: false
+  };
+
+  function $(s, root=document){return root.querySelector(s)}
+  function $$(s, root=document){return Array.from(root.querySelectorAll(s))}
+  function esc(v=""){return String(v ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+  function slug(v=""){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")}
+  function norm(v=""){return String(v ?? "").trim().replace(/\s+/g,"").toUpperCase()}
+  function textNorm(v=""){return String(v??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()}
+  function toNum(v){if(typeof v === "number" && Number.isFinite(v)) return v; let s=String(v??"").trim().replace(/[^\d,.-]/g,""); if(!s) return 0; const c=s.lastIndexOf(","), d=s.lastIndexOf("."); if(c>-1&&d>-1) s=c>d?s.replace(/\./g,"").replace(",","."):s.replace(/,/g,""); else if(c>-1) s=s.replace(/\./g,"").replace(",","."); const n=Number(s); return Number.isFinite(n)?n:0}
+  function brl(v){return toNum(v).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
+  function uniq(arr){return Array.from(new Set(arr.map(x=>String(x||"").trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,"pt-BR"))}
+  function nowIso(){return new Date().toISOString()}
+  function deepClone(x){return JSON.parse(JSON.stringify(x))}
+  function makeEmptyMeta(){return {versao:1, atualizado_em:"", categorias:[], tags:[], fornecedores:[], marcas:[], estatisticas:{}}}
+  function parseTags(v){if(Array.isArray(v)) return v.map(String).map(x=>x.trim()).filter(Boolean); if(typeof v === "string") return v.split(/[,|;]/).map(x=>x.trim()).filter(Boolean); return []}
+  function getCode(p){return norm(p.codigo || p.sku || p.id || p.firebaseKey || p.gtin || p.ean || "")}
+  function getKey(p){return String(p.firebaseKey || p.id || p.codigo || `produto_${Date.now()}`).trim()}
+  function getImg(p){let img=String(p.url_imagem || p.imagem || p.image || p.img || p.foto || "").trim(); if(!img && getCode(p)) img = `img/produtos/${getCode(p)}.webp`; return img || PLACEHOLDER}
+  function getName(p){return String(p.nome || p.titulo || p.descricao || p.codigo || "Produto sem nome")}
+  function isActive(p){const st=String(p.situacao ?? p.status ?? "A").toLowerCase(); return !["i","inativo","false","0","excluido","excluído"].includes(st) && p.ativo !== false && p.visivel !== false}
+  function parseBasketItem(item){const m=String(item||"").trim().match(/^(\d+)\s*x\s*(.+)$/i); return {qtd:m?Number(m[1])||1:1,codigo:norm(m?m[2]:item)}}
+  function fmtBasketItem(q,c){return `${Math.max(1,Number(q)||1)}x ${norm(c)}`}
+  function itemCount(cesta){return (cesta.produtos||[]).reduce((s,i)=>s+parseBasketItem(i).qtd,0)}
+  function totalBasketProductsSet(){const set=new Set(); state.cestas.forEach(c=>(c.produtos||[]).forEach(i=>set.add(parseBasketItem(i).codigo))); return set}
+  function productByCode(code){const c=norm(code); return state.produtos.find(p => [p.codigo,p.sku,p.id,p.firebaseKey,p.gtin,p.ean].some(v=>norm(v)===c)) || null}
+  function basketsByProduct(productOrCode){const code=typeof productOrCode==="object"?getCode(productOrCode):norm(productOrCode); if(!code) return []; return state.cestas.filter(c => (c.produtos||[]).some(i=>parseBasketItem(i).codigo===code))}
+  function productInBasket(basketId, productOrCode){return basketsByProduct(productOrCode).some(c=>c.id===basketId)}
+
+  function setStatus(msg, type="warn"){ $("#statusText").textContent=msg; const d=$("#statusDot"); d.className="dot"+(type==="ok"?" ok":type==="err"?" err":"") }
+  function mark(kind){ if(kind==="products") state.dirtyProducts=true; if(kind==="cestas") state.dirtyCestas=true; if(kind==="meta") state.dirtyMeta=true; saveLocal(); renderSummary(); refreshJson() }
+  function saveLocal(){localStorage.setItem(LS_PRODUCTS, JSON.stringify(state.produtos)); localStorage.setItem(LS_CESTAS, JSON.stringify(state.cestas)); localStorage.setItem(LS_META, JSON.stringify(state.meta));}
+  function loadSettings(){try{return {...defaultSettings, ...(JSON.parse(localStorage.getItem(LS_SETTINGS)||"{}"))}}catch{return {...defaultSettings}}}
+  function saveSettings(){readSettingsFromUi(); localStorage.setItem(LS_SETTINGS, JSON.stringify(state.settings)); setStatus("Configurações salvas", "ok"); alert("Configurações salvas neste navegador.")}
+
+  function firebaseUrl(node){return `${String(state.settings.firebaseUrl).replace(/\/$/,"")}/${node}.json`}
+  async function fetchJson(url){const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error(`Erro ${r.status}: ${url}`); return await r.json()}
+  async function putJson(url, data){const r=await fetch(url,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(data,null,2)}); if(!r.ok) throw new Error(`Erro ${r.status} ao salvar ${url}`); return await r.json().catch(()=>null)}
+  function normalizeProducts(data){ if(Array.isArray(data)) return data.filter(Boolean).map((p,i)=>({...p, firebaseKey:p.firebaseKey||p.id||p.codigo||`produto_${i}`})); if(data && typeof data === "object") return Object.entries(data).filter(([,v])=>v && typeof v==="object").map(([k,v])=>({...v, firebaseKey:v.firebaseKey||k, id:v.id||k})); return [] }
+  function normalizeCestas(data){ const arr=Array.isArray(data)?data:(data&&typeof data==="object"?Object.values(data):[]); return arr.filter(Boolean).map((c,i)=>({id:String(c.id||`cesta${i+1}`),nome:String(c.nome||`Cesta ${i+1}`),codigo:String(c.codigo||slug(c.nome||`cesta-${i+1}`)),preco:toNum(c.preco),imagem:String(c.imagem||""),produtos:Array.isArray(c.produtos)?c.produtos.map(String):[]})) }
+  function normalizeMeta(data){const m = data && typeof data==="object" ? data : {}; return {...makeEmptyMeta(), ...m, categorias:Array.isArray(m.categorias)?m.categorias:[], tags:Array.isArray(m.tags)?m.tags:[], fornecedores:Array.isArray(m.fornecedores)?m.fornecedores:[], marcas:Array.isArray(m.marcas)?m.marcas:[]} }
+  function productsObject(){const out={}; state.produtos.forEach((p,i)=>{const key=getKey(p)||`produto_${i}`; const cp={...p, firebaseKey:key}; out[key]=cp}); return out}
+  function buildMetaPayload(){const meta=deepClone(state.meta); meta.atualizado_em=nowIso(); meta.estatisticas = makeStats(); meta.categorias = sortCategories(meta.categorias); meta.tags = uniq(meta.tags); meta.marcas = uniq(meta.marcas); meta.fornecedores = (meta.fornecedores||[]).filter(f=>f && f.nome).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),"pt-BR")); return meta}
+  function makeStats(){const ativos=state.produtos.filter(isActive).length, semEstoque=state.produtos.filter(p=>toNum(p.estoque)<=0).length, semGtin=state.produtos.filter(p=>!String(p.gtin||p.ean||"").trim()).length, semFoto=state.produtos.filter(p=>!String(p.url_imagem||p.imagem||"").trim()).length; return {total_produtos:state.produtos.length, ativos, inativos:state.produtos.length-ativos, sem_estoque:semEstoque, sem_gtin:semGtin, sem_foto:semFoto, cestas:state.cestas.length, produtos_em_cestas:totalBasketProductsSet().size} }
+  function sortCategories(cats){return (cats||[]).filter(c=>c && c.categoria).sort((a,b)=>[a.categoria,a.subcategoria,a.subsubcategoria].join("|").localeCompare([b.categoria,b.subcategoria,b.subsubcategoria].join("|"),"pt-BR"))}
+
+  async function loadData(){setStatus("Carregando Firebase...","warn"); renderLoading(); try{ const [p,m,c]=await Promise.allSettled([fetchJson(firebaseUrl(state.settings.produtosNode)), fetchJson(firebaseUrl(state.settings.metaNode)), fetchJson(firebaseUrl(state.settings.cestasNode))]); state.produtos = p.status==="fulfilled" ? normalizeProducts(p.value) : normalizeProducts(JSON.parse(localStorage.getItem(LS_PRODUCTS)||"[]")); state.meta = m.status==="fulfilled" ? normalizeMeta(m.value) : normalizeMeta(JSON.parse(localStorage.getItem(LS_META)||"{}")); state.cestas = c.status==="fulfilled" ? normalizeCestas(c.value) : normalizeCestas(JSON.parse(localStorage.getItem(LS_CESTAS)||"[]")); if(!state.cestas.length) state.cestas=normalizeCestas(DEFAULT_CESTAS); if(!state.meta.categorias.length && state.produtos.length) rebuildMeta(false); state.selectedBasketId = state.selectedBasketId || state.cestas[0]?.id || null; state.dirtyProducts=false; state.dirtyCestas=false; state.dirtyMeta=false; setStatus(`Carregado: ${state.produtos.length} produtos, ${state.cestas.length} cestas`,"ok"); }catch(e){console.error(e); state.produtos=normalizeProducts(JSON.parse(localStorage.getItem(LS_PRODUCTS)||"[]")); state.meta=normalizeMeta(JSON.parse(localStorage.getItem(LS_META)||"{}")); state.cestas=normalizeCestas(JSON.parse(localStorage.getItem(LS_CESTAS)||"[]")); if(!state.cestas.length) state.cestas=normalizeCestas(DEFAULT_CESTAS); setStatus("Falha no Firebase. Usando backup local.","err"); } finally{ renderAll(); }}
+  async function saveProducts(){try{setStatus("Salvando produtos + produtos_meta...","warn"); const payload=productsObject(); const meta=buildMetaPayload(); await putJson(firebaseUrl(state.settings.produtosNode), payload); await putJson(firebaseUrl(state.settings.metaNode), meta); state.meta=meta; state.dirtyProducts=false; state.dirtyMeta=false; saveLocal(); if(state.settings.autoGithub) await saveGithubFiles({produtos:payload,meta}); setStatus("Produtos e produtos_meta salvos", "ok"); alert("Produtos salvos no Firebase em /produtos.json e /produtos_meta.json" + (state.settings.autoGithub ? " e enviados ao GitHub." : ".")); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar produtos. Backup local feito.","err"); alert("Erro ao salvar produtos: "+e.message)}}
+  async function saveMeta(){try{setStatus("Salvando produtos_meta...","warn"); const meta=buildMetaPayload(); await putJson(firebaseUrl(state.settings.metaNode), meta); state.meta=meta; state.dirtyMeta=false; saveLocal(); if(state.settings.autoGithub) await saveGithubFiles({meta}); setStatus("produtos_meta salvo","ok"); alert("produtos_meta.json salvo."); renderAll();}catch(e){console.error(e); alert("Erro ao salvar produtos_meta: "+e.message); setStatus("Erro em produtos_meta","err")}}
+  async function saveCestas(){try{setStatus("Salvando cestas...","warn"); await putJson(firebaseUrl(state.settings.cestasNode), state.cestas); state.dirtyCestas=false; saveLocal(); if(state.settings.autoGithub) await saveGithubFiles({cestas:state.cestas}); setStatus("Cestas salvas", "ok"); alert("Cestas salvas no Firebase" + (state.settings.autoGithub ? " e GitHub." : ".")); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar cestas. Backup local feito.","err"); alert("Erro ao salvar cestas: "+e.message)}}
+  async function saveAll(){await saveProducts(); await saveCestas();}
+
+  function b64(str){return btoa(unescape(encodeURIComponent(str)))}
+  async function githubContent(path){const s=state.settings; const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}?ref=${encodeURIComponent(s.githubBranch)}`; const r=await fetch(url,{headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json"}}); if(r.status===404) return null; if(!r.ok) throw new Error(`GitHub GET ${path}: ${r.status}`); return r.json()}
+  async function githubUpsert(path, data, message){const s=state.settings; if(!s.githubToken || !s.githubOwner || !s.githubRepo) throw new Error("Configure token, owner e repositório do GitHub."); const old=await githubContent(path); const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}`; const body={message, branch:s.githubBranch, content:b64(JSON.stringify(data,null,2))}; if(old?.sha) body.sha=old.sha; const r=await fetch(url,{method:"PUT",headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},body:JSON.stringify(body)}); if(!r.ok){const t=await r.text(); throw new Error(`GitHub PUT ${path}: ${r.status} ${t.slice(0,180)}`)} return r.json()}
+  async function saveGithubFiles({produtos,meta,cestas}={}){readSettingsFromUi(); const ops=[]; if(produtos) ops.push(githubUpsert(state.settings.githubProdutosPath, produtos, "Atualiza produtos.json pelo admin Dona Antônia")); if(meta) ops.push(githubUpsert(state.settings.githubMetaPath, meta, "Atualiza produtos_meta.json pelo admin Dona Antônia")); if(cestas) ops.push(githubUpsert(state.settings.githubCestasPath, cestas, "Atualiza cestas.json pelo admin Dona Antônia")); await Promise.all(ops)}
+  async function testGithub(){try{readSettingsFromUi(); await githubContent(state.settings.githubProdutosPath); setStatus("GitHub conectado", "ok"); alert("Conexão com GitHub OK.")}catch(e){console.error(e); setStatus("Erro no GitHub","err"); alert("Erro no GitHub: "+e.message)}}
+  async function saveGithubNow(){try{setStatus("Enviando JSONs ao GitHub...","warn"); await saveGithubFiles({produtos:productsObject(),meta:buildMetaPayload(),cestas:state.cestas}); setStatus("GitHub atualizado","ok"); alert("produtos.json, produtos_meta.json e cestas.json enviados ao GitHub.")}catch(e){console.error(e); setStatus("Erro ao enviar GitHub","err"); alert("Erro ao enviar GitHub: "+e.message)}}
+
+  function renderAll(){renderTabs(); renderSettingsUi(); renderFilterOptions(); renderSummary(); renderProducts(); renderBasketsList(); renderBasketEditor(); renderCatalogs(); refreshJson();}
+  function renderLoading(){ $("#productsGrid").innerHTML=`<div class="empty">Carregando produtos...</div>`; $("#basketsList").innerHTML=""; $("#basketEditor").innerHTML=`<div class="empty">Carregando cestas...</div>` }
+  function toggleAdminDrawer(open){const drawer=$("#adminDrawer"), overlay=$("#adminDrawerOverlay"), btn=$("[data-action='toggle-admin-menu']"); if(!drawer||!overlay) return; const shouldOpen=!!open; drawer.classList.toggle("open",shouldOpen); overlay.classList.toggle("open",shouldOpen); drawer.setAttribute("aria-hidden", shouldOpen?"false":"true"); if(btn) btn.setAttribute("aria-expanded", shouldOpen?"true":"false"); }
+  function renderTabs(){ $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===state.activeTab)); ["produtos","cestas","cadastros","integracoes","json"].forEach(t=>$("#tab-"+t)?.classList.toggle("hidden",t!==state.activeTab)); }
+  function renderSummary(){const st=makeStats(); $("#summary").innerHTML=[['Produtos',st.total_produtos],['Ativos',st.ativos],['Sem estoque',st.sem_estoque],['Sem GTIN',st.sem_gtin],['Sem foto',st.sem_foto],['Cestas',st.cestas],['Em cestas',st.produtos_em_cestas],['Pendências',(state.dirtyProducts||state.dirtyCestas||state.dirtyMeta)?'Sim':'Não']].map(([l,v])=>`<div class="summary-card"><strong>${esc(v)}</strong><span>${esc(l)}</span></div>`).join("")}
+  function renderFilterOptions(){ fillSelect("#f-categoria", uniq([...state.produtos.map(p=>p.categoria), ...state.meta.categorias.map(c=>c.categoria)])); fillSelect("#f-subcategoria", uniq([...state.produtos.map(p=>p.subcategoria), ...state.meta.categorias.map(c=>c.subcategoria)])); fillSelect("#f-subsubcategoria", uniq([...state.produtos.map(p=>p.subsubcategoria), ...state.meta.categorias.map(c=>c.subsubcategoria)])); fillSelect("#f-marca", uniq([...state.produtos.map(p=>p.marca), ...state.meta.marcas])); fillSelect("#f-fornecedor", uniq([...state.produtos.map(p=>p.fornecedor), ...state.meta.fornecedores.map(f=>f.nome)])); fillSelect("#f-tag", uniq([...state.produtos.flatMap(p=>parseTags(p.tags)), ...state.meta.tags])); }
+  function fillSelect(sel, values){const el=$(sel); if(!el) return; const cur=el.value; const first=el.querySelector('option')?.outerHTML || '<option value="">Todos</option>'; el.innerHTML = first + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join(""); el.value = values.includes(cur)?cur:""}
+  function getFilters(){return {q:$("#f-q")?.value||"",categoria:$("#f-categoria")?.value||"",subcategoria:$("#f-subcategoria")?.value||"",subsubcategoria:$("#f-subsubcategoria")?.value||"",marca:$("#f-marca")?.value||"",fornecedor:$("#f-fornecedor")?.value||"",tag:$("#f-tag")?.value||"",situacao:$("#f-situacao")?.value||"",qualidade:$("#f-qualidade")?.value||"",cesta:$("#f-cesta")?.value||"",sort:$("#f-sort")?.value||"nome",pageSize:Number($("#f-page-size")?.value||24)}}
+  function filteredProducts(){const f=getFilters(); let list=[...state.produtos]; const q=textNorm(f.q); if(q) list=list.filter(p=>textNorm([p.nome,p.codigo,p.gtin,p.ean,p.marca,p.categoria,p.subcategoria,p.subsubcategoria,p.fornecedor,p.descricao,parseTags(p.tags).join(' ')].join(' ')).includes(q)); ['categoria','subcategoria','subsubcategoria','marca','fornecedor'].forEach(k=>{if(f[k]) list=list.filter(p=>String(p[k]||'')===f[k])}); if(f.tag) list=list.filter(p=>parseTags(p.tags).includes(f.tag)); if(f.situacao==='A') list=list.filter(isActive); if(f.situacao==='I') list=list.filter(p=>!isActive(p)); if(f.situacao==='sem_estoque') list=list.filter(p=>toNum(p.estoque)<=0); if(f.situacao==='com_estoque') list=list.filter(p=>toNum(p.estoque)>0); if(f.qualidade==='sem_foto') list=list.filter(p=>!String(p.url_imagem||p.imagem||'').trim()); if(f.qualidade==='sem_gtin') list=list.filter(p=>!String(p.gtin||p.ean||'').trim()); if(f.qualidade==='sem_descricao') list=list.filter(p=>!String(p.descricao||'').trim()); if(f.qualidade==='com_oferta') list=list.filter(p=>toNum(p.preco_oferta)>0); if(f.cesta==='em_cesta') list=list.filter(p=>basketsByProduct(p).length); if(f.cesta==='fora_cesta') list=list.filter(p=>!basketsByProduct(p).length); const sorters={nome:(a,b)=>getName(a).localeCompare(getName(b),'pt-BR'),codigo:(a,b)=>getCode(a).localeCompare(getCode(b),'pt-BR'),preco_desc:(a,b)=>toNum(b.preco)-toNum(a.preco),preco_asc:(a,b)=>toNum(a.preco)-toNum(b.preco),estoque_desc:(a,b)=>toNum(b.estoque)-toNum(a.estoque),atualizado_desc:(a,b)=>toNum(b.last_update)-toNum(a.last_update)}; return list.sort(sorters[f.sort]||sorters.nome)}
+  function renderProducts(){const all=filteredProducts(); const f=getFilters(); const pages=Math.max(1,Math.ceil(all.length/f.pageSize)); state.productPage=Math.min(state.productPage,pages); const start=(state.productPage-1)*f.pageSize; const list=all.slice(start,start+f.pageSize); $("#productsGrid").innerHTML = list.length ? list.map(renderProductCard).join("") : `<div class="empty">Nenhum produto encontrado.</div>`; $("#pagination").innerHTML = `<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`; }
+  function renderProductCard(p){const code=getCode(p); const baskets=basketsByProduct(p); const basketBadges=baskets.length?baskets.map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join(""):`<span class="chip empty">fora das cestas</span>`; const tags=parseTags(p.tags).slice(0,4).map(t=>`<span class="chip">#${esc(t)}</span>`).join(""); return `<article class="product-card"><div class="product-img"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'" alt="${esc(getName(p))}" loading="lazy"></div><div class="product-body"><h3 class="product-name">${esc(getName(p))}</h3><div class="meta-line"><span class="chip">Cód: ${esc(p.codigo||p.firebaseKey||code)}</span>${p.gtin?`<span class="chip">GTIN: ${esc(p.gtin)}</span>`:''}${p.marca?`<span class="chip">${esc(p.marca)}</span>`:''}${isActive(p)?'<span class="chip green">ativo</span>':'<span class="chip red">inativo</span>'}</div><div class="price-row"><div class="price">${brl(p.preco)}</div><div class="stock">Estoque: ${esc(p.estoque??0)}</div></div><div class="tiny">${esc([p.categoria,p.subcategoria,p.subsubcategoria].filter(Boolean).join(' › '))}</div><div class="meta-line">${tags}</div><div class="meta-line">${basketBadges}</div><div class="card-actions"><button class="btn small" data-action="edit-product" data-key="${esc(getKey(p))}">Editar produto</button><button class="btn small gold" data-action="edit-membership" data-code="${esc(code)}">Editar cestas</button><button class="btn small blue" data-action="duplicate-product" data-key="${esc(getKey(p))}">Duplicar</button><button class="btn small red" data-action="delete-product" data-key="${esc(getKey(p))}">Excluir</button></div></div></article>`}
+
+  function createProduct(){const key=`produto_${Date.now()}`; const p={firebaseKey:key,id:key,codigo:`NOVO${String(Date.now()).slice(-6)}`,nome:"Novo produto",gtin:"",preco:0,preco_custo:0,estoque:0,situacao:"A",ncm:"",validade:"",categoria:"",subcategoria:"",subsubcategoria:"",marca:"",embalagem:"",fornecedor:"",tags:[],url_imagem:"",descricao:"",preco_oferta:"",validade_oferta:"",gondola:"",prateleira:"",last_update:Date.now()}; state.produtos.unshift(p); mark('products'); openProduct(getKey(p))}
+  function duplicateProduct(key){const p=productByKey(key); if(!p) return; const nk=`produto_${Date.now()}`; const cp={...deepClone(p),firebaseKey:nk,id:nk,codigo:`${p.codigo||'COPIA'}_COPIA`,nome:`${getName(p)} - Cópia`,last_update:Date.now()}; state.produtos.unshift(cp); mark('products'); openProduct(nk)}
+  function deleteProduct(key){const p=productByKey(key); if(!p) return; if(!confirm(`Excluir o produto ${getName(p)}?`)) return; state.produtos=state.produtos.filter(x=>getKey(x)!==String(key)); state.cestas.forEach(c=>c.produtos=(c.produtos||[]).filter(i=>parseBasketItem(i).codigo!==getCode(p))); mark('products'); mark('cestas'); renderAll()}
+  function productByKey(key){return state.produtos.find(p=>getKey(p)===String(key))||null}
+  function openProduct(key){const p=productByKey(key); if(!p) return; state.editingProductKey=key; $("#productModal").classList.add('open'); renderProductEditor()}
+  function closeProduct(){state.editingProductKey=null; $("#productModal").classList.remove('open'); renderAll()}
+  function updateProduct(field, value){const p=productByKey(state.editingProductKey); if(!p) return; if(['preco','preco_custo','estoque','preco_oferta'].includes(field)) p[field]=toNum(value); else if(field==='tags') p.tags=parseTags(value); else p[field]=value; p.last_update=Date.now(); mark('products')}
+  function applyProductJson(){const p=productByKey(state.editingProductKey); if(!p) return; try{const next=JSON.parse($("#productJsonEditor").value); const key=getKey(p); Object.keys(p).forEach(k=>delete p[k]); Object.assign(p,next,{firebaseKey:next.firebaseKey||key,last_update:Date.now()}); mark('products'); renderProductEditor(); alert('JSON aplicado.')}catch(e){alert('JSON inválido: '+e.message)}}
+  function renderProductEditor(resetJson=true){const p=productByKey(state.editingProductKey); if(!p) return; $("#productModalTitle").textContent=`Editar: ${getName(p)}`; const catOptions=uniq([...state.meta.categorias.map(c=>c.categoria),...state.produtos.map(x=>x.categoria)]).map(v=>`<option ${p.categoria===v?'selected':''}>${esc(v)}</option>`).join(''); const subOptions=uniq([...state.meta.categorias.map(c=>c.subcategoria),...state.produtos.map(x=>x.subcategoria)]).map(v=>`<option ${p.subcategoria===v?'selected':''}>${esc(v)}</option>`).join(''); const subsubOptions=uniq([...state.meta.categorias.map(c=>c.subsubcategoria),...state.produtos.map(x=>x.subsubcategoria)]).map(v=>`<option ${p.subsubcategoria===v?'selected':''}>${esc(v)}</option>`).join(''); const marcaOptions=uniq([...state.meta.marcas,...state.produtos.map(x=>x.marca)]).map(v=>`<option ${p.marca===v?'selected':''}>${esc(v)}</option>`).join(''); const fornOptions=uniq([...state.meta.fornecedores.map(f=>f.nome),...state.produtos.map(x=>x.fornecedor)]).map(v=>`<option ${p.fornecedor===v?'selected':''}>${esc(v)}</option>`).join(''); $("#productModalBody").innerHTML=`<div class="editor-preview"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(getName(p))}</strong><div class="meta-line" style="margin-top:8px"><span class="chip">${esc(p.codigo||getCode(p))}</span><span class="chip">${brl(p.preco)}</span>${basketsByProduct(p).map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join('')}</div></div></div><div class="form-grid"><div class="field"><label>Nome</label><input class="input" data-pfield="nome" value="${esc(p.nome||'')}"></div><div class="field"><label>Código</label><input class="input" data-pfield="codigo" value="${esc(p.codigo||'')}"></div><div class="field"><label>GTIN/EAN</label><input class="input" data-pfield="gtin" value="${esc(p.gtin||p.ean||'')}"></div><div class="field"><label>Situação</label><select class="select" data-pfield="situacao"><option value="A" ${isActive(p)?'selected':''}>Ativo</option><option value="I" ${!isActive(p)?'selected':''}>Inativo</option></select></div><div class="field"><label>Preço</label><input class="input" data-pfield="preco" value="${esc(p.preco||0)}"></div><div class="field"><label>Custo</label><input class="input" data-pfield="preco_custo" value="${esc(p.preco_custo||0)}"></div><div class="field"><label>Preço oferta</label><input class="input" data-pfield="preco_oferta" value="${esc(p.preco_oferta||'')}"></div><div class="field"><label>Validade oferta</label><input class="input" data-pfield="validade_oferta" value="${esc(p.validade_oferta||'')}"></div><div class="field"><label>Estoque</label><input class="input" data-pfield="estoque" value="${esc(p.estoque||0)}"></div><div class="field"><label>NCM</label><input class="input" data-pfield="ncm" value="${esc(p.ncm||'')}"></div><div class="field"><label>Validade</label><input class="input" data-pfield="validade" value="${esc(p.validade||'')}"></div><div class="field"><label>Embalagem</label><input class="input" data-pfield="embalagem" value="${esc(p.embalagem||'')}"></div><div class="field"><label>Categoria</label><input list="catList" class="input" data-pfield="categoria" value="${esc(p.categoria||'')}"><datalist id="catList">${catOptions}</datalist></div><div class="field"><label>Subcategoria</label><input list="subList" class="input" data-pfield="subcategoria" value="${esc(p.subcategoria||'')}"><datalist id="subList">${subOptions}</datalist></div><div class="field"><label>Subsubcategoria</label><input list="subsubList" class="input" data-pfield="subsubcategoria" value="${esc(p.subsubcategoria||'')}"><datalist id="subsubList">${subsubOptions}</datalist></div><div class="field"><label>Marca</label><input list="marcaList" class="input" data-pfield="marca" value="${esc(p.marca||'')}"><datalist id="marcaList">${marcaOptions}</datalist></div><div class="field"><label>Fornecedor</label><input list="fornList" class="input" data-pfield="fornecedor" value="${esc(p.fornecedor||'')}"><datalist id="fornList">${fornOptions}</datalist></div><div class="field"><label>Gôndola</label><input class="input" data-pfield="gondola" value="${esc(p.gondola||'')}"></div><div class="field"><label>Prateleira</label><input class="input" data-pfield="prateleira" value="${esc(p.prateleira||'')}"></div><div class="field"><label>Tags</label><input class="input" data-pfield="tags" value="${esc(parseTags(p.tags).join(', '))}"></div><div class="field span-4"><label>URL imagem</label><input class="input" data-pfield="url_imagem" value="${esc(p.url_imagem||p.imagem||'')}"></div><div class="field span-4"><label>Descrição</label><textarea class="textarea" data-pfield="descricao">${esc(p.descricao||'')}</textarea></div><div class="field span-4"><label>JSON avançado do produto</label><textarea class="textarea" id="productJsonEditor">${esc(JSON.stringify(p,null,2))}</textarea></div></div><div class="toolbar" style="justify-content:flex-start;margin-top:14px"><button class="btn primary" data-action="close-product-modal">Concluir</button><button class="btn gold" data-action="apply-product-json">Aplicar JSON avançado</button><button class="btn blue" data-action="edit-membership" data-code="${esc(getCode(p))}">Editar cestas deste produto</button><button class="btn red" data-action="delete-product" data-key="${esc(getKey(p))}">Excluir produto</button></div>`; }
+
+  function renderBasketsList(){const q=textNorm($("#basketSearch")?.value||""); const list=state.cestas.filter(c=>!q||textNorm([c.nome,c.codigo].join(' ')).includes(q)); $("#basketsList").innerHTML=list.map(c=>`<button class="side-card ${c.id===state.selectedBasketId?'active':''}" data-action="select-basket" data-id="${esc(c.id)}"><img src="${esc(c.imagem||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><span><strong>${esc(c.nome)}</strong><small>${brl(c.preco)} · ${itemCount(c)} itens</small></span></button>`).join('') || `<div class="empty">Nenhuma cesta.</div>`}
+  function renderBasketEditor(){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(!c){$("#basketEditor").innerHTML=`<div class="empty">Selecione ou crie uma cesta.</div>`; return} const rows=(c.produtos||[]).map(i=>renderBasketRow(c,i)).join('') || `<div class="empty">Cesta sem produtos.</div>`; $("#basketEditor").innerHTML=`<div class="panel-head"><div class="panel-title"><h2>${esc(c.nome)}</h2><p>${esc(c.codigo)} · ${itemCount(c)} itens</p></div><div class="toolbar"><button class="btn red" data-action="delete-basket">Excluir cesta</button></div></div><div class="form-grid"><div class="field"><label>Nome</label><input class="input" data-cfield="nome" value="${esc(c.nome)}"></div><div class="field"><label>Código</label><input class="input" data-cfield="codigo" value="${esc(c.codigo)}"></div><div class="field"><label>Preço</label><input class="input" data-cfield="preco" value="${esc(c.preco)}"></div><div class="field"><label>Imagem</label><input class="input" data-cfield="imagem" value="${esc(c.imagem)}"></div></div><div style="margin-top:14px"><div class="field"><label>Buscar produto para adicionar/substituir</label><input class="input" id="basketProductSearch" value="${esc(state.basketProductSearch)}" placeholder="Digite nome, código, marca ou GTIN..."></div><div class="search-results" id="basketProductResults">${renderBasketSearchResults()}</div></div><div class="basket-list">${rows}</div>`}
+  function renderBasketRow(c,item){const it=parseBasketItem(item), p=productByCode(it.codigo); return `<div class="basket-row"><img src="${esc(p?getImg(p):PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(p?getName(p):'Produto não encontrado')}</strong><div class="tiny">Código: ${esc(it.codigo)} ${p?`· ${brl(p.preco)}`:''}</div></div><div class="field"><label>Qtd</label><input class="input" data-action="basket-qtd" data-code="${esc(it.codigo)}" value="${esc(it.qtd)}"></div><button class="btn small blue" data-action="start-replace" data-code="${esc(it.codigo)}">Substituir</button><button class="btn small red" data-action="remove-from-basket" data-code="${esc(it.codigo)}">Remover</button></div>`}
+  function renderBasketSearchResults(){const q=textNorm(state.basketProductSearch); if(!q) return state.basketReplace?`<div class="notice gold">Escolha o produto substituto.</div>`:''; return state.produtos.filter(p=>textNorm([getName(p),p.codigo,p.gtin,p.marca,p.categoria].join(' ')).includes(q)).slice(0,30).map(p=>`<div class="result-row"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(getName(p))}</strong><div class="tiny">${esc(p.codigo||getCode(p))} · ${brl(p.preco)}</div></div><button class="btn small ${state.basketReplace?'blue':'green'}" data-action="${state.basketReplace?'confirm-replace':'add-to-basket'}" data-code="${esc(getCode(p))}">${state.basketReplace?'Usar como substituto':'Adicionar'}</button></div>`).join('') || `<div class="empty">Nenhum produto encontrado.</div>`}
+  function addToBasket(code,qtd=1){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(!c) return; const n=norm(code); const idx=(c.produtos||[]).findIndex(i=>parseBasketItem(i).codigo===n); if(idx>=0){const it=parseBasketItem(c.produtos[idx]); c.produtos[idx]=fmtBasketItem(it.qtd+Number(qtd||1),n)} else c.produtos.push(fmtBasketItem(qtd,n)); state.basketProductSearch=''; mark('cestas'); renderAll()}
+  function removeFromBasket(code){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(!c) return; c.produtos=(c.produtos||[]).filter(i=>parseBasketItem(i).codigo!==norm(code)); mark('cestas'); renderAll()}
+  function updateBasketQty(code,qtd){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(!c) return; c.produtos=(c.produtos||[]).map(i=>parseBasketItem(i).codigo===norm(code)?fmtBasketItem(qtd,code):i); mark('cestas')}
+  function replaceInBasket(newCode){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(!c||!state.basketReplace) return; c.produtos=(c.produtos||[]).map(i=>{const it=parseBasketItem(i); return it.codigo===norm(state.basketReplace)?fmtBasketItem(it.qtd,newCode):i}); state.basketReplace=null; state.basketProductSearch=''; mark('cestas'); renderAll()}
+  function createBasket(){const id=`cesta${state.cestas.length+1}`; state.cestas.push({id,nome:`Nova cesta ${state.cestas.length+1}`,codigo:slug(`nova cesta ${state.cestas.length+1}`),preco:0,imagem:'img/cesta-padrao.webp',produtos:[]}); state.selectedBasketId=id; mark('cestas'); renderAll()}
+  function deleteBasket(){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(!c||!confirm(`Excluir ${c.nome}?`)) return; state.cestas=state.cestas.filter(x=>x.id!==c.id); state.selectedBasketId=state.cestas[0]?.id||null; mark('cestas'); renderAll()}
+
+  function openMembership(code){state.membershipProductCode=norm(code); const p=productByCode(code); $("#membershipSub").textContent = `${p?getName(p):'Produto'} · Código ${state.membershipProductCode}`; $("#membershipBody").innerHTML = `<div class="catalog-list">${state.cestas.map(c=>`<label class="catalog-row"><span><strong>${esc(c.nome)}</strong><br><small class="tiny">${esc(c.codigo)} · ${itemCount(c)} itens</small></span><input type="checkbox" data-action="toggle-membership" data-id="${esc(c.id)}" ${productInBasket(c.id,state.membershipProductCode)?'checked':''}></label>`).join('')}</div>`; $("#membershipModal").classList.add('open')}
+  function toggleMembership(basketId,checked){const c=state.cestas.find(x=>x.id===basketId); if(!c) return; if(checked){if(!productInBasket(basketId,state.membershipProductCode)) c.produtos.push(fmtBasketItem(1,state.membershipProductCode))} else {c.produtos=(c.produtos||[]).filter(i=>parseBasketItem(i).codigo!==state.membershipProductCode)} mark('cestas')}
+
+  function rebuildMeta(withRender=true){const cats=[]; state.produtos.forEach(p=>{if(p.categoria||p.subcategoria||p.subsubcategoria) cats.push({categoria:p.categoria||'',subcategoria:p.subcategoria||'',subsubcategoria:p.subsubcategoria||''})}); const seen=new Set(); state.meta.categorias=cats.filter(c=>{const k=[c.categoria,c.subcategoria,c.subsubcategoria].join('|'); if(seen.has(k)) return false; seen.add(k); return true}); state.meta.tags=uniq(state.produtos.flatMap(p=>parseTags(p.tags))); state.meta.marcas=uniq(state.produtos.map(p=>p.marca)); const existing=state.meta.fornecedores||[]; const names=uniq(state.produtos.map(p=>p.fornecedor)); state.meta.fornecedores=names.map(n=>existing.find(f=>f.nome===n)||{id:slug(n),nome:n,telefone:'',observacoes:''}); state.meta.estatisticas=makeStats(); state.meta.atualizado_em=nowIso(); state.dirtyMeta=true; saveLocal(); if(withRender){renderAll(); setStatus('Cadastros reconstruídos','ok')}}
+  function renderCatalogs(){renderCategories(); renderTags(); renderFornecedores(); renderMarcas()}
+  function renderCategories(){const el=$("#categoriesList"); if(!el) return; el.innerHTML=sortCategories(state.meta.categorias).map((c,i)=>`<div class="catalog-row multi"><input class="input" data-cat-index="${i}" data-cat-field="categoria" value="${esc(c.categoria)}"><input class="input" data-cat-index="${i}" data-cat-field="subcategoria" value="${esc(c.subcategoria)}"><input class="input" data-cat-index="${i}" data-cat-field="subsubcategoria" value="${esc(c.subsubcategoria)}"><button class="btn small red" data-action="delete-category" data-index="${i}">Excluir</button></div>`).join('') || `<div class="empty">Nenhuma categoria.</div>`}
+  function renderTags(){const el=$("#tagsList"); if(!el) return; el.innerHTML=uniq(state.meta.tags).map((t,i)=>`<div class="catalog-row"><input class="input" data-tag-index="${i}" value="${esc(t)}"><button class="btn small red" data-action="delete-tag" data-index="${i}">Excluir</button></div>`).join('') || `<div class="empty">Nenhuma tag.</div>`}
+  function renderFornecedores(){const el=$("#fornecedoresList"); if(!el) return; el.innerHTML=(state.meta.fornecedores||[]).map((f,i)=>`<div class="catalog-row multi"><input class="input" data-forn-index="${i}" data-forn-field="nome" value="${esc(f.nome)}"><input class="input" data-forn-index="${i}" data-forn-field="telefone" value="${esc(f.telefone||'')}"><input class="input" data-forn-index="${i}" data-forn-field="observacoes" value="${esc(f.observacoes||'')}"><button class="btn small red" data-action="delete-fornecedor" data-index="${i}">Excluir</button></div>`).join('') || `<div class="empty">Nenhum fornecedor.</div>`}
+  function renderMarcas(){const el=$("#marcasList"); if(!el) return; el.innerHTML=uniq(state.meta.marcas).map((m,i)=>`<div class="catalog-row"><input class="input" data-marca-index="${i}" value="${esc(m)}"><button class="btn small red" data-action="delete-marca" data-index="${i}">Excluir</button></div>`).join('') || `<div class="empty">Nenhuma marca.</div>`}
+
+  function renderSettingsUi(){const s=state.settings; const ids={setFirebaseUrl:'firebaseUrl',setProdutosNode:'produtosNode',setMetaNode:'metaNode',setCestasNode:'cestasNode',setGithubToken:'githubToken',setGithubOwner:'githubOwner',setGithubRepo:'githubRepo',setGithubBranch:'githubBranch',setGithubProdutosPath:'githubProdutosPath',setGithubMetaPath:'githubMetaPath',setGithubCestasPath:'githubCestasPath',setBlingToken:'blingToken',setBlingDeposito:'blingDeposito',setBlingUnidade:'blingUnidade'}; Object.entries(ids).forEach(([id,k])=>{const el=$("#"+id); if(el && el.value!==String(s[k]||'')) el.value=s[k]||''}); const auto=$("#setAutoGithub"); if(auto) auto.checked=!!s.autoGithub}
+  function readSettingsFromUi(){const ids={setFirebaseUrl:'firebaseUrl',setProdutosNode:'produtosNode',setMetaNode:'metaNode',setCestasNode:'cestasNode',setGithubToken:'githubToken',setGithubOwner:'githubOwner',setGithubRepo:'githubRepo',setGithubBranch:'githubBranch',setGithubProdutosPath:'githubProdutosPath',setGithubMetaPath:'githubMetaPath',setGithubCestasPath:'githubCestasPath',setBlingToken:'blingToken',setBlingDeposito:'blingDeposito',setBlingUnidade:'blingUnidade'}; Object.entries(ids).forEach(([id,k])=>{const el=$("#"+id); if(el) state.settings[k]=el.value.trim()}); state.settings.autoGithub=!!$("#setAutoGithub")?.checked}
+
+  function refreshJson(){const jp=$("#jsonProdutos"), jm=$("#jsonMeta"), jc=$("#jsonCestas"); if(jp) jp.value=JSON.stringify(productsObject(),null,2); if(jm) jm.value=JSON.stringify(buildMetaPayload(),null,2); if(jc) jc.value=JSON.stringify(state.cestas,null,2)}
+  function applyJson(){try{state.produtos=normalizeProducts(JSON.parse($("#jsonProdutos").value)); state.meta=normalizeMeta(JSON.parse($("#jsonMeta").value)); state.cestas=normalizeCestas(JSON.parse($("#jsonCestas").value)); mark('products'); mark('meta'); mark('cestas'); renderAll(); alert('JSON aplicado.')}catch(e){alert('JSON inválido: '+e.message)}}
+  function download(name,data,type='application/json'){const blob=new Blob([type.includes('json')?JSON.stringify(data,null,2):data],{type}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(url),500)}
+  function exportProductsJson(){download('produtos.json', productsObject())}
+  function exportMetaJson(){download('produtos_meta.json', buildMetaPayload())}
+  function exportCestasJson(){download('cestas.json', state.cestas)}
+  function csvEscape(v){const s=String(v??''); return /[";\n\r]/.test(s)?`"${s.replace(/"/g,'""')}"`:s}
+  function blingRows(){return filteredProducts().map(p=>({codigo:p.codigo||getCode(p),descricao:getName(p),unidade:state.settings.blingUnidade||'UN',preco:toNum(p.preco).toFixed(2).replace('.',','),preco_custo:toNum(p.preco_custo).toFixed(2).replace('.',','),codigo_barras:String(p.gtin||p.ean||'').trim(),ncm:p.ncm||'',estoque:p.estoque||0,situacao:isActive(p)?'Ativo':'Inativo',categoria:p.categoria||'',marca:p.marca||'',descricao_curta:p.descricao||'',url_imagem:p.url_imagem||p.imagem||'',fornecedor:p.fornecedor||'',gondola:p.gondola||'',prateleira:p.prateleira||''}))}
+  function exportBlingCsv(){const rows=blingRows(); const header=['codigo','descricao','unidade','preco','preco_custo','codigo_barras','ncm','estoque','situacao','categoria','marca','descricao_curta','url_imagem','fornecedor','gondola','prateleira']; const csv='\ufeff'+[header.join(';'),...rows.map(r=>header.map(h=>csvEscape(r[h])).join(';'))].join('\n'); download('produtos-bling.csv', csv, 'text/csv;charset=utf-8')}
+  function exportBlingJson(){download('produtos-bling.json', blingRows())}
+  function copyReport(){const s=makeStats(); const txt=`Relatório Dona Antônia\nProdutos: ${s.total_produtos}\nAtivos: ${s.ativos}\nSem estoque: ${s.sem_estoque}\nSem GTIN: ${s.sem_gtin}\nSem foto: ${s.sem_foto}\nCestas: ${s.cestas}\nProdutos em cestas: ${s.produtos_em_cestas}`; navigator.clipboard?.writeText(txt); alert('Relatório copiado.')}
+  function importFile(file,kind){const rd=new FileReader(); rd.onload=()=>{try{const data=JSON.parse(rd.result); if(kind==='products'){state.produtos=normalizeProducts(data); mark('products')} if(kind==='cestas'){state.cestas=normalizeCestas(data); state.selectedBasketId=state.cestas[0]?.id||null; mark('cestas')} rebuildMeta(false); renderAll(); alert('Arquivo importado.')}catch(e){alert('Arquivo inválido: '+e.message)}}; rd.readAsText(file)}
+
+  document.addEventListener('click', e => {const b=e.target.closest('[data-action]'); if(!b) return; const a=b.dataset.action; if(a==='toggle-admin-menu') toggleAdminDrawer(true); if(a==='close-admin-menu') toggleAdminDrawer(false); if(a==='reload') loadData(); if(a==='new-product') createProduct(); if(a==='save-products') saveProducts(); if(a==='save-meta') saveMeta(); if(a==='save-cestas') saveCestas(); if(a==='save-all') saveAll(); if(a==='open-settings') {state.activeTab='integracoes'; renderAll();} if(a==='export-products-json') exportProductsJson(); if(a==='export-meta-json') exportMetaJson(); if(a==='export-cestas-json') exportCestasJson(); if(a==='export-bling-csv') exportBlingCsv(); if(a==='export-bling-json') exportBlingJson(); if(a==='clear-filters'){['#f-q','#f-categoria','#f-subcategoria','#f-subsubcategoria','#f-marca','#f-fornecedor','#f-tag','#f-situacao','#f-qualidade','#f-cesta'].forEach(s=>{const el=$(s); if(el) el.value=''}); state.productPage=1; renderProducts()} if(a==='prev-page'){state.productPage=Math.max(1,state.productPage-1); renderProducts()} if(a==='next-page'){state.productPage++; renderProducts()} if(a==='edit-product') openProduct(b.dataset.key); if(a==='close-product-modal') closeProduct(); if(a==='duplicate-product') duplicateProduct(b.dataset.key); if(a==='delete-product') deleteProduct(b.dataset.key); if(a==='apply-product-json') applyProductJson(); if(a==='edit-membership') openMembership(b.dataset.code); if(a==='close-membership-modal') {$('#membershipModal').classList.remove('open'); renderAll()} if(a==='select-basket'){state.selectedBasketId=b.dataset.id; state.basketReplace=null; renderAll()} if(a==='new-cesta') createBasket(); if(a==='delete-basket') deleteBasket(); if(a==='add-to-basket') addToBasket(b.dataset.code); if(a==='remove-from-basket') removeFromBasket(b.dataset.code); if(a==='start-replace'){state.basketReplace=b.dataset.code; state.basketProductSearch=''; renderBasketEditor()} if(a==='confirm-replace') replaceInBasket(b.dataset.code); if(a==='rebuild-meta') rebuildMeta(); if(a==='add-category'){const c=$('#newCat').value.trim(), s=$('#newSub').value.trim(), ss=$('#newSubSub').value.trim(); if(c||s||ss){state.meta.categorias.push({categoria:c,subcategoria:s,subsubcategoria:ss}); mark('meta'); renderAll(); $('#newCat').value=$('#newSub').value=$('#newSubSub').value=''}} if(a==='delete-category'){state.meta.categorias.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-tag'){const v=$('#newTag').value.trim(); if(v&&!state.meta.tags.includes(v)){state.meta.tags.push(v); $('#newTag').value=''; mark('meta'); renderAll()}} if(a==='delete-tag'){state.meta.tags.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-fornecedor'){const nome=$('#newFornecedorNome').value.trim(); if(nome){state.meta.fornecedores.push({id:slug(nome),nome,telefone:$('#newFornecedorTel').value.trim(),observacoes:$('#newFornecedorObs').value.trim()}); $('#newFornecedorNome').value=$('#newFornecedorTel').value=$('#newFornecedorObs').value=''; mark('meta'); renderAll()}} if(a==='delete-fornecedor'){state.meta.fornecedores.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-marca'){const v=$('#newMarca').value.trim(); if(v&&!state.meta.marcas.includes(v)){state.meta.marcas.push(v); $('#newMarca').value=''; mark('meta'); renderAll()}} if(a==='delete-marca'){state.meta.marcas.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='save-settings') saveSettings(); if(a==='test-github') testGithub(); if(a==='save-github-now') saveGithubNow(); if(a==='refresh-json') refreshJson(); if(a==='apply-json') applyJson(); if(a==='copy-report') copyReport(); });
+  document.addEventListener('click', e=>{const t=e.target.closest('.tab'); if(!t) return; state.activeTab=t.dataset.tab; renderAll(); toggleAdminDrawer(false)});
+  document.addEventListener('input', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.matches('[data-pfield]')) updateProduct(el.dataset.pfield, el.value); if(el.matches('[data-cfield]')){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(c){c[el.dataset.cfield]=el.dataset.cfield==='preco'?toNum(el.value):el.value; mark('cestas'); renderBasketsList(); refreshJson()}} if(el.matches('#basketSearch')) renderBasketsList(); if(el.matches('#basketProductSearch')){state.basketProductSearch=el.value; $('#basketProductResults').innerHTML=renderBasketSearchResults()} if(el.matches('[data-action="basket-qtd"]')) updateBasketQty(el.dataset.code, el.value); if(el.matches('[data-cat-index]')){state.meta.categorias[Number(el.dataset.catIndex)][el.dataset.catField]=el.value; mark('meta')} if(el.matches('[data-tag-index]')){state.meta.tags[Number(el.dataset.tagIndex)]=el.value; mark('meta')} if(el.matches('[data-forn-index]')){state.meta.fornecedores[Number(el.dataset.fornIndex)][el.dataset.fornField]=el.value; mark('meta')} if(el.matches('[data-marca-index]')){state.meta.marcas[Number(el.dataset.marcaIndex)]=el.value; mark('meta')} if(el.closest('#tab-integracoes')) readSettingsFromUi(); });
+  document.addEventListener('change', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.id==='productsFile'&&el.files[0]) importFile(el.files[0],'products'); if(el.id==='cestasFile'&&el.files[0]) importFile(el.files[0],'cestas'); if(el.matches('[data-action="toggle-membership"]')) toggleMembership(el.dataset.id, el.checked); if(el.id==='setAutoGithub') readSettingsFromUi()});
+  window.addEventListener('beforeunload', e=>{if(state.dirtyProducts||state.dirtyCestas||state.dirtyMeta){e.preventDefault(); e.returnValue='Existem alterações não salvas.'}});
+
+  loadData();
+})();
+</script>
 </body>
 </html>
