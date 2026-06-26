@@ -131,6 +131,9 @@
     .quick-card.primary { background: linear-gradient(135deg, #14532d, #16a34a); color: #fff; border-color: transparent; }
     .quick-card.primary span { color: rgba(255,255,255,.82); }
     .quick-card.danger { background: #fff1f2; color: #9f1239; border-color: #fecdd3; }
+    .quick-card.with-photo { display: grid; grid-template-columns: 1fr 54px; align-items: center; min-height: 82px; }
+    .quick-thumb, .routine-thumb { width: 54px; height: 54px; border-radius: 16px; background: #fff; border: 1px solid rgba(229,231,235,.85); object-fit: contain; padding: 5px; justify-self: end; }
+    .quick-card.primary .quick-thumb { border-color: rgba(255,255,255,.45); background: rgba(255,255,255,.92); }
 
     .section { margin-top: 18px; }
     .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin: 0 2px 10px; }
@@ -141,8 +144,8 @@
     .rail > * { scroll-snap-align: start; }
 
     .routine-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
-    .routine-card { border: 1px solid var(--line); border-radius: 20px; padding: 13px; min-height: 96px; background: #fff; box-shadow: 0 1px 2px rgba(16,24,40,.03); display: flex; flex-direction: column; justify-content: space-between; }
-    .routine-card strong { font-size: 14px; font-weight: 950; letter-spacing: -.02em; }
+    .routine-card { border: 1px solid var(--line); border-radius: 20px; padding: 13px; min-height: 92px; background: #fff; box-shadow: 0 1px 2px rgba(16,24,40,.03); display: grid; grid-template-columns: 1fr 56px; align-items: center; gap: 10px; }
+    .routine-card strong { font-size: 14px; font-weight: 950; letter-spacing: -.02em; line-height: 1.15; }
     .routine-card span { color: var(--muted); font-size: 12px; font-weight: 700; line-height: 1.3; margin-top: 6px; }
 
     .chips { display: flex; gap: 8px; overflow-x: auto; padding: 1px 1px 9px; -webkit-overflow-scrolling: touch; }
@@ -182,6 +185,20 @@
     .basket-body { padding: 12px; display: grid; gap: 8px; }
     .basket-name { font-size: 15px; line-height: 1.25; font-weight: 950; letter-spacing: -.02em; min-height: 38px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
     .basket-desc { color: var(--muted); font-size: 12px; font-weight: 700; line-height: 1.35; min-height: 32px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+    .basket-list { display: grid; gap: 12px; }
+    .basket-card.wide { border-radius: 24px; }
+    .basket-card.wide .basket-imgbox { height: 265px; }
+    .basket-card.wide .basket-imgbox img { padding: 10px; }
+    .basket-card.wide .basket-name { font-size: 18px; min-height: 0; }
+    .basket-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .secondary-btn { width: 100%; height: 40px; border-radius: 999px; border: 1px solid var(--line-strong); background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 950; }
+    .basket-editor { display: grid; gap: 10px; }
+    .basket-editor-row { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 10px; display: grid; grid-template-columns: 70px 1fr auto; gap: 10px; align-items: center; }
+    .basket-editor-row img { width: 70px; height: 70px; object-fit: contain; border-radius: 14px; background: #f8fafc; border: 1px solid #eef2f7; padding: 5px; }
+    .basket-editor-name { font-size: 13px; line-height: 1.3; font-weight: 850; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+    .basket-editor-price { margin-top: 4px; color: var(--muted); font-size: 12px; font-weight: 800; }
+    .basket-total-card { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 15px; margin-top: 12px; display: grid; gap: 10px; }
+    .clear-cart-btn { width: 100%; height: 42px; margin-top: 10px; border-radius: 999px; border: 1px solid #fecdd3; background: #fff1f2; color: #9f1239; font-size: 13px; font-weight: 950; display: flex; align-items: center; justify-content: center; gap: 7px; }
 
     .empty, .notice { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 24px 18px; text-align: center; color: var(--muted); font-weight: 750; }
     .empty strong { display: block; color: var(--ink); font-size: 17px; font-weight: 950; margin-bottom: 7px; }
@@ -248,7 +265,7 @@
     @media (min-width: 768px) {
       :root { --header-h: 78px; --bottom-h: 0px; }
       .header { padding: calc(10px + var(--safe-top)) 28px 10px; }
-      .header-inner { grid-template-columns: auto 1fr auto; align-items: center; gap: 24px; }
+      .header-inner { grid-template-columns: auto 1fr; align-items: center; gap: 24px; }
       .brand-logo { width: 160px; height: 44px; }
       .brand-text { display: block; }
       .search-wrap { max-width: 520px; justify-self: center; width: 100%; }
@@ -262,6 +279,10 @@
       .routine-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
       .product-grid { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; }
       .product-card.compact { width: 188px; flex-basis: 188px; }
+      .basket-card.wide { display: grid; grid-template-columns: 42% 1fr; }
+      .basket-card.wide .basket-imgbox { height: 300px; border-bottom: none; border-right: 1px solid #eef2f7; }
+      .basket-editor-row { grid-template-columns: 86px 1fr auto; }
+      .basket-editor-row img { width: 86px; height: 86px; }
       .product-imgbox { height: 150px; }
       .product-list { grid-template-columns: repeat(2, minmax(0,1fr)); }
       .drawer { border-radius: 24px 0 0 24px; }
@@ -285,7 +306,6 @@
         <button id="search-submit" class="search-submit" type="submit" aria-label="Buscar"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"></path></svg></button>
         <button id="search-clear" class="search-clear" type="button" aria-label="Limpar busca"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></button>
       </form>
-      <a class="header-pill" href="#/informacoes" aria-label="Informações da loja"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 12-9 12S3 17 3 10a9 9 0 1118 0z"></path><path d="M12 10h.01"></path></svg><span>Cuiabá e VG</span></a>
     </div>
   </header>
 
@@ -342,6 +362,7 @@
       cart: {},
       cartOrder: [],
       basketCustomizations: {},
+      basketDrafts: {},
       virtualFees: {},
       activeCategory: 'Todos',
       searchQuery: '',
@@ -641,6 +662,19 @@
       setQty(key, current + (Number(qty) || 1));
     }
 
+    function clearCart() {
+      state.cart = {};
+      state.cartOrder = [];
+      state.basketCustomizations = {};
+      state.basketDrafts = {};
+      state.virtualFees = {};
+      localStorage.removeItem(CONFIG.CART_STORAGE_KEY);
+      updateCartUI();
+      syncVisibleCards();
+      if ($('checkout-drawer').classList.contains('open')) renderCheckout();
+      showToast('Carrinho limpo.');
+    }
+
     function removeMissingCartItems() {
       let changed = false;
       Object.keys(state.cart).forEach(id => {
@@ -676,6 +710,36 @@
     function findProductByCode(code) {
       const wanted = norm(code);
       return state.products.find(p => [p.id, p.codigo, p.firebaseKey, p.gtin, p.ean].some(v => norm(v) === wanted)) || null;
+    }
+
+    function setBasketDraftQty(basketId, productId, qty) {
+      const key = String(basketId);
+      const draft = ensureBasketDraft(key);
+      draft[String(productId)] = Math.max(0, Number(qty) || 0);
+      renderBasketDetail(key);
+    }
+
+    function addBasketCustomToCart(basketId) {
+      const basket = state.cestas.find(c => String(c.id) === String(basketId));
+      const draft = ensureBasketDraft(basketId);
+      if (!basket || !draft) return;
+      let added = 0;
+      Object.entries(draft).forEach(([productId, qty]) => {
+        const p = getProductById(productId);
+        const amount = Math.max(0, Number(qty) || 0);
+        if (!p || !isAvailable(p) || amount <= 0) return;
+        const key = String(p.id);
+        if (!state.cartOrder.includes(key)) state.cartOrder.push(key);
+        state.cart[key] = Number(state.cart[key] || 0) + amount;
+        added += amount;
+      });
+      if (!added) { showToast('Escolha pelo menos um produto da cesta.'); return; }
+      state.basketCustomizations[basket.id] = { name: basket.nome, changed: true, fee: 0 };
+      saveCart();
+      updateCartUI();
+      syncVisibleCards();
+      showToast(`${basket.nome} editada adicionada à compra.`);
+      location.hash = '#/cestas';
     }
 
     function addBasketToCart(basketId) {
@@ -806,6 +870,30 @@
       return parts.join('<span>•</span>');
     }
 
+    function pickProductImage(list) {
+      const available = (list || []).filter(item => item && item.img);
+      if (!available.length) return 'img/logoantonia5.png';
+      return available[Math.floor(Math.random() * available.length)].img;
+    }
+
+    function categoryThumb(categoryName) {
+      const pool = state.products.filter(p => isAvailable(p) && p.categoria === categoryName);
+      return pickProductImage(pool);
+    }
+
+    function routineThumb(key) {
+      return pickProductImage(productsByRoutine(key, 12));
+    }
+
+    function offersThumb() {
+      return pickProductImage(getTopOffers(12));
+    }
+
+    function cestasThumb() {
+      const cesta = state.cestas.find(c => c.imagem);
+      return cesta ? cesta.imagem : 'img/logoantonia5.png';
+    }
+
     function productCard(p, mode) {
       const id = String(p.id);
       const qty = Number(state.cart[id] || 0);
@@ -835,6 +923,7 @@
     function basketCard(cesta, mode) {
       const classes = ['basket-card'];
       if (mode === 'compact') classes.push('compact');
+      if (mode === 'wide') classes.push('wide');
       return `
         <article class="${classes.join(' ')}">
           <div class="basket-imgbox"><img loading="lazy" decoding="async" src="${escapeHtml(cesta.imagem)}" alt="${escapeHtml(cesta.nome)}" onerror="window.__daFallbackImg(this)"></div>
@@ -842,7 +931,10 @@
             <div class="basket-name">${escapeHtml(cesta.nome)}</div>
             <div class="basket-desc">${escapeHtml(cesta.descricao || 'Kit pronto para facilitar sua compra.')}</div>
             <div class="price-row"><div>${cesta.precoOriginal > cesta.preco ? `<div class="old-price">${fmt(cesta.precoOriginal)}</div>` : ''}<div class="price">${cesta.preco ? fmt(cesta.preco) : 'Ver itens'}</div></div></div>
-            <button class="add-btn" type="button" data-action="add-basket" data-id="${escapeHtml(cesta.id)}">Adicionar cesta</button>
+            <div class="basket-actions">
+              <a class="secondary-btn" href="#/cesta/${encodeURIComponent(cesta.id)}">Ver produtos</a>
+              <button class="add-btn" type="button" data-action="add-basket" data-id="${escapeHtml(cesta.id)}">Adicionar</button>
+            </div>
           </div>
         </article>`;
     }
@@ -861,29 +953,30 @@
       const offers = getTopOffers(10);
       const compraMes = productsByRoutine('compra-mes', 10);
       const limpeza = productsByRoutine('limpeza', 10);
+      const quicks = [
+        { href: '#/cestas', title: 'Cestas básicas', cls: 'primary', img: cestasThumb() },
+        { href: '#/ofertas', title: 'Ofertas', cls: 'danger', img: offersThumb() },
+        { href: '#/rotina/compra-mes', title: 'Compra do mês', cls: '', img: routineThumb('compra-mes') },
+        { href: '#/categorias', title: 'Categorias', cls: '', img: pickProductImage(state.products.filter(isAvailable)) }
+      ];
       const html = `
         <div class="container">
           <section class="hero">
-            <div class="hero-eyebrow">Entrega local • Cuiabá e Várzea Grande</div>
             <h1 class="hero-title">Monte sua compra sem complicação.</h1>
-            <p class="hero-copy">Use a busca, escolha por rotina ou toque em uma categoria. O pedido vai direto para o WhatsApp da Dona Antônia.</p>
             <div class="hero-actions">
-              <a class="quick-card primary" href="#/cestas"><strong>Cestas básicas</strong><span>Kits prontos para pedir rápido</span></a>
-              <a class="quick-card danger" href="#/ofertas"><strong>Ofertas</strong><span>Produtos com desconto</span></a>
-              <a class="quick-card" href="#/rotina/compra-mes"><strong>Compra do mês</strong><span>Básicos da despensa</span></a>
-              <a class="quick-card" href="#/categorias"><strong>Categorias</strong><span>Ver todos os setores</span></a>
+              ${quicks.map(item => `<a class="quick-card with-photo ${item.cls}" href="${item.href}"><strong>${escapeHtml(item.title)}</strong><img class="quick-thumb" loading="lazy" decoding="async" src="${escapeHtml(item.img)}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}
             </div>
           </section>
           <section class="section">
-            <div class="section-head"><div><h2 class="section-title">Compre por rotina</h2><div class="section-caption">Mais fácil para comprar produtos variados.</div></div></div>
+            <div class="section-head"><div><h2 class="section-title">Compre por rotina</h2></div></div>
             <div class="routine-grid">
-              ${Object.entries(ROUTINES).map(([key, item]) => `<a class="routine-card" href="#/rotina/${key}"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.subtitle)}</span></a>`).join('')}
+              ${Object.entries(ROUTINES).map(([key, item]) => `<a class="routine-card" href="#/rotina/${key}"><strong>${escapeHtml(item.title)}</strong><img class="routine-thumb" loading="lazy" decoding="async" src="${escapeHtml(routineThumb(key))}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}
             </div>
           </section>
-          ${shelf('Ofertas em destaque', 'Produtos com preço especial.', offers, '#/ofertas')}
-          ${shelf('Cestas básicas', 'Kits prontos para facilitar o pedido.', state.cestas.slice(0, 8), '#/cestas', 'basket')}
-          ${shelf('Compra do mês', 'Itens comuns para completar a despensa.', compraMes, '#/rotina/compra-mes')}
-          ${shelf('Limpeza da casa', 'Produtos que costumam complementar a compra.', limpeza, '#/rotina/limpeza')}
+          ${shelf('Ofertas em destaque', '', offers, '#/ofertas')}
+          ${shelf('Cestas básicas', '', state.cestas.slice(0, 8), '#/cestas', 'basket')}
+          ${shelf('Compra do mês', '', compraMes, '#/rotina/compra-mes')}
+          ${shelf('Limpeza da casa', '', limpeza, '#/rotina/limpeza')}
         </div>`;
       app.innerHTML = html;
       updateMeta('Dona Antônia - Supermercado e Cestas', 'Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.', '/');
@@ -893,7 +986,7 @@
     function renderCategories() {
       const cats = getCategories();
       app.innerHTML = `<div class="container">${pageHeader('Categorias', 'Escolha um setor para navegar.', '#/')}
-        <div class="routine-grid">${cats.map(([cat, count]) => `<a class="routine-card" href="#/categoria/${encodeURIComponent(cat)}"><strong>${escapeHtml(cat)}</strong><span>${count} produtos disponíveis</span></a>`).join('')}</div></div>`;
+        <div class="routine-grid">${cats.map(([cat, count]) => `<a class="routine-card" href="#/categoria/${encodeURIComponent(cat)}"><strong>${escapeHtml(cat)}</strong><img class="routine-thumb" loading="lazy" decoding="async" src="${escapeHtml(categoryThumb(cat))}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}</div></div>`;
       setActiveNav('categorias');
     }
 
@@ -919,12 +1012,72 @@
     function renderRoutine(key) {
       const routine = ROUTINES[key] || ROUTINES['compra-mes'];
       const products = productsByRoutine(key, 200);
-      app.innerHTML = `<div class="container">${pageHeader(routine.title, routine.subtitle, '#/')}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
+      app.innerHTML = `<div class="container">${pageHeader(routine.title, '', '#/')}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
       setActiveNav('home');
     }
 
     function renderCestas() {
-      app.innerHTML = `<div class="container">${pageHeader('Cestas básicas', 'Escolha um kit pronto e envie pelo WhatsApp.', '#/')}${state.cestas.length ? `<div class="product-grid">${state.cestas.map(c => basketCard(c)).join('')}</div>` : `<div class="empty"><strong>Nenhuma cesta carregada</strong>Confira se o arquivo cestas.json está junto com o index.html.</div>`}</div>`;
+      app.innerHTML = `<div class="container">${pageHeader('Cestas básicas', 'Escolha um kit pronto e envie pelo WhatsApp.', '#/')}${state.cestas.length ? `<div class="basket-list">${state.cestas.map(c => basketCard(c, 'wide')).join('')}</div>` : `<div class="empty"><strong>Nenhuma cesta carregada</strong>Confira se o arquivo cestas.json está junto com o index.html.</div>`}</div>`;
+      setActiveNav('home');
+    }
+
+    function getBasketLines(basketId) {
+      const basket = state.cestas.find(c => String(c.id) === String(basketId));
+      if (!basket) return { basket: null, rows: [] };
+      const rows = (basket.produtos || []).map(line => {
+        const parsed = parseBasketItem(line);
+        const product = findProductByCode(parsed.code);
+        return product && isAvailable(product) ? { product, qty: Math.max(1, Number(parsed.qty || 1)) } : null;
+      }).filter(Boolean);
+      return { basket, rows };
+    }
+
+    function ensureBasketDraft(basketId) {
+      const { rows } = getBasketLines(basketId);
+      const key = String(basketId);
+      if (!state.basketDrafts[key]) {
+        state.basketDrafts[key] = {};
+        rows.forEach(row => { state.basketDrafts[key][row.product.id] = row.qty; });
+      }
+      return state.basketDrafts[key];
+    }
+
+    function basketDraftTotal(basketId) {
+      const draft = ensureBasketDraft(basketId);
+      return Object.entries(draft).reduce((sum, [id, qty]) => {
+        const p = getProductById(id);
+        return p ? sum + Number(p.price || 0) * Number(qty || 0) : sum;
+      }, 0);
+    }
+
+    function renderBasketDetail(basketId) {
+      const { basket, rows } = getBasketLines(basketId);
+      if (!basket) {
+        app.innerHTML = `<div class="container">${pageHeader('Cesta não encontrada', '', '#/cestas')}<div class="empty"><strong>Não encontramos essa cesta</strong>Volte e escolha outra opção.</div></div>`;
+        return;
+      }
+      const draft = ensureBasketDraft(basket.id);
+      const total = basketDraftTotal(basket.id);
+      app.innerHTML = `<div class="container">${pageHeader(basket.nome, '', '#/cestas')}
+        <article class="basket-card wide" style="margin-bottom:12px">
+          <div class="basket-imgbox"><img src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}" onerror="window.__daFallbackImg(this)"></div>
+          <div class="basket-body"><div class="basket-name">${escapeHtml(basket.nome)}</div><div class="price">${basket.preco ? fmt(basket.preco) : fmt(total)}</div><button class="add-btn" type="button" data-action="add-basket" data-id="${escapeHtml(basket.id)}">Adicionar cesta padrão</button></div>
+        </article>
+        <section class="section"><div class="section-head"><div><h2 class="section-title">Produtos da cesta</h2></div></div>
+          ${rows.length ? `<div class="basket-editor">${rows.map(({product}) => {
+            const qty = Number(draft[product.id] || 0);
+            return `<div class="basket-editor-row" data-basket-row="${escapeHtml(product.id)}">
+              <img src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
+              <div><div class="basket-editor-name">${escapeHtml(product.name)}</div><div class="basket-editor-price">${fmt(product.price)} cada</div></div>
+              <div class="cart-qty"><button type="button" data-action="basket-dec" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(product.id)}">−</button><span>${qty}</span><button type="button" data-action="basket-inc" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(product.id)}">+</button></div>
+            </div>`;
+          }).join('')}</div>` : `<div class="empty"><strong>Itens não localizados</strong>Não conseguimos relacionar os produtos dessa cesta ao cadastro atual.</div>`}
+        </section>
+        <section class="basket-total-card">
+          <div class="summary-row total"><span>Total dos produtos editados</span><span>${fmt(total)}</span></div>
+          <button class="send-btn" type="button" data-action="add-basket-custom" data-id="${escapeHtml(basket.id)}" ${rows.length ? '' : 'disabled'}>Adicionar cesta editada</button>
+        </section>
+      </div>`;
       setActiveNav('home');
     }
 
@@ -984,6 +1137,7 @@
       if (parts[0] === 'ofertas') return renderOffers();
       if (parts[0] === 'rotina') return renderRoutine(parts[1]);
       if (parts[0] === 'produto') return renderProduct(parts.slice(1).join('/'));
+      if (parts[0] === 'cesta') return renderBasketDetail(parts.slice(1).join('/'));
       if (parts[0] === 'cestas') return renderCestas();
       if (parts[0] === 'busca') return renderSearch(state.searchQuery || decodeURIComponent(parts.slice(1).join(' ')));
       if (parts[0] === 'informacoes') return renderInfo();
@@ -1073,6 +1227,7 @@
             </div>`).join('') : `<div class="empty"><strong>Sua compra está vazia</strong>Adicione produtos para enviar o pedido.</div>`}
           <div class="summary-row total"><span>Total</span><span>${fmt(total)}</span></div>
           <div class="min-order" id="min-order-box" style="display:${items.length && missing > 0 ? 'block' : 'none'}">Faltam <strong>${fmt(missing)}</strong> para atingir o pedido mínimo de ${fmt(CONFIG.MIN_ORDER)}.</div>
+          ${items.length ? `<button class="clear-cart-btn" type="button" data-action="clear-cart"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15"></path></svg>Limpar carrinho</button>` : ''}
         </section>
         ${suggestions.length ? `<section class="checkout-section"><div class="checkout-title">${missing > 0 ? 'Complete o pedido mínimo' : 'Produtos que combinam'}</div><div class="mini-suggest">${suggestions.map(p => productCard(p, 'compact')).join('')}</div></section>` : ''}
         <section class="checkout-section">
@@ -1323,7 +1478,7 @@
       let basketInfo = '';
       if (hasBasket) {
         basketInfo = '\n------------------------------';
-        Object.values(state.basketCustomizations).forEach(info => { basketInfo += `\nCesta/Kit ${info.name || ''} PADRÃO`; });
+        Object.values(state.basketCustomizations).forEach(info => { basketInfo += `\nCesta/Kit ${info.name || ''} ${info.changed ? 'EDITADA' : 'PADRÃO'}`; });
       }
 
       let msg;
@@ -1344,6 +1499,7 @@
       state.cart = {};
       state.cartOrder = [];
       state.basketCustomizations = {};
+      state.basketDrafts = {};
       state.virtualFees = {};
       localStorage.removeItem(CONFIG.CART_STORAGE_KEY);
       updateCartUI();
@@ -1408,6 +1564,10 @@
         if (action === 'inc') addToCart(id, 1);
         if (action === 'dec') setQty(id, Number(state.cart[id] || 0) - 1);
         if (action === 'add-basket') addBasketToCart(id);
+        if (action === 'basket-inc') setBasketDraftQty(btn.getAttribute('data-basket-id'), id, Number((state.basketDrafts[btn.getAttribute('data-basket-id')] || {})[id] || 0) + 1);
+        if (action === 'basket-dec') setBasketDraftQty(btn.getAttribute('data-basket-id'), id, Number((state.basketDrafts[btn.getAttribute('data-basket-id')] || {})[id] || 0) - 1);
+        if (action === 'add-basket-custom') addBasketCustomToCart(id);
+        if (action === 'clear-cart') clearCart();
       });
       document.addEventListener('input', e => {
         const el = e.target;
@@ -1455,6 +1615,7 @@
     window.closeCheckout = closeCheckout;
     window.sendOrder = sendOrder;
     window.clearSearch = clearSearch;
+    window.clearCart = clearCart;
 
     init();
   })();
