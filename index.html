@@ -717,6 +717,385 @@
       .drawer { border-radius: 28px 0 0 28px; }
     }
 
+
+    /* =========================================================
+       Camada minimalista Dona Antônia — vitrine com separadores
+       ========================================================= */
+    :root {
+      --bg: #fbfaf7;
+      --surface: #ffffff;
+      --surface-soft: #f5f4ef;
+      --photo-bg: #f1f2ee;
+      --ink: #171f1a;
+      --muted: #687069;
+      --line: #e8e3da;
+      --line-soft: rgba(23,31,26,.105);
+      --brand: #235a35;
+      --brand-2: #367548;
+      --danger: #c9364c;
+      --shadow: none;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    .header {
+      background: rgba(251,250,247,.94);
+      border-bottom: 1px solid var(--line-soft);
+      box-shadow: none;
+    }
+
+    .search-input {
+      background: #fff;
+      border-color: var(--line-soft);
+      box-shadow: none;
+      font-weight: 500;
+    }
+
+    .container { max-width: 1220px; }
+
+    .hero {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      border-radius: 0;
+      padding: 4px 2px 10px;
+      margin-bottom: 2px;
+    }
+
+    .hero-eyebrow {
+      background: transparent;
+      color: var(--brand);
+      border: 0;
+      padding: 0;
+      margin-bottom: 8px;
+      letter-spacing: .08em;
+    }
+
+    .hero-title {
+      max-width: 760px;
+      font-weight: 760;
+      letter-spacing: -.055em;
+    }
+
+    .hero-copy {
+      max-width: 680px;
+      color: var(--muted);
+      font-weight: 440;
+    }
+
+    .hero-actions { display: none; }
+
+    .section {
+      margin-top: 24px;
+    }
+
+    .section-head {
+      margin: 0 2px 12px;
+      align-items: center;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 760;
+      letter-spacing: -.045em;
+    }
+
+    .section-caption {
+      font-size: 13px;
+      font-weight: 440;
+      color: var(--muted);
+    }
+
+    .see-all {
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 13px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--line-soft);
+      color: var(--ink);
+      font-size: 12.5px;
+      font-weight: 720;
+    }
+
+    .rail {
+      gap: 0;
+      padding: 0 1px 8px;
+      border-top: 1px solid var(--line-soft);
+    }
+
+    .product-grid,
+    .product-list {
+      gap: 0;
+      border-top: 1px solid var(--line-soft);
+    }
+
+    .product-card,
+    .basket-card {
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      transform: none !important;
+      padding: 12px 12px 16px !important;
+      border-right: 1px solid var(--line-soft) !important;
+      border-bottom: 1px solid var(--line-soft) !important;
+      overflow: visible;
+    }
+
+    .product-card:hover,
+    .basket-card:hover {
+      border-color: var(--line-soft) !important;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    .rail .product-card,
+    .rail .basket-card {
+      border-bottom: 0 !important;
+      padding-left: 10px !important;
+      padding-right: 12px !important;
+    }
+
+    .product-card.compact {
+      width: 176px;
+      flex: 0 0 176px;
+    }
+
+    .basket-card.compact {
+      width: 218px;
+      flex: 0 0 218px;
+    }
+
+    .product-imgbox,
+    .basket-imgbox,
+    .detail-imgbox {
+      height: auto !important;
+      aspect-ratio: 1 / 1;
+      margin: 0 0 12px !important;
+      border: 0 !important;
+      border-radius: 18px !important;
+      background: var(--photo-bg) !important;
+      overflow: hidden;
+    }
+
+    .product-imgbox img,
+    .basket-imgbox img,
+    .detail-imgbox img,
+    .quick-thumb,
+    .routine-thumb,
+    .category-thumb,
+    .cart-img,
+    .basket-editor-row img {
+      mix-blend-mode: multiply;
+      filter: contrast(1.035) saturate(1.01);
+    }
+
+    .product-imgbox img,
+    .basket-imgbox img {
+      padding: 8px;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .product-body,
+    .basket-body {
+      padding: 0 !important;
+      gap: 8px;
+    }
+
+    .product-meta {
+      min-height: 14px;
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: .055em;
+      color: #7d857d;
+    }
+
+    .product-name {
+      min-height: 42px;
+      font-size: 14.2px;
+      line-height: 1.36;
+      font-weight: 580;
+      color: var(--ink);
+    }
+
+    .basket-name {
+      min-height: 38px;
+      font-size: 15px;
+      line-height: 1.24;
+      font-weight: 720;
+      letter-spacing: -.025em;
+    }
+
+    .basket-desc {
+      min-height: 30px;
+      font-size: 12.5px;
+      font-weight: 430;
+      color: var(--muted);
+    }
+
+    .price {
+      font-size: 20px;
+      font-weight: 780;
+      letter-spacing: -.045em;
+    }
+
+    .old-price { font-weight: 520; }
+
+    .add-btn,
+    .qty-control,
+    .secondary-btn,
+    .send-btn,
+    .clear-cart-btn,
+    .menu-main-btn {
+      min-height: 42px;
+      border-radius: 12px;
+      font-weight: 740;
+      letter-spacing: -.01em;
+      box-shadow: none;
+    }
+
+    .add-btn,
+    .menu-main-btn {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .secondary-btn,
+    .qty-control {
+      background: #fff;
+      border-color: var(--line-soft);
+    }
+
+    .basket-actions { gap: 7px; }
+
+    .chips {
+      gap: 0;
+      padding: 0 0 12px;
+      border-top: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .chip {
+      height: 42px;
+      border: 0;
+      border-radius: 0;
+      border-right: 1px solid var(--line-soft);
+      background: transparent;
+      box-shadow: none;
+      color: var(--muted);
+      font-weight: 650;
+      padding: 0 15px;
+    }
+
+    .chip.active {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: inset 0 -2px 0 var(--ink);
+    }
+
+    .category-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border-top: 1px solid var(--line-soft);
+    }
+
+    .category-button {
+      min-height: 104px;
+      display: grid;
+      grid-template-columns: 1fr 74px;
+      gap: 12px;
+      align-items: center;
+      padding: 13px 12px;
+      border-right: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+      background: transparent;
+      color: var(--ink);
+    }
+
+    .category-button strong {
+      display: block;
+      font-size: 14.5px;
+      line-height: 1.18;
+      font-weight: 720;
+      letter-spacing: -.025em;
+    }
+
+    .category-button span {
+      display: block;
+      margin-top: 6px;
+      font-size: 12px;
+      line-height: 1.25;
+      color: var(--muted);
+      font-weight: 430;
+    }
+
+    .category-thumb {
+      width: 74px;
+      height: 74px;
+      object-fit: contain;
+      border-radius: 18px;
+      background: var(--photo-bg);
+      padding: 7px;
+    }
+
+    .quick-card,
+    .routine-card {
+      box-shadow: none;
+    }
+
+    .drawer,
+    .drawer-head,
+    .bottom-bar {
+      box-shadow: none;
+    }
+
+    .menu-hero-card,
+    .menu-section-card,
+    .checkout-section,
+    .empty,
+    .notice,
+    .basket-total-card,
+    .info-accordion details,
+    .merchant-footer {
+      box-shadow: none;
+    }
+
+    @media (max-width: 767px) {
+      .product-grid > .product-card:nth-child(2n),
+      .product-grid > .basket-card:nth-child(2n),
+      .category-buttons > .category-button:nth-child(2n) {
+        border-right: 0 !important;
+      }
+      .hero-title { font-size: 25px; }
+      .hero-copy { font-size: 14px; }
+    }
+
+    @media (min-width: 768px) {
+      .hero { padding-top: 8px; }
+      .hero-title { font-size: 42px; }
+      .product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .product-grid > .product-card:nth-child(4n),
+      .product-grid > .basket-card:nth-child(4n) {
+        border-right: 0 !important;
+      }
+      .product-card.compact { width: 208px; flex-basis: 208px; }
+      .basket-card.compact { width: 244px; flex-basis: 244px; }
+      .category-buttons { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .category-buttons > .category-button:nth-child(4n) { border-right: 0; }
+      .category-button { min-height: 118px; padding: 16px 14px; grid-template-columns: 1fr 86px; }
+      .category-thumb { width: 86px; height: 86px; border-radius: 20px; }
+      .product-name { font-size: 14.8px; min-height: 44px; }
+      .price { font-size: 21px; }
+    }
+
   </style>
 </head>
 <body>
@@ -793,18 +1172,7 @@
           <a class="menu-link" href="#/informacoes"><span>Empresa e políticas</span><small>Entrega, devolução e atendimento</small></a>
         </div>
       </section>
-
-      <section class="menu-section-card">
-        <div class="menu-section-title">Compre por rotina</div>
-        <div class="menu-mini-grid">
-          <a href="#/rotina/compra-mes">Compra do mês</a>
-          <a href="#/rotina/limpeza">Limpeza da casa</a>
-          <a href="#/rotina/cafe">Café da manhã</a>
-          <a href="#/rotina/higiene">Higiene e beleza</a>
-        </div>
-      </section>
-
-      <section class="menu-section-card">
+<section class="menu-section-card">
         <div class="menu-section-title">Condições de compra</div>
         <div class="menu-benefits">
           <div><strong>Entrega local</strong><span>Cuiabá e Várzea Grande</span></div>
@@ -1472,34 +1840,32 @@
       return `<div class="page-head">${backHref ? `<a class="back-btn" href="${backHref}"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 12H5m7 7l-7-7 7-7"></path></svg></a>` : ''}<div><h1 class="page-title">${escapeHtml(title)}</h1>${subtitle ? `<div class="page-subtitle">${escapeHtml(subtitle)}</div>` : ''}</div></div>`;
     }
 
+
+
+    function categoryButtonsHtml() {
+      const cats = getCategories();
+      if (!cats.length) return '';
+      return `<section class="section category-section">
+        <div class="section-head"><div><h2 class="section-title">Categorias</h2><div class="section-caption">Escolha um setor e veja todos os produtos disponíveis.</div></div><a class="see-all" href="#/categorias">Ver página</a></div>
+        <div class="category-buttons">
+          ${cats.map(([cat, count]) => `<a class="category-button" href="#/categoria/${encodeURIComponent(cat)}"><div><strong>${escapeHtml(cat)}</strong><span>${count} ${count === 1 ? 'produto' : 'produtos'}</span></div><img class="category-thumb" loading="lazy" decoding="async" src="${escapeHtml(categoryThumb(cat))}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}
+        </div>
+      </section>`;
+    }
+
+
     function renderHome() {
-      const offers = getTopOffers(10);
-      const compraMes = productsByCategoryForMonth(1).flatMap(group => group.products).slice(0, 12);
-      const limpeza = productsByRoutine('limpeza', 10);
-      const quicks = [
-        { href: '#/cestas', title: 'Cestas básicas', cls: 'primary', img: cestasThumb() },
-        { href: '#/ofertas', title: 'Ofertas', cls: 'danger', img: offersThumb() },
-        { href: '#/rotina/compra-mes', title: 'Compra do mês', cls: '', img: routineThumb('compra-mes') },
-        { href: '#/categorias', title: 'Categorias', cls: '', img: pickProductImage(state.products.filter(isAvailable)) }
-      ];
+      const offers = getTopOffers(12);
       const html = `
         <div class="container">
           <section class="hero">
-            <h1 class="hero-title">Monte sua compra sem complicação.</h1>
-            <div class="hero-actions">
-              ${quicks.map(item => `<a class="quick-card with-photo ${item.cls}" href="${item.href}"><strong>${escapeHtml(item.title)}</strong><img class="quick-thumb" loading="lazy" decoding="async" src="${escapeHtml(item.img)}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}
-            </div>
+            <div class="hero-eyebrow">DONA ANTÔNIA • CUIABÁ E VÁRZEA GRANDE</div>
+            <h1 class="hero-title">Sua compra do mercado, simples e bem organizada.</h1>
+            <p class="hero-copy">Escolha produtos, cestas básicas ou ofertas. No final, envie o pedido pelo WhatsApp para confirmação.</p>
           </section>
-          <section class="section">
-            <div class="section-head"><div><h2 class="section-title">Compre por rotina</h2></div></div>
-            <div class="routine-grid">
-              ${Object.entries(ROUTINES).map(([key, item]) => `<a class="routine-card" href="#/rotina/${key}"><strong>${escapeHtml(item.title)}</strong><img class="routine-thumb" loading="lazy" decoding="async" src="${escapeHtml(routineThumb(key))}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}
-            </div>
-          </section>
-          ${shelf('Ofertas em destaque', '', offers, '#/ofertas')}
-          ${shelf('Cestas básicas', '', state.cestas.slice(0, 8), '#/cestas', 'basket')}
-          ${shelf('Compra do mês', '', compraMes, '#/rotina/compra-mes')}
-          ${shelf('Limpeza da casa', '', limpeza, '#/rotina/limpeza')}
+          ${shelf('Cestas básicas', 'Kits prontos para facilitar sua compra.', state.cestas.slice(0, 8), '#/cestas', 'basket')}
+          ${shelf('Ofertas', 'Produtos em destaque disponíveis agora.', offers, '#/ofertas')}
+          ${categoryButtonsHtml()}
         </div>`;
       app.innerHTML = html;
       updateMeta('Dona Antônia - Supermercado e Cestas', 'Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.', '/');
@@ -1509,7 +1875,7 @@
     function renderCategories() {
       const cats = getCategories();
       app.innerHTML = `<div class="container">${pageHeader('Categorias', 'Escolha um setor para navegar.', '#/')}
-        <div class="routine-grid">${cats.map(([cat, count]) => `<a class="routine-card" href="#/categoria/${encodeURIComponent(cat)}"><strong>${escapeHtml(cat)}</strong><img class="routine-thumb" loading="lazy" decoding="async" src="${escapeHtml(categoryThumb(cat))}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}</div></div>`;
+        <div class="category-buttons">${cats.map(([cat, count]) => `<a class="category-button" href="#/categoria/${encodeURIComponent(cat)}"><div><strong>${escapeHtml(cat)}</strong><span>${count} ${count === 1 ? 'produto' : 'produtos'}</span></div><img class="category-thumb" loading="lazy" decoding="async" src="${escapeHtml(categoryThumb(cat))}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}</div></div>`;
       setActiveNav('categorias');
     }
 
