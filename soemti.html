@@ -13,6 +13,15 @@
   <meta property="og:image" content="" />
   <meta name="twitter:card" content="summary_large_image" />
   <title>Só em Ti | Presentes Católicos</title>
+  <link rel="canonical" id="canonicalLink" href="" />
+  <meta name="author" content="Só em Ti" />
+  <meta name="format-detection" content="telephone=yes" />
+  <meta name="keywords" content="canecas católicas, presentes católicos, caneca personalizada católica, Nossa Senhora, santos católicos, presentes devocionais" />
+  <meta property="og:locale" content="pt_BR" />
+  <meta property="og:url" content="" />
+  <meta name="twitter:title" content="Só em Ti | Presentes Católicos" />
+  <meta name="twitter:description" content="Presentes católicos com arte devocional autoral. Produtos para presentear com fé." />
+  <meta name="twitter:image" content="" />
 
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
@@ -68,6 +77,39 @@
     .nav-links{display:flex;align-items:center;gap:2px}
     .nav-links a,.nav-links button{border:0;background:transparent;padding:10px 12px;border-radius:999px;color:var(--muted);font-weight:500;font-size:.9rem}
     .nav-links a:hover,.nav-links button:hover{background:var(--surface);color:var(--ink)}
+
+    .cart-nav{display:inline-flex!important;align-items:center;gap:8px}
+    .cart-count{min-width:22px;height:22px;border-radius:999px;background:var(--ink);color:#fff;display:inline-grid;place-items:center;font-size:.72rem;font-weight:700;padding:0 6px}
+    .promo-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0 10px}
+    .promo-card{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:15px 16px;display:flex;gap:11px;align-items:flex-start;color:var(--muted)}
+    .promo-card strong{display:block;color:var(--ink);font-weight:680;letter-spacing:-.025em;line-height:1.15}
+    .promo-card span{font-size:.86rem}
+    .promo-ico{width:34px;height:34px;border-radius:999px;background:var(--gold-soft);color:var(--brand-dark);display:grid;place-items:center;flex:0 0 auto;font-weight:700}
+    .price{white-space:nowrap;display:inline-flex;align-items:baseline;gap:4px}
+    .checkout-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,.52fr);gap:22px;align-items:start}
+    .checkout-card,.checkout-summary{background:#fff;border:1px solid rgba(235,232,224,.9);border-radius:30px;padding:20px;box-shadow:var(--shadow-soft)}
+    .checkout-list{display:grid;gap:12px}
+    .cart-item{display:grid;grid-template-columns:84px 1fr auto;gap:13px;align-items:center;border:1px solid var(--line);border-radius:22px;padding:10px;background:#fff}
+    .cart-item img{width:84px;height:84px;object-fit:cover;border-radius:17px;background:var(--surface)}
+    .cart-item-title{font-weight:650;letter-spacing:-.02em;line-height:1.18}
+    .cart-item-style{font-size:.82rem;color:var(--muted);margin-top:4px}
+    .cart-item-price{font-weight:650;margin-top:5px;white-space:nowrap}
+    .cart-controls{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+    .cart-controls button{width:34px;height:34px;border:0;border-radius:999px;background:var(--surface);font-weight:700}
+    .cart-controls .remove{width:auto;padding:0 11px;color:var(--danger);background:#fff;box-shadow:inset 0 0 0 1px var(--line)}
+    .checkout-form{display:grid;gap:11px;margin-top:14px}
+    .checkout-field{display:grid;gap:6px}
+    .checkout-field label{font-size:.78rem;color:var(--soft);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+    .checkout-field input{width:100%;border:1px solid var(--line);background:#fff;border-radius:17px;padding:13px 14px;min-height:48px;outline:none}
+    .checkout-field input:focus{box-shadow:var(--focus);border-color:rgba(199,164,90,.65)}
+    .checkout-total{border-top:1px solid var(--line);margin-top:14px;padding-top:14px;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:1.08rem}
+    .shipping-progress{background:var(--surface);border-radius:18px;padding:12px;margin-top:12px;color:var(--muted);font-size:.9rem}
+    .shipping-bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-top:8px}
+    .shipping-bar span{display:block;height:100%;background:var(--gold);border-radius:99px}
+    .checkout-note{font-size:.86rem;color:var(--muted);margin:10px 0 0}
+    .lightbox-hint{color:rgba(255,255,255,.74);font-size:.84rem;text-align:center}
+    .lightbox-zoom-btn{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1);color:#fff;border-radius:999px;padding:10px 13px;font-weight:600}
+    .lightbox-stage img.zoomed{transform:scale(2);cursor:zoom-out;max-width:none;max-height:none}
     .menu-btn{display:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:600;color:var(--ink)}
 
     main{min-height:70vh}
@@ -129,7 +171,7 @@
     .product-title{font-weight:540;letter-spacing:-.025em;line-height:1.18;font-size:.97rem;min-height:2.25em;color:var(--ink)}
     .product-summary{display:none}
     .price-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
-    .price{font-size:1rem;font-weight:650;color:var(--ink);letter-spacing:-.025em}
+    .price{font-size:1rem;font-weight:650;color:var(--ink);letter-spacing:-.025em;white-space:nowrap;display:inline-flex;align-items:baseline;gap:4px}
     .tiny{font-size:.78rem;color:var(--muted)}
     .card-actions{display:none}
     .visual-link{position:absolute;inset:0;z-index:1;border-radius:28px}
@@ -209,12 +251,12 @@
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .lightbox{position:fixed;inset:0;background:rgba(24,22,19,.88);display:none;z-index:150;align-items:center;justify-content:center;padding:18px}
     .lightbox.open{display:flex}
-    .lightbox-inner{width:min(1120px,100%);max-height:94vh;display:grid;gap:12px}
-    .lightbox-bar{display:flex;justify-content:space-between;align-items:center;color:#fff;gap:12px}
+    .lightbox-inner{width:min(1120px,calc(100vw - 24px));max-height:94vh;display:grid;gap:12px}
+    .lightbox-bar{display:flex;justify-content:space-between;align-items:center;color:#fff;gap:8px;flex-wrap:wrap}
     .lightbox-title{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .lightbox-close{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1);color:#fff;border-radius:999px;padding:10px 13px;font-weight:600}
-    .lightbox-stage{display:grid;place-items:center;max-height:84vh;overflow:auto}
-    .lightbox-stage img,.lightbox-stage video{max-height:84vh;max-width:100%;border-radius:20px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    .lightbox-stage{display:grid;place-items:center;max-height:84vh;overflow:auto;overscroll-behavior:contain;touch-action:pan-x pan-y}
+    .lightbox-stage img,.lightbox-stage video{max-height:84vh;max-width:100%;width:auto;height:auto;object-fit:contain;border-radius:20px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.35);transition:.18s transform;transform-origin:center center}
     .lightbox-stage video{background:#000}
 
     @media (max-width:1080px){
@@ -263,6 +305,18 @@
       .buy-panel{padding:18px;border-radius:28px}
       .main-preview,.wide-art img,.vertical-video-wrap{border-radius:24px}
       .footer-grid{gap:14px}
+
+      .promo-strip{grid-template-columns:1fr;gap:8px;margin:14px 0}
+      .promo-card{border-radius:20px;padding:12px}
+      .checkout-layout{grid-template-columns:1fr}
+      .checkout-card,.checkout-summary{border-radius:24px;padding:14px}
+      .cart-item{grid-template-columns:68px 1fr;align-items:start}
+      .cart-item img{width:68px;height:68px;border-radius:15px}
+      .cart-controls{grid-column:1/-1;justify-content:flex-start}
+      .lightbox{padding:10px}
+      .lightbox-inner{width:calc(100vw - 20px);max-height:96vh}
+      .lightbox-stage{max-height:calc(100vh - 142px);place-items:start center}
+      .lightbox-stage img,.lightbox-stage video{max-width:calc(100vw - 20px);max-height:calc(100vh - 150px);border-radius:16px}
     }
     @media (max-width:390px){
       .products-grid{gap:10px}
@@ -284,6 +338,7 @@
       <nav class="nav-links" id="navLinks">
         <a href="./">Início</a>
         <a href="?view=catalogo">Produtos</a>
+        <a class="cart-nav" href="?view=checkout" aria-label="Abrir carrinho e checkout">Carrinho <span class="cart-count" id="cartCount">0</span></a>
         <a href="?view=reels">Vídeos</a>
         <a href="?page=envio">Envio</a>
         <a href="?page=quem-somos">Quem somos</a>
@@ -309,8 +364,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="lightbox" id="lightbox" aria-hidden="true" role="dialog" aria-label="Imagem ampliada">
     <div class="lightbox-inner">
-      <div class="lightbox-bar"><div class="lightbox-title" id="lightboxTitle">Visualização</div><button class="lightbox-close" type="button" id="lightboxClose">Fechar ✕</button></div>
-      <div class="lightbox-stage" id="lightboxStage"></div>
+      <div class="lightbox-bar"><div class="lightbox-title" id="lightboxTitle">Visualização</div><button class="lightbox-zoom-btn" type="button" id="lightboxZoom">Zoom</button><button class="lightbox-close" type="button" id="lightboxClose">Fechar ✕</button></div>
+      <div class="lightbox-stage" id="lightboxStage"></div><div class="lightbox-hint">No celular, toque duas vezes na imagem para aproximar e arraste para ver detalhes.</div>
     </div>
   </div>
 
@@ -332,16 +387,45 @@
     const DEFAULT_CONFIG = {
       lojaNome:"Só em Ti",
       whatsapp:"5565999999999",
-      avisoTopo:"Canecas católicas e presentes devocionais · Pedido pelo WhatsApp",
+      avisoTopo:"Frete grátis a partir de R$ 149,90 · Parcelamos em até 3x sem juros · Pedido pelo WhatsApp",
       footerTexto:"Canecas católicas e presentes devocionais com arte autoral, atendimento humano e pedido pelo WhatsApp.",
       hero:{
         etiqueta:"Presentes católicos autorais",
         titulo:"Um tema de fé. Vários estilos para escolher.",
-        texto:"Escolha o tema, veja as variações de estilo e peça pelo WhatsApp."
+        texto:"Escolha o tema, veja as variações de estilo, adicione vários produtos ao carrinho e finalize pelo WhatsApp."
       },
       sociais:{},
+      siteUrl:"",
+      seo:{
+        titulo:"Só em Ti | Canecas Católicas e Presentes Devocionais",
+        descricao:"Canecas católicas e presentes devocionais com arte autoral. Compre pelo site, monte seu carrinho e finalize o pedido pelo WhatsApp.",
+        keywords:"canecas católicas, presentes católicos, caneca católica personalizada, lembrança católica, Nossa Senhora, santos católicos"
+      },
+      empresa:{
+        nomeLegal:"NOME DA EMPRESA LTDA",
+        cnpj:"00.000.000/0000-00",
+        telefone:"+55 65 99999-9999",
+        email:"contato@seudominio.com.br",
+        rua:"Rua Exemplo, 123",
+        bairro:"Centro",
+        cidade:"Sua cidade",
+        uf:"UF",
+        cep:"00000-000",
+        pais:"BR",
+        latitude:"",
+        longitude:"",
+        horario:"Mo-Fr 08:00-18:00"
+      },
+      politicas:{
+        freteGratisMinimo:149.90,
+        parcelamento:"Parcelamos em até 3x sem juros",
+        entregaTexto:"Frete grátis a partir de R$ 149,90",
+        atendimentoTexto:"Pedido confirmado pelo WhatsApp",
+        prazoTexto:"Prazo confirmado no atendimento",
+        trocaDias:7
+      },
       paginas:{
-        envio:{titulo:"Regras de envio", html:"<p>Os pedidos são confirmados pelo WhatsApp. Após a confirmação do pagamento, informamos prazo de produção, postagem e rastreio conforme o endereço informado.</p><h2>Produção</h2><p>Os produtos são produzidos sob demanda ou enviados conforme estoque disponível. O prazo exato é confirmado no atendimento.</p>"},
+        envio:{titulo:"Regras de envio", html:"<p>Os pedidos são confirmados pelo WhatsApp. O prazo de separação, pagamento, entrega ou postagem é informado no atendimento conforme disponibilidade e endereço informado.</p><h2>Frete e pagamento</h2><p>Frete grátis a partir de R$ 149,90. Parcelamos em até 3x sem juros. Para pedidos abaixo do mínimo de frete grátis, o valor de entrega é confirmado no atendimento.</p>"},
         privacidade:{titulo:"Sigilo de dados", html:"<p>Usamos seus dados somente para atendimento, confirmação do pedido, pagamento, emissão de comprovantes quando necessário e envio do produto. Não vendemos seus dados.</p>"},
         "quem-somos":{titulo:"Quem somos", html:"<p>A Só em Ti nasceu para criar presentes católicos com beleza, respeito e devoção. Nosso foco é oferecer produtos com visual delicado, autoral e pronto para presentear.</p>"},
         contato:{titulo:"Contato", html:"<p>Fale conosco pelo WhatsApp, Instagram ou TikTok. Atendemos pedidos, dúvidas sobre envio e encomendas em quantidade.</p>"},
@@ -351,7 +435,9 @@
 
     const $ = (s,root=document)=>root.querySelector(s);
     const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
-    const state = {config:null,categorias:{},produtos:{},reels:{},db:null,params:new URLSearchParams(location.search),galleryItems:[]};
+    const CART_KEY = "soemti_carrinho_v3";
+    const CUSTOMER_KEY = "soemti_cliente_checkout_v1";
+    const state = {config:null,categorias:{},produtos:{},reels:{},db:null,params:new URLSearchParams(location.search),galleryItems:[],cart:[],customer:{}};
     const canUseFirebaseSdk = firebaseConfig.databaseURL && !firebaseConfig.databaseURL.includes("SEU-PROJETO") && firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("COLE_AQUI");
 
     function esc(v=""){return String(v ?? "").replace(/[&<>'"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[m]))}
@@ -504,6 +590,94 @@
     function subName(catSlug,subSlug){const c=catBySlug(catSlug);return c?.subcategorias?.[subSlug] || titleFromSlug(subSlug) || ""}
     function hasEntries(obj){return Object.keys(obj||{}).length>0}
 
+
+    function loadCart(){try{return JSON.parse(localStorage.getItem(CART_KEY)||"[]").filter(Boolean)}catch(e){return []}}
+    function saveCart(){localStorage.setItem(CART_KEY, JSON.stringify(state.cart||[])); updateCartBadge()}
+    function loadCustomer(){try{return JSON.parse(localStorage.getItem(CUSTOMER_KEY)||"{}")||{}}catch(e){return {}}}
+    function saveCustomer(data){state.customer=data||{}; localStorage.setItem(CUSTOMER_KEY, JSON.stringify(state.customer))}
+    function cartCount(){return (state.cart||[]).reduce((sum,item)=>sum+(Number(item.qty)||0),0)}
+    function updateCartBadge(){const el=$("#cartCount"); if(el) el.textContent=cartCount()}
+    function productPrice(p){const n=parsePrice(p?.preco ?? p?.valor ?? p?.price); return n!==null?n:0}
+    function freteMinimo(){return parsePrice(state.config?.politicas?.freteGratisMinimo) || 149.90}
+    function cartKeyFor(p,variation=null){return `${p.id || p.slug || "produto"}::${variation?.estiloSlug || variation?.id || "principal"}`}
+    function addToCart(p,qty=1,variation=null){
+      const key=cartKeyFor(p,variation); const current=(state.cart||[]).find(i=>i.key===key);
+      const item={
+        key, produtoId:p.id, produtoSlug:p.slug||p.id, titulo:p.titulo,
+        variacaoId:variation?.id||"", variacaoSlug:variation?.estiloSlug||"", variacaoEstilo:variation?.estiloNome||"",
+        qty:Math.max(1,Number(qty)||1), price:productPrice(p), precoTexto:p.precoTexto || brl(p.preco),
+        image:imageOf(p,variation), url:currentUrl({produto:p.slug||p.id,estilo:variation?.estiloSlug||null})
+      };
+      if(current){current.qty += item.qty; Object.assign(current,{price:item.price,precoTexto:item.precoTexto,image:item.image,url:item.url,titulo:item.titulo,variacaoEstilo:item.variacaoEstilo})}
+      else state.cart.push(item);
+      saveCart();
+      toast("Produto adicionado ao carrinho.");
+    }
+    function updateCartItemQty(key,qty){const item=(state.cart||[]).find(i=>i.key===key); if(!item)return; item.qty=Math.max(1,Number(qty)||1); saveCart()}
+    function removeCartItem(key){state.cart=(state.cart||[]).filter(i=>i.key!==key); saveCart()}
+    function cartItemsDetailed(){
+      return (state.cart||[]).map(item=>{
+        const p=findProduct(item.produtoSlug)||findProduct(item.produtoId);
+        const v=p ? variationsOf(p).find(x=>x.estiloSlug===item.variacaoSlug || x.id===item.variacaoId) : null;
+        const price=p ? productPrice(p) : Number(item.price||0);
+        return {...item, product:p, variation:v, titulo:p?.titulo||item.titulo, image:(p?imageOf(p,v):item.image)||"", price, precoTexto:p?.precoTexto||item.precoTexto||brl(price), subtotal:price*(Number(item.qty)||1), url:p?currentUrl({produto:p.slug||p.id,estilo:v?.estiloSlug||null}):item.url};
+      });
+    }
+    function cartTotal(){return cartItemsDetailed().reduce((sum,item)=>sum+(Number(item.subtotal)||0),0)}
+    function freeShippingStatus(total=cartTotal()){
+      const min=freteMinimo();
+      const pct=Math.max(0,Math.min(100,(total/min)*100));
+      return {min,pct,missing:Math.max(0,min-total),free:total>=min};
+    }
+    function renderPromoStrip(){
+      const pol=state.config?.politicas||DEFAULT_CONFIG.politicas; const min=brl(pol.freteGratisMinimo||149.90);
+      return `<div class="promo-strip" aria-label="Condições de compra">
+        <div class="promo-card"><span class="promo-ico">✓</span><span><strong>Frete grátis a partir de ${esc(min)}</strong><span>Valor de entrega confirmado no atendimento.</span></span></div>
+        <div class="promo-card"><span class="promo-ico">3x</span><span><strong>Parcelamos em até 3x sem juros</strong><span>Pagamento combinado pelo WhatsApp.</span></span></div>
+        <div class="promo-card"><span class="promo-ico">🛒</span><span><strong>Monte seu pedido com vários produtos</strong><span>Checkout simples: nome, telefone, cidade e email.</span></span></div>
+      </div>`;
+    }
+    function siteBaseUrl(){
+      const fromConfig=String(state.config?.siteUrl||"").trim();
+      const base=fromConfig || `${location.origin}${location.pathname.replace(/[^\/]*$/,"")}`;
+      return base.endsWith("/") ? base : `${base}/`;
+    }
+    function absoluteUrl(url=""){try{return new URL(url || "./", siteBaseUrl()).href}catch(e){return url||""}}
+    function pageUrl(extra={}){const url=new URL(siteBaseUrl()); Object.entries(extra).forEach(([k,v])=>{if(v!=null&&v!=="")url.searchParams.set(k,v)}); return url.href}
+    function setCanonical(url=location.href){let el=$("#canonicalLink"); if(el) el.setAttribute("href",url); setOg("og:url",url)}
+    function setTwitter(n,v){let el=document.querySelector(`meta[name="${n}"]`); if(el) el.setAttribute("content",v||"")}
+    function setJsonLd(id,obj){let ld=$(`#${id}`); if(!ld){ld=document.createElement("script");ld.type="application/ld+json";ld.id=id;document.head.appendChild(ld)} ld.textContent=JSON.stringify(obj,null,2)}
+    function removeJsonLd(id){const el=$(`#${id}`); if(el) el.remove()}
+    function cleanJson(obj){
+      if(Array.isArray(obj)) return obj.map(cleanJson).filter(v=>v!==undefined&&v!==null&&v!==""&&!(Array.isArray(v)&&!v.length));
+      if(obj && typeof obj==="object"){const o={}; Object.entries(obj).forEach(([k,v])=>{const cv=cleanJson(v); if(cv!==undefined&&cv!==null&&cv!==""&&!(Array.isArray(cv)&&!cv.length)&&!(typeof cv==="object"&&!Array.isArray(cv)&&!Object.keys(cv).length)) o[k]=cv}); return o}
+      return obj;
+    }
+    function businessAddress(){
+      const e=state.config?.empresa||DEFAULT_CONFIG.empresa;
+      return cleanJson({"@type":"PostalAddress",streetAddress:e.rua,addressLocality:e.cidade,addressRegion:e.uf,postalCode:e.cep,addressCountry:e.pais||"BR"});
+    }
+    function updateBaseStructuredData(){
+      const c=state.config||DEFAULT_CONFIG, e=c.empresa||DEFAULT_CONFIG.empresa, name=c.lojaNome||"Só em Ti", base=siteBaseUrl();
+      const logo=c.logo || c.hero?.imagem || "";
+      setJsonLd("storeLd", cleanJson({
+        "@context":"https://schema.org",
+        "@graph":[
+          {"@type":["Organization","Store"],"@id":`${base}#organization`,name,url:base,legalName:e.nomeLegal,taxID:e.cnpj,telephone:e.telefone,email:e.email,logo:absoluteUrl(logo),image:absoluteUrl(logo),address:businessAddress(),sameAs:Object.values(c.sociais||{}).filter(Boolean),
+           "hasMerchantReturnPolicy":{"@type":"MerchantReturnPolicy","@id":`${base}#return-policy`,applicableCountry:"BR",returnPolicyCategory:"https://schema.org/MerchantReturnFiniteReturnWindow",merchantReturnDays:c.politicas?.trocaDias||7,returnMethod:"https://schema.org/ReturnByMail",returnFees:"https://schema.org/ReturnShippingFees"}},
+          {"@type":"LocalBusiness","@id":`${base}#localbusiness`,name,url:base,telephone:e.telefone,email:e.email,address:businessAddress(),openingHours:e.horario,priceRange:"$$",geo:e.latitude&&e.longitude?{"@type":"GeoCoordinates",latitude:e.latitude,longitude:e.longitude}:undefined},
+          {"@type":"WebSite","@id":`${base}#website`,url:base,name,publisher:{"@id":`${base}#organization`},potentialAction:{"@type":"SearchAction",target:`${base}?view=catalogo&q={search_term_string}`,"query-input":"required name=search_term_string"}}
+        ]
+      }));
+    }
+    function updateSeoGeneric(title,desc,img="",url=location.href,type="website"){
+      removeJsonLd("productLd");
+      document.title=title;
+      setMeta("description",desc);
+      setOg("og:type",type); setOg("og:title",title); setOg("og:description",desc); setOg("og:image",img||""); setCanonical(url);
+      setTwitter("twitter:title",title); setTwitter("twitter:description",desc); setTwitter("twitter:image",img||"");
+    }
+
     async function readFirebaseNode(path){
       const clean = String(path || "").replace(/^\/+|\/+$/g, "");
       try{
@@ -553,12 +727,15 @@
       document.title = `${name} | Presentes Católicos`;
       $("#brandName").textContent = name;
       $("#footerBrandName").textContent = name;
-      $("#topNote").innerHTML = esc(c.avisoTopo || DEFAULT_CONFIG.avisoTopo).replace("WhatsApp","<strong>WhatsApp</strong>");
+      const aviso=esc(c.avisoTopo || DEFAULT_CONFIG.avisoTopo).replace("WhatsApp","<strong>WhatsApp</strong>");
+      $("#topNote").innerHTML = aviso;
       $("#footerText").textContent = c.footerTexto || DEFAULT_CONFIG.footerTexto;
       $("#year").textContent = new Date().getFullYear();
       const soc=c.sociais||{};
       $("#footerSocials").innerHTML = [soc.instagram&&["Instagram",soc.instagram],soc.tiktok&&["TikTok",soc.tiktok],soc.whatsapp&&["WhatsApp",soc.whatsapp]].filter(Boolean).map(([n,u])=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(n)}</a>`).join("");
       document.querySelector(".copyright").innerHTML = `© <span id="year">${new Date().getFullYear()}</span> ${esc(name)}. Produtos religiosos autorais. Atendimento e confirmação de pedido via WhatsApp.`;
+      updateBaseStructuredData();
+      updateCartBadge();
     }
     function route(){state.params = new URLSearchParams(location.search);return {page:state.params.get("page"),view:state.params.get("view"),produto:state.params.get("produto"),categoria:state.params.get("categoria"),sub:state.params.get("sub"),q:state.params.get("q")||""}}
     function render(){
@@ -567,6 +744,7 @@
       const r=route();
       if(r.produto) return renderProduct(r.produto);
       if(r.page) return renderStaticPage(r.page);
+      if(r.view === "checkout" || r.view === "carrinho") return renderCheckout();
       if(r.view === "reels") return renderReelsPage();
       if(r.view === "catalogo" || r.categoria || r.q) return renderCatalog();
       return renderHome();
@@ -575,6 +753,7 @@
 
     function renderHome(){
       const c=state.config||DEFAULT_CONFIG;
+      updateSeoGeneric(c.seo?.titulo || `${c.lojaNome||"Só em Ti"} | Canecas Católicas`, c.seo?.descricao || DEFAULT_CONFIG.seo.descricao, c.hero?.imagem || "", pageUrl());
       const picked=activeProducts().filter(p=>p.destaque);
       const featured=(picked.length?picked:activeProducts()).slice(0,12);
       const catsHtml=renderCategories();
@@ -587,10 +766,11 @@
               <span class="eyebrow">${esc(c.hero?.etiqueta || "Presentes católicos autorais")}</span>
               <h1>${esc(c.hero?.titulo || DEFAULT_CONFIG.hero.titulo)}</h1>
               <p>${esc(c.hero?.texto || DEFAULT_CONFIG.hero.texto)}</p>
-              <div class="hero-actions"><a class="btn primary" href="?view=catalogo">Ver produtos</a><a class="btn secondary" href="?view=reels">Ver vídeos</a></div>
+              <div class="hero-actions"><a class="btn primary" href="?view=catalogo">Ver produtos</a><a class="btn secondary" href="?view=checkout">Ver carrinho</a><a class="btn secondary" href="?view=reels">Ver vídeos</a></div>
             </div>
             ${heroMedia}
           </div>
+          <div class="container">${renderPromoStrip()}</div>
         </section>
         ${catsHtml?`<section><div class="container"><div class="section-head"><div><h2>Categorias</h2><p>Produtos organizados para facilitar a escolha do presente católico.</p></div><a class="btn secondary" href="?view=catalogo">Catálogo completo</a></div><div class="grid-cats">${catsHtml}</div></div></section>`:""}
         <section><div class="container"><div class="section-head"><div><h2>Escolha pela imagem</h2><p>Cada caneca pode ter várias versões visuais. Toque na foto, escolha o estilo e finalize pelo WhatsApp.</p></div></div><div class="products-grid">${featured.map(renderProductCard).join("") || empty("Nenhum produto ativo encontrado.")}</div></div></section>
@@ -610,8 +790,10 @@
     }
     function renderCatalog(){
       const r=route(); const cat=catBySlug(r.categoria); const list=filtersProducts();
+      updateSeoGeneric(`${cat?cat.nome:"Catálogo"} | ${state.config?.lojaNome||"Só em Ti"}`, cat?.descricao || "Catálogo de canecas católicas e presentes devocionais com pedido pelo WhatsApp.", imageOf(list[0]) || "", pageUrl({view:"catalogo",categoria:r.categoria||"",sub:r.sub||"",q:r.q||""}));
       setMain(`<section class="page"><div class="container">
         <div class="section-head"><div><h2>${cat?esc(cat.nome):"Todos os produtos"}</h2><p>${cat?esc(cat.descricao||""):"Catálogo visual com foco total nas fotos e nas variações disponíveis."}</p></div></div>
+        ${renderPromoStrip()}
         ${renderFilters(r)}
         ${cat ? renderSubcats(cat,r.sub) : ""}
         <div class="products-grid">${list.map(renderProductCard).join("") || empty("Nenhum produto encontrado.")}</div>
@@ -653,7 +835,7 @@
         ${variationPreview(p,6)}
         <div class="product-body">
           <a class="product-title" href="?produto=${esc(p.slug||p.id)}">${esc(p.titulo)}</a>
-          <div class="price-row"><span class="price">${esc(p.precoTexto || brl(p.preco))}</span><span class="tiny">${vCount?esc(`${vCount} opções`):esc(p.estoqueTexto||p.estoque_texto||"Sob demanda")}</span></div>
+          <div class="price-row"><span class="price">${esc(p.precoTexto || brl(p.preco))}</span><span class="tiny">${vCount?esc(`${vCount} opções`):esc(p.estoqueTexto||p.estoque_texto||"Consulte")}</span></div>
         </div>
       </article>`
     }
@@ -679,13 +861,22 @@
             ${vars.length?renderVariationSelector(p,selected):""}
             ${selected?`<p class="selected-style"><strong>${esc(selectedName)}</strong>${selected.descricaoEstilo?` — ${esc(selected.descricaoEstilo)}`:""}</p>`:""}
             <div class="minimal-details">${esc(p.descricaoTema || p.descricaoCurta || p.resumo || "Escolha o estilo, confira as fotos e envie o pedido pelo WhatsApp.")}</div>
-            <div class="order-box"><label class="tiny" for="qty">Quantidade</label><div class="qty-row"><button type="button" id="minusQty">−</button><input id="qty" value="1" inputmode="numeric" pattern="[0-9]*" aria-label="Quantidade"><button type="button" id="plusQty">+</button></div><button class="btn primary full" id="whatsBtn">Pedir pelo WhatsApp</button><div class="share-row"><button class="btn secondary" id="shareBtn" type="button">Compartilhar</button><button class="btn ghost" id="copyBtn" type="button">Copiar link</button></div></div>
+            ${renderProductBenefits()}
+            <div class="order-box"><label class="tiny" for="qty">Quantidade</label><div class="qty-row"><button type="button" id="minusQty">−</button><input id="qty" value="1" inputmode="numeric" pattern="[0-9]*" aria-label="Quantidade"><button type="button" id="plusQty">+</button></div><button class="btn primary full" id="addCartBtn">Adicionar ao carrinho</button><button class="btn secondary full" id="checkoutBtn" type="button">Finalizar pedido</button><div class="share-row"><button class="btn secondary" id="shareBtn" type="button">Compartilhar</button><button class="btn ghost" id="copyBtn" type="button">Copiar link</button></div></div>
           </aside>
         </div>
         <div class="media-section">${renderWideArt(p,selected)}${renderVerticalProductVideo(p,selected)}</div>
         ${related.length?`<section><div class="section-head"><div><h2>Relacionados</h2><p>Outras opções do mesmo tema ou categoria.</p></div></div><div class="related-grid">${related.map(renderProductCard).join("")}</div></section>`:""}
       </div></section>`);
       bindGallery(p,selected);bindVariationSelector(p);bindOrder(p,selected);bindLightboxTriggers();
+    }
+    function renderProductBenefits(){
+      const pol=state.config?.politicas||DEFAULT_CONFIG.politicas;
+      return `<ul class="benefits">
+        <li><span class="dot"></span><span>${esc(pol.entregaTexto || "Frete grátis a partir de R$ 149,90")}</span></li>
+        <li><span class="dot"></span><span>${esc(pol.parcelamento || "Parcelamos em até 3x sem juros")}</span></li>
+        <li><span class="dot"></span><span>Adicione vários produtos e finalize em um único pedido pelo WhatsApp.</span></li>
+      </ul>`;
     }
     function renderVariationSelector(p,selected){
       const vars=variationsOf(p);
@@ -738,46 +929,158 @@
     function bindOrder(p,variation=null){
       const q=$("#qty"), minus=$("#minusQty"), plus=$("#plusQty");
       const clean=()=>{q.value=Math.max(1,parseInt(q.value||"1",10)||1)};
-      minus?.addEventListener("click",()=>{q.value=Math.max(1,(parseInt(q.value||"1",10)||1)-1)}); plus?.addEventListener("click",()=>{q.value=(parseInt(q.value||"1",10)||1)+1}); q?.addEventListener("input",clean);
-      $("#whatsBtn")?.addEventListener("click",()=>sendWhats(p, parseInt(q.value||"1",10)||1, variation));
+      minus?.addEventListener("click",()=>{q.value=Math.max(1,(parseInt(q.value||"1",10)||1)-1)});
+      plus?.addEventListener("click",()=>{q.value=(parseInt(q.value||"1",10)||1)+1});
+      q?.addEventListener("input",clean);
+      $("#addCartBtn")?.addEventListener("click",()=>addToCart(p, parseInt(q.value||"1",10)||1, variation));
+      $("#checkoutBtn")?.addEventListener("click",()=>{addToCart(p, parseInt(q.value||"1",10)||1, variation); history.pushState(null,"","?view=checkout"); render();});
       $("#shareBtn")?.addEventListener("click",()=>shareProduct(p));
       $("#copyBtn")?.addEventListener("click",async()=>{await navigator.clipboard?.writeText(currentUrl({produto:p.slug||p.id,estilo:variation?.estiloSlug||null})); toast("Link copiado.")});
     }
     async function sendWhats(p,qty,variation=null){
-      const orderId = `SETI_${Date.now()}`;
-      const order={id:orderId,produtoId:p.id,produtoSlug:p.slug,titulo:p.titulo,variacaoId:variation?.id||"",variacaoEstilo:variation?.estiloNome||"",variacaoSlug:variation?.estiloSlug||"",quantidade:qty,preco:p.preco||null,precoTexto:p.precoTexto||brl(p.preco),status:"novo_whatsapp",origem:"site",criadoEm:new Date().toISOString()};
-      try{
-        if(state.db) await state.db.ref(`pedidos/${orderId}`).set(order);
-        else await fetch(`${FIREBASE_DATABASE_URL}/pedidos/${orderId}.json`, {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(order)});
-      }catch(e){console.warn(e);toast("Não consegui salvar no Firebase, mas vou abrir o WhatsApp.")}
-      const c=state.config||DEFAULT_CONFIG; const phone=(c.whatsapp||"5565999999999").replace(/\D/g,"");
-      const msg = `Olá! Quero fazer este pedido na Só em Ti.\n\nProduto: ${p.titulo}\n${variation?`Estilo escolhido: ${variation.estiloNome}\n`:""}Quantidade: ${qty}\nValor unitário: ${p.precoTexto || brl(p.preco)}\nCódigo do pedido: ${orderId}\nLink do produto: ${currentUrl({produto:p.slug||p.id,estilo:variation?.estiloSlug||null})}\n\nPode me passar disponibilidade, pagamento, frete e prazo?`;
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank','noopener');
+      addToCart(p,qty,variation);
+      history.pushState(null,"","?view=checkout");
+      render();
     }
     async function shareProduct(p){const data={title:p.titulo,text:p.resumo||"Produto católico Só em Ti",url:currentUrl({produto:p.slug||p.id,estilo:selectedVariation(p)?.estiloSlug||null})}; if(navigator.share){try{await navigator.share(data)}catch(e){}} else {await navigator.clipboard?.writeText(data.url);toast("Link copiado para compartilhar.")}}
     function updateSeoProduct(p){
-      const desc=p.seo?.description || p.resumo || p.descricaoCurta || p.descricao || "Produto católico Só em Ti";
+      const c=state.config||DEFAULT_CONFIG; const storeName=c.lojaNome || "Só em Ti";
+      const desc=p.seo?.description || p.resumo || p.descricaoCurta || p.descricao || "Caneca católica e presente devocional com pedido pelo WhatsApp.";
       const v=selectedVariation(p); const img=imageOf(p,v);
-      document.title=`${p.titulo} | ${state.config?.lojaNome || "Só em Ti"}`;
-      setMeta("description",desc); setOg("og:title",`${p.titulo} | ${state.config?.lojaNome || "Só em Ti"}`); setOg("og:description",desc); setOg("og:image",img);
-      let ld=$("#productLd"); if(!ld){ld=document.createElement("script");ld.type="application/ld+json";ld.id="productLd";document.head.appendChild(ld)}
-      ld.textContent=JSON.stringify({"@context":"https://schema.org","@type":"Product",name:p.titulo,description:desc,image:[img].filter(Boolean),brand:{"@type":"Brand",name:state.config?.lojaNome||"Só em Ti"},offers:{"@type":"Offer",priceCurrency:"BRL",price:p.preco||undefined,availability:"https://schema.org/InStock",url:currentUrl({produto:p.slug||p.id})}});
+      const title=`${p.titulo} | ${storeName}`;
+      const url=pageUrl({produto:p.slug||p.id,estilo:v?.estiloSlug||""});
+      document.title=title;
+      setMeta("description",desc);
+      setMeta("keywords",[p.titulo,p.subcategoriaNome,p.categoriaSlug,...(p.tags||[]),v?.estiloNome,"caneca católica","presente católico"].filter(Boolean).join(", "));
+      setOg("og:type","product"); setOg("og:title",title); setOg("og:description",desc); setOg("og:image",img); setCanonical(url);
+      setOg("product:price:amount",productPrice(p)); setOg("product:price:currency","BRL");
+      setTwitter("twitter:title",title); setTwitter("twitter:description",desc); setTwitter("twitter:image",img);
+      const images=[img,v?.midias?.mockupEsquerdaUrl,v?.midias?.mockupFrenteUrl,v?.midias?.mockupDireitaUrl,v?.midias?.arteAbertaUrl,p.midias?.principalUrl].filter(Boolean).map(absoluteUrl);
+      const price=productPrice(p);
+      const offer=cleanJson({
+        "@type":"Offer",
+        url,
+        priceCurrency:"BRL",
+        price:price || undefined,
+        availability:"https://schema.org/InStock",
+        itemCondition:"https://schema.org/NewCondition",
+        seller:{"@id":`${siteBaseUrl()}#organization`},
+        hasMerchantReturnPolicy:{"@id":`${siteBaseUrl()}#return-policy`}
+      });
+      setJsonLd("productLd", cleanJson({
+        "@context":"https://schema.org/",
+        "@type":"Product",
+        "@id":`${url}#product`,
+        name:p.titulo,
+        description:desc,
+        image:images,
+        sku:String(p.sku || p.codigo || p.id || ""),
+        mpn:String(p.mpn || p.codigo || p.id || ""),
+        gtin:p.gtin || p.ean || undefined,
+        brand:{"@type":"Brand",name:storeName},
+        category:p.subcategoriaNome || p.categoriaSlug,
+        material:p.material || "Cerâmica",
+        color:v?.estiloNome || undefined,
+        isVariantOf:v?{"@type":"ProductGroup",name:p.titulo,productGroupID:p.id,hasVariant:variationsOf(p).map(x=>({"@type":"Product",name:`${p.titulo} - ${x.estiloNome}`,sku:x.id||`${p.id}-${x.estiloSlug}`}))}:undefined,
+        offers:offer
+      }));
     }
     function setMeta(n,v){let el=document.querySelector(`meta[name="${n}"]`); if(el) el.setAttribute("content",v||"")}
     function setOg(n,v){let el=document.querySelector(`meta[property="${n}"]`); if(el) el.setAttribute("content",v||"")}
 
+
+    function renderCheckout(){
+      const c=state.config||DEFAULT_CONFIG; const items=cartItemsDetailed(); const total=cartTotal(); const status=freeShippingStatus(total);
+      updateSeoGeneric(`Checkout | ${c.lojaNome||"Só em Ti"}`, "Finalize seu pedido com nome, telefone, cidade e email. O pedido será enviado pelo WhatsApp.", "", pageUrl({view:"checkout"}));
+      const customer=state.customer||{};
+      setMain(`<section class="page"><div class="container">
+        <div class="section-head"><div><h2>Checkout</h2><p>Monte seu pedido com vários produtos e envie tudo de uma vez pelo WhatsApp.</p></div><a class="btn secondary" href="?view=catalogo">Continuar comprando</a></div>
+        ${renderPromoStrip()}
+        ${!items.length ? `<div class="empty">Seu carrinho está vazio. Escolha produtos no catálogo para finalizar o pedido.</div>` : `
+        <div class="checkout-layout">
+          <section class="checkout-card">
+            <h3 style="margin:0 0 12px;font-size:1.35rem;letter-spacing:-.03em">Produtos do pedido</h3>
+            <div class="checkout-list">${items.map(renderCartItem).join("")}</div>
+          </section>
+          <aside class="checkout-summary">
+            <h3 style="margin:0;font-size:1.35rem;letter-spacing:-.03em">Dados para atendimento</h3>
+            <p class="checkout-note">Essas informações vão junto na mensagem do WhatsApp para agilizar o pedido.</p>
+            <form class="checkout-form" id="checkoutForm">
+              <div class="checkout-field"><label for="clienteNome">Nome</label><input id="clienteNome" name="nome" autocomplete="name" required value="${esc(customer.nome||"")}" placeholder="Seu nome"></div>
+              <div class="checkout-field"><label for="clienteTelefone">Telefone</label><input id="clienteTelefone" name="telefone" autocomplete="tel" inputmode="tel" required value="${esc(customer.telefone||"")}" placeholder="(00) 00000-0000"></div>
+              <div class="checkout-field"><label for="clienteCidade">Cidade</label><input id="clienteCidade" name="cidade" autocomplete="address-level2" required value="${esc(customer.cidade||"")}" placeholder="Sua cidade"></div>
+              <div class="checkout-field"><label for="clienteEmail">Email</label><input id="clienteEmail" name="email" autocomplete="email" type="email" required value="${esc(customer.email||"")}" placeholder="seu@email.com"></div>
+              <div class="shipping-progress">
+                <strong>${status.free ? "Frete grátis disponível para este pedido." : `Faltam ${brl(status.missing)} para frete grátis.`}</strong>
+                <div class="shipping-bar" aria-hidden="true"><span style="width:${status.pct}%"></span></div>
+                <div class="checkout-note">Frete grátis a partir de ${brl(status.min)}. Parcelamos em até 3x sem juros.</div>
+              </div>
+              <div class="checkout-total"><span>Total dos produtos</span><span>${brl(total)}</span></div>
+              <button class="btn primary full" type="submit">Enviar pedido pelo WhatsApp</button>
+              <p class="checkout-note">O valor final de entrega, disponibilidade e prazo são confirmados no atendimento.</p>
+            </form>
+          </aside>
+        </div>`}
+      </div></section>`);
+      bindCheckout();
+    }
+    function renderCartItem(item){
+      return `<article class="cart-item">
+        ${item.image?`<img src="${esc(item.image)}" alt="${esc(item.titulo)}" loading="lazy">`:`<div class="image-missing" style="width:84px;height:84px;aspect-ratio:auto">Sem foto</div>`}
+        <div>
+          <div class="cart-item-title">${esc(item.titulo)}</div>
+          ${item.variacaoEstilo?`<div class="cart-item-style">Estilo: ${esc(item.variacaoEstilo)}</div>`:""}
+          <div class="cart-item-price">${esc(item.precoTexto || brl(item.price))} × ${esc(item.qty)} = ${brl(item.subtotal)}</div>
+        </div>
+        <div class="cart-controls">
+          <button type="button" data-cart-minus="${esc(item.key)}" aria-label="Diminuir quantidade">−</button>
+          <strong>${esc(item.qty)}</strong>
+          <button type="button" data-cart-plus="${esc(item.key)}" aria-label="Aumentar quantidade">+</button>
+          <button type="button" class="remove" data-cart-remove="${esc(item.key)}">Remover</button>
+        </div>
+      </article>`;
+    }
+    function bindCheckout(){
+      $$("[data-cart-plus]").forEach(btn=>btn.addEventListener("click",()=>{const item=(state.cart||[]).find(i=>i.key===btn.dataset.cartPlus); if(item){updateCartItemQty(item.key,(Number(item.qty)||1)+1); renderCheckout();}}));
+      $$("[data-cart-minus]").forEach(btn=>btn.addEventListener("click",()=>{const item=(state.cart||[]).find(i=>i.key===btn.dataset.cartMinus); if(item){updateCartItemQty(item.key,Math.max(1,(Number(item.qty)||1)-1)); renderCheckout();}}));
+      $$("[data-cart-remove]").forEach(btn=>btn.addEventListener("click",()=>{removeCartItem(btn.dataset.cartRemove); renderCheckout();}));
+      $("#checkoutForm")?.addEventListener("submit",finalizeCheckout);
+    }
+    async function finalizeCheckout(e){
+      e.preventDefault();
+      const form=e.currentTarget;
+      if(!form.checkValidity()){form.reportValidity();return}
+      const fd=new FormData(form);
+      const cliente={nome:String(fd.get("nome")||"").trim(),telefone:String(fd.get("telefone")||"").trim(),cidade:String(fd.get("cidade")||"").trim(),email:String(fd.get("email")||"").trim()};
+      saveCustomer(cliente);
+      const items=cartItemsDetailed(); if(!items.length){toast("O carrinho está vazio.");return}
+      const total=cartTotal(); const status=freeShippingStatus(total); const orderId=`SETI_${Date.now()}`;
+      const order={id:orderId,cliente,itens:items.map(i=>({produtoId:i.produtoId,produtoSlug:i.produtoSlug,titulo:i.titulo,variacaoId:i.variacaoId,variacaoEstilo:i.variacaoEstilo,quantidade:i.qty,preco:i.price,subtotal:i.subtotal,url:i.url})),subtotal:total,totalProdutos:total,freteGratisElegivel:status.free,pagamento:"até 3x sem juros",status:"novo_whatsapp",origem:"site_checkout",criadoEm:new Date().toISOString()};
+      try{
+        if(state.db) await state.db.ref(`pedidos/${orderId}`).set(order);
+        else await fetch(`${FIREBASE_DATABASE_URL}/pedidos/${orderId}.json`, {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(order)});
+      }catch(err){console.warn(err);toast("Não consegui salvar no Firebase, mas vou abrir o WhatsApp.")}
+      const phone=((state.config||DEFAULT_CONFIG).whatsapp||"5565999999999").replace(/\D/g,"");
+      const linhas=items.map((i,idx)=>`${idx+1}. ${i.titulo}${i.variacaoEstilo?` - ${i.variacaoEstilo}`:""}\n   Qtd: ${i.qty} | Unitário: ${brl(i.price)} | Subtotal: ${brl(i.subtotal)}\n   Link: ${i.url}`).join("\n\n");
+      const msg=`Olá! Quero finalizar este pedido na Só em Ti.\n\nCódigo do pedido: ${orderId}\n\nDADOS DO CLIENTE\nNome: ${cliente.nome}\nTelefone: ${cliente.telefone}\nCidade: ${cliente.cidade}\nEmail: ${cliente.email}\n\nPRODUTOS\n${linhas}\n\nTotal dos produtos: ${brl(total)}\n${status.free?"Frete grátis: pedido atingiu o mínimo de "+brl(status.min):"Frete: consultar valor. Faltam "+brl(status.missing)+" para frete grátis."}\nPagamento: parcelamos em até 3x sem juros.\n\nPode confirmar disponibilidade, prazo e forma de pagamento?`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank','noopener');
+      toast("Pedido aberto no WhatsApp.");
+    }
+
     function renderReelsBlock(){const reels=activeReels().slice(0,4); if(!reels.length) return ""; return `<section><div class="container"><div class="section-head"><div><h2>Vídeos</h2><p>Vídeos verticais para demonstrar os produtos.</p></div><a class="btn secondary" href="?view=reels">Ver todos</a></div><div class="reels-grid">${reels.map(renderReelCard).join("")}</div></div></section>`}
-    function renderReelsPage(){setMain(`<section class="page"><div class="container"><div class="section-head"><div><h2>Vídeos da Só em Ti</h2><p>Uma seção estilo Reels com vídeos verticais dos produtos.</p></div></div><div class="reels-grid">${activeReels().map(renderReelCard).join("") || empty("Nenhum vídeo cadastrado.")}</div></div></section>`)}
+    function renderReelsPage(){updateSeoGeneric(`Vídeos | ${state.config?.lojaNome||"Só em Ti"}`, "Vídeos verticais demonstrando produtos e presentes católicos.", "", pageUrl({view:"reels"})); setMain(`<section class="page"><div class="container"><div class="section-head"><div><h2>Vídeos da Só em Ti</h2><p>Uma seção estilo Reels com vídeos verticais dos produtos.</p></div></div><div class="reels-grid">${activeReels().map(renderReelCard).join("") || empty("Nenhum vídeo cadastrado.")}</div></div></section>`)}
     function renderReelCard(r){return `<article class="reel-card"><div class="reel-frame">${renderReelMedia(r)}</div><div class="reel-card-body"><h3>${esc(r.titulo||"Vídeo")}</h3><p class="tiny">${esc(r.descricao||r.plataforma||"")}</p></div></article>`}
     function renderReelMedia(r){if(r.embedHtml)return r.embedHtml; const yurl=r.youtubeUrl||r.videoYoutubeUrl||""; if(yurl)return `<iframe src="${esc(youtubeEmbedUrl(yurl))}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`; if(r.videoVerticalUrl||r.videoUrl)return `<video src="${esc(r.videoVerticalUrl||r.videoUrl)}" poster="${esc(r.thumbnailUrl||"")}" muted playsinline loop controls></video>`; if(r.tiktokUrl)return `<iframe src="${esc(r.tiktokUrl)}" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>`; if(r.instagramUrl)return `<iframe src="${esc(r.instagramUrl)}embed" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>`; return `<img src="${esc(r.thumbnailUrl||"")}" alt="${esc(r.titulo||"Vídeo")}">`}
-    function renderStaticPage(key){const pg=state.config?.paginas?.[key]; setMain(`<section class="page"><div class="container"><article class="static-page"><h1>${esc(pg?.titulo||"Página")}</h1>${pg?.html||"<p>Conteúdo em construção.</p>"}<p style="margin-top:24px"><a class="btn primary" href="?view=catalogo">Ver produtos</a></p></article></div></section>`)}
+    function renderStaticPage(key){const pg=state.config?.paginas?.[key]; updateSeoGeneric(`${pg?.titulo||"Página"} | ${state.config?.lojaNome||"Só em Ti"}`, String(pg?.html||"").replace(/<[^>]+>/g," ").slice(0,155) || "Informações da loja.", "", pageUrl({page:key})); setMain(`<section class="page"><div class="container"><article class="static-page"><h1>${esc(pg?.titulo||"Página")}</h1>${pg?.html||"<p>Conteúdo em construção.</p>"}<p style="margin-top:24px"><a class="btn primary" href="?view=catalogo">Ver produtos</a></p></article></div></section>`)}
     function empty(msg){return `<div class="empty">${esc(msg)}</div>`}
     function bindLightboxTriggers(root=document){$$('[data-lightbox]',root).forEach(el=>{if(el.dataset.bound)return;el.dataset.bound="1";el.addEventListener("click",()=>openLightbox(el))})}
-    function openLightbox(el){const type=el.dataset.lightbox, title=el.dataset.title||"Visualização"; const src=el.currentSrc||el.src; $("#lightboxTitle").textContent=title; $("#lightboxStage").innerHTML = type==="video" ? `<video src="${esc(src)}" controls autoplay playsinline loop></video>` : `<img src="${esc(src)}" alt="${esc(title)}">`; $("#lightbox").classList.add("open"); $("#lightbox").setAttribute("aria-hidden","false"); document.body.classList.add("lightbox-open")}
+    function toggleLightboxZoom(){const img=$("#lightboxStage img"); if(!img)return; img.classList.toggle("zoomed"); $("#lightboxZoom").textContent=img.classList.contains("zoomed")?"Reduzir":"Zoom"}
+    function openLightbox(el){const type=el.dataset.lightbox, title=el.dataset.title||"Visualização"; const src=el.currentSrc||el.src; $("#lightboxTitle").textContent=title; $("#lightboxZoom").style.display=type==="video"?"none":"inline-flex"; $("#lightboxZoom").textContent="Zoom"; $("#lightboxStage").innerHTML = type==="video" ? `<video src="${esc(src)}" controls autoplay playsinline loop></video>` : `<img src="${esc(src)}" alt="${esc(title)}">`; $("#lightbox").classList.add("open"); $("#lightbox").setAttribute("aria-hidden","false"); document.body.classList.add("lightbox-open"); const img=$("#lightboxStage img"); if(img){let lastTap=0; img.addEventListener("click",()=>toggleLightboxZoom()); img.addEventListener("touchend",()=>{const now=Date.now(); if(now-lastTap<320){toggleLightboxZoom()} lastTap=now},{passive:true});}}
     function closeLightbox(){ $("#lightbox").classList.remove("open"); $("#lightbox").setAttribute("aria-hidden","true"); $("#lightboxStage").innerHTML=""; document.body.classList.remove("lightbox-open")}
-    $("#lightboxClose").addEventListener("click",closeLightbox); $("#lightbox").addEventListener("click",e=>{if(e.target.id==="lightbox") closeLightbox()}); document.addEventListener("keydown",e=>{if(e.key==="Escape") closeLightbox()});
+    $("#lightboxZoom").addEventListener("click",toggleLightboxZoom); $("#lightboxClose").addEventListener("click",closeLightbox); $("#lightbox").addEventListener("click",e=>{if(e.target.id==="lightbox") closeLightbox()}); document.addEventListener("keydown",e=>{if(e.key==="Escape") closeLightbox()});
     $("#menuBtn").addEventListener("click",()=>{const open=!document.body.classList.contains("menu-open");document.body.classList.toggle("menu-open",open);$("#menuBtn").setAttribute("aria-expanded",String(open))});
     window.addEventListener("popstate",render); document.addEventListener("click",e=>{const a=e.target.closest('a[href^="?"] , a[href="./"]'); if(!a || a.target) return; const href=a.getAttribute("href"); e.preventDefault(); history.pushState(null,"",href); render()});
+    state.cart = loadCart(); state.customer = loadCustomer(); updateCartBadge();
     loadData();
   </script>
 </body>
