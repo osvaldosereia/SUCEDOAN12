@@ -145,11 +145,27 @@
     .category-card h3{margin:16px 0 4px;font-size:1rem;font-weight:600;letter-spacing:-.02em}
     .category-card span{color:var(--muted);font-size:.88rem}
 
-    .filters{display:grid;grid-template-columns:1fr 190px 190px;gap:10px;background:var(--surface);border-radius:26px;padding:10px;margin:12px 0 18px}
+    .filters{display:grid;grid-template-columns:minmax(260px,1fr) minmax(160px,190px) minmax(160px,190px);gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:10px;margin:12px 0 18px}
     .field{position:relative}
     .field label{position:absolute;left:14px;top:8px;font-size:.68rem;font-weight:650;color:var(--soft);text-transform:uppercase;letter-spacing:.08em}
     .field input,.field select{width:100%;border:0;background:#fff;border-radius:18px;padding:28px 14px 10px;min-height:58px;color:var(--ink);outline:none}
+    .field select{white-space:nowrap;text-overflow:ellipsis}
+    .field select:disabled{color:var(--soft);cursor:not-allowed}
     .field input::placeholder{color:#b4aea6}
+    .catalog-head{align-items:flex-end}
+    .catalog-head .eyebrow{margin-bottom:12px}
+    .result-count{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;color:var(--muted);font-size:.82rem;font-weight:550;box-shadow:var(--shadow-soft)}
+    .result-count strong{color:var(--ink);font-size:.9rem}
+    .subcat-nav{margin:0 0 24px;padding:16px 16px 10px;background:linear-gradient(180deg,#fff,var(--surface));border:1px solid var(--line);border-radius:24px;overflow:hidden}
+    .subcat-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 2px 12px}
+    .subcat-title{font-size:.84rem;font-weight:650;color:var(--ink);letter-spacing:-.01em}
+    .subcat-hint{font-size:.74rem;color:var(--soft);white-space:nowrap}
+    .subcat-scroll{display:flex;align-items:center;gap:8px;overflow-x:auto;overflow-y:hidden;padding:1px 2px 8px;scroll-snap-type:x proximity;overscroll-behavior-inline:contain;scrollbar-width:thin;scrollbar-color:var(--surface-3) transparent}
+    .subcat-scroll::-webkit-scrollbar{height:5px}
+    .subcat-scroll::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:999px}
+    .subcat-scroll .pill{flex:0 0 auto;max-width:290px;min-height:36px;padding:9px 13px;background:#fff;border:1px solid var(--line);color:var(--muted);font-size:.78rem;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;scroll-snap-align:start;transition:.18s border-color,.18s background,.18s color,.18s transform}
+    .subcat-scroll .pill:hover{border-color:rgba(199,164,90,.62);color:var(--ink);transform:translateY(-1px)}
+    .subcat-scroll .pill.gold{background:var(--ink);border-color:var(--ink);color:#fff;box-shadow:0 7px 16px rgba(32,31,28,.12)}
 
     .products-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:26px}
     .product-card{background:#fff;border-radius:0;overflow:visible;display:flex;flex-direction:column;min-width:0;position:relative;transition:.22s transform}
@@ -268,6 +284,10 @@
       .buy-panel{position:static}
       .filters{grid-template-columns:1fr 1fr}
       .filters .field:first-child{grid-column:1/-1}
+      .menu-btn{display:inline-flex}
+      .nav-links{position:fixed;left:20px;right:20px;top:82px;background:#fff;border:1px solid var(--line);border-radius:24px;padding:10px;display:none;flex-direction:column;align-items:stretch;box-shadow:var(--shadow)}
+      body.menu-open .nav-links{display:flex}
+      .nav-links a,.nav-links button{text-align:left;border-radius:16px}
     }
     @media (max-width:760px){
       .container{width:min(100% - 24px,var(--max))}
@@ -284,6 +304,13 @@
       .hero h1{font-size:3.1rem}
       .section-head{align-items:start;flex-direction:column}
       .filters{grid-template-columns:1fr;padding:8px}
+      .filters .field:first-child{grid-column:auto}
+      .result-count{margin-top:-6px}
+      .subcat-nav{margin-bottom:20px;padding:13px 12px 8px;border-radius:20px}
+      .subcat-head{margin-bottom:10px}
+      .subcat-hint{font-size:.69rem}
+      .subcat-scroll{margin-right:-12px;padding-right:12px}
+      .subcat-scroll .pill{max-width:240px;min-height:34px;padding:8px 11px;font-size:.73rem}
       .products-grid{grid-template-columns:repeat(2,1fr);gap:16px}
       .product-media{border-radius:22px}
       .product-media img,.image-missing{border-radius:22px}
@@ -321,6 +348,8 @@
     @media (max-width:390px){
       .products-grid{gap:10px}
       .product-body{padding:10px}
+      .price-row{display:block}
+      .price-row .tiny{display:block;margin-top:4px;line-height:1.25;text-align:left}
       .btn{padding:11px 13px}
     }
   </style>
@@ -792,25 +821,31 @@
       const r=route(); const cat=catBySlug(r.categoria); const list=filtersProducts();
       updateSeoGeneric(`${cat?cat.nome:"Catálogo"} | ${state.config?.lojaNome||"Só em Ti"}`, cat?.descricao || "Catálogo de canecas católicas e presentes devocionais com pedido pelo WhatsApp.", imageOf(list[0]) || "", pageUrl({view:"catalogo",categoria:r.categoria||"",sub:r.sub||"",q:r.q||""}));
       setMain(`<section class="page"><div class="container">
-        <div class="section-head"><div><h2>${cat?esc(cat.nome):"Todos os produtos"}</h2><p>${cat?esc(cat.descricao||""):"Catálogo visual com foco total nas fotos e nas variações disponíveis."}</p></div></div>
+        <div class="section-head catalog-head"><div><span class="eyebrow">Catálogo</span><h2>${cat?esc(cat.nome):"Todos os produtos"}</h2><p>${cat?esc(cat.descricao||"Escolha um tema para encontrar o presente ideal."):"Catálogo visual com foco total nas fotos e nas variações disponíveis."}</p></div><div class="result-count" aria-live="polite"><strong>${list.length}</strong> ${list.length===1?"produto":"produtos"}</div></div>
         ${renderPromoStrip()}
         ${renderFilters(r)}
         ${cat ? renderSubcats(cat,r.sub) : ""}
         <div class="products-grid">${list.map(renderProductCard).join("") || empty("Nenhum produto encontrado.")}</div>
       </div></section>`);
       bindFilters();
+      bindSubcatRail();
     }
     function renderFilters(r){
       const cats=arrObj(state.categorias).sort((a,b)=>(a.ordem||99)-(b.ordem||99)||String(a.nome||"").localeCompare(String(b.nome||"")));
       return `<form class="filters" id="filtersForm">
         <div class="field"><label for="q">Buscar</label><input id="q" name="q" value="${esc(r.q||"")}" placeholder="Nossa Senhora, santo, oração..."></div>
         <div class="field"><label for="categoria">Categoria</label><select id="categoria" name="categoria"><option value="">Todas</option>${cats.map(c=>`<option value="${esc(c.slug||c.id)}" ${r.categoria===(c.slug||c.id)?"selected":""}>${esc(c.nome)}</option>`).join("")}</select></div>
-        <div class="field"><label for="sub">Subcategoria</label><select id="sub" name="sub"><option value="">Todas</option>${r.categoria ? Object.entries(catBySlug(r.categoria)?.subcategorias||{}).map(([k,v])=>`<option value="${esc(k)}" ${r.sub===k?"selected":""}>${esc(v)}</option>`).join("") : ""}</select></div>
+        <div class="field"><label for="sub">Subcategoria</label><select id="sub" name="sub" ${r.categoria?"":"disabled"}><option value="">${r.categoria?"Todas":"Escolha a categoria"}</option>${r.categoria ? Object.entries(catBySlug(r.categoria)?.subcategorias||{}).sort((a,b)=>String(a[1]).localeCompare(String(b[1]),"pt-BR")).map(([k,v])=>`<option value="${esc(k)}" ${r.sub===k?"selected":""}>${esc(v)}</option>`).join("") : ""}</select></div>
       </form>`
     }
     function renderSubcats(cat,active){
-      const entries=Object.entries(cat.subcategorias||{}); if(!entries.length) return "";
-      return `<div class="pill-row"><a class="pill ${!active?'gold':''}" href="?categoria=${esc(cat.slug||cat.id)}">Todas</a>${entries.map(([k,v])=>`<a class="pill ${active===k?'gold':''}" href="?categoria=${esc(cat.slug||cat.id)}&sub=${esc(k)}">${esc(v)}</a>`).join("")}</div>`
+      const entries=Object.entries(cat.subcategorias||{}).sort((a,b)=>String(a[1]).localeCompare(String(b[1]),"pt-BR")); if(!entries.length) return "";
+      return `<nav class="subcat-nav" aria-label="Filtrar por tema"><div class="subcat-head"><span class="subcat-title">Explore por tema</span><span class="subcat-hint">Deslize para ver ${entries.length} opções</span></div><div class="subcat-scroll"><a class="pill ${!active?'gold':''}" ${!active?'aria-current="page"':''} href="?categoria=${esc(cat.slug||cat.id)}">Todos</a>${entries.map(([k,v])=>`<a class="pill ${active===k?'gold':''}" ${active===k?'aria-current="page"':''} title="${esc(v)}" href="?categoria=${esc(cat.slug||cat.id)}&sub=${esc(k)}">${esc(v)}</a>`).join("")}</div></nav>`
+    }
+    function bindSubcatRail(){
+      const rail=$(".subcat-scroll"); const active=rail?.querySelector('[aria-current="page"]');
+      if(!rail || !active || active===rail.firstElementChild) return;
+      requestAnimationFrame(()=>{rail.scrollLeft=Math.max(0,active.offsetLeft-(rail.clientWidth-active.clientWidth)/2)});
     }
     function bindFilters(){const f=$("#filtersForm"); if(!f)return; f.addEventListener("change",()=>submitFilters(f)); f.addEventListener("submit",e=>{e.preventDefault();submitFilters(f)}); $("#q")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();submitFilters(f)}})}
     function submitFilters(f){const fd=new FormData(f); const url=new URL(location.href); url.search=""; url.searchParams.set("view","catalogo"); for(const [k,v] of fd.entries()) if(v) url.searchParams.set(k,v); history.pushState(null,"",url); render()}
