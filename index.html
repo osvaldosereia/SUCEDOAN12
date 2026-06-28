@@ -2557,6 +2557,7 @@
           <div class="checkout-title">Seus dados</div>
           <p class="checkout-help">Pedimos somente o necessário para iniciar o atendimento. O endereço completo pode ser confirmado no WhatsApp.</p>
           <input type="text" id="chk-nome" class="field" placeholder="Nome Completo*" autocomplete="name">
+          <input type="tel" id="chk-cpf" class="field" placeholder="CPF*" maxlength="14" inputmode="numeric" autocomplete="off">
           <input type="tel" id="chk-telefone" class="field" placeholder="WhatsApp com DDD. Ex: (65) 99999-8888*" maxlength="18" inputmode="tel" autocomplete="tel-national">
           <select id="chk-cidade" class="field"><option value="">Cidade*</option><option value="Cuiabá">Cuiabá</option><option value="Várzea Grande">Várzea Grande</option></select>
           <input type="text" id="chk-bairro" class="field" placeholder="Bairro*">
@@ -2565,7 +2566,6 @@
           <details class="optional-data">
             <summary>Informar endereço completo agora (opcional)</summary>
             <div style="padding-top:12px">
-              <input type="tel" id="chk-cpf" class="field" placeholder="CPF (opcional)" maxlength="14" inputmode="numeric" autocomplete="off">
               <input type="email" id="chk-email" class="field" placeholder="E-mail (opcional)" autocomplete="email">
               <input type="tel" id="chk-cep" class="field" placeholder="CEP (opcional)" maxlength="9" inputmode="numeric" autocomplete="postal-code">
               <input type="text" id="chk-rua" class="field" placeholder="Rua (opcional)">
@@ -2748,11 +2748,11 @@
       const errors = [
         { id: 'agendamento-options-container', label: 'Data de agendamento', valid: !!dataAgendamento },
         { id: 'chk-nome', label: 'Nome completo', valid: !!nome },
+        { id: 'chk-cpf', label: 'CPF válido com 11 números', valid: cpf.length === 11 },
         { id: 'chk-telefone', label: 'Telefone/WhatsApp válido com DDD', valid: telefoneValidoBR(telefone) },
         { id: 'chk-cidade', label: 'Cidade', valid: !!cidade },
         { id: 'chk-bairro', label: 'Bairro', valid: !!bairro },
         { id: 'chk-pagamento', label: 'Forma de pagamento', valid: !!pag },
-        { id: 'chk-cpf', label: 'CPF válido com 11 números', valid: !cpf || cpf.length === 11 },
         { id: 'chk-email', label: 'E-mail válido', valid: !email || emailValido(email) },
         { id: 'chk-cep', label: 'CEP válido com 8 números', valid: !cep || cep.length === 8 }
       ].filter(e => !e.valid);
