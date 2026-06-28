@@ -1213,22 +1213,6 @@
     }
     .hero-cta.primary { color: var(--brand); background: #fff; }
     .hero-cta.secondary { color: #fff; border: 1px solid rgba(255,255,255,.42); background: rgba(255,255,255,.08); }
-    .hero-visual {
-      min-height: 160px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      border-radius: 20px;
-      background: rgba(255,255,255,.10);
-      border: 1px solid rgba(255,255,255,.16);
-      overflow: hidden;
-    }
-    .hero-basket { font-size: 76px; line-height: 1; filter: drop-shadow(0 16px 18px rgba(0,0,0,.20)); }
-    .hero-products { display: flex; gap: 8px; font-size: 28px; }
-    .hero-visual strong { color: #fff; font-size: 13px; }
-
     .trust-strip {
       margin-top: 12px;
       display: grid;
@@ -1362,14 +1346,33 @@
       .header-cart-btn > span:last-child { display: block; }
       .header-menu-btn { width: auto; padding: 0 13px; }
       .header-menu-text { display: inline; }
-      .hero { grid-template-columns: minmax(0,1.45fr) minmax(260px,.55fr); align-items: center; padding: 38px; }
-      .hero-visual { min-height: 250px; }
-      .hero-basket { font-size: 92px; }
+      .hero { display: block; padding: 38px; }
       .trust-item { padding: 16px; text-align: left; }
       .trust-item strong { font-size: 14px; }
       .trust-item span { font-size: 12px; }
       .bottom-bar { left: 50%; right: auto; width: min(640px, calc(100% - 32px)); transform: translateX(-50%); border: 1px solid var(--line); border-bottom: 0; border-radius: 18px 18px 0 0; }
       .product-card.compact { width: 214px; flex-basis: 214px; }
+    }
+
+    /* Modo leve: menos efeitos custosos em aparelhos simples */
+    .app { scroll-behavior: auto; }
+    .header,
+    .bottom-bar,
+    .drawer-head,
+    .drawer-overlay {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+    @media (max-width: 600px), (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+      .product-card,
+      .basket-card,
+      .category-button { box-shadow: none; }
     }
 
   </style>
@@ -1477,6 +1480,8 @@
       WHATSAPP_NUMBER: '5565998150975',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v4',
       PRODUCT_CACHE_MAX_AGE: 1000 * 60 * 20,
+      BASKET_CACHE_KEY: 'da_cestas_cache_v1',
+      BASKET_CACHE_MAX_AGE: 1000 * 60 * 60 * 12,
       CART_STORAGE_KEY: 'da_carrinho_v1',
       CHECKOUT_CLIENT_KEY: 'da_checkout_cliente_v1',
       MIN_ORDER: 75,
@@ -1651,8 +1656,7 @@
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs || 6500);
       try {
-        const sep = url.includes('?') ? '&' : '?';
-        const res = await fetch(`${url}${sep}_=${Date.now()}`, { cache: 'no-store', signal: controller.signal, headers: { Accept: 'application/json' } });
+        const res = await fetch(url, { cache: 'default', signal: controller.signal, headers: { Accept: 'application/json' } });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
       } finally { clearTimeout(timer); }
@@ -1673,39 +1677,63 @@
       const cache = readCache(CONFIG.PRODUCT_CACHE_KEY);
       const freshEnough = cache && cache.savedAt && (Date.now() - Number(cache.savedAt) < CONFIG.PRODUCT_CACHE_MAX_AGE);
       if (cache && cache.data) normalizeProducts(cache.data);
-      try {
-        if (!freshEnough || !state.products.length) {
-          const data = await fetchJson(CONFIG.PRODUCT_URL, 6500);
-          normalizeProducts(data);
-          writeCache(CONFIG.PRODUCT_CACHE_KEY, { savedAt: Date.now(), data });
-        }
-      } catch (err) {
+      if (freshEnough && state.products.length) return;
+
+      const refresh = async () => {
+        const data = await fetchJson(CONFIG.PRODUCT_URL, 9000);
+        normalizeProducts(data);
+        writeCache(CONFIG.PRODUCT_CACHE_KEY, { savedAt: Date.now(), data });
+      };
+
+      if (state.products.length) {
+        setTimeout(() => refresh().catch(err => console.error('Atualização de produtos adiada:', err)), 0);
+        return;
+      }
+
+      try { await refresh(); }
+      catch (err) {
         console.error('Erro ao carregar Firebase:', err);
-        if (!state.products.length) throw err;
-        showToast('Usando produtos salvos. Verifique a conexão depois.');
+        throw err;
       }
     }
 
+    function applyCestasData(data) {
+      const list = Array.isArray(data) ? data : Object.values(data || {});
+      state.cestas = list.filter(c => c && c.id && c.nome && Array.isArray(c.produtos)).map(c => ({
+        id: String(c.id),
+        nome: String(c.nome || 'Cesta Básica'),
+        descricao: String(c.descricao || c.description || 'Kit de produtos selecionados.'),
+        imagem: normalizeRelativeImage(c.imagem || c.img || c.url_imagem || 'img/logoantonia5.png'),
+        preco: parseMoney(c.preco || c.price || 0),
+        precoOriginal: parseMoney(c.precoOriginal || c.preco_original || 0),
+        produtos: c.produtos || [],
+        validade: c.validade || ''
+      }));
+    }
+
     async function loadCestas() {
-      const urls = ['cestas.json', './cestas.json', 'site/cestas.json'];
+      const cache = readCache(CONFIG.BASKET_CACHE_KEY);
+      const freshEnough = cache && cache.savedAt && (Date.now() - Number(cache.savedAt) < CONFIG.BASKET_CACHE_MAX_AGE);
+      if (cache && cache.data) applyCestasData(cache.data);
+      if (freshEnough && state.cestas.length) return;
+
+      const urls = ['cestas.json', 'site/cestas.json'];
+      const refresh = async () => {
       for (const url of urls) {
         try {
-          const data = await fetchJson(url, 4500);
-          const list = Array.isArray(data) ? data : Object.values(data || {});
-          state.cestas = list.filter(c => c && c.id && c.nome && Array.isArray(c.produtos)).map(c => ({
-            id: String(c.id),
-            nome: String(c.nome || 'Cesta Básica'),
-            descricao: String(c.descricao || c.description || 'Kit de produtos selecionados.'),
-            imagem: normalizeRelativeImage(c.imagem || c.img || c.url_imagem || 'img/logoantonia5.png'),
-            preco: parseMoney(c.preco || c.price || 0),
-            precoOriginal: parseMoney(c.precoOriginal || c.preco_original || 0),
-            produtos: c.produtos || [],
-            validade: c.validade || ''
-          }));
+          const data = await fetchJson(url, 3000);
+          applyCestasData(data);
+          writeCache(CONFIG.BASKET_CACHE_KEY, { savedAt: Date.now(), data });
           return;
         } catch(e) {}
       }
-      state.cestas = [];
+      };
+
+      if (state.cestas.length) {
+        setTimeout(() => refresh(), 0);
+        return;
+      }
+      await refresh();
     }
 
     function normalizeRelativeImage(value) {
@@ -2145,11 +2173,6 @@
                 <a class="hero-cta secondary" href="#/cestas">Comprar cesta básica</a>
               </div>
             </div>
-            <div class="hero-visual" aria-label="Produtos para sua casa">
-              <div class="hero-basket" aria-hidden="true">🧺</div>
-              <div class="hero-products" aria-hidden="true"><span>🍚</span><span>☕</span><span>🧼</span></div>
-              <strong>Escolha, envie e confirme</strong>
-            </div>
           </section>
           <section class="trust-strip" aria-label="Condições da loja">
             <div class="trust-item"><strong>Pedido mínimo R$ 75</strong><span>Veja o progresso no carrinho</span></div>
@@ -2389,8 +2412,16 @@
       setActiveNav('info');
     }
 
+    function scrollPageTop() {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      app.scrollTop = 0;
+    }
+
     function handleRoute() {
       if (!state.isReady) return;
+      scrollPageTop();
       const hash = location.hash || '#/';
       const clean = hash.replace(/^#\/?/, '').split('?')[0];
       const parts = clean.split('/').filter(Boolean);
@@ -2430,11 +2461,13 @@
         if (q) {
           if (!(location.hash || '').startsWith('#/busca')) history.replaceState(null, '', '#/busca');
           renderSearch(q);
+          scrollPageTop();
         } else if ((location.hash || '').startsWith('#/busca')) {
           history.replaceState(null, '', '#/');
           renderHome();
+          scrollPageTop();
         }
-      }, 120);
+      }, 250);
     }
 
     function clearSearch() {
@@ -2874,9 +2907,12 @@
     }
 
     function bindEvents() {
-      window.addEventListener('hashchange', () => { handleRoute(); app.scrollTo({ top: 0, behavior: 'auto' }); });
+      window.addEventListener('hashchange', () => {
+        handleRoute();
+        requestAnimationFrame(scrollPageTop);
+      });
       $('search-input').addEventListener('input', runInstantSearch);
-      $('search-form').addEventListener('submit', e => { e.preventDefault(); const q = $('search-input').value.trim(); state.searchQuery = q; if (q) { history.replaceState(null, '', '#/busca'); renderSearch(q); } });
+      $('search-form').addEventListener('submit', e => { e.preventDefault(); const q = $('search-input').value.trim(); state.searchQuery = q; if (q) { history.replaceState(null, '', '#/busca'); renderSearch(q); scrollPageTop(); } });
       $('search-clear').addEventListener('click', clearSearch);
       $('bottom-cta').addEventListener('click', openCheckout);
       $('nav-cart').addEventListener('click', openCheckout);
