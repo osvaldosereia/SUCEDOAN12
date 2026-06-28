@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Dona Antônia - Supermercado e Cestas</title>
   <meta name="description" id="meta-description" content="Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -1096,6 +1096,282 @@
       .price { font-size: 21px; }
     }
 
+    /* Vitrine 2026: hierarquia mais comercial, navegação simples e foco em conversão */
+    :root {
+      --bg: #f7f3ea;
+      --surface: #fffdf8;
+      --surface-soft: #f3eee2;
+      --ink: #173126;
+      --muted: #66736c;
+      --line: #e8dfd0;
+      --line-strong: #d8cdbb;
+      --brand: #165c38;
+      --brand-2: #238754;
+      --danger: #d9472b;
+      --warning: #e39a22;
+      --shadow: 0 12px 34px rgba(35, 57, 45, .09);
+      --radius: 18px;
+      --header-h: 116px;
+      --bottom-h: 70px;
+    }
+
+    html, body { overflow-x: hidden; overflow-y: auto; height: auto; min-height: 100%; }
+    body {
+      background:
+        radial-gradient(circle at 100% 0, rgba(227,154,34,.10), transparent 30%),
+        var(--bg);
+    }
+    .header {
+      height: calc(var(--header-h) + var(--safe-top));
+      padding: calc(10px + var(--safe-top)) 14px 10px;
+      background: rgba(255,253,248,.96);
+      border-color: rgba(216,205,187,.9);
+      box-shadow: 0 6px 22px rgba(35,57,45,.07);
+    }
+    .header-inner { gap: 8px; }
+    .brand-logo { width: 132px; height: 38px; }
+    .header-actions { gap: 7px; }
+    .header-cart-btn {
+      min-width: 52px;
+      height: 40px;
+      border-color: var(--line-strong);
+      background: #fff;
+      padding: 0 10px;
+    }
+    .header-cart-btn > span:last-child { display: none; }
+    .header-menu-btn {
+      width: 42px;
+      height: 40px;
+      padding: 0;
+      border-color: var(--line-strong);
+      background: #fff;
+    }
+    .header-menu-text { display: none; }
+    .search-input {
+      height: 46px;
+      border-radius: 14px;
+      border-color: var(--line-strong);
+      padding-left: 44px;
+      font-weight: 600;
+    }
+    .app {
+      position: relative;
+      top: auto;
+      height: auto;
+      min-height: 100dvh;
+      overflow: visible;
+      padding: calc(var(--header-h) + var(--safe-top) + 14px) 12px calc(var(--bottom-h) + var(--safe-bottom) + 22px);
+    }
+    .container { max-width: 1180px; }
+
+    .hero {
+      position: relative;
+      display: grid;
+      gap: 18px;
+      padding: 22px;
+      color: #fff;
+      background:
+        radial-gradient(circle at 92% 10%, rgba(255,210,104,.32), transparent 33%),
+        linear-gradient(135deg, #124a2e 0%, #1f7045 62%, #2d8b54 100%);
+      border: 0;
+      border-radius: 24px;
+      box-shadow: 0 18px 42px rgba(18,74,46,.20);
+    }
+    .hero-content { position: relative; z-index: 1; }
+    .hero-eyebrow {
+      margin-bottom: 12px;
+      color: #fff5d9;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.20);
+    }
+    .hero-title {
+      max-width: 720px;
+      color: #fff;
+      font-size: clamp(30px, 7vw, 48px);
+      line-height: 1;
+      letter-spacing: -.045em;
+      text-wrap: balance;
+    }
+    .hero-copy {
+      max-width: 620px;
+      margin-top: 12px;
+      color: rgba(255,255,255,.86);
+      font-size: 15px;
+      line-height: 1.5;
+      font-weight: 550;
+    }
+    .hero-ctas { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+    .hero-cta {
+      min-height: 46px;
+      padding: 0 16px;
+      border-radius: 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 850;
+    }
+    .hero-cta.primary { color: var(--brand); background: #fff; }
+    .hero-cta.secondary { color: #fff; border: 1px solid rgba(255,255,255,.42); background: rgba(255,255,255,.08); }
+    .hero-visual {
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      border-radius: 20px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.16);
+      overflow: hidden;
+    }
+    .hero-basket { font-size: 76px; line-height: 1; filter: drop-shadow(0 16px 18px rgba(0,0,0,.20)); }
+    .hero-products { display: flex; gap: 8px; font-size: 28px; }
+    .hero-visual strong { color: #fff; font-size: 13px; }
+
+    .trust-strip {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .trust-item { padding: 13px 8px; text-align: center; border-right: 1px solid var(--line); }
+    .trust-item:last-child { border-right: 0; }
+    .trust-item strong { display: block; font-size: 12px; line-height: 1.2; font-weight: 850; color: var(--ink); }
+    .trust-item span { display: block; margin-top: 3px; font-size: 10px; line-height: 1.2; color: var(--muted); }
+
+    .section { margin-top: 26px; }
+    .section-head { align-items: center; margin-bottom: 12px; }
+    .section-title { font-size: 21px; font-weight: 850; color: var(--ink); }
+    .section-caption { font-weight: 550; }
+    .see-all {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 11px;
+      border-radius: 10px;
+      background: #e8f3eb;
+      font-weight: 800;
+    }
+    .rail { gap: 12px; padding-bottom: 8px; scroll-padding-left: 1px; }
+    .product-card,
+    .basket-card {
+      border-color: var(--line);
+      border-radius: 17px;
+      background: var(--surface);
+      box-shadow: 0 5px 18px rgba(35,57,45,.06);
+    }
+    .product-card.compact { width: 172px; flex-basis: 172px; }
+    .product-imgbox { height: 146px; background: #fff; }
+    .product-imgbox img { padding: 12px; }
+    .product-body { padding: 12px; gap: 8px; }
+    .product-meta { color: #78847d; font-size: 10px; }
+    .product-name { min-height: 40px; font-size: 14px; font-weight: 700; color: var(--ink); }
+    .old-price { font-size: 11px; }
+    .price { color: var(--brand); font-size: 21px; font-weight: 900; }
+    .discount {
+      padding: 3px 6px;
+      border-radius: 6px;
+      color: #fff;
+      background: var(--danger);
+    }
+    .add-btn {
+      height: 42px;
+      border-radius: 11px;
+      background: var(--brand);
+      box-shadow: none;
+      font-weight: 850;
+    }
+    .qty-control { height: 42px; border-radius: 11px; border-color: var(--brand); }
+    .category-buttons { gap: 10px; }
+    .category-button {
+      min-height: 96px;
+      border: 1px solid var(--line) !important;
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: 0 4px 14px rgba(35,57,45,.05);
+    }
+
+    .bottom-bar {
+      height: calc(var(--bottom-h) + var(--safe-bottom));
+      padding: 5px 8px calc(5px + var(--safe-bottom));
+      background: rgba(255,253,248,.98);
+      border-color: var(--line);
+    }
+    .bottom-nav { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    #nav-info { display: none; }
+    .nav-item { height: 56px; font-size: 10px; font-weight: 700; }
+    .nav-item.active { color: var(--brand); background: #e8f3eb; }
+    .checkout-cta { display: none; }
+
+    .drawer { max-width: 560px; background: var(--bg); }
+    .drawer-head { background: rgba(255,253,248,.98); }
+    .checkout-section {
+      border-color: var(--line);
+      border-radius: 18px;
+      background: var(--surface);
+    }
+    .checkout-title { font-weight: 850; }
+    .field {
+      min-height: 48px;
+      border-radius: 12px;
+      border-color: var(--line-strong);
+      background: #fff;
+    }
+    .checkout-help {
+      margin: -3px 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .checkout-notice {
+      margin-bottom: 12px;
+      padding: 12px;
+      border-radius: 13px;
+      color: #185b39;
+      background: #e8f3eb;
+      font-size: 12px;
+      line-height: 1.4;
+      font-weight: 650;
+    }
+    .optional-data {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--surface-soft);
+    }
+    .optional-data summary { cursor: pointer; color: var(--brand); font-size: 13px; font-weight: 800; }
+    .send-btn {
+      border-radius: 13px;
+      background: #1fae59;
+      box-shadow: 0 10px 24px rgba(31,174,89,.20);
+      text-transform: none;
+      font-weight: 850;
+    }
+
+    @media (min-width: 768px) {
+      :root { --header-h: 126px; }
+      .header { padding-inline: 24px; }
+      .app { padding-inline: 24px; }
+      .brand-logo { width: 154px; height: 42px; }
+      .header-cart-btn { min-width: 138px; }
+      .header-cart-btn > span:last-child { display: block; }
+      .header-menu-btn { width: auto; padding: 0 13px; }
+      .header-menu-text { display: inline; }
+      .hero { grid-template-columns: minmax(0,1.45fr) minmax(260px,.55fr); align-items: center; padding: 38px; }
+      .hero-visual { min-height: 250px; }
+      .hero-basket { font-size: 92px; }
+      .trust-item { padding: 16px; text-align: left; }
+      .trust-item strong { font-size: 14px; }
+      .trust-item span { font-size: 12px; }
+      .bottom-bar { left: 50%; right: auto; width: min(640px, calc(100% - 32px)); transform: translateX(-50%); border: 1px solid var(--line); border-bottom: 0; border-radius: 18px 18px 0 0; }
+      .product-card.compact { width: 214px; flex-basis: 214px; }
+    }
+
   </style>
 </head>
 <body>
@@ -1856,15 +2132,33 @@
 
     function renderHome() {
       const offers = getTopOffers(12);
+      const essentials = productsByRoutine('compra-mes', 12);
       const html = `
         <div class="container">
           <section class="hero">
-            <div class="hero-eyebrow">DONA ANTÔNIA • CUIABÁ E VÁRZEA GRANDE</div>
-            <h1 class="hero-title">Sua compra do mercado, simples e bem organizada.</h1>
-            <p class="hero-copy">Escolha produtos, cestas básicas ou ofertas. No final, envie o pedido pelo WhatsApp para confirmação.</p>
+            <div class="hero-content">
+              <div class="hero-eyebrow">ENTREGA EM CUIABÁ E VÁRZEA GRANDE</div>
+              <h1 class="hero-title">Mercado e cestas sem complicação.</h1>
+              <p class="hero-copy">Escolha seus produtos com calma e envie a compra pronta pelo WhatsApp. Nossa equipe confere tudo com você antes da entrega.</p>
+              <div class="hero-ctas">
+                <a class="hero-cta primary" href="#/ofertas">Ver ofertas</a>
+                <a class="hero-cta secondary" href="#/cestas">Comprar cesta básica</a>
+              </div>
+            </div>
+            <div class="hero-visual" aria-label="Produtos para sua casa">
+              <div class="hero-basket" aria-hidden="true">🧺</div>
+              <div class="hero-products" aria-hidden="true"><span>🍚</span><span>☕</span><span>🧼</span></div>
+              <strong>Escolha, envie e confirme</strong>
+            </div>
           </section>
+          <section class="trust-strip" aria-label="Condições da loja">
+            <div class="trust-item"><strong>Pedido mínimo R$ 75</strong><span>Veja o progresso no carrinho</span></div>
+            <div class="trust-item"><strong>Entrega local</strong><span>Cuiabá e Várzea Grande</span></div>
+            <div class="trust-item"><strong>Confirmação humana</strong><span>Atendimento pelo WhatsApp</span></div>
+          </section>
+          ${shelf('Ofertas de hoje', 'Economize nos produtos disponíveis agora.', offers, '#/ofertas')}
+          ${shelf('Essenciais para sua casa', 'Os itens que não podem faltar na despensa.', essentials, '#/rotina/compra-mes')}
           ${shelf('Cestas básicas', 'Kits prontos para facilitar sua compra.', state.cestas.slice(0, 8), '#/cestas', 'basket')}
-          ${shelf('Ofertas', 'Produtos em destaque disponíveis agora.', offers, '#/ofertas')}
           ${categoryButtonsHtml()}
         </div>`;
       app.innerHTML = html;
@@ -2227,23 +2521,31 @@
           <div id="agendamento-options-container">${agendamentoOptionsHtml()}</div>
         </section>
         <section class="checkout-section">
-          <div class="checkout-title">Dados e entrega</div>
+          <div class="checkout-title">Seus dados</div>
+          <p class="checkout-help">Pedimos somente o necessário para iniciar o atendimento. O endereço completo pode ser confirmado no WhatsApp.</p>
           <input type="text" id="chk-nome" class="field" placeholder="Nome Completo*" autocomplete="name">
-          <input type="tel" id="chk-cpf" class="field" placeholder="CPF*" maxlength="14" inputmode="numeric" autocomplete="off">
           <input type="tel" id="chk-telefone" class="field" placeholder="WhatsApp com DDD. Ex: (65) 99999-8888*" maxlength="18" inputmode="tel" autocomplete="tel-national">
-          <input type="email" id="chk-email" class="field" placeholder="E-mail*" autocomplete="email">
-          <input type="tel" id="chk-cep" class="field" placeholder="CEP*" maxlength="9" inputmode="numeric" autocomplete="postal-code">
           <select id="chk-cidade" class="field"><option value="">Cidade*</option><option value="Cuiabá">Cuiabá</option><option value="Várzea Grande">Várzea Grande</option></select>
           <input type="text" id="chk-bairro" class="field" placeholder="Bairro*">
-          <div class="field-row"><input type="text" id="chk-rua" class="field" placeholder="Rua*" style="flex:2"><input type="text" id="chk-quadra" class="field" placeholder="Quadra" style="flex:1"><input type="text" id="chk-casa" class="field" placeholder="Nº Casa*" style="flex:1"></div>
-          <input type="text" id="chk-frente" class="field" placeholder="Como é a frente da casa? (Cor do portão, muro...)*">
           <div class="checkout-title" style="font-size:15px;margin-top:8px">Forma de pagamento*</div>
           <select id="chk-pagamento" class="field"><option value="">Selecione...</option><option value="DINHEIRO">Dinheiro</option><option value="PIX">Pix</option><option value="CARTAO_DE_DEBITO">Cartão de Débito</option><option value="CARTAO_DE_CREDITO">Cartão de Crédito</option><option value="VALE_ALIMENTACAO">Vale Alimentação</option><option value="VALE_REFEICAO">Vale Refeição</option></select>
+          <details class="optional-data">
+            <summary>Informar endereço completo agora (opcional)</summary>
+            <div style="padding-top:12px">
+              <input type="tel" id="chk-cpf" class="field" placeholder="CPF (opcional)" maxlength="14" inputmode="numeric" autocomplete="off">
+              <input type="email" id="chk-email" class="field" placeholder="E-mail (opcional)" autocomplete="email">
+              <input type="tel" id="chk-cep" class="field" placeholder="CEP (opcional)" maxlength="9" inputmode="numeric" autocomplete="postal-code">
+              <input type="text" id="chk-rua" class="field" placeholder="Rua (opcional)">
+              <div class="field-row"><input type="text" id="chk-quadra" class="field" placeholder="Quadra" style="flex:1"><input type="text" id="chk-casa" class="field" placeholder="Nº da casa" style="flex:1"></div>
+              <input type="text" id="chk-frente" class="field" placeholder="Complemento ou referência">
+            </div>
+          </details>
         </section>
         <section class="checkout-section">
+          <div class="checkout-notice">Você será direcionado ao WhatsApp com a lista pronta. Seu carrinho ficará salvo até você decidir limpá-lo.</div>
           <div class="summary-row"><span>Subtotal dos produtos</span><span>${fmt(total)}</span></div>
           <div class="summary-row total"><span>Total estimado</span><span>${fmt(total)}</span></div>
-          <button class="send-btn" type="button" id="btn-send-order" ${items.length ? '' : 'disabled'}><svg class="svg-fill" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"></path></svg>Enviar para o WhatsApp</button>
+          <button class="send-btn" type="button" id="btn-send-order" ${items.length && missing <= 0 ? '' : 'disabled'}><svg class="svg-fill" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"></path></svg>${items.length && missing > 0 ? `Faltam ${fmt(missing)} para enviar` : 'Enviar pedido pelo WhatsApp'}</button>
         </section>`;
       restoreCheckoutClient();
     }
@@ -2360,7 +2662,7 @@
     function emailValido(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim()); }
 
     function saveCheckoutClient() {
-      const ids = ['chk-nome','chk-cpf','chk-telefone','chk-email','chk-cep','chk-cidade','chk-bairro','chk-rua','chk-quadra','chk-casa','chk-frente','chk-pagamento'];
+      const ids = ['chk-nome','chk-telefone','chk-cidade','chk-bairro','chk-pagamento'];
       const dados = {};
       ids.forEach(id => { const el = $(id); if (el) dados[id] = el.value || ''; });
       writeCache(CONFIG.CHECKOUT_CLIENT_KEY, { savedAt: Date.now(), dados });
@@ -2389,6 +2691,11 @@
     async function sendOrder(btn) {
       const items = getCartItems();
       if (!items.filter(i => !i.product.isFee).length) return;
+      const totalAtual = subtotalCart(true);
+      if (totalAtual < CONFIG.MIN_ORDER) {
+        showToast(`Faltam ${fmt(CONFIG.MIN_ORDER - totalAtual)} para o pedido mínimo.`);
+        return;
+      }
       const nome = $('chk-nome').value.trim();
       const cpf = limparCPF($('chk-cpf').value);
       const telefone = limparTelefone($('chk-telefone').value);
@@ -2408,16 +2715,13 @@
       const errors = [
         { id: 'agendamento-options-container', label: 'Data de agendamento', valid: !!dataAgendamento },
         { id: 'chk-nome', label: 'Nome completo', valid: !!nome },
-        { id: 'chk-cpf', label: 'CPF válido com 11 números', valid: cpf.length === 11 },
         { id: 'chk-telefone', label: 'Telefone/WhatsApp válido com DDD', valid: telefoneValidoBR(telefone) },
-        { id: 'chk-email', label: 'E-mail válido', valid: emailValido(email) },
-        { id: 'chk-cep', label: 'CEP válido com 8 números', valid: cep.length === 8 },
         { id: 'chk-cidade', label: 'Cidade', valid: !!cidade },
         { id: 'chk-bairro', label: 'Bairro', valid: !!bairro },
-        { id: 'chk-rua', label: 'Rua', valid: !!rua },
-        { id: 'chk-casa', label: 'Nº da casa', valid: !!casa },
-        { id: 'chk-frente', label: 'Como é a frente da casa', valid: !!frente },
-        { id: 'chk-pagamento', label: 'Forma de pagamento', valid: !!pag }
+        { id: 'chk-pagamento', label: 'Forma de pagamento', valid: !!pag },
+        { id: 'chk-cpf', label: 'CPF válido com 11 números', valid: !cpf || cpf.length === 11 },
+        { id: 'chk-email', label: 'E-mail válido', valid: !email || emailValido(email) },
+        { id: 'chk-cep', label: 'CEP válido com 8 números', valid: !cep || cep.length === 8 }
       ].filter(e => !e.valid);
       document.querySelectorAll('.field.invalid').forEach(el => el.classList.remove('invalid'));
       if (errors.length) { showCheckoutErrors(errors); return; }
@@ -2502,37 +2806,32 @@
         }
       };
 
-      const dadosCliente = `\n*👤 DADOS DO CLIENTE E ENTREGA*\nNome: ${nome}\nCPF: ${formatarCPF(cpf)}\nTelefone/WhatsApp: ${formatarTelefone(telefone)}\nE-mail: ${email}\nEndereço: CEP ${formatarCEP(cep)}, ${cidade}/${uf}, Bairro ${bairro}, Rua ${rua}, Quadra ${quadra || 'S/N'}, Casa ${casa}\nDetalhes: ${frente}\n📅 *Agendamento:* ${dataAgendamento}\n💳 *Pagamento:* ${pagamentoBling.nome}`;
+      const dadosOpcionais = [];
+      if (cpf) dadosOpcionais.push(`CPF: ${formatarCPF(cpf)}`);
+      if (email) dadosOpcionais.push(`E-mail: ${email}`);
+      if (cep) dadosOpcionais.push(`CEP: ${formatarCEP(cep)}`);
+      if (rua) dadosOpcionais.push(`Rua: ${rua}`);
+      if (quadra) dadosOpcionais.push(`Quadra: ${quadra}`);
+      if (casa) dadosOpcionais.push(`Nº: ${casa}`);
+      if (frente) dadosOpcionais.push(`Complemento/referência: ${frente}`);
+      const dadosCliente = `\n*👤 DADOS PARA ATENDIMENTO*\nNome: ${nome}\nTelefone/WhatsApp: ${formatarTelefone(telefone)}\nCidade: ${cidade}/${uf}\nBairro: ${bairro}${dadosOpcionais.length ? `\n${dadosOpcionais.join('\n')}` : '\nEndereço completo: confirmar no atendimento'}\n📅 *Agendamento:* ${dataAgendamento}\n💳 *Pagamento:* ${pagamentoBling.nome}`;
       let basketInfo = '';
       if (hasBasket) {
         basketInfo = '\n------------------------------';
         Object.values(state.basketCustomizations).forEach(info => { basketInfo += `\nCesta/Kit ${info.name || ''} ${info.changed ? 'EDITADA' : 'PADRÃO'}`; });
       }
 
-      let msg;
-      if (totalSite >= CONFIG.MIN_ORDER) {
-        try {
-          await fetch(CONFIG.MAKE_WEBHOOK_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(makePayload)
-          });
-        } catch(err) { console.error('Erro na integração Make:', err); }
-        msg = `*PEDIDO #${orderId}*\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*\n💰 *TOTAL:* ${fmt(totalSite)}${basketInfo}\n------------------------------${dadosCliente}\n------------------------------\nOlá, esse é o meu pedido.`;
-      } else {
-        msg = `*ADICIONAR AO PEDIDO ANTERIOR*\n------------------------------\nOlá! Gostaria de adicionar os itens abaixo ao pedido que fiz anteriormente:\n\n*ITENS ADICIONAIS*\n${itemsTxt}\n*RESUMO DE VALORES*\n💰 *TOTAL DO ACRÉSCIMO:* ${fmt(totalSite)}${basketInfo}\n------------------------------${dadosCliente}\n------------------------------\nPor favor, podem incluir na minha entrega?`;
-      }
+      fetch(CONFIG.MAKE_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(makePayload),
+        keepalive: true
+      }).catch(err => console.error('Erro na integração Make:', err));
+      const msg = `*PEDIDO #${orderId}*\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*\n💰 *TOTAL:* ${fmt(totalSite)}${basketInfo}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.`;
 
       abrirWhatsAppPedido(msg);
-      state.cart = {};
-      state.cartOrder = [];
-      state.basketCustomizations = {};
-      state.basketDrafts = {};
-      state.virtualFees = {};
-      localStorage.removeItem(CONFIG.CART_STORAGE_KEY);
-      updateCartUI();
-      syncVisibleCards();
       closeCheckout();
+      showToast('Pedido preparado. Seu carrinho continua salvo.');
       setTimeout(() => { btn.disabled = false; btn.innerHTML = original; }, 1500);
     }
 
