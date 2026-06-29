@@ -145,7 +145,7 @@
     .category-card h3{margin:16px 0 4px;font-size:1rem;font-weight:600;letter-spacing:-.02em}
     .category-card span{color:var(--muted);font-size:.88rem}
 
-    .filters{display:grid;grid-template-columns:minmax(260px,1fr) minmax(160px,190px) minmax(160px,190px);gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:10px;margin:12px 0 18px}
+    .filters{display:grid;grid-template-columns:minmax(260px,1fr) minmax(160px,220px);gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:10px;margin:12px 0 18px}
     .field{position:relative}
     .field label{position:absolute;left:14px;top:8px;font-size:.68rem;font-weight:650;color:var(--soft);text-transform:uppercase;letter-spacing:.08em}
     .field input,.field select{width:100%;border:0;background:#fff;border-radius:18px;padding:28px 14px 10px;min-height:58px;color:var(--ink);outline:none}
@@ -218,6 +218,12 @@
     .qty-row button{width:40px;height:40px;border-radius:50%;border:0;background:#fff;font-weight:650;color:var(--ink)}
     .qty-row input{width:74px;text-align:center;border:0;border-radius:18px;padding:10px;background:#fff;font-weight:600}
     .share-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+
+    .personalization-field{display:grid;gap:7px;margin:12px 0}
+    .personalization-field label{font-size:.78rem;color:var(--soft);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+    .personalization-field input{width:100%;border:0;background:#fff;border-radius:18px;padding:13px 14px;min-height:48px;outline:none}
+    .personalization-field input:focus{box-shadow:var(--focus)}
+    .personalization-help{font-size:.78rem;color:var(--muted);line-height:1.35}
     .variant-panel{margin:20px 0 0;display:grid;gap:12px}
     .selector-head{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--ink);font-size:.88rem;font-weight:650;letter-spacing:-.01em}
     .variant-counter{color:var(--muted);font-weight:500;font-size:.78rem}
@@ -367,8 +373,6 @@
       <nav class="nav-links" id="navLinks">
         <a href="./">Início</a>
         <a href="?view=catalogo">Produtos</a>
-        <a class="cart-nav" href="?view=checkout" aria-label="Abrir carrinho e checkout">Carrinho <span class="cart-count" id="cartCount">0</span></a>
-        <a href="?view=reels">Vídeos</a>
         <a href="?page=envio">Envio</a>
         <a href="?page=quem-somos">Quem somos</a>
         <a href="?page=privacidade">Privacidade</a>
@@ -384,7 +388,7 @@
         <p id="footerText">Canecas católicas e presentes devocionais com arte autoral, atendimento humano e pedido pelo WhatsApp.</p>
         <div class="socials" id="footerSocials"></div>
       </div>
-      <div><h4>Produtos</h4><a href="?categoria=caneca">Canecas Católicas</a><a href="?view=catalogo">Catálogo completo</a><a href="?view=reels">Vídeos</a></div>
+      <div><h4>Produtos</h4><a href="?categoria=caneca">Canecas Católicas</a><a href="?view=catalogo">Catálogo completo</a></div>
       <div><h4>Atendimento</h4><a href="?page=envio">Regras de envio</a><a href="?page=contato">Contato</a><a href="?page=privacidade">Sigilo de dados</a></div>
       <div><h4>Institucional</h4><a href="?page=quem-somos">Quem somos</a><a href="?page=trocas">Trocas e cuidados</a><a href="?view=catalogo">Catálogo completo</a></div>
     </div>
@@ -421,13 +425,13 @@
       hero:{
         etiqueta:"Presentes católicos autorais",
         titulo:"Um tema de fé. Vários estilos para escolher.",
-        texto:"Escolha o tema, veja as variações de estilo, adicione vários produtos ao carrinho e finalize pelo WhatsApp."
+        texto:"Escolha o tema, veja as variações de estilo, escreva o nome personalizado e envie a encomenda direto pelo WhatsApp."
       },
       sociais:{},
       siteUrl:"",
       seo:{
         titulo:"Só em Ti | Canecas Católicas e Presentes Devocionais",
-        descricao:"Canecas católicas e presentes devocionais com arte autoral. Compre pelo site, monte seu carrinho e finalize o pedido pelo WhatsApp.",
+        descricao:"Canecas católicas e presentes devocionais com arte autoral. Escolha a caneca, informe o nome personalizado e envie o pedido pelo WhatsApp.",
         keywords:"canecas católicas, presentes católicos, caneca católica personalizada, lembrança católica, Nossa Senhora, santos católicos"
       },
       empresa:{
@@ -487,6 +491,25 @@
     function brl(v){const n=parsePrice(v);return n!==null?n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}):(v||"")}
     function normalizeTags(tags){if(Array.isArray(tags)) return tags.filter(Boolean); if(typeof tags==="string") return tags.split(/[,;|]/).map(t=>t.trim()).filter(Boolean); return []}
     function mediaImageOf(m={}){return m?.principalUrl || m?.mockupFrenteUrl || m?.mockupEsquerdaUrl || m?.mockupDireitaUrl || m?.arteAbertaUrl || m?.url || m?.imagem || ""}
+
+    function optimizeImageUrl(url="", width=900, quality=78){
+      const raw=String(url||"").trim();
+      if(!raw) return "";
+      try{
+        const u=new URL(raw, location.href);
+        if(u.hostname.includes("images.unsplash.com")){
+          u.searchParams.set("auto","format");
+          u.searchParams.set("fit","crop");
+          u.searchParams.set("w",String(width));
+          u.searchParams.set("q",String(quality));
+          return u.toString();
+        }
+        if(u.hostname.includes("googleusercontent.com") && !/[=]w\d+/.test(u.pathname+u.search)){
+          return raw.replace(/=s\d+.*$/,"") + `=w${width}-rw`;
+        }
+      }catch(e){}
+      return raw;
+    }
     function objectEntriesList(value){
       if(Array.isArray(value)) return value.filter(Boolean);
       if(value && typeof value === "object") return Object.entries(value).map(([key,val])=>({...val,id:val?.id||key})).filter(Boolean);
@@ -663,7 +686,7 @@
       return `<div class="promo-strip" aria-label="Condições de compra">
         <div class="promo-card"><span class="promo-ico">✓</span><span><strong>Frete grátis a partir de ${esc(min)}</strong><span>Valor de entrega confirmado no atendimento.</span></span></div>
         <div class="promo-card"><span class="promo-ico">3x</span><span><strong>Parcelamos em até 3x sem juros</strong><span>Pagamento combinado pelo WhatsApp.</span></span></div>
-        <div class="promo-card"><span class="promo-ico">🛒</span><span><strong>Monte seu pedido com vários produtos</strong><span>Checkout simples: nome, telefone, cidade e email.</span></span></div>
+        <div class="promo-card"><span class="promo-ico">🛒</span><span><strong>Encomenda direta na página do produto</strong><span>Informe o nome personalizado e envie tudo pelo WhatsApp.</span></span></div>
       </div>`;
     }
     function siteBaseUrl(){
@@ -728,17 +751,16 @@
           O catálogo público deste site deve ler somente o nó /canecas.
           A pasta /produtos pertence a outro uso e não é consultada aqui.
         */
-        const [canecas, categorias, reels, config, configPim] = await Promise.all([
+        const [canecas, categorias, config, configPim] = await Promise.all([
           readFirebaseNode("canecas"),
           readFirebaseNode("categorias"),
-          readFirebaseNode("reels"),
           readFirebaseNode("config"),
           readFirebaseNode("config_pim")
         ]);
         state.config = deepMerge(DEFAULT_CONFIG, configPim || {}, config || {});
         state.categorias = categorias || {};
         state.produtos = normalizeProducts(canecas || {});
-        state.reels = normalizeReels(reels || {});
+        state.reels = {};
         if(!activeProducts().length) toast("Nenhuma caneca ativa encontrada no Firebase.");
       }catch(e){
         console.warn(e);
@@ -773,8 +795,7 @@
       const r=route();
       if(r.produto) return renderProduct(r.produto);
       if(r.page) return renderStaticPage(r.page);
-      if(r.view === "checkout" || r.view === "carrinho") return renderCheckout();
-      if(r.view === "reels") return renderReelsPage();
+      if(r.view === "checkout" || r.view === "carrinho" || r.view === "reels") { history.replaceState(null,"","?view=catalogo"); return renderCatalog(); }
       if(r.view === "catalogo" || r.categoria || r.q) return renderCatalog();
       return renderHome();
     }
@@ -787,7 +808,7 @@
       const featured=(picked.length?picked:activeProducts()).slice(0,12);
       const catsHtml=renderCategories();
       const heroImg=c.hero?.imagem || imageOf(featured[0]);
-      const heroMedia=heroImg?`<div class="hero-media"><img src="${esc(heroImg)}" alt="${esc(c.lojaNome||"Só em Ti")}" loading="eager"></div>`:"";
+      const heroMedia=heroImg?`<div class="hero-media"><img src="${esc(optimizeImageUrl(heroImg,1000,78))}" alt="${esc(c.lojaNome||"Só em Ti")}" loading="eager" decoding="async" fetchpriority="high"></div>`:"";
       setMain(`
         <section class="hero">
           <div class="container hero-grid ${heroImg?'':'no-media'}">
@@ -795,7 +816,7 @@
               <span class="eyebrow">${esc(c.hero?.etiqueta || "Presentes católicos autorais")}</span>
               <h1>${esc(c.hero?.titulo || DEFAULT_CONFIG.hero.titulo)}</h1>
               <p>${esc(c.hero?.texto || DEFAULT_CONFIG.hero.texto)}</p>
-              <div class="hero-actions"><a class="btn primary" href="?view=catalogo">Ver produtos</a><a class="btn secondary" href="?view=checkout">Ver carrinho</a><a class="btn secondary" href="?view=reels">Ver vídeos</a></div>
+              <div class="hero-actions"><a class="btn primary" href="?view=catalogo">Ver produtos</a></div>
             </div>
             ${heroMedia}
           </div>
@@ -803,14 +824,12 @@
         </section>
         ${catsHtml?`<section><div class="container"><div class="section-head"><div><h2>Categorias</h2><p>Produtos organizados para facilitar a escolha do presente católico.</p></div><a class="btn secondary" href="?view=catalogo">Catálogo completo</a></div><div class="grid-cats">${catsHtml}</div></div></section>`:""}
         <section><div class="container"><div class="section-head"><div><h2>Escolha pela imagem</h2><p>Cada caneca pode ter várias versões visuais. Toque na foto, escolha o estilo e finalize pelo WhatsApp.</p></div></div><div class="products-grid">${featured.map(renderProductCard).join("") || empty("Nenhum produto ativo encontrado.")}</div></div></section>
-        ${renderReelsBlock()}
       `);
     }
     function renderCategories(){return arrObj(state.categorias).sort((a,b)=>(a.ordem||99)-(b.ordem||99)||String(a.nome||"").localeCompare(String(b.nome||""))).map(cat=>`<a class="category-card" href="?categoria=${esc(cat.slug||cat.id)}"><span class="ico">${esc(cat.icone||"✦")}</span><div><h3>${esc(cat.nome)}</h3><span>${esc(cat.descricao||"Ver produtos")}</span></div></a>`).join("")}
     function filtersProducts(){
       const r=route(); const q=slugify(r.q); let list=activeProducts();
       if(r.categoria) list=list.filter(p=>p.categoriaSlug===r.categoria);
-      if(r.sub) list=list.filter(p=>p.subcategoriaSlug===r.sub);
       if(q) list=list.filter(p=>{
         const variationText = variationsOf(p).map(v=>[v.estiloNome,v.tagNome,v.descricaoEstilo].join(" ")).join(" ");
         return slugify([p.titulo,p.resumo,p.descricao,p.descricaoTema,p.descricaoEstiloGeral,variationText,(p.tags||[]).join(" ")].join(" ")).includes(q);
@@ -819,34 +838,24 @@
     }
     function renderCatalog(){
       const r=route(); const cat=catBySlug(r.categoria); const list=filtersProducts();
-      updateSeoGeneric(`${cat?cat.nome:"Catálogo"} | ${state.config?.lojaNome||"Só em Ti"}`, cat?.descricao || "Catálogo de canecas católicas e presentes devocionais com pedido pelo WhatsApp.", imageOf(list[0]) || "", pageUrl({view:"catalogo",categoria:r.categoria||"",sub:r.sub||"",q:r.q||""}));
+      updateSeoGeneric(`${cat?cat.nome:"Catálogo"} | ${state.config?.lojaNome||"Só em Ti"}`, cat?.descricao || "Catálogo de canecas católicas e presentes devocionais com pedido pelo WhatsApp.", imageOf(list[0]) || "", pageUrl({view:"catalogo",categoria:r.categoria||"",q:r.q||""}));
       setMain(`<section class="page"><div class="container">
         <div class="section-head catalog-head"><div><span class="eyebrow">Catálogo</span><h2>${cat?esc(cat.nome):"Todos os produtos"}</h2><p>${cat?esc(cat.descricao||"Escolha um tema para encontrar o presente ideal."):"Catálogo visual com foco total nas fotos e nas variações disponíveis."}</p></div><div class="result-count" aria-live="polite"><strong>${list.length}</strong> ${list.length===1?"produto":"produtos"}</div></div>
         ${renderPromoStrip()}
         ${renderFilters(r)}
-        ${cat ? renderSubcats(cat,r.sub) : ""}
         <div class="products-grid">${list.map(renderProductCard).join("") || empty("Nenhum produto encontrado.")}</div>
       </div></section>`);
       bindFilters();
-      bindSubcatRail();
     }
     function renderFilters(r){
       const cats=arrObj(state.categorias).sort((a,b)=>(a.ordem||99)-(b.ordem||99)||String(a.nome||"").localeCompare(String(b.nome||"")));
       return `<form class="filters" id="filtersForm">
         <div class="field"><label for="q">Buscar</label><input id="q" name="q" value="${esc(r.q||"")}" placeholder="Nossa Senhora, santo, oração..."></div>
         <div class="field"><label for="categoria">Categoria</label><select id="categoria" name="categoria"><option value="">Todas</option>${cats.map(c=>`<option value="${esc(c.slug||c.id)}" ${r.categoria===(c.slug||c.id)?"selected":""}>${esc(c.nome)}</option>`).join("")}</select></div>
-        <div class="field"><label for="sub">Subcategoria</label><select id="sub" name="sub" ${r.categoria?"":"disabled"}><option value="">${r.categoria?"Todas":"Escolha a categoria"}</option>${r.categoria ? Object.entries(catBySlug(r.categoria)?.subcategorias||{}).sort((a,b)=>String(a[1]).localeCompare(String(b[1]),"pt-BR")).map(([k,v])=>`<option value="${esc(k)}" ${r.sub===k?"selected":""}>${esc(v)}</option>`).join("") : ""}</select></div>
       </form>`
     }
-    function renderSubcats(cat,active){
-      const entries=Object.entries(cat.subcategorias||{}).sort((a,b)=>String(a[1]).localeCompare(String(b[1]),"pt-BR")); if(!entries.length) return "";
-      return `<nav class="subcat-nav" aria-label="Filtrar por tema"><div class="subcat-head"><span class="subcat-title">Explore por tema</span><span class="subcat-hint">Deslize para ver ${entries.length} opções</span></div><div class="subcat-scroll"><a class="pill ${!active?'gold':''}" ${!active?'aria-current="page"':''} href="?categoria=${esc(cat.slug||cat.id)}">Todos</a>${entries.map(([k,v])=>`<a class="pill ${active===k?'gold':''}" ${active===k?'aria-current="page"':''} title="${esc(v)}" href="?categoria=${esc(cat.slug||cat.id)}&sub=${esc(k)}">${esc(v)}</a>`).join("")}</div></nav>`
-    }
-    function bindSubcatRail(){
-      const rail=$(".subcat-scroll"); const active=rail?.querySelector('[aria-current="page"]');
-      if(!rail || !active || active===rail.firstElementChild) return;
-      requestAnimationFrame(()=>{rail.scrollLeft=Math.max(0,active.offsetLeft-(rail.clientWidth-active.clientWidth)/2)});
-    }
+    function renderSubcats(){return ""}
+    function bindSubcatRail(){}
     function bindFilters(){const f=$("#filtersForm"); if(!f)return; f.addEventListener("change",()=>submitFilters(f)); f.addEventListener("submit",e=>{e.preventDefault();submitFilters(f)}); $("#q")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();submitFilters(f)}})}
     function submitFilters(f){const fd=new FormData(f); const url=new URL(location.href); url.search=""; url.searchParams.set("view","catalogo"); for(const [k,v] of fd.entries()) if(v) url.searchParams.set(k,v); history.pushState(null,"",url); render()}
     function productChips(p){return ""}
@@ -855,7 +864,7 @@
       const visible=vars.slice(0,limit);
       const more=vars.length-visible.length;
       return `<div class="variation-strip" aria-label="${esc(vars.length)} estilos disponíveis">
-        ${visible.map((v,i)=>`<span class="variation-dot ${i===0?'active':''}" title="${esc(v.estiloNome)}"><img src="${esc(imageOf(p,v))}" alt="${esc(v.estiloNome)}" loading="lazy"></span>`).join("")}
+        ${visible.map((v,i)=>`<span class="variation-dot ${i===0?'active':''}" title="${esc(v.estiloNome)}"><img src="${esc(optimizeImageUrl(imageOf(p,v),160,72))}" alt="${esc(v.estiloNome)}" loading="lazy" decoding="async"></span>`).join("")}
         ${more>0?`<span class="variation-more">+${more}</span>`:""}
         <span class="variation-mini-label">${esc(variationText(p))}</span>
       </div>`;
@@ -865,7 +874,7 @@
       const vCount=variationCount(p);
       return `<article class="product-card">
         <a class="product-media" href="?produto=${esc(p.slug||p.id)}" aria-label="Ver ${esc(p.titulo)}">
-          ${img?`<img src="${esc(img)}" alt="${esc(p.titulo)}" loading="lazy">`:`<div class="image-missing">Sem foto</div>`}
+          ${img?`<img src="${esc(optimizeImageUrl(img,620,76))}" alt="${esc(p.titulo)}" loading="lazy" decoding="async">`:`<div class="image-missing">Sem foto</div>`}
         </a>
         ${variationPreview(p,6)}
         <div class="product-body">
@@ -876,15 +885,13 @@
     }
     function findRelatedProducts(p){
       const all=activeProducts().filter(x=>x.id!==p.id);
-      const sameCategoryAndSub=all.filter(x=>x.categoriaSlug===p.categoriaSlug && x.subcategoriaSlug===p.subcategoriaSlug);
-      const sameSub=all.filter(x=>x.subcategoriaSlug===p.subcategoriaSlug && !sameCategoryAndSub.some(y=>y.id===x.id));
-      const sameCategory=all.filter(x=>x.categoriaSlug===p.categoriaSlug && !sameCategoryAndSub.some(y=>y.id===x.id) && !sameSub.some(y=>y.id===x.id));
-      return [...sameCategoryAndSub,...sameSub,...sameCategory].slice(0,16);
+      const sameCategory=all.filter(x=>x.categoriaSlug===p.categoriaSlug);
+      return sameCategory.slice(0,16);
     }
     function renderProduct(slug){
       const p=findProduct(slug); if(!p){setMain(`<section class="page"><div class="container">${empty("Produto não encontrado.")}<p><a class="btn secondary" href="?view=catalogo">Voltar ao catálogo</a></p></div></section>`);return}
       updateSeoProduct(p);
-      const cat=catBySlug(p.categoriaSlug); const related=findRelatedProducts(p); const relatedSub=subName(p.categoriaSlug,p.subcategoriaSlug);
+      const cat=catBySlug(p.categoriaSlug); const related=findRelatedProducts(p);
       const vars=variationsOf(p); const selected=selectedVariation(p); const selectedName=selected?.estiloNome || "Modelo principal";
       setMain(`<section class="page"><div class="container">
         <nav class="breadcrumbs"><a href="./">Início</a><span>/</span><a href="?categoria=${esc(p.categoriaSlug)}">${esc(cat?.nome||"Canecas")}</a><span>/</span><span>${esc(p.titulo)}</span></nav>
@@ -897,10 +904,10 @@
             ${selected?`<p class="selected-style"><strong>${esc(selectedName)}</strong>${selected.descricaoEstilo?` — ${esc(selected.descricaoEstilo)}`:""}</p>`:""}
             <div class="minimal-details">${esc(p.descricaoTema || p.descricaoCurta || p.resumo || "Escolha o estilo, confira as fotos e envie o pedido pelo WhatsApp.")}</div>
             ${renderProductBenefits()}
-            <div class="order-box"><label class="tiny" for="qty">Quantidade</label><div class="qty-row"><button type="button" id="minusQty">−</button><input id="qty" value="1" inputmode="numeric" pattern="[0-9]*" aria-label="Quantidade"><button type="button" id="plusQty">+</button></div><button class="btn primary full" id="addCartBtn">Adicionar ao carrinho</button><button class="btn secondary full" id="checkoutBtn" type="button">Finalizar pedido</button><div class="share-row"><button class="btn secondary" id="shareBtn" type="button">Compartilhar</button><button class="btn ghost" id="copyBtn" type="button">Copiar link</button></div></div>
+            <div class="order-box"><label class="tiny" for="qty">Quantidade</label><div class="qty-row"><button type="button" id="minusQty">−</button><input id="qty" value="1" inputmode="numeric" pattern="[0-9]*" aria-label="Quantidade"><button type="button" id="plusQty">+</button></div><div class="personalization-field"><label for="personalName">Nome personalizado na caneca</label><input id="personalName" name="personalName" required maxlength="40" autocomplete="off" placeholder="Ex.: Maria Clara"><div class="personalization-help">Escreva exatamente como o nome deve aparecer na arte.</div></div><button class="btn primary full" id="whatsBtn" type="button">Encomendar pelo WhatsApp</button><div class="share-row"><button class="btn secondary" id="shareBtn" type="button">Compartilhar</button></div></div>
           </aside>
         </div>
-        <div class="media-section">${renderWideArt(p,selected)}${renderVerticalProductVideo(p,selected)}</div>
+        <div class="media-section">${renderWideArt(p,selected)}</div>
         ${related.length?`<section><div class="section-head"><div><h2>Relacionados</h2><p>Outras opções do mesmo tema ou categoria.</p></div></div><div class="related-grid">${related.map(renderProductCard).join("")}</div></section>`:""}
       </div></section>`);
       bindGallery(p,selected);bindVariationSelector(p);bindOrder(p,selected);bindLightboxTriggers();
@@ -910,18 +917,18 @@
       return `<ul class="benefits">
         <li><span class="dot"></span><span>${esc(pol.entregaTexto || "Frete grátis a partir de R$ 149,90")}</span></li>
         <li><span class="dot"></span><span>${esc(pol.parcelamento || "Parcelamos em até 3x sem juros")}</span></li>
-        <li><span class="dot"></span><span>Adicione vários produtos e finalize em um único pedido pelo WhatsApp.</span></li>
+        <li><span class="dot"></span><span>Informe o nome personalizado e encomende direto pelo WhatsApp.</span></li>
       </ul>`;
     }
     function renderVariationSelector(p,selected){
       const vars=variationsOf(p);
       return `<div class="variant-panel"><div class="selector-head"><span>Escolha o estilo</span><span class="variant-counter">${vars.length} ${vars.length===1?'opção':'opções'}</span></div><div class="variant-grid">
-        ${vars.map(v=>`<button type="button" class="variant-card ${selected?.estiloSlug===v.estiloSlug?'active':''}" data-estilo="${esc(v.estiloSlug)}" aria-label="Escolher ${esc(v.estiloNome)}"><img src="${esc(imageOf(p,v))}" alt="${esc(v.estiloNome)}" loading="lazy"><span><strong>${esc(v.estiloNome)}</strong><span>${esc(v.tagNome||v.colecaoNome||"Estilo visual")}</span></span></button>`).join("")}
+        ${vars.map(v=>`<button type="button" class="variant-card ${selected?.estiloSlug===v.estiloSlug?'active':''}" data-estilo="${esc(v.estiloSlug)}" aria-label="Escolher ${esc(v.estiloNome)}"><img src="${esc(optimizeImageUrl(imageOf(p,v),160,72))}" alt="${esc(v.estiloNome)}" loading="lazy" decoding="async"><span><strong>${esc(v.estiloNome)}</strong><span>${esc(v.tagNome||v.colecaoNome||"Estilo visual")}</span></span></button>`).join("")}
       </div></div>`;
     }
     function renderWideArt(p,variation=null){
       const m=variation?.midias || p.midias || {}; if(!m.arteAbertaUrl) return "";
-      return `<section class="wide-art"><div class="section-head"><div><h2>Arte aberta</h2><p>Desenho completo do estilo escolhido.</p></div></div><img src="${esc(m.arteAbertaUrl)}" alt="Arte aberta ${esc(p.titulo)}" data-lightbox="image" data-title="Arte aberta - ${esc(p.titulo)}"></section>`;
+      return `<section class="wide-art"><div class="section-head"><div><h2>Arte aberta</h2><p>Desenho completo do estilo escolhido.</p></div></div><img src="${esc(optimizeImageUrl(m.arteAbertaUrl,1400,82))}" alt="Arte aberta ${esc(p.titulo)}" data-lightbox="image" data-title="Arte aberta - ${esc(p.titulo)}"></section>`;
     }
     function renderGallery(p,variation=null){
       const m=variation?.midias || p.midias || {};
@@ -931,19 +938,16 @@
       if(m.mockupDireitaUrl) items.push({type:"image",label:"Lado direito",url:m.mockupDireitaUrl});
       if(m.principalUrl && !items.some(i=>i.url===m.principalUrl)) items.unshift({type:"image",label:"Principal",url:m.principalUrl});
       if(m.arteAbertaUrl) items.push({type:"image",label:"Arte aberta",url:m.arteAbertaUrl,wide:true});
-      const yurl = productYoutubeUrl({...p,midias:m});
-      if(yurl) items.push({type:"youtube",label:"Vídeo YouTube",url:yurl,vertical:true,poster:m.videoPosterUrl||m.principalUrl||youtubeThumb(yurl)});
-      else if(m.videoVerticalUrl) items.push({type:"video",label:"Vídeo 9:16",url:m.videoVerticalUrl,vertical:true,poster:m.videoPosterUrl||m.principalUrl});
       const first=items[0];
       state.galleryItems = items;
-      return `<div class="main-preview ${first?.wide?'horizontal':''} ${first?.vertical?'vertical':''}" id="mainPreview">${renderMedia(first,p.titulo,true)}</div><div class="thumbs">${items.map((it,i)=>`<button class="thumb ${i===0?'active':''}" type="button" data-index="${i}" aria-label="Ver ${esc(it.label)}">${it.type==='video'?`<video src="${esc(it.url)}" poster="${esc(it.poster||'')}" muted playsinline></video>`:`<img src="${esc(it.poster||it.url)}" alt="${esc(it.label)}" loading="lazy">`}</button>`).join("")}</div>`
+      return `<div class="main-preview ${first?.wide?'horizontal':''} ${first?.vertical?'vertical':''}" id="mainPreview">${renderMedia(first,p.titulo,true)}</div><div class="thumbs">${items.map((it,i)=>`<button class="thumb ${i===0?'active':''}" type="button" data-index="${i}" aria-label="Ver ${esc(it.label)}">${it.type==='video'?`<video src="${esc(it.url)}" poster="${esc(it.poster||'')}" muted playsinline></video>`:`<img src="${esc(optimizeImageUrl(it.poster||it.url,180,72))}" alt="${esc(it.label)}" loading="lazy" decoding="async">`}</button>`).join("")}</div>`
     }
     function renderMedia(it,title,main=false){
       if(!it) return `<div class="empty">Sem mídia cadastrada.</div>`;
       const titleAttr=esc(`${it.label} - ${title}`);
       if(it.type==="youtube") return `<iframe src="${esc(youtubeEmbedUrl(it.url))}" title="${titleAttr}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
       if(it.type==="video") return `<video src="${esc(it.url)}" poster="${esc(it.poster||'')}" muted playsinline loop controls ${main?'autoplay':''} data-lightbox="video" data-title="${titleAttr}"></video>`;
-      return `<img src="${esc(it.url)}" alt="${titleAttr}" data-lightbox="image" data-title="${titleAttr}" style="cursor:zoom-in">`;
+      return `<img src="${esc(optimizeImageUrl(it.url,1200,82))}" alt="${titleAttr}" data-lightbox="image" data-title="${titleAttr}" style="cursor:zoom-in" decoding="async">`;
     }
     function bindGallery(p,variation=null){
       const items=state.galleryItems||[]; const main=$("#mainPreview"); if(!main || !items.length) return;
@@ -955,27 +959,47 @@
         const url=new URL(location.href); url.searchParams.set("produto",p.slug||p.id); url.searchParams.set("estilo",btn.dataset.estilo); history.pushState(null,"",url); render();
       }));
     }
-    function renderVerticalProductVideo(p,variation=null){
-      const m=variation?.midias || p.midias || {}; const yurl=productYoutubeUrl({...p,midias:m});
-      if(!yurl && !m.videoVerticalUrl && !m.videoEmbedHtml) return "";
-      const media = m.videoEmbedHtml || (yurl ? `<iframe src="${esc(youtubeEmbedUrl(yurl))}" title="Vídeo - ${esc(p.titulo)}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>` : `<video src="${esc(m.videoVerticalUrl)}" poster="${esc(m.videoPosterUrl||imageOf(p,variation))}" muted playsinline autoplay loop controls data-lightbox="video" data-title="Vídeo - ${esc(p.titulo)}"></video>`);
-      return `<section class="vertical-video-box"><div class="section-head"><div><h2>Vídeo</h2><p>Demonstração do produto quando cadastrada.</p></div></div><div class="vertical-video-wrap">${media}</div></section>`
-    }
+    function renderVerticalProductVideo(){return ""}
     function bindOrder(p,variation=null){
-      const q=$("#qty"), minus=$("#minusQty"), plus=$("#plusQty");
+      const q=$("#qty"), minus=$("#minusQty"), plus=$("#plusQty"), personalName=$("#personalName");
       const clean=()=>{q.value=Math.max(1,parseInt(q.value||"1",10)||1)};
       minus?.addEventListener("click",()=>{q.value=Math.max(1,(parseInt(q.value||"1",10)||1)-1)});
       plus?.addEventListener("click",()=>{q.value=(parseInt(q.value||"1",10)||1)+1});
       q?.addEventListener("input",clean);
-      $("#addCartBtn")?.addEventListener("click",()=>addToCart(p, parseInt(q.value||"1",10)||1, variation));
-      $("#checkoutBtn")?.addEventListener("click",()=>{addToCart(p, parseInt(q.value||"1",10)||1, variation); history.pushState(null,"","?view=checkout"); render();});
+      $("#whatsBtn")?.addEventListener("click",()=>sendProductWhatsApp(p, parseInt(q.value||"1",10)||1, variation, String(personalName?.value||"").trim()));
+      personalName?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("#whatsBtn")?.click();}});
       $("#shareBtn")?.addEventListener("click",()=>shareProduct(p));
-      $("#copyBtn")?.addEventListener("click",async()=>{await navigator.clipboard?.writeText(currentUrl({produto:p.slug||p.id,estilo:variation?.estiloSlug||null})); toast("Link copiado.")});
     }
-    async function sendWhats(p,qty,variation=null){
-      addToCart(p,qty,variation);
-      history.pushState(null,"","?view=checkout");
-      render();
+    function productCode(p,variation=null){
+      return String(variation?.codigo || variation?.sku || variation?.id || p.codigo || p.sku || p.id || p.slug || "").trim();
+    }
+    async function sendProductWhatsApp(p,qty,variation=null,personalName=""){
+      if(!personalName){toast("Digite o nome personalizado da caneca."); $("#personalName")?.focus(); return;}
+      const phone=((state.config||DEFAULT_CONFIG).whatsapp||"5565999999999").replace(/\D/g,"");
+      const code=productCode(p,variation);
+      const orderId=`SETI_${Date.now()}`;
+      const unit=productPrice(p); const subtotal=unit*qty;
+      const url=currentUrl({produto:p.slug||p.id,estilo:variation?.estiloSlug||null});
+      const order={id:orderId,produtoId:p.id,produtoSlug:p.slug,codigoCaneca:code,titulo:p.titulo,variacaoId:variation?.id||"",variacaoEstilo:variation?.estiloNome||"",quantidade:qty,nomePersonalizado:personalName,preco:unit,subtotal,url,status:"novo_whatsapp",origem:"produto_direto",criadoEm:new Date().toISOString()};
+      try{
+        if(state.db) await state.db.ref(`pedidos/${orderId}`).set(order);
+        else await fetch(`${FIREBASE_DATABASE_URL}/pedidos/${orderId}.json`, {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(order)});
+      }catch(err){console.warn(err);}
+      const msg=`Olá! Quero encomendar esta caneca personalizada na Só em Ti.
+
+Código do pedido: ${orderId}
+Código da caneca: ${code}
+Produto: ${p.titulo}${variation?.estiloNome?`
+Estilo: ${variation.estiloNome}`:""}
+Quantidade: ${qty}
+Nome personalizado: ${personalName}
+Valor unitário: ${brl(unit)}
+Subtotal: ${brl(subtotal)}
+Link do produto: ${url}
+
+Pode confirmar disponibilidade, prazo, pagamento e envio?`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank','noopener');
+      toast("Pedido aberto no WhatsApp.");
     }
     async function shareProduct(p){const data={title:p.titulo,text:p.resumo||"Produto católico Só em Ti",url:currentUrl({produto:p.slug||p.id,estilo:selectedVariation(p)?.estiloSlug||null})}; if(navigator.share){try{await navigator.share(data)}catch(e){}} else {await navigator.clipboard?.writeText(data.url);toast("Link copiado para compartilhar.")}}
     function updateSeoProduct(p){
@@ -986,7 +1010,7 @@
       const url=pageUrl({produto:p.slug||p.id,estilo:v?.estiloSlug||""});
       document.title=title;
       setMeta("description",desc);
-      setMeta("keywords",[p.titulo,p.subcategoriaNome,p.categoriaSlug,...(p.tags||[]),v?.estiloNome,"caneca católica","presente católico"].filter(Boolean).join(", "));
+      setMeta("keywords",[p.titulo,p.categoriaSlug,...(p.tags||[]),v?.estiloNome,"caneca personalizada","caneca católica","presente católico"].filter(Boolean).join(", "));
       setOg("og:type","product"); setOg("og:title",title); setOg("og:description",desc); setOg("og:image",img); setCanonical(url);
       setOg("product:price:amount",productPrice(p)); setOg("product:price:currency","BRL");
       setTwitter("twitter:title",title); setTwitter("twitter:description",desc); setTwitter("twitter:image",img);
@@ -1013,7 +1037,7 @@
         mpn:String(p.mpn || p.codigo || p.id || ""),
         gtin:p.gtin || p.ean || undefined,
         brand:{"@type":"Brand",name:storeName},
-        category:p.subcategoriaNome || p.categoriaSlug,
+        category:p.categoriaSlug,
         material:p.material || "Cerâmica",
         color:v?.estiloNome || undefined,
         isVariantOf:v?{"@type":"ProductGroup",name:p.titulo,productGroupID:p.id,hasVariant:variationsOf(p).map(x=>({"@type":"Product",name:`${p.titulo} - ${x.estiloNome}`,sku:x.id||`${p.id}-${x.estiloSlug}`}))}:undefined,
@@ -1024,88 +1048,15 @@
     function setOg(n,v){let el=document.querySelector(`meta[property="${n}"]`); if(el) el.setAttribute("content",v||"")}
 
 
-    function renderCheckout(){
-      const c=state.config||DEFAULT_CONFIG; const items=cartItemsDetailed(); const total=cartTotal(); const status=freeShippingStatus(total);
-      updateSeoGeneric(`Checkout | ${c.lojaNome||"Só em Ti"}`, "Finalize seu pedido com nome, telefone, cidade e email. O pedido será enviado pelo WhatsApp.", "", pageUrl({view:"checkout"}));
-      const customer=state.customer||{};
-      setMain(`<section class="page"><div class="container">
-        <div class="section-head"><div><h2>Checkout</h2><p>Monte seu pedido com vários produtos e envie tudo de uma vez pelo WhatsApp.</p></div><a class="btn secondary" href="?view=catalogo">Continuar comprando</a></div>
-        ${renderPromoStrip()}
-        ${!items.length ? `<div class="empty">Seu carrinho está vazio. Escolha produtos no catálogo para finalizar o pedido.</div>` : `
-        <div class="checkout-layout">
-          <section class="checkout-card">
-            <h3 style="margin:0 0 12px;font-size:1.35rem;letter-spacing:-.03em">Produtos do pedido</h3>
-            <div class="checkout-list">${items.map(renderCartItem).join("")}</div>
-          </section>
-          <aside class="checkout-summary">
-            <h3 style="margin:0;font-size:1.35rem;letter-spacing:-.03em">Dados para atendimento</h3>
-            <p class="checkout-note">Essas informações vão junto na mensagem do WhatsApp para agilizar o pedido.</p>
-            <form class="checkout-form" id="checkoutForm">
-              <div class="checkout-field"><label for="clienteNome">Nome</label><input id="clienteNome" name="nome" autocomplete="name" required value="${esc(customer.nome||"")}" placeholder="Seu nome"></div>
-              <div class="checkout-field"><label for="clienteTelefone">Telefone</label><input id="clienteTelefone" name="telefone" autocomplete="tel" inputmode="tel" required value="${esc(customer.telefone||"")}" placeholder="(00) 00000-0000"></div>
-              <div class="checkout-field"><label for="clienteCidade">Cidade</label><input id="clienteCidade" name="cidade" autocomplete="address-level2" required value="${esc(customer.cidade||"")}" placeholder="Sua cidade"></div>
-              <div class="checkout-field"><label for="clienteEmail">Email</label><input id="clienteEmail" name="email" autocomplete="email" type="email" required value="${esc(customer.email||"")}" placeholder="seu@email.com"></div>
-              <div class="shipping-progress">
-                <strong>${status.free ? "Frete grátis disponível para este pedido." : `Faltam ${brl(status.missing)} para frete grátis.`}</strong>
-                <div class="shipping-bar" aria-hidden="true"><span style="width:${status.pct}%"></span></div>
-                <div class="checkout-note">Frete grátis a partir de ${brl(status.min)}. Parcelamos em até 3x sem juros.</div>
-              </div>
-              <div class="checkout-total"><span>Total dos produtos</span><span>${brl(total)}</span></div>
-              <button class="btn primary full" type="submit">Enviar pedido pelo WhatsApp</button>
-              <p class="checkout-note">O valor final de entrega, disponibilidade e prazo são confirmados no atendimento.</p>
-            </form>
-          </aside>
-        </div>`}
-      </div></section>`);
-      bindCheckout();
-    }
-    function renderCartItem(item){
-      return `<article class="cart-item">
-        ${item.image?`<img src="${esc(item.image)}" alt="${esc(item.titulo)}" loading="lazy">`:`<div class="image-missing" style="width:84px;height:84px;aspect-ratio:auto">Sem foto</div>`}
-        <div>
-          <div class="cart-item-title">${esc(item.titulo)}</div>
-          ${item.variacaoEstilo?`<div class="cart-item-style">Estilo: ${esc(item.variacaoEstilo)}</div>`:""}
-          <div class="cart-item-price">${esc(item.precoTexto || brl(item.price))} × ${esc(item.qty)} = ${brl(item.subtotal)}</div>
-        </div>
-        <div class="cart-controls">
-          <button type="button" data-cart-minus="${esc(item.key)}" aria-label="Diminuir quantidade">−</button>
-          <strong>${esc(item.qty)}</strong>
-          <button type="button" data-cart-plus="${esc(item.key)}" aria-label="Aumentar quantidade">+</button>
-          <button type="button" class="remove" data-cart-remove="${esc(item.key)}">Remover</button>
-        </div>
-      </article>`;
-    }
-    function bindCheckout(){
-      $$("[data-cart-plus]").forEach(btn=>btn.addEventListener("click",()=>{const item=(state.cart||[]).find(i=>i.key===btn.dataset.cartPlus); if(item){updateCartItemQty(item.key,(Number(item.qty)||1)+1); renderCheckout();}}));
-      $$("[data-cart-minus]").forEach(btn=>btn.addEventListener("click",()=>{const item=(state.cart||[]).find(i=>i.key===btn.dataset.cartMinus); if(item){updateCartItemQty(item.key,Math.max(1,(Number(item.qty)||1)-1)); renderCheckout();}}));
-      $$("[data-cart-remove]").forEach(btn=>btn.addEventListener("click",()=>{removeCartItem(btn.dataset.cartRemove); renderCheckout();}));
-      $("#checkoutForm")?.addEventListener("submit",finalizeCheckout);
-    }
-    async function finalizeCheckout(e){
-      e.preventDefault();
-      const form=e.currentTarget;
-      if(!form.checkValidity()){form.reportValidity();return}
-      const fd=new FormData(form);
-      const cliente={nome:String(fd.get("nome")||"").trim(),telefone:String(fd.get("telefone")||"").trim(),cidade:String(fd.get("cidade")||"").trim(),email:String(fd.get("email")||"").trim()};
-      saveCustomer(cliente);
-      const items=cartItemsDetailed(); if(!items.length){toast("O carrinho está vazio.");return}
-      const total=cartTotal(); const status=freeShippingStatus(total); const orderId=`SETI_${Date.now()}`;
-      const order={id:orderId,cliente,itens:items.map(i=>({produtoId:i.produtoId,produtoSlug:i.produtoSlug,titulo:i.titulo,variacaoId:i.variacaoId,variacaoEstilo:i.variacaoEstilo,quantidade:i.qty,preco:i.price,subtotal:i.subtotal,url:i.url})),subtotal:total,totalProdutos:total,freteGratisElegivel:status.free,pagamento:"até 3x sem juros",status:"novo_whatsapp",origem:"site_checkout",criadoEm:new Date().toISOString()};
-      try{
-        if(state.db) await state.db.ref(`pedidos/${orderId}`).set(order);
-        else await fetch(`${FIREBASE_DATABASE_URL}/pedidos/${orderId}.json`, {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(order)});
-      }catch(err){console.warn(err);toast("Não consegui salvar no Firebase, mas vou abrir o WhatsApp.")}
-      const phone=((state.config||DEFAULT_CONFIG).whatsapp||"5565999999999").replace(/\D/g,"");
-      const linhas=items.map((i,idx)=>`${idx+1}. ${i.titulo}${i.variacaoEstilo?` - ${i.variacaoEstilo}`:""}\n   Qtd: ${i.qty} | Unitário: ${brl(i.price)} | Subtotal: ${brl(i.subtotal)}\n   Link: ${i.url}`).join("\n\n");
-      const msg=`Olá! Quero finalizar este pedido na Só em Ti.\n\nCódigo do pedido: ${orderId}\n\nDADOS DO CLIENTE\nNome: ${cliente.nome}\nTelefone: ${cliente.telefone}\nCidade: ${cliente.cidade}\nEmail: ${cliente.email}\n\nPRODUTOS\n${linhas}\n\nTotal dos produtos: ${brl(total)}\n${status.free?"Frete grátis: pedido atingiu o mínimo de "+brl(status.min):"Frete: consultar valor. Faltam "+brl(status.missing)+" para frete grátis."}\nPagamento: parcelamos em até 3x sem juros.\n\nPode confirmar disponibilidade, prazo e forma de pagamento?`;
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank','noopener');
-      toast("Pedido aberto no WhatsApp.");
-    }
+    function renderCheckout(){return renderCatalog()}
+    function renderCartItem(){return ""}
+    function bindCheckout(){}
+    async function finalizeCheckout(){}
 
-    function renderReelsBlock(){const reels=activeReels().slice(0,4); if(!reels.length) return ""; return `<section><div class="container"><div class="section-head"><div><h2>Vídeos</h2><p>Vídeos verticais para demonstrar os produtos.</p></div><a class="btn secondary" href="?view=reels">Ver todos</a></div><div class="reels-grid">${reels.map(renderReelCard).join("")}</div></div></section>`}
-    function renderReelsPage(){updateSeoGeneric(`Vídeos | ${state.config?.lojaNome||"Só em Ti"}`, "Vídeos verticais demonstrando produtos e presentes católicos.", "", pageUrl({view:"reels"})); setMain(`<section class="page"><div class="container"><div class="section-head"><div><h2>Vídeos da Só em Ti</h2><p>Uma seção estilo Reels com vídeos verticais dos produtos.</p></div></div><div class="reels-grid">${activeReels().map(renderReelCard).join("") || empty("Nenhum vídeo cadastrado.")}</div></div></section>`)}
-    function renderReelCard(r){return `<article class="reel-card"><div class="reel-frame">${renderReelMedia(r)}</div><div class="reel-card-body"><h3>${esc(r.titulo||"Vídeo")}</h3><p class="tiny">${esc(r.descricao||r.plataforma||"")}</p></div></article>`}
-    function renderReelMedia(r){if(r.embedHtml)return r.embedHtml; const yurl=r.youtubeUrl||r.videoYoutubeUrl||""; if(yurl)return `<iframe src="${esc(youtubeEmbedUrl(yurl))}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`; if(r.videoVerticalUrl||r.videoUrl)return `<video src="${esc(r.videoVerticalUrl||r.videoUrl)}" poster="${esc(r.thumbnailUrl||"")}" muted playsinline loop controls></video>`; if(r.tiktokUrl)return `<iframe src="${esc(r.tiktokUrl)}" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>`; if(r.instagramUrl)return `<iframe src="${esc(r.instagramUrl)}embed" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>`; return `<img src="${esc(r.thumbnailUrl||"")}" alt="${esc(r.titulo||"Vídeo")}">`}
+    function renderReelsBlock(){return ""}
+    function renderReelsPage(){return renderCatalog()}
+    function renderReelCard(){return ""}
+    function renderReelMedia(){return ""}
     function renderStaticPage(key){const pg=state.config?.paginas?.[key]; updateSeoGeneric(`${pg?.titulo||"Página"} | ${state.config?.lojaNome||"Só em Ti"}`, String(pg?.html||"").replace(/<[^>]+>/g," ").slice(0,155) || "Informações da loja.", "", pageUrl({page:key})); setMain(`<section class="page"><div class="container"><article class="static-page"><h1>${esc(pg?.titulo||"Página")}</h1>${pg?.html||"<p>Conteúdo em construção.</p>"}<p style="margin-top:24px"><a class="btn primary" href="?view=catalogo">Ver produtos</a></p></article></div></section>`)}
     function empty(msg){return `<div class="empty">${esc(msg)}</div>`}
     function bindLightboxTriggers(root=document){$$('[data-lightbox]',root).forEach(el=>{if(el.dataset.bound)return;el.dataset.bound="1";el.addEventListener("click",()=>openLightbox(el))})}
