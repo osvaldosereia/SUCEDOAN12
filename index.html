@@ -2792,7 +2792,12 @@
         const text = await response.text();
         let result;
         try { result = JSON.parse(text); }
-        catch(e) { throw new Error('O Make não devolveu uma resposta JSON válida.'); }
+        catch(e) {
+          if (String(text || '').trim().toLowerCase() === 'accepted') {
+            throw new Error('O cenário de consulta está desligado ou não processou a chamada. Ative o cenário no Make e tente novamente.');
+          }
+          throw new Error('O Make não devolveu uma resposta JSON válida.');
+        }
         if (!response.ok || result.sucesso === false) throw new Error(result.erro || 'Não foi possível consultar o cadastro.');
         if (!result.encontrado || !result.cliente) {
           setLookupStatus('Cadastro não encontrado. Preencha todos os dados para realizar a primeira compra.', 'warning');
