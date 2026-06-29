@@ -1329,6 +1329,18 @@
       background: var(--surface-soft);
     }
     .optional-data summary { cursor: pointer; color: var(--brand); font-size: 13px; font-weight: 800; }
+    .client-lookup { padding: 13px; margin-bottom: 14px; border: 1px solid #bbf7d0; border-radius: 18px; background: #f0fdf4; }
+    .client-lookup-title { color: var(--brand); font-size: 14px; font-weight: 950; margin-bottom: 5px; }
+    .client-lookup-copy { color: var(--muted); font-size: 12px; font-weight: 700; line-height: 1.4; margin-bottom: 10px; }
+    .client-lookup-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: start; }
+    .client-lookup-row .field { margin-bottom: 0; }
+    .lookup-btn { min-width: 105px; height: 48px; padding: 0 14px; border-radius: 14px; background: var(--brand); color: #fff; font-size: 13px; font-weight: 950; }
+    .lookup-btn:disabled { background: #94a3b8; cursor: wait; }
+    .lookup-status { display: none; margin-top: 9px; padding: 9px 11px; border-radius: 12px; font-size: 12px; font-weight: 800; line-height: 1.4; }
+    .lookup-status.show { display: block; }
+    .lookup-status.success { color: #166534; background: #dcfce7; }
+    .lookup-status.warning { color: #92400e; background: #fef3c7; }
+    .lookup-status.error { color: #9f1239; background: #ffe4e6; }
     .send-btn {
       border-radius: 13px;
       background: #1fae59;
@@ -1477,6 +1489,7 @@
       SITE_BASE_URL: 'https://www.donaantonia.com.br',
       PRODUCT_URL: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json',
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
+      CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v4',
       PRODUCT_CACHE_MAX_AGE: 1000 * 60 * 20,
@@ -2555,24 +2568,27 @@
         </section>
         <section class="checkout-section">
           <div class="checkout-title">Seus dados</div>
-          <p class="checkout-help">Pedimos somente o necessário para iniciar o atendimento. O endereço completo pode ser confirmado no WhatsApp.</p>
+          <div class="client-lookup">
+            <div class="client-lookup-title">Já comprou com a gente?</div>
+            <p class="client-lookup-copy">Digite seu CPF para carregar o cadastro salvo no Bling. Use somente números.</p>
+            <div class="client-lookup-row">
+              <input type="tel" id="chk-cpf" class="field" placeholder="CPF*" maxlength="14" inputmode="numeric" autocomplete="off">
+              <button type="button" class="lookup-btn" id="btn-lookup-client">Buscar</button>
+            </div>
+            <div class="lookup-status" id="lookup-status" role="status" aria-live="polite"></div>
+          </div>
+          <p class="checkout-help">Na primeira compra, preencha o cadastro completo. Nas próximas, os dados também ficam salvos neste aparelho.</p>
           <input type="text" id="chk-nome" class="field" placeholder="Nome Completo*" autocomplete="name">
-          <input type="tel" id="chk-cpf" class="field" placeholder="CPF*" maxlength="14" inputmode="numeric" autocomplete="off">
           <input type="tel" id="chk-telefone" class="field" placeholder="WhatsApp com DDD. Ex: (65) 99999-8888*" maxlength="18" inputmode="tel" autocomplete="tel-national">
+          <input type="email" id="chk-email" class="field" placeholder="E-mail*" autocomplete="email">
+          <input type="tel" id="chk-cep" class="field" placeholder="CEP*" maxlength="9" inputmode="numeric" autocomplete="postal-code">
           <select id="chk-cidade" class="field"><option value="">Cidade*</option><option value="Cuiabá">Cuiabá</option><option value="Várzea Grande">Várzea Grande</option></select>
           <input type="text" id="chk-bairro" class="field" placeholder="Bairro*">
+          <input type="text" id="chk-rua" class="field" placeholder="Rua/Avenida*">
+          <div class="field-row"><input type="text" id="chk-quadra" class="field" placeholder="Quadra (opcional)" style="flex:1"><input type="text" id="chk-casa" class="field" placeholder="Nº da casa*" style="flex:1"></div>
+          <input type="text" id="chk-frente" class="field" placeholder="Complemento ou referência (opcional)">
           <div class="checkout-title" style="font-size:15px;margin-top:8px">Forma de pagamento*</div>
           <select id="chk-pagamento" class="field"><option value="">Selecione...</option><option value="DINHEIRO">Dinheiro</option><option value="PIX">Pix</option><option value="CARTAO_DE_DEBITO">Cartão de Débito</option><option value="CARTAO_DE_CREDITO">Cartão de Crédito</option><option value="VALE_ALIMENTACAO">Vale Alimentação</option><option value="VALE_REFEICAO">Vale Refeição</option></select>
-          <details class="optional-data">
-            <summary>Informar endereço completo agora (opcional)</summary>
-            <div style="padding-top:12px">
-              <input type="email" id="chk-email" class="field" placeholder="E-mail (opcional)" autocomplete="email">
-              <input type="tel" id="chk-cep" class="field" placeholder="CEP (opcional)" maxlength="9" inputmode="numeric" autocomplete="postal-code">
-              <input type="text" id="chk-rua" class="field" placeholder="Rua (opcional)">
-              <div class="field-row"><input type="text" id="chk-quadra" class="field" placeholder="Quadra" style="flex:1"><input type="text" id="chk-casa" class="field" placeholder="Nº da casa" style="flex:1"></div>
-              <input type="text" id="chk-frente" class="field" placeholder="Complemento ou referência">
-            </div>
-          </details>
         </section>
         <section class="checkout-section">
           <div class="checkout-notice">Você será direcionado ao WhatsApp com a lista pronta. Seu carrinho ficará salvo até você decidir limpá-lo.</div>
@@ -2695,7 +2711,7 @@
     function emailValido(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim()); }
 
     function saveCheckoutClient() {
-      const ids = ['chk-nome','chk-telefone','chk-cidade','chk-bairro','chk-pagamento'];
+      const ids = ['chk-nome','chk-cpf','chk-telefone','chk-email','chk-cep','chk-cidade','chk-bairro','chk-rua','chk-quadra','chk-casa','chk-frente','chk-pagamento'];
       const dados = {};
       ids.forEach(id => { const el = $(id); if (el) dados[id] = el.value || ''; });
       writeCache(CONFIG.CHECKOUT_CLIENT_KEY, { savedAt: Date.now(), dados });
@@ -2708,6 +2724,91 @@
       const cpf = $('chk-cpf'); if (cpf) cpf.value = formatarCPF(cpf.value);
       const tel = $('chk-telefone'); if (tel) tel.value = tel.value ? formatarTelefone(tel.value) : '';
       const cep = $('chk-cep'); if (cep) cep.value = formatarCEP(cep.value);
+    }
+
+    function setLookupStatus(message, type) {
+      const el = $('lookup-status');
+      if (!el) return;
+      el.textContent = message || '';
+      el.className = `lookup-status${message ? ' show' : ''}${type ? ' ' + type : ''}`;
+    }
+
+    function valueFrom(obj, paths) {
+      for (const path of paths) {
+        const value = path.split('.').reduce((acc, key) => acc && acc[key] !== undefined ? acc[key] : undefined, obj);
+        if (value !== undefined && value !== null && String(value).trim() !== '') return String(value);
+      }
+      return '';
+    }
+
+    function fillClientFromBling(raw) {
+      const cliente = raw && raw.data && !raw.nome ? raw.data : (raw || {});
+      const endereco = cliente.endereco && (cliente.endereco.geral || cliente.endereco) || {};
+      const values = {
+        'chk-nome': valueFrom(cliente, ['nome']),
+        'chk-cpf': valueFrom(cliente, ['numeroDocumento', 'cpf']),
+        'chk-telefone': valueFrom(cliente, ['celular', 'telefone', 'telefoneFormatado']),
+        'chk-email': valueFrom(cliente, ['email']),
+        'chk-cep': valueFrom(endereco, ['cep']),
+        'chk-cidade': valueFrom(endereco, ['municipio', 'cidade']),
+        'chk-bairro': valueFrom(endereco, ['bairro']),
+        'chk-rua': valueFrom(endereco, ['endereco', 'rua']),
+        'chk-casa': valueFrom(endereco, ['numero']),
+        'chk-frente': valueFrom(endereco, ['complemento'])
+      };
+      Object.entries(values).forEach(([id, value]) => {
+        const el = $(id);
+        if (el && value) el.value = value;
+      });
+      if ($('chk-cpf')) $('chk-cpf').value = formatarCPF($('chk-cpf').value);
+      if ($('chk-telefone')) $('chk-telefone').value = formatarTelefone($('chk-telefone').value);
+      if ($('chk-cep')) $('chk-cep').value = formatarCEP($('chk-cep').value);
+      saveCheckoutClient();
+    }
+
+    async function lookupClientByCpf(btn) {
+      const cpfEl = $('chk-cpf');
+      const cpf = limparCPF(cpfEl && cpfEl.value);
+      if (cpf.length !== 11) {
+        if (cpfEl) cpfEl.classList.add('invalid');
+        setLookupStatus('Digite um CPF com 11 números.', 'error');
+        return;
+      }
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = 'Buscando...';
+      setLookupStatus('Consultando seu cadastro no Bling...', 'warning');
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000);
+        const body = new URLSearchParams({ cpf });
+        const response = await fetch(CONFIG.CLIENT_LOOKUP_WEBHOOK_URL, {
+          method: 'POST',
+          body,
+          cache: 'no-store',
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+        const text = await response.text();
+        let result;
+        try { result = JSON.parse(text); }
+        catch(e) { throw new Error('O Make não devolveu uma resposta JSON válida.'); }
+        if (!response.ok || result.sucesso === false) throw new Error(result.erro || 'Não foi possível consultar o cadastro.');
+        if (!result.encontrado || !result.cliente) {
+          setLookupStatus('Cadastro não encontrado. Preencha todos os dados para realizar a primeira compra.', 'warning');
+          return;
+        }
+        fillClientFromBling(result.cliente);
+        setLookupStatus('Cadastro encontrado e preenchido. Confira os dados antes de enviar.', 'success');
+      } catch(err) {
+        const message = err && err.name === 'AbortError'
+          ? 'A consulta demorou demais. Tente novamente.'
+          : (err.message || 'Não foi possível consultar o cadastro agora.');
+        setLookupStatus(message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
     }
 
     function showCheckoutErrors(errors) {
@@ -2750,11 +2851,13 @@
         { id: 'chk-nome', label: 'Nome completo', valid: !!nome },
         { id: 'chk-cpf', label: 'CPF válido com 11 números', valid: cpf.length === 11 },
         { id: 'chk-telefone', label: 'Telefone/WhatsApp válido com DDD', valid: telefoneValidoBR(telefone) },
+        { id: 'chk-email', label: 'E-mail válido', valid: emailValido(email) },
+        { id: 'chk-cep', label: 'CEP válido com 8 números', valid: cep.length === 8 },
         { id: 'chk-cidade', label: 'Cidade', valid: !!cidade },
         { id: 'chk-bairro', label: 'Bairro', valid: !!bairro },
+        { id: 'chk-rua', label: 'Rua/Avenida', valid: !!rua },
+        { id: 'chk-casa', label: 'Número da casa', valid: !!casa },
         { id: 'chk-pagamento', label: 'Forma de pagamento', valid: !!pag },
-        { id: 'chk-email', label: 'E-mail válido', valid: !email || emailValido(email) },
-        { id: 'chk-cep', label: 'CEP válido com 8 números', valid: !cep || cep.length === 8 }
       ].filter(e => !e.valid);
       document.querySelectorAll('.field.invalid').forEach(el => el.classList.remove('invalid'));
       if (errors.length) { showCheckoutErrors(errors); return; }
@@ -2966,6 +3069,11 @@
         saveCheckoutClient();
       });
       document.addEventListener('click', e => {
+        const lookup = e.target.closest('#btn-lookup-client');
+        if (lookup) {
+          lookupClientByCpf(lookup);
+          return;
+        }
         const send = e.target.closest('#btn-send-order');
         if (send) sendOrder(send);
       });
