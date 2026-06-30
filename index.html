@@ -1491,10 +1491,8 @@
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      PRODUCT_CACHE_KEY: 'da_produtos_cache_v4',
-      PRODUCT_CACHE_MAX_AGE: 1000 * 60 * 20,
-      BASKET_CACHE_KEY: 'da_cestas_cache_v3',
-      BASKET_CACHE_MAX_AGE: 1000 * 60 * 60 * 12,
+      PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
+      BASKET_CACHE_KEY: 'da_cestas_cache_v4',
       CART_STORAGE_KEY: 'da_carrinho_v1',
       CHECKOUT_CLIENT_KEY: 'da_checkout_cliente_v1',
       MIN_ORDER: 75,
@@ -1697,23 +1695,15 @@
 
     async function loadProducts() {
       const cache = readCache(CONFIG.PRODUCT_CACHE_KEY);
-      const freshEnough = cache && cache.savedAt && (Date.now() - Number(cache.savedAt) < CONFIG.PRODUCT_CACHE_MAX_AGE);
-      if (cache && cache.data) normalizeProducts(cache.data);
-      if (freshEnough && state.products.length) return;
-
-      const refresh = async () => {
-        const data = await fetchJson(CONFIG.PRODUCT_URL, 9000);
+      try {
+        const data = await fetchJson(withCacheBust(CONFIG.PRODUCT_URL), 9000, { cache: 'no-store' });
         normalizeProducts(data);
         writeCache(CONFIG.PRODUCT_CACHE_KEY, { savedAt: Date.now(), data });
-      };
-
-      if (state.products.length) {
-        setTimeout(() => refresh().catch(err => console.error('Atualização de produtos adiada:', err)), 0);
-        return;
-      }
-
-      try { await refresh(); }
-      catch (err) {
+      } catch (err) {
+        if (cache && cache.data) {
+          normalizeProducts(cache.data);
+          return;
+        }
         console.error('Erro ao carregar Firebase:', err);
         throw err;
       }
@@ -1735,29 +1725,24 @@
 
     async function loadCestas() {
       const cache = readCache(CONFIG.BASKET_CACHE_KEY);
-      if (cache && cache.data) applyCestasData(cache.data);
-
       const urls = ['site/produtos-cesta-basica.json', 'site/cestas.json', 'cestas.json'];
-      const refresh = async () => {
-        let lastError = null;
-        for (const url of urls) {
-          try {
-            const data = await fetchJson(withCacheBust(url), 5000, { cache: 'no-store' });
-            applyCestasData(data);
-            writeCache(CONFIG.BASKET_CACHE_KEY, { savedAt: Date.now(), data });
-            return;
-          } catch(e) {
-            lastError = e;
-          }
+      let lastError = null;
+      for (const url of urls) {
+        try {
+          const data = await fetchJson(withCacheBust(url), 5000, { cache: 'no-store' });
+          applyCestasData(data);
+          writeCache(CONFIG.BASKET_CACHE_KEY, { savedAt: Date.now(), data });
+          return;
+        } catch(e) {
+          lastError = e;
         }
-        if (!state.cestas.length && lastError) throw lastError;
-      };
+      }
 
-      if (state.cestas.length) {
-        setTimeout(() => refresh().catch(err => console.error('Atualização de cestas adiada:', err)), 0);
+      if (cache && cache.data) {
+        applyCestasData(cache.data);
         return;
       }
-      await refresh();
+      if (lastError) throw lastError;
     }
 
     function normalizeRelativeImage(value) {
@@ -2581,38 +2566,38 @@
         </section>
         ${suggestions.length ? `<section class="checkout-section"><div class="checkout-title">${missing > 0 ? 'Complete o pedido mínimo' : 'Produtos que combinam'}</div><div class="mini-suggest">${suggestions.map(p => productCard(p, 'compact')).join('')}</div></section>` : ''}
         <section class="checkout-section">
-          <div class="checkout-title">Agendamento da entrega</div>
+          <div class="checkout-title">Escolha a entrega</div>
           <div id="agendamento-options-container">${agendamentoOptionsHtml()}</div>
         </section>
         <section class="checkout-section">
           <div class="checkout-title">Seus dados</div>
           <div class="client-lookup">
-            <div class="client-lookup-title">Já comprou com a gente?</div>
-            <p class="client-lookup-copy">Digite seu CPF para carregar o cadastro salvo no Bling. Use somente números.</p>
+            <div class="client-lookup-title">Já comprou aqui?</div>
+            <p class="client-lookup-copy">Digite seu CPF para preencher seus dados mais rápido.</p>
             <div class="client-lookup-row">
               <input type="tel" id="chk-cpf" class="field" placeholder="CPF*" maxlength="14" inputmode="numeric" autocomplete="off">
-              <button type="button" class="lookup-btn" id="btn-lookup-client">Buscar</button>
+              <button type="button" class="lookup-btn" id="btn-lookup-client">Preencher</button>
             </div>
             <div class="lookup-status" id="lookup-status" role="status" aria-live="polite"></div>
           </div>
-          <p class="checkout-help">Na primeira compra, preencha o cadastro completo. Nas próximas, os dados também ficam salvos neste aparelho.</p>
-          <input type="text" id="chk-nome" class="field" placeholder="Nome Completo*" autocomplete="name">
-          <input type="tel" id="chk-telefone" class="field" placeholder="WhatsApp com DDD. Ex: (65) 99999-8888*" maxlength="18" inputmode="tel" autocomplete="tel-national">
+          <p class="checkout-help">Se for sua primeira compra, preencha os campos abaixo.</p>
+          <input type="text" id="chk-nome" class="field" placeholder="Nome completo*" autocomplete="name">
+          <input type="tel" id="chk-telefone" class="field" placeholder="WhatsApp com DDD*" maxlength="18" inputmode="tel" autocomplete="tel-national">
           <input type="email" id="chk-email" class="field" placeholder="E-mail*" autocomplete="email">
           <input type="tel" id="chk-cep" class="field" placeholder="CEP*" maxlength="9" inputmode="numeric" autocomplete="postal-code">
           <select id="chk-cidade" class="field"><option value="">Cidade*</option><option value="Cuiabá">Cuiabá</option><option value="Várzea Grande">Várzea Grande</option></select>
           <input type="text" id="chk-bairro" class="field" placeholder="Bairro*">
-          <input type="text" id="chk-rua" class="field" placeholder="Rua/Avenida*">
-          <div class="field-row"><input type="text" id="chk-quadra" class="field" placeholder="Quadra (opcional)" style="flex:1"><input type="text" id="chk-casa" class="field" placeholder="Nº da casa*" style="flex:1"></div>
-          <input type="text" id="chk-frente" class="field" placeholder="Complemento ou referência (opcional)">
-          <div class="checkout-title" style="font-size:15px;margin-top:8px">Forma de pagamento*</div>
+          <input type="text" id="chk-rua" class="field" placeholder="Rua ou avenida*">
+          <div class="field-row"><input type="text" id="chk-quadra" class="field" placeholder="Quadra (opcional)" style="flex:1"><input type="text" id="chk-casa" class="field" placeholder="Número*" style="flex:1"></div>
+          <input type="text" id="chk-frente" class="field" placeholder="Complemento ou referência">
+          <div class="checkout-title" style="font-size:15px;margin-top:8px">Pagamento*</div>
           <select id="chk-pagamento" class="field"><option value="">Selecione...</option><option value="DINHEIRO">Dinheiro</option><option value="PIX">Pix</option><option value="CARTAO_DE_DEBITO">Cartão de Débito</option><option value="CARTAO_DE_CREDITO">Cartão de Crédito</option><option value="VALE_ALIMENTACAO">Vale Alimentação</option><option value="VALE_REFEICAO">Vale Refeição</option></select>
         </section>
         <section class="checkout-section">
-          <div class="checkout-notice">Você será direcionado ao WhatsApp com a lista pronta. Seu carrinho ficará salvo até você decidir limpá-lo.</div>
+          <div class="checkout-notice">Ao tocar no botão, seu pedido vai abrir no WhatsApp.</div>
           <div class="summary-row"><span>Subtotal dos produtos</span><span>${fmt(total)}</span></div>
           <div class="summary-row total"><span>Total estimado</span><span>${fmt(total)}</span></div>
-          <button class="send-btn" type="button" id="btn-send-order" ${items.length && missing <= 0 ? '' : 'disabled'}><svg class="svg-fill" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"></path></svg>${items.length && missing > 0 ? `Faltam ${fmt(missing)} para enviar` : 'Enviar pedido pelo WhatsApp'}</button>
+          <button class="send-btn" type="button" id="btn-send-order" ${items.length && missing <= 0 ? '' : 'disabled'}><svg class="svg-fill" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"></path></svg>${items.length && missing > 0 ? `Faltam ${fmt(missing)}` : 'Pedir no WhatsApp'}</button>
         </section>`;
       restoreCheckoutClient();
     }
@@ -2789,13 +2774,13 @@
       const cpf = limparCPF(cpfEl && cpfEl.value);
       if (cpf.length !== 11) {
         if (cpfEl) cpfEl.classList.add('invalid');
-        setLookupStatus('Digite um CPF com 11 números.', 'error');
+        setLookupStatus('Digite os 11 números do CPF.', 'error');
         return;
       }
       btn.disabled = true;
       const original = btn.textContent;
-      btn.textContent = 'Buscando...';
-      setLookupStatus('Consultando seu cadastro no Bling...', 'warning');
+      btn.textContent = 'Aguarde...';
+      setLookupStatus('Buscando seus dados...', 'warning');
       try {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 15000);
@@ -2812,21 +2797,21 @@
         try { result = JSON.parse(text); }
         catch(e) {
           if (String(text || '').trim().toLowerCase() === 'accepted') {
-            throw new Error('O cenário de consulta está desligado ou não processou a chamada. Ative o cenário no Make e tente novamente.');
+            throw new Error('Não conseguimos buscar seus dados agora. Tente novamente.');
           }
-          throw new Error('O Make não devolveu uma resposta JSON válida.');
+          throw new Error('Não conseguimos buscar seus dados agora.');
         }
-        if (!response.ok || result.sucesso === false) throw new Error(result.erro || 'Não foi possível consultar o cadastro.');
+        if (!response.ok || result.sucesso === false) throw new Error(result.erro || 'Não foi possível buscar seus dados agora.');
         if (!result.encontrado || !result.cliente) {
-          setLookupStatus('Cadastro não encontrado. Preencha todos os dados para realizar a primeira compra.', 'warning');
+          setLookupStatus('Não encontramos seus dados. Preencha os campos abaixo.', 'warning');
           return;
         }
         fillClientFromBling(result.cliente);
-        setLookupStatus('Cadastro encontrado e preenchido. Confira os dados antes de enviar.', 'success');
+        setLookupStatus('Pronto. Preenchemos seus dados.', 'success');
       } catch(err) {
         const message = err && err.name === 'AbortError'
-          ? 'A consulta demorou demais. Tente novamente.'
-          : (err.message || 'Não foi possível consultar o cadastro agora.');
+          ? 'Demorou demais. Tente de novo.'
+          : (err.message || 'Não foi possível buscar seus dados agora.');
         setLookupStatus(message, 'error');
       } finally {
         btn.disabled = false;
@@ -2837,7 +2822,7 @@
     function showCheckoutErrors(errors) {
       const alert = $('checkout-alert');
       if (alert) {
-        alert.innerHTML = `<strong>Confira antes de enviar:</strong><br>${errors.map(e => '• ' + escapeHtml(e.label)).join('<br>')}`;
+        alert.innerHTML = `<strong>Falta preencher:</strong><br>${errors.map(e => '• ' + escapeHtml(e.label)).join('<br>')}`;
         alert.style.display = 'block';
       }
       errors.forEach(e => { const el = $(e.id); if (el) el.classList.add('invalid'); });
@@ -2850,7 +2835,7 @@
       if (!items.filter(i => !i.product.isFee).length) return;
       const totalAtual = subtotalCart(true);
       if (totalAtual < CONFIG.MIN_ORDER) {
-        showToast(`Faltam ${fmt(CONFIG.MIN_ORDER - totalAtual)} para o pedido mínimo.`);
+        showToast(`Faltam ${fmt(CONFIG.MIN_ORDER - totalAtual)}.`);
         return;
       }
       const nome = $('chk-nome').value.trim();
@@ -2870,17 +2855,17 @@
       const dataAgendamento = agendamentoObj ? agendamentoObj.value : '';
 
       const errors = [
-        { id: 'agendamento-options-container', label: 'Data de agendamento', valid: !!dataAgendamento },
+        { id: 'agendamento-options-container', label: 'Escolha a entrega', valid: !!dataAgendamento },
         { id: 'chk-nome', label: 'Nome completo', valid: !!nome },
-        { id: 'chk-cpf', label: 'CPF válido com 11 números', valid: cpf.length === 11 },
-        { id: 'chk-telefone', label: 'Telefone/WhatsApp válido com DDD', valid: telefoneValidoBR(telefone) },
-        { id: 'chk-email', label: 'E-mail válido', valid: emailValido(email) },
-        { id: 'chk-cep', label: 'CEP válido com 8 números', valid: cep.length === 8 },
+        { id: 'chk-cpf', label: 'CPF com 11 números', valid: cpf.length === 11 },
+        { id: 'chk-telefone', label: 'WhatsApp com DDD', valid: telefoneValidoBR(telefone) },
+        { id: 'chk-email', label: 'E-mail', valid: emailValido(email) },
+        { id: 'chk-cep', label: 'CEP com 8 números', valid: cep.length === 8 },
         { id: 'chk-cidade', label: 'Cidade', valid: !!cidade },
         { id: 'chk-bairro', label: 'Bairro', valid: !!bairro },
-        { id: 'chk-rua', label: 'Rua/Avenida', valid: !!rua },
-        { id: 'chk-casa', label: 'Número da casa', valid: !!casa },
-        { id: 'chk-pagamento', label: 'Forma de pagamento', valid: !!pag },
+        { id: 'chk-rua', label: 'Rua ou avenida', valid: !!rua },
+        { id: 'chk-casa', label: 'Número', valid: !!casa },
+        { id: 'chk-pagamento', label: 'Pagamento', valid: !!pag },
       ].filter(e => !e.valid);
       document.querySelectorAll('.field.invalid').forEach(el => el.classList.remove('invalid'));
       if (errors.length) { showCheckoutErrors(errors); return; }
@@ -2990,7 +2975,7 @@
 
       abrirWhatsAppPedido(msg);
       closeCheckout();
-      showToast('Pedido preparado. Seu carrinho continua salvo.');
+      showToast('Pedido pronto no WhatsApp.');
       setTimeout(() => { btn.disabled = false; btn.innerHTML = original; }, 1500);
     }
 
