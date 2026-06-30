@@ -26,6 +26,8 @@
     body{padding:12px}
     button,input{font:inherit}
     .app{max-width:520px;margin:0 auto;display:grid;gap:12px}
+    .toast{position:sticky;top:0;z-index:20;display:none;justify-self:center;background:#111;color:#fff;padding:10px 14px;border-radius:999px;font-size:13px;font-weight:900;box-shadow:0 8px 22px rgba(0,0,0,.18)}
+    .toast.show{display:inline-flex}
     .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px}
     .title{font-size:22px;font-weight:900;line-height:1.05;margin:0}
     .subtitle{margin:4px 0 0;color:var(--muted);font-size:13px}
@@ -70,6 +72,7 @@
 </head>
 <body>
   <main class="app">
+    <div id="toast" class="toast">salvo</div>
     <section class="card">
       <h1 class="title">Conferencia de Estoque</h1>
       <p class="subtitle">Tela leve para celular. Le um produto, ajusta e salva direto no Firebase.</p>
@@ -86,6 +89,7 @@
         <button id="toggleCameraBtn" class="btn primary" type="button">Abrir camera</button>
         <button id="findBtn" class="btn gold" type="button">Buscar produto</button>
       </div>
+      <input id="cameraCaptureInput" type="file" accept="image/*" capture="environment" hidden>
       <div class="history" id="history"></div>
       <p class="tiny" style="margin:10px 0 0">Se a camera nao ler neste aparelho, digite o codigo e toque em buscar.</p>
     </section>
@@ -113,7 +117,8 @@
       history: loadHistory(),
       productCache: null,
       statusTimer: null,
-      audioCtx: null
+      audioCtx: null,
+      toastTimer: null
     };
 
     const $ = (s, root=document) => root.querySelector(s);
@@ -150,6 +155,17 @@
         }, 1400);
       }
     };
+    function showToast(msg="salvo") {
+      const el = $("#toast");
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.add("show");
+      if (state.toastTimer) clearTimeout(state.toastTimer);
+      state.toastTimer = setTimeout(() => {
+        el.classList.remove("show");
+        state.toastTimer = null;
+      }, 1100);
+    }
     async function beep(type="ok") {
       try {
         const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -369,6 +385,8 @@
       if (fromCamera && navigator.vibrate) navigator.vibrate(60);
       beep("ok");
       setStatus(`Produto ${getName(state.currentProduct)} carregado.`, "ok", true);
+      const card = $("#productCard");
+      if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     async function saveCurrentProduct() {
@@ -377,6 +395,7 @@
         setStatus("Salvando no Firebase...", "warn");
         await putJson(firebaseProductUrl(state.currentKey), state.currentProduct);
         beep("save");
+        showToast("salvo");
         setStatus("OK salvo.", "ok", true);
       } catch (e) {
         console.error(e);
@@ -414,8 +433,9 @@
     }
 
     async function startScanner() {
-      if (!("BarcodeDetector" in window)) {
-        setStatus("Este aparelho nao suporta leitura nativa. Digite o codigo manualmente.", "warn");
+      if (!("BarcodeDetector" in window) || !navigator.mediaDevices?.getUserMedia) {
+        $("#cameraCaptureInput")?.click();
+        setStatus("Abrindo camera/foto do aparelho...", "warn");
         return;
       }
       try {
@@ -447,6 +467,33 @@
     async function toggleScanner() {
       if (state.scannerRunning || state.scannerStream) await stopScanner();
       else await startScanner();
+    }
+    async function decodeCapturedFile(file) {
+      if (!file) return;
+      if (!("BarcodeDetector" in window)) {
+        setStatus("Seu aparelho abriu a camera, mas nao consegue ler o codigo automaticamente. Digite o codigo abaixo.", "warn");
+        return;
+      }
+      try {
+        if (!state.scannerDetector) {
+          state.scannerDetector = new BarcodeDetector({
+            formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf"]
+          });
+        }
+        const bitmap = await createImageBitmap(file);
+        const codes = await state.scannerDetector.detect(bitmap);
+        bitmap.close?.();
+        const raw = codes?.[0]?.rawValue;
+        if (!raw) {
+          setStatus("Nao consegui ler o codigo dessa foto. Digite manualmente.", "warn");
+          return;
+        }
+        $("#codeInput").value = norm(raw);
+        await openProductByCode(raw, true);
+      } catch (e) {
+        console.error(e);
+        setStatus("Nao consegui ler o codigo pela foto. Digite manualmente.", "warn");
+      }
     }
 
     document.addEventListener("click", async (e) => {
@@ -482,6 +529,12 @@
       if (e.target.id === "codeInput" && e.key === "Enter") {
         e.preventDefault();
         openProductByCode(e.target.value);
+      }
+    });
+    document.addEventListener("change", (e) => {
+      if (e.target.id === "cameraCaptureInput" && e.target.files?.[0]) {
+        decodeCapturedFile(e.target.files[0]);
+        e.target.value = "";
       }
     });
 
