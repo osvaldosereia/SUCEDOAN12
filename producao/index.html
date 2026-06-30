@@ -69,13 +69,35 @@
     .card-save-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:4px}
     .icon-actions{display:flex;gap:7px;justify-content:flex-end;margin-top:auto;padding-top:4px}
     .icon-btn{width:35px;height:35px;padding:0;border-radius:10px;font-size:16px;line-height:1}
+    .mobile-quick{max-width:620px;margin:0 auto}
+    .mobile-quick-shell{display:grid;gap:14px}
+    .mobile-only-note{display:none}
+    .scanner-card{background:linear-gradient(180deg,#fff8eb,#fff);border:1px solid #ecd898;border-radius:20px;padding:14px}
+    .scanner-video{width:100%;border-radius:18px;background:#111;aspect-ratio:3/4;object-fit:cover;border:1px solid var(--line)}
+    .scanner-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .scanner-code{font-size:22px;font-weight:900;letter-spacing:.02em}
+    .quick-product-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:14px;box-shadow:var(--shadow)}
+    .quick-product-head{display:grid;grid-template-columns:92px 1fr;gap:12px;align-items:center;margin-bottom:12px}
+    .quick-product-head img{width:92px;height:92px;object-fit:contain;border-radius:16px;background:#fafafa;border:1px solid var(--line)}
+    .quick-mobile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .quick-mobile-grid .field.span-all{grid-column:1/-1}
+    .quick-mobile-input{min-height:52px;font-size:16px}
+    .quick-save-bar{position:sticky;bottom:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+    .quick-save-bar .btn{min-height:52px;font-size:15px}
+    .scanner-history{display:flex;flex-wrap:wrap;gap:8px}
+    .scanner-history .chip{cursor:pointer}
+    .mobile-quick-status{font-size:13px;color:var(--muted)}
+    .scanner-status-ok{color:var(--green);font-weight:800}
+    .scanner-status-warn{color:#8a6116;font-weight:800}
+    .scanner-status-err{color:var(--red);font-weight:800}
     .low-stock-list{display:flex;flex-direction:column;gap:9px}
     .low-stock-row{display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:9px;background:#fff;text-align:left;width:100%}
     .low-stock-row.in-basket{background:var(--gold2);border-color:#e6cd82}
     .low-stock-row img{width:56px;height:56px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff}
     .low-stock-row strong,.low-stock-row small{display:block}
     .low-stock-row small{color:var(--muted);margin-top:3px}
-    @media(max-width:560px){.drawer-action-grid{grid-template-columns:1fr}.quick-edit{grid-template-columns:1fr}.quick-field.wide{grid-column:auto}.low-stock-row{grid-template-columns:48px 1fr}.low-stock-row .btn{grid-column:1/-1}}
+    @media(max-width:560px){.drawer-action-grid{grid-template-columns:1fr}.quick-edit{grid-template-columns:1fr}.quick-field.wide{grid-column:auto}.low-stock-row{grid-template-columns:48px 1fr}.low-stock-row .btn{grid-column:1/-1}.quick-product-head{grid-template-columns:1fr}.quick-product-head img{width:100%;height:180px}.quick-mobile-grid{grid-template-columns:1fr}.scanner-actions,.quick-save-bar{grid-template-columns:1fr}}
+    @media(min-width:861px){#tab-leitura .mobile-only-note{display:block}#tab-leitura .mobile-quick-shell{display:none}}
 
   </style>
 </head>
@@ -97,6 +119,7 @@
     <div class="primary-nav">
       <nav class="tabs" aria-label="Navegação principal">
         <button class="tab active" type="button" data-tab="produtos">Produtos</button>
+        <button class="tab" type="button" data-tab="leitura">Leitura rápida</button>
         <button class="tab" type="button" data-tab="cestas">Cestas básicas</button>
         <button class="tab" type="button" data-tab="kits">Kits promocionais</button>
         <button class="tab" type="button" data-tab="cadastros">Cadastros</button>
@@ -136,6 +159,7 @@
       <h3>Abas do sistema</h3>
       <nav class="tabs drawer-tabs">
         <button class="tab active" type="button" data-tab="produtos">Produtos</button>
+        <button class="tab" type="button" data-tab="leitura">Leitura rápida</button>
         <button class="tab" type="button" data-tab="cestas">Cestas básicas</button>
         <button class="tab" type="button" data-tab="kits">Kits promocionais</button>
         <button class="tab" type="button" data-tab="cadastros">Categorias, tags e fornecedores</button>
@@ -174,6 +198,32 @@
       <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Edição rápida do catálogo e controle de estoque.</p></div><div class="toolbar"><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
       <div class="products-grid" id="productsGrid"></div>
       <div class="pagination" id="pagination"></div>
+    </section>
+
+    <section class="panel hidden" id="tab-leitura">
+      <div class="mobile-quick">
+        <div class="compact-section-title"><h2>Leitura rápida</h2><p>Fluxo mobile para ler, ajustar e salvar um produto por vez direto no Firebase.</p></div>
+        <div class="notice gold mobile-only-note">Esta tela foi pensada para celular. No desktop ela fica oculta para manter o uso simples.</div>
+        <div class="mobile-quick-shell">
+          <div class="scanner-card">
+            <div class="field">
+              <label>Câmera / leitura</label>
+              <video id="scannerVideo" class="scanner-video" playsinline muted></video>
+            </div>
+            <div class="field" style="margin-top:10px">
+              <label>Código lido ou digitado</label>
+              <input class="input quick-mobile-input scanner-code" id="scannerCodeInput" placeholder="Leia ou digite o código">
+            </div>
+            <div class="scanner-actions" style="margin-top:10px">
+              <button class="btn primary" type="button" data-action="toggle-scanner">Abrir câmera</button>
+              <button class="btn" type="button" data-action="find-scanner-product">Buscar produto</button>
+            </div>
+            <div class="mobile-quick-status" id="scannerStatusText" style="margin-top:10px">Aguardando leitura.</div>
+            <div class="scanner-history" id="scannerHistory" style="margin-top:10px"></div>
+          </div>
+          <div id="quickMobileEditor"></div>
+        </div>
+      </div>
     </section>
 
     <section class="panel hidden" id="tab-cestas">
@@ -280,7 +330,9 @@
     activeTab: "produtos", productPage: 1, selectedBasketId: null, selectedKitId: null, editingProductKey: null,
     basketProductSearch: "", basketReplace: null, kitProductSearch: "", kitReplace: null, membershipProductCode: "",
     dirtyProducts: false, dirtyCestas: false, dirtyKits: false, dirtyMeta: false,
-    dirtyProductKeys: new Set(), dirtyProductFields: {}, deletedProductKeys: new Set(), productSyncMeta: {}
+    dirtyProductKeys: new Set(), dirtyProductFields: {}, deletedProductKeys: new Set(), productSyncMeta: {},
+    scannerCode: "", scannerCurrentKey: null, scannerStream: null, scannerDetector: null, scannerLoopActive: false,
+    scannerStatus: "Aguardando leitura.", scannerStatusType: "warn", scannerRecentCodes: []
   };
 
   function $(s, root=document){return root.querySelector(s)}
@@ -496,10 +548,78 @@
   async function testGithub(){try{readSettingsFromUi(); await githubContent(state.settings.githubProdutosPath); setStatus("GitHub conectado", "ok"); alert("Conexão com GitHub OK.")}catch(e){console.error(e); setStatus("Erro no GitHub","err"); alert("Erro no GitHub: "+e.message)}}
   async function saveGithubNow(){try{setStatus("Enviando arquivos ao GitHub...","warn"); await saveGithubFiles({produtos:productsObject(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits}); setStatus("GitHub atualizado","ok"); alert("produtos.json, produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e kitspromocionais.json enviados ao GitHub.")}catch(e){console.error(e); setStatus("Erro ao enviar GitHub","err"); alert("Erro ao enviar GitHub: "+e.message)}}
 
-  function renderAll(){restoreLegacyBasketStock(); renderTabs(); renderSettingsUi(); renderFilterOptions(); renderSummary(); renderProducts(); renderBasketsList(); renderBasketEditor(); renderKitsList(); renderKitEditor(); renderCatalogs(); refreshJson();}
+  function renderAll(){restoreLegacyBasketStock(); renderTabs(); renderSettingsUi(); renderFilterOptions(); renderSummary(); renderProducts(); renderBasketsList(); renderBasketEditor(); renderKitsList(); renderKitEditor(); renderCatalogs(); renderScannerEditor(); renderScannerHistory(); refreshJson();}
   function renderLoading(){ $("#productsGrid").innerHTML=`<div class="empty">Carregando produtos...</div>`; $("#basketsList").innerHTML=""; $("#basketEditor").innerHTML=`<div class="empty">Carregando cestas...</div>`; if($("#kitsList")) $("#kitsList").innerHTML=""; if($("#kitEditor")) $("#kitEditor").innerHTML=`<div class="empty">Carregando kits...</div>` }
   function toggleAdminDrawer(open){const drawer=$("#adminDrawer"), overlay=$("#adminDrawerOverlay"), btn=$("[data-action='toggle-admin-menu']"); if(!drawer||!overlay) return; const shouldOpen=!!open; drawer.classList.toggle("open",shouldOpen); overlay.classList.toggle("open",shouldOpen); drawer.setAttribute("aria-hidden", shouldOpen?"false":"true"); if(btn) btn.setAttribute("aria-expanded", shouldOpen?"true":"false"); }
-  function renderTabs(){ $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===state.activeTab)); ["produtos","cestas","kits","cadastros","integracoes","json"].forEach(t=>$("#tab-"+t)?.classList.toggle("hidden",t!==state.activeTab)); $("#backToProductsBtn")?.classList.toggle("hidden", state.activeTab==="produtos"); }
+  function setScannerStatus(msg,type="warn"){state.scannerStatus=msg; state.scannerStatusType=type; const el=$("#scannerStatusText"); if(el){el.textContent=msg; el.className=`mobile-quick-status scanner-status-${type}`}}
+  function pushScannerHistory(code){const normalized=norm(code); if(!normalized) return; state.scannerRecentCodes=[normalized, ...state.scannerRecentCodes.filter(x=>x!==normalized)].slice(0,8)}
+  function findProductForScanner(code){const normalized=norm(code); if(!normalized) return null; return state.produtos.find(p=>[p.codigo,p.sku,p.id,p.firebaseKey,p.gtin,p.ean].some(v=>norm(v)===normalized)) || null}
+  function renderScannerEditor(){
+    const host=$("#quickMobileEditor");
+    if(!host) return;
+    const p=state.scannerCurrentKey?productByKey(state.scannerCurrentKey):null;
+    if(!p){host.innerHTML=`<div class="notice">Leia ou digite um código para abrir o produto.</div>`; return}
+    host.innerHTML=`<div class="quick-product-card"><div class="quick-product-head"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong style="font-size:18px">${esc(getName(p))}</strong><div class="tiny" style="margin-top:6px">Código: ${esc(p.codigo||getCode(p))}${p.gtin?` · GTIN: ${esc(p.gtin)}`:''}</div><div class="meta-line" style="margin-top:8px"><span class="chip ${toNum(p.estoque)>0?'green':'red'}">Estoque: ${esc(toNum(p.estoque))}</span>${p.gondola?`<span class="chip">Gôndola: ${esc(p.gondola)}</span>`:''}${p.prateleira?`<span class="chip">Prateleira: ${esc(p.prateleira)}</span>`:''}</div></div></div><div class="quick-mobile-grid"><div class="field span-all"><label>Nome</label><input class="input quick-mobile-input" data-quick-field="nome" value="${esc(p.nome||'')}"></div><div class="field"><label>Estoque</label><input class="input quick-mobile-input" type="number" data-quick-field="estoque" value="${esc(toNum(p.estoque))}"></div><div class="field"><label>Validade</label><input class="input quick-mobile-input" data-quick-field="validade" value="${esc(p.validade||'')}"></div><div class="field"><label>Gôndola</label><input class="input quick-mobile-input" data-quick-field="gondola" value="${esc(p.gondola||'')}"></div><div class="field"><label>Prateleira</label><input class="input quick-mobile-input" data-quick-field="prateleira" value="${esc(p.prateleira||'')}"></div></div><div class="quick-save-bar"><button class="btn gold" type="button" data-action="clear-scanner-product">Próximo produto</button><button class="btn primary" type="button" data-action="save-scanner-product" data-key="${esc(getKey(p))}">Salvar no Firebase</button></div></div>`;
+  }
+  function renderScannerHistory(){const host=$("#scannerHistory"); if(!host) return; host.innerHTML=state.scannerRecentCodes.length?state.scannerRecentCodes.map(code=>`<button class="chip" type="button" data-action="use-scanner-history" data-code="${esc(code)}">${esc(code)}</button>`).join(""):""}
+  async function stopScanner(){if(state.scannerLoopActive) state.scannerLoopActive=false; if(state.scannerStream){state.scannerStream.getTracks().forEach(track=>track.stop()); state.scannerStream=null} const video=$("#scannerVideo"); if(video) video.srcObject=null}
+  async function scannerLoop(){
+    const video=$("#scannerVideo");
+    if(!video || !state.scannerLoopActive || !state.scannerDetector) return;
+    try{
+      if(video.readyState>=2){
+        const codes=await state.scannerDetector.detect(video);
+        const raw=codes?.[0]?.rawValue;
+        if(raw){
+          const normalized=norm(raw);
+          if(normalized && normalized!==norm(state.scannerCode)){
+            state.scannerCode=normalized;
+            const input=$("#scannerCodeInput");
+            if(input) input.value=normalized;
+            pushScannerHistory(normalized);
+            openScannerProduct(normalized, true);
+          }
+        }
+      }
+    }catch{}
+    if(state.scannerLoopActive) requestAnimationFrame(scannerLoop);
+  }
+  async function startScanner(){
+    if(!(window.isSecureContext || location.protocol==="file:")){setScannerStatus("A câmera precisa de contexto seguro no celular.", "err"); return}
+    if(!('BarcodeDetector' in window)){setScannerStatus("Leitura por câmera não disponível neste aparelho. Digite o código abaixo.", "warn"); return}
+    try{
+      if(!state.scannerDetector) state.scannerDetector = new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf']});
+      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720}}, audio:false});
+      state.scannerStream=stream;
+      const video=$("#scannerVideo");
+      if(video){video.srcObject=stream; await video.play()}
+      state.scannerLoopActive=true;
+      setScannerStatus("Câmera ativa. Aponte para o código de barras.", "ok");
+      requestAnimationFrame(scannerLoop);
+    }catch(e){console.error(e); setScannerStatus("Não foi possível abrir a câmera deste aparelho.", "err")}
+  }
+  async function toggleScanner(){if(state.scannerStream){await stopScanner(); setScannerStatus("Câmera pausada.", "warn")}else await startScanner()}
+  function clearScannerProduct(){state.scannerCurrentKey=null; state.scannerCode=""; const input=$("#scannerCodeInput"); if(input) input.value=""; renderScannerEditor(); setScannerStatus("Pronto para o próximo produto.", "ok")}
+  function updateScannerProduct(field, value){
+    const p=state.scannerCurrentKey?productByKey(state.scannerCurrentKey):null;
+    if(!p) return;
+    if(field==='estoque') p[field]=toNum(value); else p[field]=value;
+    p.last_update=Date.now(); p.updated_at=nowIso(); if(field==='estoque') p.stock_updated_at=nowIso();
+    markProductDirty(getKey(p), [field]); mark('products'); renderScannerEditor();
+  }
+  function openScannerProduct(code, fromCamera=false){
+    const normalized=norm(code||state.scannerCode);
+    state.scannerCode=normalized;
+    const input=$("#scannerCodeInput"); if(input) input.value=normalized;
+    const p=findProductForScanner(normalized);
+    if(!p){state.scannerCurrentKey=null; renderScannerEditor(); setScannerStatus(`Código ${normalized||'-'} não encontrado.`, "err"); return}
+    state.scannerCurrentKey=getKey(p);
+    pushScannerHistory(normalized);
+    renderScannerHistory();
+    renderScannerEditor();
+    setScannerStatus(fromCamera?`Produto ${getName(p)} encontrado pela câmera.`:`Produto ${getName(p)} carregado.`, "ok");
+  }
+  function renderTabs(){ $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===state.activeTab)); ["produtos","leitura","cestas","kits","cadastros","integracoes","json"].forEach(t=>$("#tab-"+t)?.classList.toggle("hidden",t!==state.activeTab)); $("#backToProductsBtn")?.classList.toggle("hidden", state.activeTab==="produtos"); if(state.activeTab!=="leitura") stopScanner(); else {renderScannerEditor(); renderScannerHistory(); setTimeout(()=>{const input=$("#scannerCodeInput"); if(input) input.value=state.scannerCode||""; setScannerStatus(state.scannerStatus,state.scannerStatusType)},0)} }
   function renderSummary(){const st=makeStats(); $("#summary").innerHTML=[['Produtos',st.total_produtos],['Ativos',st.ativos],['Sem estoque',st.sem_estoque],['Sem GTIN',st.sem_gtin],['Sem foto',st.sem_foto],['Cestas',st.cestas],['Kits',st.kits],['Em kits',st.produtos_em_kits],['Pendências',(state.dirtyProducts||state.dirtyCestas||state.dirtyKits||state.dirtyMeta)?'Sim':'Não']].map(([l,v])=>`<div class="summary-card"><strong>${esc(v)}</strong><span>${esc(l)}</span></div>`).join("")}
   function renderFilterOptions(){ fillSelect("#f-categoria", uniq([...state.produtos.map(p=>p.categoria), ...state.meta.categorias.map(c=>c.categoria)])); fillSelect("#f-subcategoria", uniq([...state.produtos.map(p=>p.subcategoria), ...state.meta.categorias.map(c=>c.subcategoria)])); fillSelect("#f-subsubcategoria", uniq([...state.produtos.map(p=>p.subsubcategoria), ...state.meta.categorias.map(c=>c.subsubcategoria)])); fillSelect("#f-marca", uniq([...state.produtos.map(p=>p.marca), ...state.meta.marcas])); fillSelect("#f-fornecedor", uniq([...state.produtos.map(p=>p.fornecedor), ...state.meta.fornecedores.map(f=>f.nome)])); fillSelect("#f-tag", uniq([...state.produtos.flatMap(p=>parseTags(p.tags)), ...state.meta.tags])); }
   function fillSelect(sel, values){const el=$(sel); if(!el) return; const cur=el.value; const first=el.querySelector('option')?.outerHTML || '<option value="">Todos</option>'; el.innerHTML = first + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join(""); el.value = values.includes(cur)?cur:""}
@@ -529,7 +649,7 @@
     const p=productByKey(key); if(!p) return;
     if(['preco','preco_custo','estoque','preco_oferta'].includes(field)) p[field]=toNum(value); else p[field]=value;
     if(field==='gtin') delete p.ean;
-    p.last_update=Date.now(); mark('products');
+    p.last_update=Date.now(); p.updated_at=nowIso(); if(field==='estoque') p.stock_updated_at=nowIso(); markProductDirty(getKey(p), [field]); mark('products');
   }
 
   function renderLowStockModal(){
@@ -635,11 +755,12 @@
   function copyReport(){const s=makeStats(); const txt=`Relatório Dona Antônia\nProdutos: ${s.total_produtos}\nAtivos: ${s.ativos}\nSem estoque: ${s.sem_estoque}\nSem GTIN: ${s.sem_gtin}\nSem foto: ${s.sem_foto}\nCestas: ${s.cestas}\nProdutos em cestas: ${s.produtos_em_cestas}\nKits promocionais: ${s.kits}\nProdutos em kits: ${s.produtos_em_kits}`; navigator.clipboard?.writeText(txt); alert('Relatório copiado.')}
   function importFile(file,kind){const rd=new FileReader(); rd.onload=()=>{try{const data=JSON.parse(rd.result); if(kind==='products'){const previousKeys=Object.keys(state.productSyncMeta); state.produtos=normalizeProducts(data); markAllProductsDirty(previousKeys); mark('products')} if(kind==='cestas'){state.cestas=normalizeCestas(data); state.selectedBasketId=state.cestas[0]?.id||null; mark('cestas')} if(kind==='kits'){state.kits=normalizeKits(data); state.selectedKitId=state.kits[0]?.id||null; mark('kits')} rebuildMeta(false); renderAll(); alert('Arquivo importado.')}catch(e){alert('Arquivo inválido: '+e.message)}}; rd.readAsText(file)}
 
-  document.addEventListener('click', e => {const b=e.target.closest('[data-action]'); if(!b) return; const a=b.dataset.action; if(a==='toggle-admin-menu') toggleAdminDrawer(true); if(a==='close-admin-menu') toggleAdminDrawer(false); if(a==='reload') loadData(); if(a==='go-products') {state.activeTab='produtos'; renderAll(); window.scrollTo({top:0,behavior:'smooth'});} if(a==='new-product') createProduct(); if(a==='save-products') saveProducts(); if(a==='save-meta') saveMeta(); if(a==='save-cestas') saveCestas(); if(a==='save-kits') saveKits(); if(a==='save-all') saveAll(); if(a==='open-settings') {state.activeTab='integracoes'; renderAll();} if(a==='export-products-json') exportProductsJson(); if(a==='export-meta-json') exportMetaJson(); if(a==='export-admin-meta-json') exportAdminMetaJson(); if(a==='export-cestas-json') exportCestasJson(); if(a==='export-kits-json') exportKitsJson(); if(a==='export-bling-csv') exportBlingCsv(); if(a==='export-bling-json') exportBlingJson(); if(a==='clear-filters'){['#f-q','#f-categoria','#f-subcategoria','#f-subsubcategoria','#f-marca','#f-fornecedor','#f-tag','#f-situacao','#f-qualidade','#f-cesta'].forEach(s=>{const el=$(s); if(el) el.value=''}); state.productPage=1; renderProducts()} if(a==='prev-page'){state.productPage=Math.max(1,state.productPage-1); renderProducts()} if(a==='next-page'){state.productPage++; renderProducts()} if(a==='edit-product') openProduct(b.dataset.key); if(a==='close-product-modal') closeProduct(); if(a==='duplicate-product') duplicateProduct(b.dataset.key); if(a==='delete-product') deleteProduct(b.dataset.key); if(a==='apply-product-json') applyProductJson(); if(a==='edit-membership') openMembership(b.dataset.code); if(a==='close-membership-modal') {$('#membershipModal').classList.remove('open'); renderAll()} if(a==='select-basket'){state.selectedBasketId=b.dataset.id; state.basketReplace=null; renderAll()} if(a==='new-cesta') createBasket(); if(a==='delete-basket') deleteBasket(); if(a==='select-kit'){state.selectedKitId=b.dataset.id; state.kitReplace=null; renderAll()} if(a==='new-kit') createKit(); if(a==='delete-kit') deleteKit(); if(a==='add-to-kit') addToKit(b.dataset.code); if(a==='remove-from-kit') removeFromKit(b.dataset.code); if(a==='start-kit-replace'){state.kitReplace=b.dataset.code; state.kitProductSearch=''; renderKitEditor()} if(a==='confirm-kit-replace') replaceInKit(b.dataset.code); if(a==='use-kit-image-local') useSelectedKitImageLocal(); if(a==='upload-kit-image-github') uploadSelectedKitImageGithub(); if(a==='add-to-basket') addToBasket(b.dataset.code); if(a==='remove-from-basket') removeFromBasket(b.dataset.code); if(a==='save-basket-product') saveProductFirebase(b.dataset.key); if(a==='start-replace'){state.basketReplace={mode:'replace-main',code:b.dataset.code}; state.basketProductSearch=''; renderBasketEditor()} if(a==='start-substitute'){state.basketReplace={mode:'replace-substitute',code:b.dataset.code,slot:Number(b.dataset.slot)||0}; state.basketProductSearch=''; renderBasketEditor()} if(a==='clear-substitute') clearBasketSubstitute(b.dataset.code,b.dataset.slot); if(a==='confirm-replace') replaceInBasket(b.dataset.code); if(a==='rebuild-meta') rebuildMeta(); if(a==='add-category'){const c=$('#newCat').value.trim(), s=$('#newSub').value.trim(), ss=$('#newSubSub').value.trim(); if(c||s||ss){state.meta.categorias.push({categoria:c,subcategoria:s,subsubcategoria:ss}); mark('meta'); renderAll(); $('#newCat').value=$('#newSub').value=$('#newSubSub').value=''}} if(a==='delete-category'){state.meta.categorias.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-tag'){const v=$('#newTag').value.trim(); if(v&&!state.meta.tags.includes(v)){state.meta.tags.push(v); $('#newTag').value=''; mark('meta'); renderAll()}} if(a==='delete-tag'){state.meta.tags.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-fornecedor'){const nome=$('#newFornecedorNome').value.trim(); if(nome){state.meta.fornecedores.push({id:slug(nome),nome,telefone:$('#newFornecedorTel').value.trim(),observacoes:$('#newFornecedorObs').value.trim()}); $('#newFornecedorNome').value=$('#newFornecedorTel').value=$('#newFornecedorObs').value=''; mark('meta'); renderAll()}} if(a==='delete-fornecedor'){state.meta.fornecedores.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-marca'){const v=$('#newMarca').value.trim(); if(v&&!state.meta.marcas.includes(v)){state.meta.marcas.push(v); $('#newMarca').value=''; mark('meta'); renderAll()}} if(a==='delete-marca'){state.meta.marcas.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='save-settings') saveSettings(); if(a==='test-github') testGithub(); if(a==='save-github-now') saveGithubNow(); if(a==='refresh-json') refreshJson(); if(a==='apply-json') applyJson(); if(a==='copy-report') copyReport(); if(a==='use-selected-photo-local') useSelectedPhotoLocal(); if(a==='upload-selected-photo-github') uploadSelectedPhotoGithub(); if(a==='remove-product-photo') removeProductPhoto(); if(a==='copy-product-photo-url') copyProductPhotoUrl(); if(a==='add-universal-tag-from-product') addUniversalTagFromProduct(); });
+  document.addEventListener('click', e => {const b=e.target.closest('[data-action]'); if(!b) return; const a=b.dataset.action; if(a==='toggle-admin-menu') toggleAdminDrawer(true); if(a==='close-admin-menu') toggleAdminDrawer(false); if(a==='reload') loadData(); if(a==='go-products') {state.activeTab='produtos'; renderAll(); window.scrollTo({top:0,behavior:'smooth'});} if(a==='new-product') createProduct(); if(a==='save-products') saveProducts(); if(a==='save-meta') saveMeta(); if(a==='save-cestas') saveCestas(); if(a==='save-kits') saveKits(); if(a==='save-all') saveAll(); if(a==='open-settings') {state.activeTab='integracoes'; renderAll();} if(a==='export-products-json') exportProductsJson(); if(a==='export-meta-json') exportMetaJson(); if(a==='export-admin-meta-json') exportAdminMetaJson(); if(a==='export-cestas-json') exportCestasJson(); if(a==='export-kits-json') exportKitsJson(); if(a==='export-bling-csv') exportBlingCsv(); if(a==='export-bling-json') exportBlingJson(); if(a==='clear-filters'){['#f-q','#f-categoria','#f-subcategoria','#f-subsubcategoria','#f-marca','#f-fornecedor','#f-tag','#f-situacao','#f-qualidade','#f-cesta'].forEach(s=>{const el=$(s); if(el) el.value=''}); state.productPage=1; renderProducts()} if(a==='prev-page'){state.productPage=Math.max(1,state.productPage-1); renderProducts()} if(a==='next-page'){state.productPage++; renderProducts()} if(a==='edit-product') openProduct(b.dataset.key); if(a==='close-product-modal') closeProduct(); if(a==='duplicate-product') duplicateProduct(b.dataset.key); if(a==='delete-product') deleteProduct(b.dataset.key); if(a==='apply-product-json') applyProductJson(); if(a==='edit-membership') openMembership(b.dataset.code); if(a==='close-membership-modal') {$('#membershipModal').classList.remove('open'); renderAll()} if(a==='select-basket'){state.selectedBasketId=b.dataset.id; state.basketReplace=null; renderAll()} if(a==='new-cesta') createBasket(); if(a==='delete-basket') deleteBasket(); if(a==='select-kit'){state.selectedKitId=b.dataset.id; state.kitReplace=null; renderAll()} if(a==='new-kit') createKit(); if(a==='delete-kit') deleteKit(); if(a==='add-to-kit') addToKit(b.dataset.code); if(a==='remove-from-kit') removeFromKit(b.dataset.code); if(a==='start-kit-replace'){state.kitReplace=b.dataset.code; state.kitProductSearch=''; renderKitEditor()} if(a==='confirm-kit-replace') replaceInKit(b.dataset.code); if(a==='use-kit-image-local') useSelectedKitImageLocal(); if(a==='upload-kit-image-github') uploadSelectedKitImageGithub(); if(a==='add-to-basket') addToBasket(b.dataset.code); if(a==='remove-from-basket') removeFromBasket(b.dataset.code); if(a==='save-basket-product') saveProductFirebase(b.dataset.key); if(a==='start-replace'){state.basketReplace={mode:'replace-main',code:b.dataset.code}; state.basketProductSearch=''; renderBasketEditor()} if(a==='start-substitute'){state.basketReplace={mode:'replace-substitute',code:b.dataset.code,slot:Number(b.dataset.slot)||0}; state.basketProductSearch=''; renderBasketEditor()} if(a==='clear-substitute') clearBasketSubstitute(b.dataset.code,b.dataset.slot); if(a==='confirm-replace') replaceInBasket(b.dataset.code); if(a==='rebuild-meta') rebuildMeta(); if(a==='add-category'){const c=$('#newCat').value.trim(), s=$('#newSub').value.trim(), ss=$('#newSubSub').value.trim(); if(c||s||ss){state.meta.categorias.push({categoria:c,subcategoria:s,subsubcategoria:ss}); mark('meta'); renderAll(); $('#newCat').value=$('#newSub').value=$('#newSubSub').value=''}} if(a==='delete-category'){state.meta.categorias.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-tag'){const v=$('#newTag').value.trim(); if(v&&!state.meta.tags.includes(v)){state.meta.tags.push(v); $('#newTag').value=''; mark('meta'); renderAll()}} if(a==='delete-tag'){state.meta.tags.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-fornecedor'){const nome=$('#newFornecedorNome').value.trim(); if(nome){state.meta.fornecedores.push({id:slug(nome),nome,telefone:$('#newFornecedorTel').value.trim(),observacoes:$('#newFornecedorObs').value.trim()}); $('#newFornecedorNome').value=$('#newFornecedorTel').value=$('#newFornecedorObs').value=''; mark('meta'); renderAll()}} if(a==='delete-fornecedor'){state.meta.fornecedores.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-marca'){const v=$('#newMarca').value.trim(); if(v&&!state.meta.marcas.includes(v)){state.meta.marcas.push(v); $('#newMarca').value=''; mark('meta'); renderAll()}} if(a==='delete-marca'){state.meta.marcas.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='save-settings') saveSettings(); if(a==='test-github') testGithub(); if(a==='save-github-now') saveGithubNow(); if(a==='refresh-json') refreshJson(); if(a==='apply-json') applyJson(); if(a==='copy-report') copyReport(); if(a==='use-selected-photo-local') useSelectedPhotoLocal(); if(a==='upload-selected-photo-github') uploadSelectedPhotoGithub(); if(a==='remove-product-photo') removeProductPhoto(); if(a==='copy-product-photo-url') copyProductPhotoUrl(); if(a==='add-universal-tag-from-product') addUniversalTagFromProduct(); if(a==='toggle-scanner') toggleScanner(); if(a==='find-scanner-product') openScannerProduct($("#scannerCodeInput")?.value||state.scannerCode); if(a==='save-scanner-product') saveProductFirebase(b.dataset.key); if(a==='clear-scanner-product') clearScannerProduct(); if(a==='use-scanner-history') openScannerProduct(b.dataset.code); });
   document.addEventListener('click', e=>{const t=e.target.closest('.tab'); if(!t) return; state.activeTab=t.dataset.tab; renderAll(); toggleAdminDrawer(false); window.scrollTo({top:0,behavior:'smooth'});});
-  document.addEventListener('input', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.matches('[data-pfield]')) updateProduct(el.dataset.pfield, el.value); if(el.matches('[data-cfield]')){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(c){c[el.dataset.cfield]=el.dataset.cfield==='preco'?toNum(el.value):el.value; mark('cestas'); renderBasketsList(); refreshJson()}} if(el.matches('[data-kfield]')){const c=currentKit(); if(c){c[el.dataset.kfield]=el.dataset.kfield==='preco'?toNum(el.value):el.value; mark('kits'); renderKitsList(); refreshJson()}} if(el.matches('#basketSearch')) renderBasketsList(); if(el.matches('#basketProductSearch')){state.basketProductSearch=el.value; $('#basketProductResults').innerHTML=renderBasketSearchResults()} if(el.matches('#kitSearch')) renderKitsList(); if(el.matches('#kitProductSearch')){state.kitProductSearch=el.value; $('#kitProductResults').innerHTML=renderKitSearchResults()} if(el.matches('[data-action="basket-qtd"]')) updateBasketQty(el.dataset.code, el.value); if(el.matches('[data-action="basket-stock"]')) updateBasketProductStock(el.dataset.key, el.value); if(el.matches('[data-action="kit-qtd"]')) updateKitQty(el.dataset.code, el.value); if(el.matches('[data-cat-index]')){state.meta.categorias[Number(el.dataset.catIndex)][el.dataset.catField]=el.value; mark('meta')} if(el.matches('[data-tag-index]')){state.meta.tags[Number(el.dataset.tagIndex)]=el.value; mark('meta')} if(el.matches('[data-forn-index]')){state.meta.fornecedores[Number(el.dataset.fornIndex)][el.dataset.fornField]=el.value; mark('meta')} if(el.matches('[data-marca-index]')){state.meta.marcas[Number(el.dataset.marcaIndex)]=el.value; mark('meta')} if(el.closest('#tab-integracoes')) readSettingsFromUi(); });
+  document.addEventListener('input', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.matches('[data-pfield]')) updateProduct(el.dataset.pfield, el.value); if(el.matches('[data-cfield]')){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(c){c[el.dataset.cfield]=el.dataset.cfield==='preco'?toNum(el.value):el.value; mark('cestas'); renderBasketsList(); refreshJson()}} if(el.matches('[data-kfield]')){const c=currentKit(); if(c){c[el.dataset.kfield]=el.dataset.kfield==='preco'?toNum(el.value):el.value; mark('kits'); renderKitsList(); refreshJson()}} if(el.matches('#basketSearch')) renderBasketsList(); if(el.matches('#basketProductSearch')){state.basketProductSearch=el.value; $('#basketProductResults').innerHTML=renderBasketSearchResults()} if(el.matches('#kitSearch')) renderKitsList(); if(el.matches('#kitProductSearch')){state.kitProductSearch=el.value; $('#kitProductResults').innerHTML=renderKitSearchResults()} if(el.matches('[data-action="basket-qtd"]')) updateBasketQty(el.dataset.code, el.value); if(el.matches('[data-action="basket-stock"]')) updateBasketProductStock(el.dataset.key, el.value); if(el.matches('[data-action="kit-qtd"]')) updateKitQty(el.dataset.code, el.value); if(el.matches('[data-cat-index]')){state.meta.categorias[Number(el.dataset.catIndex)][el.dataset.catField]=el.value; mark('meta')} if(el.matches('[data-tag-index]')){state.meta.tags[Number(el.dataset.tagIndex)]=el.value; mark('meta')} if(el.matches('[data-forn-index]')){state.meta.fornecedores[Number(el.dataset.fornIndex)][el.dataset.fornField]=el.value; mark('meta')} if(el.matches('[data-marca-index]')){state.meta.marcas[Number(el.dataset.marcaIndex)]=el.value; mark('meta')} if(el.closest('#tab-integracoes')) readSettingsFromUi(); if(el.id==='scannerCodeInput'){state.scannerCode=el.value; if(!el.value.trim()) renderScannerHistory()} if(el.matches('[data-quick-field]')) updateScannerProduct(el.dataset.quickField, el.value); });
   document.addEventListener('change', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.id==='productsFile'&&el.files[0]) importFile(el.files[0],'products'); if(el.id==='cestasFile'&&el.files[0]) importFile(el.files[0],'cestas'); if(el.id==='kitsFile'&&el.files[0]) importFile(el.files[0],'kits'); if(el.matches('[data-action="toggle-membership"]')) toggleMembership(el.dataset.id, el.checked); if(el.matches('[data-ptag]')) toggleProductTag(el.dataset.ptag, el.checked); if(el.id==='setAutoGithub') readSettingsFromUi()});
   document.addEventListener('change', e=>{const el=e.target;if(el.matches('[data-card-field]')) updateProductFromCard(el.dataset.key,el.dataset.cardField,el.value);if(el.matches('[data-action="toggle-kit-membership"]'))toggleKitMembership(el.dataset.id,el.checked)});
+  document.addEventListener('keydown', e=>{const el=e.target; if(el?.id==='scannerCodeInput' && e.key==='Enter'){e.preventDefault(); openScannerProduct(el.value||state.scannerCode)}});
   document.addEventListener('click', e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='open-low-stock'){renderLowStockModal();$("#lowStockModal").classList.add('open');toggleAdminDrawer(false)}if(a==='close-low-stock')$("#lowStockModal").classList.remove('open');if(a==='open-product-from-stock'){$("#lowStockModal").classList.remove('open');openProduct(b.dataset.key)}if(a==='edit-kit-membership')openKitMembership(b.dataset.code);if(a==='close-kit-membership-modal'){$("#kitMembershipModal").classList.remove('open');renderAll()}if(a==='open-filter-panel')toggleAdminDrawer(true);if(a==='apply-filters'){state.productPage=1;renderProducts();toggleAdminDrawer(false)}if(a==='apply-search'){state.productPage=1;renderProducts()}if(a==='save-card-firebase')saveProductFirebase(b.dataset.key);if(a==='save-products-firebase')saveProductsFirebaseOnly();if(a==='save-everything')saveEverything()});
   function firebaseProductUrl(key){return `${String(state.settings.firebaseUrl).replace(/\/$/,"")}/${state.settings.produtosNode}/${encodeURIComponent(key)}.json`}
   async function saveProductFirebase(key){
@@ -648,13 +769,16 @@
     try{
       if(!state.dirtyProductKeys.has(getKey(p)) && !state.deletedProductKeys.has(getKey(p))){
         setStatus(`${getName(p)} já está sincronizado`, "ok");
+        if(state.scannerCurrentKey===getKey(p)) setScannerStatus(`${getName(p)} já está salvo no Firebase.`, "ok");
         return;
       }
       setStatus(`Salvando ${getName(p)} no Firebase...`,"warn");
       const result=await syncProductsToFirebase([getKey(p)]);
       const conflictMsg=result.conflicts.length?` Conflito de estoque detectado para ${result.conflicts.join(", ")}.`:"";
       setStatus(`${getName(p)} salvo no Firebase`,"ok");
+      if(state.scannerCurrentKey===getKey(p)) setScannerStatus(`${getName(p)} salvo direto no Firebase.`, "ok");
       renderBasketEditor();
+      renderScannerEditor();
       refreshJson();
       if(conflictMsg) alert(conflictMsg);
     }catch(e){console.error(e);setStatus("Erro ao salvar produto no Firebase","err");alert("Erro ao salvar produto: "+e.message)}
