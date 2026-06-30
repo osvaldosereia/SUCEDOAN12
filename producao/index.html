@@ -47,6 +47,17 @@
     @media(max-width:900px){.compact-topbar{grid-template-columns:auto 1fr auto!important;gap:10px!important}.compact-topbar .brand h1{font-size:15px}.compact-topbar .brand p{display:none}.product-card .product-img{height:190px!important;flex-basis:190px!important}.photo-tools-grid{grid-template-columns:1fr}.photo-preview-box{height:220px}}
 
     /* Edição rápida dos cards */
+    .compact-topbar{grid-template-columns:auto auto minmax(280px,1fr) auto auto auto!important}
+    .top-search-wrap{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:7px}
+    .top-save{white-space:nowrap}
+    .filter-modal .modal{width:min(1100px,100%)}
+    .filter-modal .filters{grid-template-columns:repeat(4,minmax(0,1fr));margin:0}
+    @media(max-width:1100px){.compact-topbar{grid-template-columns:auto auto 1fr auto!important}.compact-topbar .brand>div:last-child,.top-save-label{display:none}.top-save{width:42px;padding:0}.filter-modal .filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:700px){.compact-topbar{grid-template-columns:auto auto 1fr auto!important}.top-filter-btn,.top-firebase-btn{display:none}.filter-modal .filters{grid-template-columns:1fr}}
+    .drawer-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .drawer-action-grid .btn{min-height:42px;text-align:center}
+    .drawer-tabs .tab{flex:1 1 calc(50% - 8px);border-radius:12px;text-align:center}
+    .drawer-block{box-shadow:0 5px 18px rgba(0,0,0,.025)}
     .chip.blue{background:var(--blue2);color:var(--blue);border-color:#cfe1ff}
     #kitEditor .photo-tools>p.tiny{display:none}
     .quick-edit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:4px}
@@ -55,6 +66,7 @@
     .quick-field label{font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
     .quick-input{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:7px 8px;background:#fff;font-size:12px;outline:none}
     .quick-input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,163,73,.14)}
+    .card-save-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:4px}
     .icon-actions{display:flex;gap:7px;justify-content:flex-end;margin-top:auto;padding-top:4px}
     .icon-btn{width:35px;height:35px;padding:0;border-radius:10px;font-size:16px;line-height:1}
     .low-stock-list{display:flex;flex-direction:column;gap:9px}
@@ -63,7 +75,7 @@
     .low-stock-row img{width:56px;height:56px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff}
     .low-stock-row strong,.low-stock-row small{display:block}
     .low-stock-row small{color:var(--muted);margin-top:3px}
-    @media(max-width:560px){.quick-edit{grid-template-columns:1fr}.quick-field.wide{grid-column:auto}.low-stock-row{grid-template-columns:48px 1fr}.low-stock-row .btn{grid-column:1/-1}}
+    @media(max-width:560px){.drawer-action-grid{grid-template-columns:1fr}.quick-edit{grid-template-columns:1fr}.quick-field.wide{grid-column:auto}.low-stock-row{grid-template-columns:48px 1fr}.low-stock-row .btn{grid-column:1/-1}}
 
   </style>
 </head>
@@ -71,10 +83,14 @@
   <header class="topbar">
     <div class="topbar-inner compact-topbar">
       <div class="brand"><div class="brand-mark">DA</div><div><h1>Dona Antônia — Admin completo</h1><p>Produtos, cestas, kits promocionais e integrações.</p></div></div>
+      <button class="btn menu-toggle" type="button" data-action="toggle-admin-menu" aria-controls="adminDrawer" aria-expanded="false" title="Abrir menu">☰</button>
       <div class="top-search-wrap">
         <input class="input top-search" id="f-q" placeholder="Buscar produto por nome, código, GTIN, marca..." autocomplete="off">
+        <button class="btn primary" type="button" data-action="apply-search">Buscar</button>
       </div>
-      <button class="btn primary menu-toggle" type="button" data-action="toggle-admin-menu" aria-controls="adminDrawer" aria-expanded="false">☰ Menu</button>
+      <button class="btn gold top-filter-btn" type="button" data-action="open-filter-panel">☷ Filtros</button>
+      <button class="btn blue top-save top-firebase-btn" type="button" data-action="save-products-firebase" title="Salvar todos os produtos no Firebase">☁ <span class="top-save-label">Salvar Firebase</span></button>
+      <button class="btn green top-save" type="button" data-action="save-everything" title="Salvar produtos, metadados, cestas e kits">✓ <span class="top-save-label">Salvar geral</span></button>
     </div>
   </header>
 
@@ -83,7 +99,7 @@
     <div class="drawer-head">
       <div>
         <strong>Menu administrativo</strong>
-        <p>Botões, filtros, abas, exportações e informações.</p>
+        <p>Navegação, produtos, filtros e configurações.</p>
       </div>
       <button class="btn small" type="button" data-action="close-admin-menu">Fechar</button>
     </div>
@@ -93,17 +109,14 @@
     </div>
 
     <div class="drawer-block">
-      <h3>Ações rápidas</h3>
-      <div class="drawer-actions">
-        <button class="btn" type="button" data-action="reload">Recarregar</button>
-        <button class="btn green" type="button" data-action="new-product">Novo produto</button>
-        <button class="btn primary" type="button" data-action="save-products">Salvar produtos</button>
-        <button class="btn gold" type="button" data-action="save-cestas">Salvar cestas</button>
-        <button class="btn gold" type="button" data-action="save-kits">Salvar kits</button>
-        <button class="btn green" type="button" data-action="save-all">Salvar tudo</button>
-        <button class="btn gold" type="button" data-action="open-low-stock">Estoque 0 a 5</button>
-        <button class="btn blue" type="button" data-action="open-settings">Configurações</button>
+      <h3>Produtos</h3>
+      <div class="drawer-action-grid">
+        <button class="btn green" type="button" data-action="new-product">＋ Novo produto</button>
+        <button class="btn primary" type="button" data-action="save-products">✓ Salvar produtos</button>
+        <button class="btn gold" type="button" data-action="open-low-stock">⚠ Estoque 0 a 5</button>
+        <button class="btn" type="button" data-action="reload">↻ Recarregar dados</button>
       </div>
+      <button class="btn blue block" style="margin-top:8px" type="button" data-action="open-settings">⚙ Configurações</button>
     </div>
 
     <div class="drawer-block">
@@ -137,47 +150,27 @@
         <div class="field"><label>Cestas</label><select class="select" id="f-cesta"><option value="">Todos</option><option value="em_cesta">Em alguma cesta</option><option value="fora_cesta">Fora das cestas</option></select></div>
         <div class="field"><label>Ordenar</label><select class="select" id="f-sort"><option value="nome">Nome</option><option value="codigo">Código</option><option value="preco_desc">Maior preço</option><option value="preco_asc">Menor preço</option><option value="estoque_desc">Maior estoque</option><option value="atualizado_desc">Mais atualizados</option></select></div>
         <div class="field"><label>Itens por página</label><select class="select" id="f-page-size"><option>24</option><option>48</option><option>96</option><option>200</option><option value="999999">Todos</option></select></div>
-        <div class="filter-actions"><button class="btn" type="button" data-action="clear-filters">Limpar filtros</button><button class="btn gold" type="button" data-action="rebuild-meta">Atualizar cadastros</button></div>
+        <div class="filter-actions"><button class="btn primary" type="button" data-action="apply-filters">Buscar com filtros</button><button class="btn" type="button" data-action="clear-filters">Limpar filtros</button><button class="btn gold" type="button" data-action="rebuild-meta">Atualizar cadastros</button></div>
       </form>
     </div>
 
-    <div class="drawer-block">
-      <h3>Produtos, cestas e arquivos</h3>
-      <div class="drawer-actions">
-        <button class="btn green" type="button" data-action="new-product">Criar produto</button>
-        <button class="btn primary" type="button" data-action="save-products">Salvar produtos</button>
-        <button class="btn gold" type="button" data-action="export-products-json">Exportar produtos.json</button>
-        <label class="btn">Importar produtos<input id="productsFile" hidden type="file" accept=".json,application/json"></label>
-        <button class="btn blue" type="button" data-action="export-bling-csv">Exportar para Bling</button>
-        <button class="btn green" type="button" data-action="new-cesta">Nova cesta</button>
-        <button class="btn primary" type="button" data-action="save-cestas">Salvar cestas</button>
-        <button class="btn gold" type="button" data-action="export-cestas-json">Exportar produtos-cesta-basica.json</button>
-        <label class="btn">Importar cestas<input id="cestasFile" hidden type="file" accept=".json,application/json"></label>
-        <button class="btn green" type="button" data-action="new-kit">Novo kit</button>
-        <button class="btn primary" type="button" data-action="save-kits">Salvar kits</button>
-        <button class="btn gold" type="button" data-action="export-kits-json">Exportar kitspromocionais.json</button>
-        <label class="btn">Importar kits<input id="kitsFile" hidden type="file" accept=".json,application/json"></label>
-        <button class="btn gold" type="button" data-action="export-meta-json">Baixar produtos_meta.json</button>
-        <button class="btn blue" type="button" data-action="export-bling-json">Exportar Bling JSON</button>
-        <button class="btn" type="button" data-action="copy-report">Copiar relatório</button>
-      </div>
-    </div>
   </aside>
 
   <main class="app">
     <section class="panel" id="tab-produtos">
+      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Edição rápida do catálogo e controle de estoque.</p></div><div class="toolbar"><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
       <div class="products-grid" id="productsGrid"></div>
       <div class="pagination" id="pagination"></div>
     </section>
 
     <section class="panel hidden" id="tab-cestas">
-      <div class="compact-section-title"><h2>Cestas básicas</h2><p>Editar produtos das cestas, substituir itens, mudar quantidades e criar novas cestas.</p></div>
+      <div class="panel-head"><div class="panel-title"><h2>Cestas básicas</h2><p>Crie, edite, organize e salve todas as cestas nesta página.</p></div><div class="toolbar"><button class="btn green" data-action="new-cesta">＋ Nova cesta</button><button class="btn primary" data-action="save-cestas">✓ Salvar cestas</button><button class="btn gold" data-action="export-cestas-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="cestasFile" hidden type="file" accept=".json,application/json"></label></div></div>
       <div class="notice gold" style="margin-bottom:12px">Capas das cestas: use o formato <strong>img/nome-da-cesta.webp</strong>.</div>
       <div class="split"><aside><input class="input" id="basketSearch" placeholder="Buscar cesta..."><div class="side-list" id="basketsList" style="margin-top:10px"></div></aside><section class="basket-editor" id="basketEditor"></section></div>
     </section>
 
     <section class="panel hidden" id="tab-kits">
-      <div class="compact-section-title"><h2>Kits promocionais</h2><p>Mesma inteligência das cestas: montar kits com vários produtos, preço fechado, foto quadrada e exportação em kitspromocionais.json.</p></div>
+      <div class="panel-head"><div class="panel-title"><h2>Kits promocionais</h2><p>Crie, edite e organize os kits. O salvamento é exclusivo no GitHub em site/kits.json.</p></div><div class="toolbar"><button class="btn green" data-action="new-kit">＋ Novo kit</button><button class="btn primary" data-action="save-kits">✓ Salvar no GitHub</button><button class="btn gold" data-action="export-kits-json">↓ Exportar kits.json</button><label class="btn">↑ Importar JSON<input id="kitsFile" hidden type="file" accept=".json,application/json"></label></div></div>
       <div class="notice gold" style="margin-bottom:12px">Capas dos kits: serão salvas no formato <strong>img/nome-do-kit.webp</strong>. Dentro do kit, os produtos têm disponibilidade virtual 99999 sem alterar o estoque real.</div>
       <div class="split"><aside><input class="input" id="kitSearch" placeholder="Buscar kit promocional..."><div class="side-list" id="kitsList" style="margin-top:10px"></div></aside><section class="basket-editor" id="kitEditor"></section></div>
     </section>
@@ -255,7 +248,7 @@
     githubProdutosPath: "site/produtos.json",
     githubMetaPath: "site/produtos_meta.json",
     githubCestasPath: "site/produtos-cesta-basica.json",
-    githubKitsPath: "site/kitspromocionais.json",
+    githubKitsPath: "site/kits.json",
     githubImagesPath: "site/img/produtos",
     imagePublicBase: "img/produtos",
     githubKitImagesPath: "site/img/kits",
@@ -304,7 +297,7 @@
   function setStatus(msg, type="warn"){ $("#statusText").textContent=msg; const d=$("#statusDot"); d.className="dot"+(type==="ok"?" ok":type==="err"?" err":"") }
   function mark(kind){ if(kind==="products") state.dirtyProducts=true; if(kind==="cestas") state.dirtyCestas=true; if(kind==="kits") state.dirtyKits=true; if(kind==="meta") state.dirtyMeta=true; saveLocal(); renderSummary(); refreshJson() }
   function saveLocal(){localStorage.setItem(LS_PRODUCTS, JSON.stringify(state.produtos)); localStorage.setItem(LS_CESTAS, JSON.stringify(state.cestas)); localStorage.setItem(LS_KITS, JSON.stringify(state.kits)); localStorage.setItem(LS_META, JSON.stringify(state.meta));}
-  function loadSettings(){try{const saved=JSON.parse(localStorage.getItem(LS_SETTINGS)||"{}"); if(!saved.githubCestasPath || saved.githubCestasPath==="site/cestas.json") saved.githubCestasPath="site/produtos-cesta-basica.json"; return {...defaultSettings, ...saved}}catch{return {...defaultSettings}}}
+  function loadSettings(){try{const saved=JSON.parse(localStorage.getItem(LS_SETTINGS)||"{}"); if(!saved.githubCestasPath || saved.githubCestasPath==="site/cestas.json") saved.githubCestasPath="site/produtos-cesta-basica.json"; if(!saved.githubKitsPath||saved.githubKitsPath==="site/kitspromocionais.json")saved.githubKitsPath="site/kits.json"; return {...defaultSettings, ...saved}}catch{return {...defaultSettings}}}
   function saveSettings(){readSettingsFromUi(); localStorage.setItem(LS_SETTINGS, JSON.stringify(state.settings)); setStatus("Configurações salvas", "ok"); alert("Configurações salvas neste navegador.")}
 
   function firebaseUrl(node){return `${String(state.settings.firebaseUrl).replace(/\/$/,"")}/${node}.json`}
@@ -324,7 +317,7 @@
   async function saveProducts(){try{setStatus("Salvando produtos no Firebase e produtos_meta no GitHub...","warn"); const payload=productsObject(); const meta=buildMetaPayload(); await putJson(firebaseUrl(state.settings.produtosNode), payload); await saveGithubFiles({meta}); state.meta=meta; state.dirtyProducts=false; state.dirtyMeta=false; saveLocal(); if(state.settings.autoGithub) await saveGithubFiles({produtos:payload}); setStatus("Produtos e produtos_meta salvos", "ok"); alert("Produtos salvos no Firebase e produtos_meta.json salvo exclusivamente no GitHub." + (state.settings.autoGithub ? " produtos.json também foi enviado ao GitHub." : "")); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar produtos. Backup local feito.","err"); alert("Erro ao salvar produtos: "+e.message)}}
   async function saveMeta(){try{setStatus("Salvando produtos_meta no GitHub...","warn"); const meta=buildMetaPayload(); await saveGithubFiles({meta}); state.meta=meta; state.dirtyMeta=false; saveLocal(); setStatus("produtos_meta salvo no GitHub","ok"); alert("site/produtos_meta.json salvo no GitHub. Nenhum dado de meta foi enviado ao Firebase."); renderAll();}catch(e){console.error(e); saveLocal(); alert("Erro ao salvar produtos_meta no GitHub: "+e.message); setStatus("Erro em produtos_meta","err")}}
   async function saveCestas(){try{setStatus("Salvando cestas no GitHub...","warn"); await saveGithubFiles({cestas:state.cestas}); state.dirtyCestas=false; saveLocal(); setStatus("Cestas salvas no GitHub", "ok"); alert("site/produtos-cesta-basica.json salvo no GitHub. Nenhum dado de cestas foi enviado ao Firebase."); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar cestas. Backup local feito.","err"); alert("Erro ao salvar cestas no GitHub: "+e.message)}}
-  async function saveKits(){try{setStatus("Salvando kits promocionais...","warn"); await putJson(firebaseUrl(state.settings.kitsNode), state.kits); state.dirtyKits=false; saveLocal(); if(state.settings.autoGithub) await saveGithubFiles({kits:state.kits}); setStatus("Kits promocionais salvos", "ok"); alert("Kits salvos no Firebase em /kitspromocionais.json" + (state.settings.autoGithub ? " e no GitHub." : ".")); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar kits. Backup local feito.","err"); alert("Erro ao salvar kits: "+e.message)}}
+  async function saveKits(){try{setStatus("Salvando kits exclusivamente no GitHub...","warn"); await saveGithubFiles({kits:state.kits}); state.dirtyKits=false; saveLocal(); setStatus("Kits salvos no GitHub em site/kits.json","ok"); alert("Kits salvos exclusivamente no GitHub em site/kits.json."); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar kits. Backup local feito.","err"); alert("Erro ao salvar kits no GitHub: "+e.message)}}
   async function saveAll(){await saveProducts(); await saveCestas(); await saveKits();}
 
   function b64(str){return btoa(unescape(encodeURIComponent(str)))}
@@ -382,8 +375,9 @@
     const code=getCode(p), kits=kitsByProduct(p);
     const kitBadges=`<div class="meta-line">${kits.length?kits.map(k=>`<span class="chip blue">Kit: ${esc(k.nome)}</span>`).join(""):'<span class="chip empty">fora dos kits</span>'}</div>`;
     const kitButton=`<button class="btn icon-btn green" data-action="edit-kit-membership" data-code="${esc(code)}" title="Marcar produto em kits" aria-label="Marcar produto em kits">🎁</button>`;
+    const saveActions=`<div class="card-save-actions"><button class="btn small blue" data-action="save-card-firebase" data-key="${esc(getKey(p))}">☁ Firebase</button><button class="btn small green" data-action="save-everything">✓ Salvar geral</button></div>`;
     return renderProductCardV2(p)
-      .replace('<div class="icon-actions">',`${kitBadges}<div class="icon-actions">`)
+      .replace('<div class="icon-actions">',`${kitBadges}${saveActions}<div class="icon-actions">`)
       .replace('<button class="btn icon-btn blue" data-action="duplicate-product"',`${kitButton}<button class="btn icon-btn blue" data-action="duplicate-product"`);
   }
 
@@ -458,7 +452,7 @@
   function exportProductsJson(){download('produtos.json', productsObject())}
   function exportMetaJson(){download('produtos_meta.json', buildMetaPayload())}
   function exportCestasJson(){download('produtos-cesta-basica.json', state.cestas)}
-  function exportKitsJson(){download('kitspromocionais.json', state.kits)}
+  function exportKitsJson(){download('kits.json', state.kits)}
   function csvEscape(v){const s=String(v??''); return /[";\n\r]/.test(s)?`"${s.replace(/"/g,'""')}"`:s}
   function blingRows(){return filteredProducts().map(p=>({codigo:p.codigo||getCode(p),descricao:getName(p),unidade:state.settings.blingUnidade||'UN',preco:toNum(p.preco).toFixed(2).replace('.',','),preco_custo:toNum(p.preco_custo).toFixed(2).replace('.',','),codigo_barras:String(p.gtin||p.ean||'').trim(),ncm:p.ncm||'',estoque:p.estoque||0,situacao:isActive(p)?'Ativo':'Inativo',categoria:p.categoria||'',marca:p.marca||'',descricao_curta:p.descricao||'',url_imagem:p.url_imagem||p.imagem||'',fornecedor:p.fornecedor||'',gondola:p.gondola||'',prateleira:p.prateleira||''}))}
   function exportBlingCsv(){const rows=blingRows(); const header=['codigo','descricao','unidade','preco','preco_custo','codigo_barras','ncm','estoque','situacao','categoria','marca','descricao_curta','url_imagem','fornecedor','gondola','prateleira']; const csv='\ufeff'+[header.join(';'),...rows.map(r=>header.map(h=>csvEscape(r[h])).join(';'))].join('\n'); download('produtos-bling.csv', csv, 'text/csv;charset=utf-8')}
@@ -471,8 +465,49 @@
   document.addEventListener('input', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.matches('[data-pfield]')) updateProduct(el.dataset.pfield, el.value); if(el.matches('[data-cfield]')){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(c){c[el.dataset.cfield]=el.dataset.cfield==='preco'?toNum(el.value):el.value; mark('cestas'); renderBasketsList(); refreshJson()}} if(el.matches('[data-kfield]')){const c=currentKit(); if(c){c[el.dataset.kfield]=el.dataset.kfield==='preco'?toNum(el.value):el.value; mark('kits'); renderKitsList(); refreshJson()}} if(el.matches('#basketSearch')) renderBasketsList(); if(el.matches('#basketProductSearch')){state.basketProductSearch=el.value; $('#basketProductResults').innerHTML=renderBasketSearchResults()} if(el.matches('#kitSearch')) renderKitsList(); if(el.matches('#kitProductSearch')){state.kitProductSearch=el.value; $('#kitProductResults').innerHTML=renderKitSearchResults()} if(el.matches('[data-action="basket-qtd"]')) updateBasketQty(el.dataset.code, el.value); if(el.matches('[data-action="kit-qtd"]')) updateKitQty(el.dataset.code, el.value); if(el.matches('[data-cat-index]')){state.meta.categorias[Number(el.dataset.catIndex)][el.dataset.catField]=el.value; mark('meta')} if(el.matches('[data-tag-index]')){state.meta.tags[Number(el.dataset.tagIndex)]=el.value; mark('meta')} if(el.matches('[data-forn-index]')){state.meta.fornecedores[Number(el.dataset.fornIndex)][el.dataset.fornField]=el.value; mark('meta')} if(el.matches('[data-marca-index]')){state.meta.marcas[Number(el.dataset.marcaIndex)]=el.value; mark('meta')} if(el.closest('#tab-integracoes')) readSettingsFromUi(); });
   document.addEventListener('change', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.id==='productsFile'&&el.files[0]) importFile(el.files[0],'products'); if(el.id==='cestasFile'&&el.files[0]) importFile(el.files[0],'cestas'); if(el.id==='kitsFile'&&el.files[0]) importFile(el.files[0],'kits'); if(el.matches('[data-action="toggle-membership"]')) toggleMembership(el.dataset.id, el.checked); if(el.matches('[data-ptag]')) toggleProductTag(el.dataset.ptag, el.checked); if(el.id==='setAutoGithub') readSettingsFromUi()});
   document.addEventListener('change', e=>{const el=e.target;if(el.matches('[data-card-field]')) updateProductFromCard(el.dataset.key,el.dataset.cardField,el.value);if(el.matches('[data-action="toggle-kit-membership"]'))toggleKitMembership(el.dataset.id,el.checked)});
-  document.addEventListener('click', e=>{const b=e.target.closest('[data-action]');if(!b)return;if(b.dataset.action==='open-low-stock'){renderLowStockModal();$("#lowStockModal").classList.add('open');toggleAdminDrawer(false)}if(b.dataset.action==='close-low-stock')$("#lowStockModal").classList.remove('open');if(b.dataset.action==='open-product-from-stock'){$("#lowStockModal").classList.remove('open');openProduct(b.dataset.key)}if(b.dataset.action==='edit-kit-membership')openKitMembership(b.dataset.code);if(b.dataset.action==='close-kit-membership-modal'){$("#kitMembershipModal").classList.remove('open');renderAll()}});
+  document.addEventListener('click', e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='open-low-stock'){renderLowStockModal();$("#lowStockModal").classList.add('open');toggleAdminDrawer(false)}if(a==='close-low-stock')$("#lowStockModal").classList.remove('open');if(a==='open-product-from-stock'){$("#lowStockModal").classList.remove('open');openProduct(b.dataset.key)}if(a==='edit-kit-membership')openKitMembership(b.dataset.code);if(a==='close-kit-membership-modal'){$("#kitMembershipModal").classList.remove('open');renderAll()}if(a==='open-filter-panel')toggleAdminDrawer(true);if(a==='apply-filters'){state.productPage=1;renderProducts();toggleAdminDrawer(false)}if(a==='apply-search'){state.productPage=1;renderProducts()}if(a==='save-card-firebase')saveProductFirebase(b.dataset.key);if(a==='save-products-firebase')saveProductsFirebaseOnly();if(a==='save-everything')saveEverything()});
+  function firebaseProductUrl(key){return `${String(state.settings.firebaseUrl).replace(/\/$/,"")}/${state.settings.produtosNode}/${encodeURIComponent(key)}.json`}
+  async function saveProductFirebase(key){const p=productByKey(key);if(!p)return;try{setStatus(`Salvando ${getName(p)} no Firebase...`,"warn");const copy={...p,firebaseKey:getKey(p)};delete copy.estoque_real_cesta;delete copy.estoque_protegido_cesta;await putJson(firebaseProductUrl(getKey(p)),copy);saveLocal();setStatus(`${getName(p)} salvo no Firebase`,"ok")}catch(e){console.error(e);setStatus("Erro ao salvar produto no Firebase","err");alert("Erro ao salvar produto: "+e.message)}}
+  async function saveProductsFirebaseOnly(){try{setStatus("Salvando todos os produtos no Firebase...","warn");await putJson(firebaseUrl(state.settings.produtosNode),productsObject());state.dirtyProducts=false;saveLocal();setStatus("Todos os produtos foram salvos no Firebase","ok");renderSummary()}catch(e){console.error(e);setStatus("Erro ao salvar produtos no Firebase","err");alert("Erro no Firebase: "+e.message)}}
+  async function saveEverything(){try{readSettingsFromUi();setStatus("Salvando absolutamente tudo...","warn");const produtos=productsObject(),meta=buildMetaPayload();await putJson(firebaseUrl(state.settings.produtosNode),produtos);await saveGithubFiles({produtos,meta,cestas:state.cestas,kits:state.kits});state.meta=meta;state.dirtyProducts=state.dirtyMeta=state.dirtyCestas=state.dirtyKits=false;localStorage.setItem(LS_SETTINGS,JSON.stringify(state.settings));saveLocal();setStatus("Salvamento geral concluído: Firebase e GitHub atualizados","ok");alert("Salvamento geral concluído. Produtos foram salvos no Firebase e os quatro JSONs foram salvos no GitHub, incluindo site/kits.json.");renderAll()}catch(e){console.error(e);saveLocal();setStatus("Salvamento geral incompleto","err");alert("Não foi possível concluir o salvamento geral: "+e.message)}}
+
   window.addEventListener('beforeunload', e=>{if(state.dirtyProducts||state.dirtyCestas||state.dirtyKits||state.dirtyMeta){e.preventDefault(); e.returnValue='Existem alterações não salvas.'}});
+
+  async function loadKitsFromGithub(){
+    const s=state.settings;
+    const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(s.githubKitsPath)}?ref=${encodeURIComponent(s.githubBranch)}`;
+    const headers={Accept:"application/vnd.github+json"};
+    if(s.githubToken)headers.Authorization=`Bearer ${s.githubToken}`;
+    const r=await fetch(url,{headers,cache:"no-store"});
+    if(r.status===404)return [];
+    if(!r.ok)throw new Error(`GitHub kits: ${r.status}`);
+    const file=await r.json();
+    const text=decodeURIComponent(escape(atob(String(file.content||"").replace(/\s/g,""))));
+    return JSON.parse(text);
+  }
+
+  async function loadData(){
+    setStatus("Carregando produtos, cestas e kits...","warn");renderLoading();
+    try{
+      const [p,m,c,k]=await Promise.allSettled([
+        fetchJson(firebaseUrl(state.settings.produtosNode)),
+        fetchJson(firebaseUrl(state.settings.metaNode)),
+        fetchJson(firebaseUrl(state.settings.cestasNode)),
+        loadKitsFromGithub()
+      ]);
+      state.produtos=p.status==="fulfilled"?normalizeProducts(p.value):normalizeProducts(JSON.parse(localStorage.getItem(LS_PRODUCTS)||"[]"));
+      state.meta=m.status==="fulfilled"?normalizeMeta(m.value):normalizeMeta(JSON.parse(localStorage.getItem(LS_META)||"{}"));
+      state.cestas=c.status==="fulfilled"?normalizeCestas(c.value):normalizeCestas(JSON.parse(localStorage.getItem(LS_CESTAS)||"[]"));
+      state.kits=k.status==="fulfilled"?normalizeKits(k.value):normalizeKits(JSON.parse(localStorage.getItem(LS_KITS)||"[]"));
+      if(!state.cestas.length)state.cestas=normalizeCestas(DEFAULT_CESTAS);
+      if(!state.meta.categorias.length&&state.produtos.length)rebuildMeta(false);
+      state.selectedBasketId=state.selectedBasketId||state.cestas[0]?.id||null;
+      state.selectedKitId=state.selectedKitId||state.kits[0]?.id||null;
+      state.dirtyProducts=state.dirtyCestas=state.dirtyKits=state.dirtyMeta=false;
+      setStatus(`Carregado: ${state.produtos.length} produtos, ${state.cestas.length} cestas, ${state.kits.length} kits`,"ok");
+    }catch(e){console.error(e);setStatus("Falha ao carregar. Usando backups locais.","err")}
+    finally{renderAll()}
+  }
 
   loadData();
 })();
