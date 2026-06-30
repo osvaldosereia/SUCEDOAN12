@@ -110,7 +110,8 @@
       scannerStream: null,
       scannerDetector: null,
       scannerRunning: false,
-      history: loadHistory()
+      history: loadHistory(),
+      productCache: null
     };
 
     const $ = (s, root=document) => root.querySelector(s);
@@ -173,13 +174,43 @@
       return await r.json().catch(() => null);
     }
 
+    async function loadProductCache() {
+      if (state.productCache) return state.productCache;
+      const data = await fetchJson(`${FIREBASE_URL.replace(/\/$/, "")}/${PRODUTOS_NODE}.json`);
+      state.productCache = Object.entries(data || {}).map(([key, product]) => ({ key, product }));
+      return state.productCache;
+    }
+
     async function findByQuery(field, code) {
       const query = `${FIREBASE_URL.replace(/\/$/, "")}/${PRODUTOS_NODE}.json?orderBy=${encodeURIComponent('"' + field + '"')}&equalTo=${encodeURIComponent('"' + code + '"')}&limitToFirst=1`;
-      const data = await fetchJson(query);
+      let data;
+      try {
+        data = await fetchJson(query);
+      } catch (e) {
+        if (String(e.message || "").includes("400")) return null;
+        throw e;
+      }
       if (!data || typeof data !== "object") return null;
       const entry = Object.entries(data)[0];
       if (!entry) return null;
       return { key: entry[0], product: entry[1] };
+    }
+
+    async function findFromCache(code) {
+      const normalized = norm(code);
+      const cache = await loadProductCache();
+      const found = cache.find(({ key, product }) =>
+        [
+          key,
+          product?.firebaseKey,
+          product?.id,
+          product?.codigo,
+          product?.sku,
+          product?.gtin,
+          product?.ean
+        ].some(value => norm(value) === normalized)
+      );
+      return found || null;
     }
 
     async function findProduct(code) {
@@ -198,6 +229,10 @@
           if (found) return found;
         } catch {}
       }
+
+      try {
+        return await findFromCache(normalized);
+      } catch {}
 
       return null;
     }
