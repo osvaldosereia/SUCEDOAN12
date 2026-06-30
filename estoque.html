@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Dona Antonia - Conferencia de Estoque</title>
+  <meta name="robots" content="noindex,nofollow">
+  <style>
+    :root{
+      --bg:#f5f1e8;
+      --card:#ffffff;
+      --line:#ded6c5;
+      --ink:#191919;
+      --muted:#6f6a61;
+      --gold:#b48a2a;
+      --gold-soft:#fff6dd;
+      --green:#157347;
+      --green-soft:#edf8f1;
+      --red:#b42318;
+      --red-soft:#fff1ef;
+      --radius:18px;
+      --shadow:0 10px 28px rgba(0,0,0,.06);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+    body{padding:12px}
+    button,input{font:inherit}
+    .app{max-width:520px;margin:0 auto;display:grid;gap:12px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px}
+    .title{font-size:22px;font-weight:900;line-height:1.05;margin:0}
+    .subtitle{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .status{font-size:13px;color:var(--muted)}
+    .status.ok{color:var(--green);font-weight:700}
+    .status.err{color:var(--red);font-weight:700}
+    .status.warn{color:#8a6116;font-weight:700}
+    .video{width:100%;aspect-ratio:3/4;background:#111;border-radius:16px;object-fit:cover;border:1px solid var(--line)}
+    .field{display:grid;gap:6px;margin-top:10px}
+    .field label{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase}
+    .input{width:100%;min-height:50px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;color:var(--ink);font-size:16px;outline:none}
+    .input:focus{border-color:var(--gold)}
+    .scan-code{font-size:22px;font-weight:900;letter-spacing:.02em}
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+    .btn{min-height:50px;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);font-weight:900;padding:10px 12px}
+    .btn.primary{background:#111;color:#fff;border-color:#111}
+    .btn.gold{background:var(--gold-soft);border-color:#ecd898;color:#7b5a10}
+    .btn.green{background:var(--green-soft);border-color:#caead7;color:var(--green)}
+    .btn.red{background:var(--red-soft);border-color:#ffd3cf;color:var(--red)}
+    .product{display:grid;gap:12px}
+    .product-head{display:grid;grid-template-columns:92px 1fr;gap:12px;align-items:center}
+    .photo{width:92px;height:92px;border-radius:16px;object-fit:contain;background:#faf8f3;border:1px solid var(--line)}
+    .name{font-size:20px;font-weight:900;line-height:1.1;margin:0}
+    .meta{margin-top:6px;color:var(--muted);font-size:13px}
+    .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .chip{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:5px 8px;font-size:11px;font-weight:800;background:#fff}
+    .chip.ok{background:var(--green-soft);border-color:#caead7;color:var(--green)}
+    .chip.err{background:var(--red-soft);border-color:#ffd3cf;color:var(--red)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid .span-all{grid-column:1 / -1}
+    .savebar{display:grid;grid-template-columns:1fr 1fr;gap:8px;position:sticky;bottom:8px}
+    .history{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .history button{min-height:0;padding:8px 10px;border-radius:999px;font-size:12px}
+    .empty{color:var(--muted);text-align:center;padding:12px 4px}
+    .tiny{font-size:12px;color:var(--muted)}
+    @media (max-width:380px){
+      .actions,.grid,.savebar{grid-template-columns:1fr}
+      .product-head{grid-template-columns:1fr}
+      .photo{width:100%;height:180px}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card">
+      <h1 class="title">Conferencia de Estoque</h1>
+      <p class="subtitle">Tela leve para celular. Le um produto, ajusta e salva direto no Firebase.</p>
+      <div id="statusText" class="status warn" style="margin-top:10px">Pronto para leitura.</div>
+    </section>
+
+    <section class="card">
+      <video id="scannerVideo" class="video" playsinline muted></video>
+      <div class="field">
+        <label>Codigo de barras</label>
+        <input id="codeInput" class="input scan-code" placeholder="Leia ou digite o codigo" inputmode="numeric" autocomplete="off">
+      </div>
+      <div class="actions">
+        <button id="toggleCameraBtn" class="btn primary" type="button">Abrir camera</button>
+        <button id="findBtn" class="btn gold" type="button">Buscar produto</button>
+      </div>
+      <div class="history" id="history"></div>
+      <p class="tiny" style="margin:10px 0 0">Se a camera nao ler neste aparelho, digite o codigo e toque em buscar.</p>
+    </section>
+
+    <section id="productCard" class="card">
+      <div class="empty">Nenhum produto carregado.</div>
+    </section>
+  </main>
+
+  <script>
+  (() => {
+    "use strict";
+
+    const FIREBASE_URL = "https://cedar-chemist-310801-default-rtdb.firebaseio.com";
+    const PRODUTOS_NODE = "produtos";
+    const PLACEHOLDER = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><rect width='100%' height='100%' fill='#f4f4f4'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#999' font-family='Arial' font-size='18'>sem foto</text></svg>");
+    const LS_HISTORY = "da_mobile_stock_history_v1";
+
+    const state = {
+      currentKey: null,
+      currentProduct: null,
+      scannerStream: null,
+      scannerDetector: null,
+      scannerRunning: false,
+      history: loadHistory()
+    };
+
+    const $ = (s, root=document) => root.querySelector(s);
+    const esc = (v="") => String(v ?? "").replace(/[&<>\"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+    const norm = (v="") => String(v ?? "").trim().replace(/\s+/g, "").toUpperCase();
+    const toNum = (v) => {
+      if (typeof v === "number" && Number.isFinite(v)) return v;
+      let s = String(v ?? "").trim().replace(/[^\d,.-]/g, "");
+      if (!s) return 0;
+      const c = s.lastIndexOf(","), d = s.lastIndexOf(".");
+      if (c > -1 && d > -1) s = c > d ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+      else if (c > -1) s = s.replace(/\./g, "").replace(",", ".");
+      const n = Number(s);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const getImg = (p) => String(p?.url_imagem || p?.imagem || p?.image || p?.img || "").trim() || PLACEHOLDER;
+    const getName = (p) => String(p?.nome || p?.titulo || p?.descricao || p?.codigo || "Produto sem nome");
+    const firebaseProductUrl = (key) => `${FIREBASE_URL.replace(/\/$/, "")}/${PRODUTOS_NODE}/${encodeURIComponent(key)}.json`;
+    const setStatus = (msg, type="warn") => {
+      const el = $("#statusText");
+      el.textContent = msg;
+      el.className = `status ${type}`;
+    };
+
+    function loadHistory() {
+      try { return JSON.parse(localStorage.getItem(LS_HISTORY) || "[]").filter(Boolean).slice(0, 8); }
+      catch { return []; }
+    }
+
+    function saveHistory() {
+      localStorage.setItem(LS_HISTORY, JSON.stringify(state.history.slice(0, 8)));
+    }
+
+    function pushHistory(code) {
+      const normalized = norm(code);
+      if (!normalized) return;
+      state.history = [normalized, ...state.history.filter(v => v !== normalized)].slice(0, 8);
+      saveHistory();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const host = $("#history");
+      host.innerHTML = state.history.map(code => `<button class="btn" type="button" data-history="${esc(code)}">${esc(code)}</button>`).join("");
+    }
+
+    async function fetchJson(url) {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) throw new Error(`Erro ${r.status}`);
+      return await r.json();
+    }
+
+    async function putJson(url, data) {
+      const r = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data, null, 2)
+      });
+      if (!r.ok) throw new Error(`Erro ${r.status} ao salvar`);
+      return await r.json().catch(() => null);
+    }
+
+    async function findByQuery(field, code) {
+      const query = `${FIREBASE_URL.replace(/\/$/, "")}/${PRODUTOS_NODE}.json?orderBy=${encodeURIComponent('"' + field + '"')}&equalTo=${encodeURIComponent('"' + code + '"')}&limitToFirst=1`;
+      const data = await fetchJson(query);
+      if (!data || typeof data !== "object") return null;
+      const entry = Object.entries(data)[0];
+      if (!entry) return null;
+      return { key: entry[0], product: entry[1] };
+    }
+
+    async function findProduct(code) {
+      const normalized = norm(code);
+      if (!normalized) return null;
+
+      try {
+        const direct = await fetchJson(firebaseProductUrl(normalized));
+        if (direct && typeof direct === "object") return { key: normalized, product: direct };
+      } catch {}
+
+      const fields = ["gtin", "ean", "codigo", "sku", "firebaseKey", "id"];
+      for (const field of fields) {
+        try {
+          const found = await findByQuery(field, normalized);
+          if (found) return found;
+        } catch {}
+      }
+
+      return null;
+    }
+
+    function renderProduct() {
+      const host = $("#productCard");
+      const p = state.currentProduct;
+      if (!p || !state.currentKey) {
+        host.innerHTML = '<div class="empty">Nenhum produto carregado.</div>';
+        return;
+      }
+
+      host.innerHTML = `
+        <div class="product">
+          <div class="product-head">
+            <img class="photo" src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'">
+            <div>
+              <h2 class="name">${esc(getName(p))}</h2>
+              <div class="meta">Chave: ${esc(state.currentKey)}${p.gtin ? ` · GTIN: ${esc(p.gtin)}` : ""}</div>
+              <div class="chips">
+                <span class="chip ${toNum(p.estoque) > 0 ? "ok" : "err"}">Estoque atual: ${esc(toNum(p.estoque))}</span>
+              </div>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="field span-all">
+              <label>Foto (URL ou caminho)</label>
+              <input class="input" data-field="url_imagem" value="${esc(p.url_imagem || p.imagem || "")}">
+            </div>
+            <div class="field span-all">
+              <label>Nome</label>
+              <input class="input" data-field="nome" value="${esc(p.nome || "")}">
+            </div>
+            <div class="field">
+              <label>Estoque</label>
+              <input class="input" inputmode="numeric" data-field="estoque" value="${esc(toNum(p.estoque))}">
+            </div>
+            <div class="field">
+              <label>Validade</label>
+              <input class="input" data-field="validade" value="${esc(p.validade || "")}">
+            </div>
+            <div class="field">
+              <label>Gondola</label>
+              <input class="input" data-field="gondola" value="${esc(p.gondola || "")}">
+            </div>
+            <div class="field">
+              <label>Prateleira</label>
+              <input class="input" data-field="prateleira" value="${esc(p.prateleira || "")}">
+            </div>
+          </div>
+          <div class="savebar">
+            <button id="nextBtn" class="btn gold" type="button">Proximo item</button>
+            <button id="saveBtn" class="btn green" type="button">Salvar no Firebase</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function clearProduct() {
+      state.currentKey = null;
+      state.currentProduct = null;
+      $("#codeInput").value = "";
+      renderProduct();
+      setStatus("Pronto para o proximo produto.", "ok");
+      $("#codeInput").focus();
+    }
+
+    function updateLocalProduct(field, value) {
+      if (!state.currentProduct) return;
+      if (field === "estoque") state.currentProduct[field] = toNum(value);
+      else state.currentProduct[field] = value;
+      if (field === "url_imagem") state.currentProduct.imagem = value;
+      state.currentProduct.last_update = Date.now();
+      state.currentProduct.updated_at = new Date().toISOString();
+      if (field === "estoque") state.currentProduct.stock_updated_at = new Date().toISOString();
+      if (field === "url_imagem") renderProduct();
+    }
+
+    async function openProductByCode(rawCode, fromCamera=false) {
+      const code = norm(rawCode || $("#codeInput").value);
+      $("#codeInput").value = code;
+      if (!code) {
+        setStatus("Digite ou leia um codigo.", "warn");
+        return;
+      }
+      setStatus("Buscando produto...", "warn");
+      const found = await findProduct(code);
+      if (!found) {
+        state.currentKey = null;
+        state.currentProduct = null;
+        renderProduct();
+        setStatus(`Codigo ${code} nao encontrado.`, "err");
+        return;
+      }
+      state.currentKey = found.key;
+      state.currentProduct = { ...found.product, firebaseKey: found.product.firebaseKey || found.key };
+      pushHistory(code);
+      renderProduct();
+      if (fromCamera && navigator.vibrate) navigator.vibrate(60);
+      setStatus(`Produto ${getName(state.currentProduct)} carregado.`, "ok");
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }
+
+    async function saveCurrentProduct() {
+      if (!state.currentKey || !state.currentProduct) return;
+      try {
+        setStatus("Salvando no Firebase...", "warn");
+        await putJson(firebaseProductUrl(state.currentKey), state.currentProduct);
+        setStatus("Produto salvo no Firebase.", "ok");
+      } catch (e) {
+        console.error(e);
+        setStatus("Erro ao salvar no Firebase.", "err");
+      }
+    }
+
+    async function stopScanner() {
+      state.scannerRunning = false;
+      if (state.scannerStream) {
+        state.scannerStream.getTracks().forEach(track => track.stop());
+        state.scannerStream = null;
+      }
+      $("#scannerVideo").srcObject = null;
+      $("#toggleCameraBtn").textContent = "Abrir camera";
+    }
+
+    async function scanLoop() {
+      const video = $("#scannerVideo");
+      if (!state.scannerRunning || !state.scannerDetector || !video) return;
+      try {
+        if (video.readyState >= 2) {
+          const codes = await state.scannerDetector.detect(video);
+          const raw = codes?.[0]?.rawValue;
+          if (raw) {
+            const normalized = norm(raw);
+            if (normalized) {
+              $("#codeInput").value = normalized;
+              await openProductByCode(normalized, true);
+            }
+          }
+        }
+      } catch {}
+      if (state.scannerRunning) requestAnimationFrame(scanLoop);
+    }
+
+    async function startScanner() {
+      if (!("BarcodeDetector" in window)) {
+        setStatus("Este aparelho nao suporta leitura nativa. Digite o codigo manualmente.", "warn");
+        return;
+      }
+      try {
+        if (!state.scannerDetector) {
+          state.scannerDetector = new BarcodeDetector({
+            formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf"]
+          });
+        }
+        state.scannerStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 960 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+        $("#scannerVideo").srcObject = state.scannerStream;
+        await $("#scannerVideo").play();
+        state.scannerRunning = true;
+        $("#toggleCameraBtn").textContent = "Fechar camera";
+        setStatus("Camera ativa. Aponte para o codigo.", "ok");
+        requestAnimationFrame(scanLoop);
+      } catch (e) {
+        console.error(e);
+        setStatus("Nao foi possivel abrir a camera.", "err");
+      }
+    }
+
+    async function toggleScanner() {
+      if (state.scannerRunning || state.scannerStream) await stopScanner();
+      else await startScanner();
+    }
+
+    document.addEventListener("click", async (e) => {
+      const historyBtn = e.target.closest("[data-history]");
+      if (historyBtn) {
+        openProductByCode(historyBtn.dataset.history);
+        return;
+      }
+      if (e.target.id === "toggleCameraBtn") {
+        toggleScanner();
+        return;
+      }
+      if (e.target.id === "findBtn") {
+        openProductByCode($("#codeInput").value);
+        return;
+      }
+      if (e.target.id === "saveBtn") {
+        saveCurrentProduct();
+        return;
+      }
+      if (e.target.id === "nextBtn") {
+        clearProduct();
+      }
+    });
+
+    document.addEventListener("input", (e) => {
+      const field = e.target.dataset.field;
+      if (!field) return;
+      updateLocalProduct(field, e.target.value);
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.target.id === "codeInput" && e.key === "Enter") {
+        e.preventDefault();
+        openProductByCode(e.target.value);
+      }
+    });
+
+    window.addEventListener("beforeunload", () => stopScanner());
+
+    renderHistory();
+    renderProduct();
+  })();
+  </script>
+</body>
+</html>
