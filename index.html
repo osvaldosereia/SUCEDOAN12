@@ -1493,7 +1493,7 @@
       WHATSAPP_NUMBER: '5565998150975',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v4',
       PRODUCT_CACHE_MAX_AGE: 1000 * 60 * 20,
-      BASKET_CACHE_KEY: 'da_cestas_cache_v2',
+      BASKET_CACHE_KEY: 'da_cestas_cache_v3',
       BASKET_CACHE_MAX_AGE: 1000 * 60 * 60 * 12,
       CART_STORAGE_KEY: 'da_carrinho_v1',
       CHECKOUT_CLIENT_KEY: 'da_checkout_cliente_v1',
@@ -1665,11 +1665,20 @@
       try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
     }
 
-    async function fetchJson(url, timeoutMs) {
+    function withCacheBust(url) {
+      const separator = String(url).includes('?') ? '&' : '?';
+      return `${url}${separator}v=${Date.now()}`;
+    }
+
+    async function fetchJson(url, timeoutMs, options) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs || 6500);
       try {
-        const res = await fetch(url, { cache: 'default', signal: controller.signal, headers: { Accept: 'application/json' } });
+        const res = await fetch(url, {
+          cache: options && options.cache ? options.cache : 'default',
+          signal: controller.signal,
+          headers: { Accept: 'application/json' }
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
       } finally { clearTimeout(timer); }
@@ -1726,24 +1735,26 @@
 
     async function loadCestas() {
       const cache = readCache(CONFIG.BASKET_CACHE_KEY);
-      const freshEnough = cache && cache.savedAt && (Date.now() - Number(cache.savedAt) < CONFIG.BASKET_CACHE_MAX_AGE);
       if (cache && cache.data) applyCestasData(cache.data);
-      if (freshEnough && state.cestas.length) return;
 
       const urls = ['site/produtos-cesta-basica.json', 'site/cestas.json', 'cestas.json'];
       const refresh = async () => {
-      for (const url of urls) {
-        try {
-          const data = await fetchJson(url, 3000);
-          applyCestasData(data);
-          writeCache(CONFIG.BASKET_CACHE_KEY, { savedAt: Date.now(), data });
-          return;
-        } catch(e) {}
-      }
+        let lastError = null;
+        for (const url of urls) {
+          try {
+            const data = await fetchJson(withCacheBust(url), 5000, { cache: 'no-store' });
+            applyCestasData(data);
+            writeCache(CONFIG.BASKET_CACHE_KEY, { savedAt: Date.now(), data });
+            return;
+          } catch(e) {
+            lastError = e;
+          }
+        }
+        if (!state.cestas.length && lastError) throw lastError;
       };
 
       if (state.cestas.length) {
-        setTimeout(() => refresh(), 0);
+        setTimeout(() => refresh().catch(err => console.error('Atualização de cestas adiada:', err)), 0);
         return;
       }
       await refresh();
@@ -1763,6 +1774,7 @@
       state.cart = {};
       state.cartOrder = [];
       state.basketCustomizations = {};
+      state.basketDrafts = {};
       try {
         const saved = JSON.parse(localStorage.getItem(CONFIG.CART_STORAGE_KEY) || 'null');
         if (!saved || typeof saved !== 'object') return;
@@ -1777,6 +1789,7 @@
           }
         });
         state.basketCustomizations = saved.basketCustomizations && typeof saved.basketCustomizations === 'object' ? saved.basketCustomizations : {};
+        state.basketDrafts = saved.basketDrafts && typeof saved.basketDrafts === 'object' ? saved.basketDrafts : {};
       } catch(e) { localStorage.removeItem(CONFIG.CART_STORAGE_KEY); }
     }
 
@@ -1785,7 +1798,8 @@
         savedAt: Date.now(),
         cart: state.cart,
         cartOrder: state.cartOrder,
-        basketCustomizations: state.basketCustomizations
+        basketCustomizations: state.basketCustomizations,
+        basketDrafts: state.basketDrafts
       });
     }
 
@@ -1892,6 +1906,7 @@
       const key = String(basketId);
       const draft = ensureBasketDraft(key);
       draft[String(productId)] = Math.max(0, Number(qty) || 0);
+      saveCart();
       renderBasketDetail(key);
     }
 
@@ -2259,10 +2274,13 @@
     function ensureBasketDraft(basketId) {
       const { rows } = getBasketLines(basketId);
       const key = String(basketId);
-      if (!state.basketDrafts[key]) {
-        state.basketDrafts[key] = {};
-        rows.forEach(row => { state.basketDrafts[key][row.product.id] = row.qty; });
-      }
+      const existing = state.basketDrafts[key] && typeof state.basketDrafts[key] === 'object' ? state.basketDrafts[key] : {};
+      const merged = {};
+      rows.forEach(row => {
+        const savedQty = existing[row.product.id];
+        merged[row.product.id] = Math.max(0, Number(savedQty !== undefined ? savedQty : row.qty) || 0);
+      });
+      state.basketDrafts[key] = merged;
       return state.basketDrafts[key];
     }
 
