@@ -33,7 +33,7 @@
     .status.ok{color:var(--green);font-weight:700}
     .status.err{color:var(--red);font-weight:700}
     .status.warn{color:#8a6116;font-weight:700}
-    .video{width:100%;aspect-ratio:3/4;background:#111;border-radius:16px;object-fit:cover;border:1px solid var(--line)}
+    .video{width:100%;aspect-ratio:4/3;max-height:220px;background:#111;border-radius:16px;object-fit:cover;border:1px solid var(--line)}
     .field{display:grid;gap:6px;margin-top:10px}
     .field label{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase}
     .input{width:100%;min-height:50px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;color:var(--ink);font-size:16px;outline:none}
@@ -111,7 +111,9 @@
       scannerDetector: null,
       scannerRunning: false,
       history: loadHistory(),
-      productCache: null
+      productCache: null,
+      statusTimer: null,
+      audioCtx: null
     };
 
     const $ = (s, root=document) => root.querySelector(s);
@@ -130,11 +132,44 @@
     const getImg = (p) => String(p?.url_imagem || p?.imagem || p?.image || p?.img || "").trim() || PLACEHOLDER;
     const getName = (p) => String(p?.nome || p?.titulo || p?.descricao || p?.codigo || "Produto sem nome");
     const firebaseProductUrl = (key) => `${FIREBASE_URL.replace(/\/$/, "")}/${PRODUTOS_NODE}/${encodeURIComponent(key)}.json`;
-    const setStatus = (msg, type="warn") => {
+    const setStatus = (msg, type="warn", autoClear=false) => {
       const el = $("#statusText");
       el.textContent = msg;
       el.className = `status ${type}`;
+      if (state.statusTimer) {
+        clearTimeout(state.statusTimer);
+        state.statusTimer = null;
+      }
+      if (autoClear) {
+        state.statusTimer = setTimeout(() => {
+          const box = $("#statusText");
+          if (!box) return;
+          box.textContent = "Pronto para leitura.";
+          box.className = "status warn";
+          state.statusTimer = null;
+        }, 1400);
+      }
     };
+    async function beep(type="ok") {
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        if (!state.audioCtx) state.audioCtx = new Ctx();
+        if (state.audioCtx.state === "suspended") await state.audioCtx.resume();
+        const ctx = state.audioCtx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = type === "save" ? 980 : 760;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.09, ctx.currentTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (type === "save" ? 0.16 : 0.12));
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + (type === "save" ? 0.17 : 0.13));
+      } catch {}
+    }
 
     function loadHistory() {
       try { return JSON.parse(localStorage.getItem(LS_HISTORY) || "[]").filter(Boolean).slice(0, 8); }
@@ -332,8 +367,8 @@
       pushHistory(code);
       renderProduct();
       if (fromCamera && navigator.vibrate) navigator.vibrate(60);
-      setStatus(`Produto ${getName(state.currentProduct)} carregado.`, "ok");
-      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      beep("ok");
+      setStatus(`Produto ${getName(state.currentProduct)} carregado.`, "ok", true);
     }
 
     async function saveCurrentProduct() {
@@ -341,7 +376,8 @@
       try {
         setStatus("Salvando no Firebase...", "warn");
         await putJson(firebaseProductUrl(state.currentKey), state.currentProduct);
-        setStatus("Produto salvo no Firebase.", "ok");
+        beep("save");
+        setStatus("OK salvo.", "ok", true);
       } catch (e) {
         console.error(e);
         setStatus("Erro ao salvar no Firebase.", "err");
