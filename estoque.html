@@ -80,7 +80,7 @@
     </section>
 
     <section class="card">
-      <video id="scannerVideo" class="video" playsinline muted></video>
+      <video id="scannerVideo" class="video" playsinline muted autoplay></video>
       <div class="field">
         <label>Codigo de barras</label>
         <input id="codeInput" class="input scan-code" placeholder="Leia ou digite o codigo" inputmode="numeric" autocomplete="off">
@@ -118,7 +118,8 @@
       productCache: null,
       statusTimer: null,
       audioCtx: null,
-      toastTimer: null
+      toastTimer: null,
+      cameraWatchdog: null
     };
 
     const $ = (s, root=document) => root.querySelector(s);
@@ -405,6 +406,10 @@
 
     async function stopScanner() {
       state.scannerRunning = false;
+      if (state.cameraWatchdog) {
+        clearTimeout(state.cameraWatchdog);
+        state.cameraWatchdog = null;
+      }
       if (state.scannerStream) {
         state.scannerStream.getTracks().forEach(track => track.stop());
         state.scannerStream = null;
@@ -432,6 +437,35 @@
       if (state.scannerRunning) requestAnimationFrame(scanLoop);
     }
 
+    function scheduleCameraWatchdog() {
+      if (state.cameraWatchdog) clearTimeout(state.cameraWatchdog);
+      state.cameraWatchdog = setTimeout(async () => {
+        const video = $("#scannerVideo");
+        const noFrames = !video || video.readyState < 2 || !video.videoWidth || !video.videoHeight;
+        if (noFrames && state.scannerStream) {
+          await stopScanner();
+          $("#cameraCaptureInput")?.click();
+          setStatus("A camera abriu sem imagem nesse navegador. Usei o modo de foto.", "warn");
+        }
+      }, 2200);
+    }
+
+    async function tryLiveCamera(videoConstraint) {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraint, audio: false });
+      const video = $("#scannerVideo");
+      state.scannerStream = stream;
+      video.srcObject = stream;
+      video.setAttribute("autoplay", "");
+      video.setAttribute("playsinline", "");
+      video.muted = true;
+      await video.play();
+      state.scannerRunning = true;
+      $("#toggleCameraBtn").textContent = "Fechar camera";
+      setStatus("Camera ativa. Aponte para o codigo.", "ok");
+      scheduleCameraWatchdog();
+      requestAnimationFrame(scanLoop);
+    }
+
     async function startScanner() {
       if (!("BarcodeDetector" in window) || !navigator.mediaDevices?.getUserMedia) {
         $("#cameraCaptureInput")?.click();
@@ -444,23 +478,19 @@
             formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf"]
           });
         }
-        state.scannerStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 960 },
-            height: { ideal: 720 }
-          },
-          audio: false
-        });
-        $("#scannerVideo").srcObject = state.scannerStream;
-        await $("#scannerVideo").play();
-        state.scannerRunning = true;
-        $("#toggleCameraBtn").textContent = "Fechar camera";
-        setStatus("Camera ativa. Aponte para o codigo.", "ok");
-        requestAnimationFrame(scanLoop);
+        try {
+          await tryLiveCamera({ facingMode: "environment" });
+        } catch {
+          try {
+            await tryLiveCamera({ facingMode: { ideal: "environment" } });
+          } catch {
+            await tryLiveCamera(true);
+          }
+        }
       } catch (e) {
         console.error(e);
-        setStatus("Nao foi possivel abrir a camera.", "err");
+        $("#cameraCaptureInput")?.click();
+        setStatus("Nao foi possivel usar a camera ao vivo. Tentei o modo de foto.", "warn");
       }
     }
 
