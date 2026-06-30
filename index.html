@@ -1493,7 +1493,7 @@
       WHATSAPP_NUMBER: '5565998150975',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v4',
       PRODUCT_CACHE_MAX_AGE: 1000 * 60 * 20,
-      BASKET_CACHE_KEY: 'da_cestas_cache_v1',
+      BASKET_CACHE_KEY: 'da_cestas_cache_v2',
       BASKET_CACHE_MAX_AGE: 1000 * 60 * 60 * 12,
       CART_STORAGE_KEY: 'da_carrinho_v1',
       CHECKOUT_CLIENT_KEY: 'da_checkout_cliente_v1',
@@ -1730,7 +1730,7 @@
       if (cache && cache.data) applyCestasData(cache.data);
       if (freshEnough && state.cestas.length) return;
 
-      const urls = ['cestas.json', 'site/cestas.json'];
+      const urls = ['site/produtos-cesta-basica.json', 'site/cestas.json', 'cestas.json'];
       const refresh = async () => {
       for (const url of urls) {
         try {
@@ -2241,7 +2241,7 @@
     }
 
     function renderCestas() {
-      app.innerHTML = `<div class="container">${pageHeader('Cestas básicas', 'Escolha um kit pronto e envie pelo WhatsApp.', '#/')}${state.cestas.length ? `<div class="basket-list">${state.cestas.map(c => basketCard(c, 'wide')).join('')}</div>` : `<div class="empty"><strong>Nenhuma cesta carregada</strong>Confira se o arquivo cestas.json está junto com o index.html.</div>`}</div>`;
+      app.innerHTML = `<div class="container">${pageHeader('Cestas básicas', 'Escolha um kit pronto e envie pelo WhatsApp.', '#/')}${state.cestas.length ? `<div class="basket-list">${state.cestas.map(c => basketCard(c, 'wide')).join('')}</div>` : `<div class="empty"><strong>Nenhuma cesta carregada</strong>Confira se o arquivo de cestas publicado está disponível em <code>site/produtos-cesta-basica.json</code>.</div>`}</div>`;
       setActiveNav('home');
     }
 
