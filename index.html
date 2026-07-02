@@ -1403,12 +1403,14 @@
     body { background: var(--bg); }
     .header { box-shadow: none; border-color: rgba(23,79,50,.09); }
     .hero {
-      min-height: 390px;
-      grid-template-columns: minmax(0, 1.1fr) minmax(290px, .9fr);
+      display: grid;
+      min-height: 300px;
+      grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr);
       align-items: center;
+      padding: 30px;
       background: linear-gradient(120deg, #143f2a 0%, #1e6540 100%);
     }
-    .hero-media { display: grid; grid-template-columns: 1.15fr .85fr; gap: 10px; min-height: 310px; }
+    .hero-media { display: grid; grid-template-columns: 1.15fr .85fr; gap: 8px; height: 230px; min-height: 0; }
     .hero-photo {
       overflow: hidden;
       border-radius: 22px;
@@ -1416,7 +1418,7 @@
       box-shadow: 0 18px 45px rgba(0,0,0,.16);
     }
     .hero-photo:first-child { grid-row: span 2; }
-    .hero-photo img { width: 100%; height: 100%; object-fit: contain; padding: 18px; }
+    .hero-photo img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
     .product-card { transition: transform .2s ease, box-shadow .2s ease; }
     .product-card:hover { transform: translateY(-3px); box-shadow: 0 15px 32px rgba(28,52,38,.10); }
     .product-imgbox { height: 170px; }
@@ -1469,10 +1471,25 @@
     .coupon-active span { display: block; margin-top: 2px; font-size: 11px; opacity: .8; }
     .coupon-remove { color: #8f2141; font-size: 12px; font-weight: 850; }
     .summary-row.discount-row { color: #167344; }
+    .coupon-price-note {
+      display: inline-flex;
+      align-items: center;
+      width: max-content;
+      margin-top: 4px;
+      padding: 4px 7px;
+      border-radius: 7px;
+      color: #167344;
+      background: #e7f5ea;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .discount.coupon-discount { background: #167344; }
 
     @media (max-width: 767px) {
       .hero { min-height: 0; grid-template-columns: 1fr; padding: 24px; }
-      .hero-media { min-height: 190px; grid-template-columns: 1.2fr .8fr; }
+      .hero-media { height: 190px; min-height: 190px; grid-template-columns: 1.2fr .8fr; }
       .hero-photo img { padding: 10px; }
       .beauty-banner { grid-template-columns: 1fr; padding: 24px; }
       .beauty-products { min-height: 165px; }
@@ -1859,7 +1876,7 @@
 
     async function loadCestas() {
       const cache = readCache(CONFIG.BASKET_CACHE_KEY);
-      const urls = ['site/produtos-cesta-basica.json', 'site/cestas.json', 'cestas.json'];
+      const urls = ['site/produtos-cesta-basica.json', 'site/cestas.json', 'cestas.json', 'https://donaantonia.com.br/site/produtos-cesta-basica.json'];
       let lastError = null;
       for (const url of urls) {
         try {
@@ -1881,7 +1898,13 @@
     }
 
     function normalizeRelativeImage(value) {
-      return siteAssetUrl(value);
+      const img = String(value || '').trim();
+      if (!img) return 'https://donaantonia.com.br/img/logoantonia5.png';
+      if (/^(https?:|data:)/i.test(img)) return img;
+      const clean = img.replace(/^(\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
+      if (clean.startsWith('site/')) return `https://donaantonia.com.br/${clean}`;
+      if (clean.startsWith('img/')) return `https://donaantonia.com.br/${clean}`;
+      return `https://donaantonia.com.br/img/${clean}`;
     }
 
     function loadCart() {
@@ -2023,6 +2046,7 @@
         button.textContent = 'Cupom ativado ✓';
       });
       updateCartUI();
+      if (!(location.hash || '').startsWith('#/campanha-cupom/')) handleRoute();
       if ($('checkout-drawer').classList.contains('open')) renderCheckout();
       showToast(`Cupom ${state.activeCouponCode} ativado.`);
       return true;
@@ -2040,6 +2064,7 @@
         });
       }
       updateCartUI();
+      if (!(location.hash || '').startsWith('#/campanha-cupom/')) handleRoute();
       if ($('checkout-drawer').classList.contains('open')) renderCheckout();
       showToast('Cupom removido.');
     }
@@ -2308,10 +2333,24 @@
 
     function productMetaHtml(p) {
       const parts = [];
-      if (p.discountPercent > 0) parts.push(`<span class="discount">-${Math.round(p.discountPercent)}%</span>`);
+      const display = productDisplayPricing(p);
+      if (display.discountPercent > 0) parts.push(`<span class="discount${display.couponApplied ? ' coupon-discount' : ''}">-${display.discountPercent}%${display.couponApplied ? ' CUPOM' : ''}</span>`);
       if (p.embalagem) parts.push(`<span>${escapeHtml(p.embalagem)}</span>`);
       if (p.marca) parts.push(`<span>${escapeHtml(p.marca)}</span>`);
       return parts.join('<span>•</span>');
+    }
+
+    function productDisplayPricing(p) {
+      const current = Number(p.price || 0);
+      const original = Math.max(Number(p.oldPrice || current), current);
+      const coupon = getActiveCoupon();
+      const eligibility = couponEligibility(coupon, rawCartSubtotal(true));
+      const effective = coupon && eligibility.eligible ? couponUnitPrice(p, coupon) : current;
+      const couponApplied = effective < current - .001;
+      const discountPercent = original > effective
+        ? Math.round(((original - effective) / Math.max(original, .01)) * 100)
+        : 0;
+      return { current, original, effective, coupon, couponApplied, discountPercent };
     }
 
     function pickProductImage(list) {
@@ -2342,6 +2381,7 @@
       const id = String(p.id);
       const qty = Number(state.cart[id] || 0);
       const unavailable = !isAvailable(p);
+      const display = productDisplayPricing(p);
       const classes = ['product-card'];
       if (mode === 'compact') classes.push('compact');
       if (mode === 'list') classes.push('list');
@@ -2355,8 +2395,9 @@
             <a class="product-name" href="#/produto/${productRouteKey(p)}">${escapeHtml(p.name)}</a>
             <div class="price-row">
               <div class="price-wrap">
-                ${p.oldPrice > p.price ? `<div class="old-price">${fmt(p.oldPrice)}</div>` : ''}
-                <div class="price">${fmt(p.price)}</div>
+                ${display.original > display.effective ? `<div class="old-price">${fmt(display.original)}</div>` : ''}
+                <div class="price">${fmt(display.effective)}</div>
+                ${display.couponApplied ? `<div class="coupon-price-note">com ${escapeHtml(display.coupon.codigo)}</div>` : ''}
               </div>
             </div>
             <div class="add-area" data-card-controls="${escapeHtml(id)}">${unavailable ? '<button class="add-btn" disabled>Esgotado</button>' : qtyControlHtml(id, qty)}</div>
@@ -2510,7 +2551,11 @@
         const groups = productsByCategoryForMonth(8);
         app.innerHTML = `<div class="container">${pageHeader('Compra do mês', '', '#/')}${groups.length ? groups.map(group => `<section class="month-group"><h2 class="month-group-title">${escapeHtml(group.category)}</h2><div class="product-grid">${group.products.map(p => productCard(p)).join('')}</div></section>`).join('') : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
       } else {
-        const products = productsByRoutine(key, 200);
+        let products = productsByRoutine(key, 200);
+        if (key === 'higiene') {
+          const beautyCoupon = getCouponByCode('BELEZA20');
+          products = products.filter(p => couponMatchesProduct(beautyCoupon, p));
+        }
         app.innerHTML = `<div class="container">${pageHeader(routine.title, '', '#/')}${key === 'higiene' ? beautyBannerHtml(products) : ''}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
       }
       setActiveNav('home');
@@ -2606,6 +2651,7 @@
         app.innerHTML = `<div class="container">${pageHeader('Produto não encontrado', 'Esse item pode ter saído do estoque.', '#/')}<div class="empty"><strong>Produto indisponível</strong>Volte para a loja e procure outro item.</div></div>`;
         return;
       }
+      const display = productDisplayPricing(p);
       const related = state.products.filter(x => isAvailable(x) && x.id !== p.id && (x.categoria === p.categoria || x.marca === p.marca)).slice(0, 10);
       app.innerHTML = `<div class="container">${pageHeader('Produto', '', '#/')}
         <article class="product-detail">
@@ -2613,7 +2659,7 @@
           <div class="detail-info">
             ${p.marca ? `<span class="detail-brand">${escapeHtml(p.marca)}</span>` : ''}
             <h1 class="detail-title">${escapeHtml(p.name)}</h1>
-            <div>${p.oldPrice > p.price ? `<div class="old-price">${fmt(p.oldPrice)}</div>` : ''}<div class="detail-price">${fmt(p.price)}</div></div>
+            <div>${display.original > display.effective ? `<div class="old-price">${fmt(display.original)}</div>` : ''}<div class="detail-price">${fmt(display.effective)}</div>${display.couponApplied ? `<div class="coupon-price-note">com ${escapeHtml(display.coupon.codigo)}</div>` : ''}</div>
             <div data-card-controls="${escapeHtml(p.id)}">${qtyControlHtml(p.id, Number(state.cart[p.id] || 0))}</div>
             <div class="desc">${escapeHtml(p.descricao || `${p.categoria}${p.subcategoria ? ' • ' + p.subcategoria : ''}${p.embalagem ? ' • ' + p.embalagem : ''}`)}</div>
           </div>
@@ -3439,4 +3485,3 @@
   </script>
 </body>
 </html>
- 
