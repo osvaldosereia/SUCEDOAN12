@@ -2194,11 +2194,12 @@
         added += amount;
       });
       if (!added) { showToast('Escolha pelo menos um produto da cesta.'); return; }
-      addBasketFeeToCart(basket, true);
+      const changed = basketDraftChanged(basketId);
+      addBasketFeeToCart(basket, changed);
       saveCart();
       updateCartUI();
       syncVisibleCards();
-      showToast(`${basket.nome} editada adicionada à compra.`);
+      showToast(`${basket.nome} ${changed ? 'alterada' : 'padrão'} adicionada à compra.`);
       location.hash = '#/cestas';
     }
 
@@ -2598,6 +2599,12 @@
       }, 0);
     }
 
+    function basketDraftChanged(basketId) {
+      const { rows } = getBasketLines(basketId);
+      const draft = ensureBasketDraft(basketId);
+      return rows.some(row => Number(draft[row.product.id] || 0) !== Number(row.qty || 0));
+    }
+
     function basketDraftTotal(basketId) {
       const basket = state.cestas.find(c => String(c.id) === String(basketId));
       const currentProducts = basketDraftProductTotal(basketId);
@@ -2613,6 +2620,7 @@
       }
       const draft = ensureBasketDraft(basket.id);
       const total = basketDraftTotal(basket.id);
+      const draftChanged = basketDraftChanged(basket.id);
       app.innerHTML = `<div class="container">${pageHeader(basket.nome, '', '#/cestas')}
         <article class="basket-card wide" style="margin-bottom:12px">
           <div class="basket-imgbox"><img src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}" onerror="window.__daFallbackImg(this)"></div>
@@ -2632,7 +2640,7 @@
           <div class="summary-row"><span>Valor da cesta padrão</span><span>${basket.preco ? fmt(basket.preco) : fmt(basketDefaultProductTotal(basket.id))}</span></div>
           <div class="summary-row total"><span>Total da cesta editada</span><span>${fmt(total)}</span></div>
           <div class="desc">O total mantém o valor predefinido da cesta. Se retirar produto, o valor do item é abatido; se adicionar, o valor do item é somado.</div>
-          <button class="send-btn" type="button" data-action="add-basket-custom" data-id="${escapeHtml(basket.id)}" ${rows.length ? '' : 'disabled'}>Adicionar cesta editada</button>
+          <button class="send-btn" type="button" data-action="add-basket-custom" data-id="${escapeHtml(basket.id)}" ${rows.length ? '' : 'disabled'}>Adicionar cesta ${draftChanged ? 'alterada' : 'padrão'}</button>
         </section>
       </div>`;
       setActiveNav('home');
@@ -3232,7 +3240,7 @@
         const line = effectivePrice * qty;
         totalBruto += line;
         if (product.isFee || String(id).startsWith('fee_')) { totalTaxasExtras += line; return; }
-        itemsTxt += `${qty}x ${product.name} — ${fmt(effectivePrice)} cada\n`;
+        itemsTxt += `${qty}x ${product.name}\n`;
         pedidoItens.push({
           firebaseKey: String(product.firebaseKey || ''),
           sku: String(product.codigo || product.id),
@@ -3318,7 +3326,7 @@
       let basketInfo = '';
       if (hasBasket) {
         basketInfo = '\n------------------------------';
-        Object.values(state.basketCustomizations).forEach(info => { basketInfo += `\nCesta/Kit ${info.name || ''} ${info.changed ? 'EDITADA' : 'PADRÃO'}`; });
+        Object.values(state.basketCustomizations).forEach(info => { basketInfo += `\nCesta/Kit ${info.name || ''} ${info.changed ? 'ALTERADA' : 'PADRÃO'}`; });
       }
 
       fetch(CONFIG.MAKE_WEBHOOK_URL, {
@@ -3327,8 +3335,7 @@
         body: JSON.stringify(makePayload),
         keepalive: true
       }).catch(err => console.error('Erro na integração Make:', err));
-      const couponInfo = pricing.coupon && pricing.discount > 0 ? `\n🏷️ *Cupom ${pricing.coupon.codigo}:* − ${fmt(pricing.discount)}` : '';
-      const msg = `*PEDIDO #${orderId}*\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*${couponInfo}\n💰 *TOTAL:* ${fmt(totalSite)}${basketInfo}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.`;
+      const msg = `*PEDIDO #${orderId}*\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*\n💰 *TOTAL:* ${fmt(totalSite)}${basketInfo}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.`;
 
       abrirWhatsAppPedido(msg);
       closeCheckout();
