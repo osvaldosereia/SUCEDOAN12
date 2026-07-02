@@ -1387,6 +1387,99 @@
       .category-button { box-shadow: none; }
     }
 
+    /* Refinamento premium: mais respiro, superfícies limpas e protagonismo para imagens */
+    :root {
+      --bg: #f6f5f0;
+      --surface-soft: #f1f3ed;
+      --ink: #17211b;
+      --muted: #657067;
+      --line: #e6e7e1;
+      --line-strong: #d7dbd3;
+      --brand: #174f32;
+      --brand-2: #267a4c;
+      --danger: #b4234f;
+      --shadow: 0 18px 55px rgba(28, 52, 38, .09);
+    }
+    body { background: var(--bg); }
+    .header { box-shadow: none; border-color: rgba(23,79,50,.09); }
+    .hero {
+      min-height: 390px;
+      grid-template-columns: minmax(0, 1.1fr) minmax(290px, .9fr);
+      align-items: center;
+      background: linear-gradient(120deg, #143f2a 0%, #1e6540 100%);
+    }
+    .hero-media { display: grid; grid-template-columns: 1.15fr .85fr; gap: 10px; min-height: 310px; }
+    .hero-photo {
+      overflow: hidden;
+      border-radius: 22px;
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 18px 45px rgba(0,0,0,.16);
+    }
+    .hero-photo:first-child { grid-row: span 2; }
+    .hero-photo img { width: 100%; height: 100%; object-fit: contain; padding: 18px; }
+    .product-card { transition: transform .2s ease, box-shadow .2s ease; }
+    .product-card:hover { transform: translateY(-3px); box-shadow: 0 15px 32px rgba(28,52,38,.10); }
+    .product-imgbox { height: 170px; }
+    .product-imgbox img { padding: 8px; }
+    .category-thumb { width: 72px; height: 72px; }
+    .beauty-banner {
+      position: relative;
+      min-height: 250px;
+      margin: 4px 0 24px;
+      padding: 28px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, .75fr);
+      align-items: center;
+      gap: 22px;
+      border-radius: 26px;
+      color: #fff;
+      background: linear-gradient(120deg, #6f244d, #b84b78);
+      box-shadow: 0 22px 50px rgba(111,36,77,.18);
+    }
+    .beauty-banner-copy { position: relative; z-index: 2; }
+    .beauty-banner-kicker { font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; opacity: .84; }
+    .beauty-banner h2 { max-width: 510px; margin-top: 8px; font-size: clamp(28px, 5vw, 46px); line-height: .98; letter-spacing: -.05em; }
+    .beauty-banner p { max-width: 540px; margin-top: 12px; color: rgba(255,255,255,.82); line-height: 1.5; }
+    .beauty-coupon-btn {
+      min-height: 48px;
+      margin-top: 18px;
+      padding: 0 18px;
+      border-radius: 13px;
+      color: #6f244d;
+      background: #fff;
+      font-weight: 900;
+    }
+    .beauty-products { position: relative; z-index: 1; display: flex; justify-content: center; align-items: flex-end; min-height: 205px; }
+    .beauty-products img {
+      width: 46%; height: 190px; object-fit: contain; padding: 7px;
+      border-radius: 20px; background: rgba(255,255,255,.96); box-shadow: 0 16px 36px rgba(51,10,33,.20);
+    }
+    .beauty-products img + img { margin-left: -12%; transform: translateY(14px) rotate(3deg); }
+    .coupon-box { padding: 15px; border: 1px solid #d9e7dd; border-radius: 16px; background: #f5faf6; }
+    .coupon-label { display: block; margin-bottom: 8px; color: var(--brand); font-size: 12px; font-weight: 900; }
+    .coupon-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
+    .coupon-row .field { margin: 0; text-transform: uppercase; letter-spacing: .04em; }
+    .coupon-apply { min-width: 92px; padding: 0 15px; border-radius: 12px; color: #fff; background: var(--brand); font-size: 13px; font-weight: 900; }
+    .coupon-message { margin-top: 9px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .coupon-message.success { color: #167344; font-weight: 750; }
+    .coupon-message.error { color: #a42142; font-weight: 750; }
+    .coupon-active { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; border-radius: 13px; background: #e7f5ea; color: var(--brand); }
+    .coupon-active strong { display: block; font-size: 13px; }
+    .coupon-active span { display: block; margin-top: 2px; font-size: 11px; opacity: .8; }
+    .coupon-remove { color: #8f2141; font-size: 12px; font-weight: 850; }
+    .summary-row.discount-row { color: #167344; }
+
+    @media (max-width: 767px) {
+      .hero { min-height: 0; grid-template-columns: 1fr; padding: 24px; }
+      .hero-media { min-height: 190px; grid-template-columns: 1.2fr .8fr; }
+      .hero-photo img { padding: 10px; }
+      .beauty-banner { grid-template-columns: 1fr; padding: 24px; }
+      .beauty-products { min-height: 165px; }
+      .beauty-products img { height: 155px; }
+      .product-imgbox { height: 148px; }
+    }
+
   </style>
 </head>
 <body>
@@ -1495,6 +1588,8 @@
       BASKET_CACHE_KEY: 'da_cestas_cache_v4',
       CART_STORAGE_KEY: 'da_carrinho_v1',
       CHECKOUT_CLIENT_KEY: 'da_checkout_cliente_v1',
+      COUPON_STORAGE_KEY: 'da_cupom_ativo_v1',
+      COUPON_URLS: ['cuponsativos.json', 'site/cuponsativos.json'],
       MIN_ORDER: 75,
       DEFAULT_DDD: '65'
     };
@@ -1518,6 +1613,11 @@
       activeCategory: 'Todos',
       searchQuery: '',
       searchTimer: null,
+      coupons: [],
+      activeCouponCode: '',
+      couponMessage: '',
+      couponMessageType: '',
+      customerLookupStatus: 'unknown',
       isReady: false
     };
 
@@ -1567,19 +1667,20 @@
       return raw.toLowerCase().replace(/(^|\s|[-/])([a-záéíóúâêôãõç])/g, (m, sep, chr) => sep + chr.toUpperCase()).replace(/\b(kg|g|ml|l|un|und|pct|cx)\b/gi, m => m.toLowerCase());
     }
 
+    function siteAssetUrl(value) {
+      const img = String(value || '').trim();
+      const assetBase = 'https://donaantonia.com.br';
+      if (!img) return `${assetBase}/site/img/logoantonia5.png`;
+      if (/^(https?:|data:)/i.test(img)) return img;
+      const clean = img.replace(/^(\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
+      return `${assetBase}/${clean.startsWith('site/') ? clean : `site/${clean}`}`;
+    }
+
     function imageFor(raw, product) {
       const val = raw.url_imagem || raw.imagem || raw.image || raw.img || raw.foto || raw.foto_url || raw.urlImagem || raw.imagem_url || '';
-      if (typeof val === 'string' && val.trim()) {
-        const img = val.trim();
-        if (/^(https?:|data:)/i.test(img)) return img;
-        if (img.startsWith('../')) return img;
-        if (img.startsWith('./')) return img.slice(2);
-        if (img.startsWith('/site/')) return img.replace('/site/', '');
-        if (img.startsWith('/')) return img.slice(1);
-        return img;
-      }
+      if (typeof val === 'string' && val.trim()) return siteAssetUrl(val);
       const code = String(product.codigo || product.id || product.firebaseKey || '').trim();
-      return code ? `img/produtos/${encodeURIComponent(code)}.webp` : 'img/logoantonia5.png';
+      return code ? siteAssetUrl(`img/produtos/${encodeURIComponent(code)}.webp`) : siteAssetUrl('img/logoantonia5.png');
     }
 
     function extractVolume(text) {
@@ -1682,6 +1783,39 @@
       } finally { clearTimeout(timer); }
     }
 
+    function couponIsValid(coupon) {
+      if (!coupon || coupon.ativo !== true) return false;
+      if (!coupon.validade) return true;
+      const end = new Date(`${coupon.validade}T23:59:59`);
+      return !isNaN(end.getTime()) && end >= new Date();
+    }
+
+    function getCouponByCode(code) {
+      const wanted = norm(code).replace(/\s+/g, '');
+      return state.coupons.find(c => norm(c.codigo).replace(/\s+/g, '') === wanted) || null;
+    }
+
+    function getActiveCoupon() {
+      const coupon = getCouponByCode(state.activeCouponCode);
+      return couponIsValid(coupon) ? coupon : null;
+    }
+
+    async function loadCoupons() {
+      let data = null;
+      for (const url of CONFIG.COUPON_URLS) {
+        try {
+          data = await fetchJson(withCacheBust(url), 5000, { cache: 'no-store' });
+          break;
+        } catch(e) {}
+      }
+      state.coupons = (Array.isArray(data) ? data : Object.values(data || {}))
+        .filter(c => c && c.codigo)
+        .sort((a,b) => Number(a.posicao || 99) - Number(b.posicao || 99));
+      const saved = readCache(CONFIG.COUPON_STORAGE_KEY);
+      const savedCode = saved && saved.codigo ? String(saved.codigo) : '';
+      if (couponIsValid(getCouponByCode(savedCode))) state.activeCouponCode = savedCode.toUpperCase();
+    }
+
     function normalizeProducts(raw) {
       const entries = Array.isArray(raw)
         ? raw.map((value, index) => [String(index), value]).filter(([, value]) => value)
@@ -1742,17 +1876,12 @@
         applyCestasData(cache.data);
         return;
       }
-      if (lastError) throw lastError;
+      state.cestas = [];
+      if (lastError) console.warn('Cestas não disponíveis:', lastError.message || lastError);
     }
 
     function normalizeRelativeImage(value) {
-      const img = String(value || '').trim();
-      if (!img) return 'img/logoantonia5.png';
-      if (/^(https?:|data:)/i.test(img)) return img;
-      if (img.startsWith('./')) return img.slice(2);
-      if (img.startsWith('/site/')) return img.replace('/site/', '');
-      if (img.startsWith('/')) return img.slice(1);
-      return img;
+      return siteAssetUrl(value);
     }
 
     function loadCart() {
@@ -1802,10 +1931,117 @@
     }
 
     function subtotalCart(includeFees) {
+      return cartPricing(includeFees).total;
+    }
+
+    function rawCartSubtotal(includeFees) {
       return getCartItems().reduce((sum, item) => {
         if (!includeFees && item.product.isFee) return sum;
         return sum + Number(item.product.price || 0) * item.qty;
       }, 0);
+    }
+
+    function couponMatchesProduct(coupon, product) {
+      if (!coupon || !product || product.isFee) return false;
+      const categories = (coupon.categorias || []).map(norm).filter(Boolean);
+      const brands = (coupon.marcas || []).map(norm).filter(Boolean);
+      const keywords = (coupon.palavras_chave || []).map(norm).filter(Boolean);
+      if (!categories.length && !brands.length && !keywords.length) return true;
+      const categoryText = norm([product.categoria, product.subcategoria, product.subsubcategoria].join(' '));
+      const brandText = norm(product.marca);
+      const productText = norm([product.name, product.marca, product.categoria, product.subcategoria, product.subsubcategoria].join(' '));
+      return categories.some(v => categoryText.includes(v) || v.includes(categoryText))
+        || brands.some(v => brandText === v || productText.includes(v))
+        || keywords.some(v => productText.includes(v));
+    }
+
+    function couponEligibility(coupon, rawSubtotal) {
+      if (!coupon) return { eligible: false, reason: 'Cupom não encontrado.' };
+      if (!couponIsValid(coupon)) return { eligible: false, reason: 'Este cupom está inativo ou vencido.' };
+      const minimum = Number(coupon.valorMinimo || 0);
+      if (rawSubtotal < minimum) return { eligible: false, pending: true, reason: `Faltam ${fmt(minimum - rawSubtotal)} para usar este cupom.` };
+      if (coupon.grupo === 'cliente_novo' && state.customerLookupStatus === 'existing') {
+        return { eligible: false, reason: 'Este cupom é exclusivo para a primeira compra.' };
+      }
+      return { eligible: true, reason: '' };
+    }
+
+    function couponUnitPrice(product, coupon) {
+      const current = Number(product.price || 0);
+      if (!couponMatchesProduct(coupon, product)) return current;
+      if (coupon.tipo === 'percentual') {
+        const base = Number(product.oldPrice || current);
+        const candidate = base * (1 - Number(coupon.desconto || 0) / 100);
+        return Math.max(0, Math.min(current, Math.round((candidate + Number.EPSILON) * 100) / 100));
+      }
+      return current;
+    }
+
+    function cartPricing(includeFees) {
+      const items = getCartItems().filter(item => includeFees || !item.product.isFee);
+      const subtotalBefore = items.reduce((sum, item) => sum + Number(item.product.price || 0) * item.qty, 0);
+      const coupon = getActiveCoupon();
+      const eligibility = couponEligibility(coupon, subtotalBefore);
+      let participatingItems = 0;
+      const total = items.reduce((sum, item) => {
+        const original = Number(item.product.price || 0);
+        const effective = eligibility.eligible ? couponUnitPrice(item.product, coupon) : original;
+        if (effective < original) participatingItems += item.qty;
+        return sum + effective * item.qty;
+      }, 0);
+      const roundedTotal = Math.round((total + Number.EPSILON) * 100) / 100;
+      return {
+        coupon,
+        eligibility,
+        subtotalBefore: Math.round((subtotalBefore + Number.EPSILON) * 100) / 100,
+        total: roundedTotal,
+        discount: Math.round((subtotalBefore - roundedTotal + Number.EPSILON) * 100) / 100,
+        participatingItems
+      };
+    }
+
+    function activateCoupon(code) {
+      const coupon = getCouponByCode(code);
+      if (!couponIsValid(coupon)) {
+        state.couponMessage = 'Cupom inválido, inativo ou vencido.';
+        state.couponMessageType = 'error';
+        if ($('checkout-drawer').classList.contains('open')) renderCheckout();
+        showToast('Cupom não encontrado.');
+        return false;
+      }
+      if (coupon.grupo === 'cliente_novo' && state.customerLookupStatus === 'existing') {
+        state.couponMessage = 'Este cupom é exclusivo para a primeira compra.';
+        state.couponMessageType = 'error';
+        if ($('checkout-drawer').classList.contains('open')) renderCheckout();
+        return false;
+      }
+      state.activeCouponCode = String(coupon.codigo).toUpperCase();
+      state.couponMessage = '';
+      state.couponMessageType = '';
+      writeCache(CONFIG.COUPON_STORAGE_KEY, { codigo: state.activeCouponCode, savedAt: Date.now() });
+      document.querySelectorAll(`[data-action="activate-coupon"][data-code="${state.activeCouponCode}"]`).forEach(button => {
+        button.textContent = 'Cupom ativado ✓';
+      });
+      updateCartUI();
+      if ($('checkout-drawer').classList.contains('open')) renderCheckout();
+      showToast(`Cupom ${state.activeCouponCode} ativado.`);
+      return true;
+    }
+
+    function removeCoupon() {
+      const previous = getActiveCoupon();
+      state.activeCouponCode = '';
+      state.couponMessage = '';
+      state.couponMessageType = '';
+      try { localStorage.removeItem(CONFIG.COUPON_STORAGE_KEY); } catch(e) {}
+      if (previous) {
+        document.querySelectorAll(`[data-action="activate-coupon"][data-code="${previous.codigo}"]`).forEach(button => {
+          button.textContent = previous.textoBotao || 'Ativar cupom';
+        });
+      }
+      updateCartUI();
+      if ($('checkout-drawer').classList.contains('open')) renderCheckout();
+      showToast('Cupom removido.');
     }
 
     function cartCount() {
@@ -2059,7 +2295,7 @@
 
     function fallbackImg(el) {
       el.onerror = null;
-      el.src = 'img/logoantonia5.png';
+      el.src = siteAssetUrl('img/logoantonia5.png');
     }
     window.__daFallbackImg = fallbackImg;
 
@@ -2157,6 +2393,43 @@
       return `<div class="page-head">${backHref ? `<a class="back-btn" href="${backHref}"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 12H5m7 7l-7-7 7-7"></path></svg></a>` : ''}<div><h1 class="page-title">${escapeHtml(title)}</h1>${subtitle ? `<div class="page-subtitle">${escapeHtml(subtitle)}</div>` : ''}</div></div>`;
     }
 
+    function beautyBannerHtml(products) {
+      const coupon = getCouponByCode('BELEZA20');
+      if (!couponIsValid(coupon)) return '';
+      const candidates = (products && products.length ? products : state.products)
+        .filter(p => isAvailable(p) && couponMatchesProduct(coupon, p))
+        .slice(0, 2);
+      const active = state.activeCouponCode === 'BELEZA20';
+      return `<section class="beauty-banner" aria-label="Cupom de beleza">
+        <div class="beauty-banner-copy">
+          <div class="beauty-banner-kicker">${escapeHtml(coupon.chamadaPequena || 'Beleza e cuidados')}</div>
+          <h2>${escapeHtml(coupon.tituloBanner || '20% OFF em Beleza')}</h2>
+          <p>${escapeHtml(coupon.subtituloBanner || coupon.descricao || '')}</p>
+          <button class="beauty-coupon-btn" type="button" data-action="activate-coupon" data-code="BELEZA20">${active ? 'Cupom ativado ✓' : escapeHtml(coupon.textoBotao || 'Ativar cupom')}</button>
+        </div>
+        ${candidates.length ? `<div class="beauty-products">${candidates.map(p => `<img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)">`).join('')}</div>` : ''}
+      </section>`;
+    }
+
+    function couponBoxHtml() {
+      const coupon = getActiveCoupon();
+      const pricing = cartPricing(true);
+      if (coupon) {
+        const detail = pricing.eligibility.eligible
+          ? (pricing.discount > 0 ? `Você economiza ${fmt(pricing.discount)} em ${pricing.participatingItems} ${pricing.participatingItems === 1 ? 'item' : 'itens'}.` : 'Ativo. A oferta vigente continua quando for mais vantajosa.')
+          : pricing.eligibility.reason;
+        return `<div class="coupon-box">
+          <span class="coupon-label">Cupom aplicado</span>
+          <div class="coupon-active"><div><strong>${escapeHtml(coupon.codigo)}</strong><span>${escapeHtml(detail)}</span></div><button class="coupon-remove" type="button" data-action="remove-coupon">Remover</button></div>
+        </div>`;
+      }
+      return `<div class="coupon-box">
+        <label class="coupon-label" for="coupon-code">Tem um cupom?</label>
+        <div class="coupon-row"><input id="coupon-code" class="field" type="text" placeholder="Digite o código" autocomplete="off" maxlength="30"><button class="coupon-apply" type="button" data-action="apply-coupon">Aplicar</button></div>
+        <div class="coupon-message ${escapeHtml(state.couponMessageType)}" role="status">${escapeHtml(state.couponMessage || 'O desconto será calculado nos produtos participantes.')}</div>
+      </div>`;
+    }
+
 
 
     function categoryButtonsHtml() {
@@ -2174,6 +2447,7 @@
     function renderHome() {
       const offers = getTopOffers(12);
       const essentials = productsByRoutine('compra-mes', 12);
+      const heroProducts = [...offers, ...essentials].filter((p, i, arr) => arr.findIndex(x => x.id === p.id) === i).slice(0, 3);
       const html = `
         <div class="container">
           <section class="hero">
@@ -2186,6 +2460,7 @@
                 <a class="hero-cta secondary" href="#/cestas">Comprar cesta básica</a>
               </div>
             </div>
+            ${heroProducts.length ? `<div class="hero-media" aria-label="Produtos em destaque">${heroProducts.map(p => `<a class="hero-photo" href="#/produto/${encodeURIComponent(productRouteKey(p))}"><img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)"></a>`).join('')}</div>` : ''}
           </section>
           <section class="trust-strip" aria-label="Condições da loja">
             <div class="trust-item"><strong>Pedido mínimo R$ 75</strong><span>Veja o progresso no carrinho</span></div>
@@ -2216,7 +2491,8 @@
       const currentSub = new URLSearchParams(location.hash.split('?')[1] || '').get('sub') || 'Todos';
       const filtered = currentSub === 'Todos' ? products : products.filter(p => p.subcategoria === currentSub);
       const chips = `<div class="chips"><a class="chip ${currentSub === 'Todos' ? 'active' : ''}" href="#/categoria/${encodeURIComponent(decoded)}">Todos</a>${subs.map(s => `<a class="chip ${currentSub === s ? 'active' : ''}" href="#/categoria/${encodeURIComponent(decoded)}?sub=${encodeURIComponent(s)}">${escapeHtml(s)}</a>`).join('')}</div>`;
-      app.innerHTML = `<div class="container">${pageHeader(decoded, `${filtered.length} produtos encontrados`, '#/categorias')}${chips}<div class="product-grid">${filtered.map(p => productCard(p)).join('')}</div></div>`;
+      const isBeauty = /(beleza|higiene|perfumaria)/.test(norm(decoded));
+      app.innerHTML = `<div class="container">${pageHeader(decoded, `${filtered.length} produtos encontrados`, '#/categorias')}${isBeauty ? beautyBannerHtml(products) : ''}${chips}<div class="product-grid">${filtered.map(p => productCard(p)).join('')}</div></div>`;
       setActiveNav('categorias');
       updateMeta(`${decoded} - Dona Antônia`, `Compre ${decoded.toLowerCase()} com entrega em Cuiabá e Várzea Grande.`, `/?categoria=${encodeURIComponent(decoded)}`);
     }
@@ -2235,7 +2511,7 @@
         app.innerHTML = `<div class="container">${pageHeader('Compra do mês', '', '#/')}${groups.length ? groups.map(group => `<section class="month-group"><h2 class="month-group-title">${escapeHtml(group.category)}</h2><div class="product-grid">${group.products.map(p => productCard(p)).join('')}</div></section>`).join('') : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
       } else {
         const products = productsByRoutine(key, 200);
-        app.innerHTML = `<div class="container">${pageHeader(routine.title, '', '#/')}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
+        app.innerHTML = `<div class="container">${pageHeader(routine.title, '', '#/')}${key === 'higiene' ? beautyBannerHtml(products) : ''}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
       }
       setActiveNav('home');
     }
@@ -2452,6 +2728,13 @@
       if (parts[0] === 'cestas') return renderCestas();
       if (parts[0] === 'busca') return renderSearch(state.searchQuery || decodeURIComponent(parts.slice(1).join(' ')));
       if (parts[0] === 'informacoes') return renderInfo();
+      if (parts[0] === 'campanha-cupom') {
+        activateCoupon(parts[1] || '');
+        const coupon = getCouponByCode(parts[1] || '');
+        if (coupon && coupon.grupo === 'beleza') return renderRoutine('higiene');
+        if (coupon && coupon.grupo === 'cafe_da_manha') return renderRoutine('cafe');
+        return renderHome();
+      }
       return renderHome();
     }
 
@@ -2544,8 +2827,9 @@
 
     function renderCheckout() {
       const items = getCartItems().filter(i => !i.product.isFee);
-      const total = subtotalCart(true);
-      const missing = Math.max(CONFIG.MIN_ORDER - total, 0);
+      const pricing = cartPricing(true);
+      const total = pricing.total;
+      const missing = Math.max(CONFIG.MIN_ORDER - pricing.subtotalBefore, 0);
       const suggestions = missing > 0
         ? state.products.filter(p => isAvailable(p) && !state.cart[p.id] && p.price <= Math.max(missing + 8, 12)).sort((a,b) => a.price - b.price).slice(0, 10)
         : getCompleteCartSuggestions(10);
@@ -2557,12 +2841,17 @@
           ${items.length ? items.map(({id, product, qty}) => `
             <div class="cart-row">
               <img class="cart-img" src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
-              <div><div class="cart-name">${escapeHtml(product.name)}</div><div class="cart-price">${fmt(product.price)} cada</div></div>
+              <div><div class="cart-name">${escapeHtml(product.name)}</div><div class="cart-price">${pricing.eligibility.eligible && couponUnitPrice(product, pricing.coupon) < product.price ? `<s>${fmt(product.price)}</s> · ${fmt(couponUnitPrice(product, pricing.coupon))} com cupom` : `${fmt(product.price)} cada`}</div></div>
               <div class="cart-qty"><button type="button" data-action="dec" data-id="${escapeHtml(id)}">−</button><span>${qty}</span><button type="button" data-action="inc" data-id="${escapeHtml(id)}">+</button></div>
             </div>`).join('') : `<div class="empty"><strong>Sua compra está vazia</strong>Adicione produtos para enviar o pedido.</div>`}
+          ${pricing.discount > 0 ? `<div class="summary-row discount-row"><span>Desconto ${escapeHtml(pricing.coupon.codigo)}</span><span>− ${fmt(pricing.discount)}</span></div>` : ''}
           <div class="summary-row total"><span>Total</span><span>${fmt(total)}</span></div>
           <div class="min-order" id="min-order-box" style="display:${items.length && missing > 0 ? 'block' : 'none'}">Faltam <strong>${fmt(missing)}</strong> para atingir o pedido mínimo de ${fmt(CONFIG.MIN_ORDER)}.</div>
           ${items.length ? `<button class="clear-cart-btn" type="button" data-action="clear-cart"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15"></path></svg>Limpar carrinho</button>` : ''}
+        </section>
+        <section class="checkout-section">
+          <div class="checkout-title">Cupom de desconto</div>
+          ${couponBoxHtml()}
         </section>
         ${suggestions.length ? `<section class="checkout-section"><div class="checkout-title">${missing > 0 ? 'Complete o pedido mínimo' : 'Produtos que combinam'}</div><div class="mini-suggest">${suggestions.map(p => productCard(p, 'compact')).join('')}</div></section>` : ''}
         <section class="checkout-section">
@@ -2595,7 +2884,8 @@
         </section>
         <section class="checkout-section">
           <div class="checkout-notice">Ao tocar no botão, seu pedido vai abrir no WhatsApp.</div>
-          <div class="summary-row"><span>Subtotal dos produtos</span><span>${fmt(total)}</span></div>
+          <div class="summary-row"><span>Subtotal dos produtos</span><span>${fmt(pricing.subtotalBefore)}</span></div>
+          ${pricing.discount > 0 ? `<div class="summary-row discount-row"><span>Desconto ${escapeHtml(pricing.coupon.codigo)}</span><span>− ${fmt(pricing.discount)}</span></div>` : ''}
           <div class="summary-row total"><span>Total estimado</span><span>${fmt(total)}</span></div>
           <button class="send-btn" type="button" id="btn-send-order" ${items.length && missing <= 0 ? '' : 'disabled'}><svg class="svg-fill" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"></path></svg>${items.length && missing > 0 ? `Faltam ${fmt(missing)}` : 'Pedir no WhatsApp'}</button>
         </section>`;
@@ -2803,10 +3093,19 @@
         }
         if (!response.ok || result.sucesso === false) throw new Error(result.erro || 'Não foi possível buscar seus dados agora.');
         if (!result.encontrado || !result.cliente) {
+          state.customerLookupStatus = 'new';
           setLookupStatus('Não encontramos seus dados. Preencha os campos abaixo.', 'warning');
           return;
         }
+        state.customerLookupStatus = 'existing';
         fillClientFromBling(result.cliente);
+        if (getActiveCoupon() && getActiveCoupon().grupo === 'cliente_novo') {
+          state.couponMessage = 'Este cupom é exclusivo para a primeira compra.';
+          state.couponMessageType = 'error';
+          renderCheckout();
+          showToast('Cupom de primeira compra não elegível.');
+          return;
+        }
         setLookupStatus('Pronto. Preenchemos seus dados.', 'success');
       } catch(err) {
         const message = err && err.name === 'AbortError'
@@ -2833,7 +3132,8 @@
     async function sendOrder(btn) {
       const items = getCartItems();
       if (!items.filter(i => !i.product.isFee).length) return;
-      const totalAtual = subtotalCart(true);
+      const pricing = cartPricing(true);
+      const totalAtual = pricing.subtotalBefore;
       if (totalAtual < CONFIG.MIN_ORDER) {
         showToast(`Faltam ${fmt(CONFIG.MIN_ORDER - totalAtual)}.`);
         return;
@@ -2882,16 +3182,19 @@
       const pedidoItens = [];
 
       items.forEach(({id, product, qty}) => {
-        const line = Number(product.price || 0) * qty;
+        const effectivePrice = pricing.eligibility.eligible ? couponUnitPrice(product, pricing.coupon) : Number(product.price || 0);
+        const line = effectivePrice * qty;
         totalBruto += line;
         if (product.isFee || String(id).startsWith('fee_')) { totalTaxasExtras += line; return; }
-        itemsTxt += `${qty}x ${product.name}\n`;
+        itemsTxt += `${qty}x ${product.name} — ${fmt(effectivePrice)} cada\n`;
         pedidoItens.push({
           firebaseKey: String(product.firebaseKey || ''),
           sku: String(product.codigo || product.id),
           nome: product.name,
           qtd: qty,
-          price: Number(product.price || 0),
+          price: effectivePrice,
+          precoOriginal: Number(product.price || 0),
+          descontoCupom: Math.max(0, Number(product.price || 0) - effectivePrice),
           gtin: String(product.gtin || ''),
           ean: String(product.ean || product.gtin || ''),
           url_imagem: String(product.url_imagem || product.img || ''),
@@ -2923,6 +3226,13 @@
           outrasDespesasBling,
           descontoBling,
           desconto: 0,
+          cupom: pricing.coupon && pricing.eligibility.eligible ? {
+            codigo: pricing.coupon.codigo,
+            tipo: pricing.coupon.tipo,
+            percentual: Number(pricing.coupon.desconto || 0),
+            valorDesconto: pricing.discount,
+            itensParticipantes: pricing.participatingItems
+          } : null,
           observacoes: hasBasket ? 'Pedido com Cesta/Kit' : 'Pedido Comum',
           cliente: {
             nome,
@@ -2971,7 +3281,8 @@
         body: JSON.stringify(makePayload),
         keepalive: true
       }).catch(err => console.error('Erro na integração Make:', err));
-      const msg = `*PEDIDO #${orderId}*\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*\n💰 *TOTAL:* ${fmt(totalSite)}${basketInfo}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.`;
+      const couponInfo = pricing.coupon && pricing.discount > 0 ? `\n🏷️ *Cupom ${pricing.coupon.codigo}:* − ${fmt(pricing.discount)}` : '';
+      const msg = `*PEDIDO #${orderId}*\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*${couponInfo}\n💰 *TOTAL:* ${fmt(totalSite)}${basketInfo}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.`;
 
       abrirWhatsAppPedido(msg);
       closeCheckout();
@@ -3057,6 +3368,12 @@
         if (action === 'basket-dec') setBasketDraftQty(btn.getAttribute('data-basket-id'), id, Number((state.basketDrafts[btn.getAttribute('data-basket-id')] || {})[id] || 0) - 1);
         if (action === 'add-basket-custom') addBasketCustomToCart(id);
         if (action === 'clear-cart') clearCart();
+        if (action === 'activate-coupon') activateCoupon(btn.getAttribute('data-code'));
+        if (action === 'apply-coupon') {
+          const input = $('coupon-code');
+          activateCoupon(input ? input.value : '');
+        }
+        if (action === 'remove-coupon') removeCoupon();
       });
       document.addEventListener('input', e => {
         const el = e.target;
@@ -3076,6 +3393,12 @@
         if (el.id === 'chk-telefone') el.value = formatarTelefone(el.value);
         saveCheckoutClient();
       });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && e.target && e.target.id === 'coupon-code') {
+          e.preventDefault();
+          activateCoupon(e.target.value);
+        }
+      });
       document.addEventListener('click', e => {
         const lookup = e.target.closest('#btn-lookup-client');
         if (lookup) {
@@ -3092,7 +3415,7 @@
       loadCart();
       updateCartUI();
       try {
-        await Promise.all([loadProducts(), loadCestas()]);
+        await Promise.all([loadProducts(), loadCestas(), loadCoupons()]);
         rebuildVirtualFees();
         removeMissingCartItems();
         state.isReady = true;
