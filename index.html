@@ -1602,7 +1602,7 @@
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
-      BASKET_CACHE_KEY: 'da_cestas_cache_v4',
+      BASKET_CACHE_KEY: 'da_cestas_cache_v5',
       CART_STORAGE_KEY: 'da_carrinho_v1',
       CHECKOUT_CLIENT_KEY: 'da_checkout_cliente_v1',
       COUPON_STORAGE_KEY: 'da_cupom_ativo_v1',
@@ -1621,6 +1621,7 @@
     const state = {
       products: [],
       productMap: new Map(),
+      productCodeMap: new Map(),
       cestas: [],
       cart: {},
       cartOrder: [],
@@ -1660,6 +1661,17 @@
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
         .trim();
+    }
+
+    function codeVariants(value) {
+      const raw = String(value == null ? '' : value).trim();
+      const base = norm(raw);
+      if (!base) return [];
+      const compact = base.replace(/[^a-z0-9]/g, '');
+      const noPrefixZeros = compact.replace(/^([a-z]+)0+(\d+)$/, '$1$2');
+      const onlyNumber = compact.replace(/^[a-z]+0*(\d+)$/, '$1');
+      const noLeadingZeros = compact.replace(/^0+(\d+)$/, '$1');
+      return Array.from(new Set([base, compact, noPrefixZeros, onlyNumber, noLeadingZeros].filter(Boolean)));
     }
 
     function words(value) {
@@ -1840,6 +1852,14 @@
       const products = entries.map(([key, value], index) => normalizeProduct(value || {}, key, index)).filter(p => String(p.situacao || '').toUpperCase() !== 'I');
       products.sort((a,b) => a.name.localeCompare(b.name, 'pt-BR'));
       state.productMap = new Map(products.map(p => [String(p.id), p]));
+      state.productCodeMap = new Map();
+      products.forEach(p => {
+        [p.id, p.codigo, p.firebaseKey, p.gtin, p.ean].forEach(value => {
+          codeVariants(value).forEach(key => {
+            if (key && !state.productCodeMap.has(key)) state.productCodeMap.set(key, p);
+          });
+        });
+      });
       state.products = products;
       rebuildVirtualFees();
     }
@@ -2136,16 +2156,51 @@
       });
     }
 
+    function normalizeBasketSubstitutes(value) {
+      if (Array.isArray(value)) {
+        return value.map(item => {
+          if (item && typeof item === 'object') return item.codigo || item.sku || item.id || item.gtin || item.ean || '';
+          return item;
+        }).map(v => String(v || '').trim()).filter(Boolean);
+      }
+      return String(value || '').split(/[;,|]/g).map(v => v.trim()).filter(Boolean);
+    }
+
     function parseBasketItem(line) {
+      if (line && typeof line === 'object') {
+        const code = line.codigo || line.sku || line.id || line.gtin || line.ean || '';
+        const qty = Number(line.qtd || line.qty || line.quantidade || line.quantity || 1);
+        return {
+          qty: Math.max(1, qty || 1),
+          code: String(code || '').trim(),
+          substitutes: normalizeBasketSubstitutes(line.substitutos || line.substitutes || line.alternativos || line.alternatives)
+        };
+      }
       const str = String(line || '').trim();
       const m = str.match(/^(\d+)\s*x\s*(.+)$/i);
-      if (m) return { qty: Number(m[1] || 1), code: m[2].trim() };
-      return { qty: 1, code: str };
+      if (m) return { qty: Math.max(1, Number(m[1] || 1)), code: m[2].trim(), substitutes: [] };
+      return { qty: 1, code: str, substitutes: [] };
     }
 
     function findProductByCode(code) {
-      const wanted = norm(code);
-      return state.products.find(p => [p.id, p.codigo, p.firebaseKey, p.gtin, p.ean].some(v => norm(v) === wanted)) || null;
+      const variants = codeVariants(code);
+      for (const key of variants) {
+        if (state.productCodeMap && state.productCodeMap.has(key)) return state.productCodeMap.get(key);
+      }
+      return state.products.find(p => [p.id, p.codigo, p.firebaseKey, p.gtin, p.ean].some(v => {
+        const productVariants = codeVariants(v);
+        return productVariants.some(key => variants.includes(key));
+      })) || null;
+    }
+
+    function findBasketProduct(line) {
+      const parsed = parseBasketItem(line);
+      const codes = [parsed.code, ...(parsed.substitutes || [])].filter(Boolean);
+      for (const code of codes) {
+        const product = findProductByCode(code);
+        if (product && isAvailable(product)) return { product, qty: Math.max(1, Number(parsed.qty || 1)) };
+      }
+      return null;
     }
 
     function setBasketDraftQty(basketId, productId, qty) {
@@ -2250,18 +2305,16 @@
     }
 
     function addBasketToCart(basketId) {
-      const basket = state.cestas.find(c => String(c.id) === String(basketId));
+      const { basket, rows } = getBasketLines(basketId);
       if (!basket) return;
       let added = 0;
-      (basket.produtos || []).forEach(line => {
-        const parsed = parseBasketItem(line);
-        const p = findProductByCode(parsed.code);
+      rows.forEach(({ product: p, qty }) => {
         if (!p || !isAvailable(p)) return;
-        const qty = Math.max(1, parsed.qty || 1);
+        const amount = Math.max(1, Number(qty || 1));
         const key = String(p.id);
         if (!state.cartOrder.includes(key)) state.cartOrder.push(key);
-        state.cart[key] = Number(state.cart[key] || 0) + qty;
-        added += qty;
+        state.cart[key] = Number(state.cart[key] || 0) + amount;
+        added += amount;
       });
       if (!added) { showToast('Não consegui localizar os itens dessa cesta.'); return; }
       addBasketFeeToCart(basket, false, basketOriginalItemsMap(basket.id));
@@ -2616,11 +2669,9 @@
     function getBasketLines(basketId) {
       const basket = state.cestas.find(c => String(c.id) === String(basketId));
       if (!basket) return { basket: null, rows: [] };
-      const rows = (basket.produtos || []).map(line => {
-        const parsed = parseBasketItem(line);
-        const product = findProductByCode(parsed.code);
-        return product && isAvailable(product) ? { product, qty: Math.max(1, Number(parsed.qty || 1)) } : null;
-      }).filter(Boolean);
+      const rows = (basket.produtos || [])
+        .map(line => findBasketProduct(line))
+        .filter(Boolean);
       return { basket, rows };
     }
 
