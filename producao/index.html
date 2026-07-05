@@ -126,8 +126,40 @@
     #imageEditorCanvas{width:100%;max-width:520px;aspect-ratio:1;background:linear-gradient(45deg,#eee 25%,transparent 25%),linear-gradient(-45deg,#eee 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eee 75%),linear-gradient(-45deg,transparent 75%,#eee 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0;border:1px solid var(--line);border-radius:16px}
     .editor-controls{display:flex;flex-direction:column;gap:14px}.editor-controls input[type=range]{width:100%}
     .expiry-help{margin-top:6px;padding:9px 10px;background:var(--gold2);color:#705512;border-radius:10px;font-size:11px;font-weight:750}
+    .view-switch{display:inline-flex;gap:5px;padding:4px;background:#eeeae1;border:1px solid var(--line);border-radius:14px}
+    .view-switch .btn{background:transparent;border-color:transparent;box-shadow:none}
+    .view-switch .btn.active{background:#111;color:#fff;border-color:#111}
+    .products-grid.list-view{display:flex!important;flex-direction:column;gap:9px}
+    .products-grid.list-view .product-card{display:grid!important;grid-template-columns:76px minmax(0,1fr)!important;min-height:0!important}
+    .products-grid.list-view .product-img{width:76px!important;height:100%!important;min-height:108px!important;max-height:none!important;flex:0 0 76px!important;border:0!important;border-right:1px solid var(--line)!important}
+    .products-grid.list-view .product-img img{padding:8px!important}
+    .products-grid.list-view .product-body{display:grid!important;grid-template-columns:minmax(150px,1.35fr) minmax(720px,5fr) auto!important;align-items:center!important;gap:10px!important;padding:10px!important;overflow-x:auto}
+    .products-grid.list-view .quick-edit{grid-template-columns:repeat(10,minmax(86px,1fr))!important;grid-column:2!important;grid-row:1 / span 3}
+    .products-grid.list-view .meta-line{grid-column:1}
+    .products-grid.list-view .card-save-actions,.products-grid.list-view .icon-actions{grid-column:3!important}
+    .products-grid.list-view .card-save-actions{grid-row:1}
+    .products-grid.list-view .icon-actions{grid-row:2 / span 2}
+    .products-grid.list-view .quick-field.wide{grid-column:auto!important}
+    .registry-letter{border:1px solid var(--line);border-radius:16px;background:#fafafa;overflow:hidden}
+    .registry-letter-head{padding:8px 12px;background:#f1eee7;border-bottom:1px solid var(--line);font-size:12px;font-weight:950;color:#705512}
+    .registry-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:9px}
+    .registry-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
+    .category-tree{display:flex;flex-direction:column;gap:12px}
+    .category-manager{grid-column:1/-1}
+    .category-tree-card{border:1px solid #dfd4b4;border-radius:18px;background:#fffdf7;overflow:hidden}
+    .category-tree-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end;padding:12px;background:var(--gold2);border-bottom:1px solid #ead493}
+    .category-tree-head label,.subcategory-tree-head label{display:block;font-size:10px;font-weight:900;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+    .category-tree-body{display:flex;flex-direction:column;gap:9px;padding:10px}
+    .subcategory-tree{margin-left:18px;border-left:3px solid #dce8ff;background:#fafcff;border-radius:0 14px 14px 0;padding:10px}
+    .subcategory-tree-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}
+    .subsubcategory-list{display:flex;flex-direction:column;gap:6px;margin:9px 0 0 20px}
+    .subsubcategory-row{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:7px;align-items:center}
+    .tree-branch{color:var(--blue);font-weight:950;text-align:center}
+    .tree-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;margin-top:9px}
+    .category-tree-empty{padding:9px;color:var(--muted);font-size:12px}
     @media(max-width:1100px){.basket-workspace{grid-template-columns:1fr}.product-finder{position:relative;top:auto;max-height:none;order:-1}.kit-health{grid-template-columns:1fr 1fr}}
-    @media(max-width:700px){#tab-cadastros .catalog-grid{grid-template-columns:1fr}.image-editor-layout{grid-template-columns:1fr}.kit-health{grid-template-columns:1fr}}
+    @media(max-width:900px){.products-grid.list-view .product-body{grid-template-columns:1fr!important}.products-grid.list-view .quick-edit,.products-grid.list-view .meta-line,.products-grid.list-view .card-save-actions,.products-grid.list-view .icon-actions{grid-column:1!important;grid-row:auto!important}.products-grid.list-view .quick-edit{grid-template-columns:repeat(3,minmax(100px,1fr))!important}}
+    @media(max-width:700px){#tab-cadastros .catalog-grid{grid-template-columns:1fr}.image-editor-layout{grid-template-columns:1fr}.kit-health{grid-template-columns:1fr}.registry-items{grid-template-columns:1fr}.subcategory-tree{margin-left:8px}.subsubcategory-list{margin-left:8px}.products-grid.list-view .product-card{grid-template-columns:62px minmax(0,1fr)!important}.products-grid.list-view .product-img{width:62px!important}.products-grid.list-view .quick-edit{grid-template-columns:repeat(2,minmax(100px,1fr))!important}}
   </style>
 </head>
 <body>
@@ -224,7 +256,7 @@
 
   <main class="app">
     <section class="panel" id="tab-produtos">
-      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Edição rápida do catálogo e controle de estoque.</p></div><div class="toolbar"><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
+      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Edição rápida do catálogo e controle de estoque.</p></div><div class="toolbar"><div class="view-switch" aria-label="Forma de exibição"><button class="btn small active" type="button" data-action="view-products-grid" title="Grade com quatro colunas">▦ Grade</button><button class="btn small" type="button" data-action="view-products-list" title="Lista compacta com miniaturas">☷ Lista</button></div><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
       <div class="products-grid" id="productsGrid"></div>
       <div class="pagination" id="pagination"></div>
     </section>
@@ -268,9 +300,9 @@
     </section>
 
     <section class="panel hidden" id="tab-cadastros">
-      <div class="panel-head"><div class="panel-title"><h2>Categorias, tags e fornecedores</h2><p>Cadastros auxiliares salvos no produtos_admin_meta.json e usados nos filtros/editores. O produtos_meta.csv é gerado no padrão aceito pela Meta.</p></div><div class="toolbar"><button class="btn gold" data-action="rebuild-meta">Reconstruir a partir dos produtos</button><button class="btn primary" data-action="save-meta">Salvar metadados</button></div></div>
+      <div class="panel-head"><div class="panel-title"><h2>Categorias, marcas, tags e fornecedores</h2><p>Cadastros auxiliares organizados para edição rápida e salvos no produtos_admin_meta.json.</p></div><div class="toolbar"><button class="btn gold" data-action="rebuild-meta">Reconstruir a partir dos produtos</button><button class="btn primary" data-action="save-meta">Salvar metadados</button></div></div>
       <div class="catalog-grid">
-        <div class="card pad"><h3>Categorias</h3><div class="form-grid"><div class="field"><label>Categoria</label><input class="input" id="newCat"></div><div class="field"><label>Subcategoria</label><input class="input" id="newSub"></div><div class="field"><label>Subsubcategoria</label><input class="input" id="newSubSub"></div><div class="field"><label>&nbsp;</label><button class="btn green" data-action="add-category">Adicionar</button></div></div><div class="catalog-list" id="categoriesList"></div></div>
+        <div class="card pad category-manager"><h3>Hierarquia de categorias</h3><p class="tiny">Cada categoria principal contém suas subcategorias e subsubcategorias. Você pode editar qualquer nível diretamente.</p><div class="form-grid"><div class="field"><label>Categoria</label><input class="input" id="newCat"></div><div class="field"><label>Subcategoria</label><input class="input" id="newSub"></div><div class="field"><label>Subsubcategoria</label><input class="input" id="newSubSub"></div><div class="field"><label>&nbsp;</label><button class="btn green" data-action="add-category">Adicionar hierarquia</button></div></div><div class="catalog-list" id="categoriesList"></div></div>
         <div class="card pad"><h3>Tags universais</h3><p class="tiny">Tags globais salvas no produtos_admin_meta.json. Elas aparecem no editor de todos os produtos.</p><div class="form-grid"><div class="field span-3"><label>Nova tag universal</label><input class="input" id="newTag"></div><div class="field"><label>&nbsp;</label><button class="btn green" data-action="add-tag">Adicionar</button></div></div><div class="catalog-list" id="tagsList"></div></div>
         <div class="card pad"><h3>Fornecedores</h3><div class="form-grid"><div class="field"><label>Nome</label><input class="input" id="newFornecedorNome"></div><div class="field"><label>Telefone</label><input class="input" id="newFornecedorTel"></div><div class="field"><label>Observação</label><input class="input" id="newFornecedorObs"></div><div class="field"><label>&nbsp;</label><button class="btn green" data-action="add-fornecedor">Adicionar</button></div></div><div class="catalog-list" id="fornecedoresList"></div></div>
         <div class="card pad"><h3>Marcas</h3><div class="form-grid"><div class="field span-3"><label>Nova marca</label><input class="input" id="newMarca"></div><div class="field"><label>&nbsp;</label><button class="btn green" data-action="add-marca">Adicionar</button></div></div><div class="catalog-list" id="marcasList"></div></div>
@@ -363,6 +395,7 @@
     scannerCode: "", scannerCurrentKey: null, scannerStream: null, scannerDetector: null, scannerLoopActive: false,
     scannerStatus: "Aguardando leitura.", scannerStatusType: "warn", scannerRecentCodes: []
   };
+  state.productView=localStorage.getItem("donaantonia_product_view")==="list"?"list":"grid";
 
   function $(s, root=document){return root.querySelector(s)}
   function $$(s, root=document){return Array.from(root.querySelectorAll(s))}
@@ -654,19 +687,19 @@
   function fillSelect(sel, values){const el=$(sel); if(!el) return; const cur=el.value; const first=el.querySelector('option')?.outerHTML || '<option value="">Todos</option>'; el.innerHTML = first + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join(""); el.value = values.includes(cur)?cur:""}
   function getFilters(){return {q:$("#f-q")?.value||"",categoria:$("#f-categoria")?.value||"",subcategoria:$("#f-subcategoria")?.value||"",subsubcategoria:$("#f-subsubcategoria")?.value||"",marca:$("#f-marca")?.value||"",fornecedor:$("#f-fornecedor")?.value||"",tag:$("#f-tag")?.value||"",situacao:$("#f-situacao")?.value||"",qualidade:$("#f-qualidade")?.value||"",cesta:$("#f-cesta")?.value||"",sort:$("#f-sort")?.value||"nome",pageSize:Number($("#f-page-size")?.value||24)}}
   function filteredProducts(){const f=getFilters(); let list=[...state.produtos]; const q=textNorm(f.q); if(q) list=list.filter(p=>textNorm([p.nome,p.codigo,p.gtin,p.ean,p.marca,p.categoria,p.subcategoria,p.subsubcategoria,p.fornecedor,p.descricao,parseTags(p.tags).join(' ')].join(' ')).includes(q)); ['categoria','subcategoria','subsubcategoria','marca','fornecedor'].forEach(k=>{if(f[k]) list=list.filter(p=>String(p[k]||'')===f[k])}); if(f.tag) list=list.filter(p=>parseTags(p.tags).includes(f.tag)); if(f.situacao==='A') list=list.filter(isActive); if(f.situacao==='I') list=list.filter(p=>!isActive(p)); if(f.situacao==='sem_estoque') list=list.filter(p=>toNum(p.estoque)<=0); if(f.situacao==='com_estoque') list=list.filter(p=>toNum(p.estoque)>0); if(f.qualidade==='sem_foto') list=list.filter(p=>!String(p.url_imagem||p.imagem||'').trim()); if(f.qualidade==='sem_gtin') list=list.filter(p=>!String(p.gtin||p.ean||'').trim()); if(f.qualidade==='sem_descricao') list=list.filter(p=>!String(p.descricao||'').trim()); if(f.qualidade==='com_oferta') list=list.filter(p=>toNum(p.preco_oferta)>0); if(f.cesta==='em_cesta') list=list.filter(p=>basketsByProduct(p).length); if(f.cesta==='fora_cesta') list=list.filter(p=>!basketsByProduct(p).length); const sorters={nome:(a,b)=>getName(a).localeCompare(getName(b),'pt-BR'),codigo:(a,b)=>getCode(a).localeCompare(getCode(b),'pt-BR'),preco_desc:(a,b)=>toNum(b.preco)-toNum(a.preco),preco_asc:(a,b)=>toNum(a.preco)-toNum(b.preco),estoque_desc:(a,b)=>toNum(b.estoque)-toNum(a.estoque),atualizado_desc:(a,b)=>toNum(b.last_update)-toNum(a.last_update)}; return list.sort(sorters[f.sort]||sorters.nome)}
-  function renderProducts(){const all=filteredProducts(); const f=getFilters(); const pages=Math.max(1,Math.ceil(all.length/f.pageSize)); state.productPage=Math.min(state.productPage,pages); const start=(state.productPage-1)*f.pageSize; const list=all.slice(start,start+f.pageSize); $("#productsGrid").innerHTML = list.length ? list.map(renderProductCardV3).join("") : `<div class="empty">Nenhum produto encontrado.</div>`; $("#pagination").innerHTML = `<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`; }
-  function renderProductCard(p){const code=getCode(p); const baskets=basketsByProduct(p); const basketBadges=baskets.length?baskets.map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join(""):`<span class="chip empty">fora das cestas</span>`; const tags=parseTags(p.tags).slice(0,4).map(t=>`<span class="chip">#${esc(t)}</span>`).join(""); return `<article class="product-card"><div class="product-img"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'" alt="${esc(getName(p))}" loading="lazy"></div><div class="product-body"><h3 class="product-name">${esc(getName(p))}</h3><div class="meta-line"><span class="chip">Cód: ${esc(p.codigo||p.firebaseKey||code)}</span>${p.gtin?`<span class="chip">GTIN: ${esc(p.gtin)}</span>`:''}${p.marca?`<span class="chip">${esc(p.marca)}</span>`:''}${isActive(p)?'<span class="chip green">ativo</span>':'<span class="chip red">inativo</span>'}</div><div class="price-row"><div class="price">${brl(p.preco)}</div><div class="stock">Estoque: ${esc(p.estoque??0)}</div></div><div class="tiny">${esc([p.categoria,p.subcategoria,p.subsubcategoria].filter(Boolean).join(' › '))}</div><div class="meta-line">${tags}</div><div class="meta-line">${basketBadges}</div><div class="card-actions"><button class="btn small" data-action="edit-product" data-key="${esc(getKey(p))}">Editar produto</button><button class="btn small gold" data-action="edit-membership" data-code="${esc(code)}">Editar cestas</button><button class="btn small blue" data-action="duplicate-product" data-key="${esc(getKey(p))}">Duplicar</button><button class="btn small red" data-action="delete-product" data-key="${esc(getKey(p))}">Excluir</button></div></div></article>`}
+  function renderProducts(){const all=filteredProducts(); const f=getFilters(); const pages=Math.max(1,Math.ceil(all.length/f.pageSize)); state.productPage=Math.min(state.productPage,pages); const start=(state.productPage-1)*f.pageSize; const list=all.slice(start,start+f.pageSize); const grid=$("#productsGrid"); grid.classList.toggle("list-view",state.productView==="list"); grid.innerHTML = list.length ? list.map(renderProductCardV3).join("") : `<div class="empty">Nenhum produto encontrado.</div>`; $$('[data-action="view-products-grid"],[data-action="view-products-list"]').forEach(b=>b.classList.toggle("active",(state.productView==="list")===b.dataset.action.endsWith("list"))); $("#pagination").innerHTML = `<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`; }
+  function renderProductCard(p){const code=getCode(p); const baskets=basketsByProduct(p); const basketBadges=baskets.map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join(""); const tags=parseTags(p.tags).slice(0,4).map(t=>`<span class="chip">#${esc(t)}</span>`).join(""); return `<article class="product-card"><div class="product-img"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'" alt="${esc(getName(p))}" loading="lazy"></div><div class="product-body"><h3 class="product-name">${esc(getName(p))}</h3><div class="meta-line"><span class="chip">Cód: ${esc(p.codigo||p.firebaseKey||code)}</span>${p.gtin?`<span class="chip">GTIN: ${esc(p.gtin)}</span>`:''}${p.marca?`<span class="chip">${esc(p.marca)}</span>`:''}${isActive(p)?'<span class="chip green">ativo</span>':'<span class="chip red">inativo</span>'}</div><div class="price-row"><div class="price">${brl(p.preco)}</div><div class="stock">Estoque: ${esc(p.estoque??0)}</div></div><div class="tiny">${esc([p.categoria,p.subcategoria,p.subsubcategoria].filter(Boolean).join(' › '))}</div><div class="meta-line">${tags}</div>${basketBadges?`<div class="meta-line">${basketBadges}</div>`:''}<div class="card-actions"><button class="btn small" data-action="edit-product" data-key="${esc(getKey(p))}">Editar produto</button><button class="btn small gold" data-action="edit-membership" data-code="${esc(code)}">Editar cestas</button><button class="btn small blue" data-action="duplicate-product" data-key="${esc(getKey(p))}">Duplicar</button><button class="btn small red" data-action="delete-product" data-key="${esc(getKey(p))}">Excluir</button></div></div></article>`}
 
   function quickField(p,field,label,value,type="text",wide=false){return `<div class="quick-field ${wide?'wide':''}"><label>${esc(label)}</label><input class="quick-input" type="${type}" data-card-field="${esc(field)}" data-key="${esc(getKey(p))}" value="${esc(value??'')}"></div>`}
   function renderProductCardV2(p){
     const code=getCode(p), baskets=basketsByProduct(p);
-    const basketBadges=baskets.length?baskets.map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join(""):`<span class="chip empty">fora das cestas</span>`;
-    return `<article class="product-card" data-product-key="${esc(getKey(p))}"><div class="product-img"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'" alt="${esc(getName(p))}" loading="lazy"></div><div class="product-body"><div class="meta-line"><span class="chip">Cód: ${esc(p.codigo||p.firebaseKey||code)}</span>${isActive(p)?'<span class="chip green">ativo</span>':'<span class="chip red">inativo</span>'}</div><div class="quick-edit">${quickField(p,'nome','Nome',p.nome||'', 'text', true)}${quickField(p,'gtin','EAN / GTIN',p.gtin||p.ean||'')}${quickField(p,'ncm','NCM',p.ncm||'')}${quickField(p,'preco_custo','Custo',p.preco_custo??0,'number')}${quickField(p,'preco','Venda',p.preco??0,'number')}${quickField(p,'estoque','Estoque real',p.estoque??0,'number')}${quickField(p,'validade','Validade',p.validade||'')}${quickField(p,'gondola','Gôndola',p.gondola||'')}${quickField(p,'prateleira','Prateleira',p.prateleira||'')}</div><div class="meta-line">${basketBadges}</div><div class="icon-actions"><button class="btn icon-btn" data-action="edit-product" data-key="${esc(getKey(p))}" title="Abrir cadastro completo" aria-label="Abrir cadastro completo">✎</button><button class="btn icon-btn gold" data-action="edit-membership" data-code="${esc(code)}" title="Editar cestas" aria-label="Editar cestas">🧺</button><button class="btn icon-btn blue" data-action="duplicate-product" data-key="${esc(getKey(p))}" title="Duplicar produto" aria-label="Duplicar produto">⧉</button><button class="btn icon-btn red" data-action="delete-product" data-key="${esc(getKey(p))}" title="Excluir produto" aria-label="Excluir produto">🗑</button></div></div></article>`;
+    const basketBadges=baskets.map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join("");
+    return `<article class="product-card" data-product-key="${esc(getKey(p))}"><div class="product-img"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'" alt="${esc(getName(p))}" loading="lazy"></div><div class="product-body"><div class="meta-line"><span class="chip">Cód: ${esc(p.codigo||p.firebaseKey||code)}</span>${isActive(p)?'<span class="chip green">ativo</span>':'<span class="chip red">inativo</span>'}</div><div class="quick-edit">${quickField(p,'nome','Nome',p.nome||'', 'text', true)}${quickField(p,'gtin','EAN / GTIN',p.gtin||p.ean||'')}${quickField(p,'ncm','NCM',p.ncm||'')}${quickField(p,'embalagem','Embalagem',p.embalagem||'')}${quickField(p,'preco_custo','Custo',p.preco_custo??0,'number')}${quickField(p,'preco','Venda',p.preco??0,'number')}${quickField(p,'estoque','Estoque real',p.estoque??0,'number')}${quickField(p,'validade','Validade',p.validade||'')}${quickField(p,'gondola','Gôndola',p.gondola||'')}${quickField(p,'prateleira','Prateleira',p.prateleira||'')}</div>${basketBadges?`<div class="meta-line">${basketBadges}</div>`:''}<div class="icon-actions"><button class="btn icon-btn" data-action="edit-product" data-key="${esc(getKey(p))}" title="Abrir cadastro completo" aria-label="Abrir cadastro completo">✎</button><button class="btn icon-btn gold" data-action="edit-membership" data-code="${esc(code)}" title="Editar cestas" aria-label="Editar cestas">🧺</button><button class="btn icon-btn blue" data-action="duplicate-product" data-key="${esc(getKey(p))}" title="Duplicar produto" aria-label="Duplicar produto">⧉</button><button class="btn icon-btn red" data-action="delete-product" data-key="${esc(getKey(p))}" title="Excluir produto" aria-label="Excluir produto">🗑</button></div></div></article>`;
   }
 
   function renderProductCardV3(p){
     const code=getCode(p), kits=kitsByProduct(p);
-    const kitBadges=`<div class="meta-line">${kits.length?kits.map(k=>`<span class="chip blue">Kit: ${esc(k.nome)}</span>`).join(""):'<span class="chip empty">fora dos kits</span>'}</div>`;
+    const kitBadges=kits.length?`<div class="meta-line">${kits.map(k=>`<span class="chip blue">Kit: ${esc(k.nome)}</span>`).join("")}</div>`:"";
     const kitButton=`<button class="btn icon-btn green" data-action="edit-kit-membership" data-code="${esc(code)}" title="Marcar produto em kits" aria-label="Marcar produto em kits">🎁</button>`;
     const saveActions=`<div class="card-save-actions"><button class="btn small blue" data-action="save-card-firebase" data-key="${esc(getKey(p))}">☁ Firebase</button><button class="btn small green" data-action="save-everything">✓ Salvar geral</button></div>`;
     return renderProductCardV2(p)
@@ -796,10 +829,48 @@
 
   function rebuildMeta(withRender=true){const cats=[]; state.produtos.forEach(p=>{if(p.categoria||p.subcategoria||p.subsubcategoria) cats.push({categoria:p.categoria||'',subcategoria:p.subcategoria||'',subsubcategoria:p.subsubcategoria||''})}); const seen=new Set(); state.meta.categorias=cats.filter(c=>{const k=[c.categoria,c.subcategoria,c.subsubcategoria].join('|'); if(seen.has(k)) return false; seen.add(k); return true}); state.meta.tags=uniq(state.produtos.flatMap(p=>parseTags(p.tags))); state.meta.marcas=uniq(state.produtos.map(p=>p.marca)); const existing=state.meta.fornecedores||[]; const names=uniq(state.produtos.map(p=>p.fornecedor)); state.meta.fornecedores=names.map(n=>existing.find(f=>f.nome===n)||{id:slug(n),nome:n,telefone:'',observacoes:''}); state.meta.estatisticas=makeStats(); state.meta.atualizado_em=nowIso(); state.dirtyMeta=true; saveLocal(); if(withRender){renderAll(); setStatus('Cadastros reconstruídos','ok')}}
   function renderCatalogs(){renderCategories(); renderTags(); renderFornecedores(); renderMarcas()}
-  function renderCategories(){const el=$("#categoriesList"); if(!el) return; el.innerHTML=sortCategories(state.meta.categorias).map((c,i)=>`<div class="catalog-row multi"><input class="input" data-cat-index="${i}" data-cat-field="categoria" value="${esc(c.categoria)}"><input class="input" data-cat-index="${i}" data-cat-field="subcategoria" value="${esc(c.subcategoria)}"><input class="input" data-cat-index="${i}" data-cat-field="subsubcategoria" value="${esc(c.subsubcategoria)}"><button class="btn small red" data-action="delete-category" data-index="${i}">Excluir</button></div>`).join('') || `<div class="empty">Nenhuma categoria.</div>`}
-  function renderTags(){const el=$("#tagsList"); if(!el) return; el.innerHTML=uniq(state.meta.tags).map((t,i)=>`<div class="catalog-row"><input class="input" data-tag-index="${i}" value="${esc(t)}"><button class="btn small red" data-action="delete-tag" data-index="${i}">Excluir</button></div>`).join('') || `<div class="empty">Nenhuma tag.</div>`}
+  function renderCategories(){
+    const el=$("#categoriesList"); if(!el) return;
+    const indexed=(state.meta.categorias||[]).map((value,index)=>({value,index}));
+    const groups=new Map();
+    indexed.forEach(entry=>{const key=String(entry.value.categoria||"");if(!groups.has(key))groups.set(key,[]);groups.get(key).push(entry)});
+    const sorted=[...groups.entries()].sort((a,b)=>(a[0]||"").localeCompare(b[0]||"","pt-BR"));
+    el.className="catalog-list category-tree";
+    el.innerHTML=sorted.map(([category,rows])=>{
+      const subgroups=new Map();
+      rows.forEach(entry=>{const key=String(entry.value.subcategoria||"");if(!subgroups.has(key))subgroups.set(key,[]);subgroups.get(key).push(entry)});
+      const subHtml=[...subgroups.entries()].sort((a,b)=>(a[0]||"").localeCompare(b[0]||"","pt-BR")).map(([sub,subRows])=>`
+        <div class="subcategory-tree">
+          <div class="subcategory-tree-head">
+            <div><label>Subcategoria</label><input class="input" data-subcategory-group data-category="${esc(category)}" data-old-value="${esc(sub)}" value="${esc(sub)}" placeholder="Nome da subcategoria"></div>
+            <button class="btn small red" type="button" data-action="delete-subcategory-group" data-category="${esc(category)}" data-subcategory="${esc(sub)}">Excluir ramo</button>
+          </div>
+          <div class="subsubcategory-list">
+            ${subRows.map(({value,index})=>`<div class="subsubcategory-row"><span class="tree-branch">↳</span><input class="input" data-cat-index="${index}" data-cat-field="subsubcategoria" value="${esc(value.subsubcategoria||"")}" placeholder="Subsubcategoria (opcional)"><button class="btn small red" type="button" data-action="delete-category" data-index="${index}">Excluir</button></div>`).join("")}
+          </div>
+          <div class="tree-add"><input class="input" data-new-subsub-input placeholder="Adicionar subsubcategoria"><button class="btn small blue" type="button" data-action="add-tree-subsub" data-category="${esc(category)}" data-subcategory="${esc(sub)}">＋ Adicionar nível</button></div>
+        </div>`).join("");
+      return `<div class="category-tree-card">
+        <div class="category-tree-head">
+          <div><label>Categoria principal</label><input class="input" data-category-group data-old-value="${esc(category)}" value="${esc(category)}" placeholder="Nome da categoria"></div>
+          <button class="btn small red" type="button" data-action="delete-category-group" data-category="${esc(category)}">Excluir categoria</button>
+        </div>
+        <div class="category-tree-body">${subHtml||'<div class="category-tree-empty">Nenhuma subcategoria cadastrada.</div>'}
+          <div class="tree-add"><input class="input" data-new-subcat-input placeholder="Nova subcategoria"><button class="btn small green" type="button" data-action="add-tree-subcategory" data-category="${esc(category)}">＋ Adicionar subcategoria</button></div>
+        </div>
+      </div>`;
+    }).join("")||`<div class="empty">Nenhuma categoria. Use os campos acima para criar a primeira hierarquia.</div>`;
+  }
+  function renderFlatRegistry(el,items,kind){
+    if(!el)return;
+    const entries=(items||[]).map((value,index)=>({value:String(value||""),index})).filter(x=>x.value.trim()).sort((a,b)=>a.value.localeCompare(b.value,"pt-BR"));
+    const groups=new Map();
+    entries.forEach(entry=>{const letter=(entry.value.trim()[0]||"#").toLocaleUpperCase("pt-BR");if(!groups.has(letter))groups.set(letter,[]);groups.get(letter).push(entry)});
+    el.innerHTML=[...groups.entries()].map(([letter,rows])=>`<div class="registry-letter"><div class="registry-letter-head">${esc(letter)} · ${rows.length}</div><div class="registry-items">${rows.map(({value,index})=>`<div class="registry-item"><input class="input" data-${kind}-index="${index}" value="${esc(value)}"><button class="btn small red" type="button" data-action="delete-${kind}" data-index="${index}">Excluir</button></div>`).join("")}</div></div>`).join("")||`<div class="empty">Nenhum item cadastrado.</div>`;
+  }
+  function renderTags(){renderFlatRegistry($("#tagsList"),state.meta.tags,"tag")}
   function renderFornecedores(){const el=$("#fornecedoresList"); if(!el) return; el.innerHTML=(state.meta.fornecedores||[]).map((f,i)=>`<div class="catalog-row multi"><input class="input" data-forn-index="${i}" data-forn-field="nome" value="${esc(f.nome)}"><input class="input" data-forn-index="${i}" data-forn-field="telefone" value="${esc(f.telefone||'')}"><input class="input" data-forn-index="${i}" data-forn-field="observacoes" value="${esc(f.observacoes||'')}"><button class="btn small red" data-action="delete-fornecedor" data-index="${i}">Excluir</button></div>`).join('') || `<div class="empty">Nenhum fornecedor.</div>`}
-  function renderMarcas(){const el=$("#marcasList"); if(!el) return; el.innerHTML=uniq(state.meta.marcas).map((m,i)=>`<div class="catalog-row"><input class="input" data-marca-index="${i}" value="${esc(m)}"><button class="btn small red" data-action="delete-marca" data-index="${i}">Excluir</button></div>`).join('') || `<div class="empty">Nenhuma marca.</div>`}
+  function renderMarcas(){renderFlatRegistry($("#marcasList"),state.meta.marcas,"marca")}
 
   function renderSettingsUi(){const s=state.settings; const ids={setFirebaseUrl:'firebaseUrl',setProdutosNode:'produtosNode',setMetaNode:'metaNode',setGithubToken:'githubToken',setGithubOwner:'githubOwner',setGithubRepo:'githubRepo',setGithubBranch:'githubBranch',setSiteBaseUrl:'siteBaseUrl',setGithubProdutosPath:'githubProdutosPath',setGithubMetaPath:'githubMetaPath',setGithubAdminMetaPath:'githubAdminMetaPath',setCestasNode:'cestasNode',setKitsNode:'kitsNode',setGithubCestasPath:'githubCestasPath',setGithubKitsPath:'githubKitsPath',setGithubImagesPath:'githubImagesPath',setImagePublicBase:'imagePublicBase',setGithubKitImagesPath:'githubKitImagesPath',setKitImagePublicBase:'kitImagePublicBase',setBlingToken:'blingToken',setBlingDeposito:'blingDeposito',setBlingUnidade:'blingUnidade'}; Object.entries(ids).forEach(([id,k])=>{const el=$("#"+id); if(el && el.value!==String(s[k]||'')) el.value=s[k]||''}); const auto=$("#setAutoGithub"); if(auto) auto.checked=!!s.autoGithub}
   function readSettingsFromUi(){const ids={setFirebaseUrl:'firebaseUrl',setProdutosNode:'produtosNode',setMetaNode:'metaNode',setGithubToken:'githubToken',setGithubOwner:'githubOwner',setGithubRepo:'githubRepo',setGithubBranch:'githubBranch',setSiteBaseUrl:'siteBaseUrl',setGithubProdutosPath:'githubProdutosPath',setGithubMetaPath:'githubMetaPath',setGithubAdminMetaPath:'githubAdminMetaPath',setCestasNode:'cestasNode',setKitsNode:'kitsNode',setGithubCestasPath:'githubCestasPath',setGithubKitsPath:'githubKitsPath',setGithubImagesPath:'githubImagesPath',setImagePublicBase:'imagePublicBase',setGithubKitImagesPath:'githubKitImagesPath',setKitImagePublicBase:'kitImagePublicBase',setBlingToken:'blingToken',setBlingDeposito:'blingDeposito',setBlingUnidade:'blingUnidade'}; Object.entries(ids).forEach(([id,k])=>{const el=$("#"+id); if(el) state.settings[k]=el.value.trim()}); state.settings.autoGithub=!!$("#setAutoGithub")?.checked}
@@ -1155,10 +1226,57 @@
     for(const operation of ops) await operation();
   };
 
+  document.addEventListener("click",e=>{
+    const b=e.target.closest("[data-action]"); if(!b)return;
+    const action=b.dataset.action;
+    if(action==="view-products-grid"||action==="view-products-list"){
+      state.productView=action.endsWith("list")?"list":"grid";
+      localStorage.setItem("donaantonia_product_view",state.productView);
+      renderProducts();
+    }
+    if(action==="add-tree-subcategory"){
+      const card=b.closest(".category-tree-card"),value=card?.querySelector("[data-new-subcat-input]")?.value.trim();
+      if(!value)return;
+      state.meta.categorias.push({categoria:b.dataset.category||"",subcategoria:value,subsubcategoria:""});
+      mark("meta"); renderCategories();
+    }
+    if(action==="add-tree-subsub"){
+      const branch=b.closest(".subcategory-tree"),value=branch?.querySelector("[data-new-subsub-input]")?.value.trim();
+      if(!value)return;
+      state.meta.categorias.push({categoria:b.dataset.category||"",subcategoria:b.dataset.subcategory||"",subsubcategoria:value});
+      mark("meta"); renderCategories();
+    }
+    if(action==="delete-category-group"){
+      const category=b.dataset.category||"";
+      if(!confirm(`Excluir a categoria "${category||"sem nome"}" e toda a hierarquia abaixo dela?`))return;
+      state.meta.categorias=state.meta.categorias.filter(c=>String(c.categoria||"")!==category);
+      mark("meta"); renderCategories();
+    }
+    if(action==="delete-subcategory-group"){
+      const category=b.dataset.category||"",sub=b.dataset.subcategory||"";
+      if(!confirm(`Excluir a subcategoria "${sub||"sem nome"}" e os níveis abaixo dela?`))return;
+      state.meta.categorias=state.meta.categorias.filter(c=>!(String(c.categoria||"")===category&&String(c.subcategoria||"")===sub));
+      mark("meta"); renderCategories();
+    }
+  });
+  document.addEventListener("change",e=>{
+    const el=e.target;
+    if(el.matches("[data-category-group]")){
+      const old=el.dataset.oldValue||"",next=el.value.trim();
+      state.meta.categorias.forEach(c=>{if(String(c.categoria||"")===old)c.categoria=next});
+      mark("meta"); renderCategories();
+    }
+    if(el.matches("[data-subcategory-group]")){
+      const category=el.dataset.category||"",old=el.dataset.oldValue||"",next=el.value.trim();
+      state.meta.categorias.forEach(c=>{if(String(c.categoria||"")===category&&String(c.subcategoria||"")===old)c.subcategoria=next});
+      mark("meta"); renderCategories();
+    }
+  });
+
   const originalLoadData=loadData;
   loadData=async function(){await originalLoadData();document.querySelectorAll('[data-tab="leitura"],#tab-leitura').forEach(x=>x.remove());if(state.activeTab==="leitura"){state.activeTab="produtos";renderAll()}state.produtos.forEach(p=>{if(!Array.isArray(p.imagens))p.imagens=uniq([p.url_imagem||p.imagem||""]).filter(Boolean);applyExpiryDiscount(p)});state.kits.forEach(recalcKit)};
   loadData();
 })(); 
 </script>
 </body>
-</html> 
+</html>
