@@ -1022,7 +1022,7 @@
   const originalLoadData=loadData;
   loadData=async function(){await originalLoadData();document.querySelectorAll('[data-tab="leitura"],#tab-leitura').forEach(x=>x.remove());if(state.activeTab==="leitura"){state.activeTab="produtos";renderAll()}state.produtos.forEach(p=>{if(!Array.isArray(p.imagens))p.imagens=uniq([p.url_imagem||p.imagem||""]).filter(Boolean);applyExpiryDiscount(p)});state.kits.forEach(recalcKit)};
   loadData();
-})();
+})(); 
 </script>
 </body>
 </html>
