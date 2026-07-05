@@ -100,6 +100,35 @@
     @media(min-width:861px){#tab-leitura .mobile-only-note{display:block}#tab-leitura .mobile-quick-shell{display:none}}
 
   </style>
+  <style>
+    /* Revisão profissional 2026: fluxos de cestas, kits, cadastros e mídia */
+    [data-tab="leitura"],#tab-leitura{display:none!important}
+    .basket-workspace{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start;margin-top:16px}
+    .product-finder{position:sticky;top:132px;border:1px solid var(--line);border-radius:18px;background:#fffdf7;padding:14px;box-shadow:0 14px 36px rgba(0,0,0,.07);max-height:calc(100vh - 154px);overflow:auto}
+    .product-finder h3{margin:0 0 4px;font-size:16px}.product-finder .search-results{max-height:none}
+    .finder-mode{padding:9px 11px;border-radius:12px;background:var(--blue2);color:var(--blue);font-size:12px;font-weight:850;margin:9px 0}
+    .basket-row{grid-template-columns:58px minmax(180px,1fr) 76px 106px minmax(210px,280px)}
+    .kit-health{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:14px 0}
+    .metric{padding:12px;border:1px solid var(--line);border-radius:14px;background:#fafafa}.metric strong{display:block;font-size:20px}.metric span{font-size:11px;color:var(--muted);font-weight:750}
+    .metric.good{background:var(--green2);color:var(--green)}.metric.bad{background:var(--red2);color:var(--red)}
+    #tab-cadastros .catalog-grid{grid-template-columns:1fr 1fr;align-items:start}
+    #tab-cadastros .card{box-shadow:0 8px 24px rgba(0,0,0,.04);overflow:hidden}
+    #tab-cadastros .card h3{margin:-16px -16px 14px;padding:15px 16px;background:#faf9f6;border-bottom:1px solid var(--line)}
+    #tab-cadastros .catalog-list{max-height:430px;overflow:auto;padding-right:4px}
+    #tab-cadastros .catalog-row{box-shadow:0 2px 8px rgba(0,0,0,.025)}
+    .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:10px;margin-top:12px}
+    .gallery-item{border:1px solid var(--line);border-radius:14px;padding:7px;background:#fff;position:relative}
+    .gallery-item.primary{border:2px solid var(--gold);background:var(--gold2)}
+    .gallery-item img{width:100%;aspect-ratio:1;object-fit:contain;background:#fafafa;border-radius:9px}
+    .gallery-item .photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px}
+    .gallery-item .btn{font-size:10px;padding:6px 5px}
+    .image-editor-layout{display:grid;grid-template-columns:minmax(280px,1fr) 260px;gap:18px}
+    #imageEditorCanvas{width:100%;max-width:520px;aspect-ratio:1;background:linear-gradient(45deg,#eee 25%,transparent 25%),linear-gradient(-45deg,#eee 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eee 75%),linear-gradient(-45deg,transparent 75%,#eee 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0;border:1px solid var(--line);border-radius:16px}
+    .editor-controls{display:flex;flex-direction:column;gap:14px}.editor-controls input[type=range]{width:100%}
+    .expiry-help{margin-top:6px;padding:9px 10px;background:var(--gold2);color:#705512;border-radius:10px;font-size:11px;font-weight:750}
+    @media(max-width:1100px){.basket-workspace{grid-template-columns:1fr}.product-finder{position:relative;top:auto;max-height:none;order:-1}.kit-health{grid-template-columns:1fr 1fr}}
+    @media(max-width:700px){#tab-cadastros .catalog-grid{grid-template-columns:1fr}.image-editor-layout{grid-template-columns:1fr}.kit-health{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
   <header class="topbar">
@@ -234,7 +263,7 @@
 
     <section class="panel hidden" id="tab-kits">
       <div class="panel-head"><div class="panel-title"><h2>Kits promocionais</h2><p>Crie, edite e organize os kits. O salvamento é exclusivo no GitHub em site/kits.json.</p></div><div class="toolbar"><button class="btn green" data-action="new-kit">＋ Novo kit</button><button class="btn primary" data-action="save-kits">✓ Salvar no GitHub</button><button class="btn gold" data-action="export-kits-json">↓ Exportar kits.json</button><label class="btn">↑ Importar JSON<input id="kitsFile" hidden type="file" accept=".json,application/json"></label></div></div>
-      <div class="notice gold" style="margin-bottom:12px">Capas dos kits: serão salvas no formato <strong>img/nome-do-kit.webp</strong>. Dentro do kit, os produtos têm disponibilidade virtual 99999 sem alterar o estoque real.</div>
+      <div class="notice gold" style="margin-bottom:12px">A disponibilidade é calculada automaticamente pelo <strong>limite do kit ou pelo estoque individual dos produtos</strong>, valendo o que acabar primeiro. Kits sem estoque ou sem desconto saem do ar.</div>
       <div class="split"><aside><input class="input" id="kitSearch" placeholder="Buscar kit promocional..."><div class="side-list" id="kitsList" style="margin-top:10px"></div></aside><section class="basket-editor" id="kitEditor"></section></div>
     </section>
 
@@ -882,6 +911,116 @@
     finally{renderAll()}
   }
 
+  /* ===== Ajustes funcionais solicitados ===== */
+  const originalNormalizeKits=normalizeKits;
+  normalizeKits=function(data){
+    const raw=Array.isArray(data)?data:(data&&typeof data==="object"?Object.values(data):[]);
+    return originalNormalizeKits(data).map((k,i)=>({
+      ...k,
+      descricao:String(raw[i]?.descricao||""),
+      limite_kits:Math.max(0,Math.floor(toNum(raw[i]?.limite_kits))),
+      data_inicio:String(raw[i]?.data_inicio||""),
+      data_fim:String(raw[i]?.data_fim||""),
+      desconto_percentual:toNum(raw[i]?.desconto_percentual),
+      estoque_disponivel:Math.max(0,Math.floor(toNum(raw[i]?.estoque_disponivel))),
+      ativo:raw[i]?.ativo!==false
+    }));
+  };
+
+  function kitRetailTotal(k){return (k.produtos||[]).reduce((sum,item)=>{const it=parseBasketItem(item),p=productByCode(it.codigo);return sum+(p?toNum(p.preco)*Math.max(1,toNum(it.qtd)):0)},0)}
+  function kitStockCapacity(k){
+    if(!(k.produtos||[]).length)return 0;
+    const byProducts=Math.min(...k.produtos.map(item=>{const it=parseBasketItem(item),p=productByCode(it.codigo);return p?Math.floor(Math.max(0,toNum(p.estoque))/Math.max(1,toNum(it.qtd))):0}));
+    const manual=Math.max(0,Math.floor(toNum(k.limite_kits)));
+    return manual>0?Math.min(manual,byProducts):byProducts;
+  }
+  function recalcKit(k){
+    const total=kitRetailTotal(k),capacity=kitStockCapacity(k),manual=Math.max(0,Math.floor(toNum(k.limite_kits))),now=new Date(),start=k.data_inicio?new Date(k.data_inicio+"T00:00:00"):null,end=k.data_fim?new Date(k.data_fim+"T23:59:59"):null;
+    k.limite_kits=manual;k.estoque_disponivel=capacity;
+    k.desconto_percentual=total>0&&toNum(k.preco)>0?Math.max(0,Math.round((1-toNum(k.preco)/total)*10000)/100):0;
+    k.ativo=capacity>0&&toNum(k.preco)>0&&toNum(k.preco)<total&&(!start||now>=start)&&(!end||now<=end);
+    return k;
+  }
+  function validateBasket(c){const errors=[];if(!String(c.nome||"").trim())errors.push("nome");if(!String(c.codigo||"").trim())errors.push("código");if(toNum(c.preco)<=0)errors.push("preço");if(!(c.produtos||[]).length)errors.push("ao menos um produto");return errors}
+  function validateKit(k){recalcKit(k);const errors=[];if(!String(k.nome||"").trim())errors.push("nome");if(!String(k.codigo||"").trim())errors.push("código");if(!(k.produtos||[]).length)errors.push("ao menos um produto");if(toNum(k.preco)<=0)errors.push("preço promocional");if(kitRetailTotal(k)>0&&toNum(k.preco)>=kitRetailTotal(k))errors.push("desconto real sobre a soma dos produtos");return errors}
+
+  const originalSaveCestas=saveCestas;
+  saveCestas=async function(){const invalid=state.cestas.map(c=>({c,e:validateBasket(c)})).filter(x=>x.e.length);if(invalid.length)return alert(`Revise as cestas antes de salvar:\n${invalid.map(x=>`• ${x.c.nome}: ${x.e.join(", ")}`).join("\n")}`);return originalSaveCestas()};
+  const originalSaveKits=saveKits;
+  saveKits=async function(){const invalid=state.kits.map(k=>({k,e:validateKit(k)})).filter(x=>x.e.length);if(invalid.length)return alert(`Revise os kits antes de salvar:\n${invalid.map(x=>`• ${x.k.nome}: ${x.e.join(", ")}`).join("\n")}`);mark("kits");return originalSaveKits()};
+
+  const originalCreateBasket=createBasket;
+  createBasket=function(){originalCreateBasket();const c=state.cestas.find(x=>x.id===state.selectedBasketId);if(c){c.descricao="";c.ativo=true;renderBasketEditor()}};
+  createKit=function(){const id=`kit${Date.now()}`,nome=`Novo kit promocional ${state.kits.length+1}`;state.kits.push({id,nome,codigo:slug(nome),preco:0,imagem:`img/${slug(nome)}.webp`,descricao:"",limite_kits:0,data_inicio:"",data_fim:"",desconto_percentual:0,estoque_disponivel:0,ativo:false,produtos:[]});state.selectedKitId=id;mark("kits");renderAll()};
+
+  renderBasketEditor=function(){
+    const c=state.cestas.find(x=>x.id===state.selectedBasketId),el=$("#basketEditor");if(!c){el.innerHTML=`<div class="empty">Selecione ou crie uma cesta.</div>`;return}
+    const y=window.scrollY,rows=(c.produtos||[]).map(i=>renderBasketRow(c,i)).join("")||`<div class="empty">Comece buscando um produto ao lado.</div>`;
+    const mode=state.basketReplace?`<div class="finder-mode">Selecionando ${state.basketReplace.mode==="replace-main"?"novo produto principal":`substituto ${Number(state.basketReplace.slot)+1}`}. A lista foi filtrada para você.</div>`:"";
+    el.innerHTML=`<div class="panel-head"><div class="panel-title"><h2>${esc(c.nome)}</h2><p>${esc(c.codigo)} · ${itemCount(c)} itens</p></div><div class="toolbar"><button class="btn primary" data-action="save-cestas">Salvar cesta</button><button class="btn red" data-action="delete-basket">Excluir</button></div></div>
+    <div class="form-grid"><div class="field"><label>Nome *</label><input class="input" data-cfield="nome" value="${esc(c.nome)}"></div><div class="field"><label>Código *</label><input class="input" data-cfield="codigo" value="${esc(c.codigo)}"></div><div class="field"><label>Preço *</label><input class="input" type="number" min="0" step=".01" data-cfield="preco" value="${esc(c.preco)}"></div><div class="field"><label>Imagem</label><input class="input" data-cfield="imagem" value="${esc(c.imagem)}"></div></div>
+    <div class="basket-workspace"><div><h3 style="margin:0">Produtos da cesta</h3><p class="tiny">Edite quantidades e estoque sem perder sua posição na página.</p><div class="basket-list">${rows}</div></div><aside class="product-finder"><h3>Adicionar ou substituir</h3><p class="tiny">Busca instantânea por nome, código, marca ou EAN.</p>${mode}<input class="input" id="basketProductSearch" value="${esc(state.basketProductSearch)}" placeholder="Comece a digitar..."><div class="search-results" id="basketProductResults">${renderBasketSearchResults()}</div></aside></div>`;
+    requestAnimationFrame(()=>{window.scrollTo(0,y);if(state.basketReplace){const input=$("#basketProductSearch");input?.focus();input?.scrollIntoView({block:"nearest"})}});
+  };
+  updateBasketProductStock=function(key,value){const p=productByKey(key);if(!p)return;p.estoque=toNum(value);p.last_update=Date.now();p.updated_at=nowIso();p.stock_updated_at=nowIso();markProductDirty(getKey(p),["estoque"]);mark("products");const input=document.activeElement;if(input?.matches('[data-action="basket-stock"]')){const row=input.closest(".basket-row"),chip=row?.querySelector(".chip.green,.chip.red");if(chip){chip.className=`chip ${p.estoque>0?"green":"red"}`;chip.textContent=`Estoque principal: ${p.estoque}`}}};
+
+  renderKitEditor=function(){
+    const k=currentKit(),el=$("#kitEditor");if(!k){el.innerHTML=`<div class="empty">Selecione ou crie um kit promocional.</div>`;return}recalcKit(k);
+    const y=window.scrollY,total=kitRetailTotal(k),rows=(k.produtos||[]).map(i=>renderKitRow(k,i)).join("")||`<div class="empty">Adicione produtos para calcular estoque e desconto.</div>`;
+    el.innerHTML=`<div class="panel-head"><div class="panel-title"><h2>${esc(k.nome)}</h2><p>${esc(k.codigo)} · disponibilidade calculada pelo menor estoque</p></div><div class="toolbar"><button class="btn primary" data-action="save-kits">Salvar kit</button><button class="btn red" data-action="delete-kit">Excluir</button></div></div>
+    <div class="kit-health"><div class="metric"><strong>${brl(total)}</strong><span>Soma avulsa</span></div><div class="metric ${k.desconto_percentual>0?"good":"bad"}"><strong>${esc(k.desconto_percentual)}%</strong><span>Desconto real</span></div><div class="metric ${k.estoque_disponivel>0?"good":"bad"}"><strong>${esc(k.estoque_disponivel)}</strong><span>Kits disponíveis</span></div><div class="metric ${k.ativo?"good":"bad"}"><strong>${k.ativo?"NO AR":"FORA DO AR"}</strong><span>Status automático</span></div></div>
+    <div class="form-grid"><div class="field"><label>Nome *</label><input class="input" data-kfield="nome" value="${esc(k.nome)}"></div><div class="field"><label>Código *</label><input class="input" data-kfield="codigo" value="${esc(k.codigo)}"></div><div class="field"><label>Preço promocional *</label><input class="input" type="number" min="0" step=".01" data-kfield="preco" value="${esc(k.preco)}"></div><div class="field"><label>Limite máximo de kits (0 = só estoque)</label><input class="input" type="number" min="0" data-kfield="limite_kits" value="${esc(k.limite_kits)}"></div><div class="field"><label>Início da promoção</label><input class="input" type="date" data-kfield="data_inicio" value="${esc(k.data_inicio)}"></div><div class="field"><label>Fim da promoção</label><input class="input" type="date" data-kfield="data_fim" value="${esc(k.data_fim)}"></div><div class="field span-2"><label>Imagem</label><input class="input" data-kfield="imagem" value="${esc(k.imagem)}"></div><div class="field span-4"><label>Descrição</label><textarea class="textarea" data-kfield="descricao">${esc(k.descricao)}</textarea></div></div>
+    <div class="photo-tools"><h4>Capa do kit</h4><div class="photo-tools-grid"><div class="photo-preview-box"><img src="${esc(k.imagem||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"></div><div><input class="input" id="kitImageFile" type="file" accept="image/*"><div class="photo-actions"><button class="btn green" data-action="use-kit-image-local">Aplicar WebP</button><button class="btn blue" data-action="upload-kit-image-github">Enviar ao GitHub</button></div></div></div></div>
+    <div class="basket-workspace"><div><h3 style="margin:0">Composição do kit</h3><div class="basket-list">${rows}</div></div><aside class="product-finder"><h3>Adicionar ou substituir</h3><p class="tiny">O kit sai do ar quando qualquer produto não sustenta mais uma unidade.</p>${state.kitReplace?'<div class="finder-mode">Escolha o novo produto para substituir.</div>':""}<input class="input" id="kitProductSearch" value="${esc(state.kitProductSearch)}" placeholder="Nome, código, marca ou EAN..."><div class="search-results" id="kitProductResults">${renderKitSearchResults()}</div></aside></div>`;
+    requestAnimationFrame(()=>{window.scrollTo(0,y);if(state.kitReplace)$("#kitProductSearch")?.focus()});
+  };
+  renderKitRow=function(k,item){const it=parseBasketItem(item),p=productByCode(it.codigo),units=p?Math.floor(Math.max(0,toNum(p.estoque))/Math.max(1,toNum(it.qtd))):0;return `<div class="basket-row ${units<1?"low-stock":""}"><img src="${esc(p?getImg(p):PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(p?getName(p):"Produto não encontrado")}</strong><div class="tiny">${esc(it.codigo)} ${p?`· ${brl(p.preco)}`:""}</div><div class="meta-line" style="margin-top:6px"><span class="chip ${units>0?"green":"red"}">Sustenta ${units} kit(s)</span>${p?`<span class="chip">Estoque real: ${esc(toNum(p.estoque))}</span>`:""}</div></div><div class="field"><label>Qtd/kit</label><input class="input" data-action="kit-qtd" data-code="${esc(it.codigo)}" value="${esc(it.qtd)}"></div><button class="btn small blue" data-action="start-kit-replace" data-code="${esc(it.codigo)}">Substituir</button><button class="btn small red" data-action="remove-from-kit" data-code="${esc(it.codigo)}">Remover</button></div>`};
+
+  function parseExpiryDate(value){const s=String(value||"").trim();if(!s)return null;let d;if(/^\d{4}-\d{2}-\d{2}$/.test(s))d=new Date(s+"T23:59:59");else if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){const [dd,mm,yy]=s.split("/");d=new Date(`${yy}-${mm}-${dd}T23:59:59`)}else d=new Date(s);return Number.isNaN(d.getTime())?null:d}
+  function expiryDiscount(value){const d=parseExpiryDate(value);if(!d)return 0;const days=Math.ceil((d-new Date())/86400000);if(days<0)return 0;if(days<=30)return 50;if(days<=60)return 40;if(days<=90)return 30;if(days<=120)return 20;if(days<=150)return 10;return 0}
+  function applyExpiryDiscount(p){const pct=expiryDiscount(p.validade);if(pct>0&&toNum(p.preco)>0){p.preco_oferta=Math.round(toNum(p.preco)*(1-pct/100)*100)/100;p.validade_oferta=p.validade;p.desconto_validade=pct}else{p.desconto_validade=0}return pct}
+
+  const originalRenderProductEditor=renderProductEditor;
+  renderProductEditor=function(resetJson=true){
+    const p=productByKey(state.editingProductKey);if(!p)return;if(!Array.isArray(p.imagens))p.imagens=uniq([p.url_imagem||p.imagem||""]).filter(Boolean);
+    originalRenderProductEditor(resetJson);
+    const tools=$("#productModalBody .photo-tools");if(!tools)return;
+    const google=`https://www.google.com/search?tbm=isch&q=${encodeURIComponent([getName(p),p.marca,p.codigo,p.gtin].filter(Boolean).join(" "))}`;
+    const gallery=p.imagens.map((src,i)=>`<div class="gallery-item ${src===(p.url_imagem||p.imagem)?"primary":""}"><img src="${esc(src)}" onerror="this.src='${PLACEHOLDER}'"><div class="photo-actions"><button class="btn small" data-action="make-photo-primary" data-index="${i}">Principal</button><button class="btn small red" data-action="remove-gallery-photo" data-index="${i}">Excluir</button></div></div>`).join("")||`<div class="notice">Nenhuma imagem adicionada.</div>`;
+    tools.insertAdjacentHTML("beforeend",`<div class="photo-actions"><a class="btn blue" href="${esc(google)}" target="_blank" rel="noopener">Buscar no Google Imagens ↗</a><button class="btn gold" type="button" data-action="open-image-editor">Editar: cortar, nitidez e fundo</button></div><h4 style="margin-top:16px">Galeria do produto</h4><p class="tiny">A primeira imagem é a principal. Todas são mantidas no campo <strong>imagens</strong>.</p><div class="gallery-grid">${gallery}</div>`);
+    const validity=[...$("#productModalBody").querySelectorAll("[data-pfield]")].find(x=>x.dataset.pfield==="validade");if(validity){validity.type="date";validity.insertAdjacentHTML("afterend",`<div class="expiry-help">Desconto automático por validade: ≤30d 50% · ≤60d 40% · ≤90d 30% · ≤120d 20% · ≤150d 10%</div>`)}
+  };
+
+  prepareProductImageBlob=async function(file){return compressImageToWebp(file,{maxBytes:30*1024,maxDimension:300,square:true})};
+  async function processedPhotoBlob(img,zoom=1,sharpness=0,removeWhite=false){
+    const c=document.createElement("canvas");c.width=c.height=300;const x=c.getContext("2d",{willReadFrequently:true});x.clearRect(0,0,300,300);const ow=img.naturalWidth||img.width,oh=img.naturalHeight||img.height,scale=Math.min(300/ow,300/oh)*zoom,w=ow*scale,h=oh*scale;x.drawImage(img,(300-w)/2,(300-h)/2,w,h);
+    if(removeWhite||sharpness>0){const im=x.getImageData(0,0,300,300),d=im.data;if(removeWhite)for(let i=0;i<d.length;i+=4)if(d[i]>242&&d[i+1]>242&&d[i+2]>242){const m=Math.min(d[i],d[i+1],d[i+2]);d[i+3]=Math.max(0,255-(m-235)*12)};if(sharpness>0){const src=new Uint8ClampedArray(d),a=Math.min(1,sharpness/100);for(let yy=1;yy<299;yy++)for(let xx=1;xx<299;xx++)for(let ch=0;ch<3;ch++){const i=(yy*300+xx)*4+ch,center=src[i],blur=(src[i-1200]+src[i+1200]+src[i-4]+src[i+4])/4;d[i]=Math.max(0,Math.min(255,center+(center-blur)*a*2))}}x.putImageData(im,0,0)}
+    let best=null;for(const q of [.86,.75,.64,.52,.42,.32,.24,.18,.12,.08]){const blob=await canvasToBlob(c,"image/webp",q);if(blob){best=blob;if(blob.size<=30*1024)break}}return best
+  }
+  let editorImage=null;
+  function ensureImageEditor(){
+    if($("#imageEditorModal"))return;document.body.insertAdjacentHTML("beforeend",`<div class="modal-overlay" id="imageEditorModal"><div class="modal"><div class="modal-head"><div><h3>Editor de imagem 300 × 300</h3><p>Enquadre sem deformar; a saída será WebP de até 30 KB.</p></div><button class="btn" data-action="close-image-editor">Fechar</button></div><div class="modal-body image-editor-layout"><canvas id="imageEditorCanvas" width="300" height="300"></canvas><div class="editor-controls"><div class="field"><label>Corte / zoom</label><input id="imageZoom" type="range" min="100" max="300" value="100"></div><div class="field"><label>Nitidez</label><input id="imageSharpness" type="range" min="0" max="100" value="20"></div><label class="checkline"><input id="imageRemoveWhite" type="checkbox"> Remover fundo branco</label><div class="notice gold">A imagem mantém a proporção; espaços livres ficam transparentes.</div><button class="btn primary" data-action="apply-image-editor">Aplicar à galeria</button></div></div></div></div>`)}
+  async function previewImageEditor(){if(!editorImage)return;const blob=await processedPhotoBlob(editorImage,toNum($("#imageZoom")?.value)/100,toNum($("#imageSharpness")?.value),!!$("#imageRemoveWhite")?.checked),url=URL.createObjectURL(blob),im=new Image();im.onload=()=>{const c=$("#imageEditorCanvas"),x=c.getContext("2d");x.clearRect(0,0,300,300);x.drawImage(im,0,0,300,300);URL.revokeObjectURL(url)};im.src=url}
+
+  const originalUseSelectedPhotoLocal=useSelectedPhotoLocal;
+  useSelectedPhotoLocal=async function(){const p=productByKey(state.editingProductKey),file=selectedProductPhotoFile();if(!p||!file)return alert("Selecione uma imagem primeiro.");const prepared=await prepareProductImageBlob(file),src=await blobToDataUrl(prepared.blob);p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=p.url_imagem||src;p.imagem=p.url_imagem;markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false);setStatus(`Imagem adicionada: 300×300 WebP (${formatBytes(prepared.bytes)})`,"ok")};
+  const originalUploadSelectedPhotoGithub=uploadSelectedPhotoGithub;
+  uploadSelectedPhotoGithub=async function(){await originalUploadSelectedPhotoGithub();const p=productByKey(state.editingProductKey);if(p&&p.url_imagem){p.imagens=uniq([...(p.imagens||[]),p.url_imagem]);markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false)}};
+
+  const originalSaveMeta=saveMeta;
+  saveMeta=async function(){try{readSettingsFromUi();const csv=String(buildMetaCatalogCsv()||""),admin=buildAdminMetaPayload();if(!state.settings.githubMetaPath)throw new Error("Informe o caminho do produtos_meta.csv em Integrações.");if(!state.settings.githubAdminMetaPath)throw new Error("Informe o caminho do produtos_admin_meta.json em Integrações.");setStatus("Salvando arquivo Meta...","warn");await githubUpsertText(state.settings.githubMetaPath,csv,"Atualiza catálogo Meta pelo admin Dona Antônia");await githubUpsert(state.settings.githubAdminMetaPath,admin,"Atualiza cadastros administrativos");state.meta=admin;state.dirtyMeta=false;saveLocal();setStatus("Arquivo Meta salvo com sucesso","ok");alert(`Arquivos salvos:\n• ${state.settings.githubMetaPath}\n• ${state.settings.githubAdminMetaPath}`)}catch(e){console.error(e);saveLocal();setStatus("Erro ao salvar arquivo Meta","err");alert("Não foi possível salvar o arquivo Meta: "+e.message)}};
+
+  document.addEventListener("change",e=>{const el=e.target;if(el.matches('[data-pfield="validade"]')){const p=productByKey(state.editingProductKey);if(p){const pct=applyExpiryDiscount(p);markProductDirty(getKey(p),["preco_oferta","validade_oferta","desconto_validade"]);mark("products");renderProductEditor(false);setStatus(pct?`Desconto de validade aplicado: ${pct}%`:"Validade fora da faixa de desconto","ok")}}if(el.matches("#imageZoom,#imageSharpness,#imageRemoveWhite"))previewImageEditor();if(el.matches('[data-action="kit-qtd"],[data-kfield]')){const k=currentKit();if(k){recalcKit(k);renderKitEditor()}}});
+  document.addEventListener("click",async e=>{const b=e.target.closest("[data-action]");if(!b)return;const a=b.dataset.action,p=productByKey(state.editingProductKey);
+    if(a==="make-photo-primary"&&p){const src=(p.imagens||[])[Number(b.dataset.index)];if(src){p.url_imagem=p.imagem=src;markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false)}}
+    if(a==="remove-gallery-photo"&&p){const i=Number(b.dataset.index),removed=(p.imagens||[])[i];p.imagens=(p.imagens||[]).filter((_,x)=>x!==i);if((p.url_imagem||p.imagem)===removed)p.url_imagem=p.imagem=p.imagens[0]||"";markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false)}
+    if(a==="open-image-editor"){const file=selectedProductPhotoFile();if(!file)return alert("Selecione uma nova imagem primeiro.");ensureImageEditor();editorImage=await loadImageFromFile(file);$("#imageEditorModal").classList.add("open");previewImageEditor()}
+    if(a==="close-image-editor")$("#imageEditorModal")?.classList.remove("open");
+    if(a==="apply-image-editor"&&p&&editorImage){const blob=await processedPhotoBlob(editorImage,toNum($("#imageZoom").value)/100,toNum($("#imageSharpness").value),$("#imageRemoveWhite").checked),src=await blobToDataUrl(blob);p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=p.url_imagem||src;p.imagem=p.url_imagem;markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");$("#imageEditorModal").classList.remove("open");renderProductEditor(false);setStatus(`Imagem editada: WebP 300×300 (${formatBytes(blob.size)})`,"ok")}
+  });
+
+  const originalLoadData=loadData;
+  loadData=async function(){await originalLoadData();document.querySelectorAll('[data-tab="leitura"],#tab-leitura').forEach(x=>x.remove());if(state.activeTab==="leitura"){state.activeTab="produtos";renderAll()}state.produtos.forEach(p=>{if(!Array.isArray(p.imagens))p.imagens=uniq([p.url_imagem||p.imagem||""]).filter(Boolean);applyExpiryDiscount(p)});state.kits.forEach(recalcKit)};
   loadData();
 })();
 </script>
