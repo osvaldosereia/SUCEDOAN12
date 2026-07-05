@@ -731,6 +731,41 @@
     });
     state.basketReplace=null; state.basketProductSearch=''; mark('cestas'); renderAll()
   }
+
+  // Ao trocar o produto principal, atualiza a mesma referência em todas as cestas.
+  // A configuração pontual de "Subst. 1/2" continua afetando somente a cesta aberta.
+  const replaceInCurrentBasketOnly=replaceInBasket;
+  replaceInBasket=function(newCode){
+    if(!state.basketReplace || state.basketReplace.mode!=='replace-main'){
+      return replaceInCurrentBasketOnly(newCode);
+    }
+    const oldCode=norm(state.basketReplace.code), replacement=norm(newCode);
+    if(!oldCode || !replacement || oldCode===replacement){
+      state.basketReplace=null; state.basketProductSearch=''; renderAll(); return;
+    }
+    let changedBaskets=0;
+    state.cestas.forEach(cesta=>{
+      let changed=false;
+      cesta.produtos=(cesta.produtos||[]).map(raw=>{
+        const it=parseBasketItem(raw);
+        let itemChanged=false;
+        let main=it.codigo;
+        let subs=[...it.substitutos];
+        if(main===oldCode){main=replacement; changed=itemChanged=true}
+        subs=subs.map(code=>{
+          if(code===oldCode){changed=itemChanged=true; return replacement}
+          return code;
+        }).filter(code=>code!==main);
+        return itemChanged ? fmtBasketItem(it.qtd,main,subs) : raw;
+      });
+      if(changed) changedBaskets++;
+    });
+    state.basketReplace=null;
+    state.basketProductSearch='';
+    mark('cestas');
+    setStatus(`Produto substituído automaticamente em ${changedBaskets} cesta(s).`,"ok");
+    renderAll();
+  };
   function clearBasketSubstitute(code, slot){
     const c=state.cestas.find(x=>x.id===state.selectedBasketId);
     if(!c) return;
@@ -988,6 +1023,13 @@
     const google=`https://www.google.com/search?tbm=isch&q=${encodeURIComponent([getName(p),p.marca,p.codigo,p.gtin].filter(Boolean).join(" "))}`;
     const gallery=p.imagens.map((src,i)=>`<div class="gallery-item ${src===(p.url_imagem||p.imagem)?"primary":""}"><img src="${esc(src)}" onerror="this.src='${PLACEHOLDER}'"><div class="photo-actions"><button class="btn small" data-action="make-photo-primary" data-index="${i}">Principal</button><button class="btn small red" data-action="remove-gallery-photo" data-index="${i}">Excluir</button></div></div>`).join("")||`<div class="notice">Nenhuma imagem adicionada.</div>`;
     tools.insertAdjacentHTML("beforeend",`<div class="photo-actions"><a class="btn blue" href="${esc(google)}" target="_blank" rel="noopener">Buscar no Google Imagens ↗</a><button class="btn gold" type="button" data-action="open-image-editor">Editar: cortar, nitidez e fundo</button></div><h4 style="margin-top:16px">Galeria do produto</h4><p class="tiny">A primeira imagem é a principal. Todas são mantidas no campo <strong>imagens</strong>.</p><div class="gallery-grid">${gallery}</div>`);
+    const fileInput=$("#productPhotoFile");
+    if(fileInput) fileInput.insertAdjacentHTML("afterend",`<p class="tiny" style="margin-top:6px">Você também pode colar uma imagem diretamente com <strong>Ctrl+V</strong>.</p>`);
+    const ncmInput=[...$("#productModalBody").querySelectorAll("[data-pfield]")].find(x=>x.dataset.pfield==="ncm");
+    if(ncmInput){
+      const ncmQuery=encodeURIComponent(`NCM ${[getName(p),p.marca,p.gtin||p.ean].filter(Boolean).join(" ")}`);
+      ncmInput.insertAdjacentHTML("afterend",`<a class="btn blue small" style="margin-top:7px" href="https://www.google.com/search?q=${ncmQuery}" target="_blank" rel="noopener">Buscar NCM ↗</a>`);
+    }
     const validity=[...$("#productModalBody").querySelectorAll("[data-pfield]")].find(x=>x.dataset.pfield==="validade");if(validity){validity.type="date";validity.insertAdjacentHTML("afterend",`<div class="expiry-help">Desconto automático por validade: ≤30d 50% · ≤60d 40% · ≤90d 30% · ≤120d 20% · ≤150d 10%</div>`)}
   };
 
@@ -998,6 +1040,25 @@
     let best=null;for(const q of [.86,.75,.64,.52,.42,.32,.24,.18,.12,.08]){const blob=await canvasToBlob(c,"image/webp",q);if(blob){best=blob;if(blob.size<=30*1024)break}}return best
   }
   let editorImage=null;
+  let pendingProductPhotoFile=null;
+  let pendingProductPhotoKey=null;
+  selectedProductPhotoFile=function(){
+    const input=$("#productPhotoFile"), selected=input?.files?.[0]||null;
+    if(selected){
+      pendingProductPhotoFile=selected;
+      pendingProductPhotoKey=state.editingProductKey;
+    }
+    return pendingProductPhotoKey===state.editingProductKey ? pendingProductPhotoFile : null;
+  };
+  function loadImageFromSource(src){
+    return new Promise((resolve,reject)=>{
+      const im=new Image();
+      if(!String(src||"").startsWith("data:")) im.crossOrigin="anonymous";
+      im.onload=()=>resolve(im);
+      im.onerror=()=>reject(new Error("Não foi possível abrir a imagem atual. Selecione ou cole uma nova imagem."));
+      im.src=src;
+    });
+  }
   function ensureImageEditor(){
     if($("#imageEditorModal"))return;document.body.insertAdjacentHTML("beforeend",`<div class="modal-overlay" id="imageEditorModal"><div class="modal"><div class="modal-head"><div><h3>Editor de imagem 300 × 300</h3><p>Enquadre sem deformar; a saída será WebP de até 30 KB.</p></div><button class="btn" data-action="close-image-editor">Fechar</button></div><div class="modal-body image-editor-layout"><canvas id="imageEditorCanvas" width="300" height="300"></canvas><div class="editor-controls"><div class="field"><label>Corte / zoom</label><input id="imageZoom" type="range" min="100" max="300" value="100"></div><div class="field"><label>Nitidez</label><input id="imageSharpness" type="range" min="0" max="100" value="20"></div><label class="checkline"><input id="imageRemoveWhite" type="checkbox"> Remover fundo branco</label><div class="notice gold">A imagem mantém a proporção; espaços livres ficam transparentes.</div><button class="btn primary" data-action="apply-image-editor">Aplicar à galeria</button></div></div></div></div>`)}
   async function previewImageEditor(){if(!editorImage)return;const blob=await processedPhotoBlob(editorImage,toNum($("#imageZoom")?.value)/100,toNum($("#imageSharpness")?.value),!!$("#imageRemoveWhite")?.checked),url=URL.createObjectURL(blob),im=new Image();im.onload=()=>{const c=$("#imageEditorCanvas"),x=c.getContext("2d");x.clearRect(0,0,300,300);x.drawImage(im,0,0,300,300);URL.revokeObjectURL(url)};im.src=url}
@@ -1014,10 +1075,85 @@
   document.addEventListener("click",async e=>{const b=e.target.closest("[data-action]");if(!b)return;const a=b.dataset.action,p=productByKey(state.editingProductKey);
     if(a==="make-photo-primary"&&p){const src=(p.imagens||[])[Number(b.dataset.index)];if(src){p.url_imagem=p.imagem=src;markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false)}}
     if(a==="remove-gallery-photo"&&p){const i=Number(b.dataset.index),removed=(p.imagens||[])[i];p.imagens=(p.imagens||[]).filter((_,x)=>x!==i);if((p.url_imagem||p.imagem)===removed)p.url_imagem=p.imagem=p.imagens[0]||"";markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false)}
-    if(a==="open-image-editor"){const file=selectedProductPhotoFile();if(!file)return alert("Selecione uma nova imagem primeiro.");ensureImageEditor();editorImage=await loadImageFromFile(file);$("#imageEditorModal").classList.add("open");previewImageEditor()}
+    if(a==="open-image-editor"){try{const file=selectedProductPhotoFile(),src=p&&(p.url_imagem||p.imagem||(p.imagens||[])[0]);if(!file&&!src)return alert("Selecione ou cole uma imagem primeiro.");ensureImageEditor();editorImage=file?await loadImageFromFile(file):await loadImageFromSource(src);$("#imageEditorModal").classList.add("open");previewImageEditor()}catch(err){alert(err.message)}}
     if(a==="close-image-editor")$("#imageEditorModal")?.classList.remove("open");
     if(a==="apply-image-editor"&&p&&editorImage){const blob=await processedPhotoBlob(editorImage,toNum($("#imageZoom").value)/100,toNum($("#imageSharpness").value),$("#imageRemoveWhite").checked),src=await blobToDataUrl(blob);p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=p.url_imagem||src;p.imagem=p.url_imagem;markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");$("#imageEditorModal").classList.remove("open");renderProductEditor(false);setStatus(`Imagem editada: WebP 300×300 (${formatBytes(blob.size)})`,"ok")}
   });
+
+  document.addEventListener("change",e=>{
+    if(e.target?.id==="productPhotoFile" && e.target.files?.[0]){
+      pendingProductPhotoFile=e.target.files[0];
+      pendingProductPhotoKey=state.editingProductKey;
+      setStatus("Imagem selecionada. Você já pode editar ou adicionar ao produto.","ok");
+    }
+  });
+  document.addEventListener("paste",async e=>{
+    const modal=$("#productModal");
+    if(!modal?.classList.contains("open")) return;
+    const item=[...(e.clipboardData?.items||[])].find(x=>x.type?.startsWith("image/"));
+    if(!item) return;
+    const file=item.getAsFile();
+    const p=productByKey(state.editingProductKey);
+    if(!file||!p) return;
+    e.preventDefault();
+    try{
+      pendingProductPhotoFile=file;
+      pendingProductPhotoKey=state.editingProductKey;
+      setStatus("Processando imagem colada...","warn");
+      const prepared=await prepareProductImageBlob(file),src=await blobToDataUrl(prepared.blob);
+      p.imagens=uniq([...(p.imagens||[]),src]);
+      p.url_imagem=p.url_imagem||src;
+      p.imagem=p.url_imagem;
+      markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);
+      mark("products");
+      renderProductEditor(false);
+      setStatus(`Imagem colada e adicionada: 300×300 WebP (${formatBytes(prepared.bytes)})`,"ok");
+    }catch(err){
+      console.error(err);
+      setStatus("Erro ao colar imagem","err");
+      alert("Não foi possível adicionar a imagem colada: "+err.message);
+    }
+  });
+
+  // A API Contents cria um commit por arquivo. As gravações precisam ser
+  // sequenciais; em caso de corrida externa, buscamos o SHA novo e repetimos.
+  async function githubPutWithFreshSha(path,content,message){
+    const s=state.settings;
+    if(!s.githubToken||!s.githubOwner||!s.githubRepo) throw new Error("Configure token, owner e repositório do GitHub.");
+    const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}`;
+    let lastError="";
+    for(let attempt=1;attempt<=3;attempt++){
+      const old=await githubContent(path);
+      const body={message,branch:s.githubBranch,content};
+      if(old?.sha) body.sha=old.sha;
+      const r=await fetch(url,{method:"PUT",headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},body:JSON.stringify(body)});
+      if(r.ok) return r.json();
+      lastError=await r.text();
+      if(![409,422].includes(r.status)) throw new Error(`GitHub PUT ${path}: ${r.status} ${lastError.slice(0,240)}`);
+    }
+    throw new Error(`GitHub PUT ${path}: conflito persistente após 3 tentativas. ${lastError.slice(0,240)}`);
+  }
+  githubContent=async function(path){
+    const s=state.settings;
+    const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}?ref=${encodeURIComponent(s.githubBranch)}&_=${Date.now()}`;
+    const r=await fetch(url,{cache:"no-store",headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json"}});
+    if(r.status===404) return null;
+    if(!r.ok) throw new Error(`GitHub GET ${path}: ${r.status}`);
+    return r.json();
+  };
+  githubUpsert=function(path,data,message){return githubPutWithFreshSha(path,b64(JSON.stringify(data,null,2)),message)};
+  githubUpsertText=function(path,text,message){return githubPutWithFreshSha(path,b64(String(text??"")),message)};
+  githubUpsertRaw=function(path,arrayBuffer,message){return githubPutWithFreshSha(path,arrayBufferToBase64(arrayBuffer),message)};
+  saveGithubFiles=async function({produtos,metaCatalogCsv,adminMeta,cestas,kits}={}){
+    readSettingsFromUi();
+    const ops=[];
+    if(produtos) ops.push(()=>githubUpsert(state.settings.githubProdutosPath,produtos,"Atualiza produtos.json pelo admin Dona Antônia"));
+    if(metaCatalogCsv) ops.push(()=>githubUpsertText(state.settings.githubMetaPath,metaCatalogCsv,"Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia"));
+    if(adminMeta) ops.push(()=>githubUpsert(state.settings.githubAdminMetaPath,adminMeta,"Atualiza produtos_admin_meta.json pelo admin Dona Antônia"));
+    if(cestas) ops.push(()=>githubUpsert(state.settings.githubCestasPath,cestas,"Atualiza produtos-cesta-basica.json pelo admin Dona Antônia"));
+    if(kits) ops.push(()=>githubUpsert(state.settings.githubKitsPath,kits,"Atualiza kits.json pelo admin Dona Antônia"));
+    for(const operation of ops) await operation();
+  };
 
   const originalLoadData=loadData;
   loadData=async function(){await originalLoadData();document.querySelectorAll('[data-tab="leitura"],#tab-leitura').forEach(x=>x.remove());if(state.activeTab==="leitura"){state.activeTab="produtos";renderAll()}state.produtos.forEach(p=>{if(!Array.isArray(p.imagens))p.imagens=uniq([p.url_imagem||p.imagem||""]).filter(Boolean);applyExpiryDiscount(p)});state.kits.forEach(recalcKit)};
