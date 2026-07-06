@@ -221,6 +221,25 @@
     .expiry-alert-row strong{display:block}.expiry-alert-row small{display:block;margin-top:3px;color:var(--muted)}
     .expiry-alert-days{font-size:12px;font-weight:900;color:#9f1239}
     @media(max-width:700px){.expiry-alert-btn .expiry-alert-label{display:none}.expiry-alert-row{grid-template-columns:1fr auto}.expiry-alert-row .btn{grid-column:1/-1}}
+    .bulk-price-overlay[hidden]{display:none!important}
+    .bulk-price-overlay{position:fixed;inset:0;z-index:125;display:grid;place-items:center;padding:18px;background:rgba(15,23,42,.56)}
+    .bulk-price-dialog{width:min(920px,96vw);max-height:90vh;overflow:auto;padding:20px;border-radius:24px;background:#fff;box-shadow:0 30px 90px rgba(0,0,0,.28)}
+    .bulk-price-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}
+    .bulk-price-head h2{margin:0;font-size:22px}.bulk-price-head p{margin:5px 0 0;color:var(--muted);font-size:13px}
+    .bulk-price-form{display:grid;grid-template-columns:1fr 1.4fr 1fr 1fr;gap:10px;padding:14px;border:1px solid var(--line);border-radius:18px;background:#fafafa}
+    .bulk-price-form .field{margin:0}
+    .bulk-price-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+    .bulk-price-metric{padding:12px;border:1px solid var(--line);border-radius:14px;background:#fff}
+    .bulk-price-metric strong{display:block;font-size:20px}.bulk-price-metric span{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-weight:800}
+    .bulk-price-table-wrap{overflow:auto;max-height:310px;border:1px solid var(--line);border-radius:15px}
+    .bulk-price-table{width:100%;border-collapse:collapse;font-size:12px}
+    .bulk-price-table th,.bulk-price-table td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+    .bulk-price-table th{position:sticky;top:0;background:#f4f1e9;color:#705512;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+    .bulk-price-table td:first-child{white-space:normal;min-width:220px;font-weight:800}
+    .bulk-price-new{color:var(--green);font-weight:950}
+    .bulk-price-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:15px}
+    @media(max-width:760px){.bulk-price-dialog{padding:15px}.bulk-price-form{grid-template-columns:1fr 1fr}.bulk-price-summary{grid-template-columns:1fr}.bulk-price-actions .btn{flex:1 1 140px}.bulk-price-table td:first-child{min-width:170px}}
+    @media(max-width:460px){.bulk-price-form{grid-template-columns:1fr}.bulk-price-head{align-items:center}.bulk-price-head p{font-size:11px}}
   </style>
 </head>
 <body>
@@ -274,6 +293,7 @@
         <button class="btn green" type="button" data-action="new-product">＋ Novo produto</button>
         <button class="btn primary" type="button" data-action="save-products">✓ Salvar produtos</button>
         <button class="btn gold" type="button" data-action="open-low-stock">⚠ Estoque 0 a 5</button>
+        <button class="btn blue" type="button" data-action="open-bulk-price">％ Reajuste em massa</button>
         <button class="btn" type="button" data-action="reload">↻ Recarregar dados</button>
       </div>
       <button class="btn blue block" style="margin-top:8px" type="button" data-action="open-settings">⚙ Configurações</button>
@@ -318,9 +338,28 @@
 
   </aside>
 
+  <div class="bulk-price-overlay" id="bulkPriceModal" hidden>
+    <section class="bulk-price-dialog" role="dialog" aria-modal="true" aria-labelledby="bulkPriceTitle">
+      <div class="bulk-price-head">
+        <div><h2 id="bulkPriceTitle">Reajuste de preços em massa</h2><p>Selecione um grupo, confira a prévia e aplique a alteração ao preço de venda.</p></div>
+        <button class="btn" type="button" data-action="close-bulk-price">Fechar</button>
+      </div>
+      <div class="bulk-price-form">
+        <div class="field"><label>Agrupar por</label><select class="select" id="bulkPriceScope"><option value="categoria">Categoria</option><option value="subcategoria">Subcategoria</option><option value="marca">Marca</option></select></div>
+        <div class="field"><label>Selecionar grupo</label><select class="select" id="bulkPriceValue"></select></div>
+        <div class="field"><label>Operação</label><select class="select" id="bulkPriceOperation"><option value="discount">Aplicar desconto</option><option value="increase">Aplicar acréscimo</option></select></div>
+        <div class="field"><label>Percentual</label><input class="input" id="bulkPricePercent" type="number" min=".01" max="40" step=".01" value="5" inputmode="decimal"></div>
+      </div>
+      <div class="notice gold" id="bulkPriceRuleNote" style="margin-top:10px">Descontos em massa respeitam o limite máximo de 40%.</div>
+      <div class="bulk-price-summary" id="bulkPriceSummary"></div>
+      <div class="bulk-price-table-wrap"><table class="bulk-price-table"><thead><tr><th>Produto</th><th>Código</th><th>Preço atual</th><th>Novo preço</th></tr></thead><tbody id="bulkPricePreview"></tbody></table></div>
+      <div class="bulk-price-actions"><button class="btn" type="button" data-action="close-bulk-price">Cancelar</button><button class="btn primary" id="bulkPriceApplyBtn" type="button" data-action="apply-bulk-price">Aplicar reajuste</button></div>
+    </section>
+  </div>
+
   <main class="app">
     <section class="panel" id="tab-produtos">
-      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Ficha completa para editar produtos, imagens, cestas e kits sem sair da página.</p></div><div class="toolbar"><button class="btn notes-home-btn" id="notesHomeBtn" type="button" data-action="go-notes">📝 Notas <span class="notes-count">0</span></button><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn blue" data-action="normalize-products-site">✓ Adequar ao site</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
+      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Ficha completa para editar produtos, imagens, cestas e kits sem sair da página.</p></div><div class="toolbar"><button class="btn notes-home-btn" id="notesHomeBtn" type="button" data-action="go-notes">📝 Notas <span class="notes-count">0</span></button><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn blue" data-action="normalize-products-site">✓ Adequar ao site</button><button class="btn blue" data-action="open-bulk-price">％ Reajuste em massa</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
       <div class="products-grid" id="productsGrid"></div>
       <div class="pagination" id="pagination"></div>
     </section>
@@ -1715,6 +1754,86 @@
     const p=productByKey(key);if(!p)return;const nk=`produto_${Date.now()}`,cp={...deepClone(p),firebaseKey:nk,id:nk,codigo:`${p.codigo||"COPIA"}_COPIA`,nome:`${getName(p)} - Cópia`,last_update:Date.now(),updated_at:nowIso()};
     state.produtos.unshift(cp);markProductDirty(nk,["__all"]);mark("products");focusProductWorkbench(nk);
   };
+
+  /* ===== Reajuste de preços em massa ===== */
+  function bulkPriceGroupValues(scope){
+    return uniq(state.produtos.map(p=>String(p?.[scope]||"").trim()).filter(Boolean))
+      .sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  }
+  function bulkPriceSelectedProducts(){
+    const scope=$("#bulkPriceScope")?.value||"categoria",value=$("#bulkPriceValue")?.value||"";
+    if(!value)return [];
+    return state.produtos.filter(p=>String(p?.[scope]||"").trim()===value);
+  }
+  function bulkPriceParameters(){
+    const operation=$("#bulkPriceOperation")?.value==="increase"?"increase":"discount";
+    let percent=Math.max(0,toNum($("#bulkPricePercent")?.value));
+    if(operation==="discount")percent=Math.min(MAX_PRODUCT_DISCOUNT,percent);
+    else percent=Math.min(500,percent);
+    const factor=operation==="discount"?1-percent/100:1+percent/100;
+    return {operation,percent,factor};
+  }
+  function bulkAdjustedPrice(price,factor){
+    return roundCatalogMoney(Math.max(.01,toNum(price)*factor));
+  }
+  function populateBulkPriceValues(preserveValue=true){
+    const select=$("#bulkPriceValue");if(!select)return;
+    const previous=preserveValue?select.value:"",scope=$("#bulkPriceScope")?.value||"categoria",values=bulkPriceGroupValues(scope);
+    select.innerHTML=values.length?values.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join(""):`<option value="">Nenhum grupo disponível</option>`;
+    if(previous&&values.includes(previous))select.value=previous;
+  }
+  function renderBulkPricePreview(){
+    const rows=bulkPriceSelectedProducts(),params=bulkPriceParameters(),preview=$("#bulkPricePreview"),summary=$("#bulkPriceSummary"),button=$("#bulkPriceApplyBtn"),percentInput=$("#bulkPricePercent"),note=$("#bulkPriceRuleNote");
+    if(percentInput){
+      percentInput.max=params.operation==="discount" ? String(MAX_PRODUCT_DISCOUNT) : "500";
+      if(toNum(percentInput.value)!==params.percent)percentInput.value=String(params.percent||"");
+    }
+    if(note)note.textContent=params.operation==="discount"
+      ? `Descontos em massa respeitam o limite máximo de ${MAX_PRODUCT_DISCOUNT}%.`
+      : "Acréscimos podem ser aplicados de 0,01% até 500%.";
+    const validRows=rows.filter(p=>toNum(p.preco)>0),before=validRows.reduce((sum,p)=>sum+toNum(p.preco),0),after=validRows.reduce((sum,p)=>sum+bulkAdjustedPrice(p.preco,params.factor),0);
+    if(summary)summary.innerHTML=`<div class="bulk-price-metric"><strong>${validRows.length}</strong><span>Produtos que serão alterados</span></div><div class="bulk-price-metric"><strong>${brl(before)}</strong><span>Soma dos preços atuais</span></div><div class="bulk-price-metric"><strong>${brl(after)}</strong><span>Soma após o reajuste</span></div>`;
+    if(preview)preview.innerHTML=validRows.length?validRows.slice(0,100).map(p=>`<tr><td>${esc(getName(p))}</td><td>${esc(p.codigo||getKey(p))}</td><td>${brl(p.preco)}</td><td class="bulk-price-new">${brl(bulkAdjustedPrice(p.preco,params.factor))}</td></tr>`).join(""):`<tr><td colspan="4">Nenhum produto com preço válido neste grupo.</td></tr>`;
+    if(button)button.disabled=!validRows.length||params.percent<=0;
+  }
+  function openBulkPriceModal(){
+    populateBulkPriceValues(false);
+    $("#bulkPriceModal").hidden=false;
+    renderBulkPricePreview();
+    toggleAdminDrawer(false);
+  }
+  function closeBulkPriceModal(){$("#bulkPriceModal").hidden=true}
+  function applyBulkPriceAdjustment(){
+    const rows=bulkPriceSelectedProducts().filter(p=>toNum(p.preco)>0),params=bulkPriceParameters(),scope=$("#bulkPriceScope")?.value||"categoria",value=$("#bulkPriceValue")?.value||"";
+    if(!rows.length)return alert("Nenhum produto com preço válido foi encontrado.");
+    if(params.percent<=0)return alert("Informe um percentual maior que zero.");
+    const operationLabel=params.operation==="discount"?"desconto":"acréscimo";
+    if(!confirm(`Aplicar ${params.percent}% de ${operationLabel} em ${rows.length} produto(s) de ${scope} \"${value}\"?`))return;
+    rows.forEach(p=>{
+      p.preco=bulkAdjustedPrice(p.preco,params.factor);
+      const ruleResult=applyExpiryRules(p),fields=["preco",...ruleResult.fields];
+      if(toNum(p.preco_oferta)>=toNum(p.preco)){
+        delete p.preco_oferta;delete p.validade_oferta;delete p.desconto_validade;delete p.oferta_origem;
+        fields.push("preco_oferta","validade_oferta","desconto_validade","oferta_origem");
+      }
+      p.last_update=Date.now();p.updated_at=nowIso();
+      markProductDirty(getKey(p),[...new Set(fields)]);
+    });
+    mark("products");renderProducts();updateExpiryAlert();renderBulkPricePreview();
+    setStatus(`${rows.length} produto(s) reajustado(s) em ${params.percent}%`,"ok");
+    alert(`${rows.length} produto(s) alterado(s). Revise a prévia e clique em Salvar produtos ou Salvar geral para publicar.`);
+  }
+  document.addEventListener("click",e=>{
+    const action=e.target.closest("[data-action]")?.dataset.action;
+    if(action==="open-bulk-price")openBulkPriceModal();
+    if(action==="close-bulk-price")closeBulkPriceModal();
+    if(action==="apply-bulk-price")applyBulkPriceAdjustment();
+  });
+  document.addEventListener("change",e=>{
+    if(e.target.id==="bulkPriceScope"){populateBulkPriceValues(false);renderBulkPricePreview()}
+    if(e.target.id==="bulkPriceValue"||e.target.id==="bulkPriceOperation")renderBulkPricePreview();
+  });
+  document.addEventListener("input",e=>{if(e.target.id==="bulkPricePercent")renderBulkPricePreview()});
 
   /* ===== Anotações no GitHub ===== */
   function normalizeNotes(data){
