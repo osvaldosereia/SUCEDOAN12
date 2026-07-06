@@ -192,6 +192,8 @@
     .product-meta { min-height: 15px; color: var(--muted); text-transform: uppercase; letter-spacing: .035em; font-size: 10.5px; font-weight: 850; display: flex; gap: 5px; flex-wrap: wrap; }
     .discount { color: var(--danger); }
     .product-name { min-height: 38px; font-size: 13.6px; line-height: 1.35; font-weight: 800; letter-spacing: -.015em; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+    .product-expiry { color: var(--muted); font-size: 10.5px; line-height: 1.25; font-weight: 700; letter-spacing: .01em; }
+    .expiry-bulk-note { padding: 6px 8px; border-radius: 9px; color: #8a4b08; background: #fff7e6; font-size: 10.5px; line-height: 1.3; font-weight: 850; }
     .price-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
     .price-wrap { min-width: 0; }
     .old-price { color: var(--muted-2); text-decoration: line-through; font-size: 11px; font-weight: 800; }
@@ -2091,23 +2093,50 @@
 
     const WHOLESALE_MIN_QTY = 3;
     const WHOLESALE_DISCOUNT_RATE = 0.02;
+    const EXPIRY_BULK_DISCOUNT_RATE = 0.10;
+    const EXPIRY_BULK_MAX_DAYS = 40;
 
     function roundMoney(value) {
       return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+    }
+
+    function productExpiryDays(product) {
+      const end = parseOfferEndDate(product && product.validade);
+      if (!end) return null;
+      end.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return Math.round((end - today) / 86400000);
+    }
+
+    function hasExpiryBulkDiscount(product) {
+      const days = productExpiryDays(product);
+      return days !== null && days >= 0 && days < EXPIRY_BULK_MAX_DAYS;
+    }
+
+    function formatProductExpiry(value) {
+      const date = parseOfferEndDate(value);
+      if (!date) return '';
+      return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
     }
 
     function cartUnitPricing(product, qty, coupon, eligibility) {
       const original = Number(product.price || 0);
       const couponPrice = eligibility && eligibility.eligible ? couponUnitPrice(product, coupon) : original;
       const wholesaleEligible = !product.isFee && Number(qty || 0) >= WHOLESALE_MIN_QTY;
-      const effective = wholesaleEligible ? roundMoney(couponPrice * (1 - WHOLESALE_DISCOUNT_RATE)) : couponPrice;
+      const expiryBulkEligible = wholesaleEligible && hasExpiryBulkDiscount(product);
+      const expiryBulkPrice = expiryBulkEligible ? roundMoney(couponPrice * (1 - EXPIRY_BULK_DISCOUNT_RATE)) : couponPrice;
+      const effective = wholesaleEligible ? roundMoney(expiryBulkPrice * (1 - WHOLESALE_DISCOUNT_RATE)) : expiryBulkPrice;
       return {
         original,
         couponPrice,
+        expiryBulkPrice,
         effective,
         wholesaleEligible,
+        expiryBulkEligible,
         couponDiscount: Math.max(0, original - couponPrice),
-        wholesaleDiscount: Math.max(0, couponPrice - effective)
+        expiryBulkDiscount: Math.max(0, couponPrice - expiryBulkPrice),
+        wholesaleDiscount: Math.max(0, expiryBulkPrice - effective)
       };
     }
 
@@ -2118,13 +2147,17 @@
       const eligibility = couponEligibility(coupon, subtotalBefore);
       let participatingItems = 0;
       let wholesaleItems = 0;
+      let expiryBulkItems = 0;
       let couponDiscount = 0;
+      let expiryBulkDiscount = 0;
       let wholesaleDiscount = 0;
       const total = items.reduce((sum, item) => {
         const unit = cartUnitPricing(item.product, item.qty, coupon, eligibility);
         if (unit.couponDiscount > 0) participatingItems += item.qty;
         if (unit.wholesaleEligible) wholesaleItems += item.qty;
+        if (unit.expiryBulkEligible) expiryBulkItems += item.qty;
         couponDiscount += unit.couponDiscount * item.qty;
+        expiryBulkDiscount += unit.expiryBulkDiscount * item.qty;
         wholesaleDiscount += unit.wholesaleDiscount * item.qty;
         return sum + unit.effective * item.qty;
       }, 0);
@@ -2136,8 +2169,10 @@
         total: roundedTotal,
         discount: roundMoney(subtotalBefore - roundedTotal),
         couponDiscount: roundMoney(couponDiscount),
+        expiryBulkDiscount: roundMoney(expiryBulkDiscount),
         wholesaleDiscount: roundMoney(wholesaleDiscount),
         participatingItems,
+        expiryBulkItems,
         wholesaleItems
       };
     }
@@ -2553,10 +2588,9 @@
     function productDisplayPricing(p) {
       const current = Number(p.price || 0);
       const original = Math.max(Number(p.oldPrice || current), current);
-      const coupon = getActiveCoupon();
-      const eligibility = couponEligibility(coupon, rawCartSubtotal(true));
-      const effective = coupon && eligibility.eligible ? couponUnitPrice(p, coupon) : current;
-      const couponApplied = effective < current - .001;
+      const effective = current;
+      const coupon = null;
+      const couponApplied = false;
       const discountPercent = original > effective
         ? Math.round(((original - effective) / Math.max(original, .01)) * 100)
         : 0;
@@ -2603,7 +2637,9 @@
           </a>
           <div class="product-body">
             <div class="product-meta">${productMetaHtml(p) || '&nbsp;'}</div>
+            ${p.validade && formatProductExpiry(p.validade) ? `<div class="product-expiry">Validade: ${escapeHtml(formatProductExpiry(p.validade))}</div>` : ''}
             <a class="product-name" href="#/produto/${productRouteKey(p)}">${escapeHtml(p.name)}</a>
+            ${hasExpiryBulkDiscount(p) ? `<div class="expiry-bulk-note">Leve 3 ou mais e ganhe +10% no checkout.</div>` : ''}
             <div class="price-row">
               <div class="price-wrap">
                 ${display.original > display.effective ? `<div class="old-price">${fmt(display.original)}</div>` : ''}
@@ -2930,7 +2966,9 @@
           <div class="detail-imgbox"><img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)"></div>
           <div class="detail-info">
             ${p.marca ? `<span class="detail-brand">${escapeHtml(p.marca)}</span>` : ''}
+            ${p.validade && formatProductExpiry(p.validade) ? `<div class="product-expiry">Validade: ${escapeHtml(formatProductExpiry(p.validade))}</div>` : ''}
             <h1 class="detail-title">${escapeHtml(p.name)}</h1>
+            ${hasExpiryBulkDiscount(p) ? `<div class="expiry-bulk-note">Leve 3 ou mais unidades e ganhe mais 10% no checkout.</div>` : ''}
             <div>${display.original > display.effective ? `<div class="old-price">${fmt(display.original)}</div>` : ''}<div class="detail-price">${fmt(display.effective)}</div>${display.couponApplied ? `<div class="coupon-price-note">com ${escapeHtml(display.coupon.codigo)}</div>` : ''}</div>
             <div data-card-controls="${escapeHtml(p.id)}">${qtyControlHtml(p.id, Number(state.cart[p.id] || 0))}</div>
             <div class="desc">${escapeHtml(p.descricao || `${p.categoria}${p.subcategoria ? ' • ' + p.subcategoria : ''}${p.embalagem ? ' • ' + p.embalagem : ''}`)}</div>
@@ -3215,8 +3253,9 @@
           <div class="checkout-notice">Ao tocar no botão, seu pedido vai abrir no WhatsApp.</div>
           <div class="summary-row"><span>Subtotal dos produtos</span><span>${fmt(pricing.subtotalBefore)}</span></div>
           ${pricing.couponDiscount > 0 ? `<div class="summary-row discount-row"><span>Desconto ${escapeHtml(pricing.coupon.codigo)}</span><span>− ${fmt(pricing.couponDiscount)}</span></div>` : ''}
+          ${pricing.expiryBulkDiscount > 0 ? `<div class="summary-row discount-row"><span>Desconto por validade — 3+ unidades (10%)</span><span>− ${fmt(pricing.expiryBulkDiscount)}</span></div>` : ''}
           ${pricing.wholesaleDiscount > 0 ? `<div class="summary-row discount-row"><span>Desconto de atacado (2%)</span><span>− ${fmt(pricing.wholesaleDiscount)}</span></div>` : ''}
-          <div class="wholesale-note">Comprando 3 ou mais unidades do mesmo produto, você recebe 2% de desconto automaticamente.</div>
+          <div class="wholesale-note">Comprando 3 ou mais unidades do mesmo produto, você recebe 2% de desconto automaticamente. Produtos com menos de 40 dias de validade recebem mais 10%.</div>
           <div class="summary-row total"><span>Total estimado</span><span>${fmt(total)}</span></div>
           <button class="send-btn" type="button" id="btn-send-order" ${items.length && missing <= 0 && clientDetailsVisible ? '' : 'disabled'}><svg class="svg-fill" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"></path></svg>${items.length && missing > 0 ? `Faltam ${fmt(missing)}` : (!clientDetailsVisible ? 'Consulte o CPF acima' : 'Pedir no WhatsApp')}</button>
         </section>`;
@@ -3631,6 +3670,7 @@
           price: effectivePrice,
           precoOriginal: Number(product.price || 0),
           descontoCupom: unitPricing.couponDiscount,
+          descontoValidadeQuantidade: unitPricing.expiryBulkDiscount,
           descontoAtacado: unitPricing.wholesaleDiscount,
           gtin: String(product.gtin || ''),
           ean: String(product.ean || product.gtin || ''),
@@ -3675,6 +3715,13 @@
             quantidadeMinima: WHOLESALE_MIN_QTY,
             valorDesconto: pricing.wholesaleDiscount,
             itensParticipantes: pricing.wholesaleItems
+          } : null,
+          validadeQuantidade: pricing.expiryBulkDiscount > 0 ? {
+            percentual: EXPIRY_BULK_DISCOUNT_RATE * 100,
+            quantidadeMinima: WHOLESALE_MIN_QTY,
+            diasMaximos: EXPIRY_BULK_MAX_DAYS - 1,
+            valorDesconto: pricing.expiryBulkDiscount,
+            itensParticipantes: pricing.expiryBulkItems
           } : null,
           observacoes: hasBasket ? 'Pedido com Cesta/Kit' : 'Pedido Comum',
           cliente: {
@@ -3723,8 +3770,9 @@
         ? `\n\n*PRODUTOS RETIRADOS DA CESTA ORIGINAL*\n${basketMessage.removed.length ? basketMessage.removed.join(', ') : 'Nenhum produto retirado.'}`
         : '';
       const couponSummary = pricing.couponDiscount > 0 ? `\n🏷️ *CUPOM:* − ${fmt(pricing.couponDiscount)}` : '';
+      const expiryBulkSummary = pricing.expiryBulkDiscount > 0 ? `\n⏳ *VALIDADE + 3 UNIDADES:* − ${fmt(pricing.expiryBulkDiscount)}` : '';
       const wholesaleSummary = pricing.wholesaleDiscount > 0 ? `\n📦 *DESCONTO ATACADO:* − ${fmt(pricing.wholesaleDiscount)}` : '';
-      const msg = `*PEDIDO #${orderId}*${basketHeader}\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*${couponSummary}${wholesaleSummary}\n💰 *TOTAL:* ${fmt(totalSite)}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.${removedSection}`;
+      const msg = `*PEDIDO #${orderId}*${basketHeader}\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*${couponSummary}${expiryBulkSummary}${wholesaleSummary}\n💰 *TOTAL:* ${fmt(totalSite)}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.${removedSection}`;
 
       abrirWhatsAppPedido(msg);
       closeCheckout();
