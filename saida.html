@@ -1,108 +1,598 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Expedição Dona Antônia</title>
-<style>
-:root{--bg:#f3f4f6;--card:#fff;--txt:#111827;--muted:#6b7280;--line:#e5e7eb;--dark:#111827;--ok:#16a34a;--warn:#f59e0b;--blue:#2563eb;--red:#dc2626;--radius:14px}
-*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--txt)}button,input,select,textarea{font-family:inherit}button{cursor:pointer;border:0}.app{min-height:100vh;display:flex;flex-direction:column}.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);padding:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.brand{font-weight:900;font-size:16px;margin-right:auto}.btn{height:42px;padding:0 12px;border-radius:10px;font-weight:900;background:#fff;border:1px solid var(--line);color:var(--txt)}.btn.primary{background:var(--dark);color:#fff;border-color:var(--dark)}.btn.blue{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.ok{background:var(--ok);color:#fff;border-color:var(--ok)}.btn.warn{background:var(--warn);color:#111827;border-color:var(--warn)}.btn.red{background:var(--red);color:#fff;border-color:var(--red)}.btn:disabled{opacity:.55;cursor:not-allowed}.main{padding:12px;max-width:1180px;width:100%;margin:0 auto}.grid{display:grid;grid-template-columns:360px 1fr;gap:12px}.panel,.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 2px 10px rgba(0,0,0,.03)}.panel{padding:14px}.section-title{font-size:12px;text-transform:uppercase;color:var(--muted);font-weight:900;margin:0 0 10px}.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}.field label{font-size:12px;font-weight:900}.input{width:100%;height:42px;border:1px solid var(--line);border-radius:10px;padding:0 10px;font-size:14px;background:#fff}.textarea{height:80px;padding:10px;resize:vertical}.hint{font-size:12px;color:var(--muted);line-height:1.35}.status-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.tab{height:38px;border-radius:999px;padding:0 12px;background:#fff;border:1px solid var(--line);font-weight:900;font-size:12px}.tab.active{background:#111827;color:#fff}.orders{display:flex;flex-direction:column;gap:10px}.order-card{padding:12px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}.order-title{font-weight:900;font-size:18px}.order-meta{font-size:13px;color:var(--muted);font-weight:700;line-height:1.45}.badge{display:inline-flex;align-items:center;border-radius:999px;padding:5px 8px;font-size:12px;font-weight:900;border:1px solid var(--line);background:#f9fafb}.badge.open{background:#fff7ed;color:#9a3412;border-color:#fed7aa}.badge.progress{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}.badge.done{background:#ecfdf5;color:#047857;border-color:#bbf7d0}.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.toast{position:fixed;left:50%;top:14px;transform:translateX(-50%) translateY(-120%);z-index:9999;background:#111827;color:#fff;padding:12px 16px;border-radius:999px;font-weight:900;transition:.25s;max-width:92%;text-align:center}.toast.show{transform:translateX(-50%) translateY(0)}.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:none;align-items:stretch;justify-content:center}.modal.show{display:flex}.drawer{background:#fff;width:100%;max-width:760px;min-height:100%;display:flex;flex-direction:column}.drawer-head{padding:12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}.drawer-title{font-weight:900;font-size:18px;margin-right:auto}.drawer-body{padding:12px;overflow:auto;flex:1}.separator-screen{background:#fff;min-height:100vh;display:flex;flex-direction:column}.sep-head{position:sticky;top:0;z-index:10;background:#111827;color:#fff;padding:10px;display:flex;align-items:center;gap:8px}.sep-title{font-size:15px;font-weight:900;margin-right:auto}.progress{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden}.progress div{height:100%;background:#16a34a;width:0}.sep-card{padding:10px;display:flex;flex-direction:column;gap:10px}.prod-img{width:100%;height:235px;object-fit:contain;background:#f9fafb;border:1px solid var(--line);border-radius:14px}.prod-name{font-size:22px;line-height:1.15;font-weight:900}.qty-box{background:#111827;color:#fff;border-radius:16px;padding:14px;text-align:center}.qty-box small{display:block;font-size:12px;text-transform:uppercase;opacity:.8;font-weight:900}.qty-box strong{font-size:46px;line-height:1}.loc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.loc{background:#f3f4f6;border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}.loc small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;font-weight:900}.loc strong{font-size:28px}.codes{font-size:13px;color:#374151;font-weight:800;background:#f9fafb;border:1px solid var(--line);border-radius:12px;padding:10px;word-break:break-word}.sep-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px;margin-top:auto}.sep-actions .btn{height:54px;font-size:15px}.checkline{display:flex;gap:8px;align-items:center}.checkline input{width:26px;height:26px}.checkline span{font-weight:900;font-size:16px}.label-sheet{display:none}.empty{text-align:center;padding:30px;color:var(--muted);font-weight:800}.small{font-size:12px}.split{display:grid;grid-template-columns:1fr 1fr;gap:8px}.hr{height:1px;background:var(--line);margin:12px 0}
-@media(max-width:850px){.grid{grid-template-columns:1fr}.brand{width:100%;font-size:15px}.top .btn{flex:1}.order-card{grid-template-columns:1fr}.actions{justify-content:stretch}.actions .btn{flex:1}.panel.config{display:none}.panel.config.open{display:block}.main{padding:8px}.prod-img{height:210px}.prod-name{font-size:20px}.qty-box strong{font-size:42px}}
-@media print{body *{visibility:hidden!important}.label-sheet,.label-sheet *{visibility:visible!important}.label-sheet{display:block!important;position:fixed;left:0;top:0;width:10cm;height:15cm;background:#fff;color:#000;padding:.5cm;font-family:Arial,Helvetica,sans-serif}.label-box{border:2px solid #000;width:100%;height:100%;padding:.35cm;display:flex;flex-direction:column;gap:.18cm}.lbl-title{text-align:center;font-weight:900;font-size:18pt;border-bottom:2px solid #000;padding-bottom:.15cm}.lbl-client{font-size:20pt;font-weight:900;line-height:1.05;text-transform:uppercase}.lbl-address{font-size:16pt;font-weight:900;line-height:1.12}.lbl-info{font-size:12pt;font-weight:800}.lbl-obs{font-size:11pt;border-top:1px solid #000;padding-top:.15cm;margin-top:auto}.no-print{display:none!important}@page{size:10cm 15cm;margin:0}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>Central de Expedição - Dona Antônia</title>
+  <style>
+    :root{
+      --bg:#f4f6f5;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;
+      --brand:#0f766e;--brand2:#0d9488;--ok:#15803d;--warn:#b45309;--danger:#b91c1c;--blue:#1d4ed8;
+      --top:58px;--tabs:58px;--dock:154px;--radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif;font-size:15px;-webkit-text-size-adjust:100%}
+    button,input,textarea,select{font-family:inherit;font-size:16px}
+    button{border:0;border-radius:12px;padding:12px 14px;background:#e5e7eb;color:#111827;font-weight:700;cursor:pointer;touch-action:manipulation}
+    button:active{transform:translateY(1px)}
+    .btn-primary{background:var(--brand);color:#fff}.btn-ok{background:var(--ok);color:#fff}.btn-warn{background:var(--warn);color:#fff}.btn-danger{background:var(--danger);color:#fff}.btn-blue{background:var(--blue);color:#fff}.btn-light{background:#fff;border:1px solid var(--line)}
+    .smallbtn{padding:8px 10px;border-radius:10px;font-size:13px}.full{width:100%}.muted{color:var(--muted)}.hide{display:none!important}.nowrap{white-space:nowrap}
+    .topbar{position:fixed;top:0;left:0;right:0;height:var(--top);z-index:20;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:7px 10px;gap:8px}
+    .brand{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:white;display:flex;align-items:center;justify-content:center;font-weight:900}
+    .toptext{min-width:0;flex:1}.topline{display:flex;align-items:center;gap:6px;font-weight:900;font-size:14px;line-height:1.15}.subline{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+    .online{width:9px;height:9px;border-radius:99px;background:var(--ok);display:inline-block}.offline{background:var(--danger)}
+    main{padding:calc(var(--top) + 8px) 10px calc(var(--tabs) + 16px);max-width:980px;margin:0 auto}
+    body.separando main{padding-bottom:calc(var(--tabs) + var(--dock) + 8px)}
+    .tabs{position:fixed;bottom:0;left:0;right:0;height:var(--tabs);z-index:25;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(6,1fr)}
+    .tab{border-radius:0;background:#fff;color:#374151;font-size:11px;padding:6px 2px;font-weight:800;border-right:1px solid #f3f4f6}.tab.active{color:var(--brand);background:#ecfdf5}.tab span{display:block;font-size:18px;line-height:18px;margin-bottom:2px}
+    .section{display:none}.section.active{display:block}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:10px;box-shadow:0 1px 1px rgba(0,0,0,.02)}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.row{display:flex;gap:8px;align-items:center}.between{display:flex;justify-content:space-between;gap:8px;align-items:center}.wrap{flex-wrap:wrap}
+    .input{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}.textarea{width:100%;min-height:84px;border:1px solid var(--line);border-radius:12px;padding:12px;resize:vertical;background:#fff}
+    .badge{display:inline-block;border-radius:999px;padding:5px 8px;font-size:12px;font-weight:900;background:#eef2ff;color:#3730a3}.badge.ok{background:#dcfce7;color:#166534}.badge.warn{background:#fef3c7;color:#92400e}.badge.danger{background:#fee2e2;color:#991b1b}.badge.gray{background:#f3f4f6;color:#374151}.badge.blue{background:#dbeafe;color:#1e40af}
+    .order-card{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.order-title{font-size:18px;font-weight:900}.order-meta{font-size:13px;color:#4b5563;line-height:1.35}.money{font-weight:900;color:var(--ok)}
+    .statbar{height:9px;background:#e5e7eb;border-radius:999px;overflow:hidden}.statbar>div{height:100%;background:var(--brand);width:0%}
+    .sep-head{position:sticky;top:var(--top);z-index:10;background:var(--bg);padding:6px 0 8px}.sep-info{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center}
+    .product-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;display:grid;grid-template-columns:42% 1fr;gap:10px;min-height:260px}
+    .photo-wrap{background:#f3f4f6;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:185px;border:1px solid #eef2f7}.photo-wrap img{width:100%;height:100%;object-fit:contain;display:block}.photo-fallback{font-size:13px;text-align:center;color:var(--muted);padding:10px;font-weight:800}
+    .prod-name{font-size:18px;font-weight:900;line-height:1.1;margin:0 0 6px}.prod-meta{font-size:13px;color:#374151;line-height:1.35}.loc{font-size:20px;font-weight:900;color:var(--brand);margin:8px 0}.qtybox{margin-top:8px;background:#f9fafb;border:1px solid var(--line);border-radius:12px;padding:8px}.qty-big{font-size:26px;font-weight:900;line-height:1;color:#111827}
+    .action-dock{display:none;position:fixed;left:0;right:0;bottom:var(--tabs);z-index:21;background:#fff;border-top:1px solid var(--line);padding:8px 10px;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
+    body.separando .action-dock{display:block}.dock-grid{max-width:980px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}.qty-controls{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:7px;margin-bottom:7px}.qty-display{background:#f3f4f6;border:1px solid var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900}
+    .list-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}.list-table th,.list-table td{border-bottom:1px solid var(--line);padding:9px;text-align:left;font-size:13px}.list-table th{background:#f9fafb;color:#374151}.item-mini{display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line);padding:8px 0}.mini-img{width:46px;height:46px;border-radius:10px;background:#f3f4f6;object-fit:contain;border:1px solid var(--line)}
+    .note{font-size:13px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:10px;margin:8px 0}.danger-note{background:#fef2f2;border-color:#fecaca;color:#991b1b}.ok-note{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
+    .print-area{background:#fff;color:#000;border:1px solid var(--line);padding:18px;border-radius:12px}.print-title{font-size:26px;font-weight:900;text-align:center}.print-line{border-top:1px dashed #999;margin:10px 0}.label-row{font-size:17px;margin:6px 0}.label-strong{font-weight:900}
+    .empty{padding:28px;text-align:center;color:var(--muted)}.loading{padding:28px;text-align:center;color:var(--muted);font-weight:900}.footer-space{height:8px}
+    @media (min-width:760px){main{padding-left:16px;padding-right:16px}.desktop-cols{display:grid;grid-template-columns:1.3fr .9fr;gap:12px}.product-box{grid-template-columns:310px 1fr}.tabs{left:50%;transform:translateX(-50%);max-width:980px;border-left:1px solid var(--line);border-right:1px solid var(--line);border-radius:16px 16px 0 0}.topbar{justify-content:center}.topbar-inner{width:980px;display:flex;align-items:center;gap:8px}.topbar{padding-left:0;padding-right:0}}
+    @media (max-height:650px){:root{--top:52px;--tabs:50px;--dock:142px}.topbar{height:52px}.brand{width:34px;height:34px}.prod-name{font-size:16px}.product-box{min-height:218px}.photo-wrap{min-height:155px}.loc{font-size:17px;margin:5px 0}.qty-big{font-size:22px}.prod-meta{font-size:12px}.card{padding:9px}.sep-head{padding-top:3px;padding-bottom:5px}button{padding:10px 12px}.dock-grid,.qty-controls{gap:6px}.tab span{font-size:16px}.tab{font-size:10px}}
+    @media (max-width:390px){body{font-size:14px}.product-box{grid-template-columns:39% 1fr;gap:8px}.prod-name{font-size:15px}.loc{font-size:16px}.photo-wrap{min-height:145px}.prod-meta{font-size:12px}.qtybox{padding:6px}.grid2{gap:6px}button{font-size:14px;padding:10px 8px}.smallbtn{font-size:12px;padding:7px}}
+    @media print{body{background:#fff}.topbar,.tabs,.action-dock,.no-print,main>.section:not(#tab-etiqueta){display:none!important}main{padding:0;margin:0;max-width:none}.section{display:block!important}.print-area{border:0;border-radius:0;padding:0}.card{border:0;box-shadow:none}.print-title{font-size:30px}}
+  </style>
 </head>
 <body>
-<div id="toast" class="toast"></div>
-<div id="app" class="app">
-  <div class="top no-print">
-    <div class="brand">EXPEDIÇÃO DONA ANTÔNIA</div>
-    <button class="btn primary" onclick="carregarPedidos()">BUSCAR PEDIDOS</button>
-    <button class="btn" onclick="toggleConfig()">CONFIGURAÇÃO</button>
-    <button class="btn" onclick="abrirSeparacaoSelecionada()">SEPARAÇÃO</button>
-  </div>
-  <div class="main no-print">
-    <div class="grid">
-      <div class="panel config" id="configPanel">
-        <div class="section-title">Conexões</div>
-        <div class="field"><label>Webhook/Proxy Make obrigatório para Bling</label><input id="proxyUrl" class="input" placeholder="https://hook.eu1.make.com/..." oninput="salvarConfig()"></div>
-        <div class="field"><label>Access token Bling</label><input id="blingToken" class="input" type="password" placeholder="Salvo só neste navegador" oninput="salvarConfig()"></div>
-        <div class="hr"></div>
-        <div class="section-title">GitHub</div>
-        <div class="field"><label>Token GitHub</label><input id="githubToken" class="input" type="password" oninput="salvarConfig()"></div>
-        <div class="split"><div class="field"><label>Owner</label><input id="ghOwner" class="input" placeholder="usuario" oninput="salvarConfig()"></div><div class="field"><label>Repo</label><input id="ghRepo" class="input" placeholder="repositorio" oninput="salvarConfig()"></div></div>
-        <div class="split"><div class="field"><label>Branch</label><input id="ghBranch" class="input" value="main" oninput="salvarConfig()"></div><div class="field"><label>Usar proxy p/ GitHub?</label><select id="githubProxy" class="input" onchange="salvarConfig()"><option value="nao">Não</option><option value="sim">Sim</option></select></div></div>
-        <div class="field"><label>URL produtos.json com fotos/localização</label><input id="produtosJsonUrl" class="input" placeholder="https://raw.githubusercontent.com/.../site/produtos.json" oninput="salvarConfig()"></div>
-        <div class="hint">Os tokens ficam no localStorage, não ficam gravados no HTML. Para Bling, use sempre Make/proxy para evitar erro Failed to fetch/CORS.</div>
-        <div class="hr"></div>
-        <div class="section-title">Status reais do Bling</div>
-        <div class="hint"><b>Em aberto = 6</b><br><b>Em andamento = 15</b><br><b>Atendido = 9</b></div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">DA</div>
+      <div class="toptext">
+        <div class="topline"><span id="netDot" class="online"></span><span id="topPedido">Central de Expedição</span></div>
+        <div class="subline" id="topSub">Dona Antônia • Firebase /pedidos</div>
       </div>
-      <div>
-        <div class="panel">
-          <div class="section-title">Pedidos de venda</div>
-          <div class="status-tabs" id="tabs"></div>
-          <div class="split">
-            <input id="q" class="input" placeholder="Buscar por número ou cliente" oninput="renderPedidos()">
-            <select id="periodo" class="input" onchange="salvarConfig();carregarPedidos()"><option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="30">Últimos 30 dias</option></select>
+      <button class="smallbtn btn-light no-print" onclick="reloadAll()">Atualizar</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="tab-pedidos" class="section active">
+      <div class="card">
+        <div class="between wrap">
+          <div>
+            <strong>Pedidos para montagem e envio</strong><br>
+            <span class="muted">Carrega os pedidos salvos no Firebase em /pedidos.</span>
+          </div>
+          <button class="btn-primary" onclick="loadOrders()">Buscar pedidos</button>
+        </div>
+        <div style="height:8px"></div>
+        <div class="grid2">
+          <input id="pedidoBusca" class="input" placeholder="Buscar pedido, cliente ou bairro" oninput="renderOrders()">
+          <select id="statusFiltro" class="input" onchange="renderOrders()">
+            <option value="">Todos os status</option>
+            <option value="pendente">Pendente</option>
+            <option value="em_andamento">Em separação</option>
+            <option value="concluida">Separado</option>
+            <option value="concluida_com_falta">Com falta</option>
+            <option value="aguardando_envio">Aguardando envio</option>
+            <option value="em_rota">Em rota</option>
+            <option value="entregue">Entregue</option>
+            <option value="problema">Problema</option>
+          </select>
+        </div>
+      </div>
+      <div id="ordersList" class="loading">Toque em “Buscar pedidos”.</div>
+    </section>
+
+    <section id="tab-separacao" class="section">
+      <div id="noOrderSep" class="empty">Selecione um pedido na aba Pedidos ou abra com <strong>?id=486905</strong>.</div>
+      <div id="sepArea" class="hide">
+        <div class="sep-head no-print">
+          <div class="card" style="margin-bottom:6px">
+            <div class="sep-info">
+              <div>
+                <strong id="sepPedido">Pedido</strong><br>
+                <span class="muted" id="sepCliente">Cliente</span>
+              </div>
+              <span id="sepStatus" class="badge gray">pendente</span>
+            </div>
+            <div style="height:8px"></div>
+            <div class="between" style="font-size:13px">
+              <span id="sepEntrega">Entrega: -</span>
+              <span id="sepProgText">0/0</span>
+            </div>
+            <div class="statbar"><div id="sepProgBar"></div></div>
           </div>
         </div>
-        <div style="height:10px"></div>
-        <div class="orders" id="orders"></div>
+
+        <div class="product-box" id="productBox">
+          <div class="photo-wrap"><img id="prodImg" alt="Foto do produto" loading="eager" onerror="imageFallback()"></div>
+          <div>
+            <h2 class="prod-name" id="prodNome">Produto</h2>
+            <div class="loc" id="prodLoc">Gôndola -</div>
+            <div class="prod-meta" id="prodMeta">SKU -</div>
+            <div class="qtybox">
+              <div class="between"><span>Pedido</span><strong id="qtyPedido">0</strong></div>
+              <div class="between"><span>Separado</span><span class="qty-big" id="qtySep">0</span></div>
+            </div>
+            <div style="height:8px"></div>
+            <span id="prodStatus" class="badge gray">pendente</span>
+          </div>
+        </div>
+
+        <div class="card no-print">
+          <label><strong>Anotação deste item</strong></label>
+          <textarea id="itemObs" class="textarea" placeholder="Ex.: produto amassado, vencimento curto, substituir depois..." onblur="saveItemNote()"></textarea>
+        </div>
       </div>
+    </section>
+
+    <section id="tab-conferencia" class="section">
+      <div id="confArea" class="empty">Selecione um pedido para conferir.</div>
+    </section>
+
+    <section id="tab-envio" class="section">
+      <div id="envioArea" class="empty">Selecione um pedido para preparar envio.</div>
+    </section>
+
+    <section id="tab-etiqueta" class="section">
+      <div id="etiquetaArea" class="empty">Selecione um pedido para gerar etiqueta.</div>
+    </section>
+
+    <section id="tab-config" class="section">
+      <div class="card">
+        <strong>Configurações rápidas</strong>
+        <div style="height:10px"></div>
+        <label>Nome do separador</label>
+        <input id="operatorName" class="input" placeholder="Ex.: Separador 1" oninput="saveOperator()">
+        <div style="height:8px"></div>
+        <label>Abrir pedido direto</label>
+        <div class="row">
+          <input id="directId" class="input" placeholder="Número do pedido">
+          <button class="btn-primary" onclick="openDirect()">Abrir</button>
+        </div>
+        <div class="note">
+          Este arquivo usa Firebase REST direto. Para produção com dados sensíveis, mantenha o acesso do site interno restrito e depois podemos colocar login ou webhook do Make para gravar alterações.
+        </div>
+      </div>
+      <div class="card">
+        <strong>Firebase</strong>
+        <p class="muted" style="margin-bottom:6px">Base usada pelo site:</p>
+        <code id="fbInfo"></code>
+      </div>
+    </section>
+  </main>
+
+  <div class="action-dock no-print" id="actionDock">
+    <div class="qty-controls">
+      <button onclick="changeQty(-1)">−</button>
+      <div class="qty-display"><span id="dockQty">0</span>/<span id="dockTotal">0</span></div>
+      <button onclick="changeQty(1)">+</button>
+    </div>
+    <div class="dock-grid">
+      <button class="btn-light" onclick="prevItem()">← Voltar</button>
+      <button class="btn-warn" onclick="skipItem()">Pular</button>
+      <button class="btn-danger" onclick="markMissing()">Em falta</button>
+      <button class="btn-light" onclick="nextItem()">Próximo →</button>
+      <button class="btn-blue" onclick="openTab('conferencia')">Conferir</button>
+      <button class="btn-ok" onclick="markSeparated()">Separado</button>
     </div>
   </div>
-</div>
 
-<div id="sepModal" class="modal no-print"><div class="drawer"><div class="drawer-head"><div class="drawer-title">Separação</div><button class="btn" onclick="fecharSeparacao()">FECHAR</button></div><div id="sepBody" class="drawer-body"></div></div></div>
-<div id="labelSheet" class="label-sheet"><div class="label-box" id="labelBox"></div></div>
+  <nav class="tabs no-print">
+    <button class="tab active" data-tab="pedidos" onclick="openTab('pedidos')"><span>📋</span>Pedidos</button>
+    <button class="tab" data-tab="separacao" onclick="openTab('separacao')"><span>📦</span>Separar</button>
+    <button class="tab" data-tab="conferencia" onclick="openTab('conferencia')"><span>✅</span>Conferir</button>
+    <button class="tab" data-tab="envio" onclick="openTab('envio')"><span>🚚</span>Envio</button>
+    <button class="tab" data-tab="etiqueta" onclick="openTab('etiqueta')"><span>🏷️</span>Etiqueta</button>
+    <button class="tab" data-tab="config" onclick="openTab('config')"><span>⚙️</span>Ajustes</button>
+  </nav>
 
 <script>
-'use strict';
-const STATUS = {
-  ABERTO:{id:6,nome:'Em aberto',classe:'open'},
-  ANDAMENTO:{id:15,nome:'Em andamento',classe:'progress'},
-  ATENDIDO:{id:9,nome:'Atendido',classe:'done'}
-};
-const CFG_KEY='da_expedicao_cfg_v3';
-const CACHE_KEY='da_expedicao_cache_v3';
-let cfg={proxyUrl:'',blingToken:'',githubToken:'',ghOwner:'',ghRepo:'',ghBranch:'main',githubProxy:'nao',produtosJsonUrl:'',periodo:'7'};
-let pedidos=[];let filtro='todos';let pedidoSelecionado=null;let produtosIndex={};let sep={pedido:null,itens:[],idx:0,checked:{}};
-function $(id){return document.getElementById(id)}
-function toast(msg,ms=2800){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),ms)}
-function money(v){let n=Number(v||0);return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-function only(v){return String(v??'').trim()}
-function todayMinus(days){const d=new Date();d.setDate(d.getDate()-Number(days||7));return d.toISOString().slice(0,10)}
-function normalize(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
-function loadConfig(){try{cfg={...cfg,...JSON.parse(localStorage.getItem(CFG_KEY)||'{}')}}catch(e){};['proxyUrl','blingToken','githubToken','ghOwner','ghRepo','ghBranch','githubProxy','produtosJsonUrl','periodo'].forEach(k=>{if($(k))$(k).value=cfg[k]||''});if(!cfg.ghBranch){cfg.ghBranch='main';$('ghBranch').value='main'};try{const c=JSON.parse(localStorage.getItem(CACHE_KEY)||'{}');pedidos=c.pedidos||[]}catch(e){};renderTabs();renderPedidos()}
-function salvarConfig(){['proxyUrl','blingToken','githubToken','ghOwner','ghRepo','ghBranch','githubProxy','produtosJsonUrl','periodo'].forEach(k=>{if($(k))cfg[k]=$(k).value.trim()});localStorage.setItem(CFG_KEY,JSON.stringify(cfg))}
-function salvarCache(){localStorage.setItem(CACHE_KEY,JSON.stringify({at:Date.now(),pedidos}))}
-function toggleConfig(){const p=$('configPanel');p.classList.toggle('open')}
-function statusById(id){id=Number(id);return Object.values(STATUS).find(s=>Number(s.id)===id)||{id:id||0,nome:'Sem status',classe:''}}
-function statusFromPedido(p){const s=p.situacao||p.status||{};const id=Number(s.id||s.codigo||s.situacao_id||p.situacao_id||p.idSituacao||0);if(id)return statusById(id);const nome=only(s.nome||s.descricao||s.valor||p.situacao_nome||p.status);const n=normalize(nome);if(n.includes('aberto'))return STATUS.ABERTO;if(n.includes('andamento'))return STATUS.ANDAMENTO;if(n.includes('atendido'))return STATUS.ATENDIDO;return {id:0,nome:nome||'Sem status',classe:''}}
-function renderTabs(){const arr=[['todos','Todos'],['6','Em aberto'],['15','Em andamento'],['9','Atendido']];$('tabs').innerHTML=arr.map(a=>`<button class="tab ${filtro===a[0]?'active':''}" onclick="filtro='${a[0]}';renderTabs();renderPedidos()">${a[1]}</button>`).join('')}
-function renderPedidos(){const q=normalize($('q')?.value||'');let list=pedidos.slice();if(filtro!=='todos')list=list.filter(p=>String(statusFromPedido(p).id)===filtro);if(q)list=list.filter(p=>normalize((p.numero||p.numeroLoja||p.id||'')+' '+(p.contato?.nome||p.cliente?.nome||p.nome||'')).includes(q));list.sort((a,b)=>Number(b.id||0)-Number(a.id||0));$('orders').innerHTML=list.length?list.map(cardPedido).join(''):'<div class="card empty">Nenhum pedido encontrado.</div>'}
-function cardPedido(p){const st=statusFromPedido(p);const id=only(p.id);const num=only(p.numero||p.numeroLoja||p.id);const cli=only(p.contato?.nome||p.cliente?.nome||p.nomeCliente||'Cliente não informado');const total=money(p.total||p.valorTotal||p.totalPedido);const tel=only(p.contato?.telefone||p.contato?.celular||p.cliente?.telefone||'');return `<div class="card order-card"><div><div class="order-title">Pedido ${num}</div><div class="order-meta">${cli}<br>${tel?tel+'<br>':''}${total}</div><div style="margin-top:8px"><span class="badge ${st.classe}">${st.nome} - id ${st.id||'-'}</span></div></div><div class="actions"><button class="btn" onclick="selecionarPedido('${id}')">ABRIR</button><button class="btn blue" onclick="mudarStatus('${id}',15)">SEPARAR</button><button class="btn ok" onclick="mudarStatus('${id}',9)">ATENDIDO</button><button class="btn warn" onclick="imprimirEtiqueta('${id}')">ETIQUETA</button></div></div>`}
-async function proxyCall(service,path,method='GET',body=null){salvarConfig();if(!cfg.proxyUrl)throw new Error('Configure o Webhook/Proxy Make.');const res=await fetch(cfg.proxyUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service,path,method,body,config:{blingToken:cfg.blingToken,githubToken:cfg.githubToken,ghOwner:cfg.ghOwner,ghRepo:cfg.ghRepo,ghBranch:cfg.ghBranch}})});if(!res.ok)throw new Error('Proxy retornou erro '+res.status);const text=await res.text();try{return JSON.parse(text)}catch(e){return {raw:text}}}
-async function bling(path,method='GET',body=null){return proxyCall('bling',path,method,body)}
-async function carregarPedidos(){try{salvarConfig();toast('Buscando pedidos...');await carregarProdutosIndex();const dataInicial=todayMinus(cfg.periodo||7);let r=await bling(`/pedidos/vendas?limite=100&dataInicial=${dataInicial}`,'GET');let arr=Array.isArray(r?.data)?r.data:(Array.isArray(r)?r:[]);pedidos=arr;salvarCache();renderPedidos();toast('Pedidos carregados: '+pedidos.length)}catch(e){toast('Erro ao buscar pedidos: '+e.message,5000)}}
-async function detalhePedido(id){let local=pedidos.find(p=>String(p.id)===String(id));try{const r=await bling(`/pedidos/vendas/${id}`,'GET');const p=r?.data||r||local;if(p&&p.id){const i=pedidos.findIndex(x=>String(x.id)===String(id));if(i>=0)pedidos[i]={...pedidos[i],...p};else pedidos.push(p);salvarCache();return pedidos.find(x=>String(x.id)===String(id))}}catch(e){if(local)return local;throw e}return local}
-async function selecionarPedido(id){try{const p=await detalhePedido(id);pedidoSelecionado=p;abrirDetalhes(p)}catch(e){toast('Erro ao abrir pedido: '+e.message,4500)}}
-function abrirDetalhes(p){const st=statusFromPedido(p);const itens=normalizarItens(p);$('sepBody').innerHTML=`<div class="panel"><div class="order-title">Pedido ${only(p.numero||p.id)}</div><div class="order-meta">${only(p.contato?.nome||p.cliente?.nome||'Cliente')}<br>${money(p.total||p.valorTotal)}</div><div style="margin:10px 0"><span class="badge ${st.classe}">${st.nome} - id ${st.id}</span></div><div class="actions" style="justify-content:flex-start"><button class="btn blue" onclick="mudarStatus('${p.id}',15)">MUDAR PARA EM ANDAMENTO</button><button class="btn ok" onclick="mudarStatus('${p.id}',9)">MUDAR PARA ATENDIDO</button><button class="btn warn" onclick="imprimirEtiqueta('${p.id}')">IMPRIMIR ETIQUETA</button><button class="btn primary" onclick="iniciarSeparacao('${p.id}')">ABRIR TELA DE SEPARAÇÃO</button></div></div><div style="height:10px"></div><div class="panel"><div class="section-title">Itens</div>${itens.map(i=>`<div style="display:flex;gap:8px;border-bottom:1px solid #eee;padding:8px 0"><img src="${i.foto||''}" onerror="this.style.display='none'" style="width:54px;height:54px;object-fit:contain"><div><b>${i.nome}</b><br><span class="small">Qtd: ${i.qtd} | Cód: ${i.codigo||'-'} | EAN: ${i.ean||'-'} | Gôndola: ${i.gondola||'-'} | Prat.: ${i.prateleira||'-'}</span></div></div>`).join('')}</div>`;$('sepModal').classList.add('show')}
-function fecharSeparacao(){$('sepModal').classList.remove('show')}
-function normalizarItens(p){const raw=p.itens||p.items||p.produtos||[];return raw.map((it,idx)=>{const prod=it.produto||it;const cod=only(prod.codigo||it.codigo||prod.sku||it.sku);const ean=only(prod.gtin||prod.ean||prod.codigoBarras||it.gtin||it.ean);const found=produtosIndex[cod]||produtosIndex[ean]||{};return {idx,nome:only(prod.nome||it.descricao||it.nome||found.nome||'Produto'),codigo:cod||found.codigo||'',ean:ean||found.gtin||'',qtd:Number(it.quantidade||it.qtd||prod.quantidade||1),gondola:only(found.gondola||prod.gondola||it.gondola||''),prateleira:only(found.prateleira||prod.prateleira||it.prateleira||''),foto:only(found.url_imagem||found.foto||found.imagem||prod.url_imagem||prod.imagem||'')};}).sort((a,b)=>String(a.gondola).localeCompare(String(b.gondola),'pt-BR',{numeric:true})||String(a.prateleira).localeCompare(String(b.prateleira),'pt-BR',{numeric:true})||a.nome.localeCompare(b.nome))}
-async function carregarProdutosIndex(){if(!cfg.produtosJsonUrl)return;try{const res=await fetch(cfg.produtosJsonUrl+(cfg.produtosJsonUrl.includes('?')?'&':'?')+'_='+Date.now(),{cache:'no-store'});const json=await res.json();const arr=Array.isArray(json)?json:Object.values(json||{});produtosIndex={};arr.forEach(p=>{if(p.codigo)produtosIndex[String(p.codigo)]=p;if(p.gtin)produtosIndex[String(p.gtin)]=p;if(p.ean)produtosIndex[String(p.ean)]=p})}catch(e){console.warn('produtos.json não carregou',e)}}
-async function mudarStatus(id,statusId){try{const p=await detalhePedido(id);if(Number(statusId)===15){await salvarSeparacaoGithub(p,'Em andamento')}toast('Atualizando status no Bling...');await bling(`/pedidos/vendas/${id}/situacoes/${statusId}`,'PATCH',{});p.situacao={...(p.situacao||{}),id:statusId,nome:statusById(statusId).nome};salvarCache();renderPedidos();if(Number(statusId)===15)toast('Pedido em andamento e separacao.json atualizado.');else toast('Status alterado para '+statusById(statusId).nome)}catch(e){toast('Erro ao mudar status: '+e.message,5500)}}
-function montarRegistroSeparacao(p,statusNome){const itens=normalizarItens(p);return {updated_at:new Date().toISOString(),pedido:{...p,status_separacao:statusNome,status_bling:statusFromPedido(p)},itens,total_itens:itens.length}}
-async function salvarSeparacaoGithub(p,statusNome){const reg=montarRegistroSeparacao(p,statusNome);let arquivo={updated_at:new Date().toISOString(),pedidos:{}};try{arquivo=await githubGetJson('expedicao/separacao.json')||arquivo}catch(e){};arquivo.pedidos=arquivo.pedidos||{};arquivo.pedidos[String(p.id)]=reg;await githubPutJson('expedicao/separacao.json',arquivo,'Atualiza separacao pedido '+(p.numero||p.id))}
-async function githubGetJson(path){if(cfg.githubProxy==='sim')return await proxyCall('github','/repos/contents/'+path,'GET');const url=`https://api.github.com/repos/${cfg.ghOwner}/${cfg.ghRepo}/contents/${path}?ref=${cfg.ghBranch||'main'}&_=${Date.now()}`;const res=await fetch(url,{headers:{Authorization:'Bearer '+cfg.githubToken,Accept:'application/vnd.github+json'},cache:'no-store'});if(res.status===404)return null;if(!res.ok)throw new Error('GitHub GET '+res.status);const j=await res.json();return JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))))}
-async function githubPutJson(path,obj,msg){if(!cfg.ghOwner||!cfg.ghRepo||!cfg.githubToken)throw new Error('Configure GitHub para salvar separação.');if(cfg.githubProxy==='sim')return await proxyCall('github','/repos/contents/'+path,'PUT',{content:obj,message:msg});let sha=null;try{const urlGet=`https://api.github.com/repos/${cfg.ghOwner}/${cfg.ghRepo}/contents/${path}?ref=${cfg.ghBranch||'main'}&_=${Date.now()}`;const gr=await fetch(urlGet,{headers:{Authorization:'Bearer '+cfg.githubToken,Accept:'application/vnd.github+json'},cache:'no-store'});if(gr.ok){sha=(await gr.json()).sha}}catch(e){}const content=btoa(unescape(encodeURIComponent(JSON.stringify(obj,null,2))));const url=`https://api.github.com/repos/${cfg.ghOwner}/${cfg.ghRepo}/contents/${path}`;const body={message:msg,content,branch:cfg.ghBranch||'main'};if(sha)body.sha=sha;const res=await fetch(url,{method:'PUT',headers:{Authorization:'Bearer '+cfg.githubToken,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok)throw new Error('GitHub PUT '+res.status+': '+await res.text());return res.json()}
-async function iniciarSeparacao(id){try{const p=await detalhePedido(id);sep={pedido:p,itens:normalizarItens(p),idx:0,checked:{}};if(!sep.itens.length){toast('Pedido sem itens.');return}renderSeparador();$('sepModal').classList.add('show')}catch(e){toast('Erro ao iniciar separação: '+e.message,4500)}}
-function abrirSeparacaoSelecionada(){if(pedidoSelecionado?.id)return iniciarSeparacao(pedidoSelecionado.id);toast('Abra um pedido primeiro.')}
-function renderSeparador(){const it=sep.itens[sep.idx];const done=Object.keys(sep.checked).length;const pct=Math.round((done/sep.itens.length)*100);$('sepBody').innerHTML=`<div class="separator-screen"><div class="sep-head"><div class="sep-title">Pedido ${only(sep.pedido.numero||sep.pedido.id)} - ${sep.idx+1}/${sep.itens.length}</div><button class="btn" onclick="abrirDetalhes(sep.pedido)">LISTA</button></div><div class="progress"><div style="width:${pct}%"></div></div><div class="sep-card"><img class="prod-img" src="${it.foto||''}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22500%22 height=%22300%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23f3f4f6%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 fill=%22%236b7280%22 font-size=%2224%22 font-family=%22Arial%22%3ESem foto%3C/text%3E%3C/svg%3E'"><div class="prod-name">${it.nome}</div><div class="qty-box"><small>Quantidade para separar</small><strong>${it.qtd}</strong></div><div class="loc-grid"><div class="loc"><small>Gôndola</small><strong>${it.gondola||'-'}</strong></div><div class="loc"><small>Prateleira</small><strong>${it.prateleira||'-'}</strong></div></div><div class="codes">Código: ${it.codigo||'-'}<br>EAN: ${it.ean||'-'}</div><label class="checkline"><input type="checkbox" ${sep.checked[it.idx]?'checked':''} onchange="toggleItem(${it.idx},this.checked)"><span>Produto separado</span></label></div><div class="sep-actions"><button class="btn" onclick="sep.idx=Math.max(0,sep.idx-1);renderSeparador()">ANTERIOR</button><button class="btn blue" onclick="sep.idx=Math.min(sep.itens.length-1,sep.idx+1);renderSeparador()">PRÓXIMO</button><button class="btn ok" onclick="toggleItem(${it.idx},true);sep.idx=Math.min(sep.itens.length-1,sep.idx+1);renderSeparador()">MARCAR E AVANÇAR</button><button class="btn primary" onclick="concluirSeparacao()">CONCLUIR</button></div></div>`}
-function toggleItem(idx,val){if(val)sep.checked[idx]=true;else delete sep.checked[idx]}
-async function concluirSeparacao(){const faltam=sep.itens.length-Object.keys(sep.checked).length;if(faltam>0&&!confirm(`Ainda faltam ${faltam} item(ns). Concluir mesmo assim?`))return;await mudarStatus(sep.pedido.id,9);toast('Separação concluída. Pedido Atendido. Agora pode imprimir a etiqueta.');abrirDetalhes(sep.pedido)}
-async function imprimirEtiqueta(id){try{const p=await detalhePedido(id);const c=p.contato||p.cliente||{};const end=c.endereco||p.endereco||{};const nome=only(c.nome||p.nomeCliente||'CLIENTE');const rua=only(end.endereco||end.rua||c.rua||'');const num=only(end.numero||c.numero||'');const comp=only(end.complemento||c.complemento||'');const bairro=only(end.bairro||c.bairro||'');const cidade=only(end.municipio||end.cidade||c.cidade||'');const uf=only(end.uf||c.uf||'');const cep=only(end.cep||c.cep||'');const tel=only(c.telefone||c.celular||p.telefone||'');const obs=only(p.observacoes||p.observacao||p.observacoesInternas||'');$('labelBox').innerHTML=`<div class="lbl-title">DONA ANTÔNIA<br>PEDIDO ${only(p.numero||p.id)}</div><div class="lbl-client">${nome}</div><div class="lbl-address">${rua}${num?', Nº '+num:''}<br>${comp?comp+'<br>':''}${bairro}<br>${cidade}${uf?' - '+uf:''}<br>CEP ${cep||'-'}</div><div class="lbl-info">Telefone: ${tel||'-'}<br>Total: ${money(p.total||p.valorTotal)}</div><div class="lbl-obs">Obs: ${obs||'Sem observação'}</div>`;window.print();toast('Etiqueta enviada para impressão.');}catch(e){toast('Erro ao imprimir: '+e.message,4500)}}
-loadConfig();
+(function(){
+  'use strict';
+  var FIREBASE_BASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
+  var PEDIDOS_PATH = 'pedidos';
+  var orders = [];
+  var currentOrder = null;
+  var currentId = '';
+  var sortedItems = [];
+  var cursor = 0;
+  var tempQty = 0;
+  var activeTab = 'pedidos';
+
+  window.addEventListener('online', updateOnline);
+  window.addEventListener('offline', updateOnline);
+  document.addEventListener('DOMContentLoaded', init);
+
+  function init(){
+    document.getElementById('fbInfo').textContent = FIREBASE_BASE + '/' + PEDIDOS_PATH;
+    document.getElementById('operatorName').value = getOperator();
+    updateOnline();
+    var params = new URLSearchParams(location.search);
+    var id = params.get('id') || params.get('pedido') || localStorage.getItem('expedicao_last_id') || '';
+    if(id){
+      document.getElementById('directId').value = id;
+      loadOrder(id, true);
+    }else{
+      loadOrders();
+    }
+  }
+
+  function request(method, path, body){
+    var url = FIREBASE_BASE + '/' + path.replace(/^\/+/, '') + '.json';
+    var opts = {method: method, headers: {'Content-Type':'application/json'}};
+    if(body !== undefined) opts.body = JSON.stringify(body);
+    if(window.fetch){
+      return fetch(url, opts).then(function(r){
+        if(!r.ok) return r.text().then(function(t){throw new Error(t || r.statusText)});
+        return r.text().then(function(t){return t ? JSON.parse(t) : null});
+      });
+    }
+    return new Promise(function(resolve,reject){
+      var xhr = new XMLHttpRequest();
+      xhr.open(method, url, true);
+      xhr.setRequestHeader('Content-Type','application/json');
+      xhr.onreadystatechange = function(){
+        if(xhr.readyState === 4){
+          if(xhr.status >= 200 && xhr.status < 300){
+            try{ resolve(xhr.responseText ? JSON.parse(xhr.responseText) : null); }
+            catch(e){ resolve(null); }
+          }else reject(new Error(xhr.responseText || xhr.statusText));
+        }
+      };
+      xhr.send(body !== undefined ? JSON.stringify(body) : null);
+    });
+  }
+
+  function nowISO(){
+    var d = new Date();
+    var pad = function(n){return String(n).padStart(2,'0')};
+    var off = -d.getTimezoneOffset();
+    var sign = off >= 0 ? '+' : '-';
+    var hh = pad(Math.floor(Math.abs(off)/60));
+    var mm = pad(Math.abs(off)%60);
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())+sign+hh+':'+mm;
+  }
+
+  function money(v){
+    v = Number(v || 0);
+    return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  }
+  function onlyDigits(v){return String(v||'').replace(/\D/g,'')}
+  function esc(s){return String(s==null?'':s).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]})}
+  function fmtDate(s){
+    if(!s) return '-';
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s)){var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
+    try{return new Date(s).toLocaleDateString('pt-BR')}catch(e){return s}
+  }
+  function getOperator(){return localStorage.getItem('expedicao_operator') || 'Separador'}
+  function setTop(){
+    if(currentOrder){
+      document.getElementById('topPedido').textContent = 'Pedido ' + (currentOrder.numero_pedido || currentOrder.id || currentId);
+      document.getElementById('topSub').textContent = 'Entrega: ' + fmtDate(currentOrder.entrega && currentOrder.entrega.agendamento) + ' • ' + getOperator();
+    }else{
+      document.getElementById('topPedido').textContent = 'Central de Expedição';
+      document.getElementById('topSub').textContent = 'Dona Antônia • ' + getOperator();
+    }
+  }
+  function badge(status){
+    var s = String(status || 'pendente');
+    var cls = 'gray';
+    if(['separado','concluida','entregue'].indexOf(s)>=0) cls='ok';
+    if(['em_andamento','pulou','parcial','aguardando_envio','em_rota'].indexOf(s)>=0) cls='warn';
+    if(['em_falta','problema','cancelado','concluida_com_falta'].indexOf(s)>=0) cls='danger';
+    return '<span class="badge '+cls+'">'+esc(labelStatus(s))+'</span>';
+  }
+  function labelStatus(s){
+    var map={pendente:'Pendente',recebido:'Recebido',em_andamento:'Em separação',concluida:'Concluída',concluida_com_falta:'Com falta',separado:'Separado',parcial:'Parcial',em_falta:'Em falta',pulou:'Pulou',aguardando_envio:'Aguardando envio',em_rota:'Em rota',entregue:'Entregue',problema:'Problema',cancelado:'Cancelado'};
+    return map[s] || s;
+  }
+
+  function loadOrders(){
+    var box = document.getElementById('ordersList');
+    box.className='loading'; box.textContent='Carregando pedidos...';
+    request('GET', PEDIDOS_PATH).then(function(data){
+      orders = [];
+      if(data){
+        Object.keys(data).forEach(function(k){
+          if(data[k] && typeof data[k] === 'object'){
+            data[k]._key = k;
+            orders.push(data[k]);
+          }
+        });
+      }
+      orders.sort(function(a,b){return String(b.criado_em||'').localeCompare(String(a.criado_em||''))});
+      renderOrders();
+    }).catch(function(err){
+      box.className='card danger-note';
+      box.textContent='Erro ao carregar pedidos: ' + err.message;
+    });
+  }
+
+  function renderOrders(){
+    var box = document.getElementById('ordersList');
+    var q = (document.getElementById('pedidoBusca').value || '').toLowerCase().trim();
+    var f = document.getElementById('statusFiltro').value;
+    var arr = orders.filter(function(o){
+      var statusSep = o.status_separacao || (o.separacao && o.separacao.status) || o.status || 'pendente';
+      if(f && String(statusSep) !== f && String(o.status||'') !== f) return false;
+      if(!q) return true;
+      var txt = [o.id,o.numero_pedido,o.cliente&&o.cliente.nome,o.entrega&&o.entrega.bairro,o.entrega&&o.entrega.cidade,o.pagamento&&o.pagamento.total].join(' ').toLowerCase();
+      return txt.indexOf(q) >= 0;
+    }).slice(0,120);
+    if(!arr.length){box.className='empty';box.textContent='Nenhum pedido encontrado.';return}
+    box.className='';
+    box.innerHTML = arr.map(function(o){
+      var id = o.id || o.numero_pedido || o._key;
+      var itens = Array.isArray(o.itens) ? o.itens.length : 0;
+      var st = o.status_separacao || (o.separacao && o.separacao.status) || o.status || 'pendente';
+      return '<div class="card order-card" onclick="loadOrder(\''+esc(id)+'\',true)">'+
+        '<div><div class="order-title">Pedido '+esc(id)+'</div>'+badge(st)+
+        '<div class="order-meta">Cliente: <strong>'+esc(o.cliente&&o.cliente.nome)+'</strong><br>Entrega: '+esc(fmtDate(o.entrega&&o.entrega.agendamento))+' • '+esc(o.entrega&&o.entrega.bairro)+'<br>'+itens+' itens • <span class="money">'+money(o.pagamento&&o.pagamento.total)+'</span></div></div>'+ 
+        '<button class="btn-primary smallbtn">Abrir</button></div>';
+    }).join('');
+  }
+
+  function loadOrder(id, goSep){
+    id = String(id || '').trim();
+    if(!id) return;
+    document.getElementById('noOrderSep').textContent='Carregando pedido '+id+'...';
+    request('GET', PEDIDOS_PATH + '/' + encodeURIComponent(id)).then(function(o){
+      if(!o) throw new Error('Pedido não encontrado');
+      currentOrder = o; currentId = id;
+      localStorage.setItem('expedicao_last_id', id);
+      prepareItems();
+      cursor = Number(localStorage.getItem('expedicao_cursor_'+id) || 0);
+      if(cursor < 0 || cursor >= sortedItems.length) cursor = 0;
+      renderAll();
+      if(goSep) openTab('separacao');
+    }).catch(function(err){
+      alert('Erro ao abrir pedido: ' + err.message);
+    });
+  }
+
+  function prepareItems(){
+    var itens = Array.isArray(currentOrder.itens) ? currentOrder.itens : [];
+    sortedItems = itens.map(function(it,i){return {item:it, index:i}}).sort(function(a,b){
+      function loc(x){return [x.item.gondola||'Z', x.item.prateleira||'Z', x.item.categoria||'', x.item.nome||''].join('|').toLowerCase()}
+      return loc(a).localeCompare(loc(b));
+    });
+  }
+
+  function renderAll(){
+    setTop(); renderSep(); renderConf(); renderEnvio(); renderEtiqueta();
+  }
+
+  function renderSep(){
+    var has = !!currentOrder;
+    document.getElementById('noOrderSep').classList.toggle('hide', has);
+    document.getElementById('sepArea').classList.toggle('hide', !has);
+    if(!has) return;
+    var s = summary();
+    document.getElementById('sepPedido').textContent = 'Pedido ' + (currentOrder.numero_pedido || currentId);
+    document.getElementById('sepCliente').textContent = (currentOrder.cliente&&currentOrder.cliente.nome || '-') + ' • ' + (currentOrder.entrega&&currentOrder.entrega.bairro || '-');
+    document.getElementById('sepEntrega').textContent = 'Entrega: ' + fmtDate(currentOrder.entrega&&currentOrder.entrega.agendamento);
+    document.getElementById('sepProgText').textContent = s.done + '/' + s.total + ' resolvidos';
+    document.getElementById('sepProgBar').style.width = s.total ? Math.round((s.done/s.total)*100)+'%' : '0%';
+    document.getElementById('sepStatus').outerHTML = '<span id="sepStatus" class="badge '+(s.statusClass)+'">'+labelStatus(currentOrder.status_separacao || 'pendente')+'</span>';
+    renderCurrentItem();
+  }
+
+  function currentEntry(){return sortedItems[cursor] || null}
+  function renderCurrentItem(){
+    var e = currentEntry(); if(!e) return;
+    var it = e.item;
+    tempQty = Number(it.quantidade_separada || 0);
+    document.getElementById('prodNome').textContent = it.nome || 'Produto';
+    document.getElementById('prodLoc').textContent = 'Gôndola ' + (it.gondola || '-') + ' • Prat. ' + (it.prateleira || '-');
+    document.getElementById('prodMeta').innerHTML = 'Item '+(cursor+1)+' de '+sortedItems.length+'<br>SKU: <strong>'+esc(it.sku||it.codigo||'-')+'</strong><br>Marca: '+esc(it.marca||'-')+' • '+esc(it.embalagem||'-')+'<br>'+esc(it.categoria||'');
+    document.getElementById('qtyPedido').textContent = it.quantidade || 0;
+    document.getElementById('qtySep').textContent = tempQty;
+    document.getElementById('dockQty').textContent = tempQty;
+    document.getElementById('dockTotal').textContent = it.quantidade || 0;
+    document.getElementById('prodStatus').outerHTML = '<span id="prodStatus" class="badge '+statusClassItem(it.status_separacao)+'">'+labelStatus(it.status_separacao || 'pendente')+'</span>';
+    document.getElementById('itemObs').value = it.observacao_separacao || '';
+    var wrap = document.querySelector('.photo-wrap');
+    wrap.innerHTML = '<img id="prodImg" alt="Foto do produto" loading="eager" onerror="imageFallback()">';
+    var img = document.getElementById('prodImg');
+    img.src = it.url_imagem || '';
+    img.alt = it.nome || 'Produto';
+    if(!it.url_imagem) imageFallback();
+    localStorage.setItem('expedicao_cursor_'+currentId, cursor);
+  }
+  function statusClassItem(st){
+    st = String(st||'pendente');
+    if(st==='separado') return 'ok';
+    if(st==='parcial'||st==='pulou') return 'warn';
+    if(st==='em_falta'||st==='cancelado') return 'danger';
+    return 'gray';
+  }
+  function imageFallback(){
+    var wrap = document.querySelector('.photo-wrap');
+    var e = currentEntry();
+    var sku = e && (e.item.sku || e.item.codigo || 'Produto');
+    wrap.innerHTML = '<div class="photo-fallback">Sem foto<br>'+esc(sku)+'</div>';
+  }
+
+  function changeQty(delta){
+    var e = currentEntry(); if(!e) return;
+    var max = Number(e.item.quantidade || 0);
+    tempQty = Math.max(0, Math.min(max, Number(tempQty||0) + delta));
+    document.getElementById('qtySep').textContent=tempQty;
+    document.getElementById('dockQty').textContent=tempQty;
+  }
+
+  function ensureStarted(){
+    if(!currentOrder) return Promise.resolve();
+    var st = currentOrder.status_separacao || 'pendente';
+    if(st === 'pendente' || st === 'recebido'){
+      return request('PATCH', PEDIDOS_PATH+'/'+encodeURIComponent(currentId), {status:'em_separacao',status_separacao:'em_andamento',atualizado_em:nowISO(),separacao:{status:'em_andamento',iniciada_em:nowISO(),separador:getOperator()}})
+        .then(function(){currentOrder.status='em_separacao';currentOrder.status_separacao='em_andamento'});
+    }
+    return Promise.resolve();
+  }
+  function saveItemPatch(index, patch, action){
+    patch.atualizado_em = nowISO();
+    return ensureStarted().then(function(){
+      return request('PATCH', PEDIDOS_PATH+'/'+encodeURIComponent(currentId)+'/itens/'+index, patch);
+    }).then(function(){
+      Object.assign(currentOrder.itens[index], patch);
+      return addHistory(action || 'item_atualizado', {sku: currentOrder.itens[index].sku, nome: currentOrder.itens[index].nome, quantidade_separada: patch.quantidade_separada, status: patch.status_separacao});
+    }).then(function(){prepareItems(); renderAll();});
+  }
+  function addHistory(action, extra){
+    if(!currentId) return Promise.resolve();
+    var payload = Object.assign({acao:action, usuario:getOperator(), criado_em:nowISO()}, extra || {});
+    return request('POST', PEDIDOS_PATH+'/'+encodeURIComponent(currentId)+'/historico', payload).catch(function(){return null});
+  }
+
+  function markSeparated(){
+    var e=currentEntry(); if(!e) return;
+    var qtdPedido = Number(e.item.quantidade || 0);
+    var qtd = Number(tempQty || 0);
+    if(qtd <= 0) qtd = qtdPedido;
+    var status = qtd >= qtdPedido ? 'separado' : 'parcial';
+    saveItemPatch(e.index, {status_separacao:status, quantidade_separada:qtd, separado_em:nowISO(), separador:getOperator()}, status==='separado'?'item_separado':'item_parcial').then(nextUnresolvedOrNext);
+  }
+  function skipItem(){
+    var e=currentEntry(); if(!e) return;
+    saveItemPatch(e.index, {status_separacao:'pulou', quantidade_separada:Number(e.item.quantidade_separada||0), separador:getOperator()}, 'item_pulado').then(nextItem);
+  }
+  function markMissing(){
+    var e=currentEntry(); if(!e) return;
+    var note = prompt('Observação da falta (opcional):', e.item.observacao_separacao || 'Produto em falta');
+    if(note === null) return;
+    saveItemPatch(e.index, {status_separacao:'em_falta', quantidade_separada:0, separado_em:'', separador:getOperator(), observacao_separacao:note}, 'item_em_falta').then(nextUnresolvedOrNext);
+  }
+  function saveItemNote(){
+    var e=currentEntry(); if(!e || !currentOrder) return;
+    var val = document.getElementById('itemObs').value || '';
+    if((e.item.observacao_separacao||'') === val) return;
+    saveItemPatch(e.index, {observacao_separacao:val, separador:getOperator()}, 'anotacao_item');
+  }
+  function nextItem(){if(!sortedItems.length)return;cursor=(cursor+1)%sortedItems.length;renderCurrentItem();}
+  function prevItem(){if(!sortedItems.length)return;cursor=(cursor-1+sortedItems.length)%sortedItems.length;renderCurrentItem();}
+  function nextUnresolvedOrNext(){
+    var start = cursor;
+    for(var i=1;i<=sortedItems.length;i++){
+      var idx = (start+i)%sortedItems.length;
+      var st = sortedItems[idx].item.status_separacao || 'pendente';
+      if(st==='pendente' || st==='pulou'){cursor=idx;renderCurrentItem();return;}
+    }
+    renderAll(); openTab('conferencia');
+  }
+
+  function summary(){
+    var itens = currentOrder && Array.isArray(currentOrder.itens) ? currentOrder.itens : [];
+    var s={total:itens.length,separado:0,parcial:0,falta:0,pulou:0,pendente:0,cancelado:0,done:0,hasSeparated:false,statusClass:'gray'};
+    itens.forEach(function(it){
+      var st = it.status_separacao || 'pendente';
+      if(st==='separado'){s.separado++;s.done++;s.hasSeparated=true}
+      else if(st==='parcial'){s.parcial++;s.done++; if(Number(it.quantidade_separada||0)>0)s.hasSeparated=true}
+      else if(st==='em_falta'){s.falta++;s.done++}
+      else if(st==='cancelado'){s.cancelado++;s.done++}
+      else if(st==='pulou') s.pulou++;
+      else s.pendente++;
+    });
+    if(s.falta || s.parcial) s.statusClass='danger'; else if(s.done && s.done<s.total) s.statusClass='warn'; else if(s.total && s.done===s.total) s.statusClass='ok';
+    return s;
+  }
+
+  function renderConf(){
+    var box=document.getElementById('confArea');
+    if(!currentOrder){box.className='empty';box.textContent='Selecione um pedido para conferir.';return}
+    var s=summary();
+    var pend = currentOrder.itens.filter(function(i){var st=i.status_separacao||'pendente';return st==='pendente'||st==='pulou'});
+    var falta = currentOrder.itens.filter(function(i){return i.status_separacao==='em_falta'});
+    var parcial = currentOrder.itens.filter(function(i){return i.status_separacao==='parcial'});
+    box.className='';
+    box.innerHTML = '<div class="card"><div class="between"><div><strong>Conferência do pedido '+esc(currentOrder.numero_pedido||currentId)+'</strong><br><span class="muted">Entrega: '+fmtDate(currentOrder.entrega&&currentOrder.entrega.agendamento)+'</span></div>'+badge(currentOrder.status_separacao||'pendente')+'</div><div style="height:10px"></div><div class="grid3"><div class="card"><strong>'+s.total+'</strong><br><span class="muted">Itens</span></div><div class="card"><strong>'+s.separado+'</strong><br><span class="muted">Separados</span></div><div class="card"><strong>'+s.falta+'</strong><br><span class="muted">Em falta</span></div></div><div class="grid3"><div class="card"><strong>'+s.parcial+'</strong><br><span class="muted">Parciais</span></div><div class="card"><strong>'+s.pulou+'</strong><br><span class="muted">Pulados</span></div><div class="card"><strong>'+s.pendente+'</strong><br><span class="muted">Pendentes</span></div></div></div>'+
+      (pend.length?'<div class="card danger-note"><strong>Não pode concluir ainda</strong><br>Existem produtos pendentes ou pulados. Volte para separar/revisar.<div style="height:8px"></div>'+itemsList(pend)+'</div>':'')+
+      (falta.length?'<div class="card danger-note"><strong>Produtos em falta</strong>'+itemsList(falta)+'</div>':'')+
+      (parcial.length?'<div class="card note"><strong>Produtos parciais</strong>'+itemsList(parcial)+'</div>':'')+
+      '<div class="card"><label><strong>Anotações do pedido</strong></label><textarea id="pedidoNote" class="textarea" placeholder="Anotações internas da separação, entrega ou atendimento..."></textarea><div style="height:8px"></div><button class="btn-blue full" onclick="saveOrderNote()">Salvar anotação</button></div>'+
+      '<div class="card"><button class="btn-light full" onclick="openTab(\'separacao\')">Voltar para revisar</button><div style="height:8px"></div><button class="btn-ok full" onclick="finishSeparation()">Concluir separação</button></div>';
+  }
+  function itemsList(arr){
+    return arr.map(function(i){return '<div class="item-mini"><img class="mini-img" src="'+esc(i.url_imagem||'')+'" onerror="this.style.display=\'none\'"><div><strong>'+esc(i.nome)+'</strong><br><span class="muted">SKU '+esc(i.sku||i.codigo)+' • Pedido '+esc(i.quantidade)+' • Separado '+esc(i.quantidade_separada||0)+' • '+esc(i.gondola||'-')+'/'+esc(i.prateleira||'-')+'</span></div></div>'}).join('');
+  }
+  function saveOrderNote(){
+    var v = document.getElementById('pedidoNote').value.trim();
+    if(!v) return alert('Digite uma anotação.');
+    request('POST', PEDIDOS_PATH+'/'+encodeURIComponent(currentId)+'/anotacoes_expedicao', {texto:v,usuario:getOperator(),criado_em:nowISO()})
+      .then(function(){document.getElementById('pedidoNote').value='';return addHistory('anotacao_pedido',{texto:v})})
+      .then(function(){alert('Anotação salva.');});
+  }
+  function finishSeparation(){
+    var s=summary();
+    if(!s.hasSeparated) return alert('Não é possível encerrar: nenhum produto foi separado.');
+    if(s.pendente || s.pulou) return alert('Não é possível encerrar: existem produtos pendentes ou pulados. Revise todos primeiro.');
+    if((s.falta || s.parcial) && !confirm('Este pedido tem produtos em falta ou parciais. Confirmar separação mesmo assim?')) return;
+    var newStatus = (s.falta || s.parcial) ? 'concluida_com_falta' : 'concluida';
+    request('PATCH', PEDIDOS_PATH+'/'+encodeURIComponent(currentId), {status:'aguardando_envio',status_separacao:newStatus,atualizado_em:nowISO(),separacao:{status:newStatus,concluida_em:nowISO(),separador:getOperator(),resumo:s}})
+      .then(function(){currentOrder.status='aguardando_envio';currentOrder.status_separacao=newStatus;return addHistory('separacao_concluida',{resumo:s})})
+      .then(function(){renderAll();openTab('envio');alert('Separação concluída.');});
+  }
+
+  function renderEnvio(){
+    var box=document.getElementById('envioArea');
+    if(!currentOrder){box.className='empty';box.textContent='Selecione um pedido para preparar envio.';return}
+    var c=currentOrder.cliente||{}, e=currentOrder.entrega||{}, p=currentOrder.pagamento||{};
+    var end=e.endereco_completo || [e.rua,e.numero,e.bairro,e.cidade,e.uf,e.cepFormatado].filter(Boolean).join(', ');
+    var maps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(end);
+    var phone='55'+onlyDigits(c.telefoneFormatado||c.telefone||c.celular);
+    var msg='Olá, seu pedido Dona Antônia saiu para entrega.\n\nPedido: '+(currentOrder.numero_pedido||currentId)+'\nTotal: '+money(p.total)+'\nPagamento: '+(p.forma||'-');
+    var whats='https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
+    box.className='';
+    box.innerHTML='<div class="card"><strong>Envio do pedido '+esc(currentOrder.numero_pedido||currentId)+'</strong><br>'+badge(currentOrder.status||'aguardando_envio')+'<div style="height:10px"></div><p><strong>Cliente:</strong> '+esc(c.nome||'-')+'<br><strong>Telefone:</strong> '+esc(c.telefoneFormatado||c.telefone||'-')+'<br><strong>Entrega:</strong> '+esc(fmtDate(e.agendamento))+'<br><strong>Endereço:</strong> '+esc(end)+'<br><strong>Pagamento:</strong> '+esc(p.forma||'-')+' • <span class="money">'+money(p.total)+'</span></p></div>'+
+      '<div class="grid2"><a href="'+maps+'" target="_blank"><button class="btn-blue full">Abrir Maps</button></a><a href="'+whats+'" target="_blank"><button class="btn-ok full">WhatsApp</button></a></div><div style="height:8px"></div>'+
+      '<div class="grid2"><button class="btn-warn" onclick="setOrderStatus(\'em_rota\')">Saiu para entrega</button><button class="btn-ok" onclick="setOrderStatus(\'entregue\')">Marcar entregue</button></div><div style="height:8px"></div><button class="btn-danger full" onclick="setOrderStatus(\'problema\')">Registrar problema</button>'+
+      '<div class="card"><label><strong>Observações originais</strong></label><p class="muted">'+esc(currentOrder.observacoes||'-')+'</p><label><strong>Complemento/frente</strong></label><p class="muted">'+esc(e.complemento||e.frente||'-')+'</p></div>';
+  }
+  function setOrderStatus(status){
+    if(!currentOrder) return;
+    var extra={status:status,atualizado_em:nowISO()};
+    if(status==='em_rota') extra.envio={status:'em_rota',saiu_em:nowISO(),entregador:getOperator()};
+    if(status==='entregue') extra.envio={status:'entregue',entregue_em:nowISO(),entregador:getOperator()};
+    if(status==='problema'){
+      var motivo=prompt('Descreva o problema:','');
+      if(motivo===null) return;
+      extra.envio={status:'problema',motivo:motivo,criado_em:nowISO(),usuario:getOperator()};
+    }
+    request('PATCH', PEDIDOS_PATH+'/'+encodeURIComponent(currentId), extra).then(function(){currentOrder.status=status;return addHistory('status_'+status, extra.envio||{})}).then(function(){renderAll();});
+  }
+
+  function renderEtiqueta(){
+    var box=document.getElementById('etiquetaArea');
+    if(!currentOrder){box.className='empty';box.textContent='Selecione um pedido para gerar etiqueta.';return}
+    var c=currentOrder.cliente||{}, e=currentOrder.entrega||{}, p=currentOrder.pagamento||{}, s=summary();
+    box.className='';
+    box.innerHTML='<div class="no-print card"><button class="btn-primary full" onclick="window.print()">Imprimir etiqueta</button></div><div class="print-area"><div class="print-title">Dona Antônia</div><div class="print-line"></div><div class="label-row"><span class="label-strong">Pedido:</span> '+esc(currentOrder.numero_pedido||currentId)+'</div><div class="label-row"><span class="label-strong">Cliente:</span> '+esc(c.nome||'-')+'</div><div class="label-row"><span class="label-strong">Telefone:</span> '+esc(c.telefoneFormatado||c.telefone||'-')+'</div><div class="print-line"></div><div class="label-row"><span class="label-strong">Endereço:</span> '+esc(e.endereco_completo||[e.rua,e.numero,e.bairro,e.cidade,e.uf,e.cepFormatado].filter(Boolean).join(', '))+'</div><div class="label-row"><span class="label-strong">Complemento:</span> '+esc(e.complemento||e.frente||'-')+'</div><div class="print-line"></div><div class="label-row"><span class="label-strong">Entrega:</span> '+esc(fmtDate(e.agendamento))+'</div><div class="label-row"><span class="label-strong">Pagamento:</span> '+esc(p.forma||'-')+' • '+money(p.total)+'</div><div class="label-row"><span class="label-strong">Itens:</span> '+s.total+' • Falta: '+s.falta+' • Parcial: '+s.parcial+'</div><div class="print-line"></div><div class="label-row"><span class="label-strong">Obs.:</span> '+esc(currentOrder.observacoes||'-')+'</div></div>';
+  }
+
+  function openTab(name){
+    activeTab=name;
+    document.querySelectorAll('.section').forEach(function(el){el.classList.remove('active')});
+    document.getElementById('tab-'+name).classList.add('active');
+    document.querySelectorAll('.tab').forEach(function(el){el.classList.toggle('active', el.getAttribute('data-tab')===name)});
+    document.body.classList.toggle('separando', name==='separacao' && !!currentOrder);
+    if(name==='conferencia') renderConf();
+    if(name==='envio') renderEnvio();
+    if(name==='etiqueta') renderEtiqueta();
+  }
+  function saveOperator(){localStorage.setItem('expedicao_operator', document.getElementById('operatorName').value || 'Separador'); setTop();}
+  function openDirect(){loadOrder(document.getElementById('directId').value,true)}
+  function reloadAll(){if(currentId) loadOrder(currentId, activeTab==='separacao'); else loadOrders();}
+  function updateOnline(){document.getElementById('netDot').className = navigator.onLine ? 'online' : 'online offline'}
+
+  window.loadOrders=loadOrders; window.renderOrders=renderOrders; window.loadOrder=loadOrder; window.openTab=openTab; window.changeQty=changeQty; window.prevItem=prevItem; window.nextItem=nextItem; window.skipItem=skipItem; window.markMissing=markMissing; window.markSeparated=markSeparated; window.saveItemNote=saveItemNote; window.saveOrderNote=saveOrderNote; window.finishSeparation=finishSeparation; window.setOrderStatus=setOrderStatus; window.saveOperator=saveOperator; window.openDirect=openDirect; window.reloadAll=reloadAll; window.imageFallback=imageFallback;
+})();
 </script>
 </body>
 </html>
