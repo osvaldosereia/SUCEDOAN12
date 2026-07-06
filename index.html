@@ -195,9 +195,24 @@
     .product-expiry { color: var(--muted); font-size: 10.5px; line-height: 1.25; font-weight: 700; letter-spacing: .01em; }
     .expiry-bulk-note { padding: 6px 8px; border-radius: 9px; color: #8a4b08; background: #fff7e6; font-size: 10.5px; line-height: 1.3; font-weight: 850; }
     .price-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
-    .price-wrap { min-width: 0; }
+    .price-wrap { width: 100%; min-width: 0; }
     .old-price { color: var(--muted-2); text-decoration: line-through; font-size: 11px; font-weight: 800; }
     .price { font-size: 18px; font-weight: 950; letter-spacing: -.04em; }
+    .coupon-price-card { display: grid; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); gap: 8px; align-items: stretch; width: 100%; margin-top: 2px; }
+    .coupon-price-before, .coupon-price-pay { min-width: 0; padding: 8px 9px; border-radius: 11px; }
+    .coupon-price-before { display: flex; flex-direction: column; justify-content: center; background: #f7f7f5; color: var(--muted); }
+    .coupon-price-pay { background: #eaf7ed; color: #145c35; border: 1px solid #cde9d4; }
+    .coupon-price-card span { display: block; margin-bottom: 3px; font-size: 9.5px; line-height: 1.15; font-weight: 850; letter-spacing: .025em; text-transform: uppercase; }
+    .coupon-price-before s { display: block; font-size: 13px; line-height: 1.15; font-weight: 850; white-space: nowrap; }
+    .coupon-price-pay strong { display: block; font-size: 19px; line-height: 1.05; font-weight: 950; letter-spacing: -.035em; white-space: nowrap; }
+    .coupon-active-note { display: flex; align-items: flex-start; gap: 6px; margin-top: 7px; padding: 7px 8px; border-radius: 9px; background: #edf8f0; color: #14683c; font-size: 10px; line-height: 1.3; font-weight: 850; }
+    .coupon-active-note::before { content: "✓"; flex: 0 0 auto; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #167344; color: #fff; font-size: 10px; }
+    .coupon-active-note.best-offer { background: #fff7e6; color: #81510d; }
+    .coupon-active-note.best-offer::before { content: "★"; background: #b87510; }
+    .detail-price-area { display: grid; gap: 7px; max-width: 420px; }
+    .detail-price-area .coupon-price-card { grid-template-columns: minmax(130px,.8fr) minmax(170px,1.2fr); }
+    .detail-price-area .coupon-price-before, .detail-price-area .coupon-price-pay { padding: 12px 14px; border-radius: 14px; }
+    .detail-price-area .coupon-price-pay strong { font-size: 30px; }
     .add-area { margin-top: 2px; }
     .add-btn, .qty-control { width: 100%; height: 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 950; }
     .add-btn { background: var(--ink); color: #fff; box-shadow: 0 7px 18px rgba(15,23,42,.16); }
@@ -1523,6 +1538,13 @@
       .add-btn, .qty-control { min-height: 46px; }
       .cart-qty { height: 42px; }
       .cart-qty button { width: 36px; }
+      .product-card:has(.coupon-price-card) .product-body { gap: 8px; }
+      .coupon-price-card { gap: 6px; }
+      .coupon-price-before, .coupon-price-pay { padding: 8px 7px; }
+      .coupon-price-card span { font-size: 8.5px; }
+      .coupon-price-before s { font-size: 11.5px; }
+      .coupon-price-pay strong { font-size: clamp(15px,4.3vw,17px); }
+      .detail-price-area .coupon-price-card { grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); }
     }
     @media (max-width: 360px) {
       .category-buttons { grid-template-columns: 1fr; }
@@ -2588,13 +2610,42 @@
     function productDisplayPricing(p) {
       const current = Number(p.price || 0);
       const original = Math.max(Number(p.oldPrice || current), current);
-      const effective = current;
-      const coupon = null;
-      const couponApplied = false;
+      const coupon = getActiveCoupon();
+      const couponParticipates = !!(coupon && couponIsValid(coupon) && couponMatchesProduct(coupon, p) && coupon.tipo === 'percentual' && Number(coupon.desconto || 0) > 0);
+      const couponPercent = couponParticipates ? Math.max(0, Number(coupon.desconto || 0)) : 0;
+      const couponCandidate = couponParticipates ? roundMoney(original * (1 - couponPercent / 100)) : current;
+      const effective = couponParticipates ? Math.min(current, couponCandidate) : current;
+      const couponApplied = couponParticipates && effective < current - .001;
+      const systemDiscountPercent = original > current
+        ? Math.round(((original - current) / Math.max(original, .01)) * 100)
+        : 0;
+      const systemOfferWins = couponParticipates && current < couponCandidate - .001;
+      const systemOfferIsExpiry = systemOfferWins && !!p.validade;
       const discountPercent = original > effective
         ? Math.round(((original - effective) / Math.max(original, .01)) * 100)
         : 0;
-      return { current, original, effective, coupon, couponApplied, discountPercent };
+      return { current, original, effective, coupon, couponApplied, couponParticipates, couponPercent, couponCandidate, systemDiscountPercent, systemOfferWins, systemOfferIsExpiry, discountPercent };
+    }
+
+    function productPriceHtml(display, detail) {
+      const priceClass = detail ? 'detail-price' : 'price';
+      if (display.couponParticipates) {
+        const note = display.couponApplied
+          ? `Cupom ${escapeHtml(display.coupon.codigo)} ativo · ${display.couponPercent}% de desconto`
+          : display.systemOfferWins
+            ? `Cupom ${escapeHtml(display.coupon.codigo)} ativo · a ${display.systemOfferIsExpiry ? 'oferta por validade' : 'oferta atual'} de ${display.systemDiscountPercent}% é mais vantajosa`
+            : `Cupom ${escapeHtml(display.coupon.codigo)} ativo · o melhor preço já está aplicado`;
+        const beforeLabel = display.couponApplied ? 'Preço sem cupom' : 'Preço normal';
+        const beforeValue = display.couponApplied ? display.current : display.original;
+        return `<div class="${detail ? 'detail-price-area' : ''}">
+          <div class="coupon-price-card">
+            <div class="coupon-price-before"><span>${beforeLabel}</span><s>${fmt(beforeValue)}</s></div>
+            <div class="coupon-price-pay"><span>Você vai pagar</span><strong>${fmt(display.effective)}</strong></div>
+          </div>
+          <div class="coupon-active-note${display.systemOfferWins ? ' best-offer' : ''}">${note}</div>
+        </div>`;
+      }
+      return `${display.original > display.effective ? `<div class="old-price">${fmt(display.original)}</div>` : ''}<div class="${priceClass}">${fmt(display.effective)}</div>`;
     }
 
     function pickProductImage(list) {
@@ -2641,11 +2692,7 @@
             <a class="product-name" href="#/produto/${productRouteKey(p)}">${escapeHtml(p.name)}</a>
             ${hasExpiryBulkDiscount(p) ? `<div class="expiry-bulk-note">Leve 3 ou mais e ganhe +10% no checkout.</div>` : ''}
             <div class="price-row">
-              <div class="price-wrap">
-                ${display.original > display.effective ? `<div class="old-price">${fmt(display.original)}</div>` : ''}
-                <div class="price">${fmt(display.effective)}</div>
-                ${display.couponApplied ? `<div class="coupon-price-note">com ${escapeHtml(display.coupon.codigo)}</div>` : ''}
-              </div>
+              <div class="price-wrap">${productPriceHtml(display, false)}</div>
             </div>
             <div class="add-area" data-card-controls="${escapeHtml(id)}">${unavailable ? '<button class="add-btn" disabled>Esgotado</button>' : qtyControlHtml(id, qty)}</div>
           </div>
@@ -2969,7 +3016,7 @@
             ${p.validade && formatProductExpiry(p.validade) ? `<div class="product-expiry">Validade: ${escapeHtml(formatProductExpiry(p.validade))}</div>` : ''}
             <h1 class="detail-title">${escapeHtml(p.name)}</h1>
             ${hasExpiryBulkDiscount(p) ? `<div class="expiry-bulk-note">Leve 3 ou mais unidades e ganhe mais 10% no checkout.</div>` : ''}
-            <div>${display.original > display.effective ? `<div class="old-price">${fmt(display.original)}</div>` : ''}<div class="detail-price">${fmt(display.effective)}</div>${display.couponApplied ? `<div class="coupon-price-note">com ${escapeHtml(display.coupon.codigo)}</div>` : ''}</div>
+            ${productPriceHtml(display, true)}
             <div data-card-controls="${escapeHtml(p.id)}">${qtyControlHtml(p.id, Number(state.cart[p.id] || 0))}</div>
             <div class="desc">${escapeHtml(p.descricao || `${p.categoria}${p.subcategoria ? ' • ' + p.subcategoria : ''}${p.embalagem ? ' • ' + p.embalagem : ''}`)}</div>
           </div>
