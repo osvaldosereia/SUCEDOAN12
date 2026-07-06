@@ -235,6 +235,20 @@
     .notice { text-align: left; font-size: 13px; line-height: 1.45; }
     .toast { position: fixed; left: 50%; top: calc(14px + var(--safe-top)); transform: translate(-50%, -150%); z-index: 90; max-width: 92vw; background: var(--brand); color: #fff; padding: 12px 16px; border-radius: 999px; font-size: 14px; font-weight: 900; box-shadow: 0 16px 35px rgba(20,83,45,.28); opacity: 0; transition: transform .25s ease, opacity .25s ease; text-align: center; }
     .toast.show { transform: translate(-50%, 0); opacity: 1; }
+    .basket-confirm-overlay { position: fixed; inset: 0; z-index: 95; display: flex; align-items: flex-end; justify-content: center; padding: 16px; background: rgba(15,23,42,.46); opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    .basket-confirm-overlay.show { opacity: 1; pointer-events: auto; }
+    .basket-confirm { width: min(100%, 440px); padding: 22px; border-radius: 24px; background: #fff; box-shadow: 0 24px 70px rgba(15,23,42,.24); transform: translateY(24px); transition: transform .22s ease; text-align: center; }
+    .basket-confirm-overlay.show .basket-confirm { transform: translateY(0); }
+    .basket-confirm-icon { width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 999px; display: grid; place-items: center; color: #fff; background: var(--brand); font-size: 27px; font-weight: 950; }
+    .basket-confirm h2 { font-size: 22px; line-height: 1.15; color: var(--ink); }
+    .basket-confirm p { margin-top: 8px; color: var(--muted); font-size: 14px; line-height: 1.45; }
+    .basket-confirm-summary { margin: 16px 0; padding: 13px; border-radius: 14px; color: var(--ink); background: var(--surface-soft); font-size: 14px; font-weight: 800; }
+    .basket-confirm-actions { display: grid; gap: 9px; }
+    .basket-confirm-primary, .basket-confirm-secondary { width: 100%; min-height: 48px; border-radius: 13px; font-size: 14px; font-weight: 850; }
+    .basket-confirm-primary { color: #fff; background: var(--brand); }
+    .basket-confirm-secondary { color: var(--brand); border: 1px solid var(--line-strong); background: #fff; }
+    .checkout-field-label { display: block; margin: 3px 2px 6px; color: var(--ink); font-size: 12px; font-weight: 800; }
+    :where(button, a, input, select, textarea):focus-visible { outline: 3px solid rgba(22,163,74,.32); outline-offset: 2px; }
 
     .bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; height: calc(var(--bottom-h) + var(--safe-bottom)); padding: 6px 10px calc(6px + var(--safe-bottom)); background: rgba(255,255,255,.96); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(229,231,235,.95); box-shadow: 0 -8px 28px rgba(16,24,40,.08); display: flex; align-items: center; gap: 8px; }
     .bottom-nav { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; }
@@ -1341,6 +1355,11 @@
     .lookup-status.success { color: #166534; background: #dcfce7; }
     .lookup-status.warning { color: #92400e; background: #fef3c7; }
     .lookup-status.error { color: #9f1239; background: #ffe4e6; }
+    .client-details[hidden] { display: none; }
+    .client-details-intro { margin: 0 0 12px; padding: 11px 12px; border-radius: 12px; color: #185b39; background: #e8f3eb; font-size: 12px; line-height: 1.4; font-weight: 700; }
+    .wholesale-note { margin-top: 10px; padding: 10px 12px; border-radius: 12px; color: #185b39; background: #e8f3eb; font-size: 12px; font-weight: 750; line-height: 1.4; }
+    .checkout-offers-rail { scroll-behavior: smooth; }
+    .checkout-offers-hint { margin-top: 8px; color: var(--muted); font-size: 11px; text-align: center; }
     .send-btn {
       border-radius: 13px;
       background: #1fae59;
@@ -1495,6 +1514,18 @@
       .beauty-products { min-height: 165px; }
       .beauty-products img { height: 155px; }
       .product-imgbox { height: 148px; }
+      .category-button { grid-template-columns: minmax(0, 1fr) 60px; gap: 8px; padding: 12px 10px; min-width: 0; }
+      .category-button > div { min-width: 0; }
+      .category-button strong { overflow-wrap: anywhere; }
+      .category-thumb { width: 60px; height: 60px; padding: 5px; border-radius: 15px; }
+      .add-btn, .qty-control { min-height: 46px; }
+      .cart-qty { height: 42px; }
+      .cart-qty button { width: 36px; }
+    }
+    @media (max-width: 360px) {
+      .category-buttons { grid-template-columns: 1fr; }
+      .category-button { grid-template-columns: minmax(0, 1fr) 72px; }
+      .category-thumb { width: 72px; height: 72px; }
     }
 
   </style>
@@ -1541,6 +1572,18 @@
   </nav>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="basket-confirm-overlay" class="basket-confirm-overlay" aria-hidden="true">
+    <section class="basket-confirm" role="dialog" aria-modal="true" aria-labelledby="basket-confirm-title">
+      <div class="basket-confirm-icon" aria-hidden="true">✓</div>
+      <h2 id="basket-confirm-title">Cesta adicionada!</h2>
+      <p id="basket-confirm-message">A cesta foi colocada na sua compra.</p>
+      <div class="basket-confirm-summary" id="basket-confirm-summary"></div>
+      <div class="basket-confirm-actions">
+        <button class="basket-confirm-primary" id="basket-confirm-continue" type="button">Continuar comprando</button>
+        <button class="basket-confirm-secondary" id="basket-confirm-view" type="button">Ver minha compra</button>
+      </div>
+    </section>
+  </div>
   <div id="drawer-overlay" class="drawer-overlay"></div>
   <aside id="site-menu-drawer" class="drawer site-menu-drawer" aria-label="Menu principal" aria-hidden="true">
     <div class="drawer-head menu-drawer-head">
@@ -1554,13 +1597,13 @@
       <section class="menu-hero-card">
         <div class="menu-hero-kicker">Supermercado online local</div>
         <strong>Compra fácil para Cuiabá e Várzea Grande.</strong>
-        <span>Escolha os produtos, confira o carrinho e envie o pedido direto pelo WhatsApp.</span>
+        <span>Escolha os produtos, confira sua compra e envie o pedido direto pelo WhatsApp.</span>
       </section>
 
       <section class="menu-section-card menu-cart-card">
         <div class="menu-section-title">Resumo da compra</div>
         <div class="menu-cart-line"><span id="menu-cart-count">0 itens</span><strong id="menu-cart-total">R$ 0,00</strong></div>
-        <button class="menu-main-btn" type="button" id="menu-open-checkout">Abrir checkout</button>
+        <button class="menu-main-btn" type="button" id="menu-open-checkout">Revisar minha compra</button>
       </section>
 
       <section class="menu-section-card">
@@ -1636,6 +1679,9 @@
       couponMessage: '',
       couponMessageType: '',
       customerLookupStatus: 'unknown',
+      customerLookupCpf: '',
+      checkoutOfferLimit: 12,
+      checkoutOfferScrollLeft: 0,
       isReady: false
     };
 
@@ -1761,6 +1807,29 @@
       return { text: norm(core), tokens, code: norm([p.codigo, p.gtin, p.ean].join(' ')) };
     }
 
+    function parseOfferEndDate(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return null;
+      let match = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (match) {
+        const day = Number(match[1]);
+        const month = Number(match[2]);
+        const year = Number(match[3]);
+        const date = new Date(year, month - 1, day, 23, 59, 59, 999);
+        return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null;
+      }
+      match = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
+      if (match) {
+        const year = Number(match[1]);
+        const month = Number(match[2]);
+        const day = Number(match[3]);
+        const date = new Date(year, month - 1, day, 23, 59, 59, 999);
+        return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null;
+      }
+      const parsed = new Date(raw);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
     function applyProductDiscount(p) {
       p.discountPercent = 0;
       p.hasExplicitOffer = false;
@@ -1768,8 +1837,8 @@
       p.price = Number(p.oldPrice || p.price || 0);
 
       if (p.preco_oferta && p.validade_oferta) {
-        const valid = new Date(p.validade_oferta);
-        if (!isNaN(valid.getTime()) && valid >= new Date() && p.preco_oferta < p.oldPrice) {
+        const valid = parseOfferEndDate(p.validade_oferta);
+        if (valid && valid >= new Date() && p.preco_oferta < p.oldPrice) {
           p.price = p.preco_oferta;
           p.hasExplicitOffer = true;
           p.discountPercent = Math.round(((p.oldPrice - p.price) / Math.max(p.oldPrice, .01)) * 100);
@@ -2020,26 +2089,56 @@
       return current;
     }
 
+    const WHOLESALE_MIN_QTY = 3;
+    const WHOLESALE_DISCOUNT_RATE = 0.02;
+
+    function roundMoney(value) {
+      return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+    }
+
+    function cartUnitPricing(product, qty, coupon, eligibility) {
+      const original = Number(product.price || 0);
+      const couponPrice = eligibility && eligibility.eligible ? couponUnitPrice(product, coupon) : original;
+      const wholesaleEligible = !product.isFee && Number(qty || 0) >= WHOLESALE_MIN_QTY;
+      const effective = wholesaleEligible ? roundMoney(couponPrice * (1 - WHOLESALE_DISCOUNT_RATE)) : couponPrice;
+      return {
+        original,
+        couponPrice,
+        effective,
+        wholesaleEligible,
+        couponDiscount: Math.max(0, original - couponPrice),
+        wholesaleDiscount: Math.max(0, couponPrice - effective)
+      };
+    }
+
     function cartPricing(includeFees) {
       const items = getCartItems().filter(item => includeFees || !item.product.isFee);
       const subtotalBefore = items.reduce((sum, item) => sum + Number(item.product.price || 0) * item.qty, 0);
       const coupon = getActiveCoupon();
       const eligibility = couponEligibility(coupon, subtotalBefore);
       let participatingItems = 0;
+      let wholesaleItems = 0;
+      let couponDiscount = 0;
+      let wholesaleDiscount = 0;
       const total = items.reduce((sum, item) => {
-        const original = Number(item.product.price || 0);
-        const effective = eligibility.eligible ? couponUnitPrice(item.product, coupon) : original;
-        if (effective < original) participatingItems += item.qty;
-        return sum + effective * item.qty;
+        const unit = cartUnitPricing(item.product, item.qty, coupon, eligibility);
+        if (unit.couponDiscount > 0) participatingItems += item.qty;
+        if (unit.wholesaleEligible) wholesaleItems += item.qty;
+        couponDiscount += unit.couponDiscount * item.qty;
+        wholesaleDiscount += unit.wholesaleDiscount * item.qty;
+        return sum + unit.effective * item.qty;
       }, 0);
-      const roundedTotal = Math.round((total + Number.EPSILON) * 100) / 100;
+      const roundedTotal = roundMoney(total);
       return {
         coupon,
         eligibility,
-        subtotalBefore: Math.round((subtotalBefore + Number.EPSILON) * 100) / 100,
+        subtotalBefore: roundMoney(subtotalBefore),
         total: roundedTotal,
-        discount: Math.round((subtotalBefore - roundedTotal + Number.EPSILON) * 100) / 100,
-        participatingItems
+        discount: roundMoney(subtotalBefore - roundedTotal),
+        couponDiscount: roundMoney(couponDiscount),
+        wholesaleDiscount: roundMoney(wholesaleDiscount),
+        participatingItems,
+        wholesaleItems
       };
     }
 
@@ -2097,6 +2196,7 @@
       const key = String(id);
       const product = getProductById(key);
       if (!product) return;
+      const previous = Number(state.cart[key] || 0);
       const next = Math.max(0, parseInt(qty, 10) || 0);
       if (next <= 0) {
         delete state.cart[key];
@@ -2105,7 +2205,10 @@
         if (!state.cartOrder.includes(key)) state.cartOrder.push(key);
         state.cart[key] = next;
       }
-      if (!options || !options.silent) showToast(next > 0 ? 'Produto atualizado na compra.' : 'Produto removido da compra.');
+      if (!options || !options.silent) {
+        if (next >= WHOLESALE_MIN_QTY && previous < WHOLESALE_MIN_QTY && !product.isFee) showToast('Desconto de atacado de 2% aplicado.');
+        else showToast(next > 0 ? 'Produto atualizado na compra.' : 'Produto removido da compra.');
+      }
       saveCart();
       updateCartUI();
       syncVisibleCards();
@@ -2128,7 +2231,7 @@
       updateCartUI();
       syncVisibleCards();
       if ($('checkout-drawer').classList.contains('open')) renderCheckout();
-      showToast('Carrinho limpo.');
+      showToast('Compra limpa.');
     }
 
     function removeMissingCartItems() {
@@ -2300,8 +2403,7 @@
       saveCart();
       updateCartUI();
       syncVisibleCards();
-      showToast(`${basket.nome} ${changed ? 'alterada' : 'padrão'} adicionada à compra.`);
-      location.hash = '#/cestas';
+      openBasketConfirmation(basket, changed);
     }
 
     function addBasketToCart(basketId) {
@@ -2321,7 +2423,7 @@
       saveCart();
       updateCartUI();
       syncVisibleCards();
-      showToast(`${basket.nome} adicionada à compra.`);
+      openBasketConfirmation(basket, false);
     }
 
     function productScore(p, query) {
@@ -2394,7 +2496,15 @@
 
     function getTopOffers(limit) {
       return state.products.filter(p => isAvailable(p) && Number(p.discountPercent || 0) > 0)
-        .sort((a,b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || a.price - b.price)
+        .sort((a,b) => {
+          const displayA = productDisplayPricing(a);
+          const displayB = productDisplayPricing(b);
+          const rateA = displayA.original > 0 ? (displayA.original - displayA.effective) / displayA.original : 0;
+          const rateB = displayB.original > 0 ? (displayB.original - displayB.effective) / displayB.original : 0;
+          const savingA = displayA.original - displayA.effective;
+          const savingB = displayB.original - displayB.effective;
+          return rateB - rateA || savingB - savingA || a.name.localeCompare(b.name, 'pt-BR');
+        })
         .slice(0, limit || 12);
     }
 
@@ -2454,9 +2564,10 @@
     }
 
     function pickProductImage(list) {
-      const available = (list || []).filter(item => item && item.img);
+      const available = (list || []).filter(item => item && item.img)
+        .sort((a,b) => String(a.codigo || a.id || a.name).localeCompare(String(b.codigo || b.id || b.name), 'pt-BR'));
       if (!available.length) return 'img/logoantonia5.png';
-      return available[Math.floor(Math.random() * available.length)].img;
+      return available[0].img;
     }
 
     function categoryThumb(categoryName) {
@@ -2557,7 +2668,7 @@
       const pricing = cartPricing(true);
       if (coupon) {
         const detail = pricing.eligibility.eligible
-          ? (pricing.discount > 0 ? `Você economiza ${fmt(pricing.discount)} em ${pricing.participatingItems} ${pricing.participatingItems === 1 ? 'item' : 'itens'}.` : 'Ativo. A oferta vigente continua quando for mais vantajosa.')
+          ? (pricing.couponDiscount > 0 ? `Você economiza ${fmt(pricing.couponDiscount)} em ${pricing.participatingItems} ${pricing.participatingItems === 1 ? 'item' : 'itens'}.` : 'Ativo. A oferta vigente continua quando for mais vantajosa.')
           : pricing.eligibility.reason;
         return `<div class="coupon-box">
           <span class="coupon-label">Cupom aplicado</span>
@@ -2604,7 +2715,7 @@
             ${heroProducts.length ? `<div class="hero-media" aria-label="Produtos em destaque">${heroProducts.map(p => `<a class="hero-photo" href="#/produto/${encodeURIComponent(productRouteKey(p))}"><img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)"></a>`).join('')}</div>` : ''}
           </section>
           <section class="trust-strip" aria-label="Condições da loja">
-            <div class="trust-item"><strong>Pedido mínimo R$ 75</strong><span>Veja o progresso no carrinho</span></div>
+            <div class="trust-item"><strong>Pedido mínimo R$ 75</strong><span>Veja o progresso na sua compra</span></div>
             <div class="trust-item"><strong>Entrega local</strong><span>Cuiabá e Várzea Grande</span></div>
             <div class="trust-item"><strong>Confirmação humana</strong><span>Atendimento pelo WhatsApp</span></div>
           </section>
@@ -3037,66 +3148,108 @@
       const pricing = cartPricing(true);
       const total = pricing.total;
       const missing = Math.max(CONFIG.MIN_ORDER - pricing.subtotalBefore, 0);
-      const suggestions = missing > 0
-        ? state.products.filter(p => isAvailable(p) && !state.cart[p.id] && p.price <= Math.max(missing + 8, 12)).sort((a,b) => a.price - b.price).slice(0, 10)
-        : getCompleteCartSuggestions(10);
+      const checkoutOffers = getTopOffers(200).filter(p => !state.cart[p.id]);
+      const initialCheckoutOffers = checkoutOffers.slice(0, Math.max(12, Number(state.checkoutOfferLimit || 12)));
+      const clientDetailsVisible = state.customerLookupStatus === 'existing' || state.customerLookupStatus === 'new';
+      const clientDetailsIntro = state.customerLookupStatus === 'existing'
+        ? 'Encontramos seu cadastro. Confira os dados abaixo e edite somente se precisar.'
+        : 'CPF não cadastrado. Preencha seus dados para finalizar a compra.';
 
       $('checkout-content').innerHTML = `
         <div class="checkout-alert" id="checkout-alert"></div>
         <section class="checkout-section">
-          <div class="checkout-title">Produtos escolhidos</div>
+          <div class="checkout-title">1. Revise sua compra</div>
           ${items.length ? items.map(({id, product, qty}) => `
             <div class="cart-row">
               <img class="cart-img" src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
-              <div><div class="cart-name">${escapeHtml(product.name)}</div><div class="cart-price">${pricing.eligibility.eligible && couponUnitPrice(product, pricing.coupon) < product.price ? `<s>${fmt(product.price)}</s> · ${fmt(couponUnitPrice(product, pricing.coupon))} com cupom` : `${fmt(product.price)} cada`}</div></div>
+              <div><div class="cart-name">${escapeHtml(product.name)}</div></div>
               <div class="cart-qty"><button type="button" data-action="dec" data-id="${escapeHtml(id)}">−</button><span>${qty}</span><button type="button" data-action="inc" data-id="${escapeHtml(id)}">+</button></div>
             </div>`).join('') : `<div class="empty"><strong>Sua compra está vazia</strong>Adicione produtos para enviar o pedido.</div>`}
-          ${pricing.discount > 0 ? `<div class="summary-row discount-row"><span>Desconto ${escapeHtml(pricing.coupon.codigo)}</span><span>− ${fmt(pricing.discount)}</span></div>` : ''}
-          <div class="summary-row total"><span>Total</span><span>${fmt(total)}</span></div>
           <div class="min-order" id="min-order-box" style="display:${items.length && missing > 0 ? 'block' : 'none'}">Faltam <strong>${fmt(missing)}</strong> para atingir o pedido mínimo de ${fmt(CONFIG.MIN_ORDER)}.</div>
-          ${items.length ? `<button class="clear-cart-btn" type="button" data-action="clear-cart"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15"></path></svg>Limpar carrinho</button>` : ''}
+          ${items.length ? `<button class="clear-cart-btn" type="button" data-action="clear-cart"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15"></path></svg>Limpar compra</button>` : ''}
         </section>
+        ${initialCheckoutOffers.length ? `<section class="checkout-section"><div class="checkout-title">Super Ofertas de hoje</div><div class="mini-suggest checkout-offers-rail" id="checkout-offers-rail" data-loaded="${initialCheckoutOffers.length}">${initialCheckoutOffers.map(p => productCard(p, 'compact')).join('')}</div>${checkoutOffers.length > initialCheckoutOffers.length ? '<div class="checkout-offers-hint" id="checkout-offers-hint">Role para ver mais ofertas</div>' : ''}</section>` : ''}
         <section class="checkout-section">
-          <div class="checkout-title">Cupom de desconto</div>
-          ${couponBoxHtml()}
-        </section>
-        ${suggestions.length ? `<section class="checkout-section"><div class="checkout-title">${missing > 0 ? 'Complete o pedido mínimo' : 'Produtos que combinam'}</div><div class="mini-suggest">${suggestions.map(p => productCard(p, 'compact')).join('')}</div></section>` : ''}
-        <section class="checkout-section">
-          <div class="checkout-title">Escolha a entrega</div>
+          <div class="checkout-title">2. Escolha a entrega</div>
           <div id="agendamento-options-container">${agendamentoOptionsHtml()}</div>
         </section>
         <section class="checkout-section">
-          <div class="checkout-title">Seus dados</div>
+          <div class="checkout-title">3. Seus dados</div>
           <div class="client-lookup">
-            <div class="client-lookup-title">Já comprou aqui?</div>
-            <p class="client-lookup-copy">Digite seu CPF para preencher seus dados mais rápido.</p>
+            <div class="client-lookup-title">Informe seu CPF para continuar</div>
+            <p class="client-lookup-copy">Primeiro vamos verificar se você já possui cadastro.</p>
+            <label class="checkout-field-label" for="chk-cpf">CPF*</label>
             <div class="client-lookup-row">
               <input type="tel" id="chk-cpf" class="field" placeholder="CPF*" maxlength="14" inputmode="numeric" autocomplete="off">
-              <button type="button" class="lookup-btn" id="btn-lookup-client">Preencher</button>
+              <button type="button" class="lookup-btn" id="btn-lookup-client">Continuar</button>
             </div>
             <div class="lookup-status" id="lookup-status" role="status" aria-live="polite"></div>
           </div>
-          <p class="checkout-help">Se for sua primeira compra, preencha os campos abaixo.</p>
+          <div class="client-details" id="client-details" ${clientDetailsVisible ? '' : 'hidden'}>
+          <p class="client-details-intro" id="client-details-intro">${escapeHtml(clientDetailsIntro)}</p>
+          <label class="checkout-field-label" for="chk-nome">Nome completo*</label>
           <input type="text" id="chk-nome" class="field" placeholder="Nome completo*" autocomplete="name">
+          <label class="checkout-field-label" for="chk-telefone">WhatsApp com DDD*</label>
           <input type="tel" id="chk-telefone" class="field" placeholder="WhatsApp com DDD*" maxlength="18" inputmode="tel" autocomplete="tel-national">
+          <label class="checkout-field-label" for="chk-email">E-mail*</label>
           <input type="email" id="chk-email" class="field" placeholder="E-mail*" autocomplete="email">
+          <label class="checkout-field-label" for="chk-cep">CEP*</label>
           <input type="tel" id="chk-cep" class="field" placeholder="CEP*" maxlength="9" inputmode="numeric" autocomplete="postal-code">
+          <label class="checkout-field-label" for="chk-cidade">Cidade*</label>
           <select id="chk-cidade" class="field"><option value="">Cidade*</option><option value="Cuiabá">Cuiabá</option><option value="Várzea Grande">Várzea Grande</option></select>
+          <label class="checkout-field-label" for="chk-bairro">Bairro*</label>
           <input type="text" id="chk-bairro" class="field" placeholder="Bairro*">
+          <label class="checkout-field-label" for="chk-rua">Rua ou avenida*</label>
           <input type="text" id="chk-rua" class="field" placeholder="Rua ou avenida*">
+          <label class="checkout-field-label">Número e quadra</label>
           <div class="field-row"><input type="text" id="chk-quadra" class="field" placeholder="Quadra (opcional)" style="flex:1"><input type="text" id="chk-casa" class="field" placeholder="Número*" style="flex:1"></div>
+          <label class="checkout-field-label" for="chk-frente">Complemento ou referência</label>
           <input type="text" id="chk-frente" class="field" placeholder="Complemento ou referência">
-          <div class="checkout-title" style="font-size:15px;margin-top:8px">Pagamento*</div>
+          <label class="checkout-field-label" for="chk-pagamento">Pagamento*</label>
           <select id="chk-pagamento" class="field"><option value="">Selecione...</option><option value="DINHEIRO">Dinheiro</option><option value="PIX">Pix</option><option value="CARTAO_DE_DEBITO">Cartão de Débito</option><option value="CARTAO_DE_CREDITO">Cartão de Crédito</option><option value="VALE_ALIMENTACAO">Vale Alimentação</option><option value="VALE_REFEICAO">Vale Refeição</option></select>
+          </div>
         </section>
         <section class="checkout-section">
+          <div class="checkout-title">Cupom e valor final</div>
+          ${couponBoxHtml()}
           <div class="checkout-notice">Ao tocar no botão, seu pedido vai abrir no WhatsApp.</div>
           <div class="summary-row"><span>Subtotal dos produtos</span><span>${fmt(pricing.subtotalBefore)}</span></div>
-          ${pricing.discount > 0 ? `<div class="summary-row discount-row"><span>Desconto ${escapeHtml(pricing.coupon.codigo)}</span><span>− ${fmt(pricing.discount)}</span></div>` : ''}
+          ${pricing.couponDiscount > 0 ? `<div class="summary-row discount-row"><span>Desconto ${escapeHtml(pricing.coupon.codigo)}</span><span>− ${fmt(pricing.couponDiscount)}</span></div>` : ''}
+          ${pricing.wholesaleDiscount > 0 ? `<div class="summary-row discount-row"><span>Desconto de atacado (2%)</span><span>− ${fmt(pricing.wholesaleDiscount)}</span></div>` : ''}
+          <div class="wholesale-note">Comprando 3 ou mais unidades do mesmo produto, você recebe 2% de desconto automaticamente.</div>
           <div class="summary-row total"><span>Total estimado</span><span>${fmt(total)}</span></div>
-          <button class="send-btn" type="button" id="btn-send-order" ${items.length && missing <= 0 ? '' : 'disabled'}><svg class="svg-fill" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"></path></svg>${items.length && missing > 0 ? `Faltam ${fmt(missing)}` : 'Pedir no WhatsApp'}</button>
+          <button class="send-btn" type="button" id="btn-send-order" ${items.length && missing <= 0 && clientDetailsVisible ? '' : 'disabled'}><svg class="svg-fill" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"></path></svg>${items.length && missing > 0 ? `Faltam ${fmt(missing)}` : (!clientDetailsVisible ? 'Consulte o CPF acima' : 'Pedir no WhatsApp')}</button>
         </section>`;
       restoreCheckoutClient();
+      setupCheckoutOffersCarousel();
+    }
+
+    function setupCheckoutOffersCarousel() {
+      const rail = $('checkout-offers-rail');
+      if (!rail) return;
+      let loading = false;
+      requestAnimationFrame(() => { rail.scrollLeft = Number(state.checkoutOfferScrollLeft || 0); });
+      rail.addEventListener('scroll', () => {
+        state.checkoutOfferScrollLeft = rail.scrollLeft;
+        if (loading || rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 160) return;
+        const offers = getTopOffers(200).filter(p => !state.cart[p.id]);
+        const loaded = Number(rail.dataset.loaded || 0);
+        if (loaded >= offers.length) {
+          const hint = $('checkout-offers-hint');
+          if (hint) hint.remove();
+          return;
+        }
+        loading = true;
+        const next = offers.slice(loaded, loaded + 12);
+        rail.insertAdjacentHTML('beforeend', next.map(p => productCard(p, 'compact')).join(''));
+        rail.dataset.loaded = String(loaded + next.length);
+        state.checkoutOfferLimit = loaded + next.length;
+        if (loaded + next.length >= offers.length) {
+          const hint = $('checkout-offers-hint');
+          if (hint) hint.remove();
+        }
+        loading = false;
+      }, { passive: true });
     }
 
     function getAgoraCuiaba() {
@@ -3120,20 +3273,82 @@
       return d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
     }
 
+    function easterSunday(year) {
+      const a = year % 19;
+      const b = Math.floor(year / 100);
+      const c = year % 100;
+      const d = Math.floor(b / 4);
+      const e = b % 4;
+      const f = Math.floor((b + 8) / 25);
+      const g = Math.floor((b - f + 1) / 3);
+      const h = (19 * a + b - d - g + 15) % 30;
+      const i = Math.floor(c / 4);
+      const k = c % 4;
+      const l = (32 + 2 * e + 2 * i - h - k) % 7;
+      const m = Math.floor((a + 11 * h + 22 * l) / 451);
+      const month = Math.floor((h + l - 7 * m + 114) / 31);
+      const day = ((h + l - 7 * m + 114) % 31) + 1;
+      return new Date(year, month - 1, day, 12, 0, 0, 0);
+    }
+
+    function nationalHolidayKeys(year) {
+      const fixed = ['01-01','04-21','05-01','09-07','10-12','11-02','11-15','11-20','12-25']
+        .map(monthDay => `${year}-${monthDay}`);
+      const goodFriday = addDays(easterSunday(year), -2);
+      return new Set([...fixed, formatDateValue(goodFriday)]);
+    }
+
+    function isNationalHoliday(date) {
+      return nationalHolidayKeys(date.getFullYear()).has(formatDateValue(date));
+    }
+
     function agendamentoOptionsHtml() {
       const now = getAgoraCuiaba();
-      let first = new Date(now);
-      if (now.getHours() >= 10) first = addDays(first, 1);
       const dates = [];
-      let cursor = new Date(first);
-      while (dates.length < 6) {
-        if (cursor.getDay() !== 0) dates.push(new Date(cursor));
+      let cursor = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
+      while (dates.length < 7) {
+        if (cursor.getDay() !== 0 && !isNationalHoliday(cursor)) dates.push(new Date(cursor));
         cursor = addDays(cursor, 1);
       }
       return dates.map((d, i) => `<label class="radio-option"><input type="radio" name="agendamento" value="${formatDateValue(d)}" ${i === 0 ? 'checked' : ''}>${i === 0 ? 'Próxima entrega: ' : ''}${formatDateLabel(d)}</label>`).join('');
     }
 
+    let basketConfirmPreviousFocus = null;
+
+    function openBasketConfirmation(basket, changed) {
+      const overlay = $('basket-confirm-overlay');
+      if (!overlay || !basket) return;
+      basketConfirmPreviousFocus = document.activeElement;
+      $('basket-confirm-title').textContent = changed ? 'Cesta alterada adicionada!' : 'Cesta adicionada!';
+      $('basket-confirm-message').textContent = `${basket.nome} foi colocada na sua compra.`;
+      const count = cartCount();
+      $('basket-confirm-summary').textContent = `${count} ${count === 1 ? 'item' : 'itens'} na compra · Total ${fmt(subtotalCart(true))}`;
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => $('basket-confirm-continue')?.focus());
+    }
+
+    function closeBasketConfirmation() {
+      const overlay = $('basket-confirm-overlay');
+      if (!overlay) return;
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden', 'true');
+      if (basketConfirmPreviousFocus && typeof basketConfirmPreviousFocus.focus === 'function') basketConfirmPreviousFocus.focus();
+      basketConfirmPreviousFocus = null;
+    }
+
+    function continueShoppingAfterBasket() {
+      closeBasketConfirmation();
+      if ((location.hash || '') === '#/ofertas') {
+        renderOffers();
+        scrollPageTop();
+      } else {
+        location.hash = '#/ofertas';
+      }
+    }
+
     function openCheckout() {
+      closeBasketConfirmation();
       closeSiteMenu();
       renderCheckout();
       $('drawer-overlay').classList.add('show');
@@ -3179,6 +3394,7 @@
     }
 
     function closeAllDrawers() {
+      closeBasketConfirmation();
       closeCheckout();
       closeSiteMenu();
     }
@@ -3224,6 +3440,12 @@
       const cpf = $('chk-cpf'); if (cpf) cpf.value = formatarCPF(cpf.value);
       const tel = $('chk-telefone'); if (tel) tel.value = tel.value ? formatarTelefone(tel.value) : '';
       const cep = $('chk-cep'); if (cep) cep.value = formatarCEP(cep.value);
+    }
+
+    function clearCheckoutClientDetails() {
+      ['chk-nome','chk-telefone','chk-email','chk-cep','chk-cidade','chk-bairro','chk-rua','chk-quadra','chk-casa','chk-frente','chk-pagamento']
+        .forEach(id => { const el = $(id); if (el) el.value = ''; });
+      saveCheckoutClient();
     }
 
     function setLookupStatus(message, type) {
@@ -3299,12 +3521,16 @@
           throw new Error('Não conseguimos buscar seus dados agora.');
         }
         if (!response.ok || result.sucesso === false) throw new Error(result.erro || 'Não foi possível buscar seus dados agora.');
+        clearCheckoutClientDetails();
         if (!result.encontrado || !result.cliente) {
           state.customerLookupStatus = 'new';
+          state.customerLookupCpf = cpf;
+          renderCheckout();
           setLookupStatus('Não encontramos seus dados. Preencha os campos abaixo.', 'warning');
           return;
         }
         state.customerLookupStatus = 'existing';
+        state.customerLookupCpf = cpf;
         fillClientFromBling(result.cliente);
         if (getActiveCoupon() && getActiveCoupon().grupo === 'cliente_novo') {
           state.couponMessage = 'Este cupom é exclusivo para a primeira compra.';
@@ -3313,6 +3539,7 @@
           showToast('Cupom de primeira compra não elegível.');
           return;
         }
+        renderCheckout();
         setLookupStatus('Pronto. Preenchemos seus dados.', 'success');
       } catch(err) {
         const message = err && err.name === 'AbortError'
@@ -3390,7 +3617,8 @@
       const basketMessage = buildBasketMessageContext();
 
       items.forEach(({id, product, qty}) => {
-        const effectivePrice = pricing.eligibility.eligible ? couponUnitPrice(product, pricing.coupon) : Number(product.price || 0);
+        const unitPricing = cartUnitPricing(product, qty, pricing.coupon, pricing.eligibility);
+        const effectivePrice = unitPricing.effective;
         const line = effectivePrice * qty;
         totalBruto += line;
         if (product.isFee || String(id).startsWith('fee_')) { totalTaxasExtras += line; return; }
@@ -3402,7 +3630,8 @@
           qtd: qty,
           price: effectivePrice,
           precoOriginal: Number(product.price || 0),
-          descontoCupom: Math.max(0, Number(product.price || 0) - effectivePrice),
+          descontoCupom: unitPricing.couponDiscount,
+          descontoAtacado: unitPricing.wholesaleDiscount,
           gtin: String(product.gtin || ''),
           ean: String(product.ean || product.gtin || ''),
           url_imagem: String(product.url_imagem || product.img || ''),
@@ -3438,8 +3667,14 @@
             codigo: pricing.coupon.codigo,
             tipo: pricing.coupon.tipo,
             percentual: Number(pricing.coupon.desconto || 0),
-            valorDesconto: pricing.discount,
+            valorDesconto: pricing.couponDiscount,
             itensParticipantes: pricing.participatingItems
+          } : null,
+          atacado: pricing.wholesaleDiscount > 0 ? {
+            percentual: WHOLESALE_DISCOUNT_RATE * 100,
+            quantidadeMinima: WHOLESALE_MIN_QTY,
+            valorDesconto: pricing.wholesaleDiscount,
+            itensParticipantes: pricing.wholesaleItems
           } : null,
           observacoes: hasBasket ? 'Pedido com Cesta/Kit' : 'Pedido Comum',
           cliente: {
@@ -3487,7 +3722,9 @@
       const removedSection = hasBasket
         ? `\n\n*PRODUTOS RETIRADOS DA CESTA ORIGINAL*\n${basketMessage.removed.length ? basketMessage.removed.join(', ') : 'Nenhum produto retirado.'}`
         : '';
-      const msg = `*PEDIDO #${orderId}*${basketHeader}\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*\n💰 *TOTAL:* ${fmt(totalSite)}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.${removedSection}`;
+      const couponSummary = pricing.couponDiscount > 0 ? `\n🏷️ *CUPOM:* − ${fmt(pricing.couponDiscount)}` : '';
+      const wholesaleSummary = pricing.wholesaleDiscount > 0 ? `\n📦 *DESCONTO ATACADO:* − ${fmt(pricing.wholesaleDiscount)}` : '';
+      const msg = `*PEDIDO #${orderId}*${basketHeader}\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*${couponSummary}${wholesaleSummary}\n💰 *TOTAL:* ${fmt(totalSite)}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.${removedSection}`;
 
       abrirWhatsAppPedido(msg);
       closeCheckout();
@@ -3547,10 +3784,18 @@
       const headerMenuBtn = $('header-menu-btn');
       const menuClose = $('menu-close');
       const menuOpenCheckout = $('menu-open-checkout');
+      const basketConfirmOverlay = $('basket-confirm-overlay');
+      const basketConfirmContinue = $('basket-confirm-continue');
+      const basketConfirmView = $('basket-confirm-view');
       if (headerCartBtn) headerCartBtn.addEventListener('click', openCheckout);
       if (headerMenuBtn) headerMenuBtn.addEventListener('click', openSiteMenu);
       if (menuClose) menuClose.addEventListener('click', closeSiteMenu);
       if (menuOpenCheckout) menuOpenCheckout.addEventListener('click', openCheckout);
+      if (basketConfirmContinue) basketConfirmContinue.addEventListener('click', continueShoppingAfterBasket);
+      if (basketConfirmView) basketConfirmView.addEventListener('click', openCheckout);
+      if (basketConfirmOverlay) basketConfirmOverlay.addEventListener('click', e => {
+        if (e.target === basketConfirmOverlay) closeBasketConfirmation();
+      });
       $('drawer-close').addEventListener('click', closeCheckout);
       $('drawer-overlay').addEventListener('click', closeAllDrawers);
       const siteMenuDrawer = $('site-menu-drawer');
@@ -3583,7 +3828,19 @@
       document.addEventListener('input', e => {
         const el = e.target;
         if (!el || !el.id || !el.id.startsWith('chk-')) return;
-        if (el.id === 'chk-cpf') el.value = formatarCPF(el.value);
+        if (el.id === 'chk-cpf') {
+          el.value = formatarCPF(el.value);
+          if (state.customerLookupStatus !== 'unknown' && limparCPF(el.value) !== state.customerLookupCpf) {
+            state.customerLookupStatus = 'unknown';
+            state.customerLookupCpf = '';
+            clearCheckoutClientDetails();
+            const details = $('client-details');
+            if (details) details.hidden = true;
+            const sendButton = $('btn-send-order');
+            if (sendButton) sendButton.disabled = true;
+            setLookupStatus('CPF alterado. Toque em Continuar para consultar novamente.', 'warning');
+          }
+        }
         if (el.id === 'chk-cep') el.value = formatarCEP(el.value);
         if (el.id === 'chk-telefone') {
           const nums = telefoneSomenteNumeros(el.value);
