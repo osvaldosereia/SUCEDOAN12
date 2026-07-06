@@ -47,13 +47,13 @@
     @media(max-width:900px){.compact-topbar{grid-template-columns:auto 1fr auto!important;gap:10px!important}.compact-topbar .brand h1{font-size:15px}.compact-topbar .brand p{display:none}.product-card .product-img{height:190px!important;flex-basis:190px!important}.photo-tools-grid{grid-template-columns:1fr}.photo-preview-box{height:220px}}
 
     /* Edição rápida dos cards */
-    .compact-topbar{grid-template-columns:auto auto minmax(280px,1fr) auto auto auto!important}
+    .compact-topbar{grid-template-columns:auto auto minmax(280px,1fr) auto auto auto auto!important}
     .top-search-wrap{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:7px}
     .top-save{white-space:nowrap}
     .filter-modal .modal{width:min(1100px,100%)}
     .filter-modal .filters{grid-template-columns:repeat(4,minmax(0,1fr));margin:0}
-    @media(max-width:1100px){.compact-topbar{grid-template-columns:auto auto 1fr auto!important}.compact-topbar .brand>div:last-child,.top-save-label{display:none}.top-save{width:42px;padding:0}.filter-modal .filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media(max-width:700px){.compact-topbar{grid-template-columns:auto auto 1fr auto!important}.top-filter-btn,.top-firebase-btn{display:none}.filter-modal .filters{grid-template-columns:1fr}}
+    @media(max-width:1100px){.compact-topbar{grid-template-columns:auto auto 1fr auto auto!important}.compact-topbar .brand>div:last-child,.top-save-label{display:none}.top-save{width:42px;padding:0}.filter-modal .filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:700px){.compact-topbar{grid-template-columns:auto auto 1fr auto auto!important}.top-filter-btn,.top-firebase-btn{display:none}.filter-modal .filters{grid-template-columns:1fr}}
     .drawer-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .drawer-action-grid .btn{min-height:42px;text-align:center}
     .drawer-tabs .tab{flex:1 1 calc(50% - 8px);border-radius:12px;text-align:center}
@@ -209,6 +209,18 @@
     @media(max-width:1100px){.workbench-group.commercial,.workbench-group.classification{grid-column:span 12}.workbench-field{grid-column:span 4}.notes-layout{grid-template-columns:1fr}.notes-compose{position:static}}
     @media(max-width:760px){.product-workbench{grid-template-columns:1fr!important}.workbench-media{border-right:0;border-bottom:1px solid var(--line);border-radius:22px 22px 0 0}.workbench-photo{height:220px}.workbench-field,.workbench-field.span-2,.workbench-field.span-4,.workbench-field.span-6,.workbench-field.span-8{grid-column:span 6}.workbench-header{flex-direction:column}.workbench-actions{justify-content:flex-start}}
     @media(max-width:500px){.workbench-field,.workbench-field.span-2,.workbench-field.span-4,.workbench-field.span-6,.workbench-field.span-8{grid-column:span 12}.workbench-media-actions{grid-template-columns:1fr}}
+    .expiry-alert-btn{border-color:#fecaca!important;background:#fff1f2!important;color:#9f1239!important;white-space:nowrap}
+    .expiry-alert-btn[hidden]{display:none!important}
+    .expiry-alert-count{display:inline-grid;place-items:center;min-width:21px;height:21px;padding:0 6px;margin-left:4px;border-radius:999px;background:#be123c;color:#fff;font-size:11px;font-weight:950}
+    .expiry-alert-overlay{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:18px;background:rgba(15,23,42,.5)}
+    .expiry-alert-dialog{width:min(760px,96vw);max-height:86vh;overflow:auto;padding:18px;border-radius:22px;background:#fff;box-shadow:0 28px 80px rgba(0,0,0,.24)}
+    .expiry-alert-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+    .expiry-alert-head h2{margin:0;font-size:20px}.expiry-alert-head p{margin:5px 0 0;color:var(--muted);font-size:12px}
+    .expiry-alert-list{display:grid;gap:8px}
+    .expiry-alert-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:11px;border:1px solid var(--line);border-radius:14px;background:#fafafa}
+    .expiry-alert-row strong{display:block}.expiry-alert-row small{display:block;margin-top:3px;color:var(--muted)}
+    .expiry-alert-days{font-size:12px;font-weight:900;color:#9f1239}
+    @media(max-width:700px){.expiry-alert-btn .expiry-alert-label{display:none}.expiry-alert-row{grid-template-columns:1fr auto}.expiry-alert-row .btn{grid-column:1/-1}}
   </style>
 </head>
 <body>
@@ -221,6 +233,7 @@
         <button class="btn primary" type="button" data-action="apply-search">Buscar</button>
       </div>
       <button class="btn gold top-filter-btn" type="button" data-action="open-filter-panel">☷ Filtros</button>
+      <button class="btn expiry-alert-btn" id="expiryAlertBtn" type="button" data-action="open-expiry-alert" hidden title="Ver produtos vencidos ou com até 15 dias de validade"><span class="expiry-alert-label">Validade crítica</span><span class="expiry-alert-count" id="expiryAlertCount">0</span></button>
       <button class="btn blue top-save top-firebase-btn" type="button" data-action="save-products-firebase" title="Salvar todos os produtos no Firebase">☁ <span class="top-save-label">Salvar Firebase</span></button>
       <button class="btn green top-save" type="button" data-action="save-everything" title="Salvar produtos, metadados, cestas e kits">✓ <span class="top-save-label">Salvar geral</span></button>
     </div>
@@ -533,7 +546,9 @@
     if(Array.isArray(source.imagens))copy.imagens=uniq([copy.url_imagem,...source.imagens.map(cleanCatalogText)]).filter(Boolean);
     if(Object.prototype.hasOwnProperty.call(source,"tags"))copy.tags=parseTags(source.tags);
 
-    const offerPrice=roundCatalogMoney(source.preco_oferta??source.precoOferta);
+    const requestedOfferPrice=roundCatalogMoney(source.preco_oferta??source.precoOferta);
+    const minimumOfferPrice=roundCatalogMoney(copy.preco*(1-MAX_PRODUCT_DISCOUNT/100));
+    const offerPrice=requestedOfferPrice>0?Math.max(requestedOfferPrice,minimumOfferPrice):0;
     const offerDate=normalizeCatalogDate(source.validade_oferta||source.validadeOferta||"",{offerEnd:true});
     if(offerPrice>0){
       copy.preco_oferta=offerPrice;
@@ -929,7 +944,7 @@
   function productByKey(key){return state.produtos.find(p=>getKey(p)===String(key))||null}
   function openProduct(key){const p=productByKey(key); if(!p) return; state.editingProductKey=key; $("#productModal").classList.add('open'); renderProductEditor()}
   function closeProduct(){state.editingProductKey=null; $("#productModal").classList.remove('open'); renderAll()}
-  function updateProduct(field, value){const p=productByKey(state.editingProductKey); if(!p) return; if(['preco','preco_custo','estoque','preco_oferta'].includes(field)) p[field]=toNum(value); else if(field==='tags') p.tags=parseTags(value); else p[field]=value; p.last_update=Date.now(); p.updated_at=nowIso(); if(field==='estoque') p.stock_updated_at=nowIso(); markProductDirty(getKey(p), [field]); mark('products')}
+  function updateProduct(field, value){const p=productByKey(state.editingProductKey); if(!p) return; if(['preco','preco_custo','estoque','preco_oferta'].includes(field)) p[field]=toNum(value); else if(field==='tags') p.tags=parseTags(value); else p[field]=value; const pricingRuleResult=['preco','preco_oferta','validade'].includes(field)?applyExpiryRules(p):{fields:[]}; p.last_update=Date.now(); p.updated_at=nowIso(); if(field==='estoque') p.stock_updated_at=nowIso(); markProductDirty(getKey(p), [field,...pricingRuleResult.fields]); mark('products'); updateExpiryAlert()}
   function applyProductJson(){const p=productByKey(state.editingProductKey); if(!p) return; try{const next=JSON.parse($("#productJsonEditor").value); const key=getKey(p); const estoqueAntes=toNum(p.estoque); Object.keys(p).forEach(k=>delete p[k]); Object.assign(p,next,{firebaseKey:next.firebaseKey||key,last_update:Date.now(),updated_at:nowIso()}); if(toNum(p.estoque)!==estoqueAntes) p.stock_updated_at=nowIso(); markProductDirty(getKey(p), toNum(p.estoque)!==estoqueAntes?['__all','estoque']:['__all']); mark('products'); renderProductEditor(); alert('JSON aplicado.')}catch(e){alert('JSON inválido: '+e.message)}}
   function renderProductEditor(resetJson=true){const p=productByKey(state.editingProductKey); if(!p) return; $("#productModalTitle").textContent=`Editar: ${getName(p)}`; const catOptions=uniq([...state.meta.categorias.map(c=>c.categoria),...state.produtos.map(x=>x.categoria)]).map(v=>`<option ${p.categoria===v?'selected':''}>${esc(v)}</option>`).join(''); const subOptions=uniq([...state.meta.categorias.map(c=>c.subcategoria),...state.produtos.map(x=>x.subcategoria)]).map(v=>`<option ${p.subcategoria===v?'selected':''}>${esc(v)}</option>`).join(''); const subsubOptions=uniq([...state.meta.categorias.map(c=>c.subsubcategoria),...state.produtos.map(x=>x.subsubcategoria)]).map(v=>`<option ${p.subsubcategoria===v?'selected':''}>${esc(v)}</option>`).join(''); const marcaOptions=uniq([...state.meta.marcas,...state.produtos.map(x=>x.marca)]).map(v=>`<option ${p.marca===v?'selected':''}>${esc(v)}</option>`).join(''); const fornOptions=uniq([...state.meta.fornecedores.map(f=>f.nome),...state.produtos.map(x=>x.fornecedor)]).map(v=>`<option ${p.fornecedor===v?'selected':''}>${esc(v)}</option>`).join(''); const pTags=parseTags(p.tags); const universalTags=state.meta.tags.length?state.meta.tags.map(t=>`<label class="tag-pill ${pTags.includes(t)?'active':''}"><input type="checkbox" data-ptag="${esc(t)}" ${pTags.includes(t)?'checked':''}>${esc(t)}</label>`).join(''):`<div class="notice gold">Nenhuma tag universal cadastrada. Crie uma abaixo ou na aba Cadastros.</div>`; $("#productModalBody").innerHTML=`<div class="editor-preview"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(getName(p))}</strong><div class="meta-line" style="margin-top:8px"><span class="chip">${esc(p.codigo||getCode(p))}</span><span class="chip">${brl(p.preco)}</span>${basketsByProduct(p).map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join('')}</div></div></div><div class="photo-tools"><h4>Foto do produto</h4><p class="tiny">Adicione, troque ou edite a foto por URL, arquivo local ou envio direto para o GitHub.</p><div class="photo-tools-grid"><div class="photo-preview-box"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"></div><div><div class="field"><label>URL/caminho da imagem</label><input class="input" data-pfield="url_imagem" value="${esc(p.url_imagem||p.imagem||'')}" placeholder="img/produtos/produto.webp ou https://..."></div><div class="field" style="margin-top:10px"><label>Selecionar nova imagem</label><input class="input" id="productPhotoFile" type="file" accept="image/*"></div><div class="photo-actions"><button class="btn blue" type="button" data-action="use-selected-photo-local">Usar arquivo no produto</button><button class="btn gold" type="button" data-action="upload-selected-photo-github">Enviar foto para GitHub</button><button class="btn" type="button" data-action="copy-product-photo-url">Copiar URL</button><button class="btn red" type="button" data-action="remove-product-photo">Remover foto</button></div><p class="tiny" style="margin-top:8px">Para envio ao GitHub, configure token, repositório, pasta das fotos e caminho público em Integrações.</p></div></div></div><div class="universal-tags-box"><h4>Tags universais</h4><p class="tiny">Marque rapidamente as tags globais deste produto. Essas tags ficam salvas no produtos_admin_meta.json.</p><div class="tag-pills">${universalTags}</div><div class="tag-quick-add"><input class="input" id="newUniversalTagFromProduct" placeholder="Criar nova tag universal e aplicar neste produto"><button class="btn green" type="button" data-action="add-universal-tag-from-product">Criar e aplicar</button></div></div><div class="form-grid"><div class="field"><label>Nome</label><input class="input" data-pfield="nome" value="${esc(p.nome||'')}"></div><div class="field"><label>Código</label><input class="input" data-pfield="codigo" value="${esc(p.codigo||'')}"></div><div class="field"><label>GTIN/EAN</label><input class="input" data-pfield="gtin" value="${esc(p.gtin||p.ean||'')}"></div><div class="field"><label>Situação</label><select class="select" data-pfield="situacao"><option value="A" ${isActive(p)?'selected':''}>Ativo</option><option value="I" ${!isActive(p)?'selected':''}>Inativo</option></select></div><div class="field"><label>Preço</label><input class="input" data-pfield="preco" value="${esc(p.preco||0)}"></div><div class="field"><label>Custo</label><input class="input" data-pfield="preco_custo" value="${esc(p.preco_custo||0)}"></div><div class="field"><label>Preço oferta</label><input class="input" data-pfield="preco_oferta" value="${esc(p.preco_oferta||'')}"></div><div class="field"><label>Validade oferta</label><input class="input" data-pfield="validade_oferta" value="${esc(p.validade_oferta||'')}"></div><div class="field"><label>Estoque</label><input class="input" data-pfield="estoque" value="${esc(p.estoque||0)}"></div><div class="field"><label>NCM</label><input class="input" data-pfield="ncm" value="${esc(p.ncm||'')}"></div><div class="field"><label>Validade</label><input class="input" data-pfield="validade" value="${esc(p.validade||'')}"></div><div class="field"><label>Embalagem</label><input class="input" data-pfield="embalagem" value="${esc(p.embalagem||'')}"></div><div class="field"><label>Categoria</label><input list="catList" class="input" data-pfield="categoria" value="${esc(p.categoria||'')}"><datalist id="catList">${catOptions}</datalist></div><div class="field"><label>Subcategoria</label><input list="subList" class="input" data-pfield="subcategoria" value="${esc(p.subcategoria||'')}"><datalist id="subList">${subOptions}</datalist></div><div class="field"><label>Subsubcategoria</label><input list="subsubList" class="input" data-pfield="subsubcategoria" value="${esc(p.subsubcategoria||'')}"><datalist id="subsubList">${subsubOptions}</datalist></div><div class="field"><label>Marca</label><input list="marcaList" class="input" data-pfield="marca" value="${esc(p.marca||'')}"><datalist id="marcaList">${marcaOptions}</datalist></div><div class="field"><label>Fornecedor</label><input list="fornList" class="input" data-pfield="fornecedor" value="${esc(p.fornecedor||'')}"><datalist id="fornList">${fornOptions}</datalist></div><div class="field"><label>Gôndola</label><input class="input" data-pfield="gondola" value="${esc(p.gondola||'')}"></div><div class="field"><label>Prateleira</label><input class="input" data-pfield="prateleira" value="${esc(p.prateleira||'')}"></div><div class="field"><label>Tags manuais</label><input class="input" data-pfield="tags" value="${esc(parseTags(p.tags).join(', '))}"></div><div class="field span-4"><label>Descrição</label><textarea class="textarea" data-pfield="descricao">${esc(p.descricao||'')}</textarea></div><div class="field span-4"><label>JSON avançado do produto</label><textarea class="textarea" id="productJsonEditor">${esc(JSON.stringify(p,null,2))}</textarea></div></div><div class="toolbar" style="justify-content:flex-start;margin-top:14px"><button class="btn primary" data-action="close-product-modal">Concluir</button><button class="btn gold" data-action="apply-product-json">Aplicar JSON avançado</button><button class="btn blue" data-action="edit-membership" data-code="${esc(getCode(p))}">Editar cestas deste produto</button><button class="btn red" data-action="delete-product" data-key="${esc(getKey(p))}">Excluir produto</button></div>`; }
 
@@ -1319,9 +1334,70 @@
   };
   renderKitRow=function(k,item){const it=parseBasketItem(item),p=productByCode(it.codigo),units=p?Math.floor(Math.max(0,toNum(p.estoque))/Math.max(1,toNum(it.qtd))):0;return `<div class="basket-row ${units<1?"low-stock":""}"><img src="${esc(p?getImg(p):PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(p?getName(p):"Produto não encontrado")}</strong><div class="tiny">${esc(it.codigo)} ${p?`· ${brl(p.preco)}`:""}</div><div class="meta-line" style="margin-top:6px"><span class="chip ${units>0?"green":"red"}">Sustenta ${units} kit(s)</span>${p?`<span class="chip">Estoque real: ${esc(toNum(p.estoque))}</span>`:""}</div></div><div class="field"><label>Qtd/kit</label><input class="input" data-action="kit-qtd" data-code="${esc(it.codigo)}" value="${esc(it.qtd)}"></div><button class="btn small blue" data-action="start-kit-replace" data-code="${esc(it.codigo)}">Substituir</button><button class="btn small red" data-action="remove-from-kit" data-code="${esc(it.codigo)}">Remover</button></div>`};
 
-  function parseExpiryDate(value){const s=String(value||"").trim();if(!s)return null;let d;if(/^\d{4}-\d{2}-\d{2}$/.test(s))d=new Date(s+"T23:59:59");else if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){const [dd,mm,yy]=s.split("/");d=new Date(`${yy}-${mm}-${dd}T23:59:59`)}else d=new Date(s);return Number.isNaN(d.getTime())?null:d}
-  function expiryDiscount(value){const d=parseExpiryDate(value);if(!d)return 0;const days=Math.ceil((d-new Date())/86400000);if(days<0)return 0;if(days<=30)return 50;if(days<=60)return 40;if(days<=90)return 30;if(days<=120)return 20;if(days<=150)return 10;return 0}
-  function applyExpiryDiscount(p){const pct=expiryDiscount(p.validade);if(pct>0&&toNum(p.preco)>0){p.preco_oferta=Math.round(toNum(p.preco)*(1-pct/100)*100)/100;p.validade_oferta=p.validade;p.desconto_validade=pct}else{p.desconto_validade=0}return pct}
+  const MAX_PRODUCT_DISCOUNT=40;
+  const CRITICAL_EXPIRY_DAYS=15;
+  const EXPIRY_DISCOUNT_TIERS=[
+    {maxDays:30,percent:40},
+    {maxDays:45,percent:35},
+    {maxDays:60,percent:30},
+    {maxDays:75,percent:25},
+    {maxDays:90,percent:20},
+    {maxDays:105,percent:10},
+    {maxDays:120,percent:5}
+  ];
+  function parseExpiryDate(value){const s=String(value||"").trim();if(!s)return null;let d;if(/^\d{4}-\d{2}-\d{2}/.test(s)){const [yy,mm,dd]=s.slice(0,10).split("-").map(Number);d=new Date(yy,mm-1,dd,23,59,59,999)}else if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){const [dd,mm,yy]=s.split("/").map(Number);d=new Date(yy,mm-1,dd,23,59,59,999)}else d=new Date(s);return Number.isNaN(d.getTime())?null:d}
+  function expiryDays(value){const d=parseExpiryDate(value);if(!d)return null;d.setHours(0,0,0,0);const today=new Date();today.setHours(0,0,0,0);return Math.round((d-today)/86400000)}
+  function expiryDiscount(value){const days=expiryDays(value);if(days===null||days<=CRITICAL_EXPIRY_DAYS||days>120)return 0;return EXPIRY_DISCOUNT_TIERS.find(tier=>days<=tier.maxDays)?.percent||0}
+  function capOfferAtMaximumDiscount(p){
+    const regular=roundCatalogMoney(p.preco),offer=roundCatalogMoney(p.preco_oferta);
+    if(!regular||!offer)return false;
+    const minimum=roundCatalogMoney(regular*(1-MAX_PRODUCT_DISCOUNT/100));
+    if(offer>=minimum)return false;
+    p.preco_oferta=minimum;
+    p.desconto_limitado=true;
+    return true;
+  }
+  function applyExpiryRules(p){
+    const before={estoque:toNum(p.estoque),preco_oferta:roundCatalogMoney(p.preco_oferta),validade_oferta:String(p.validade_oferta||""),desconto_validade:toNum(p.desconto_validade)};
+    const days=expiryDays(p.validade),pct=expiryDiscount(p.validade);
+    if(days!==null&&days<=CRITICAL_EXPIRY_DAYS){
+      p.estoque=0;
+      p.stock_updated_at=nowIso();
+    }
+    if(pct>0&&toNum(p.preco)>0){
+      p.preco_oferta=roundCatalogMoney(toNum(p.preco)*(1-pct/100));
+      p.validade_oferta=p.validade;
+      p.desconto_validade=pct;
+      p.oferta_origem="validade";
+    }else if(p.oferta_origem==="validade"||toNum(p.desconto_validade)>0){
+      delete p.preco_oferta;
+      delete p.validade_oferta;
+      delete p.oferta_origem;
+      p.desconto_validade=0;
+    }
+    capOfferAtMaximumDiscount(p);
+    const fields=[];
+    if(before.estoque!==toNum(p.estoque))fields.push("estoque","stock_updated_at");
+    if(before.preco_oferta!==roundCatalogMoney(p.preco_oferta))fields.push("preco_oferta");
+    if(before.validade_oferta!==String(p.validade_oferta||""))fields.push("validade_oferta");
+    if(before.desconto_validade!==toNum(p.desconto_validade))fields.push("desconto_validade","oferta_origem");
+    return {days,pct,fields:[...new Set(fields)]};
+  }
+  function applyExpiryDiscount(p){return applyExpiryRules(p).pct}
+  function criticalExpiryProducts(){return state.produtos.map(p=>({p,days:expiryDays(p.validade)})).filter(x=>x.days!==null&&x.days<=CRITICAL_EXPIRY_DAYS).sort((a,b)=>a.days-b.days||getName(a.p).localeCompare(getName(b.p),"pt-BR"))}
+  function updateExpiryAlert(){
+    const button=$("#expiryAlertBtn"),count=$("#expiryAlertCount"),items=criticalExpiryProducts();
+    if(!button||!count)return;
+    count.textContent=items.length;
+    button.hidden=!items.length;
+    button.title=items.length?`${items.length} produto(s) vencido(s) ou com até ${CRITICAL_EXPIRY_DAYS} dias. Estoque zerado pela regra automática.`:"";
+  }
+  function renderExpiryAlert(){
+    $(".expiry-alert-overlay")?.remove();
+    const items=criticalExpiryProducts();
+    const rows=items.map(({p,days})=>`<div class="expiry-alert-row"><div><strong>${esc(getName(p))}</strong><small>${esc(p.codigo||getKey(p))} · Validade: ${esc(workbenchDateValue(p.validade).split("-").reverse().join("/"))} · Estoque: ${esc(toNum(p.estoque))}</small></div><span class="expiry-alert-days">${days<0?`Vencido há ${Math.abs(days)} dia(s)`:days===0?"Vence hoje":`${days} dia(s)`}</span><button class="btn small" type="button" data-action="open-expiry-product" data-key="${esc(getKey(p))}">Abrir produto</button></div>`).join("");
+    document.body.insertAdjacentHTML("beforeend",`<div class="expiry-alert-overlay" role="presentation"><section class="expiry-alert-dialog" role="dialog" aria-modal="true" aria-labelledby="expiryAlertTitle"><div class="expiry-alert-head"><div><h2 id="expiryAlertTitle">Validade crítica</h2><p>Produtos vencidos ou com até ${CRITICAL_EXPIRY_DAYS} dias têm o estoque zerado automaticamente.</p></div><button class="btn" type="button" data-action="close-expiry-alert">Fechar</button></div><div class="expiry-alert-list">${rows||'<div class="empty">Nenhum produto em validade crítica.</div>'}</div></section></div>`);
+  }
 
   const originalRenderProductEditor=renderProductEditor;
   renderProductEditor=function(resetJson=true){
@@ -1338,7 +1414,7 @@
       const ncmQuery=encodeURIComponent(`NCM ${[getName(p),p.marca,p.gtin||p.ean].filter(Boolean).join(" ")}`);
       ncmInput.insertAdjacentHTML("afterend",`<a class="btn blue small" style="margin-top:7px" href="https://www.google.com/search?q=${ncmQuery}" target="_blank" rel="noopener">Buscar NCM ↗</a>`);
     }
-    const validity=[...$("#productModalBody").querySelectorAll("[data-pfield]")].find(x=>x.dataset.pfield==="validade");if(validity){validity.type="date";validity.insertAdjacentHTML("afterend",`<div class="expiry-help">Desconto automático por validade: ≤30d 50% · ≤60d 40% · ≤90d 30% · ≤120d 20% · ≤150d 10%</div>`)}
+    const validity=[...$("#productModalBody").querySelectorAll("[data-pfield]")].find(x=>x.dataset.pfield==="validade");if(validity){validity.type="date";validity.insertAdjacentHTML("afterend",`<div class="expiry-help">Regra automática: ≤15d estoque zero · 16–30d 40% · 31–45d 35% · 46–60d 30% · 61–75d 25% · 76–90d 20% · 91–105d 10% · 106–120d 5%. Desconto máximo: 40%.</div>`)}
   };
 
   prepareProductImageBlob=async function(file){return compressImageToWebp(file,{maxBytes:30*1024,maxDimension:300,square:true})};
@@ -1614,8 +1690,9 @@
     else p[field]=value;
     if(field==="gtin")delete p.ean;
     if(field==="video_youtube")delete p.video_url;
+    const pricingRuleResult=["preco","preco_oferta","validade"].includes(field)?applyExpiryRules(p):{fields:[]};
     p.last_update=Date.now();p.updated_at=nowIso();if(field==="estoque")p.stock_updated_at=nowIso();
-    markProductDirty(getKey(p),[field]);mark("products");
+    markProductDirty(getKey(p),[field,...pricingRuleResult.fields]);mark("products");updateExpiryAlert();
     const card=$(`[data-product-key="${CSS.escape(String(key))}"]`);if(card)card.classList.add("dirty");
   };
   function workbenchPhotoInput(key){return $$("[data-card-photo-key]").find(el=>el.dataset.cardPhotoKey===String(key))||null}
@@ -1698,12 +1775,15 @@
     if(action==="workbench-remove-photo"&&p){if(!confirm("Remover a imagem principal deste produto?"))return;p.url_imagem=p.imagem="";markProductDirty(key,["url_imagem","imagem"]);mark("products");renderProducts()}
     if(action==="workbench-make-primary"&&p){p.url_imagem=p.imagem=b.dataset.src;markProductDirty(key,["url_imagem","imagem"]);mark("products");renderProducts()}
     if(action==="workbench-remove-gallery"&&p){const src=b.dataset.src;p.imagens=(p.imagens||[]).filter(x=>x!==src);if((p.url_imagem||p.imagem)===src)p.url_imagem=p.imagem=p.imagens[0]||"";markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts()}
+    if(action==="open-expiry-alert")renderExpiryAlert();
+    if(action==="close-expiry-alert")$(".expiry-alert-overlay")?.remove();
+    if(action==="open-expiry-product"){ $(".expiry-alert-overlay")?.remove(); state.activeTab="produtos"; renderAll(); focusProductWorkbench(key); }
   });
   document.addEventListener("change",async e=>{
     const el=e.target;
     if(el.matches('[data-action="toggle-note"]')){const n=state.anotacoes.find(x=>x.id===el.dataset.id);if(!n)return;n.feito=el.checked;n.concluida_em=el.checked?nowIso():null;mark("notes");renderNotes();updateNotesIndicator();await saveNotes(false)}
     if(el.matches("[data-card-photo-key]")){state.cardImageTargetKey=el.dataset.cardPhotoKey;setStatus("Imagem selecionada no card. Você pode usar, editar ou enviar.","ok")}
-    if(el.matches('[data-card-field="validade"]')){const p=productByKey(el.dataset.key);if(p){applyExpiryDiscount(p);markProductDirty(getKey(p),["preco_oferta","validade_oferta","desconto_validade"]);mark("products");renderProducts()}}
+    if(el.matches('[data-card-field="validade"]')){const p=productByKey(el.dataset.key);if(p){const result=applyExpiryRules(p);markProductDirty(getKey(p),["validade",...result.fields]);mark("products");renderProducts();updateExpiryAlert()}}
     if(el.matches('[data-card-field="url_imagem"]')){const p=productByKey(el.dataset.key);if(p){p.imagem=p.url_imagem;markProductDirty(getKey(p),["imagem"]);mark("products");renderProducts()}}
   });
   document.addEventListener("paste",async e=>{
@@ -1720,14 +1800,14 @@
     await originalLoadData();
     document.querySelectorAll('[data-tab="leitura"],#tab-leitura').forEach(x=>x.remove());
     if(state.activeTab==="leitura")state.activeTab="produtos";
-    state.produtos.forEach(p=>{if(!Array.isArray(p.imagens))p.imagens=uniq([p.url_imagem||p.imagem||""]).filter(Boolean);if(!p.video_youtube&&p.video_url)p.video_youtube=p.video_url;applyExpiryDiscount(p)});
+    state.produtos.forEach(p=>{if(!Array.isArray(p.imagens))p.imagens=uniq([p.url_imagem||p.imagem||""]).filter(Boolean);if(!p.video_youtube&&p.video_url)p.video_youtube=p.video_url;const result=applyExpiryRules(p);if(result.fields.length)markProductDirty(getKey(p),result.fields)});
     state.kits.forEach(recalcKit);
     const localNotes=normalizeNotes(JSON.parse(localStorage.getItem(LS_NOTES)||"[]")),hadPending=localStorage.getItem(LS_NOTES_DIRTY)==="1";
     try{
       const remoteNotes=await loadNotesFromGithub();
       state.anotacoes=hadPending?localNotes:remoteNotes;
     }catch(e){console.error(e);state.anotacoes=localNotes}
-    const removed=cleanupExpiredNotes();state.dirtyNotes=hadPending||removed>0;if(state.dirtyNotes)localStorage.setItem(LS_NOTES_DIRTY,"1");saveLocal();renderAll();
+    const removed=cleanupExpiredNotes();state.dirtyNotes=hadPending||removed>0;if(state.dirtyNotes)localStorage.setItem(LS_NOTES_DIRTY,"1");saveLocal();renderAll();updateExpiryAlert();
     if(state.dirtyNotes&&state.settings.githubToken)await saveNotes(false);
   };
   setInterval(async()=>{const removed=cleanupExpiredNotes();if(removed){mark("notes");renderNotes();updateNotesIndicator();if(state.settings.githubToken)await saveNotes(false)}},60*60*1000);
