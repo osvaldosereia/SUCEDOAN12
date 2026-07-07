@@ -436,9 +436,9 @@
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
         <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho kitspromocionais.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="img/produtos"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
-        <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
+        <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
-      <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar kitspromocionais.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
+      <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar kitspromocionais.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
     </section>
 
     <section class="panel hidden" id="tab-json">
@@ -1166,10 +1166,164 @@
   function exportAdminMetaJson(){download('produtos_admin_meta.json', buildAdminMetaPayload())}
   function exportCestasJson(){download('produtos-cesta-basica.json', state.cestas)}
   function exportKitsJson(){download('kits.json', state.kits)}
-  function csvEscape(v){const s=String(v??''); return /[";\n\r]/.test(s)?`"${s.replace(/"/g,'""')}"`:s}
-  function blingRows(){return filteredProducts().map(p=>({codigo:p.codigo||getCode(p),descricao:getName(p),unidade:state.settings.blingUnidade||'UN',preco:toNum(p.preco).toFixed(2).replace('.',','),preco_custo:toNum(p.preco_custo).toFixed(2).replace('.',','),codigo_barras:String(p.gtin||p.ean||'').trim(),ncm:p.ncm||'',estoque:p.estoque||0,situacao:isActive(p)?'Ativo':'Inativo',categoria:p.categoria||'',marca:p.marca||'',descricao_curta:p.descricao||'',url_imagem:p.url_imagem||p.imagem||'',fornecedor:p.fornecedor||'',gondola:p.gondola||'',prateleira:p.prateleira||''}))}
-  function exportBlingCsv(){const rows=blingRows(); const header=['codigo','descricao','unidade','preco','preco_custo','codigo_barras','ncm','estoque','situacao','categoria','marca','descricao_curta','url_imagem','fornecedor','gondola','prateleira']; const csv='\ufeff'+[header.join(';'),...rows.map(r=>header.map(h=>csvEscape(r[h])).join(';'))].join('\n'); download('produtos-bling.csv', csv, 'text/csv;charset=utf-8')}
-  function exportBlingJson(){download('produtos-bling.json', blingRows())}
+  const BLING_MAX_PRODUTOS_POR_ARQUIVO = 999;
+  const BLING_CSV_HEADERS = [
+    "ID",
+    "Código",
+    "Descrição",
+    "Unidade",
+    "NCM",
+    "Origem",
+    "Preço",
+    "Valor IPI fixo",
+    "Observações",
+    "Situação",
+    "Estoque",
+    "Preço de custo",
+    "Cód no fornecedor",
+    "Fornecedor",
+    "Localização",
+    "Estoque maximo",
+    "Estoque minimo",
+    "Peso líquido (Kg)",
+    "Peso bruto (Kg)",
+    "GTIN/EAN",
+    "GTIN/EAN da embalagem",
+    "Largura do Produto",
+    "Altura do Produto",
+    "Profundidade do produto",
+    "Data Validade",
+    "Descrição do Produto no Fornecedor",
+    "Descrição Complementar",
+    "Itens p/ caixa",
+    "Produto Variação",
+    "Tipo Produção",
+    "Classe de enquadramento do IPI",
+    "Código da lista de serviços",
+    "Tipo do item",
+    "Grupo de Tags/Tags",
+    "Tributos",
+    "Código Pai",
+    "Código Integração",
+    "Grupo de produtos",
+    "Marca",
+    "CEST",
+    "Volumes",
+    "Descrição Curta",
+    "Cross-Docking",
+    "URL Imagens Externas",
+    "Link Externo",
+    "Meses Garantia no Fornecedor",
+    "Clonar dados do pai",
+    "Condição do produto",
+    "Frete Grátis",
+    "Número FCI",
+    "Vídeo",
+    "Departamento",
+    "Unidade de medida",
+    "Preço de compra",
+    "Valor base ICMS ST para retenção",
+    "Valor ICMS ST para retenção",
+    "Valor ICMS próprio do substituto",
+    "Categoria do produto",
+    "Informações Adicionais"
+];
+  function csvEscapeBling(v){const s=String(v??''); return /[",\n\r]/.test(s)?`"${s.replace(/"/g,'""')}"`:s}
+  function blingBlank(v){return v===undefined||v===null||String(v).trim()===''}
+  function blingMoney(v){if(blingBlank(v))return ''; const n=toNum(v); return Number.isFinite(n)?n.toFixed(2).replace('.',','):''}
+  function blingNumber(v){if(blingBlank(v))return ''; const n=toNum(v); return Number.isFinite(n)?String(n).replace('.',','):''}
+  function blingInt(v){if(blingBlank(v))return ''; const n=toNum(v); return Number.isFinite(n)?String(Math.max(0,Math.round(n))):''}
+  function blingDate(v){
+    const raw=String(v??'').trim();
+    if(!raw)return '';
+    let m=raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m)return `${m[3]}/${m[2]}/${m[1]}`;
+    m=raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if(m)return raw;
+    const d=new Date(raw);
+    if(Number.isNaN(d.getTime()))return raw;
+    const dd=String(d.getDate()).padStart(2,'0'), mm=String(d.getMonth()+1).padStart(2,'0'), yy=d.getFullYear();
+    return `${dd}/${mm}/${yy}`;
+  }
+  function blingCategoriaProduto(p){return [p.categoria,p.subcategoria,p.subsubcategoria].map(x=>String(x||'').trim()).filter(Boolean).join('>>')}
+  function blingLocalizacao(p){return String(p.localizacao||p.localização||[p.gondola,p.prateleira].map(x=>String(x||'').trim()).filter(Boolean).join(' - ')||'').trim()}
+  function blingRows(produtos=state.produtos){
+    return [...(produtos||[])].sort((a,b)=>getCode(a).localeCompare(getCode(b),'pt-BR')).map(p=>({
+      'ID':'',
+      'Código':p.codigo||getCode(p),
+      'Descrição':getName(p),
+      'Unidade':p.unidade||state.settings.blingUnidade||'UN',
+      'NCM':p.ncm||'',
+      'Origem':String(p.origem??'0'),
+      'Preço':blingMoney(p.preco)||'0',
+      'Valor IPI fixo':blingMoney(p.valor_ipi_fixo||p.ipi_fixo),
+      'Observações':p.observacoes||p.observações||'',
+      'Situação':isActive(p)?'Ativo':'Inativo',
+      'Estoque':blingInt(p.estoque)||'0',
+      'Preço de custo':blingMoney(p.preco_custo||p.custo),
+      'Cód no fornecedor':p.cod_fornecedor||p.codigo_fornecedor||'',
+      'Fornecedor':p.fornecedor||'',
+      'Localização':blingLocalizacao(p),
+      'Estoque maximo':blingInt(p.estoque_maximo||p.estoqueMaximo),
+      'Estoque minimo':blingInt(p.estoque_minimo||p.estoqueMinimo),
+      'Peso líquido (Kg)':blingNumber(p.peso_liquido||p.peso_liquido_kg),
+      'Peso bruto (Kg)':blingNumber(p.peso_bruto||p.peso_bruto_kg),
+      'GTIN/EAN':String(p.gtin||p.ean||'').trim(),
+      'GTIN/EAN da embalagem':String(p.gtin_embalagem||p.ean_embalagem||'').trim(),
+      'Largura do Produto':blingNumber(p.largura||p.largura_produto),
+      'Altura do Produto':blingNumber(p.altura||p.altura_produto),
+      'Profundidade do produto':blingNumber(p.profundidade||p.comprimento||p.profundidade_produto),
+      'Data Validade':blingDate(p.validade||p.data_validade),
+      'Descrição do Produto no Fornecedor':p.descricao_fornecedor||p.descrição_fornecedor||getName(p),
+      'Descrição Complementar':p.descricao||p.descrição||'',
+      'Itens p/ caixa':blingInt(p.itens_caixa||p.itens_por_caixa)||'1',
+      'Produto Variação':p.produto_variacao||p.produto_variação||'Produto',
+      'Tipo Produção':p.tipo_producao||p.tipo_produção||'',
+      'Classe de enquadramento do IPI':p.classe_ipi||p.classe_enquadramento_ipi||'',
+      'Código da lista de serviços':p.codigo_lista_servicos||p.codigo_lista_serviços||'',
+      'Tipo do item':p.tipo_item||'',
+      'Grupo de Tags/Tags':p.grupo_tags||p.tags_bling||'',
+      'Tributos':p.tributos||'',
+      'Código Pai':p.codigo_pai||'',
+      'Código Integração':p.codigo_integracao||p.codigo_integração||getKey(p),
+      'Grupo de produtos':p.grupo_produtos||p.grupo||p.categoria||'',
+      'Marca':p.marca||'',
+      'CEST':p.cest||p.CEST||'',
+      'Volumes':blingInt(p.volumes),
+      'Descrição Curta':p.descricao_curta||p.descrição_curta||getName(p),
+      'Cross-Docking':blingInt(p.cross_docking),
+      'URL Imagens Externas':absolutePublicUrl(p.url_imagem||p.imagem||''),
+      'Link Externo':p.link_externo||'',
+      'Meses Garantia no Fornecedor':blingInt(p.meses_garantia||p.garantia_meses),
+      'Clonar dados do pai':p.clonar_dados_pai||'Não',
+      'Condição do produto':p.condicao||p.condição||'NOVO',
+      'Frete Grátis':p.frete_gratis||p.frete_grátis||'Não',
+      'Número FCI':p.numero_fci||p.número_fci||'',
+      'Vídeo':safeYoutubeUrl(p.video||p.video_url||''),
+      'Departamento':p.departamento||'',
+      'Unidade de medida':p.unidade_medida||'',
+      'Preço de compra':blingMoney(p.preco_compra||p.preco_custo||p.custo),
+      'Valor base ICMS ST para retenção':blingMoney(p.valor_base_icms_st_retencao||p.valor_base_icms_st_retenção),
+      'Valor ICMS ST para retenção':blingMoney(p.valor_icms_st_retencao||p.valor_icms_st_retenção),
+      'Valor ICMS próprio do substituto':blingMoney(p.valor_icms_proprio_substituto||p.valor_icms_próprio_substituto),
+      'Categoria do produto':blingCategoriaProduto(p),
+      'Informações Adicionais':p.informacoes_adicionais||p.informações_adicionais||''
+    }));
+  }
+  function buildBlingCsv(rows){return '\ufeff'+[BLING_CSV_HEADERS.join(','),...rows.map(r=>BLING_CSV_HEADERS.map(h=>csvEscapeBling(r[h]??'')).join(','))].join('\n')}
+  function splitBlingRows(rows){const chunks=[]; for(let i=0;i<rows.length;i+=BLING_MAX_PRODUTOS_POR_ARQUIVO)chunks.push(rows.slice(i,i+BLING_MAX_PRODUTOS_POR_ARQUIVO)); return chunks}
+  function exportBlingCsv(){
+    const rows=blingRows(state.produtos);
+    if(!rows.length){alert('Nenhum produto carregado para exportar ao Bling.');return}
+    const chunks=splitBlingRows(rows);
+    chunks.forEach((chunk,index)=>{
+      const name=chunks.length===1?'produtos-bling.csv':`produtos-bling-parte-${String(index+1).padStart(2,'0')}.csv`;
+      setTimeout(()=>download(name, buildBlingCsv(chunk), 'text/csv;charset=utf-8'), index*350);
+    });
+    setTimeout(()=>alert(`Exportação Bling concluída: ${rows.length} produto(s) em ${chunks.length} arquivo(s), com no máximo ${BLING_MAX_PRODUTOS_POR_ARQUIVO} produtos por arquivo.`), chunks.length*350+80);
+  }
+  function exportBlingJson(){download('produtos-bling.json', blingRows(state.produtos))}
+
   function copyReport(){const s=makeStats(); const txt=`Relatório Dona Antônia\nProdutos: ${s.total_produtos}\nAtivos: ${s.ativos}\nSem estoque: ${s.sem_estoque}\nSem GTIN: ${s.sem_gtin}\nSem foto: ${s.sem_foto}\nCestas: ${s.cestas}\nProdutos em cestas: ${s.produtos_em_cestas}\nKits promocionais: ${s.kits}\nProdutos em kits: ${s.produtos_em_kits}`; navigator.clipboard?.writeText(txt); alert('Relatório copiado.')}
   function importFile(file,kind){const rd=new FileReader(); rd.onload=()=>{try{const data=JSON.parse(rd.result); if(kind==='products'){const previousKeys=Object.keys(state.productSyncMeta); state.produtos=normalizeProducts(data); markAllProductsDirty(previousKeys); mark('products')} if(kind==='cestas'){state.cestas=normalizeCestas(data); state.selectedBasketId=state.cestas[0]?.id||null; mark('cestas')} if(kind==='kits'){state.kits=normalizeKits(data); state.selectedKitId=state.kits[0]?.id||null; mark('kits')} rebuildMeta(false); renderAll(); alert('Arquivo importado.')}catch(e){alert('Arquivo inválido: '+e.message)}}; rd.readAsText(file)}
 
