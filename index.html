@@ -1579,6 +1579,67 @@
       .category-thumb { width: 72px; height: 72px; }
     }
 
+    .product-card.compact,
+    .basket-card.compact,
+    .carousel-more-card {
+      width: 190px !important;
+      flex: 0 0 190px !important;
+      min-height: 314px;
+    }
+    .carousel-more-card {
+      border: 1px dashed var(--line-strong);
+      border-radius: 22px;
+      background: #fff;
+      display: grid;
+      place-content: center;
+      text-align: center;
+      gap: 5px;
+      color: var(--brand);
+      font-weight: 950;
+    }
+    .carousel-more-card span { color: var(--muted); font-size: 12px; font-weight: 800; }
+    .kit-card-countdown { width: max-content; max-width: 100%; padding: 6px 9px; border-radius: 999px; background: #111827; color: #fff; font-size: 11px; font-weight: 900; }
+    .kit-deal-top-stacked { display: grid; grid-template-columns: 1fr; }
+    .kit-deal-top-stacked .kit-deal-img { width: 100%; height: 260px; aspect-ratio: auto; }
+    .kit-description-toggle p { white-space: pre-line; }
+    .kit-product-row { grid-template-columns: 70px minmax(0,1fr) minmax(96px,auto); }
+    .kit-product-row .basket-editor-name { min-height: 50px; -webkit-line-clamp: 3; }
+    .delivery-picker { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+    .delivery-option { position: relative; min-height: 62px; border: 1px solid var(--line); border-radius: 16px; background: #fff; padding: 10px 11px; display: grid; align-content: center; gap: 3px; cursor: pointer; }
+    .delivery-option input { position: absolute; opacity: 0; pointer-events: none; }
+    .delivery-option strong { font-size: 12.5px; line-height: 1.15; font-weight: 950; color: var(--ink); }
+    .delivery-option span { font-size: 12px; color: var(--muted); font-weight: 800; }
+    .delivery-option:has(input:checked) { border-color: var(--brand); background: #ecfdf3; box-shadow: 0 0 0 3px rgba(22,163,74,.10); }
+    .checkout-next-step p, .client-lookup-copy, .client-details-intro { color: var(--muted); font-size: 13px; line-height: 1.45; font-weight: 750; }
+    .address-confirm { display: flex; gap: 9px; align-items: flex-start; padding: 11px 12px; margin: 2px 0 12px; border-radius: 14px; background: #ecfdf3; color: #14532d; font-size: 13px; line-height: 1.35; font-weight: 900; }
+    .address-confirm input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--brand); flex: 0 0 auto; }
+    .category-buttons { grid-template-columns: 1fr !important; gap: 12px !important; }
+    .category-button {
+      min-height: 164px !important;
+      grid-template-columns: 1fr !important;
+      align-content: start;
+      gap: 10px !important;
+      padding: 12px !important;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .category-photo-strip { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 2px; scroll-snap-type: x proximity; }
+    .category-photo-strip::-webkit-scrollbar { display: none; }
+    .category-mini-img { width: 62px; height: 62px; flex: 0 0 62px; object-fit: contain; padding: 5px; border-radius: 14px; background: #f8fafc; border: 1px solid #eef2f7; scroll-snap-align: start; }
+    .category-card-copy { display: grid; gap: 4px; }
+    .category-card-copy strong { font-size: 15px; line-height: 1.15; }
+    .category-card-copy span { font-size: 12px; }
+    .category-thumb { display: none !important; }
+    @media (min-width: 768px) {
+      .product-card.compact,
+      .basket-card.compact,
+      .carousel-more-card {
+        width: 224px !important;
+        flex-basis: 224px !important;
+      }
+      .category-buttons { grid-template-columns: repeat(4,minmax(0,1fr)) !important; }
+      .category-button { min-height: 176px !important; }
+    }
   </style>
 </head>
 <body>
@@ -2076,7 +2137,7 @@
           id: String(k.id || k.codigo),
           codigo: String(k.codigo || k.id || ''),
           nome: String(k.nome || 'Kit promocional'),
-          descricao: String(k.descricao || k.description || 'Kit promocional por tempo limitado.'),
+          descricao: String(k.descricao || k.description || k.descricao_oferta || k.detalhes || k.observacoes || k.obs || 'Kit promocional por tempo limitado.'),
           imagem: normalizeRelativeImage(k.imagem || k.img || k.url_imagem || 'img/logoantonia5.png'),
           preco,
           precoOriginal: parseMoney(k.precoOriginal || k.preco_original || k.soma_avulsa || k.valor_original || 0),
@@ -2948,6 +3009,21 @@
       return pickProductImage(pool);
     }
 
+    function categoryPreviewImages(categoryName) {
+      return state.products
+        .filter(p => isAvailable(p) && p.categoria === categoryName && p.img)
+        .sort((a,b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || a.name.localeCompare(b.name, 'pt-BR'))
+        .slice(0, 6)
+        .map(p => p.img);
+    }
+
+    function categoryCardHtml(cat, count) {
+      const images = categoryPreviewImages(cat);
+      const fallback = categoryThumb(cat);
+      const thumbs = (images.length ? images : [fallback]).map(img => `<img class="category-mini-img" loading="lazy" decoding="async" src="${escapeHtml(img)}" alt="" onerror="window.__daFallbackImg(this)">`).join('');
+      return `<a class="category-button" href="#/categoria/${encodeURIComponent(cat)}"><div class="category-photo-strip">${thumbs}</div><div class="category-card-copy"><strong>${escapeHtml(cat)}</strong><span>${count} ${count === 1 ? 'produto' : 'produtos'}</span></div></a>`;
+    }
+
     function routineThumb(key) {
       return pickProductImage(productsByRoutine(key, 12));
     }
@@ -3019,6 +3095,7 @@
             <div class="product-meta">${discount > 0 ? `<span class="discount">-${discount}%</span>` : '&nbsp;'}</div>
             <div class="basket-name">${escapeHtml(kit.nome)}</div>
             <div class="basket-desc">${escapeHtml(kit.descricao || 'Kit promocional por tempo limitado.')}</div>
+            <div class="kit-card-countdown">Termina em <span data-offer-countdown>--:--:--</span></div>
             <div class="price-row"><div>${original > kit.preco ? `<div class="old-price">${fmt(original)}</div>` : ''}<div class="price">${kit.preco ? fmt(kit.preco) : 'Ver itens'}</div></div></div>
             <div class="basket-actions">
               <a class="secondary-btn" href="#/kit/${encodeURIComponent(kit.id)}">Ver produtos</a>
@@ -3030,8 +3107,10 @@
 
     function shelf(title, caption, items, href, type) {
       if (!items || !items.length) return '';
-      const cards = items.map(item => type === 'kit' ? kitCard(item, 'compact') : (type === 'basket' ? basketCard(item, 'compact') : productCard(item, 'compact'))).join('');
-      return `<section class="section"><div class="section-head"><div><h2 class="section-title">${escapeHtml(title)}</h2>${caption ? `<div class="section-caption">${escapeHtml(caption)}</div>` : ''}</div>${href ? `<a class="see-all" href="${href}">Ver todos</a>` : ''}</div><div class="rail">${cards}</div></section>`;
+      const visible = items.slice(0, 20);
+      const cards = visible.map(item => type === 'kit' ? kitCard(item, 'compact') : (type === 'basket' ? basketCard(item, 'compact') : productCard(item, 'compact'))).join('');
+      const moreCard = href && items.length > 20 ? `<a class="carousel-more-card" href="${href}"><strong>Ver mais</strong><span>${items.length - 20} produtos</span></a>` : '';
+      return `<section class="section"><div class="section-head"><div><h2 class="section-title">${escapeHtml(title)}</h2>${caption ? `<div class="section-caption">${escapeHtml(caption)}</div>` : ''}</div>${href ? `<a class="see-all" href="${href}">Ver todos</a>` : ''}</div><div class="rail">${cards}${moreCard}</div></section>`;
     }
 
     function pageHeader(title, subtitle, backHref) {
@@ -3083,15 +3162,15 @@
       return `<section class="section category-section">
         <div class="section-head"><div><h2 class="section-title">Categorias</h2><div class="section-caption">Escolha um setor e veja todos os produtos disponíveis.</div></div><a class="see-all" href="#/categorias">Ver página</a></div>
         <div class="category-buttons">
-          ${cats.map(([cat, count]) => `<a class="category-button" href="#/categoria/${encodeURIComponent(cat)}"><div><strong>${escapeHtml(cat)}</strong><span>${count} ${count === 1 ? 'produto' : 'produtos'}</span></div><img class="category-thumb" loading="lazy" decoding="async" src="${escapeHtml(categoryThumb(cat))}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}
+          ${cats.map(([cat, count]) => categoryCardHtml(cat, count)).join('')}
         </div>
       </section>`;
     }
 
 
     function renderHome() {
-      const offers = getTopOffers(12);
-      const essentials = productsByRoutine('compra-mes', 12);
+      const offers = getTopOffers(40);
+      const essentials = productsByRoutine('compra-mes', 40);
       const kits = getActiveKits();
       const heroProducts = [...offers, ...essentials].filter((p, i, arr) => arr.findIndex(x => x.id === p.id) === i).slice(0, 3);
       const html = `
@@ -3115,11 +3194,12 @@
           </section>
           ${shelf('Ofertas de hoje', 'Economize nos produtos disponíveis agora.', offers, '#/ofertas')}
           ${shelf('Essenciais para sua casa', 'Os itens que não podem faltar na despensa.', essentials, '#/rotina/compra-mes')}
-          ${shelf('Cestas básicas', 'Kits prontos para facilitar sua compra.', state.cestas.slice(0, 8), '#/cestas', 'basket')}
-          ${shelf('Kits promocionais', 'Combos com desconto real e disponibilidade limitada.', kits.slice(0, 8), '#/kits', 'kit')}
+          ${shelf('Cestas básicas', 'Kits prontos para facilitar sua compra.', state.cestas, '#/cestas', 'basket')}
+          ${shelf('Kits promocionais', 'Combos com desconto real e disponibilidade limitada.', kits, '#/kits', 'kit')}
           ${categoryButtonsHtml()}
         </div>`;
       app.innerHTML = html;
+      updateOfferCountdowns();
       updateMeta('Dona Antônia - Supermercado e Cestas', 'Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.', '/');
       setActiveNav('home');
     }
@@ -3127,7 +3207,7 @@
     function renderCategories() {
       const cats = getCategories();
       app.innerHTML = `<div class="container">${pageHeader('Categorias', 'Escolha um setor para navegar.', '#/')}
-        <div class="category-buttons">${cats.map(([cat, count]) => `<a class="category-button" href="#/categoria/${encodeURIComponent(cat)}"><div><strong>${escapeHtml(cat)}</strong><span>${count} ${count === 1 ? 'produto' : 'produtos'}</span></div><img class="category-thumb" loading="lazy" decoding="async" src="${escapeHtml(categoryThumb(cat))}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}</div></div>`;
+        <div class="category-buttons">${cats.map(([cat, count]) => categoryCardHtml(cat, count)).join('')}</div></div>`;
       setActiveNav('categorias');
     }
 
@@ -3176,6 +3256,7 @@
       const kits = getActiveKits();
       app.innerHTML = `<div class="container">${pageHeader('Kits promocionais', 'Escolha um combo com desconto e envie pelo WhatsApp.', '#/')}${kits.length ? `<div class="basket-list">${kits.map(k => kitCard(k, 'wide')).join('')}</div>` : `<div class="empty"><strong>Nenhum kit promocional ativo</strong>Confira se o arquivo <code>site/kits.json</code> foi publicado e se os kits possuem estoque, desconto e periodo valido.</div>`}</div>`;
       setActiveNav('home');
+      updateOfferCountdowns();
       updateMeta('Kits promocionais - Dona Antonia', 'Kits promocionais de supermercado com entrega em Cuiaba e Varzea Grande.', '/#/kits');
     }
 
@@ -3216,12 +3297,12 @@
       const kitRatio = original > 0 ? Math.min(1, Number(kit.preco || 0) / original) : 1;
       app.innerHTML = `<div class="container">${pageHeader(kit.nome, '', '#/kits')}
         <article class="kit-deal-card">
-          <div class="kit-deal-top">
+          <div class="kit-deal-top kit-deal-top-stacked">
             <img class="kit-deal-img" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
             <div class="kit-deal-copy">
               <div class="kit-badge-row">
                 ${discount > 0 ? `<span class="kit-discount-badge">-${discount}% OFF</span>` : ''}
-                <span class="kit-countdown">Atualiza em <span data-offer-countdown>--:--:--</span></span>
+                <span class="kit-countdown">Termina em <span data-offer-countdown>--:--:--</span></span>
               </div>
               <h2 class="kit-deal-title">${escapeHtml(kit.nome)}</h2>
               <div class="kit-price-box">
@@ -3241,8 +3322,8 @@
           ${rows.length ? `<div class="basket-editor">${rows.map(({product, qty}) => `
             <div class="basket-editor-row kit-product-row">
               <img src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
-              <div><div class="basket-editor-name">${escapeHtml(product.name)}</div><div class="basket-editor-price">${qty}x no kit</div></div>
-              <div class="kit-product-price"><s>${fmt(Number(product.price || 0) * Number(qty || 1))}</s><strong>${fmt(roundMoney(Number(product.price || 0) * Number(qty || 1) * kitRatio))}</strong><span>valor no combo</span></div>
+              <div><div class="basket-editor-name">${escapeHtml(product.name)}</div><div class="basket-editor-price">${qty} ${Number(qty) === 1 ? 'unidade' : 'unidades'} no kit</div></div>
+              <div class="kit-product-price"><s>${fmt(Number(product.price || 0))}</s><strong>${fmt(roundMoney(Number(product.price || 0) * kitRatio))}</strong><span>cada no combo</span></div>
             </div>`).join('')}</div>` : `<div class="empty"><strong>Itens nao localizados</strong>Nao conseguimos relacionar os produtos desse kit ao cadastro atual.</div>`}
         </section>
       </div>`;
@@ -3753,6 +3834,101 @@
       setupCheckoutOffersCarousel();
     }
 
+    function renderCheckout() {
+      removeMissingCartItems({ silent: true });
+      const items = getCartItems().filter(i => !i.product.isFee && isAvailable(i.product));
+      const pricing = cartPricing(true);
+      const total = pricing.total;
+      const missing = Math.max(CONFIG.MIN_ORDER - pricing.subtotalBefore, 0);
+      const checkoutOffers = getTopOffers(200).filter(p => !state.cart[p.id]);
+      const initialCheckoutOffers = checkoutOffers.slice(0, Math.max(12, Number(state.checkoutOfferLimit || 12)));
+      const clientDetailsVisible = state.customerLookupStatus === 'existing' || state.customerLookupStatus === 'new';
+      const isExistingClient = state.customerLookupStatus === 'existing';
+      const clientDetailsIntro = isExistingClient
+        ? 'Encontramos seu cadastro. Confirme se o endereco de entrega esta correto.'
+        : 'CPF nao cadastrado. Complete seus dados uma vez para finalizar.';
+      const addressConfirm = isExistingClient
+        ? `<label class="address-confirm"><input type="checkbox" id="chk-address-ok">Confirmo que este endereco de entrega esta correto.</label>`
+        : '';
+      const deliveryAndDetails = clientDetailsVisible ? `
+        <section class="checkout-section">
+          <div class="checkout-title">2. Entrega</div>
+          <div id="agendamento-options-container">${agendamentoOptionsHtml()}</div>
+        </section>
+        <section class="checkout-section">
+          <div class="checkout-title">${isExistingClient ? '3. Confirme seus dados' : '3. Dados para entrega'}</div>
+          <div class="client-details" id="client-details">
+            <p class="client-details-intro" id="client-details-intro">${escapeHtml(clientDetailsIntro)}</p>
+            <label class="checkout-field-label" for="chk-nome">Nome completo*</label>
+            <input type="text" id="chk-nome" class="field" placeholder="Nome completo*" autocomplete="name">
+            <label class="checkout-field-label" for="chk-telefone">WhatsApp com DDD*</label>
+            <input type="tel" id="chk-telefone" class="field" placeholder="WhatsApp com DDD*" maxlength="18" inputmode="tel" autocomplete="tel-national">
+            <label class="checkout-field-label" for="chk-email">E-mail*</label>
+            <input type="email" id="chk-email" class="field" placeholder="E-mail*" autocomplete="email">
+            <label class="checkout-field-label" for="chk-cep">CEP*</label>
+            <input type="tel" id="chk-cep" class="field" placeholder="CEP*" maxlength="9" inputmode="numeric" autocomplete="postal-code">
+            <label class="checkout-field-label" for="chk-cidade">Cidade*</label>
+            <select id="chk-cidade" class="field"><option value="">Cidade*</option><option value="Cuiabá">Cuiabá</option><option value="Várzea Grande">Várzea Grande</option></select>
+            <label class="checkout-field-label" for="chk-bairro">Bairro*</label>
+            <input type="text" id="chk-bairro" class="field" placeholder="Bairro*">
+            <label class="checkout-field-label" for="chk-rua">Rua ou avenida*</label>
+            <input type="text" id="chk-rua" class="field" placeholder="Rua ou avenida*">
+            <label class="checkout-field-label">Numero e quadra</label>
+            <div class="field-row"><input type="text" id="chk-quadra" class="field" placeholder="Quadra (opcional)" style="flex:1"><input type="text" id="chk-casa" class="field" placeholder="Numero*" style="flex:1"></div>
+            <label class="checkout-field-label" for="chk-frente">Complemento ou referencia</label>
+            <input type="text" id="chk-frente" class="field" placeholder="Complemento ou referencia">
+            ${addressConfirm}
+            <label class="checkout-field-label" for="chk-pagamento">Pagamento*</label>
+            <select id="chk-pagamento" class="field"><option value="">Selecione...</option><option value="DINHEIRO">Dinheiro</option><option value="PIX">Pix</option><option value="CARTAO_DE_DEBITO">Cartao de Debito</option><option value="CARTAO_DE_CREDITO">Cartao de Credito</option><option value="VALE_ALIMENTACAO">Vale Alimentacao</option><option value="VALE_REFEICAO">Vale Refeicao</option></select>
+          </div>
+        </section>
+        <section class="checkout-section">
+          <div class="checkout-title">4. Total</div>
+          ${couponBoxHtml()}
+          <div class="summary-row"><span>Subtotal dos produtos</span><span>${fmt(pricing.subtotalBefore)}</span></div>
+          ${pricing.couponDiscount > 0 ? `<div class="summary-row discount-row"><span>Desconto ${escapeHtml(pricing.coupon.codigo)}</span><span>- ${fmt(pricing.couponDiscount)}</span></div>` : ''}
+          ${pricing.expiryBulkDiscount > 0 ? `<div class="summary-row discount-row"><span>Desconto por validade - 3+ unidades (10%)</span><span>- ${fmt(pricing.expiryBulkDiscount)}</span></div>` : ''}
+          ${pricing.wholesaleDiscount > 0 ? `<div class="summary-row discount-row"><span>Desconto de atacado (5%)</span><span>- ${fmt(pricing.wholesaleDiscount)}</span></div>` : ''}
+          <div class="summary-row total"><span>Total estimado</span><span>${fmt(total)}</span></div>
+          <button class="send-btn" type="button" id="btn-send-order" ${items.length && missing <= 0 ? '' : 'disabled'}>Pedir no WhatsApp</button>
+        </section>` : `
+        <section class="checkout-section checkout-next-step">
+          <div class="checkout-title">Proximo passo</div>
+          <p>Digite seu CPF e toque em Continuar. Se voce ja tiver cadastro, mostramos o endereco salvo para confirmar. Se nao tiver, abrimos os campos necessarios.</p>
+        </section>`;
+
+      $('checkout-content').innerHTML = `
+        <div class="checkout-alert" id="checkout-alert"></div>
+        <section class="checkout-section">
+          <div class="checkout-title">1. Revise sua compra</div>
+          ${items.length ? items.map(({id, product, qty}) => `
+            <div class="cart-row">
+              <img class="cart-img" src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
+              <div><div class="cart-name">${escapeHtml(product.name)}</div></div>
+              <div class="cart-qty"><button type="button" data-action="dec" data-id="${escapeHtml(id)}">-</button><span>${qty}</span><button type="button" data-action="inc" data-id="${escapeHtml(id)}">+</button></div>
+            </div>`).join('') : `<div class="empty"><strong>Sua compra esta vazia</strong>Adicione produtos para enviar o pedido.</div>`}
+          <div class="min-order" id="min-order-box" style="display:${items.length && missing > 0 ? 'block' : 'none'}">Faltam <strong>${fmt(missing)}</strong> para atingir o pedido minimo de ${fmt(CONFIG.MIN_ORDER)}.</div>
+          ${items.length ? `<button class="clear-cart-btn" type="button" data-action="clear-cart"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15"></path></svg>Limpar compra</button>` : ''}
+        </section>
+        ${initialCheckoutOffers.length ? `<section class="checkout-section"><div class="checkout-title">Ofertas para completar</div><div class="mini-suggest checkout-offers-rail" id="checkout-offers-rail" data-loaded="${initialCheckoutOffers.length}">${initialCheckoutOffers.map(p => productCard(p, 'compact')).join('')}</div>${checkoutOffers.length > initialCheckoutOffers.length ? '<div class="checkout-offers-hint" id="checkout-offers-hint">Role para ver mais ofertas</div>' : ''}</section>` : ''}
+        <section class="checkout-section checkout-cpf-step">
+          <div class="checkout-title">2. Identifique seu cadastro</div>
+          <div class="client-lookup">
+            <div class="client-lookup-title">Consulte pelo CPF antes de preencher endereco</div>
+            <p class="client-lookup-copy">Assim evitamos campos desnecessarios e ja trazemos seu endereco salvo quando existir.</p>
+            <label class="checkout-field-label" for="chk-cpf">CPF*</label>
+            <div class="client-lookup-row">
+              <input type="tel" id="chk-cpf" class="field" placeholder="CPF*" maxlength="14" inputmode="numeric" autocomplete="off">
+              <button type="button" class="lookup-btn" id="btn-lookup-client">Continuar</button>
+            </div>
+            <div class="lookup-status" id="lookup-status" role="status" aria-live="polite"></div>
+          </div>
+        </section>
+        ${deliveryAndDetails}`;
+      restoreCheckoutClient();
+      setupCheckoutOffersCarousel();
+    }
+
     function setupCheckoutOffersCarousel() {
       const rail = $('checkout-offers-rail');
       if (!rail) return;
@@ -3841,7 +4017,11 @@
         if (sameDayStillOpen && cursor.getDay() !== 0 && !isNationalHoliday(cursor)) dates.push(new Date(cursor));
         cursor = addDays(cursor, 1);
       }
-      return dates.map((d, i) => `<label class="radio-option"><input type="radio" name="agendamento" value="${formatDateValue(d)}" ${i === 0 ? 'checked' : ''}>${i === 0 ? 'Próxima entrega: ' : ''}${formatDateLabel(d)}</label>`).join('');
+      return `<div class="delivery-picker">${dates.map((d, i) => {
+        const label = formatDateLabel(d);
+        const parts = label.split(',');
+        return `<label class="delivery-option"><input type="radio" name="agendamento" value="${formatDateValue(d)}" ${i === 0 ? 'checked' : ''}><strong>${i === 0 ? 'Proxima entrega' : parts[0]}</strong><span>${(parts[1] || label).trim()}</span></label>`;
+      }).join('')}</div>`;
     }
 
     let basketConfirmPreviousFocus = null;
@@ -4171,6 +4351,7 @@
         { id: 'chk-rua', label: 'Rua ou avenida', valid: !!rua },
         { id: 'chk-casa', label: 'Número', valid: !!casa },
         { id: 'chk-pagamento', label: 'Pagamento', valid: !!pag },
+        { id: 'client-details', label: 'Confirme que o endereco de entrega esta correto', valid: state.customerLookupStatus !== 'existing' || !!$('chk-address-ok')?.checked },
       ].filter(e => !e.valid);
       document.querySelectorAll('.field.invalid').forEach(el => el.classList.remove('invalid'));
       if (errors.length) {
