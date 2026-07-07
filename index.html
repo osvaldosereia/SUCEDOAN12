@@ -247,6 +247,30 @@
     .basket-editor-row img { width: 70px; height: 70px; object-fit: contain; border-radius: 14px; background: #f8fafc; border: 1px solid #eef2f7; padding: 5px; }
     .basket-editor-name { font-size: 13px; line-height: 1.3; font-weight: 850; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
     .basket-editor-price { margin-top: 4px; color: var(--muted); font-size: 12px; font-weight: 800; }
+    .bulk-nudge { margin-top: 6px; padding: 7px 9px; border-radius: 11px; background: #fff7e6; color: #8a4b08; font-size: 11px; line-height: 1.25; font-weight: 900; }
+    .kit-deal-card { background: linear-gradient(135deg, #fff 0%, #fff8eb 48%, #ecfdf3 100%); border: 1px solid #f4d8a7; border-radius: 24px; padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow); display: grid; gap: 12px; }
+    .kit-deal-top { display: grid; grid-template-columns: 116px 1fr; gap: 13px; align-items: center; }
+    .kit-deal-img { width: 116px; aspect-ratio: 1; border-radius: 20px; background: #fff; border: 1px solid rgba(244,216,167,.9); object-fit: contain; padding: 8px; }
+    .kit-deal-copy { display: grid; gap: 8px; min-width: 0; }
+    .kit-badge-row { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+    .kit-discount-badge { display: inline-flex; align-items: center; min-height: 30px; padding: 6px 10px; border-radius: 999px; background: #b91c1c; color: #fff; font-size: 13px; font-weight: 950; letter-spacing: .02em; }
+    .kit-countdown { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 6px 10px; border-radius: 999px; background: #111827; color: #fff; font-size: 12px; font-weight: 900; }
+    .kit-deal-title { font-size: 21px; line-height: 1.08; font-weight: 950; letter-spacing: -.04em; }
+    .kit-price-box { display: grid; gap: 3px; }
+    .kit-price-box .old-price { font-size: 13px; }
+    .kit-price-main { color: #14532d; font-size: 34px; line-height: 1; font-weight: 950; letter-spacing: -.055em; }
+    .kit-saving { color: #8a4b08; font-size: 12px; font-weight: 900; }
+    .kit-description-toggle { border-top: 1px dashed rgba(148,163,184,.55); padding-top: 10px; }
+    .kit-description-toggle summary { cursor: pointer; color: var(--brand); font-size: 13px; font-weight: 950; list-style: none; }
+    .kit-description-toggle summary::-webkit-details-marker { display: none; }
+    .kit-description-toggle summary::after { content: " +"; }
+    .kit-description-toggle[open] summary::after { content: " -"; }
+    .kit-description-toggle p { margin-top: 8px; color: var(--muted); font-size: 13px; line-height: 1.45; font-weight: 700; }
+    .kit-product-row { grid-template-columns: 70px 1fr minmax(92px, auto); }
+    .kit-product-price { text-align: right; display: grid; gap: 2px; }
+    .kit-product-price s { color: var(--muted-2); font-size: 11px; font-weight: 850; }
+    .kit-product-price strong { color: #14532d; font-size: 16px; font-weight: 950; letter-spacing: -.03em; }
+    .kit-product-price span { color: var(--muted); font-size: 10.5px; font-weight: 850; }
     .basket-total-card { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 15px; margin-top: 12px; display: grid; gap: 10px; }
     .clear-cart-btn { width: 100%; height: 42px; margin-top: 10px; border-radius: 999px; border: 1px solid #fecdd3; background: #fff1f2; color: #9f1239; font-size: 13px; font-weight: 950; display: flex; align-items: center; justify-content: center; gap: 7px; }
 
@@ -2202,7 +2226,7 @@
     }
 
     const WHOLESALE_MIN_QTY = 3;
-    const WHOLESALE_DISCOUNT_RATE = 0.02;
+    const WHOLESALE_DISCOUNT_RATE = 0.05;
     const EXPIRY_BULK_DISCOUNT_RATE = 0.10;
     const EXPIRY_BULK_MAX_DAYS = 40;
 
@@ -2360,7 +2384,8 @@
         state.cart[key] = next;
       }
       if (!options || !options.silent) {
-        if (next >= WHOLESALE_MIN_QTY && previous < WHOLESALE_MIN_QTY && !product.isFee) showToast('Desconto de atacado de 2% aplicado.');
+        if (next === WHOLESALE_MIN_QTY - 1 && previous < next && !product.isFee) showToast(`Leve 3 e pague ${fmt(roundMoney(Number(product.price || 0) * (1 - WHOLESALE_DISCOUNT_RATE)))} em cada.`);
+        else if (next >= WHOLESALE_MIN_QTY && previous < WHOLESALE_MIN_QTY && !product.isFee) showToast('Desconto de atacado de 5% aplicado.');
         else showToast(next > 0 ? 'Produto atualizado na compra.' : 'Produto removido da compra.');
       }
       saveCart();
@@ -2852,7 +2877,11 @@
 
     function qtyControlHtml(id, qty) {
       if (qty > 0) {
-        return `<div class="qty-control" data-product-qty="${escapeHtml(id)}"><button type="button" data-action="dec" data-id="${escapeHtml(id)}">−</button><span>${qty}</span><button type="button" data-action="inc" data-id="${escapeHtml(id)}">+</button></div>`;
+        const product = getProductById(id);
+        const nudge = product && !product.isFee && qty > 0 && qty < WHOLESALE_MIN_QTY
+          ? `<div class="bulk-nudge">Leve 3 e pague ${fmt(roundMoney(Number(product.price || 0) * (1 - WHOLESALE_DISCOUNT_RATE)))} em cada.</div>`
+          : '';
+        return `<div class="qty-control" data-product-qty="${escapeHtml(id)}"><button type="button" data-action="dec" data-id="${escapeHtml(id)}">−</button><span>${qty}</span><button type="button" data-action="inc" data-id="${escapeHtml(id)}">+</button></div>${nudge}`;
       }
       return `<button class="add-btn" type="button" data-action="add" data-id="${escapeHtml(id)}">Adicionar</button>`;
     }
@@ -3150,6 +3179,31 @@
       updateMeta('Kits promocionais - Dona Antonia', 'Kits promocionais de supermercado com entrega em Cuiaba e Varzea Grande.', '/#/kits');
     }
 
+    let offerCountdownTimer = null;
+
+    function timeUntilMidnightLabel() {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+      const totalSeconds = Math.max(0, Math.floor((midnight - now) / 1000));
+      const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+      const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+      const seconds = String(totalSeconds % 60).padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    }
+
+    function updateOfferCountdowns() {
+      const nodes = document.querySelectorAll('[data-offer-countdown]');
+      if (!nodes.length) return;
+      const tick = () => {
+        const label = timeUntilMidnightLabel();
+        document.querySelectorAll('[data-offer-countdown]').forEach(el => { el.textContent = label; });
+      };
+      tick();
+      clearInterval(offerCountdownTimer);
+      offerCountdownTimer = setInterval(tick, 1000);
+    }
+
     function renderKitDetail(kitId) {
       const { kit, rows } = getKitLines(kitId);
       if (!kit || !kitIsVisible(kit)) {
@@ -3158,26 +3212,42 @@
       }
       const original = kitOriginalPrice(kit);
       const discount = kitDiscountPercent(kit);
+      const saving = Math.max(0, original - Number(kit.preco || 0));
+      const kitRatio = original > 0 ? Math.min(1, Number(kit.preco || 0) / original) : 1;
       app.innerHTML = `<div class="container">${pageHeader(kit.nome, '', '#/kits')}
-        <article class="basket-card wide" style="margin-bottom:12px">
-          <div class="basket-imgbox"><img src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)"></div>
-          <div class="basket-body">
-            <div class="basket-name">${escapeHtml(kit.nome)}</div>
-            <div class="basket-desc">${escapeHtml(kit.descricao || 'Kit promocional por tempo limitado.')}</div>
-            ${discount > 0 ? `<div class="product-meta"><span class="discount">-${discount}%</span></div>` : ''}
-            <div class="price-row"><div>${original > kit.preco ? `<div class="old-price">${fmt(original)}</div>` : ''}<div class="price">${fmt(kit.preco)}</div></div></div>
-            <button class="add-btn" type="button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar kit</button>
+        <article class="kit-deal-card">
+          <div class="kit-deal-top">
+            <img class="kit-deal-img" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
+            <div class="kit-deal-copy">
+              <div class="kit-badge-row">
+                ${discount > 0 ? `<span class="kit-discount-badge">-${discount}% OFF</span>` : ''}
+                <span class="kit-countdown">Atualiza em <span data-offer-countdown>--:--:--</span></span>
+              </div>
+              <h2 class="kit-deal-title">${escapeHtml(kit.nome)}</h2>
+              <div class="kit-price-box">
+                ${original > kit.preco ? `<div class="old-price">De ${fmt(original)}</div>` : ''}
+                <div class="kit-price-main">${fmt(kit.preco)}</div>
+                ${saving > 0 ? `<div class="kit-saving">Economia de ${fmt(saving)} neste combo.</div>` : ''}
+              </div>
+              <button class="add-btn" type="button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar kit promocional</button>
+            </div>
           </div>
+          <details class="kit-description-toggle">
+            <summary>Ver detalhes da oferta</summary>
+            <p>${escapeHtml(kit.descricao || 'Kit promocional por tempo limitado.')}</p>
+          </details>
         </article>
         <section class="section"><div class="section-head"><div><h2 class="section-title">Produtos do kit</h2></div></div>
           ${rows.length ? `<div class="basket-editor">${rows.map(({product, qty}) => `
-            <div class="basket-editor-row">
+            <div class="basket-editor-row kit-product-row">
               <img src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
-              <div><div class="basket-editor-name">${escapeHtml(product.name)}</div><div class="basket-editor-price">${qty}x ${fmt(product.price)} cada</div></div>
+              <div><div class="basket-editor-name">${escapeHtml(product.name)}</div><div class="basket-editor-price">${qty}x no kit</div></div>
+              <div class="kit-product-price"><s>${fmt(Number(product.price || 0) * Number(qty || 1))}</s><strong>${fmt(roundMoney(Number(product.price || 0) * Number(qty || 1) * kitRatio))}</strong><span>valor no combo</span></div>
             </div>`).join('')}</div>` : `<div class="empty"><strong>Itens nao localizados</strong>Nao conseguimos relacionar os produtos desse kit ao cadastro atual.</div>`}
         </section>
       </div>`;
       setActiveNav('home');
+      updateOfferCountdowns();
       updateMeta(`${kit.nome} - Dona Antonia`, `Compre ${kit.nome} com entrega em Cuiaba e Varzea Grande.`, `/#/kit/${encodeURIComponent(kit.id)}`);
     }
 
@@ -3674,8 +3744,8 @@
           <div class="summary-row"><span>Subtotal dos produtos</span><span>${fmt(pricing.subtotalBefore)}</span></div>
           ${pricing.couponDiscount > 0 ? `<div class="summary-row discount-row"><span>Desconto ${escapeHtml(pricing.coupon.codigo)}</span><span>− ${fmt(pricing.couponDiscount)}</span></div>` : ''}
           ${pricing.expiryBulkDiscount > 0 ? `<div class="summary-row discount-row"><span>Desconto por validade — 3+ unidades (10%)</span><span>− ${fmt(pricing.expiryBulkDiscount)}</span></div>` : ''}
-          ${pricing.wholesaleDiscount > 0 ? `<div class="summary-row discount-row"><span>Desconto de atacado (2%)</span><span>− ${fmt(pricing.wholesaleDiscount)}</span></div>` : ''}
-          <div class="wholesale-note">Comprando 3 ou mais unidades do mesmo produto, você recebe 2% de desconto automaticamente. Produtos com menos de 40 dias de validade recebem mais 10%.</div>
+          ${pricing.wholesaleDiscount > 0 ? `<div class="summary-row discount-row"><span>Desconto de atacado (5%)</span><span>− ${fmt(pricing.wholesaleDiscount)}</span></div>` : ''}
+          <div class="wholesale-note">Comprando 3 ou mais unidades do mesmo produto, você recebe 5% de desconto automaticamente. Produtos com menos de 40 dias de validade recebem mais 10%.</div>
           <div class="summary-row total"><span>Total estimado</span><span>${fmt(total)}</span></div>
           <button class="send-btn" type="button" id="btn-send-order" ${items.length && missing <= 0 && clientDetailsVisible ? '' : 'disabled'}><svg class="svg-fill" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"></path></svg>${items.length && missing > 0 ? `Faltam ${fmt(missing)}` : (!clientDetailsVisible ? 'Consulte o CPF acima' : 'Pedir no WhatsApp')}</button>
         </section>`;
@@ -3766,7 +3836,9 @@
       const dates = [];
       let cursor = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
       while (dates.length < 7) {
-        if (cursor.getDay() !== 0 && !isNationalHoliday(cursor)) dates.push(new Date(cursor));
+        const sameDay = cursor.getFullYear() === now.getFullYear() && cursor.getMonth() === now.getMonth() && cursor.getDate() === now.getDate();
+        const sameDayStillOpen = !sameDay || now.getHours() < 10;
+        if (sameDayStillOpen && cursor.getDay() !== 0 && !isNationalHoliday(cursor)) dates.push(new Date(cursor));
         cursor = addDays(cursor, 1);
       }
       return dates.map((d, i) => `<label class="radio-option"><input type="radio" name="agendamento" value="${formatDateValue(d)}" ${i === 0 ? 'checked' : ''}>${i === 0 ? 'Próxima entrega: ' : ''}${formatDateLabel(d)}</label>`).join('');
@@ -4083,9 +4155,12 @@
       const pag = $('chk-pagamento').value;
       const agendamentoObj = document.querySelector('input[name="agendamento"]:checked');
       const dataAgendamento = agendamentoObj ? agendamentoObj.value : '';
+      const agoraEntrega = getAgoraCuiaba();
+      const hojeEntrega = formatDateValue(agoraEntrega);
+      const entregaHojeForaHorario = dataAgendamento === hojeEntrega && agoraEntrega.getHours() >= 10;
 
       const errors = [
-        { id: 'agendamento-options-container', label: 'Escolha a entrega', valid: !!dataAgendamento },
+        { id: 'agendamento-options-container', label: entregaHojeForaHorario ? 'Entrega para hoje somente ate 10h da manha' : 'Escolha a entrega', valid: !!dataAgendamento && !entregaHojeForaHorario },
         { id: 'chk-nome', label: 'Nome completo', valid: !!nome },
         { id: 'chk-cpf', label: 'CPF com 11 números', valid: cpf.length === 11 },
         { id: 'chk-telefone', label: 'WhatsApp com DDD', valid: telefoneValidoBR(telefone) },
