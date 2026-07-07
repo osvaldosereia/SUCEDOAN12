@@ -1638,6 +1638,7 @@
         <div class="menu-link-list">
           <a class="menu-link" href="#/"><span>Início</span><small>Vitrine principal</small></a>
           <a class="menu-link" href="#/cestas"><span>Cestas básicas</span><small>Kits prontos e editáveis</small></a>
+          <a class="menu-link" href="#/kits"><span>Kits promocionais</span><small>Combos com desconto ativo</small></a>
           <a class="menu-link" href="#/ofertas"><span>Ofertas</span><small>Produtos em destaque</small></a>
           <a class="menu-link" href="#/categorias"><span>Categorias</span><small>Navegue por setor</small></a>
           <a class="menu-link" href="#/informacoes"><span>Empresa e políticas</span><small>Entrega, devolução e atendimento</small></a>
@@ -1671,10 +1672,11 @@
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-07-anti-pedido-antigo-v1',
+      APP_VERSION: '2026-07-07-kits-promocionais-v1',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
+      KIT_CACHE_KEY: 'da_kits_cache_v1',
       CART_STORAGE_KEY: 'da_carrinho_v1',
       CHECKOUT_CLIENT_KEY: 'da_checkout_cliente_v1',
       COUPON_STORAGE_KEY: 'da_cupom_ativo_v1',
@@ -1696,6 +1698,7 @@
       productMap: new Map(),
       productCodeMap: new Map(),
       cestas: [],
+      kits: [],
       cart: {},
       cartOrder: [],
       basketCustomizations: {},
@@ -1898,6 +1901,7 @@
       try {
         localStorage.removeItem(CONFIG.PRODUCT_CACHE_KEY);
         localStorage.removeItem(CONFIG.BASKET_CACHE_KEY);
+        localStorage.removeItem(CONFIG.KIT_CACHE_KEY);
         localStorage.removeItem(CONFIG.CART_STORAGE_KEY);
         localStorage.removeItem(CONFIG.COUPON_STORAGE_KEY);
       } catch(e) {}
@@ -2038,6 +2042,52 @@
       }
       state.cestas = [];
       if (lastError) console.warn('Cestas não disponíveis:', lastError.message || lastError);
+    }
+
+    function applyKitsData(data) {
+      const list = Array.isArray(data) ? data : Object.values(data || {});
+      state.kits = list.filter(k => k && (k.id || k.codigo) && k.nome && Array.isArray(k.produtos)).map(k => {
+        const preco = parseMoney(k.preco || k.price || k.preco_promocional || 0);
+        return {
+          id: String(k.id || k.codigo),
+          codigo: String(k.codigo || k.id || ''),
+          nome: String(k.nome || 'Kit promocional'),
+          descricao: String(k.descricao || k.description || 'Kit promocional por tempo limitado.'),
+          imagem: normalizeRelativeImage(k.imagem || k.img || k.url_imagem || 'img/logoantonia5.png'),
+          preco,
+          precoOriginal: parseMoney(k.precoOriginal || k.preco_original || k.soma_avulsa || k.valor_original || 0),
+          produtos: k.produtos || [],
+          limiteKits: Math.max(0, Math.floor(parseMoney(k.limite_kits || k.limiteKits || 0))),
+          estoqueDisponivel: Math.max(0, Math.floor(parseMoney(k.estoque_disponivel || k.estoqueDisponivel || 0))),
+          descontoPercentual: parseMoney(k.desconto_percentual || k.descontoPercentual || 0),
+          dataInicio: String(k.data_inicio || k.dataInicio || ''),
+          dataFim: String(k.data_fim || k.dataFim || ''),
+          ativo: k.ativo !== false
+        };
+      });
+    }
+
+    async function loadKits() {
+      const cache = readCache(CONFIG.KIT_CACHE_KEY);
+      const urls = ['site/kits.json', 'kits.json', 'https://donaantonia.com.br/site/kits.json'];
+      let lastError = null;
+      for (const url of urls) {
+        try {
+          const data = await fetchJson(withCacheBust(url), 5000, { cache: 'no-store' });
+          applyKitsData(data);
+          writeCache(CONFIG.KIT_CACHE_KEY, { savedAt: Date.now(), data });
+          return;
+        } catch(e) {
+          lastError = e;
+        }
+      }
+
+      if (cache && cache.data) {
+        applyKitsData(cache.data);
+        return;
+      }
+      state.kits = [];
+      if (lastError) console.warn('Kits nao disponiveis:', lastError.message || lastError);
     }
 
     function normalizeRelativeImage(value) {
@@ -2394,13 +2444,14 @@
       state.virtualFees = {};
       Object.entries(state.basketCustomizations || {}).forEach(([basketId, info]) => {
         const feeId = 'fee_' + basketId;
+        const isKit = String(info.label || '').toUpperCase().includes('KIT') || String(basketId).startsWith('kit:');
         state.virtualFees[feeId] = {
           id: feeId,
-          name: 'Ajuste de valor da cesta',
+          name: isKit ? 'Ajuste de valor do kit' : 'Ajuste de valor da cesta',
           price: Number(info.fee || 0),
           img: 'img/logoantonia5.png',
           isFee: true,
-          categoria: 'Cestas',
+          categoria: isKit ? 'Kits' : 'Cestas',
           stock: 999
         };
       });
@@ -2451,6 +2502,67 @@
         if (product && isAvailable(product)) return { product, qty: Math.max(1, Number(parsed.qty || 1)) };
       }
       return null;
+    }
+
+    function parseKitDate(value, endOfDay) {
+      const raw = String(value || '').trim();
+      if (!raw) return null;
+      const date = new Date(`${raw}${raw.includes('T') ? '' : (endOfDay ? 'T23:59:59' : 'T00:00:00')}`);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function kitDateIsActive(kit) {
+      const now = new Date();
+      const start = parseKitDate(kit.dataInicio, false);
+      const end = parseKitDate(kit.dataFim, true);
+      return (!start || now >= start) && (!end || now <= end);
+    }
+
+    function getKitLines(kitId) {
+      const kit = state.kits.find(k => String(k.id) === String(kitId) || String(k.codigo) === String(kitId));
+      if (!kit) return { kit: null, rows: [] };
+      const rows = (kit.produtos || [])
+        .map(line => findBasketProduct(line))
+        .filter(Boolean);
+      return { kit, rows };
+    }
+
+    function kitRetailTotal(kitId) {
+      const { rows } = getKitLines(kitId);
+      return rows.reduce((sum, row) => sum + Number(row.product.price || 0) * Number(row.qty || 0), 0);
+    }
+
+    function kitOriginalPrice(kit) {
+      return Math.max(Number(kit.precoOriginal || 0), kitRetailTotal(kit.id));
+    }
+
+    function kitStockCapacity(kit) {
+      if (!kit || !(kit.produtos || []).length) return 0;
+      const { rows } = getKitLines(kit.id);
+      if (rows.length !== kit.produtos.length) return 0;
+      const productCapacity = Math.min(...rows.map(row => Math.floor(Math.max(0, Number(row.product.stock || 0)) / Math.max(1, Number(row.qty || 1)))));
+      const manualLimit = Math.max(0, Math.floor(Number(kit.limiteKits || 0)));
+      const publishedStock = Math.max(0, Math.floor(Number(kit.estoqueDisponivel || 0)));
+      const limitedByManual = manualLimit > 0 ? Math.min(productCapacity, manualLimit) : productCapacity;
+      return publishedStock > 0 ? Math.min(limitedByManual, publishedStock) : limitedByManual;
+    }
+
+    function kitDiscountPercent(kit) {
+      const original = kitOriginalPrice(kit);
+      return original > Number(kit.preco || 0)
+        ? Math.round(((original - Number(kit.preco || 0)) / Math.max(original, .01)) * 100)
+        : 0;
+    }
+
+    function kitIsVisible(kit) {
+      if (!kit || kit.ativo === false || !kitDateIsActive(kit)) return false;
+      if (!Number(kit.preco || 0) || !(kit.produtos || []).length) return false;
+      if (kitStockCapacity(kit) <= 0) return false;
+      return kitDiscountPercent(kit) > 0 || Number(kit.descontoPercentual || 0) > 0;
+    }
+
+    function getActiveKits() {
+      return state.kits.filter(kitIsVisible);
     }
 
     function setBasketDraftQty(basketId, productId, qty) {
@@ -2571,6 +2683,63 @@
       updateCartUI();
       syncVisibleCards();
       openBasketConfirmation(basket, false);
+    }
+
+    function kitOriginalItemsMap(kitId) {
+      const { rows } = getKitLines(kitId);
+      return rows.reduce((map, row) => {
+        map[String(row.product.id)] = Number(map[String(row.product.id)] || 0) + Number(row.qty || 0);
+        return map;
+      }, {});
+    }
+
+    function addKitFeeToCart(kit, selectedItems) {
+      const currentProducts = kitRetailTotal(kit.id);
+      const fee = Math.round((Number(kit.preco || 0) - currentProducts + Number.EPSILON) * 100) / 100;
+      const customizationKey = 'kit:' + kit.id;
+      const feeId = 'fee_' + customizationKey;
+      const existing = state.basketCustomizations[customizationKey] || {};
+      const originalItems = kitOriginalItemsMap(kit.id);
+      const chosenItems = normalizeQuantityMap(selectedItems || originalItems);
+      const mergedOriginal = existing.originalItems
+        ? sumQuantityMaps(existing.originalItems, originalItems)
+        : originalItems;
+      const mergedSelected = existing.selectedItems
+        ? sumQuantityMaps(existing.selectedItems, chosenItems)
+        : chosenItems;
+      state.basketCustomizations[customizationKey] = {
+        name: kit.nome,
+        label: 'KIT PROMOCIONAL',
+        changed: false,
+        fee,
+        originalItems: mergedOriginal,
+        selectedItems: mergedSelected
+      };
+      if (fee !== 0) {
+        state.virtualFees[feeId] = { id: feeId, name: 'Ajuste de valor do kit', price: fee, img: kit.imagem || 'img/logoantonia5.png', isFee: true, categoria: 'Kits', stock: 999 };
+        if (!state.cartOrder.includes(feeId)) state.cartOrder.push(feeId);
+        state.cart[feeId] = Number(state.cart[feeId] || 0) + 1;
+      }
+    }
+
+    function addKitToCart(kitId) {
+      const { kit, rows } = getKitLines(kitId);
+      if (!kit || !kitIsVisible(kit)) { showToast('Kit promocional indisponivel no momento.'); return; }
+      let added = 0;
+      rows.forEach(({ product: p, qty }) => {
+        if (!p || !isAvailable(p)) return;
+        const amount = Math.max(1, Number(qty || 1));
+        const key = String(p.id);
+        if (!state.cartOrder.includes(key)) state.cartOrder.push(key);
+        state.cart[key] = Number(state.cart[key] || 0) + amount;
+        added += amount;
+      });
+      if (!added) { showToast('Nao consegui localizar os itens desse kit.'); return; }
+      addKitFeeToCart(kit, kitOriginalItemsMap(kit.id));
+      saveCart();
+      updateCartUI();
+      syncVisibleCards();
+      openBasketConfirmation(kit, false, 'kit');
     }
 
     function productScore(p, query) {
@@ -2808,9 +2977,31 @@
         </article>`;
     }
 
+    function kitCard(kit, mode) {
+      const classes = ['basket-card'];
+      const original = kitOriginalPrice(kit);
+      const discount = kitDiscountPercent(kit);
+      if (mode === 'compact') classes.push('compact');
+      if (mode === 'wide') classes.push('wide');
+      return `
+        <article class="${classes.join(' ')}">
+          <div class="basket-imgbox"><img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)"></div>
+          <div class="basket-body">
+            <div class="product-meta">${discount > 0 ? `<span class="discount">-${discount}%</span>` : '&nbsp;'}</div>
+            <div class="basket-name">${escapeHtml(kit.nome)}</div>
+            <div class="basket-desc">${escapeHtml(kit.descricao || 'Kit promocional por tempo limitado.')}</div>
+            <div class="price-row"><div>${original > kit.preco ? `<div class="old-price">${fmt(original)}</div>` : ''}<div class="price">${kit.preco ? fmt(kit.preco) : 'Ver itens'}</div></div></div>
+            <div class="basket-actions">
+              <a class="secondary-btn" href="#/kit/${encodeURIComponent(kit.id)}">Ver produtos</a>
+              <button class="add-btn" type="button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar</button>
+            </div>
+          </div>
+        </article>`;
+    }
+
     function shelf(title, caption, items, href, type) {
       if (!items || !items.length) return '';
-      const cards = items.map(item => type === 'basket' ? basketCard(item, 'compact') : productCard(item, 'compact')).join('');
+      const cards = items.map(item => type === 'kit' ? kitCard(item, 'compact') : (type === 'basket' ? basketCard(item, 'compact') : productCard(item, 'compact'))).join('');
       return `<section class="section"><div class="section-head"><div><h2 class="section-title">${escapeHtml(title)}</h2>${caption ? `<div class="section-caption">${escapeHtml(caption)}</div>` : ''}</div>${href ? `<a class="see-all" href="${href}">Ver todos</a>` : ''}</div><div class="rail">${cards}</div></section>`;
     }
 
@@ -2872,6 +3063,7 @@
     function renderHome() {
       const offers = getTopOffers(12);
       const essentials = productsByRoutine('compra-mes', 12);
+      const kits = getActiveKits();
       const heroProducts = [...offers, ...essentials].filter((p, i, arr) => arr.findIndex(x => x.id === p.id) === i).slice(0, 3);
       const html = `
         <div class="container">
@@ -2895,6 +3087,7 @@
           ${shelf('Ofertas de hoje', 'Economize nos produtos disponíveis agora.', offers, '#/ofertas')}
           ${shelf('Essenciais para sua casa', 'Os itens que não podem faltar na despensa.', essentials, '#/rotina/compra-mes')}
           ${shelf('Cestas básicas', 'Kits prontos para facilitar sua compra.', state.cestas.slice(0, 8), '#/cestas', 'basket')}
+          ${shelf('Kits promocionais', 'Combos com desconto real e disponibilidade limitada.', kits.slice(0, 8), '#/kits', 'kit')}
           ${categoryButtonsHtml()}
         </div>`;
       app.innerHTML = html;
@@ -2948,6 +3141,44 @@
     function renderCestas() {
       app.innerHTML = `<div class="container">${pageHeader('Cestas básicas', 'Escolha um kit pronto e envie pelo WhatsApp.', '#/')}${state.cestas.length ? `<div class="basket-list">${state.cestas.map(c => basketCard(c, 'wide')).join('')}</div>` : `<div class="empty"><strong>Nenhuma cesta carregada</strong>Confira se o arquivo de cestas publicado está disponível em <code>site/produtos-cesta-basica.json</code>.</div>`}</div>`;
       setActiveNav('home');
+    }
+
+    function renderKits() {
+      const kits = getActiveKits();
+      app.innerHTML = `<div class="container">${pageHeader('Kits promocionais', 'Escolha um combo com desconto e envie pelo WhatsApp.', '#/')}${kits.length ? `<div class="basket-list">${kits.map(k => kitCard(k, 'wide')).join('')}</div>` : `<div class="empty"><strong>Nenhum kit promocional ativo</strong>Confira se o arquivo <code>site/kits.json</code> foi publicado e se os kits possuem estoque, desconto e periodo valido.</div>`}</div>`;
+      setActiveNav('home');
+      updateMeta('Kits promocionais - Dona Antonia', 'Kits promocionais de supermercado com entrega em Cuiaba e Varzea Grande.', '/#/kits');
+    }
+
+    function renderKitDetail(kitId) {
+      const { kit, rows } = getKitLines(kitId);
+      if (!kit || !kitIsVisible(kit)) {
+        app.innerHTML = `<div class="container">${pageHeader('Kit nao encontrado', '', '#/kits')}<div class="empty"><strong>Kit indisponivel</strong>Volte e escolha outra promocao ativa.</div></div>`;
+        return;
+      }
+      const original = kitOriginalPrice(kit);
+      const discount = kitDiscountPercent(kit);
+      app.innerHTML = `<div class="container">${pageHeader(kit.nome, '', '#/kits')}
+        <article class="basket-card wide" style="margin-bottom:12px">
+          <div class="basket-imgbox"><img src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)"></div>
+          <div class="basket-body">
+            <div class="basket-name">${escapeHtml(kit.nome)}</div>
+            <div class="basket-desc">${escapeHtml(kit.descricao || 'Kit promocional por tempo limitado.')}</div>
+            ${discount > 0 ? `<div class="product-meta"><span class="discount">-${discount}%</span></div>` : ''}
+            <div class="price-row"><div>${original > kit.preco ? `<div class="old-price">${fmt(original)}</div>` : ''}<div class="price">${fmt(kit.preco)}</div></div></div>
+            <button class="add-btn" type="button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar kit</button>
+          </div>
+        </article>
+        <section class="section"><div class="section-head"><div><h2 class="section-title">Produtos do kit</h2></div></div>
+          ${rows.length ? `<div class="basket-editor">${rows.map(({product, qty}) => `
+            <div class="basket-editor-row">
+              <img src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
+              <div><div class="basket-editor-name">${escapeHtml(product.name)}</div><div class="basket-editor-price">${qty}x ${fmt(product.price)} cada</div></div>
+            </div>`).join('')}</div>` : `<div class="empty"><strong>Itens nao localizados</strong>Nao conseguimos relacionar os produtos desse kit ao cadastro atual.</div>`}
+        </section>
+      </div>`;
+      setActiveNav('home');
+      updateMeta(`${kit.nome} - Dona Antonia`, `Compre ${kit.nome} com entrega em Cuiaba e Varzea Grande.`, `/#/kit/${encodeURIComponent(kit.id)}`);
     }
 
     function getBasketLines(basketId) {
@@ -3038,6 +3269,55 @@
           const id = String(productId);
           if (!Object.prototype.hasOwnProperty.call(originalAggregate, id)) return '🟢 ';
           return Number(state.cart[id] || 0) !== Number(originalAggregate[id] || 0) ? '🔴 ' : '';
+        }
+      };
+    }
+
+    function buildBasketMessageContext() {
+      const entries = Object.entries(state.basketCustomizations || {});
+      const originalAggregate = {};
+      const basketData = entries.map(([basketId, info]) => {
+        const original = Object.keys(info.originalItems || {}).length
+          ? normalizeQuantityMap(info.originalItems)
+          : basketOriginalItemsMap(basketId);
+        const selected = Object.keys(info.selectedItems || {}).length
+          ? normalizeQuantityMap(info.selectedItems)
+          : (state.basketDrafts[basketId] ? normalizeQuantityMap(state.basketDrafts[basketId]) : original);
+        Object.entries(original).forEach(([id, qty]) => {
+          originalAggregate[id] = Number(originalAggregate[id] || 0) + Number(qty || 0);
+        });
+        return { basketId, info, original, selected };
+      });
+      const hasBasket = basketData.length > 0;
+      const actualForOriginal = {};
+      Object.keys(originalAggregate).forEach(id => {
+        actualForOriginal[id] = Math.max(0, Number(state.cart[id] || 0));
+      });
+      const aggregateChanged = quantityMapsDiffer(originalAggregate, actualForOriginal);
+      const headers = basketData.map(({info, original, selected}) => {
+        const changed = basketData.length === 1
+          ? aggregateChanged
+          : (!!info.changed || quantityMapsDiffer(original, selected));
+        const label = String(info.label || 'CESTA').toUpperCase();
+        const status = label.includes('KIT') ? 'PROMOCIONAL' : (changed ? 'ALTERADA' : 'PADRAO');
+        return `*${label}: ${String(info.name || label).toUpperCase()} - ${status}*`;
+      });
+      const removed = Object.entries(originalAggregate).reduce((list, [id, originalQty]) => {
+        const removedQty = Math.max(0, Number(originalQty || 0) - Number(state.cart[id] || 0));
+        if (removedQty <= 0) return list;
+        const product = getProductById(id);
+        list.push(`${removedQty}x ${abbreviateProductName(product ? product.name : id, 10)}`);
+        return list;
+      }, []);
+      return {
+        hasBasket,
+        headers,
+        removed,
+        markerFor(productId) {
+          if (!hasBasket) return '';
+          const id = String(productId);
+          if (!Object.prototype.hasOwnProperty.call(originalAggregate, id)) return '';
+          return Number(state.cart[id] || 0) !== Number(originalAggregate[id] || 0) ? 'ALT ' : '';
         }
       };
     }
@@ -3219,6 +3499,8 @@
       if (parts[0] === 'produto') return renderProduct(parts.slice(1).join('/'));
       if (parts[0] === 'cesta') return renderBasketDetail(parts.slice(1).join('/'));
       if (parts[0] === 'cestas') return renderCestas();
+      if (parts[0] === 'kit') return renderKitDetail(parts.slice(1).join('/'));
+      if (parts[0] === 'kits') return renderKits();
       if (parts[0] === 'busca') return renderSearch(state.searchQuery || decodeURIComponent(parts.slice(1).join(' ')));
       if (parts[0] === 'informacoes') return renderInfo();
       if (parts[0] === 'campanha-cupom') {
@@ -3500,6 +3782,20 @@
       $('basket-confirm-message').textContent = `${basket.nome} foi colocada na sua compra.`;
       const count = cartCount();
       $('basket-confirm-summary').textContent = `${count} ${count === 1 ? 'item' : 'itens'} na compra · Total ${fmt(subtotalCart(true))}`;
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => $('basket-confirm-continue')?.focus());
+    }
+
+    function openBasketConfirmation(basket, changed, type) {
+      const overlay = $('basket-confirm-overlay');
+      if (!overlay || !basket) return;
+      const isKit = type === 'kit';
+      basketConfirmPreviousFocus = document.activeElement;
+      $('basket-confirm-title').textContent = isKit ? 'Kit promocional adicionado!' : (changed ? 'Cesta alterada adicionada!' : 'Cesta adicionada!');
+      $('basket-confirm-message').textContent = `${basket.nome} foi ${isKit ? 'colocado' : 'colocada'} na sua compra.`;
+      const count = cartCount();
+      $('basket-confirm-summary').textContent = `${count} ${count === 1 ? 'item' : 'itens'} na compra - Total ${fmt(subtotalCart(true))}`;
       overlay.classList.add('show');
       overlay.setAttribute('aria-hidden', 'false');
       requestAnimationFrame(() => $('basket-confirm-continue')?.focus());
@@ -4025,6 +4321,7 @@
         if (action === 'inc') addToCart(id, 1);
         if (action === 'dec') setQty(id, Number(state.cart[id] || 0) - 1);
         if (action === 'add-basket') addBasketToCart(id);
+        if (action === 'add-kit') addKitToCart(id);
         if (action === 'basket-inc') setBasketDraftQty(btn.getAttribute('data-basket-id'), id, Number((state.basketDrafts[btn.getAttribute('data-basket-id')] || {})[id] || 0) + 1);
         if (action === 'basket-dec') setBasketDraftQty(btn.getAttribute('data-basket-id'), id, Number((state.basketDrafts[btn.getAttribute('data-basket-id')] || {})[id] || 0) - 1);
         if (action === 'add-basket-custom') addBasketCustomToCart(id);
@@ -4089,7 +4386,7 @@
       loadCart();
       updateCartUI();
       try {
-        await Promise.all([loadProducts(), loadCestas(), loadCoupons()]);
+        await Promise.all([loadProducts(), loadCestas(), loadKits(), loadCoupons()]);
         rebuildVirtualFees();
         removeMissingCartItems();
         state.isReady = true;
