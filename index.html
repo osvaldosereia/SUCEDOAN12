@@ -1600,7 +1600,7 @@
     .carousel-more-card span { color: var(--muted); font-size: 12px; font-weight: 800; }
     .kit-card-countdown { width: max-content; max-width: 100%; padding: 6px 9px; border-radius: 999px; background: #111827; color: #fff; font-size: 11px; font-weight: 900; }
     .kit-deal-top-stacked { display: grid; grid-template-columns: 1fr; }
-    .kit-deal-top-stacked .kit-deal-img { width: 100%; height: 260px; aspect-ratio: auto; }
+    .kit-deal-top-stacked .kit-deal-img { width: 100%; height: auto; aspect-ratio: 1 / 1; }
     .kit-description-toggle p { white-space: pre-line; }
     .kit-product-row { grid-template-columns: 70px minmax(0,1fr) minmax(96px,auto); }
     .kit-product-row .basket-editor-name { min-height: 50px; -webkit-line-clamp: 3; }
@@ -1984,7 +1984,6 @@
 
     function clearSavedCatalogAndCart() {
       try {
-        localStorage.removeItem(CONFIG.PRODUCT_CACHE_KEY);
         localStorage.removeItem(CONFIG.BASKET_CACHE_KEY);
         localStorage.removeItem(CONFIG.KIT_CACHE_KEY);
         localStorage.removeItem(CONFIG.CART_STORAGE_KEY);
@@ -2078,6 +2077,7 @@
     }
 
     async function loadProducts() {
+      const cache = readCache(CONFIG.PRODUCT_CACHE_KEY);
       try {
         const data = await fetchJson(withCacheBust(CONFIG.PRODUCT_URL), 9000, { cache: 'no-store' });
         normalizeProducts(data);
@@ -2085,6 +2085,13 @@
         state.catalogSource = 'firebase-live';
         writeCache(CONFIG.PRODUCT_CACHE_KEY, { savedAt: Date.now(), appVersion: CONFIG.APP_VERSION, data });
       } catch (err) {
+        if (cache && cache.data) {
+          normalizeProducts(cache.data);
+          state.catalogLoadedAt = Number(cache.savedAt || 0);
+          state.catalogSource = 'cache-fallback';
+          console.warn('Firebase indisponivel. Usando cache de produtos:', err.message || err);
+          return;
+        }
         state.catalogLoadedAt = 0;
         state.catalogSource = '';
         console.error('Erro ao carregar Firebase:', err);
@@ -3978,6 +3985,17 @@
       return d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
     }
 
+    function deliveryOptionText(date, index, now) {
+      const sameDay = date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+      const tomorrow = addDays(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0), 1);
+      const isTomorrow = date.getFullYear() === tomorrow.getFullYear() && date.getMonth() === tomorrow.getMonth() && date.getDate() === tomorrow.getDate();
+      const weekday = date.toLocaleDateString('pt-BR', { weekday: 'long' });
+      const dayMonth = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      if (sameDay) return { title: `Hoje, ${weekday}`, detail: 'No periodo da tarde' };
+      if (isTomorrow) return { title: `Amanha, ${weekday}`, detail: `Dia ${dayMonth}` };
+      return { title: `${weekday}`, detail: `Dia ${dayMonth}` };
+    }
+
     function easterSunday(year) {
       const a = year % 19;
       const b = Math.floor(year / 100);
@@ -4018,9 +4036,8 @@
         cursor = addDays(cursor, 1);
       }
       return `<div class="delivery-picker">${dates.map((d, i) => {
-        const label = formatDateLabel(d);
-        const parts = label.split(',');
-        return `<label class="delivery-option"><input type="radio" name="agendamento" value="${formatDateValue(d)}" ${i === 0 ? 'checked' : ''}><strong>${i === 0 ? 'Proxima entrega' : parts[0]}</strong><span>${(parts[1] || label).trim()}</span></label>`;
+        const opt = deliveryOptionText(d, i, now);
+        return `<label class="delivery-option"><input type="radio" name="agendamento" value="${formatDateValue(d)}" ${i === 0 ? 'checked' : ''}><strong>${escapeHtml(opt.title)}</strong><span>${escapeHtml(opt.detail)}</span></label>`;
       }).join('')}</div>`;
     }
 
@@ -4270,6 +4287,72 @@
         const message = err && err.name === 'AbortError'
           ? 'Demorou demais. Tente de novo.'
           : (err.message || 'Não foi possível buscar seus dados agora.');
+        setLookupStatus(message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    }
+
+    async function lookupClientByCpf(btn) {
+      const cpfEl = $('chk-cpf');
+      const cpf = limparCPF(cpfEl && cpfEl.value);
+      if (cpf.length !== 11) {
+        if (cpfEl) cpfEl.classList.add('invalid');
+        setLookupStatus('Digite os 11 numeros do CPF.', 'error');
+        return;
+      }
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = 'Consultando...';
+      setLookupStatus('Consultando cadastro no Bling...', 'warning');
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000);
+        const body = new URLSearchParams({ cpf });
+        const response = await fetch(CONFIG.CLIENT_LOOKUP_WEBHOOK_URL, {
+          method: 'POST',
+          body,
+          cache: 'no-store',
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+        const text = await response.text();
+        let result;
+        try { result = JSON.parse(text); }
+        catch(e) {
+          if (String(text || '').trim().toLowerCase() === 'accepted') {
+            throw new Error('Nao conseguimos buscar seus dados agora. Tente novamente.');
+          }
+          throw new Error('Nao conseguimos buscar seus dados agora.');
+        }
+        if (!response.ok || result.sucesso === false) throw new Error(result.erro || 'Nao foi possivel buscar seus dados agora.');
+        clearCheckoutClientDetails();
+        if (!result.encontrado || !result.cliente) {
+          state.customerLookupStatus = 'new';
+          state.customerLookupCpf = cpf;
+          renderCheckout();
+          const cpfAfter = $('chk-cpf');
+          if (cpfAfter) cpfAfter.value = formatarCPF(cpf);
+          setLookupStatus('CPF nao cadastrado. Complete os dados para entrega.', 'warning');
+          return;
+        }
+        state.customerLookupStatus = 'existing';
+        state.customerLookupCpf = cpf;
+        renderCheckout();
+        fillClientFromBling(result.cliente);
+        setLookupStatus('Cadastro encontrado. Confira o endereco e marque a confirmacao.', 'success');
+        if (getActiveCoupon() && getActiveCoupon().grupo === 'cliente_novo') {
+          state.couponMessage = 'Este cupom e exclusivo para a primeira compra.';
+          state.couponMessageType = 'error';
+          renderCheckout();
+          fillClientFromBling(result.cliente);
+          showToast('Cupom de primeira compra nao elegivel.');
+        }
+      } catch(err) {
+        const message = err && err.name === 'AbortError'
+          ? 'Demorou demais. Tente de novo.'
+          : (err.message || 'Nao foi possivel buscar seus dados agora.');
         setLookupStatus(message, 'error');
       } finally {
         btn.disabled = false;
@@ -4642,7 +4725,8 @@
       loadCart();
       updateCartUI();
       try {
-        await Promise.all([loadProducts(), loadCestas(), loadKits(), loadCoupons()]);
+        await loadProducts();
+        await Promise.allSettled([loadCestas(), loadKits(), loadCoupons()]);
         rebuildVirtualFees();
         removeMissingCartItems();
         state.isReady = true;
