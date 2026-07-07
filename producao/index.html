@@ -252,7 +252,7 @@
         <button class="btn primary" type="button" data-action="apply-search">Buscar</button>
       </div>
       <button class="btn gold top-filter-btn" type="button" data-action="open-filter-panel">☷ Filtros</button>
-      <button class="btn expiry-alert-btn" id="expiryAlertBtn" type="button" data-action="open-expiry-alert" hidden title="Ver produtos vencidos ou com até 15 dias de validade"><span class="expiry-alert-label">Validade crítica</span><span class="expiry-alert-count" id="expiryAlertCount">0</span></button>
+      <button class="btn expiry-alert-btn" id="expiryAlertBtn" type="button" data-action="open-expiry-alert" hidden title="Ver produtos vencidos ou com até 2 dias de validade"><span class="expiry-alert-label">Validade crítica</span><span class="expiry-alert-count" id="expiryAlertCount">0</span></button>
       <button class="btn blue top-save top-firebase-btn" type="button" data-action="save-products-firebase" title="Salvar todos os produtos no Firebase">☁ <span class="top-save-label">Salvar Firebase</span></button>
       <button class="btn green top-save" type="button" data-action="save-everything" title="Salvar produtos, metadados, cestas e kits">✓ <span class="top-save-label">Salvar geral</span></button>
     </div>
@@ -348,9 +348,9 @@
         <div class="field"><label>Agrupar por</label><select class="select" id="bulkPriceScope"><option value="categoria">Categoria</option><option value="subcategoria">Subcategoria</option><option value="marca">Marca</option></select></div>
         <div class="field"><label>Selecionar grupo</label><select class="select" id="bulkPriceValue"></select></div>
         <div class="field"><label>Operação</label><select class="select" id="bulkPriceOperation"><option value="discount">Aplicar desconto</option><option value="increase">Aplicar acréscimo</option></select></div>
-        <div class="field"><label>Percentual</label><input class="input" id="bulkPricePercent" type="number" min=".01" max="40" step=".01" value="5" inputmode="decimal"></div>
+        <div class="field"><label>Percentual</label><input class="input" id="bulkPricePercent" type="number" min=".01" max="50" step=".01" value="5" inputmode="decimal"></div>
       </div>
-      <div class="notice gold" id="bulkPriceRuleNote" style="margin-top:10px">Descontos em massa respeitam o limite máximo de 40%.</div>
+      <div class="notice gold" id="bulkPriceRuleNote" style="margin-top:10px">Descontos em massa respeitam o limite máximo de 50%.</div>
       <div class="bulk-price-summary" id="bulkPriceSummary"></div>
       <div class="bulk-price-table-wrap"><table class="bulk-price-table"><thead><tr><th>Produto</th><th>Código</th><th>Preço atual</th><th>Novo preço</th></tr></thead><tbody id="bulkPricePreview"></tbody></table></div>
       <div class="bulk-price-actions"><button class="btn" type="button" data-action="close-bulk-price">Cancelar</button><button class="btn primary" id="bulkPriceApplyBtn" type="button" data-action="apply-bulk-price">Aplicar reajuste</button></div>
@@ -1527,20 +1527,21 @@
   };
   renderKitRow=function(k,item){const it=parseBasketItem(item),p=productByCode(it.codigo),units=p?Math.floor(Math.max(0,toNum(p.estoque))/Math.max(1,toNum(it.qtd))):0;return `<div class="basket-row ${units<1?"low-stock":""}"><img src="${esc(p?getImg(p):PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(p?getName(p):"Produto não encontrado")}</strong><div class="tiny">${esc(it.codigo)} ${p?`· ${brl(p.preco)}`:""}</div><div class="meta-line" style="margin-top:6px"><span class="chip ${units>0?"green":"red"}">Sustenta ${units} kit(s)</span>${p?`<span class="chip">Estoque real: ${esc(toNum(p.estoque))}</span>`:""}</div></div><div class="field"><label>Qtd/kit</label><input class="input" data-action="kit-qtd" data-code="${esc(it.codigo)}" value="${esc(it.qtd)}"></div><button class="btn small blue" data-action="start-kit-replace" data-code="${esc(it.codigo)}">Substituir</button><button class="btn small red" data-action="remove-from-kit" data-code="${esc(it.codigo)}">Remover</button></div>`};
 
-  const MAX_PRODUCT_DISCOUNT=40;
-  const CRITICAL_EXPIRY_DAYS=15;
+  const MAX_PRODUCT_DISCOUNT=50;
+  const CRITICAL_EXPIRY_DAYS=2;
   const EXPIRY_DISCOUNT_TIERS=[
-    {maxDays:30,percent:40},
-    {maxDays:45,percent:35},
-    {maxDays:60,percent:30},
-    {maxDays:75,percent:25},
-    {maxDays:90,percent:20},
-    {maxDays:105,percent:10},
-    {maxDays:120,percent:5}
+    {maxDays:7,percent:50},
+    {maxDays:15,percent:40},
+    {maxDays:31,percent:35},
+    {maxDays:46,percent:30},
+    {maxDays:65,percent:25},
+    {maxDays:76,percent:20},
+    {maxDays:91,percent:10},
+    {maxDays:105,percent:5}
   ];
   function parseExpiryDate(value){const s=String(value||"").trim();if(!s)return null;let d;if(/^\d{4}-\d{2}-\d{2}/.test(s)){const [yy,mm,dd]=s.slice(0,10).split("-").map(Number);d=new Date(yy,mm-1,dd,23,59,59,999)}else if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){const [dd,mm,yy]=s.split("/").map(Number);d=new Date(yy,mm-1,dd,23,59,59,999)}else d=new Date(s);return Number.isNaN(d.getTime())?null:d}
   function expiryDays(value){const d=parseExpiryDate(value);if(!d)return null;d.setHours(0,0,0,0);const today=new Date();today.setHours(0,0,0,0);return Math.round((d-today)/86400000)}
-  function expiryDiscount(value){const days=expiryDays(value);if(days===null||days<=CRITICAL_EXPIRY_DAYS||days>120)return 0;return EXPIRY_DISCOUNT_TIERS.find(tier=>days<=tier.maxDays)?.percent||0}
+  function expiryDiscount(value){const days=expiryDays(value);if(days===null||days<=CRITICAL_EXPIRY_DAYS)return 0;return EXPIRY_DISCOUNT_TIERS.find(tier=>days<=tier.maxDays)?.percent||0}
   function capOfferAtMaximumDiscount(p){
     const regular=roundCatalogMoney(p.preco),offer=roundCatalogMoney(p.preco_oferta);
     if(!regular||!offer)return false;
@@ -1607,7 +1608,7 @@
       const ncmQuery=encodeURIComponent(`NCM ${[getName(p),p.marca,p.gtin||p.ean].filter(Boolean).join(" ")}`);
       ncmInput.insertAdjacentHTML("afterend",`<a class="btn blue small" style="margin-top:7px" href="https://www.google.com/search?q=${ncmQuery}" target="_blank" rel="noopener">Buscar NCM ↗</a>`);
     }
-    const validity=[...$("#productModalBody").querySelectorAll("[data-pfield]")].find(x=>x.dataset.pfield==="validade");if(validity){validity.type="date";validity.insertAdjacentHTML("afterend",`<div class="expiry-help">Regra automática: ≤15d estoque zero · 16–30d 40% · 31–45d 35% · 46–60d 30% · 61–75d 25% · 76–90d 20% · 91–105d 10% · 106–120d 5%. Desconto máximo: 40%.</div>`)}
+    const validity=[...$("#productModalBody").querySelectorAll("[data-pfield]")].find(x=>x.dataset.pfield==="validade");if(validity){validity.type="date";validity.insertAdjacentHTML("afterend",`<div class="expiry-help">Regra automática: ≤2d estoque zero · 3–7d 50% · 8–15d 40% · 16–31d 35% · 32–46d 30% · 47–65d 25% · 66–76d 20% · 77–91d 10% · 92–105d 5%. Desconto máximo: 50%.</div>`)}
   };
 
   prepareProductImageBlob=async function(file){return compressImageToWebp(file,{maxBytes:30*1024,maxDimension:300,square:true})};
