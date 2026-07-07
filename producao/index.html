@@ -1245,7 +1245,7 @@
     const dd=String(d.getDate()).padStart(2,'0'), mm=String(d.getMonth()+1).padStart(2,'0'), yy=d.getFullYear();
     return `${dd}/${mm}/${yy}`;
   }
-  function blingCategoriaProduto(p){return [p.categoria,p.subcategoria,p.subsubcategoria].map(x=>String(x||'').trim()).filter(Boolean).join('>>')}
+  function blingCategoriaProduto(p){return 'GERAL'}
   function blingLocalizacao(p){return String(p.localizacao||p.localização||[p.gondola,p.prateleira].map(x=>String(x||'').trim()).filter(Boolean).join(' - ')||'').trim()}
   function blingRows(produtos=state.produtos){
     return [...(produtos||[])].sort((a,b)=>getCode(a).localeCompare(getCode(b),'pt-BR')).map(p=>({
@@ -1261,8 +1261,8 @@
       'Situação':isActive(p)?'Ativo':'Inativo',
       'Estoque':blingInt(p.estoque)||'0',
       'Preço de custo':blingMoney(p.preco_custo||p.custo),
-      'Cód no fornecedor':p.cod_fornecedor||p.codigo_fornecedor||'',
-      'Fornecedor':p.fornecedor||'',
+      'Cód no fornecedor':'',
+      'Fornecedor':'',
       'Localização':blingLocalizacao(p),
       'Estoque maximo':blingInt(p.estoque_maximo||p.estoqueMaximo),
       'Estoque minimo':blingInt(p.estoque_minimo||p.estoqueMinimo),
@@ -1274,7 +1274,7 @@
       'Altura do Produto':blingNumber(p.altura||p.altura_produto),
       'Profundidade do produto':blingNumber(p.profundidade||p.comprimento||p.profundidade_produto),
       'Data Validade':blingDate(p.validade||p.data_validade),
-      'Descrição do Produto no Fornecedor':p.descricao_fornecedor||p.descrição_fornecedor||getName(p),
+      'Descrição do Produto no Fornecedor':'',
       'Descrição Complementar':p.descricao||p.descrição||'',
       'Itens p/ caixa':blingInt(p.itens_caixa||p.itens_por_caixa)||'1',
       'Produto Variação':p.produto_variacao||p.produto_variação||'Produto',
@@ -1286,7 +1286,7 @@
       'Tributos':p.tributos||'',
       'Código Pai':p.codigo_pai||'',
       'Código Integração':p.codigo_integracao||p.codigo_integração||getKey(p),
-      'Grupo de produtos':p.grupo_produtos||p.grupo||p.categoria||'',
+      'Grupo de produtos':'GERAL',
       'Marca':p.marca||'',
       'CEST':p.cest||p.CEST||'',
       'Volumes':blingInt(p.volumes),
@@ -1294,7 +1294,7 @@
       'Cross-Docking':blingInt(p.cross_docking),
       'URL Imagens Externas':absolutePublicUrl(p.url_imagem||p.imagem||''),
       'Link Externo':p.link_externo||'',
-      'Meses Garantia no Fornecedor':blingInt(p.meses_garantia||p.garantia_meses),
+      'Meses Garantia no Fornecedor':'',
       'Clonar dados do pai':p.clonar_dados_pai||'Não',
       'Condição do produto':p.condicao||p.condição||'NOVO',
       'Frete Grátis':p.frete_gratis||p.frete_grátis||'Não',
@@ -1306,7 +1306,7 @@
       'Valor base ICMS ST para retenção':blingMoney(p.valor_base_icms_st_retencao||p.valor_base_icms_st_retenção),
       'Valor ICMS ST para retenção':blingMoney(p.valor_icms_st_retencao||p.valor_icms_st_retenção),
       'Valor ICMS próprio do substituto':blingMoney(p.valor_icms_proprio_substituto||p.valor_icms_próprio_substituto),
-      'Categoria do produto':blingCategoriaProduto(p),
+      'Categoria do produto':'GERAL',
       'Informações Adicionais':p.informacoes_adicionais||p.informações_adicionais||''
     }));
   }
@@ -1320,7 +1320,7 @@
       const name=chunks.length===1?'produtos-bling.csv':`produtos-bling-parte-${String(index+1).padStart(2,'0')}.csv`;
       setTimeout(()=>download(name, buildBlingCsv(chunk), 'text/csv;charset=utf-8'), index*350);
     });
-    setTimeout(()=>alert(`Exportação Bling concluída: ${rows.length} produto(s) em ${chunks.length} arquivo(s), com no máximo ${BLING_MAX_PRODUTOS_POR_ARQUIVO} produtos por arquivo.`), chunks.length*350+80);
+    setTimeout(()=>alert(`Exportação Bling concluída: ${rows.length} produto(s) em ${chunks.length} arquivo(s), com no máximo ${BLING_MAX_PRODUTOS_POR_ARQUIVO} produtos por arquivo. Categoria: GERAL. Fornecedor em branco.`), chunks.length*350+80);
   }
   function exportBlingJson(){download('produtos-bling.json', blingRows(state.produtos))}
 
