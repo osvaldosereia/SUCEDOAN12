@@ -7,6 +7,9 @@
   <meta name="description" id="meta-description" content="Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="theme-color" content="#ffffff">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="format-detection" content="telephone=yes">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Dona Antônia">
@@ -1668,12 +1671,15 @@
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
+      APP_VERSION: '2026-07-07-anti-pedido-antigo-v1',
+      VERSION_STORAGE_KEY: 'da_app_version_v1',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
       CART_STORAGE_KEY: 'da_carrinho_v1',
       CHECKOUT_CLIENT_KEY: 'da_checkout_cliente_v1',
       COUPON_STORAGE_KEY: 'da_cupom_ativo_v1',
       COUPON_URLS: ['cuponsativos.json', 'site/cuponsativos.json'],
+      CART_MAX_AGE_MS: 6 * 60 * 60 * 1000,
       MIN_ORDER: 75,
       DEFAULT_DDD: '65'
     };
@@ -1706,6 +1712,8 @@
       customerLookupCpf: '',
       checkoutOfferLimit: 12,
       checkoutOfferScrollLeft: 0,
+      catalogLoadedAt: 0,
+      catalogSource: '',
       isReady: false
     };
 
@@ -1886,6 +1894,25 @@
       try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
     }
 
+    function clearSavedCatalogAndCart() {
+      try {
+        localStorage.removeItem(CONFIG.PRODUCT_CACHE_KEY);
+        localStorage.removeItem(CONFIG.BASKET_CACHE_KEY);
+        localStorage.removeItem(CONFIG.CART_STORAGE_KEY);
+        localStorage.removeItem(CONFIG.COUPON_STORAGE_KEY);
+      } catch(e) {}
+    }
+
+    function enforceAppVersion() {
+      try {
+        const current = localStorage.getItem(CONFIG.VERSION_STORAGE_KEY);
+        if (current !== CONFIG.APP_VERSION) {
+          clearSavedCatalogAndCart();
+          localStorage.setItem(CONFIG.VERSION_STORAGE_KEY, CONFIG.APP_VERSION);
+        }
+      } catch(e) {}
+    }
+
     function withCacheBust(url) {
       const separator = String(url).includes('?') ? '&' : '?';
       return `${url}${separator}v=${Date.now()}`;
@@ -1898,7 +1925,11 @@
         const res = await fetch(url, {
           cache: options && options.cache ? options.cache : 'default',
           signal: controller.signal,
-          headers: { Accept: 'application/json' }
+          headers: {
+            Accept: 'application/json',
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache'
+          }
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
@@ -1958,16 +1989,15 @@
     }
 
     async function loadProducts() {
-      const cache = readCache(CONFIG.PRODUCT_CACHE_KEY);
       try {
         const data = await fetchJson(withCacheBust(CONFIG.PRODUCT_URL), 9000, { cache: 'no-store' });
         normalizeProducts(data);
-        writeCache(CONFIG.PRODUCT_CACHE_KEY, { savedAt: Date.now(), data });
+        state.catalogLoadedAt = Date.now();
+        state.catalogSource = 'firebase-live';
+        writeCache(CONFIG.PRODUCT_CACHE_KEY, { savedAt: Date.now(), appVersion: CONFIG.APP_VERSION, data });
       } catch (err) {
-        if (cache && cache.data) {
-          normalizeProducts(cache.data);
-          return;
-        }
+        state.catalogLoadedAt = 0;
+        state.catalogSource = '';
         console.error('Erro ao carregar Firebase:', err);
         throw err;
       }
@@ -2028,6 +2058,13 @@
       try {
         const saved = JSON.parse(localStorage.getItem(CONFIG.CART_STORAGE_KEY) || 'null');
         if (!saved || typeof saved !== 'object') return;
+        const savedAt = Number(saved.savedAt || 0);
+        const expired = !savedAt || (Date.now() - savedAt) > CONFIG.CART_MAX_AGE_MS;
+        const wrongVersion = saved.appVersion && saved.appVersion !== CONFIG.APP_VERSION;
+        if (expired || wrongVersion) {
+          localStorage.removeItem(CONFIG.CART_STORAGE_KEY);
+          return;
+        }
         const cart = saved.cart && typeof saved.cart === 'object' ? saved.cart : {};
         const order = Array.isArray(saved.cartOrder) ? saved.cartOrder : Object.keys(cart);
         order.concat(Object.keys(cart)).forEach(id => {
@@ -2046,6 +2083,7 @@
     function saveCart() {
       writeCache(CONFIG.CART_STORAGE_KEY, {
         savedAt: Date.now(),
+        appVersion: CONFIG.APP_VERSION,
         cart: state.cart,
         cartOrder: state.cartOrder,
         basketCustomizations: state.basketCustomizations,
@@ -2252,7 +2290,16 @@
     function setQty(id, qty, options) {
       const key = String(id);
       const product = getProductById(key);
-      if (!product) return;
+      if (!product || (!product.isFee && !isAvailable(product))) {
+        delete state.cart[key];
+        state.cartOrder = state.cartOrder.filter(x => String(x) !== key);
+        saveCart();
+        updateCartUI();
+        syncVisibleCards();
+        if (!options || !options.silent) showToast('Produto indisponível removido da compra.');
+        if ($('checkout-drawer').classList.contains('open')) renderCheckout();
+        return;
+      }
       const previous = Number(state.cart[key] || 0);
       const next = Math.max(0, parseInt(qty, 10) || 0);
       if (next <= 0) {
@@ -2291,13 +2338,56 @@
       showToast('Compra limpa.');
     }
 
-    function removeMissingCartItems() {
+    function removeMissingCartItems(options) {
       let changed = false;
+      const removed = [];
       Object.keys(state.cart).forEach(id => {
-        if (!getProductById(id)) { delete state.cart[id]; changed = true; }
+        const product = getProductById(id);
+        const invalid = !product || (!product.isFee && !isAvailable(product));
+        if (invalid) {
+          removed.push(product && product.name ? product.name : id);
+          delete state.cart[id];
+          changed = true;
+        }
       });
-      state.cartOrder = state.cartOrder.filter(id => state.cart[id] && getProductById(id));
-      if (changed) saveCart();
+      state.cartOrder = state.cartOrder.filter(id => {
+        const product = getProductById(id);
+        return state.cart[id] && product && (product.isFee || isAvailable(product));
+      });
+      if (changed) {
+        Object.keys(state.cart).forEach(id => {
+          if (String(id).startsWith('fee_')) delete state.cart[id];
+        });
+        state.cartOrder = state.cartOrder.filter(id => !String(id).startsWith('fee_'));
+        state.basketCustomizations = {};
+        state.basketDrafts = {};
+        rebuildVirtualFees();
+        saveCart();
+        updateCartUI();
+        syncVisibleCards();
+        if (!options || !options.silent) showToast('Atualizamos sua compra. Produto indisponível foi removido.');
+      }
+      return removed;
+    }
+
+    async function validateLiveCatalogBeforeOrder() {
+      try {
+        await loadProducts();
+      } catch(e) {
+        return {
+          ok: false,
+          reason: 'Não consegui conferir o catálogo atual. Para evitar produto antigo, o pedido não será enviado agora.'
+        };
+      }
+      const removed = removeMissingCartItems({ silent: true });
+      if (removed.length) {
+        return {
+          ok: false,
+          removed,
+          reason: 'Algum produto saiu do site, ficou sem estoque ou foi inativado. Removemos da compra antes do envio.'
+        };
+      }
+      return { ok: true, removed: [] };
     }
 
     function rebuildVirtualFees() {
@@ -3229,7 +3319,8 @@
     }
 
     function renderCheckout() {
-      const items = getCartItems().filter(i => !i.product.isFee);
+      removeMissingCartItems({ silent: true });
+      const items = getCartItems().filter(i => !i.product.isFee && isAvailable(i.product));
       const pricing = cartPricing(true);
       const total = pricing.total;
       const missing = Math.max(CONFIG.MIN_ORDER - pricing.subtotalBefore, 0);
@@ -3650,12 +3741,35 @@
     }
 
     async function sendOrder(btn) {
-      const items = getCartItems();
-      if (!items.filter(i => !i.product.isFee).length) return;
+      const original = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Conferindo produtos...';
+      }
+
+      const liveCheck = await validateLiveCatalogBeforeOrder();
+      if (!liveCheck.ok) {
+        if (liveCheck.removed && liveCheck.removed.length) {
+          renderCheckout();
+          showToast('Produto indisponível removido. Revise a compra.');
+        } else {
+          showToast(liveCheck.reason);
+        }
+        if (btn) { btn.disabled = false; btn.innerHTML = original; }
+        return;
+      }
+
+      const items = getCartItems().filter(i => i.product.isFee || isAvailable(i.product));
+      if (!items.filter(i => !i.product.isFee).length) {
+        if (btn) { btn.disabled = false; btn.innerHTML = original; }
+        renderCheckout();
+        return;
+      }
       const pricing = cartPricing(true);
       const totalAtual = pricing.subtotalBefore;
       if (totalAtual < CONFIG.MIN_ORDER) {
         showToast(`Faltam ${fmt(CONFIG.MIN_ORDER - totalAtual)}.`);
+        if (btn) { btn.disabled = false; btn.innerHTML = original; }
         return;
       }
       const nome = $('chk-nome').value.trim();
@@ -3688,12 +3802,14 @@
         { id: 'chk-pagamento', label: 'Pagamento', valid: !!pag },
       ].filter(e => !e.valid);
       document.querySelectorAll('.field.invalid').forEach(el => el.classList.remove('invalid'));
-      if (errors.length) { showCheckoutErrors(errors); return; }
+      if (errors.length) {
+        showCheckoutErrors(errors);
+        if (btn) { btn.disabled = false; btn.innerHTML = original; }
+        return;
+      }
 
       saveCheckoutClient();
-      btn.disabled = true;
-      const original = btn.innerHTML;
-      btn.textContent = 'Processando...';
+      if (btn) btn.textContent = 'Processando...';
 
       const orderId = String(Date.now()).slice(-6);
       let itemsTxt = '';
@@ -3824,7 +3940,7 @@
       abrirWhatsAppPedido(msg);
       closeCheckout();
       showToast('Pedido pronto no WhatsApp.');
-      setTimeout(() => { btn.disabled = false; btn.innerHTML = original; }, 1500);
+      setTimeout(() => { if (btn) { btn.disabled = false; btn.innerHTML = original; } }, 1500);
     }
 
     function normalizarPagamentoParaBling(pagamento) {
@@ -3969,6 +4085,7 @@
 
     async function init() {
       bindEvents();
+      enforceAppVersion();
       loadCart();
       updateCartUI();
       try {
