@@ -3415,13 +3415,14 @@
         const removedQty = Math.max(0, Number(originalQty || 0) - Number(state.cart[id] || 0));
         if (removedQty <= 0) return list;
         const product = getProductById(id);
-        list.push(`${removedQty}x ${abbreviateProductName(product ? product.name : id, 10)}`);
+        list.push(`${removedQty}x ${abbreviateProductName(product ? product.name : id, 20)}`);
         return list;
       }, []);
       return {
         hasBasket,
         headers,
         removed,
+        originalAggregate,
         markerFor(productId) {
           if (!hasBasket) return '';
           const id = String(productId);
@@ -3464,13 +3465,14 @@
         const removedQty = Math.max(0, Number(originalQty || 0) - Number(state.cart[id] || 0));
         if (removedQty <= 0) return list;
         const product = getProductById(id);
-        list.push(`${removedQty}x ${abbreviateProductName(product ? product.name : id, 10)}`);
+        list.push(`${removedQty}x ${abbreviateProductName(product ? product.name : id, 20)}`);
         return list;
       }, []);
       return {
         hasBasket,
         headers,
         removed,
+        originalAggregate,
         markerFor(productId) {
           if (!hasBasket) return '';
           const id = String(productId);
@@ -3485,6 +3487,53 @@
       const currentProducts = basketDraftProductTotal(basketId);
       if (!basket || !basket.preco) return currentProducts;
       return Math.round((currentProducts + basketFixedAdjustment(basketId) + Number.EPSILON) * 100) / 100;
+    }
+
+    function formatOrderDate(value) {
+      const raw = String(value || '').trim();
+      const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+      const date = new Date(raw);
+      if (Number.isNaN(date.getTime())) return raw;
+      return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
+    }
+
+    function formatOrderLine(product, qty) {
+      return `${qty}x ${product ? product.name : 'Produto'}`;
+    }
+
+    function totalQtyLabel(items) {
+      const total = items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+      return `Total de itens: ${total}`;
+    }
+
+    function buildGroupedItemsText(cartItems, basketMessage) {
+      if (!basketMessage.hasBasket) {
+        const items = cartItems.filter(item => !item.product.isFee);
+        return `${items.map(item => formatOrderLine(item.product, item.qty)).join('\n')}\n${totalQtyLabel(items)}\n`;
+      }
+      const standard = [];
+      const changed = [];
+      const extras = [];
+      cartItems.filter(item => !item.product.isFee).forEach(item => {
+        const id = String(item.id);
+        const originalQty = Number((basketMessage.originalAggregate || {})[id] || 0);
+        if (!originalQty) {
+          extras.push(item);
+        } else if (Number(item.qty || 0) === originalQty) {
+          standard.push(item);
+        } else {
+          changed.push(item);
+        }
+      });
+      const section = (title, items) => `*${title}*\n${items.length ? items.map(item => formatOrderLine(item.product, item.qty)).join('\n') : 'Nenhum item.'}\n${totalQtyLabel(items)}`;
+      return [
+        section('PRODUTOS DA CESTA SEM ALTERACAO', standard),
+        '------------------------------',
+        section('PRODUTOS DA CESTA COM QUANTIDADE ALTERADA', changed),
+        '------------------------------',
+        section('PRODUTOS ADICIONADOS FORA DA CESTA', extras)
+      ].join('\n') + '\n';
     }
 
     function renderBasketDetail(basketId) {
@@ -3819,8 +3868,8 @@
           <input type="text" id="chk-rua" class="field" placeholder="Rua ou avenida*">
           <label class="checkout-field-label">Número e quadra</label>
           <div class="field-row"><input type="text" id="chk-quadra" class="field" placeholder="Quadra (opcional)" style="flex:1"><input type="text" id="chk-casa" class="field" placeholder="Número*" style="flex:1"></div>
-          <label class="checkout-field-label" for="chk-frente">Complemento ou referência</label>
-          <input type="text" id="chk-frente" class="field" placeholder="Complemento ou referência">
+          <label class="checkout-field-label" for="chk-frente">Ponto de referencia para entrega</label>
+          <input type="text" id="chk-frente" class="field" placeholder="Ex: casa azul, portao branco, comercio ao lado">
           <label class="checkout-field-label" for="chk-pagamento">Pagamento*</label>
           <select id="chk-pagamento" class="field"><option value="">Selecione...</option><option value="DINHEIRO">Dinheiro</option><option value="PIX">Pix</option><option value="CARTAO_DE_DEBITO">Cartão de Débito</option><option value="CARTAO_DE_CREDITO">Cartão de Crédito</option><option value="VALE_ALIMENTACAO">Vale Alimentação</option><option value="VALE_REFEICAO">Vale Refeição</option></select>
           </div>
@@ -3882,8 +3931,8 @@
             <input type="text" id="chk-rua" class="field" placeholder="Rua ou avenida*">
             <label class="checkout-field-label">Numero e quadra</label>
             <div class="field-row"><input type="text" id="chk-quadra" class="field" placeholder="Quadra (opcional)" style="flex:1"><input type="text" id="chk-casa" class="field" placeholder="Numero*" style="flex:1"></div>
-            <label class="checkout-field-label" for="chk-frente">Complemento ou referencia</label>
-            <input type="text" id="chk-frente" class="field" placeholder="Complemento ou referencia">
+            <label class="checkout-field-label" for="chk-frente">Ponto de referencia para entrega</label>
+            <input type="text" id="chk-frente" class="field" placeholder="Ex: casa azul, portao branco, comercio ao lado">
             ${addressConfirm}
             <label class="checkout-field-label" for="chk-pagamento">Pagamento*</label>
             <select id="chk-pagamento" class="field"><option value="">Selecione...</option><option value="DINHEIRO">Dinheiro</option><option value="PIX">Pix</option><option value="CARTAO_DE_DEBITO">Cartao de Debito</option><option value="CARTAO_DE_CREDITO">Cartao de Credito</option><option value="VALE_ALIMENTACAO">Vale Alimentacao</option><option value="VALE_REFEICAO">Vale Refeicao</option></select>
@@ -4179,6 +4228,7 @@
       const saved = readCache(CONFIG.CHECKOUT_CLIENT_KEY);
       const dados = saved && saved.dados ? saved.dados : {};
       Object.entries(dados).forEach(([id, value]) => { const el = $(id); if (el && !el.value) el.value = value || ''; });
+      const frente = $('chk-frente'); if (frente) frente.value = cleanDeliveryReference(frente.value);
       const cpf = $('chk-cpf'); if (cpf) cpf.value = formatarCPF(cpf.value);
       const tel = $('chk-telefone'); if (tel) tel.value = tel.value ? formatarTelefone(tel.value) : '';
       const cep = $('chk-cep'); if (cep) cep.value = formatarCEP(cep.value);
@@ -4205,6 +4255,19 @@
       return '';
     }
 
+    function cleanDeliveryReference(value) {
+      let text = String(value || '').replace(/\s+/g, ' ').trim();
+      if (!text) return '';
+      for (let i = 0; i < 4; i++) {
+        text = text
+          .replace(/(?:^|\s)(?:quadra|qd\.?)\s*:\s*\.?/ig, ' ')
+          .replace(/(?:^|\s)(?:frente|refer[eê]ncia|referencia)\s*:\s*\.?/ig, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+      return text;
+    }
+
     function fillClientFromBling(raw) {
       const cliente = raw && raw.data && !raw.nome ? raw.data : (raw || {});
       const endereco = cliente.endereco && (cliente.endereco.geral || cliente.endereco) || {};
@@ -4218,7 +4281,7 @@
         'chk-bairro': valueFrom(endereco, ['bairro']),
         'chk-rua': valueFrom(endereco, ['endereco', 'rua']),
         'chk-casa': valueFrom(endereco, ['numero']),
-        'chk-frente': valueFrom(endereco, ['complemento'])
+        'chk-frente': cleanDeliveryReference(valueFrom(endereco, ['referencia', 'pontoReferencia', 'ponto_referencia', 'complemento']))
       };
       Object.entries(values).forEach(([id, value]) => {
         const el = $(id);
@@ -4414,7 +4477,7 @@
       const rua = $('chk-rua').value.trim();
       const quadra = $('chk-quadra').value.trim();
       const casa = $('chk-casa').value.trim();
-      const frente = $('chk-frente').value.trim();
+      const frente = cleanDeliveryReference($('chk-frente').value);
       const pag = $('chk-pagamento').value;
       const agendamentoObj = document.querySelector('input[name="agendamento"]:checked');
       const dataAgendamento = agendamentoObj ? agendamentoObj.value : '';
@@ -4459,7 +4522,6 @@
         const line = effectivePrice * qty;
         totalBruto += line;
         if (product.isFee || String(id).startsWith('fee_')) { totalTaxasExtras += line; return; }
-        itemsTxt += `${basketMessage.markerFor(id)}${qty}x ${product.name}\n`;
         pedidoItens.push({
           firebaseKey: String(product.firebaseKey || ''),
           sku: String(product.codigo || product.id),
@@ -4538,7 +4600,7 @@
             quadra,
             casa,
             numero: casa,
-            complemento: quadra ? `Quadra ${quadra}. ${frente}` : frente,
+            complemento: [quadra ? `Quadra ${quadra}` : '', frente].filter(Boolean).join('. '),
             frente,
             pagamento: pagamentoBling.nome,
             pagamentoCodigo: pagamentoBling.codigo,
@@ -4549,20 +4611,19 @@
       };
 
       const dadosOpcionais = [];
-      if (cpf) dadosOpcionais.push(`CPF: ${formatarCPF(cpf)}`);
-      if (email) dadosOpcionais.push(`E-mail: ${email}`);
       if (cep) dadosOpcionais.push(`CEP: ${formatarCEP(cep)}`);
       if (rua) dadosOpcionais.push(`Rua: ${rua}`);
       if (quadra) dadosOpcionais.push(`Quadra: ${quadra}`);
       if (casa) dadosOpcionais.push(`Nº: ${casa}`);
-      if (frente) dadosOpcionais.push(`Complemento/referência: ${frente}`);
-      const dadosCliente = `\n*👤 DADOS PARA ATENDIMENTO*\nNome: ${nome}\nTelefone/WhatsApp: ${formatarTelefone(telefone)}\nCidade: ${cidade}/${uf}\nBairro: ${bairro}${dadosOpcionais.length ? `\n${dadosOpcionais.join('\n')}` : '\nEndereço completo: confirmar no atendimento'}\n📅 *Agendamento:* ${dataAgendamento}\n💳 *Pagamento:* ${pagamentoBling.nome}`;
+      if (frente) dadosOpcionais.push(`Referencia para entrega: ${frente}`);
+      const dadosCliente = `\n*👤 DADOS PARA ATENDIMENTO*\nNome: ${nome}\nTelefone/WhatsApp: ${formatarTelefone(telefone)}\nCidade: ${cidade}/${uf}\nBairro: ${bairro}${dadosOpcionais.length ? `\n${dadosOpcionais.join('\n')}` : '\nEndereço completo: confirmar no atendimento'}\n📅 *Agendamento:* ${formatOrderDate(dataAgendamento)}\n💳 *Pagamento:* ${pagamentoBling.nome}`;
       fetch(CONFIG.MAKE_WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(makePayload),
         keepalive: true
       }).catch(err => console.error('Erro na integração Make:', err));
+      itemsTxt = buildGroupedItemsText(items, basketMessage);
       const basketHeader = basketMessage.headers.length ? `\n${basketMessage.headers.join('\n')}` : '';
       const removedSection = hasBasket
         ? `\n\n*PRODUTOS RETIRADOS DA CESTA ORIGINAL*\n${basketMessage.removed.length ? basketMessage.removed.join(', ') : 'Nenhum produto retirado.'}`
@@ -4570,7 +4631,7 @@
       const couponSummary = pricing.couponDiscount > 0 ? `\n🏷️ *CUPOM:* − ${fmt(pricing.couponDiscount)}` : '';
       const expiryBulkSummary = pricing.expiryBulkDiscount > 0 ? `\n⏳ *VALIDADE + 3 UNIDADES:* − ${fmt(pricing.expiryBulkDiscount)}` : '';
       const wholesaleSummary = pricing.wholesaleDiscount > 0 ? `\n📦 *DESCONTO ATACADO:* − ${fmt(pricing.wholesaleDiscount)}` : '';
-      const msg = `*PEDIDO #${orderId}*${basketHeader}\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*${couponSummary}${expiryBulkSummary}${wholesaleSummary}\n💰 *TOTAL:* ${fmt(totalSite)}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.${removedSection}`;
+      const msg = `*PEDIDO #${orderId}*${basketHeader}\n*ENTREGA:* ${formatOrderDate(dataAgendamento)}\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*${couponSummary}${expiryBulkSummary}${wholesaleSummary}\n💰 *TOTAL:* ${fmt(totalSite)}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.${removedSection}`;
 
       abrirWhatsAppPedido(msg);
       closeCheckout();
