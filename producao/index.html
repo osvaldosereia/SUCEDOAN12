@@ -949,7 +949,7 @@
     if(!host) return;
     const p=state.scannerCurrentKey?productByKey(state.scannerCurrentKey):null;
     if(!p){host.innerHTML=`<div class="notice">Leia ou digite um código para abrir o produto.</div>`; return}
-    host.innerHTML=`<div class="quick-product-card"><div class="quick-product-head"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong style="font-size:18px">${esc(getName(p))}</strong><div class="tiny" style="margin-top:6px">Código: ${esc(p.codigo||getCode(p))}${p.gtin?` · GTIN: ${esc(p.gtin)}`:''}</div><div class="meta-line" style="margin-top:8px"><span class="chip ${toNum(p.estoque)>0?'green':'red'}">Estoque: ${esc(toNum(p.estoque))}</span>${p.gondola?`<span class="chip">Gôndola: ${esc(p.gondola)}</span>`:''}${p.prateleira?`<span class="chip">Prateleira: ${esc(p.prateleira)}</span>`:''}</div></div></div><div class="quick-mobile-grid"><div class="field span-all"><label>Nome</label><input class="input quick-mobile-input" data-quick-field="nome" value="${esc(p.nome||'')}"></div><div class="field"><label>Estoque</label><input class="input quick-mobile-input" type="number" data-quick-field="estoque" value="${esc(toNum(p.estoque))}"></div><div class="field"><label>Validade</label><input class="input quick-mobile-input" data-quick-field="validade" value="${esc(p.validade||'')}"></div><div class="field"><label>Gôndola</label><input class="input quick-mobile-input" data-quick-field="gondola" value="${esc(p.gondola||'')}"></div><div class="field"><label>Prateleira</label><input class="input quick-mobile-input" data-quick-field="prateleira" value="${esc(p.prateleira||'')}"></div></div><div class="quick-save-bar"><button class="btn gold" type="button" data-action="clear-scanner-product">Próximo produto</button><button class="btn primary" type="button" data-action="save-scanner-product" data-key="${esc(getKey(p))}">Salvar no Firebase</button></div></div>`;
+    host.innerHTML=`<div class="quick-product-card"><div class="quick-product-head"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong style="font-size:18px">${esc(getName(p))}</strong><div class="tiny" style="margin-top:6px">Código: ${esc(p.codigo||getCode(p))}${p.gtin?` · GTIN: ${esc(p.gtin)}`:''}</div><div class="meta-line" style="margin-top:8px"><span class="chip ${toNum(p.estoque)>0?'green':'red'}">Estoque: ${esc(toNum(p.estoque))}</span>${p.gondola?`<span class="chip">Gôndola: ${esc(p.gondola)}</span>`:''}${p.prateleira?`<span class="chip">Prateleira: ${esc(p.prateleira)}</span>`:''}</div></div></div><div class="quick-mobile-grid"><div class="field span-all"><label>Nome</label><input class="input quick-mobile-input" data-quick-field="nome" value="${esc(p.nome||'')}"></div><div class="field"><label>Estoque</label><input class="input quick-mobile-input" type="number" data-quick-field="estoque" value="${esc(toNum(p.estoque))}"></div><div class="field"><label>Validade</label><input class="input quick-mobile-input" data-quick-field="validade" value="${esc(p.validade||'')}"></div>${quickMobileSelectField("gondola","Gôndola",p.gondola||"",locationValues("gondola",p.gondola))}${quickMobileSelectField("prateleira","Prateleira",p.prateleira||"",locationValues("prateleira",p.prateleira))}</div><div class="quick-save-bar"><button class="btn gold" type="button" data-action="clear-scanner-product">Próximo produto</button><button class="btn primary" type="button" data-action="save-scanner-product" data-key="${esc(getKey(p))}">Salvar no Firebase</button></div></div>`;
   }
   function renderScannerHistory(){const host=$("#scannerHistory"); if(!host) return; host.innerHTML=state.scannerRecentCodes.length?state.scannerRecentCodes.map(code=>`<button class="chip" type="button" data-action="use-scanner-history" data-code="${esc(code)}">${esc(code)}</button>`).join(""):""}
   async function stopScanner(){if(state.scannerLoopActive) state.scannerLoopActive=false; if(state.scannerStream){state.scannerStream.getTracks().forEach(track=>track.stop()); state.scannerStream=null} const video=$("#scannerVideo"); if(video) video.srcObject=null}
@@ -1058,7 +1058,7 @@
   function closeProduct(){state.editingProductKey=null; $("#productModal").classList.remove('open'); renderAll()}
   function updateProduct(field, value){const p=productByKey(state.editingProductKey); if(!p) return; if(['preco','preco_custo','estoque','preco_oferta'].includes(field)) p[field]=toNum(value); else if(field==='tags') p.tags=parseTags(value); else p[field]=value; const pricingRuleResult=['preco','preco_oferta','validade'].includes(field)?applyExpiryRules(p):{fields:[]}; p.last_update=Date.now(); p.updated_at=nowIso(); if(field==='estoque') p.stock_updated_at=nowIso(); markProductDirty(getKey(p), [field,...pricingRuleResult.fields]); mark('products'); updateExpiryAlert()}
   function applyProductJson(){const p=productByKey(state.editingProductKey); if(!p) return; try{const next=JSON.parse($("#productJsonEditor").value); const key=getKey(p); const estoqueAntes=toNum(p.estoque); Object.keys(p).forEach(k=>delete p[k]); Object.assign(p,next,{firebaseKey:next.firebaseKey||key,last_update:Date.now(),updated_at:nowIso()}); if(toNum(p.estoque)!==estoqueAntes) p.stock_updated_at=nowIso(); markProductDirty(getKey(p), toNum(p.estoque)!==estoqueAntes?['__all','estoque']:['__all']); mark('products'); renderProductEditor(); alert('JSON aplicado.')}catch(e){alert('JSON inválido: '+e.message)}}
-  function renderProductEditor(resetJson=true){const p=productByKey(state.editingProductKey); if(!p) return; $("#productModalTitle").textContent=`Editar: ${getName(p)}`; const catOptions=uniq([...state.meta.categorias.map(c=>c.categoria),...state.produtos.map(x=>x.categoria)]).map(v=>`<option ${p.categoria===v?'selected':''}>${esc(v)}</option>`).join(''); const subOptions=uniq([...state.meta.categorias.map(c=>c.subcategoria),...state.produtos.map(x=>x.subcategoria)]).map(v=>`<option ${p.subcategoria===v?'selected':''}>${esc(v)}</option>`).join(''); const subsubOptions=uniq([...state.meta.categorias.map(c=>c.subsubcategoria),...state.produtos.map(x=>x.subsubcategoria)]).map(v=>`<option ${p.subsubcategoria===v?'selected':''}>${esc(v)}</option>`).join(''); const marcaOptions=uniq([...state.meta.marcas,...state.produtos.map(x=>x.marca)]).map(v=>`<option ${p.marca===v?'selected':''}>${esc(v)}</option>`).join(''); const fornOptions=uniq([...state.meta.fornecedores.map(f=>f.nome),...state.produtos.map(x=>x.fornecedor)]).map(v=>`<option ${p.fornecedor===v?'selected':''}>${esc(v)}</option>`).join(''); const pTags=parseTags(p.tags); const universalTags=state.meta.tags.length?state.meta.tags.map(t=>`<label class="tag-pill ${pTags.includes(t)?'active':''}"><input type="checkbox" data-ptag="${esc(t)}" ${pTags.includes(t)?'checked':''}>${esc(t)}</label>`).join(''):`<div class="notice gold">Nenhuma tag universal cadastrada. Crie uma abaixo ou na aba Cadastros.</div>`; $("#productModalBody").innerHTML=`<div class="editor-preview"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(getName(p))}</strong><div class="meta-line" style="margin-top:8px"><span class="chip">${esc(p.codigo||getCode(p))}</span><span class="chip">${brl(p.preco)}</span>${basketsByProduct(p).map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join('')}</div></div></div><div class="photo-tools"><h4>Foto do produto</h4><p class="tiny">Adicione, troque ou edite a foto por URL, arquivo local ou envio direto para o GitHub.</p><div class="photo-tools-grid"><div class="photo-preview-box"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"></div><div><div class="field"><label>URL/caminho da imagem</label><input class="input" data-pfield="url_imagem" value="${esc(p.url_imagem||p.imagem||'')}" placeholder="img/produtos/produto.webp ou https://..."></div><div class="field" style="margin-top:10px"><label>Selecionar nova imagem</label><input class="input" id="productPhotoFile" type="file" accept="image/*"></div><div class="photo-actions"><button class="btn blue" type="button" data-action="use-selected-photo-local">Usar arquivo no produto</button><button class="btn gold" type="button" data-action="upload-selected-photo-github">Enviar foto para GitHub</button><button class="btn" type="button" data-action="copy-product-photo-url">Copiar URL</button><button class="btn red" type="button" data-action="remove-product-photo">Remover foto</button></div><p class="tiny" style="margin-top:8px">Para envio ao GitHub, configure token, repositório, pasta das fotos e caminho público em Integrações.</p></div></div></div><div class="universal-tags-box"><h4>Tags universais</h4><p class="tiny">Marque rapidamente as tags globais deste produto. Essas tags ficam salvas no produtos_admin_meta.json.</p><div class="tag-pills">${universalTags}</div><div class="tag-quick-add"><input class="input" id="newUniversalTagFromProduct" placeholder="Criar nova tag universal e aplicar neste produto"><button class="btn green" type="button" data-action="add-universal-tag-from-product">Criar e aplicar</button></div></div><div class="form-grid"><div class="field"><label>Nome</label><input class="input" data-pfield="nome" value="${esc(p.nome||'')}"></div><div class="field"><label>Código</label><input class="input" data-pfield="codigo" value="${esc(p.codigo||'')}"></div><div class="field"><label>GTIN/EAN</label><input class="input" data-pfield="gtin" value="${esc(p.gtin||p.ean||'')}"></div><div class="field"><label>Situação</label><select class="select" data-pfield="situacao"><option value="A" ${isActive(p)?'selected':''}>Ativo</option><option value="I" ${!isActive(p)?'selected':''}>Inativo</option></select></div><div class="field"><label>Preço</label><input class="input" data-pfield="preco" value="${esc(p.preco||0)}"></div><div class="field"><label>Custo</label><input class="input" data-pfield="preco_custo" value="${esc(p.preco_custo||0)}"></div><div class="field"><label>Preço oferta</label><input class="input" data-pfield="preco_oferta" value="${esc(p.preco_oferta||'')}"></div><div class="field"><label>Validade oferta</label><input class="input" data-pfield="validade_oferta" value="${esc(p.validade_oferta||'')}"></div><div class="field"><label>Estoque</label><input class="input" data-pfield="estoque" value="${esc(p.estoque||0)}"></div><div class="field"><label>NCM</label><input class="input" data-pfield="ncm" value="${esc(p.ncm||'')}"></div><div class="field"><label>Validade</label><input class="input" data-pfield="validade" value="${esc(p.validade||'')}"></div><div class="field"><label>Embalagem</label><input class="input" data-pfield="embalagem" value="${esc(p.embalagem||'')}"></div><div class="field"><label>Categoria</label><input list="catList" class="input" data-pfield="categoria" value="${esc(p.categoria||'')}"><datalist id="catList">${catOptions}</datalist></div><div class="field"><label>Subcategoria</label><input list="subList" class="input" data-pfield="subcategoria" value="${esc(p.subcategoria||'')}"><datalist id="subList">${subOptions}</datalist></div><div class="field"><label>Subsubcategoria</label><input list="subsubList" class="input" data-pfield="subsubcategoria" value="${esc(p.subsubcategoria||'')}"><datalist id="subsubList">${subsubOptions}</datalist></div><div class="field"><label>Marca</label><input list="marcaList" class="input" data-pfield="marca" value="${esc(p.marca||'')}"><datalist id="marcaList">${marcaOptions}</datalist></div><div class="field"><label>Fornecedor</label><input list="fornList" class="input" data-pfield="fornecedor" value="${esc(p.fornecedor||'')}"><datalist id="fornList">${fornOptions}</datalist></div><div class="field"><label>Gôndola</label><input class="input" data-pfield="gondola" value="${esc(p.gondola||'')}"></div><div class="field"><label>Prateleira</label><input class="input" data-pfield="prateleira" value="${esc(p.prateleira||'')}"></div><div class="field"><label>Tags manuais</label><input class="input" data-pfield="tags" value="${esc(parseTags(p.tags).join(', '))}"></div><div class="field span-4"><label>Descrição</label><textarea class="textarea" data-pfield="descricao">${esc(p.descricao||'')}</textarea></div><div class="field span-4"><label>JSON avançado do produto</label><textarea class="textarea" id="productJsonEditor">${esc(JSON.stringify(p,null,2))}</textarea></div></div><div class="toolbar" style="justify-content:flex-start;margin-top:14px"><button class="btn primary" data-action="close-product-modal">Concluir</button><button class="btn gold" data-action="apply-product-json">Aplicar JSON avançado</button><button class="btn blue" data-action="edit-membership" data-code="${esc(getCode(p))}">Editar cestas deste produto</button><button class="btn red" data-action="delete-product" data-key="${esc(getKey(p))}">Excluir produto</button></div>`; }
+  function renderProductEditor(resetJson=true){const p=productByKey(state.editingProductKey); if(!p) return; $("#productModalTitle").textContent=`Editar: ${getName(p)}`; const catOptions=uniq([...state.meta.categorias.map(c=>c.categoria),...state.produtos.map(x=>x.categoria)]).map(v=>`<option ${p.categoria===v?'selected':''}>${esc(v)}</option>`).join(''); const subOptions=uniq([...state.meta.categorias.map(c=>c.subcategoria),...state.produtos.map(x=>x.subcategoria)]).map(v=>`<option ${p.subcategoria===v?'selected':''}>${esc(v)}</option>`).join(''); const subsubOptions=uniq([...state.meta.categorias.map(c=>c.subsubcategoria),...state.produtos.map(x=>x.subsubcategoria)]).map(v=>`<option ${p.subsubcategoria===v?'selected':''}>${esc(v)}</option>`).join(''); const marcaOptions=uniq([...state.meta.marcas,...state.produtos.map(x=>x.marca)]).map(v=>`<option ${p.marca===v?'selected':''}>${esc(v)}</option>`).join(''); const fornOptions=uniq([...state.meta.fornecedores.map(f=>f.nome),...state.produtos.map(x=>x.fornecedor)]).map(v=>`<option ${p.fornecedor===v?'selected':''}>${esc(v)}</option>`).join(''); const pTags=parseTags(p.tags); const universalTags=state.meta.tags.length?state.meta.tags.map(t=>`<label class="tag-pill ${pTags.includes(t)?'active':''}"><input type="checkbox" data-ptag="${esc(t)}" ${pTags.includes(t)?'checked':''}>${esc(t)}</label>`).join(''):`<div class="notice gold">Nenhuma tag universal cadastrada. Crie uma abaixo ou na aba Cadastros.</div>`; $("#productModalBody").innerHTML=`<div class="editor-preview"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(getName(p))}</strong><div class="meta-line" style="margin-top:8px"><span class="chip">${esc(p.codigo||getCode(p))}</span><span class="chip">${brl(p.preco)}</span>${basketsByProduct(p).map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join('')}</div></div></div><div class="photo-tools"><h4>Foto do produto</h4><p class="tiny">Adicione, troque ou edite a foto por URL, arquivo local ou envio direto para o GitHub.</p><div class="photo-tools-grid"><div class="photo-preview-box"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"></div><div><div class="field"><label>URL/caminho da imagem</label><input class="input" data-pfield="url_imagem" value="${esc(p.url_imagem||p.imagem||'')}" placeholder="img/produtos/produto.webp ou https://..."></div><div class="field" style="margin-top:10px"><label>Selecionar nova imagem</label><input class="input" id="productPhotoFile" type="file" accept="image/*"></div><div class="photo-actions"><button class="btn blue" type="button" data-action="use-selected-photo-local">Usar arquivo no produto</button><button class="btn gold" type="button" data-action="upload-selected-photo-github">Enviar foto para GitHub</button><button class="btn" type="button" data-action="copy-product-photo-url">Copiar URL</button><button class="btn red" type="button" data-action="remove-product-photo">Remover foto</button></div><p class="tiny" style="margin-top:8px">Para envio ao GitHub, configure token, repositório, pasta das fotos e caminho público em Integrações.</p></div></div></div><div class="universal-tags-box"><h4>Tags universais</h4><p class="tiny">Marque rapidamente as tags globais deste produto. Essas tags ficam salvas no produtos_admin_meta.json.</p><div class="tag-pills">${universalTags}</div><div class="tag-quick-add"><input class="input" id="newUniversalTagFromProduct" placeholder="Criar nova tag universal e aplicar neste produto"><button class="btn green" type="button" data-action="add-universal-tag-from-product">Criar e aplicar</button></div></div><div class="form-grid"><div class="field"><label>Nome</label><input class="input" data-pfield="nome" value="${esc(p.nome||'')}"></div><div class="field"><label>Código</label><input class="input" data-pfield="codigo" value="${esc(p.codigo||'')}"></div><div class="field"><label>GTIN/EAN</label><input class="input" data-pfield="gtin" value="${esc(p.gtin||p.ean||'')}"></div><div class="field"><label>Situação</label><select class="select" data-pfield="situacao"><option value="A" ${isActive(p)?'selected':''}>Ativo</option><option value="I" ${!isActive(p)?'selected':''}>Inativo</option></select></div><div class="field"><label>Preço</label><input class="input" data-pfield="preco" value="${esc(p.preco||0)}"></div><div class="field"><label>Custo</label><input class="input" data-pfield="preco_custo" value="${esc(p.preco_custo||0)}"></div><div class="field"><label>Preço oferta</label><input class="input" data-pfield="preco_oferta" value="${esc(p.preco_oferta||'')}"></div><div class="field"><label>Validade oferta</label><input class="input" data-pfield="validade_oferta" value="${esc(p.validade_oferta||'')}"></div><div class="field"><label>Estoque</label><input class="input" data-pfield="estoque" value="${esc(p.estoque||0)}"></div><div class="field"><label>NCM</label><input class="input" data-pfield="ncm" value="${esc(p.ncm||'')}"></div><div class="field"><label>Validade</label><input class="input" data-pfield="validade" value="${esc(p.validade||'')}"></div><div class="field"><label>Embalagem</label><input class="input" data-pfield="embalagem" value="${esc(p.embalagem||'')}"></div>${modalSelectField(p,"categoria","Categoria",categoryValues(p.categoria))}${modalSelectField(p,"subcategoria","Subcategoria",subcategoryValues(p.categoria,p.subcategoria))}${modalSelectField(p,"subsubcategoria","Subsubcategoria",subsubcategoryValues(p.categoria,p.subcategoria,p.subsubcategoria))}<div class="field"><label>Marca</label><input list="marcaList" class="input" data-pfield="marca" value="${esc(p.marca||'')}"><datalist id="marcaList">${marcaOptions}</datalist></div><div class="field"><label>Fornecedor</label><input list="fornList" class="input" data-pfield="fornecedor" value="${esc(p.fornecedor||'')}"><datalist id="fornList">${fornOptions}</datalist></div>${modalSelectField(p,"gondola","Gôndola",locationValues("gondola",p.gondola))}${modalSelectField(p,"prateleira","Prateleira",locationValues("prateleira",p.prateleira))}<div class="field"><label>Tags manuais</label><input class="input" data-pfield="tags" value="${esc(parseTags(p.tags).join(', '))}"></div><div class="field span-4"><label>Descrição</label><textarea class="textarea" data-pfield="descricao">${esc(p.descricao||'')}</textarea></div><div class="field span-4"><label>JSON avançado do produto</label><textarea class="textarea" id="productJsonEditor">${esc(JSON.stringify(p,null,2))}</textarea></div></div><div class="toolbar" style="justify-content:flex-start;margin-top:14px"><button class="btn primary" data-action="close-product-modal">Concluir</button><button class="btn gold" data-action="apply-product-json">Aplicar JSON avançado</button><button class="btn blue" data-action="edit-membership" data-code="${esc(getCode(p))}">Editar cestas deste produto</button><button class="btn red" data-action="delete-product" data-key="${esc(getKey(p))}">Excluir produto</button></div>`; }
 
   function renderBasketsList(){const q=textNorm($("#basketSearch")?.value||""); const list=state.cestas.filter(c=>!q||textNorm([c.nome,c.codigo].join(' ')).includes(q)); $("#basketsList").innerHTML=list.map(c=>`<button class="side-card ${c.id===state.selectedBasketId?'active':''}" data-action="select-basket" data-id="${esc(c.id)}"><img src="${esc(c.imagem||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><span><strong>${esc(c.nome)}</strong><small>${brl(c.preco)} · ${itemCount(c)} itens</small></span></button>`).join('') || `<div class="empty">Nenhuma cesta.</div>`}
   function renderBasketEditor(){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(!c){$("#basketEditor").innerHTML=`<div class="empty">Selecione ou crie uma cesta.</div>`; return} const rows=(c.produtos||[]).map(i=>renderBasketRow(c,i)).join('') || `<div class="empty">Cesta sem produtos.</div>`; $("#basketEditor").innerHTML=`<div class="panel-head"><div class="panel-title"><h2>${esc(c.nome)}</h2><p>${esc(c.codigo)} · ${itemCount(c)} itens</p></div><div class="toolbar"><button class="btn red" data-action="delete-basket">Excluir cesta</button></div></div><div class="form-grid"><div class="field"><label>Nome</label><input class="input" data-cfield="nome" value="${esc(c.nome)}"></div><div class="field"><label>Código</label><input class="input" data-cfield="codigo" value="${esc(c.codigo)}"></div><div class="field"><label>Preço</label><input class="input" data-cfield="preco" value="${esc(c.preco)}"></div><div class="field"><label>Imagem</label><input class="input" data-cfield="imagem" value="${esc(c.imagem)}"></div></div><div style="margin-top:14px"><div class="field"><label>Buscar produto para adicionar ou configurar substituto</label><input class="input" id="basketProductSearch" value="${esc(state.basketProductSearch)}" placeholder="Digite nome, código, marca ou GTIN..."></div><div class="search-results" id="basketProductResults">${renderBasketSearchResults()}</div></div><div class="basket-list">${rows}</div>`}
@@ -1866,6 +1866,37 @@
     if(textarea)return `<div class="${cls}"><label>${esc(label)}</label><textarea class="textarea" data-card-field="${esc(field)}" data-key="${key}">${esc(value??"")}</textarea></div>`;
     return `<div class="${cls}"><label>${esc(label)}</label><input class="input" type="${type}" data-card-field="${esc(field)}" data-key="${key}" value="${esc(value??"")}"></div>`;
   }
+  function uniqClean(values=[]){return uniq((values||[]).map(v=>String(v??"").trim()).filter(Boolean)).sort((a,b)=>a.localeCompare(b,"pt-BR",{numeric:true}))}
+  function categoryValues(current=""){
+    return uniqClean([current,...(state.meta.categorias||[]).map(c=>c.categoria),...state.produtos.map(p=>p.categoria)]);
+  }
+  function subcategoryValues(category="",current=""){
+    const cat=String(category||"");
+    return uniqClean([current,...(state.meta.categorias||[]).filter(c=>!cat||String(c.categoria||"")===cat).map(c=>c.subcategoria),...state.produtos.filter(p=>!cat||String(p.categoria||"")===cat).map(p=>p.subcategoria)]);
+  }
+  function subsubcategoryValues(category="",subcategory="",current=""){
+    const cat=String(category||""),sub=String(subcategory||"");
+    return uniqClean([current,...(state.meta.categorias||[]).filter(c=>(!cat||String(c.categoria||"")===cat)&&(!sub||String(c.subcategoria||"")===sub)).map(c=>c.subsubcategoria),...state.produtos.filter(p=>(!cat||String(p.categoria||"")===cat)&&(!sub||String(p.subcategoria||"")===sub)).map(p=>p.subsubcategoria)]);
+  }
+  function locationValues(field,current=""){
+    return uniqClean([current,...state.produtos.map(p=>p[field])]);
+  }
+  function selectOptionsHtml(values,current="",emptyLabel="Selecione"){
+    const cur=String(current||"");
+    const vals=uniqClean([cur,...values]);
+    return `<option value="">${esc(emptyLabel)}</option>`+vals.map(v=>`<option value="${esc(v)}" ${String(v)===cur?"selected":""}>${esc(v)}</option>`).join("");
+  }
+  function workbenchSelectField(p,field,label,values,{span=3,empty="Selecione"}={}){
+    const key=esc(getKey(p)),cls=`workbench-field span-${span}`,cur=p[field]||"";
+    return `<div class="${cls}"><label>${esc(label)}</label><select class="select" data-card-field="${esc(field)}" data-key="${key}">${selectOptionsHtml(values,cur,empty)}</select></div>`;
+  }
+  function modalSelectField(p,field,label,values,{empty="Selecione"}={}){
+    const cur=p[field]||"";
+    return `<div class="field"><label>${esc(label)}</label><select class="select" data-pfield="${esc(field)}">${selectOptionsHtml(values,cur,empty)}</select></div>`;
+  }
+  function quickMobileSelectField(field,label,current,values){
+    return `<div class="field"><label>${esc(label)}</label><select class="select quick-mobile-input" data-quick-field="${esc(field)}">${selectOptionsHtml(values,current,"Selecione")}</select></div>`;
+  }
   function workbenchDateValue(value){
     const s=String(value||"").trim(),br=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/),iso=s.match(/^(\d{4}-\d{2}-\d{2})/);
     return iso?iso[1]:br?`${br[3]}-${br[2]}-${br[1]}`:"";
@@ -1934,14 +1965,14 @@
           <section class="workbench-group classification">
             <h4>Classificação e localização</h4>
             <div class="workbench-fields">
-              ${workbenchField(p,"categoria","Categoria",p.categoria||"",{span:4})}
-              ${workbenchField(p,"subcategoria","Subcategoria",p.subcategoria||"",{span:4})}
-              ${workbenchField(p,"subsubcategoria","Subsubcategoria",p.subsubcategoria||"",{span:4})}
+              ${workbenchSelectField(p,"categoria","Categoria",categoryValues(p.categoria),{span:4})}
+              ${workbenchSelectField(p,"subcategoria","Subcategoria",subcategoryValues(p.categoria,p.subcategoria),{span:4})}
+              ${workbenchSelectField(p,"subsubcategoria","Subsubcategoria",subsubcategoryValues(p.categoria,p.subcategoria,p.subsubcategoria),{span:4})}
               ${workbenchField(p,"marca","Marca",p.marca||"",{span:3})}
               ${workbenchField(p,"fornecedor","Fornecedor",p.fornecedor||"",{span:3})}
               ${workbenchField(p,"ncm","NCM",p.ncm||"",{span:2})}
-              ${workbenchField(p,"gondola","Gôndola",p.gondola||"",{span:2})}
-              ${workbenchField(p,"prateleira","Prateleira",p.prateleira||"",{span:2})}
+              ${workbenchSelectField(p,"gondola","Gôndola",locationValues("gondola",p.gondola),{span:2})}
+              ${workbenchSelectField(p,"prateleira","Prateleira",locationValues("prateleira",p.prateleira),{span:2})}
               <div class="workbench-field span-12"><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="btn small blue" href="${esc(ncmSearch)}" target="_blank" rel="noopener">Buscar NCM ↗</a>${youtube?`<a class="btn small red" href="${esc(youtube)}" target="_blank" rel="noopener">Abrir vídeo ↗</a>`:""}<button class="btn small green" type="button" data-action="save-everything">✓ Salvar tudo</button></div></div>
             </div>
           </section>
@@ -2653,6 +2684,138 @@
     await runUiAction(b,labels[action]||"Processando...",handlers[action]);
     card?.classList.remove("processing");
   },true);
+
+
+  /* ===== Ajustes 08/07: seletores e limpeza de imagens de produtos no GitHub ===== */
+  state.pendingGithubProductImageDeletes = state.pendingGithubProductImageDeletes || new Set();
+
+  function productImagePathFromUrl(src=""){
+    let s=String(src||"").trim();
+    if(!s || s.startsWith("data:"))return "";
+    s=s.split("#")[0].split("?")[0].replace(/\\/g,"/");
+    try{
+      if(/^https?:\/\//i.test(s)){
+        const u=new URL(s);
+        const pathname=decodeURIComponent(u.pathname.replace(/^\/+/ ,""));
+        if(u.hostname==="raw.githubusercontent.com"){
+          const parts=pathname.split("/").filter(Boolean);
+          if(parts.length>=4){return parts.slice(3).join("/")}
+        }
+        if(pathname.startsWith("site/img/"))return pathname;
+        if(pathname.startsWith("img/"))return `site/${pathname}`;
+        return "";
+      }
+    }catch{}
+    try{s=decodeURIComponent(s.replace(/^\/+/ ,""))}catch{s=s.replace(/^\/+/ ,"")}
+    if(s.startsWith("site/img/"))return s;
+    if(s.startsWith("img/"))return `site/${s}`;
+    return "";
+  }
+  function isProductImageRepoPath(path=""){
+    const p=String(path||"").replace(/^\/+/ ,"");
+    const folders=productImageFolders();
+    return /\.(webp|png|jpe?g|gif)$/i.test(p) && folders.some(folder=>p.startsWith(`${folder}/`));
+  }
+  function productImageFolders(){
+    return uniqClean([state.settings.githubImagesPath||"site/img/produtos","site/img/produtos","site/img/produtos_2"])
+      .map(p=>String(p).replace(/^\/+/ ,"").replace(/\/+$/,""));
+  }
+  function markGithubProductImageForDelete(src=""){
+    const path=productImagePathFromUrl(src);
+    if(path && isProductImageRepoPath(path))state.pendingGithubProductImageDeletes.add(path);
+  }
+  function usedProductImageRepoPaths(){
+    const used=new Set();
+    state.produtos.forEach(p=>{
+      [p.url_imagem,p.imagem,...(Array.isArray(p.imagens)?p.imagens:[])].forEach(src=>{
+        const path=productImagePathFromUrl(src);
+        if(path)used.add(path);
+      });
+    });
+    return used;
+  }
+  async function githubDeleteFile(path,sha,message){
+    const s=state.settings;
+    if(!s.githubToken||!s.githubOwner||!s.githubRepo) throw new Error("Configure token, owner e repositório do GitHub.");
+    const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}`;
+    const body={message,branch:s.githubBranch,sha};
+    const r=await fetch(url,{method:"DELETE",cache:"no-store",headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(r.status===404)return null;
+    if(!r.ok){const t=await r.text();throw new Error(`GitHub DELETE ${path}: ${r.status} ${t.slice(0,220)}`)}
+    return r.json().catch(()=>null);
+  }
+  async function cleanupUnusedProductImagesFromGithub(){
+    readSettingsFromUi();
+    if(!state.settings.githubToken)return {deleted:0,checked:0};
+    const used=usedProductImageRepoPaths(), folders=productImageFolders();
+    const candidates=new Map();
+    for(const folder of folders){
+      const list=await githubContent(folder).catch(err=>{console.warn("Falha ao listar pasta",folder,err);return null});
+      if(Array.isArray(list)){
+        list.forEach(item=>{
+          if(item?.type==="file" && /\.(webp|png|jpe?g|gif)$/i.test(item.name||"") && item.path && item.sha){
+            candidates.set(item.path,{path:item.path,sha:item.sha});
+          }
+        });
+      }
+    }
+    (state.pendingGithubProductImageDeletes||new Set()).forEach(path=>{if(!used.has(path)&&isProductImageRepoPath(path)&&!candidates.has(path))candidates.set(path,{path,sha:null})});
+    let deleted=0,checked=0;
+    for(const item of candidates.values()){
+      checked++;
+      if(used.has(item.path))continue;
+      const current=item.sha?item:await githubContent(item.path).catch(()=>null);
+      if(current?.sha){await githubDeleteFile(item.path,current.sha,`Remove imagem de produto sem uso: ${item.path.split('/').pop()}`);deleted++}
+    }
+    state.pendingGithubProductImageDeletes.clear();
+    return {deleted,checked};
+  }
+
+  const originalUpdateProductFromCardForSelects=updateProductFromCard;
+  updateProductFromCard=function(key,field,value){
+    const p=productByKey(key);
+    const oldImage=p&&field==="url_imagem"?(p.url_imagem||p.imagem||""):"";
+    originalUpdateProductFromCardForSelects(key,field,value);
+    if(p&&field==="url_imagem"&&oldImage&&oldImage!==value)markGithubProductImageForDelete(oldImage);
+    if(p&&field==="categoria"){
+      if(p.subcategoria && !subcategoryValues(p.categoria,p.subcategoria).includes(p.subcategoria)){p.subcategoria="";p.subsubcategoria="";markProductDirty(getKey(p),["subcategoria","subsubcategoria"])}
+      renderProducts();
+    }
+    if(p&&field==="subcategoria"){
+      if(p.subsubcategoria && !subsubcategoryValues(p.categoria,p.subcategoria,p.subsubcategoria).includes(p.subsubcategoria)){p.subsubcategoria="";markProductDirty(getKey(p),["subsubcategoria"])}
+      renderProducts();
+    }
+  };
+
+  const originalSaveEverythingWithImageCleanup=saveEverything;
+  saveEverything=async function(){
+    await originalSaveEverythingWithImageCleanup();
+    try{
+      setStatus("Verificando imagens de produtos sem uso no GitHub...","warn");
+      const res=await cleanupUnusedProductImagesFromGithub();
+      if(res.deleted)setStatus(`Salvamento concluído e ${res.deleted} imagem(ns) de produtos sem uso foram apagadas do GitHub`,"ok");
+      else setStatus("Salvamento concluído. Nenhuma imagem de produto sem uso encontrada no GitHub","ok");
+    }catch(err){console.error(err);setStatus("Salvo, mas a limpeza de imagens do GitHub falhou","err");alert("Os dados foram salvos, mas não foi possível limpar imagens sem uso do GitHub: "+err.message)}
+  };
+
+  document.addEventListener("click",e=>{
+    const b=e.target.closest?.("[data-action]");if(!b)return;
+    const action=b.dataset.action,key=b.dataset.key,p=key?productByKey(key):null;
+    if(action==="workbench-remove-photo"&&p)markGithubProductImageForDelete(p.url_imagem||p.imagem||"");
+    if(action==="workbench-remove-gallery")markGithubProductImageForDelete(b.dataset.src||"");
+    if(action==="remove-product-photo"){
+      const p=productByKey(state.editingProductKey);if(p)markGithubProductImageForDelete(p.url_imagem||p.imagem||"");
+    }
+    if(action==="remove-gallery-photo"){
+      const p=productByKey(state.editingProductKey),i=Number(b.dataset.index);if(p&&Array.isArray(p.imagens))markGithubProductImageForDelete(p.imagens[i]||"");
+    }
+  },true);
+
+  document.addEventListener("change",e=>{
+    const el=e.target;
+    if(el.matches('[data-pfield="categoria"],[data-pfield="subcategoria"]'))setTimeout(()=>renderProductEditor(false),0);
+    if(el.matches('[data-card-field="categoria"],[data-card-field="subcategoria"]'))setTimeout(()=>renderProducts(),0);
+  });
 
   loadData();
 })(); 
