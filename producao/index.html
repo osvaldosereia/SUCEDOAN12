@@ -436,7 +436,7 @@
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
         <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho kitspromocionais.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="img/produtos"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
-        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">Use o webhook de textos para nomes e descricoes. Use o webhook de imagens para melhorar fotos e gerar capas de kits.</div></div>
+        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">Use o webhook de textos para o botão único IA Cadastro (nome, embalagem, descrição e tags). Use o webhook de imagens apenas para capas de kits e fotos.</div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
       <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar kitspromocionais.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
@@ -1811,7 +1811,7 @@
         <div class="workbench-media-actions">
           <button class="btn green" type="button" data-action="workbench-use-photo" data-key="${esc(key)}">Usar foto</button>
           <button class="btn blue" type="button" data-action="workbench-edit-photo" data-key="${esc(key)}">Editar foto</button>
-          <button class="btn gold" type="button" data-action="ai-product-image" data-key="${esc(key)}">Melhorar IA</button>
+          <button class="btn gold" type="button" data-action="ai-product-image" data-key="${esc(key)}">Melhorar foto</button>
           <button class="btn gold" type="button" data-action="workbench-upload-photo" data-key="${esc(key)}">Enviar GitHub</button>
           <a class="btn" href="${esc(imageSearch)}" target="_blank" rel="noopener">Buscar foto</a>
           <button class="btn red" type="button" data-action="workbench-remove-photo" data-key="${esc(key)}">Remover</button>
@@ -1823,8 +1823,7 @@
         <div class="workbench-header">
           <div class="workbench-title"><strong>${esc(getName(p))}</strong><small>${esc(p.codigo||key)} ${dirty?"· alterações pendentes":""}</small><div class="workbench-memberships" style="margin-top:6px">${memberships}</div></div>
           <div class="workbench-actions">
-            <button class="btn small gold" type="button" data-action="ai-product-description" data-key="${esc(key)}">IA descrição</button>
-            <button class="btn small gold" type="button" data-action="ai-product-name" data-key="${esc(key)}">IA nome</button>
+            <button class="btn small gold" type="button" data-action="ai-product-cadastro" data-key="${esc(key)}">✨ IA cadastro</button>
             <button class="btn small blue" type="button" data-action="save-card-firebase" data-key="${esc(key)}">☁ Salvar produto</button>
             <button class="btn small gold" type="button" data-action="edit-membership" data-code="${esc(code)}">🧺 Cestas</button>
             <button class="btn small green" type="button" data-action="edit-kit-membership" data-code="${esc(code)}">🎁 Kits</button>
@@ -2057,9 +2056,18 @@
   };
 
   function publicAssetUrl(src){
-    const value=String(src||"").trim();
+    let value=String(src||"").trim();
     if(!value)return "";
-    if(/^data:/i.test(value)||/^https?:\/\//i.test(value))return value;
+    if(/^data:/i.test(value))return value;
+    value=value.replace(/\\/g,"/");
+    value=value.replace(/^\.\.\/site\//i,"").replace(/^\.\//,"").replace(/^site\//i,"");
+    if(/^https?:\/\//i.test(value)){
+      try{
+        const u=new URL(value);
+        u.pathname=u.pathname.replace(/\/\.\.\/site\//ig,"/").replace(/\/site\//ig,"/");
+        return u.toString();
+      }catch{return value}
+    }
     const base=String(state.settings.siteBaseUrl||location.origin||"").replace(/\/+$/,"");
     return `${base}/${value.replace(/^\/+/,"")}`;
   }
@@ -2075,6 +2083,7 @@
       categoria:p.categoria||"",
       subcategoria:p.subcategoria||"",
       subsubcategoria:p.subsubcategoria||"",
+      embalagem:p.embalagem||"",
       preco:toNum(p.preco),
       preco_oferta:toNum(p.preco_oferta),
       estoque:toNum(p.estoque),
@@ -2095,6 +2104,9 @@
         nome:p?getName(p):"Produto nao encontrado",
         marca:p?.marca||"",
         categoria:p?.categoria||"",
+        subcategoria:p?.subcategoria||"",
+        subsubcategoria:p?.subsubcategoria||"",
+        embalagem:p?.embalagem||"",
         preco_unitario:p?toNum(p.preco):0,
         imagem:img,
         imagem_url:publicAssetUrl(img)
@@ -2153,10 +2165,39 @@
     renderProducts();
     refreshJson();
   }
+  function assertAiProductIdentity(p,result){
+    const codigo=String(p.codigo||"").trim(),codigoRet=String(result.produto_codigo_recebido||result.codigo_recebido||"").trim();
+    if(codigo&&codigoRet&&codigo!==codigoRet)throw new Error(`A IA retornou dados de outro produto: código ${codigoRet}. Produto atual: ${codigo}.`);
+    const desc=String(result.descricao||result.description||"").toLowerCase();
+    const cat=[p.categoria,p.subcategoria,p.subsubcategoria,getName(p)].join(" ").toLowerCase();
+    const isFood=/café|cafe|achocolatado|alimento|arroz|feijão|feijao|macarrão|macarrao|açúcar|acucar|farinha|leite|biscoito|bolacha|molho|tempero|óleo|oleo|cereal/.test(cat);
+    if(isFood&&/(creme dental|higiene bucal|colgate|shampoo|sabonete|desodorante|detergente|amaciante)/.test(desc))throw new Error("A IA parece ter descrito outro tipo de produto. A descrição foi bloqueada para evitar cadastro errado.");
+  }
+  async function aiProductCadastro(key){
+    const p=productByKey(key);if(!p)return;
+    setStatus("Gerando nome, embalagem, descricao e tags no Make...","warn");
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_cadastro_produto",produto:compactProductForAi(p)}));
+    assertAiProductIdentity(p,result);
+    const fields=[];
+    const name=result.nome_sugerido||result.nome||result.name||"";
+    const desc=result.descricao||result.description||result.texto||"";
+    const shortDesc=result.descricao_curta||result.short_description||"";
+    const embalagem=result.embalagem_sugerida||result.embalagem||"";
+    const tags=Array.isArray(result.tags_sugeridas)?result.tags_sugeridas:(Array.isArray(result.tags)?result.tags:[]);
+    if(name){p.nome=String(name).trim();fields.push("nome")}
+    if(embalagem){p.embalagem=String(embalagem).trim();fields.push("embalagem")}
+    if(desc){p.descricao=String(desc).trim();fields.push("descricao")}
+    if(shortDesc){p.descricao_curta=String(shortDesc).trim();fields.push("descricao_curta")}
+    if(tags.length){p.tags=uniq([...parseTags(p.tags),...tags.map(t=>String(t).trim()).filter(Boolean)]).join(", ");fields.push("tags")}
+    if(!fields.length)throw new Error("O Make nao retornou nome, embalagem, descricao ou tags.");
+    markProductAiChange(p,fields);
+    setStatus("IA cadastro aplicada ao produto. Revise e clique em Salvar produto/Firebase.","ok");
+  }
   async function aiProductDescription(key){
     const p=productByKey(key);if(!p)return;
     setStatus("Gerando descricao do produto no Make...","warn");
     const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_descricao_produto",produto:compactProductForAi(p)}));
+    assertAiProductIdentity(p,result);
     const desc=result.descricao||result.description||result.texto||"";
     if(!desc)throw new Error("O Make nao retornou uma descricao.");
     p.descricao=String(desc).trim();
@@ -2169,6 +2210,7 @@
     const p=productByKey(key);if(!p)return;
     setStatus("Melhorando nome do produto no Make...","warn");
     const result=unwrapAiResult(await callMakeAi("text",{acao:"melhorar_nome_produto",produto:compactProductForAi(p)}));
+    assertAiProductIdentity(p,result);
     const name=result.nome_sugerido||result.nome||result.name||result.texto||"";
     if(!name)throw new Error("O Make nao retornou um nome sugerido.");
     p.nome=String(name).trim();
@@ -2231,6 +2273,7 @@
     if(action==="workbench-remove-photo"&&p){if(!confirm("Remover a imagem principal deste produto?"))return;p.url_imagem=p.imagem="";markProductDirty(key,["url_imagem","imagem"]);mark("products");renderProducts()}
     if(action==="workbench-make-primary"&&p){p.url_imagem=p.imagem=b.dataset.src;markProductDirty(key,["url_imagem","imagem"]);mark("products");renderProducts()}
     if(action==="workbench-remove-gallery"&&p){const src=b.dataset.src;p.imagens=(p.imagens||[]).filter(x=>x!==src);if((p.url_imagem||p.imagem)===src)p.url_imagem=p.imagem=p.imagens[0]||"";markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts()}
+    if(action==="ai-product-cadastro"&&p){try{await aiProductCadastro(key)}catch(err){console.error(err);setStatus("Erro na IA cadastro","err");alert(err.message)}}
     if(action==="ai-product-description"&&p){try{await aiProductDescription(key)}catch(err){console.error(err);setStatus("Erro na IA de descricao","err");alert(err.message)}}
     if(action==="ai-product-name"&&p){try{await aiProductName(key)}catch(err){console.error(err);setStatus("Erro na IA de nome","err");alert(err.message)}}
     if(action==="ai-product-image"&&p){try{await aiProductImage(key)}catch(err){console.error(err);setStatus("Erro na IA de imagem","err");alert(err.message)}}
