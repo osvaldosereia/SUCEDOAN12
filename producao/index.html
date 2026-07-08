@@ -910,6 +910,7 @@
   async function githubUpsertText(path, text, message){const s=state.settings; if(!s.githubToken || !s.githubOwner || !s.githubRepo) throw new Error("Configure token, owner e repositório do GitHub."); const old=await githubContent(path); const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}`; const body={message, branch:s.githubBranch, content:b64(String(text??""))}; if(old?.sha) body.sha=old.sha; const r=await fetch(url,{method:"PUT",headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},body:JSON.stringify(body)}); if(!r.ok){const t=await r.text(); throw new Error(`GitHub PUT ${path}: ${r.status} ${t.slice(0,180)}`)} return r.json()}
   function arrayBufferToBase64(buffer){let binary=""; const bytes=new Uint8Array(buffer); const chunk=0x8000; for(let i=0;i<bytes.length;i+=chunk){binary+=String.fromCharCode.apply(null, bytes.subarray(i,i+chunk))} return btoa(binary)}
   async function githubUpsertRaw(path, arrayBuffer, message){const s=state.settings; if(!s.githubToken || !s.githubOwner || !s.githubRepo) throw new Error("Configure token, owner e repositório do GitHub."); const old=await githubContent(path); const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}`; const body={message, branch:s.githubBranch, content:arrayBufferToBase64(arrayBuffer)}; if(old?.sha) body.sha=old.sha; const r=await fetch(url,{method:"PUT",headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},body:JSON.stringify(body)}); if(!r.ok){const t=await r.text(); throw new Error(`GitHub PUT ${path}: ${r.status} ${t.slice(0,180)}`)} return r.json()}
+  function githubRawFileUrl(path=""){const s=state.settings||{}; const owner=String(s.githubOwner||"").trim(); const repo=String(s.githubRepo||"").trim(); const branch=String(s.githubBranch||"main").trim()||"main"; const clean=String(path||"").replace(/^\/+/,""); return owner&&repo&&clean?`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${clean}`:""}
   const IMAGE_MAX_BYTES = 30 * 1024;
   function formatBytes(bytes){return `${Math.max(1,Math.round((bytes||0)/1024))} KB`}
   function fileToDataUrl(file){return new Promise((resolve,reject)=>{const rd=new FileReader(); rd.onload=()=>resolve(rd.result); rd.onerror=()=>reject(rd.error||new Error("Falha ao ler imagem")); rd.readAsDataURL(file)})}
@@ -2287,7 +2288,7 @@
   }
   function ensureAiImagePlanModal(){
     if($("#aiImagePlanModal"))return;
-    document.body.insertAdjacentHTML("beforeend",`<div class="ai-image-plan-overlay" id="aiImagePlanModal"><div class="ai-image-plan"><div class="ai-image-plan-head"><div><h3>Quantas imagens você quer gerar?</h3><p>Escolha a estratégia de geração para este produto. O Make vai receber a foto atual e todas as informações do cadastro.</p></div><button class="btn small" type="button" data-action="close-ai-image-plan">×</button></div><div class="ai-image-plan-grid"><button class="ai-image-option" type="button" data-ai-image-count="1"><strong>1 imagem</strong><span class="chip green">mais rápida e econômica</span><small>Gera uma versão melhorada e substitui automaticamente a imagem principal do produto.</small></button><button class="ai-image-option" type="button" data-ai-image-count="2"><strong>2 imagens</strong><span class="chip gold">comparação segura</span><small>Mantém a principal atual e cria duas novas opções para comparar no site.</small></button><button class="ai-image-option" type="button" data-ai-image-count="3"><strong>3 imagens</strong><span class="chip blue">mais opções</span><small>Mantém a principal atual e cria três variações para escolha manual da melhor.</small></button></div><div class="ai-image-plan-note"><strong>Estratégia:</strong> 1 imagem = troca automática da principal. 2 ou 3 imagens = adiciona novas opções na galeria sem mexer na principal atual.</div></div></div>`);
+    document.body.insertAdjacentHTML("beforeend",`<div class="ai-image-plan-overlay" id="aiImagePlanModal"><div class="ai-image-plan"><div class="ai-image-plan-head"><div><h3>Quantas imagens você quer gerar?</h3><p>Escolha a estratégia de geração para este produto. A IA vai analisar a foto atual e todas as informações do cadastro para gerar imagens melhores para o site.</p></div><button class="btn small" type="button" data-action="close-ai-image-plan">×</button></div><div class="ai-image-plan-grid"><button class="ai-image-option" type="button" data-ai-image-count="1"><strong>1 imagem</strong><span class="chip green">mais rápida e econômica</span><small>Estratégia principal de e-commerce: gera uma foto hero limpa, frontal e pronta para virar a imagem principal do produto.</small></button><button class="ai-image-option" type="button" data-ai-image-count="2"><strong>2 imagens</strong><span class="chip gold">comparação segura</span><small>Estratégia de comparação: gera 2 imagens complementares para a galeria, sem trocar a principal atual.</small></button><button class="ai-image-option" type="button" data-ai-image-count="3"><strong>3 imagens</strong><span class="chip blue">mais opções</span><small>Estratégia completa: gera 3 imagens pensadas para galeria de e-commerce, com abordagens diferentes do mesmo produto.</small></button></div><div class="ai-image-plan-note"><strong>Estratégia:</strong> 1 imagem = troca automática da principal. 2 ou 3 imagens = adiciona novas opções na galeria sem mexer na principal atual.</div></div></div>`);
   }
   function askAiImageCount(p){
     ensureAiImagePlanModal();
@@ -2418,9 +2419,9 @@
     setStatus("Nome melhorado pela IA e aplicado ao produto","ok");
   }
   function buildAiImageStrategy(count){
-    if(count<=1)return {replacePrimary:true,label:'1 imagem',message:'Gera 1 imagem e substitui automaticamente a principal.'};
-    if(count===2)return {replacePrimary:false,label:'2 imagens',message:'Gera 2 imagens novas e preserva a principal atual para comparação.'};
-    return {replacePrimary:false,label:'3 imagens',message:'Gera 3 imagens novas e preserva a principal atual para seleção manual.'};
+    if(count<=1)return {replacePrimary:true,label:'1 imagem',message:'Estratégia hero: gerar 1 imagem principal de e-commerce e substituir automaticamente a foto principal.'};
+    if(count===2)return {replacePrimary:false,label:'2 imagens',message:'Estratégia comparativa: gerar 2 imagens complementares para a galeria e manter a principal atual.'};
+    return {replacePrimary:false,label:'3 imagens',message:'Estratégia completa: gerar 3 imagens com funções diferentes para enriquecer a galeria do produto.'};
   }
   async function saveGeneratedProductImageToGithub(p,src,index,batchId){
     let finalSrc=String(src||'').trim();
@@ -2430,9 +2431,8 @@
       const code=slug(p.codigo||p.gtin||getName(p)||Date.now());
       const fileName=`${code}-ia-${batchId}-${String(index).padStart(2,'0')}.webp`;
       const basePath=String(state.settings.githubImagesPath||'site/img/produtos').replace(/\/+$/,'');
-      const publicBase=String(state.settings.imagePublicBase||'img/produtos').replace(/\/+$/,'');
       await githubUpsertRaw(`${basePath}/${fileName}`,await blob.arrayBuffer(),`Gera imagem IA do produto ${p.codigo||getName(p)} (${index})`);
-      finalSrc=`${publicBase}/${fileName}`;
+      finalSrc=githubRawFileUrl(`${basePath}/${fileName}`)||absolutePublicUrl(`img/produtos/${fileName}`)||`img/produtos/${fileName}`;
     }
     return finalSrc;
   }
@@ -2464,8 +2464,9 @@
     p.imagens=uniq([...(p.imagens||[]),...saved]);
     if(plan.replacePrimary||!(p.url_imagem||p.imagem))p.url_imagem=p.imagem=saved[0]||p.url_imagem||p.imagem;
     markProductAiChange(p,['url_imagem','imagem','imagens']);
+    updateProductWorkbenchDom(key);
     setStatus(`${saved.length} imagem(ns) gerada(s) e salva(s) para o produto`,'ok');
-    toast(`${saved.length} imagem(ns) IA salva(s). ${plan.replacePrimary?'A primeira virou a principal.':'A principal atual foi preservada.'}`,'ok',5200);
+    toast(`${saved.length} imagem(ns) IA salva(s). ${plan.replacePrimary?'A primeira virou a principal e já aparece no card.':'A principal atual foi preservada e as novas foram adicionadas à galeria do card.'}`,'ok',6200);
   }
   async function aiKitDescription(){
     const k=currentKit();if(!k)return;
