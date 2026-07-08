@@ -240,7 +240,29 @@
     .bulk-price-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:15px}
     @media(max-width:760px){.bulk-price-dialog{padding:15px}.bulk-price-form{grid-template-columns:1fr 1fr}.bulk-price-summary{grid-template-columns:1fr}.bulk-price-actions .btn{flex:1 1 140px}.bulk-price-table td:first-child{min-width:170px}}
     @media(max-width:460px){.bulk-price-form{grid-template-columns:1fr}.bulk-price-head{align-items:center}.bulk-price-head p{font-size:11px}}
-  </style>
+  
+    /* Feedback discreto: toasts laterais e botões em processamento */
+    .toast-stack{position:fixed;right:16px;top:86px;z-index:99999;display:flex;flex-direction:column;gap:8px;width:min(360px,calc(100vw - 28px));pointer-events:none}
+    .toast-msg{pointer-events:auto;background:#fff;border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:14px;box-shadow:0 14px 36px rgba(0,0,0,.13);padding:11px 12px;font-size:12.5px;line-height:1.35;color:#222;animation:toastIn .18s ease-out;white-space:pre-wrap;overflow-wrap:anywhere}
+    .toast-msg.ok{border-left-color:var(--green);background:#f7fff9}.toast-msg.warn{border-left-color:var(--gold);background:#fffdf7}.toast-msg.err{border-left-color:var(--red);background:#fff8f7}
+    .toast-msg strong{display:block;font-size:12px;margin-bottom:2px}.toast-msg .toast-close{float:right;border:0;background:transparent;color:#777;font-weight:900;padding:0 0 4px 8px;cursor:pointer}
+    @keyframes toastIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+    .btn.busy,.btn[disabled]{opacity:.62!important;cursor:progress!important;pointer-events:none!important;transform:none!important}
+    .btn.busy::before{content:"";width:12px;height:12px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;display:inline-block;animation:btnSpin .75s linear infinite}
+    @keyframes btnSpin{to{transform:rotate(360deg)}}
+    .product-workbench.processing{box-shadow:0 0 0 3px rgba(201,163,73,.22),0 12px 34px rgba(0,0,0,.055)!important}
+    @media(max-width:700px){.toast-stack{right:10px;left:10px;top:auto;bottom:12px;width:auto}}
+
+    .product-chat-float{position:fixed;right:16px;bottom:18px;z-index:99990;width:min(360px,calc(100vw - 28px));max-height:70vh;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 54px rgba(0,0,0,.18);display:none;overflow:hidden}
+    .product-chat-float.open{display:flex;flex-direction:column}
+    .product-chat-head{padding:11px 12px;background:#f7f7f4;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+    .product-chat-head strong{display:block;font-size:13px;line-height:1.25}.product-chat-head small{display:block;margin-top:3px;color:var(--muted);font-size:11px;line-height:1.25}
+    .product-chat-body{padding:11px;overflow:auto;display:flex;flex-direction:column;gap:8px;min-height:130px;max-height:42vh;background:#fbfaf7}
+    .chat-bubble{max-width:86%;padding:9px 10px;border-radius:14px;font-size:12.5px;line-height:1.38;white-space:pre-wrap;position:relative}
+    .chat-bubble.user{align-self:flex-end;background:#dcf8c6;border:1px solid #c9ecae}.chat-bubble.ai{align-self:flex-start;background:#fff;border:1px solid var(--line)}
+    .chat-copy{display:block;margin-top:6px;border:0;background:transparent;color:#6b7280;font-size:11px;font-weight:800;padding:0;cursor:pointer;text-align:left}
+    .product-chat-compose{border-top:1px solid var(--line);padding:9px;display:grid;grid-template-columns:1fr auto;gap:7px;background:#fff}.product-chat-compose textarea{min-height:42px;max-height:90px;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:8px 9px;font-size:13px;outline:none}
+</style>
 </head>
 <body>
   <header class="topbar">
@@ -692,6 +714,40 @@
   function productInKit(kitId, productOrCode){return kitsByProduct(productOrCode).some(c=>c.id===kitId)}
 
   function setStatus(msg, type="warn"){ $("#statusText").textContent=msg; const d=$("#statusDot"); d.className="dot"+(type==="ok"?" ok":type==="err"?" err":"") }
+  let __lastToastText="",__lastToastAt=0;
+  function toast(msg,type="warn",timeout){
+    msg=String(msg||"").trim();
+    if(!msg||msg==="Carregando...")return;
+    const now=Date.now();
+    if(msg===__lastToastText&&now-__lastToastAt<1400)return;
+    __lastToastText=msg;__lastToastAt=now;
+    let stack=document.querySelector(".toast-stack");
+    if(!stack){stack=document.createElement("div");stack.className="toast-stack";document.body.appendChild(stack)}
+    const el=document.createElement("div");
+    el.className=`toast-msg ${type==="err"?"err":type==="ok"?"ok":"warn"}`;
+    const title=type==="err"?"Atenção":type==="ok"?"Concluído":"Processando";
+    el.innerHTML=`<button class="toast-close" type="button" aria-label="Fechar">×</button><strong>${title}</strong><span></span>`;
+    el.querySelector("span").textContent=msg;
+    el.querySelector(".toast-close").onclick=()=>el.remove();
+    stack.appendChild(el);
+    while(stack.children.length>5)stack.firstElementChild.remove();
+    setTimeout(()=>{el.style.opacity="0";el.style.transform="translateX(16px)";el.style.transition=".18s";setTimeout(()=>el.remove(),220)}, timeout|| (type==="err"?7600:3600));
+  }
+  const __setStatusBase=setStatus;
+  setStatus=function(msg,type="warn"){__setStatusBase(msg,type);toast(msg,type)};
+  window.alert=function(msg){const text=String(msg||"");const isErr=/erro|não foi possível|nao foi possivel|falha|conflito|revise|invalid|unauthorized|forbidden/i.test(text);toast(text,isErr?"err":"ok",isErr?9000:4200);console.log("Aviso:",text)};
+  function setButtonBusy(btn,busy,label){
+    if(!btn)return;
+    if(busy){btn.dataset.oldHtml=btn.dataset.oldHtml||btn.innerHTML;btn.classList.add("busy");btn.disabled=true;if(label)btn.innerHTML=label}
+    else{btn.classList.remove("busy");btn.disabled=false;if(btn.dataset.oldHtml){btn.innerHTML=btn.dataset.oldHtml;delete btn.dataset.oldHtml}}
+  }
+  async function runUiAction(btn,msg,fn){
+    if(btn?.disabled)return;
+    setButtonBusy(btn,true,msg||"Processando...");
+    try{return await fn()}
+    catch(err){console.error(err);setStatus(err?.message||String(err),"err")}
+    finally{setButtonBusy(btn,false)}
+  }
   function syncPendingProductsFlag(){state.dirtyProducts = state.dirtyProductKeys.size>0 || state.deletedProductKeys.size>0}
   function productSyncSnapshot(p){return {exists:!!p, estoque:toNum(p?.estoque), stock_updated_at:String(p?.stock_updated_at||""), last_update:toNum(p?.last_update), updated_at:String(p?.updated_at||"")}}
   function setProductSyncMeta(products){state.productSyncMeta={}; products.forEach(p=>{state.productSyncMeta[getKey(p)] = productSyncSnapshot(p)})}
@@ -1704,17 +1760,21 @@
     const s=state.settings;
     if(!s.githubToken||!s.githubOwner||!s.githubRepo) throw new Error("Configure token, owner e repositório do GitHub.");
     const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}`;
-    let lastError="";
-    for(let attempt=1;attempt<=3;attempt++){
-      const old=await githubContent(path);
+    let lastError="",forcedSha="";
+    for(let attempt=1;attempt<=6;attempt++){
+      const old=forcedSha?{sha:forcedSha}:await githubContent(path);
+      forcedSha="";
       const body={message,branch:s.githubBranch,content};
       if(old?.sha) body.sha=old.sha;
-      const r=await fetch(url,{method:"PUT",headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},body:JSON.stringify(body)});
+      const r=await fetch(url,{method:"PUT",cache:"no-store",headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},body:JSON.stringify(body)});
       if(r.ok) return r.json();
       lastError=await r.text();
       if(![409,422].includes(r.status)) throw new Error(`GitHub PUT ${path}: ${r.status} ${lastError.slice(0,240)}`);
+      const current=lastError.match(/is at ([a-f0-9]{40}) but expected/i)?.[1];
+      if(current)forcedSha=current;
+      await new Promise(r=>setTimeout(r,300*attempt));
     }
-    throw new Error(`GitHub PUT ${path}: conflito persistente após 3 tentativas. ${lastError.slice(0,240)}`);
+    throw new Error(`GitHub PUT ${path}: conflito persistente. Feche outras abas do admin e tente novamente. ${lastError.slice(0,220)}`);
   }
   githubContent=async function(path){
     const s=state.settings;
@@ -2170,11 +2230,27 @@
     const url=r.data?.[0]?.url||output?.result;
     return url?String(url):"";
   }
+  function updateProductWorkbenchDom(key){
+    const p=productByKey(key),card=document.querySelector(`.product-workbench[data-product-key="${CSS.escape(String(key))}"]`);
+    if(!p||!card)return false;
+    card.classList.add("dirty");
+    const title=card.querySelector(".workbench-title strong");if(title)title.textContent=getName(p);
+    const small=card.querySelector(".workbench-title small");if(small)small.textContent=`${p.codigo||key} · alterações pendentes`;
+    card.querySelectorAll("[data-card-field]").forEach(el=>{
+      const f=el.dataset.cardField;let v=f==="tags"?parseTags(p.tags).join(", "):(p[f]??"");
+      if(f==="validade"||f==="validade_oferta")v=workbenchDateValue(v);
+      if(el.tagName==="SELECT")el.value=String(v||"");else el.value=v;
+    });
+    const img=card.querySelector(".workbench-photo img");if(img){img.src=getImg(p);img.alt=getName(p)}
+    return true;
+  }
   function markProductAiChange(p,fields){
-    markProductDirty(getKey(p),fields);
+    const key=getKey(p);
+    markProductDirty(key,fields);
     mark("products");
     saveLocal();
-    renderProducts();
+    if(!updateProductWorkbenchDom(key))renderProducts();
+    renderSummary();
     refreshJson();
   }
   function assertAiProductIdentity(p,result){
@@ -2187,33 +2263,44 @@
   }
   function ensureProductChatModal(){
     if($("#productChatModal"))return;
-    document.body.insertAdjacentHTML("beforeend",`<div class="modal-overlay" id="productChatModal"><div class="modal"><div class="modal-head"><div><h3 id="productChatTitle">Chat IA do produto</h3><p id="productChatSub">Pergunte qualquer coisa usando os dados cadastrados deste produto.</p></div><button class="btn small" type="button" data-action="close-product-chat">Fechar</button></div><div class="modal-body"><div class="notice gold" style="margin-bottom:12px">A IA responde somente com base no cadastro enviado ao Make. Se o cadastro não tiver a informação, ela deve avisar.</div><div class="field"><label>Pergunta sobre o produto</label><textarea class="textarea" id="productChatQuestion" placeholder="Ex.: Esse produto está em oferta? Qual embalagem aparece no cadastro? Posso usar esse texto no site?"></textarea></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn primary" type="button" data-action="send-product-chat">Enviar pergunta</button><button class="btn" type="button" data-action="copy-product-chat">Copiar resposta</button></div><div id="productChatAnswer" class="notice" style="margin-top:12px;white-space:pre-wrap;line-height:1.45">Aguardando pergunta.</div></div></div></div>`);
+    document.body.insertAdjacentHTML("beforeend",`<aside class="product-chat-float" id="productChatModal" aria-live="polite"><div class="product-chat-head"><div><strong id="productChatTitle">Chat IA do produto</strong><small id="productChatSub">Pergunte sobre o produto</small></div><button class="btn small" type="button" data-action="close-product-chat">×</button></div><div class="product-chat-body" id="productChatMessages"><div class="chat-bubble ai">Digite uma pergunta sobre este produto.</div></div><div class="product-chat-compose"><textarea id="productChatQuestion" placeholder="Pergunte sobre o produto..."></textarea><button class="btn primary small" type="button" data-action="send-product-chat">Enviar</button></div></aside>`);
+    const q=$("#productChatQuestion");
+    q?.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();document.querySelector('[data-action="send-product-chat"]')?.click()}});
   }
   function openProductChat(key){
     const p=productByKey(key);if(!p)return;
     state.productChatKey=key;
     ensureProductChatModal();
-    const title=$("#productChatTitle"),sub=$("#productChatSub"),q=$("#productChatQuestion"),ans=$("#productChatAnswer"),modal=$("#productChatModal");
-    if(title)title.textContent="Chat IA: "+getName(p);
-    if(sub)sub.textContent=`Código ${p.codigo||key} · Marca ${p.marca||"sem marca"} · Estoque ${toNum(p.estoque)}`;
+    const title=$("#productChatTitle"),sub=$("#productChatSub"),q=$("#productChatQuestion"),msgs=$("#productChatMessages"),modal=$("#productChatModal");
+    if(title)title.textContent=getName(p);
+    if(sub)sub.textContent=`Cód. ${p.codigo||key} · ${p.marca||"sem marca"} · Est. ${toNum(p.estoque)}`;
     if(q)q.value="";
-    if(ans){ans.textContent="Digite uma pergunta sobre este produto e clique em Enviar pergunta.";ans.dataset.answer=""}
+    if(msgs)msgs.innerHTML='<div class="chat-bubble ai">Digite uma pergunta sobre este produto.</div>';
     modal?.classList.add("open");
     setTimeout(()=>q?.focus(),80);
   }
   function closeProductChat(){ $("#productChatModal")?.classList.remove("open") }
+  function addProductChatMessage(role,text,copy=false){
+    const msgs=$("#productChatMessages");if(!msgs)return;
+    const el=document.createElement("div");el.className=`chat-bubble ${role==="user"?"user":"ai"}`;
+    const span=document.createElement("span");span.textContent=String(text||"").trim();el.appendChild(span);
+    if(copy){const b=document.createElement("button");b.className="chat-copy";b.type="button";b.textContent="copiar";b.onclick=()=>navigator.clipboard?.writeText(span.textContent).then(()=>toast("Resposta copiada","ok"));el.appendChild(b)}
+    msgs.appendChild(el);msgs.scrollTop=msgs.scrollHeight;
+  }
   async function sendProductChatQuestion(){
     const key=state.productChatKey,p=productByKey(key);if(!p)throw new Error("Produto do chat não encontrado.");
     const q=$("#productChatQuestion")?.value.trim();
     if(!q)throw new Error("Digite uma pergunta sobre o produto.");
-    const ans=$("#productChatAnswer");
-    if(ans){ans.textContent="Consultando IA no Make...";ans.dataset.answer=""}
+    addProductChatMessage("user",q);
+    const qEl=$("#productChatQuestion");if(qEl)qEl.value="";
+    addProductChatMessage("ai","Consultando IA no Make...");
     setStatus("Consultando IA sobre o produto...","warn");
     const result=unwrapAiResult(await callMakeAi("text",{acao:"chat_produto",pergunta:q,produto:compactProductForAi(p)}));
     assertAiProductIdentity(p,result);
-    const resposta=result.resposta||result.answer||result.texto||result.message||"";
+    const resposta=result.resposta||result.answer||result.texto||result.message||result.content||result.result||result.body||result.output_text||"";
     if(!resposta)throw new Error("O Make não retornou uma resposta para o chat.");
-    if(ans){ans.textContent=String(resposta).trim();ans.dataset.answer=String(resposta).trim()}
+    const msgs=$("#productChatMessages");if(msgs?.lastElementChild?.textContent?.includes("Consultando IA"))msgs.lastElementChild.remove();
+    addProductChatMessage("ai",String(resposta).trim(),true);
     setStatus("Resposta do chat IA gerada","ok");
   }
   async function aiProductCadastro(key){
@@ -2296,14 +2383,23 @@
     if(!kit.produtos.length)return alert("Adicione produtos ao kit antes de gerar a capa.");
     setStatus("Enviando produtos do kit para gerar capa no Make...","warn");
     const result=await callMakeAi("image",{acao:"gerar_capa_kit",kit,instrucoes:"Crie uma capa promocional quadrada para e-commerce usando os produtos informados. Mostrar visual de kit, nome do kit, preco anterior, preco promocional e economia/desconto. Estilo limpo, legivel e pronto para loja online."});
-    const img=imageFromAiResult(result);
+    let img=imageFromAiResult(result);
     if(!img)throw new Error("O Make nao retornou URL ou base64 da capa.");
+    if(/^data:image\//i.test(img)){
+      setStatus("Salvando capa gerada no GitHub...","warn");
+      const blob=await (await fetch(img)).blob();
+      const fileName=`${slug(k.codigo||k.nome)||Date.now()}.webp`;
+      const basePath=String(state.settings.githubKitImagesPath||"site/img/kits").replace(/\/+$/,'');
+      const publicBase=String(state.settings.kitImagePublicBase||"img/kits").replace(/\/+$/,'');
+      await githubUpsertRaw(`${basePath}/${fileName}`,await blob.arrayBuffer(),`Atualiza capa IA do kit ${k.codigo||k.nome}`);
+      img=`${publicBase}/${fileName}`;
+    }
     k.imagem=img;
     mark("kits");
     saveLocal();
     renderKitEditor();
     refreshJson();
-    setStatus("Capa do kit gerada pela IA e aplicada","ok");
+    setStatus("Capa do kit gerada e aplicada. Revise e salve o kit.","ok");
   }
 
   document.addEventListener("focusin",e=>{const card=e.target.closest?.(".product-workbench");if(card)state.cardImageTargetKey=card.dataset.productKey});
@@ -2320,16 +2416,16 @@
     if(action==="workbench-remove-photo"&&p){if(!confirm("Remover a imagem principal deste produto?"))return;p.url_imagem=p.imagem="";markProductDirty(key,["url_imagem","imagem"]);mark("products");renderProducts()}
     if(action==="workbench-make-primary"&&p){p.url_imagem=p.imagem=b.dataset.src;markProductDirty(key,["url_imagem","imagem"]);mark("products");renderProducts()}
     if(action==="workbench-remove-gallery"&&p){const src=b.dataset.src;p.imagens=(p.imagens||[]).filter(x=>x!==src);if((p.url_imagem||p.imagem)===src)p.url_imagem=p.imagem=p.imagens[0]||"";markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts()}
-    if(action==="ai-product-cadastro"&&p){try{await aiProductCadastro(key)}catch(err){console.error(err);setStatus("Erro na IA cadastro","err");alert(err.message)}}
+    if(action==="ai-product-cadastro"&&p){await runUiAction(b,"Gerando cadastro...",()=>aiProductCadastro(key));return}
     if(action==="open-product-chat"&&p){openProductChat(key)}
     if(action==="close-product-chat"){closeProductChat()}
-    if(action==="send-product-chat"){try{await sendProductChatQuestion()}catch(err){console.error(err);setStatus("Erro no chat IA","err");alert(err.message)}}
-    if(action==="copy-product-chat"){const text=$("#productChatAnswer")?.dataset.answer||$("#productChatAnswer")?.textContent||"";if(text&&navigator.clipboard)navigator.clipboard.writeText(text).then(()=>setStatus("Resposta copiada","ok"))}
-    if(action==="ai-product-description"&&p){try{await aiProductDescription(key)}catch(err){console.error(err);setStatus("Erro na IA de descricao","err");alert(err.message)}}
-    if(action==="ai-product-name"&&p){try{await aiProductName(key)}catch(err){console.error(err);setStatus("Erro na IA de nome","err");alert(err.message)}}
-    if(action==="ai-product-image"&&p){try{await aiProductImage(key)}catch(err){console.error(err);setStatus("Erro na IA de imagem","err");alert(err.message)}}
-    if(action==="ai-kit-description"){try{await aiKitDescription()}catch(err){console.error(err);setStatus("Erro na IA do kit","err");alert(err.message)}}
-    if(action==="ai-kit-cover"){try{await aiKitCover()}catch(err){console.error(err);setStatus("Erro na IA da capa","err");alert(err.message)}}
+    if(action==="send-product-chat"){await runUiAction(b,"Enviando...",()=>sendProductChatQuestion());return}
+    if(action==="copy-product-chat"){const text=[...document.querySelectorAll("#productChatMessages .chat-bubble.ai span")].at(-1)?.textContent||"";if(text&&navigator.clipboard)navigator.clipboard.writeText(text).then(()=>toast("Resposta copiada","ok"))}
+    if(action==="ai-product-description"&&p){await runUiAction(b,"Gerando descrição...",()=>aiProductDescription(key));return}
+    if(action==="ai-product-name"&&p){await runUiAction(b,"Melhorando nome...",()=>aiProductName(key));return}
+    if(action==="ai-product-image"&&p){await runUiAction(b,"Melhorando foto...",()=>aiProductImage(key));return}
+    if(action==="ai-kit-description"){await runUiAction(b,"Gerando descrição...",()=>aiKitDescription());return}
+    if(action==="ai-kit-cover"){await runUiAction(b,"Gerando capa...",()=>aiKitCover());return}
     if(action==="open-expiry-alert")renderExpiryAlert();
     if(action==="close-expiry-alert")$(".expiry-alert-overlay")?.remove();
     if(action==="open-expiry-product"){ $(".expiry-alert-overlay")?.remove(); state.activeTab="produtos"; renderAll(); focusProductWorkbench(key); }
@@ -2366,6 +2462,53 @@
     if(state.dirtyNotes&&state.settings.githubToken)await saveNotes(false);
   };
   setInterval(async()=>{const removed=cleanupExpiredNotes();if(removed){mark("notes");renderNotes();updateNotesIndicator();if(state.settings.githubToken)await saveNotes(false)}},60*60*1000);
+
+  document.addEventListener("click",async e=>{
+    const b=e.target.closest?.("[data-action]");if(!b)return;
+    const action=b.dataset.action,key=b.dataset.key,p=key?productByKey(key):null;
+    const handlers={
+      "save-card-firebase":()=>saveProductFirebase(b.dataset.key),
+      "save-products-firebase":()=>saveProductsFirebaseOnly(),
+      "save-everything":()=>saveEverything(),
+      "save-products":()=>saveProducts(),
+      "save-meta":()=>saveMeta(),
+      "save-cestas":()=>saveCestas(),
+      "save-kits":()=>saveKits(),
+      "save-github-now":()=>saveGithubNow(),
+      "test-github":()=>testGithub(),
+      "ai-product-cadastro":()=>p?aiProductCadastro(key):null,
+      "ai-product-description":()=>p?aiProductDescription(key):null,
+      "ai-product-name":()=>p?aiProductName(key):null,
+      "ai-product-image":()=>p?aiProductImage(key):null,
+      "send-product-chat":()=>sendProductChatQuestion(),
+      "ai-kit-description":()=>aiKitDescription(),
+      "ai-kit-cover":()=>aiKitCover()
+    };
+    if(!handlers[action])return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    const labels={
+      "save-card-firebase":"Salvando...",
+      "save-products-firebase":"Salvando Firebase...",
+      "save-everything":"Salvando geral...",
+      "save-products":"Salvando produtos...",
+      "save-meta":"Salvando cadastros...",
+      "save-cestas":"Salvando cestas...",
+      "save-kits":"Salvando kits...",
+      "save-github-now":"Enviando GitHub...",
+      "test-github":"Testando...",
+      "ai-product-cadastro":"Gerando cadastro...",
+      "ai-product-description":"Gerando descrição...",
+      "ai-product-name":"Melhorando nome...",
+      "ai-product-image":"Melhorando foto...",
+      "send-product-chat":"Enviando...",
+      "ai-kit-description":"Gerando descrição...",
+      "ai-kit-cover":"Gerando capa..."
+    };
+    const card=b.closest?.(".product-workbench");card?.classList.add("processing");
+    await runUiAction(b,labels[action]||"Processando...",handlers[action]);
+    card?.classList.remove("processing");
+  },true);
+
   loadData();
 })(); 
 </script>
