@@ -2322,6 +2322,19 @@
     }
     return true;
   }
+  function markProductAiChange(product,fields=[]){
+    if(!product)return;
+    const key=getKey(product);
+    const changed=uniq((Array.isArray(fields)?fields:[fields]).map(f=>String(f||"").trim()).filter(Boolean));
+    product.last_update=Date.now();
+    product.updated_at=nowIso();
+    markProductDirty(key,changed.length?changed:["__ai"]);
+    mark("products");
+    saveLocal();
+    renderProducts();
+    if(state.editingProductKey===key)renderProductEditor(false);
+    refreshJson();
+  }
   function imageFromAiResult(result){
     const r=unwrapAiResult(result);
     const direct=r.imagem||r.imagem_principal||r.image||r.image_url||r.url_imagem||r.url||r.src;
