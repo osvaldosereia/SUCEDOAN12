@@ -2424,7 +2424,13 @@
       const blob=await (await fetch(img)).blob();
       const fileName=`${slug(k.codigo||k.nome)||Date.now()}.webp`;
       const basePath=String(state.settings.githubKitImagesPath||"site/img/kits").replace(/\/+$/,'');
-      const publicBase=String(state.settings.kitImagePublicBase||"img/kits").replace(/\/+$/,'');
+      let publicBase=String(state.settings.kitImagePublicBase||"").replace(/\/+$/,'');
+      if(!/^https?:\/\//i.test(publicBase)){
+        const owner=String(state.settings.githubOwner||"osvaldosereia").trim();
+        const repo=String(state.settings.githubRepo||"SUCEDOAN12").trim();
+        const branch=String(state.settings.githubBranch||"main").trim();
+        publicBase=`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${basePath}`;
+      }
       await githubUpsertRaw(`${basePath}/${fileName}`,await blob.arrayBuffer(),`Atualiza capa IA do kit ${k.codigo||k.nome}`);
       img=`${publicBase}/${fileName}`;
       toast(`Capa do kit salva no GitHub em ${basePath}/${fileName}`,'ok',5200);
@@ -2432,6 +2438,7 @@
     k.imagem=img;
     mark("kits");
     saveLocal();
+    renderKitsList();
     renderKitEditor();
     refreshJson();
     setStatus("Capa do kit gerada e aplicada. Revise e salve o kit.","ok");
