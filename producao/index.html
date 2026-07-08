@@ -2474,15 +2474,15 @@
     if(!p.url_imagem&&!p.imagem&&!(p.imagens||[]).length)throw new Error('Este produto ainda n?o tem imagem de refer?ncia para melhorar.');
     readSettingsFromUi();
     const count=3,plan=buildAiImageStrategy(count),batchId=new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14),seoPlan=productSeoImagePlan(p,batchId);
-    const payload=buildProductAiPayload(p);
-    Object.assign(payload,{
+    const payload={
       acao:'melhorar_imagem_produto',
       quantidade_imagens:3,
+      produto:compactProductForAi(p),
       estrategia:plan.label,
       seo_imagens:seoPlan,
       substituir_imagens_existentes:true,
       instrucoes:'Gerar exatamente 3 imagens do produto para substituir a galeria atual: imagem 1 foto principal padrao de e-commerce em fundo branco; imagem 2 mockup ultrarrealista mostrando uso real coerente; imagem 3 imagem informativa usando somente nome, embalagem e informacoes reais visiveis no rotulo/cadastro. Preservar embalagem, rotulo, formato, marca, cores e variante do produto.'
-    });
+    };
     setStatus('Enviando produto para gerar 3 imagens SEO no Make...','warn');
     const result=await callMakeAi('image',payload);
     console.log('Resposta IA imagem produto:',result);
