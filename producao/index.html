@@ -1824,6 +1824,7 @@
           <div class="workbench-title"><strong>${esc(getName(p))}</strong><small>${esc(p.codigo||key)} ${dirty?"· alterações pendentes":""}</small><div class="workbench-memberships" style="margin-top:6px">${memberships}</div></div>
           <div class="workbench-actions">
             <button class="btn small gold" type="button" data-action="ai-product-cadastro" data-key="${esc(key)}">✨ IA cadastro</button>
+            <button class="btn small blue" type="button" data-action="open-product-chat" data-key="${esc(key)}">💬 Chat produto</button>
             <button class="btn small blue" type="button" data-action="save-card-firebase" data-key="${esc(key)}">☁ Salvar produto</button>
             <button class="btn small gold" type="button" data-action="edit-membership" data-code="${esc(code)}">🧺 Cestas</button>
             <button class="btn small green" type="button" data-action="edit-kit-membership" data-code="${esc(code)}">🎁 Kits</button>
@@ -2086,8 +2087,16 @@
       embalagem:p.embalagem||"",
       preco:toNum(p.preco),
       preco_oferta:toNum(p.preco_oferta),
+      preco_custo:toNum(p.preco_custo),
       estoque:toNum(p.estoque),
+      situacao:p.situacao||"",
+      validade:p.validade||"",
+      ncm:p.ncm||"",
+      fornecedor:p.fornecedor||"",
+      gondola:p.gondola||"",
+      prateleira:p.prateleira||"",
       descricao:p.descricao||"",
+      descricao_curta:p.descricao_curta||"",
       tags:parseTags(p.tags),
       imagem:img,
       imagem_url:publicAssetUrl(img)
@@ -2123,6 +2132,9 @@
       preco_novo:toNum(k.preco),
       desconto_percentual:toNum(k.desconto_percentual),
       economia:Math.max(0,total-toNum(k.preco)),
+      preco_anterior_formatado:brl(total),
+      preco_novo_formatado:brl(toNum(k.preco)),
+      economia_formatada:brl(Math.max(0,total-toNum(k.preco))),
       produtos
     };
   }
@@ -2172,6 +2184,37 @@
     const cat=[p.categoria,p.subcategoria,p.subsubcategoria,getName(p)].join(" ").toLowerCase();
     const isFood=/café|cafe|achocolatado|alimento|arroz|feijão|feijao|macarrão|macarrao|açúcar|acucar|farinha|leite|biscoito|bolacha|molho|tempero|óleo|oleo|cereal/.test(cat);
     if(isFood&&/(creme dental|higiene bucal|colgate|shampoo|sabonete|desodorante|detergente|amaciante)/.test(desc))throw new Error("A IA parece ter descrito outro tipo de produto. A descrição foi bloqueada para evitar cadastro errado.");
+  }
+  function ensureProductChatModal(){
+    if($("#productChatModal"))return;
+    document.body.insertAdjacentHTML("beforeend",`<div class="modal-overlay" id="productChatModal"><div class="modal"><div class="modal-head"><div><h3 id="productChatTitle">Chat IA do produto</h3><p id="productChatSub">Pergunte qualquer coisa usando os dados cadastrados deste produto.</p></div><button class="btn small" type="button" data-action="close-product-chat">Fechar</button></div><div class="modal-body"><div class="notice gold" style="margin-bottom:12px">A IA responde somente com base no cadastro enviado ao Make. Se o cadastro não tiver a informação, ela deve avisar.</div><div class="field"><label>Pergunta sobre o produto</label><textarea class="textarea" id="productChatQuestion" placeholder="Ex.: Esse produto está em oferta? Qual embalagem aparece no cadastro? Posso usar esse texto no site?"></textarea></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn primary" type="button" data-action="send-product-chat">Enviar pergunta</button><button class="btn" type="button" data-action="copy-product-chat">Copiar resposta</button></div><div id="productChatAnswer" class="notice" style="margin-top:12px;white-space:pre-wrap;line-height:1.45">Aguardando pergunta.</div></div></div></div>`);
+  }
+  function openProductChat(key){
+    const p=productByKey(key);if(!p)return;
+    state.productChatKey=key;
+    ensureProductChatModal();
+    const title=$("#productChatTitle"),sub=$("#productChatSub"),q=$("#productChatQuestion"),ans=$("#productChatAnswer"),modal=$("#productChatModal");
+    if(title)title.textContent="Chat IA: "+getName(p);
+    if(sub)sub.textContent=`Código ${p.codigo||key} · Marca ${p.marca||"sem marca"} · Estoque ${toNum(p.estoque)}`;
+    if(q)q.value="";
+    if(ans){ans.textContent="Digite uma pergunta sobre este produto e clique em Enviar pergunta.";ans.dataset.answer=""}
+    modal?.classList.add("open");
+    setTimeout(()=>q?.focus(),80);
+  }
+  function closeProductChat(){ $("#productChatModal")?.classList.remove("open") }
+  async function sendProductChatQuestion(){
+    const key=state.productChatKey,p=productByKey(key);if(!p)throw new Error("Produto do chat não encontrado.");
+    const q=$("#productChatQuestion")?.value.trim();
+    if(!q)throw new Error("Digite uma pergunta sobre o produto.");
+    const ans=$("#productChatAnswer");
+    if(ans){ans.textContent="Consultando IA no Make...";ans.dataset.answer=""}
+    setStatus("Consultando IA sobre o produto...","warn");
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"chat_produto",pergunta:q,produto:compactProductForAi(p)}));
+    assertAiProductIdentity(p,result);
+    const resposta=result.resposta||result.answer||result.texto||result.message||"";
+    if(!resposta)throw new Error("O Make não retornou uma resposta para o chat.");
+    if(ans){ans.textContent=String(resposta).trim();ans.dataset.answer=String(resposta).trim()}
+    setStatus("Resposta do chat IA gerada","ok");
   }
   async function aiProductCadastro(key){
     const p=productByKey(key);if(!p)return;
@@ -2232,16 +2275,20 @@
   }
   async function aiKitDescription(){
     const k=currentKit();if(!k)return;
-    setStatus("Gerando descricao do kit no Make...","warn");
+    setStatus("Gerando nome curto e descricao objetiva do kit no Make...","warn");
     const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_descricao_kit",kit:compactKitForAi(k)}));
     const desc=result.descricao||result.description||result.texto||"";
+    const nome=result.nome_sugerido||result.nome_curto||result.nome||result.name||"";
     if(!desc)throw new Error("O Make nao retornou uma descricao para o kit.");
+    const fields=["descricao"];
     k.descricao=String(desc).trim();
+    if(nome){k.nome=String(nome).trim().slice(0,70);fields.push("nome")}
     mark("kits");
     saveLocal();
+    renderKitsList();
     renderKitEditor();
     refreshJson();
-    setStatus("Descricao do kit gerada pela IA","ok");
+    setStatus(`IA do kit aplicada (${fields.join(", ")}). Revise e salve o kit.`,"ok");
   }
   async function aiKitCover(){
     const k=currentKit();if(!k)return;
@@ -2274,6 +2321,10 @@
     if(action==="workbench-make-primary"&&p){p.url_imagem=p.imagem=b.dataset.src;markProductDirty(key,["url_imagem","imagem"]);mark("products");renderProducts()}
     if(action==="workbench-remove-gallery"&&p){const src=b.dataset.src;p.imagens=(p.imagens||[]).filter(x=>x!==src);if((p.url_imagem||p.imagem)===src)p.url_imagem=p.imagem=p.imagens[0]||"";markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts()}
     if(action==="ai-product-cadastro"&&p){try{await aiProductCadastro(key)}catch(err){console.error(err);setStatus("Erro na IA cadastro","err");alert(err.message)}}
+    if(action==="open-product-chat"&&p){openProductChat(key)}
+    if(action==="close-product-chat"){closeProductChat()}
+    if(action==="send-product-chat"){try{await sendProductChatQuestion()}catch(err){console.error(err);setStatus("Erro no chat IA","err");alert(err.message)}}
+    if(action==="copy-product-chat"){const text=$("#productChatAnswer")?.dataset.answer||$("#productChatAnswer")?.textContent||"";if(text&&navigator.clipboard)navigator.clipboard.writeText(text).then(()=>setStatus("Resposta copiada","ok"))}
     if(action==="ai-product-description"&&p){try{await aiProductDescription(key)}catch(err){console.error(err);setStatus("Erro na IA de descricao","err");alert(err.message)}}
     if(action==="ai-product-name"&&p){try{await aiProductName(key)}catch(err){console.error(err);setStatus("Erro na IA de nome","err");alert(err.message)}}
     if(action==="ai-product-image"&&p){try{await aiProductImage(key)}catch(err){console.error(err);setStatus("Erro na IA de imagem","err");alert(err.message)}}
