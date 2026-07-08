@@ -1759,7 +1759,7 @@
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-07-kits-promocionais-v2-cesta-ajuste',
+      APP_VERSION: '2026-07-07-kits-promocionais-v3-ref-entrega',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
@@ -3971,8 +3971,8 @@
           <input type="text" id="chk-rua" class="field" placeholder="Rua ou avenida*">
           <label class="checkout-field-label">Número e quadra</label>
           <div class="field-row"><input type="text" id="chk-quadra" class="field" placeholder="Quadra (opcional)" style="flex:1"><input type="text" id="chk-casa" class="field" placeholder="Número*" style="flex:1"></div>
-          <label class="checkout-field-label" for="chk-frente">Ponto de referencia para entrega</label>
-          <input type="text" id="chk-frente" class="field" placeholder="Ex: casa azul, portao branco, comercio ao lado">
+          <label class="checkout-field-label" for="chk-frente">Ponto de referência para entrega</label>
+          <input type="text" id="chk-frente" class="field" placeholder="Como é a frente da casa?">
           <label class="checkout-field-label" for="chk-pagamento">Pagamento*</label>
           <select id="chk-pagamento" class="field"><option value="">Selecione...</option><option value="DINHEIRO">Dinheiro</option><option value="PIX">Pix</option><option value="CARTAO_DE_DEBITO">Cartão de Débito</option><option value="CARTAO_DE_CREDITO">Cartão de Crédito</option><option value="VALE_ALIMENTACAO">Vale Alimentação</option><option value="VALE_REFEICAO">Vale Refeição</option></select>
           </div>
@@ -4030,8 +4030,8 @@
             <input type="text" id="chk-rua" class="field" placeholder="Rua ou avenida*">
             <label class="checkout-field-label">Numero e quadra</label>
             <div class="field-row"><input type="text" id="chk-quadra" class="field" placeholder="Quadra (opcional)" style="flex:1"><input type="text" id="chk-casa" class="field" placeholder="Numero*" style="flex:1"></div>
-            <label class="checkout-field-label" for="chk-frente">Ponto de referencia para entrega</label>
-            <input type="text" id="chk-frente" class="field" placeholder="Ex: casa azul, portao branco, comercio ao lado">
+            <label class="checkout-field-label" for="chk-frente">Ponto de referência para entrega</label>
+            <input type="text" id="chk-frente" class="field" placeholder="Como é a frente da casa?">
             ${addressConfirm}
             <label class="checkout-field-label" for="chk-pagamento">Pagamento*</label>
             <select id="chk-pagamento" class="field"><option value="">Selecione...</option><option value="DINHEIRO">Dinheiro</option><option value="PIX">Pix</option><option value="CARTAO_DE_DEBITO">Cartao de Debito</option><option value="CARTAO_DE_CREDITO">Cartao de Credito</option><option value="VALE_ALIMENTACAO">Vale Alimentacao</option><option value="VALE_REFEICAO">Vale Refeicao</option></select>
@@ -4313,7 +4313,7 @@
     function emailValido(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim()); }
 
     function saveCheckoutClient() {
-      const ids = ['chk-nome','chk-cpf','chk-telefone','chk-email','chk-cep','chk-cidade','chk-bairro','chk-rua','chk-quadra','chk-casa','chk-frente','chk-pagamento'];
+      const ids = ['chk-nome','chk-cpf','chk-telefone','chk-email','chk-cep','chk-cidade','chk-bairro','chk-rua','chk-quadra','chk-casa','chk-pagamento'];
       const dados = {};
       ids.forEach(id => { const el = $(id); if (el) dados[id] = el.value || ''; });
       writeCache(CONFIG.CHECKOUT_CLIENT_KEY, { savedAt: Date.now(), dados });
@@ -4323,7 +4323,7 @@
       const saved = readCache(CONFIG.CHECKOUT_CLIENT_KEY);
       const dados = saved && saved.dados ? saved.dados : {};
       Object.entries(dados).forEach(([id, value]) => { const el = $(id); if (el && !el.value) el.value = value || ''; });
-      const frente = $('chk-frente'); if (frente) frente.value = cleanDeliveryReference(frente.value);
+      const frente = $('chk-frente'); if (frente) frente.value = '';
       const cpf = $('chk-cpf'); if (cpf) cpf.value = formatarCPF(cpf.value);
       const tel = $('chk-telefone'); if (tel) tel.value = tel.value ? formatarTelefone(tel.value) : '';
       const cep = $('chk-cep'); if (cep) cep.value = formatarCEP(cep.value);
@@ -4376,7 +4376,7 @@
         'chk-bairro': valueFrom(endereco, ['bairro']),
         'chk-rua': valueFrom(endereco, ['endereco', 'rua']),
         'chk-casa': valueFrom(endereco, ['numero']),
-        'chk-frente': cleanDeliveryReference(valueFrom(endereco, ['referencia', 'pontoReferencia', 'ponto_referencia', 'complemento']))
+        'chk-frente': ''
       };
       Object.entries(values).forEach(([id, value]) => {
         const el = $(id);
@@ -4720,7 +4720,7 @@
       if (rua) dadosOpcionais.push(`Rua: ${rua}`);
       if (quadra) dadosOpcionais.push(`Quadra: ${quadra}`);
       if (casa) dadosOpcionais.push(`Nº: ${casa}`);
-      if (frente) dadosOpcionais.push(`Referencia para entrega: ${frente}`);
+      if (frente) dadosOpcionais.push(`Referência para entrega: ${frente}`);
       const dadosCliente = `\n*👤 DADOS PARA ATENDIMENTO*\nNome: ${nome}\nTelefone/WhatsApp: ${formatarTelefone(telefone)}\nCidade: ${cidade}/${uf}\nBairro: ${bairro}${dadosOpcionais.length ? `\n${dadosOpcionais.join('\n')}` : '\nEndereço completo: confirmar no atendimento'}\n📅 *Agendamento:* ${formatOrderDate(dataAgendamento)}\n💳 *Pagamento:* ${pagamentoBling.nome}`;
       fetch(CONFIG.MAKE_WEBHOOK_URL, {
         method: 'POST',
