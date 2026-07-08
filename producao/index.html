@@ -471,7 +471,7 @@
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
         <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho kitspromocionais.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="img/produtos"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
-        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">Use o webhook de textos para o botão único IA Cadastro (nome, embalagem, descrição e tags). Use o webhook de imagens apenas para capas de kits e fotos.</div></div>
+        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">Use o webhook de textos para o botão único IA Cadastro (nome, embalagem, descrição e tags). Use o webhook de imagens para capas de kits e para gerar 3 fotos SEO do produto: fundo branco, mockup de uso e informativa.</div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
       <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar kitspromocionais.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
@@ -923,7 +923,7 @@
   async function prepareKitImageBlob(file){return compressImageToWebp(file,{maxBytes:IMAGE_MAX_BYTES,maxDimension:900,square:true})}
   function selectedProductPhotoFile(){const input=$("#productPhotoFile"); return input?.files?.[0]||null}
   async function useSelectedPhotoLocal(){const p=productByKey(state.editingProductKey); const file=selectedProductPhotoFile(); if(!p||!file) return alert("Selecione uma imagem primeiro."); const prepared=await prepareProductImageBlob(file); p.url_imagem=await blobToDataUrl(prepared.blob); p.imagem=p.url_imagem; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem']); mark('products'); renderProductEditor(false); setStatus(`Foto aplicada em WebP (${formatBytes(prepared.bytes)})`, "ok")}
-  async function uploadSelectedPhotoGithub(){const p=productByKey(state.editingProductKey); const file=selectedProductPhotoFile(); if(!p||!file) return alert("Selecione uma imagem primeiro."); try{readSettingsFromUi(); setStatus("Compactando e enviando foto ao GitHub...", "warn"); const prepared=await prepareProductImageBlob(file); const code=slug(p.codigo||p.gtin||getName(p)||Date.now()); const fileName=`${code||Date.now()}.webp`; const basePath=String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,''); const path=`${basePath}/${fileName}`; await githubUpsertRaw(path, await prepared.blob.arrayBuffer(), `Atualiza foto do produto ${p.codigo||getName(p)}`); const publicBase=String(state.settings.imagePublicBase||"img/produtos").replace(/\/+$/,''); p.url_imagem=`${publicBase}/${fileName}`; p.imagem=p.url_imagem; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem']); mark('products'); renderProductEditor(false); setStatus(`Foto enviada ao GitHub em WebP (${formatBytes(prepared.bytes)})`, "ok"); alert(`Foto compactada em WebP (${formatBytes(prepared.bytes)}) e enviada. Clique em Salvar produtos para gravar o produtos.json.`)}catch(e){console.error(e); setStatus("Erro na foto", "err"); alert("Erro ao enviar foto: "+e.message)}}
+  async function uploadSelectedPhotoGithub(){const p=productByKey(state.editingProductKey); const file=selectedProductPhotoFile(); if(!p||!file) return alert("Selecione uma imagem primeiro."); try{readSettingsFromUi(); setStatus("Compactando e enviando foto SEO ao GitHub...", "warn"); const prepared=await prepareProductImageBlob(file); const oldSources=currentProductImageSources(p); const fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"); const basePath=String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,''); const path=`${basePath}/${fileName}`; await githubUpsertRaw(path, await prepared.blob.arrayBuffer(), `Atualiza foto SEO do produto ${p.codigo||getName(p)}`); const src=publicProductImageSrc(fileName); oldSources.forEach(x=>markGithubProductImageForDelete(x)); p.url_imagem=src; p.imagem=src; p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]); p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem','imagens']); mark('products'); renderProductEditor(false); setStatus(`Foto SEO enviada ao GitHub em WebP (${formatBytes(prepared.bytes)})`, "ok"); alert(`Foto SEO compactada em WebP (${formatBytes(prepared.bytes)}) e enviada como ${fileName}. Clique em Salvar geral para publicar e limpar imagens antigas.`)}catch(e){console.error(e); setStatus("Erro na foto", "err"); alert("Erro ao enviar foto: "+e.message)}}
   function removeProductPhoto(){const p=productByKey(state.editingProductKey); if(!p) return; if(!confirm("Remover a foto deste produto?")) return; p.url_imagem=""; p.imagem=""; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem']); mark('products'); renderProductEditor(false)}
   function copyProductPhotoUrl(){const p=productByKey(state.editingProductKey); if(!p) return; navigator.clipboard?.writeText(p.url_imagem||p.imagem||""); alert("URL da foto copiada.")}
   function toggleProductTag(tag,checked){const p=productByKey(state.editingProductKey); if(!p) return; let tags=parseTags(p.tags); if(checked && !tags.includes(tag)) tags.push(tag); if(!checked) tags=tags.filter(t=>t!==tag); p.tags=tags; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['tags']); mark('products'); renderProductEditor(false)}
@@ -2334,54 +2334,7 @@
     if($("#aiImagePlanModal"))return;
     document.body.insertAdjacentHTML("beforeend",`<div class="ai-image-plan-overlay" id="aiImagePlanModal"><div class="ai-image-plan"><div class="ai-image-plan-head"><div><h3>Quantas imagens você quer gerar?</h3><p>Escolha a estratégia de geração para este produto. A IA vai analisar a foto atual e todas as informações do cadastro para gerar imagens melhores para o site.</p></div><button class="btn small" type="button" data-action="close-ai-image-plan">×</button></div><div class="ai-image-plan-grid"><button class="ai-image-option" type="button" data-ai-image-count="1"><strong>1 imagem</strong><span class="chip green">mais rápida e econômica</span><small>Estratégia principal de e-commerce: gera uma foto hero limpa, frontal e pronta para virar a imagem principal do produto.</small></button><button class="ai-image-option" type="button" data-ai-image-count="2"><strong>2 imagens</strong><span class="chip gold">comparação segura</span><small>Estratégia de comparação: gera 2 imagens complementares para a galeria, sem trocar a principal atual.</small></button><button class="ai-image-option" type="button" data-ai-image-count="3"><strong>3 imagens</strong><span class="chip blue">mais opções</span><small>Estratégia completa: gera 3 imagens pensadas para galeria de e-commerce, com abordagens diferentes do mesmo produto.</small></button></div><div class="ai-image-plan-note"><strong>Estratégia:</strong> 1 imagem = troca automática da principal. 2 ou 3 imagens = adiciona novas opções na galeria sem mexer na principal atual.</div></div></div>`);
   }
-  function askAiImageCount(p){
-    ensureAiImagePlanModal();
-    return new Promise((resolve,reject)=>{
-      const modal=$("#aiImagePlanModal"); if(!modal)return reject(new Error("Modal de imagens não disponível."));
-      const cleanup=()=>{modal.classList.remove('open'); modal.querySelectorAll('[data-ai-image-count]').forEach(b=>b.onclick=null); const close=modal.querySelector('[data-action="close-ai-image-plan"]'); if(close) close.onclick=null; modal.onclick=null;};
-      modal.querySelectorAll('[data-ai-image-count]').forEach(btn=>btn.onclick=()=>{const n=Math.max(1,Math.min(3,Number(btn.dataset.aiImageCount)||1)); cleanup(); resolve(n);});
-      const close=modal.querySelector('[data-action="close-ai-image-plan"]'); if(close) close.onclick=()=>{cleanup(); reject(new Error('Geração de imagem cancelada.'));};
-      modal.onclick=(e)=>{if(e.target===modal){cleanup(); reject(new Error('Geração de imagem cancelada.'));}};
-      modal.classList.add('open');
-    });
-  }
-  function updateProductWorkbenchDom(key){
-    const p=productByKey(key),card=document.querySelector(`.product-workbench[data-product-key="${CSS.escape(String(key))}"]`);
-    if(!p||!card)return false;
-    card.classList.add("dirty");
-    const title=card.querySelector(".workbench-title strong");if(title)title.textContent=getName(p);
-    const small=card.querySelector(".workbench-title small");if(small)small.textContent=`${p.codigo||key} · alterações pendentes`;
-    card.querySelectorAll("[data-card-field]").forEach(el=>{
-      const f=el.dataset.cardField;let v=f==="tags"?parseTags(p.tags).join(", "):(p[f]??"");
-      if(f==="validade"||f==="validade_oferta")v=workbenchDateValue(v);
-      if(el.tagName==="SELECT")el.value=String(v||"");else el.value=v;
-    });
-    const img=card.querySelector(".workbench-photo img");if(img){img.src=getImg(p);img.alt=getName(p)}
-    return true;
-  }
-  function markProductAiChange(p,fields){
-    const key=getKey(p);
-    markProductDirty(key,fields);
-    mark("products");
-    saveLocal();
-    if(!updateProductWorkbenchDom(key))renderProducts();
-    renderSummary();
-    refreshJson();
-  }
-  function assertAiProductIdentity(p,result){
-    const codigo=String(p.codigo||"").trim(),codigoRet=String(result.produto_codigo_recebido||result.codigo_recebido||"").trim();
-    if(codigo&&codigoRet&&codigo!==codigoRet)throw new Error(`A IA retornou dados de outro produto: código ${codigoRet}. Produto atual: ${codigo}.`);
-    const desc=String(result.descricao||result.description||"").toLowerCase();
-    const cat=[p.categoria,p.subcategoria,p.subsubcategoria,getName(p)].join(" ").toLowerCase();
-    const isFood=/café|cafe|achocolatado|alimento|arroz|feijão|feijao|macarrão|macarrao|açúcar|acucar|farinha|leite|biscoito|bolacha|molho|tempero|óleo|oleo|cereal/.test(cat);
-    if(isFood&&/(creme dental|higiene bucal|colgate|shampoo|sabonete|desodorante|detergente|amaciante)/.test(desc))throw new Error("A IA parece ter descrito outro tipo de produto. A descrição foi bloqueada para evitar cadastro errado.");
-  }
-  function ensureProductChatModal(){
-    if($("#productChatModal"))return;
-    document.body.insertAdjacentHTML("beforeend",`<aside class="product-chat-float" id="productChatModal" aria-live="polite"><div class="product-chat-head"><div><strong id="productChatTitle">Chat IA do produto</strong><small id="productChatSub">Pergunte sobre o produto</small></div><button class="btn small" type="button" data-action="close-product-chat">×</button></div><div class="product-chat-body" id="productChatMessages"><div class="chat-bubble ai">Digite uma pergunta sobre este produto.</div></div><div class="product-chat-compose"><textarea id="productChatQuestion" placeholder="Pergunte sobre o produto..."></textarea><button class="btn primary small" type="button" data-action="send-product-chat">Enviar</button></div></aside>`);
-    const q=$("#productChatQuestion");
-    q?.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();document.querySelector('[data-action="send-product-chat"]')?.click()}});
-  }
+  function askAiImageCount(p){return Promise.resolve(3)}
   function openProductChat(key){
     const p=productByKey(key);if(!p)return;
     state.productChatKey=key;
@@ -2462,63 +2415,98 @@
     markProductAiChange(p,["nome"]);
     setStatus("Nome melhorado pela IA e aplicado ao produto","ok");
   }
-  function buildAiImageStrategy(count){
+
+  /* ===== SEO de imagens e substitui??o segura de galeria ===== */
+  function productSeoImageBase(p, fallback="produto"){
+    const parts=[getName(p),p.marca,p.embalagem,p.categoria,p.subcategoria,p.gtin||p.ean||p.codigo||getKey(p)]
+      .map(v=>String(v||"").trim())
+      .filter(Boolean);
+    let base=slug(parts.join(" "));
+    if(!base)base=slug(fallback)||"produto";
+    if(base.length>118)base=base.slice(0,118).replace(/-+$/,'');
+    const unique=slug(p.gtin||p.ean||p.codigo||getKey(p)||"");
+    if(unique && !base.includes(unique))base=`${base}-${unique}`.slice(0,140).replace(/-+$/,'');
+    return base;
+  }
+  function productSeoImageFileName(p,kind="foto-produto",stamp=""){
+    const suffix=slug(kind)||"foto-produto";
+    const time=stamp||new Date().toISOString().replace(/[-:TZ.]/g,"").slice(0,14);
+    return `${productSeoImageBase(p)}-${suffix}-${time}.webp`;
+  }
+  function productSeoImagePlan(p,stamp=""){
+    const time=stamp||new Date().toISOString().replace(/[-:TZ.]/g,"").slice(0,14);
     return {
-      replacePrimary:false,
-      label:'2 imagens - mockup de uso real + informativa em lista',
-      message:'Estratégia fixa: gerar 2 imagens para a galeria — mockup mostrando o uso real do produto e imagem informativa em formato de lista.'
+      base:productSeoImageBase(p),
+      pasta:String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,""),
+      publico:String(state.settings.imagePublicBase||"img/produtos").replace(/\/+$/,""),
+      principal:productSeoImageFileName(p,"foto-principal-fundo-branco",time),
+      mockup:productSeoImageFileName(p,"mockup-uso-real",time),
+      informativa:productSeoImageFileName(p,"informacoes-rotulo",time)
     };
   }
-  async function saveGeneratedProductImageToGithub(p,src,index,batchId){
-    let finalSrc=String(src||'').trim();
-    if(!isUsableAiImageSrc(finalSrc))throw new Error('Imagem IA vazia ou inválida. O Make respondeu sem base64 válido.');
+  function currentProductImageSources(p){return uniq([p?.url_imagem||"",p?.imagem||"",...(Array.isArray(p?.imagens)?p.imagens:[])]).filter(Boolean)}
+  function publicProductImageSrc(fileName){return `${String(state.settings.imagePublicBase||"img/produtos").replace(/\/+$/,'')}/${fileName}`}
+
+  function buildAiImageStrategy(count){
+    return {
+      count:3,
+      label:'3 imagens SEO - fundo branco + mockup de uso + informativa',
+      message:'Estrat?gia fixa: gerar 3 imagens para substituir a galeria do produto. 1) foto principal em fundo branco; 2) mockup ultrarrealista de uso; 3) imagem informativa usando somente nome, embalagem e informa??es vis?veis no r?tulo/cadastro.'
+    };
+  }
+  async function saveGeneratedProductImageToGithub(p,src,index,batchId,fileName=""){
+    let finalSrc=String(src||"");
+    if(!finalSrc)throw new Error(`Imagem ${index} vazia retornada pelo Make.`);
     if(/^data:image\//i.test(finalSrc)){
+      readSettingsFromUi();
       const blob=await (await fetch(finalSrc)).blob();
-      if(!blob||blob.size<200)throw new Error('Imagem IA inválida: base64 muito pequeno. Confira o módulo Webhook Response do Make.');
-      const code=slug(p.codigo||p.gtin||getName(p)||Date.now());
-      const fileName=`${code}-ia-${batchId}-${String(index).padStart(2,'0')}.webp`;
+      const kind=index===1?'foto-principal-fundo-branco':index===2?'mockup-uso-real':'informacoes-rotulo';
+      const seoName=fileName||productSeoImageFileName(p,kind,batchId);
       const basePath=String(state.settings.githubImagesPath||'site/img/produtos').replace(/\/+$/,'');
-      const fullPath=`${basePath}/${fileName}`;
-      await githubUpsertRaw(fullPath,await blob.arrayBuffer(),`Gera imagem IA do produto ${p.codigo||getName(p)} (${index})`);
-      finalSrc=githubRawFileUrl(fullPath)||absolutePublicUrl(`img/produtos/${fileName}`)||`img/produtos/${fileName}`;
+      const fullPath=`${basePath}/${seoName}`;
+      await githubUpsertRaw(fullPath,await blob.arrayBuffer(),`Gera imagem IA SEO do produto ${p.codigo||getName(p)} (${kind})`);
+      finalSrc=publicProductImageSrc(seoName);
     }
     return finalSrc;
   }
   async function aiProductImage(key){
     const p=productByKey(key);if(!p)return;
-    const product=compactProductForAi(p);
-    if(!product.imagem_url)throw new Error('Este produto ainda não tem imagem para melhorar.');
-    const count=2;
-    const plan=buildAiImageStrategy(count);
-    const payload={
+    if(!p.url_imagem&&!p.imagem&&!(p.imagens||[]).length)throw new Error('Este produto ainda n?o tem imagem de refer?ncia para melhorar.');
+    readSettingsFromUi();
+    const count=3,plan=buildAiImageStrategy(count),batchId=new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14),seoPlan=productSeoImagePlan(p,batchId);
+    const payload=buildProductAiPayload(p);
+    Object.assign(payload,{
       acao:'melhorar_imagem_produto',
-      quantidade_imagens:2,
+      quantidade_imagens:3,
       estrategia:plan.label,
-      produto:product,
-      instrucoes:'Gerar automaticamente 2 imagens para a galeria do produto: imagem 1 mockup simulando o uso real do produto; imagem 2 arte informativa em formato de lista. Não gerar imagem principal, não trocar a foto principal do cadastro, manter embalagem, rótulo e formato do produto idênticos ao original.'
-    };
-    setStatus('Enviando produto para gerar mockup de uso real e imagem informativa no Make...','warn');
-    toast(plan.message,'warn',4200);
+      seo_imagens:seoPlan,
+      substituir_imagens_existentes:true,
+      instrucoes:'Gerar exatamente 3 imagens do produto para substituir a galeria atual: imagem 1 foto principal padrao de e-commerce em fundo branco; imagem 2 mockup ultrarrealista mostrando uso real coerente; imagem 3 imagem informativa usando somente nome, embalagem e informacoes reais visiveis no rotulo/cadastro. Preservar embalagem, rotulo, formato, marca, cores e variante do produto.'
+    });
+    setStatus('Enviando produto para gerar 3 imagens SEO no Make...','warn');
     const result=await callMakeAi('image',payload);
     console.log('Resposta IA imagem produto:',result);
-    const generated=imagesFromAiResult(result).slice(0,2);
-    if(generated.length<2)throw new Error('O Make rodou, mas não devolveu as 2 imagens válidas para o admin. Verifique o Webhook Response: deve retornar imagem_1 e imagem_2.');
-    const batchId=Date.now();
+    const generated=imagesFromAiResult(result).slice(0,3);
+    if(generated.length<3)throw new Error('O Make rodou, mas n?o devolveu as 3 imagens v?lidas. O Webhook Response deve retornar imagem_1, imagem_2 e imagem_3.');
+    const oldSources=currentProductImageSources(p);
     const saved=[];
     for(let i=0;i<generated.length;i++){
-      setStatus(`Registrando imagem ${i+1}/${generated.length} no cadastro...`,'warn');
-      const src=await saveGeneratedProductImageToGithub(p,generated[i].src,i+1,batchId);
+      setStatus(`Registrando imagem SEO ${i+1}/3 no cadastro...`,'warn');
+      const expectedName=i===0?seoPlan.principal:i===1?seoPlan.mockup:seoPlan.informativa;
+      const src=await saveGeneratedProductImageToGithub(p,generated[i].src,i+1,batchId,generated[i].fileName||expectedName);
       saved.push(src);
     }
-    p.imagens=uniq([...(p.imagens||[]),...saved]).slice(0,12);
-    markProductDirty(getKey(p),['imagens']);
+    oldSources.forEach(src=>markGithubProductImageForDelete(src));
+    p.url_imagem=p.imagem=saved[0]||'';
+    p.imagens=uniq(saved).slice(0,12);
+    p.last_update=Date.now();p.updated_at=nowIso();
+    markProductDirty(getKey(p),['url_imagem','imagem','imagens']);
     mark('products');
     saveLocal();
     renderProducts();
-    renderSummary();
-    refreshJson();
-    setStatus('Mockup de uso real e imagem informativa adicionados à galeria do produto','ok');
-    toast('2 imagens IA adicionadas à galeria. A foto principal do produto não foi alterada. Clique em Salvar produto para gravar no banco.', 'ok', 8000);
+    renderProductEditor(false);
+    setStatus('Galeria substitu?da por 3 imagens SEO do produto','ok');
+    toast('3 imagens SEO geradas: principal em fundo branco, mockup de uso e informativa. Clique em Salvar geral para publicar e apagar as imagens antigas sem uso.', 'ok', 9000);
   }
   async function aiKitDescription(){
     const k=currentKit();if(!k)return;
@@ -2588,8 +2576,8 @@
     if(action==="delete-note"){if(!confirm("Excluir esta anotação?"))return;state.anotacoes=state.anotacoes.filter(n=>n.id!==b.dataset.id);mark("notes");renderNotes();updateNotesIndicator();await saveNotes(false)}
     if(action==="workbench-use-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{setStatus("Processando imagem...","warn");const prepared=await addWorkbenchPhoto(p,file);setStatus(`Imagem aplicada (${formatBytes(prepared.bytes)})`,"ok")}catch(err){alert("Erro na imagem: "+err.message)}}
     if(action==="workbench-edit-photo"&&p){try{const file=workbenchPhotoInput(key)?.files?.[0],src=p.url_imagem||p.imagem||(p.imagens||[])[0];if(!file&&!src)return alert("Selecione, cole ou cadastre uma imagem primeiro.");state.editingProductKey=key;pendingProductPhotoFile=file||null;pendingProductPhotoKey=key;ensureImageEditor();editorImage=file?await loadImageFromFile(file):await loadImageFromSource(src);$("#imageEditorModal").classList.add("open");previewImageEditor()}catch(err){alert(err.message)}}
-    if(action==="workbench-upload-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{readSettingsFromUi();setStatus("Enviando imagem ao GitHub...","warn");const prepared=await prepareProductImageBlob(file),fileName=`${slug(p.codigo||p.gtin||getName(p))||Date.now()}.webp`,path=`${String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,"")}/${fileName}`;await githubUpsertRaw(path,await prepared.blob.arrayBuffer(),`Atualiza foto do produto ${p.codigo||getName(p)}`);const src=`${String(state.settings.imagePublicBase||"img/produtos").replace(/\/+$/,"")}/${fileName}`;p.url_imagem=p.imagem=src;p.imagens=uniq([...(p.imagens||[]),src]);markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts();setStatus("Imagem enviada ao GitHub","ok")}catch(err){alert("Erro ao enviar imagem: "+err.message)}}
-    if(action==="workbench-remove-photo"&&p){if(!confirm("Remover a imagem principal deste produto?"))return;p.url_imagem=p.imagem="";markProductDirty(key,["url_imagem","imagem"]);mark("products");renderProducts()}
+    if(action==="workbench-upload-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{readSettingsFromUi();setStatus("Enviando imagem SEO ao GitHub...","warn");const prepared=await prepareProductImageBlob(file),oldSources=currentProductImageSources(p),fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"),path=`${String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,"")}/${fileName}`;await githubUpsertRaw(path,await prepared.blob.arrayBuffer(),`Atualiza foto SEO do produto ${p.codigo||getName(p)}`);const src=publicProductImageSrc(fileName);oldSources.forEach(x=>markGithubProductImageForDelete(x));p.url_imagem=p.imagem=src;p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]);markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts();setStatus("Imagem SEO enviada ao GitHub","ok")}catch(err){alert("Erro ao enviar imagem: "+err.message)}}
+    if(action==="workbench-remove-photo"&&p){if(!confirm("Remover a imagem principal deste produto?"))return;const old=p.url_imagem||p.imagem||"";p.url_imagem=p.imagem="";if(old)p.imagens=(p.imagens||[]).filter(x=>x!==old);markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts()}
     if(action==="workbench-make-primary"&&p){p.url_imagem=p.imagem=b.dataset.src;markProductDirty(key,["url_imagem","imagem"]);mark("products");renderProducts()}
     if(action==="workbench-remove-gallery"&&p){const src=b.dataset.src;p.imagens=(p.imagens||[]).filter(x=>x!==src);if((p.url_imagem||p.imagem)===src)p.url_imagem=p.imagem=p.imagens[0]||"";markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts()}
     if(action==="ai-product-cadastro"&&p){await runUiAction(b,"Gerando cadastro...",()=>aiProductCadastro(key));return}
@@ -2687,7 +2675,8 @@
 
 
   /* ===== Ajustes 08/07: seletores e limpeza de imagens de produtos no GitHub ===== */
-  state.pendingGithubProductImageDeletes = state.pendingGithubProductImageDeletes || new Set();
+  const LS_PENDING_GITHUB_IMAGE_DELETES="da_pending_github_product_image_deletes";
+  state.pendingGithubProductImageDeletes = state.pendingGithubProductImageDeletes || new Set(JSON.parse(localStorage.getItem(LS_PENDING_GITHUB_IMAGE_DELETES)||"[]"));
 
   function productImagePathFromUrl(src=""){
     let s=String(src||"").trim();
@@ -2722,7 +2711,7 @@
   }
   function markGithubProductImageForDelete(src=""){
     const path=productImagePathFromUrl(src);
-    if(path && isProductImageRepoPath(path))state.pendingGithubProductImageDeletes.add(path);
+    if(path && isProductImageRepoPath(path)){state.pendingGithubProductImageDeletes.add(path);try{localStorage.setItem(LS_PENDING_GITHUB_IMAGE_DELETES,JSON.stringify(Array.from(state.pendingGithubProductImageDeletes)))}catch{}}
   }
   function usedProductImageRepoPaths(){
     const used=new Set();
@@ -2747,27 +2736,18 @@
   async function cleanupUnusedProductImagesFromGithub(){
     readSettingsFromUi();
     if(!state.settings.githubToken)return {deleted:0,checked:0};
-    const used=usedProductImageRepoPaths(), folders=productImageFolders();
-    const candidates=new Map();
-    for(const folder of folders){
-      const list=await githubContent(folder).catch(err=>{console.warn("Falha ao listar pasta",folder,err);return null});
-      if(Array.isArray(list)){
-        list.forEach(item=>{
-          if(item?.type==="file" && /\.(webp|png|jpe?g|gif)$/i.test(item.name||"") && item.path && item.sha){
-            candidates.set(item.path,{path:item.path,sha:item.sha});
-          }
-        });
-      }
-    }
-    (state.pendingGithubProductImageDeletes||new Set()).forEach(path=>{if(!used.has(path)&&isProductImageRepoPath(path)&&!candidates.has(path))candidates.set(path,{path,sha:null})});
-    let deleted=0,checked=0;
-    for(const item of candidates.values()){
+    const used=usedProductImageRepoPaths();
+    const pending=Array.from(state.pendingGithubProductImageDeletes||[]).filter(path=>isProductImageRepoPath(path));
+    let deleted=0,checked=0,kept=[];
+    for(const path of pending){
       checked++;
-      if(used.has(item.path))continue;
-      const current=item.sha?item:await githubContent(item.path).catch(()=>null);
-      if(current?.sha){await githubDeleteFile(item.path,current.sha,`Remove imagem de produto sem uso: ${item.path.split('/').pop()}`);deleted++}
+      if(used.has(path))continue;
+      const current=await githubContent(path).catch(()=>null);
+      if(current?.sha){await githubDeleteFile(path,current.sha,`Remove imagem de produto substitu?da: ${path.split('/').pop()}`);deleted++}
+      else kept.push(path);
     }
-    state.pendingGithubProductImageDeletes.clear();
+    state.pendingGithubProductImageDeletes=new Set(kept);
+    try{localStorage.setItem(LS_PENDING_GITHUB_IMAGE_DELETES,JSON.stringify(kept))}catch{}
     return {deleted,checked};
   }
 
@@ -2789,7 +2769,8 @@
 
   const originalSaveEverythingWithImageCleanup=saveEverything;
   saveEverything=async function(){
-    await originalSaveEverythingWithImageCleanup();
+    const savedOk=await originalSaveEverythingWithImageCleanup();
+    if(savedOk===false)return;
     try{
       setStatus("Verificando imagens de produtos sem uso no GitHub...","warn");
       const res=await cleanupUnusedProductImagesFromGithub();
