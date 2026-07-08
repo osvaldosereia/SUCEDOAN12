@@ -2291,6 +2291,37 @@
     if(result?.output?.[0]?.content?.[0]?.text)return unwrapAiResult(result.output[0].content[0].text);
     return result||{};
   }
+  function assertAiProductIdentity(product,result){
+    if(!product||!result||typeof result!=="object")return true;
+    const expectedCode=norm(product.codigo||"");
+    const expectedKey=norm(getKey(product)||"");
+    const expectedGtin=norm(product.gtin||product.ean||"");
+    const candidates=[
+      result.codigo,
+      result.codigo_produto,
+      result.product_code,
+      result.sku,
+      result.id_produto,
+      result.produto_id,
+      result.product_id,
+      result.key,
+      result.firebaseKey
+    ].map(norm).filter(Boolean);
+    const gtinCandidates=[
+      result.gtin,
+      result.ean,
+      result.codigo_barras,
+      result.barcode
+    ].map(norm).filter(Boolean);
+    const expectedIds=[expectedCode,expectedKey].filter(Boolean);
+    if(candidates.length&&expectedIds.length&&!candidates.some(v=>expectedIds.includes(v))){
+      throw new Error("A IA retornou dados de outro produto. Gere novamente ou confira o webhook do Make.");
+    }
+    if(gtinCandidates.length&&expectedGtin&&!gtinCandidates.includes(expectedGtin)){
+      throw new Error("A IA retornou EAN/GTIN diferente do produto selecionado. Gere novamente ou confira o webhook do Make.");
+    }
+    return true;
+  }
   function imageFromAiResult(result){
     const r=unwrapAiResult(result);
     const direct=r.imagem||r.imagem_principal||r.image||r.image_url||r.url_imagem||r.url||r.src;
