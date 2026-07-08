@@ -2432,9 +2432,11 @@
     setStatus("Nome melhorado pela IA e aplicado ao produto","ok");
   }
   function buildAiImageStrategy(count){
-    if(count<=1)return {replacePrimary:true,label:'1 imagem - principal',message:'Estratégia: gerar somente a imagem principal do produto.'};
-    if(count===2)return {replacePrimary:true,label:'2 imagens - principal + mockup',message:'Estratégia: imagem 1 vira principal e imagem 2 entra como mockup na galeria.'};
-    return {replacePrimary:true,label:'3 imagens - principal + mockup + informativa',message:'Estratégia: imagem 1 vira principal, imagem 2 mockup e imagem 3 informativa entram na galeria.'};
+    return {
+      replacePrimary:false,
+      label:'2 imagens - mockup de uso real + informativa em lista',
+      message:'Estratégia fixa: gerar 2 imagens para a galeria — mockup mostrando o uso real do produto e imagem informativa em formato de lista.'
+    };
   }
   async function saveGeneratedProductImageToGithub(p,src,index,batchId){
     let finalSrc=String(src||'').trim();
@@ -2455,38 +2457,37 @@
     const p=productByKey(key);if(!p)return;
     const product=compactProductForAi(p);
     if(!product.imagem_url)throw new Error('Este produto ainda não tem imagem para melhorar.');
-    const count=await askAiImageCount(p);
+    const count=2;
     const plan=buildAiImageStrategy(count);
     const payload={
       acao:'melhorar_imagem_produto',
-      quantidade_imagens:count,
+      quantidade_imagens:2,
       estrategia:plan.label,
       produto:product,
-      instrucoes:'A IA deve analisar a foto e o cadastro completo do produto. Gerar imagens de e-commerce fiéis ao produto real, respeitando a estratégia escolhida: 1 imagem hero principal; 2 imagens complementares; 3 imagens para galeria completa.'
+      instrucoes:'Gerar automaticamente 2 imagens para a galeria do produto: imagem 1 mockup simulando o uso real do produto; imagem 2 arte informativa em formato de lista. Não gerar imagem principal, não trocar a foto principal do cadastro, manter embalagem, rótulo e formato do produto idênticos ao original.'
     };
-    setStatus(`Enviando produto para gerar ${count} imagem(ns) no Make...`,'warn');
+    setStatus('Enviando produto para gerar mockup de uso real e imagem informativa no Make...','warn');
     toast(plan.message,'warn',4200);
     const result=await callMakeAi('image',payload);
     console.log('Resposta IA imagem produto:',result);
-    const generated=imagesFromAiResult(result).slice(0,count);
-    if(!generated.length)throw new Error('O Make rodou, mas não devolveu imagem válida para o admin. Verifique se o Webhook Response está devolvendo imagem/base64.');
+    const generated=imagesFromAiResult(result).slice(0,2);
+    if(generated.length<2)throw new Error('O Make rodou, mas não devolveu as 2 imagens válidas para o admin. Verifique o Webhook Response: deve retornar imagem_1 e imagem_2.');
     const batchId=Date.now();
     const saved=[];
     for(let i=0;i<generated.length;i++){
-      setStatus(`Salvando imagem ${i+1}/${generated.length} no GitHub...`,'warn');
+      setStatus(`Registrando imagem ${i+1}/${generated.length} no cadastro...`,'warn');
       const src=await saveGeneratedProductImageToGithub(p,generated[i].src,i+1,batchId);
       saved.push(src);
     }
     p.imagens=uniq([...(p.imagens||[]),...saved]).slice(0,12);
-    if(plan.replacePrimary||!(p.url_imagem||p.imagem))p.url_imagem=p.imagem=saved[0]||p.url_imagem||p.imagem;
-    markProductDirty(getKey(p),['url_imagem','imagem','imagens']);
+    markProductDirty(getKey(p),['imagens']);
     mark('products');
     saveLocal();
     renderProducts();
     renderSummary();
     refreshJson();
-    setStatus(`${saved.length} imagem(ns) gerada(s), salva(s) no GitHub e enviada(s) ao cadastro do produto`,'ok');
-    toast(`${saved.length} imagem(ns) IA adicionada(s). A primeira virou a principal e as demais entraram na galeria. Clique em Salvar produto para gravar no banco.`, 'ok', 8000);
+    setStatus('Mockup de uso real e imagem informativa adicionados à galeria do produto','ok');
+    toast('2 imagens IA adicionadas à galeria. A foto principal do produto não foi alterada. Clique em Salvar produto para gravar no banco.', 'ok', 8000);
   }
   async function aiKitDescription(){
     const k=currentKit();if(!k)return;
