@@ -436,6 +436,7 @@
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
         <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho kitspromocionais.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="img/produtos"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
+        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">Use o webhook de textos para nomes e descricoes. Use o webhook de imagens para melhorar fotos e gerar capas de kits.</div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
       <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar kitspromocionais.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
@@ -505,6 +506,8 @@
     githubKitImagesPath: "site/img/kits",
     kitImagePublicBase: "img/kits",
     autoGithub: false,
+    makeTextWebhookUrl: "",
+    makeImageWebhookUrl: "",
     blingToken: "",
     blingDeposito: "",
     blingUnidade: "UN"
@@ -1518,10 +1521,10 @@
   renderKitEditor=function(){
     const k=currentKit(),el=$("#kitEditor");if(!k){el.innerHTML=`<div class="empty">Selecione ou crie um kit promocional.</div>`;return}recalcKit(k);
     const y=window.scrollY,total=kitRetailTotal(k),rows=(k.produtos||[]).map(i=>renderKitRow(k,i)).join("")||`<div class="empty">Adicione produtos para calcular estoque e desconto.</div>`;
-    el.innerHTML=`<div class="panel-head"><div class="panel-title"><h2>${esc(k.nome)}</h2><p>${esc(k.codigo)} · disponibilidade calculada pelo menor estoque</p></div><div class="toolbar"><button class="btn primary" data-action="save-kits">Salvar kit</button><button class="btn red" data-action="delete-kit">Excluir</button></div></div>
+    el.innerHTML=`<div class="panel-head"><div class="panel-title"><h2>${esc(k.nome)}</h2><p>${esc(k.codigo)} · disponibilidade calculada pelo menor estoque</p></div><div class="toolbar"><button class="btn gold" data-action="ai-kit-description">IA descrição</button><button class="btn gold" data-action="ai-kit-cover">IA capa do kit</button><button class="btn primary" data-action="save-kits">Salvar kit</button><button class="btn red" data-action="delete-kit">Excluir</button></div></div>
     <div class="kit-health"><div class="metric"><strong>${brl(total)}</strong><span>Soma avulsa</span></div><div class="metric ${k.desconto_percentual>0?"good":"bad"}"><strong>${esc(k.desconto_percentual)}%</strong><span>Desconto real</span></div><div class="metric ${k.estoque_disponivel>0?"good":"bad"}"><strong>${esc(k.estoque_disponivel)}</strong><span>Kits disponíveis</span></div><div class="metric ${k.ativo?"good":"bad"}"><strong>${k.ativo?"NO AR":"FORA DO AR"}</strong><span>Status automático</span></div></div>
     <div class="form-grid"><div class="field"><label>Nome *</label><input class="input" data-kfield="nome" value="${esc(k.nome)}"></div><div class="field"><label>Código *</label><input class="input" data-kfield="codigo" value="${esc(k.codigo)}"></div><div class="field"><label>Preço promocional *</label><input class="input" type="number" min="0" step=".01" data-kfield="preco" value="${esc(k.preco)}"></div><div class="field"><label>Limite máximo de kits (0 = só estoque)</label><input class="input" type="number" min="0" data-kfield="limite_kits" value="${esc(k.limite_kits)}"></div><div class="field"><label>Início da promoção</label><input class="input" type="date" data-kfield="data_inicio" value="${esc(k.data_inicio)}"></div><div class="field"><label>Fim da promoção</label><input class="input" type="date" data-kfield="data_fim" value="${esc(k.data_fim)}"></div><div class="field span-2"><label>Imagem</label><input class="input" data-kfield="imagem" value="${esc(k.imagem)}"></div><div class="field span-4"><label>Descrição</label><textarea class="textarea" data-kfield="descricao">${esc(k.descricao)}</textarea></div></div>
-    <div class="photo-tools"><h4>Capa do kit</h4><div class="photo-tools-grid"><div class="photo-preview-box"><img src="${esc(k.imagem||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"></div><div><input class="input" id="kitImageFile" type="file" accept="image/*"><div class="photo-actions"><button class="btn green" data-action="use-kit-image-local">Aplicar WebP</button><button class="btn blue" data-action="upload-kit-image-github">Enviar ao GitHub</button></div></div></div></div>
+    <div class="photo-tools"><h4>Capa do kit</h4><div class="photo-tools-grid"><div class="photo-preview-box"><img src="${esc(k.imagem||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"></div><div><input class="input" id="kitImageFile" type="file" accept="image/*"><div class="photo-actions"><button class="btn gold" data-action="ai-kit-cover">Gerar capa IA</button><button class="btn green" data-action="use-kit-image-local">Aplicar WebP</button><button class="btn blue" data-action="upload-kit-image-github">Enviar ao GitHub</button></div></div></div></div>
     <div class="basket-workspace"><div><h3 style="margin:0">Composição do kit</h3><div class="basket-list">${rows}</div></div><aside class="product-finder"><h3>Adicionar ou substituir</h3><p class="tiny">O kit sai do ar quando qualquer produto não sustenta mais uma unidade.</p>${state.kitReplace?'<div class="finder-mode">Escolha o novo produto para substituir.</div>':""}<input class="input" id="kitProductSearch" value="${esc(state.kitProductSearch)}" placeholder="Nome, código, marca ou EAN..."><div class="search-results" id="kitProductResults">${renderKitSearchResults()}</div></aside></div>`;
     requestAnimationFrame(()=>{window.scrollTo(0,y);if(state.kitReplace)$("#kitProductSearch")?.focus()});
   };
@@ -1808,6 +1811,7 @@
         <div class="workbench-media-actions">
           <button class="btn green" type="button" data-action="workbench-use-photo" data-key="${esc(key)}">Usar foto</button>
           <button class="btn blue" type="button" data-action="workbench-edit-photo" data-key="${esc(key)}">Editar foto</button>
+          <button class="btn gold" type="button" data-action="ai-product-image" data-key="${esc(key)}">Melhorar IA</button>
           <button class="btn gold" type="button" data-action="workbench-upload-photo" data-key="${esc(key)}">Enviar GitHub</button>
           <a class="btn" href="${esc(imageSearch)}" target="_blank" rel="noopener">Buscar foto</a>
           <button class="btn red" type="button" data-action="workbench-remove-photo" data-key="${esc(key)}">Remover</button>
@@ -1819,6 +1823,8 @@
         <div class="workbench-header">
           <div class="workbench-title"><strong>${esc(getName(p))}</strong><small>${esc(p.codigo||key)} ${dirty?"· alterações pendentes":""}</small><div class="workbench-memberships" style="margin-top:6px">${memberships}</div></div>
           <div class="workbench-actions">
+            <button class="btn small gold" type="button" data-action="ai-product-description" data-key="${esc(key)}">IA descrição</button>
+            <button class="btn small gold" type="button" data-action="ai-product-name" data-key="${esc(key)}">IA nome</button>
             <button class="btn small blue" type="button" data-action="save-card-firebase" data-key="${esc(key)}">☁ Salvar produto</button>
             <button class="btn small gold" type="button" data-action="edit-membership" data-code="${esc(code)}">🧺 Cestas</button>
             <button class="btn small green" type="button" data-action="edit-kit-membership" data-code="${esc(code)}">🎁 Kits</button>
@@ -2035,6 +2041,180 @@
   const baseReadSettingsFromUi=readSettingsFromUi;
   readSettingsFromUi=function(){baseReadSettingsFromUi();const el=$("#setGithubAnotacoesPath");if(el)state.settings.githubAnotacoesPath=el.value.trim()||"site/anotacoes.json"};
 
+  const aiBaseRenderSettingsUi=renderSettingsUi;
+  renderSettingsUi=function(){
+    aiBaseRenderSettingsUi();
+    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl");
+    if(text&&text.value!==String(state.settings.makeTextWebhookUrl||""))text.value=state.settings.makeTextWebhookUrl||"";
+    if(image&&image.value!==String(state.settings.makeImageWebhookUrl||""))image.value=state.settings.makeImageWebhookUrl||"";
+  };
+  const aiBaseReadSettingsFromUi=readSettingsFromUi;
+  readSettingsFromUi=function(){
+    aiBaseReadSettingsFromUi();
+    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl");
+    if(text)state.settings.makeTextWebhookUrl=text.value.trim();
+    if(image)state.settings.makeImageWebhookUrl=image.value.trim();
+  };
+
+  function publicAssetUrl(src){
+    const value=String(src||"").trim();
+    if(!value)return "";
+    if(/^data:/i.test(value)||/^https?:\/\//i.test(value))return value;
+    const base=String(state.settings.siteBaseUrl||location.origin||"").replace(/\/+$/,"");
+    return `${base}/${value.replace(/^\/+/,"")}`;
+  }
+  function compactProductForAi(p){
+    if(!p)return null;
+    const img=p.url_imagem||p.imagem||(Array.isArray(p.imagens)?p.imagens[0]:"")||"";
+    return {
+      key:getKey(p),
+      nome:getName(p),
+      codigo:p.codigo||"",
+      gtin:p.gtin||p.ean||"",
+      marca:p.marca||"",
+      categoria:p.categoria||"",
+      subcategoria:p.subcategoria||"",
+      subsubcategoria:p.subsubcategoria||"",
+      preco:toNum(p.preco),
+      preco_oferta:toNum(p.preco_oferta),
+      estoque:toNum(p.estoque),
+      descricao:p.descricao||"",
+      tags:parseTags(p.tags),
+      imagem:img,
+      imagem_url:publicAssetUrl(img)
+    };
+  }
+  function compactKitForAi(k){
+    recalcKit(k);
+    const total=kitRetailTotal(k);
+    const produtos=(k.produtos||[]).map(item=>{
+      const it=parseBasketItem(item),p=productByCode(it.codigo),img=p?(p.url_imagem||p.imagem||(Array.isArray(p.imagens)?p.imagens[0]:"")):"";
+      return {
+        codigo:it.codigo,
+        quantidade:toNum(it.qtd)||1,
+        nome:p?getName(p):"Produto nao encontrado",
+        marca:p?.marca||"",
+        categoria:p?.categoria||"",
+        preco_unitario:p?toNum(p.preco):0,
+        imagem:img,
+        imagem_url:publicAssetUrl(img)
+      };
+    });
+    return {
+      id:k.id||"",
+      nome:k.nome||"",
+      codigo:k.codigo||"",
+      descricao:k.descricao||"",
+      imagem:k.imagem||"",
+      imagem_url:publicAssetUrl(k.imagem||""),
+      preco_anterior:total,
+      preco_novo:toNum(k.preco),
+      desconto_percentual:toNum(k.desconto_percentual),
+      economia:Math.max(0,total-toNum(k.preco)),
+      produtos
+    };
+  }
+  async function callMakeAi(kind,payload){
+    readSettingsFromUi();
+    const url=kind==="image"?state.settings.makeImageWebhookUrl:state.settings.makeTextWebhookUrl;
+    if(!url)throw new Error(`Configure o webhook de IA ${kind==="image"?"imagens":"textos"} na aba Integracoes.`);
+    const response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    const text=await response.text();
+    if(!response.ok)throw new Error(`Make retornou ${response.status}: ${text.slice(0,240)}`);
+    try{return JSON.parse(text)}catch{return {ok:true,texto:text}}
+  }
+  function unwrapAiResult(result){
+    if(typeof result==="string"){
+      try{return JSON.parse(result)}catch{return {texto:result}}
+    }
+    if(result?.texto&&typeof result.texto==="string"){
+      try{return JSON.parse(result.texto)}catch{}
+    }
+    if(result?.choices?.[0]?.message?.content)return unwrapAiResult(result.choices[0].message.content);
+    if(result?.output?.[0]?.content?.[0]?.text)return unwrapAiResult(result.output[0].content[0].text);
+    return result||{};
+  }
+  function imageFromAiResult(result){
+    const r=unwrapAiResult(result);
+    const direct=r.imagem||r.image||r.image_url||r.url_imagem||r.url||r.src;
+    if(direct)return String(direct);
+    const b64=r.b64_json||r.base64||r.data?.[0]?.b64_json;
+    if(b64)return `data:image/png;base64,${b64}`;
+    const output=Array.isArray(r.output)?r.output.find(x=>x.type==="image_generation_call"&&x.result):null;
+    const url=r.data?.[0]?.url||output?.result;
+    return url?String(url):"";
+  }
+  function markProductAiChange(p,fields){
+    markProductDirty(getKey(p),fields);
+    mark("products");
+    saveLocal();
+    renderProducts();
+    refreshJson();
+  }
+  async function aiProductDescription(key){
+    const p=productByKey(key);if(!p)return;
+    setStatus("Gerando descricao do produto no Make...","warn");
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_descricao_produto",produto:compactProductForAi(p)}));
+    const desc=result.descricao||result.description||result.texto||"";
+    if(!desc)throw new Error("O Make nao retornou uma descricao.");
+    p.descricao=String(desc).trim();
+    if(result.descricao_curta)p.descricao_curta=String(result.descricao_curta).trim();
+    if(Array.isArray(result.tags_sugeridas))p.tags=uniq([...parseTags(p.tags),...result.tags_sugeridas]).join(", ");
+    markProductAiChange(p,["descricao","descricao_curta","tags"]);
+    setStatus("Descricao gerada pela IA e aplicada ao produto","ok");
+  }
+  async function aiProductName(key){
+    const p=productByKey(key);if(!p)return;
+    setStatus("Melhorando nome do produto no Make...","warn");
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"melhorar_nome_produto",produto:compactProductForAi(p)}));
+    const name=result.nome_sugerido||result.nome||result.name||result.texto||"";
+    if(!name)throw new Error("O Make nao retornou um nome sugerido.");
+    p.nome=String(name).trim();
+    markProductAiChange(p,["nome"]);
+    setStatus("Nome melhorado pela IA e aplicado ao produto","ok");
+  }
+  async function aiProductImage(key){
+    const p=productByKey(key);if(!p)return;
+    const product=compactProductForAi(p);
+    if(!product.imagem_url)return alert("Este produto ainda nao tem imagem para melhorar.");
+    setStatus("Enviando imagem do produto para o Make...","warn");
+    const result=await callMakeAi("image",{acao:"melhorar_imagem_produto",produto:product,instrucoes:"Melhore a imagem do produto mantendo embalagem, marca e identidade visual. Fundo limpo, e-commerce, sem alterar texto da embalagem."});
+    const img=imageFromAiResult(result);
+    if(!img)throw new Error("O Make nao retornou URL ou base64 da imagem.");
+    p.url_imagem=p.imagem=img;
+    p.imagens=uniq([...(p.imagens||[]),img]);
+    markProductAiChange(p,["url_imagem","imagem","imagens"]);
+    setStatus("Imagem melhorada pela IA e aplicada ao produto","ok");
+  }
+  async function aiKitDescription(){
+    const k=currentKit();if(!k)return;
+    setStatus("Gerando descricao do kit no Make...","warn");
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_descricao_kit",kit:compactKitForAi(k)}));
+    const desc=result.descricao||result.description||result.texto||"";
+    if(!desc)throw new Error("O Make nao retornou uma descricao para o kit.");
+    k.descricao=String(desc).trim();
+    mark("kits");
+    saveLocal();
+    renderKitEditor();
+    refreshJson();
+    setStatus("Descricao do kit gerada pela IA","ok");
+  }
+  async function aiKitCover(){
+    const k=currentKit();if(!k)return;
+    const kit=compactKitForAi(k);
+    if(!kit.produtos.length)return alert("Adicione produtos ao kit antes de gerar a capa.");
+    setStatus("Enviando produtos do kit para gerar capa no Make...","warn");
+    const result=await callMakeAi("image",{acao:"gerar_capa_kit",kit,instrucoes:"Crie uma capa promocional quadrada para e-commerce usando os produtos informados. Mostrar visual de kit, nome do kit, preco anterior, preco promocional e economia/desconto. Estilo limpo, legivel e pronto para loja online."});
+    const img=imageFromAiResult(result);
+    if(!img)throw new Error("O Make nao retornou URL ou base64 da capa.");
+    k.imagem=img;
+    mark("kits");
+    saveLocal();
+    renderKitEditor();
+    refreshJson();
+    setStatus("Capa do kit gerada pela IA e aplicada","ok");
+  }
+
   document.addEventListener("focusin",e=>{const card=e.target.closest?.(".product-workbench");if(card)state.cardImageTargetKey=card.dataset.productKey});
   document.addEventListener("click",async e=>{
     const card=e.target.closest?.(".product-workbench");if(card)state.cardImageTargetKey=card.dataset.productKey;
@@ -2049,6 +2229,11 @@
     if(action==="workbench-remove-photo"&&p){if(!confirm("Remover a imagem principal deste produto?"))return;p.url_imagem=p.imagem="";markProductDirty(key,["url_imagem","imagem"]);mark("products");renderProducts()}
     if(action==="workbench-make-primary"&&p){p.url_imagem=p.imagem=b.dataset.src;markProductDirty(key,["url_imagem","imagem"]);mark("products");renderProducts()}
     if(action==="workbench-remove-gallery"&&p){const src=b.dataset.src;p.imagens=(p.imagens||[]).filter(x=>x!==src);if((p.url_imagem||p.imagem)===src)p.url_imagem=p.imagem=p.imagens[0]||"";markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts()}
+    if(action==="ai-product-description"&&p){try{await aiProductDescription(key)}catch(err){console.error(err);setStatus("Erro na IA de descricao","err");alert(err.message)}}
+    if(action==="ai-product-name"&&p){try{await aiProductName(key)}catch(err){console.error(err);setStatus("Erro na IA de nome","err");alert(err.message)}}
+    if(action==="ai-product-image"&&p){try{await aiProductImage(key)}catch(err){console.error(err);setStatus("Erro na IA de imagem","err");alert(err.message)}}
+    if(action==="ai-kit-description"){try{await aiKitDescription()}catch(err){console.error(err);setStatus("Erro na IA do kit","err");alert(err.message)}}
+    if(action==="ai-kit-cover"){try{await aiKitCover()}catch(err){console.error(err);setStatus("Erro na IA da capa","err");alert(err.message)}}
     if(action==="open-expiry-alert")renderExpiryAlert();
     if(action==="close-expiry-alert")$(".expiry-alert-overlay")?.remove();
     if(action==="open-expiry-product"){ $(".expiry-alert-overlay")?.remove(); state.activeTab="produtos"; renderAll(); focusProductWorkbench(key); }
