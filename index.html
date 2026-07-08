@@ -1759,7 +1759,7 @@
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-07-kits-promocionais-v1',
+      APP_VERSION: '2026-07-07-kits-promocionais-v2-cesta-ajuste',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
@@ -2252,11 +2252,35 @@
       return cartPricing(includeFees).total;
     }
 
+    function feeCountsInTotal(item, kitContext) {
+      if (!item || !item.product || !item.product.isFee) return false;
+      const id = String(item.id || '');
+      if (id.indexOf('fee_kit:') === 0 && kitContext && !kitContext.activeFeeIds.has(id)) return false;
+      return true;
+    }
+
+    function isKitFeeItem(item) {
+      return !!(item && item.product && item.product.isFee && String(item.id || '').indexOf('fee_kit:') === 0);
+    }
+
+    function feeTotalByKind(cartItems, kitContext, kind) {
+      return roundMoney((cartItems || []).reduce((sum, item) => {
+        if (!feeCountsInTotal(item, kitContext)) return sum;
+        const isKitFee = isKitFeeItem(item);
+        if (kind === 'kit' && !isKitFee) return sum;
+        if (kind === 'basket' && isKitFee) return sum;
+        return sum + Number(item.product.price || 0) * Number(item.qty || 0);
+      }, 0));
+    }
+
     function rawCartSubtotal(includeFees) {
-      return getCartItems().reduce((sum, item) => {
-        if (!includeFees && item.product.isFee) return sum;
+      const kitContext = kitPromotionContext();
+      const items = getCartItems();
+      const productsTotal = items.reduce((sum, item) => {
+        if (item.product.isFee) return sum;
         return sum + Number(item.product.price || 0) * item.qty;
       }, 0);
+      return roundMoney(productsTotal + (includeFees ? feeTotalByKind(items, kitContext, 'basket') + feeTotalByKind(items, kitContext, 'kit') : 0));
     }
 
     function couponMatchesProduct(coupon, product) {
@@ -2401,8 +2425,12 @@
 
     function cartPricing(includeFees) {
       const kitContext = kitPromotionContext();
-      const items = getCartItems().filter(item => includeFees || !item.product.isFee);
-      const subtotalBefore = items.reduce((sum, item) => item.product.isFee ? sum : sum + Number(item.product.price || 0) * item.qty, 0);
+      const allItems = getCartItems();
+      const productItems = allItems.filter(item => !item.product.isFee);
+      const basketHiddenAdjustment = includeFees ? feeTotalByKind(allItems, kitContext, 'basket') : 0;
+      const kitAdjustment = includeFees ? feeTotalByKind(allItems, kitContext, 'kit') : 0;
+      const productsSubtotalBefore = productItems.reduce((sum, item) => sum + Number(item.product.price || 0) * item.qty, 0);
+      const subtotalBefore = roundMoney(productsSubtotalBefore + basketHiddenAdjustment);
       const coupon = getActiveCoupon();
       const eligibility = couponEligibility(coupon, subtotalBefore);
       let participatingItems = 0;
@@ -2411,11 +2439,7 @@
       let couponDiscount = 0;
       let expiryBulkDiscount = 0;
       let wholesaleDiscount = 0;
-      const total = items.reduce((sum, item) => {
-        if (item.product.isFee) {
-          if (String(item.id).indexOf('fee_kit:') === 0 && !kitContext.activeFeeIds.has(String(item.id))) return sum;
-          return sum + Number(item.product.price || 0) * item.qty;
-        }
+      const productsTotal = productItems.reduce((sum, item) => {
         const line = cartLinePricing(item.product, item.qty, coupon, eligibility, kitContext.protectedQtyById[String(item.id)] || 0);
         participatingItems += line.participatingItems;
         wholesaleItems += line.wholesaleItems;
@@ -2425,11 +2449,14 @@
         wholesaleDiscount += line.wholesaleDiscountTotal;
         return sum + line.total;
       }, 0);
-      const roundedTotal = roundMoney(total);
+      const roundedTotal = roundMoney(productsTotal + basketHiddenAdjustment + kitAdjustment);
       return {
         coupon,
         eligibility,
-        subtotalBefore: roundMoney(subtotalBefore),
+        subtotalBefore,
+        productsSubtotalBefore: roundMoney(productsSubtotalBefore),
+        hiddenAdjustment: basketHiddenAdjustment,
+        kitAdjustment,
         total: roundedTotal,
         discount: roundMoney(subtotalBefore - roundedTotal),
         couponDiscount: roundMoney(couponDiscount),
@@ -4621,7 +4648,7 @@
         });
       });
 
-      const totalSite = Math.round((totalBruto + Number.EPSILON) * 100) / 100;
+      const totalSite = roundMoney(pricing.total);
       const totalProdutosBling = Math.round((pedidoItens.reduce((sum, item) => sum + Number(item.qtd || 0) * Number(item.price || 0), 0) + Number.EPSILON) * 100) / 100;
       const diferencaBling = Math.round((totalSite - totalProdutosBling + Number.EPSILON) * 100) / 100;
       const outrasDespesasBling = diferencaBling > 0 ? diferencaBling : 0;
