@@ -2432,9 +2432,9 @@
     setStatus("Nome melhorado pela IA e aplicado ao produto","ok");
   }
   function buildAiImageStrategy(count){
-    if(count<=1)return {replacePrimary:true,label:'1 imagem - hero principal',message:'Estratégia hero: 1 imagem nova vai virar a principal do produto.'};
-    if(count===2)return {replacePrimary:false,label:'2 imagens - hero + galeria',message:'Estratégia comparativa: 2 imagens novas entram na galeria, mantendo a principal atual.'};
-    return {replacePrimary:false,label:'3 imagens - galeria completa',message:'Estratégia completa: 3 imagens novas entram na galeria para escolha manual.'};
+    if(count<=1)return {replacePrimary:true,label:'1 imagem - principal',message:'Estratégia: gerar somente a imagem principal do produto.'};
+    if(count===2)return {replacePrimary:true,label:'2 imagens - principal + mockup',message:'Estratégia: imagem 1 vira principal e imagem 2 entra como mockup na galeria.'};
+    return {replacePrimary:true,label:'3 imagens - principal + mockup + informativa',message:'Estratégia: imagem 1 vira principal, imagem 2 mockup e imagem 3 informativa entram na galeria.'};
   }
   async function saveGeneratedProductImageToGithub(p,src,index,batchId){
     let finalSrc=String(src||'').trim();
@@ -2486,7 +2486,7 @@
     renderSummary();
     refreshJson();
     setStatus(`${saved.length} imagem(ns) gerada(s), salva(s) no GitHub e enviada(s) ao cadastro do produto`,'ok');
-    toast(`${saved.length} imagem(ns) IA adicionada(s). ${plan.replacePrimary?'A primeira virou a principal.':'Confira as miniaturas da galeria abaixo da foto do produto.'} Clique em Salvar produto para gravar no banco.`, 'ok', 8000);
+    toast(`${saved.length} imagem(ns) IA adicionada(s). A primeira virou a principal e as demais entraram na galeria. Clique em Salvar produto para gravar no banco.`, 'ok', 8000);
   }
   async function aiKitDescription(){
     const k=currentKit();if(!k)return;
