@@ -2299,6 +2299,21 @@
     const seen=new Set();
     return imgs.filter(x=>{const key=`${x.src}|${x.fileName}`; if(seen.has(key)) return false; seen.add(key); return true;}).slice(0,limit);
   }
+  function ensureAiImagePlanModal(){
+    if($("#aiImagePlanModal"))return;
+    document.body.insertAdjacentHTML("beforeend",`<div class="ai-image-plan-overlay" id="aiImagePlanModal"><div class="ai-image-plan"><div class="ai-image-plan-head"><div><h3>Quantas imagens você quer gerar?</h3><p>Escolha a estratégia de geração para este produto. A IA vai analisar a foto atual e todas as informações do cadastro para gerar imagens melhores para o site.</p></div><button class="btn small" type="button" data-action="close-ai-image-plan">×</button></div><div class="ai-image-plan-grid"><button class="ai-image-option" type="button" data-ai-image-count="1"><strong>1 imagem</strong><span class="chip green">mais rápida e econômica</span><small>Estratégia principal de e-commerce: gera uma foto hero limpa, frontal e pronta para virar a imagem principal do produto.</small></button><button class="ai-image-option" type="button" data-ai-image-count="2"><strong>2 imagens</strong><span class="chip gold">comparação segura</span><small>Estratégia de comparação: gera 2 imagens complementares para a galeria, sem trocar a principal atual.</small></button><button class="ai-image-option" type="button" data-ai-image-count="3"><strong>3 imagens</strong><span class="chip blue">mais opções</span><small>Estratégia completa: gera 3 imagens pensadas para galeria de e-commerce, com abordagens diferentes do mesmo produto.</small></button></div><div class="ai-image-plan-note"><strong>Estratégia:</strong> 1 imagem = troca automática da principal. 2 ou 3 imagens = adiciona novas opções na galeria sem mexer na principal atual.</div></div></div>`);
+  }
+  function askAiImageCount(p){
+    ensureAiImagePlanModal();
+    return new Promise((resolve,reject)=>{
+      const modal=$("#aiImagePlanModal"); if(!modal)return reject(new Error("Modal de imagens não disponível."));
+      const cleanup=()=>{modal.classList.remove('open'); modal.querySelectorAll('[data-ai-image-count]').forEach(b=>b.onclick=null); const close=modal.querySelector('[data-action="close-ai-image-plan"]'); if(close) close.onclick=null; modal.onclick=null;};
+      modal.querySelectorAll('[data-ai-image-count]').forEach(btn=>btn.onclick=()=>{const n=Math.max(1,Math.min(3,Number(btn.dataset.aiImageCount)||1)); cleanup(); resolve(n);});
+      const close=modal.querySelector('[data-action="close-ai-image-plan"]'); if(close) close.onclick=()=>{cleanup(); reject(new Error('Geração de imagem cancelada.'));};
+      modal.onclick=(e)=>{if(e.target===modal){cleanup(); reject(new Error('Geração de imagem cancelada.'));}};
+      modal.classList.add('open');
+    });
+  }
   function updateProductWorkbenchDom(key){
     const p=productByKey(key),card=document.querySelector(`.product-workbench[data-product-key="${CSS.escape(String(key))}"]`);
     if(!p||!card)return false;
