@@ -1648,6 +1648,341 @@
       .category-buttons { grid-template-columns: repeat(4,minmax(0,1fr)) !important; }
       .category-button { min-height: 176px !important; }
     }
+
+    /* Desktop 2026: imagens maiores, layout limpo e menos caixas visuais */
+    @media (min-width: 1024px) {
+      :root {
+        --bg: #f7f7f2;
+        --surface: #fffef9;
+        --surface-soft: #f0f3ec;
+        --photo-bg: #f6f7f2;
+        --ink: #142018;
+        --muted: #637065;
+        --line: #e2e5dc;
+        --line-strong: #cfd6ca;
+        --brand: #145a36;
+        --brand-2: #1f7b4a;
+        --shadow: 0 16px 44px rgba(20, 32, 24, .08);
+      }
+
+      body {
+        background:
+          linear-gradient(90deg, rgba(20,90,54,.035), transparent 18%, transparent 82%, rgba(20,90,54,.035)),
+          var(--bg);
+      }
+
+      .container { max-width: 1768px; }
+      .app { padding-inline: 32px; }
+      .header { background: rgba(255,253,247,.94); border-color: rgba(20,32,24,.08); }
+      .header-inner { max-width: 1768px; }
+      .search-form { max-width: 840px; }
+
+      .section { margin-top: 34px; }
+      .section-title { font-size: 25px; letter-spacing: -.035em; }
+      .section-caption { color: #657268; font-size: 14px; }
+
+      .rail { gap: 18px; }
+      .product-grid { grid-template-columns: repeat(5, minmax(0,1fr)); gap: 24px; }
+      .product-list { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 22px; }
+
+      .product-card,
+      .basket-card,
+      .kit-deal-card,
+      .basket-total-card,
+      .checkout-section,
+      .info-accordion details,
+      .empty,
+      .notice {
+        box-shadow: none !important;
+      }
+
+      .product-card,
+      .basket-card {
+        border: 0 !important;
+        background: transparent !important;
+        overflow: visible !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+      }
+
+      .product-card:hover,
+      .basket-card:hover {
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
+      .product-card.compact,
+      .basket-card.compact,
+      .carousel-more-card {
+        width: 270px !important;
+        flex: 0 0 270px !important;
+        min-height: 0 !important;
+      }
+
+      .product-imgbox,
+      .basket-imgbox,
+      .detail-imgbox,
+      .kit-deal-img,
+      .cart-img,
+      .basket-editor-row img {
+        border: 0 !important;
+        background: var(--photo-bg) !important;
+        border-radius: 24px !important;
+        box-shadow: none !important;
+      }
+
+      .product-imgbox,
+      .basket-imgbox {
+        width: 100%;
+        height: auto !important;
+        aspect-ratio: 1 / 1 !important;
+        margin: 0 0 14px !important;
+        overflow: hidden !important;
+      }
+
+      .product-imgbox img,
+      .basket-imgbox img {
+        width: 100%;
+        height: 100%;
+        padding: 0 !important;
+        object-fit: contain;
+        mix-blend-mode: normal !important;
+        filter: contrast(1.04) saturate(1.04);
+      }
+
+      .product-body,
+      .basket-body {
+        padding: 0 2px !important;
+      }
+
+      .product-meta {
+        min-height: 16px;
+        color: #6d776e;
+        font-size: 10px;
+        letter-spacing: .06em;
+      }
+
+      .product-name,
+      .basket-name {
+        color: var(--ink);
+        font-weight: 850;
+      }
+
+      .product-name { font-size: 15px; line-height: 1.32; min-height: 42px; }
+      .basket-name { font-size: 18px; line-height: 1.2; min-height: 44px; }
+      .basket-desc { color: #5f6c62; font-size: 13.5px; line-height: 1.38; font-weight: 560; }
+      .price { color: var(--brand); font-size: 24px; font-weight: 920; }
+      .old-price { color: #879089; }
+
+      .basket-actions,
+      .card-actions {
+        gap: 10px;
+      }
+
+      .add-btn,
+      .secondary-btn,
+      .qty-control,
+      .send-btn {
+        min-height: 50px;
+        border-radius: 16px;
+        font-size: 14px;
+        box-shadow: none !important;
+      }
+
+      .add-btn,
+      .send-btn {
+        background: var(--brand);
+      }
+
+      .secondary-btn,
+      .qty-control {
+        border-color: var(--line-strong);
+        background: #fff;
+      }
+
+      .basket-list {
+        grid-template-columns: repeat(3, minmax(0,1fr));
+        gap: 30px;
+      }
+
+      .basket-card.wide {
+        display: block !important;
+        border: 0 !important;
+        background: transparent !important;
+      }
+
+      .basket-card.wide .basket-imgbox {
+        width: 100%;
+        max-width: none;
+        aspect-ratio: 1 / 1 !important;
+        min-height: 0 !important;
+        height: auto !important;
+        margin: 0 0 16px !important;
+        border-radius: 28px !important;
+      }
+
+      .basket-card.wide .basket-name {
+        font-size: 21px;
+      }
+
+      .basket-card.wide .basket-desc {
+        min-height: 58px;
+      }
+
+      .product-detail {
+        display: grid;
+        grid-template-columns: minmax(420px, 680px) minmax(0,1fr);
+        gap: 32px;
+        align-items: center;
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+
+      .detail-media {
+        padding: 0 !important;
+        gap: 12px;
+        background: transparent !important;
+        border: 0 !important;
+      }
+
+      .detail-imgbox {
+        width: 100%;
+        height: auto !important;
+        aspect-ratio: 1 / 1;
+        border-radius: 30px !important;
+      }
+
+      .detail-imgbox img {
+        padding: 0 !important;
+        object-fit: contain;
+        mix-blend-mode: normal !important;
+      }
+
+      .detail-info {
+        padding: 0 !important;
+        max-width: 720px;
+        gap: 16px;
+      }
+
+      .detail-title {
+        font-size: clamp(34px, 3vw, 56px);
+        line-height: .98;
+        letter-spacing: -.055em;
+      }
+
+      .desc {
+        color: #5f6c62;
+        font-size: 16px;
+        line-height: 1.58;
+      }
+
+      .detail-gallery {
+        grid-template-columns: repeat(6, minmax(0,1fr));
+      }
+
+      .detail-thumb {
+        border: 0;
+        border-radius: 18px;
+        background: var(--photo-bg);
+      }
+
+      .detail-thumb img {
+        padding: 0;
+        object-fit: contain;
+      }
+
+      .kit-deal-card {
+        background: transparent !important;
+        border: 0 !important;
+        padding: 0 !important;
+        margin-bottom: 34px;
+      }
+
+      .kit-deal-top-stacked,
+      .kit-deal-top {
+        display: grid !important;
+        grid-template-columns: minmax(420px, 680px) minmax(0,1fr) !important;
+        gap: 34px !important;
+        align-items: center !important;
+      }
+
+      .kit-deal-img {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 1 / 1 !important;
+        object-fit: contain;
+        padding: 0 !important;
+        border-radius: 30px !important;
+        filter: contrast(1.04) saturate(1.04);
+      }
+
+      .basket-detail-hero {
+        display: grid !important;
+        grid-template-columns: minmax(420px, 680px) minmax(0,1fr) !important;
+        gap: 34px !important;
+        align-items: center !important;
+        margin-bottom: 36px !important;
+      }
+
+      .basket-detail-hero .basket-imgbox {
+        margin: 0 !important;
+        border-radius: 30px !important;
+      }
+
+      .basket-detail-hero .basket-body {
+        max-width: 720px;
+        gap: 18px;
+      }
+
+      .basket-detail-hero .basket-name {
+        font-size: clamp(34px, 3vw, 54px);
+        line-height: .98;
+        min-height: 0;
+      }
+
+      .kit-deal-copy {
+        max-width: 760px;
+        gap: 16px;
+      }
+
+      .kit-deal-title {
+        font-size: clamp(34px, 3vw, 54px);
+        line-height: .98;
+      }
+
+      .kit-price-main {
+        font-size: clamp(38px, 3.8vw, 64px);
+      }
+
+      .basket-editor {
+        gap: 14px;
+      }
+
+      .basket-editor-row {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        padding: 8px 0;
+        grid-template-columns: 92px minmax(0,1fr) minmax(116px,auto);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .basket-editor-row img {
+        width: 92px;
+        height: 92px;
+        padding: 0;
+        object-fit: cover;
+      }
+
+      .basket-total-card {
+        border: 0;
+        background: transparent;
+        padding: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -2138,7 +2473,15 @@
 
     async function loadCestas() {
       const cache = readCache(CONFIG.BASKET_CACHE_KEY);
-      const urls = ['site/produtos-cesta-basica.json', 'site/cestas.json', 'cestas.json', 'https://donaantonia.com.br/site/produtos-cesta-basica.json'];
+      const urls = [
+        'site/produtos-cesta-basica.json',
+        'site/cestas.json',
+        'cestas.json',
+        'https://cedar-chemist-310801-default-rtdb.firebaseio.com/cestas.json',
+        'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/produtos-cesta-basica.json',
+        'https://donaantonia.com.br/site/produtos-cesta-basica.json',
+        'https://www.donaantonia.com.br/site/produtos-cesta-basica.json'
+      ];
       let lastError = null;
       for (const url of urls) {
         try {
@@ -2184,7 +2527,14 @@
 
     async function loadKits() {
       const cache = readCache(CONFIG.KIT_CACHE_KEY);
-      const urls = ['site/kits.json', 'kits.json', 'https://donaantonia.com.br/site/kits.json'];
+      const urls = [
+        'site/kits.json',
+        'kits.json',
+        'https://cedar-chemist-310801-default-rtdb.firebaseio.com/kitspromocionais.json',
+        'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/kits.json',
+        'https://donaantonia.com.br/site/kits.json',
+        'https://www.donaantonia.com.br/site/kits.json'
+      ];
       let lastError = null;
       for (const url of urls) {
         try {
@@ -3200,7 +3550,9 @@
       if (mode === 'wide') classes.push('wide');
       return `
         <article class="${classes.join(' ')}">
-          <div class="basket-imgbox"><img loading="lazy" decoding="async" src="${escapeHtml(cesta.imagem)}" alt="${escapeHtml(cesta.nome)}" onerror="window.__daFallbackImg(this)"></div>
+          <a class="basket-imgbox" href="#/cesta/${encodeURIComponent(cesta.id)}" aria-label="Abrir ${escapeHtml(cesta.nome)}">
+            <img loading="lazy" decoding="async" src="${escapeHtml(cesta.imagem)}" alt="${escapeHtml(cesta.nome)}" onerror="window.__daFallbackImg(this)">
+          </a>
           <div class="basket-body">
             <div class="basket-name">${escapeHtml(cesta.nome)}</div>
             <div class="basket-desc">${escapeHtml(cesta.descricao || 'Kit pronto para facilitar sua compra.')}</div>
@@ -3221,7 +3573,9 @@
       if (mode === 'wide') classes.push('wide');
       return `
         <article class="${classes.join(' ')}">
-          <div class="basket-imgbox"><img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)"></div>
+          <a class="basket-imgbox" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}">
+            <img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
+          </a>
           <div class="basket-body">
             <div class="product-meta">${discount > 0 ? `<span class="discount">-${discount}%</span>` : '&nbsp;'}</div>
             <div class="basket-name">${escapeHtml(kit.nome)}</div>
@@ -3670,7 +4024,7 @@
       const total = basketDraftTotal(basket.id);
       const draftChanged = basketDraftChanged(basket.id);
       app.innerHTML = `<div class="container">${pageHeader(basket.nome, '', '#/cestas')}
-        <article class="basket-card wide" style="margin-bottom:12px">
+        <article class="basket-card wide basket-detail-hero" style="margin-bottom:12px">
           <div class="basket-imgbox"><img src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}" onerror="window.__daFallbackImg(this)"></div>
           <div class="basket-body"><div class="basket-name">${escapeHtml(basket.nome)}</div><div class="price">${basket.preco ? fmt(basket.preco) : fmt(total)}</div><button class="add-btn" type="button" data-action="add-basket" data-id="${escapeHtml(basket.id)}">Adicionar cesta padrão</button></div>
         </article>
