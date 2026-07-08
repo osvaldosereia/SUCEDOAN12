@@ -2262,44 +2262,42 @@
   }
   function imageFromAiResult(result){
     const r=unwrapAiResult(result);
-    const direct=r.imagem||r.image||r.image_url||r.url_imagem||r.url||r.src;
-    if(direct)return String(direct);
+    const direct=r.imagem||r.imagem_principal||r.image||r.image_url||r.url_imagem||r.url||r.src;
+    if(isUsableAiImageSrc(direct))return String(direct).trim();
     const b64=r.b64_json||r.base64||r.data?.[0]?.b64_json;
-    if(b64)return `data:image/png;base64,${b64}`;
+    if(b64&&String(b64).trim().length>80)return `data:image/png;base64,${String(b64).trim()}`;
     const output=Array.isArray(r.output)?r.output.find(x=>x.type==="image_generation_call"&&x.result):null;
     const url=r.data?.[0]?.url||output?.result;
-    return url?String(url):"";
+    return isUsableAiImageSrc(url)?String(url).trim():"";
+  }
+  function isUsableAiImageSrc(src){
+    const s=String(src||"").trim();
+    if(!s||/^(undefined|null|false)$/i.test(s))return false;
+    if(/^data:image\//i.test(s)){
+      const parts=s.split(',');
+      const b64=(parts[1]||'').replace(/\s/g,'');
+      return b64.length>120;
+    }
+    return /^(https?:\/\/|img\/|site\/img\/)/i.test(s);
   }
   function imagesFromAiResult(result){
     const r=unwrapAiResult(result);
+    const limit=Math.max(1,Math.min(3,Number(r.quantidade_solicitada||r.quantidade||r.n||3)||3));
     const imgs=[];
-    const push=(src,name="")=>{const s=String(src||"").trim(); if(s) imgs.push({src:s,fileName:String(name||"")})};
+    const push=(src,name="")=>{const s=String(src||"").trim(); if(isUsableAiImageSrc(s)) imgs.push({src:s,fileName:String(name||"")})};
+    // Prioriza o campo principal porque em alguns módulos do Make o array pode vir vazio,
+    // enquanto a imagem principal já vem pronta.
+    push(r.imagem_principal||r.imagem||r.image||r.image_url||r.url_imagem||r.url||r.src,r.fileName||r.file_name||'imagem_1.webp');
     if(Array.isArray(r.imagens)){
-      r.imagens.forEach((item,i)=>{
+      r.imagens.slice(0,limit).forEach((item,i)=>{
         if(typeof item==='string')return push(item,`imagem_${i+1}.webp`);
         if(item&&typeof item==='object')push(item.imagem||item.image||item.url||item.src||item.image_url||item.data||"",item.fileName||item.file_name||`imagem_${i+1}.webp`);
       });
     }
-    ['imagem_1','imagem_2','imagem_3'].forEach((k,i)=>push(r[k],r[`fileName_${i+1}`]||`imagem_${i+1}.webp`));
-    if(Array.isArray(r.data))r.data.forEach((item,i)=>{if(item?.b64_json)push(`data:image/webp;base64,${item.b64_json}`,item.fileName||`imagem_${i+1}.webp`); else if(item?.url)push(item.url,item.fileName||`imagem_${i+1}.webp`); else if(item?.imagem)push(item.imagem,item.fileName||`imagem_${i+1}.webp`)});
-    if(!imgs.length){const single=imageFromAiResult(r); if(single) push(single,r.fileName||'imagem_1.webp')}
+    ['imagem_1','imagem_2','imagem_3'].forEach((k,i)=>{ if(i+1<=limit) push(r[k],r[`fileName_${i+1}`]||`imagem_${i+1}.webp`) });
+    if(Array.isArray(r.data))r.data.slice(0,limit).forEach((item,i)=>{if(item?.b64_json)push(`data:image/webp;base64,${item.b64_json}`,item.fileName||`imagem_${i+1}.webp`); else if(item?.url)push(item.url,item.fileName||`imagem_${i+1}.webp`); else if(item?.imagem)push(item.imagem,item.fileName||`imagem_${i+1}.webp`)});
     const seen=new Set();
-    return imgs.filter(x=>{const key=`${x.src}|${x.fileName}`; if(seen.has(key)) return false; seen.add(key); return true;});
-  }
-  function ensureAiImagePlanModal(){
-    if($("#aiImagePlanModal"))return;
-    document.body.insertAdjacentHTML("beforeend",`<div class="ai-image-plan-overlay" id="aiImagePlanModal"><div class="ai-image-plan"><div class="ai-image-plan-head"><div><h3>Quantas imagens você quer gerar?</h3><p>Escolha a estratégia de geração para este produto. A IA vai analisar a foto atual e todas as informações do cadastro para gerar imagens melhores para o site.</p></div><button class="btn small" type="button" data-action="close-ai-image-plan">×</button></div><div class="ai-image-plan-grid"><button class="ai-image-option" type="button" data-ai-image-count="1"><strong>1 imagem</strong><span class="chip green">mais rápida e econômica</span><small>Estratégia principal de e-commerce: gera uma foto hero limpa, frontal e pronta para virar a imagem principal do produto.</small></button><button class="ai-image-option" type="button" data-ai-image-count="2"><strong>2 imagens</strong><span class="chip gold">comparação segura</span><small>Estratégia de comparação: gera 2 imagens complementares para a galeria, sem trocar a principal atual.</small></button><button class="ai-image-option" type="button" data-ai-image-count="3"><strong>3 imagens</strong><span class="chip blue">mais opções</span><small>Estratégia completa: gera 3 imagens pensadas para galeria de e-commerce, com abordagens diferentes do mesmo produto.</small></button></div><div class="ai-image-plan-note"><strong>Estratégia:</strong> 1 imagem = troca automática da principal. 2 ou 3 imagens = adiciona novas opções na galeria sem mexer na principal atual.</div></div></div>`);
-  }
-  function askAiImageCount(p){
-    ensureAiImagePlanModal();
-    return new Promise((resolve,reject)=>{
-      const modal=$("#aiImagePlanModal"); if(!modal)return reject(new Error("Modal de imagens não disponível."));
-      const cleanup=()=>{modal.classList.remove('open'); modal.querySelectorAll('[data-ai-image-count]').forEach(b=>b.onclick=null); const close=modal.querySelector('[data-action="close-ai-image-plan"]'); if(close) close.onclick=null; modal.onclick=null;};
-      modal.querySelectorAll('[data-ai-image-count]').forEach(btn=>btn.onclick=()=>{const n=Math.max(1,Math.min(3,Number(btn.dataset.aiImageCount)||1)); cleanup(); resolve(n);});
-      const close=modal.querySelector('[data-action="close-ai-image-plan"]'); if(close) close.onclick=()=>{cleanup(); reject(new Error('Geração de imagem cancelada.'));};
-      modal.onclick=(e)=>{if(e.target===modal){cleanup(); reject(new Error('Geração de imagem cancelada.'));}};
-      modal.classList.add('open');
-    });
+    return imgs.filter(x=>{const key=`${x.src}|${x.fileName}`; if(seen.has(key)) return false; seen.add(key); return true;}).slice(0,limit);
   }
   function updateProductWorkbenchDom(key){
     const p=productByKey(key),card=document.querySelector(`.product-workbench[data-product-key="${CSS.escape(String(key))}"]`);
@@ -2419,20 +2417,22 @@
     setStatus("Nome melhorado pela IA e aplicado ao produto","ok");
   }
   function buildAiImageStrategy(count){
-    if(count<=1)return {replacePrimary:true,label:'1 imagem',message:'Estratégia hero: gerar 1 imagem principal de e-commerce e substituir automaticamente a foto principal.'};
-    if(count===2)return {replacePrimary:false,label:'2 imagens',message:'Estratégia comparativa: gerar 2 imagens complementares para a galeria e manter a principal atual.'};
-    return {replacePrimary:false,label:'3 imagens',message:'Estratégia completa: gerar 3 imagens com funções diferentes para enriquecer a galeria do produto.'};
+    if(count<=1)return {replacePrimary:true,label:'1 imagem - hero principal',message:'Estratégia hero: 1 imagem nova vai virar a principal do produto.'};
+    if(count===2)return {replacePrimary:false,label:'2 imagens - hero + galeria',message:'Estratégia comparativa: 2 imagens novas entram na galeria, mantendo a principal atual.'};
+    return {replacePrimary:false,label:'3 imagens - galeria completa',message:'Estratégia completa: 3 imagens novas entram na galeria para escolha manual.'};
   }
   async function saveGeneratedProductImageToGithub(p,src,index,batchId){
     let finalSrc=String(src||'').trim();
-    if(!finalSrc)throw new Error('Imagem IA vazia.');
+    if(!isUsableAiImageSrc(finalSrc))throw new Error('Imagem IA vazia ou inválida. O Make respondeu sem base64 válido.');
     if(/^data:image\//i.test(finalSrc)){
       const blob=await (await fetch(finalSrc)).blob();
+      if(!blob||blob.size<200)throw new Error('Imagem IA inválida: base64 muito pequeno. Confira o módulo Webhook Response do Make.');
       const code=slug(p.codigo||p.gtin||getName(p)||Date.now());
       const fileName=`${code}-ia-${batchId}-${String(index).padStart(2,'0')}.webp`;
       const basePath=String(state.settings.githubImagesPath||'site/img/produtos').replace(/\/+$/,'');
-      await githubUpsertRaw(`${basePath}/${fileName}`,await blob.arrayBuffer(),`Gera imagem IA do produto ${p.codigo||getName(p)} (${index})`);
-      finalSrc=githubRawFileUrl(`${basePath}/${fileName}`)||absolutePublicUrl(`img/produtos/${fileName}`)||`img/produtos/${fileName}`;
+      const fullPath=`${basePath}/${fileName}`;
+      await githubUpsertRaw(fullPath,await blob.arrayBuffer(),`Gera imagem IA do produto ${p.codigo||getName(p)} (${index})`);
+      finalSrc=githubRawFileUrl(fullPath)||absolutePublicUrl(`img/produtos/${fileName}`)||`img/produtos/${fileName}`;
     }
     return finalSrc;
   }
@@ -2447,13 +2447,14 @@
       quantidade_imagens:count,
       estrategia:plan.label,
       produto:product,
-      instrucoes:'Melhore a imagem do produto mantendo embalagem, marca, identidade visual e o texto principal da embalagem. Criar imagem de e-commerce limpa, fundo claro, aparência profissional e pronta para uso no site.'
+      instrucoes:'A IA deve analisar a foto e o cadastro completo do produto. Gerar imagens de e-commerce fiéis ao produto real, respeitando a estratégia escolhida: 1 imagem hero principal; 2 imagens complementares; 3 imagens para galeria completa.'
     };
     setStatus(`Enviando produto para gerar ${count} imagem(ns) no Make...`,'warn');
     toast(plan.message,'warn',4200);
     const result=await callMakeAi('image',payload);
+    console.log('Resposta IA imagem produto:',result);
     const generated=imagesFromAiResult(result).slice(0,count);
-    if(!generated.length)throw new Error('O Make não retornou nenhuma imagem do produto.');
+    if(!generated.length)throw new Error('O Make rodou, mas não devolveu imagem válida para o admin. Verifique se o Webhook Response está devolvendo imagem/base64.');
     const batchId=Date.now();
     const saved=[];
     for(let i=0;i<generated.length;i++){
@@ -2461,12 +2462,16 @@
       const src=await saveGeneratedProductImageToGithub(p,generated[i].src,i+1,batchId);
       saved.push(src);
     }
-    p.imagens=uniq([...(p.imagens||[]),...saved]);
+    p.imagens=uniq([...(p.imagens||[]),...saved]).slice(0,12);
     if(plan.replacePrimary||!(p.url_imagem||p.imagem))p.url_imagem=p.imagem=saved[0]||p.url_imagem||p.imagem;
-    markProductAiChange(p,['url_imagem','imagem','imagens']);
-    updateProductWorkbenchDom(key);
-    setStatus(`${saved.length} imagem(ns) gerada(s) e salva(s) para o produto`,'ok');
-    toast(`${saved.length} imagem(ns) IA salva(s). ${plan.replacePrimary?'A primeira virou a principal e já aparece no card.':'A principal atual foi preservada e as novas foram adicionadas à galeria do card.'}`,'ok',6200);
+    markProductDirty(getKey(p),['url_imagem','imagem','imagens']);
+    mark('products');
+    saveLocal();
+    renderProducts();
+    renderSummary();
+    refreshJson();
+    setStatus(`${saved.length} imagem(ns) gerada(s), salva(s) no GitHub e enviada(s) ao cadastro do produto`,'ok');
+    toast(`${saved.length} imagem(ns) IA adicionada(s). ${plan.replacePrimary?'A primeira virou a principal.':'Confira as miniaturas da galeria abaixo da foto do produto.'} Clique em Salvar produto para gravar no banco.`, 'ok', 8000);
   }
   async function aiKitDescription(){
     const k=currentKit();if(!k)return;
@@ -2638,5 +2643,4 @@
 </script>
 </body>
 </html>
- 
  
