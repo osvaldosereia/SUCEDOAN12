@@ -2162,6 +2162,30 @@
       imagem_url:publicAssetUrl(img)
     };
   }
+  async function buildKitReferenceCollage(kitData){
+    try{
+      const refs=(kitData?.produtos||[]).map(p=>publicAssetUrl(p.imagem_url||p.imagem||""))
+        .filter(Boolean).slice(0,6);
+      if(!refs.length)return "";
+      const load=(src)=>new Promise((resolve,reject)=>{const img=new Image();img.crossOrigin="anonymous";img.onload=()=>resolve(img);img.onerror=reject;img.src=src});
+      const imgs=[];
+      for(const src of refs){try{imgs.push(await load(src))}catch{}}
+      if(!imgs.length)return "";
+      const cols=imgs.length<=2?2:3,rows=Math.ceil(imgs.length/cols),size=1024,pad=28,gap=18;
+      const cellW=Math.floor((size-pad*2-gap*(cols-1))/cols),cellH=Math.floor((size-pad*2-gap*(rows-1))/rows);
+      const cv=document.createElement('canvas');cv.width=size;cv.height=size;const cx=cv.getContext('2d');
+      cx.fillStyle='#ffffff';cx.fillRect(0,0,size,size);
+      imgs.forEach((img,i)=>{
+        const c=i%cols,r=Math.floor(i/cols),x=pad+c*(cellW+gap),y=pad+r*(cellH+gap);
+        const scale=Math.min(cellW/img.width,cellH/img.height),w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+        const dx=x+Math.round((cellW-w)/2),dy=y+Math.round((cellH-h)/2);
+        cx.fillStyle='#faf8f1';cx.fillRect(x,y,cellW,cellH);
+        cx.strokeStyle='rgba(176,138,73,.22)';cx.lineWidth=2;cx.strokeRect(x,y,cellW,cellH);
+        cx.drawImage(img,dx,dy,w,h);
+      });
+      return cv.toDataURL('image/png');
+    }catch{return ""}
+  }
   function compactKitForAi(k){
     recalcKit(k);
     const total=kitRetailTotal(k);
@@ -2181,6 +2205,7 @@
         imagem_url:publicAssetUrl(img)
       };
     });
+    const referencias_imagens=produtos.map(p=>p.imagem_url).filter(Boolean);
     return {
       id:k.id||"",
       nome:k.nome||"",
@@ -2195,7 +2220,8 @@
       preco_anterior_formatado:brl(total),
       preco_novo_formatado:brl(toNum(k.preco)),
       economia_formatada:brl(Math.max(0,total-toNum(k.preco))),
-      produtos
+      produtos,
+      referencias_imagens
     };
   }
   async function callMakeAi(kind,payload){
@@ -2204,7 +2230,7 @@
     if(!url)throw new Error(`Configure o webhook de IA ${kind==="image"?"imagens":"textos"} na aba Integracoes.`);
     const body=new URLSearchParams();
     body.set("payload",JSON.stringify(payload));
-    const response=await fetch(url,{method:"POST",body});
+    const response=await fetch(url,{method:"POST",headers:{"Accept":"application/json"},body});
     const text=await response.text();
     if(!response.ok)throw new Error(`Make retornou ${response.status}: ${text.slice(0,240)}`);
     try{return JSON.parse(text)}catch{return {ok:true,texto:text}}
@@ -2381,18 +2407,27 @@
     const k=currentKit();if(!k)return;
     const kit=compactKitForAi(k);
     if(!kit.produtos.length)return alert("Adicione produtos ao kit antes de gerar a capa.");
-    setStatus("Enviando produtos do kit para gerar capa no Make...","warn");
-    const result=await callMakeAi("image",{acao:"gerar_capa_kit",kit,instrucoes:"Crie uma capa promocional quadrada para e-commerce usando os produtos informados. Mostrar visual de kit, nome do kit, preco anterior, preco promocional e economia/desconto. Estilo limpo, legivel e pronto para loja online."});
+    if(!kit.referencias_imagens?.length)return alert("Os produtos do kit precisam ter imagens validas para gerar a capa.");
+    setStatus(`Preparando ${kit.referencias_imagens.length} imagem(ns) de referencia do kit...`,"warn");
+    const colagem_referencia=await buildKitReferenceCollage(kit);
+    const payload={
+      acao:"gerar_capa_kit",
+      kit:{...kit,colagem_referencia},
+      instrucoes:"Crie uma capa promocional quadrada para e-commerce usando obrigatoriamente os produtos do kit. Preserve as embalagens e marcas. Use as imagens enviadas como referencia visual. Mostrar nome do kit, preco anterior, preco promocional e economia/desconto. Estilo limpo, legivel e pronto para loja online."
+    };
+    setStatus("Enviando referencias do kit para o Make...","warn");
+    const result=await callMakeAi("image",payload);
     let img=imageFromAiResult(result);
     if(!img)throw new Error("O Make nao retornou URL ou base64 da capa.");
     if(/^data:image\//i.test(img)){
-      setStatus("Salvando capa gerada no GitHub...","warn");
+      setStatus("Salvando capa gerada no GitHub em site/img/kits...","warn");
       const blob=await (await fetch(img)).blob();
       const fileName=`${slug(k.codigo||k.nome)||Date.now()}.webp`;
       const basePath=String(state.settings.githubKitImagesPath||"site/img/kits").replace(/\/+$/,'');
       const publicBase=String(state.settings.kitImagePublicBase||"img/kits").replace(/\/+$/,'');
       await githubUpsertRaw(`${basePath}/${fileName}`,await blob.arrayBuffer(),`Atualiza capa IA do kit ${k.codigo||k.nome}`);
       img=`${publicBase}/${fileName}`;
+      toast(`Capa do kit salva no GitHub em ${basePath}/${fileName}`,'ok',5200);
     }
     k.imagem=img;
     mark("kits");
