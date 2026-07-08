@@ -248,7 +248,20 @@
     .toast-msg strong{display:block;font-size:12px;margin-bottom:2px}.toast-msg .toast-close{float:right;border:0;background:transparent;color:#777;font-weight:900;padding:0 0 4px 8px;cursor:pointer}
     @keyframes toastIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
     .btn.busy,.btn[disabled]{opacity:.62!important;cursor:progress!important;pointer-events:none!important;transform:none!important}
-    .btn.busy::before{content:"";width:12px;height:12px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;display:inline-block;animation:btnSpin .75s linear infinite}
+    
+    .ai-image-plan-overlay{position:fixed;inset:0;z-index:130;display:none;place-items:center;padding:16px;background:rgba(15,23,42,.42)}
+    .ai-image-plan-overlay.open{display:grid}
+    .ai-image-plan{width:min(720px,96vw);background:#fff;border:1px solid var(--line);border-radius:24px;box-shadow:0 26px 90px rgba(0,0,0,.22);padding:18px}
+    .ai-image-plan-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+    .ai-image-plan-head h3{margin:0;font-size:20px}.ai-image-plan-head p{margin:5px 0 0;color:var(--muted);font-size:12px}
+    .ai-image-plan-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .ai-image-option{border:1px solid var(--line);border-radius:18px;background:#fffdf7;padding:14px;display:flex;flex-direction:column;gap:7px;cursor:pointer;transition:.12s}
+    .ai-image-option:hover{transform:translateY(-1px);border-color:#d7c37d;box-shadow:0 10px 22px rgba(201,163,73,.12)}
+    .ai-image-option strong{font-size:18px;color:#705512}.ai-image-option small{color:var(--muted);line-height:1.4}
+    .ai-image-option .chip{align-self:flex-start}
+    .ai-image-plan-note{margin-top:12px;padding:11px 12px;border-radius:14px;background:#f8fafc;border:1px solid #dbe5f0;font-size:12px;color:#334155;line-height:1.45}
+    @media(max-width:760px){.ai-image-plan-grid{grid-template-columns:1fr}}
+.btn.busy::before{content:"";width:12px;height:12px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;display:inline-block;animation:btnSpin .75s linear infinite}
     @keyframes btnSpin{to{transform:rotate(360deg)}}
     .product-workbench.processing{box-shadow:0 0 0 3px rgba(201,163,73,.22),0 12px 34px rgba(0,0,0,.055)!important}
     @media(max-width:700px){.toast-stack{right:10px;left:10px;top:auto;bottom:12px;width:auto}}
@@ -2256,6 +2269,37 @@
     const url=r.data?.[0]?.url||output?.result;
     return url?String(url):"";
   }
+  function imagesFromAiResult(result){
+    const r=unwrapAiResult(result);
+    const imgs=[];
+    const push=(src,name="")=>{const s=String(src||"").trim(); if(s) imgs.push({src:s,fileName:String(name||"")})};
+    if(Array.isArray(r.imagens)){
+      r.imagens.forEach((item,i)=>{
+        if(typeof item==='string')return push(item,`imagem_${i+1}.webp`);
+        if(item&&typeof item==='object')push(item.imagem||item.image||item.url||item.src||item.image_url||item.data||"",item.fileName||item.file_name||`imagem_${i+1}.webp`);
+      });
+    }
+    ['imagem_1','imagem_2','imagem_3'].forEach((k,i)=>push(r[k],r[`fileName_${i+1}`]||`imagem_${i+1}.webp`));
+    if(Array.isArray(r.data))r.data.forEach((item,i)=>{if(item?.b64_json)push(`data:image/webp;base64,${item.b64_json}`,item.fileName||`imagem_${i+1}.webp`); else if(item?.url)push(item.url,item.fileName||`imagem_${i+1}.webp`); else if(item?.imagem)push(item.imagem,item.fileName||`imagem_${i+1}.webp`)});
+    if(!imgs.length){const single=imageFromAiResult(r); if(single) push(single,r.fileName||'imagem_1.webp')}
+    const seen=new Set();
+    return imgs.filter(x=>{const key=`${x.src}|${x.fileName}`; if(seen.has(key)) return false; seen.add(key); return true;});
+  }
+  function ensureAiImagePlanModal(){
+    if($("#aiImagePlanModal"))return;
+    document.body.insertAdjacentHTML("beforeend",`<div class="ai-image-plan-overlay" id="aiImagePlanModal"><div class="ai-image-plan"><div class="ai-image-plan-head"><div><h3>Quantas imagens você quer gerar?</h3><p>Escolha a estratégia de geração para este produto. O Make vai receber a foto atual e todas as informações do cadastro.</p></div><button class="btn small" type="button" data-action="close-ai-image-plan">×</button></div><div class="ai-image-plan-grid"><button class="ai-image-option" type="button" data-ai-image-count="1"><strong>1 imagem</strong><span class="chip green">mais rápida e econômica</span><small>Gera uma versão melhorada e substitui automaticamente a imagem principal do produto.</small></button><button class="ai-image-option" type="button" data-ai-image-count="2"><strong>2 imagens</strong><span class="chip gold">comparação segura</span><small>Mantém a principal atual e cria duas novas opções para comparar no site.</small></button><button class="ai-image-option" type="button" data-ai-image-count="3"><strong>3 imagens</strong><span class="chip blue">mais opções</span><small>Mantém a principal atual e cria três variações para escolha manual da melhor.</small></button></div><div class="ai-image-plan-note"><strong>Estratégia:</strong> 1 imagem = troca automática da principal. 2 ou 3 imagens = adiciona novas opções na galeria sem mexer na principal atual.</div></div></div>`);
+  }
+  function askAiImageCount(p){
+    ensureAiImagePlanModal();
+    return new Promise((resolve,reject)=>{
+      const modal=$("#aiImagePlanModal"); if(!modal)return reject(new Error("Modal de imagens não disponível."));
+      const cleanup=()=>{modal.classList.remove('open'); modal.querySelectorAll('[data-ai-image-count]').forEach(b=>b.onclick=null); const close=modal.querySelector('[data-action="close-ai-image-plan"]'); if(close) close.onclick=null; modal.onclick=null;};
+      modal.querySelectorAll('[data-ai-image-count]').forEach(btn=>btn.onclick=()=>{const n=Math.max(1,Math.min(3,Number(btn.dataset.aiImageCount)||1)); cleanup(); resolve(n);});
+      const close=modal.querySelector('[data-action="close-ai-image-plan"]'); if(close) close.onclick=()=>{cleanup(); reject(new Error('Geração de imagem cancelada.'));};
+      modal.onclick=(e)=>{if(e.target===modal){cleanup(); reject(new Error('Geração de imagem cancelada.'));}};
+      modal.classList.add('open');
+    });
+  }
   function updateProductWorkbenchDom(key){
     const p=productByKey(key),card=document.querySelector(`.product-workbench[data-product-key="${CSS.escape(String(key))}"]`);
     if(!p||!card)return false;
@@ -2373,18 +2417,55 @@
     markProductAiChange(p,["nome"]);
     setStatus("Nome melhorado pela IA e aplicado ao produto","ok");
   }
+  function buildAiImageStrategy(count){
+    if(count<=1)return {replacePrimary:true,label:'1 imagem',message:'Gera 1 imagem e substitui automaticamente a principal.'};
+    if(count===2)return {replacePrimary:false,label:'2 imagens',message:'Gera 2 imagens novas e preserva a principal atual para comparação.'};
+    return {replacePrimary:false,label:'3 imagens',message:'Gera 3 imagens novas e preserva a principal atual para seleção manual.'};
+  }
+  async function saveGeneratedProductImageToGithub(p,src,index,batchId){
+    let finalSrc=String(src||'').trim();
+    if(!finalSrc)throw new Error('Imagem IA vazia.');
+    if(/^data:image\//i.test(finalSrc)){
+      const blob=await (await fetch(finalSrc)).blob();
+      const code=slug(p.codigo||p.gtin||getName(p)||Date.now());
+      const fileName=`${code}-ia-${batchId}-${String(index).padStart(2,'0')}.webp`;
+      const basePath=String(state.settings.githubImagesPath||'site/img/produtos').replace(/\/+$/,'');
+      const publicBase=String(state.settings.imagePublicBase||'img/produtos').replace(/\/+$/,'');
+      await githubUpsertRaw(`${basePath}/${fileName}`,await blob.arrayBuffer(),`Gera imagem IA do produto ${p.codigo||getName(p)} (${index})`);
+      finalSrc=`${publicBase}/${fileName}`;
+    }
+    return finalSrc;
+  }
   async function aiProductImage(key){
     const p=productByKey(key);if(!p)return;
     const product=compactProductForAi(p);
-    if(!product.imagem_url)return alert("Este produto ainda nao tem imagem para melhorar.");
-    setStatus("Enviando imagem do produto para o Make...","warn");
-    const result=await callMakeAi("image",{acao:"melhorar_imagem_produto",produto:product,instrucoes:"Melhore a imagem do produto mantendo embalagem, marca e identidade visual. Fundo limpo, e-commerce, sem alterar texto da embalagem."});
-    const img=imageFromAiResult(result);
-    if(!img)throw new Error("O Make nao retornou URL ou base64 da imagem.");
-    p.url_imagem=p.imagem=img;
-    p.imagens=uniq([...(p.imagens||[]),img]);
-    markProductAiChange(p,["url_imagem","imagem","imagens"]);
-    setStatus("Imagem melhorada pela IA e aplicada ao produto","ok");
+    if(!product.imagem_url)throw new Error('Este produto ainda não tem imagem para melhorar.');
+    const count=await askAiImageCount(p);
+    const plan=buildAiImageStrategy(count);
+    const payload={
+      acao:'melhorar_imagem_produto',
+      quantidade_imagens:count,
+      estrategia:plan.label,
+      produto:product,
+      instrucoes:'Melhore a imagem do produto mantendo embalagem, marca, identidade visual e o texto principal da embalagem. Criar imagem de e-commerce limpa, fundo claro, aparência profissional e pronta para uso no site.'
+    };
+    setStatus(`Enviando produto para gerar ${count} imagem(ns) no Make...`,'warn');
+    toast(plan.message,'warn',4200);
+    const result=await callMakeAi('image',payload);
+    const generated=imagesFromAiResult(result).slice(0,count);
+    if(!generated.length)throw new Error('O Make não retornou nenhuma imagem do produto.');
+    const batchId=Date.now();
+    const saved=[];
+    for(let i=0;i<generated.length;i++){
+      setStatus(`Salvando imagem ${i+1}/${generated.length} no GitHub...`,'warn');
+      const src=await saveGeneratedProductImageToGithub(p,generated[i].src,i+1,batchId);
+      saved.push(src);
+    }
+    p.imagens=uniq([...(p.imagens||[]),...saved]);
+    if(plan.replacePrimary||!(p.url_imagem||p.imagem))p.url_imagem=p.imagem=saved[0]||p.url_imagem||p.imagem;
+    markProductAiChange(p,['url_imagem','imagem','imagens']);
+    setStatus(`${saved.length} imagem(ns) gerada(s) e salva(s) para o produto`,'ok');
+    toast(`${saved.length} imagem(ns) IA salva(s). ${plan.replacePrimary?'A primeira virou a principal.':'A principal atual foi preservada.'}`,'ok',5200);
   }
   async function aiKitDescription(){
     const k=currentKit();if(!k)return;
