@@ -331,6 +331,8 @@
         <button class="btn blue" type="button" data-action="open-bulk-price">％ Reajuste em massa</button>
         <button class="btn blue" type="button" data-action="ai-category-images">🖼 IA da categoria</button>
         <button class="btn red" type="button" data-action="stop-ai-category-images">■ Parar fila IA</button>
+        <button class="btn gold" type="button" data-action="ai-category-text">✍ IA texto da categoria</button>
+        <button class="btn red" type="button" data-action="stop-ai-category-text">■ Parar fila texto</button>
         <button class="btn" type="button" data-action="reload">↻ Recarregar dados</button>
       </div>
       <button class="btn blue block" style="margin-top:8px" type="button" data-action="open-settings">⚙ Configurações</button>
@@ -396,7 +398,7 @@
 
   <main class="app">
     <section class="panel" id="tab-produtos">
-      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Ficha completa para editar produtos, imagens, cestas e kits sem sair da página.</p></div><div class="toolbar"><button class="btn notes-home-btn" id="notesHomeBtn" type="button" data-action="go-notes">📝 Notas <span class="notes-count">0</span></button><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn blue" data-action="normalize-products-site">✓ Adequar ao site</button><button class="btn blue" data-action="open-bulk-price">％ Reajuste em massa</button><button class="btn blue" data-action="ai-category-images">🖼 IA da categoria</button><button class="btn red" data-action="stop-ai-category-images">■ Parar fila IA</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
+      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Ficha completa para editar produtos, imagens, cestas e kits sem sair da página.</p></div><div class="toolbar"><button class="btn notes-home-btn" id="notesHomeBtn" type="button" data-action="go-notes">📝 Notas <span class="notes-count">0</span></button><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn blue" data-action="normalize-products-site">✓ Adequar ao site</button><button class="btn blue" data-action="open-bulk-price">％ Reajuste em massa</button><button class="btn blue" data-action="ai-category-images">🖼 IA da categoria</button><button class="btn red" data-action="stop-ai-category-images">■ Parar fila IA</button><button class="btn gold" data-action="ai-category-text">✍ IA texto da categoria</button><button class="btn red" data-action="stop-ai-category-text">■ Parar fila texto</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
       <div class="products-grid" id="productsGrid"></div>
       <div class="pagination" id="pagination"></div>
     </section>
@@ -558,7 +560,8 @@
     dirtyProductKeys: new Set(), dirtyProductFields: {}, deletedProductKeys: new Set(), productSyncMeta: {},
     scannerCode: "", scannerCurrentKey: null, scannerStream: null, scannerDetector: null, scannerLoopActive: false,
     scannerStatus: "Aguardando leitura.", scannerStatusType: "warn", scannerRecentCodes: [],
-    aiImageBatchRunning: false, aiImageBatchCancel: false, aiImageBatchTotal: 0, aiImageBatchDone: 0, aiImageBatchErrors: 0
+    aiImageBatchRunning: false, aiImageBatchCancel: false, aiImageBatchTotal: 0, aiImageBatchDone: 0, aiImageBatchErrors: 0,
+    aiTextBatchRunning: false, aiTextBatchCancel: false, aiTextBatchTotal: 0, aiTextBatchDone: 0, aiTextBatchErrors: 0
   };
   state.productView=localStorage.getItem("donaantonia_product_view")==="list"?"list":"grid";
 
@@ -1022,11 +1025,15 @@
   function batchImageCandidates(){
     const f=getFilters();
     if(!f.categoria) throw new Error('Selecione uma categoria antes de iniciar a geração em lote.');
-    return filteredProducts().filter(p=>isActive(p)).filter(p=>String(p.url_imagem||p.imagem||'').trim()||Array.isArray(p.imagens)&&p.imagens.length);
+    return filteredProducts()
+      .filter(p=>isActive(p))
+      .filter(p=>String(p.url_imagem||p.imagem||'').trim()||Array.isArray(p.imagens)&&p.imagens.length)
+      .filter(p=>!shouldSkipAiImageGeneration(p));
   }
   async function aiCategoryImagesBatch(){
     if(state.aiImageBatchRunning) throw new Error('Já existe uma fila de geração de imagens rodando agora.');
     readSettingsFromUi();
+    if(opts.force && hasAiGeneratedProductImage(p)) setStatus('Gerando nova imagem por solicitação direta, mesmo já existindo imagem IA anterior...','warn');
     const webhook=String(state.settings.makeImageWebhookUrl||state.settings.makeImageWebhook||state.settings.makeWebhookImage||state.settings.makeWebhook||'').trim();
     if(!/^https?:\/\//i.test(webhook)) throw new Error('Configure o webhook de imagem do Make antes de iniciar a fila.');
     const f=getFilters();
@@ -1051,9 +1058,14 @@
           break;
         }
         const p=items[index], key=getKey(p), name=getName(p);
+        if(shouldSkipAiImageGeneration(p)){
+          state.aiImageBatchDone = index + 1;
+          setStatus(`Fila IA ${state.aiImageBatchDone}/${items.length}: ${name} pulado porque já possui imagem gerada por IA.`,'warn');
+          continue;
+        }
         setStatus(`Fila IA ${index+1}/${items.length}: enviando ${name}...`,'warn');
         try{
-          await aiProductImage(key);
+          await aiProductImage(key,{force:false, origem:'fila-categoria'});
         }catch(err){
           state.aiImageBatchErrors += 1;
           console.error('Erro na fila IA do produto', name, err);
@@ -1080,6 +1092,74 @@
     state.aiImageBatchCancel=true;
     setStatus('Solicitação de parada recebida. A fila será encerrada após concluir o produto atual.','warn');
     toast('Parando a fila após o produto atual.','warn',6000);
+  }
+  function batchTextCandidates(){
+    const f=getFilters();
+    if(!f.categoria) throw new Error('Selecione uma categoria antes de iniciar a geração em lote de textos.');
+    return filteredProducts().filter(p=>isActive(p)).filter(p=>!String(p.descricao||'').trim());
+  }
+  async function aiCategoryTextBatch(){
+    if(state.aiTextBatchRunning) throw new Error('Já existe uma fila de geração de textos rodando agora.');
+    readSettingsFromUi();
+    const webhook=String(state.settings.makeTextWebhookUrl||state.settings.makeTextWebhook||state.settings.makeWebhookText||state.settings.makeWebhook||'').trim();
+    if(!/^https?:\/\//i.test(webhook)) throw new Error('Configure o webhook de texto do Make antes de iniciar a fila.');
+    const f=getFilters();
+    const allFiltered=filteredProducts();
+    const activeWithoutDesc=batchTextCandidates();
+    if(!activeWithoutDesc.length) throw new Error('Nenhum produto elegível foi encontrado. Se a categoria já tem descrição, a fila não tenta novamente.');
+    const alreadyWithDesc=allFiltered.filter(p=>String(p.descricao||'').trim()).length;
+    const inactiveCount=allFiltered.filter(p=>!isActive(p)).length;
+    const categoryLabel=f.categoria || 'categoria selecionada';
+    const message=`Gerar descrição por IA para ${activeWithoutDesc.length} produto(s) da categoria ${categoryLabel}?\n\nO sistema enviará 1 produto por vez ao Make, aguardando 5 segundos entre cada envio.\n\nProdutos com descrição já preenchida serão pulados automaticamente.${alreadyWithDesc>0?`\n- Já com descrição: ${alreadyWithDesc}`:''}${inactiveCount>0?`\n- Inativos (pulados): ${inactiveCount}`:''}`;
+    if(!confirm(message)) return;
+    state.aiTextBatchRunning=true;
+    state.aiTextBatchCancel=false;
+    state.aiTextBatchTotal=activeWithoutDesc.length;
+    state.aiTextBatchDone=0;
+    state.aiTextBatchErrors=0;
+    try{
+      setStatus(`Fila de texto iniciada para ${activeWithoutDesc.length} produto(s) da categoria ${categoryLabel}.`,'warn');
+      toast(`Fila de textos iniciada para ${activeWithoutDesc.length} produto(s). Produtos com descrição existente serão ignorados.`,'warn',7000);
+      for(let index=0; index<activeWithoutDesc.length; index++){
+        if(state.aiTextBatchCancel){
+          setStatus(`Fila de texto interrompida. ${state.aiTextBatchDone}/${state.aiTextBatchTotal} produto(s) processados.`,'warn');
+          toast('Fila de textos interrompida pelo usuário.','warn',7000);
+          break;
+        }
+        const p=activeWithoutDesc[index], key=getKey(p), name=getName(p);
+        if(String(p.descricao||'').trim()){
+          state.aiTextBatchDone = index + 1;
+          continue;
+        }
+        setStatus(`Fila texto ${index+1}/${activeWithoutDesc.length}: gerando descrição de ${name}...`,'warn');
+        try{
+          await aiProductDescription(key);
+        }catch(err){
+          state.aiTextBatchErrors += 1;
+          console.error('Erro na fila de texto do produto', name, err);
+          toast(`Erro ao gerar descrição de ${name}: ${err.message||err}`,'err',9000);
+        }
+        state.aiTextBatchDone = index + 1;
+        if(index < activeWithoutDesc.length - 1 && !state.aiTextBatchCancel){
+          setStatus(`Fila texto ${state.aiTextBatchDone}/${activeWithoutDesc.length}: aguardando 5 segundos para o próximo produto...`,'warn');
+          await sleep(5000);
+        }
+      }
+      if(!state.aiTextBatchCancel){
+        const ok=Math.max(0,state.aiTextBatchDone-state.aiTextBatchErrors);
+        setStatus(`Fila de texto finalizada. ${ok} com sucesso e ${state.aiTextBatchErrors} com erro.`,'ok');
+        toast(`Fila de textos concluída. ${ok} produto(s) processado(s) com sucesso e ${state.aiTextBatchErrors} com erro.`,'ok',9000);
+      }
+    }finally{
+      state.aiTextBatchRunning=false;
+      state.aiTextBatchCancel=false;
+    }
+  }
+  function stopAiCategoryTextBatch(){
+    if(!state.aiTextBatchRunning){toast('Não existe fila de textos em execução no momento.','warn',5000);return}
+    state.aiTextBatchCancel=true;
+    setStatus('Solicitação de parada da fila de texto recebida. Vou encerrar após o produto atual.','warn');
+    toast('Parando a fila de texto após o produto atual.','warn',6000);
   }
   function renderProducts(){const all=filteredProducts(); const f=getFilters(); const pages=Math.max(1,Math.ceil(all.length/f.pageSize)); state.productPage=Math.min(state.productPage,pages); const start=(state.productPage-1)*f.pageSize; const list=all.slice(start,start+f.pageSize); const grid=$("#productsGrid"); grid.classList.toggle("list-view",state.productView==="list"); grid.innerHTML = list.length ? list.map(renderProductCardV3).join("") : `<div class="empty">Nenhum produto encontrado.</div>`; $$('[data-action="view-products-grid"],[data-action="view-products-list"]').forEach(b=>b.classList.toggle("active",(state.productView==="list")===b.dataset.action.endsWith("list"))); $("#pagination").innerHTML = `<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`; }
   function renderProductCard(p){const code=getCode(p); const baskets=basketsByProduct(p); const basketBadges=baskets.map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join(""); const tags=parseTags(p.tags).slice(0,4).map(t=>`<span class="chip">#${esc(t)}</span>`).join(""); return `<article class="product-card"><div class="product-img"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'" alt="${esc(getName(p))}" loading="lazy"></div><div class="product-body"><h3 class="product-name">${esc(getName(p))}</h3><div class="meta-line"><span class="chip">Cód: ${esc(p.codigo||p.firebaseKey||code)}</span>${p.gtin?`<span class="chip">GTIN: ${esc(p.gtin)}</span>`:''}${p.marca?`<span class="chip">${esc(p.marca)}</span>`:''}${isActive(p)?'<span class="chip green">ativo</span>':'<span class="chip red">inativo</span>'}</div><div class="price-row"><div class="price">${brl(p.preco)}</div><div class="stock">Estoque: ${esc(p.estoque??0)}</div></div><div class="tiny">${esc([p.categoria,p.subcategoria,p.subsubcategoria].filter(Boolean).join(' › '))}</div><div class="meta-line">${tags}</div>${basketBadges?`<div class="meta-line">${basketBadges}</div>`:''}<div class="card-actions"><button class="btn small" data-action="edit-product" data-key="${esc(getKey(p))}">Editar produto</button><button class="btn small gold" data-action="edit-membership" data-code="${esc(code)}">Editar cestas</button><button class="btn small blue" data-action="duplicate-product" data-key="${esc(getKey(p))}">Duplicar</button><button class="btn small red" data-action="delete-product" data-key="${esc(getKey(p))}">Excluir</button></div></div></article>`}
@@ -1476,7 +1556,7 @@
   document.addEventListener('change', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.id==='productsFile'&&el.files[0]) importFile(el.files[0],'products'); if(el.id==='cestasFile'&&el.files[0]) importFile(el.files[0],'cestas'); if(el.id==='kitsFile'&&el.files[0]) importFile(el.files[0],'kits'); if(el.matches('[data-action="toggle-membership"]')) toggleMembership(el.dataset.id, el.checked); if(el.matches('[data-ptag]')) toggleProductTag(el.dataset.ptag, el.checked); if(el.id==='setAutoGithub') readSettingsFromUi()});
   document.addEventListener('change', e=>{const el=e.target;if(el.matches('[data-card-field]')) updateProductFromCard(el.dataset.key,el.dataset.cardField,el.value);if(el.matches('[data-action="toggle-kit-membership"]'))toggleKitMembership(el.dataset.id,el.checked)});
   document.addEventListener('keydown', e=>{const el=e.target; if(el?.id==='scannerCodeInput' && e.key==='Enter'){e.preventDefault(); openScannerProduct(el.value||state.scannerCode)}});
-  document.addEventListener('click', e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='open-low-stock'){renderLowStockModal();$("#lowStockModal").classList.add('open');toggleAdminDrawer(false)}if(a==='close-low-stock')$("#lowStockModal").classList.remove('open');if(a==='open-product-from-stock'){$("#lowStockModal").classList.remove('open');focusProductWorkbench(b.dataset.key)}if(a==='edit-kit-membership')openKitMembership(b.dataset.code);if(a==='close-kit-membership-modal'){$("#kitMembershipModal").classList.remove('open');renderAll()}if(a==='open-filter-panel')toggleAdminDrawer(true);if(a==='apply-filters'){state.productPage=1;renderProducts();toggleAdminDrawer(false)}if(a==='apply-search'){state.productPage=1;renderProducts()}if(a==='save-card-firebase')saveProductFirebase(b.dataset.key);if(a==='save-products-firebase')saveProductsFirebaseOnly();if(a==='save-everything')saveEverything();if(a==='ai-category-images')aiCategoryImagesBatch();if(a==='stop-ai-category-images')stopAiCategoryImagesBatch()});
+  document.addEventListener('click', e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='open-low-stock'){renderLowStockModal();$("#lowStockModal").classList.add('open');toggleAdminDrawer(false)}if(a==='close-low-stock')$("#lowStockModal").classList.remove('open');if(a==='open-product-from-stock'){$("#lowStockModal").classList.remove('open');focusProductWorkbench(b.dataset.key)}if(a==='edit-kit-membership')openKitMembership(b.dataset.code);if(a==='close-kit-membership-modal'){$("#kitMembershipModal").classList.remove('open');renderAll()}if(a==='open-filter-panel')toggleAdminDrawer(true);if(a==='apply-filters'){state.productPage=1;renderProducts();toggleAdminDrawer(false)}if(a==='apply-search'){state.productPage=1;renderProducts()}if(a==='save-card-firebase')saveProductFirebase(b.dataset.key);if(a==='save-products-firebase')saveProductsFirebaseOnly();if(a==='save-everything')saveEverything();if(a==='ai-category-images')aiCategoryImagesBatch();if(a==='stop-ai-category-images')stopAiCategoryImagesBatch();if(a==='ai-category-text')aiCategoryTextBatch();if(a==='stop-ai-category-text')stopAiCategoryTextBatch()});
   function firebaseProductUrl(key){return `${String(state.settings.firebaseUrl).replace(/\/$/,"")}/${state.settings.produtosNode}/${encodeURIComponent(key)}.json`}
   async function saveProductFirebase(key){
     const p=productByKey(key);
@@ -2571,6 +2651,12 @@
     const s=String(src||"").toLowerCase();
     return /info-lado-a-lado|informacoes-rotulo|foto-principal-fundo-branco|mockup-uso-real|produtos_2|imagem[-_]?ia|ia[-_]?produto/.test(s);
   }
+  function hasAiGeneratedProductImage(p){
+    return currentProductImageSources(p).some(src=>isAiGeneratedProductImageSrc(src));
+  }
+  function shouldSkipAiImageGeneration(p, options={}){
+    return !options.force && hasAiGeneratedProductImage(p);
+  }
   function loadImageElementForAi(src){
     return new Promise((resolve,reject)=>{
       const img=new Image();
@@ -2631,8 +2717,9 @@
     }
     return finalSrc;
   }
-  async function aiProductImage(key){
+  async function aiProductImage(key,options={}){
     const p=productByKey(key);if(!p)return;
+    const opts=options&&typeof options==='object'?options:{};
     if(!p.url_imagem&&!p.imagem&&!(p.imagens||[]).length)throw new Error('Este produto ainda n?o tem imagem de refer?ncia para melhorar.');
     readSettingsFromUi();
     const count=1,plan=buildAiImageStrategy(count),batchId=new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14),seoPlan=productSeoImagePlan(p,batchId);
@@ -2754,7 +2841,7 @@
     if(action==="copy-product-chat"){const text=[...document.querySelectorAll("#productChatMessages .chat-bubble.ai span")].at(-1)?.textContent||"";if(text&&navigator.clipboard)navigator.clipboard.writeText(text).then(()=>toast("Resposta copiada","ok"))}
     if(action==="ai-product-description"&&p){await runUiAction(b,"Gerando descrição...",()=>aiProductDescription(key));return}
     if(action==="ai-product-name"&&p){await runUiAction(b,"Melhorando nome...",()=>aiProductName(key));return}
-    if(action==="ai-product-image"&&p){await runUiAction(b,"Melhorando foto...",()=>aiProductImage(key));return}
+    if(action==="ai-product-image"&&p){await runUiAction(b,"Melhorando foto...",()=>aiProductImage(key,{force:true,origem:'botao-card'}));return}
     if(action==="ai-kit-description"){await runUiAction(b,"Gerando descrição...",()=>aiKitDescription());return}
     if(action==="ai-kit-cover"){await runUiAction(b,"Gerando capa...",()=>aiKitCover());return}
     if(action==="open-expiry-alert")renderExpiryAlert();
@@ -2809,10 +2896,12 @@
       "test-github":()=>testGithub(),
       "ai-category-images":()=>aiCategoryImagesBatch(),
       "stop-ai-category-images":()=>stopAiCategoryImagesBatch(),
+      "ai-category-text":()=>aiCategoryTextBatch(),
+      "stop-ai-category-text":()=>stopAiCategoryTextBatch(),
       "ai-product-cadastro":()=>p?aiProductCadastro(key):null,
       "ai-product-description":()=>p?aiProductDescription(key):null,
       "ai-product-name":()=>p?aiProductName(key):null,
-      "ai-product-image":()=>p?aiProductImage(key):null,
+      "ai-product-image":()=>p?aiProductImage(key,{force:true,origem:'botao-card'}):null,
       "send-product-chat":()=>sendProductChatQuestion(),
       "ai-kit-description":()=>aiKitDescription(),
       "ai-kit-cover":()=>aiKitCover()
@@ -2831,6 +2920,8 @@
       "test-github":"Testando...",
       "ai-category-images":"Enfileirando geração IA...",
       "stop-ai-category-images":"Parando fila IA...",
+      "ai-category-text":"Enfileirando geração de textos...",
+      "stop-ai-category-text":"Parando fila de texto...",
       "ai-product-cadastro":"Gerando cadastro...",
       "ai-product-description":"Gerando descrição...",
       "ai-product-name":"Melhorando nome...",
