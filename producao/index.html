@@ -1243,7 +1243,7 @@
   function exportMetaJson(){download('produtos_meta.csv', buildMetaCatalogCsv(), 'text/csv;charset=utf-8')}
   function exportAdminMetaJson(){download('produtos_admin_meta.json', buildAdminMetaPayload())}
   function exportCestasJson(){download('produtos-cesta-basica.json', state.cestas)}
-  function exportKitsJson(){download('kits.json', state.kits)}
+  function exportKitsJson(){state.kits.forEach(k=>recalcKit(k));download('kits.json', state.kits)}
   const BLING_MAX_PRODUTOS_POR_ARQUIVO = 999;
   const BLING_CSV_HEADERS = [
     "ID",
@@ -1411,7 +1411,7 @@
     if(button)normalizeCatalogForSite();
   });
   document.addEventListener('click', e=>{const t=e.target.closest('.tab'); if(!t) return; state.activeTab=t.dataset.tab; renderAll(); toggleAdminDrawer(false); window.scrollTo({top:0,behavior:'smooth'});});
-  document.addEventListener('input', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.matches('[data-pfield]')) updateProduct(el.dataset.pfield, el.value); if(el.matches('[data-cfield]')){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(c){c[el.dataset.cfield]=el.dataset.cfield==='preco'?toNum(el.value):el.value; mark('cestas'); renderBasketsList(); refreshJson()}} if(el.matches('[data-kfield]')){const c=currentKit(); if(c){c[el.dataset.kfield]=el.dataset.kfield==='preco'?toNum(el.value):el.value; mark('kits'); renderKitsList(); refreshJson()}} if(el.matches('#basketSearch')) renderBasketsList(); if(el.matches('#basketProductSearch')){state.basketProductSearch=el.value; $('#basketProductResults').innerHTML=renderBasketSearchResults()} if(el.matches('#kitSearch')) renderKitsList(); if(el.matches('#kitProductSearch')){state.kitProductSearch=el.value; $('#kitProductResults').innerHTML=renderKitSearchResults()} if(el.matches('[data-action="basket-qtd"]')) updateBasketQty(el.dataset.code, el.value); if(el.matches('[data-action="basket-stock"]')) updateBasketProductStock(el.dataset.key, el.value); if(el.matches('[data-action="kit-qtd"]')) updateKitQty(el.dataset.code, el.value); if(el.matches('[data-cat-index]')){state.meta.categorias[Number(el.dataset.catIndex)][el.dataset.catField]=el.value; mark('meta')} if(el.matches('[data-tag-index]')){state.meta.tags[Number(el.dataset.tagIndex)]=el.value; mark('meta')} if(el.matches('[data-forn-index]')){state.meta.fornecedores[Number(el.dataset.fornIndex)][el.dataset.fornField]=el.value; mark('meta')} if(el.matches('[data-marca-index]')){state.meta.marcas[Number(el.dataset.marcaIndex)]=el.value; mark('meta')} if(el.closest('#tab-integracoes')) readSettingsFromUi(); if(el.id==='scannerCodeInput'){state.scannerCode=el.value; if(!el.value.trim()) renderScannerHistory()} if(el.matches('[data-quick-field]')) updateScannerProduct(el.dataset.quickField, el.value); });
+  document.addEventListener('input', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.matches('[data-pfield]')) updateProduct(el.dataset.pfield, el.value); if(el.matches('[data-cfield]')){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(c){c[el.dataset.cfield]=el.dataset.cfield==='preco'?toNum(el.value):el.value; mark('cestas'); renderBasketsList(); refreshJson()}} if(el.matches('[data-kfield]')){const c=currentKit(); if(c){c[el.dataset.kfield]=['preco','limite_kits'].includes(el.dataset.kfield)?toNum(el.value):el.value; recalcKit(c); mark('kits'); renderKitsList(); refreshJson()}} if(el.matches('#basketSearch')) renderBasketsList(); if(el.matches('#basketProductSearch')){state.basketProductSearch=el.value; $('#basketProductResults').innerHTML=renderBasketSearchResults()} if(el.matches('#kitSearch')) renderKitsList(); if(el.matches('#kitProductSearch')){state.kitProductSearch=el.value; $('#kitProductResults').innerHTML=renderKitSearchResults()} if(el.matches('[data-action="basket-qtd"]')) updateBasketQty(el.dataset.code, el.value); if(el.matches('[data-action="basket-stock"]')) updateBasketProductStock(el.dataset.key, el.value); if(el.matches('[data-action="kit-qtd"]')) updateKitQty(el.dataset.code, el.value); if(el.matches('[data-cat-index]')){state.meta.categorias[Number(el.dataset.catIndex)][el.dataset.catField]=el.value; mark('meta')} if(el.matches('[data-tag-index]')){state.meta.tags[Number(el.dataset.tagIndex)]=el.value; mark('meta')} if(el.matches('[data-forn-index]')){state.meta.fornecedores[Number(el.dataset.fornIndex)][el.dataset.fornField]=el.value; mark('meta')} if(el.matches('[data-marca-index]')){state.meta.marcas[Number(el.dataset.marcaIndex)]=el.value; mark('meta')} if(el.closest('#tab-integracoes')) readSettingsFromUi(); if(el.id==='scannerCodeInput'){state.scannerCode=el.value; if(!el.value.trim()) renderScannerHistory()} if(el.matches('[data-quick-field]')) updateScannerProduct(el.dataset.quickField, el.value); });
   document.addEventListener('change', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.id==='productsFile'&&el.files[0]) importFile(el.files[0],'products'); if(el.id==='cestasFile'&&el.files[0]) importFile(el.files[0],'cestas'); if(el.id==='kitsFile'&&el.files[0]) importFile(el.files[0],'kits'); if(el.matches('[data-action="toggle-membership"]')) toggleMembership(el.dataset.id, el.checked); if(el.matches('[data-ptag]')) toggleProductTag(el.dataset.ptag, el.checked); if(el.id==='setAutoGithub') readSettingsFromUi()});
   document.addEventListener('change', e=>{const el=e.target;if(el.matches('[data-card-field]')) updateProductFromCard(el.dataset.key,el.dataset.cardField,el.value);if(el.matches('[data-action="toggle-kit-membership"]'))toggleKitMembership(el.dataset.id,el.checked)});
   document.addEventListener('keydown', e=>{const el=e.target; if(el?.id==='scannerCodeInput' && e.key==='Enter'){e.preventDefault(); openScannerProduct(el.value||state.scannerCode)}});
@@ -1553,6 +1553,12 @@
       desconto_percentual:toNum(raw[i]?.desconto_percentual),
       estoque_disponivel:Math.max(0,Math.floor(toNum(raw[i]?.estoque_disponivel))),
       ativo:raw[i]?.ativo!==false,
+      preco_anterior:toNum(raw[i]?.preco_anterior),
+      preco_novo:toNum(raw[i]?.preco_novo||raw[i]?.preco),
+      economia:toNum(raw[i]?.economia),
+      preco_anterior_formatado:String(raw[i]?.preco_anterior_formatado||""),
+      preco_novo_formatado:String(raw[i]?.preco_novo_formatado||""),
+      economia_formatada:String(raw[i]?.economia_formatada||""),
       instagram_status:String(raw[i]?.instagram_status||""),
       instagram_enviado_em:String(raw[i]?.instagram_enviado_em||""),
       instagram_post_id:String(raw[i]?.instagram_post_id||""),
@@ -1564,6 +1570,66 @@
   };
 
   function kitRetailTotal(k){return (k.produtos||[]).reduce((sum,item)=>{const it=parseBasketItem(item),p=productByCode(it.codigo);return sum+(p?toNum(p.preco)*Math.max(1,toNum(it.qtd)):0)},0)}
+  function moneyCents(v){return Math.round((toNum(v)+Number.EPSILON)*100)}
+  function moneyFromCents(c){return Math.round(Number(c||0))/100}
+  function kitPricingDetails(k){
+    const rawItems=Array.isArray(k?.produtos)?k.produtos:[];
+    const items=rawItems.map((item,index)=>{
+      const it=parseBasketItem(item),p=productByCode(it.codigo),qtd=Math.max(1,toNum(it.qtd)||1);
+      const unitCents=p?moneyCents(p.preco):0,totalCents=unitCents*qtd;
+      return {raw:item,index,it,p,qtd,unitCents,totalCents,newTotalCents:0};
+    });
+    const totalCents=items.reduce((s,x)=>s+x.totalCents,0);
+    const kitCents=Math.max(0,moneyCents(k?.preco));
+    const allocCents=totalCents>0?Math.min(kitCents,totalCents):0;
+    if(totalCents>0&&allocCents>0){
+      const provisional=items.map((x,i)=>{
+        const exact=(x.totalCents*allocCents)/totalCents,base=Math.floor(exact);
+        return {i,base,frac:exact-base};
+      });
+      let remainder=allocCents-provisional.reduce((s,x)=>s+x.base,0);
+      provisional.sort((a,b)=>b.frac-a.frac||a.i-b.i);
+      provisional.forEach(x=>{items[x.i].newTotalCents=x.base});
+      for(let i=0;i<remainder;i++)items[provisional[i%provisional.length].i].newTotalCents++;
+    }
+    return {
+      totalAntigo:moneyFromCents(totalCents),
+      precoKit:moneyFromCents(kitCents),
+      economiaTotal:moneyFromCents(Math.max(0,totalCents-allocCents)),
+      descontoPercentual:totalCents>0&&kitCents>0?Math.max(0,Math.round((1-kitCents/totalCents)*10000)/100):0,
+      items:items.map(x=>{
+        const oldUnit=moneyFromCents(x.unitCents),oldTotal=moneyFromCents(x.totalCents),newTotal=moneyFromCents(x.newTotalCents);
+        const newUnit=x.qtd?newTotal/x.qtd:0,econTotal=Math.max(0,oldTotal-newTotal),econUnit=x.qtd?econTotal/x.qtd:0;
+        return {...x,oldUnit,oldTotal,newTotal,newUnit,econTotal,econUnit};
+      })
+    };
+  }
+  function applyKitPricing(k){
+    const details=kitPricingDetails(k);
+    k.preco_anterior=details.totalAntigo;
+    k.preco_novo=toNum(k.preco);
+    k.economia=details.economiaTotal;
+    k.preco_anterior_formatado=brl(details.totalAntigo);
+    k.preco_novo_formatado=brl(toNum(k.preco));
+    k.economia_formatada=brl(details.economiaTotal);
+    k.produtos=details.items.map(x=>({
+      ...parseBasketItem(x.raw),
+      preco_antigo_unitario:x.oldUnit,
+      preco_antigo_total:x.oldTotal,
+      preco_novo_unitario_kit:Math.round((x.newUnit+Number.EPSILON)*100)/100,
+      preco_novo_total_kit:x.newTotal,
+      economia_unitaria_kit:Math.round((x.econUnit+Number.EPSILON)*100)/100,
+      economia_total_kit:x.econTotal,
+      desconto_percentual_kit:details.descontoPercentual,
+      preco_antigo_unitario_formatado:brl(x.oldUnit),
+      preco_antigo_total_formatado:brl(x.oldTotal),
+      preco_novo_unitario_kit_formatado:brl(x.newUnit),
+      preco_novo_total_kit_formatado:brl(x.newTotal),
+      economia_unitaria_kit_formatado:brl(x.econUnit),
+      economia_total_kit_formatado:brl(x.econTotal)
+    }));
+    return details;
+  }
   function kitStockCapacity(k){
     if(!(k.produtos||[]).length)return 0;
     const byProducts=Math.min(...k.produtos.map(item=>{const it=parseBasketItem(item),p=productByCode(it.codigo);return p?Math.floor(Math.max(0,toNum(p.estoque))/Math.max(1,toNum(it.qtd))):0}));
@@ -1571,7 +1637,7 @@
     return manual>0?Math.min(manual,byProducts):byProducts;
   }
   function recalcKit(k){
-    const total=kitRetailTotal(k),capacity=kitStockCapacity(k),manual=Math.max(0,Math.floor(toNum(k.limite_kits))),now=new Date(),start=k.data_inicio?new Date(k.data_inicio+"T00:00:00"):null,end=k.data_fim?new Date(k.data_fim+"T23:59:59"):null;
+    const pricing=applyKitPricing(k),total=pricing.totalAntigo,capacity=kitStockCapacity(k),manual=Math.max(0,Math.floor(toNum(k.limite_kits))),now=new Date(),start=k.data_inicio?new Date(k.data_inicio+"T00:00:00"):null,end=k.data_fim?new Date(k.data_fim+"T23:59:59"):null;
     k.limite_kits=manual;k.estoque_disponivel=capacity;
     k.desconto_percentual=total>0&&toNum(k.preco)>0?Math.max(0,Math.round((1-toNum(k.preco)/total)*10000)/100):0;
     k.ativo=capacity>0&&toNum(k.preco)>0&&toNum(k.preco)<total&&(!start||now>=start)&&(!end||now<=end);
@@ -1583,7 +1649,7 @@
   const originalSaveCestas=saveCestas;
   saveCestas=async function(){const invalid=state.cestas.map(c=>({c,e:validateBasket(c)})).filter(x=>x.e.length);if(invalid.length)return alert(`Revise as cestas antes de salvar:\n${invalid.map(x=>`• ${x.c.nome}: ${x.e.join(", ")}`).join("\n")}`);return originalSaveCestas()};
   const originalSaveKits=saveKits;
-  saveKits=async function(){const invalid=state.kits.map(k=>({k,e:validateKit(k)})).filter(x=>x.e.length);if(invalid.length)return alert(`Revise os kits antes de salvar:\n${invalid.map(x=>`• ${x.k.nome}: ${x.e.join(", ")}`).join("\n")}`);mark("kits");return originalSaveKits()};
+  saveKits=async function(){state.kits.forEach(k=>recalcKit(k));const invalid=state.kits.map(k=>({k,e:validateKit(k)})).filter(x=>x.e.length);if(invalid.length)return alert(`Revise os kits antes de salvar:\n${invalid.map(x=>`• ${x.k.nome}: ${x.e.join(", ")}`).join("\n")}`);mark("kits");return originalSaveKits()};
 
   const originalCreateBasket=createBasket;
   createBasket=function(){originalCreateBasket();const c=state.cestas.find(x=>x.id===state.selectedBasketId);if(c){c.descricao="";c.ativo=true;renderBasketEditor()}};
@@ -1604,13 +1670,16 @@
     const k=currentKit(),el=$("#kitEditor");if(!k){el.innerHTML=`<div class="empty">Selecione ou crie um kit promocional.</div>`;return}recalcKit(k);
     const y=window.scrollY,total=kitRetailTotal(k),rows=(k.produtos||[]).map(i=>renderKitRow(k,i)).join("")||`<div class="empty">Adicione produtos para calcular estoque e desconto.</div>`;
     el.innerHTML=`<div class="panel-head"><div class="panel-title"><h2>${esc(k.nome)}</h2><p>${esc(k.codigo)} · disponibilidade calculada pelo menor estoque</p></div><div class="toolbar"><button class="btn blue" data-action="send-kit-instagram">📲 Gerar fila Instagram</button><button class="btn gold" data-action="ai-kit-description">IA descrição</button><button class="btn gold" data-action="ai-kit-cover">IA capa do kit</button><button class="btn primary" data-action="save-kits">Salvar kit</button><button class="btn red" data-action="delete-kit">Excluir</button></div></div>
-    <div class="kit-health"><div class="metric"><strong>${brl(total)}</strong><span>Soma avulsa</span></div><div class="metric ${k.desconto_percentual>0?"good":"bad"}"><strong>${esc(k.desconto_percentual)}%</strong><span>Desconto real</span></div><div class="metric ${k.estoque_disponivel>0?"good":"bad"}"><strong>${esc(k.estoque_disponivel)}</strong><span>Kits disponíveis</span></div><div class="metric ${k.ativo?"good":"bad"}"><strong>${k.ativo?"NO AR":"FORA DO AR"}</strong><span>Status automático</span></div></div>
+    <div class="kit-health"><div class="metric"><strong>${brl(total)}</strong><span>Preço antigo / soma avulsa</span></div><div class="metric good"><strong>${brl(k.preco)}</strong><span>Preço novo do kit</span></div><div class="metric ${k.desconto_percentual>0?"good":"bad"}"><strong>${brl(k.economia||Math.max(0,total-toNum(k.preco)))}</strong><span>Economia total</span></div><div class="metric ${k.estoque_disponivel>0?"good":"bad"}"><strong>${esc(k.estoque_disponivel)}</strong><span>Kits disponíveis</span></div></div>
     <div class="form-grid"><div class="field"><label>Nome *</label><input class="input" data-kfield="nome" value="${esc(k.nome)}"></div><div class="field"><label>Código *</label><input class="input" data-kfield="codigo" value="${esc(k.codigo)}"></div><div class="field"><label>Preço promocional *</label><input class="input" type="number" min="0" step=".01" data-kfield="preco" value="${esc(k.preco)}"></div><div class="field"><label>Limite máximo de kits (0 = só estoque)</label><input class="input" type="number" min="0" data-kfield="limite_kits" value="${esc(k.limite_kits)}"></div><div class="field"><label>Início da promoção</label><input class="input" type="date" data-kfield="data_inicio" value="${esc(k.data_inicio)}"></div><div class="field"><label>Fim da promoção</label><input class="input" type="date" data-kfield="data_fim" value="${esc(k.data_fim)}"></div><div class="field span-2"><label>Imagem</label><input class="input" data-kfield="imagem" value="${esc(k.imagem)}"></div><div class="field span-4"><label>Descrição</label><textarea class="textarea" data-kfield="descricao">${esc(k.descricao)}</textarea></div></div>
     <div class="photo-tools"><h4>Capa do kit</h4><div class="photo-tools-grid"><div class="photo-preview-box"><img src="${esc(k.imagem||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"></div><div><input class="input" id="kitImageFile" type="file" accept="image/*"><div class="photo-actions"><button class="btn gold" data-action="ai-kit-cover">Gerar capa IA</button><button class="btn green" data-action="use-kit-image-local">Aplicar WebP</button><button class="btn blue" data-action="upload-kit-image-github">Enviar ao GitHub</button></div></div></div></div>
     <div class="basket-workspace"><div><h3 style="margin:0">Composição do kit</h3><div class="basket-list">${rows}</div></div><aside class="product-finder"><h3>Adicionar ou substituir</h3><p class="tiny">O kit sai do ar quando qualquer produto não sustenta mais uma unidade.</p>${state.kitReplace?'<div class="finder-mode">Escolha o novo produto para substituir.</div>':""}<input class="input" id="kitProductSearch" value="${esc(state.kitProductSearch)}" placeholder="Nome, código, marca ou EAN..."><div class="search-results" id="kitProductResults">${renderKitSearchResults()}</div></aside></div>`;
     requestAnimationFrame(()=>{window.scrollTo(0,y);if(state.kitReplace)$("#kitProductSearch")?.focus()});
   };
-  renderKitRow=function(k,item){const it=parseBasketItem(item),p=productByCode(it.codigo),units=p?Math.floor(Math.max(0,toNum(p.estoque))/Math.max(1,toNum(it.qtd))):0;return `<div class="basket-row ${units<1?"low-stock":""}"><img src="${esc(p?getImg(p):PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(p?getName(p):"Produto não encontrado")}</strong><div class="tiny">${esc(it.codigo)} ${p?`· ${brl(p.preco)}`:""}</div><div class="meta-line" style="margin-top:6px"><span class="chip ${units>0?"green":"red"}">Sustenta ${units} kit(s)</span>${p?`<span class="chip">Estoque real: ${esc(toNum(p.estoque))}</span>`:""}</div></div><div class="field"><label>Qtd/kit</label><input class="input" data-action="kit-qtd" data-code="${esc(it.codigo)}" value="${esc(it.qtd)}"></div><button class="btn small blue" data-action="start-kit-replace" data-code="${esc(it.codigo)}">Substituir</button><button class="btn small red" data-action="remove-from-kit" data-code="${esc(it.codigo)}">Remover</button></div>`};
+  renderKitRow=function(k,item){
+    const it=parseBasketItem(item),extra=item&&typeof item==="object"?item:{},p=productByCode(it.codigo),units=p?Math.floor(Math.max(0,toNum(p.estoque))/Math.max(1,toNum(it.qtd))):0;
+    const oldUnit=toNum(extra.preco_antigo_unitario)||(p?toNum(p.preco):0),newUnit=toNum(extra.preco_novo_unitario_kit)||oldUnit,econUnit=Math.max(0,oldUnit-newUnit);
+    return `<div class="basket-row ${units<1?"low-stock":""}"><img src="${esc(p?getImg(p):PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(p?getName(p):"Produto não encontrado")}</strong><div class="tiny">${esc(it.codigo)} · ${it.qtd}x · antigo ${brl(oldUnit)} un · no kit ${brl(newUnit)} un · economiza ${brl(econUnit)} un</div><div class="meta-line" style="margin-top:6px"><span class="chip ${units>0?"green":"red"}">Sustenta ${units} kit(s)</span>${p?`<span class="chip">Estoque real: ${esc(toNum(p.estoque))}</span>`:""}<span class="chip gold">Total no kit: ${brl(extra.preco_novo_total_kit||newUnit*it.qtd)}</span></div></div><div class="field"><label>Qtd/kit</label><input class="input" data-action="kit-qtd" data-code="${esc(it.codigo)}" value="${esc(it.qtd)}"></div><button class="btn small blue" data-action="start-kit-replace" data-code="${esc(it.codigo)}">Substituir</button><button class="btn small red" data-action="remove-from-kit" data-code="${esc(it.codigo)}">Remover</button></div>`};
 
   const MAX_PRODUCT_DISCOUNT=50;
   const CRITICAL_EXPIRY_DAYS=2;
@@ -2327,6 +2396,9 @@
         subsubcategoria:p?.subsubcategoria||"",
         embalagem:p?.embalagem||"",
         preco_unitario:p?toNum(p.preco):0,
+        preco_antigo_unitario:toNum(item?.preco_antigo_unitario)||(p?toNum(p.preco):0),
+        preco_novo_unitario_kit:toNum(item?.preco_novo_unitario_kit),
+        economia_unitaria_kit:toNum(item?.economia_unitaria_kit),
         imagem:img,
         imagem_url:makeDownloadImageUrl(img)
       };
@@ -3048,6 +3120,19 @@
         tags:parseTags(p?.tags),
         preco_unitario:p?toNum(p.preco):0,
         preco_unitario_formatado:p?brl(p.preco):"",
+        preco_antigo_unitario:toNum(item?.preco_antigo_unitario)||(p?toNum(p.preco):0),
+        preco_antigo_total:toNum(item?.preco_antigo_total)||((p?toNum(p.preco):0)*Math.max(1,toNum(it.qtd)||1)),
+        preco_novo_unitario_kit:toNum(item?.preco_novo_unitario_kit),
+        preco_novo_total_kit:toNum(item?.preco_novo_total_kit),
+        economia_unitaria_kit:toNum(item?.economia_unitaria_kit),
+        economia_total_kit:toNum(item?.economia_total_kit),
+        desconto_percentual_kit:toNum(item?.desconto_percentual_kit),
+        preco_antigo_unitario_formatado:item?.preco_antigo_unitario_formatado||brl(item?.preco_antigo_unitario||(p?p.preco:0)),
+        preco_antigo_total_formatado:item?.preco_antigo_total_formatado||brl(item?.preco_antigo_total||((p?toNum(p.preco):0)*Math.max(1,toNum(it.qtd)||1))),
+        preco_novo_unitario_kit_formatado:item?.preco_novo_unitario_kit_formatado||brl(item?.preco_novo_unitario_kit),
+        preco_novo_total_kit_formatado:item?.preco_novo_total_kit_formatado||brl(item?.preco_novo_total_kit),
+        economia_unitaria_kit_formatado:item?.economia_unitaria_kit_formatado||brl(item?.economia_unitaria_kit),
+        economia_total_kit_formatado:item?.economia_total_kit_formatado||brl(item?.economia_total_kit),
         estoque:p?toNum(p.estoque):0,
         imagem:p?img:"",
         imagem_url:p?makeDownloadImageUrl(img):"",
@@ -3069,12 +3154,14 @@
         codigo:k.codigo||"",
         descricao:k.descricao||"",
         preco:toNum(k.preco),
-        preco_anterior:total,
-        economia:Math.max(0,total-toNum(k.preco)),
+        preco_novo:toNum(k.preco),
+        preco_anterior:toNum(k.preco_anterior)||total,
+        economia:toNum(k.economia)||Math.max(0,total-toNum(k.preco)),
         desconto_percentual:toNum(k.desconto_percentual),
         preco_formatado:brl(k.preco),
-        preco_anterior_formatado:brl(total),
-        economia_formatada:brl(Math.max(0,total-toNum(k.preco))),
+        preco_novo_formatado:brl(k.preco),
+        preco_anterior_formatado:k.preco_anterior_formatado||brl(total),
+        economia_formatada:k.economia_formatada||brl(Math.max(0,total-toNum(k.preco))),
         imagem:k.imagem||"",
         imagem_url:makeDownloadImageUrl(k.imagem)||publicAssetUrl(k.imagem),
         limite_kits:Math.max(0,Math.floor(toNum(k.limite_kits))),
