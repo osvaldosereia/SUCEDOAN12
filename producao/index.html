@@ -2631,14 +2631,31 @@
     const kit=compactKitForAi(k);
     if(!kit.produtos.length)return alert("Adicione produtos ao kit antes de gerar a capa.");
     if(!kit.referencias_imagens?.length)return alert("Os produtos do kit precisam ter imagens validas para gerar a capa.");
-    setStatus(`Preparando ${kit.referencias_imagens.length} imagem(ns) de referencia do kit...`,"warn");
+    setStatus(`Preparando 1 imagem de referencia unica com os produtos do kit...`,"warn");
     const colagem_referencia=await buildKitReferenceCollage(kit);
+    if(!colagem_referencia)return alert("Nao foi possivel montar a imagem de referencia do kit. Confira se as imagens dos produtos carregam corretamente.");
+
+    const basePath=String(state.settings.githubKitImagesPath||"site/img/kits").replace(/\/+$/,'');
+    let publicBase=String(state.settings.kitImagePublicBase||"").replace(/\/+$/,'');
+    if(!/^https?:\/\//i.test(publicBase)){
+      const owner=String(state.settings.githubOwner||"osvaldosereia").trim();
+      const repo=String(state.settings.githubRepo||"SUCEDOAN12").trim();
+      const branch=String(state.settings.githubBranch||"main").trim();
+      publicBase=`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${basePath}`;
+    }
+
+    setStatus("Salvando referencia unica do kit no GitHub para o Make baixar...","warn");
+    const refBlob=await (await fetch(colagem_referencia)).blob();
+    const refFileName=`_referencias/${slug(k.codigo||k.nome)||Date.now()}-referencia-${Date.now()}.png`;
+    await githubUpsertRaw(`${basePath}/${refFileName}`,await refBlob.arrayBuffer(),`Atualiza referencia IA do kit ${k.codigo||k.nome}`);
+    const colagem_url=`${publicBase}/${refFileName}`;
+
     const payload={
       acao:"gerar_capa_kit",
-      kit:{...kit,colagem_referencia},
-      instrucoes:"Crie uma capa promocional quadrada para e-commerce usando obrigatoriamente os produtos do kit. Preserve as embalagens e marcas. Use as imagens enviadas como referencia visual. Mostrar nome do kit, preco anterior, preco promocional e economia/desconto. Estilo limpo, legivel e pronto para loja online."
+      kit:{...kit,colagem_referencia,colagem_url,referencias_imagens:[colagem_url]},
+      instrucoes:"Crie apenas 1 capa promocional quadrada para e-commerce usando a referencia unica do kit. A referencia e uma colagem com todos os produtos reais. Preserve embalagens e marcas. Mostrar nome do kit, preco anterior, preco promocional e economia/desconto. Estilo limpo, legivel e pronto para loja online."
     };
-    setStatus("Enviando referencias do kit para o Make...","warn");
+    setStatus("Enviando 1 referencia do kit para o Make...","warn");
     const result=await callMakeAi("image",payload);
     let img=imageFromAiResult(result);
     if(!img)throw new Error("O Make nao retornou URL ou base64 da capa.");
@@ -2646,14 +2663,6 @@
       setStatus("Salvando capa gerada no GitHub em site/img/kits...","warn");
       const blob=await (await fetch(img)).blob();
       const fileName=`${slug(k.codigo||k.nome)||Date.now()}.webp`;
-      const basePath=String(state.settings.githubKitImagesPath||"site/img/kits").replace(/\/+$/,'');
-      let publicBase=String(state.settings.kitImagePublicBase||"").replace(/\/+$/,'');
-      if(!/^https?:\/\//i.test(publicBase)){
-        const owner=String(state.settings.githubOwner||"osvaldosereia").trim();
-        const repo=String(state.settings.githubRepo||"SUCEDOAN12").trim();
-        const branch=String(state.settings.githubBranch||"main").trim();
-        publicBase=`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${basePath}`;
-      }
       await githubUpsertRaw(`${basePath}/${fileName}`,await blob.arrayBuffer(),`Atualiza capa IA do kit ${k.codigo||k.nome}`);
       img=`${publicBase}/${fileName}`;
       toast(`Capa do kit salva no GitHub em ${basePath}/${fileName}`,'ok',5200);
