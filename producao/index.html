@@ -2174,8 +2174,12 @@
         return u.toString();
       }catch{return value}
     }
-    const base=String(state.settings.siteBaseUrl||location.origin||"").replace(/\/+$/,"");
-    return `${base}/${value.replace(/^\/+/,"")}`;
+    const clean=value.replace(/^\/+/,"");
+    const configuredBase=String(state.settings.siteBaseUrl||defaultSettings.siteBaseUrl||"").trim().replace(/\/+$/,"");
+    const runtimeBase=String(location.origin||"").trim().replace(/\/+$/,"");
+    const base=/^https?:\/\//i.test(configuredBase)?configuredBase:(/^https?:\/\//i.test(runtimeBase)?runtimeBase:"");
+    if(base)return `${base}/${clean}`;
+    return githubRawFileUrl(`site/${clean}`);
   }
   function compactProductForAi(p){
     if(!p)return null;
@@ -2497,6 +2501,55 @@
       message:'Estrategia fixa: gerar 1 imagem informativa para substituir a imagem principal e a galeria do produto.'
     };
   }
+  function isAiGeneratedProductImageSrc(src){
+    const s=String(src||"").toLowerCase();
+    return /info-lado-a-lado|informacoes-rotulo|foto-principal-fundo-branco|mockup-uso-real|produtos_2|imagem[-_]?ia|ia[-_]?produto/.test(s);
+  }
+  function loadImageElementForAi(src){
+    return new Promise((resolve,reject)=>{
+      const img=new Image();
+      img.crossOrigin="anonymous";
+      img.onload=()=>resolve(img);
+      img.onerror=()=>reject(new Error("Nao foi possivel carregar a imagem de referencia atual."));
+      img.src=src;
+    });
+  }
+  async function imageSrcToPngBlobForAi(src){
+    const img=await loadImageElementForAi(src);
+    const size=1024,cv=document.createElement("canvas"),cx=cv.getContext("2d");
+    cv.width=size;cv.height=size;
+    cx.fillStyle="#fff";cx.fillRect(0,0,size,size);
+    const scale=Math.min(size/img.naturalWidth,size/img.naturalHeight),w=Math.max(1,Math.round(img.naturalWidth*scale)),h=Math.max(1,Math.round(img.naturalHeight*scale));
+    cx.drawImage(img,Math.round((size-w)/2),Math.round((size-h)/2),w,h);
+    return await new Promise((resolve,reject)=>cv.toBlob(b=>b?resolve(b):reject(new Error("Nao foi possivel converter a imagem de referencia para PNG.")),"image/png",0.92));
+  }
+  async function prepareProductReferenceImageForMake(p,batchId){
+    const originalSrc=p.url_imagem||p.imagem||(Array.isArray(p.imagens)?p.imagens[0]:"")||"";
+    let referenceUrl=publicAssetUrl(originalSrc);
+    const needsPreparedReference=/^data:image\//i.test(referenceUrl)||isAiGeneratedProductImageSrc(originalSrc)||isAiGeneratedProductImageSrc(referenceUrl);
+    if(!needsPreparedReference)return referenceUrl;
+    if(!state.settings.githubToken||!state.settings.githubOwner||!state.settings.githubRepo){
+      if(/^https?:\/\//i.test(referenceUrl))return referenceUrl;
+      throw new Error("Esta imagem gerada antiga esta em base64. Configure o token/owner/repositorio do GitHub para eu criar uma referencia publica antes de chamar o Make.");
+    }
+    setStatus("Preparando imagem de referencia para o Make...","warn");
+    const srcForCanvas=/^data:image\//i.test(originalSrc)?originalSrc:referenceUrl;
+    try{
+      const blob=await imageSrcToPngBlobForAi(srcForCanvas);
+      const fileName=productSeoImageFileName(p,"referencia-make",batchId).replace(/\.webp$/i,".png");
+      const basePath=String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,"");
+      const fullPath=`${basePath}/${fileName}`;
+      await githubUpsertRaw(fullPath,await blob.arrayBuffer(),`Prepara referencia PNG para IA do produto ${p.codigo||getName(p)}`);
+      markGithubProductImageForDelete(githubRawFileUrl(fullPath));
+      return githubRawFileUrl(fullPath);
+    }catch(err){
+      if(/^https?:\/\//i.test(referenceUrl)){
+        console.warn("Nao foi possivel preparar PNG de referencia; usando URL atual.",err);
+        return referenceUrl;
+      }
+      throw err;
+    }
+  }
   async function saveGeneratedProductImageToGithub(p,src,index,batchId,fileName=""){
     let finalSrc=String(src||"");
     if(!finalSrc)throw new Error(`Imagem ${index} vazia retornada pelo Make.`);
@@ -2517,15 +2570,20 @@
     if(!p.url_imagem&&!p.imagem&&!(p.imagens||[]).length)throw new Error('Este produto ainda n?o tem imagem de refer?ncia para melhorar.');
     readSettingsFromUi();
     const count=1,plan=buildAiImageStrategy(count),batchId=new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14),seoPlan=productSeoImagePlan(p,batchId);
+    const referenceImageUrl=await prepareProductReferenceImageForMake(p,batchId);
     const payload={
       acao:'melhorar_imagem_produto',
       quantidade_imagens:1,
-      produto:compactProductForAi(p),
+      produto:{...compactProductForAi(p),imagem_url:referenceImageUrl},
       estrategia:plan.label,
       seo_imagens:seoPlan,
       substituir_imagens_existentes:true,
       instrucoes:'Gerar exatamente 1 imagem unica informativa quadrada do produto para substituir a imagem principal e a galeria atual. Fundo branco, produto fiel no lado esquerdo, sombra suave de base e uma lista curta no lado direito com somente informacoes reais do rotulo/cadastro, incluindo Embalagem. Preservar embalagem, rotulo, formato, marca, cores e variante do produto.'
     };
+    const referenceUrl=String(payload.produto?.imagem_url||"").trim();
+    if(!/^https?:\/\//i.test(referenceUrl)){
+      throw new Error('A imagem de referencia precisa estar em uma URL publica http/https antes de chamar o Make. Envie a foto ao GitHub ou configure a URL base do site publico em Integracoes.');
+    }
     setStatus('Enviando produto para gerar 1 imagem SEO no Make...','warn');
     const result=await callMakeAi('image',payload);
     console.log('Resposta IA imagem produto:',result);
