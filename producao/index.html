@@ -471,7 +471,7 @@
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
         <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho kitspromocionais.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="img/produtos"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
-        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">Use o webhook de textos para o botão único IA Cadastro (nome, embalagem, descrição e tags). Use o webhook de imagens para capas de kits e para gerar 3 fotos SEO do produto: fundo branco, mockup de uso e informativa.</div></div>
+        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">Use o webhook de textos para o botão único IA Cadastro (nome, embalagem, descrição e tags). Use o webhook de imagens para capas de kits e para gerar 1 imagem SEO informativa por produto.</div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
       <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar kitspromocionais.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
@@ -2357,7 +2357,7 @@
   }
   function imagesFromAiResult(result){
     const r=unwrapAiResult(result);
-    const limit=Math.max(1,Math.min(3,Number(r.quantidade_solicitada||r.quantidade||r.n||3)||3));
+    const limit=Math.max(1,Math.min(1,Number(r.quantidade_solicitada||r.quantidade||r.n||1)||1));
     const imgs=[];
     const push=(src,name="")=>{const s=String(src||"").trim(); if(isUsableAiImageSrc(s)) imgs.push({src:s,fileName:String(name||"")})};
     // Prioriza o campo principal porque em alguns módulos do Make o array pode vir vazio,
@@ -2369,16 +2369,16 @@
         if(item&&typeof item==='object')push(item.imagem||item.image||item.url||item.src||item.image_url||item.data||"",item.fileName||item.file_name||`imagem_${i+1}.webp`);
       });
     }
-    ['imagem_1','imagem_2','imagem_3'].forEach((k,i)=>{ if(i+1<=limit) push(r[k],r[`fileName_${i+1}`]||`imagem_${i+1}.webp`) });
+    ['imagem_1'].forEach((k,i)=>{ if(i+1<=limit) push(r[k],r[`fileName_${i+1}`]||`imagem_${i+1}.webp`) });
     if(Array.isArray(r.data))r.data.slice(0,limit).forEach((item,i)=>{if(item?.b64_json)push(`data:image/webp;base64,${item.b64_json}`,item.fileName||`imagem_${i+1}.webp`); else if(item?.url)push(item.url,item.fileName||`imagem_${i+1}.webp`); else if(item?.imagem)push(item.imagem,item.fileName||`imagem_${i+1}.webp`)});
     const seen=new Set();
     return imgs.filter(x=>{const key=`${x.src}|${x.fileName}`; if(seen.has(key)) return false; seen.add(key); return true;}).slice(0,limit);
   }
   function ensureAiImagePlanModal(){
     if($("#aiImagePlanModal"))return;
-    document.body.insertAdjacentHTML("beforeend",`<div class="ai-image-plan-overlay" id="aiImagePlanModal"><div class="ai-image-plan"><div class="ai-image-plan-head"><div><h3>Quantas imagens você quer gerar?</h3><p>Escolha a estratégia de geração para este produto. A IA vai analisar a foto atual e todas as informações do cadastro para gerar imagens melhores para o site.</p></div><button class="btn small" type="button" data-action="close-ai-image-plan">×</button></div><div class="ai-image-plan-grid"><button class="ai-image-option" type="button" data-ai-image-count="1"><strong>1 imagem</strong><span class="chip green">mais rápida e econômica</span><small>Estratégia principal de e-commerce: gera uma foto hero limpa, frontal e pronta para virar a imagem principal do produto.</small></button><button class="ai-image-option" type="button" data-ai-image-count="2"><strong>2 imagens</strong><span class="chip gold">comparação segura</span><small>Estratégia de comparação: gera 2 imagens complementares para a galeria, sem trocar a principal atual.</small></button><button class="ai-image-option" type="button" data-ai-image-count="3"><strong>3 imagens</strong><span class="chip blue">mais opções</span><small>Estratégia completa: gera 3 imagens pensadas para galeria de e-commerce, com abordagens diferentes do mesmo produto.</small></button></div><div class="ai-image-plan-note"><strong>Estratégia:</strong> 1 imagem = troca automática da principal. 2 ou 3 imagens = adiciona novas opções na galeria sem mexer na principal atual.</div></div></div>`);
+    document.body.insertAdjacentHTML("beforeend",`<div class="ai-image-plan-overlay" id="aiImagePlanModal"><div class="ai-image-plan"><div class="ai-image-plan-head"><div><h3>Imagem SEO do produto</h3><p>O cenário atual gera sempre 1 imagem informativa quadrada por produto e substitui a imagem principal.</p></div><button class="btn small" type="button" data-action="close-ai-image-plan">×</button></div><div class="ai-image-plan-note"><strong>Estratégia fixa:</strong> gerar uma imagem única, fiel ao produto, com fundo branco, produto à esquerda e informações reais do cadastro/rótulo à direita.</div></div></div>`);
   }
-  function askAiImageCount(p){return Promise.resolve(3)}
+  function askAiImageCount(p){return Promise.resolve(1)}
   function openProductChat(key){
     const p=productByKey(key);if(!p)return;
     state.productChatKey=key;
@@ -2483,9 +2483,8 @@
       base:productSeoImageBase(p),
       pasta:String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,""),
       publico:String(state.settings.imagePublicBase||"img/produtos").replace(/\/+$/,""),
-      principal:productSeoImageFileName(p,"foto-principal-fundo-branco",time),
-      mockup:productSeoImageFileName(p,"mockup-uso-real",time),
-      informativa:productSeoImageFileName(p,"informacoes-rotulo",time)
+      principal:productSeoImageFileName(p,"info-lado-a-lado",time),
+      informativa:productSeoImageFileName(p,"info-lado-a-lado",time)
     };
   }
   function currentProductImageSources(p){return uniq([p?.url_imagem||"",p?.imagem||"",...(Array.isArray(p?.imagens)?p.imagens:[])]).filter(Boolean)}
@@ -2493,9 +2492,9 @@
 
   function buildAiImageStrategy(count){
     return {
-      count:3,
-      label:'3 imagens SEO - fundo branco + mockup de uso + informativa',
-      message:'Estrat?gia fixa: gerar 3 imagens para substituir a galeria do produto. 1) foto principal em fundo branco; 2) mockup ultrarrealista de uso; 3) imagem informativa usando somente nome, embalagem e informa??es vis?veis no r?tulo/cadastro.'
+      count:1,
+      label:'1 imagem SEO informativa quadrada',
+      message:'Estrategia fixa: gerar 1 imagem informativa para substituir a imagem principal e a galeria do produto.'
     };
   }
   async function saveGeneratedProductImageToGithub(p,src,index,batchId,fileName=""){
@@ -2504,7 +2503,7 @@
     if(/^data:image\//i.test(finalSrc)){
       readSettingsFromUi();
       const blob=await (await fetch(finalSrc)).blob();
-      const kind=index===1?'foto-principal-fundo-branco':index===2?'mockup-uso-real':'informacoes-rotulo';
+      const kind='info-lado-a-lado';
       const seoName=fileName||productSeoImageFileName(p,kind,batchId);
       const basePath=String(state.settings.githubImagesPath||'site/img/produtos').replace(/\/+$/,'');
       const fullPath=`${basePath}/${seoName}`;
@@ -2517,40 +2516,40 @@
     const p=productByKey(key);if(!p)return;
     if(!p.url_imagem&&!p.imagem&&!(p.imagens||[]).length)throw new Error('Este produto ainda n?o tem imagem de refer?ncia para melhorar.');
     readSettingsFromUi();
-    const count=3,plan=buildAiImageStrategy(count),batchId=new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14),seoPlan=productSeoImagePlan(p,batchId);
+    const count=1,plan=buildAiImageStrategy(count),batchId=new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14),seoPlan=productSeoImagePlan(p,batchId);
     const payload={
       acao:'melhorar_imagem_produto',
-      quantidade_imagens:3,
+      quantidade_imagens:1,
       produto:compactProductForAi(p),
       estrategia:plan.label,
       seo_imagens:seoPlan,
       substituir_imagens_existentes:true,
-      instrucoes:'Gerar exatamente 3 imagens do produto para substituir a galeria atual: imagem 1 foto principal padrao de e-commerce em fundo branco; imagem 2 mockup ultrarrealista mostrando uso real coerente; imagem 3 imagem informativa usando somente nome, embalagem e informacoes reais visiveis no rotulo/cadastro. Preservar embalagem, rotulo, formato, marca, cores e variante do produto.'
+      instrucoes:'Gerar exatamente 1 imagem unica informativa quadrada do produto para substituir a imagem principal e a galeria atual. Fundo branco, produto fiel no lado esquerdo, sombra suave de base e uma lista curta no lado direito com somente informacoes reais do rotulo/cadastro, incluindo Embalagem. Preservar embalagem, rotulo, formato, marca, cores e variante do produto.'
     };
-    setStatus('Enviando produto para gerar 3 imagens SEO no Make...','warn');
+    setStatus('Enviando produto para gerar 1 imagem SEO no Make...','warn');
     const result=await callMakeAi('image',payload);
     console.log('Resposta IA imagem produto:',result);
-    const generated=imagesFromAiResult(result).slice(0,3);
-    if(generated.length<3)throw new Error('O Make rodou, mas n?o devolveu as 3 imagens v?lidas. O Webhook Response deve retornar imagem_1, imagem_2 e imagem_3.');
+    const generated=imagesFromAiResult(result).slice(0,1);
+    if(generated.length<1)throw new Error('O Make rodou, mas nao devolveu 1 imagem valida. O Webhook Response deve retornar imagem ou imagem_1.');
     const oldSources=currentProductImageSources(p);
     const saved=[];
     for(let i=0;i<generated.length;i++){
-      setStatus(`Registrando imagem SEO ${i+1}/3 no cadastro...`,'warn');
-      const expectedName=i===0?seoPlan.principal:i===1?seoPlan.mockup:seoPlan.informativa;
+      setStatus(`Registrando imagem SEO ${i+1}/1 no cadastro...`,'warn');
+      const expectedName=seoPlan.informativa||seoPlan.principal;
       const src=await saveGeneratedProductImageToGithub(p,generated[i].src,i+1,batchId,generated[i].fileName||expectedName);
       saved.push(src);
     }
     oldSources.forEach(src=>markGithubProductImageForDelete(src));
     p.url_imagem=p.imagem=saved[0]||'';
-    p.imagens=uniq(saved).slice(0,12);
+    p.imagens=uniq(saved).slice(0,1);
     p.last_update=Date.now();p.updated_at=nowIso();
     markProductDirty(getKey(p),['url_imagem','imagem','imagens']);
     mark('products');
     saveLocal();
     renderProducts();
     renderProductEditor(false);
-    setStatus('Galeria substitu?da por 3 imagens SEO do produto','ok');
-    toast('3 imagens SEO geradas: principal em fundo branco, mockup de uso e informativa. Clique em Salvar geral para publicar e apagar as imagens antigas sem uso.', 'ok', 9000);
+    setStatus('Imagem principal substituida por 1 imagem SEO do produto','ok');
+    toast('1 imagem SEO informativa gerada. Clique em Salvar geral para publicar e apagar as imagens antigas sem uso.', 'ok', 9000);
   }
   async function aiKitDescription(){
     const k=currentKit();if(!k)return;
