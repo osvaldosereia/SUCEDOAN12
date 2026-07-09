@@ -1022,34 +1022,26 @@
   function getFilters(){return {q:$("#f-q")?.value||"",categoria:$("#f-categoria")?.value||"",subcategoria:$("#f-subcategoria")?.value||"",subsubcategoria:$("#f-subsubcategoria")?.value||"",marca:$("#f-marca")?.value||"",fornecedor:$("#f-fornecedor")?.value||"",tag:$("#f-tag")?.value||"",situacao:$("#f-situacao")?.value||"",qualidade:$("#f-qualidade")?.value||"",cesta:$("#f-cesta")?.value||"",sort:$("#f-sort")?.value||"nome",pageSize:Number($("#f-page-size")?.value||24)}}
   function filteredProducts(){const f=getFilters(); let list=[...state.produtos]; const q=textNorm(f.q); if(q) list=list.filter(p=>textNorm([p.nome,p.codigo,p.gtin,p.ean,p.marca,p.categoria,p.subcategoria,p.subsubcategoria,p.fornecedor,p.descricao,parseTags(p.tags).join(' ')].join(' ')).includes(q)); ['categoria','subcategoria','subsubcategoria','marca','fornecedor'].forEach(k=>{if(f[k]) list=list.filter(p=>String(p[k]||'')===f[k])}); if(f.tag) list=list.filter(p=>parseTags(p.tags).includes(f.tag)); if(f.situacao==='A') list=list.filter(isActive); if(f.situacao==='I') list=list.filter(p=>!isActive(p)); if(f.situacao==='sem_estoque') list=list.filter(p=>toNum(p.estoque)<=0); if(f.situacao==='com_estoque') list=list.filter(p=>toNum(p.estoque)>0); if(f.qualidade==='sem_foto') list=list.filter(p=>!String(p.url_imagem||p.imagem||'').trim()); if(f.qualidade==='sem_gtin') list=list.filter(p=>!String(p.gtin||p.ean||'').trim()); if(f.qualidade==='sem_descricao') list=list.filter(p=>!String(p.descricao||'').trim()); if(f.qualidade==='com_oferta') list=list.filter(p=>toNum(p.preco_oferta)>0); if(f.cesta==='em_cesta') list=list.filter(p=>basketsByProduct(p).length); if(f.cesta==='fora_cesta') list=list.filter(p=>!basketsByProduct(p).length); const sorters={nome:(a,b)=>getName(a).localeCompare(getName(b),'pt-BR'),codigo:(a,b)=>getCode(a).localeCompare(getCode(b),'pt-BR'),preco_desc:(a,b)=>toNum(b.preco)-toNum(a.preco),preco_asc:(a,b)=>toNum(a.preco)-toNum(b.preco),estoque_desc:(a,b)=>toNum(b.estoque)-toNum(a.estoque),atualizado_desc:(a,b)=>toNum(b.last_update)-toNum(a.last_update)}; return list.sort(sorters[f.sort]||sorters.nome)}
   function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
-  function hasProductDescription(p){
-    return !!String(p?.descricao||"").trim();
-  }
-  function hasProductImageReference(p){
-    return !!(String(p?.url_imagem||p?.imagem||"").trim() || (Array.isArray(p?.imagens)&&p.imagens.some(src=>String(src||"").trim())));
-  }
   function batchImageCandidates(){
     const f=getFilters();
     if(!f.categoria) throw new Error('Selecione uma categoria antes de iniciar a geração em lote.');
     return filteredProducts()
       .filter(p=>isActive(p))
-      .filter(p=>hasProductImageReference(p))
+      .filter(p=>String(p.url_imagem||p.imagem||'').trim()||Array.isArray(p.imagens)&&p.imagens.length)
       .filter(p=>!shouldSkipAiImageGeneration(p));
   }
   async function aiCategoryImagesBatch(){
     if(state.aiImageBatchRunning) throw new Error('Já existe uma fila de geração de imagens rodando agora.');
     readSettingsFromUi();
+    if(opts.force && hasAiGeneratedProductImage(p)) setStatus('Gerando nova imagem por solicitação direta, mesmo já existindo imagem IA anterior...','warn');
     const webhook=String(state.settings.makeImageWebhookUrl||state.settings.makeImageWebhook||state.settings.makeWebhookImage||state.settings.makeWebhook||'').trim();
     if(!/^https?:\/\//i.test(webhook)) throw new Error('Configure o webhook de imagem do Make antes de iniciar a fila.');
     const f=getFilters();
-    const allFiltered=filteredProducts();
     const items=batchImageCandidates();
     if(!items.length) throw new Error('Nenhum produto elegível foi encontrado para a categoria/filtragem atual.');
-    const skippedAi=allFiltered.filter(p=>isActive(p)&&hasAiGeneratedProductImage(p)).length;
-    const skippedNoReference=allFiltered.filter(p=>isActive(p)&&!hasProductImageReference(p)).length;
-    const skippedInactive=allFiltered.filter(p=>!isActive(p)).length;
+    const skipped=filteredProducts().length-items.length;
     const categoryLabel=f.categoria || 'categoria selecionada';
-    const message=`Gerar 1 imagem por produto para ${items.length} item(ns) da categoria ${categoryLabel}?\n\nO sistema enviará 1 produto ao Make por vez, aguardando 5 segundos entre cada envio.\n\nProdutos que já têm imagem gerada por IA serão pulados automaticamente.${skippedAi>0?`\n- Já com imagem IA: ${skippedAi}`:''}${skippedNoReference>0?`\n- Sem imagem de referência: ${skippedNoReference}`:''}${skippedInactive>0?`\n- Inativos (pulados): ${skippedInactive}`:''}`;
+    const message=`Gerar 1 imagem por produto para ${items.length} item(ns) da categoria ${categoryLabel}?\n\nO sistema enviará 1 produto ao Make por vez, aguardando 5 segundos entre cada envio.\n${skipped>0?`\nObservação: ${skipped} item(ns) filtrado(s) ficarão de fora por estarem inativos ou sem imagem de referência.`:''}`;
     if(!confirm(message)) return;
     state.aiImageBatchRunning=true;
     state.aiImageBatchCancel=false;
@@ -1104,7 +1096,7 @@
   function batchTextCandidates(){
     const f=getFilters();
     if(!f.categoria) throw new Error('Selecione uma categoria antes de iniciar a geração em lote de textos.');
-    return filteredProducts().filter(p=>isActive(p)).filter(p=>!hasProductDescription(p));
+    return filteredProducts().filter(p=>isActive(p)).filter(p=>!String(p.descricao||'').trim());
   }
   async function aiCategoryTextBatch(){
     if(state.aiTextBatchRunning) throw new Error('Já existe uma fila de geração de textos rodando agora.');
@@ -1115,7 +1107,7 @@
     const allFiltered=filteredProducts();
     const activeWithoutDesc=batchTextCandidates();
     if(!activeWithoutDesc.length) throw new Error('Nenhum produto elegível foi encontrado. Se a categoria já tem descrição, a fila não tenta novamente.');
-    const alreadyWithDesc=allFiltered.filter(p=>hasProductDescription(p)).length;
+    const alreadyWithDesc=allFiltered.filter(p=>String(p.descricao||'').trim()).length;
     const inactiveCount=allFiltered.filter(p=>!isActive(p)).length;
     const categoryLabel=f.categoria || 'categoria selecionada';
     const message=`Gerar descrição por IA para ${activeWithoutDesc.length} produto(s) da categoria ${categoryLabel}?\n\nO sistema enviará 1 produto por vez ao Make, aguardando 5 segundos entre cada envio.\n\nProdutos com descrição já preenchida serão pulados automaticamente.${alreadyWithDesc>0?`\n- Já com descrição: ${alreadyWithDesc}`:''}${inactiveCount>0?`\n- Inativos (pulados): ${inactiveCount}`:''}`;
@@ -1135,14 +1127,13 @@
           break;
         }
         const p=activeWithoutDesc[index], key=getKey(p), name=getName(p);
-        if(hasProductDescription(p)){
+        if(String(p.descricao||'').trim()){
           state.aiTextBatchDone = index + 1;
-          setStatus(`Fila texto ${state.aiTextBatchDone}/${activeWithoutDesc.length}: ${name} pulado porque já tem descrição.`,'warn');
           continue;
         }
         setStatus(`Fila texto ${index+1}/${activeWithoutDesc.length}: gerando descrição de ${name}...`,'warn');
         try{
-          await aiProductDescription(key,{skipExisting:true, origem:'fila-categoria'});
+          await aiProductDescription(key);
         }catch(err){
           state.aiTextBatchErrors += 1;
           console.error('Erro na fila de texto do produto', name, err);
@@ -2458,33 +2449,15 @@
       referencias_imagens
     };
   }
-  function makePayloadDebugSummary(payload){
-    const product=payload?.produto||payload?.kit||{};
-    const imageUrl=String(payload?.imagem_url||payload?.imagem_referencia_url||product?.imagem_url||"").trim();
-    return [
-      payload?.acao?`acao=${payload.acao}`:"",
-      product?.codigo?`codigo=${product.codigo}`:"",
-      product?.nome?`produto=${product.nome}`:"",
-      imageUrl?`imagem_url=${imageUrl.slice(0,180)}`:""
-    ].filter(Boolean).join(" | ");
-  }
   async function callMakeAi(kind,payload){
     readSettingsFromUi();
     const url=kind==="image"?state.settings.makeImageWebhookUrl:state.settings.makeTextWebhookUrl;
     if(!url)throw new Error(`Configure o webhook de IA ${kind==="image"?"imagens":"textos"} na aba Integracoes.`);
     const body=new URLSearchParams();
     body.set("payload",JSON.stringify(payload));
-    body.set("kind",kind);
-    if(payload?.acao)body.set("acao",String(payload.acao));
-    if(payload?.produto_codigo||payload?.produto?.codigo)body.set("produto_codigo",String(payload.produto_codigo||payload.produto.codigo||""));
-    if(payload?.produto_nome||payload?.produto?.nome)body.set("produto_nome",String(payload.produto_nome||payload.produto.nome||""));
-    if(payload?.imagem_url||payload?.imagem_referencia_url||payload?.produto?.imagem_url)body.set("imagem_url",String(payload.imagem_url||payload.imagem_referencia_url||payload.produto.imagem_url||""));
     const response=await fetch(url,{method:"POST",headers:{"Accept":"application/json"},body});
     const text=await response.text();
-    if(!response.ok){
-      const detail=makePayloadDebugSummary(payload);
-      throw new Error(`Make retornou ${response.status}: ${text.slice(0,240)}${detail?` | ${detail}`:""}`);
-    }
+    if(!response.ok)throw new Error(`Make retornou ${response.status}: ${text.slice(0,240)}`);
     try{return JSON.parse(text)}catch{return {ok:true,texto:text}}
   }
   function unwrapAiResult(result){
@@ -2642,17 +2615,8 @@
     markProductAiChange(p,fields);
     setStatus("IA cadastro aplicada ao produto. Revise e clique em Salvar produto/Firebase.","ok");
   }
-  async function aiProductDescription(key,options={}){
+  async function aiProductDescription(key){
     const p=productByKey(key);if(!p)return;
-    const opts=options&&typeof options==="object"?options:{};
-    if(hasProductDescription(p)){
-      const msg=`${getName(p)} já tem descrição. A IA de texto não foi enviada.`;
-      if(opts.skipExisting){
-        setStatus(msg,'warn');
-        return {skipped:true,reason:'descricao_existente'};
-      }
-      throw new Error(msg);
-    }
     setStatus("Gerando descricao do produto no Make sem enviar imagem...","warn");
     const payload={acao:"gerar_descricao_produto",produto:compactProductForTextAi(p),modo:"texto_sem_imagem"};
     const result=unwrapAiResult(await callMakeAi("text",payload));
@@ -2804,30 +2768,14 @@
   async function aiProductImage(key,options={}){
     const p=productByKey(key);if(!p)return;
     const opts=options&&typeof options==='object'?options:{};
-    if(!hasProductImageReference(p))throw new Error('Este produto ainda não tem imagem de referência para melhorar.');
-    if(shouldSkipAiImageGeneration(p,opts)){
-      const msg=`${getName(p)} já tem imagem gerada por IA. Pulado no envio por categoria.`;
-      setStatus(msg,'warn');
-      return {skipped:true,reason:'imagem_ia_existente'};
-    }
-    if(opts.force && hasAiGeneratedProductImage(p)) setStatus('Gerando nova imagem por solicitação direta, mesmo já existindo imagem IA anterior...','warn');
+    if(!p.url_imagem&&!p.imagem&&!(p.imagens||[]).length)throw new Error('Este produto ainda n?o tem imagem de refer?ncia para melhorar.');
     readSettingsFromUi();
-    const rememberedReference=rememberAiReferenceImage(p);
     const count=1,plan=buildAiImageStrategy(count),batchId=new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14),seoPlan=productSeoImagePlan(p,batchId);
     const referenceImageUrl=await prepareProductReferenceImageForMake(p,batchId);
     const payload={
       acao:'melhorar_imagem_produto',
       quantidade_imagens:1,
       produto:{...compactProductForAi(p),imagem_url:referenceImageUrl},
-      produto_codigo:p.codigo||getKey(p)||"",
-      produto_nome:getName(p),
-      imagem_url:referenceImageUrl,
-      imagem_referencia_url:referenceImageUrl,
-      origem:opts.origem||'individual',
-      forcar_substituicao:!!opts.force,
-      produto_tem_imagem_ia:hasAiGeneratedProductImage(p),
-      referencia_eh_imagem_ia:isAiGeneratedProductImageSrc(referenceImageUrl)||isAiGeneratedProductImageSrc(getAiReferenceImageSrc(p)),
-      permitir_imagem_ia_como_referencia:!!opts.force,
       estrategia:plan.label,
       seo_imagens:seoPlan,
       substituir_imagens_existentes:true,
