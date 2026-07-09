@@ -2161,19 +2161,43 @@
     if(image)state.settings.makeImageWebhookUrl=image.value.trim();
   };
 
+  function normalizeGithubRawImageUrl(src){
+    let value=String(src||"").trim();
+    if(!/^https?:\/\//i.test(value))return value;
+    try{
+      const u=new URL(value);
+      const host=u.hostname.toLowerCase();
+      if(host!=="raw.githubusercontent.com")return value;
+      const parts=decodeURIComponent(u.pathname||"").split("/").filter(Boolean);
+      if(parts.length<4)return value;
+      let filePath=parts.slice(3).join("/").replace(/^\/+/,"");
+      // No repositório as imagens públicas ficam em site/img/..., mas algumas rotinas antigas
+      // transformavam errado para main/img/... e isso causava 404 na segunda geração por IA.
+      if(/^img\//i.test(filePath))filePath=`site/${filePath}`;
+      filePath=filePath.replace(/^site\/site\//i,"site/");
+      return `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/${parts[2]}/${filePath}`;
+    }catch{return value}
+  }
+
   function publicAssetUrl(src){
     let value=String(src||"").trim();
     if(!value)return "";
     if(/^data:/i.test(value))return value;
     value=value.replace(/\\/g,"/");
-    value=value.replace(/^\.\.\/site\//i,"").replace(/^\.\//,"").replace(/^site\//i,"");
+    value=value.replace(/^\.\.\/site\//i,"").replace(/^\.\//,"");
     if(/^https?:\/\//i.test(value)){
       try{
         const u=new URL(value);
+        const host=u.hostname.toLowerCase();
+        if(host==="raw.githubusercontent.com")return normalizeGithubRawImageUrl(u.toString());
+        if(host==="github.com")return u.toString();
+        // Só removemos /site/ das URLs públicas do próprio site. Em raw.githubusercontent.com
+        // /site/ faz parte do caminho real do arquivo no repositório e não pode ser removido.
         u.pathname=u.pathname.replace(/\/\.\.\/site\//ig,"/").replace(/\/site\//ig,"/");
         return u.toString();
       }catch{return value}
     }
+    value=value.replace(/^site\//i,"");
     const clean=value.replace(/^\/+/,"");
     const configuredBase=String(state.settings.siteBaseUrl||defaultSettings.siteBaseUrl||"").trim().replace(/\/+$/,"");
     const runtimeBase=String(location.origin||"").trim().replace(/\/+$/,"");
@@ -2193,13 +2217,13 @@
         const u=new URL(value);
         const host=u.hostname.toLowerCase();
         let path=decodeURIComponent(u.pathname||"").replace(/\/+/g,"/");
-        if(host==="raw.githubusercontent.com")return u.toString();
+        if(host==="raw.githubusercontent.com")return normalizeGithubRawImageUrl(u.toString());
         if(host==="github.com" && path.includes("/blob/")){
           const parts=path.split("/").filter(Boolean);
           const blobIndex=parts.indexOf("blob");
           if(parts.length>blobIndex+2){
             const owner=parts[0],repo=parts[1],branch=parts[blobIndex+1],filePath=parts.slice(blobIndex+2).join("/");
-            return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
+            return normalizeGithubRawImageUrl(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`);
           }
         }
         // URLs publicas do site normalmente apontam para /img/...; no repositorio isso fica em /site/img/...
