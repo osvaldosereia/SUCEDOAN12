@@ -329,10 +329,6 @@
         <button class="btn primary" type="button" data-action="save-products">✓ Salvar produtos</button>
         <button class="btn gold" type="button" data-action="open-low-stock">⚠ Estoque 0 a 5</button>
         <button class="btn blue" type="button" data-action="open-bulk-price">％ Reajuste em massa</button>
-        <button class="btn blue" type="button" data-action="ai-category-images">🖼 IA da categoria</button>
-        <button class="btn red" type="button" data-action="stop-ai-category-images">■ Parar fila IA</button>
-        <button class="btn gold" type="button" data-action="ai-category-text">✍ IA texto da categoria</button>
-        <button class="btn red" type="button" data-action="stop-ai-category-text">■ Parar fila texto</button>
         <button class="btn" type="button" data-action="reload">↻ Recarregar dados</button>
       </div>
       <button class="btn blue block" style="margin-top:8px" type="button" data-action="open-settings">⚙ Configurações</button>
@@ -398,7 +394,7 @@
 
   <main class="app">
     <section class="panel" id="tab-produtos">
-      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Ficha completa para editar produtos, imagens, cestas e kits sem sair da página.</p></div><div class="toolbar"><button class="btn notes-home-btn" id="notesHomeBtn" type="button" data-action="go-notes">📝 Notas <span class="notes-count">0</span></button><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn blue" data-action="normalize-products-site">✓ Adequar ao site</button><button class="btn blue" data-action="open-bulk-price">％ Reajuste em massa</button><button class="btn blue" data-action="ai-category-images">🖼 IA da categoria</button><button class="btn red" data-action="stop-ai-category-images">■ Parar fila IA</button><button class="btn gold" data-action="ai-category-text">✍ IA texto da categoria</button><button class="btn red" data-action="stop-ai-category-text">■ Parar fila texto</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
+      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Ficha completa para editar produtos, imagens, cestas e kits sem sair da página.</p></div><div class="toolbar"><button class="btn notes-home-btn" id="notesHomeBtn" type="button" data-action="go-notes">📝 Notas <span class="notes-count">0</span></button><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn blue" data-action="normalize-products-site">✓ Adequar ao site</button><button class="btn blue" data-action="open-bulk-price">％ Reajuste em massa</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
       <div class="products-grid" id="productsGrid"></div>
       <div class="pagination" id="pagination"></div>
     </section>
@@ -559,9 +555,7 @@
     dirtyProducts: false, dirtyCestas: false, dirtyKits: false, dirtyMeta: false, dirtyNotes: false,
     dirtyProductKeys: new Set(), dirtyProductFields: {}, deletedProductKeys: new Set(), productSyncMeta: {},
     scannerCode: "", scannerCurrentKey: null, scannerStream: null, scannerDetector: null, scannerLoopActive: false,
-    scannerStatus: "Aguardando leitura.", scannerStatusType: "warn", scannerRecentCodes: [],
-    aiImageBatchRunning: false, aiImageBatchCancel: false, aiImageBatchTotal: 0, aiImageBatchDone: 0, aiImageBatchErrors: 0,
-    aiTextBatchRunning: false, aiTextBatchCancel: false, aiTextBatchTotal: 0, aiTextBatchDone: 0, aiTextBatchErrors: 0
+    scannerStatus: "Aguardando leitura.", scannerStatusType: "warn", scannerRecentCodes: []
   };
   state.productView=localStorage.getItem("donaantonia_product_view")==="list"?"list":"grid";
 
@@ -687,12 +681,7 @@
   function parseTags(v){if(Array.isArray(v)) return v.map(String).map(x=>x.trim()).filter(Boolean); if(typeof v === "string") return v.split(/[,|;]/).map(x=>x.trim()).filter(Boolean); return []}
   function getCode(p){return norm(p.codigo || p.sku || p.id || p.firebaseKey || p.gtin || p.ean || "")}
   function getKey(p){return String(p.firebaseKey || p.id || p.codigo || `produto_${Date.now()}`).trim()}
-  function getImg(p){
-    let img=String(p.url_imagem || p.imagem || p.image || p.img || p.foto || "").trim();
-    if(!img && getCode(p)) img = `img/produtos/${getCode(p)}.webp`;
-    if(!img) return PLACEHOLDER;
-    return publicAssetUrl(img) || img || PLACEHOLDER;
-  }
+  function getImg(p){let img=String(p.url_imagem || p.imagem || p.image || p.img || p.foto || "").trim(); if(!img && getCode(p)) img = `img/produtos/${getCode(p)}.webp`; return img || PLACEHOLDER}
   function getRawImg(p){return String(p.url_imagem || p.imagem || p.image || p.img || p.foto || "").trim()}
   function getName(p){return String(p.nome || p.titulo || p.descricao || p.codigo || "Produto sem nome")}
   function isActive(p){const st=String(p.situacao ?? p.status ?? "A").toLowerCase(); return !["i","inativo","false","0","excluido","excluído"].includes(st) && p.ativo !== false && p.visivel !== false}
@@ -933,8 +922,8 @@
   async function prepareProductImageBlob(file){return compressImageToWebp(file,{maxBytes:IMAGE_MAX_BYTES,maxDimension:900,square:false})}
   async function prepareKitImageBlob(file){return compressImageToWebp(file,{maxBytes:IMAGE_MAX_BYTES,maxDimension:900,square:true})}
   function selectedProductPhotoFile(){const input=$("#productPhotoFile"); return input?.files?.[0]||null}
-  async function useSelectedPhotoLocal(){const p=productByKey(state.editingProductKey); const file=selectedProductPhotoFile(); if(!p||!file) return alert("Selecione uma imagem primeiro."); const prepared=await prepareProductImageBlob(file); p.url_imagem=await blobToDataUrl(prepared.blob); p.imagem=p.url_imagem; p.imagem_referencia_ia=p.url_imagem; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem','imagem_referencia_ia']); mark('products'); renderProductEditor(false); setStatus(`Foto aplicada em WebP (${formatBytes(prepared.bytes)})`, "ok")}
-  async function uploadSelectedPhotoGithub(){const p=productByKey(state.editingProductKey); const file=selectedProductPhotoFile(); if(!p||!file) return alert("Selecione uma imagem primeiro."); try{readSettingsFromUi(); setStatus("Compactando e enviando foto SEO ao GitHub...", "warn"); const prepared=await prepareProductImageBlob(file); const oldSources=currentProductImageSources(p); const fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"); const basePath=String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,''); const path=`${basePath}/${fileName}`; await githubUpsertRaw(path, await prepared.blob.arrayBuffer(), `Atualiza foto SEO do produto ${p.codigo||getName(p)}`); const src=publicProductImageSrc(fileName); oldSources.forEach(x=>markGithubProductImageForDelete(x)); p.url_imagem=src; p.imagem=src; p.imagem_referencia_ia=src; p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]); p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem','imagens','imagem_referencia_ia']); mark('products'); renderProductEditor(false); setStatus(`Foto SEO enviada ao GitHub em WebP (${formatBytes(prepared.bytes)})`, "ok"); alert(`Foto SEO compactada em WebP (${formatBytes(prepared.bytes)}) e enviada como ${fileName}. Clique em Salvar geral para publicar e limpar imagens antigas.`)}catch(e){console.error(e); setStatus("Erro na foto", "err"); alert("Erro ao enviar foto: "+e.message)}}
+  async function useSelectedPhotoLocal(){const p=productByKey(state.editingProductKey); const file=selectedProductPhotoFile(); if(!p||!file) return alert("Selecione uma imagem primeiro."); const prepared=await prepareProductImageBlob(file); p.url_imagem=await blobToDataUrl(prepared.blob); p.imagem=p.url_imagem; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem']); mark('products'); renderProductEditor(false); setStatus(`Foto aplicada em WebP (${formatBytes(prepared.bytes)})`, "ok")}
+  async function uploadSelectedPhotoGithub(){const p=productByKey(state.editingProductKey); const file=selectedProductPhotoFile(); if(!p||!file) return alert("Selecione uma imagem primeiro."); try{readSettingsFromUi(); setStatus("Compactando e enviando foto SEO ao GitHub...", "warn"); const prepared=await prepareProductImageBlob(file); const oldSources=currentProductImageSources(p); const fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"); const basePath=String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,''); const path=`${basePath}/${fileName}`; await githubUpsertRaw(path, await prepared.blob.arrayBuffer(), `Atualiza foto SEO do produto ${p.codigo||getName(p)}`); const src=publicProductImageSrc(fileName); oldSources.forEach(x=>markGithubProductImageForDelete(x)); p.url_imagem=src; p.imagem=src; p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]); p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem','imagens']); mark('products'); renderProductEditor(false); setStatus(`Foto SEO enviada ao GitHub em WebP (${formatBytes(prepared.bytes)})`, "ok"); alert(`Foto SEO compactada em WebP (${formatBytes(prepared.bytes)}) e enviada como ${fileName}. Clique em Salvar geral para publicar e limpar imagens antigas.`)}catch(e){console.error(e); setStatus("Erro na foto", "err"); alert("Erro ao enviar foto: "+e.message)}}
   function removeProductPhoto(){const p=productByKey(state.editingProductKey); if(!p) return; if(!confirm("Remover a foto deste produto?")) return; p.url_imagem=""; p.imagem=""; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem']); mark('products'); renderProductEditor(false)}
   function copyProductPhotoUrl(){const p=productByKey(state.editingProductKey); if(!p) return; navigator.clipboard?.writeText(p.url_imagem||p.imagem||""); alert("URL da foto copiada.")}
   function toggleProductTag(tag,checked){const p=productByKey(state.editingProductKey); if(!p) return; let tags=parseTags(p.tags); if(checked && !tags.includes(tag)) tags.push(tag); if(!checked) tags=tags.filter(t=>t!==tag); p.tags=tags; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['tags']); mark('products'); renderProductEditor(false)}
@@ -1026,146 +1015,6 @@
   function fillSelect(sel, values){const el=$(sel); if(!el) return; const cur=el.value; const first=el.querySelector('option')?.outerHTML || '<option value="">Todos</option>'; el.innerHTML = first + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join(""); el.value = values.includes(cur)?cur:""}
   function getFilters(){return {q:$("#f-q")?.value||"",categoria:$("#f-categoria")?.value||"",subcategoria:$("#f-subcategoria")?.value||"",subsubcategoria:$("#f-subsubcategoria")?.value||"",marca:$("#f-marca")?.value||"",fornecedor:$("#f-fornecedor")?.value||"",tag:$("#f-tag")?.value||"",situacao:$("#f-situacao")?.value||"",qualidade:$("#f-qualidade")?.value||"",cesta:$("#f-cesta")?.value||"",sort:$("#f-sort")?.value||"nome",pageSize:Number($("#f-page-size")?.value||24)}}
   function filteredProducts(){const f=getFilters(); let list=[...state.produtos]; const q=textNorm(f.q); if(q) list=list.filter(p=>textNorm([p.nome,p.codigo,p.gtin,p.ean,p.marca,p.categoria,p.subcategoria,p.subsubcategoria,p.fornecedor,p.descricao,parseTags(p.tags).join(' ')].join(' ')).includes(q)); ['categoria','subcategoria','subsubcategoria','marca','fornecedor'].forEach(k=>{if(f[k]) list=list.filter(p=>String(p[k]||'')===f[k])}); if(f.tag) list=list.filter(p=>parseTags(p.tags).includes(f.tag)); if(f.situacao==='A') list=list.filter(isActive); if(f.situacao==='I') list=list.filter(p=>!isActive(p)); if(f.situacao==='sem_estoque') list=list.filter(p=>toNum(p.estoque)<=0); if(f.situacao==='com_estoque') list=list.filter(p=>toNum(p.estoque)>0); if(f.qualidade==='sem_foto') list=list.filter(p=>!String(p.url_imagem||p.imagem||'').trim()); if(f.qualidade==='sem_gtin') list=list.filter(p=>!String(p.gtin||p.ean||'').trim()); if(f.qualidade==='sem_descricao') list=list.filter(p=>!String(p.descricao||'').trim()); if(f.qualidade==='com_oferta') list=list.filter(p=>toNum(p.preco_oferta)>0); if(f.cesta==='em_cesta') list=list.filter(p=>basketsByProduct(p).length); if(f.cesta==='fora_cesta') list=list.filter(p=>!basketsByProduct(p).length); const sorters={nome:(a,b)=>getName(a).localeCompare(getName(b),'pt-BR'),codigo:(a,b)=>getCode(a).localeCompare(getCode(b),'pt-BR'),preco_desc:(a,b)=>toNum(b.preco)-toNum(a.preco),preco_asc:(a,b)=>toNum(a.preco)-toNum(b.preco),estoque_desc:(a,b)=>toNum(b.estoque)-toNum(a.estoque),atualizado_desc:(a,b)=>toNum(b.last_update)-toNum(a.last_update)}; return list.sort(sorters[f.sort]||sorters.nome)}
-  function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
-  function batchImageCandidates(){
-    const f=getFilters();
-    if(!f.categoria) throw new Error('Selecione uma categoria antes de iniciar a geração em lote.');
-    return filteredProducts()
-      .filter(p=>isActive(p))
-      .filter(p=>String(p.url_imagem||p.imagem||'').trim()||Array.isArray(p.imagens)&&p.imagens.length)
-      .filter(p=>!shouldSkipAiImageGeneration(p));
-  }
-  async function aiCategoryImagesBatch(){
-    if(state.aiImageBatchRunning) throw new Error('Já existe uma fila de geração de imagens rodando agora.');
-    readSettingsFromUi();
-    if(opts.force && hasAiGeneratedProductImage(p)) setStatus('Gerando nova imagem por solicitação direta, mesmo já existindo imagem IA anterior...','warn');
-    const webhook=String(state.settings.makeImageWebhookUrl||state.settings.makeImageWebhook||state.settings.makeWebhookImage||state.settings.makeWebhook||'').trim();
-    if(!/^https?:\/\//i.test(webhook)) throw new Error('Configure o webhook de imagem do Make antes de iniciar a fila.');
-    const f=getFilters();
-    const items=batchImageCandidates();
-    if(!items.length) throw new Error('Nenhum produto elegível foi encontrado para a categoria/filtragem atual.');
-    const skipped=filteredProducts().length-items.length;
-    const categoryLabel=f.categoria || 'categoria selecionada';
-    const message=`Gerar 1 imagem por produto para ${items.length} item(ns) da categoria ${categoryLabel}?\n\nO sistema enviará 1 produto ao Make por vez, aguardando 5 segundos entre cada envio.\n${skipped>0?`\nObservação: ${skipped} item(ns) filtrado(s) ficarão de fora por estarem inativos ou sem imagem de referência.`:''}`;
-    if(!confirm(message)) return;
-    state.aiImageBatchRunning=true;
-    state.aiImageBatchCancel=false;
-    state.aiImageBatchTotal=items.length;
-    state.aiImageBatchDone=0;
-    state.aiImageBatchErrors=0;
-    try{
-      setStatus(`Fila IA iniciada para ${items.length} produto(s) da categoria ${categoryLabel}.`,'warn');
-      toast(`Fila de imagens iniciada para ${items.length} produto(s). O Make receberá 1 produto a cada 5 segundos.`,'warn',7000);
-      for(let index=0; index<items.length; index++){
-        if(state.aiImageBatchCancel){
-          setStatus(`Fila IA interrompida. ${state.aiImageBatchDone}/${state.aiImageBatchTotal} produto(s) processados.`,'warn');
-          toast('Fila de imagens interrompida pelo usuário.','warn',7000);
-          break;
-        }
-        const p=items[index], key=getKey(p), name=getName(p);
-        if(shouldSkipAiImageGeneration(p)){
-          state.aiImageBatchDone = index + 1;
-          setStatus(`Fila IA ${state.aiImageBatchDone}/${items.length}: ${name} pulado porque já possui imagem gerada por IA.`,'warn');
-          continue;
-        }
-        setStatus(`Fila IA ${index+1}/${items.length}: enviando ${name}...`,'warn');
-        try{
-          await aiProductImage(key,{force:false, origem:'fila-categoria'});
-        }catch(err){
-          state.aiImageBatchErrors += 1;
-          console.error('Erro na fila IA do produto', name, err);
-          toast(`Erro ao gerar imagem de ${name}: ${err.message||err}`,'err',9000);
-        }
-        state.aiImageBatchDone = index + 1;
-        if(index < items.length - 1 && !state.aiImageBatchCancel){
-          setStatus(`Fila IA ${state.aiImageBatchDone}/${items.length}: aguardando 5 segundos para o próximo produto...`,'warn');
-          await sleep(5000);
-        }
-      }
-      if(!state.aiImageBatchCancel){
-        const ok=Math.max(0,state.aiImageBatchDone-state.aiImageBatchErrors);
-        setStatus(`Fila IA finalizada. ${ok} com sucesso e ${state.aiImageBatchErrors} com erro.`,'ok');
-        toast(`Fila de imagens concluída. ${ok} produto(s) processado(s) com sucesso e ${state.aiImageBatchErrors} com erro.`,'ok',9000);
-      }
-    }finally{
-      state.aiImageBatchRunning=false;
-      state.aiImageBatchCancel=false;
-    }
-  }
-  function stopAiCategoryImagesBatch(){
-    if(!state.aiImageBatchRunning){toast('Não existe fila de imagens em execução no momento.','warn',5000);return}
-    state.aiImageBatchCancel=true;
-    setStatus('Solicitação de parada recebida. A fila será encerrada após concluir o produto atual.','warn');
-    toast('Parando a fila após o produto atual.','warn',6000);
-  }
-  function batchTextCandidates(){
-    const f=getFilters();
-    if(!f.categoria) throw new Error('Selecione uma categoria antes de iniciar a geração em lote de textos.');
-    return filteredProducts().filter(p=>isActive(p)).filter(p=>!String(p.descricao||'').trim());
-  }
-  async function aiCategoryTextBatch(){
-    if(state.aiTextBatchRunning) throw new Error('Já existe uma fila de geração de textos rodando agora.');
-    readSettingsFromUi();
-    const webhook=String(state.settings.makeTextWebhookUrl||state.settings.makeTextWebhook||state.settings.makeWebhookText||state.settings.makeWebhook||'').trim();
-    if(!/^https?:\/\//i.test(webhook)) throw new Error('Configure o webhook de texto do Make antes de iniciar a fila.');
-    const f=getFilters();
-    const allFiltered=filteredProducts();
-    const activeWithoutDesc=batchTextCandidates();
-    if(!activeWithoutDesc.length) throw new Error('Nenhum produto elegível foi encontrado. Se a categoria já tem descrição, a fila não tenta novamente.');
-    const alreadyWithDesc=allFiltered.filter(p=>String(p.descricao||'').trim()).length;
-    const inactiveCount=allFiltered.filter(p=>!isActive(p)).length;
-    const categoryLabel=f.categoria || 'categoria selecionada';
-    const message=`Gerar descrição por IA para ${activeWithoutDesc.length} produto(s) da categoria ${categoryLabel}?\n\nO sistema enviará 1 produto por vez ao Make, aguardando 5 segundos entre cada envio.\n\nProdutos com descrição já preenchida serão pulados automaticamente.${alreadyWithDesc>0?`\n- Já com descrição: ${alreadyWithDesc}`:''}${inactiveCount>0?`\n- Inativos (pulados): ${inactiveCount}`:''}`;
-    if(!confirm(message)) return;
-    state.aiTextBatchRunning=true;
-    state.aiTextBatchCancel=false;
-    state.aiTextBatchTotal=activeWithoutDesc.length;
-    state.aiTextBatchDone=0;
-    state.aiTextBatchErrors=0;
-    try{
-      setStatus(`Fila de texto iniciada para ${activeWithoutDesc.length} produto(s) da categoria ${categoryLabel}.`,'warn');
-      toast(`Fila de textos iniciada para ${activeWithoutDesc.length} produto(s). Produtos com descrição existente serão ignorados.`,'warn',7000);
-      for(let index=0; index<activeWithoutDesc.length; index++){
-        if(state.aiTextBatchCancel){
-          setStatus(`Fila de texto interrompida. ${state.aiTextBatchDone}/${state.aiTextBatchTotal} produto(s) processados.`,'warn');
-          toast('Fila de textos interrompida pelo usuário.','warn',7000);
-          break;
-        }
-        const p=activeWithoutDesc[index], key=getKey(p), name=getName(p);
-        if(String(p.descricao||'').trim()){
-          state.aiTextBatchDone = index + 1;
-          continue;
-        }
-        setStatus(`Fila texto ${index+1}/${activeWithoutDesc.length}: gerando descrição de ${name}...`,'warn');
-        try{
-          await aiProductDescription(key);
-        }catch(err){
-          state.aiTextBatchErrors += 1;
-          console.error('Erro na fila de texto do produto', name, err);
-          toast(`Erro ao gerar descrição de ${name}: ${err.message||err}`,'err',9000);
-        }
-        state.aiTextBatchDone = index + 1;
-        if(index < activeWithoutDesc.length - 1 && !state.aiTextBatchCancel){
-          setStatus(`Fila texto ${state.aiTextBatchDone}/${activeWithoutDesc.length}: aguardando 5 segundos para o próximo produto...`,'warn');
-          await sleep(5000);
-        }
-      }
-      if(!state.aiTextBatchCancel){
-        const ok=Math.max(0,state.aiTextBatchDone-state.aiTextBatchErrors);
-        setStatus(`Fila de texto finalizada. ${ok} com sucesso e ${state.aiTextBatchErrors} com erro.`,'ok');
-        toast(`Fila de textos concluída. ${ok} produto(s) processado(s) com sucesso e ${state.aiTextBatchErrors} com erro.`,'ok',9000);
-      }
-    }finally{
-      state.aiTextBatchRunning=false;
-      state.aiTextBatchCancel=false;
-    }
-  }
-  function stopAiCategoryTextBatch(){
-    if(!state.aiTextBatchRunning){toast('Não existe fila de textos em execução no momento.','warn',5000);return}
-    state.aiTextBatchCancel=true;
-    setStatus('Solicitação de parada da fila de texto recebida. Vou encerrar após o produto atual.','warn');
-    toast('Parando a fila de texto após o produto atual.','warn',6000);
-  }
   function renderProducts(){const all=filteredProducts(); const f=getFilters(); const pages=Math.max(1,Math.ceil(all.length/f.pageSize)); state.productPage=Math.min(state.productPage,pages); const start=(state.productPage-1)*f.pageSize; const list=all.slice(start,start+f.pageSize); const grid=$("#productsGrid"); grid.classList.toggle("list-view",state.productView==="list"); grid.innerHTML = list.length ? list.map(renderProductCardV3).join("") : `<div class="empty">Nenhum produto encontrado.</div>`; $$('[data-action="view-products-grid"],[data-action="view-products-list"]').forEach(b=>b.classList.toggle("active",(state.productView==="list")===b.dataset.action.endsWith("list"))); $("#pagination").innerHTML = `<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`; }
   function renderProductCard(p){const code=getCode(p); const baskets=basketsByProduct(p); const basketBadges=baskets.map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join(""); const tags=parseTags(p.tags).slice(0,4).map(t=>`<span class="chip">#${esc(t)}</span>`).join(""); return `<article class="product-card"><div class="product-img"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'" alt="${esc(getName(p))}" loading="lazy"></div><div class="product-body"><h3 class="product-name">${esc(getName(p))}</h3><div class="meta-line"><span class="chip">Cód: ${esc(p.codigo||p.firebaseKey||code)}</span>${p.gtin?`<span class="chip">GTIN: ${esc(p.gtin)}</span>`:''}${p.marca?`<span class="chip">${esc(p.marca)}</span>`:''}${isActive(p)?'<span class="chip green">ativo</span>':'<span class="chip red">inativo</span>'}</div><div class="price-row"><div class="price">${brl(p.preco)}</div><div class="stock">Estoque: ${esc(p.estoque??0)}</div></div><div class="tiny">${esc([p.categoria,p.subcategoria,p.subsubcategoria].filter(Boolean).join(' › '))}</div><div class="meta-line">${tags}</div>${basketBadges?`<div class="meta-line">${basketBadges}</div>`:''}<div class="card-actions"><button class="btn small" data-action="edit-product" data-key="${esc(getKey(p))}">Editar produto</button><button class="btn small gold" data-action="edit-membership" data-code="${esc(code)}">Editar cestas</button><button class="btn small blue" data-action="duplicate-product" data-key="${esc(getKey(p))}">Duplicar</button><button class="btn small red" data-action="delete-product" data-key="${esc(getKey(p))}">Excluir</button></div></div></article>`}
 
@@ -1561,7 +1410,7 @@
   document.addEventListener('change', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.id==='productsFile'&&el.files[0]) importFile(el.files[0],'products'); if(el.id==='cestasFile'&&el.files[0]) importFile(el.files[0],'cestas'); if(el.id==='kitsFile'&&el.files[0]) importFile(el.files[0],'kits'); if(el.matches('[data-action="toggle-membership"]')) toggleMembership(el.dataset.id, el.checked); if(el.matches('[data-ptag]')) toggleProductTag(el.dataset.ptag, el.checked); if(el.id==='setAutoGithub') readSettingsFromUi()});
   document.addEventListener('change', e=>{const el=e.target;if(el.matches('[data-card-field]')) updateProductFromCard(el.dataset.key,el.dataset.cardField,el.value);if(el.matches('[data-action="toggle-kit-membership"]'))toggleKitMembership(el.dataset.id,el.checked)});
   document.addEventListener('keydown', e=>{const el=e.target; if(el?.id==='scannerCodeInput' && e.key==='Enter'){e.preventDefault(); openScannerProduct(el.value||state.scannerCode)}});
-  document.addEventListener('click', e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='open-low-stock'){renderLowStockModal();$("#lowStockModal").classList.add('open');toggleAdminDrawer(false)}if(a==='close-low-stock')$("#lowStockModal").classList.remove('open');if(a==='open-product-from-stock'){$("#lowStockModal").classList.remove('open');focusProductWorkbench(b.dataset.key)}if(a==='edit-kit-membership')openKitMembership(b.dataset.code);if(a==='close-kit-membership-modal'){$("#kitMembershipModal").classList.remove('open');renderAll()}if(a==='open-filter-panel')toggleAdminDrawer(true);if(a==='apply-filters'){state.productPage=1;renderProducts();toggleAdminDrawer(false)}if(a==='apply-search'){state.productPage=1;renderProducts()}if(a==='save-card-firebase')saveProductFirebase(b.dataset.key);if(a==='save-products-firebase')saveProductsFirebaseOnly();if(a==='save-everything')saveEverything();if(a==='ai-category-images')aiCategoryImagesBatch();if(a==='stop-ai-category-images')stopAiCategoryImagesBatch();if(a==='ai-category-text')aiCategoryTextBatch();if(a==='stop-ai-category-text')stopAiCategoryTextBatch()});
+  document.addEventListener('click', e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='open-low-stock'){renderLowStockModal();$("#lowStockModal").classList.add('open');toggleAdminDrawer(false)}if(a==='close-low-stock')$("#lowStockModal").classList.remove('open');if(a==='open-product-from-stock'){$("#lowStockModal").classList.remove('open');focusProductWorkbench(b.dataset.key)}if(a==='edit-kit-membership')openKitMembership(b.dataset.code);if(a==='close-kit-membership-modal'){$("#kitMembershipModal").classList.remove('open');renderAll()}if(a==='open-filter-panel')toggleAdminDrawer(true);if(a==='apply-filters'){state.productPage=1;renderProducts();toggleAdminDrawer(false)}if(a==='apply-search'){state.productPage=1;renderProducts()}if(a==='save-card-firebase')saveProductFirebase(b.dataset.key);if(a==='save-products-firebase')saveProductsFirebaseOnly();if(a==='save-everything')saveEverything()});
   function firebaseProductUrl(key){return `${String(state.settings.firebaseUrl).replace(/\/$/,"")}/${state.settings.produtosNode}/${encodeURIComponent(key)}.json`}
   async function saveProductFirebase(key){
     const p=productByKey(key);
@@ -1868,20 +1717,20 @@
   async function previewImageEditor(){if(!editorImage)return;const blob=await processedPhotoBlob(editorImage,toNum($("#imageZoom")?.value)/100,toNum($("#imageSharpness")?.value),!!$("#imageRemoveWhite")?.checked),url=URL.createObjectURL(blob),im=new Image();im.onload=()=>{const c=$("#imageEditorCanvas"),x=c.getContext("2d");x.clearRect(0,0,300,300);x.drawImage(im,0,0,300,300);URL.revokeObjectURL(url)};im.src=url}
 
   const originalUseSelectedPhotoLocal=useSelectedPhotoLocal;
-  useSelectedPhotoLocal=async function(){const p=productByKey(state.editingProductKey),file=selectedProductPhotoFile();if(!p||!file)return alert("Selecione uma imagem primeiro.");const prepared=await prepareProductImageBlob(file),src=await blobToDataUrl(prepared.blob);p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=p.url_imagem||src;p.imagem=p.url_imagem;p.imagem_referencia_ia=src;markProductDirty(getKey(p),["url_imagem","imagem","imagens","imagem_referencia_ia"]);mark("products");renderProductEditor(false);setStatus(`Imagem adicionada: 300×300 WebP (${formatBytes(prepared.bytes)})`,"ok")};
+  useSelectedPhotoLocal=async function(){const p=productByKey(state.editingProductKey),file=selectedProductPhotoFile();if(!p||!file)return alert("Selecione uma imagem primeiro.");const prepared=await prepareProductImageBlob(file),src=await blobToDataUrl(prepared.blob);p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=p.url_imagem||src;p.imagem=p.url_imagem;markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false);setStatus(`Imagem adicionada: 300×300 WebP (${formatBytes(prepared.bytes)})`,"ok")};
   const originalUploadSelectedPhotoGithub=uploadSelectedPhotoGithub;
-  uploadSelectedPhotoGithub=async function(){await originalUploadSelectedPhotoGithub();const p=productByKey(state.editingProductKey);if(p&&p.url_imagem){p.imagens=uniq([...(p.imagens||[]),p.url_imagem]);markProductDirty(getKey(p),["url_imagem","imagem","imagens","imagem_referencia_ia"]);mark("products");renderProductEditor(false)}};
+  uploadSelectedPhotoGithub=async function(){await originalUploadSelectedPhotoGithub();const p=productByKey(state.editingProductKey);if(p&&p.url_imagem){p.imagens=uniq([...(p.imagens||[]),p.url_imagem]);markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false)}};
 
   const originalSaveMeta=saveMeta;
   saveMeta=async function(){try{readSettingsFromUi();const csv=String(buildMetaCatalogCsv()||""),admin=buildAdminMetaPayload();if(!state.settings.githubMetaPath)throw new Error("Informe o caminho do produtos_meta.csv em Integrações.");if(!state.settings.githubAdminMetaPath)throw new Error("Informe o caminho do produtos_admin_meta.json em Integrações.");setStatus("Salvando arquivo Meta...","warn");await githubUpsertText(state.settings.githubMetaPath,csv,"Atualiza catálogo Meta pelo admin Dona Antônia");await githubUpsert(state.settings.githubAdminMetaPath,admin,"Atualiza cadastros administrativos");state.meta=admin;state.dirtyMeta=false;saveLocal();setStatus("Arquivo Meta salvo com sucesso","ok");alert(`Arquivos salvos:\n• ${state.settings.githubMetaPath}\n• ${state.settings.githubAdminMetaPath}`)}catch(e){console.error(e);saveLocal();setStatus("Erro ao salvar arquivo Meta","err");alert("Não foi possível salvar o arquivo Meta: "+e.message)}};
 
   document.addEventListener("change",e=>{const el=e.target;if(el.matches('[data-pfield="validade"]')){const p=productByKey(state.editingProductKey);if(p){const pct=applyExpiryDiscount(p);markProductDirty(getKey(p),["preco_oferta","validade_oferta","desconto_validade"]);mark("products");renderProductEditor(false);setStatus(pct?`Desconto de validade aplicado: ${pct}%`:"Validade fora da faixa de desconto","ok")}}if(el.matches("#imageZoom,#imageSharpness,#imageRemoveWhite"))previewImageEditor();if(el.matches('[data-action="kit-qtd"],[data-kfield]')){const k=currentKit();if(k){recalcKit(k);renderKitEditor()}}});
   document.addEventListener("click",async e=>{const b=e.target.closest("[data-action]");if(!b)return;const a=b.dataset.action,p=productByKey(state.editingProductKey);
-    if(a==="make-photo-primary"&&p){const src=(p.imagens||[])[Number(b.dataset.index)];if(src){p.url_imagem=p.imagem=src;if(!isAiGeneratedProductImageSrc(src))p.imagem_referencia_ia=src;markProductDirty(getKey(p),["url_imagem","imagem","imagens","imagem_referencia_ia"]);mark("products");renderProductEditor(false)}}
-    if(a==="remove-gallery-photo"&&p){const i=Number(b.dataset.index),removed=(p.imagens||[])[i];p.imagens=(p.imagens||[]).filter((_,x)=>x!==i);if((p.url_imagem||p.imagem)===removed)p.url_imagem=p.imagem=p.imagens[0]||"";markProductDirty(getKey(p),["url_imagem","imagem","imagens","imagem_referencia_ia"]);mark("products");renderProductEditor(false)}
+    if(a==="make-photo-primary"&&p){const src=(p.imagens||[])[Number(b.dataset.index)];if(src){p.url_imagem=p.imagem=src;markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false)}}
+    if(a==="remove-gallery-photo"&&p){const i=Number(b.dataset.index),removed=(p.imagens||[])[i];p.imagens=(p.imagens||[]).filter((_,x)=>x!==i);if((p.url_imagem||p.imagem)===removed)p.url_imagem=p.imagem=p.imagens[0]||"";markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false)}
     if(a==="open-image-editor"){try{const file=selectedProductPhotoFile(),src=p&&(p.url_imagem||p.imagem||(p.imagens||[])[0]);if(!file&&!src)return alert("Selecione ou cole uma imagem primeiro.");ensureImageEditor();editorImage=file?await loadImageFromFile(file):await loadImageFromSource(src);$("#imageEditorModal").classList.add("open");previewImageEditor()}catch(err){alert(err.message)}}
     if(a==="close-image-editor")$("#imageEditorModal")?.classList.remove("open");
-    if(a==="apply-image-editor"&&p&&editorImage){const blob=await processedPhotoBlob(editorImage,toNum($("#imageZoom").value)/100,toNum($("#imageSharpness").value),$("#imageRemoveWhite").checked),src=await blobToDataUrl(blob);p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=p.url_imagem||src;p.imagem=p.url_imagem;p.imagem_referencia_ia=src;markProductDirty(getKey(p),["url_imagem","imagem","imagens","imagem_referencia_ia"]);mark("products");$("#imageEditorModal").classList.remove("open");renderProductEditor(false);renderProducts();setStatus(`Imagem editada: WebP 300×300 (${formatBytes(blob.size)})`,"ok")}
+    if(a==="apply-image-editor"&&p&&editorImage){const blob=await processedPhotoBlob(editorImage,toNum($("#imageZoom").value)/100,toNum($("#imageSharpness").value),$("#imageRemoveWhite").checked),src=await blobToDataUrl(blob);p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=p.url_imagem||src;p.imagem=p.url_imagem;markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");$("#imageEditorModal").classList.remove("open");renderProductEditor(false);renderProducts();setStatus(`Imagem editada: WebP 300×300 (${formatBytes(blob.size)})`,"ok")}
   });
 
   document.addEventListener("change",e=>{
@@ -1908,7 +1757,7 @@
       p.imagens=uniq([...(p.imagens||[]),src]);
       p.url_imagem=p.url_imagem||src;
       p.imagem=p.url_imagem;
-      markProductDirty(getKey(p),["url_imagem","imagem","imagens","imagem_referencia_ia"]);
+      markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);
       mark("products");
       renderProductEditor(false);
       setStatus(`Imagem colada e adicionada: 300×300 WebP (${formatBytes(prepared.bytes)})`,"ok");
@@ -2055,7 +1904,7 @@
   function renderProductWorkbench(p){
     const key=getKey(p),code=getCode(p),images=uniq([p.url_imagem||p.imagem||"",...(Array.isArray(p.imagens)?p.imagens:[])]).filter(Boolean);
     const baskets=basketsByProduct(p),kits=kitsByProduct(p),dirty=state.dirtyProductKeys.has(key);
-    const gallery=images.slice(0,9).map((src,index)=>`<div class="workbench-thumb ${src===(p.url_imagem||p.imagem)?"primary":""}" title="Clique para tornar principal"><img src="${esc(publicAssetUrl(src)||src)}" data-action="workbench-make-primary" data-key="${esc(key)}" data-src="${esc(src)}" onerror="this.src='${PLACEHOLDER}'"><button type="button" data-action="workbench-remove-gallery" data-key="${esc(key)}" data-src="${esc(src)}" title="Remover imagem">×</button></div>`).join("");
+    const gallery=images.slice(0,9).map((src,index)=>`<div class="workbench-thumb ${src===(p.url_imagem||p.imagem)?"primary":""}" title="Clique para tornar principal"><img src="${esc(src)}" data-action="workbench-make-primary" data-key="${esc(key)}" data-src="${esc(src)}" onerror="this.src='${PLACEHOLDER}'"><button type="button" data-action="workbench-remove-gallery" data-key="${esc(key)}" data-src="${esc(src)}" title="Remover imagem">×</button></div>`).join("");
     const memberships=[...baskets.map(c=>`<span class="chip gold">Cesta: ${esc(c.nome)}</span>`),...kits.map(k=>`<span class="chip blue">Kit: ${esc(k.nome)}</span>`)].join("");
     const ncmSearch=`https://www.google.com/search?q=${encodeURIComponent(`NCM ${[getName(p),p.marca,p.gtin||p.ean].filter(Boolean).join(" ")}`)}`,youtube=safeYoutubeUrl(p.video_youtube||p.video_url||"");
     const imageSearch=`https://www.google.com/search?tbm=isch&q=${encodeURIComponent([getName(p),p.marca,p.codigo,p.gtin].filter(Boolean).join(" "))}`;
@@ -2154,8 +2003,8 @@
   function workbenchPhotoInput(key){return $$("[data-card-photo-key]").find(el=>el.dataset.cardPhotoKey===String(key))||null}
   async function addWorkbenchPhoto(p,file){
     const prepared=await prepareProductImageBlob(file),src=await blobToDataUrl(prepared.blob);
-    p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=src;p.imagem=src;p.imagem_referencia_ia=src;
-    markProductDirty(getKey(p),["url_imagem","imagem","imagens","imagem_referencia_ia"]);mark("products");renderProducts();
+    p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=src;p.imagem=src;
+    markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProducts();
     return prepared;
   }
   function focusProductWorkbench(key){
@@ -2362,44 +2211,6 @@
       imagem_url:publicAssetUrl(img)
     };
   }
-  function safeTextImageUrlForAi(p){
-    const src=String(p?.url_imagem||p?.imagem||(Array.isArray(p?.imagens)?p.imagens[0]:"")||"").trim();
-    if(!src || /^data:image\//i.test(src))return "";
-    return publicAssetUrl(src);
-  }
-  function compactProductForTextAi(p){
-    if(!p)return null;
-    const img=safeTextImageUrlForAi(p);
-    return {
-      key:getKey(p),
-      firebaseKey:getKey(p),
-      id:p.id||getKey(p),
-      nome:getName(p),
-      codigo:p.codigo||"",
-      gtin:p.gtin||p.ean||"",
-      ean:p.ean||p.gtin||"",
-      marca:p.marca||"",
-      categoria:p.categoria||"",
-      subcategoria:p.subcategoria||"",
-      subsubcategoria:p.subsubcategoria||"",
-      embalagem:p.embalagem||"",
-      preco:toNum(p.preco),
-      preco_oferta:toNum(p.preco_oferta),
-      preco_custo:toNum(p.preco_custo),
-      estoque:toNum(p.estoque),
-      situacao:p.situacao||"",
-      validade:p.validade||"",
-      ncm:p.ncm||"",
-      fornecedor:p.fornecedor||"",
-      gondola:p.gondola||"",
-      prateleira:p.prateleira||"",
-      descricao:p.descricao||"",
-      descricao_curta:p.descricao_curta||"",
-      tags:parseTags(p.tags),
-      imagem:img,
-      imagem_url:img
-    };
-  }
   async function buildKitReferenceCollage(kitData){
     try{
       const refs=(kitData?.produtos||[]).map(p=>publicAssetUrl(p.imagem_url||p.imagem||""))
@@ -2470,12 +2281,7 @@
     body.set("payload",JSON.stringify(payload));
     const response=await fetch(url,{method:"POST",headers:{"Accept":"application/json"},body});
     const text=await response.text();
-    if(!response.ok){
-      const hint=kind==="text"
-        ?" Verifique no cenário de TEXTO se ele está lendo o campo payload e se aceita acao/produto."
-        :" Verifique no cenário de IMAGEM se ele está lendo produto.imagem ou produto.imagem_url.";
-      throw new Error(`Make retornou ${response.status}: ${text.slice(0,240)}${hint}`);
-    }
+    if(!response.ok)throw new Error(`Make retornou ${response.status}: ${text.slice(0,240)}`);
     try{return JSON.parse(text)}catch{return {ok:true,texto:text}}
   }
   function unwrapAiResult(result){
@@ -2605,7 +2411,7 @@
     const qEl=$("#productChatQuestion");if(qEl)qEl.value="";
     addProductChatMessage("ai","Consultando IA no Make...");
     setStatus("Consultando IA sobre o produto...","warn");
-    const result=unwrapAiResult(await callMakeAi("text",{acao:"chat_produto",pergunta:q,produto:compactProductForTextAi(p)}));
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"chat_produto",pergunta:q,produto:compactProductForAi(p)}));
     assertAiProductIdentity(p,result);
     const resposta=result.resposta||result.answer||result.texto||result.message||result.content||result.result||result.body||result.output_text||"";
     if(!resposta)throw new Error("O Make não retornou uma resposta para o chat.");
@@ -2616,7 +2422,7 @@
   async function aiProductCadastro(key){
     const p=productByKey(key);if(!p)return;
     setStatus("Gerando nome, embalagem, descricao e tags no Make...","warn");
-    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_cadastro_produto",produto:compactProductForTextAi(p)}));
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_cadastro_produto",produto:compactProductForAi(p)}));
     assertAiProductIdentity(p,result);
     const fields=[];
     const name=result.nome_sugerido||result.nome||result.name||"";
@@ -2635,27 +2441,26 @@
   }
   async function aiProductDescription(key){
     const p=productByKey(key);if(!p)return;
-    setStatus("Gerando descrição do produto no Make...","warn");
-    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_descricao_produto",produto:compactProductForTextAi(p)}));
+    setStatus("Gerando descricao do produto no Make...","warn");
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_descricao_produto",produto:compactProductForAi(p)}));
     assertAiProductIdentity(p,result);
     const desc=result.descricao||result.description||result.texto||"";
-    if(!desc)throw new Error("O Make respondeu, mas não devolveu descricao.");
+    if(!desc)throw new Error("O Make nao retornou uma descricao.");
     p.descricao=String(desc).trim();
     if(result.descricao_curta)p.descricao_curta=String(result.descricao_curta).trim();
     if(Array.isArray(result.tags_sugeridas))p.tags=uniq([...parseTags(p.tags),...result.tags_sugeridas]).join(", ");
     markProductAiChange(p,["descricao","descricao_curta","tags"]);
-    setStatus("Descrição gerada pela IA e aplicada ao produto","ok");
+    setStatus("Descricao gerada pela IA e aplicada ao produto","ok");
   }
   async function aiProductName(key){
     const p=productByKey(key);if(!p)return;
     setStatus("Melhorando nome do produto no Make...","warn");
-    const result=unwrapAiResult(await callMakeAi("text",{acao:"melhorar_nome_produto",produto:compactProductForTextAi(p)}));
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"melhorar_nome_produto",produto:compactProductForAi(p)}));
     assertAiProductIdentity(p,result);
     const name=result.nome_sugerido||result.nome||result.name||result.texto||"";
-    if(!name)throw new Error("O Make respondeu, mas não devolveu nome_sugerido.");
+    if(!name)throw new Error("O Make nao retornou um nome sugerido.");
     p.nome=String(name).trim();
-    if(result.embalagem_sugerida||result.embalagem)p.embalagem=String(result.embalagem_sugerida||result.embalagem).trim();
-    markProductAiChange(p,["nome","embalagem"]);
+    markProductAiChange(p,["nome"]);
     setStatus("Nome melhorado pela IA e aplicado ao produto","ok");
   }
 
@@ -2700,32 +2505,6 @@
     const s=String(src||"").toLowerCase();
     return /info-lado-a-lado|informacoes-rotulo|foto-principal-fundo-branco|mockup-uso-real|produtos_2|imagem[-_]?ia|ia[-_]?produto/.test(s);
   }
-  function findFirstNonAiProductImageSrc(p){
-    return currentProductImageSources(p).find(src=>!isAiGeneratedProductImageSrc(src))||"";
-  }
-  function getStoredAiReferenceImageSrc(p){
-    return String(p?.imagem_referencia_ia||p?.ai_reference_image||"").trim();
-  }
-  function getAiReferenceImageSrc(p){
-    return getStoredAiReferenceImageSrc(p)||findFirstNonAiProductImageSrc(p)||String(p?.url_imagem||p?.imagem||(Array.isArray(p?.imagens)?p.imagens[0]:"")||"").trim();
-  }
-  function rememberAiReferenceImage(p,src=""){
-    const candidate=String(src||"").trim()||findFirstNonAiProductImageSrc(p);
-    if(candidate && !isAiGeneratedProductImageSrc(candidate)){
-      p.imagem_referencia_ia=candidate;
-      return candidate;
-    }
-    return getStoredAiReferenceImageSrc(p);
-  }
-  function hasAiGeneratedProductImage(p){
-    return currentProductImageSources(p).some(src=>isAiGeneratedProductImageSrc(src));
-  }
-  function shouldSkipAiImageGeneration(p, options={}){
-    return !options.force && hasAiGeneratedProductImage(p);
-  }
-  function hasStableOriginalReferenceForAi(p){
-    return !!(getStoredAiReferenceImageSrc(p)||findFirstNonAiProductImageSrc(p));
-  }
   function loadImageElementForAi(src){
     return new Promise((resolve,reject)=>{
       const img=new Image();
@@ -2745,7 +2524,7 @@
     return await new Promise((resolve,reject)=>cv.toBlob(b=>b?resolve(b):reject(new Error("Nao foi possivel converter a imagem de referencia para PNG.")),"image/png",0.92));
   }
   async function prepareProductReferenceImageForMake(p,batchId){
-    const originalSrc=getAiReferenceImageSrc(p)||p.url_imagem||p.imagem||(Array.isArray(p.imagens)?p.imagens[0]:"")||"";
+    const originalSrc=p.url_imagem||p.imagem||(Array.isArray(p.imagens)?p.imagens[0]:"")||"";
     let referenceUrl=publicAssetUrl(originalSrc);
     const needsPreparedReference=/^data:image\//i.test(referenceUrl)||isAiGeneratedProductImageSrc(originalSrc)||isAiGeneratedProductImageSrc(referenceUrl);
     if(!needsPreparedReference)return referenceUrl;
@@ -2786,25 +2565,16 @@
     }
     return finalSrc;
   }
-  async function aiProductImage(key,options={}){
+  async function aiProductImage(key){
     const p=productByKey(key);if(!p)return;
-    const opts=options&&typeof options==='object'?options:{};
-    if(!p.url_imagem&&!p.imagem&&!(p.imagens||[]).length&&!getStoredAiReferenceImageSrc(p))throw new Error('Este produto ainda não tem imagem de referência para melhorar.');
+    if(!p.url_imagem&&!p.imagem&&!(p.imagens||[]).length)throw new Error('Este produto ainda n?o tem imagem de refer?ncia para melhorar.');
     readSettingsFromUi();
-
-    const alreadyAi=hasAiGeneratedProductImage(p);
-    if(opts.force && alreadyAi && !hasStableOriginalReferenceForAi(p)){
-      throw new Error('Este produto só tem imagem gerada por IA e não encontrei a foto original de referência. Envie uma foto base no card e clique na IA novamente.');
-    }
-    if(opts.force && alreadyAi)setStatus('Gerando nova imagem por solicitação direta usando a referência original salva...','warn');
-
-    const rememberedReference=rememberAiReferenceImage(p);
     const count=1,plan=buildAiImageStrategy(count),batchId=new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14),seoPlan=productSeoImagePlan(p,batchId);
     const referenceImageUrl=await prepareProductReferenceImageForMake(p,batchId);
     const payload={
       acao:'melhorar_imagem_produto',
       quantidade_imagens:1,
-      produto:{...compactProductForAi(p),imagem:referenceImageUrl,imagem_url:referenceImageUrl},
+      produto:{...compactProductForAi(p),imagem_url:referenceImageUrl},
       estrategia:plan.label,
       seo_imagens:seoPlan,
       substituir_imagens_existentes:true,
@@ -2827,12 +2597,11 @@
       const src=await saveGeneratedProductImageToGithub(p,generated[i].src,i+1,batchId,generated[i].fileName||expectedName);
       saved.push(src);
     }
-    oldSources.forEach(src=>{if(!rememberedReference || src!==rememberedReference)markGithubProductImageForDelete(src)});
+    oldSources.forEach(src=>markGithubProductImageForDelete(src));
     p.url_imagem=p.imagem=saved[0]||'';
     p.imagens=uniq(saved).slice(0,1);
-    if(rememberedReference)p.imagem_referencia_ia=rememberedReference;
     p.last_update=Date.now();p.updated_at=nowIso();
-    markProductDirty(getKey(p),['url_imagem','imagem','imagens','imagem_referencia_ia']);
+    markProductDirty(getKey(p),['url_imagem','imagem','imagens']);
     mark('products');
     saveLocal();
     renderProducts();
@@ -2907,10 +2676,10 @@
     if(action==="save-notes")await saveNotes(true);
     if(action==="delete-note"){if(!confirm("Excluir esta anotação?"))return;state.anotacoes=state.anotacoes.filter(n=>n.id!==b.dataset.id);mark("notes");renderNotes();updateNotesIndicator();await saveNotes(false)}
     if(action==="workbench-use-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{setStatus("Processando imagem...","warn");const prepared=await addWorkbenchPhoto(p,file);setStatus(`Imagem aplicada (${formatBytes(prepared.bytes)})`,"ok")}catch(err){alert("Erro na imagem: "+err.message)}}
-    if(action==="workbench-edit-photo"&&p){try{const file=workbenchPhotoInput(key)?.files?.[0],src=p.url_imagem||p.imagem||(p.imagens||[])[0];if(!file&&!src)return alert("Selecione, cole ou cadastre uma imagem primeiro.");state.editingProductKey=key;pendingProductPhotoFile=file||null;pendingProductPhotoKey=key;ensureImageEditor();editorImage=file?await loadImageFromFile(file):await loadImageFromSource(publicAssetUrl(src)||src);$("#imageEditorModal").classList.add("open");previewImageEditor()}catch(err){alert(err.message)}}
-    if(action==="workbench-upload-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{readSettingsFromUi();setStatus("Enviando imagem SEO ao GitHub...","warn");const prepared=await prepareProductImageBlob(file),oldSources=currentProductImageSources(p),fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"),path=`${String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,"")}/${fileName}`;await githubUpsertRaw(path,await prepared.blob.arrayBuffer(),`Atualiza foto SEO do produto ${p.codigo||getName(p)}`);const src=publicProductImageSrc(fileName);oldSources.forEach(x=>markGithubProductImageForDelete(x));p.url_imagem=p.imagem=src;p.imagem_referencia_ia=src;p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]);markProductDirty(key,["url_imagem","imagem","imagens","imagem_referencia_ia"]);mark("products");renderProducts();setStatus("Imagem SEO enviada ao GitHub","ok")}catch(err){alert("Erro ao enviar imagem: "+err.message)}}
+    if(action==="workbench-edit-photo"&&p){try{const file=workbenchPhotoInput(key)?.files?.[0],src=p.url_imagem||p.imagem||(p.imagens||[])[0];if(!file&&!src)return alert("Selecione, cole ou cadastre uma imagem primeiro.");state.editingProductKey=key;pendingProductPhotoFile=file||null;pendingProductPhotoKey=key;ensureImageEditor();editorImage=file?await loadImageFromFile(file):await loadImageFromSource(src);$("#imageEditorModal").classList.add("open");previewImageEditor()}catch(err){alert(err.message)}}
+    if(action==="workbench-upload-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{readSettingsFromUi();setStatus("Enviando imagem SEO ao GitHub...","warn");const prepared=await prepareProductImageBlob(file),oldSources=currentProductImageSources(p),fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"),path=`${String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,"")}/${fileName}`;await githubUpsertRaw(path,await prepared.blob.arrayBuffer(),`Atualiza foto SEO do produto ${p.codigo||getName(p)}`);const src=publicProductImageSrc(fileName);oldSources.forEach(x=>markGithubProductImageForDelete(x));p.url_imagem=p.imagem=src;p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]);markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts();setStatus("Imagem SEO enviada ao GitHub","ok")}catch(err){alert("Erro ao enviar imagem: "+err.message)}}
     if(action==="workbench-remove-photo"&&p){if(!confirm("Remover a imagem principal deste produto?"))return;const old=p.url_imagem||p.imagem||"";p.url_imagem=p.imagem="";if(old)p.imagens=(p.imagens||[]).filter(x=>x!==old);markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts()}
-    if(action==="workbench-make-primary"&&p){p.url_imagem=p.imagem=b.dataset.src;if(!isAiGeneratedProductImageSrc(b.dataset.src))p.imagem_referencia_ia=b.dataset.src;markProductDirty(key,["url_imagem","imagem","imagem_referencia_ia"]);mark("products");renderProducts()}
+    if(action==="workbench-make-primary"&&p){p.url_imagem=p.imagem=b.dataset.src;markProductDirty(key,["url_imagem","imagem"]);mark("products");renderProducts()}
     if(action==="workbench-remove-gallery"&&p){const src=b.dataset.src;p.imagens=(p.imagens||[]).filter(x=>x!==src);if((p.url_imagem||p.imagem)===src)p.url_imagem=p.imagem=p.imagens[0]||"";markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts()}
     if(action==="ai-product-cadastro"&&p){await runUiAction(b,"Gerando cadastro...",()=>aiProductCadastro(key));return}
     if(action==="open-product-chat"&&p){openProductChat(key)}
@@ -2919,7 +2688,7 @@
     if(action==="copy-product-chat"){const text=[...document.querySelectorAll("#productChatMessages .chat-bubble.ai span")].at(-1)?.textContent||"";if(text&&navigator.clipboard)navigator.clipboard.writeText(text).then(()=>toast("Resposta copiada","ok"))}
     if(action==="ai-product-description"&&p){await runUiAction(b,"Gerando descrição...",()=>aiProductDescription(key));return}
     if(action==="ai-product-name"&&p){await runUiAction(b,"Melhorando nome...",()=>aiProductName(key));return}
-    if(action==="ai-product-image"&&p){await runUiAction(b,"Melhorando foto...",()=>aiProductImage(key,{force:true,origem:'botao-card'}));return}
+    if(action==="ai-product-image"&&p){await runUiAction(b,"Melhorando foto...",()=>aiProductImage(key));return}
     if(action==="ai-kit-description"){await runUiAction(b,"Gerando descrição...",()=>aiKitDescription());return}
     if(action==="ai-kit-cover"){await runUiAction(b,"Gerando capa...",()=>aiKitCover());return}
     if(action==="open-expiry-alert")renderExpiryAlert();
@@ -2931,20 +2700,7 @@
     if(el.matches('[data-action="toggle-note"]')){const n=state.anotacoes.find(x=>x.id===el.dataset.id);if(!n)return;n.feito=el.checked;n.concluida_em=el.checked?nowIso():null;mark("notes");renderNotes();updateNotesIndicator();await saveNotes(false)}
     if(el.matches("[data-card-photo-key]")){state.cardImageTargetKey=el.dataset.cardPhotoKey;setStatus("Imagem selecionada no card. Você pode usar, editar ou enviar.","ok")}
     if(el.matches('[data-card-field="validade"]')){const p=productByKey(el.dataset.key);if(p){const result=applyExpiryRules(p);markProductDirty(getKey(p),["validade",...result.fields]);mark("products");renderProducts();updateExpiryAlert()}}
-    if(el.matches('[data-card-field="url_imagem"]')){
-      const p=productByKey(el.dataset.key);
-      if(p){
-        const value=cleanCatalogText(el.value||"").trim();
-        const previous=p.url_imagem||p.imagem||"";
-        p.url_imagem=value;
-        p.imagem=value;
-        if(value && !isAiGeneratedProductImageSrc(value))p.imagem_referencia_ia=value;
-        if(previous && previous!==value)markGithubProductImageForDelete(previous);
-        markProductDirty(getKey(p),["url_imagem","imagem","imagem_referencia_ia"]);
-        mark("products");
-        renderProducts();
-      }
-    }
+    if(el.matches('[data-card-field="url_imagem"]')){const p=productByKey(el.dataset.key);if(p){p.imagem=p.url_imagem;markProductDirty(getKey(p),["imagem"]);mark("products");renderProducts()}}
   });
   document.addEventListener("paste",async e=>{
     if($("#productModal")?.classList.contains("open"))return;
@@ -2985,14 +2741,10 @@
       "save-kits":()=>saveKits(),
       "save-github-now":()=>saveGithubNow(),
       "test-github":()=>testGithub(),
-      "ai-category-images":()=>aiCategoryImagesBatch(),
-      "stop-ai-category-images":()=>stopAiCategoryImagesBatch(),
-      "ai-category-text":()=>aiCategoryTextBatch(),
-      "stop-ai-category-text":()=>stopAiCategoryTextBatch(),
       "ai-product-cadastro":()=>p?aiProductCadastro(key):null,
       "ai-product-description":()=>p?aiProductDescription(key):null,
       "ai-product-name":()=>p?aiProductName(key):null,
-      "ai-product-image":()=>p?aiProductImage(key,{force:true,origem:'botao-card'}):null,
+      "ai-product-image":()=>p?aiProductImage(key):null,
       "send-product-chat":()=>sendProductChatQuestion(),
       "ai-kit-description":()=>aiKitDescription(),
       "ai-kit-cover":()=>aiKitCover()
@@ -3009,10 +2761,6 @@
       "save-kits":"Salvando kits...",
       "save-github-now":"Enviando GitHub...",
       "test-github":"Testando...",
-      "ai-category-images":"Enfileirando geração IA...",
-      "stop-ai-category-images":"Parando fila IA...",
-      "ai-category-text":"Enfileirando geração de textos...",
-      "stop-ai-category-text":"Parando fila de texto...",
       "ai-product-cadastro":"Gerando cadastro...",
       "ai-product-description":"Gerando descrição...",
       "ai-product-name":"Melhorando nome...",
