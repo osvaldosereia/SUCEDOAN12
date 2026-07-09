@@ -2181,6 +2181,45 @@
     if(base)return `${base}/${clean}`;
     return githubRawFileUrl(`site/${clean}`);
   }
+
+  function makeDownloadImageUrl(src){
+    let value=String(src||"").trim();
+    if(!value)return "";
+    if(/^data:/i.test(value))return "";
+    value=value.replace(/\\/g,"/");
+    value=value.replace(/^\.\.\/site\//i,"").replace(/^\.\//,"").replace(/^site\//i,"");
+    if(/^https?:\/\//i.test(value)){
+      try{
+        const u=new URL(value);
+        const host=u.hostname.toLowerCase();
+        let path=decodeURIComponent(u.pathname||"").replace(/\/+/g,"/");
+        if(host==="raw.githubusercontent.com")return u.toString();
+        if(host==="github.com" && path.includes("/blob/")){
+          const parts=path.split("/").filter(Boolean);
+          const blobIndex=parts.indexOf("blob");
+          if(parts.length>blobIndex+2){
+            const owner=parts[0],repo=parts[1],branch=parts[blobIndex+1],filePath=parts.slice(blobIndex+2).join("/");
+            return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
+          }
+        }
+        // URLs publicas do site normalmente apontam para /img/...; no repositorio isso fica em /site/img/...
+        const imgIndex=path.toLowerCase().indexOf("/img/");
+        if(imgIndex>=0){
+          const rel=path.slice(imgIndex+1).replace(/^site\//i,"");
+          return githubRawFileUrl(`site/${rel}`);
+        }
+        const siteIndex=path.toLowerCase().indexOf("/site/");
+        if(siteIndex>=0){
+          const rel=path.slice(siteIndex+1);
+          return githubRawFileUrl(rel);
+        }
+        return u.toString();
+      }catch{return value}
+    }
+    const clean=value.replace(/^\/+/,"").replace(/^site\//i,"");
+    return githubRawFileUrl(`site/${clean}`);
+  }
+
   function compactProductForAi(p){
     if(!p)return null;
     const img=p.url_imagem||p.imagem||(Array.isArray(p.imagens)?p.imagens[0]:"")||"";
@@ -2251,7 +2290,7 @@
         embalagem:p?.embalagem||"",
         preco_unitario:p?toNum(p.preco):0,
         imagem:img,
-        imagem_url:publicAssetUrl(img)
+        imagem_url:makeDownloadImageUrl(img)
       };
     });
     const referencias_imagens=produtos.map(p=>p.imagem_url).filter(Boolean);
@@ -2635,7 +2674,7 @@
     // IMPORTANTE:
     // Nao montar colagem no navegador. Algumas imagens do GitHub/site podem bloquear canvas por CORS
     // e isso gera o erro: "Nao foi possivel montar a imagem de referencia do kit".
-    // O Make vai baixar as imagens dos produtos pelo HTTP DownloadFile, agregar as referencias
+    // O admin envia URLs RAW do GitHub para o Make. O Make baixa as imagens dos produtos pelo HTTP DownloadFile, agrega as referencias
     // e enviar todas como entrada visual para o OpenAI, mas o OpenAI gera somente 1 capa final.
     const payload={
       acao:"gerar_capa_kit",
