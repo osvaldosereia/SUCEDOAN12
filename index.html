@@ -3515,6 +3515,104 @@
       }
     }
 
+  
+
+    /* =========================
+       AJUSTES FINAIS v7
+       Imagens temáticas: sem multiply, sem fundo cinza e maiores
+    ========================= */
+
+    .product-imgbox,
+    .basket-imgbox,
+    .detail-imgbox,
+    .detail-thumb,
+    .hero-photo,
+    .category-thumb-single,
+    .quick-thumb,
+    .routine-thumb,
+    .cart-img,
+    .basket-editor-row img,
+    .kit-deal-img,
+    .category-mini-img,
+    .beauty-products img {
+      background: transparent !important;
+      border-radius: 18px !important;
+      overflow: hidden !important;
+      border: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .product-imgbox img,
+    .basket-imgbox img,
+    .detail-imgbox img,
+    .detail-thumb img,
+    .hero-photo img,
+    .category-thumb-single img,
+    .quick-thumb,
+    .routine-thumb,
+    .cart-img,
+    .basket-editor-row img,
+    .kit-deal-img,
+    .category-mini-img,
+    .beauty-products img {
+      mix-blend-mode: normal !important;
+      filter: none !important;
+      padding: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      border-radius: inherit !important;
+      background: transparent !important;
+    }
+
+    .product-imgbox,
+    .basket-imgbox {
+      aspect-ratio: 1 / 1 !important;
+      margin-bottom: 10px !important;
+    }
+
+    .detail-imgbox {
+      border-radius: 24px !important;
+    }
+
+    .detail-gallery {
+      gap: 10px !important;
+    }
+
+    .detail-thumb {
+      border-radius: 14px !important;
+      background: transparent !important;
+    }
+
+    .section-grid .product-imgbox,
+    .section-grid .basket-imgbox,
+    .related-grid .product-imgbox {
+      border-radius: 18px !important;
+    }
+
+    @media (min-width: 768px) {
+      .section-grid .product-imgbox,
+      .section-grid .basket-imgbox,
+      .related-grid .product-imgbox {
+        border-radius: 18px !important;
+      }
+
+      .detail-imgbox {
+        border-radius: 24px !important;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .product-imgbox,
+      .basket-imgbox {
+        border-radius: 16px !important;
+      }
+
+      .detail-imgbox {
+        border-radius: 22px !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -6925,4 +7023,3 @@
   </script>
 </body>
 </html>
- 
