@@ -2784,8 +2784,16 @@
   async function aiProductImage(key,options={}){
     const p=productByKey(key);if(!p)return;
     const opts=options&&typeof options==='object'?options:{};
-    if(!p.url_imagem&&!p.imagem&&!(p.imagens||[]).length)throw new Error('Este produto ainda n?o tem imagem de refer?ncia para melhorar.');
+    if(!p.url_imagem&&!p.imagem&&!(p.imagens||[]).length&&!getStoredAiReferenceImageSrc(p))throw new Error('Este produto ainda não tem imagem de referência para melhorar.');
     readSettingsFromUi();
+
+    const alreadyAi=hasAiGeneratedProductImage(p);
+    if(opts.force && alreadyAi && !hasStableOriginalReferenceForAi(p)){
+      throw new Error('Este produto só tem imagem gerada por IA e não encontrei a foto original de referência. Envie uma foto base no card e clique na IA novamente.');
+    }
+    if(opts.force && alreadyAi)setStatus('Gerando nova imagem por solicitação direta usando a referência original salva...','warn');
+
+    const rememberedReference=rememberAiReferenceImage(p);
     const count=1,plan=buildAiImageStrategy(count),batchId=new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14),seoPlan=productSeoImagePlan(p,batchId);
     const referenceImageUrl=await prepareProductReferenceImageForMake(p,batchId);
     const payload={
