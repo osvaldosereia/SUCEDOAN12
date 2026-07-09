@@ -2458,15 +2458,33 @@
       referencias_imagens
     };
   }
+  function makePayloadDebugSummary(payload){
+    const product=payload?.produto||payload?.kit||{};
+    const imageUrl=String(payload?.imagem_url||payload?.imagem_referencia_url||product?.imagem_url||"").trim();
+    return [
+      payload?.acao?`acao=${payload.acao}`:"",
+      product?.codigo?`codigo=${product.codigo}`:"",
+      product?.nome?`produto=${product.nome}`:"",
+      imageUrl?`imagem_url=${imageUrl.slice(0,180)}`:""
+    ].filter(Boolean).join(" | ");
+  }
   async function callMakeAi(kind,payload){
     readSettingsFromUi();
     const url=kind==="image"?state.settings.makeImageWebhookUrl:state.settings.makeTextWebhookUrl;
     if(!url)throw new Error(`Configure o webhook de IA ${kind==="image"?"imagens":"textos"} na aba Integracoes.`);
     const body=new URLSearchParams();
     body.set("payload",JSON.stringify(payload));
+    body.set("kind",kind);
+    if(payload?.acao)body.set("acao",String(payload.acao));
+    if(payload?.produto_codigo||payload?.produto?.codigo)body.set("produto_codigo",String(payload.produto_codigo||payload.produto.codigo||""));
+    if(payload?.produto_nome||payload?.produto?.nome)body.set("produto_nome",String(payload.produto_nome||payload.produto.nome||""));
+    if(payload?.imagem_url||payload?.imagem_referencia_url||payload?.produto?.imagem_url)body.set("imagem_url",String(payload.imagem_url||payload.imagem_referencia_url||payload.produto.imagem_url||""));
     const response=await fetch(url,{method:"POST",headers:{"Accept":"application/json"},body});
     const text=await response.text();
-    if(!response.ok)throw new Error(`Make retornou ${response.status}: ${text.slice(0,240)}`);
+    if(!response.ok){
+      const detail=makePayloadDebugSummary(payload);
+      throw new Error(`Make retornou ${response.status}: ${text.slice(0,240)}${detail?` | ${detail}`:""}`);
+    }
     try{return JSON.parse(text)}catch{return {ok:true,texto:text}}
   }
   function unwrapAiResult(result){
@@ -2801,6 +2819,15 @@
       acao:'melhorar_imagem_produto',
       quantidade_imagens:1,
       produto:{...compactProductForAi(p),imagem_url:referenceImageUrl},
+      produto_codigo:p.codigo||getKey(p)||"",
+      produto_nome:getName(p),
+      imagem_url:referenceImageUrl,
+      imagem_referencia_url:referenceImageUrl,
+      origem:opts.origem||'individual',
+      forcar_substituicao:!!opts.force,
+      produto_tem_imagem_ia:hasAiGeneratedProductImage(p),
+      referencia_eh_imagem_ia:isAiGeneratedProductImageSrc(referenceImageUrl)||isAiGeneratedProductImageSrc(getAiReferenceImageSrc(p)),
+      permitir_imagem_ia_como_referencia:!!opts.force,
       estrategia:plan.label,
       seo_imagens:seoPlan,
       substituir_imagens_existentes:true,
