@@ -687,7 +687,12 @@
   function parseTags(v){if(Array.isArray(v)) return v.map(String).map(x=>x.trim()).filter(Boolean); if(typeof v === "string") return v.split(/[,|;]/).map(x=>x.trim()).filter(Boolean); return []}
   function getCode(p){return norm(p.codigo || p.sku || p.id || p.firebaseKey || p.gtin || p.ean || "")}
   function getKey(p){return String(p.firebaseKey || p.id || p.codigo || `produto_${Date.now()}`).trim()}
-  function getImg(p){let img=String(p.url_imagem || p.imagem || p.image || p.img || p.foto || "").trim(); if(!img && getCode(p)) img = `img/produtos/${getCode(p)}.webp`; return img || PLACEHOLDER}
+  function getImg(p){
+    let img=String(p.url_imagem || p.imagem || p.image || p.img || p.foto || "").trim();
+    if(!img && getCode(p)) img = `img/produtos/${getCode(p)}.webp`;
+    if(!img) return PLACEHOLDER;
+    return publicAssetUrl(img) || img || PLACEHOLDER;
+  }
   function getRawImg(p){return String(p.url_imagem || p.imagem || p.image || p.img || p.foto || "").trim()}
   function getName(p){return String(p.nome || p.titulo || p.descricao || p.codigo || "Produto sem nome")}
   function isActive(p){const st=String(p.situacao ?? p.status ?? "A").toLowerCase(); return !["i","inativo","false","0","excluido","excluído"].includes(st) && p.ativo !== false && p.visivel !== false}
@@ -2050,7 +2055,7 @@
   function renderProductWorkbench(p){
     const key=getKey(p),code=getCode(p),images=uniq([p.url_imagem||p.imagem||"",...(Array.isArray(p.imagens)?p.imagens:[])]).filter(Boolean);
     const baskets=basketsByProduct(p),kits=kitsByProduct(p),dirty=state.dirtyProductKeys.has(key);
-    const gallery=images.slice(0,9).map((src,index)=>`<div class="workbench-thumb ${src===(p.url_imagem||p.imagem)?"primary":""}" title="Clique para tornar principal"><img src="${esc(src)}" data-action="workbench-make-primary" data-key="${esc(key)}" data-src="${esc(src)}" onerror="this.src='${PLACEHOLDER}'"><button type="button" data-action="workbench-remove-gallery" data-key="${esc(key)}" data-src="${esc(src)}" title="Remover imagem">×</button></div>`).join("");
+    const gallery=images.slice(0,9).map((src,index)=>`<div class="workbench-thumb ${src===(p.url_imagem||p.imagem)?"primary":""}" title="Clique para tornar principal"><img src="${esc(publicAssetUrl(src)||src)}" data-action="workbench-make-primary" data-key="${esc(key)}" data-src="${esc(src)}" onerror="this.src='${PLACEHOLDER}'"><button type="button" data-action="workbench-remove-gallery" data-key="${esc(key)}" data-src="${esc(src)}" title="Remover imagem">×</button></div>`).join("");
     const memberships=[...baskets.map(c=>`<span class="chip gold">Cesta: ${esc(c.nome)}</span>`),...kits.map(k=>`<span class="chip blue">Kit: ${esc(k.nome)}</span>`)].join("");
     const ncmSearch=`https://www.google.com/search?q=${encodeURIComponent(`NCM ${[getName(p),p.marca,p.gtin||p.ean].filter(Boolean).join(" ")}`)}`,youtube=safeYoutubeUrl(p.video_youtube||p.video_url||"");
     const imageSearch=`https://www.google.com/search?tbm=isch&q=${encodeURIComponent([getName(p),p.marca,p.codigo,p.gtin].filter(Boolean).join(" "))}`;
@@ -2902,7 +2907,7 @@
     if(action==="save-notes")await saveNotes(true);
     if(action==="delete-note"){if(!confirm("Excluir esta anotação?"))return;state.anotacoes=state.anotacoes.filter(n=>n.id!==b.dataset.id);mark("notes");renderNotes();updateNotesIndicator();await saveNotes(false)}
     if(action==="workbench-use-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{setStatus("Processando imagem...","warn");const prepared=await addWorkbenchPhoto(p,file);setStatus(`Imagem aplicada (${formatBytes(prepared.bytes)})`,"ok")}catch(err){alert("Erro na imagem: "+err.message)}}
-    if(action==="workbench-edit-photo"&&p){try{const file=workbenchPhotoInput(key)?.files?.[0],src=p.url_imagem||p.imagem||(p.imagens||[])[0];if(!file&&!src)return alert("Selecione, cole ou cadastre uma imagem primeiro.");state.editingProductKey=key;pendingProductPhotoFile=file||null;pendingProductPhotoKey=key;ensureImageEditor();editorImage=file?await loadImageFromFile(file):await loadImageFromSource(src);$("#imageEditorModal").classList.add("open");previewImageEditor()}catch(err){alert(err.message)}}
+    if(action==="workbench-edit-photo"&&p){try{const file=workbenchPhotoInput(key)?.files?.[0],src=p.url_imagem||p.imagem||(p.imagens||[])[0];if(!file&&!src)return alert("Selecione, cole ou cadastre uma imagem primeiro.");state.editingProductKey=key;pendingProductPhotoFile=file||null;pendingProductPhotoKey=key;ensureImageEditor();editorImage=file?await loadImageFromFile(file):await loadImageFromSource(publicAssetUrl(src)||src);$("#imageEditorModal").classList.add("open");previewImageEditor()}catch(err){alert(err.message)}}
     if(action==="workbench-upload-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{readSettingsFromUi();setStatus("Enviando imagem SEO ao GitHub...","warn");const prepared=await prepareProductImageBlob(file),oldSources=currentProductImageSources(p),fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"),path=`${String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,"")}/${fileName}`;await githubUpsertRaw(path,await prepared.blob.arrayBuffer(),`Atualiza foto SEO do produto ${p.codigo||getName(p)}`);const src=publicProductImageSrc(fileName);oldSources.forEach(x=>markGithubProductImageForDelete(x));p.url_imagem=p.imagem=src;p.imagem_referencia_ia=src;p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]);markProductDirty(key,["url_imagem","imagem","imagens","imagem_referencia_ia"]);mark("products");renderProducts();setStatus("Imagem SEO enviada ao GitHub","ok")}catch(err){alert("Erro ao enviar imagem: "+err.message)}}
     if(action==="workbench-remove-photo"&&p){if(!confirm("Remover a imagem principal deste produto?"))return;const old=p.url_imagem||p.imagem||"";p.url_imagem=p.imagem="";if(old)p.imagens=(p.imagens||[]).filter(x=>x!==old);markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts()}
     if(action==="workbench-make-primary"&&p){p.url_imagem=p.imagem=b.dataset.src;if(!isAiGeneratedProductImageSrc(b.dataset.src))p.imagem_referencia_ia=b.dataset.src;markProductDirty(key,["url_imagem","imagem","imagem_referencia_ia"]);mark("products");renderProducts()}
@@ -2926,7 +2931,20 @@
     if(el.matches('[data-action="toggle-note"]')){const n=state.anotacoes.find(x=>x.id===el.dataset.id);if(!n)return;n.feito=el.checked;n.concluida_em=el.checked?nowIso():null;mark("notes");renderNotes();updateNotesIndicator();await saveNotes(false)}
     if(el.matches("[data-card-photo-key]")){state.cardImageTargetKey=el.dataset.cardPhotoKey;setStatus("Imagem selecionada no card. Você pode usar, editar ou enviar.","ok")}
     if(el.matches('[data-card-field="validade"]')){const p=productByKey(el.dataset.key);if(p){const result=applyExpiryRules(p);markProductDirty(getKey(p),["validade",...result.fields]);mark("products");renderProducts();updateExpiryAlert()}}
-    if(el.matches('[data-card-field="url_imagem"]')){const p=productByKey(el.dataset.key);if(p){p.imagem=p.url_imagem;markProductDirty(getKey(p),["imagem"]);mark("products");renderProducts()}}
+    if(el.matches('[data-card-field="url_imagem"]')){
+      const p=productByKey(el.dataset.key);
+      if(p){
+        const value=cleanCatalogText(el.value||"").trim();
+        const previous=p.url_imagem||p.imagem||"";
+        p.url_imagem=value;
+        p.imagem=value;
+        if(value && !isAiGeneratedProductImageSrc(value))p.imagem_referencia_ia=value;
+        if(previous && previous!==value)markGithubProductImageForDelete(previous);
+        markProductDirty(getKey(p),["url_imagem","imagem","imagem_referencia_ia"]);
+        mark("products");
+        renderProducts();
+      }
+    }
   });
   document.addEventListener("paste",async e=>{
     if($("#productModal")?.classList.contains("open"))return;
