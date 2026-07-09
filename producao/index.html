@@ -2631,9 +2631,23 @@
     const kit=compactKitForAi(k);
     if(!kit.produtos.length)return alert("Adicione produtos ao kit antes de gerar a capa.");
     if(!kit.referencias_imagens?.length)return alert("Os produtos do kit precisam ter imagens validas para gerar a capa.");
-    setStatus(`Preparando 1 imagem de referencia unica com os produtos do kit...`,"warn");
-    const colagem_referencia=await buildKitReferenceCollage(kit);
-    if(!colagem_referencia)return alert("Nao foi possivel montar a imagem de referencia do kit. Confira se as imagens dos produtos carregam corretamente.");
+
+    // IMPORTANTE:
+    // Nao montar colagem no navegador. Algumas imagens do GitHub/site podem bloquear canvas por CORS
+    // e isso gera o erro: "Nao foi possivel montar a imagem de referencia do kit".
+    // O Make vai baixar as imagens dos produtos pelo HTTP DownloadFile, agregar as referencias
+    // e enviar todas como entrada visual para o OpenAI, mas o OpenAI gera somente 1 capa final.
+    const payload={
+      acao:"gerar_capa_kit",
+      quantidade_imagens:1,
+      kit:{...kit,referencias_imagens:kit.referencias_imagens},
+      instrucoes:"Crie apenas 1 capa promocional quadrada para e-commerce usando as fotos reais dos produtos do kit. O Make enviara as imagens dos produtos como referencias visuais. Preserve embalagens, marcas, variantes, volumes e cores. Mostrar nome do kit, preco anterior, preco promocional e economia/desconto. Estilo limpo, legivel e pronto para loja online."
+    };
+
+    setStatus("Enviando produtos do kit para o Make gerar 1 capa...","warn");
+    const result=await callMakeAi("image",payload);
+    let img=imageFromAiResult(result);
+    if(!img)throw new Error("O Make nao retornou URL ou base64 da capa. O Webhook Response deve retornar o campo imagem.");
 
     const basePath=String(state.settings.githubKitImagesPath||"site/img/kits").replace(/\/+$/,'');
     let publicBase=String(state.settings.kitImagePublicBase||"").replace(/\/+$/,'');
@@ -2644,23 +2658,8 @@
       publicBase=`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${basePath}`;
     }
 
-    setStatus("Salvando referencia unica do kit no GitHub para o Make baixar...","warn");
-    const refBlob=await (await fetch(colagem_referencia)).blob();
-    const refFileName=`_referencias/${slug(k.codigo||k.nome)||Date.now()}-referencia-${Date.now()}.png`;
-    await githubUpsertRaw(`${basePath}/${refFileName}`,await refBlob.arrayBuffer(),`Atualiza referencia IA do kit ${k.codigo||k.nome}`);
-    const colagem_url=`${publicBase}/${refFileName}`;
-
-    const payload={
-      acao:"gerar_capa_kit",
-      kit:{...kit,colagem_referencia,colagem_url,referencias_imagens:[colagem_url]},
-      instrucoes:"Crie apenas 1 capa promocional quadrada para e-commerce usando a referencia unica do kit. A referencia e uma colagem com todos os produtos reais. Preserve embalagens e marcas. Mostrar nome do kit, preco anterior, preco promocional e economia/desconto. Estilo limpo, legivel e pronto para loja online."
-    };
-    setStatus("Enviando 1 referencia do kit para o Make...","warn");
-    const result=await callMakeAi("image",payload);
-    let img=imageFromAiResult(result);
-    if(!img)throw new Error("O Make nao retornou URL ou base64 da capa.");
     if(/^data:image\//i.test(img)){
-      setStatus("Salvando capa gerada no GitHub em site/img/kits...","warn");
+      setStatus("Salvando a unica capa gerada no GitHub em site/img/kits...","warn");
       const blob=await (await fetch(img)).blob();
       const fileName=`${slug(k.codigo||k.nome)||Date.now()}.webp`;
       await githubUpsertRaw(`${basePath}/${fileName}`,await blob.arrayBuffer(),`Atualiza capa IA do kit ${k.codigo||k.nome}`);
@@ -2673,7 +2672,7 @@
     renderKitsList();
     renderKitEditor();
     refreshJson();
-    setStatus("Capa do kit gerada e aplicada. Revise e salve o kit.","ok");
+    setStatus("Capa unica do kit gerada e aplicada. Clique em Salvar geral para publicar.","ok");
   }
 
   document.addEventListener("focusin",e=>{const card=e.target.closest?.(".product-workbench");if(card)state.cardImageTargetKey=card.dataset.productKey});
