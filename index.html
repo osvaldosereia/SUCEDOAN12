@@ -3613,6 +3613,97 @@
       }
     }
 
+  
+
+    /* =========================
+       AJUSTES FINAIS v8
+       Linhas separadoras entre cards: vertical e horizontal
+    ========================= */
+
+    .section-grid,
+    .product-grid,
+    .product-list,
+    .related-grid {
+      gap: 0 !important;
+      border-top: 1px solid #eeeeee !important;
+      border-left: 0 !important;
+    }
+
+    .section-grid > .product-card,
+    .section-grid > .basket-card,
+    .product-grid > .product-card,
+    .product-list > .product-card,
+    .related-grid > .product-card {
+      padding: 20px 14px 28px !important;
+      margin: 0 !important;
+      border-right: 1px solid #eeeeee !important;
+      border-bottom: 1px solid #eeeeee !important;
+      box-sizing: border-box !important;
+    }
+
+    .section-grid > .product-card:nth-child(2n),
+    .section-grid > .basket-card:nth-child(2n),
+    .product-grid > .product-card:nth-child(2n),
+    .product-list > .product-card:nth-child(2n),
+    .related-grid > .product-card:nth-child(2n) {
+      border-right: 0 !important;
+    }
+
+    .section-grid .product-imgbox,
+    .section-grid .basket-imgbox,
+    .product-grid .product-imgbox,
+    .product-list .product-imgbox,
+    .related-grid .product-imgbox {
+      margin-bottom: 10px !important;
+    }
+
+    @media (min-width: 768px) {
+      .section-grid,
+      .product-grid,
+      .product-list,
+      .related-grid {
+        gap: 0 !important;
+      }
+
+      .section-grid > .product-card,
+      .section-grid > .basket-card,
+      .product-grid > .product-card,
+      .product-list > .product-card,
+      .related-grid > .product-card {
+        padding: 22px 16px 32px !important;
+        border-right: 1px solid #eeeeee !important;
+        border-bottom: 1px solid #eeeeee !important;
+      }
+
+      .section-grid > .product-card:nth-child(2n),
+      .section-grid > .basket-card:nth-child(2n),
+      .product-grid > .product-card:nth-child(2n),
+      .product-list > .product-card:nth-child(2n),
+      .related-grid > .product-card:nth-child(2n) {
+        border-right: 1px solid #eeeeee !important;
+      }
+
+      .section-grid > .product-card:nth-child(4n),
+      .section-grid > .basket-card:nth-child(4n),
+      .product-grid > .product-card:nth-child(4n),
+      .product-list > .product-card:nth-child(4n),
+      .related-grid > .product-card:nth-child(4n) {
+        border-right: 0 !important;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .section-grid > .product-card,
+      .section-grid > .basket-card,
+      .product-grid > .product-card,
+      .product-list > .product-card,
+      .related-grid > .product-card {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+        padding-bottom: 26px !important;
+      }
+    }
+
   </style>
 </head>
 <body>
