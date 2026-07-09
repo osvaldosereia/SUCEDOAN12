@@ -329,6 +329,8 @@
         <button class="btn primary" type="button" data-action="save-products">✓ Salvar produtos</button>
         <button class="btn gold" type="button" data-action="open-low-stock">⚠ Estoque 0 a 5</button>
         <button class="btn blue" type="button" data-action="open-bulk-price">％ Reajuste em massa</button>
+        <button class="btn blue" type="button" data-action="ai-category-images">🖼 IA da categoria</button>
+        <button class="btn red" type="button" data-action="stop-ai-category-images">■ Parar fila IA</button>
         <button class="btn" type="button" data-action="reload">↻ Recarregar dados</button>
       </div>
       <button class="btn blue block" style="margin-top:8px" type="button" data-action="open-settings">⚙ Configurações</button>
@@ -394,7 +396,7 @@
 
   <main class="app">
     <section class="panel" id="tab-produtos">
-      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Ficha completa para editar produtos, imagens, cestas e kits sem sair da página.</p></div><div class="toolbar"><button class="btn notes-home-btn" id="notesHomeBtn" type="button" data-action="go-notes">📝 Notas <span class="notes-count">0</span></button><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn blue" data-action="normalize-products-site">✓ Adequar ao site</button><button class="btn blue" data-action="open-bulk-price">％ Reajuste em massa</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
+      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Ficha completa para editar produtos, imagens, cestas e kits sem sair da página.</p></div><div class="toolbar"><button class="btn notes-home-btn" id="notesHomeBtn" type="button" data-action="go-notes">📝 Notas <span class="notes-count">0</span></button><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn blue" data-action="normalize-products-site">✓ Adequar ao site</button><button class="btn blue" data-action="open-bulk-price">％ Reajuste em massa</button><button class="btn blue" data-action="ai-category-images">🖼 IA da categoria</button><button class="btn red" data-action="stop-ai-category-images">■ Parar fila IA</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
       <div class="products-grid" id="productsGrid"></div>
       <div class="pagination" id="pagination"></div>
     </section>
@@ -555,7 +557,8 @@
     dirtyProducts: false, dirtyCestas: false, dirtyKits: false, dirtyMeta: false, dirtyNotes: false,
     dirtyProductKeys: new Set(), dirtyProductFields: {}, deletedProductKeys: new Set(), productSyncMeta: {},
     scannerCode: "", scannerCurrentKey: null, scannerStream: null, scannerDetector: null, scannerLoopActive: false,
-    scannerStatus: "Aguardando leitura.", scannerStatusType: "warn", scannerRecentCodes: []
+    scannerStatus: "Aguardando leitura.", scannerStatusType: "warn", scannerRecentCodes: [],
+    aiImageBatchRunning: false, aiImageBatchCancel: false, aiImageBatchTotal: 0, aiImageBatchDone: 0, aiImageBatchErrors: 0
   };
   state.productView=localStorage.getItem("donaantonia_product_view")==="list"?"list":"grid";
 
@@ -1015,6 +1018,69 @@
   function fillSelect(sel, values){const el=$(sel); if(!el) return; const cur=el.value; const first=el.querySelector('option')?.outerHTML || '<option value="">Todos</option>'; el.innerHTML = first + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join(""); el.value = values.includes(cur)?cur:""}
   function getFilters(){return {q:$("#f-q")?.value||"",categoria:$("#f-categoria")?.value||"",subcategoria:$("#f-subcategoria")?.value||"",subsubcategoria:$("#f-subsubcategoria")?.value||"",marca:$("#f-marca")?.value||"",fornecedor:$("#f-fornecedor")?.value||"",tag:$("#f-tag")?.value||"",situacao:$("#f-situacao")?.value||"",qualidade:$("#f-qualidade")?.value||"",cesta:$("#f-cesta")?.value||"",sort:$("#f-sort")?.value||"nome",pageSize:Number($("#f-page-size")?.value||24)}}
   function filteredProducts(){const f=getFilters(); let list=[...state.produtos]; const q=textNorm(f.q); if(q) list=list.filter(p=>textNorm([p.nome,p.codigo,p.gtin,p.ean,p.marca,p.categoria,p.subcategoria,p.subsubcategoria,p.fornecedor,p.descricao,parseTags(p.tags).join(' ')].join(' ')).includes(q)); ['categoria','subcategoria','subsubcategoria','marca','fornecedor'].forEach(k=>{if(f[k]) list=list.filter(p=>String(p[k]||'')===f[k])}); if(f.tag) list=list.filter(p=>parseTags(p.tags).includes(f.tag)); if(f.situacao==='A') list=list.filter(isActive); if(f.situacao==='I') list=list.filter(p=>!isActive(p)); if(f.situacao==='sem_estoque') list=list.filter(p=>toNum(p.estoque)<=0); if(f.situacao==='com_estoque') list=list.filter(p=>toNum(p.estoque)>0); if(f.qualidade==='sem_foto') list=list.filter(p=>!String(p.url_imagem||p.imagem||'').trim()); if(f.qualidade==='sem_gtin') list=list.filter(p=>!String(p.gtin||p.ean||'').trim()); if(f.qualidade==='sem_descricao') list=list.filter(p=>!String(p.descricao||'').trim()); if(f.qualidade==='com_oferta') list=list.filter(p=>toNum(p.preco_oferta)>0); if(f.cesta==='em_cesta') list=list.filter(p=>basketsByProduct(p).length); if(f.cesta==='fora_cesta') list=list.filter(p=>!basketsByProduct(p).length); const sorters={nome:(a,b)=>getName(a).localeCompare(getName(b),'pt-BR'),codigo:(a,b)=>getCode(a).localeCompare(getCode(b),'pt-BR'),preco_desc:(a,b)=>toNum(b.preco)-toNum(a.preco),preco_asc:(a,b)=>toNum(a.preco)-toNum(b.preco),estoque_desc:(a,b)=>toNum(b.estoque)-toNum(a.estoque),atualizado_desc:(a,b)=>toNum(b.last_update)-toNum(a.last_update)}; return list.sort(sorters[f.sort]||sorters.nome)}
+  function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
+  function batchImageCandidates(){
+    const f=getFilters();
+    if(!f.categoria) throw new Error('Selecione uma categoria antes de iniciar a geração em lote.');
+    return filteredProducts().filter(p=>isActive(p)).filter(p=>String(p.url_imagem||p.imagem||'').trim()||Array.isArray(p.imagens)&&p.imagens.length);
+  }
+  async function aiCategoryImagesBatch(){
+    if(state.aiImageBatchRunning) throw new Error('Já existe uma fila de geração de imagens rodando agora.');
+    readSettingsFromUi();
+    const webhook=String(state.settings.makeImageWebhookUrl||state.settings.makeImageWebhook||state.settings.makeWebhookImage||state.settings.makeWebhook||'').trim();
+    if(!/^https?:\/\//i.test(webhook)) throw new Error('Configure o webhook de imagem do Make antes de iniciar a fila.');
+    const f=getFilters();
+    const items=batchImageCandidates();
+    if(!items.length) throw new Error('Nenhum produto elegível foi encontrado para a categoria/filtragem atual.');
+    const skipped=filteredProducts().length-items.length;
+    const categoryLabel=f.categoria || 'categoria selecionada';
+    const message=`Gerar 1 imagem por produto para ${items.length} item(ns) da categoria ${categoryLabel}?\n\nO sistema enviará 1 produto ao Make por vez, aguardando 5 segundos entre cada envio.\n${skipped>0?`\nObservação: ${skipped} item(ns) filtrado(s) ficarão de fora por estarem inativos ou sem imagem de referência.`:''}`;
+    if(!confirm(message)) return;
+    state.aiImageBatchRunning=true;
+    state.aiImageBatchCancel=false;
+    state.aiImageBatchTotal=items.length;
+    state.aiImageBatchDone=0;
+    state.aiImageBatchErrors=0;
+    try{
+      setStatus(`Fila IA iniciada para ${items.length} produto(s) da categoria ${categoryLabel}.`,'warn');
+      toast(`Fila de imagens iniciada para ${items.length} produto(s). O Make receberá 1 produto a cada 5 segundos.`,'warn',7000);
+      for(let index=0; index<items.length; index++){
+        if(state.aiImageBatchCancel){
+          setStatus(`Fila IA interrompida. ${state.aiImageBatchDone}/${state.aiImageBatchTotal} produto(s) processados.`,'warn');
+          toast('Fila de imagens interrompida pelo usuário.','warn',7000);
+          break;
+        }
+        const p=items[index], key=getKey(p), name=getName(p);
+        setStatus(`Fila IA ${index+1}/${items.length}: enviando ${name}...`,'warn');
+        try{
+          await aiProductImage(key);
+        }catch(err){
+          state.aiImageBatchErrors += 1;
+          console.error('Erro na fila IA do produto', name, err);
+          toast(`Erro ao gerar imagem de ${name}: ${err.message||err}`,'err',9000);
+        }
+        state.aiImageBatchDone = index + 1;
+        if(index < items.length - 1 && !state.aiImageBatchCancel){
+          setStatus(`Fila IA ${state.aiImageBatchDone}/${items.length}: aguardando 5 segundos para o próximo produto...`,'warn');
+          await sleep(5000);
+        }
+      }
+      if(!state.aiImageBatchCancel){
+        const ok=Math.max(0,state.aiImageBatchDone-state.aiImageBatchErrors);
+        setStatus(`Fila IA finalizada. ${ok} com sucesso e ${state.aiImageBatchErrors} com erro.`,'ok');
+        toast(`Fila de imagens concluída. ${ok} produto(s) processado(s) com sucesso e ${state.aiImageBatchErrors} com erro.`,'ok',9000);
+      }
+    }finally{
+      state.aiImageBatchRunning=false;
+      state.aiImageBatchCancel=false;
+    }
+  }
+  function stopAiCategoryImagesBatch(){
+    if(!state.aiImageBatchRunning){toast('Não existe fila de imagens em execução no momento.','warn',5000);return}
+    state.aiImageBatchCancel=true;
+    setStatus('Solicitação de parada recebida. A fila será encerrada após concluir o produto atual.','warn');
+    toast('Parando a fila após o produto atual.','warn',6000);
+  }
   function renderProducts(){const all=filteredProducts(); const f=getFilters(); const pages=Math.max(1,Math.ceil(all.length/f.pageSize)); state.productPage=Math.min(state.productPage,pages); const start=(state.productPage-1)*f.pageSize; const list=all.slice(start,start+f.pageSize); const grid=$("#productsGrid"); grid.classList.toggle("list-view",state.productView==="list"); grid.innerHTML = list.length ? list.map(renderProductCardV3).join("") : `<div class="empty">Nenhum produto encontrado.</div>`; $$('[data-action="view-products-grid"],[data-action="view-products-list"]').forEach(b=>b.classList.toggle("active",(state.productView==="list")===b.dataset.action.endsWith("list"))); $("#pagination").innerHTML = `<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`; }
   function renderProductCard(p){const code=getCode(p); const baskets=basketsByProduct(p); const basketBadges=baskets.map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join(""); const tags=parseTags(p.tags).slice(0,4).map(t=>`<span class="chip">#${esc(t)}</span>`).join(""); return `<article class="product-card"><div class="product-img"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'" alt="${esc(getName(p))}" loading="lazy"></div><div class="product-body"><h3 class="product-name">${esc(getName(p))}</h3><div class="meta-line"><span class="chip">Cód: ${esc(p.codigo||p.firebaseKey||code)}</span>${p.gtin?`<span class="chip">GTIN: ${esc(p.gtin)}</span>`:''}${p.marca?`<span class="chip">${esc(p.marca)}</span>`:''}${isActive(p)?'<span class="chip green">ativo</span>':'<span class="chip red">inativo</span>'}</div><div class="price-row"><div class="price">${brl(p.preco)}</div><div class="stock">Estoque: ${esc(p.estoque??0)}</div></div><div class="tiny">${esc([p.categoria,p.subcategoria,p.subsubcategoria].filter(Boolean).join(' › '))}</div><div class="meta-line">${tags}</div>${basketBadges?`<div class="meta-line">${basketBadges}</div>`:''}<div class="card-actions"><button class="btn small" data-action="edit-product" data-key="${esc(getKey(p))}">Editar produto</button><button class="btn small gold" data-action="edit-membership" data-code="${esc(code)}">Editar cestas</button><button class="btn small blue" data-action="duplicate-product" data-key="${esc(getKey(p))}">Duplicar</button><button class="btn small red" data-action="delete-product" data-key="${esc(getKey(p))}">Excluir</button></div></div></article>`}
 
@@ -1410,7 +1476,7 @@
   document.addEventListener('change', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.id==='productsFile'&&el.files[0]) importFile(el.files[0],'products'); if(el.id==='cestasFile'&&el.files[0]) importFile(el.files[0],'cestas'); if(el.id==='kitsFile'&&el.files[0]) importFile(el.files[0],'kits'); if(el.matches('[data-action="toggle-membership"]')) toggleMembership(el.dataset.id, el.checked); if(el.matches('[data-ptag]')) toggleProductTag(el.dataset.ptag, el.checked); if(el.id==='setAutoGithub') readSettingsFromUi()});
   document.addEventListener('change', e=>{const el=e.target;if(el.matches('[data-card-field]')) updateProductFromCard(el.dataset.key,el.dataset.cardField,el.value);if(el.matches('[data-action="toggle-kit-membership"]'))toggleKitMembership(el.dataset.id,el.checked)});
   document.addEventListener('keydown', e=>{const el=e.target; if(el?.id==='scannerCodeInput' && e.key==='Enter'){e.preventDefault(); openScannerProduct(el.value||state.scannerCode)}});
-  document.addEventListener('click', e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='open-low-stock'){renderLowStockModal();$("#lowStockModal").classList.add('open');toggleAdminDrawer(false)}if(a==='close-low-stock')$("#lowStockModal").classList.remove('open');if(a==='open-product-from-stock'){$("#lowStockModal").classList.remove('open');focusProductWorkbench(b.dataset.key)}if(a==='edit-kit-membership')openKitMembership(b.dataset.code);if(a==='close-kit-membership-modal'){$("#kitMembershipModal").classList.remove('open');renderAll()}if(a==='open-filter-panel')toggleAdminDrawer(true);if(a==='apply-filters'){state.productPage=1;renderProducts();toggleAdminDrawer(false)}if(a==='apply-search'){state.productPage=1;renderProducts()}if(a==='save-card-firebase')saveProductFirebase(b.dataset.key);if(a==='save-products-firebase')saveProductsFirebaseOnly();if(a==='save-everything')saveEverything()});
+  document.addEventListener('click', e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='open-low-stock'){renderLowStockModal();$("#lowStockModal").classList.add('open');toggleAdminDrawer(false)}if(a==='close-low-stock')$("#lowStockModal").classList.remove('open');if(a==='open-product-from-stock'){$("#lowStockModal").classList.remove('open');focusProductWorkbench(b.dataset.key)}if(a==='edit-kit-membership')openKitMembership(b.dataset.code);if(a==='close-kit-membership-modal'){$("#kitMembershipModal").classList.remove('open');renderAll()}if(a==='open-filter-panel')toggleAdminDrawer(true);if(a==='apply-filters'){state.productPage=1;renderProducts();toggleAdminDrawer(false)}if(a==='apply-search'){state.productPage=1;renderProducts()}if(a==='save-card-firebase')saveProductFirebase(b.dataset.key);if(a==='save-products-firebase')saveProductsFirebaseOnly();if(a==='save-everything')saveEverything();if(a==='ai-category-images')aiCategoryImagesBatch();if(a==='stop-ai-category-images')stopAiCategoryImagesBatch()});
   function firebaseProductUrl(key){return `${String(state.settings.firebaseUrl).replace(/\/$/,"")}/${state.settings.produtosNode}/${encodeURIComponent(key)}.json`}
   async function saveProductFirebase(key){
     const p=productByKey(key);
@@ -2741,6 +2807,8 @@
       "save-kits":()=>saveKits(),
       "save-github-now":()=>saveGithubNow(),
       "test-github":()=>testGithub(),
+      "ai-category-images":()=>aiCategoryImagesBatch(),
+      "stop-ai-category-images":()=>stopAiCategoryImagesBatch(),
       "ai-product-cadastro":()=>p?aiProductCadastro(key):null,
       "ai-product-description":()=>p?aiProductDescription(key):null,
       "ai-product-name":()=>p?aiProductName(key):null,
@@ -2761,6 +2829,8 @@
       "save-kits":"Salvando kits...",
       "save-github-now":"Enviando GitHub...",
       "test-github":"Testando...",
+      "ai-category-images":"Enfileirando geração IA...",
+      "stop-ai-category-images":"Parando fila IA...",
       "ai-product-cadastro":"Gerando cadastro...",
       "ai-product-description":"Gerando descrição...",
       "ai-product-name":"Melhorando nome...",
