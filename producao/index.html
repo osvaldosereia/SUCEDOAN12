@@ -475,7 +475,7 @@
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
         <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho kitspromocionais.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="img/produtos"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
-        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">Use o webhook de textos para o botão único IA Cadastro. Use o webhook de imagens para capas de kits e imagens de produtos. Use o webhook Instagram Kits para publicar carrossel de kit promocional.</div></div>
+        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">Use o webhook de textos para o botão único IA Cadastro. Use o webhook de imagens para capas de kits e imagens de produtos. Use o webhook Instagram Kits para gerar o carrossel do kit e colocar na fila do GitHub como NOVO; a postagem é feita pelo cenário programado.</div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
       <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar kitspromocionais.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
@@ -1557,7 +1557,9 @@
       instagram_enviado_em:String(raw[i]?.instagram_enviado_em||""),
       instagram_post_id:String(raw[i]?.instagram_post_id||""),
       instagram_carrossel_id:String(raw[i]?.instagram_carrossel_id||""),
-      instagram_imagens:Array.isArray(raw[i]?.instagram_imagens)?raw[i].instagram_imagens:[]
+      instagram_imagens:Array.isArray(raw[i]?.instagram_imagens)?raw[i].instagram_imagens:[],
+      instagram_dados_json:String(raw[i]?.instagram_dados_json||""),
+      instagram_fila_json:String(raw[i]?.instagram_fila_json||"")
     }));
   };
 
@@ -1601,7 +1603,7 @@
   renderKitEditor=function(){
     const k=currentKit(),el=$("#kitEditor");if(!k){el.innerHTML=`<div class="empty">Selecione ou crie um kit promocional.</div>`;return}recalcKit(k);
     const y=window.scrollY,total=kitRetailTotal(k),rows=(k.produtos||[]).map(i=>renderKitRow(k,i)).join("")||`<div class="empty">Adicione produtos para calcular estoque e desconto.</div>`;
-    el.innerHTML=`<div class="panel-head"><div class="panel-title"><h2>${esc(k.nome)}</h2><p>${esc(k.codigo)} · disponibilidade calculada pelo menor estoque</p></div><div class="toolbar"><button class="btn blue" data-action="send-kit-instagram">📲 Enviar Instagram</button><button class="btn gold" data-action="ai-kit-description">IA descrição</button><button class="btn gold" data-action="ai-kit-cover">IA capa do kit</button><button class="btn primary" data-action="save-kits">Salvar kit</button><button class="btn red" data-action="delete-kit">Excluir</button></div></div>
+    el.innerHTML=`<div class="panel-head"><div class="panel-title"><h2>${esc(k.nome)}</h2><p>${esc(k.codigo)} · disponibilidade calculada pelo menor estoque</p></div><div class="toolbar"><button class="btn blue" data-action="send-kit-instagram">📲 Gerar fila Instagram</button><button class="btn gold" data-action="ai-kit-description">IA descrição</button><button class="btn gold" data-action="ai-kit-cover">IA capa do kit</button><button class="btn primary" data-action="save-kits">Salvar kit</button><button class="btn red" data-action="delete-kit">Excluir</button></div></div>
     <div class="kit-health"><div class="metric"><strong>${brl(total)}</strong><span>Soma avulsa</span></div><div class="metric ${k.desconto_percentual>0?"good":"bad"}"><strong>${esc(k.desconto_percentual)}%</strong><span>Desconto real</span></div><div class="metric ${k.estoque_disponivel>0?"good":"bad"}"><strong>${esc(k.estoque_disponivel)}</strong><span>Kits disponíveis</span></div><div class="metric ${k.ativo?"good":"bad"}"><strong>${k.ativo?"NO AR":"FORA DO AR"}</strong><span>Status automático</span></div></div>
     <div class="form-grid"><div class="field"><label>Nome *</label><input class="input" data-kfield="nome" value="${esc(k.nome)}"></div><div class="field"><label>Código *</label><input class="input" data-kfield="codigo" value="${esc(k.codigo)}"></div><div class="field"><label>Preço promocional *</label><input class="input" type="number" min="0" step=".01" data-kfield="preco" value="${esc(k.preco)}"></div><div class="field"><label>Limite máximo de kits (0 = só estoque)</label><input class="input" type="number" min="0" data-kfield="limite_kits" value="${esc(k.limite_kits)}"></div><div class="field"><label>Início da promoção</label><input class="input" type="date" data-kfield="data_inicio" value="${esc(k.data_inicio)}"></div><div class="field"><label>Fim da promoção</label><input class="input" type="date" data-kfield="data_fim" value="${esc(k.data_fim)}"></div><div class="field span-2"><label>Imagem</label><input class="input" data-kfield="imagem" value="${esc(k.imagem)}"></div><div class="field span-4"><label>Descrição</label><textarea class="textarea" data-kfield="descricao">${esc(k.descricao)}</textarea></div></div>
     <div class="photo-tools"><h4>Capa do kit</h4><div class="photo-tools-grid"><div class="photo-preview-box"><img src="${esc(k.imagem||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"></div><div><input class="input" id="kitImageFile" type="file" accept="image/*"><div class="photo-actions"><button class="btn gold" data-action="ai-kit-cover">Gerar capa IA</button><button class="btn green" data-action="use-kit-image-local">Aplicar WebP</button><button class="btn blue" data-action="upload-kit-image-github">Enviar ao GitHub</button></div></div></div></div>
@@ -2774,7 +2776,7 @@
     if(action==="ai-product-image"&&p){await runUiAction(b,"Melhorando foto...",()=>aiProductImage(key));return}
     if(action==="ai-kit-description"){await runUiAction(b,"Gerando descrição...",()=>aiKitDescription());return}
     if(action==="ai-kit-cover"){await runUiAction(b,"Gerando capa...",()=>aiKitCover());return}
-    if(action==="send-kit-instagram"){await runUiAction(b,"Enviando Instagram...",()=>sendKitInstagram());return}
+    if(action==="send-kit-instagram"){await runUiAction(b,"Gerando fila...",()=>sendKitInstagram());return}
     if(action==="open-expiry-alert")renderExpiryAlert();
     if(action==="close-expiry-alert")$(".expiry-alert-overlay")?.remove();
     if(action==="open-expiry-product"){ $(".expiry-alert-overlay")?.remove(); state.activeTab="produtos"; renderAll(); focusProductWorkbench(key); }
@@ -2853,7 +2855,7 @@
       "send-product-chat":"Enviando...",
       "ai-kit-description":"Gerando descrição...",
       "ai-kit-cover":"Gerando capa...",
-      "send-kit-instagram":"Enviando Instagram..."
+      "send-kit-instagram":"Gerando fila..."
     };
     const card=b.closest?.(".product-workbench");card?.classList.add("processing");
     await runUiAction(b,labels[action]||"Processando...",handlers[action]);
@@ -3053,7 +3055,8 @@
       };
     });
     return {
-      acao:"publicar_kit_instagram",
+      acao:"gerar_kit_instagram_fila",
+      modo_publicacao:"fila_github",
       origem:"admin_dona_antonia",
       criado_em:nowIso(),
       formato:"instagram_carrossel_4_5",
@@ -3082,7 +3085,7 @@
       },
       produtos,
       instrucoes:{
-        objetivo:"Criar e publicar carrossel altamente vendedor do kit promocional no Instagram da Dona Antônia.",
+        objetivo:"Criar carrossel altamente vendedor do kit promocional e salvar na fila do GitHub como NOVO, sem publicar imediatamente.",
         capa:"Mostrar nome do kit, preço promocional, economia/desconto e composição com produtos reais.",
         produto:"Uma página por produto, com foto fiel, quantidade no kit e benefício simples.",
         cta:"Última página com chamada para comprar no site/WhatsApp, entrega em Cuiabá e Várzea Grande.",
@@ -3098,11 +3101,13 @@
     if(!confirm(`Enviar o kit "${k.nome}" para o Instagram?\n\nSerão ${kitInstagramSlideCount(k)} páginas: capa + ${k.produtos.length} produto(s) + CTA.`))return;
     await ensureKitCoverPublicUrl(k);
     const payload=buildKitInstagramPayload(k);
-    setStatus("Enviando kit promocional para o cenário Instagram no Make...","warn");
+    setStatus("Gerando carrossel do kit e colocando na fila do GitHub...","warn");
     const result=unwrapAiResult(await callMakeAi("instagram-kit",payload));
-    k.instagram_status=result.status||"enviado";
+    k.instagram_status=result.status||"novo";
     k.instagram_enviado_em=nowIso();
     k.instagram_post_id=result.instagram_id||result.instagram_post_id||result.id||"";
+    k.instagram_dados_json=result.dados_json||"";
+    k.instagram_fila_json=result.fila_json||"";
     k.instagram_carrossel_id=result.id_carrossel||result.carrossel_id||"";
     k.instagram_imagens=result.imagens||result.urls_imagens||[];
     mark("kits");
@@ -3110,7 +3115,7 @@
     renderKitsList();
     renderKitEditor();
     refreshJson();
-    setStatus("Kit enviado para publicação no Instagram.","ok");
+    setStatus("Carrossel do kit criado e adicionado à fila do GitHub.","ok");
     const link=result.permalink||result.url||"";
     alert(`Kit enviado ao Make.${k.instagram_post_id?`\nPost ID: ${k.instagram_post_id}`:""}${link?`\n${link}`:""}\n\nClique em Salvar geral para gravar o status no site/kits.json.`);
   }
@@ -3122,10 +3127,10 @@
     if(!el||!k)return;
     const rows=el.querySelector(".basket-list");
     const errors=validateKitForInstagram(k);
-    const status=k.instagram_status?`<div class="tiny" style="margin-top:6px">Último envio: ${esc(k.instagram_status)} ${k.instagram_enviado_em?`· ${esc(new Date(k.instagram_enviado_em).toLocaleString("pt-BR"))}`:""}${k.instagram_post_id?` · ID ${esc(k.instagram_post_id)}`:""}</div>`:"";
+    const status=k.instagram_status?`<div class="tiny" style="margin-top:6px">Fila Instagram: ${esc(k.instagram_status)} ${k.instagram_enviado_em?`· ${esc(new Date(k.instagram_enviado_em).toLocaleString("pt-BR"))}`:""}${k.instagram_post_id?` · ID ${esc(k.instagram_post_id)}`:""}</div>`:"";
     const box=document.createElement("div");
     box.className="kit-instagram-box";
-    box.innerHTML=`<h4>📲 Instagram do kit</h4><div class="tiny">Gera carrossel 4:5 com capa, 1 página por produto e CTA final. Limite seguro: 8 produtos.</div><div class="meta-line" style="margin-top:8px"><span class="chip blue">${kitInstagramSlideCount(k)} página(s)</span><span class="chip ${errors.length?"red":"green"}">${errors.length?"Revisar antes de enviar":"Pronto para enviar"}</span></div>${errors.length?`<div class="notice red" style="margin-top:10px">${esc(errors.join(" · "))}</div>`:""}<div class="toolbar"><button class="btn blue" type="button" data-action="send-kit-instagram">📲 Enviar para Instagram</button></div>${status}`;
+    box.innerHTML=`<h4>📲 Instagram do kit</h4><div class="tiny">Gera carrossel 4:5 com capa, 1 página por produto e CTA final, salva no GitHub com status NOVO e deixa na fila para o cenário programado postar.</div><div class="meta-line" style="margin-top:8px"><span class="chip blue">${kitInstagramSlideCount(k)} página(s)</span><span class="chip ${errors.length?"red":"green"}">${errors.length?"Revisar antes de enviar":"Pronto para fila"}</span></div>${errors.length?`<div class="notice red" style="margin-top:10px">${esc(errors.join(" · "))}</div>`:""}<div class="toolbar"><button class="btn blue" type="button" data-action="send-kit-instagram">📲 Gerar para fila</button></div>${status}`;
     if(rows)el.insertBefore(box,rows);else el.appendChild(box);
   };
 
