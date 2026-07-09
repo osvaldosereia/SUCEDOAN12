@@ -2630,11 +2630,11 @@
   }
   async function aiProductDescription(key){
     const p=productByKey(key);if(!p)return;
-    setStatus("Gerando descrição usando a ação compatível do cenário de texto...","warn");
-    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_cadastro_produto",produto:compactProductForTextAi(p)}));
+    setStatus("Gerando descrição do produto no Make...","warn");
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_descricao_produto",produto:compactProductForTextAi(p)}));
     assertAiProductIdentity(p,result);
     const desc=result.descricao||result.description||result.texto||"";
-    if(!desc)throw new Error("O cenário de texto respondeu, mas não devolveu descricao.");
+    if(!desc)throw new Error("O Make respondeu, mas não devolveu descricao.");
     p.descricao=String(desc).trim();
     if(result.descricao_curta)p.descricao_curta=String(result.descricao_curta).trim();
     if(Array.isArray(result.tags_sugeridas))p.tags=uniq([...parseTags(p.tags),...result.tags_sugeridas]).join(", ");
@@ -2643,11 +2643,11 @@
   }
   async function aiProductName(key){
     const p=productByKey(key);if(!p)return;
-    setStatus("Melhorando nome usando a ação compatível do cenário de texto...","warn");
-    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_cadastro_produto",produto:compactProductForTextAi(p)}));
+    setStatus("Melhorando nome do produto no Make...","warn");
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"melhorar_nome_produto",produto:compactProductForTextAi(p)}));
     assertAiProductIdentity(p,result);
     const name=result.nome_sugerido||result.nome||result.name||result.texto||"";
-    if(!name)throw new Error("O cenário de texto respondeu, mas não devolveu nome_sugerido.");
+    if(!name)throw new Error("O Make respondeu, mas não devolveu nome_sugerido.");
     p.nome=String(name).trim();
     if(result.embalagem_sugerida||result.embalagem)p.embalagem=String(result.embalagem_sugerida||result.embalagem).trim();
     markProductAiChange(p,["nome","embalagem"]);
