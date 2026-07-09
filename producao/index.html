@@ -266,6 +266,10 @@
     .product-workbench.processing{box-shadow:0 0 0 3px rgba(201,163,73,.22),0 12px 34px rgba(0,0,0,.055)!important}
     @media(max-width:700px){.toast-stack{right:10px;left:10px;top:auto;bottom:12px;width:auto}}
 
+    .kit-instagram-box{border:1px solid #cfe1ff;background:#f8fbff;border-radius:18px;padding:14px;margin:14px 0}
+    .kit-instagram-box h4{margin:0 0 6px;font-size:15px;color:var(--blue)}
+    .kit-instagram-box .toolbar{justify-content:flex-start;margin-top:10px}
+
     .product-chat-float{position:fixed;right:16px;bottom:18px;z-index:99990;width:min(360px,calc(100vw - 28px));max-height:70vh;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 54px rgba(0,0,0,.18);display:none;overflow:hidden}
     .product-chat-float.open{display:flex;flex-direction:column}
     .product-chat-head{padding:11px 12px;background:#f7f7f4;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
@@ -471,7 +475,7 @@
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
         <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho kitspromocionais.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="img/produtos"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
-        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">Use o webhook de textos para o botão único IA Cadastro (nome, embalagem, descrição e tags). Use o webhook de imagens para capas de kits e para gerar 1 imagem SEO informativa por produto.</div></div>
+        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">Use o webhook de textos para o botão único IA Cadastro. Use o webhook de imagens para capas de kits e imagens de produtos. Use o webhook Instagram Kits para publicar carrossel de kit promocional.</div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
       <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar kitspromocionais.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
@@ -543,6 +547,7 @@
     autoGithub: false,
     makeTextWebhookUrl: "",
     makeImageWebhookUrl: "",
+    makeInstagramKitWebhookUrl: "",
     blingToken: "",
     blingDeposito: "",
     blingUnidade: "UN"
@@ -1547,7 +1552,12 @@
       data_fim:String(raw[i]?.data_fim||""),
       desconto_percentual:toNum(raw[i]?.desconto_percentual),
       estoque_disponivel:Math.max(0,Math.floor(toNum(raw[i]?.estoque_disponivel))),
-      ativo:raw[i]?.ativo!==false
+      ativo:raw[i]?.ativo!==false,
+      instagram_status:String(raw[i]?.instagram_status||""),
+      instagram_enviado_em:String(raw[i]?.instagram_enviado_em||""),
+      instagram_post_id:String(raw[i]?.instagram_post_id||""),
+      instagram_carrossel_id:String(raw[i]?.instagram_carrossel_id||""),
+      instagram_imagens:Array.isArray(raw[i]?.instagram_imagens)?raw[i].instagram_imagens:[]
     }));
   };
 
@@ -2149,16 +2159,18 @@
   const aiBaseRenderSettingsUi=renderSettingsUi;
   renderSettingsUi=function(){
     aiBaseRenderSettingsUi();
-    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl");
+    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl"),instagramKit=$("#setMakeInstagramKitWebhookUrl");
     if(text&&text.value!==String(state.settings.makeTextWebhookUrl||""))text.value=state.settings.makeTextWebhookUrl||"";
     if(image&&image.value!==String(state.settings.makeImageWebhookUrl||""))image.value=state.settings.makeImageWebhookUrl||"";
+    if(instagramKit&&instagramKit.value!==String(state.settings.makeInstagramKitWebhookUrl||""))instagramKit.value=state.settings.makeInstagramKitWebhookUrl||"";
   };
   const aiBaseReadSettingsFromUi=readSettingsFromUi;
   readSettingsFromUi=function(){
     aiBaseReadSettingsFromUi();
-    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl");
+    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl"),instagramKit=$("#setMakeInstagramKitWebhookUrl");
     if(text)state.settings.makeTextWebhookUrl=text.value.trim();
     if(image)state.settings.makeImageWebhookUrl=image.value.trim();
+    if(instagramKit)state.settings.makeInstagramKitWebhookUrl=instagramKit.value.trim();
   };
 
   function normalizeGithubRawImageUrl(src){
@@ -2338,8 +2350,8 @@
   }
   async function callMakeAi(kind,payload){
     readSettingsFromUi();
-    const url=kind==="image"?state.settings.makeImageWebhookUrl:state.settings.makeTextWebhookUrl;
-    if(!url)throw new Error(`Configure o webhook de IA ${kind==="image"?"imagens":"textos"} na aba Integracoes.`);
+    const url=kind==="image"?state.settings.makeImageWebhookUrl:(kind==="instagram-kit"?state.settings.makeInstagramKitWebhookUrl:state.settings.makeTextWebhookUrl);
+    if(!url)throw new Error(kind==="instagram-kit"?"Configure o webhook Instagram Kits na aba Integracoes.":`Configure o webhook de IA ${kind==="image"?"imagens":"textos"} na aba Integracoes.`);
     const body=new URLSearchParams();
     body.set("payload",JSON.stringify(payload));
     const response=await fetch(url,{method:"POST",headers:{"Accept":"application/json"},body});
@@ -2762,6 +2774,7 @@
     if(action==="ai-product-image"&&p){await runUiAction(b,"Melhorando foto...",()=>aiProductImage(key));return}
     if(action==="ai-kit-description"){await runUiAction(b,"Gerando descrição...",()=>aiKitDescription());return}
     if(action==="ai-kit-cover"){await runUiAction(b,"Gerando capa...",()=>aiKitCover());return}
+    if(action==="send-kit-instagram"){await runUiAction(b,"Enviando Instagram...",()=>sendKitInstagram());return}
     if(action==="open-expiry-alert")renderExpiryAlert();
     if(action==="close-expiry-alert")$(".expiry-alert-overlay")?.remove();
     if(action==="open-expiry-product"){ $(".expiry-alert-overlay")?.remove(); state.activeTab="produtos"; renderAll(); focusProductWorkbench(key); }
@@ -2818,7 +2831,8 @@
       "ai-product-image":()=>p?aiProductImage(key):null,
       "send-product-chat":()=>sendProductChatQuestion(),
       "ai-kit-description":()=>aiKitDescription(),
-      "ai-kit-cover":()=>aiKitCover()
+      "ai-kit-cover":()=>aiKitCover(),
+      "send-kit-instagram":()=>sendKitInstagram()
     };
     if(!handlers[action])return;
     e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
@@ -2838,7 +2852,8 @@
       "ai-product-image":"Melhorando foto...",
       "send-product-chat":"Enviando...",
       "ai-kit-description":"Gerando descrição...",
-      "ai-kit-cover":"Gerando capa..."
+      "ai-kit-cover":"Gerando capa...",
+      "send-kit-instagram":"Enviando Instagram..."
     };
     const card=b.closest?.(".product-workbench");card?.classList.add("processing");
     await runUiAction(b,labels[action]||"Processando...",handlers[action]);
@@ -2969,6 +2984,150 @@
     if(el.matches('[data-pfield="categoria"],[data-pfield="subcategoria"]'))setTimeout(()=>renderProductEditor(false),0);
     if(el.matches('[data-card-field="categoria"],[data-card-field="subcategoria"]'))setTimeout(()=>renderProducts(),0);
   });
+
+
+
+  /* ===== Integração Instagram Kits Promocionais ===== */
+  function kitInstagramSlideCount(k){return 2 + (k?.produtos?.length || 0)}
+  function validateKitForInstagram(k){
+    const errors=[];
+    if(!k)errors.push("kit não selecionado");
+    if(!String(k?.nome||"").trim())errors.push("nome do kit");
+    if(!String(k?.codigo||"").trim())errors.push("código do kit");
+    if(toNum(k?.preco)<=0)errors.push("preço promocional");
+    const items=k?.produtos||[];
+    if(!items.length)errors.push("ao menos 1 produto");
+    if(items.length>8)errors.push("máximo de 8 produtos para caber em capa + produtos + CTA");
+    const missing=[];
+    const noImage=[];
+    items.forEach(item=>{
+      const it=parseBasketItem(item),p=productByCode(it.codigo);
+      if(!p)missing.push(it.codigo);
+      else if(!makeDownloadImageUrl(p.url_imagem||p.imagem||(Array.isArray(p.imagens)?p.imagens[0]:"")))noImage.push(it.codigo);
+    });
+    if(missing.length)errors.push(`produto(s) não encontrado(s): ${missing.join(", ")}`);
+    if(noImage.length)errors.push(`produto(s) sem imagem pública: ${noImage.join(", ")}`);
+    return errors;
+  }
+  async function ensureKitCoverPublicUrl(k){
+    if(!k)return "";
+    let img=String(k.imagem||"").trim();
+    if(!img)return "";
+    if(/^data:image\//i.test(img)){
+      readSettingsFromUi();
+      setStatus("Salvando imagem base64 do kit no GitHub antes do Instagram...","warn");
+      const blob=await (await fetch(img)).blob();
+      const basePath=String(state.settings.githubKitImagesPath||"site/img/kits").replace(/\/+$/,'');
+      const fileName=`${slug(k.codigo||k.nome)||Date.now()}.webp`;
+      await githubUpsertRaw(`${basePath}/${fileName}`,await blob.arrayBuffer(),`Publica imagem do kit para Instagram ${k.codigo||k.nome}`);
+      img=githubRawFileUrl(`${basePath}/${fileName}`);
+      k.imagem=img;
+      mark("kits");
+      saveLocal();
+    }
+    return makeDownloadImageUrl(img)||publicAssetUrl(img);
+  }
+  function buildKitInstagramPayload(k){
+    recalcKit(k);
+    const total=kitRetailTotal(k);
+    const produtos=(k.produtos||[]).map((item,index)=>{
+      const it=parseBasketItem(item),p=productByCode(it.codigo),img=p?(p.url_imagem||p.imagem||(Array.isArray(p.imagens)?p.imagens[0]:"")):"";
+      return {
+        indice:index+1,
+        qtd:Math.max(1,toNum(it.qtd)||1),
+        codigo:it.codigo,
+        nome:p?getName(p):"Produto não encontrado",
+        marca:p?.marca||"",
+        categoria:p?.categoria||"",
+        subcategoria:p?.subcategoria||"",
+        subsubcategoria:p?.subsubcategoria||"",
+        embalagem:p?.embalagem||"",
+        descricao:p?.descricao||"",
+        tags:parseTags(p?.tags),
+        preco_unitario:p?toNum(p.preco):0,
+        preco_unitario_formatado:p?brl(p.preco):"",
+        estoque:p?toNum(p.estoque):0,
+        imagem:p?img:"",
+        imagem_url:p?makeDownloadImageUrl(img):"",
+        substitutos:it.substitutos||[]
+      };
+    });
+    return {
+      acao:"publicar_kit_instagram",
+      origem:"admin_dona_antonia",
+      criado_em:nowIso(),
+      formato:"instagram_carrossel_4_5",
+      total_paginas:2+produtos.length,
+      regra_paginas:"capa + uma página por produto + CTA final",
+      limite_instagram_paginas:10,
+      kit:{
+        id:k.id||"",
+        nome:k.nome||"",
+        codigo:k.codigo||"",
+        descricao:k.descricao||"",
+        preco:toNum(k.preco),
+        preco_anterior:total,
+        economia:Math.max(0,total-toNum(k.preco)),
+        desconto_percentual:toNum(k.desconto_percentual),
+        preco_formatado:brl(k.preco),
+        preco_anterior_formatado:brl(total),
+        economia_formatada:brl(Math.max(0,total-toNum(k.preco))),
+        imagem:k.imagem||"",
+        imagem_url:makeDownloadImageUrl(k.imagem)||publicAssetUrl(k.imagem),
+        limite_kits:Math.max(0,Math.floor(toNum(k.limite_kits))),
+        estoque_disponivel:Math.max(0,Math.floor(toNum(k.estoque_disponivel))),
+        data_inicio:k.data_inicio||"",
+        data_fim:k.data_fim||"",
+        ativo:k.ativo!==false
+      },
+      produtos,
+      instrucoes:{
+        objetivo:"Criar e publicar carrossel altamente vendedor do kit promocional no Instagram da Dona Antônia.",
+        capa:"Mostrar nome do kit, preço promocional, economia/desconto e composição com produtos reais.",
+        produto:"Uma página por produto, com foto fiel, quantidade no kit e benefício simples.",
+        cta:"Última página com chamada para comprar no site/WhatsApp, entrega em Cuiabá e Várzea Grande.",
+        formato:"1080x1350, proporção 4:5, sem BRL, sem logo inventada, visual feminino/acolhedor/premium."
+      }
+    };
+  }
+  async function sendKitInstagram(){
+    const k=currentKit();
+    if(!k)return alert("Selecione um kit promocional.");
+    const errors=validateKit(k).concat(validateKitForInstagram(k));
+    if(errors.length)return alert(`Revise o kit antes de enviar ao Instagram:\n• ${errors.join("\n• ")}`);
+    if(!confirm(`Enviar o kit "${k.nome}" para o Instagram?\n\nSerão ${kitInstagramSlideCount(k)} páginas: capa + ${k.produtos.length} produto(s) + CTA.`))return;
+    await ensureKitCoverPublicUrl(k);
+    const payload=buildKitInstagramPayload(k);
+    setStatus("Enviando kit promocional para o cenário Instagram no Make...","warn");
+    const result=unwrapAiResult(await callMakeAi("instagram-kit",payload));
+    k.instagram_status=result.status||"enviado";
+    k.instagram_enviado_em=nowIso();
+    k.instagram_post_id=result.instagram_id||result.instagram_post_id||result.id||"";
+    k.instagram_carrossel_id=result.id_carrossel||result.carrossel_id||"";
+    k.instagram_imagens=result.imagens||result.urls_imagens||[];
+    mark("kits");
+    saveLocal();
+    renderKitsList();
+    renderKitEditor();
+    refreshJson();
+    setStatus("Kit enviado para publicação no Instagram.","ok");
+    const link=result.permalink||result.url||"";
+    alert(`Kit enviado ao Make.${k.instagram_post_id?`\nPost ID: ${k.instagram_post_id}`:""}${link?`\n${link}`:""}\n\nClique em Salvar geral para gravar o status no site/kits.json.`);
+  }
+
+  const kitInstagramBaseRenderKitEditor=renderKitEditor;
+  renderKitEditor=function(){
+    kitInstagramBaseRenderKitEditor();
+    const el=$("#kitEditor"),k=currentKit();
+    if(!el||!k)return;
+    const rows=el.querySelector(".basket-list");
+    const errors=validateKitForInstagram(k);
+    const status=k.instagram_status?`<div class="tiny" style="margin-top:6px">Último envio: ${esc(k.instagram_status)} ${k.instagram_enviado_em?`· ${esc(new Date(k.instagram_enviado_em).toLocaleString("pt-BR"))}`:""}${k.instagram_post_id?` · ID ${esc(k.instagram_post_id)}`:""}</div>`:"";
+    const box=document.createElement("div");
+    box.className="kit-instagram-box";
+    box.innerHTML=`<h4>Instagram do kit</h4><div class="tiny">Gera carrossel 4:5 com capa, 1 página por produto e CTA final. Limite seguro: 8 produtos.</div><div class="meta-line" style="margin-top:8px"><span class="chip blue">${kitInstagramSlideCount(k)} página(s)</span><span class="chip ${errors.length?"red":"green"}">${errors.length?"Revisar antes de enviar":"Pronto para enviar"}</span></div>${errors.length?`<div class="notice red" style="margin-top:10px">${esc(errors.join(" · "))}</div>`:""}<div class="toolbar"><button class="btn blue" type="button" data-action="send-kit-instagram">📲 Enviar para Instagram</button></div>${status}`;
+    if(rows)el.insertBefore(box,rows);else el.appendChild(box);
+  };
 
   loadData();
 })(); 
