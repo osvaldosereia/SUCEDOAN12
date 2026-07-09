@@ -2585,6 +2585,401 @@
       .product-list { grid-template-columns: repeat(5, minmax(0,1fr)) !important; }
     }
 
+  
+
+    /* =========================
+       AJUSTES FINAIS v2
+    ========================= */
+    .home-clean .category-section { margin-top: 0 !important; }
+    .home-clean .section:first-of-type { margin-top: 0 !important; }
+    .sidebar-brand { display: none; text-decoration: none; }
+    .sidebar-brand-copy { display: none; }
+    .basket-actions-simple { grid-template-columns: 1fr !important; }
+    .basket-card-simple .basket-desc,
+    .basket-card-simple .product-meta,
+    .basket-card-simple .kit-card-countdown { display: none !important; }
+    .basket-card-simple .secondary-btn { width: 100%; }
+    .product-imgbox img,
+    .basket-imgbox img,
+    .detail-imgbox img,
+    .detail-thumb img,
+    .hero-photo img,
+    .quick-thumb,
+    .routine-thumb,
+    .cart-img,
+    .basket-editor-row img,
+    .kit-deal-img,
+    .category-mini-img {
+      mix-blend-mode: multiply !important;
+      filter: contrast(1.03) saturate(1.01) !important;
+    }
+    .app, .container { overflow-x: hidden; }
+
+    @media (min-width: 768px) {
+      .header .brand { display: none !important; }
+      .header {
+        left: 248px !important;
+        padding: calc(14px + var(--safe-top)) 28px 14px !important;
+      }
+      .header-inner {
+        max-width: 1120px !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        gap: 16px !important;
+      }
+      .header-top { display: none !important; }
+      .search-wrap {
+        grid-column: 1 !important;
+        max-width: none !important;
+        min-width: 0 !important;
+      }
+      .header-actions {
+        grid-column: 2 !important;
+        display: flex !important;
+      }
+      .app {
+        left: 248px !important;
+        padding: 26px 28px 44px !important;
+      }
+      .container { max-width: 1120px !important; }
+      .bottom-bar {
+        width: 248px !important;
+        padding: 22px 18px !important;
+        gap: 16px !important;
+      }
+      .bottom-bar::before { display: none !important; content: none !important; }
+      .sidebar-brand {
+        display: flex !important;
+        align-items: center;
+        gap: 12px;
+        padding: 4px 6px 14px;
+        border-bottom: 1px solid var(--line);
+      }
+      .sidebar-brand-logo {
+        width: 148px;
+        height: 42px;
+        object-fit: contain;
+        display: block;
+      }
+      .sidebar-brand-copy { display: none; }
+      .bottom-nav { gap: 8px !important; }
+      .nav-item { min-width: 0; }
+      .product-grid,
+      .product-list { grid-template-columns: repeat(3, minmax(0,1fr)) !important; gap: 34px 22px !important; }
+      .product-card.compact { width: 172px !important; flex-basis: 172px !important; }
+      .basket-card.compact { width: 182px !important; flex-basis: 182px !important; }
+      .rail { gap: 14px !important; }
+      .product-name { min-height: 40px !important; }
+      .basket-list { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 36px 26px !important; }
+      .basket-card.wide .basket-name { font-size: 18px !important; min-height: 0 !important; }
+      .basket-card.wide .basket-desc { min-height: 0 !important; font-size: 13px !important; }
+      .basket-card.wide .basket-actions { grid-template-columns: 1fr auto !important; }
+      .product-detail {
+        grid-template-columns: minmax(0, 520px) minmax(280px, 1fr) !important;
+        gap: 26px !important;
+        align-items: start !important;
+      }
+      .detail-imgbox { min-height: 420px !important; }
+      .detail-title { font-size: clamp(24px, 3vw, 40px) !important; }
+      .detail-price { font-size: clamp(24px, 2vw, 34px) !important; }
+      .kit-deal-top-stacked,
+      .kit-deal-top,
+      .basket-detail-hero { grid-template-columns: minmax(0, 520px) minmax(280px, 1fr) !important; gap: 26px !important; }
+      .kit-deal-title,
+      .basket-detail-hero .basket-name { font-size: clamp(24px, 3vw, 38px) !important; }
+      .kit-price-main { font-size: clamp(30px, 3vw, 44px) !important; }
+    }
+
+    @media (min-width: 1260px) {
+      .container { max-width: 1180px !important; }
+      .header-inner { max-width: 1180px !important; }
+      .product-grid,
+      .product-list { grid-template-columns: repeat(4, minmax(0,1fr)) !important; }
+      .basket-list { grid-template-columns: repeat(3, minmax(0,1fr)) !important; }
+    }
+
+  
+
+    /* =========================
+       AJUSTES FINAIS v4
+       Tipografia tradicional + topbar sem sobrepor + cards sem vazio
+    ========================= */
+
+    body,
+    button,
+    input,
+    select,
+    textarea {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, Helvetica, sans-serif !important;
+      font-weight: 400;
+      letter-spacing: 0 !important;
+    }
+
+    .page-title,
+    .section-title,
+    .drawer-title,
+    .menu-section-title,
+    .checkout-title,
+    .basket-confirm h2 {
+      font-weight: 700 !important;
+      letter-spacing: -0.02em !important;
+      line-height: 1.18 !important;
+    }
+
+    .section-caption,
+    .page-subtitle,
+    .desc,
+    .basket-desc,
+    .hero-copy,
+    .trust-item span,
+    .menu-benefits span,
+    .menu-link small {
+      font-weight: 400 !important;
+      letter-spacing: 0 !important;
+    }
+
+    .product-name,
+    .basket-name,
+    .cart-name,
+    .basket-editor-name,
+    .category-card-copy strong,
+    .menu-link span,
+    .trust-item strong {
+      font-weight: 500 !important;
+      letter-spacing: 0 !important;
+    }
+
+    .price,
+    .detail-price,
+    .kit-price-main,
+    .header-cart-btn strong,
+    .checkout-cta strong,
+    .summary-row.total,
+    .coupon-price-pay strong {
+      font-weight: 700 !important;
+      letter-spacing: -0.02em !important;
+    }
+
+    .add-btn,
+    .secondary-btn,
+    .send-btn,
+    .chip,
+    .see-all,
+    .nav-item,
+    .qty-control,
+    .qty-control-mini,
+    .basket-confirm-primary,
+    .basket-confirm-secondary {
+      font-weight: 600 !important;
+      letter-spacing: 0 !important;
+    }
+
+    .product-imgbox img,
+    .basket-imgbox img,
+    .detail-imgbox img,
+    .detail-thumb img,
+    .hero-photo img,
+    .quick-thumb,
+    .routine-thumb,
+    .cart-img,
+    .basket-editor-row img,
+    .kit-deal-img,
+    .category-mini-img,
+    .beauty-products img {
+      mix-blend-mode: multiply !important;
+      filter: contrast(1.02) saturate(1.01) !important;
+    }
+
+    .home-clean .rail {
+      align-items: flex-start !important;
+    }
+
+    .home-clean .product-card,
+    .home-clean .basket-card {
+      height: auto !important;
+      min-height: 0 !important;
+    }
+
+    .home-clean .product-body,
+    .home-clean .basket-body {
+      flex: 0 0 auto !important;
+      min-height: 0 !important;
+      height: auto !important;
+      gap: 6px !important;
+      justify-content: flex-start !important;
+    }
+
+    .home-clean .product-name,
+    .home-clean .basket-name {
+      min-height: 0 !important;
+      margin: 0 !important;
+      line-height: 1.32 !important;
+    }
+
+    .home-clean .product-card-bottom {
+      margin-top: 0 !important;
+      min-height: 0 !important;
+      align-items: center !important;
+    }
+
+    .home-clean .price-row {
+      margin: 0 !important;
+      min-height: 0 !important;
+    }
+
+    .home-clean .basket-actions {
+      margin-top: 2px !important;
+    }
+
+    .home-clean .basket-card-simple .basket-body {
+      display: grid !important;
+      grid-template-rows: auto auto auto !important;
+    }
+
+    .product-grid,
+    .product-list {
+      row-gap: 32px !important;
+    }
+
+    .detail-title {
+      font-weight: 600 !important;
+      letter-spacing: -0.025em !important;
+      line-height: 1.14 !important;
+      overflow-wrap: anywhere;
+      word-break: normal;
+      hyphens: auto;
+    }
+
+    @media (max-width: 767px) {
+      :root {
+        --header-h: 136px !important;
+      }
+
+      .header {
+        height: calc(var(--header-h) + var(--safe-top)) !important;
+      }
+
+      .app {
+        top: calc(var(--header-h) + var(--safe-top)) !important;
+        height: calc(100dvh - var(--header-h) - var(--safe-top)) !important;
+        padding-top: 18px !important;
+      }
+
+      .product-grid,
+      .product-list {
+        row-gap: 28px !important;
+      }
+
+      .detail-title {
+        font-size: 26px !important;
+        line-height: 1.16 !important;
+        letter-spacing: -0.02em !important;
+      }
+    }
+
+    @media (min-width: 768px) {
+      :root {
+        --header-h: 104px !important;
+      }
+
+      .header {
+        height: calc(var(--header-h) + var(--safe-top)) !important;
+        padding: calc(18px + var(--safe-top)) 28px 18px !important;
+        display: flex !important;
+        align-items: center !important;
+      }
+
+      .header-inner {
+        height: 100% !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        align-items: center !important;
+        max-width: 1180px !important;
+        width: 100% !important;
+      }
+
+      .header-top {
+        display: contents !important;
+      }
+
+      .header .brand {
+        display: none !important;
+      }
+
+      .header-actions {
+        display: flex !important;
+        grid-column: 2 !important;
+        align-items: center !important;
+        align-self: center !important;
+      }
+
+      .header-cart-btn {
+        display: inline-flex !important;
+        height: 48px !important;
+        min-height: 48px !important;
+      }
+
+      .search-wrap {
+        grid-column: 1 !important;
+        align-self: center !important;
+        max-width: none !important;
+        min-width: 0 !important;
+      }
+
+      .search-input {
+        height: 48px !important;
+        font-size: 15px !important;
+      }
+
+      .app {
+        top: calc(var(--header-h) + var(--safe-top)) !important;
+        height: calc(100dvh - var(--header-h) - var(--safe-top)) !important;
+        padding-top: 34px !important;
+      }
+
+      .product-grid,
+      .product-list {
+        row-gap: 44px !important;
+      }
+
+      .home-clean .product-imgbox,
+      .home-clean .basket-imgbox {
+        margin-bottom: 8px !important;
+      }
+
+      .home-clean .product-card-bottom .price {
+        font-size: 17px !important;
+      }
+
+      .home-clean .add-plus {
+        width: 36px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        border-radius: 12px !important;
+        font-size: 21px !important;
+      }
+
+      .home-clean .secondary-btn {
+        min-height: 38px !important;
+        height: 38px !important;
+        font-size: 13px !important;
+      }
+
+      .detail-title {
+        font-size: clamp(28px, 2.5vw, 38px) !important;
+        line-height: 1.14 !important;
+      }
+
+      .detail-info {
+        gap: 12px !important;
+      }
+    }
+
+    @media (min-width: 1260px) {
+      .product-grid,
+      .product-list {
+        row-gap: 48px !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -2618,6 +3013,10 @@
   <main id="app" class="app"><div class="container"><div class="empty"><strong>Carregando produtos...</strong>Preparando a vitrine.</div></div></main>
 
   <nav class="bottom-bar" aria-label="Navegação principal">
+    <a class="sidebar-brand" href="#/" aria-label="Ir para a página inicial">
+      <img class="sidebar-brand-logo" src="img/logoantonia5.png" alt="Dona Antônia" width="152" height="42" decoding="async" onerror="this.style.display='none';this.parentElement.querySelector('.sidebar-brand-copy').style.display='block'">
+      <span class="sidebar-brand-copy"><strong>Dona Antônia</strong><span>Supermercado e cestas</span></span>
+    </a>
     <div class="bottom-nav">
       <a class="nav-item" id="nav-home" href="#/"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><path d="M9 22V12h6v10"></path></svg><span>Início</span></a>
       <a class="nav-item" id="nav-categorias" href="#/categorias"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"></path></svg><span>Categorias</span></a>
@@ -4170,6 +4569,22 @@
       const classes = ['basket-card'];
       if (mode === 'compact') classes.push('compact');
       if (mode === 'wide') classes.push('wide');
+      const priceBlock = `<div>${cesta.precoOriginal > cesta.preco ? `<div class="old-price">${fmt(cesta.precoOriginal)}</div>` : ''}<div class="price">${cesta.preco ? fmt(cesta.preco) : 'Ver itens'}</div></div>`;
+      if (mode === 'compact') {
+        return `
+          <article class="${classes.join(' ')} basket-card-simple">
+            <a class="basket-imgbox" href="#/cesta/${encodeURIComponent(cesta.id)}" aria-label="Abrir ${escapeHtml(cesta.nome)}">
+              <img loading="lazy" decoding="async" src="${escapeHtml(cesta.imagem)}" alt="${escapeHtml(cesta.nome)}" onerror="window.__daFallbackImg(this)">
+            </a>
+            <div class="basket-body">
+              <div class="basket-name">${escapeHtml(cesta.nome)}</div>
+              <div class="price-row">${priceBlock}</div>
+              <div class="basket-actions basket-actions-simple">
+                <a class="secondary-btn" href="#/cesta/${encodeURIComponent(cesta.id)}">Ver produtos</a>
+              </div>
+            </div>
+          </article>`;
+      }
       return `
         <article class="${classes.join(' ')}">
           <a class="basket-imgbox" href="#/cesta/${encodeURIComponent(cesta.id)}" aria-label="Abrir ${escapeHtml(cesta.nome)}">
@@ -4178,7 +4593,7 @@
           <div class="basket-body">
             <div class="basket-name">${escapeHtml(cesta.nome)}</div>
             <div class="basket-desc">${escapeHtml(cesta.descricao || 'Kit pronto para facilitar sua compra.')}</div>
-            <div class="price-row"><div>${cesta.precoOriginal > cesta.preco ? `<div class="old-price">${fmt(cesta.precoOriginal)}</div>` : ''}<div class="price">${cesta.preco ? fmt(cesta.preco) : 'Ver itens'}</div></div></div>
+            <div class="price-row">${priceBlock}</div>
             <div class="basket-actions">
               <a class="secondary-btn" href="#/cesta/${encodeURIComponent(cesta.id)}">Ver produtos</a>
               <button class="add-btn" type="button" data-action="add-basket" data-id="${escapeHtml(cesta.id)}">Adicionar</button>
@@ -4193,6 +4608,22 @@
       const discount = kitDiscountPercent(kit);
       if (mode === 'compact') classes.push('compact');
       if (mode === 'wide') classes.push('wide');
+      const priceBlock = `<div>${original > kit.preco ? `<div class="old-price">${fmt(original)}</div>` : ''}<div class="price">${kit.preco ? fmt(kit.preco) : 'Ver itens'}</div></div>`;
+      if (mode === 'compact') {
+        return `
+          <article class="${classes.join(' ')} basket-card-simple">
+            <a class="basket-imgbox" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}">
+              <img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
+            </a>
+            <div class="basket-body">
+              <div class="basket-name">${escapeHtml(kit.nome)}</div>
+              <div class="price-row">${priceBlock}</div>
+              <div class="basket-actions basket-actions-simple">
+                <a class="secondary-btn" href="#/kit/${encodeURIComponent(kit.id)}">Ver produtos</a>
+              </div>
+            </div>
+          </article>`;
+      }
       return `
         <article class="${classes.join(' ')}">
           <a class="basket-imgbox" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}">
@@ -4203,7 +4634,7 @@
             <div class="basket-name">${escapeHtml(kit.nome)}</div>
             <div class="basket-desc">${escapeHtml(kit.descricao || 'Kit promocional por tempo limitado.')}</div>
             <div class="kit-card-countdown">Termina em <span data-offer-countdown>--:--:--</span></div>
-            <div class="price-row"><div>${original > kit.preco ? `<div class="old-price">${fmt(original)}</div>` : ''}<div class="price">${kit.preco ? fmt(kit.preco) : 'Ver itens'}</div></div></div>
+            <div class="price-row">${priceBlock}</div>
             <div class="basket-actions">
               <a class="secondary-btn" href="#/kit/${encodeURIComponent(kit.id)}">Ver produtos</a>
               <button class="add-btn" type="button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar</button>
@@ -4279,26 +4710,8 @@
       const offers = getTopOffers(40);
       const essentials = productsByRoutine('compra-mes', 40);
       const kits = getActiveKits();
-      const heroProducts = [...offers, ...essentials].filter((p, i, arr) => arr.findIndex(x => x.id === p.id) === i).slice(0, 3);
       const html = `
-        <div class="container">
-          <section class="hero">
-            <div class="hero-content">
-              <div class="hero-eyebrow">ENTREGA EM CUIABÁ E VÁRZEA GRANDE</div>
-              <h1 class="hero-title">Mercado e cestas sem complicação.</h1>
-              <p class="hero-copy">Escolha seus produtos com calma e envie a compra pronta pelo WhatsApp. Nossa equipe confere tudo com você antes da entrega.</p>
-              <div class="hero-ctas">
-                <a class="hero-cta primary" href="#/ofertas">Ver ofertas</a>
-                <a class="hero-cta secondary" href="#/cestas">Comprar cesta básica</a>
-              </div>
-            </div>
-            ${heroProducts.length ? `<div class="hero-media" aria-label="Produtos em destaque">${heroProducts.map(p => `<a class="hero-photo" href="#/produto/${encodeURIComponent(productRouteKey(p))}"><img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)"></a>`).join('')}</div>` : ''}
-          </section>
-          <section class="trust-strip" aria-label="Condições da loja">
-            <div class="trust-item"><strong>Pedido mínimo R$ 75</strong><span>Veja o progresso na sua compra</span></div>
-            <div class="trust-item"><strong>Entrega local</strong><span>Cuiabá e Várzea Grande</span></div>
-            <div class="trust-item"><strong>Confirmação humana</strong><span>Atendimento pelo WhatsApp</span></div>
-          </section>
+        <div class="container home-clean">
           ${shelf('Ofertas de hoje', 'Economize nos produtos disponíveis agora.', offers, '#/ofertas')}
           ${shelf('Essenciais para sua casa', 'Os itens que não podem faltar na despensa.', essentials, '#/rotina/compra-mes')}
           ${shelf('Cestas básicas', 'Kits prontos para facilitar sua compra.', state.cestas, '#/cestas', 'basket')}
