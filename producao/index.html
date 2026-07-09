@@ -2357,8 +2357,14 @@
       imagem_url:publicAssetUrl(img)
     };
   }
+  function safeTextImageUrlForAi(p){
+    const src=String(p?.url_imagem||p?.imagem||(Array.isArray(p?.imagens)?p.imagens[0]:"")||"").trim();
+    if(!src || /^data:image\//i.test(src))return "";
+    return publicAssetUrl(src);
+  }
   function compactProductForTextAi(p){
     if(!p)return null;
+    const img=safeTextImageUrlForAi(p);
     return {
       key:getKey(p),
       firebaseKey:getKey(p),
@@ -2384,7 +2390,9 @@
       prateleira:p.prateleira||"",
       descricao:p.descricao||"",
       descricao_curta:p.descricao_curta||"",
-      tags:parseTags(p.tags)
+      tags:parseTags(p.tags),
+      imagem:img,
+      imagem_url:img
     };
   }
   async function buildKitReferenceCollage(kitData){
@@ -2457,7 +2465,12 @@
     body.set("payload",JSON.stringify(payload));
     const response=await fetch(url,{method:"POST",headers:{"Accept":"application/json"},body});
     const text=await response.text();
-    if(!response.ok)throw new Error(`Make retornou ${response.status}: ${text.slice(0,240)}`);
+    if(!response.ok){
+      const hint=kind==="text"
+        ?" Verifique no cenário de TEXTO se ele está lendo o campo payload e se aceita acao/produto."
+        :" Verifique no cenário de IMAGEM se ele está lendo produto.imagem ou produto.imagem_url.";
+      throw new Error(`Make retornou ${response.status}: ${text.slice(0,240)}${hint}`);
+    }
     try{return JSON.parse(text)}catch{return {ok:true,texto:text}}
   }
   function unwrapAiResult(result){
@@ -2598,7 +2611,7 @@
   async function aiProductCadastro(key){
     const p=productByKey(key);if(!p)return;
     setStatus("Gerando nome, embalagem, descricao e tags no Make...","warn");
-    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_cadastro_produto",produto:compactProductForTextAi(p),modo:"texto_sem_imagem"}));
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_cadastro_produto",produto:compactProductForTextAi(p)}));
     assertAiProductIdentity(p,result);
     const fields=[];
     const name=result.nome_sugerido||result.nome||result.name||"";
@@ -2617,27 +2630,27 @@
   }
   async function aiProductDescription(key){
     const p=productByKey(key);if(!p)return;
-    setStatus("Gerando descricao do produto no Make sem enviar imagem...","warn");
-    const payload={acao:"gerar_descricao_produto",produto:compactProductForTextAi(p),modo:"texto_sem_imagem"};
-    const result=unwrapAiResult(await callMakeAi("text",payload));
+    setStatus("Gerando descrição usando a ação compatível do cenário de texto...","warn");
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_cadastro_produto",produto:compactProductForTextAi(p)}));
     assertAiProductIdentity(p,result);
     const desc=result.descricao||result.description||result.texto||"";
-    if(!desc)throw new Error("O Make nao retornou uma descricao.");
+    if(!desc)throw new Error("O cenário de texto respondeu, mas não devolveu descricao.");
     p.descricao=String(desc).trim();
     if(result.descricao_curta)p.descricao_curta=String(result.descricao_curta).trim();
     if(Array.isArray(result.tags_sugeridas))p.tags=uniq([...parseTags(p.tags),...result.tags_sugeridas]).join(", ");
     markProductAiChange(p,["descricao","descricao_curta","tags"]);
-    setStatus("Descricao gerada pela IA e aplicada ao produto","ok");
+    setStatus("Descrição gerada pela IA e aplicada ao produto","ok");
   }
   async function aiProductName(key){
     const p=productByKey(key);if(!p)return;
-    setStatus("Melhorando nome do produto no Make...","warn");
-    const result=unwrapAiResult(await callMakeAi("text",{acao:"melhorar_nome_produto",produto:compactProductForTextAi(p),modo:"texto_sem_imagem"}));
+    setStatus("Melhorando nome usando a ação compatível do cenário de texto...","warn");
+    const result=unwrapAiResult(await callMakeAi("text",{acao:"gerar_cadastro_produto",produto:compactProductForTextAi(p)}));
     assertAiProductIdentity(p,result);
     const name=result.nome_sugerido||result.nome||result.name||result.texto||"";
-    if(!name)throw new Error("O Make nao retornou um nome sugerido.");
+    if(!name)throw new Error("O cenário de texto respondeu, mas não devolveu nome_sugerido.");
     p.nome=String(name).trim();
-    markProductAiChange(p,["nome"]);
+    if(result.embalagem_sugerida||result.embalagem)p.embalagem=String(result.embalagem_sugerida||result.embalagem).trim();
+    markProductAiChange(p,["nome","embalagem"]);
     setStatus("Nome melhorado pela IA e aplicado ao produto","ok");
   }
 
@@ -2704,6 +2717,9 @@
   }
   function shouldSkipAiImageGeneration(p, options={}){
     return !options.force && hasAiGeneratedProductImage(p);
+  }
+  function hasStableOriginalReferenceForAi(p){
+    return !!(getStoredAiReferenceImageSrc(p)||findFirstNonAiProductImageSrc(p));
   }
   function loadImageElementForAi(src){
     return new Promise((resolve,reject)=>{
@@ -2775,7 +2791,7 @@
     const payload={
       acao:'melhorar_imagem_produto',
       quantidade_imagens:1,
-      produto:{...compactProductForAi(p),imagem_url:referenceImageUrl},
+      produto:{...compactProductForAi(p),imagem:referenceImageUrl,imagem_url:referenceImageUrl},
       estrategia:plan.label,
       seo_imagens:seoPlan,
       substituir_imagens_existentes:true,
