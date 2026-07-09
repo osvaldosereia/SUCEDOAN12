@@ -2980,6 +2980,256 @@
       }
     }
 
+  
+
+    /* =========================
+       AJUSTES FINAIS v5
+       Chips clicáveis, grades sem carrossel e conteúdo mais estreito
+    ========================= */
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 30px 16px;
+      width: 100%;
+      overflow: visible;
+    }
+
+    .section-grid .product-card.compact,
+    .section-grid .basket-card.compact,
+    .section-grid .carousel-more-card {
+      width: auto !important;
+      flex: initial !important;
+      flex-basis: auto !important;
+      min-width: 0 !important;
+    }
+
+    .section-grid .basket-card-simple .basket-name {
+      min-height: 0 !important;
+      -webkit-line-clamp: 2;
+    }
+
+    .section-grid .basket-card-simple .basket-actions {
+      margin-top: 0 !important;
+    }
+
+    .category-button-single {
+      min-height: 0 !important;
+      grid-template-columns: 64px minmax(0, 1fr) !important;
+      align-items: center !important;
+      align-content: center !important;
+      gap: 12px !important;
+    }
+
+    .category-thumb-single {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: #f7f7f7;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .category-thumb-single img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 6px;
+      mix-blend-mode: multiply !important;
+    }
+
+    .category-photo-strip {
+      display: none !important;
+    }
+
+    .detail-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 2px;
+    }
+
+    .detail-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      max-width: 100%;
+      padding: 0 11px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: #555;
+      font-size: 12px;
+      line-height: 1;
+      font-weight: 500;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .detail-chip:hover {
+      border-color: #cfcfcf;
+      color: var(--ink);
+    }
+
+    .related-section {
+      margin-top: 46px !important;
+    }
+
+    .related-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 34px 18px !important;
+      max-width: 620px;
+    }
+
+    .related-actions {
+      margin-top: 22px;
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .related-see-all {
+      width: auto !important;
+      min-width: 150px;
+      padding: 0 18px;
+    }
+
+    .basket-confirm-summary:empty {
+      display: none !important;
+    }
+
+    .basket-confirm-actions {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        width: min(100%, 1040px) !important;
+        max-width: 1040px !important;
+      }
+
+      .header-inner {
+        max-width: 1040px !important;
+      }
+
+      .app {
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+      }
+
+      .section-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 42px 24px;
+      }
+
+      .section-grid .product-imgbox,
+      .section-grid .basket-imgbox {
+        border-radius: 18px !important;
+      }
+
+      .section-grid .product-name,
+      .section-grid .basket-name {
+        font-size: 13.5px !important;
+      }
+
+      .section-grid .product-card-bottom .price,
+      .section-grid .price {
+        font-size: 16px !important;
+      }
+
+      .category-buttons {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 14px !important;
+      }
+
+      .category-button-single {
+        grid-template-columns: 58px minmax(0, 1fr) !important;
+        padding: 11px !important;
+      }
+
+      .category-thumb-single {
+        width: 58px;
+        height: 58px;
+        border-radius: 14px;
+      }
+
+      .product-detail {
+        grid-template-columns: minmax(0, 470px) minmax(0, 1fr) !important;
+        gap: 30px !important;
+      }
+
+      .detail-imgbox {
+        min-height: 420px !important;
+      }
+
+      .related-grid {
+        max-width: 620px;
+      }
+    }
+
+    @media (min-width: 1260px) {
+      .container {
+        width: min(100%, 1080px) !important;
+        max-width: 1080px !important;
+      }
+
+      .header-inner {
+        max-width: 1080px !important;
+      }
+
+      .section-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 46px 26px;
+      }
+
+      .product-grid,
+      .product-list {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 46px 26px !important;
+      }
+
+      .related-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 38px 22px !important;
+        max-width: 650px;
+      }
+
+      .category-buttons {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .section-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 28px 14px;
+      }
+
+      .category-button-single {
+        grid-template-columns: 58px minmax(0, 1fr) !important;
+        padding: 11px !important;
+      }
+
+      .category-thumb-single {
+        width: 58px;
+        height: 58px;
+      }
+
+      .detail-chip-row {
+        margin: 0 0 8px;
+      }
+
+      .related-grid {
+        max-width: none;
+      }
+
+      .basket-confirm-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -3035,7 +3285,7 @@
       <p id="basket-confirm-message">A cesta foi colocada na sua compra.</p>
       <div class="basket-confirm-summary" id="basket-confirm-summary"></div>
       <div class="basket-confirm-actions">
-        <button class="basket-confirm-primary" id="basket-confirm-continue" type="button">Continuar comprando</button>
+        <button class="basket-confirm-primary" id="basket-confirm-continue" type="button">Ver ofertas</button>
         <button class="basket-confirm-secondary" id="basket-confirm-view" type="button">Ver minha compra</button>
       </div>
     </section>
@@ -4521,10 +4771,11 @@
     }
 
     function categoryCardHtml(cat, count) {
-      const images = categoryPreviewImages(cat);
-      const fallback = categoryThumb(cat);
-      const thumbs = (images.length ? images : [fallback]).map(img => `<img class="category-mini-img" loading="lazy" decoding="async" src="${escapeHtml(img)}" alt="" onerror="window.__daFallbackImg(this)">`).join('');
-      return `<a class="category-button" href="#/categoria/${encodeURIComponent(cat)}"><div class="category-photo-strip">${thumbs}</div><div class="category-card-copy"><strong>${escapeHtml(cat)}</strong><span>${count} ${count === 1 ? 'produto' : 'produtos'}</span></div></a>`;
+      const thumb = categoryThumb(cat);
+      return `<a class="category-button category-button-single" href="#/categoria/${encodeURIComponent(cat)}">
+        <div class="category-thumb-single"><img loading="lazy" decoding="async" src="${escapeHtml(thumb)}" alt="" onerror="window.__daFallbackImg(this)"></div>
+        <div class="category-card-copy"><strong>${escapeHtml(cat)}</strong><span>${count} ${count === 1 ? 'produto' : 'produtos'}</span></div>
+      </a>`;
     }
 
     function routineThumb(key) {
@@ -4645,10 +4896,28 @@
 
     function shelf(title, caption, items, href, type) {
       if (!items || !items.length) return '';
-      const visible = items.slice(0, 20);
+      const visible = items.slice(0, 8);
       const cards = visible.map(item => type === 'kit' ? kitCard(item, 'compact') : (type === 'basket' ? basketCard(item, 'compact') : productCard(item, 'compact'))).join('');
-      const moreCard = href && items.length > 20 ? `<a class="carousel-more-card" href="${href}"><strong>Ver mais</strong><span>${items.length - 20} produtos</span></a>` : '';
-      return `<section class="section"><div class="section-head"><div><h2 class="section-title">${escapeHtml(title)}</h2>${caption ? `<div class="section-caption">${escapeHtml(caption)}</div>` : ''}</div>${href ? `<a class="see-all" href="${href}">Ver todos</a>` : ''}</div><div class="rail">${cards}${moreCard}</div></section>`;
+      return `<section class="section"><div class="section-head"><div><h2 class="section-title">${escapeHtml(title)}</h2>${caption ? `<div class="section-caption">${escapeHtml(caption)}</div>` : ''}</div>${href ? `<a class="see-all" href="${href}">Ver todos</a>` : ''}</div><div class="section-grid">${cards}</div></section>`;
+    }
+
+    function productDetailChipsHtml(p) {
+      const chips = [];
+      if (p.categoria) chips.push(`<a class="detail-chip" href="#/categoria/${encodeURIComponent(p.categoria)}">${escapeHtml(p.categoria)}</a>`);
+      if (p.subcategoria && p.categoria) chips.push(`<a class="detail-chip" href="#/categoria/${encodeURIComponent(p.categoria)}?sub=${encodeURIComponent(p.subcategoria)}">${escapeHtml(p.subcategoria)}</a>`);
+      if (p.marca) chips.push(`<a class="detail-chip" href="#/busca/${encodeURIComponent(p.marca)}">${escapeHtml(p.marca)}</a>`);
+      if (!chips.length) return '';
+      return `<div class="detail-chip-row" aria-label="Filtros do produto">${chips.join('')}</div>`;
+    }
+
+    function relatedGridHtml(title, caption, items, href) {
+      if (!items || !items.length) return '';
+      const visible = items.slice(0, 8);
+      return `<section class="section related-section">
+        <div class="section-head"><div><h2 class="section-title">${escapeHtml(title)}</h2>${caption ? `<div class="section-caption">${escapeHtml(caption)}</div>` : ''}</div></div>
+        <div class="product-grid related-grid">${visible.map(p => productCard(p)).join('')}</div>
+        ${href && items.length > 8 ? `<div class="related-actions"><a class="secondary-btn related-see-all" href="${href}">Ver todos</a></div>` : ''}
+      </section>`;
     }
 
     function pageHeader(title, subtitle, backHref) {
@@ -5097,21 +5366,25 @@
         return;
       }
       const display = productDisplayPricing(p);
-      const related = state.products.filter(x => isAvailable(x) && x.id !== p.id && (x.categoria === p.categoria || x.marca === p.marca)).slice(0, 10);
+      const related = state.products.filter(x => isAvailable(x) && x.id !== p.id && (x.categoria === p.categoria || x.marca === p.marca)).slice(0, 24);
+      const descHtml = p.descricao ? `<div class="desc">${escapeHtml(p.descricao)}</div>` : '';
       app.innerHTML = `<div class="container">${pageHeader('Produto', '', '#/')}
         <article class="product-detail">
-          <div class="detail-media"><div class="detail-imgbox"><img id="product-main-image" src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)"></div>${(p.images||[]).length>1?`<div class="detail-gallery">${(p.images||[]).slice(0,6).map((img,i)=>`<button class="detail-thumb ${i===0?'active':''}" type="button" data-action="detail-image" data-src="${escapeHtml(img)}" data-alt="${escapeHtml(`${p.name} - imagem ${i+1}`)}" aria-label="Ver imagem ${i+1} de ${escapeHtml(p.name)}"><img src="${escapeHtml(img)}" alt="${escapeHtml(`${p.name} - imagem ${i+1}`)}" loading="lazy" decoding="async" onerror="window.__daFallbackImg(this)"></button>`).join('')}</div>`:''}</div>
+          <div class="detail-media">
+            <div class="detail-imgbox"><img id="product-main-image" src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)"></div>
+            ${(p.images||[]).length>1?`<div class="detail-gallery">${(p.images||[]).slice(0,6).map((img,i)=>`<button class="detail-thumb ${i===0?'active':''}" type="button" data-action="detail-image" data-src="${escapeHtml(img)}" data-alt="${escapeHtml(`${p.name} - imagem ${i+1}`)}" aria-label="Ver imagem ${i+1} de ${escapeHtml(p.name)}"><img src="${escapeHtml(img)}" alt="${escapeHtml(`${p.name} - imagem ${i+1}`)}" loading="lazy" decoding="async" onerror="window.__daFallbackImg(this)"></button>`).join('')}</div>`:''}
+            ${productDetailChipsHtml(p)}
+          </div>
           <div class="detail-info">
-            ${p.marca ? `<span class="detail-brand">${escapeHtml(p.marca)}</span>` : ''}
             ${p.validade && formatProductExpiry(p.validade) ? `<div class="product-expiry">Validade: ${escapeHtml(formatProductExpiry(p.validade))}</div>` : ''}
             <h1 class="detail-title">${escapeHtml(p.name)}</h1>
             ${hasExpiryBulkDiscount(p) ? `<div class="expiry-bulk-note">Leve 3 ou mais unidades e ganhe mais 10% no checkout.</div>` : ''}
             ${productPriceHtml(display, true)}
             <div data-card-controls="${escapeHtml(p.id)}" data-control-mode="detail">${qtyControlHtml(p.id, Number(state.cart[p.id] || 0))}</div>
-            <div class="desc">${escapeHtml(p.descricao || `${p.categoria}${p.subcategoria ? ' • ' + p.subcategoria : ''}${p.embalagem ? ' • ' + p.embalagem : ''}`)}</div>
+            ${descHtml}
           </div>
         </article>
-        ${shelf('Produtos relacionados', 'Itens parecidos ou da mesma categoria.', related, `#/categoria/${encodeURIComponent(p.categoria)}`)}
+        ${relatedGridHtml('Produtos relacionados', 'Itens parecidos ou da mesma categoria.', related, `#/categoria/${encodeURIComponent(p.categoria)}`)}
       </div>`;
       setActiveNav('home');
       updateMeta(`${p.name} - Dona Antônia`, `Compre ${p.name} com entrega em Cuiabá e Várzea Grande.`, `/?p=${encodeURIComponent(productRouteKey(p))}`);
@@ -5602,28 +5875,21 @@
 
     let basketConfirmPreviousFocus = null;
 
-    function openBasketConfirmation(basket, changed) {
-      const overlay = $('basket-confirm-overlay');
-      if (!overlay || !basket) return;
-      basketConfirmPreviousFocus = document.activeElement;
-      $('basket-confirm-title').textContent = changed ? 'Cesta alterada adicionada!' : 'Cesta adicionada!';
-      $('basket-confirm-message').textContent = `${basket.nome} foi colocada na sua compra.`;
-      const count = cartCount();
-      $('basket-confirm-summary').textContent = `${count} ${count === 1 ? 'item' : 'itens'} na compra · Total ${fmt(subtotalCart(true))}`;
-      overlay.classList.add('show');
-      overlay.setAttribute('aria-hidden', 'false');
-      requestAnimationFrame(() => $('basket-confirm-continue')?.focus());
-    }
-
     function openBasketConfirmation(basket, changed, type) {
       const overlay = $('basket-confirm-overlay');
       if (!overlay || !basket) return;
       const isKit = type === 'kit';
+      const offerCount = getTopOffers(200).length;
       basketConfirmPreviousFocus = document.activeElement;
-      $('basket-confirm-title').textContent = isKit ? 'Kit promocional adicionado!' : (changed ? 'Cesta alterada adicionada!' : 'Cesta adicionada!');
-      $('basket-confirm-message').textContent = `${basket.nome} foi ${isKit ? 'colocado' : 'colocada'} na sua compra.`;
-      const count = cartCount();
-      $('basket-confirm-summary').textContent = `${count} ${count === 1 ? 'item' : 'itens'} na compra - Total ${fmt(subtotalCart(true))}`;
+      $('basket-confirm-title').textContent = isKit ? 'Kit adicionado' : 'Cesta adicionada';
+      $('basket-confirm-message').textContent = offerCount > 0
+        ? `Temos mais de ${offerCount} produtos em oferta para você aproveitar.`
+        : 'Confira também os produtos em oferta antes de finalizar sua compra.';
+      const summary = $('basket-confirm-summary');
+      if (summary) {
+        summary.textContent = '';
+        summary.style.display = 'none';
+      }
       overlay.classList.add('show');
       overlay.setAttribute('aria-hidden', 'false');
       requestAnimationFrame(() => $('basket-confirm-continue')?.focus());
