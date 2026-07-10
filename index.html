@@ -3704,6 +3704,537 @@
       }
     }
 
+
+    /* =========================================================
+       UI/UX PROFISSIONAL + BANNERS + FAVORITOS - Dona Antonia
+       Mantem regras de compra existentes e altera somente vitrine visual.
+    ========================================================= */
+    :root {
+      --bg: #f6f7f2;
+      --surface: #ffffff;
+      --surface-soft: #f0f4ec;
+      --photo-bg: #f8faf7;
+      --ink: #14231b;
+      --muted: #617066;
+      --muted-2: #9aa49d;
+      --line: #e3e8de;
+      --line-soft: #eef2ea;
+      --line-strong: #cfd8ca;
+      --brand: #15603b;
+      --brand-2: #18a058;
+      --accent: #ff7a2f;
+      --accent-soft: #fff1e8;
+      --gold: #f6b73c;
+      --danger: #d93b42;
+      --whatsapp: #19b55b;
+      --shadow: 0 18px 48px rgba(20, 35, 27, .08);
+      --shadow-soft: 0 10px 28px rgba(20, 35, 27, .06);
+      --radius: 24px;
+      --sidebar-w: 278px;
+    }
+
+    html, body { background: var(--bg) !important; }
+    body {
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 0 0, rgba(24,160,88,.08), transparent 28%),
+        radial-gradient(circle at 100% 0, rgba(255,122,47,.10), transparent 26%),
+        linear-gradient(180deg, #fff 0, var(--bg) 360px, var(--bg) 100%) !important;
+    }
+    .header {
+      background: rgba(255,255,255,.92) !important;
+      border-bottom: 1px solid rgba(227,232,222,.92) !important;
+      box-shadow: 0 10px 32px rgba(20,35,27,.06) !important;
+      backdrop-filter: blur(18px) !important;
+      -webkit-backdrop-filter: blur(18px) !important;
+    }
+    .brand-logo { width: 150px !important; height: 42px !important; }
+    .header-cart-btn,
+    .header-menu-btn,
+    .search-input,
+    .search-clear,
+    .search-submit {
+      border-radius: 18px !important;
+    }
+    .search-input {
+      height: 52px !important;
+      background: #fff !important;
+      border: 1px solid var(--line) !important;
+      box-shadow: 0 8px 22px rgba(20,35,27,.04) !important;
+      font-weight: 650 !important;
+    }
+    .search-input:focus {
+      border-color: var(--brand-2) !important;
+      box-shadow: 0 0 0 4px rgba(24,160,88,.12) !important;
+    }
+    .search-submit { background: var(--brand) !important; }
+    .search-clear { background: var(--surface-soft) !important; }
+    .header-cart-btn,
+    .header-menu-btn {
+      background: #fff !important;
+      border: 1px solid var(--line) !important;
+      box-shadow: 0 8px 20px rgba(20,35,27,.04) !important;
+    }
+    .header-cart-count,
+    .cart-badge { background: var(--accent) !important; color: #fff !important; }
+
+    .app { background: transparent !important; }
+    .container,
+    .app > .container { max-width: 1240px !important; width: min(100%, 1240px) !important; }
+    .home-clean { display: block; }
+
+    .section { margin-top: 34px !important; }
+    .section-head {
+      margin: 0 0 16px !important;
+      align-items: end !important;
+    }
+    .section-title {
+      font-size: clamp(22px, 2.2vw, 32px) !important;
+      font-weight: 900 !important;
+      line-height: 1.02 !important;
+      letter-spacing: -.055em !important;
+    }
+    .section-caption { color: var(--muted) !important; font-size: 14px !important; font-weight: 600 !important; }
+    .see-all {
+      min-height: 38px !important;
+      padding: 0 14px !important;
+      border-radius: 999px !important;
+      background: #fff !important;
+      color: var(--brand) !important;
+      border: 1px solid var(--line) !important;
+      font-weight: 850 !important;
+      box-shadow: none !important;
+    }
+
+    /* Banners editaveis via site/banner/banners.json */
+    .da-banner { margin: 0 0 22px; }
+    .da-banner-link,
+    .da-banner-static { display: block; color: inherit; }
+    .da-banner-picture {
+      position: relative;
+      display: block;
+      width: 100%;
+      overflow: hidden;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #eaf6ee, #fff4e8);
+      box-shadow: var(--shadow);
+      isolation: isolate;
+    }
+    .da-banner-picture img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: inherit;
+      background: transparent;
+    }
+    .da-banner-hero .da-banner-picture { aspect-ratio: 1.32 / 1; min-height: 300px; }
+    .da-banner-section .da-banner-picture { aspect-ratio: 2.25 / 1; min-height: 150px; border-radius: 24px; }
+    .da-banner-carousel { position: relative; overflow: hidden; border-radius: 28px; box-shadow: var(--shadow); background: #eaf6ee; }
+    .da-banner-carousel .da-banner-slide { display: none; margin: 0; }
+    .da-banner-carousel .da-banner-slide.active { display: block; }
+    .da-banner-carousel .da-banner-picture { box-shadow: none; border-radius: 28px; }
+    .banner-arrow {
+      position: absolute;
+      top: 50%;
+      z-index: 2;
+      transform: translateY(-50%);
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      background: rgba(255,255,255,.88);
+      box-shadow: 0 10px 24px rgba(20,35,27,.12);
+    }
+    .banner-arrow.prev { left: 12px; }
+    .banner-arrow.next { right: 12px; }
+    .banner-dots {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 12px;
+      display: flex;
+      justify-content: center;
+      gap: 7px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .banner-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.58);
+      box-shadow: 0 1px 3px rgba(0,0,0,.12);
+      transition: width .2s ease, background .2s ease;
+    }
+    .banner-dot.active { width: 22px; background: #fff; }
+
+    .home-quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .home-quick-card {
+      min-height: 106px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 64px;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+    .home-quick-card strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.12;
+      font-weight: 900;
+      letter-spacing: -.03em;
+    }
+    .home-quick-card span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      font-weight: 650;
+    }
+    .home-quick-card img {
+      width: 64px;
+      height: 64px;
+      border-radius: 19px;
+      object-fit: contain;
+      background: var(--surface-soft);
+      padding: 5px;
+    }
+    .home-quick-card.primary { background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #fff; border: 0; }
+    .home-quick-card.primary span { color: rgba(255,255,255,.84); }
+    .home-quick-card.primary img { background: rgba(255,255,255,.94); }
+    .home-quick-card.offer { background: linear-gradient(135deg, #fff5e9, #fff); border-color: #ffe0c5; }
+
+    .brand-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+    .brand-pill {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: var(--surface-soft);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    /* Cards de produto mais profissionais e com favorito */
+    .section-grid,
+    .product-grid,
+    .product-list,
+    .related-grid {
+      gap: 14px !important;
+      border: 0 !important;
+    }
+    .section-grid { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    .product-grid,
+    .product-list { grid-template-columns: repeat(2, minmax(0,1fr)) !important; }
+    .product-card,
+    .basket-card {
+      position: relative;
+      border: 1px solid var(--line) !important;
+      border-radius: 24px !important;
+      background: #fff !important;
+      box-shadow: var(--shadow-soft) !important;
+      padding: 10px !important;
+      overflow: hidden !important;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .product-card:hover,
+    .basket-card:hover { transform: translateY(-2px) !important; box-shadow: var(--shadow) !important; border-color: var(--line-strong) !important; }
+    .section-grid > .product-card,
+    .section-grid > .basket-card,
+    .product-grid > .product-card,
+    .product-list > .product-card,
+    .related-grid > .product-card {
+      padding: 10px !important;
+      border-right: 1px solid var(--line) !important;
+      border-bottom: 1px solid var(--line) !important;
+    }
+    .product-card.compact,
+    .basket-card.compact,
+    .carousel-more-card { width: auto !important; min-height: auto !important; }
+    .rail .product-card.compact,
+    .rail .basket-card.compact { width: 192px !important; flex: 0 0 192px !important; }
+    .product-media-wrap { position: relative; margin: 0 0 10px; }
+    .product-imgbox,
+    .basket-imgbox {
+      width: 100% !important;
+      aspect-ratio: 1 / 1 !important;
+      margin: 0 !important;
+      border-radius: 20px !important;
+      border: 0 !important;
+      background: var(--photo-bg) !important;
+      overflow: hidden !important;
+    }
+    .product-imgbox img,
+    .basket-imgbox img,
+    .related-grid .product-imgbox img,
+    .section-grid .product-imgbox img,
+    .product-grid .product-imgbox img,
+    .product-list .product-imgbox img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain !important;
+      padding: 9px !important;
+      mix-blend-mode: normal !important;
+      filter: none !important;
+      border-radius: inherit !important;
+      background: transparent !important;
+    }
+    .product-body,
+    .basket-body { padding: 0 2px 2px !important; gap: 8px !important; }
+    .product-name,
+    .basket-name {
+      font-weight: 850 !important;
+      color: var(--ink) !important;
+      letter-spacing: -.025em;
+    }
+    .product-name { min-height: 39px !important; font-size: 14px !important; line-height: 1.34 !important; }
+    .product-card-bottom { align-items: center !important; min-height: 42px !important; }
+    .product-card-bottom .price { color: var(--brand) !important; font-size: 18px !important; font-weight: 950 !important; }
+    .old-price { color: var(--muted-2) !important; font-weight: 750 !important; }
+    .add-plus,
+    .qty-control-mini {
+      border-radius: 15px !important;
+      background: var(--brand) !important;
+      color: #fff !important;
+    }
+    .qty-control-mini { width: 96px !important; border: 1px solid rgba(21,96,59,.18) !important; background: #ecf8f0 !important; color: var(--brand) !important; }
+    .qty-control-mini button { color: var(--brand) !important; }
+    .add-btn:not(.add-plus) { background: var(--brand) !important; color: #fff !important; }
+    .secondary-btn { border: 1px solid var(--line) !important; background: #fff !important; color: var(--ink) !important; }
+
+    .favorite-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 4;
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      display: inline-grid;
+      place-items: center;
+      color: #6b7280;
+      background: rgba(255,255,255,.94);
+      border: 1px solid rgba(227,232,222,.88);
+      box-shadow: 0 8px 18px rgba(20,35,27,.08);
+      transition: transform .16s ease, color .16s ease, background .16s ease;
+    }
+    .favorite-btn:hover { transform: scale(1.04); color: var(--danger); }
+    .favorite-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2.25; }
+    .favorite-btn.active { color: #fff; background: var(--danger); border-color: var(--danger); }
+    .favorite-btn.active svg { fill: currentColor; }
+    .detail-favorite-btn {
+      position: static;
+      width: auto;
+      min-height: 44px;
+      display: inline-flex;
+      gap: 8px;
+      padding: 0 14px;
+      font-size: 13px;
+      font-weight: 850;
+      box-shadow: none;
+      border-radius: 14px;
+      background: #fff;
+    }
+    .detail-actions-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .favorites-empty-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 14px; }
+
+    .category-buttons {
+      gap: 14px !important;
+      border: 0 !important;
+      grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+    }
+    .category-button {
+      border: 1px solid var(--line) !important;
+      border-radius: 24px !important;
+      background: #fff !important;
+      box-shadow: var(--shadow-soft) !important;
+      min-height: 132px !important;
+      padding: 14px !important;
+    }
+    .category-thumb-single { background: var(--surface-soft) !important; border-radius: 18px !important; }
+    .category-thumb-single img { object-fit: contain !important; padding: 4px !important; }
+
+    .bottom-bar {
+      background: rgba(255,255,255,.96) !important;
+      border-top: 1px solid var(--line) !important;
+      box-shadow: 0 -10px 32px rgba(20,35,27,.08) !important;
+    }
+    .nav-item.active { background: #eaf7ef !important; color: var(--brand) !important; }
+    .checkout-cta { background: var(--whatsapp) !important; color: #fff !important; }
+
+    .drawer,
+    .site-menu-drawer {
+      background: var(--bg) !important;
+      max-width: 520px !important;
+    }
+    .drawer-head { background: #fff !important; border-bottom: 1px solid var(--line) !important; }
+    .menu-hero-card,
+    .menu-section-card,
+    .checkout-section,
+    .empty,
+    .notice,
+    .basket-total-card,
+    .info-accordion details,
+    .merchant-footer {
+      border: 1px solid var(--line) !important;
+      border-radius: 24px !important;
+      background: #fff !important;
+      box-shadow: var(--shadow-soft) !important;
+    }
+    .menu-hero-card { background: linear-gradient(135deg, var(--brand), var(--brand-2)) !important; color: #fff !important; }
+    .menu-hero-card span,
+    .menu-hero-kicker { color: rgba(255,255,255,.82) !important; }
+    .menu-link-list.compact { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+    .menu-link-list.compact .menu-link { min-height: 54px; }
+    .menu-link strong { font-size: 13px; }
+
+    @media (max-width: 767px) {
+      .app { padding-left: 12px !important; padding-right: 12px !important; }
+      .container,
+      .app > .container { width: 100% !important; max-width: 100% !important; }
+      .da-banner { margin-bottom: 18px; }
+      .da-banner-hero .da-banner-picture { border-radius: 24px; min-height: 280px; }
+      .da-banner-section .da-banner-picture { border-radius: 22px; }
+      .banner-arrow { width: 36px; height: 36px; }
+      .banner-arrow.prev { left: 8px; }
+      .banner-arrow.next { right: 8px; }
+      .home-quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .home-quick-card { min-height: 96px; grid-template-columns: 1fr; }
+      .home-quick-card img { display: none; }
+      .section-grid,
+      .product-grid,
+      .product-list,
+      .related-grid { gap: 10px !important; }
+      .product-card,
+      .basket-card,
+      .section-grid > .product-card,
+      .section-grid > .basket-card,
+      .product-grid > .product-card,
+      .product-list > .product-card,
+      .related-grid > .product-card { padding: 8px !important; border-radius: 20px !important; }
+      .product-imgbox,
+      .basket-imgbox { border-radius: 16px !important; }
+      .product-imgbox img,
+      .basket-imgbox img { padding: 7px !important; }
+      .product-name { font-size: 13px !important; min-height: 36px !important; }
+      .product-card-bottom .price { font-size: 16px !important; }
+      .favorite-btn { width: 34px; height: 34px; top: 6px; right: 6px; }
+      .category-button { min-height: 118px !important; }
+    }
+
+    @media (min-width: 768px) {
+      .da-banner-hero .da-banner-picture { aspect-ratio: 3.48 / 1; min-height: 260px; }
+      .da-banner-section .da-banner-picture { aspect-ratio: 5.33 / 1; min-height: 185px; }
+      .home-quick-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+      .section-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+      .product-grid,
+      .product-list,
+      .related-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+      .category-buttons { grid-template-columns: repeat(4, minmax(0,1fr)) !important; }
+      .rail .product-card.compact,
+      .rail .basket-card.compact { width: 232px !important; flex-basis: 232px !important; }
+    }
+
+    @media (min-width: 1100px) {
+      :root { --header-h: 86px; --bottom-h: 0px; }
+      .header { left: var(--sidebar-w) !important; height: calc(var(--header-h) + var(--safe-top)) !important; padding: calc(14px + var(--safe-top)) 28px 14px !important; }
+      .header-inner { max-width: 1320px !important; width: min(100%, 1320px) !important; grid-template-columns: auto minmax(420px, 1fr) auto !important; align-items: center !important; gap: 22px !important; }
+      .header-top { display: contents !important; }
+      .brand { grid-column: 1 !important; }
+      .search-wrap { grid-column: 2 !important; }
+      .header-actions { grid-column: 3 !important; }
+      .header-cart-btn { display: inline-flex !important; min-width: 148px !important; }
+      .header-cart-btn > span:last-child { display: block !important; }
+      .header-menu-btn { width: auto !important; padding: 0 14px !important; }
+      .header-menu-text { display: inline !important; }
+      .app { padding: calc(var(--header-h) + var(--safe-top) + 28px) 34px 48px calc(var(--sidebar-w) + 34px) !important; }
+      .container,
+      .app > .container { max-width: 1320px !important; width: min(100%, 1320px) !important; margin-left: 0 !important; margin-right: auto !important; }
+      .bottom-bar {
+        left: 0 !important;
+        right: auto !important;
+        top: 0 !important;
+        bottom: auto !important;
+        width: var(--sidebar-w) !important;
+        height: 100dvh !important;
+        transform: none !important;
+        border: 0 !important;
+        border-right: 1px solid var(--line) !important;
+        border-radius: 0 !important;
+        padding: calc(20px + var(--safe-top)) 18px calc(18px + var(--safe-bottom)) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 18px !important;
+      }
+      .sidebar-brand { display: flex !important; align-items: center; min-height: 54px; }
+      .sidebar-brand-logo { width: 160px; height: 44px; object-fit: contain; }
+      .bottom-nav { display: flex !important; flex-direction: column !important; gap: 8px !important; flex: 0 0 auto !important; }
+      .bottom-nav .nav-item {
+        width: 100% !important;
+        height: 50px !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+        flex-direction: row !important;
+        gap: 12px !important;
+        padding: 0 13px !important;
+        border-radius: 16px !important;
+        font-size: 13px !important;
+        font-weight: 850 !important;
+      }
+      .bottom-nav .nav-item svg { width: 22px; height: 22px; }
+      #nav-info { display: flex !important; }
+      .checkout-cta {
+        display: flex !important;
+        margin-top: auto !important;
+        height: 58px !important;
+        border-radius: 18px !important;
+      }
+      .drawer { max-width: 520px !important; }
+      .section-grid,
+      .product-grid,
+      .product-list,
+      .related-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 16px !important; }
+      .category-buttons { grid-template-columns: repeat(4, minmax(0,1fr)) !important; }
+    }
+
+    @media (min-width: 1440px) {
+      .section-grid,
+      .product-grid,
+      .product-list,
+      .related-grid { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
+      .container,
+      .app > .container { max-width: 1480px !important; width: min(100%, 1480px) !important; }
+      .header-inner { max-width: 1480px !important; width: min(100%, 1480px) !important; }
+    }
+
   </style>
 </head>
 <body>
@@ -3830,10 +4361,13 @@
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
       KIT_CACHE_KEY: 'da_kits_cache_v1',
+      BANNER_CACHE_KEY: 'da_banners_cache_v1',
       CART_STORAGE_KEY: 'da_carrinho_v1',
       CHECKOUT_CLIENT_KEY: 'da_checkout_cliente_v1',
       COUPON_STORAGE_KEY: 'da_cupom_ativo_v1',
+      FAVORITES_STORAGE_KEY: 'da_favoritos_v1',
       COUPON_URLS: ['cuponsativos.json', 'site/cuponsativos.json'],
+      BANNER_URLS: ['site/banner/banners.json', 'banner/banners.json', 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/banner/banners.json', 'https://donaantonia.com.br/site/banner/banners.json', 'https://www.donaantonia.com.br/site/banner/banners.json'],
       CART_MAX_AGE_MS: 6 * 60 * 60 * 1000,
       MIN_ORDER: 75,
       DEFAULT_DDD: '65'
@@ -3852,6 +4386,9 @@
       productCodeMap: new Map(),
       cestas: [],
       kits: [],
+      banners: [],
+      bannerTimers: [],
+      favorites: new Set(),
       cart: {},
       cartOrder: [],
       basketCustomizations: {},
@@ -4288,6 +4825,190 @@
       if (clean.startsWith('site/')) return `https://donaantonia.com.br/${clean}`;
       if (clean.startsWith('img/')) return `https://donaantonia.com.br/${clean}`;
       return `https://donaantonia.com.br/img/${clean}`;
+    }
+
+
+    function normalizeBannerImage(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return '';
+      if (/^(https?:|data:)/i.test(raw)) return raw;
+      const clean = raw.replace(/^(\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
+      if (clean.startsWith('site/') || clean.startsWith('banner/') || clean.includes('/')) return siteAssetUrl(clean);
+      return siteAssetUrl(`banner/${clean}`);
+    }
+
+    function applyBannersData(data) {
+      const source = Array.isArray(data && data.banners) ? data.banners : (Array.isArray(data) ? data : Object.values(data && data.banners || data || {}));
+      state.banners = source
+        .filter(b => b && b.ativo !== false && (b.desktop || b.mobile || b.imagem || b.img))
+        .map((b, index) => {
+          const desktop = normalizeBannerImage(b.desktop || b.desktop_url || b.imagem_desktop || b.img_desktop || b.imagem || b.img || '');
+          const mobile = normalizeBannerImage(b.mobile || b.mobile_url || b.imagem_mobile || b.img_mobile || b.imagem || b.img || desktop);
+          return {
+            id: String(b.id || `banner-${index + 1}`),
+            ativo: b.ativo !== false,
+            posicao: String(b.posicao || b.position || 'home.hero').trim(),
+            tipo: String(b.tipo || b.type || '').trim().toLowerCase(),
+            ordem: Number(b.ordem || b.order || index + 1),
+            desktop,
+            mobile,
+            alt: String(b.alt || b.titulo || b.title || 'Banner Dona Antônia'),
+            link: b.link || b.href || b.url || null
+          };
+        })
+        .filter(b => b.desktop || b.mobile)
+        .sort((a,b) => a.ordem - b.ordem || a.id.localeCompare(b.id, 'pt-BR'));
+    }
+
+    async function loadBanners() {
+      for (const url of CONFIG.BANNER_URLS) {
+        try {
+          const data = await fetchJson(withCacheBust(url), 4500, { cache: 'no-store' });
+          applyBannersData(data);
+          writeCache(CONFIG.BANNER_CACHE_KEY, { savedAt: Date.now(), data });
+          return;
+        } catch(e) {}
+      }
+      state.banners = [];
+      try { localStorage.removeItem(CONFIG.BANNER_CACHE_KEY); } catch(e) {}
+    }
+
+    function bannerPositionKey(value) {
+      return norm(String(value || '')).replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '');
+    }
+
+    function getBanners(position) {
+      const key = bannerPositionKey(position);
+      return state.banners.filter(b => b.ativo !== false && bannerPositionKey(b.posicao) === key);
+    }
+
+    function bannerLinkHref(link) {
+      if (!link) return '';
+      if (typeof link === 'string') return link;
+      const tipo = norm(link.tipo || link.type || 'rota');
+      const valor = String(link.valor || link.value || link.href || link.url || '').trim();
+      if (!valor && tipo !== 'whatsapp') return '';
+      if (tipo === 'rota') return valor.startsWith('#') ? valor : `#/${valor.replace(/^\/+/, '')}`;
+      if (tipo === 'categoria') return `#/categoria/${encodeURIComponent(valor)}`;
+      if (tipo === 'subcategoria') return `#/categoria/${encodeURIComponent(link.categoria || link.category || '')}?sub=${encodeURIComponent(valor)}`;
+      if (tipo === 'busca') return `#/busca/${encodeURIComponent(valor)}`;
+      if (tipo === 'cesta') return `#/cesta/${encodeURIComponent(valor)}`;
+      if (tipo === 'kit') return `#/kit/${encodeURIComponent(valor)}`;
+      if (tipo === 'produto') {
+        const product = state.products.find(p => [p.id, p.codigo, p.firebaseKey, p.gtin, p.ean].some(x => String(x || '') === valor) || norm(p.name) === norm(valor));
+        return product ? `#/produto/${productRouteKey(product)}` : `#/produto/${encodeURIComponent(valor)}`;
+      }
+      if (tipo === 'whatsapp') return `https://api.whatsapp.com/send?phone=${CONFIG.WHATSAPP_NUMBER}${valor ? `&text=${encodeURIComponent(valor)}` : ''}`;
+      if (tipo === 'url_externa' || tipo === 'externo' || tipo === 'url') return valor;
+      return valor;
+    }
+
+    function bannerPictureHtml(banner, kind, eager) {
+      const desktop = banner.desktop || banner.mobile;
+      const mobile = banner.mobile || banner.desktop;
+      return `<picture class="da-banner-picture da-banner-picture-${escapeHtml(kind || 'section')}">
+        <source media="(min-width: 768px)" srcset="${escapeHtml(desktop)}">
+        <img src="${escapeHtml(mobile)}" alt="${escapeHtml(banner.alt)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async" onerror="this.closest('.da-banner').style.display='none'">
+      </picture>`;
+    }
+
+    function bannerSlideHtml(banner, index, kind, eager) {
+      const href = bannerLinkHref(banner.link);
+      const content = bannerPictureHtml(banner, kind, eager);
+      const inner = href ? `<a class="da-banner-link" href="${escapeHtml(href)}"${/^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : ''}>${content}</a>` : `<div class="da-banner-static">${content}</div>`;
+      return `<div class="da-banner da-banner-slide ${index === 0 ? 'active' : ''}" data-banner-index="${index}">${inner}</div>`;
+    }
+
+    function bannerSlotHtml(position, options) {
+      const banners = getBanners(position);
+      if (!banners.length) return '';
+      const opts = options || {};
+      const kind = opts.kind || (opts.carousel ? 'hero' : 'section');
+      if (opts.carousel || banners.some(b => b.tipo === 'carousel' || b.tipo === 'carrossel')) {
+        return `<section class="da-banner da-banner-carousel da-banner-${escapeHtml(kind)}" data-banner-carousel data-active="0" aria-label="Banners promocionais">
+          ${banners.map((b,i) => bannerSlideHtml(b, i, kind, i === 0)).join('')}
+          ${banners.length > 1 ? `<button class="banner-arrow prev" type="button" data-banner-prev aria-label="Banner anterior">‹</button><button class="banner-arrow next" type="button" data-banner-next aria-label="Próximo banner">›</button><div class="banner-dots">${banners.map((_,i)=>`<span class="banner-dot ${i===0?'active':''}"></span>`).join('')}</div>` : ''}
+        </section>`;
+      }
+      const banner = banners[0];
+      const href = bannerLinkHref(banner.link);
+      const content = bannerPictureHtml(banner, kind, false);
+      return `<section class="da-banner da-banner-section da-banner-${escapeHtml(kind)}" aria-label="Banner da seção">${href ? `<a class="da-banner-link" href="${escapeHtml(href)}"${/^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : ''}>${content}</a>` : `<div class="da-banner-static">${content}</div>`}</section>`;
+    }
+
+    function setupBannerCarousels() {
+      state.bannerTimers.forEach(id => clearInterval(id));
+      state.bannerTimers = [];
+      document.querySelectorAll('[data-banner-carousel]').forEach(carousel => {
+        const slides = Array.from(carousel.querySelectorAll('.da-banner-slide'));
+        const dots = Array.from(carousel.querySelectorAll('.banner-dot'));
+        if (!slides.length) return;
+        const show = nextIndex => {
+          const index = ((nextIndex % slides.length) + slides.length) % slides.length;
+          carousel.setAttribute('data-active', String(index));
+          slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+          dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
+        };
+        const current = () => Number(carousel.getAttribute('data-active') || 0);
+        const prev = carousel.querySelector('[data-banner-prev]');
+        const next = carousel.querySelector('[data-banner-next]');
+        if (prev) prev.addEventListener('click', () => show(current() - 1));
+        if (next) next.addEventListener('click', () => show(current() + 1));
+        if (slides.length > 1) {
+          const timer = setInterval(() => show(current() + 1), 5200);
+          state.bannerTimers.push(timer);
+        }
+      });
+    }
+
+    function loadFavorites() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(CONFIG.FAVORITES_STORAGE_KEY) || '[]');
+        state.favorites = new Set(Array.isArray(saved) ? saved.map(String) : []);
+      } catch(e) {
+        state.favorites = new Set();
+      }
+    }
+
+    function saveFavorites() {
+      try { localStorage.setItem(CONFIG.FAVORITES_STORAGE_KEY, JSON.stringify(Array.from(state.favorites))); } catch(e) {}
+    }
+
+    function isFavorite(id) {
+      return state.favorites.has(String(id));
+    }
+
+    function favoriteButtonHtml(id, label) {
+      const active = isFavorite(id);
+      return `<button class="favorite-btn ${active ? 'active' : ''}${label ? ' detail-favorite-btn' : ''}" type="button" data-action="toggle-favorite" data-id="${escapeHtml(id)}" aria-label="${active ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" aria-pressed="${active ? 'true' : 'false'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"></path></svg>${label ? `<span>${active ? 'Favorito' : 'Favoritar'}</span>` : ''}</button>`;
+    }
+
+    function syncFavoriteButtons(id) {
+      document.querySelectorAll('[data-action="toggle-favorite"]').forEach(btn => {
+        if (id && String(btn.getAttribute('data-id')) !== String(id)) return;
+        const active = isFavorite(btn.getAttribute('data-id'));
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        btn.setAttribute('aria-label', active ? 'Remover dos favoritos' : 'Adicionar aos favoritos');
+        const label = btn.querySelector('span');
+        if (label) label.textContent = active ? 'Favorito' : 'Favoritar';
+      });
+    }
+
+    function toggleFavorite(id) {
+      const key = String(id || '');
+      if (!key) return;
+      if (state.favorites.has(key)) {
+        state.favorites.delete(key);
+        showToast('Removido dos favoritos.');
+      } else {
+        state.favorites.add(key);
+        showToast('Produto salvo nos favoritos.');
+      }
+      saveFavorites();
+      syncFavoriteButtons(key);
+      renderSiteMenuContent();
+      if ((location.hash || '').startsWith('#/favoritos')) renderFavorites();
     }
 
     function loadCart() {
@@ -5277,9 +5998,12 @@
       const cardName = truncateText(p.name, mode === 'compact' ? 38 : 46);
       return `
         <article class="${classes.join(' ')}" data-card-id="${escapeHtml(id)}">
-          <a class="product-imgbox" href="#/produto/${route}" aria-label="Ver ${escapeHtml(p.name)}">
-            <img loading="lazy" decoding="async" src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)">
-          </a>
+          <div class="product-media-wrap">
+            <a class="product-imgbox" href="#/produto/${route}" aria-label="Ver ${escapeHtml(p.name)}">
+              <img loading="lazy" decoding="async" src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)">
+            </a>
+            ${favoriteButtonHtml(id)}
+          </div>
           <div class="product-body">
             <a class="product-name" href="#/produto/${route}" title="${escapeHtml(p.name)}">${escapeHtml(cardName)}</a>
             <div class="product-card-bottom">
@@ -5436,6 +6160,29 @@
     }
 
 
+    function homeQuickLinksHtml() {
+      const cards = [
+        { href: '#/cestas', title: 'Cestas básicas', copy: 'Kits prontos e editáveis', img: cestasThumb(), cls: 'primary' },
+        { href: '#/ofertas', title: 'Ofertas de hoje', copy: 'Produtos com desconto ativo', img: offersThumb(), cls: 'offer' },
+        { href: '#/rotina/compra-mes', title: 'Compra do mês', copy: 'Básicos para abastecer a casa', img: routineThumb('compra-mes') },
+        { href: '#/rotina/limpeza', title: 'Limpeza', copy: 'Casa, lavanderia e cozinha', img: routineThumb('limpeza') }
+      ];
+      return `<section class="home-quick-grid" aria-label="Atalhos de compra">${cards.map(card => `<a class="home-quick-card ${card.cls || ''}" href="${card.href}"><div><strong>${escapeHtml(card.title)}</strong><span>${escapeHtml(card.copy)}</span></div><img loading="lazy" decoding="async" src="${escapeHtml(card.img)}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}</section>`;
+    }
+
+    function brandStripHtml() {
+      const counts = new Map();
+      state.products.filter(p => isAvailable(p) && p.marca).forEach(p => counts.set(p.marca, (counts.get(p.marca) || 0) + 1));
+      const brands = Array.from(counts.entries()).sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt-BR')).slice(0, 14);
+      if (!brands.length) return '';
+      return `<section class="section brand-section"><div class="section-head"><div><h2 class="section-title">Marcas procuradas</h2><div class="section-caption">Atalhos rápidos para encontrar marcas que já estão no catálogo.</div></div></div><div class="brand-strip">${brands.map(([brand, count]) => `<a class="brand-pill" href="#/busca/${encodeURIComponent(brand)}">${escapeHtml(brand)} · ${count}</a>`).join('')}</div></section>`;
+    }
+
+    function productsByCategoryName(category, limit) {
+      return state.products.filter(p => isAvailable(p) && p.categoria === category).slice(0, limit || 16);
+    }
+
+
 
     function categoryButtonsHtml() {
       const cats = getCategories();
@@ -5452,16 +6199,34 @@
     function renderHome() {
       const offers = getTopOffers(40);
       const essentials = productsByRoutine('compra-mes', 40);
+      const limpeza = productsByRoutine('limpeza', 24);
+      const cafe = productsByRoutine('cafe', 24);
+      const higiene = productsByRoutine('higiene', 24);
       const kits = getActiveKits();
       const html = `
         <div class="container home-clean">
+          ${bannerSlotHtml('home.hero', { carousel: true, kind: 'hero' })}
+          ${homeQuickLinksHtml()}
+          ${bannerSlotHtml('home.cestas.topo', { kind: 'section' })}
+          ${shelf('Cestas básicas', 'Kits prontos para facilitar sua compra e acelerar o pedido.', state.cestas, '#/cestas', 'basket')}
+          ${bannerSlotHtml('home.ofertas.topo', { kind: 'section' })}
           ${shelf('Ofertas de hoje', 'Economize nos produtos disponíveis agora.', offers, '#/ofertas')}
-          ${shelf('Essenciais para sua casa', 'Os itens que não podem faltar na despensa.', essentials, '#/rotina/compra-mes')}
-          ${shelf('Cestas básicas', 'Kits prontos para facilitar sua compra.', state.cestas, '#/cestas', 'basket')}
+          ${bannerSlotHtml('home.compra-mes.topo', { kind: 'section' })}
+          ${shelf('Compra do mês', 'Os itens que não podem faltar na despensa.', essentials, '#/rotina/compra-mes')}
+          ${bannerSlotHtml('home.limpeza.topo', { kind: 'section' })}
+          ${shelf('Limpeza da casa', 'Produtos para lavanderia, cozinha e cuidados com a casa.', limpeza, '#/rotina/limpeza')}
+          ${bannerSlotHtml('home.higiene.topo', { kind: 'section' })}
+          ${shelf('Higiene e beleza', 'Cuidados pessoais com navegação simples.', higiene, '#/rotina/higiene')}
+          ${bannerSlotHtml('home.cafe.topo', { kind: 'section' })}
+          ${shelf('Café da manhã', 'Café, biscoitos, achocolatados e itens para o dia começar.', cafe, '#/rotina/cafe')}
+          ${bannerSlotHtml('home.kits.topo', { kind: 'section' })}
           ${shelf('Kits promocionais', 'Combos com desconto real e disponibilidade limitada.', kits, '#/kits', 'kit')}
+          ${brandStripHtml()}
+          ${bannerSlotHtml('home.categorias.topo', { kind: 'section' })}
           ${categoryButtonsHtml()}
         </div>`;
       app.innerHTML = html;
+      setupBannerCarousels();
       updateOfferCountdowns();
       updateMeta('Dona Antônia - Supermercado e Cestas', 'Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.', '/');
       setActiveNav('home');
@@ -5469,7 +6234,7 @@
 
     function renderCategories() {
       const cats = getCategories();
-      app.innerHTML = `<div class="container">${pageHeader('Categorias', 'Escolha um setor para navegar.', '#/')}
+      app.innerHTML = `<div class="container">${pageHeader('Categorias', 'Escolha um setor para navegar.', '#/')}${bannerSlotHtml('categorias.topo', { kind: 'section' })}
         <div class="category-buttons">${cats.map(([cat, count]) => categoryCardHtml(cat, count)).join('')}</div></div>`;
       setActiveNav('categorias');
     }
@@ -5482,14 +6247,14 @@
       const filtered = currentSub === 'Todos' ? products : products.filter(p => p.subcategoria === currentSub);
       const chips = `<div class="chips"><a class="chip ${currentSub === 'Todos' ? 'active' : ''}" href="#/categoria/${encodeURIComponent(decoded)}">Todos</a>${subs.map(s => `<a class="chip ${currentSub === s ? 'active' : ''}" href="#/categoria/${encodeURIComponent(decoded)}?sub=${encodeURIComponent(s)}">${escapeHtml(s)}</a>`).join('')}</div>`;
       const isBeauty = /(beleza|higiene|perfumaria)/.test(norm(decoded));
-      app.innerHTML = `<div class="container">${pageHeader(decoded, `${filtered.length} produtos encontrados`, '#/categorias')}${isBeauty ? beautyBannerHtml(products) : ''}${chips}<div class="product-grid">${filtered.map(p => productCard(p)).join('')}</div></div>`;
+      app.innerHTML = `<div class="container">${pageHeader(decoded, `${filtered.length} produtos encontrados`, '#/categorias')}${bannerSlotHtml(`categoria.${decoded}.topo`, { kind: 'section' })}${isBeauty ? beautyBannerHtml(products) : ''}${chips}<div class="product-grid">${filtered.map(p => productCard(p)).join('')}</div></div>`;
       setActiveNav('categorias');
       updateMeta(`${decoded} - Dona Antônia`, `Compre ${decoded.toLowerCase()} com entrega em Cuiabá e Várzea Grande.`, `/?categoria=${encodeURIComponent(decoded)}`);
     }
 
     function renderOffers() {
       const products = getTopOffers(200);
-      app.innerHTML = `<div class="container">${pageHeader('Ofertas', 'Produtos com desconto disponíveis agora.', '#/')}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Sem ofertas no momento</strong>Volte mais tarde ou navegue pelas categorias.</div>`}</div>`;
+      app.innerHTML = `<div class="container">${pageHeader('Ofertas', 'Produtos com desconto disponíveis agora.', '#/')}${bannerSlotHtml('ofertas.topo', { kind: 'section' })}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Sem ofertas no momento</strong>Volte mais tarde ou navegue pelas categorias.</div>`}</div>`;
       setActiveNav('ofertas');
       updateMeta('Ofertas - Dona Antônia', 'Ofertas de supermercado com entrega em Cuiabá e Várzea Grande.', '/?secao=ofertas');
     }
@@ -5498,26 +6263,26 @@
       const routine = ROUTINES[key] || ROUTINES['compra-mes'];
       if (key === 'compra-mes') {
         const groups = productsByCategoryForMonth(8);
-        app.innerHTML = `<div class="container">${pageHeader('Compra do mês', '', '#/')}${groups.length ? groups.map(group => `<section class="month-group"><h2 class="month-group-title">${escapeHtml(group.category)}</h2><div class="product-grid">${group.products.map(p => productCard(p)).join('')}</div></section>`).join('') : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
+        app.innerHTML = `<div class="container">${pageHeader('Compra do mês', '', '#/')}${bannerSlotHtml('rotina.compra-mes.topo', { kind: 'section' })}${groups.length ? groups.map(group => `<section class="month-group"><h2 class="month-group-title">${escapeHtml(group.category)}</h2><div class="product-grid">${group.products.map(p => productCard(p)).join('')}</div></section>`).join('') : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
       } else {
         let products = productsByRoutine(key, 200);
         if (key === 'higiene') {
           const beautyCoupon = getCouponByCode('BELEZA20');
           products = products.filter(p => couponMatchesProduct(beautyCoupon, p));
         }
-        app.innerHTML = `<div class="container">${pageHeader(routine.title, '', '#/')}${key === 'higiene' ? beautyBannerHtml(products) : ''}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
+        app.innerHTML = `<div class="container">${pageHeader(routine.title, '', '#/')}${bannerSlotHtml(`rotina.${key}.topo`, { kind: 'section' })}${key === 'higiene' ? beautyBannerHtml(products) : ''}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
       }
       setActiveNav('home');
     }
 
     function renderCestas() {
-      app.innerHTML = `<div class="container">${pageHeader('Cestas básicas', 'Escolha um kit pronto e envie pelo WhatsApp.', '#/')}${state.cestas.length ? `<div class="basket-list">${state.cestas.map(c => basketCard(c, 'wide')).join('')}</div>` : `<div class="empty"><strong>Nenhuma cesta carregada</strong>Confira se o arquivo de cestas publicado está disponível em <code>site/produtos-cesta-basica.json</code>.</div>`}</div>`;
+      app.innerHTML = `<div class="container">${pageHeader('Cestas básicas', 'Escolha um kit pronto e envie pelo WhatsApp.', '#/')}${bannerSlotHtml('cestas.topo', { kind: 'section' })}${state.cestas.length ? `<div class="basket-list">${state.cestas.map(c => basketCard(c, 'wide')).join('')}</div>` : `<div class="empty"><strong>Nenhuma cesta carregada</strong>Confira se o arquivo de cestas publicado está disponível em <code>site/produtos-cesta-basica.json</code>.</div>`}</div>`;
       setActiveNav('home');
     }
 
     function renderKits() {
       const kits = getActiveKits();
-      app.innerHTML = `<div class="container">${pageHeader('Kits promocionais', 'Escolha um combo com desconto e envie pelo WhatsApp.', '#/')}${kits.length ? `<div class="basket-list">${kits.map(k => kitCard(k, 'wide')).join('')}</div>` : `<div class="empty"><strong>Nenhum kit promocional ativo</strong>Confira se o arquivo <code>site/kits.json</code> foi publicado e se os kits possuem estoque, desconto e periodo valido.</div>`}</div>`;
+      app.innerHTML = `<div class="container">${pageHeader('Kits promocionais', 'Escolha um combo com desconto e envie pelo WhatsApp.', '#/')}${bannerSlotHtml('kits.topo', { kind: 'section' })}${kits.length ? `<div class="basket-list">${kits.map(k => kitCard(k, 'wide')).join('')}</div>` : `<div class="empty"><strong>Nenhum kit promocional ativo</strong>Confira se o arquivo <code>site/kits.json</code> foi publicado e se os kits possuem estoque, desconto e periodo valido.</div>`}</div>`;
       setActiveNav('home');
       updateOfferCountdowns();
       updateMeta('Kits promocionais - Dona Antonia', 'Kits promocionais de supermercado com entrega em Cuiaba e Varzea Grande.', '/#/kits');
@@ -5829,7 +6594,15 @@
     function renderSearch(query) {
       const q = String(query || '').trim();
       const products = searchProducts(q);
-      app.innerHTML = `<div class="container">${pageHeader(q ? `Busca: ${q}` : 'Busca', q ? `${products.length} resultado(s)` : 'Digite o produto na busca acima.', '#/')}${q ? (products.length ? `<div class="product-list">${products.map(p => productCard(p, 'list')).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`) : ''}</div>`;
+      app.innerHTML = `<div class="container">${pageHeader(q ? `Busca: ${q}` : 'Busca', q ? `${products.length} resultado(s)` : 'Digite o produto na busca acima.', '#/')}${bannerSlotHtml('busca.topo', { kind: 'section' })}${q ? (products.length ? `<div class="product-list">${products.map(p => productCard(p, 'list')).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`) : ''}</div>`;
+      setActiveNav('home');
+    }
+
+
+    function renderFavorites() {
+      const favIds = Array.from(state.favorites);
+      const products = favIds.map(id => getProductById(id)).filter(p => p && isAvailable(p));
+      app.innerHTML = `<div class="container">${pageHeader('Favoritos', `${products.length} ${products.length === 1 ? 'produto salvo' : 'produtos salvos'}`, '#/')}${bannerSlotHtml('favoritos.topo', { kind: 'section' })}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Nenhum favorito ainda</strong>Toque no coração dos produtos para salvar aqui.<div class="favorites-empty-actions"><a class="secondary-btn" href="#/ofertas">Ver ofertas</a><a class="secondary-btn" href="#/categorias">Ver categorias</a></div></div>`}</div>`;
       setActiveNav('home');
     }
 
@@ -5854,6 +6627,7 @@
             <h1 class="detail-title">${escapeHtml(p.name)}</h1>
             ${hasExpiryBulkDiscount(p) ? `<div class="expiry-bulk-note">Leve 3 ou mais unidades e ganhe mais 10% no checkout.</div>` : ''}
             ${productPriceHtml(display, true)}
+            <div class="detail-actions-row">${favoriteButtonHtml(p.id, true)}</div>
             <div data-card-controls="${escapeHtml(p.id)}" data-control-mode="detail">${qtyControlHtml(p.id, Number(state.cart[p.id] || 0))}</div>
             ${descHtml}
           </div>
@@ -5944,6 +6718,56 @@
       setActiveNav('info');
     }
 
+
+    function renderSiteMenuContent() {
+      const el = $('site-menu-content');
+      if (!el) return;
+      const cats = getCategories().slice(0, 12);
+      const countsByBrand = new Map();
+      state.products.filter(p => isAvailable(p) && p.marca).forEach(p => countsByBrand.set(p.marca, (countsByBrand.get(p.marca) || 0) + 1));
+      const brands = Array.from(countsByBrand.entries()).sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt-BR')).slice(0, 10);
+      const count = cartCount();
+      const total = subtotalCart(true);
+      const favCount = Array.from(state.favorites).filter(id => getProductById(id)).length;
+      el.innerHTML = `
+        <section class="menu-hero-card">
+          <div class="menu-hero-kicker">Supermercado online local</div>
+          <strong>Compra fácil para Cuiabá e Várzea Grande.</strong>
+          <span>Escolha produtos, salve favoritos, revise sua compra e envie o pedido pelo WhatsApp.</span>
+        </section>
+        <section class="menu-section-card menu-cart-card">
+          <div class="menu-section-title">Resumo da compra</div>
+          <div class="menu-cart-line"><span id="menu-cart-count">${count} ${count === 1 ? 'item' : 'itens'}</span><strong id="menu-cart-total">${fmt(total)}</strong></div>
+          <button class="menu-main-btn" type="button" id="menu-open-checkout">Revisar minha compra</button>
+        </section>
+        <section class="menu-section-card">
+          <div class="menu-section-title">Atalhos principais</div>
+          <div class="menu-link-list">
+            <a class="menu-link" href="#/"><span>Início</span><small>Vitrine principal</small></a>
+            <a class="menu-link" href="#/cestas"><span>Cestas básicas</span><small>Kits prontos e editáveis</small></a>
+            <a class="menu-link" href="#/ofertas"><span>Ofertas de hoje</span><small>Produtos com desconto</small></a>
+            <a class="menu-link" href="#/favoritos"><span>Favoritos</span><small>${favCount} salvo(s)</small></a>
+            <a class="menu-link" href="#/rotina/compra-mes"><span>Compra do mês</span><small>Despensa e básicos</small></a>
+            <a class="menu-link" href="#/kits"><span>Kits promocionais</span><small>Combos ativos</small></a>
+          </div>
+        </section>
+        <section class="menu-section-card">
+          <div class="menu-section-title">Departamentos</div>
+          <div class="menu-link-list compact">
+            ${cats.map(([cat, qty]) => `<a class="menu-link" href="#/categoria/${encodeURIComponent(cat)}"><span>${escapeHtml(cat)}</span><small>${qty} produtos</small></a>`).join('')}
+          </div>
+        </section>
+        ${brands.length ? `<section class="menu-section-card"><div class="menu-section-title">Marcas populares</div><div class="brand-strip">${brands.map(([brand, qty]) => `<a class="brand-pill" href="#/busca/${encodeURIComponent(brand)}">${escapeHtml(brand)} · ${qty}</a>`).join('')}</div></section>` : ''}
+        <section class="menu-section-card">
+          <div class="menu-section-title">Condições de compra</div>
+          <div class="menu-benefits">
+            <div><strong>Entrega local</strong><span>Cuiabá e Várzea Grande</span></div>
+            <div><strong>Pedido mínimo</strong><span>A partir de ${fmt(CONFIG.MIN_ORDER)}</span></div>
+            <div><strong>WhatsApp</strong><span>Pedido conferido antes do envio</span></div>
+          </div>
+        </section>`;
+    }
+
     function scrollPageTop() {
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
@@ -5963,6 +6787,7 @@
       if (parts[0] === 'categorias') return renderCategories();
       if (parts[0] === 'categoria') return renderCategory(parts.slice(1).join('/'));
       if (parts[0] === 'ofertas') return renderOffers();
+      if (parts[0] === 'favoritos') return renderFavorites();
       if (parts[0] === 'rotina') return renderRoutine(parts[1]);
       if (parts[0] === 'produto') return renderProduct(parts.slice(1).join('/'));
       if (parts[0] === 'cesta') return renderBasketDetail(parts.slice(1).join('/'));
@@ -7011,6 +7836,7 @@
         if (!btn) return;
         const action = btn.getAttribute('data-action');
         const id = btn.getAttribute('data-id');
+        if (action === 'toggle-favorite') { toggleFavorite(id); return; }
         if (action === 'add') addToCart(id, 1);
         if (action === 'inc') addToCart(id, 1);
         if (action === 'dec') setQty(id, Number(state.cart[id] || 0) - 1);
@@ -7078,6 +7904,8 @@
           lookupClientByCpf(lookup);
           return;
         }
+        const menuCheckout = e.target.closest('#menu-open-checkout');
+        if (menuCheckout) { openCheckout(); return; }
         const send = e.target.closest('#btn-send-order');
         if (send) sendOrder(send);
       });
@@ -7086,12 +7914,14 @@
     async function init() {
       bindEvents();
       enforceAppVersion();
+      loadFavorites();
       loadCart();
       updateCartUI();
       try {
         await loadProducts();
-        await Promise.allSettled([loadCestas(), loadKits(), loadCoupons()]);
+        await Promise.allSettled([loadCestas(), loadKits(), loadCoupons(), loadBanners()]);
         rebuildVirtualFees();
+        renderSiteMenuContent();
         removeMissingCartItems();
         state.isReady = true;
         handleRoute();
