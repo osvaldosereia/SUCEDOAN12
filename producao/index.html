@@ -1453,24 +1453,105 @@
       if(conflictMsg) alert(`Nem todos os produtos foram salvos.${conflictMsg}`);
     }catch(e){console.error(e);setStatus("Erro ao salvar produtos no Firebase","err");alert("Erro no Firebase: "+e.message)}
   }
+  function explainSaveError(error, etapa=""){
+    const raw=String(error?.message||error||"Erro desconhecido");
+    const lower=raw.toLowerCase();
+    let dica="";
+    if(/401|unauthorized/.test(lower))dica="A autorização foi recusada. Confira as permissões do Firebase ou o token configurado.";
+    else if(/403|forbidden|permission denied/.test(lower))dica="Acesso negado. Confira as regras do Firebase e as permissões do token do GitHub.";
+    else if(/404|not found/.test(lower))dica="O caminho configurado não foi encontrado. Confira o repositório, a branch e os caminhos dos arquivos.";
+    else if(/409|422|conflito|conflict/.test(lower))dica="Houve conflito de versão no GitHub. Feche outras abas do admin, recarregue os dados e salve novamente.";
+    else if(/failed to fetch|network|load failed|internet/.test(lower))dica="Falha de conexão. Confira a internet e se o navegador não bloqueou a chamada.";
+    else if(/produto\(s\).*erro|corrija|catálogo possui/.test(lower))dica="Existem produtos com campos obrigatórios inválidos. Corrija os produtos indicados e tente novamente.";
+    return `${etapa?`Falha em ${etapa}. `:""}${raw}${dica?`\n\nComo corrigir: ${dica}`:""}`;
+  }
+
+  function validateGeneralSaveSettings(){
+    const missing=[];
+    if(!String(state.settings.firebaseUrl||"").trim())missing.push("URL do Firebase");
+    if(!String(state.settings.produtosNode||"").trim())missing.push("nó de produtos do Firebase");
+    if(!String(state.settings.githubToken||"").trim())missing.push("token do GitHub");
+    if(!String(state.settings.githubOwner||"").trim())missing.push("proprietário do GitHub");
+    if(!String(state.settings.githubRepo||"").trim())missing.push("repositório do GitHub");
+    if(!String(state.settings.githubBranch||"").trim())missing.push("branch do GitHub");
+    if(missing.length)throw new Error(`Configuração incompleta: ${missing.join(", ")}. Abra Integrações e preencha esses campos.`);
+  }
+
   async function saveEverything(){
+    readSettingsFromUi();
+    try{validateGeneralSaveSettings()}
+    catch(error){
+      console.error(error);saveLocal();
+      const message=explainSaveError(error,"verificação das configurações");
+      setStatus(message,"err");alert(message);
+      return false;
+    }
+
+    if(!ensureCatalogReadyForFullExport()){
+      setStatus("Salvamento geral cancelado: existem produtos com campos obrigatórios inválidos.","err");
+      return false;
+    }
+
+    let syncResult={saved:0,deleted:0,conflicts:[]};
     try{
-      readSettingsFromUi();
-      if(!ensureCatalogReadyForFullExport())return;
-      setStatus("Salvando tudo com atualização granular no Firebase...","warn");
-      const syncResult=await syncProductsToFirebase();
-      const produtos=productsObject(),adminMeta=buildAdminMetaPayload(),metaCatalogCsv=buildMetaCatalogCsv();
-      await saveGithubFiles({produtos,metaCatalogCsv,adminMeta,cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});
-      state.meta=adminMeta;
-      state.dirtyMeta=state.dirtyCestas=state.dirtyKits=state.dirtyNotes=false;
-      localStorage.removeItem(LS_NOTES_DIRTY);
-      localStorage.setItem(LS_SETTINGS,JSON.stringify(state.settings));
-      saveLocal();
-      const conflictMsg=syncResult.conflicts.length?`\nConflitos de estoque: ${syncResult.conflicts.join(", ")}.`:"";
-      setStatus("Salvamento geral concluído: Firebase granular e GitHub atualizados","ok");
-      alert(`Salvamento geral concluído. O Firebase recebeu apenas os produtos alterados, e o GitHub recebeu os arquivos completos.${conflictMsg}`);
-      renderAll();
-    }catch(e){console.error(e);saveLocal();setStatus("Salvamento geral incompleto","err");alert("Não foi possível concluir o salvamento geral: "+e.message)}
+      setStatus("Etapa 1 de 3: salvando somente os produtos alterados no Firebase...","warn");
+      syncResult=await syncProductsToFirebase();
+    }catch(error){
+      console.error(error);saveLocal();
+      const message=explainSaveError(error,"1 de 3 — produtos no Firebase");
+      setStatus(message,"err");alert(message);
+      return false;
+    }
+
+    let produtos,adminMeta,metaCatalogCsv;
+    try{
+      setStatus("Etapa 2 de 3: preparando os arquivos completos...","warn");
+      produtos=productsObject();
+      adminMeta=buildAdminMetaPayload();
+      metaCatalogCsv=buildMetaCatalogCsv();
+    }catch(error){
+      console.error(error);saveLocal();
+      const message=explainSaveError(error,"2 de 3 — preparação dos arquivos");
+      setStatus(message,"err");alert(message);
+      return false;
+    }
+
+    const githubFiles=[
+      {label:"produtos.json",path:state.settings.githubProdutosPath,run:()=>githubUpsert(state.settings.githubProdutosPath,produtos,"Atualiza produtos.json pelo admin Dona Antônia")},
+      {label:"produtos_meta.csv",path:state.settings.githubMetaPath,run:()=>githubUpsertText(state.settings.githubMetaPath,metaCatalogCsv,"Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")},
+      {label:"produtos_admin_meta.json",path:state.settings.githubAdminMetaPath,run:()=>githubUpsert(state.settings.githubAdminMetaPath,adminMeta,"Atualiza produtos_admin_meta.json pelo admin Dona Antônia")},
+      {label:"produtos-cesta-basica.json",path:state.settings.githubCestasPath,run:()=>githubUpsert(state.settings.githubCestasPath,state.cestas,"Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")},
+      {label:"kits.json",path:state.settings.githubKitsPath,run:()=>githubUpsert(state.settings.githubKitsPath,state.kits,"Atualiza kits.json pelo admin Dona Antônia")},
+      {label:"anotacoes.json",path:state.settings.githubAnotacoesPath||"site/anotacoes.json",run:()=>githubUpsert(state.settings.githubAnotacoesPath||"site/anotacoes.json",state.anotacoes||[],"Atualiza anotacoes.json pelo admin Dona Antônia")}
+    ];
+    const savedGithub=[];
+    try{
+      for(let i=0;i<githubFiles.length;i++){
+        const file=githubFiles[i];
+        if(!String(file.path||"").trim())throw new Error(`O caminho do arquivo ${file.label} está vazio nas configurações.`);
+        setStatus(`Etapa 3 de 3: enviando ${file.label} ao GitHub (${i+1}/${githubFiles.length})...`,"warn");
+        await file.run();
+        savedGithub.push(file.label);
+      }
+    }catch(error){
+      console.error(error);saveLocal();
+      const next=githubFiles[savedGithub.length];
+      const message=explainSaveError(error,`3 de 3 — GitHub${next?` / ${next.label}`:""}`)+
+        `\n\nJá concluído nesta tentativa: Firebase (${syncResult.saved} alterado(s), ${syncResult.deleted} exclusão(ões))${savedGithub.length?` e ${savedGithub.join(", ")}`:""}. Os itens ainda pendentes permanecerão marcados para uma nova tentativa.`;
+      setStatus(message,"err");alert(message);
+      return false;
+    }
+
+    state.meta=adminMeta;
+    state.dirtyMeta=state.dirtyCestas=state.dirtyKits=state.dirtyNotes=false;
+    localStorage.removeItem(LS_NOTES_DIRTY);
+    localStorage.setItem(LS_SETTINGS,JSON.stringify(state.settings));
+    saveLocal();
+    const conflictMsg=syncResult.conflicts.length?` Conflitos de estoque: ${syncResult.conflicts.join(", ")}.`:"";
+    const summary=`Salvamento geral concluído: Firebase com ${syncResult.saved} produto(s) alterado(s) e ${syncResult.deleted} exclusão(ões); GitHub com ${savedGithub.length} arquivo(s).${conflictMsg}`;
+    setStatus(summary,"ok");alert(summary);
+    renderAll();
+    return true;
   }
 
   window.addEventListener('beforeunload', e=>{if(state.dirtyProducts||state.dirtyCestas||state.dirtyKits||state.dirtyMeta||state.dirtyNotes){e.preventDefault(); e.returnValue='Existem alterações não salvas.'}});
@@ -3031,13 +3112,23 @@
   const originalSaveEverythingWithImageCleanup=saveEverything;
   saveEverything=async function(){
     const savedOk=await originalSaveEverythingWithImageCleanup();
-    if(savedOk===false)return;
+    // A limpeza só pode rodar quando Firebase e todos os arquivos do GitHub
+    // forem realmente concluídos. Antes, ela rodava mesmo após falha e gerava
+    // um segundo erro, escondendo a causa original do Salvar geral.
+    if(savedOk!==true)return false;
     try{
-      setStatus("Verificando imagens de produtos sem uso no GitHub...","warn");
+      setStatus("Salvamento concluído. Verificando imagens antigas sem uso...","warn");
       const res=await cleanupUnusedProductImagesFromGithub();
-      if(res.deleted)setStatus(`Salvamento concluído e ${res.deleted} imagem(ns) de produtos sem uso foram apagadas do GitHub`,"ok");
-      else setStatus("Salvamento concluído. Nenhuma imagem de produto sem uso encontrada no GitHub","ok");
-    }catch(err){console.error(err);setStatus("Salvo, mas a limpeza de imagens do GitHub falhou","err");alert("Os dados foram salvos, mas não foi possível limpar imagens sem uso do GitHub: "+err.message)}
+      if(res.deleted)setStatus(`Salvamento concluído e ${res.deleted} imagem(ns) antiga(s) sem uso foram apagadas do GitHub`,"ok");
+      else setStatus("Salvamento concluído. Nenhuma imagem antiga sem uso encontrada no GitHub","ok");
+      return true;
+    }catch(err){
+      console.error(err);
+      const message=explainSaveError(err,"limpeza opcional das imagens antigas do GitHub");
+      setStatus("Dados salvos; somente a limpeza opcional de imagens falhou.","warn");
+      alert(`${message}\n\nOs produtos, cestas, kits e arquivos principais já foram salvos normalmente.`);
+      return true;
+    }
   };
 
   document.addEventListener("click",e=>{
