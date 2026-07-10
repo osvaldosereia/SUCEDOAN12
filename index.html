@@ -5020,7 +5020,164 @@
     }
 
 
-  </style>
+  
+    /* =========================
+       Ajuste 2026-07-10: cesta aberta + respiro de banners
+       Aplicado no arquivo completo a partir do HTML enviado no chat.
+    ========================= */
+
+    /* Dá área de respiro antes dos banners para não encostarem no bloco anterior. */
+    .da-banner,
+    .da-banner-carousel,
+    .da-banner-section,
+    .beauty-banner {
+      margin-top: clamp(18px, 3vw, 30px) !important;
+    }
+
+    .da-banner {
+      margin-bottom: 22px !important;
+    }
+
+    @media (max-width: 767px) {
+      .da-banner,
+      .da-banner-carousel,
+      .da-banner-section,
+      .beauty-banner {
+        margin-top: 18px !important;
+        margin-bottom: 18px !important;
+      }
+    }
+
+    /* Produtos da cesta aberta em cards verticais: 2 colunas no mobile. */
+    .basket-detail-container .basket-editor {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 12px !important;
+      align-items: stretch !important;
+    }
+
+    .basket-detail-container .basket-editor-row {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      justify-content: flex-start !important;
+      min-width: 0 !important;
+      height: 100% !important;
+      padding: 10px !important;
+      gap: 9px !important;
+      border-radius: 22px !important;
+      background: #fff !important;
+      border: 1px solid rgba(23,32,26,.08) !important;
+      overflow: hidden !important;
+    }
+
+    .basket-detail-container .basket-editor-row img {
+      width: 100% !important;
+      height: auto !important;
+      aspect-ratio: 1 / 1 !important;
+      object-fit: contain !important;
+      border-radius: 18px !important;
+      padding: 8px !important;
+      margin: 0 !important;
+      flex: 0 0 auto !important;
+    }
+
+    .basket-detail-container .basket-editor-row > div:not(.cart-qty) {
+      min-width: 0 !important;
+      width: 100% !important;
+    }
+
+    .basket-detail-container .basket-editor-name {
+      min-height: 38px !important;
+      font-size: 12.5px !important;
+      line-height: 1.25 !important;
+      font-weight: 800 !important;
+      -webkit-line-clamp: 2 !important;
+    }
+
+    .basket-detail-container .basket-editor-price {
+      margin-top: 5px !important;
+      font-size: 11.5px !important;
+      line-height: 1.2 !important;
+    }
+
+    .basket-detail-container .basket-editor-row .cart-qty {
+      width: 100% !important;
+      height: 40px !important;
+      margin-top: auto !important;
+      justify-content: space-between !important;
+      border-radius: 14px !important;
+      flex: 0 0 auto !important;
+    }
+
+    .basket-detail-container .basket-editor-row .cart-qty button {
+      width: 40px !important;
+      min-width: 40px !important;
+    }
+
+    .basket-detail-container .basket-editor-row .cart-qty span {
+      flex: 1 !important;
+      width: auto !important;
+      text-align: center !important;
+    }
+
+    /*
+      Folga extra no detalhe da cesta para o botão final
+      "Adicionar cesta" nunca ficar escondido pela barra inferior mobile.
+    */
+    .basket-detail-container {
+      padding-bottom: calc(var(--bottom-h) + var(--safe-bottom) + 188px) !important;
+    }
+
+    .basket-detail-container .basket-total-card {
+      margin-bottom: calc(var(--bottom-h) + var(--safe-bottom) + 76px) !important;
+      scroll-margin-bottom: calc(var(--bottom-h) + var(--safe-bottom) + 150px) !important;
+    }
+
+    @media (min-width: 768px) {
+      .basket-detail-container .basket-editor {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 14px !important;
+      }
+
+      .basket-detail-container {
+        padding-bottom: 64px !important;
+      }
+
+      .basket-detail-container .basket-total-card {
+        margin-bottom: 28px !important;
+      }
+    }
+
+    @media (min-width: 1100px) {
+      .basket-detail-container .basket-editor {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 16px !important;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .basket-detail-container .basket-editor {
+        gap: 9px !important;
+      }
+
+      .basket-detail-container .basket-editor-row {
+        padding: 8px !important;
+        border-radius: 18px !important;
+      }
+
+      .basket-detail-container .basket-editor-row img {
+        border-radius: 15px !important;
+        padding: 6px !important;
+      }
+
+      .basket-detail-container .basket-editor-name {
+        min-height: 36px !important;
+        font-size: 11.5px !important;
+      }
+    }
+
+</style>
 </head>
 <body>
   <header class="header">
