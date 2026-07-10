@@ -5009,6 +5009,14 @@
         padding-bottom: calc(var(--bottom-h) + var(--safe-bottom) + 132px) !important;
       }
       .kit-products-section { margin-bottom: calc(var(--bottom-h) + var(--safe-bottom) + 104px) !important; }
+
+      /* Mantém o botão final da cesta totalmente acima da navegação fixa. */
+      .basket-detail-container {
+        padding-bottom: calc(var(--bottom-h) + var(--safe-bottom) + 132px) !important;
+      }
+      .basket-detail-container .basket-total-card {
+        margin-bottom: 24px !important;
+      }
     }
 
 
@@ -7484,7 +7492,7 @@
       const draft = ensureBasketDraft(basket.id);
       const total = basketDraftTotal(basket.id);
       const draftChanged = basketDraftChanged(basket.id);
-      app.innerHTML = `<div class="container">${pageHeader(basket.nome, '', '#/cestas')}
+      app.innerHTML = `<div class="container basket-detail-container">${pageHeader(basket.nome, '', '#/cestas')}
         <article class="basket-card wide basket-detail-hero" style="margin-bottom:12px">
           <div class="basket-imgbox"><img src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}" onerror="window.__daFallbackImg(this)"></div>
           <div class="basket-body"><div class="basket-name">${escapeHtml(basket.nome)}</div><div class="price">${basket.preco ? fmt(basket.preco) : fmt(total)}</div><button class="add-btn" type="button" data-action="add-basket" data-id="${escapeHtml(basket.id)}">Adicionar cesta padrão</button></div>
