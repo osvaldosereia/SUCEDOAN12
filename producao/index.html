@@ -643,9 +643,12 @@
     copy.gtin=String(source.gtin||source.ean||"").replace(/\D/g,"");
     copy.ncm=String(source.ncm||"").replace(/\D/g,"");
     copy.validade=normalizeCatalogDate(source.validade||source.vencimento||"");
-    copy.url_imagem=cleanCatalogText(source.url_imagem||source.imagem||source.image||source.img||source.foto||"");
+    const rawImagePath=cleanCatalogText(source.url_imagem||source.imagem||source.image||source.img||source.foto||"");
+    // O catalogo publicado tambem precisa usar a URL que ja existe no GitHub;
+    // o host publico pode nao ter recebido a imagem nova ainda.
+    copy.url_imagem=githubRawProductImageUrl(rawImagePath)||rawImagePath;
     if(Object.prototype.hasOwnProperty.call(source,"imagem"))copy.imagem=copy.url_imagem;
-    if(Array.isArray(source.imagens))copy.imagens=uniq([copy.url_imagem,...source.imagens.map(cleanCatalogText)]).filter(Boolean);
+    if(Array.isArray(source.imagens))copy.imagens=uniq([copy.url_imagem,...source.imagens.map(item=>{const path=cleanCatalogText(item);return githubRawProductImageUrl(path)||path})]).filter(Boolean);
     if(Object.prototype.hasOwnProperty.call(source,"tags"))copy.tags=parseTags(source.tags);
 
     const requestedOfferPrice=roundCatalogMoney(source.preco_oferta??source.precoOferta);
@@ -706,13 +709,18 @@
   function parseTags(v){if(Array.isArray(v)) return v.map(String).map(x=>x.trim()).filter(Boolean); if(typeof v === "string") return v.split(/[,|;]/).map(x=>x.trim()).filter(Boolean); return []}
   function getCode(p){return norm(p.codigo || p.sku || p.id || p.firebaseKey || p.gtin || p.ean || "")}
   function getKey(p){return String(p.firebaseKey || p.id || p.codigo || `produto_${Date.now()}`).trim()}
-  // O painel administrativo roda em /producao/, enquanto as imagens publicas
-  // ficam na raiz do site. Resolva caminhos relativos pela URL publica para
-  // evitar requisicoes incorretas como /producao/img/produtos_2/arquivo.webp.
+  // As imagens novas ficam primeiro no GitHub; o deploy publico pode ainda
+  // nao conter o arquivo e responder 404. Para caminhos relativos do catalogo,
+  // use a origem canonica do repositorio, que tambem funciona no admin.
+  function githubRawProductImageUrl(src){
+    const path=String(src||"").trim().replace(/\\/g,"/").replace(/^\.\//,"").replace(/^site\//i,"").replace(/^\/+/,"");
+    if(!/^img\//i.test(path))return "";
+    return githubRawFileUrl(`site/${path}`);
+  }
   function getImg(p){
     let img=String(p.url_imagem || p.imagem || p.image || p.img || p.foto || "").trim();
     if(!img && getCode(p)) img = `img/produtos/${getCode(p)}.webp`;
-    return img ? publicAssetUrl(img) : PLACEHOLDER;
+    return img ? (githubRawProductImageUrl(img)||publicAssetUrl(img)) : PLACEHOLDER;
   }
   function getRawImg(p){return String(p.url_imagem || p.imagem || p.image || p.img || p.foto || "").trim()}
   function getName(p){return String(p.nome || p.titulo || p.descricao || p.codigo || "Produto sem nome")}
@@ -2696,7 +2704,12 @@
     };
   }
   function currentProductImageSources(p){return uniq([p?.url_imagem||"",p?.imagem||"",p?.imagem_url||"",...(Array.isArray(p?.imagens)?p.imagens:[])]).filter(Boolean)}
-  function publicProductImageSrc(fileName){return `${String(state.settings.imagePublicBase||"img/produtos_2").replace(/\/+$/,'')}/${fileName}`}
+  function publicProductImageSrc(fileName){
+    const relative=`${String(state.settings.imagePublicBase||"img/produtos_2").replace(/\/+$/,'')}/${String(fileName||"").replace(/^\/+/,"")}`;
+    // Persiste a URL ja confirmada no GitHub: assim produto e admin nao ficam
+    // dependentes do deploy do dominio publico para exibir a foto nova.
+    return githubRawProductImageUrl(relative)||relative;
+  }
 
   function buildAiImageStrategy(count){
     return {
@@ -2756,13 +2769,25 @@
       throw err;
     }
   }
+  function isGithubRawProductAsset(src){
+    try{
+      const u=new URL(String(src||""));
+      const s=state.settings||{};
+      const owner=String(s.githubOwner||"").trim(),repo=String(s.githubRepo||"").trim(),branch=String(s.githubBranch||"main").trim()||"main";
+      const folder=String(s.githubImagesPath||"site/img/produtos_2").replace(/^\/+|\/+$/g,"");
+      return u.hostname.toLowerCase()==="raw.githubusercontent.com" && decodeURIComponent(u.pathname).startsWith(`/${owner}/${repo}/${branch}/${folder}/`);
+    }catch{return false}
+  }
   async function saveGeneratedProductImageToGithub(p,src,index,batchId,fileName=""){
     let finalSrc=String(src||"").trim();
     if(!finalSrc)throw new Error(`Imagem ${index} vazia retornada pelo Make.`);
 
     readSettingsFromUi();
     const canSaveToGithub=!!(state.settings.githubToken&&state.settings.githubOwner&&state.settings.githubRepo&&state.settings.githubBranch);
-    const shouldStoreResult=/^(data:image\/|https?:\/\/)/i.test(finalSrc);
+    // O cenário novo já grava no GitHub e devolve download_url. Não reenviar
+    // esse mesmo arquivo: além de ser redundante, a rotina antiga trocava a
+    // URL raw válida por um caminho relativo que o domínio público retorna 404.
+    const shouldStoreResult=/^(data:image\/|https?:\/\/)/i.test(finalSrc) && !isGithubRawProductAsset(finalSrc);
 
     if(canSaveToGithub&&shouldStoreResult){
       try{
@@ -3349,7 +3374,9 @@
     startedAt:null,
     timer:null,
     delayResolve:null,
-    nextAt:null
+    nextAt:null,
+    catalogPublished:false,
+    catalogError:""
   };
 
   function aiBatchUniq(values){return Array.from(new Set((values||[]).map(v=>String(v||"").trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,"pt-BR"))}
@@ -3487,7 +3514,7 @@
     const cat=$("#aiBatchCategory")?.value||"";
     const sub=$("#aiBatchSubcategory")?.value||"";
     if(!confirm(`Gerar imagem IA para ${queue.length} produto(s)?\n\nCategoria: ${cat}${sub?`\nSubcategoria: ${sub}`:""}\nIntervalo: 10 segundos entre produtos\n\nMantenha esta aba aberta até terminar.`))return;
-    state.aiImageBatch={running:true,stopRequested:false,queue,total:queue.length,index:0,success:0,failed:0,errors:[],logs:[],currentKey:null,startedAt:Date.now(),timer:null,delayResolve:null,nextAt:null};
+    state.aiImageBatch={running:true,stopRequested:false,queue,total:queue.length,index:0,success:0,failed:0,errors:[],logs:[],currentKey:null,startedAt:Date.now(),timer:null,delayResolve:null,nextAt:null,catalogPublished:false,catalogError:""};
     aiBatchLog("warn",`Fila iniciada com ${queue.length} produto(s).`);
     setStatus(`IA imagens em massa: iniciando ${queue.length} produto(s)...`,"warn");
     renderAiImageBatchModal();
@@ -3525,12 +3552,28 @@
     final.running=false;
     final.currentKey=null;
     final.index=final.total;
+    if(final.success>0){
+      try{
+        setStatus("Publicando catálogo de imagens no GitHub...","warn");
+        aiBatchLog("warn",`Publicando produtos.json com ${final.success} imagem(ns) nova(s)...`);
+        // A imagem ja foi salva produto a produto; aqui publicamos uma unica
+        // vez o catalogo que o site le, usando as URLs raw validas do GitHub.
+        await saveGithubFiles({produtos:productsObject()});
+        final.catalogPublished=true;
+        aiBatchLog("ok","produtos.json publicado no GitHub.");
+      }catch(err){
+        final.catalogError=err?.message||String(err);
+        console.error("Erro ao publicar o catálogo após imagens em massa:",err);
+        aiBatchLog("err",`Imagens geradas, mas produtos.json não foi publicado: ${final.catalogError}`);
+      }
+    }
+    const publishMsg=final.catalogPublished?" Catálogo publicado no GitHub.":(final.catalogError?" As imagens ficaram no Firebase, mas o produtos.json não foi publicado; configure o GitHub e salve novamente.":"");
     if(final.stopRequested){
-      setStatus(`IA imagens em massa parada. ${final.success} salva(s), ${final.failed} erro(s).`,final.failed?"err":"ok");
-      aiBatchLog("warn",`Processo parado. ${final.success} salva(s), ${final.failed} erro(s).`);
+      setStatus(`IA imagens em massa parada. ${final.success} salva(s), ${final.failed} erro(s).${publishMsg}`,final.failed||final.catalogError?"err":"ok");
+      aiBatchLog("warn",`Processo parado. ${final.success} salva(s), ${final.failed} erro(s).${publishMsg}`);
     }else{
-      setStatus(`IA imagens em massa concluída. ${final.success} salva(s), ${final.failed} erro(s).`,final.failed?"err":"ok");
-      aiBatchLog(final.failed?"err":"ok",`Processo concluído. ${final.success} salva(s), ${final.failed} erro(s).`);
+      setStatus(`IA imagens em massa concluída. ${final.success} salva(s), ${final.failed} erro(s).${publishMsg}`,final.failed||final.catalogError?"err":"ok");
+      aiBatchLog(final.failed||final.catalogError?"err":"ok",`Processo concluído. ${final.success} salva(s), ${final.failed} erro(s).${publishMsg}`);
     }
     renderAiImageBatchSelectors(true);
     renderAiImageBatchModal();
@@ -3578,3 +3621,4 @@
 </html>
  
  
+
