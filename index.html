@@ -4235,6 +4235,73 @@
       .header-inner { max-width: 1480px !important; width: min(100%, 1480px) !important; }
     }
 
+
+
+    /* =========================
+       AJUSTE v9 - desktop alinhado + botão final das seções
+       Corrige o deslocamento causado por padding duplicado da sidebar/header.
+    ========================= */
+    .section-actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 18px;
+    }
+    .section-see-all-btn {
+      min-height: 46px;
+      padding: 0 20px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      box-shadow: 0 12px 24px rgba(21,96,59,.16);
+    }
+    .section-see-all-btn .svg-icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (min-width: 1100px) {
+      .header {
+        left: var(--sidebar-w) !important;
+        right: 0 !important;
+        width: auto !important;
+      }
+      .app {
+        left: var(--sidebar-w) !important;
+        right: 0 !important;
+        top: calc(var(--header-h) + var(--safe-top)) !important;
+        height: calc(100dvh - var(--header-h) - var(--safe-top)) !important;
+        padding: 28px 34px 52px !important;
+      }
+      .container,
+      .app > .container {
+        margin-left: 0 !important;
+        margin-right: auto !important;
+      }
+    }
+
+    @media (min-width: 1440px) {
+      .app {
+        padding-left: 36px !important;
+        padding-right: 36px !important;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .section-actions {
+        margin-top: 14px;
+      }
+      .section-see-all-btn {
+        width: 100%;
+        min-height: 48px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -6094,9 +6161,12 @@
 
     function shelf(title, caption, items, href, type) {
       if (!items || !items.length) return '';
-      const visible = items.slice(0, 8);
+      const limit = type === 'basket' ? 12 : 8;
+      const visible = items.slice(0, limit);
       const cards = visible.map(item => type === 'kit' ? kitCard(item, 'compact') : (type === 'basket' ? basketCard(item, 'compact') : productCard(item, 'compact'))).join('');
-      return `<section class="section"><div class="section-head"><div><h2 class="section-title">${escapeHtml(title)}</h2>${caption ? `<div class="section-caption">${escapeHtml(caption)}</div>` : ''}</div>${href ? `<a class="see-all" href="${href}">Ver todos</a>` : ''}</div><div class="section-grid">${cards}</div></section>`;
+      const moreLabel = type === 'basket' ? 'Ver todas as cestas' : (type === 'kit' ? 'Ver todos os kits' : 'Ver todos');
+      const bottomAction = href ? `<div class="section-actions"><a class="section-see-all-btn" href="${href}">${moreLabel}<svg class="svg-icon" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="M13 5l7 7-7 7"></path></svg></a></div>` : '';
+      return `<section class="section"><div class="section-head"><div><h2 class="section-title">${escapeHtml(title)}</h2>${caption ? `<div class="section-caption">${escapeHtml(caption)}</div>` : ''}</div></div><div class="section-grid">${cards}</div>${bottomAction}</section>`;
     }
 
     function productDetailChipsHtml(p) {
