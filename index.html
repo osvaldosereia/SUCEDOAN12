@@ -4927,6 +4927,87 @@
     }
 
 
+    /* =========================
+       Ajuste 2026-07-10: kits na home, lista clicável e sacola pulsante
+    ========================= */
+    .kit-detail-container {
+      padding-bottom: calc(var(--bottom-h) + var(--safe-bottom) + 96px) !important;
+    }
+    .kit-products-section { margin-bottom: calc(var(--bottom-h) + var(--safe-bottom) + 74px) !important; }
+    .kit-product-link {
+      color: inherit !important;
+      text-decoration: none !important;
+      cursor: pointer;
+      transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+    }
+    .kit-product-link:hover,
+    .kit-product-link:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(245, 158, 11, .34) !important;
+      box-shadow: 0 10px 24px rgba(23, 32, 26, .08) !important;
+      background: #fffdf7 !important;
+    }
+    .kit-product-link:active { transform: scale(.992); }
+    .kit-product-link .basket-editor-name::after {
+      content: "  Ver produto";
+      color: var(--brand);
+      font-size: 11px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .checkout-cta.cart-pulse::after { content: none !important; display: none !important; }
+    .checkout-cta.cart-pulse,
+    #nav-cart.cart-pulse,
+    #header-cart-btn.cart-pulse {
+      animation: daCartBagPulse 1.18s ease-in-out 0s 2 both !important;
+      background: linear-gradient(135deg, #f59e0b, #f97316) !important;
+      border-color: rgba(249, 115, 22, .45) !important;
+      color: #fff !important;
+      transform-origin: center center;
+      box-shadow: 0 0 0 0 rgba(249, 115, 22, .26), 0 18px 34px rgba(249, 115, 22, .28) !important;
+    }
+    #nav-cart.cart-pulse .svg-icon,
+    #header-cart-btn.cart-pulse .svg-icon,
+    .checkout-cta.cart-pulse .svg-icon,
+    #header-cart-btn.cart-pulse .header-cart-icon {
+      color: #fff !important;
+      stroke: #fff !important;
+      animation: daCartBagIconPulse 1.18s ease-in-out 0s 2 both !important;
+    }
+    #header-cart-btn.cart-pulse small,
+    #header-cart-btn.cart-pulse strong,
+    .checkout-cta.cart-pulse small,
+    .checkout-cta.cart-pulse strong,
+    #nav-cart.cart-pulse span { color: #fff !important; }
+    #nav-cart.cart-pulse .cart-badge,
+    #header-cart-btn.cart-pulse .header-cart-count {
+      background: #14532d !important;
+      border-color: #fff !important;
+      color: #fff !important;
+    }
+    @keyframes daCartBagPulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(249,115,22,.26); }
+      18% { transform: scale(1.13); box-shadow: 0 0 0 12px rgba(249,115,22,.16); }
+      36% { transform: scale(.96); box-shadow: 0 0 0 5px rgba(249,115,22,.10); }
+      56% { transform: scale(1.10); box-shadow: 0 0 0 16px rgba(249,115,22,.08); }
+      76% { transform: scale(.99); box-shadow: 0 0 0 7px rgba(249,115,22,.05); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(249,115,22,0); }
+    }
+    @keyframes daCartBagIconPulse {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      22% { transform: scale(1.22) rotate(-5deg); }
+      44% { transform: scale(.94) rotate(4deg); }
+      66% { transform: scale(1.16) rotate(-3deg); }
+    }
+    @media (max-width: 767px) {
+      .kit-detail-container {
+        padding-bottom: calc(var(--bottom-h) + var(--safe-bottom) + 132px) !important;
+      }
+      .kit-products-section { margin-bottom: calc(var(--bottom-h) + var(--safe-bottom) + 104px) !important; }
+    }
+
+
   </style>
 </head>
 <body>
@@ -5048,7 +5129,7 @@
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-07-kits-promocionais-v3-ref-entrega',
+      APP_VERSION: '2026-07-10-kits-home-scroll-sacola-v1',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
@@ -6071,7 +6152,7 @@
         void el.offsetWidth;
         el.classList.add('cart-pulse');
         clearTimeout(el.__daPulseTimer);
-        el.__daPulseTimer = setTimeout(() => el.classList.remove('cart-pulse'), 1350);
+        el.__daPulseTimer = setTimeout(() => el.classList.remove('cart-pulse'), 2600);
       });
     }
 
@@ -6995,6 +7076,8 @@
           ${homeQuickLinksHtml()}
           ${bannerSlotHtml('home.cestas.topo', { kind: 'section' })}
           ${shelf('Cestas básicas', 'Kits prontos para facilitar sua compra e acelerar o pedido.', state.cestas, '#/cestas', 'basket')}
+          ${bannerSlotHtml('home.kits.topo', { kind: 'section' })}
+          ${shelf('Kits promocionais', 'Combos com desconto real e disponibilidade limitada.', kits, '#/kits', 'kit')}
           ${bannerSlotHtml('home.ofertas.topo', { kind: 'section' })}
           ${shelf('Ofertas de hoje', 'Economize nos produtos disponíveis agora.', offers, '#/ofertas')}
           ${bannerSlotHtml('home.compra-mes.topo', { kind: 'section' })}
@@ -7005,8 +7088,6 @@
           ${shelf('Higiene e beleza', 'Cuidados pessoais com navegação simples.', higiene, '#/rotina/higiene')}
           ${bannerSlotHtml('home.cafe.topo', { kind: 'section' })}
           ${shelf('Café da manhã', 'Café, biscoitos, achocolatados e itens para o dia começar.', cafe, '#/rotina/cafe')}
-          ${bannerSlotHtml('home.kits.topo', { kind: 'section' })}
-          ${shelf('Kits promocionais', 'Combos com desconto real e disponibilidade limitada.', kits, '#/kits', 'kit')}
           ${brandStripHtml()}
           ${bannerSlotHtml('home.categorias.topo', { kind: 'section' })}
           ${categoryButtonsHtml()}
@@ -7109,7 +7190,7 @@
       const discount = kitDiscountPercent(kit);
       const saving = Math.max(0, original - Number(kit.preco || 0));
       const kitRatio = original > 0 ? Math.min(1, Number(kit.preco || 0) / original) : 1;
-      app.innerHTML = `<div class="container">${pageHeader(kit.nome, '', '#/kits')}
+      app.innerHTML = `<div class="container kit-detail-container">${pageHeader(kit.nome, '', '#/kits')}
         <article class="kit-deal-card">
           <div class="kit-deal-top kit-deal-top-stacked">
             <img class="kit-deal-img" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
@@ -7132,13 +7213,13 @@
             <p>${escapeHtml(kit.descricao || 'Kit promocional por tempo limitado.')}</p>
           </details>
         </article>
-        <section class="section"><div class="section-head"><div><h2 class="section-title">Produtos do kit</h2></div></div>
+        <section class="section kit-products-section"><div class="section-head"><div><h2 class="section-title">Produtos do kit</h2></div></div>
           ${rows.length ? `<div class="basket-editor">${rows.map(({product, qty}) => `
-            <div class="basket-editor-row kit-product-row">
+            <a class="basket-editor-row kit-product-row kit-product-link" href="#/produto/${productRouteKey(product)}" aria-label="Abrir ${escapeHtml(product.name)}">
               <img src="${escapeHtml(product.img)}" data-fallback-images="${escapeHtml(imageFallbackList(product.images))}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
               <div><div class="basket-editor-name">${escapeHtml(product.name)}</div><div class="basket-editor-price">${qty} ${Number(qty) === 1 ? 'unidade' : 'unidades'} no kit</div></div>
               <div class="kit-product-price"><s>${fmt(Number(product.price || 0))}</s><strong>${fmt(roundMoney(Number(product.price || 0) * kitRatio))}</strong><span>cada no combo</span></div>
-            </div>`).join('')}</div>` : `<div class="empty"><strong>Itens nao localizados</strong>Nao conseguimos relacionar os produtos desse kit ao cadastro atual.</div>`}
+            </a>`).join('')}</div>` : `<div class="empty"><strong>Itens nao localizados</strong>Nao conseguimos relacionar os produtos desse kit ao cadastro atual.</div>`}
         </section>
       </div>`;
       setActiveNav('home');
