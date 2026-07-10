@@ -1,0 +1,93 @@
+{
+  "versao": "2026-07-10-01",
+  "banners": [
+    {
+      "id": "home-cestas-01",
+      "ativo": true,
+      "posicao": "home.hero",
+      "tipo": "carousel",
+      "ordem": 1,
+      "desktop": "site/banner/home-cestas-01-desktop.webp",
+      "mobile": "site/banner/home-cestas-01-mobile.webp",
+      "alt": "Cestas básicas Dona Antônia com entrega em Cuiabá e Várzea Grande",
+      "link": { "tipo": "rota", "valor": "#/cestas" }
+    },
+    {
+      "id": "home-ofertas-01",
+      "ativo": true,
+      "posicao": "home.hero",
+      "tipo": "carousel",
+      "ordem": 2,
+      "desktop": "site/banner/home-ofertas-01-desktop.webp",
+      "mobile": "site/banner/home-ofertas-01-mobile.webp",
+      "alt": "Ofertas de mercado Dona Antônia",
+      "link": { "tipo": "rota", "valor": "#/ofertas" }
+    },
+    {
+      "id": "home-compra-mes-01",
+      "ativo": true,
+      "posicao": "home.hero",
+      "tipo": "carousel",
+      "ordem": 3,
+      "desktop": "site/banner/home-compra-mes-01-desktop.webp",
+      "mobile": "site/banner/home-compra-mes-01-mobile.webp",
+      "alt": "Compra do mês com produtos essenciais",
+      "link": { "tipo": "rota", "valor": "#/rotina/compra-mes" }
+    },
+    {
+      "id": "home-cestas-topo",
+      "ativo": true,
+      "posicao": "home.cestas.topo",
+      "tipo": "fixo",
+      "ordem": 1,
+      "desktop": "site/banner/home-cestas-topo-desktop.webp",
+      "mobile": "site/banner/home-cestas-topo-mobile.webp",
+      "alt": "Cestas prontas para casa, empresa ou doação",
+      "link": { "tipo": "rota", "valor": "#/cestas" }
+    },
+    {
+      "id": "home-ofertas-topo",
+      "ativo": true,
+      "posicao": "home.ofertas.topo",
+      "tipo": "fixo",
+      "ordem": 1,
+      "desktop": "site/banner/home-ofertas-topo-desktop.webp",
+      "mobile": "site/banner/home-ofertas-topo-mobile.webp",
+      "alt": "Produtos com desconto por tempo limitado",
+      "link": { "tipo": "rota", "valor": "#/ofertas" }
+    },
+    {
+      "id": "home-limpeza-topo",
+      "ativo": true,
+      "posicao": "home.limpeza.topo",
+      "tipo": "fixo",
+      "ordem": 1,
+      "desktop": "site/banner/home-limpeza-topo-desktop.webp",
+      "mobile": "site/banner/home-limpeza-topo-mobile.webp",
+      "alt": "Produtos para limpeza da casa",
+      "link": { "tipo": "rota", "valor": "#/rotina/limpeza" }
+    },
+    {
+      "id": "categoria-beleza-topo",
+      "ativo": true,
+      "posicao": "categoria.BELEZA.topo",
+      "tipo": "fixo",
+      "ordem": 1,
+      "desktop": "site/banner/categoria-beleza-topo-desktop.webp",
+      "mobile": "site/banner/categoria-beleza-topo-mobile.webp",
+      "alt": "Beleza e cuidado pessoal",
+      "link": { "tipo": "categoria", "valor": "BELEZA" }
+    },
+    {
+      "id": "produto-exemplo",
+      "ativo": false,
+      "posicao": "home.ofertas.topo",
+      "tipo": "fixo",
+      "ordem": 99,
+      "desktop": "site/banner/produto-exemplo-desktop.webp",
+      "mobile": "site/banner/produto-exemplo-mobile.webp",
+      "alt": "Banner apontando para produto específico",
+      "link": { "tipo": "produto", "valor": "CODIGO_OU_FIREBASEKEY_DO_PRODUTO" }
+    }
+  ]
+}
