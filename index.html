@@ -4302,6 +4302,537 @@
       }
     }
 
+
+    /* =========================
+       AJUSTE v10 - responsivo, imagens, estoque e usabilidade
+    ========================= */
+    :root { --sidebar-w: 248px; }
+
+    .app, .container, .header, .header-inner, .section, .section-grid, .product-grid,
+    .product-list, .related-grid, .basket-list, .checkout-section, .drawer-body {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .section-grid, .product-grid, .product-list, .related-grid, .basket-list,
+    .home-quick-grid, .category-buttons {
+      min-width: 0 !important;
+      overflow: visible !important;
+    }
+
+    .product-card, .basket-card, .category-button, .home-quick-card, .menu-link,
+    .checkout-section, .product-detail, .basket-detail-hero { min-width: 0 !important; }
+
+    .product-imgbox, .detail-imgbox, .detail-thumb, .cart-img, .category-thumb-single,
+    .basket-editor-row img {
+      background: #fff !important;
+      border: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .product-imgbox img, .detail-imgbox img, .detail-thumb img,
+    .product-grid .product-imgbox img, .product-list .product-imgbox img,
+    .section-grid .product-imgbox img, .related-grid .product-imgbox img,
+    .cart-img, .basket-editor-row img, .category-thumb-single img {
+      object-fit: contain !important;
+      padding: 0 !important;
+      background: transparent !important;
+      mix-blend-mode: normal !important;
+      filter: none !important;
+    }
+
+    .product-imgbox img { transform: scale(1.06); }
+    .product-card.list .product-imgbox img { transform: scale(1.02); }
+    .detail-imgbox img { transform: none !important; }
+
+    .basket-detail-hero .basket-imgbox {
+      aspect-ratio: 16 / 10 !important;
+      height: auto !important;
+      min-height: 0 !important;
+      max-height: 520px !important;
+      background: #fff !important;
+    }
+    .basket-detail-hero .basket-imgbox img {
+      object-fit: contain !important;
+      padding: 0 !important;
+      background: transparent !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .category-card-copy, .menu-link span, .menu-link small { min-width: 0; }
+    .category-card-copy strong,
+    .category-button strong {
+      display: -webkit-box !important;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      line-height: 1.15 !important;
+      overflow-wrap: anywhere;
+      word-break: normal;
+      hyphens: auto;
+    }
+    .category-card-copy span,
+    .category-button span {
+      display: block;
+      white-space: normal !important;
+      line-height: 1.25 !important;
+    }
+    .menu-link {
+      align-items: start !important;
+      gap: 3px !important;
+      padding: 11px 12px !important;
+      height: auto !important;
+      min-height: 58px !important;
+    }
+    .menu-link span {
+      display: -webkit-box !important;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      line-height: 1.18 !important;
+      overflow-wrap: anywhere;
+    }
+    .menu-link small { white-space: normal !important; line-height: 1.25 !important; }
+    .menu-link-list.compact { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+    .checkout-cta, #nav-cart, #header-cart-btn { position: relative; }
+    .checkout-cta.cart-pulse,
+    #nav-cart.cart-pulse,
+    #header-cart-btn.cart-pulse {
+      animation: daCartPulse .72s cubic-bezier(.2,.8,.2,1) both;
+      box-shadow: 0 0 0 0 rgba(34,197,94,.34), 0 18px 34px rgba(34,197,94,.22) !important;
+    }
+    .checkout-cta.cart-pulse::after {
+      content: "Ver compra aqui";
+      position: absolute;
+      right: 4px;
+      bottom: calc(100% + 8px);
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+      box-shadow: 0 12px 24px rgba(20,83,45,.22);
+      pointer-events: none;
+      animation: daCartHint 1.35s ease both;
+    }
+    @keyframes daCartPulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34,197,94,.34); }
+      35% { transform: scale(1.08); box-shadow: 0 0 0 12px rgba(34,197,94,.16); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+    }
+    @keyframes daCartHint {
+      0% { opacity: 0; transform: translateY(8px) scale(.96); }
+      18%, 78% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-4px) scale(.98); }
+    }
+
+    .checkout-offers-rail {
+      display: flex !important;
+      flex-wrap: nowrap !important;
+      gap: 12px !important;
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      max-width: 100% !important;
+      padding: 2px 2px 10px !important;
+      scroll-snap-type: x proximity;
+    }
+    .checkout-offers-rail .product-card {
+      flex: 0 0 156px !important;
+      width: 156px !important;
+      max-width: 156px !important;
+      scroll-snap-align: start;
+    }
+    .checkout-offers-rail .product-imgbox { aspect-ratio: 1 / 1 !important; height: auto !important; }
+    .checkout-offers-rail .product-name { font-size: 12px !important; min-height: 34px !important; }
+    .checkout-offers-rail .product-card-bottom { gap: 6px !important; }
+    .checkout-offers-rail .qty-control-mini { width: 82px !important; }
+
+    @media (max-width: 767px) {
+      :root { --header-h: 78px !important; }
+      .header {
+        height: calc(var(--header-h) + var(--safe-top)) !important;
+        padding: calc(10px + var(--safe-top)) 10px 10px !important;
+      }
+      .header-inner {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        align-items: center !important;
+        gap: 8px !important;
+        height: 100% !important;
+      }
+      .header-top { display: contents !important; }
+      .header .brand { display: none !important; }
+      .search-wrap { grid-column: 1 !important; grid-row: 1 !important; width: 100% !important; min-width: 0 !important; }
+      .search-input {
+        height: 48px !important;
+        padding-left: 42px !important;
+        padding-right: 42px !important;
+        font-size: 14px !important;
+      }
+      .search-submit { display: none !important; }
+      .search-clear.show { right: 8px !important; }
+      .header-actions { grid-column: 2 !important; grid-row: 1 !important; display: flex !important; gap: 6px !important; }
+      .header-cart-btn {
+        display: inline-flex !important;
+        width: 48px !important;
+        min-width: 48px !important;
+        height: 48px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+      }
+      .header-cart-btn > span:last-child { display: none !important; }
+      .header-menu-btn { width: 48px !important; height: 48px !important; padding: 0 !important; }
+      .header-menu-text { display: none !important; }
+      .app {
+        top: calc(var(--header-h) + var(--safe-top)) !important;
+        height: calc(100dvh - var(--header-h) - var(--safe-top)) !important;
+        padding-top: 14px !important;
+      }
+      .category-buttons { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+      .category-button, .category-button-single {
+        min-height: 104px !important;
+        grid-template-columns: 52px minmax(0, 1fr) !important;
+        padding: 10px !important;
+        gap: 9px !important;
+      }
+      .category-thumb-single { width: 52px !important; height: 52px !important; border-radius: 14px !important; }
+      .category-card-copy strong { font-size: 13px !important; }
+      .category-card-copy span { font-size: 11px !important; }
+      .menu-link-list.compact { grid-template-columns: 1fr !important; }
+      .checkout-offers-rail .product-card { flex-basis: 142px !important; width: 142px !important; max-width: 142px !important; }
+      .product-detail { display: block !important; padding: 10px !important; }
+      .detail-media { padding: 0 !important; }
+      .detail-imgbox { min-height: 0 !important; aspect-ratio: 1 / 1 !important; }
+      .basket-detail-hero { display: block !important; padding: 10px !important; }
+      .basket-detail-hero .basket-imgbox { aspect-ratio: 4 / 3 !important; }
+    }
+
+    @media (min-width: 1100px) {
+      :root { --header-h: 84px !important; --bottom-h: 0px !important; }
+      .header {
+        left: var(--sidebar-w) !important;
+        right: 0 !important;
+        width: auto !important;
+        height: calc(var(--header-h) + var(--safe-top)) !important;
+        padding: calc(14px + var(--safe-top)) 28px 14px !important;
+      }
+      .header-inner {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        gap: 18px !important;
+        align-items: center !important;
+        width: min(100%, 1180px) !important;
+        max-width: 1180px !important;
+        margin: 0 auto !important;
+      }
+      .header-top { display: contents !important; }
+      .header .brand { display: none !important; }
+      .search-wrap { grid-column: 1 !important; grid-row: 1 !important; max-width: none !important; width: 100% !important; }
+      .header-actions { grid-column: 2 !important; grid-row: 1 !important; display: flex !important; }
+      .header-cart-btn { display: inline-flex !important; min-width: 154px !important; }
+      .app {
+        left: var(--sidebar-w) !important;
+        right: 0 !important;
+        width: auto !important;
+        top: calc(var(--header-h) + var(--safe-top)) !important;
+        height: calc(100dvh - var(--header-h) - var(--safe-top)) !important;
+        padding: 28px 28px 52px !important;
+        overflow-x: hidden !important;
+      }
+      .container, .app > .container {
+        width: min(100%, 1180px) !important;
+        max-width: 1180px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      .section-grid, .product-grid, .product-list, .related-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 18px !important;
+      }
+      .basket-list { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 22px !important; }
+      .category-buttons { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 14px !important; }
+      .product-detail {
+        display: grid !important;
+        grid-template-columns: minmax(0, 460px) minmax(0, 1fr) !important;
+        align-items: start !important;
+        gap: 30px !important;
+        padding: 22px !important;
+      }
+      .detail-media { padding: 0 !important; border: 0 !important; background: #fff !important; }
+      .detail-imgbox { aspect-ratio: 1 / 1 !important; height: auto !important; min-height: 0 !important; max-height: none !important; }
+      .detail-info { padding: 12px 0 0 !important; align-content: start !important; }
+      .basket-detail-hero {
+        grid-template-columns: minmax(0, 520px) minmax(0, 1fr) !important;
+        gap: 30px !important;
+        padding: 18px !important;
+      }
+      .drawer { max-width: 520px !important; }
+    }
+
+    @media (min-width: 1440px) {
+      .container, .app > .container, .header-inner {
+        width: min(100%, 1240px) !important;
+        max-width: 1240px !important;
+      }
+      .section-grid, .product-grid, .product-list, .related-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      }
+    }
+
+
+    /* =========================
+       AJUSTE v11 - DESKTOP TRAVADO SEM ESTOURAR
+       Regra final: a vitrine usa exatamente a mesma largura util da topbar.
+       O limite fica alinhado com a borda direita do botao Minha Compra.
+    ========================= */
+    :root {
+      --sidebar-w: 248px;
+      --desktop-page-gutter: 28px;
+      --desktop-content-max: 980px;
+      --desktop-content-width: min(var(--desktop-content-max), calc(100vw - var(--sidebar-w) - 56px));
+    }
+
+    html,
+    body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: clip !important;
+    }
+
+    body,
+    .header,
+    .app,
+    .bottom-bar,
+    .container,
+    .header-inner,
+    .section,
+    .section-grid,
+    .product-grid,
+    .product-list,
+    .related-grid,
+    .basket-list,
+    .product-detail,
+    .basket-detail-hero,
+    .checkout-section {
+      box-sizing: border-box !important;
+      min-width: 0 !important;
+    }
+
+    .app,
+    .container,
+    .header-inner {
+      overflow-x: clip !important;
+    }
+
+    @media (min-width: 1100px) {
+      .header {
+        left: var(--sidebar-w) !important;
+        right: 0 !important;
+        width: calc(100vw - var(--sidebar-w)) !important;
+        padding-left: var(--desktop-page-gutter) !important;
+        padding-right: var(--desktop-page-gutter) !important;
+      }
+
+      .header-inner {
+        width: var(--desktop-content-width) !important;
+        max-width: var(--desktop-content-width) !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+      }
+
+      .app {
+        left: var(--sidebar-w) !important;
+        right: 0 !important;
+        width: calc(100vw - var(--sidebar-w)) !important;
+        padding-left: var(--desktop-page-gutter) !important;
+        padding-right: var(--desktop-page-gutter) !important;
+      }
+
+      .app > .container,
+      .container {
+        width: var(--desktop-content-width) !important;
+        max-width: var(--desktop-content-width) !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+
+      .section,
+      .section-grid,
+      .product-grid,
+      .product-list,
+      .related-grid,
+      .basket-list,
+      .home-quick-grid,
+      .category-buttons,
+      .brand-strip,
+      .da-banner,
+      .product-detail,
+      .basket-detail-hero,
+      .checkout-section,
+      .drawer-body {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      .section-grid,
+      .product-grid,
+      .product-list,
+      .related-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 16px !important;
+        justify-content: stretch !important;
+        align-items: start !important;
+        overflow: clip !important;
+      }
+
+      .section-grid > *,
+      .product-grid > *,
+      .product-list > *,
+      .related-grid > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+      }
+
+      .product-card,
+      .basket-card,
+      .product-card.compact,
+      .basket-card.compact,
+      .carousel-more-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex: initial !important;
+        flex-basis: auto !important;
+      }
+
+      .product-imgbox,
+      .basket-imgbox {
+        width: 100% !important;
+        max-width: 100% !important;
+        aspect-ratio: 1 / 1 !important;
+        height: auto !important;
+      }
+
+      .product-card,
+      .basket-card {
+        padding: 9px !important;
+        border-radius: 20px !important;
+      }
+
+      .product-imgbox,
+      .basket-imgbox {
+        border-radius: 16px !important;
+      }
+
+      .product-name {
+        font-size: 13.2px !important;
+        line-height: 1.3 !important;
+        min-height: 35px !important;
+      }
+
+      .basket-name {
+        font-size: 14px !important;
+        line-height: 1.24 !important;
+      }
+
+      .product-card-bottom .price,
+      .price {
+        font-size: 17px !important;
+      }
+
+      .home-quick-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 12px !important;
+      }
+
+      .home-quick-card {
+        min-width: 0 !important;
+        padding: 12px !important;
+        grid-template-columns: minmax(0, 1fr) 54px !important;
+      }
+
+      .home-quick-card img {
+        width: 54px !important;
+        height: 54px !important;
+      }
+
+      .category-buttons {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 12px !important;
+        overflow: clip !important;
+      }
+
+      .category-button,
+      .category-button-single {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+      }
+
+      .product-detail {
+        display: grid !important;
+        grid-template-columns: minmax(0, 390px) minmax(0, 1fr) !important;
+        gap: 26px !important;
+        align-items: start !important;
+        overflow: clip !important;
+      }
+
+      .detail-media,
+      .detail-info {
+        min-width: 0 !important;
+        max-width: 100% !important;
+      }
+
+      .detail-imgbox {
+        width: 100% !important;
+        max-width: 390px !important;
+        aspect-ratio: 1 / 1 !important;
+        height: auto !important;
+        min-height: 0 !important;
+      }
+
+      .detail-title {
+        font-size: clamp(25px, 2vw, 34px) !important;
+        max-width: 100% !important;
+      }
+
+      .basket-detail-hero {
+        display: grid !important;
+        grid-template-columns: minmax(0, 430px) minmax(0, 1fr) !important;
+        overflow: clip !important;
+      }
+    }
+
+    @media (min-width: 1440px) {
+      .header-inner,
+      .app > .container,
+      .container {
+        width: var(--desktop-content-width) !important;
+        max-width: var(--desktop-content-width) !important;
+      }
+
+      .section-grid,
+      .product-grid,
+      .product-list,
+      .related-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      }
+    }
+
+    @media (min-width: 1700px) {
+      :root {
+        --desktop-content-max: 1000px;
+      }
+    }
+
+
   </style>
 </head>
 <body>
@@ -5416,6 +5947,40 @@
       return getCartItems().reduce((sum, item) => item.product.isFee ? sum : sum + item.qty, 0);
     }
 
+    function productStockLimit(product) {
+      if (!product || product.isFee) return 999999;
+      return Math.max(0, Math.floor(Number(product.stock || 0)));
+    }
+
+    function stockCheckForAddMap(addMap) {
+      const normalized = normalizeQuantityMap(addMap || {});
+      for (const [id, amount] of Object.entries(normalized)) {
+        if (amount <= 0) continue;
+        const product = getProductById(id);
+        if (!product || !isAvailable(product)) {
+          return { ok: false, product, id, reason: 'Produto indisponível.' };
+        }
+        const max = productStockLimit(product);
+        const current = Math.max(0, Number(state.cart[id] || 0));
+        if (!product.isFee && current + amount > max) {
+          return { ok: false, product, id, max, current, requested: amount, reason: `Estoque insuficiente para ${product.name}. Temos ${max} unidade(s) disponível(is).` };
+        }
+      }
+      return { ok: true };
+    }
+
+    function pulseCartTarget() {
+      ['bottom-cta', 'nav-cart', 'header-cart-btn'].forEach(id => {
+        const el = $(id);
+        if (!el) return;
+        el.classList.remove('cart-pulse');
+        void el.offsetWidth;
+        el.classList.add('cart-pulse');
+        clearTimeout(el.__daPulseTimer);
+        el.__daPulseTimer = setTimeout(() => el.classList.remove('cart-pulse'), 1350);
+      });
+    }
+
     function setQty(id, qty, options) {
       const key = String(id);
       const product = getProductById(key);
@@ -5430,7 +5995,10 @@
         return;
       }
       const previous = Number(state.cart[key] || 0);
-      const next = Math.max(0, parseInt(qty, 10) || 0);
+      const requested = Math.max(0, parseInt(qty, 10) || 0);
+      const maxStock = productStockLimit(product);
+      const next = product.isFee ? requested : Math.min(requested, maxStock);
+      const hitStockLimit = !product.isFee && requested > maxStock;
       if (next <= 0) {
         delete state.cart[key];
         state.cartOrder = state.cartOrder.filter(x => String(x) !== key);
@@ -5438,15 +6006,15 @@
         if (!state.cartOrder.includes(key)) state.cartOrder.push(key);
         state.cart[key] = next;
       }
-      if (!options || !options.silent) {
-        if (next === WHOLESALE_MIN_QTY - 1 && previous < next && !product.isFee) showToast(`Leve 3 e pague ${fmt(roundMoney(Number(product.price || 0) * (1 - WHOLESALE_DISCOUNT_RATE)))} em cada.`);
-        else if (next >= WHOLESALE_MIN_QTY && previous < WHOLESALE_MIN_QTY && !product.isFee) showToast('Desconto de atacado de 5% aplicado.');
-        else showToast(next > 0 ? 'Produto atualizado na compra.' : 'Produto removido da compra.');
-      }
       saveCart();
       updateCartUI();
       syncVisibleCards();
       if ($('checkout-drawer').classList.contains('open')) renderCheckout();
+      if (!options || !options.silent) {
+        if (hitStockLimit) showToast(`Só temos ${maxStock} unidade(s) deste produto em estoque.`);
+        else if (next > previous) pulseCartTarget();
+        else if (next <= 0 && previous > 0) showToast('Produto removido da compra.');
+      }
     }
 
     function addToCart(id, qty) {
@@ -5478,6 +6046,17 @@
           removed.push(product && product.name ? product.name : id);
           delete state.cart[id];
           changed = true;
+          return;
+        }
+        if (product && !product.isFee) {
+          const max = productStockLimit(product);
+          const current = Math.max(0, Number(state.cart[id] || 0));
+          if (current > max) {
+            if (max > 0) state.cart[id] = max;
+            else delete state.cart[id];
+            removed.push(`${product.name} (quantidade ajustada ao estoque)`);
+            changed = true;
+          }
         }
       });
       state.cartOrder = state.cartOrder.filter(id => {
@@ -5648,7 +6227,11 @@
     function setBasketDraftQty(basketId, productId, qty) {
       const key = String(basketId);
       const draft = ensureBasketDraft(key);
-      draft[String(productId)] = Math.max(0, Number(qty) || 0);
+      const product = getProductById(productId);
+      const requested = Math.max(0, Number(qty) || 0);
+      const max = productStockLimit(product);
+      draft[String(productId)] = Math.min(requested, max);
+      if (requested > max) showToast(`Só temos ${max} unidade(s) deste produto em estoque.`);
       saveCart();
       renderBasketDetail(key);
     }
@@ -5726,6 +6309,8 @@
       const basket = state.cestas.find(c => String(c.id) === String(basketId));
       const draft = ensureBasketDraft(basketId);
       if (!basket || !draft) return;
+      const stockCheck = stockCheckForAddMap(draft);
+      if (!stockCheck.ok) { showToast(stockCheck.reason || 'Estoque insuficiente para adicionar esta cesta.'); return; }
       let added = 0;
       Object.entries(draft).forEach(([productId, qty]) => {
         const p = getProductById(productId);
@@ -5742,12 +6327,16 @@
       saveCart();
       updateCartUI();
       syncVisibleCards();
+      pulseCartTarget();
       openBasketConfirmation(basket, changed);
     }
 
     function addBasketToCart(basketId) {
       const { basket, rows } = getBasketLines(basketId);
       if (!basket) return;
+      const addMap = rows.reduce((map, row) => { if (row.product) map[String(row.product.id)] = Number(map[String(row.product.id)] || 0) + Math.max(1, Number(row.qty || 1)); return map; }, {});
+      const stockCheck = stockCheckForAddMap(addMap);
+      if (!stockCheck.ok) { showToast(stockCheck.reason || 'Estoque insuficiente para adicionar esta cesta.'); return; }
       let added = 0;
       rows.forEach(({ product: p, qty }) => {
         if (!p || !isAvailable(p)) return;
@@ -5762,6 +6351,7 @@
       saveCart();
       updateCartUI();
       syncVisibleCards();
+      pulseCartTarget();
       openBasketConfirmation(basket, false);
     }
 
@@ -5805,6 +6395,9 @@
     function addKitToCart(kitId) {
       const { kit, rows } = getKitLines(kitId);
       if (!kit || !kitIsVisible(kit)) { showToast('Kit promocional indisponivel no momento.'); return; }
+      const addMap = rows.reduce((map, row) => { if (row.product) map[String(row.product.id)] = Number(map[String(row.product.id)] || 0) + Math.max(1, Number(row.qty || 1)); return map; }, {});
+      const stockCheck = stockCheckForAddMap(addMap);
+      if (!stockCheck.ok) { showToast(stockCheck.reason || 'Estoque insuficiente para adicionar este kit.'); return; }
       let added = 0;
       rows.forEach(({ product: p, qty }) => {
         if (!p || !isAvailable(p)) return;
@@ -5819,6 +6412,7 @@
       saveCart();
       updateCartUI();
       syncVisibleCards();
+      pulseCartTarget();
       openBasketConfirmation(kit, false, 'kit');
     }
 
@@ -5924,9 +6518,37 @@
       return state.products.find(p => norm(p.codigo) === norm(possibleCode) || norm(p.id) === norm(possibleCode) || norm(productRouteKey(p)) === normalized || p.slug === normalized) || null;
     }
 
+    function imageFallbackList(images) {
+      return (images || []).map(src => String(src || '').trim()).filter(Boolean).join('|');
+    }
+
     function fallbackImg(el) {
-      el.onerror = null;
-      el.src = siteAssetUrl('img/logoantonia5.png');
+      if (!el) return;
+      const logo = siteAssetUrl('img/logoantonia5.png');
+      const current = String(el.currentSrc || el.src || '').trim();
+      const declared = String(el.getAttribute('data-fallback-images') || '').split('|').map(v => v.trim()).filter(Boolean);
+      const variants = [];
+      const add = src => {
+        const clean = String(src || '').trim();
+        if (clean && !variants.includes(clean)) variants.push(clean);
+      };
+      declared.forEach(add);
+      if (current) {
+        if (/raw\.githubusercontent\.com/i.test(current) && !/\.(webp|png|jpe?g)(?:\?|$)/i.test(current)) add(current + '.webp');
+        if (/\/produtos\//i.test(current) && !/\/produtos_2\//i.test(current)) add(current.replace('/produtos/', '/produtos_2/'));
+        if (/\/produtos_2\//i.test(current)) add(current.replace('/produtos_2/', '/produtos/'));
+      }
+      add(logo);
+      const used = String(el.getAttribute('data-fallback-used') || '').split('|').filter(Boolean);
+      if (current) used.push(current);
+      const next = variants.find(src => !used.includes(src) && src !== current);
+      if (next) {
+        el.setAttribute('data-fallback-used', Array.from(new Set(used)).join('|'));
+        el.src = next;
+      } else {
+        el.onerror = null;
+        el.src = logo;
+      }
     }
     window.__daFallbackImg = fallbackImg;
 
@@ -6067,7 +6689,7 @@
         <article class="${classes.join(' ')}" data-card-id="${escapeHtml(id)}">
           <div class="product-media-wrap">
             <a class="product-imgbox" href="#/produto/${route}" aria-label="Ver ${escapeHtml(p.name)}">
-              <img loading="lazy" decoding="async" src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)">
+              <img loading="lazy" decoding="async" src="${escapeHtml(p.img)}" data-fallback-images="${escapeHtml(imageFallbackList(p.images))}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)">
             </a>
             ${favoriteButtonHtml(id)}
           </div>
@@ -6419,7 +7041,7 @@
         <section class="section"><div class="section-head"><div><h2 class="section-title">Produtos do kit</h2></div></div>
           ${rows.length ? `<div class="basket-editor">${rows.map(({product, qty}) => `
             <div class="basket-editor-row kit-product-row">
-              <img src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
+              <img src="${escapeHtml(product.img)}" data-fallback-images="${escapeHtml(imageFallbackList(product.images))}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
               <div><div class="basket-editor-name">${escapeHtml(product.name)}</div><div class="basket-editor-price">${qty} ${Number(qty) === 1 ? 'unidade' : 'unidades'} no kit</div></div>
               <div class="kit-product-price"><s>${fmt(Number(product.price || 0))}</s><strong>${fmt(roundMoney(Number(product.price || 0) * kitRatio))}</strong><span>cada no combo</span></div>
             </div>`).join('')}</div>` : `<div class="empty"><strong>Itens nao localizados</strong>Nao conseguimos relacionar os produtos desse kit ao cadastro atual.</div>`}
@@ -6645,7 +7267,7 @@
           ${rows.length ? `<div class="basket-editor">${rows.map(({product}) => {
             const qty = Number(draft[product.id] || 0);
             return `<div class="basket-editor-row" data-basket-row="${escapeHtml(product.id)}">
-              <img src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
+              <img src="${escapeHtml(product.img)}" data-fallback-images="${escapeHtml(imageFallbackList(product.images))}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
               <div><div class="basket-editor-name">${escapeHtml(product.name)}</div><div class="basket-editor-price">${fmt(product.price)} cada</div></div>
               <div class="cart-qty"><button type="button" data-action="basket-dec" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(product.id)}">−</button><span>${qty}</span><button type="button" data-action="basket-inc" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(product.id)}">+</button></div>
             </div>`;
@@ -6663,6 +7285,10 @@
 
     function renderSearch(query) {
       const q = String(query || '').trim();
+      state.searchQuery = q;
+      const searchInput = $('search-input');
+      if (searchInput && searchInput.value !== q) searchInput.value = q;
+      updateSearchButtons();
       const products = searchProducts(q);
       app.innerHTML = `<div class="container">${pageHeader(q ? `Busca: ${q}` : 'Busca', q ? `${products.length} resultado(s)` : 'Digite o produto na busca acima.', '#/')}${bannerSlotHtml('busca.topo', { kind: 'section' })}${q ? (products.length ? `<div class="product-list">${products.map(p => productCard(p, 'list')).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`) : ''}</div>`;
       setActiveNav('home');
@@ -6676,6 +7302,15 @@
       setActiveNav('home');
     }
 
+    function productBackHref() {
+      try {
+        const saved = sessionStorage.getItem('da_last_product_from') || '';
+        if (saved && !saved.startsWith('#/produto')) return saved;
+      } catch(e) {}
+      if (state.searchQuery) return '#/busca/' + encodeURIComponent(state.searchQuery);
+      return '#/';
+    }
+
     function renderProduct(routeId) {
       const p = findProductByRoute(routeId);
       if (!p) {
@@ -6685,11 +7320,11 @@
       const display = productDisplayPricing(p);
       const related = state.products.filter(x => isAvailable(x) && x.id !== p.id && (x.categoria === p.categoria || x.marca === p.marca)).slice(0, 24);
       const descHtml = p.descricao ? `<div class="desc">${escapeHtml(p.descricao)}</div>` : '';
-      app.innerHTML = `<div class="container">${pageHeader('Produto', '', '#/')}
+      app.innerHTML = `<div class="container">${pageHeader('Produto', '', productBackHref())}
         <article class="product-detail">
           <div class="detail-media">
-            <div class="detail-imgbox"><img id="product-main-image" src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)"></div>
-            ${(p.images||[]).length>1?`<div class="detail-gallery">${(p.images||[]).slice(0,6).map((img,i)=>`<button class="detail-thumb ${i===0?'active':''}" type="button" data-action="detail-image" data-src="${escapeHtml(img)}" data-alt="${escapeHtml(`${p.name} - imagem ${i+1}`)}" aria-label="Ver imagem ${i+1} de ${escapeHtml(p.name)}"><img src="${escapeHtml(img)}" alt="${escapeHtml(`${p.name} - imagem ${i+1}`)}" loading="lazy" decoding="async" onerror="window.__daFallbackImg(this)"></button>`).join('')}</div>`:''}
+            <div class="detail-imgbox"><img id="product-main-image" src="${escapeHtml(p.img)}" data-fallback-images="${escapeHtml(imageFallbackList(p.images))}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)"></div>
+            ${(p.images||[]).length>1?`<div class="detail-gallery">${(p.images||[]).slice(0,6).map((img,i)=>`<button class="detail-thumb ${i===0?'active':''}" type="button" data-action="detail-image" data-src="${escapeHtml(img)}" data-alt="${escapeHtml(`${p.name} - imagem ${i+1}`)}" aria-label="Ver imagem ${i+1} de ${escapeHtml(p.name)}"><img src="${escapeHtml(img)}" data-fallback-images="${escapeHtml(imageFallbackList(p.images))}" alt="${escapeHtml(`${p.name} - imagem ${i+1}`)}" loading="lazy" decoding="async" onerror="window.__daFallbackImg(this)"></button>`).join('')}</div>`:''}
             ${productDetailChipsHtml(p)}
           </div>
           <div class="detail-info">
@@ -6864,7 +7499,7 @@
       if (parts[0] === 'cestas') return renderCestas();
       if (parts[0] === 'kit') return renderKitDetail(parts.slice(1).join('/'));
       if (parts[0] === 'kits') return renderKits();
-      if (parts[0] === 'busca') return renderSearch(state.searchQuery || decodeURIComponent(parts.slice(1).join(' ')));
+      if (parts[0] === 'busca') return renderSearch(decodeURIComponent(parts.slice(1).join(' ')) || state.searchQuery);
       if (parts[0] === 'informacoes') return renderInfo();
       if (parts[0] === 'campanha-cupom') {
         activateCoupon(parts[1] || '');
@@ -6896,7 +7531,8 @@
       clearTimeout(state.searchTimer);
       state.searchTimer = setTimeout(() => {
         if (q) {
-          if (!(location.hash || '').startsWith('#/busca')) history.replaceState(null, '', '#/busca');
+          const target = '#/busca/' + encodeURIComponent(q);
+          if ((location.hash || '') !== target) history.replaceState(null, '', target);
           renderSearch(q);
           scrollPageTop();
         } else if ((location.hash || '').startsWith('#/busca')) {
@@ -6986,7 +7622,7 @@
           <div class="checkout-title">1. Revise sua compra</div>
           ${items.length ? items.map(({id, product, qty}) => `
             <div class="cart-row">
-              <img class="cart-img" src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
+              <img class="cart-img" src="${escapeHtml(product.img)}" data-fallback-images="${escapeHtml(imageFallbackList(product.images))}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
               <div><div class="cart-name">${escapeHtml(product.name)}</div></div>
               <div class="cart-qty"><button type="button" data-action="dec" data-id="${escapeHtml(id)}">−</button><span>${qty}</span><button type="button" data-action="inc" data-id="${escapeHtml(id)}">+</button></div>
             </div>`).join('') : `<div class="empty"><strong>Sua compra está vazia</strong>Adicione produtos para enviar o pedido.</div>`}
@@ -7111,7 +7747,7 @@
           <div class="checkout-title">1. Revise sua compra</div>
           ${items.length ? items.map(({id, product, qty}) => `
             <div class="cart-row">
-              <img class="cart-img" src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
+              <img class="cart-img" src="${escapeHtml(product.img)}" data-fallback-images="${escapeHtml(imageFallbackList(product.images))}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">
               <div><div class="cart-name">${escapeHtml(product.name)}</div></div>
               <div class="cart-qty"><button type="button" data-action="dec" data-id="${escapeHtml(id)}">-</button><span>${qty}</span><button type="button" data-action="inc" data-id="${escapeHtml(id)}">+</button></div>
             </div>`).join('') : `<div class="empty"><strong>Sua compra esta vazia</strong>Adicione produtos para enviar o pedido.</div>`}
@@ -7872,7 +8508,7 @@
         requestAnimationFrame(scrollPageTop);
       });
       $('search-input').addEventListener('input', runInstantSearch);
-      $('search-form').addEventListener('submit', e => { e.preventDefault(); const q = $('search-input').value.trim(); state.searchQuery = q; if (q) { history.replaceState(null, '', '#/busca'); renderSearch(q); scrollPageTop(); } });
+      $('search-form').addEventListener('submit', e => { e.preventDefault(); const q = $('search-input').value.trim(); state.searchQuery = q; if (q) { const target = '#/busca/' + encodeURIComponent(q); if ((location.hash || '') !== target) location.hash = target; else renderSearch(q); scrollPageTop(); } });
       $('search-clear').addEventListener('click', clearSearch);
       $('bottom-cta').addEventListener('click', openCheckout);
       $('nav-cart').addEventListener('click', openCheckout);
@@ -7901,6 +8537,14 @@
       document.addEventListener('keydown', e => {
         if (e.key === 'Escape') closeAllDrawers();
       });
+      document.addEventListener('click', e => {
+        const productLink = e.target.closest('a[href^="#/produto/"]');
+        if (!productLink) return;
+        const current = location.hash || '#/';
+        if (!current.startsWith('#/produto')) {
+          try { sessionStorage.setItem('da_last_product_from', current); } catch(err) {}
+        }
+      }, true);
       document.addEventListener('click', e => {
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
