@@ -20,26 +20,25 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Aplicar hotfix no site, admin e JSON de banners
+      - name: Aplicar hotfix no site e no admin
         run: |
           python3 <<'PY'
           from pathlib import Path
           import json
 
-          changed_files = []
-
-          def write_if_changed(path, new_text):
+          changed = []
+          def write_if_changed(path, text):
               p = Path(path)
               old = p.read_text(encoding='utf-8') if p.exists() else ''
-              if old != new_text:
-                  p.write_text(new_text, encoding='utf-8')
-                  changed_files.append(path)
+              if old != text:
+                  p.write_text(text, encoding='utf-8')
+                  changed.append(path)
 
-          # 1) Site público: mais altura, mais respiro e sem corte vertical nos banners.
+          # SITE PUBLICO: mais respiro, mais altura e imagem sem corte.
           root = Path('index.html')
-          text = root.read_text(encoding='utf-8')
-          marker_site = '/* DA_HOTFIX_BANNER_LAYOUT_CAROUSEL_20260710 */'
-          css_hotfix = r'''
+          html = root.read_text(encoding='utf-8')
+          site_marker = '/* DA_HOTFIX_BANNER_LAYOUT_CAROUSEL_20260710 */'
+          site_css = r'''
 
     /* DA_HOTFIX_BANNER_LAYOUT_CAROUSEL_20260710 */
     .da-banner {
@@ -77,121 +76,178 @@ jobs:
       }
     }
 '''
-          if marker_site not in text:
-              if '</style>' not in text:
-                  raise SystemExit('Não encontrei </style> no index.html da raiz')
-              text = text.replace('</style>', css_hotfix + '\n  </style>', 1)
-              write_if_changed('index.html', text)
-              print('Hotfix de layout inserido no index.html')
+          if site_marker not in html:
+              if '</style>' not in html:
+                  raise SystemExit('Nao encontrei </style> no index.html')
+              html = html.replace('</style>', site_css + '\n  </style>', 1)
+              write_if_changed('index.html', html)
+              print('index.html: layout de banners aplicado')
           else:
-              print('Hotfix de layout já existia no index.html')
+              print('index.html: layout ja aplicado')
 
-          # 2) Admin produção: corrige oferta inválida, posição do banner e formato mobile horizontal.
+          # ADMIN: painel/filtro de produtos com banner + botao remover banner.
           admin = Path('producao/index.html')
           adm = admin.read_text(encoding='utf-8')
-          marker_admin = '/* DA_HOTFIX_ADMIN_BANNERS_FIREBASE_20260710 */'
-          hotfix_admin = r'''
+          manager_marker = '/* DA_HOTFIX_ADMIN_BANNER_MANAGER_20260710 */'
+          manager_js = r'''
 
-  /* DA_HOTFIX_ADMIN_BANNERS_FIREBASE_20260710 */
-  const DA_BANNER_POSITIONS_STORAGE = "da_banner_positions_v1";
-  function daValidDateTime(value){const raw=String(value||"").trim();if(!raw)return false;const d=new Date(raw);return !Number.isNaN(d.getTime())}
-  const daOriginalNormalizeProductForSite = normalizeProductForSite;
-  normalizeProductForSite = function(product,key){
-    const copy = daOriginalNormalizeProductForSite(product,key);
-    const offerPrice = toNum(copy.preco_oferta), regularPrice = toNum(copy.preco), offerDateOk = daValidDateTime(copy.validade_oferta);
-    if(!(offerPrice>0 && regularPrice>0 && offerPrice<regularPrice && offerDateOk)){
-      delete copy.preco_oferta;delete copy.precoOferta;delete copy.validade_oferta;delete copy.validadeOferta;delete copy.desconto_validade;delete copy.oferta_origem;
-    }
-    return copy;
-  };
-  function daLoadBannerPositions(){try{return JSON.parse(localStorage.getItem(DA_BANNER_POSITIONS_STORAGE)||"{}")||{}}catch{return {}}}
-  function daSaveBannerPosition(key,value){if(!key||!value)return;state.bannerPositions=state.bannerPositions||daLoadBannerPositions();state.bannerPositions[String(key)]=String(value);try{localStorage.setItem(DA_BANNER_POSITIONS_STORAGE,JSON.stringify(state.bannerPositions))}catch{}}
-  function daDefaultBannerPositionForProduct(p){
-    const text=textNorm([p?.categoria,p?.subcategoria,p?.subsubcategoria,getName(p)].filter(Boolean).join(" "));
-    if(text.includes("higiene")||text.includes("beleza")||text.includes("perfumaria"))return "home.higiene.topo";
-    if(text.includes("limpeza"))return "home.limpeza.topo";
-    if(text.includes("cafe")||text.includes("café")||text.includes("matinal"))return "home.cafe.topo";
-    return "home.hero";
+/* DA_HOTFIX_ADMIN_BANNER_MANAGER_20260710 */
+(function(){
+  const DA_BANNERS_JSON_PATH="site/banners/exemplo.json";
+  function daInjectBannerManagerStyle(){
+    if(document.getElementById("daBannerManagerStyle"))return;
+    const style=document.createElement("style");style.id="daBannerManagerStyle";
+    style.textContent=`
+      .product-workbench.da-product-has-banner{border-color:#7bd88f!important;box-shadow:0 0 0 2px rgba(21,115,71,.14),var(--shadow)!important}
+      .da-banner-product-status{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 7px}
+      .da-banner-active-chip{background:#edf8f1!important;color:#157347!important;border-color:#caead7!important}
+      .workbench-banner-found{grid-column:1/-1;margin-top:8px;padding:9px 11px;border-radius:12px;background:#edf8f1;border:1px solid #caead7;color:#157347;font-size:12px;font-weight:800}
+      .da-banner-filter-on{background:#111!important;color:#fff!important;border-color:#111!important}
+      .da-banner-count-pill{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:rgba(255,255,255,.26);font-size:12px;font-weight:950}
+    `;
+    document.head.appendChild(style);
   }
-  state.bannerPositions = state.bannerPositions || daLoadBannerPositions();
-  bannerPositionOptionsHtml = function(p){
-    const key=getKey(p),positions=[...BANNER_POSITIONS],category=String(p?.categoria||"").trim();
-    if(category)positions.push({value:`categoria.${category}.topo`,label:`Categoria atual · ${category}`});
-    const current=state.bannerPositions?.[key]||daDefaultBannerPositionForProduct(p);
-    return positions.map(item=>`<option value="${esc(item.value)}" ${String(item.value)===String(current)?"selected":""}>${esc(item.label)}</option>`).join("");
-  };
-  document.addEventListener("change",e=>{const el=e.target;if(el?.matches?.("[data-banner-position]"))daSaveBannerPosition(el.dataset.key,el.value)},true);
-  createProductBanner = async function(key){
-    const product=productByKey(key);if(!product)throw new Error("Produto não encontrado.");
+  function daClean(v){return textNorm(String(v||"")).replace(/[^a-z0-9]+/g,"")}
+  function daProductCodes(p){return new Set([getKey(p),getCode(p),p?.codigo,p?.id,p?.firebaseKey,p?.gtin,p?.ean].map(daClean).filter(Boolean))}
+  function daBannerProductValue(b){
+    const link=b&&b.link;
+    if(link&&typeof link==="object"&&textNorm(link.tipo||link.type)==="produto")return link.valor||link.value||link.href||link.url||"";
+    if(typeof link==="string")return link;
+    const m=String(b?.id||"").match(/^produto-([a-z0-9]+)-/i);
+    return m?m[1]:"";
+  }
+  function daBannerMatchesProduct(b,p){
+    if(!b||b.ativo===false||!p)return false;
+    const value=daClean(daBannerProductValue(b));
+    return !!value&&daProductCodes(p).has(value);
+  }
+  function daBannersForProduct(p){return (state.daBannerList||[]).filter(b=>daBannerMatchesProduct(b,p))}
+  function daBannerProducts(){return state.produtos.filter(p=>daBannersForProduct(p).length>0)}
+  function daDecodeGithubContent(file){return decodeURIComponent(escape(atob(String(file.content||"").replace(/\s/g,""))))}
+  async function daLoadBannerJson(){
     readSettingsFromUi();
-    const webhook=String(state.settings.makeBannerWebhookUrl||"").trim();if(!webhook)throw new Error("Configure o webhook IA banners do site na aba Integrações.");
-    const card=document.querySelector(`.product-workbench[data-product-key="${CSS.escape(String(key))}"]`);
-    const positionSelect=card?.querySelector("[data-banner-position]");
-    const position=positionSelect?.value||state.bannerPositions?.[key]||daDefaultBannerPositionForProduct(product);
-    daSaveBannerPosition(key,position);
-    const image=getImg(product);if(!image||image===PLACEHOLDER)throw new Error("Cadastre uma foto válida no produto antes de criar o banner.");
-    const oldPrice=toNum(product.preco),offer=toNum(product.preco_oferta),newPrice=offer>0&&offer<oldPrice?offer:oldPrice;
-    if(oldPrice<=0)throw new Error("Informe o preço de venda do produto antes de criar o banner.");
-    const code=String(product.codigo||getKey(product)||"produto").trim(),bannerId=`produto-${slug(code||getName(product))}-${Date.now()}`,discount=oldPrice>newPrice?Math.round((1-newPrice/oldPrice)*100):0;
-    const payload={
-      acao:"criar_banner_produto",versao_contrato:2,origem:"producao/index.html",requisicao_id:bannerId,criado_em:nowIso(),
-      produto:{firebaseKey:getKey(product),id:product.id||"",codigo:code,gtin:product.gtin||product.ean||"",nome:getName(product),marca:product.marca||"",categoria:product.categoria||"",subcategoria:product.subcategoria||"",embalagem:product.embalagem||"",imagem_url:makeDownloadImageUrl(image),preco_antigo:oldPrice,preco_novo:newPrice,preco_antigo_formatado:brl(oldPrice),preco_novo_formatado:brl(newPrice),desconto_percentual:discount,em_oferta:discount>0},
-      banner:{id:bannerId,ativo:true,posicao:position,tipo:"carousel",ordem:Date.now(),alt:`${getName(product)} por ${brl(newPrice)} na Dona Antônia`,link:{tipo:"produto",valor:code||getKey(product)},arquivos:{desktop:`site/banners/gerados/${bannerId}-desktop.webp`,mobile:`site/banners/gerados/${bannerId}-mobile.webp`},formatos:{desktop:{largura:3072,altura:1024,proporcao_saida:"3:1",proporcao_site:"32:9",area_segura:"faixa central 3072x864; nada importante fora dela"},mobile:{largura:2048,altura:1152,proporcao:"16:9"}}},
-      github:{owner:state.settings.githubOwner||"osvaldosereia",repositorio:state.settings.githubRepo||"SUCEDOAN12",branch:state.settings.githubBranch||"main",json_path:"site/banners/exemplo.json",pasta_imagens:"site/banners/gerados"},
-      diretrizes:{prompt_base:"Crie banners publicitários premium para e-commerce brasileiro usando fielmente a foto real do produto. Preserve embalagem, marca, cores, textos e proporções. Gere duas versões independentes em WebP: DESKTOP com saída técnica 3072x1024, mantendo todo conteúdo importante na faixa central segura 3072x864 equivalente a 32:9; e MOBILE com saída 2048x1152, proporção 16:9. No desktop, áreas superior e inferior devem ser apenas continuação simples do fundo, sem texto nem produto importante. Nunca use formato vertical, story ou pôster. Destaque produto, nome e preço anunciado; mostre preço anterior riscado somente quando houver desconto. Alto contraste, texto curto em pt-BR, sem inventar selos, benefícios, URLs, telefone ou dados não recebidos.",fundo:"publicitário, limpo, contrastado e coerente com o produto",fidelidade_produto:"máxima",idioma:"pt-BR",marca_site:"Dona Antônia"}
-    };
-    setStatus(`Criando banner de ${getName(product)} para ${position}...`,"warn");
-    const response=await fetch(webhook,{method:"POST",headers:{Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify(payload)});
-    const raw=await response.text();let result={};try{result=raw?JSON.parse(raw):{}}catch{result={mensagem:raw}}
-    if(!response.ok)throw new Error(`Make retornou ${response.status}: ${raw.slice(0,280)||"sem detalhes"}`);
-    if(result&&result.ok===false)throw new Error(result.erro||result.error||result.mensagem||"O cenário do Make informou falha.");
-    setStatus(`Banner criado e enviado para ${position}. O site carregará o novo JSON automaticamente.`,"ok");return result;
+    try{
+      const file=await githubContent(DA_BANNERS_JSON_PATH);
+      if(file&&file.content)return JSON.parse(daDecodeGithubContent(file));
+    }catch(e){console.warn("Banners via GitHub API indisponiveis, tentando raw publico",e)}
+    const raw=githubRawFileUrl(DA_BANNERS_JSON_PATH);
+    if(!raw)throw new Error("Configure GitHub owner/repo/branch para carregar banners.");
+    const r=await fetch(`${raw}?v=${Date.now()}`,{cache:"no-store"});
+    if(!r.ok)throw new Error(`Banners raw HTTP ${r.status}`);
+    return await r.json();
+  }
+  async function daRefreshBannerIndex(showStatus=false){
+    try{
+      const data=await daLoadBannerJson();
+      state.daBannerJson=data&&typeof data==="object"?data:{banners:[]};
+      state.daBannerList=Array.isArray(state.daBannerJson.banners)?state.daBannerJson.banners.filter(b=>b&&b.ativo!==false):[];
+      state.daBannerIndexLoaded=true;
+      daInstallBannerToolbarButton();
+      if(showStatus)setStatus(`Índice de banners carregado: ${state.daBannerList.length} ativo(s).`,"ok");
+      return state.daBannerList;
+    }catch(e){console.warn("Erro ao carregar índice de banners",e);state.daBannerList=state.daBannerList||[];state.daBannerIndexLoaded=false;daInstallBannerToolbarButton();if(showStatus)setStatus("Não foi possível carregar o índice de banners: "+e.message,"err");return state.daBannerList}
+  }
+  function daInstallBannerToolbarButton(){
+    daInjectBannerManagerStyle();
+    const toolbar=document.querySelector('#tab-produtos .panel-head .toolbar');
+    if(!toolbar)return;
+    let btn=toolbar.querySelector('[data-action="view-products-with-banners"]');
+    if(!btn){btn=document.createElement('button');btn.type='button';btn.className='btn gold';btn.dataset.action='view-products-with-banners';toolbar.insertBefore(btn,toolbar.firstChild)}
+    const count=daBannerProducts().length;
+    btn.classList.toggle('da-banner-filter-on',!!state.showOnlyBannerProducts);
+    btn.innerHTML=`📣 Produtos com banner <span class="da-banner-count-pill">${count}</span>`;
+    let refresh=toolbar.querySelector('[data-action="refresh-banner-index"]');
+    if(!refresh){refresh=document.createElement('button');refresh.type='button';refresh.className='btn';refresh.dataset.action='refresh-banner-index';refresh.textContent='Atualizar banners';toolbar.insertBefore(refresh,btn.nextSibling)}
+  }
+  const daBaseRenderProductWorkbench=renderProductWorkbench;
+  renderProductWorkbench=function(p){
+    const banners=daBannersForProduct(p),has=banners.length>0;
+    let html=daBaseRenderProductWorkbench(p);
+    if(has)html=html.replace('class="product-card product-workbench','class="product-card product-workbench da-product-has-banner');
+    const badge=has?`<div class="da-banner-product-status"><span class="chip da-banner-active-chip">📣 ${banners.length} banner${banners.length>1?'s':''} ativo${banners.length>1?'s':''}</span><span class="chip">${esc(banners.map(b=>b.posicao||'sem posição').join(' · '))}</span></div>`:'';
+    html=html.replace('<div class="workbench-title"><strong>',`<div class="workbench-title">${badge}<strong>`);
+    if(has){
+      const info=`<div class="workbench-banner-found"><strong>Banner ativo:</strong> ${esc(banners.map(b=>`${b.id||'banner'} em ${b.posicao||'sem posição'}`).join(' · '))}</div>`;
+      html=html.replace('</select></div>\n          <button class="btn create-banner-btn"',`</select></div>${info}\n          <button class="btn create-banner-btn"`);
+      const remove=`<button class="btn small red" type="button" data-action="remove-product-banner" data-key="${esc(getKey(p))}">Remover banner</button>`;
+      html=html.replace('</button>\n        </div>\n        <div class="workbench-sections">',`</button>${remove}\n        </div>\n        <div class="workbench-sections">`);
+    }
+    return html;
   };
+  const daBaseRenderProducts=renderProducts;
+  renderProducts=function(){
+    daInjectBannerManagerStyle();
+    const original=state.produtos;
+    if(state.showOnlyBannerProducts)state.produtos=original.filter(p=>daBannersForProduct(p).length>0);
+    try{return daBaseRenderProducts.apply(this,arguments)}
+    finally{state.produtos=original;daInstallBannerToolbarButton()}
+  };
+  const daBaseCreateProductBanner=createProductBanner;
+  createProductBanner=async function(key){
+    const result=await daBaseCreateProductBanner.apply(this,arguments);
+    setTimeout(()=>daRefreshBannerIndex(true).then(()=>renderProducts()),900);
+    return result;
+  };
+  async function daRemoveProductBanner(key){
+    const product=productByKey(key);if(!product)return alert("Produto não encontrado.");
+    const current=daBannersForProduct(product);
+    if(!current.length)return alert("Este produto não tem banner ativo no JSON atual.");
+    if(!confirm(`Remover/desativar ${current.length} banner(s) de ${getName(product)}?`))return;
+    readSettingsFromUi();
+    const file=await githubContent(DA_BANNERS_JSON_PATH);
+    if(!file||!file.content)throw new Error("Não encontrei site/banners/exemplo.json no GitHub.");
+    const data=JSON.parse(daDecodeGithubContent(file));
+    let removed=0;
+    data.banners=(Array.isArray(data.banners)?data.banners:[]).map(b=>{
+      if(daBannerMatchesProduct(b,product)){removed++;return {...b,ativo:false,removido_em:nowIso(),removido_por:"admin"}}
+      return b;
+    });
+    data.versao=`${new Date().toISOString().replace(/[:.]/g,'-')}-banner-removido`;
+    if(!removed)return alert("Não encontrei banner ativo deste produto no JSON remoto.");
+    await githubUpsert(DA_BANNERS_JSON_PATH,data,`Remove banner do produto ${product.codigo||getName(product)}`);
+    await daRefreshBannerIndex(true);
+    renderProducts();
+    setStatus(`${removed} banner(s) removido(s) de ${getName(product)}.`,"ok");
+  }
+  document.addEventListener('click',e=>{
+    const btn=e.target.closest('[data-action]');if(!btn)return;
+    const action=btn.dataset.action;
+    if(action==='view-products-with-banners'){state.showOnlyBannerProducts=!state.showOnlyBannerProducts;state.productPage=1;renderProducts();}
+    if(action==='refresh-banner-index'){runUiAction(btn,'Atualizando...',async()=>{await daRefreshBannerIndex(true);renderProducts();});}
+    if(action==='remove-product-banner'){runUiAction(btn,'Removendo...',async()=>daRemoveProductBanner(btn.dataset.key));}
+  },true);
+  const daBaseLoadData=loadData;
+  loadData=async function(){
+    const result=await daBaseLoadData.apply(this,arguments);
+    await daRefreshBannerIndex(false);
+    renderProducts();
+    return result;
+  };
+  window.daRefreshBannerIndex=daRefreshBannerIndex;
+})();
 '''
-          if marker_admin not in adm:
+          if manager_marker not in adm:
               needle = '\n  loadData();'
               pos = adm.rfind(needle)
               if pos < 0:
-                  raise SystemExit('Não encontrei loadData(); no final de producao/index.html')
-              adm = adm[:pos] + hotfix_admin + adm[pos:]
+                  raise SystemExit('Nao encontrei loadData(); no producao/index.html')
+              adm = adm[:pos] + manager_js + adm[pos:]
               write_if_changed('producao/index.html', adm)
-              print('Hotfix de admin inserido em producao/index.html')
+              print('producao/index.html: gestor de banners aplicado')
           else:
-              print('Hotfix de admin já existia em producao/index.html')
+              print('producao/index.html: gestor de banners ja aplicado')
 
-          # 3) JSON de banners: garante JSON válido e dois banners ativos na mesma posição para virar carrossel.
-          banners_path = Path('site/banners/exemplo.json')
-          data = json.loads(banners_path.read_text(encoding='utf-8'))
-          banners = data.setdefault('banners', [])
-          expected = {
-              'produto-88091616-1783719042912': {
-                  'ativo': True,
-                  'posicao': 'home.higiene.topo',
-                  'tipo': 'carousel'
-              },
-              'produto-61000598-1783722032518': {
-                  'ativo': True,
-                  'posicao': 'home.higiene.topo',
-                  'tipo': 'carousel'
-              }
-          }
-          touched = False
-          for b in banners:
-              if b.get('id') in expected:
-                  for k, v in expected[b['id']].items():
-                      if b.get(k) != v:
-                          b[k] = v
-                          touched = True
-          active_higiene = [b for b in banners if b.get('ativo') is True and b.get('posicao') == 'home.higiene.topo']
-          if len(active_higiene) >= 2:
-              data['versao'] = '2026-07-10-1935-carrossel-layout-admin-ok'
-          if touched:
+          # JSON: valida e atualiza versao sem perder banners criados.
+          bp = Path('site/banners/exemplo.json')
+          data = json.loads(bp.read_text(encoding='utf-8'))
+          if not isinstance(data.get('banners'), list):
+              raise SystemExit('site/banners/exemplo.json sem array banners')
+          if sum(1 for b in data['banners'] if b.get('ativo') is True and b.get('posicao') == 'home.higiene.topo') >= 2:
+              data['versao'] = '2026-07-10-1950-admin-banner-manager-ok'
               write_if_changed('site/banners/exemplo.json', json.dumps(data, ensure_ascii=False, indent=2) + '\n')
-              print('JSON de banners validado e ajustado')
-          else:
-              print('JSON de banners já estava válido para carrossel')
+              print('site/banners/exemplo.json: validado')
 
-          print('Arquivos alterados:', ', '.join(changed_files) or 'nenhum')
+          print('Arquivos alterados:', ', '.join(changed) or 'nenhum')
           PY
 
       - name: Commitar alterações
@@ -200,7 +256,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if ! git diff --quiet; then
             git add index.html producao/index.html site/banners/exemplo.json
-            git commit -m "Corrige layout e carrossel de banners do site"
+            git commit -m "Adiciona gestor de banners no admin e ajusta layout"
             git push
           else
             echo "Nenhuma alteração necessária."
