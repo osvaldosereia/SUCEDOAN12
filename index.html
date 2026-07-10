@@ -3806,7 +3806,7 @@
       box-shadow: none !important;
     }
 
-    /* Banners editaveis via site/banner/banners.json */
+    /* Banners editáveis via site/banners/exemplo.json */
     .da-banner { margin: 0 0 22px; }
     .da-banner-link,
     .da-banner-static { display: block; color: inherit; }
@@ -3828,8 +3828,8 @@
       border-radius: inherit;
       background: transparent;
     }
-    .da-banner-hero .da-banner-picture { aspect-ratio: 1.32 / 1; min-height: 300px; }
-    .da-banner-section .da-banner-picture { aspect-ratio: 2.25 / 1; min-height: 150px; border-radius: 24px; }
+    .da-banner-hero .da-banner-picture { aspect-ratio: 4 / 5; min-height: 0; }
+    .da-banner-section .da-banner-picture { aspect-ratio: 4 / 5; min-height: 0; border-radius: 24px; }
     .da-banner-carousel { position: relative; overflow: hidden; border-radius: 28px; box-shadow: var(--shadow); background: #eaf6ee; }
     .da-banner-carousel .da-banner-slide { display: none; margin: 0; }
     .da-banner-carousel .da-banner-slide.active { display: block; }
@@ -3859,11 +3859,15 @@
       justify-content: center;
       gap: 7px;
       z-index: 2;
-      pointer-events: none;
+      pointer-events: auto;
     }
     .banner-dot {
       width: 7px;
       height: 7px;
+      min-width: 7px;
+      padding: 0;
+      border: 0;
+      cursor: pointer;
       border-radius: 999px;
       background: rgba(255,255,255,.58);
       box-shadow: 0 1px 3px rgba(0,0,0,.12);
@@ -4120,8 +4124,8 @@
       .container,
       .app > .container { width: 100% !important; max-width: 100% !important; }
       .da-banner { margin-bottom: 18px; }
-      .da-banner-hero .da-banner-picture { border-radius: 24px; min-height: 280px; }
-      .da-banner-section .da-banner-picture { border-radius: 22px; }
+      .da-banner-hero .da-banner-picture { border-radius: 24px; min-height: 0; }
+      .da-banner-section .da-banner-picture { border-radius: 22px; min-height: 0; }
       .banner-arrow { width: 36px; height: 36px; }
       .banner-arrow.prev { left: 8px; }
       .banner-arrow.next { right: 8px; }
@@ -4150,8 +4154,8 @@
     }
 
     @media (min-width: 768px) {
-      .da-banner-hero .da-banner-picture { aspect-ratio: 3.48 / 1; min-height: 260px; }
-      .da-banner-section .da-banner-picture { aspect-ratio: 5.33 / 1; min-height: 185px; }
+      .da-banner-hero .da-banner-picture { aspect-ratio: 32 / 9; min-height: 0; }
+      .da-banner-section .da-banner-picture { aspect-ratio: 32 / 9; min-height: 0; }
       .home-quick-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
       .section-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
       .product-grid,
@@ -5129,18 +5133,18 @@
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-10-kits-home-scroll-sacola-v1',
+      APP_VERSION: '2026-07-10-banners-carrossel-v2',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
       KIT_CACHE_KEY: 'da_kits_cache_v1',
-      BANNER_CACHE_KEY: 'da_banners_cache_v1',
+      BANNER_CACHE_KEY: 'da_banners_cache_v2',
       CART_STORAGE_KEY: 'da_carrinho_v1',
       CHECKOUT_CLIENT_KEY: 'da_checkout_cliente_v1',
       COUPON_STORAGE_KEY: 'da_cupom_ativo_v1',
       FAVORITES_STORAGE_KEY: 'da_favoritos_v1',
       COUPON_URLS: ['cuponsativos.json', 'site/cuponsativos.json'],
-      BANNER_URLS: ['site/banner/banners.json', 'banner/banners.json', 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/banner/banners.json', 'https://donaantonia.com.br/site/banner/banners.json', 'https://www.donaantonia.com.br/site/banner/banners.json'],
+      BANNER_URLS: ['site/banners/exemplo.json', 'https://donaantonia.com.br/site/banners/exemplo.json', 'https://www.donaantonia.com.br/site/banners/exemplo.json', 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/banners/exemplo.json', 'site/banner/banners.json', 'banner/banners.json'],
       CART_MAX_AGE_MS: 6 * 60 * 60 * 1000,
       MIN_ORDER: 75,
       DEFAULT_DDD: '65'
@@ -5161,6 +5165,7 @@
       kits: [],
       banners: [],
       bannerTimers: [],
+      bannerConfig: { automatico: true, manual: true, intervalo_ms: 5200, loop: true, pausar_hover: true },
       favorites: new Set(),
       cart: {},
       cartOrder: [],
@@ -5611,6 +5616,14 @@
     }
 
     function applyBannersData(data) {
+      const config = data && (data.configuracao_carrossel || data.carousel_config || data.configuracao);
+      state.bannerConfig = {
+        automatico: config?.automatico !== false,
+        manual: config?.manual !== false,
+        intervalo_ms: Math.max(2500, Number(config?.intervalo_ms || config?.interval || 5200)),
+        loop: config?.loop !== false,
+        pausar_hover: config?.pausar_hover !== false
+      };
       const source = Array.isArray(data && data.banners) ? data.banners : (Array.isArray(data) ? data : Object.values(data && data.banners || data || {}));
       state.banners = source
         .filter(b => b && b.ativo !== false && (b.desktop || b.mobile || b.imagem || b.img))
@@ -5697,10 +5710,11 @@
       if (!banners.length) return '';
       const opts = options || {};
       const kind = opts.kind || (opts.carousel ? 'hero' : 'section');
-      if (opts.carousel || banners.some(b => b.tipo === 'carousel' || b.tipo === 'carrossel')) {
-        return `<section class="da-banner da-banner-carousel da-banner-${escapeHtml(kind)}" data-banner-carousel data-active="0" aria-label="Banners promocionais">
+      if (banners.length > 1 || opts.carousel || banners.some(b => b.tipo === 'carousel' || b.tipo === 'carrossel')) {
+        const manual = state.bannerConfig.manual !== false;
+        return `<section class="da-banner da-banner-carousel da-banner-${escapeHtml(kind)}" data-banner-carousel data-active="0" aria-label="Banners promocionais" aria-roledescription="carrossel">
           ${banners.map((b,i) => bannerSlideHtml(b, i, kind, i === 0)).join('')}
-          ${banners.length > 1 ? `<button class="banner-arrow prev" type="button" data-banner-prev aria-label="Banner anterior">‹</button><button class="banner-arrow next" type="button" data-banner-next aria-label="Próximo banner">›</button><div class="banner-dots">${banners.map((_,i)=>`<span class="banner-dot ${i===0?'active':''}"></span>`).join('')}</div>` : ''}
+          ${banners.length > 1 && manual ? `<button class="banner-arrow prev" type="button" data-banner-prev aria-label="Banner anterior">‹</button><button class="banner-arrow next" type="button" data-banner-next aria-label="Próximo banner">›</button><div class="banner-dots">${banners.map((_,i)=>`<button class="banner-dot ${i===0?'active':''}" type="button" data-banner-go="${i}" aria-label="Ir para o banner ${i+1}" aria-current="${i===0?'true':'false'}"></button>`).join('')}</div>` : ''}
         </section>`;
       }
       const banner = banners[0];
@@ -5717,19 +5731,46 @@
         const dots = Array.from(carousel.querySelectorAll('.banner-dot'));
         if (!slides.length) return;
         const show = nextIndex => {
-          const index = ((nextIndex % slides.length) + slides.length) % slides.length;
+          const loop = state.bannerConfig.loop !== false;
+          const normalized = loop ? ((nextIndex % slides.length) + slides.length) % slides.length : Math.max(0, Math.min(slides.length - 1, nextIndex));
+          const index = normalized;
           carousel.setAttribute('data-active', String(index));
-          slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
-          dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
+          slides.forEach((slide, i) => {
+            slide.classList.toggle('active', i === index);
+            slide.setAttribute('aria-hidden', i === index ? 'false' : 'true');
+          });
+          dots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === index);
+            dot.setAttribute('aria-current', i === index ? 'true' : 'false');
+          });
         };
         const current = () => Number(carousel.getAttribute('data-active') || 0);
         const prev = carousel.querySelector('[data-banner-prev]');
         const next = carousel.querySelector('[data-banner-next]');
         if (prev) prev.addEventListener('click', () => show(current() - 1));
         if (next) next.addEventListener('click', () => show(current() + 1));
-        if (slides.length > 1) {
-          const timer = setInterval(() => show(current() + 1), 5200);
-          state.bannerTimers.push(timer);
+        dots.forEach(dot => dot.addEventListener('click', () => show(Number(dot.getAttribute('data-banner-go') || 0))));
+        show(0);
+        if (slides.length > 1 && state.bannerConfig.automatico !== false) {
+          let timer = null;
+          const start = () => {
+            if (timer) return;
+            timer = setInterval(() => show(current() + 1), state.bannerConfig.intervalo_ms);
+            state.bannerTimers.push(timer);
+          };
+          const pause = () => {
+            if (!timer) return;
+            clearInterval(timer);
+            state.bannerTimers = state.bannerTimers.filter(id => id !== timer);
+            timer = null;
+          };
+          start();
+          if (state.bannerConfig.pausar_hover !== false) {
+            carousel.addEventListener('mouseenter', pause);
+            carousel.addEventListener('mouseleave', start);
+            carousel.addEventListener('focusin', pause);
+            carousel.addEventListener('focusout', start);
+          }
         }
       });
     }
