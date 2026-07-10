@@ -706,7 +706,14 @@
   function parseTags(v){if(Array.isArray(v)) return v.map(String).map(x=>x.trim()).filter(Boolean); if(typeof v === "string") return v.split(/[,|;]/).map(x=>x.trim()).filter(Boolean); return []}
   function getCode(p){return norm(p.codigo || p.sku || p.id || p.firebaseKey || p.gtin || p.ean || "")}
   function getKey(p){return String(p.firebaseKey || p.id || p.codigo || `produto_${Date.now()}`).trim()}
-  function getImg(p){let img=String(p.url_imagem || p.imagem || p.image || p.img || p.foto || "").trim(); if(!img && getCode(p)) img = `img/produtos/${getCode(p)}.webp`; return img || PLACEHOLDER}
+  // O painel administrativo roda em /producao/, enquanto as imagens publicas
+  // ficam na raiz do site. Resolva caminhos relativos pela URL publica para
+  // evitar requisicoes incorretas como /producao/img/produtos_2/arquivo.webp.
+  function getImg(p){
+    let img=String(p.url_imagem || p.imagem || p.image || p.img || p.foto || "").trim();
+    if(!img && getCode(p)) img = `img/produtos/${getCode(p)}.webp`;
+    return img ? publicAssetUrl(img) : PLACEHOLDER;
+  }
   function getRawImg(p){return String(p.url_imagem || p.imagem || p.image || p.img || p.foto || "").trim()}
   function getName(p){return String(p.nome || p.titulo || p.descricao || p.codigo || "Produto sem nome")}
   function isActive(p){const st=String(p.situacao ?? p.status ?? "A").toLowerCase(); return !["i","inativo","false","0","excluido","excluído"].includes(st) && p.ativo !== false && p.visivel !== false}
@@ -3319,7 +3326,9 @@
     const box=document.createElement("div");
     box.className="kit-instagram-box";
     box.innerHTML=`<h4>📲 Instagram do kit</h4><div class="tiny">Gera carrossel 4:5 com capa, 1 página por produto e CTA final, salva no GitHub com status NOVO e deixa na fila para o cenário programado postar.</div><div class="meta-line" style="margin-top:8px"><span class="chip blue">${kitInstagramSlideCount(k)} página(s)</span><span class="chip ${errors.length?"red":"green"}">${errors.length?"Revisar antes de enviar":"Pronto para fila"}</span></div>${errors.length?`<div class="notice red" style="margin-top:10px">${esc(errors.join(" · "))}</div>`:""}<div class="toolbar"><button class="btn blue" type="button" data-action="send-kit-instagram">📲 Gerar para fila</button></div>${status}`;
-    if(rows)el.insertBefore(box,rows);else el.appendChild(box);
+    // rows e' descendente de .basket-workspace, nao filho direto de #kitEditor.
+    // Inserir no pai correto evita DOMException: "insertBefore ... is not a child of this node".
+    if(rows?.parentNode)rows.parentNode.insertBefore(box,rows);else el.appendChild(box);
   };
 
 
