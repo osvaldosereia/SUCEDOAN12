@@ -4833,6 +4833,100 @@
     }
 
 
+    /* =========================================================
+       CORREÇÃO FINAL — LOGO VISÍVEL NO MOBILE
+       Restaura a primeira linha do cabeçalho e mantém a busca abaixo.
+    ========================================================= */
+    @media (max-width: 767px) {
+      :root { --header-h: 126px !important; }
+
+      .header {
+        height: calc(var(--header-h) + var(--safe-top)) !important;
+        padding: calc(10px + var(--safe-top)) 12px 10px !important;
+      }
+
+      .header-inner {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-template-rows: 48px 48px !important;
+        align-items: center !important;
+        gap: 8px !important;
+        height: 100% !important;
+      }
+
+      .header-top {
+        display: flex !important;
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+        min-width: 0 !important;
+      }
+
+      .header .brand {
+        display: flex !important;
+        align-items: center !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        max-width: calc(100% - 104px) !important;
+        overflow: hidden !important;
+      }
+
+      .header .brand-logo {
+        display: block !important;
+        width: 138px !important;
+        max-width: 100% !important;
+        height: 40px !important;
+        object-fit: contain !important;
+        object-position: left center !important;
+        flex: 0 1 auto !important;
+      }
+
+      .header-actions {
+        display: flex !important;
+        grid-column: auto !important;
+        grid-row: auto !important;
+        flex: 0 0 auto !important;
+        gap: 6px !important;
+      }
+
+      .header-cart-btn,
+      .header-menu-btn {
+        width: 46px !important;
+        min-width: 46px !important;
+        height: 46px !important;
+        min-height: 46px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+      }
+
+      .search-wrap {
+        grid-column: 1 !important;
+        grid-row: 2 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+      }
+
+      .search-input { height: 48px !important; }
+
+      .app {
+        top: calc(var(--header-h) + var(--safe-top)) !important;
+        height: calc(100dvh - var(--header-h) - var(--safe-top)) !important;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .header .brand-logo { width: 118px !important; }
+      .header .brand { max-width: calc(100% - 100px) !important; }
+      .header-cart-btn,
+      .header-menu-btn {
+        width: 44px !important;
+        min-width: 44px !important;
+      }
+    }
+
+
   </style>
 </head>
 <body>
