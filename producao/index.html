@@ -280,6 +280,25 @@
     .chat-copy{display:block;margin-top:6px;border:0;background:transparent;color:#6b7280;font-size:11px;font-weight:800;padding:0;cursor:pointer;text-align:left}
     .product-chat-compose{border-top:1px solid var(--line);padding:9px;display:grid;grid-template-columns:1fr auto;gap:7px;background:#fff}.product-chat-compose textarea{min-height:42px;max-height:90px;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:8px 9px;font-size:13px;outline:none}
 </style>
+
+  <style>
+    .ai-batch-overlay[hidden]{display:none!important}
+    .ai-batch-overlay{position:fixed;inset:0;z-index:132;display:grid;place-items:center;padding:18px;background:rgba(15,23,42,.58)}
+    .ai-batch-dialog{width:min(980px,96vw);max-height:91vh;overflow:auto;padding:20px;border-radius:24px;background:#fff;box-shadow:0 30px 90px rgba(0,0,0,.30);border:1px solid var(--line)}
+    .ai-batch-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}
+    .ai-batch-head h2{margin:0;font-size:22px}.ai-batch-head p{margin:5px 0 0;color:var(--muted);font-size:13px;line-height:1.4}
+    .ai-batch-form{display:grid;grid-template-columns:1.25fr 1.25fr .8fr;gap:10px;padding:14px;border:1px solid var(--line);border-radius:18px;background:#fafafa}
+    .ai-batch-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+    .ai-batch-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+    .ai-batch-metric{padding:12px;border:1px solid var(--line);border-radius:14px;background:#fff}.ai-batch-metric strong{display:block;font-size:20px}.ai-batch-metric span{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-weight:800}
+    .ai-batch-progress{height:12px;background:#f1eee7;border:1px solid var(--line);border-radius:999px;overflow:hidden}.ai-batch-progress-bar{height:100%;width:0;background:#111;transition:width .2s ease}
+    .ai-batch-table-wrap{overflow:auto;max-height:280px;border:1px solid var(--line);border-radius:15px;background:#fff}
+    .ai-batch-table{width:100%;border-collapse:collapse;font-size:12px}.ai-batch-table th,.ai-batch-table td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.ai-batch-table th{position:sticky;top:0;background:#fafafa;z-index:1;color:#705512;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.ai-batch-table tr:last-child td{border-bottom:0}
+    .ai-batch-log{display:flex;flex-direction:column;gap:6px;max-height:190px;overflow:auto;margin-top:10px}.ai-batch-log-row{padding:8px 10px;border:1px solid var(--line);border-radius:11px;background:#fff;font-size:12px}.ai-batch-log-row.ok{background:var(--green2);color:var(--green);border-color:#caead7}.ai-batch-log-row.err{background:var(--red2);color:var(--red);border-color:#ffd3cf}.ai-batch-log-row.warn{background:var(--gold2);color:#705512;border-color:#ead493}
+    .ai-batch-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}.ai-batch-running .ai-batch-lock{opacity:.72;pointer-events:none}.ai-batch-current{font-weight:850;color:#111}
+    @media(max-width:760px){.ai-batch-form,.ai-batch-options,.ai-batch-summary{grid-template-columns:1fr}.ai-batch-actions{justify-content:stretch}.ai-batch-actions .btn{flex:1 1 100%}}
+  </style>
+
 </head>
 <body>
   <header class="topbar">
@@ -333,6 +352,7 @@
         <button class="btn primary" type="button" data-action="save-products">✓ Salvar produtos</button>
         <button class="btn gold" type="button" data-action="open-low-stock">⚠ Estoque 0 a 5</button>
         <button class="btn blue" type="button" data-action="open-bulk-price">％ Reajuste em massa</button>
+        <button class="btn gold" type="button" data-action="open-ai-image-batch">🖼 IA imagens em massa</button>
         <button class="btn" type="button" data-action="reload">↻ Recarregar dados</button>
       </div>
       <button class="btn blue block" style="margin-top:8px" type="button" data-action="open-settings">⚙ Configurações</button>
@@ -398,7 +418,7 @@
 
   <main class="app">
     <section class="panel" id="tab-produtos">
-      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Ficha completa para editar produtos, imagens, cestas e kits sem sair da página.</p></div><div class="toolbar"><button class="btn notes-home-btn" id="notesHomeBtn" type="button" data-action="go-notes">📝 Notas <span class="notes-count">0</span></button><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn blue" data-action="normalize-products-site">✓ Adequar ao site</button><button class="btn blue" data-action="open-bulk-price">％ Reajuste em massa</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
+      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Ficha completa para editar produtos, imagens, cestas e kits sem sair da página.</p></div><div class="toolbar"><button class="btn notes-home-btn" id="notesHomeBtn" type="button" data-action="go-notes">📝 Notas <span class="notes-count">0</span></button><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn blue" data-action="normalize-products-site">✓ Adequar ao site</button><button class="btn blue" data-action="open-bulk-price">％ Reajuste em massa</button><button class="btn gold" data-action="open-ai-image-batch">🖼 IA imagens em massa</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
       <div class="products-grid" id="productsGrid"></div>
       <div class="pagination" id="pagination"></div>
     </section>
@@ -2796,7 +2816,7 @@
       estrategia:plan.label,
       seo_imagens:seoPlan,
       substituir_imagens_existentes:true,
-      instrucoes:'Gerar exatamente 1 imagem quadrada premium do produto, com fundo claro em tom pastel, composição limpa, sem texto adicional e fidelidade total à embalagem.'
+      instrucoes:'Gerar exatamente 1 imagem quadrada premium do produto, com fundo branco puro #FFFFFF, liso e absoluto, sem textura, sem degradê, sem ambientação, sem mesa, sem cenário, sem texto adicional e com fidelidade total à embalagem.'
     };
     const referenceUrl=String(payload.produto?.imagem_url||"").trim();
     if(!/^https?:\/\//i.test(referenceUrl)){
@@ -3301,6 +3321,246 @@
     box.innerHTML=`<h4>📲 Instagram do kit</h4><div class="tiny">Gera carrossel 4:5 com capa, 1 página por produto e CTA final, salva no GitHub com status NOVO e deixa na fila para o cenário programado postar.</div><div class="meta-line" style="margin-top:8px"><span class="chip blue">${kitInstagramSlideCount(k)} página(s)</span><span class="chip ${errors.length?"red":"green"}">${errors.length?"Revisar antes de enviar":"Pronto para fila"}</span></div>${errors.length?`<div class="notice red" style="margin-top:10px">${esc(errors.join(" · "))}</div>`:""}<div class="toolbar"><button class="btn blue" type="button" data-action="send-kit-instagram">📲 Gerar para fila</button></div>${status}`;
     if(rows)el.insertBefore(box,rows);else el.appendChild(box);
   };
+
+
+
+  /* IA IMAGENS EM MASSA — uma imagem por produto, em fila, com intervalo mínimo de 10 segundos */
+  const AI_IMAGE_BATCH_DELAY_MS = 10000;
+  state.aiImageBatch = {
+    running:false,
+    stopRequested:false,
+    queue:[],
+    total:0,
+    index:0,
+    success:0,
+    failed:0,
+    errors:[],
+    logs:[],
+    currentKey:null,
+    startedAt:null,
+    timer:null,
+    delayResolve:null,
+    nextAt:null
+  };
+
+  function aiBatchUniq(values){return Array.from(new Set((values||[]).map(v=>String(v||"").trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,"pt-BR"))}
+  function aiBatchProductHasImage(p){return !!String(p?.url_imagem||p?.imagem||p?.imagem_url||(Array.isArray(p?.imagens)?p.imagens[0]:"")||"").trim()}
+  function aiBatchModal(){return $("#aiImageBatchModal")}
+  function ensureAiImageBatchModal(){
+    if(aiBatchModal())return;
+    document.body.insertAdjacentHTML("beforeend",`<div class="ai-batch-overlay" id="aiImageBatchModal" hidden>
+      <section class="ai-batch-dialog" role="dialog" aria-modal="true" aria-labelledby="aiBatchTitle">
+        <div class="ai-batch-head">
+          <div><h2 id="aiBatchTitle">IA imagens em massa</h2><p>Selecione uma categoria e o sistema gera 1 imagem por produto, sempre em sequência, aguardando 10 segundos entre um produto e outro. Mantenha esta aba aberta até terminar.</p></div>
+          <button class="btn" type="button" data-action="close-ai-image-batch">Fechar</button>
+        </div>
+        <div class="notice gold" style="margin-bottom:10px">Importante: cada produto precisa ter uma imagem atual de referência. O processo salva a nova imagem no GitHub e atualiza o Firebase automaticamente, produto por produto.</div>
+        <div class="ai-batch-form ai-batch-lock">
+          <div class="field"><label>Categoria</label><select class="select" id="aiBatchCategory"><option value="">Selecione uma categoria</option></select></div>
+          <div class="field"><label>Subcategoria opcional</label><select class="select" id="aiBatchSubcategory"><option value="">Todas da categoria</option></select></div>
+          <div class="field"><label>Intervalo</label><input class="input" id="aiBatchInterval" value="10 segundos" disabled></div>
+        </div>
+        <div class="ai-batch-options ai-batch-lock">
+          <label class="checkline"><input type="checkbox" id="aiBatchOnlyActive" checked> Somente produtos ativos</label>
+          <label class="checkline"><input type="checkbox" id="aiBatchOnlyWithImage" checked> Somente com foto atual</label>
+          <label class="checkline"><input type="checkbox" id="aiBatchSkipAiReady"> Pular quem já está em produtos_2/IA</label>
+        </div>
+        <div class="ai-batch-summary" id="aiBatchSummary"></div>
+        <div class="ai-batch-progress"><div class="ai-batch-progress-bar" id="aiBatchProgressBar"></div></div>
+        <div class="notice" id="aiBatchStatus" style="margin-top:10px">Selecione uma categoria para montar a fila.</div>
+        <div class="ai-batch-table-wrap" style="margin-top:10px"><table class="ai-batch-table"><thead><tr><th>#</th><th>Produto</th><th>Código</th><th>Status</th></tr></thead><tbody id="aiBatchPreview"></tbody></table></div>
+        <div class="ai-batch-log" id="aiBatchLog"></div>
+        <div class="ai-batch-actions">
+          <button class="btn" type="button" data-action="close-ai-image-batch">Fechar</button>
+          <button class="btn red" type="button" data-action="stop-ai-image-batch">Parar após o atual</button>
+          <button class="btn primary" id="aiBatchStartBtn" type="button" data-action="start-ai-image-batch">Iniciar geração</button>
+        </div>
+      </section>
+    </div>`);
+  }
+  function openAiImageBatchModal(){
+    ensureAiImageBatchModal();
+    renderAiImageBatchSelectors(true);
+    renderAiImageBatchModal();
+    aiBatchModal()?.removeAttribute("hidden");
+    toggleAdminDrawer(false);
+  }
+  function closeAiImageBatchModal(){
+    if(state.aiImageBatch.running){
+      alert("A geração em massa está rodando. Clique em 'Parar após o atual' antes de fechar.");
+      return;
+    }
+    aiBatchModal()?.setAttribute("hidden","");
+  }
+  function renderAiImageBatchSelectors(preserve=true){
+    ensureAiImageBatchModal();
+    const catEl=$("#aiBatchCategory"),subEl=$("#aiBatchSubcategory");
+    if(!catEl||!subEl)return;
+    const previousCat=preserve?catEl.value:"",previousSub=preserve?subEl.value:"";
+    const cats=aiBatchUniq(state.produtos.map(p=>p.categoria));
+    catEl.innerHTML='<option value="">Selecione uma categoria</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
+    if(previousCat&&cats.includes(previousCat))catEl.value=previousCat;
+    const cat=catEl.value;
+    const subs=aiBatchUniq(state.produtos.filter(p=>!cat||String(p.categoria||"")===cat).map(p=>p.subcategoria));
+    subEl.innerHTML='<option value="">Todas da categoria</option>'+subs.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
+    if(previousSub&&subs.includes(previousSub))subEl.value=previousSub;
+  }
+  function aiImageBatchCandidates(){
+    ensureAiImageBatchModal();
+    const cat=$("#aiBatchCategory")?.value||"";
+    const sub=$("#aiBatchSubcategory")?.value||"";
+    const onlyActive=$("#aiBatchOnlyActive")?.checked!==false;
+    const onlyWithImage=$("#aiBatchOnlyWithImage")?.checked!==false;
+    const skipAiReady=$("#aiBatchSkipAiReady")?.checked===true;
+    if(!cat)return [];
+    return state.produtos.filter(p=>{
+      if(String(p.categoria||"")!==cat)return false;
+      if(sub&&String(p.subcategoria||"")!==sub)return false;
+      if(onlyActive&&!isActive(p))return false;
+      if(onlyWithImage&&!aiBatchProductHasImage(p))return false;
+      if(skipAiReady&&isAiGeneratedProductImageSrc(p.url_imagem||p.imagem||p.imagem_url||(Array.isArray(p.imagens)?p.imagens[0]:"")))return false;
+      return true;
+    }).sort((a,b)=>String(getName(a)).localeCompare(String(getName(b)),"pt-BR"));
+  }
+  function aiBatchStatusForKey(key){
+    const b=state.aiImageBatch;
+    if(b.running&&b.currentKey===key)return "Gerando agora";
+    const pos=b.queue.indexOf(key);
+    if(b.running&&pos>=0&&pos<b.index)return "Concluído/tentado";
+    const failed=b.errors.find(e=>e.key===key);
+    if(failed)return "Erro";
+    return b.running?"Na fila":"Aguardando";
+  }
+  function renderAiImageBatchModal(){
+    ensureAiImageBatchModal();
+    const b=state.aiImageBatch,modal=aiBatchModal();
+    if(!modal)return;
+    modal.querySelector(".ai-batch-dialog")?.classList.toggle("ai-batch-running",!!b.running);
+    const candidates=b.running?b.queue.map(productByKey).filter(Boolean):aiImageBatchCandidates();
+    const total=b.running?b.total:candidates.length;
+    const remaining=b.running?Math.max(0,b.total-b.index):total;
+    const pct=b.total?Math.round(((b.success+b.failed)/b.total)*100):0;
+    const current=b.currentKey?productByKey(b.currentKey):null;
+    const summary=$("#aiBatchSummary");
+    if(summary)summary.innerHTML=`<div class="ai-batch-metric"><strong>${total}</strong><span>na fila</span></div><div class="ai-batch-metric"><strong>${b.success}</strong><span>salvas</span></div><div class="ai-batch-metric"><strong>${b.failed}</strong><span>com erro</span></div><div class="ai-batch-metric"><strong>${b.running?remaining:total}</strong><span>${b.running?"restantes":"prévia"}</span></div>`;
+    const bar=$("#aiBatchProgressBar"); if(bar)bar.style.width=`${pct}%`;
+    const status=$("#aiBatchStatus");
+    if(status){
+      status.className="notice "+(b.running?"gold":(b.failed?"red":""));
+      status.innerHTML=b.running?`Rodando: <span class="ai-batch-current">${esc(current?getName(current):"preparando")}</span>. Não feche esta aba. Próximo produto sempre espera 10 segundos.`:(total?`Fila pronta com ${total} produto(s). Clique em iniciar para gerar uma imagem por vez.`:"Selecione uma categoria para montar a fila.");
+    }
+    const tbody=$("#aiBatchPreview");
+    if(tbody){
+      const rows=(candidates||[]).slice(0,300).map((p,i)=>`<tr><td>${i+1}</td><td>${esc(getName(p))}</td><td>${esc(p.codigo||getKey(p))}</td><td>${esc(aiBatchStatusForKey(getKey(p)))}</td></tr>`).join("");
+      tbody.innerHTML=rows||`<tr><td colspan="4">Nenhum produto encontrado para esta seleção.</td></tr>`;
+    }
+    const log=$("#aiBatchLog");
+    if(log){log.innerHTML=(b.logs||[]).slice(-40).reverse().map(x=>`<div class="ai-batch-log-row ${esc(x.type||"")}">${esc(x.time||"")} — ${esc(x.text||"")}</div>`).join("")}
+    const start=$("#aiBatchStartBtn"); if(start){start.disabled=!!b.running||!total; start.textContent=b.running?"Gerando...":"Iniciar geração"}
+  }
+  function aiBatchLog(type,text){
+    const b=state.aiImageBatch;
+    b.logs.push({type,text,time:new Date().toLocaleTimeString("pt-BR")});
+    renderAiImageBatchModal();
+  }
+  function aiBatchDelay(ms){
+    return new Promise(resolve=>{
+      state.aiImageBatch.nextAt=Date.now()+ms;
+      state.aiImageBatch.delayResolve=resolve;
+      state.aiImageBatch.timer=setTimeout(()=>{state.aiImageBatch.timer=null;state.aiImageBatch.delayResolve=null;resolve()},ms);
+    });
+  }
+  async function startAiImageBatch(){
+    if(state.aiImageBatch.running)return;
+    renderAiImageBatchSelectors(true);
+    const queue=aiImageBatchCandidates().map(getKey).filter(Boolean);
+    if(!queue.length)return alert("Nenhum produto encontrado para gerar imagem nesta categoria.");
+    const cat=$("#aiBatchCategory")?.value||"";
+    const sub=$("#aiBatchSubcategory")?.value||"";
+    if(!confirm(`Gerar imagem IA para ${queue.length} produto(s)?\n\nCategoria: ${cat}${sub?`\nSubcategoria: ${sub}`:""}\nIntervalo: 10 segundos entre produtos\n\nMantenha esta aba aberta até terminar.`))return;
+    state.aiImageBatch={running:true,stopRequested:false,queue,total:queue.length,index:0,success:0,failed:0,errors:[],logs:[],currentKey:null,startedAt:Date.now(),timer:null,delayResolve:null,nextAt:null};
+    aiBatchLog("warn",`Fila iniciada com ${queue.length} produto(s).`);
+    setStatus(`IA imagens em massa: iniciando ${queue.length} produto(s)...`,"warn");
+    renderAiImageBatchModal();
+    for(let i=0;i<queue.length;i++){
+      const b=state.aiImageBatch;
+      if(!b.running||b.stopRequested)break;
+      b.index=i;
+      const key=queue[i],p=productByKey(key);
+      b.currentKey=key;
+      renderAiImageBatchModal();
+      if(!p){b.failed++;b.errors.push({key,message:"Produto não encontrado"});aiBatchLog("err",`Produto ${key} não encontrado.`)}
+      else{
+        aiBatchLog("warn",`Gerando ${i+1}/${queue.length}: ${getName(p)}`);
+        try{
+          await aiProductImage(key);
+          b.success++;
+          aiBatchLog("ok",`Imagem salva: ${getName(p)}`);
+        }catch(err){
+          b.failed++;
+          b.errors.push({key,message:err?.message||String(err)});
+          console.error("Erro na geração em massa de imagem:",p,err);
+          aiBatchLog("err",`${getName(p)}: ${err?.message||err}`);
+        }
+      }
+      b.index=i+1;
+      b.currentKey=null;
+      renderAiImageBatchModal();
+      if(i<queue.length-1&&!b.stopRequested){
+        setStatus(`IA imagens em massa: aguardando 10 segundos para o próximo produto...`,"warn");
+        aiBatchLog("warn","Aguardando 10 segundos para o próximo produto.");
+        await aiBatchDelay(AI_IMAGE_BATCH_DELAY_MS);
+      }
+    }
+    const final=state.aiImageBatch;
+    final.running=false;
+    final.currentKey=null;
+    final.index=final.total;
+    if(final.stopRequested){
+      setStatus(`IA imagens em massa parada. ${final.success} salva(s), ${final.failed} erro(s).`,final.failed?"err":"ok");
+      aiBatchLog("warn",`Processo parado. ${final.success} salva(s), ${final.failed} erro(s).`);
+    }else{
+      setStatus(`IA imagens em massa concluída. ${final.success} salva(s), ${final.failed} erro(s).`,final.failed?"err":"ok");
+      aiBatchLog(final.failed?"err":"ok",`Processo concluído. ${final.success} salva(s), ${final.failed} erro(s).`);
+    }
+    renderAiImageBatchSelectors(true);
+    renderAiImageBatchModal();
+  }
+  function stopAiImageBatch(){
+    const b=state.aiImageBatch;
+    if(!b.running)return;
+    b.stopRequested=true;
+    if(b.timer){clearTimeout(b.timer);b.timer=null;}
+    if(b.delayResolve){const resolve=b.delayResolve;b.delayResolve=null;resolve();}
+    aiBatchLog("warn","Parada solicitada. O produto atual termina e a fila não continua.");
+    setStatus("Parando geração em massa após o produto atual...","warn");
+    renderAiImageBatchModal();
+  }
+  window.addEventListener("beforeunload",e=>{
+    if(state.aiImageBatch?.running){e.preventDefault();e.returnValue="Geração de imagens em massa em andamento.";return e.returnValue}
+  });
+  document.addEventListener("click",e=>{
+    const b=e.target.closest('[data-action]');if(!b)return;
+    const a=b.dataset.action;
+    if(a==='open-ai-image-batch')openAiImageBatchModal();
+    if(a==='close-ai-image-batch')closeAiImageBatchModal();
+    if(a==='start-ai-image-batch')startAiImageBatch();
+    if(a==='stop-ai-image-batch')stopAiImageBatch();
+  });
+  document.addEventListener("input",e=>{
+    const el=e.target;
+    if(el&&/^aiBatch/.test(el.id||"")){
+      if(el.id==='aiBatchCategory')renderAiImageBatchSelectors(true);
+      renderAiImageBatchModal();
+    }
+  });
+  document.addEventListener("change",e=>{
+    const el=e.target;
+    if(el&&/^aiBatch/.test(el.id||"")){
+      if(el.id==='aiBatchCategory')renderAiImageBatchSelectors(true);
+      renderAiImageBatchModal();
+    }
+  });
 
   loadData();
 })(); 
