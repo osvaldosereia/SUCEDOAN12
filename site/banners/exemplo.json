@@ -1,5 +1,12 @@
 {
-  "versao": "2026-07-10-01",
+  "versao": "2026-07-10-02",
+  "configuracao_carrossel": {
+    "automatico": true,
+    "manual": true,
+    "intervalo_ms": 5200,
+    "loop": true,
+    "pausar_hover": true
+  },
   "banners": [
     {
       "id": "home-cestas-01",
@@ -38,7 +45,7 @@
       "id": "home-cestas-topo",
       "ativo": false,
       "posicao": "home.cestas.topo",
-      "tipo": "fixo",
+      "tipo": "carousel",
       "ordem": 1,
       "desktop": "site/banner/home-cestas-topo-desktop.webp",
       "mobile": "site/banner/home-cestas-topo-mobile.webp",
@@ -49,7 +56,7 @@
       "id": "home-ofertas-topo",
       "ativo": false,
       "posicao": "home.ofertas.topo",
-      "tipo": "fixo",
+      "tipo": "carousel",
       "ordem": 1,
       "desktop": "site/banner/home-ofertas-topo-desktop.webp",
       "mobile": "site/banner/home-ofertas-topo-mobile.webp",
@@ -60,7 +67,7 @@
       "id": "home-limpeza-topo",
       "ativo": false,
       "posicao": "home.limpeza.topo",
-      "tipo": "fixo",
+      "tipo": "carousel",
       "ordem": 1,
       "desktop": "site/banner/home-limpeza-topo-desktop.webp",
       "mobile": "site/banner/home-limpeza-topo-mobile.webp",
@@ -71,7 +78,7 @@
       "id": "categoria-beleza-topo",
       "ativo": false,
       "posicao": "categoria.BELEZA.topo",
-      "tipo": "fixo",
+      "tipo": "carousel",
       "ordem": 1,
       "desktop": "site/banner/categoria-beleza-topo-desktop.webp",
       "mobile": "site/banner/categoria-beleza-topo-mobile.webp",
@@ -82,7 +89,7 @@
       "id": "produto-exemplo",
       "ativo": false,
       "posicao": "home.ofertas.topo",
-      "tipo": "fixo",
+      "tipo": "carousel",
       "ordem": 99,
       "desktop": "site/banner/produto-exemplo-desktop.webp",
       "mobile": "site/banner/produto-exemplo-mobile.webp",
