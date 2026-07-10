@@ -3828,8 +3828,8 @@
       border-radius: inherit;
       background: transparent;
     }
-    .da-banner-hero .da-banner-picture { aspect-ratio: 4 / 5; min-height: 0; }
-    .da-banner-section .da-banner-picture { aspect-ratio: 4 / 5; min-height: 0; border-radius: 24px; }
+    .da-banner-hero .da-banner-picture { aspect-ratio: 16 / 9; min-height: 0; }
+    .da-banner-section .da-banner-picture { aspect-ratio: 16 / 9; min-height: 0; border-radius: 24px; }
     .da-banner-carousel { position: relative; overflow: hidden; border-radius: 28px; box-shadow: var(--shadow); background: #eaf6ee; }
     .da-banner-carousel .da-banner-slide { display: none; margin: 0; }
     .da-banner-carousel .da-banner-slide.active { display: block; }
@@ -5133,7 +5133,7 @@
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-10-banners-carrossel-v2',
+      APP_VERSION: '2026-07-10-banners-carrossel-v3-horizontal',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
@@ -5647,16 +5647,26 @@
     }
 
     async function loadBanners() {
+      const errors = [];
       for (const url of CONFIG.BANNER_URLS) {
         try {
           const data = await fetchJson(withCacheBust(url), 4500, { cache: 'no-store' });
+          if (!data || !Array.isArray(data.banners)) throw new Error('JSON de banners sem o array banners');
           applyBannersData(data);
           writeCache(CONFIG.BANNER_CACHE_KEY, { savedAt: Date.now(), data });
           return;
-        } catch(e) {}
+        } catch(e) {
+          errors.push(`${url}: ${e && e.message ? e.message : e}`);
+        }
+      }
+      const cached = readCache(CONFIG.BANNER_CACHE_KEY);
+      if (cached && cached.data && Array.isArray(cached.data.banners)) {
+        applyBannersData(cached.data);
+        console.warn('Banners carregados do último cache válido.', errors);
+        return;
       }
       state.banners = [];
-      try { localStorage.removeItem(CONFIG.BANNER_CACHE_KEY); } catch(e) {}
+      console.error('Não foi possível carregar os banners.', errors);
     }
 
     function bannerPositionKey(value) {
@@ -8875,3 +8885,4 @@
 </body>
 </html>
  
+
