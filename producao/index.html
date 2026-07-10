@@ -299,6 +299,74 @@
     @media(max-width:760px){.ai-batch-form,.ai-batch-options,.ai-batch-summary{grid-template-columns:1fr}.ai-batch-actions{justify-content:stretch}.ai-batch-actions .btn{flex:1 1 100%}}
   </style>
 
+  <style>
+    /* Contraste reforçado para monitores claros + criação de banners */
+    :root{
+      --bg:#eceff1;
+      --card:#ffffff;
+      --soft:#f5f6f7;
+      --ink:#101418;
+      --muted:#4b5563;
+      --line:#cbd2d9;
+      --gold:#a87912;
+      --gold2:#fff2c7;
+      --green:#087443;
+      --green2:#e7f8ef;
+      --red:#a51d16;
+      --red2:#ffebe8;
+      --blue:#0b57b7;
+      --blue2:#e9f2ff;
+      --shadow:0 12px 32px rgba(15,23,42,.11);
+    }
+    body{background:linear-gradient(180deg,#e9edf0 0,#f4f5f6 240px,#eef1f3 100%);color:var(--ink)}
+    .topbar{background:rgba(245,247,248,.97);border-bottom-color:#b9c2ca;box-shadow:0 3px 14px rgba(15,23,42,.08)}
+    .product-workbench{
+      background:#fff!important;
+      border:2px solid #b7c0c9!important;
+      box-shadow:0 14px 38px rgba(15,23,42,.14)!important;
+    }
+    .product-workbench:hover{border-color:#7f8b97!important;box-shadow:0 18px 48px rgba(15,23,42,.18)!important}
+    .product-workbench.dirty{border-color:#a87912!important;box-shadow:0 0 0 3px rgba(168,121,18,.18),0 14px 38px rgba(15,23,42,.14)!important}
+    .workbench-media{background:#eef1f3;border-right:2px solid #c2cad2}
+    .workbench-photo{border:2px solid #b8c1ca;background:#fff;box-shadow:inset 0 0 0 1px #fff,0 4px 14px rgba(15,23,42,.08)}
+    .workbench-main{background:#fff}
+    .workbench-header{border-bottom:2px solid #d3d9df}
+    .workbench-title strong{color:#0b1117;font-weight:950}
+    .workbench-title small,.tiny,.muted,.stock,.field label,.workbench-field label{color:#46515d!important}
+    .workbench-group{border:1.5px solid #c4ccd4;background:#f9fafb;box-shadow:0 3px 10px rgba(15,23,42,.05)}
+    .workbench-group h4{color:#664a0a;font-weight:950}
+    .input,.select,.textarea,.quick-input{border-color:#aeb8c2;background:#fff;color:#101418;font-weight:650}
+    .input::placeholder,.textarea::placeholder{color:#66717d;opacity:1}
+    .input:focus,.select:focus,.textarea:focus,.quick-input:focus{border-color:#87620d;box-shadow:0 0 0 3px rgba(168,121,18,.22)}
+    .btn{border-color:#aeb7c0;box-shadow:0 1px 2px rgba(15,23,42,.06)}
+    .btn:hover{border-color:#687481;box-shadow:0 4px 10px rgba(15,23,42,.10)}
+    .btn.gold{background:#f7df93;color:#493400;border-color:#b98b20}
+    .btn.green{background:#d8f3e4;color:#075b36;border-color:#6db68f}
+    .btn.blue{background:#deebff;color:#083f87;border-color:#79a5dd}
+    .btn.red{background:#ffe0dc;color:#811710;border-color:#d58b84}
+    .chip{border-color:#aeb8c2;color:#303a44;background:#f8fafc}
+    .workbench-banner-control{
+      display:grid;
+      grid-template-columns:minmax(210px,1fr) minmax(260px,1.35fr) auto;
+      gap:12px;
+      align-items:end;
+      padding:13px;
+      border:2px solid #93add0;
+      border-radius:16px;
+      background:linear-gradient(135deg,#e8f2ff 0,#f7fbff 58%,#fff4d5 100%);
+      box-shadow:0 7px 18px rgba(11,87,183,.10);
+    }
+    .workbench-banner-copy strong{display:block;color:#0b3e78;font-size:14px}
+    .workbench-banner-copy small{display:block;margin-top:4px;color:#34495e;font-size:11px;line-height:1.4}
+    .workbench-banner-field{display:flex;flex-direction:column;gap:5px;min-width:0}
+    .workbench-banner-field label{font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.04em;color:#263b53}
+    .workbench-banner-field .select{min-height:41px;border-color:#7896b9}
+    .create-banner-btn{min-height:41px;white-space:nowrap;background:#0b57b7!important;border-color:#0b57b7!important;color:#fff!important;padding-inline:15px!important}
+    .create-banner-btn:hover{background:#073f86!important;border-color:#073f86!important}
+    @media(max-width:980px){.workbench-banner-control{grid-template-columns:1fr 1fr}.create-banner-btn{grid-column:1/-1}}
+    @media(max-width:760px){.workbench-banner-control{grid-template-columns:1fr}.create-banner-btn{grid-column:auto;width:100%}.workbench-media{border-right:0;border-bottom:2px solid #c2cad2}}
+  </style>
+
 </head>
 <body>
   <header class="topbar">
@@ -495,7 +563,7 @@
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
         <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho kitspromocionais.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="img/produtos"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
-        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">Use o webhook de textos para o botão único IA Cadastro. Use o webhook de imagens para capas de kits e imagens de produtos. Use o webhook Instagram Kits para gerar o carrossel do kit e colocar na fila do GitHub como NOVO; a postagem é feita pelo cenário programado.</div></div>
+        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners do site</label><input class="input" id="setMakeBannerWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">O webhook de banners recebe o produto e a posição escolhida no card, gera as versões mobile e desktop, salva em <strong>site/banners/gerados</strong> e atualiza <strong>site/banners/exemplo.json</strong>.</div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
       <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar kitspromocionais.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
@@ -568,10 +636,29 @@
     makeTextWebhookUrl: "",
     makeImageWebhookUrl: "",
     makeInstagramKitWebhookUrl: "",
+    makeBannerWebhookUrl: "",
     blingToken: "",
     blingDeposito: "",
     blingUnidade: "UN"
   };
+
+  const BANNER_POSITIONS = [
+    {value:"home.hero",label:"Home · Banner principal"},
+    {value:"home.cestas.topo",label:"Home · Antes das cestas"},
+    {value:"home.kits.topo",label:"Home · Antes dos kits promocionais"},
+    {value:"home.ofertas.topo",label:"Home · Antes das ofertas"},
+    {value:"home.compra-mes.topo",label:"Home · Compra do mês"},
+    {value:"home.limpeza.topo",label:"Home · Limpeza"},
+    {value:"home.higiene.topo",label:"Home · Higiene e beleza"},
+    {value:"home.cafe.topo",label:"Home · Café da manhã"},
+    {value:"home.categorias.topo",label:"Home · Antes das categorias"},
+    {value:"categorias.topo",label:"Página · Categorias"},
+    {value:"ofertas.topo",label:"Página · Ofertas"},
+    {value:"cestas.topo",label:"Página · Cestas básicas"},
+    {value:"kits.topo",label:"Página · Kits promocionais"},
+    {value:"busca.topo",label:"Página · Resultados da busca"},
+    {value:"favoritos.topo",label:"Página · Favoritos"}
+  ];
 
   const state = {
     produtos: [], cestas: [], kits: [], anotacoes: [], meta: makeEmptyMeta(), settings: loadSettings(),
@@ -2041,6 +2128,12 @@
   function quickMobileSelectField(field,label,current,values){
     return `<div class="field"><label>${esc(label)}</label><select class="select quick-mobile-input" data-quick-field="${esc(field)}">${selectOptionsHtml(values,current,"Selecione")}</select></div>`;
   }
+  function bannerPositionOptionsHtml(p){
+    const positions=[...BANNER_POSITIONS];
+    const category=String(p?.categoria||"").trim();
+    if(category)positions.push({value:`categoria.${category}.topo`,label:`Categoria atual · ${category}`});
+    return positions.map((item,index)=>`<option value="${esc(item.value)}" ${index===0?"selected":""}>${esc(item.label)}</option>`).join("");
+  }
   function workbenchDateValue(value){
     const s=String(value||"").trim(),br=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/),iso=s.match(/^(\d{4}-\d{2}-\d{2})/);
     return iso?iso[1]:br?`${br[3]}-${br[2]}-${br[1]}`:"";
@@ -2052,6 +2145,7 @@
     const memberships=[...baskets.map(c=>`<span class="chip gold">Cesta: ${esc(c.nome)}</span>`),...kits.map(k=>`<span class="chip blue">Kit: ${esc(k.nome)}</span>`)].join("");
     const ncmSearch=`https://www.google.com/search?q=${encodeURIComponent(`NCM ${[getName(p),p.marca,p.gtin||p.ean].filter(Boolean).join(" ")}`)}`,youtube=safeYoutubeUrl(p.video_youtube||p.video_url||"");
     const imageSearch=`https://www.google.com/search?tbm=isch&q=${encodeURIComponent([getName(p),p.marca,p.codigo,p.gtin].filter(Boolean).join(" "))}`;
+    const regularPrice=toNum(p.preco),offerPrice=toNum(p.preco_oferta),bannerPrice=offerPrice>0&&offerPrice<regularPrice?offerPrice:regularPrice;
     return `<article class="product-card product-workbench ${dirty?"dirty":""}" data-product-key="${esc(key)}">
       <aside class="workbench-media">
         <div class="workbench-photo"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'" alt="${esc(getName(p))}" loading="lazy"></div>
@@ -2080,6 +2174,11 @@
             <button class="btn small" type="button" data-action="duplicate-product" data-key="${esc(key)}">Duplicar</button>
             <button class="btn small red" type="button" data-action="delete-product" data-key="${esc(key)}">Excluir</button>
           </div>
+        </div>
+        <div class="workbench-banner-control">
+          <div class="workbench-banner-copy"><strong>Banner inteligente do produto</strong><small>Envia foto, nome, preço normal (${esc(brl(regularPrice))}) e preço anunciado (${esc(brl(bannerPrice))}) ao cenário do Make.</small></div>
+          <div class="workbench-banner-field"><label>Onde o banner aparecerá</label><select class="select" data-banner-position data-key="${esc(key)}">${bannerPositionOptionsHtml(p)}</select></div>
+          <button class="btn create-banner-btn" type="button" data-action="create-product-banner" data-key="${esc(key)}">✨ Criar banner</button>
         </div>
         <div class="workbench-sections">
           <section class="workbench-group">
@@ -2293,18 +2392,20 @@
   const aiBaseRenderSettingsUi=renderSettingsUi;
   renderSettingsUi=function(){
     aiBaseRenderSettingsUi();
-    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl"),instagramKit=$("#setMakeInstagramKitWebhookUrl");
+    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl"),instagramKit=$("#setMakeInstagramKitWebhookUrl"),banner=$("#setMakeBannerWebhookUrl");
     if(text&&text.value!==String(state.settings.makeTextWebhookUrl||""))text.value=state.settings.makeTextWebhookUrl||"";
     if(image&&image.value!==String(state.settings.makeImageWebhookUrl||""))image.value=state.settings.makeImageWebhookUrl||"";
     if(instagramKit&&instagramKit.value!==String(state.settings.makeInstagramKitWebhookUrl||""))instagramKit.value=state.settings.makeInstagramKitWebhookUrl||"";
+    if(banner&&banner.value!==String(state.settings.makeBannerWebhookUrl||""))banner.value=state.settings.makeBannerWebhookUrl||"";
   };
   const aiBaseReadSettingsFromUi=readSettingsFromUi;
   readSettingsFromUi=function(){
     aiBaseReadSettingsFromUi();
-    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl"),instagramKit=$("#setMakeInstagramKitWebhookUrl");
+    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl"),instagramKit=$("#setMakeInstagramKitWebhookUrl"),banner=$("#setMakeBannerWebhookUrl");
     if(text)state.settings.makeTextWebhookUrl=text.value.trim();
     if(image)state.settings.makeImageWebhookUrl=image.value.trim();
     if(instagramKit)state.settings.makeInstagramKitWebhookUrl=instagramKit.value.trim();
+    if(banner)state.settings.makeBannerWebhookUrl=banner.value.trim();
   };
 
   function normalizeGithubRawImageUrl(src){
@@ -2495,6 +2596,93 @@
     const text=await response.text();
     if(!response.ok)throw new Error(`Make retornou ${response.status}: ${text.slice(0,240)}`);
     try{return JSON.parse(text)}catch{return {ok:true,texto:text}}
+  }
+  async function createProductBanner(key){
+    const product=productByKey(key);
+    if(!product)throw new Error("Produto não encontrado.");
+    readSettingsFromUi();
+    const webhook=String(state.settings.makeBannerWebhookUrl||"").trim();
+    if(!webhook)throw new Error("Configure o webhook IA banners do site na aba Integrações.");
+    const card=document.querySelector(`.product-workbench[data-product-key="${CSS.escape(String(key))}"]`);
+    const position=card?.querySelector("[data-banner-position]")?.value||"home.hero";
+    const image=getImg(product);
+    if(!image||image===PLACEHOLDER)throw new Error("Cadastre uma foto válida no produto antes de criar o banner.");
+    const oldPrice=toNum(product.preco);
+    const offer=toNum(product.preco_oferta);
+    const newPrice=offer>0&&offer<oldPrice?offer:oldPrice;
+    if(oldPrice<=0)throw new Error("Informe o preço de venda do produto antes de criar o banner.");
+    const code=String(product.codigo||getKey(product)||"produto").trim();
+    const bannerId=`produto-${slug(code||getName(product))}-${Date.now()}`;
+    const discount=oldPrice>newPrice?Math.round((1-newPrice/oldPrice)*100):0;
+    const payload={
+      acao:"criar_banner_produto",
+      versao_contrato:1,
+      origem:"producao/index.html",
+      requisicao_id:bannerId,
+      criado_em:nowIso(),
+      produto:{
+        firebaseKey:getKey(product),
+        id:product.id||"",
+        codigo:code,
+        gtin:product.gtin||product.ean||"",
+        nome:getName(product),
+        marca:product.marca||"",
+        categoria:product.categoria||"",
+        subcategoria:product.subcategoria||"",
+        embalagem:product.embalagem||"",
+        imagem_url:makeDownloadImageUrl(image),
+        preco_antigo:oldPrice,
+        preco_novo:newPrice,
+        preco_antigo_formatado:brl(oldPrice),
+        preco_novo_formatado:brl(newPrice),
+        desconto_percentual:discount,
+        em_oferta:discount>0
+      },
+      banner:{
+        id:bannerId,
+        ativo:true,
+        posicao:position,
+        tipo:"carousel",
+        ordem:Date.now(),
+        alt:`${getName(product)} por ${brl(newPrice)} na Dona Antônia`,
+        link:{tipo:"produto",valor:code||getKey(product)},
+        arquivos:{
+          desktop:`site/banners/gerados/${bannerId}-desktop.webp`,
+          mobile:`site/banners/gerados/${bannerId}-mobile.webp`
+        },
+        formatos:{
+          desktop:{largura:1600,altura:450,proporcao:"32:9"},
+          mobile:{largura:1080,altura:1350,proporcao:"4:5"}
+        }
+      },
+      github:{
+        owner:state.settings.githubOwner||"osvaldosereia",
+        repositorio:state.settings.githubRepo||"SUCEDOAN12",
+        branch:state.settings.githubBranch||"main",
+        json_path:"site/banners/exemplo.json",
+        pasta_imagens:"site/banners/gerados"
+      },
+      diretrizes:{
+        prompt_base:"Crie um banner publicitário premium e altamente vendável para e-commerce brasileiro usando fielmente a foto real do produto. Preserve embalagem, marca, cores, textos e proporções do produto. Destaque o produto, o nome e o preço promocional; mostre o preço anterior riscado somente quando houver desconto. Use alto contraste, hierarquia clara, acabamento fotográfico, fundo coerente com a categoria e áreas seguras para recorte. Não invente selos, benefícios, pesos, ingredientes nem informações que não estejam no payload. Produza versões independentes, uma desktop 1600x450 e uma mobile 1080x1350, ambas em WebP.",
+        fundo:"publicitário, limpo, contrastado e coerente com o produto",
+        fidelidade_produto:"máxima",
+        idioma:"pt-BR",
+        marca_site:"Dona Antônia"
+      }
+    };
+    setStatus(`Criando banner de ${getName(product)} para ${position}...`,"warn");
+    const response=await fetch(webhook,{
+      method:"POST",
+      headers:{"Accept":"application/json","Content-Type":"application/json"},
+      body:JSON.stringify(payload)
+    });
+    const raw=await response.text();
+    let result={};
+    try{result=raw?JSON.parse(raw):{}}catch{result={mensagem:raw}}
+    if(!response.ok)throw new Error(`Make retornou ${response.status}: ${raw.slice(0,280)||"sem detalhes"}`);
+    if(result&&result.ok===false)throw new Error(result.erro||result.error||result.mensagem||"O cenário do Make informou falha.");
+    setStatus(`Banner criado e enviado para ${position}. O site carregará o novo JSON automaticamente.`,"ok");
+    return result;
   }
   function unwrapAiResult(result){
     if(typeof result==="string"){
@@ -3038,7 +3226,8 @@
       "send-product-chat":()=>sendProductChatQuestion(),
       "ai-kit-description":()=>aiKitDescription(),
       "ai-kit-cover":()=>aiKitCover(),
-      "send-kit-instagram":()=>sendKitInstagram()
+      "send-kit-instagram":()=>sendKitInstagram(),
+      "create-product-banner":()=>p?createProductBanner(key):null
     };
     if(!handlers[action])return;
     e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
@@ -3059,7 +3248,8 @@
       "send-product-chat":"Enviando...",
       "ai-kit-description":"Gerando descrição...",
       "ai-kit-cover":"Gerando capa...",
-      "send-kit-instagram":"Gerando fila..."
+      "send-kit-instagram":"Gerando fila...",
+      "create-product-banner":"Criando banner..."
     };
     const card=b.closest?.(".product-workbench");card?.classList.add("processing");
     await runUiAction(b,labels[action]||"Processando...",handlers[action]);
@@ -3621,4 +3811,3 @@
 </html>
  
  
-
