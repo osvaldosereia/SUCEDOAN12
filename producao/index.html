@@ -540,8 +540,8 @@
     githubCestasPath: "site/produtos-cesta-basica.json",
     githubKitsPath: "site/kits.json",
     githubAnotacoesPath: "site/anotacoes.json",
-    githubImagesPath: "site/img/produtos",
-    imagePublicBase: "img/produtos",
+    githubImagesPath: "site/img/produtos_2",
+    imagePublicBase: "img/produtos_2",
     githubKitImagesPath: "site/img/kits",
     kitImagePublicBase: "img/kits",
     autoGithub: false,
@@ -797,7 +797,24 @@
   }
   function mark(kind){ if(kind==="products") syncPendingProductsFlag(); if(kind==="cestas") state.dirtyCestas=true; if(kind==="kits") state.dirtyKits=true; if(kind==="meta") state.dirtyMeta=true; if(kind==="notes"){state.dirtyNotes=true;localStorage.setItem(LS_NOTES_DIRTY,"1")} saveLocal(); renderSummary(); refreshJson() }
   function saveLocal(){localStorage.setItem(LS_PRODUCTS, JSON.stringify(state.produtos)); localStorage.setItem(LS_CESTAS, JSON.stringify(state.cestas)); localStorage.setItem(LS_KITS, JSON.stringify(state.kits)); localStorage.setItem(LS_META, JSON.stringify(state.meta)); localStorage.setItem(LS_NOTES, JSON.stringify(state.anotacoes));}
-  function loadSettings(){try{const saved=JSON.parse(localStorage.getItem(LS_SETTINGS)||"{}"); if(!saved.githubCestasPath || saved.githubCestasPath==="site/cestas.json") saved.githubCestasPath="site/produtos-cesta-basica.json"; if(!saved.githubKitsPath||saved.githubKitsPath==="site/kitspromocionais.json")saved.githubKitsPath="site/kits.json"; if(!saved.githubAdminMetaPath) saved.githubAdminMetaPath = saved.githubMetaPath && !["site/produtos_meta.json","site/produtos_meta.csv"].includes(saved.githubMetaPath) ? saved.githubMetaPath : "site/produtos_admin_meta.json"; if(!saved.githubMetaPath || saved.githubMetaPath==="site/produtos_meta.json") saved.githubMetaPath="site/produtos_meta.csv"; if(!saved.siteBaseUrl) saved.siteBaseUrl=defaultSettings.siteBaseUrl; return {...defaultSettings, ...saved}}catch{return {...defaultSettings}}}
+  function loadSettings(){
+    try{
+      const saved=JSON.parse(localStorage.getItem(LS_SETTINGS)||"{}");
+      if(!saved.githubCestasPath || saved.githubCestasPath==="site/cestas.json") saved.githubCestasPath="site/produtos-cesta-basica.json";
+      if(!saved.githubKitsPath||saved.githubKitsPath==="site/kitspromocionais.json")saved.githubKitsPath="site/kits.json";
+      if(!saved.githubAdminMetaPath) saved.githubAdminMetaPath = saved.githubMetaPath && !["site/produtos_meta.json","site/produtos_meta.csv"].includes(saved.githubMetaPath) ? saved.githubMetaPath : "site/produtos_admin_meta.json";
+      if(!saved.githubMetaPath || saved.githubMetaPath==="site/produtos_meta.json") saved.githubMetaPath="site/produtos_meta.csv";
+      if(!saved.siteBaseUrl) saved.siteBaseUrl=defaultSettings.siteBaseUrl;
+
+      // PADRÃO CORRIGIDO: o fluxo de IA dos produtos trabalha em produtos_2.
+      // Se o navegador ainda estiver com o padrão antigo salvo, migramos para evitar que
+      // a imagem nova seja gerada/salva em uma pasta e o sistema procure em outra.
+      if(!saved.githubImagesPath || saved.githubImagesPath==="site/img/produtos") saved.githubImagesPath="site/img/produtos_2";
+      if(!saved.imagePublicBase || saved.imagePublicBase==="img/produtos") saved.imagePublicBase="img/produtos_2";
+
+      return {...defaultSettings, ...saved}
+    }catch{return {...defaultSettings}}
+  }
   function saveSettings(){readSettingsFromUi(); localStorage.setItem(LS_SETTINGS, JSON.stringify(state.settings)); setStatus("Configurações salvas", "ok"); alert("Configurações salvas neste navegador.")}
 
   function firebaseUrl(node){return `${String(state.settings.firebaseUrl).replace(/\/$/,"")}/${node}.json`}
@@ -938,7 +955,7 @@
   async function prepareKitImageBlob(file){return compressImageToWebp(file,{maxBytes:IMAGE_MAX_BYTES,maxDimension:900,square:true})}
   function selectedProductPhotoFile(){const input=$("#productPhotoFile"); return input?.files?.[0]||null}
   async function useSelectedPhotoLocal(){const p=productByKey(state.editingProductKey); const file=selectedProductPhotoFile(); if(!p||!file) return alert("Selecione uma imagem primeiro."); const prepared=await prepareProductImageBlob(file); p.url_imagem=await blobToDataUrl(prepared.blob); p.imagem=p.url_imagem; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem']); mark('products'); renderProductEditor(false); setStatus(`Foto aplicada em WebP (${formatBytes(prepared.bytes)})`, "ok")}
-  async function uploadSelectedPhotoGithub(){const p=productByKey(state.editingProductKey); const file=selectedProductPhotoFile(); if(!p||!file) return alert("Selecione uma imagem primeiro."); try{readSettingsFromUi(); setStatus("Compactando e enviando foto SEO ao GitHub...", "warn"); const prepared=await prepareProductImageBlob(file); const oldSources=currentProductImageSources(p); const fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"); const basePath=String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,''); const path=`${basePath}/${fileName}`; await githubUpsertRaw(path, await prepared.blob.arrayBuffer(), `Atualiza foto SEO do produto ${p.codigo||getName(p)}`); const src=publicProductImageSrc(fileName); oldSources.forEach(x=>markGithubProductImageForDelete(x)); p.url_imagem=src; p.imagem=src; p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]); p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem','imagens']); mark('products'); renderProductEditor(false); setStatus(`Foto SEO enviada ao GitHub em WebP (${formatBytes(prepared.bytes)})`, "ok"); alert(`Foto SEO compactada em WebP (${formatBytes(prepared.bytes)}) e enviada como ${fileName}. Clique em Salvar geral para publicar e limpar imagens antigas.`)}catch(e){console.error(e); setStatus("Erro na foto", "err"); alert("Erro ao enviar foto: "+e.message)}}
+  async function uploadSelectedPhotoGithub(){const p=productByKey(state.editingProductKey); const file=selectedProductPhotoFile(); if(!p||!file) return alert("Selecione uma imagem primeiro."); try{readSettingsFromUi(); setStatus("Compactando e enviando foto SEO ao GitHub...", "warn"); const prepared=await prepareProductImageBlob(file); const oldSources=currentProductImageSources(p); const fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"); const basePath=String(state.settings.githubImagesPath||"site/img/produtos_2").replace(/\/+$/,''); const path=`${basePath}/${fileName}`; await githubUpsertRaw(path, await prepared.blob.arrayBuffer(), `Atualiza foto SEO do produto ${p.codigo||getName(p)}`); const src=publicProductImageSrc(fileName); oldSources.forEach(x=>markGithubProductImageForDelete(x)); p.url_imagem=src; p.imagem=src; p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]); p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem','imagens']); mark('products'); renderProductEditor(false); setStatus(`Foto SEO enviada ao GitHub em WebP (${formatBytes(prepared.bytes)})`, "ok"); alert(`Foto SEO compactada em WebP (${formatBytes(prepared.bytes)}) e enviada como ${fileName}. Clique em Salvar geral para publicar e limpar imagens antigas.`)}catch(e){console.error(e); setStatus("Erro na foto", "err"); alert("Erro ao enviar foto: "+e.message)}}
   function removeProductPhoto(){const p=productByKey(state.editingProductKey); if(!p) return; if(!confirm("Remover a foto deste produto?")) return; p.url_imagem=""; p.imagem=""; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem']); mark('products'); renderProductEditor(false)}
   function copyProductPhotoUrl(){const p=productByKey(state.editingProductKey); if(!p) return; navigator.clipboard?.writeText(p.url_imagem||p.imagem||""); alert("URL da foto copiada.")}
   function toggleProductTag(tag,checked){const p=productByKey(state.editingProductKey); if(!p) return; let tags=parseTags(p.tags); if(checked && !tags.includes(tag)) tags.push(tag); if(!checked) tags=tags.filter(t=>t!==tag); p.tags=tags; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['tags']); mark('products'); renderProductEditor(false)}
@@ -1809,20 +1826,20 @@
   async function previewImageEditor(){if(!editorImage)return;const blob=await processedPhotoBlob(editorImage,toNum($("#imageZoom")?.value)/100,toNum($("#imageSharpness")?.value),!!$("#imageRemoveWhite")?.checked),url=URL.createObjectURL(blob),im=new Image();im.onload=()=>{const c=$("#imageEditorCanvas"),x=c.getContext("2d");x.clearRect(0,0,300,300);x.drawImage(im,0,0,300,300);URL.revokeObjectURL(url)};im.src=url}
 
   const originalUseSelectedPhotoLocal=useSelectedPhotoLocal;
-  useSelectedPhotoLocal=async function(){const p=productByKey(state.editingProductKey),file=selectedProductPhotoFile();if(!p||!file)return alert("Selecione uma imagem primeiro.");const prepared=await prepareProductImageBlob(file),src=await blobToDataUrl(prepared.blob);p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=p.url_imagem||src;p.imagem=p.url_imagem;markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false);setStatus(`Imagem adicionada: 300×300 WebP (${formatBytes(prepared.bytes)})`,"ok")};
+  useSelectedPhotoLocal=async function(){const p=productByKey(state.editingProductKey),file=selectedProductPhotoFile();if(!p||!file)return alert("Selecione uma imagem primeiro.");const prepared=await prepareProductImageBlob(file),src=await blobToDataUrl(prepared.blob);p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=p.url_imagem||src;p.imagem=p.url_imagem;p.imagem_url=p.url_imagem;markProductDirty(getKey(p),["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProductEditor(false);setStatus(`Imagem adicionada: 300×300 WebP (${formatBytes(prepared.bytes)})`,"ok")};
   const originalUploadSelectedPhotoGithub=uploadSelectedPhotoGithub;
-  uploadSelectedPhotoGithub=async function(){await originalUploadSelectedPhotoGithub();const p=productByKey(state.editingProductKey);if(p&&p.url_imagem){p.imagens=uniq([...(p.imagens||[]),p.url_imagem]);markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false)}};
+  uploadSelectedPhotoGithub=async function(){await originalUploadSelectedPhotoGithub();const p=productByKey(state.editingProductKey);if(p&&p.url_imagem){p.imagens=uniq([...(p.imagens||[]),p.url_imagem]);markProductDirty(getKey(p),["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProductEditor(false)}};
 
   const originalSaveMeta=saveMeta;
   saveMeta=async function(){try{readSettingsFromUi();const csv=String(buildMetaCatalogCsv()||""),admin=buildAdminMetaPayload();if(!state.settings.githubMetaPath)throw new Error("Informe o caminho do produtos_meta.csv em Integrações.");if(!state.settings.githubAdminMetaPath)throw new Error("Informe o caminho do produtos_admin_meta.json em Integrações.");setStatus("Salvando arquivo Meta...","warn");await githubUpsertText(state.settings.githubMetaPath,csv,"Atualiza catálogo Meta pelo admin Dona Antônia");await githubUpsert(state.settings.githubAdminMetaPath,admin,"Atualiza cadastros administrativos");state.meta=admin;state.dirtyMeta=false;saveLocal();setStatus("Arquivo Meta salvo com sucesso","ok");alert(`Arquivos salvos:\n• ${state.settings.githubMetaPath}\n• ${state.settings.githubAdminMetaPath}`)}catch(e){console.error(e);saveLocal();setStatus("Erro ao salvar arquivo Meta","err");alert("Não foi possível salvar o arquivo Meta: "+e.message)}};
 
   document.addEventListener("change",e=>{const el=e.target;if(el.matches('[data-pfield="validade"]')){const p=productByKey(state.editingProductKey);if(p){const pct=applyExpiryDiscount(p);markProductDirty(getKey(p),["preco_oferta","validade_oferta","desconto_validade"]);mark("products");renderProductEditor(false);setStatus(pct?`Desconto de validade aplicado: ${pct}%`:"Validade fora da faixa de desconto","ok")}}if(el.matches("#imageZoom,#imageSharpness,#imageRemoveWhite"))previewImageEditor();if(el.matches('[data-action="kit-qtd"],[data-kfield]')){const k=currentKit();if(k){recalcKit(k);renderKitEditor()}}});
   document.addEventListener("click",async e=>{const b=e.target.closest("[data-action]");if(!b)return;const a=b.dataset.action,p=productByKey(state.editingProductKey);
-    if(a==="make-photo-primary"&&p){const src=(p.imagens||[])[Number(b.dataset.index)];if(src){p.url_imagem=p.imagem=src;markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false)}}
-    if(a==="remove-gallery-photo"&&p){const i=Number(b.dataset.index),removed=(p.imagens||[])[i];p.imagens=(p.imagens||[]).filter((_,x)=>x!==i);if((p.url_imagem||p.imagem)===removed)p.url_imagem=p.imagem=p.imagens[0]||"";markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProductEditor(false)}
+    if(a==="make-photo-primary"&&p){const src=(p.imagens||[])[Number(b.dataset.index)];if(src){p.url_imagem=p.imagem=p.imagem_url=src;markProductDirty(getKey(p),["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProductEditor(false)}}
+    if(a==="remove-gallery-photo"&&p){const i=Number(b.dataset.index),removed=(p.imagens||[])[i];p.imagens=(p.imagens||[]).filter((_,x)=>x!==i);if((p.url_imagem||p.imagem)===removed)p.url_imagem=p.imagem=p.imagem_url=p.imagens[0]||"";markProductDirty(getKey(p),["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProductEditor(false)}
     if(a==="open-image-editor"){try{const file=selectedProductPhotoFile(),src=p&&(p.url_imagem||p.imagem||(p.imagens||[])[0]);if(!file&&!src)return alert("Selecione ou cole uma imagem primeiro.");ensureImageEditor();editorImage=file?await loadImageFromFile(file):await loadImageFromSource(src);$("#imageEditorModal").classList.add("open");previewImageEditor()}catch(err){alert(err.message)}}
     if(a==="close-image-editor")$("#imageEditorModal")?.classList.remove("open");
-    if(a==="apply-image-editor"&&p&&editorImage){const blob=await processedPhotoBlob(editorImage,toNum($("#imageZoom").value)/100,toNum($("#imageSharpness").value),$("#imageRemoveWhite").checked),src=await blobToDataUrl(blob);p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=p.url_imagem||src;p.imagem=p.url_imagem;markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");$("#imageEditorModal").classList.remove("open");renderProductEditor(false);renderProducts();setStatus(`Imagem editada: WebP 300×300 (${formatBytes(blob.size)})`,"ok")}
+    if(a==="apply-image-editor"&&p&&editorImage){const blob=await processedPhotoBlob(editorImage,toNum($("#imageZoom").value)/100,toNum($("#imageSharpness").value),$("#imageRemoveWhite").checked),src=await blobToDataUrl(blob);p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=p.url_imagem||src;p.imagem=p.url_imagem;p.imagem_url=p.url_imagem;markProductDirty(getKey(p),["url_imagem","imagem","imagem_url","imagens"]);mark("products");$("#imageEditorModal").classList.remove("open");renderProductEditor(false);renderProducts();setStatus(`Imagem editada: WebP 300×300 (${formatBytes(blob.size)})`,"ok")}
   });
 
   document.addEventListener("change",e=>{
@@ -1849,7 +1866,7 @@
       p.imagens=uniq([...(p.imagens||[]),src]);
       p.url_imagem=p.url_imagem||src;
       p.imagem=p.url_imagem;
-      markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);
+      markProductDirty(getKey(p),["url_imagem","imagem","imagem_url","imagens"]);
       mark("products");
       renderProductEditor(false);
       setStatus(`Imagem colada e adicionada: 300×300 WebP (${formatBytes(prepared.bytes)})`,"ok");
@@ -2096,7 +2113,7 @@
   async function addWorkbenchPhoto(p,file){
     const prepared=await prepareProductImageBlob(file),src=await blobToDataUrl(prepared.blob);
     p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=src;p.imagem=src;
-    markProductDirty(getKey(p),["url_imagem","imagem","imagens"]);mark("products");renderProducts();
+    markProductDirty(getKey(p),["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProducts();
     return prepared;
   }
   function focusProductWorkbench(key){
@@ -2645,14 +2662,14 @@
     const time=stamp||new Date().toISOString().replace(/[-:TZ.]/g,"").slice(0,14);
     return {
       base:productSeoImageBase(p),
-      pasta:String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,""),
-      publico:String(state.settings.imagePublicBase||"img/produtos").replace(/\/+$/,""),
+      pasta:String(state.settings.githubImagesPath||"site/img/produtos_2").replace(/\/+$/,""),
+      publico:String(state.settings.imagePublicBase||"img/produtos_2").replace(/\/+$/,""),
       principal:productSeoImageFileName(p,"info-lado-a-lado",time),
       informativa:productSeoImageFileName(p,"info-lado-a-lado",time)
     };
   }
-  function currentProductImageSources(p){return uniq([p?.url_imagem||"",p?.imagem||"",...(Array.isArray(p?.imagens)?p.imagens:[])]).filter(Boolean)}
-  function publicProductImageSrc(fileName){return `${String(state.settings.imagePublicBase||"img/produtos").replace(/\/+$/,'')}/${fileName}`}
+  function currentProductImageSources(p){return uniq([p?.url_imagem||"",p?.imagem||"",p?.imagem_url||"",...(Array.isArray(p?.imagens)?p.imagens:[])]).filter(Boolean)}
+  function publicProductImageSrc(fileName){return `${String(state.settings.imagePublicBase||"img/produtos_2").replace(/\/+$/,'')}/${fileName}`}
 
   function buildAiImageStrategy(count){
     return {
@@ -2684,8 +2701,10 @@
     return await new Promise((resolve,reject)=>cv.toBlob(b=>b?resolve(b):reject(new Error("Nao foi possivel converter a imagem de referencia para PNG.")),"image/png",0.92));
   }
   async function prepareProductReferenceImageForMake(p,batchId){
-    const originalSrc=p.url_imagem||p.imagem||(Array.isArray(p.imagens)?p.imagens[0]:"")||"";
-    let referenceUrl=publicAssetUrl(originalSrc);
+    const originalSrc=p.url_imagem||p.imagem||p.imagem_url||(Array.isArray(p.imagens)?p.imagens[0]:"")||"";
+    // Envia para o Make a URL RAW do GitHub sempre que possível. Isso evita cache do site
+    // e evita o erro antigo de tentar baixar /img/... quando o arquivo real está em /site/img/...
+    let referenceUrl=makeDownloadImageUrl(originalSrc)||publicAssetUrl(originalSrc);
     const needsPreparedReference=/^data:image\//i.test(referenceUrl)||isAiGeneratedProductImageSrc(originalSrc)||isAiGeneratedProductImageSrc(referenceUrl);
     if(!needsPreparedReference)return referenceUrl;
     if(!state.settings.githubToken||!state.settings.githubOwner||!state.settings.githubRepo){
@@ -2697,7 +2716,7 @@
     try{
       const blob=await imageSrcToPngBlobForAi(srcForCanvas);
       const fileName=productSeoImageFileName(p,"referencia-make",batchId).replace(/\.webp$/i,".png");
-      const basePath=String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,"");
+      const basePath=String(state.settings.githubImagesPath||"site/img/produtos_2").replace(/\/+$/,"");
       const fullPath=`${basePath}/${fileName}`;
       await githubUpsertRaw(fullPath,await blob.arrayBuffer(),`Prepara referencia PNG para IA do produto ${p.codigo||getName(p)}`);
       markGithubProductImageForDelete(githubRawFileUrl(fullPath));
@@ -2711,26 +2730,47 @@
     }
   }
   async function saveGeneratedProductImageToGithub(p,src,index,batchId,fileName=""){
-    let finalSrc=String(src||"");
+    let finalSrc=String(src||"").trim();
     if(!finalSrc)throw new Error(`Imagem ${index} vazia retornada pelo Make.`);
-    if(/^data:image\//i.test(finalSrc)){
-      readSettingsFromUi();
-      const blob=await (await fetch(finalSrc)).blob();
-      const kind='info-lado-a-lado';
-      const seoName=fileName||productSeoImageFileName(p,kind,batchId);
-      const basePath=String(state.settings.githubImagesPath||'site/img/produtos').replace(/\/+$/,'');
-      const fullPath=`${basePath}/${seoName}`;
-      await githubUpsertRaw(fullPath,await blob.arrayBuffer(),`Gera imagem IA SEO do produto ${p.codigo||getName(p)} (${kind})`);
-      finalSrc=publicProductImageSrc(seoName);
+
+    readSettingsFromUi();
+    const canSaveToGithub=!!(state.settings.githubToken&&state.settings.githubOwner&&state.settings.githubRepo&&state.settings.githubBranch);
+    const shouldStoreResult=/^(data:image\/|https?:\/\/)/i.test(finalSrc);
+
+    if(canSaveToGithub&&shouldStoreResult){
+      try{
+        let blob;
+        if(/^data:image\//i.test(finalSrc)){
+          blob=await (await fetch(finalSrc)).blob();
+        }else{
+          const response=await fetch(finalSrc,{cache:"no-store"});
+          if(!response.ok)throw new Error(`Erro ${response.status} ao baixar a imagem gerada.`);
+          blob=await response.blob();
+        }
+        const kind='info-lado-a-lado';
+        let seoName=String(fileName||productSeoImageFileName(p,kind,batchId)).split(/[\/]/).pop().trim();
+        if(!seoName||!/\.webp$/i.test(seoName))seoName=productSeoImageFileName(p,kind,batchId);
+        const basePath=String(state.settings.githubImagesPath||'site/img/produtos_2').replace(/\/+$/,'');
+        const fullPath=`${basePath}/${seoName}`;
+        await githubUpsertRaw(fullPath,await blob.arrayBuffer(),`Substitui imagem principal por IA do produto ${p.codigo||getName(p)} (${kind})`);
+        finalSrc=publicProductImageSrc(seoName);
+      }catch(err){
+        console.warn('Nao foi possivel salvar a imagem gerada no GitHub pelo admin:',err);
+        if(/^data:image\//i.test(finalSrc)){
+          throw new Error(`A IA devolveu base64, mas o admin não conseguiu salvar no GitHub: ${err.message}`);
+        }
+      }
     }
+
     return finalSrc;
   }
   async function persistGeneratedProductImageInFirebase(p){
     const key=getKey(p);
     if(!key)throw new Error("Produto sem chave para salvar a imagem no Firebase.");
     const payload={
-      url_imagem:String(p.url_imagem||p.imagem||""),
-      imagem:String(p.imagem||p.url_imagem||""),
+      url_imagem:String(p.url_imagem||p.imagem||p.imagem_url||""),
+      imagem:String(p.imagem||p.url_imagem||p.imagem_url||""),
+      imagem_url:String(p.url_imagem||p.imagem||p.imagem_url||""),
       imagens:Array.isArray(p.imagens)?p.imagens.slice(0,1):[],
       last_update:Date.now(),
       updated_at:nowIso()
@@ -2738,7 +2778,7 @@
     await patchJson(firebaseProductUrl(key),payload);
     p.last_update=payload.last_update;
     p.updated_at=payload.updated_at;
-    clearProductDirtyFields(key,["url_imagem","imagem","imagens"]);
+    clearProductDirtyFields(key,["url_imagem","imagem","imagem_url","imagens"]);
     state.productSyncMeta[key]=productSyncSnapshot(p);
     saveLocal();
     return payload;
@@ -2774,10 +2814,11 @@
 
     p.url_imagem=newSrc;
     p.imagem=newSrc;
+    p.imagem_url=newSrc;
     p.imagens=[newSrc];
     p.last_update=Date.now();
     p.updated_at=nowIso();
-    markProductDirty(getKey(p),['url_imagem','imagem','imagens']);
+    markProductDirty(getKey(p),['url_imagem','imagem','imagem_url','imagens']);
     mark('products');
     saveLocal();
     renderProducts();
@@ -2873,10 +2914,10 @@
     if(action==="delete-note"){if(!confirm("Excluir esta anotação?"))return;state.anotacoes=state.anotacoes.filter(n=>n.id!==b.dataset.id);mark("notes");renderNotes();updateNotesIndicator();await saveNotes(false)}
     if(action==="workbench-use-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{setStatus("Processando imagem...","warn");const prepared=await addWorkbenchPhoto(p,file);setStatus(`Imagem aplicada (${formatBytes(prepared.bytes)})`,"ok")}catch(err){alert("Erro na imagem: "+err.message)}}
     if(action==="workbench-edit-photo"&&p){try{const file=workbenchPhotoInput(key)?.files?.[0],src=p.url_imagem||p.imagem||(p.imagens||[])[0];if(!file&&!src)return alert("Selecione, cole ou cadastre uma imagem primeiro.");state.editingProductKey=key;pendingProductPhotoFile=file||null;pendingProductPhotoKey=key;ensureImageEditor();editorImage=file?await loadImageFromFile(file):await loadImageFromSource(src);$("#imageEditorModal").classList.add("open");previewImageEditor()}catch(err){alert(err.message)}}
-    if(action==="workbench-upload-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{readSettingsFromUi();setStatus("Enviando imagem SEO ao GitHub...","warn");const prepared=await prepareProductImageBlob(file),oldSources=currentProductImageSources(p),fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"),path=`${String(state.settings.githubImagesPath||"site/img/produtos").replace(/\/+$/,"")}/${fileName}`;await githubUpsertRaw(path,await prepared.blob.arrayBuffer(),`Atualiza foto SEO do produto ${p.codigo||getName(p)}`);const src=publicProductImageSrc(fileName);oldSources.forEach(x=>markGithubProductImageForDelete(x));p.url_imagem=p.imagem=src;p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]);markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts();setStatus("Imagem SEO enviada ao GitHub","ok")}catch(err){alert("Erro ao enviar imagem: "+err.message)}}
-    if(action==="workbench-remove-photo"&&p){if(!confirm("Remover a imagem principal deste produto?"))return;const old=p.url_imagem||p.imagem||"";p.url_imagem=p.imagem="";if(old)p.imagens=(p.imagens||[]).filter(x=>x!==old);markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts()}
-    if(action==="workbench-make-primary"&&p){p.url_imagem=p.imagem=b.dataset.src;markProductDirty(key,["url_imagem","imagem"]);mark("products");renderProducts()}
-    if(action==="workbench-remove-gallery"&&p){const src=b.dataset.src;p.imagens=(p.imagens||[]).filter(x=>x!==src);if((p.url_imagem||p.imagem)===src)p.url_imagem=p.imagem=p.imagens[0]||"";markProductDirty(key,["url_imagem","imagem","imagens"]);mark("products");renderProducts()}
+    if(action==="workbench-upload-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{readSettingsFromUi();setStatus("Enviando imagem SEO ao GitHub...","warn");const prepared=await prepareProductImageBlob(file),oldSources=currentProductImageSources(p),fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"),path=`${String(state.settings.githubImagesPath||"site/img/produtos_2").replace(/\/+$/,"")}/${fileName}`;await githubUpsertRaw(path,await prepared.blob.arrayBuffer(),`Atualiza foto SEO do produto ${p.codigo||getName(p)}`);const src=publicProductImageSrc(fileName);oldSources.forEach(x=>markGithubProductImageForDelete(x));p.url_imagem=p.imagem=p.imagem_url=src;p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]);markProductDirty(key,["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProducts();setStatus("Imagem SEO enviada ao GitHub","ok")}catch(err){alert("Erro ao enviar imagem: "+err.message)}}
+    if(action==="workbench-remove-photo"&&p){if(!confirm("Remover a imagem principal deste produto?"))return;const old=p.url_imagem||p.imagem||"";p.url_imagem=p.imagem=p.imagem_url="";if(old)p.imagens=(p.imagens||[]).filter(x=>x!==old);markProductDirty(key,["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProducts()}
+    if(action==="workbench-make-primary"&&p){p.url_imagem=p.imagem=p.imagem_url=b.dataset.src;markProductDirty(key,["url_imagem","imagem","imagem_url"]);mark("products");renderProducts()}
+    if(action==="workbench-remove-gallery"&&p){const src=b.dataset.src;p.imagens=(p.imagens||[]).filter(x=>x!==src);if((p.url_imagem||p.imagem)===src)p.url_imagem=p.imagem=p.imagem_url=p.imagens[0]||"";markProductDirty(key,["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProducts()}
     if(action==="ai-product-cadastro"&&p){await runUiAction(b,"Gerando cadastro...",()=>aiProductCadastro(key));return}
     if(action==="open-product-chat"&&p){openProductChat(key)}
     if(action==="close-product-chat"){closeProductChat()}
@@ -2897,7 +2938,7 @@
     if(el.matches('[data-action="toggle-note"]')){const n=state.anotacoes.find(x=>x.id===el.dataset.id);if(!n)return;n.feito=el.checked;n.concluida_em=el.checked?nowIso():null;mark("notes");renderNotes();updateNotesIndicator();await saveNotes(false)}
     if(el.matches("[data-card-photo-key]")){state.cardImageTargetKey=el.dataset.cardPhotoKey;setStatus("Imagem selecionada no card. Você pode usar, editar ou enviar.","ok")}
     if(el.matches('[data-card-field="validade"]')){const p=productByKey(el.dataset.key);if(p){const result=applyExpiryRules(p);markProductDirty(getKey(p),["validade",...result.fields]);mark("products");renderProducts();updateExpiryAlert()}}
-    if(el.matches('[data-card-field="url_imagem"]')){const p=productByKey(el.dataset.key);if(p){p.imagem=p.url_imagem;markProductDirty(getKey(p),["imagem"]);mark("products");renderProducts()}}
+    if(el.matches('[data-card-field="url_imagem"]')){const p=productByKey(el.dataset.key);if(p){p.imagem=p.url_imagem;p.imagem_url=p.url_imagem;markProductDirty(getKey(p),["url_imagem","imagem","imagem_url"]);mark("products");renderProducts()}}
   });
   document.addEventListener("paste",async e=>{
     if($("#productModal")?.classList.contains("open"))return;
@@ -3006,7 +3047,7 @@
     return /\.(webp|png|jpe?g|gif)$/i.test(p) && folders.some(folder=>p.startsWith(`${folder}/`));
   }
   function productImageFolders(){
-    return uniqClean([state.settings.githubImagesPath||"site/img/produtos","site/img/produtos","site/img/produtos_2"])
+    return uniqClean([state.settings.githubImagesPath||"site/img/produtos_2","site/img/produtos","site/img/produtos_2"])
       .map(p=>String(p).replace(/^\/+/ ,"").replace(/\/+$/,""));
   }
   function markGithubProductImageForDelete(src=""){
