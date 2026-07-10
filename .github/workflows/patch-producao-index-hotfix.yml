@@ -1,9 +1,10 @@
-name: Hotfix admin banners e Firebase
+name: Hotfix site banners e admin
 
 on:
   push:
     branches: [ main ]
     paths:
+      - '.hotfix-banner-trigger'
       - '.github/workflows/patch-producao-index-hotfix.yml'
   workflow_dispatch:
 
@@ -19,102 +20,178 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Aplicar hotfix em producao/index.html e banners JSON
+      - name: Aplicar hotfix no site, admin e JSON de banners
         run: |
           python3 <<'PY'
           from pathlib import Path
           import json
 
-          index_path = Path('producao/index.html')
-          text = index_path.read_text(encoding='utf-8')
-          marker = '/* DA_HOTFIX_ADMIN_BANNERS_FIREBASE_20260710 */'
-          hotfix = r'''
-          /* DA_HOTFIX_ADMIN_BANNERS_FIREBASE_20260710 */
-          const DA_BANNER_POSITIONS_STORAGE = "da_banner_positions_v1";
-          function daValidDateTime(value){const raw=String(value||"").trim();if(!raw)return false;const d=new Date(raw);return !Number.isNaN(d.getTime())}
-          const daOriginalNormalizeProductForSite = normalizeProductForSite;
-          normalizeProductForSite = function(product,key){
-            const copy = daOriginalNormalizeProductForSite(product,key);
-            const offerPrice = toNum(copy.preco_oferta), regularPrice = toNum(copy.preco), offerDateOk = daValidDateTime(copy.validade_oferta);
-            if(!(offerPrice>0 && regularPrice>0 && offerPrice<regularPrice && offerDateOk)){
-              delete copy.preco_oferta;delete copy.precoOferta;delete copy.validade_oferta;delete copy.validadeOferta;delete copy.desconto_validade;delete copy.oferta_origem;
-            }
-            return copy;
-          };
-          function daLoadBannerPositions(){try{return JSON.parse(localStorage.getItem(DA_BANNER_POSITIONS_STORAGE)||"{}")||{}}catch{return {}}}
-          function daSaveBannerPosition(key,value){if(!key||!value)return;state.bannerPositions=state.bannerPositions||daLoadBannerPositions();state.bannerPositions[String(key)]=String(value);try{localStorage.setItem(DA_BANNER_POSITIONS_STORAGE,JSON.stringify(state.bannerPositions))}catch{}}
-          function daDefaultBannerPositionForProduct(p){
-            const text=textNorm([p?.categoria,p?.subcategoria,p?.subsubcategoria,getName(p)].filter(Boolean).join(" "));
-            if(text.includes("higiene")||text.includes("beleza")||text.includes("perfumaria"))return "home.higiene.topo";
-            if(text.includes("limpeza"))return "home.limpeza.topo";
-            if(text.includes("cafe")||text.includes("café")||text.includes("matinal"))return "home.cafe.topo";
-            return "home.hero";
-          }
-          state.bannerPositions = state.bannerPositions || daLoadBannerPositions();
-          bannerPositionOptionsHtml = function(p){
-            const key=getKey(p),positions=[...BANNER_POSITIONS],category=String(p?.categoria||"").trim();
-            if(category)positions.push({value:`categoria.${category}.topo`,label:`Categoria atual · ${category}`});
-            const current=state.bannerPositions?.[key]||daDefaultBannerPositionForProduct(p);
-            return positions.map(item=>`<option value="${esc(item.value)}" ${String(item.value)===String(current)?"selected":""}>${esc(item.label)}</option>`).join("");
-          };
-          document.addEventListener("change",e=>{const el=e.target;if(el?.matches?.("[data-banner-position]"))daSaveBannerPosition(el.dataset.key,el.value)},true);
-          createProductBanner = async function(key){
-            const product=productByKey(key);if(!product)throw new Error("Produto não encontrado.");
-            readSettingsFromUi();
-            const webhook=String(state.settings.makeBannerWebhookUrl||"").trim();if(!webhook)throw new Error("Configure o webhook IA banners do site na aba Integrações.");
-            const card=document.querySelector(`.product-workbench[data-product-key="${CSS.escape(String(key))}"]`);
-            const positionSelect=card?.querySelector("[data-banner-position]");
-            const position=positionSelect?.value||state.bannerPositions?.[key]||daDefaultBannerPositionForProduct(product);
-            daSaveBannerPosition(key,position);
-            const image=getImg(product);if(!image||image===PLACEHOLDER)throw new Error("Cadastre uma foto válida no produto antes de criar o banner.");
-            const oldPrice=toNum(product.preco),offer=toNum(product.preco_oferta),newPrice=offer>0&&offer<oldPrice?offer:oldPrice;
-            if(oldPrice<=0)throw new Error("Informe o preço de venda do produto antes de criar o banner.");
-            const code=String(product.codigo||getKey(product)||"produto").trim(),bannerId=`produto-${slug(code||getName(product))}-${Date.now()}`,discount=oldPrice>newPrice?Math.round((1-newPrice/oldPrice)*100):0;
-            const payload={
-              acao:"criar_banner_produto",versao_contrato:2,origem:"producao/index.html",requisicao_id:bannerId,criado_em:nowIso(),
-              produto:{firebaseKey:getKey(product),id:product.id||"",codigo:code,gtin:product.gtin||product.ean||"",nome:getName(product),marca:product.marca||"",categoria:product.categoria||"",subcategoria:product.subcategoria||"",embalagem:product.embalagem||"",imagem_url:makeDownloadImageUrl(image),preco_antigo:oldPrice,preco_novo:newPrice,preco_antigo_formatado:brl(oldPrice),preco_novo_formatado:brl(newPrice),desconto_percentual:discount,em_oferta:discount>0},
-              banner:{id:bannerId,ativo:true,posicao:position,tipo:"carousel",ordem:Date.now(),alt:`${getName(product)} por ${brl(newPrice)} na Dona Antônia`,link:{tipo:"produto",valor:code||getKey(product)},arquivos:{desktop:`site/banners/gerados/${bannerId}-desktop.webp`,mobile:`site/banners/gerados/${bannerId}-mobile.webp`},formatos:{desktop:{largura:3072,altura:1024,proporcao_saida:"3:1",proporcao_site:"32:9",area_segura:"faixa central 3072x864; nada importante fora dela"},mobile:{largura:2048,altura:1152,proporcao:"16:9"}}},
-              github:{owner:state.settings.githubOwner||"osvaldosereia",repositorio:state.settings.githubRepo||"SUCEDOAN12",branch:state.settings.githubBranch||"main",json_path:"site/banners/exemplo.json",pasta_imagens:"site/banners/gerados"},
-              diretrizes:{prompt_base:"Crie banners publicitários premium para e-commerce brasileiro usando fielmente a foto real do produto. Preserve embalagem, marca, cores, textos e proporções. Gere duas versões independentes em WebP: DESKTOP com saída técnica 3072x1024, mantendo todo conteúdo importante na faixa central segura 3072x864 equivalente a 32:9; e MOBILE com saída 2048x1152, proporção 16:9. No desktop, áreas superior e inferior devem ser apenas continuação simples do fundo, sem texto nem produto importante. Nunca use formato vertical, story ou pôster. Destaque produto, nome e preço anunciado; mostre preço anterior riscado somente quando houver desconto. Alto contraste, texto curto em pt-BR, sem inventar selos, benefícios, URLs, telefone ou dados não recebidos.",fundo:"publicitário, limpo, contrastado e coerente com o produto",fidelidade_produto:"máxima",idioma:"pt-BR",marca_site:"Dona Antônia"}
-            };
-            setStatus(`Criando banner de ${getName(product)} para ${position}...`,"warn");
-            const response=await fetch(webhook,{method:"POST",headers:{Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify(payload)});
-            const raw=await response.text();let result={};try{result=raw?JSON.parse(raw):{}}catch{result={mensagem:raw}}
-            if(!response.ok)throw new Error(`Make retornou ${response.status}: ${raw.slice(0,280)||"sem detalhes"}`);
-            if(result&&result.ok===false)throw new Error(result.erro||result.error||result.mensagem||"O cenário do Make informou falha.");
-            setStatus(`Banner criado e enviado para ${position}. O site carregará o novo JSON automaticamente.`,"ok");return result;
-          };
-          '''
+          changed_files = []
 
-          if marker not in text:
+          def write_if_changed(path, new_text):
+              p = Path(path)
+              old = p.read_text(encoding='utf-8') if p.exists() else ''
+              if old != new_text:
+                  p.write_text(new_text, encoding='utf-8')
+                  changed_files.append(path)
+
+          # 1) Site público: mais altura, mais respiro e sem corte vertical nos banners.
+          root = Path('index.html')
+          text = root.read_text(encoding='utf-8')
+          marker_site = '/* DA_HOTFIX_BANNER_LAYOUT_CAROUSEL_20260710 */'
+          css_hotfix = r'''
+
+    /* DA_HOTFIX_BANNER_LAYOUT_CAROUSEL_20260710 */
+    .da-banner {
+      margin: 24px 0 36px !important;
+      padding-top: 8px !important;
+    }
+    .da-banner-carousel {
+      margin: 24px 0 36px !important;
+      overflow: hidden !important;
+      border-radius: 28px !important;
+    }
+    .da-banner-carousel .da-banner-slide {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .da-banner-picture {
+      aspect-ratio: 16 / 10 !important;
+      min-height: clamp(184px, 56vw, 390px) !important;
+      background: linear-gradient(135deg, #eef8f2, #fff7ed) !important;
+    }
+    .da-banner-picture img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain !important;
+      object-position: center center !important;
+      background: transparent !important;
+    }
+    @media (min-width: 768px) {
+      .da-banner-hero .da-banner-picture,
+      .da-banner-section .da-banner-picture,
+      .da-banner-carousel .da-banner-picture {
+        aspect-ratio: 32 / 11 !important;
+        min-height: 250px !important;
+        max-height: 430px !important;
+      }
+    }
+'''
+          if marker_site not in text:
+              if '</style>' not in text:
+                  raise SystemExit('Não encontrei </style> no index.html da raiz')
+              text = text.replace('</style>', css_hotfix + '\n  </style>', 1)
+              write_if_changed('index.html', text)
+              print('Hotfix de layout inserido no index.html')
+          else:
+              print('Hotfix de layout já existia no index.html')
+
+          # 2) Admin produção: corrige oferta inválida, posição do banner e formato mobile horizontal.
+          admin = Path('producao/index.html')
+          adm = admin.read_text(encoding='utf-8')
+          marker_admin = '/* DA_HOTFIX_ADMIN_BANNERS_FIREBASE_20260710 */'
+          hotfix_admin = r'''
+
+  /* DA_HOTFIX_ADMIN_BANNERS_FIREBASE_20260710 */
+  const DA_BANNER_POSITIONS_STORAGE = "da_banner_positions_v1";
+  function daValidDateTime(value){const raw=String(value||"").trim();if(!raw)return false;const d=new Date(raw);return !Number.isNaN(d.getTime())}
+  const daOriginalNormalizeProductForSite = normalizeProductForSite;
+  normalizeProductForSite = function(product,key){
+    const copy = daOriginalNormalizeProductForSite(product,key);
+    const offerPrice = toNum(copy.preco_oferta), regularPrice = toNum(copy.preco), offerDateOk = daValidDateTime(copy.validade_oferta);
+    if(!(offerPrice>0 && regularPrice>0 && offerPrice<regularPrice && offerDateOk)){
+      delete copy.preco_oferta;delete copy.precoOferta;delete copy.validade_oferta;delete copy.validadeOferta;delete copy.desconto_validade;delete copy.oferta_origem;
+    }
+    return copy;
+  };
+  function daLoadBannerPositions(){try{return JSON.parse(localStorage.getItem(DA_BANNER_POSITIONS_STORAGE)||"{}")||{}}catch{return {}}}
+  function daSaveBannerPosition(key,value){if(!key||!value)return;state.bannerPositions=state.bannerPositions||daLoadBannerPositions();state.bannerPositions[String(key)]=String(value);try{localStorage.setItem(DA_BANNER_POSITIONS_STORAGE,JSON.stringify(state.bannerPositions))}catch{}}
+  function daDefaultBannerPositionForProduct(p){
+    const text=textNorm([p?.categoria,p?.subcategoria,p?.subsubcategoria,getName(p)].filter(Boolean).join(" "));
+    if(text.includes("higiene")||text.includes("beleza")||text.includes("perfumaria"))return "home.higiene.topo";
+    if(text.includes("limpeza"))return "home.limpeza.topo";
+    if(text.includes("cafe")||text.includes("café")||text.includes("matinal"))return "home.cafe.topo";
+    return "home.hero";
+  }
+  state.bannerPositions = state.bannerPositions || daLoadBannerPositions();
+  bannerPositionOptionsHtml = function(p){
+    const key=getKey(p),positions=[...BANNER_POSITIONS],category=String(p?.categoria||"").trim();
+    if(category)positions.push({value:`categoria.${category}.topo`,label:`Categoria atual · ${category}`});
+    const current=state.bannerPositions?.[key]||daDefaultBannerPositionForProduct(p);
+    return positions.map(item=>`<option value="${esc(item.value)}" ${String(item.value)===String(current)?"selected":""}>${esc(item.label)}</option>`).join("");
+  };
+  document.addEventListener("change",e=>{const el=e.target;if(el?.matches?.("[data-banner-position]"))daSaveBannerPosition(el.dataset.key,el.value)},true);
+  createProductBanner = async function(key){
+    const product=productByKey(key);if(!product)throw new Error("Produto não encontrado.");
+    readSettingsFromUi();
+    const webhook=String(state.settings.makeBannerWebhookUrl||"").trim();if(!webhook)throw new Error("Configure o webhook IA banners do site na aba Integrações.");
+    const card=document.querySelector(`.product-workbench[data-product-key="${CSS.escape(String(key))}"]`);
+    const positionSelect=card?.querySelector("[data-banner-position]");
+    const position=positionSelect?.value||state.bannerPositions?.[key]||daDefaultBannerPositionForProduct(product);
+    daSaveBannerPosition(key,position);
+    const image=getImg(product);if(!image||image===PLACEHOLDER)throw new Error("Cadastre uma foto válida no produto antes de criar o banner.");
+    const oldPrice=toNum(product.preco),offer=toNum(product.preco_oferta),newPrice=offer>0&&offer<oldPrice?offer:oldPrice;
+    if(oldPrice<=0)throw new Error("Informe o preço de venda do produto antes de criar o banner.");
+    const code=String(product.codigo||getKey(product)||"produto").trim(),bannerId=`produto-${slug(code||getName(product))}-${Date.now()}`,discount=oldPrice>newPrice?Math.round((1-newPrice/oldPrice)*100):0;
+    const payload={
+      acao:"criar_banner_produto",versao_contrato:2,origem:"producao/index.html",requisicao_id:bannerId,criado_em:nowIso(),
+      produto:{firebaseKey:getKey(product),id:product.id||"",codigo:code,gtin:product.gtin||product.ean||"",nome:getName(product),marca:product.marca||"",categoria:product.categoria||"",subcategoria:product.subcategoria||"",embalagem:product.embalagem||"",imagem_url:makeDownloadImageUrl(image),preco_antigo:oldPrice,preco_novo:newPrice,preco_antigo_formatado:brl(oldPrice),preco_novo_formatado:brl(newPrice),desconto_percentual:discount,em_oferta:discount>0},
+      banner:{id:bannerId,ativo:true,posicao:position,tipo:"carousel",ordem:Date.now(),alt:`${getName(product)} por ${brl(newPrice)} na Dona Antônia`,link:{tipo:"produto",valor:code||getKey(product)},arquivos:{desktop:`site/banners/gerados/${bannerId}-desktop.webp`,mobile:`site/banners/gerados/${bannerId}-mobile.webp`},formatos:{desktop:{largura:3072,altura:1024,proporcao_saida:"3:1",proporcao_site:"32:9",area_segura:"faixa central 3072x864; nada importante fora dela"},mobile:{largura:2048,altura:1152,proporcao:"16:9"}}},
+      github:{owner:state.settings.githubOwner||"osvaldosereia",repositorio:state.settings.githubRepo||"SUCEDOAN12",branch:state.settings.githubBranch||"main",json_path:"site/banners/exemplo.json",pasta_imagens:"site/banners/gerados"},
+      diretrizes:{prompt_base:"Crie banners publicitários premium para e-commerce brasileiro usando fielmente a foto real do produto. Preserve embalagem, marca, cores, textos e proporções. Gere duas versões independentes em WebP: DESKTOP com saída técnica 3072x1024, mantendo todo conteúdo importante na faixa central segura 3072x864 equivalente a 32:9; e MOBILE com saída 2048x1152, proporção 16:9. No desktop, áreas superior e inferior devem ser apenas continuação simples do fundo, sem texto nem produto importante. Nunca use formato vertical, story ou pôster. Destaque produto, nome e preço anunciado; mostre preço anterior riscado somente quando houver desconto. Alto contraste, texto curto em pt-BR, sem inventar selos, benefícios, URLs, telefone ou dados não recebidos.",fundo:"publicitário, limpo, contrastado e coerente com o produto",fidelidade_produto:"máxima",idioma:"pt-BR",marca_site:"Dona Antônia"}
+    };
+    setStatus(`Criando banner de ${getName(product)} para ${position}...`,"warn");
+    const response=await fetch(webhook,{method:"POST",headers:{Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify(payload)});
+    const raw=await response.text();let result={};try{result=raw?JSON.parse(raw):{}}catch{result={mensagem:raw}}
+    if(!response.ok)throw new Error(`Make retornou ${response.status}: ${raw.slice(0,280)||"sem detalhes"}`);
+    if(result&&result.ok===false)throw new Error(result.erro||result.error||result.mensagem||"O cenário do Make informou falha.");
+    setStatus(`Banner criado e enviado para ${position}. O site carregará o novo JSON automaticamente.`,"ok");return result;
+  };
+'''
+          if marker_admin not in adm:
               needle = '\n  loadData();'
-              pos = text.rfind(needle)
+              pos = adm.rfind(needle)
               if pos < 0:
                   raise SystemExit('Não encontrei loadData(); no final de producao/index.html')
-              text = text[:pos] + '\n\n' + hotfix + '\n' + text[pos:]
-              index_path.write_text(text, encoding='utf-8')
-              print('Hotfix inserido em producao/index.html')
+              adm = adm[:pos] + hotfix_admin + adm[pos:]
+              write_if_changed('producao/index.html', adm)
+              print('Hotfix de admin inserido em producao/index.html')
           else:
-              print('Hotfix já existia em producao/index.html')
+              print('Hotfix de admin já existia em producao/index.html')
 
+          # 3) JSON de banners: garante JSON válido e dois banners ativos na mesma posição para virar carrossel.
           banners_path = Path('site/banners/exemplo.json')
-          if banners_path.exists():
-              data = json.loads(banners_path.read_text(encoding='utf-8'))
-              changed = False
-              for b in data.get('banners', []):
-                  alt = str(b.get('alt',''))
-                  if b.get('id') == 'produto-88091616-1783719042912' or 'Giovanna Baby Desodorante Roll-On Classic' in alt:
-                      if b.get('ativo') is not True or b.get('posicao') != 'home.higiene.topo' or b.get('tipo') != 'carousel':
-                          b['ativo'] = True
-                          b['posicao'] = 'home.higiene.topo'
-                          b['tipo'] = 'carousel'
-                          changed = True
-              if changed:
-                  data['versao'] = '2026-07-10-admin-hotfix-banners'
-                  banners_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-                  print('site/banners/exemplo.json conferido e corrigido')
-              else:
-                  print('site/banners/exemplo.json já estava correto')
+          data = json.loads(banners_path.read_text(encoding='utf-8'))
+          banners = data.setdefault('banners', [])
+          expected = {
+              'produto-88091616-1783719042912': {
+                  'ativo': True,
+                  'posicao': 'home.higiene.topo',
+                  'tipo': 'carousel'
+              },
+              'produto-61000598-1783722032518': {
+                  'ativo': True,
+                  'posicao': 'home.higiene.topo',
+                  'tipo': 'carousel'
+              }
+          }
+          touched = False
+          for b in banners:
+              if b.get('id') in expected:
+                  for k, v in expected[b['id']].items():
+                      if b.get(k) != v:
+                          b[k] = v
+                          touched = True
+          active_higiene = [b for b in banners if b.get('ativo') is True and b.get('posicao') == 'home.higiene.topo']
+          if len(active_higiene) >= 2:
+              data['versao'] = '2026-07-10-1935-carrossel-layout-admin-ok'
+          if touched:
+              write_if_changed('site/banners/exemplo.json', json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+              print('JSON de banners validado e ajustado')
+          else:
+              print('JSON de banners já estava válido para carrossel')
+
+          print('Arquivos alterados:', ', '.join(changed_files) or 'nenhum')
           PY
 
       - name: Commitar alterações
@@ -122,8 +199,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if ! git diff --quiet; then
-            git add producao/index.html site/banners/exemplo.json
-            git commit -m "Corrige admin: ofertas e banners do site"
+            git add index.html producao/index.html site/banners/exemplo.json
+            git commit -m "Corrige layout e carrossel de banners do site"
             git push
           else
             echo "Nenhuma alteração necessária."
