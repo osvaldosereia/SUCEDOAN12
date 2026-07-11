@@ -693,6 +693,10 @@
   };
   state.productView=localStorage.getItem("donaantonia_product_view")==="list"?"list":"grid";
 
+  // O catálogo de produtos ficou grande demais para localStorage.
+  // O Firebase é a fonte oficial; este backup local era apenas emergencial e pode estourar a cota do navegador.
+  try{localStorage.removeItem(LS_PRODUCTS)}catch{}
+
   function $(s, root=document){return root.querySelector(s)}
   function $$(s, root=document){return Array.from(root.querySelectorAll(s))}
   function esc(v=""){return String(v ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
@@ -910,6 +914,15 @@
     catch(err){console.error(err);setStatus(err?.message||String(err),"err")}
     finally{setButtonBusy(btn,false)}
   }
+  function safeLocalSet(key,value,label="dado"){
+    try{localStorage.setItem(key,value);return true}
+    catch(err){
+      console.warn(`Não foi possível salvar ${label} no localStorage:`,err);
+      try{localStorage.removeItem(key)}catch{}
+      return false;
+    }
+  }
+
   function syncPendingProductsFlag(){state.dirtyProducts = state.dirtyProductKeys.size>0 || state.deletedProductKeys.size>0}
   function productSyncSnapshot(p){return {exists:!!p, estoque:toNum(p?.estoque), stock_updated_at:String(p?.stock_updated_at||""), last_update:toNum(p?.last_update), updated_at:String(p?.updated_at||"")}}
   function setProductSyncMeta(products){state.productSyncMeta={}; products.forEach(p=>{state.productSyncMeta[getKey(p)] = productSyncSnapshot(p)})}
@@ -939,8 +952,16 @@
     state.deletedProductKeys=new Set((previousKeys||[]).filter(key=>!state.dirtyProductKeys.has(String(key))));
     syncPendingProductsFlag();
   }
-  function mark(kind){ if(kind==="products") syncPendingProductsFlag(); if(kind==="cestas") state.dirtyCestas=true; if(kind==="kits") state.dirtyKits=true; if(kind==="meta") state.dirtyMeta=true; if(kind==="notes"){state.dirtyNotes=true;localStorage.setItem(LS_NOTES_DIRTY,"1")} saveLocal(); renderSummary(); refreshJson() }
-  function saveLocal(){localStorage.setItem(LS_PRODUCTS, JSON.stringify(state.produtos)); localStorage.setItem(LS_CESTAS, JSON.stringify(state.cestas)); localStorage.setItem(LS_KITS, JSON.stringify(state.kits)); localStorage.setItem(LS_META, JSON.stringify(state.meta)); localStorage.setItem(LS_NOTES, JSON.stringify(state.anotacoes));}
+  function mark(kind){ if(kind==="products") syncPendingProductsFlag(); if(kind==="cestas") state.dirtyCestas=true; if(kind==="kits") state.dirtyKits=true; if(kind==="meta") state.dirtyMeta=true; if(kind==="notes"){state.dirtyNotes=true;safeLocalSet(LS_NOTES_DIRTY,"1","marcador de anotações pendentes")} saveLocal(); renderSummary(); refreshJson() }
+  function saveLocal(){
+    // Não salvar state.produtos no localStorage: o catálogo completo excede a cota do navegador em bases grandes.
+    // Produtos sempre carregam do Firebase; cestas/kits/meta/notas continuam com backup local leve.
+    try{localStorage.removeItem(LS_PRODUCTS)}catch{}
+    safeLocalSet(LS_CESTAS, JSON.stringify(state.cestas), "backup local de cestas");
+    safeLocalSet(LS_KITS, JSON.stringify(state.kits), "backup local de kits");
+    safeLocalSet(LS_META, JSON.stringify(state.meta), "backup local de metadados");
+    safeLocalSet(LS_NOTES, JSON.stringify(state.anotacoes), "backup local de anotações");
+  }
   function loadSettings(){
     try{
       const saved=JSON.parse(localStorage.getItem(LS_SETTINGS)||"{}");
@@ -959,7 +980,7 @@
       return {...defaultSettings, ...saved}
     }catch{return {...defaultSettings}}
   }
-  function saveSettings(){readSettingsFromUi(); localStorage.setItem(LS_SETTINGS, JSON.stringify(state.settings)); setStatus("Configurações salvas", "ok"); alert("Configurações salvas neste navegador.")}
+  function saveSettings(){readSettingsFromUi(); safeLocalSet(LS_SETTINGS, JSON.stringify(state.settings), "configurações"); setStatus("Configurações salvas", "ok"); alert("Configurações salvas neste navegador.")}
 
   function firebaseUrl(node){return `${String(state.settings.firebaseUrl).replace(/\/$/,"")}/${node}.json`}
   async function fetchJson(url){const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error(`Erro ${r.status}: ${url}`); return await r.json()}
@@ -1759,7 +1780,8 @@
         loadCestasFromGithub(),
         loadKitsFromGithub()
       ]);
-      state.produtos=p.status==="fulfilled"?normalizeProducts(p.value):normalizeProducts(JSON.parse(localStorage.getItem(LS_PRODUCTS)||"[]"));
+      state.produtos=p.status==="fulfilled"?normalizeProducts(p.value):[];
+      if(p.status!=="fulfilled") console.warn("Firebase produtos falhou; backup local completo foi desativado para evitar quota do navegador.", p.reason);
       state.meta=m.status==="fulfilled"?normalizeMeta(m.value):normalizeMeta(JSON.parse(localStorage.getItem(LS_META)||"{}"));
       state.cestas=c.status==="fulfilled"?normalizeCestas(c.value):normalizeCestas(JSON.parse(localStorage.getItem(LS_CESTAS)||"[]"));
       state.kits=k.status==="fulfilled"?normalizeKits(k.value):normalizeKits(JSON.parse(localStorage.getItem(LS_KITS)||"[]"));
@@ -3399,7 +3421,7 @@
       const remoteNotes=await loadNotesFromGithub();
       state.anotacoes=hadPending?localNotes:remoteNotes;
     }catch(e){console.error(e);state.anotacoes=localNotes}
-    const removed=cleanupExpiredNotes();state.dirtyNotes=hadPending||removed>0;if(state.dirtyNotes)localStorage.setItem(LS_NOTES_DIRTY,"1");saveLocal();renderAll();updateExpiryAlert();
+    const removed=cleanupExpiredNotes();state.dirtyNotes=hadPending||removed>0;if(state.dirtyNotes)safeLocalSet(LS_NOTES_DIRTY,"1","marcador de anotações pendentes");saveLocal();renderAll();updateExpiryAlert();
     if(state.dirtyNotes&&state.settings.githubToken)await saveNotes(false);
   };
   setInterval(async()=>{const removed=cleanupExpiredNotes();if(removed){mark("notes");renderNotes();updateNotesIndicator();if(state.settings.githubToken)await saveNotes(false)}},60*60*1000);
