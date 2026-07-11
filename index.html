@@ -3961,6 +3961,201 @@
         app.innerHTML = `<div class="container"><div class="empty"><strong>Não conseguimos carregar o catálogo.</strong>Tente novamente em alguns instantes.</div></div>`;
       }
     }
+/* DA_SITE_BANNERS_CONTEXTUAIS_E_OFERTAS_CESTAS_V6_20260711 */
+(function(){
+  function daSiteLooksLikeBanner(value){
+    if(!value || typeof value !== 'object' || Array.isArray(value)) return false;
+    return !!(value.id || value.banner_id || value.imagem || value.image || value.img || value.arquivo || value.arquivos || value.imagens || value.exibicao || value.posicao || value.position || value.titulo || value.title || value.link);
+  }
+  function daSiteBannerEntries(value){
+    const src = value && typeof value === 'object' ? value : {};
+    const candidates = [src.banners,src.items,src.lista,src.ativos,src.banner,src.data?.banners,src.catalogo?.banners,src.catalog?.banners];
+    let selected = candidates.find(item => Array.isArray(item) || (item && typeof item === 'object' && Object.values(item).some(daSiteLooksLikeBanner)));
+    if(!selected && Array.isArray(value)) selected = value;
+    if(!selected && !Array.isArray(value)) selected = src;
+    if(Array.isArray(selected)) return selected.map((raw,index)=>({raw,key:String(raw?.id || raw?.banner_id || index)}));
+    return Object.entries(selected || {}).filter(([,raw])=>daSiteLooksLikeBanner(raw)).map(([key,raw])=>({raw,key}));
+  }
+  function daSiteBannerImageValues(raw){
+    const values = [
+      raw?.imagem,raw?.imagem_url,raw?.image,raw?.img,raw?.arquivo,raw?.arquivo_imagem,raw?.caminho,raw?.path,
+      raw?.mobile,raw?.desktop,raw?.mobile_url,raw?.desktop_url,
+      raw?.arquivos?.principal,raw?.arquivos?.mobile,raw?.arquivos?.desktop,raw?.arquivos?.imagem,
+      raw?.imagens?.principal,raw?.imagens?.mobile,raw?.imagens?.desktop,raw?.assets?.imagem,raw?.assets?.mobile,raw?.assets?.desktop
+    ];
+    return [...new Set(values.map(value=>String(value || '').trim()).filter(Boolean))];
+  }
+  function daSiteNormalizeLink(raw){
+    const source = raw?.link ?? raw?.destino ?? raw?.href ?? raw?.link_url ?? raw?.url_destino;
+    if(source && typeof source === 'object') return {tipo:String(source.tipo || source.type || 'rota'),valor:String(source.valor || source.value || source.href || source.url || '')};
+    const value = String(source || '').trim();
+    if(value) return {tipo:/^https?:/i.test(value)?'url':'rota',valor:value};
+    const productValue = raw?.produto_codigo || raw?.produto_id || raw?.firebaseKey || raw?.produto?.codigo || raw?.produto?.firebaseKey || '';
+    return productValue ? {tipo:'produto',valor:String(productValue)} : null;
+  }
+  function daSiteNormalizeOrigin(raw){
+    if(raw?.origem && typeof raw.origem === 'object'){
+      const origin = {...raw.origem};
+      if(!Array.isArray(origin.produtos)) origin.produtos = origin.produto ? [origin.produto] : [];
+      return origin;
+    }
+    const product = raw?.produto && typeof raw.produto === 'object' ? raw.produto : null;
+    const value = raw?.produto_id || raw?.produto_codigo || raw?.firebaseKey || product?.firebaseKey || product?.codigo || product?.id || '';
+    if(value) return {tipo:'produto',valor:String(value),produtos:[product || {firebaseKey:raw?.firebaseKey,codigo:raw?.produto_codigo,id:raw?.produto_id,nome:raw?.produto_nome,categoria:raw?.categoria}]};
+    return {tipo:String(raw?.tipo_conteudo || raw?.tipo || 'personalizado'),valor:'',produtos:[]};
+  }
+
+  applyBannersData = function(data){
+    const settings = data && data.settings ? data.settings : (data?.configuracao || {});
+    const carousel = settings.carousel || data?.configuracao_carrossel || data?.carousel_config || data?.configuracao || {};
+    state.bannerConfig = {
+      desktop_columns: Math.max(1, Number(carousel.desktop_columns || 4)),
+      tablet_columns: Math.max(1, Number(carousel.tablet_columns || 3)),
+      mobile_columns: Math.max(1, Number(carousel.mobile_columns || 2)),
+      show_arrows: carousel.show_arrows !== false && carousel.manual !== false,
+      show_dots: carousel.show_dots !== false,
+      show_hint: carousel.show_hint !== false,
+      autoplay: carousel.autoplay === true || carousel.automatico === true,
+      intervalo_ms: Math.max(3000, Number(carousel.intervalo_ms || carousel.interval || 5200)),
+      loop: carousel.loop === true,
+      pausar_hover: carousel.pausar_hover !== false
+    };
+    const aliases = {'home.inicio':'home.hero','home.cestas':'home.cestas.topo','home.kits':'home.kits.topo','home.mercado':'home.compra-mes.topo','home.ofertas':'home.ofertas.topo'};
+    const seen = new Set();
+    state.banners = daSiteBannerEntries(data).map(({raw,key},index)=>{
+      if(!raw || typeof raw !== 'object') return null;
+      const exhibition = raw.exibicao && typeof raw.exibicao === 'object' ? raw.exibicao : {};
+      let local = String(exhibition.local || raw.posicao || raw.position || raw.local || raw.slot || 'home.hero').trim();
+      let target = String(exhibition.alvo || raw.alvo || raw.target || raw.destino_exibicao || '').trim();
+      local = aliases[local] || local;
+      const dynamic = local.match(/^(categoria|subcategoria|marca|produto|kit|cesta)(?:::|\.)(.+?)(?:\.topo)?$/i);
+      if(dynamic){local=dynamic[1].toLowerCase();target=target || dynamic[2];}
+      const images = daSiteBannerImageValues(raw).map(normalizeBannerImage).filter(Boolean);
+      const period = raw.periodo && typeof raw.periodo === 'object' ? raw.periodo : {};
+      const id = String(raw.id || raw.banner_id || raw.slug || key || `banner-${index+1}`);
+      return {
+        id,
+        ativo: raw.ativo !== false && raw.active !== false && String(raw.status || '').toLowerCase() !== 'inativo',
+        local,
+        alvo:target,
+        ordem:Number(exhibition.ordem ?? raw.ordem ?? raw.order ?? index+1),
+        imagem:images[0] || '',
+        imagens:images,
+        titulo:String(raw.titulo || raw.title || raw.nome || ''),
+        alt:String(raw.alt || raw.titulo || raw.title || raw.nome || 'Destaque Dona Antônia'),
+        link:daSiteNormalizeLink(raw),
+        periodo:{inicio:period.inicio || raw.inicio || raw.data_inicio || raw.inicio_oferta || null,fim:period.fim || raw.fim || raw.data_fim || raw.validade_oferta || null},
+        origem:daSiteNormalizeOrigin(raw),
+        tipo_conteudo:String(raw.tipo_conteudo || raw.tipo || raw?.origem?.tipo || 'personalizado')
+      };
+    }).filter(banner=>{
+      if(!banner || !banner.id || !banner.imagem || seen.has(banner.id)) return false;
+      seen.add(banner.id); return true;
+    }).sort((a,b)=>a.ordem-b.ordem || a.id.localeCompare(b.id,'pt-BR'));
+  };
+
+  function daSiteProductByReference(value){
+    const raw = String(value || '').trim();
+    if(!raw) return null;
+    const normalized = norm(raw);
+    return state.products.find(product=>[product.id,product.firebaseKey,product.codigo,product.gtin,product.ean,product.name].some(candidate=>norm(String(candidate || '')) === normalized)) || null;
+  }
+  function daSiteBannerProducts(banner){
+    const refs = Array.isArray(banner?.origem?.produtos) ? banner.origem.produtos : [];
+    const products = refs.map(ref=>daSiteProductByReference(ref?.firebaseKey || ref?.codigo || ref?.id || ref?.gtin || ref?.ean || ref?.nome)).filter(Boolean);
+    if(banner?.origem?.tipo === 'produto'){
+      const product = daSiteProductByReference(banner.origem.valor);
+      if(product) products.push(product);
+    }
+    if(norm(banner?.link?.tipo) === 'produto'){
+      const product = daSiteProductByReference(banner.link.valor);
+      if(product) products.push(product);
+    }
+    return [...new Map(products.map(product=>[product.id,product])).values()];
+  }
+  function daSiteBannersForCategories(categories){
+    const wanted = new Set((categories || []).map(category=>norm(category)).filter(Boolean));
+    if(!wanted.size) return [];
+    return state.banners.filter(banner=>bannerIsCurrent(banner) && daSiteBannerProducts(banner).some(product=>wanted.has(norm(product.categoria))));
+  }
+  function daSiteUniqueBanners(list){
+    const seen = new Set();
+    return (list || []).filter(banner=>banner && !seen.has(banner.id) && seen.add(banner.id));
+  }
+  function daSiteBannerListHtml(position,banners,label){
+    const list = daSiteUniqueBanners(banners).filter(bannerIsCurrent);
+    if(!list.length) return '';
+    const hint = state.bannerConfig.show_hint === false ? '' : 'Deslize para ver mais';
+    scheduleBannerSetup();
+    return `<section class="da-banner-zone" data-banner-zone data-banner-position="${escapeHtml(position)}" aria-label="${escapeHtml(label || 'Destaques selecionados')}">
+      <div class="da-banner-zone-head"><div><strong>${escapeHtml(label || 'Destaques selecionados')}</strong><span>${escapeHtml(hint)}</span></div><span class="da-banner-page-counter" data-banner-counter>1 / 1</span></div>
+      <div class="da-banner-track" data-banner-track>${list.map((banner,index)=>bannerCardHtml(banner,index,index<2)).join('')}</div>
+      <div class="da-banner-controls"><div class="da-banner-arrows"><button class="da-banner-arrow" type="button" data-banner-prev aria-label="Ver banners anteriores">‹</button><button class="da-banner-arrow" type="button" data-banner-next aria-label="Ver próximos banners">›</button></div><div class="da-banner-dots" data-banner-dots aria-label="Páginas do carrossel"></div></div>
+    </section>`;
+  }
+
+  renderCategory = function(cat){
+    const decoded = decodeURIComponent(cat || '');
+    const products = state.products.filter(product=>isAvailable(product) && norm(product.categoria) === norm(decoded));
+    const canonicalCategory = products[0]?.categoria || decoded;
+    const subs = Array.from(new Set(products.map(product=>product.subcategoria).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    const currentSub = new URLSearchParams(location.hash.split('?')[1] || '').get('sub') || 'Todos';
+    const filtered = currentSub === 'Todos' ? products : products.filter(product=>norm(product.subcategoria) === norm(currentSub));
+    const chips = `<div class="chips"><a class="chip ${currentSub === 'Todos' ? 'active' : ''}" href="#/categoria/${encodeURIComponent(canonicalCategory)}">Todos</a>${subs.map(sub=>`<a class="chip ${currentSub === sub ? 'active' : ''}" href="#/categoria/${encodeURIComponent(canonicalCategory)}?sub=${encodeURIComponent(sub)}">${escapeHtml(sub)}</a>`).join('')}</div>`;
+    const isBeauty = /(beleza|higiene|perfumaria)/.test(norm(canonicalCategory));
+    const directCategory = getBanners('categoria',canonicalCategory);
+    const productCategory = daSiteBannersForCategories([canonicalCategory]);
+    const categoryBanners = daSiteBannerListHtml('categoria-contextual',daSiteUniqueBanners([...directCategory,...productCategory]),`Destaques de ${canonicalCategory}`);
+    const subcategoryBanners = currentSub !== 'Todos' ? bannerSlotHtml('subcategoria',{targets:[currentSub,`${canonicalCategory}::${currentSub}`],label:`Destaques de ${currentSub}`}) : '';
+    app.innerHTML = `<div class="container">${pageHeader(canonicalCategory,`${filtered.length} produtos encontrados`,'#/categorias')}${categoryBanners}${subcategoryBanners}${isBeauty ? beautyBannerHtml(products) : ''}${chips}<div class="product-grid">${filtered.map(product=>productCard(product)).join('')}</div></div>`;
+    setActiveNav('categorias');
+    updateMeta(`${canonicalCategory} - Dona Antônia`,`Compre ${canonicalCategory.toLowerCase()} com entrega em Cuiabá e Várzea Grande.`,`/?categoria=${encodeURIComponent(canonicalCategory)}`);
+  };
+
+  renderSearch = function(query){
+    const q = String(query || '').trim();
+    state.searchQuery = q;
+    const searchInput = $('search-input');
+    if(searchInput && searchInput.value !== q) searchInput.value = q;
+    updateSearchButtons();
+    const products = searchProducts(q);
+    const categories = [...new Set(products.map(product=>product.categoria).filter(Boolean))];
+    const contextual = daSiteBannersForCategories(categories).slice(0,16);
+    const contextualHtml = q && contextual.length ? daSiteBannerListHtml('busca-categoria-contextual',contextual,'Ofertas relacionadas à sua busca') : '';
+    app.innerHTML = `<div class="container">${pageHeader(q ? `Busca: ${q}` : 'Busca',q ? `${products.length} resultado(s)` : 'Digite o produto na busca acima.','#/')}${contextualHtml}${bannerSlotHtml('busca.topo',{kind:'section'})}${q ? (products.length ? `<div class="product-list">${products.map(product=>productCard(product,'list')).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`) : ''}</div>`;
+    setActiveNav('home');
+  };
+
+  renderBasketDetail = function(basketId){
+    const {basket,rows} = getBasketLines(basketId);
+    if(!basket){
+      app.innerHTML = `<div class="container">${pageHeader('Cesta não encontrada','','#/cestas')}<div class="empty"><strong>Não encontramos essa cesta</strong>Volte e escolha outra opção.</div></div>`;
+      return;
+    }
+    const draft = ensureBasketDraft(basket.id);
+    const total = basketDraftTotal(basket.id);
+    const draftChanged = basketDraftChanged(basket.id);
+    const basketProductIds = new Set(rows.map(row=>String(row.product?.id || '')));
+    const allOffers = getTopOffers(240);
+    const offers = [...allOffers.filter(product=>!basketProductIds.has(String(product.id))),...allOffers.filter(product=>basketProductIds.has(String(product.id)))].slice(0,24);
+    app.innerHTML = `<div class="container basket-detail-container">${pageHeader(basket.nome,'','#/cestas')}${bannerSlotHtml('cesta',{targets:[basket.id,basket.nome].filter(Boolean),label:`Destaque de ${basket.nome}`})}
+      <article class="basket-card wide basket-detail-hero" style="margin-bottom:12px"><div class="basket-imgbox"><img src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}" onerror="window.__daFallbackImg(this)"></div><div class="basket-body"><div class="basket-name">${escapeHtml(basket.nome)}</div><div class="price">${basket.preco ? fmt(basket.preco) : fmt(total)}</div><button class="add-btn" type="button" data-action="add-basket" data-id="${escapeHtml(basket.id)}">Adicionar cesta padrão</button></div></article>
+      <section class="section"><div class="section-head"><div><h2 class="section-title">Produtos da cesta</h2></div></div>${rows.length ? `<div class="basket-editor">${rows.map(({product})=>{const qty=Number(draft[product.id]||0);return `<div class="basket-editor-row" data-basket-row="${escapeHtml(product.id)}"><img src="${escapeHtml(product.img)}" data-fallback-images="${escapeHtml(imageFallbackList(product.images))}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)"><div><div class="basket-editor-name">${escapeHtml(product.name)}</div><div class="basket-editor-price">${fmt(product.price)} cada</div></div><div class="cart-qty"><button type="button" data-action="basket-dec" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(product.id)}">−</button><span>${qty}</span><button type="button" data-action="basket-inc" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(product.id)}">+</button></div></div>`;}).join('')}</div>` : `<div class="empty"><strong>Itens não localizados</strong>Não conseguimos relacionar os produtos dessa cesta ao cadastro atual.</div>`}</section>
+      <section class="basket-total-card"><div class="summary-row"><span>Valor da cesta padrão</span><span>${basket.preco ? fmt(basket.preco) : fmt(basketDefaultProductTotal(basket.id))}</span></div><div class="summary-row total"><span>Total da cesta editada</span><span>${fmt(total)}</span></div><div class="desc">O total mantém o valor predefinido da cesta. Se retirar produto, o valor do item é abatido; se adicionar, o valor do item é somado.</div><button class="send-btn" type="button" data-action="add-basket-custom" data-id="${escapeHtml(basket.id)}" ${rows.length ? '' : 'disabled'}>Adicionar cesta ${draftChanged ? 'alterada' : 'padrão'}</button></section>
+      ${offers.length ? `<section class="section basket-detail-offers"><div class="section-head"><div><h2 class="section-title">Ofertas para completar sua compra</h2><p class="section-caption">Produtos promocionais exibidos depois da lista completa da cesta.</p></div><a class="see-all" href="#/ofertas">Ver todas</a></div><div class="product-grid">${offers.map(product=>productCard(product)).join('')}</div></section>` : ''}
+    </div>`;
+    setActiveNav('home');
+    updateOfferCountdowns();
+  };
+
+  if(!document.getElementById('daSiteV6Styles')){
+    const style = document.createElement('style');
+    style.id = 'daSiteV6Styles';
+    style.textContent = `.basket-detail-offers{margin-top:28px;padding-top:20px;border-top:2px solid var(--line)}.basket-detail-offers .product-grid{margin-top:4px}`;
+    document.head.appendChild(style);
+  }
+})();
+
     init();
   })();
 </script>
