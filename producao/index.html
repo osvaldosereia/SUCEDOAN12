@@ -4766,6 +4766,459 @@ document.addEventListener('change',e=>{const el=e.target;if(el.id==='bannerStatu
 daEnsureBannerUi();daBannerManagerCss();
 const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold')].find(x=>x.textContent.includes('webhook de banners'));if(bannerNotice)bannerNotice.innerHTML='O webhook profissional usa <strong>uma única imagem vertical WebP 1024×1536</strong>, no máximo <strong>3 produtos de referência</strong>, salva em <strong>site/banners/ativos/...</strong> e atualiza <strong>site/banners/banners.json</strong>. O token do GitHub fica somente no Make.';
 
+/* DA_CORRECOES_BANNERS_OFERTAS_KITS_V6_20260711 */
+(function(){
+  const DA_V6_NOW = () => Date.now();
+  const DA_V6_BANNER_FILTER_ID = 'f-banner-ativo';
+
+  function daV6ParseNumber(value){
+    if(typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    const text = String(value ?? '').trim().replace(/\s/g,'').replace(/\.(?=\d{3}(?:\D|$))/g,'').replace(',','.');
+    const number = Number(text);
+    return Number.isFinite(number) ? number : 0;
+  }
+  function daV6ValidOffer(product){
+    const regular = roundCatalogMoney(product?.preco);
+    const offer = roundCatalogMoney(product?.preco_oferta ?? product?.precoOferta);
+    return regular > 0 && offer > 0 && offer < regular;
+  }
+
+  /* Preço promocional manual não pode ser sobrescrito pela regra automática de validade. */
+  const daV6NormalizeProductBase = normalizeProductForSite;
+  normalizeProductForSite = function(product,key){
+    const source = product && typeof product === 'object' ? product : {};
+    const copy = daV6NormalizeProductBase(source,key);
+    const regular = roundCatalogMoney(source.preco ?? source.price ?? copy.preco);
+    const requested = roundCatalogMoney(source.preco_oferta ?? source.precoOferta);
+    if(regular > 0 && requested > 0 && requested < regular){
+      copy.preco_oferta = requested;
+      const startRaw = source.data_inicio_oferta ?? source.inicio_oferta ?? source.inicioOferta ?? '';
+      const endRaw = source.validade_oferta ?? source.validadeOferta ?? source.oferta_validade ?? '';
+      const start = normalizeCatalogDate(startRaw);
+      const end = normalizeCatalogDate(endRaw,{offerEnd:true});
+      if(start) copy.data_inicio_oferta = start;
+      else if(String(startRaw || '').trim() === '') delete copy.data_inicio_oferta;
+      if(end) copy.validade_oferta = end;
+      else if(String(endRaw || '').trim() === '') delete copy.validade_oferta;
+      copy.oferta_origem = source.oferta_origem === 'validade' ? 'validade' : 'manual';
+      if(copy.oferta_origem === 'manual') copy.desconto_validade = 0;
+      delete copy.desconto_limitado;
+    }else{
+      delete copy.preco_oferta;
+      delete copy.precoOferta;
+      delete copy.validade_oferta;
+      delete copy.validadeOferta;
+      delete copy.data_inicio_oferta;
+      delete copy.inicio_oferta;
+      delete copy.desconto_validade;
+      delete copy.oferta_origem;
+      delete copy.desconto_limitado;
+    }
+    return copy;
+  };
+
+  const daV6ValidateProductBase = validateProductForSite;
+  validateProductForSite = function(product){
+    const result = daV6ValidateProductBase(product);
+    result.errors = (result.errors || []).filter(error => error !== 'validade da oferta válida');
+    if(daV6ValidOffer(product) && !String(product?.validade_oferta || '').trim()){
+      result.warnings = [...new Set([...(result.warnings || []),'oferta sem data final'])];
+    }
+    return result;
+  };
+
+  const daV6ApplyExpiryRulesBase = applyExpiryRules;
+  applyExpiryRules = function(product){
+    const manual = product?.oferta_origem === 'manual' && daV6ValidOffer(product);
+    if(!manual) return daV6ApplyExpiryRulesBase(product);
+    const snapshot = {
+      preco_oferta: product.preco_oferta,
+      data_inicio_oferta: product.data_inicio_oferta,
+      validade_oferta: product.validade_oferta,
+      oferta_origem: 'manual',
+      desconto_validade: 0
+    };
+    const result = daV6ApplyExpiryRulesBase(product) || {fields:[]};
+    Object.assign(product,snapshot);
+    delete product.desconto_limitado;
+    result.fields = (result.fields || []).filter(field => !['preco_oferta','data_inicio_oferta','validade_oferta','desconto_validade','oferta_origem'].includes(field));
+    return result;
+  };
+
+  function daV6AssignProductField(product,field,value){
+    if(['preco','preco_custo','estoque'].includes(field)) product[field] = daV6ParseNumber(value);
+    else if(field === 'preco_oferta'){
+      const offer = daV6ParseNumber(value);
+      if(offer > 0){
+        product.preco_oferta = offer;
+        product.oferta_origem = 'manual';
+        product.desconto_validade = 0;
+        delete product.desconto_limitado;
+      }else{
+        delete product.preco_oferta;
+        delete product.validade_oferta;
+        delete product.data_inicio_oferta;
+        delete product.oferta_origem;
+        delete product.desconto_validade;
+      }
+    }else if(field === 'tags') product.tags = parseTags(value);
+    else product[field] = value;
+    if(field === 'gtin') delete product.ean;
+    if(field === 'video_youtube') delete product.video_url;
+    const shouldApplyExpiry = field === 'validade' || (field === 'preco' && product.oferta_origem === 'validade');
+    const pricing = shouldApplyExpiry ? applyExpiryRules(product) : {fields:[]};
+    product.last_update = DA_V6_NOW();
+    product.updated_at = nowIso();
+    if(field === 'estoque') product.stock_updated_at = nowIso();
+    return pricing;
+  }
+
+  updateProductFromCard = function(key,field,value){
+    const product = productByKey(key); if(!product) return;
+    const pricing = daV6AssignProductField(product,field,value);
+    markProductDirty(getKey(product),[field,...(pricing.fields || [])]);
+    mark('products');
+    updateExpiryAlert();
+    const card = document.querySelector(`[data-product-key="${CSS.escape(String(key))}"]`);
+    if(card) card.classList.add('dirty');
+  };
+
+  updateProduct = function(field,value){
+    const product = productByKey(state.editingProductKey); if(!product) return;
+    const pricing = daV6AssignProductField(product,field,value);
+    markProductDirty(getKey(product),[field,...(pricing.fields || [])]);
+    mark('products');
+    updateExpiryAlert();
+  };
+
+  function daV6CommitVisibleProductCard(key){
+    const product = productByKey(key);
+    const card = document.querySelector(`[data-product-key="${CSS.escape(String(key))}"]`);
+    if(!product || !card) return;
+    card.querySelectorAll('[data-card-field]').forEach(input => {
+      const field = input.dataset.cardField;
+      if(!field) return;
+      let current = product[field];
+      let next = input.value;
+      if(['preco','preco_custo','estoque','preco_oferta'].includes(field)){
+        current = daV6ParseNumber(current);
+        next = daV6ParseNumber(next);
+      }else if(['data_inicio_oferta','validade_oferta','validade'].includes(field)){
+        current = workbenchDateValue(current);
+        next = workbenchDateValue(next) || String(next || '');
+      }else if(field === 'tags'){
+        current = parseTags(current).join(', ');
+        next = parseTags(next).join(', ');
+      }else{
+        current = String(current ?? '');
+        next = String(next ?? '');
+      }
+      if(String(current) !== String(next)) updateProductFromCard(key,field,input.value);
+    });
+  }
+  const daV6SaveProductFirebaseBase = saveProductFirebase;
+  saveProductFirebase = async function(key){
+    daV6CommitVisibleProductCard(key);
+    return daV6SaveProductFirebaseBase(key);
+  };
+
+  /* Compatibilidade de catálogo: aceita banners novos, legados, arrays e objetos indexados. */
+  function daV6LooksLikeBanner(value){
+    if(!value || typeof value !== 'object' || Array.isArray(value)) return false;
+    return !!(value.id || value.banner_id || value.imagem || value.image || value.img || value.arquivo || value.arquivos || value.imagens || value.exibicao || value.posicao || value.position || value.titulo || value.title || value.link);
+  }
+  function daV6CatalogEntries(value){
+    const src = value && typeof value === 'object' ? value : {};
+    const candidates = [src.banners,src.items,src.lista,src.ativos,src.banner,src.data?.banners,src.catalogo?.banners,src.catalog?.banners];
+    let selected = candidates.find(item => Array.isArray(item) || (item && typeof item === 'object' && Object.values(item).some(daV6LooksLikeBanner)));
+    if(!selected && Array.isArray(value)) selected = value;
+    if(!selected && !Array.isArray(value)) selected = src;
+    if(Array.isArray(selected)) return selected.map((raw,index)=>({raw,key:String(raw?.id || raw?.banner_id || index)}));
+    return Object.entries(selected || {}).filter(([,raw])=>daV6LooksLikeBanner(raw)).map(([key,raw])=>({raw,key}));
+  }
+  function daV6BannerFiles(raw){
+    const values = [
+      raw?.imagem,raw?.imagem_url,raw?.image,raw?.img,raw?.arquivo,raw?.arquivo_imagem,raw?.caminho,raw?.path,
+      raw?.mobile,raw?.desktop,raw?.mobile_url,raw?.desktop_url,
+      raw?.arquivos?.principal,raw?.arquivos?.mobile,raw?.arquivos?.desktop,raw?.arquivos?.imagem,
+      raw?.imagens?.principal,raw?.imagens?.mobile,raw?.imagens?.desktop,raw?.assets?.imagem,raw?.assets?.mobile,raw?.assets?.desktop
+    ];
+    return [...new Set(values.map(value=>String(value || '').trim()).filter(Boolean))];
+  }
+  function daV6NormalizeBannerLink(rawLink,raw){
+    const link = rawLink ?? raw?.destino ?? raw?.href ?? raw?.link_url ?? raw?.url_destino;
+    if(link && typeof link === 'object') return {tipo:String(link.tipo || link.type || 'rota'),valor:String(link.valor || link.value || link.href || link.url || '')};
+    const value = String(link || '').trim();
+    if(value) return {tipo:/^https?:/i.test(value)?'url':'rota',valor:value};
+    const productValue = raw?.produto_codigo || raw?.produto_id || raw?.firebaseKey || raw?.produto?.codigo || raw?.produto?.firebaseKey || '';
+    return productValue ? {tipo:'produto',valor:String(productValue)} : {tipo:'rota',valor:'#/'};
+  }
+  function daV6NormalizeBanner(raw,key,index){
+    const exhibition = raw.exibicao && typeof raw.exibicao === 'object' ? raw.exibicao : {};
+    let local = String(exhibition.local || raw.posicao || raw.position || raw.local || raw.slot || 'home.hero').trim();
+    let target = String(exhibition.alvo || raw.alvo || raw.target || raw.destino_exibicao || '').trim();
+    const aliases = {'home.inicio':'home.hero','home.cestas':'home.cestas.topo','home.kits':'home.kits.topo','home.mercado':'home.compra-mes.topo','home.ofertas':'home.ofertas.topo'};
+    local = aliases[local] || local;
+    let dynamic = local.match(/^(categoria|subcategoria|marca|produto|kit|cesta)(?:::|\.)(.+?)(?:\.topo)?$/i);
+    if(dynamic){ local = dynamic[1].toLowerCase(); target = target || dynamic[2]; }
+    const files = daV6BannerFiles(raw);
+    const id = String(raw.id || raw.banner_id || raw.slug || key || `banner-${index+1}`);
+    const productRaw = raw.produto && typeof raw.produto === 'object' ? raw.produto : null;
+    let origin = raw.origem && typeof raw.origem === 'object' ? deepClone(raw.origem) : null;
+    if(!origin){
+      const value = raw.produto_id || raw.produto_codigo || raw.firebaseKey || productRaw?.firebaseKey || productRaw?.codigo || productRaw?.id || '';
+      origin = value ? {tipo:'produto',valor:String(value),produtos:[productRaw || {firebaseKey:raw.firebaseKey,codigo:raw.produto_codigo,id:raw.produto_id,nome:raw.produto_nome}]} : {tipo:String(raw.tipo_conteudo || raw.tipo || 'personalizado'),valor:''};
+    }
+    if(!Array.isArray(origin.produtos)) origin.produtos = origin.produto ? [origin.produto] : [];
+    const period = raw.periodo && typeof raw.periodo === 'object' ? raw.periodo : {};
+    return {
+      ...deepClone(raw),
+      id,
+      ativo: raw.ativo !== false && raw.active !== false && String(raw.status || '').toLowerCase() !== 'inativo',
+      titulo:String(raw.titulo || raw.title || raw.nome || id),
+      alt:String(raw.alt || raw.titulo || raw.title || raw.nome || 'Banner Dona Antônia'),
+      tipo_conteudo:String(raw.tipo_conteudo || origin.tipo || raw.tipo || 'personalizado'),
+      texto_arte:String(raw.texto_arte || raw.texto || raw.copy || ''),
+      origem:origin,
+      exibicao:{local,alvo:target,ordem:Number(exhibition.ordem ?? raw.ordem ?? raw.order ?? index+1)},
+      imagem:files[0] || '',
+      link:daV6NormalizeBannerLink(raw.link,raw),
+      periodo:{inicio:period.inicio || raw.inicio || raw.data_inicio || raw.inicio_oferta || null,fim:period.fim || raw.fim || raw.data_fim || raw.validade_oferta || null},
+      criado_em:raw.criado_em || raw.created_at || raw.createdAt || null,
+      atualizado_em:raw.atualizado_em || raw.updated_at || raw.updatedAt || null
+    };
+  }
+  daNormalizeBannerCatalog = function(value){
+    const base = daBannerDefaultCatalog();
+    const src = value && typeof value === 'object' ? value : {};
+    base.schema_version = Number(src.schema_version || src.versao || DA_BANNER_SCHEMA_VERSION) || DA_BANNER_SCHEMA_VERSION;
+    base.updated_at = src.updated_at || src.atualizado_em || base.updated_at;
+    base.settings = {...base.settings,...(src.settings || src.configuracao || {}),image:{...base.settings.image,...(src.settings?.image || src.configuracao?.imagem || {})},carousel:{...base.settings.carousel,...(src.settings?.carousel || src.configuracao_carrossel || src.carousel_config || {})}};
+    base.settings.image = {...base.settings.image,width:DA_BANNER_IMAGE_WIDTH,height:DA_BANNER_IMAGE_HEIGHT,aspect_ratio:'2:3',format:'webp',single_asset_all_devices:true};
+    const seen = new Set();
+    base.banners = daV6CatalogEntries(value).map(({raw,key},index)=>daV6NormalizeBanner(raw,key,index)).filter(banner=>{
+      if(!banner.id || seen.has(banner.id)) return false;
+      seen.add(banner.id); return true;
+    });
+    return base;
+  };
+  daBannerPublicUrl = function(path){
+    const value = String(path || '').trim();
+    if(!value) return '';
+    if(/^(https?:|data:|blob:)/i.test(value)) return `${value}${value.includes('?')?'&':'?'}v=${Date.now()}`;
+    return `${daBannerRawUrl(value.replace(/^\/+/,''))}?v=${Date.now()}`;
+  };
+
+  function daV6BannerReferenceValues(banner){
+    const refs = Array.isArray(banner?.origem?.produtos) ? banner.origem.produtos : [];
+    const values = refs.flatMap(ref=>[ref?.firebaseKey,ref?.id,ref?.codigo,ref?.gtin,ref?.ean,ref?.nome]);
+    if(banner?.origem?.tipo === 'produto') values.push(banner.origem.valor);
+    if(String(banner?.link?.tipo || '').toLowerCase() === 'produto') values.push(banner.link.valor);
+    return values.map(value=>String(value || '').trim()).filter(Boolean);
+  }
+  function daV6BannerBelongsToProduct(banner,product){
+    const values = new Set(daV6BannerReferenceValues(banner).map(value=>textNorm(value)));
+    return [getKey(product),product?.id,product?.codigo,product?.gtin,product?.ean,getName(product)].some(value=>values.has(textNorm(value)));
+  }
+  function daV6ActiveBannersForProduct(product){
+    return (state.bannerManager.catalog?.banners || []).filter(banner=>daBannerStatus(banner).text === 'Ativo' && daV6BannerBelongsToProduct(banner,product));
+  }
+
+  const daV6RenderWorkbenchBase = renderProductWorkbench;
+  renderProductWorkbench = function(product){
+    let html = daV6RenderWorkbenchBase(product);
+    const active = daV6ActiveBannersForProduct(product);
+    if(!active.length) return html;
+    html = html.replace('product-card product-workbench','product-card product-workbench has-active-banner');
+    html = html.replace('<div class="workbench-memberships" style="margin-top:6px">',`<div class="workbench-memberships" style="margin-top:6px"><span class="chip green banner-active-chip">● ${active.length === 1 ? 'Banner ativo' : `${active.length} banners ativos`}</span>`);
+    return html;
+  };
+
+  function daV6EnsureBannerProductFilter(){
+    const form = document.getElementById('productFilters');
+    if(!form || document.getElementById(DA_V6_BANNER_FILTER_ID)) return;
+    const field = document.createElement('div');
+    field.className = 'field';
+    field.innerHTML = `<label>Banners</label><select class="select" id="${DA_V6_BANNER_FILTER_ID}"><option value="">Todos</option><option value="com_banner">Somente com banner ativo</option><option value="sem_banner">Somente sem banner ativo</option></select>`;
+    const basketField = document.getElementById('f-cesta')?.closest('.field');
+    basketField?.insertAdjacentElement('afterend',field);
+  }
+  daV6EnsureBannerProductFilter();
+  const daV6GetFiltersBase = getFilters;
+  getFilters = function(){return {...daV6GetFiltersBase(),bannerAtivo:document.getElementById(DA_V6_BANNER_FILTER_ID)?.value || ''}};
+  const daV6FilteredProductsBase = filteredProducts;
+  filteredProducts = function(){
+    let list = daV6FilteredProductsBase();
+    const mode = document.getElementById(DA_V6_BANNER_FILTER_ID)?.value || '';
+    if(mode === 'com_banner') list = list.filter(product=>daV6ActiveBannersForProduct(product).length > 0);
+    if(mode === 'sem_banner') list = list.filter(product=>daV6ActiveBannersForProduct(product).length === 0);
+    return list;
+  };
+  document.addEventListener('click',event=>{
+    const button = event.target.closest('[data-action="clear-filters"]');
+    if(!button) return;
+    const filter = document.getElementById(DA_V6_BANNER_FILTER_ID);
+    if(filter) filter.value = '';
+  },true);
+
+  function daV6ExpiryTime(banner){
+    const value = banner?.periodo?.fim;
+    if(!value) return Number.POSITIVE_INFINITY;
+    const time = new Date(value).getTime();
+    return Number.isFinite(time) ? time : Number.POSITIVE_INFINITY;
+  }
+  function daV6FormatDateTime(value){
+    if(!value) return 'Sem vencimento';
+    const date = new Date(value);
+    if(Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+  }
+  daBannerCardHtml = function(banner){
+    const status = daBannerStatus(banner), related = daBannerRelatedProducts(banner), kind = banner.tipo_conteudo || banner.origem?.tipo || 'personalizado';
+    const imageUrl = daBannerPublicUrl(banner.imagem);
+    return `<article class="card banner-admin-card" data-banner-id="${esc(banner.id)}"><div class="banner-admin-preview"><img loading="lazy" src="${esc(imageUrl)}" alt="${esc(banner.alt||banner.titulo||'Banner')}" onerror="this.closest('.banner-admin-preview').classList.add('image-error');this.style.display='none'"><div class="banner-admin-badges"><span class="chip ${status.cls}">${esc(status.text)}</span><span class="chip blue">${esc(kind)}</span></div></div><div class="banner-admin-body"><div class="banner-admin-title">${esc(banner.titulo||banner.alt||banner.id)}</div>${banner.texto_arte?`<div class="banner-art-text"><strong>Texto da arte:</strong> ${esc(banner.texto_arte)}</div>`:''}<div class="tiny"><strong>Vencimento:</strong> ${esc(daV6FormatDateTime(banner.periodo?.fim))}</div><div class="tiny"><strong>Exibição:</strong> ${esc(daBannerPlacementLabel(banner.exibicao?.local,banner.exibicao?.alvo))}</div><div class="tiny"><strong>Link:</strong> ${esc(daBannerLinkLabel(banner.link))}</div><div class="banner-products-mini">${related.slice(0,3).map(product=>`<img title="${esc(getName(product)||product.nome||'Produto')}" src="${esc(getImg(product)||product.imagem_url||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'">`).join('')}</div><div class="banner-admin-actions"><button class="btn small" type="button" data-action="banner-edit" data-id="${esc(banner.id)}">Editar</button><button class="btn small ${banner.ativo?'gold':'green'}" type="button" data-action="banner-toggle" data-id="${esc(banner.id)}">${banner.ativo?'Desativar':'Ativar'}</button><button class="btn small blue" type="button" data-action="banner-open-link" data-id="${esc(banner.id)}">Abrir link</button><button class="btn small red" type="button" data-action="banner-delete" data-id="${esc(banner.id)}">Remover</button></div></div></article>`;
+  };
+  daRenderBannerManager = async function(){
+    daEnsureBannerUi(); daBannerManagerCss(); daV6EnsureBannerProductFilter();
+    const body = document.getElementById('bannerManagerBody'); if(!body) return;
+    if(state.bannerManager.loading){body.innerHTML='<div class="notice gold">Carregando catálogo de banners...</div>';return;}
+    if(!state.bannerManager.catalog){body.innerHTML='<div class="notice gold">Clique em Atualizar para carregar os banners.</div>';return;}
+    const stats = daBannerCatalogStats(), query = textNorm(state.bannerManager.query || ''), statusFilter = state.bannerManager.statusFilter || 'todos', placeFilter = state.bannerManager.placeFilter || 'todos';
+    const list = (state.bannerManager.catalog.banners || []).filter(banner=>{
+      const search = textNorm([banner.id,banner.titulo,banner.alt,banner.texto_arte,banner.exibicao?.local,banner.exibicao?.alvo,banner.origem?.tipo,banner.origem?.valor,daBannerLinkLabel(banner.link),...daV6BannerReferenceValues(banner)].join(' '));
+      const status = daBannerStatus(banner).text.toLowerCase();
+      return (!query || search.includes(query)) && (statusFilter === 'todos' || status === statusFilter) && (placeFilter === 'todos' || banner.exibicao?.local === placeFilter);
+    }).sort((a,b)=>daV6ExpiryTime(a)-daV6ExpiryTime(b) || (Number(a.exibicao?.ordem)||0)-(Number(b.exibicao?.ordem)||0) || String(a.id).localeCompare(String(b.id),'pt-BR'));
+    body.innerHTML = `${state.bannerManager.error?`<div class="notice red" style="margin-bottom:12px">${esc(state.bannerManager.error)}</div>`:''}<div class="banner-summary"><div class="summary-card"><strong>${stats.total}</strong><span>Total</span></div><div class="summary-card"><strong>${stats.active}</strong><span>Ativos</span></div><div class="summary-card"><strong>${stats.scheduled}</strong><span>Agendados</span></div><div class="summary-card"><strong>${stats.inactive}</strong><span>Inativos</span></div></div><div class="banner-manager-toolbar"><input class="input" id="bannerManagerSearch" placeholder="Buscar banner, produto, marca ou posição" value="${esc(state.bannerManager.query||'')}"><select class="select" id="bannerStatusFilter"><option value="todos">Todos os status</option><option value="ativo">Ativos</option><option value="inativo">Inativos</option><option value="agendado">Agendados</option><option value="encerrado">Encerrados</option></select><select class="select" id="bannerPlaceFilter"><option value="todos">Todos os direcionamentos</option>${DA_BANNER_PLACEMENTS.map(item=>`<option value="${esc(item.value)}">${esc(item.label)}</option>`).join('')}</select><button class="btn blue" type="button" data-action="banner-open-json">Ver JSON</button></div><div class="banner-schema-note" style="margin-bottom:14px"><strong>Ordem automática:</strong> os banners mais próximos de vencer aparecem primeiro. Banners vencidos são removidos do JSON e suas imagens são enviadas para exclusão automática.</div><div class="banner-admin-grid">${list.length?list.map(daBannerCardHtml).join(''):'<div class="empty">Ainda não há banners criados. Use “Criar banner” para publicar o primeiro.</div>'}</div>`;
+    const sf=document.getElementById('bannerStatusFilter'),pf=document.getElementById('bannerPlaceFilter'); if(sf) sf.value=statusFilter; if(pf) pf.value=placeFilter;
+  };
+
+  function daV6FilesForBanner(banner){return [...new Set(daV6BannerFiles(banner || {}).map(value=>String(value || '').trim()).filter(Boolean))];}
+  async function daV6DeleteBannerFromCatalog(banner,{confirmUser=false,expired=false}={}){
+    if(!banner) return false;
+    if(confirmUser && !confirm(`Remover definitivamente o banner "${banner.titulo || banner.id}"? A imagem também será apagada do GitHub e o produto ficará desmarcado.`)) return false;
+    const current = daNormalizeBannerCatalog(state.bannerManager.catalog);
+    const next = daNormalizeBannerCatalog(current);
+    next.banners = next.banners.filter(item=>item.id !== banner.id);
+    next.updated_at = nowIso();
+    const files = daV6FilesForBanner(banner);
+    const productRefs = daV6BannerReferenceValues(banner);
+    await daCallBannerWebhook({
+      acao:'remover_banner',versao_contrato:6,motivo:expired?'promocao_encerrada':'remocao_manual',banner_id:banner.id,
+      arquivo_excluir:files[0] || '',arquivos_excluir:files,produtos_desmarcar:productRefs,
+      catalogo_json:JSON.stringify(next,null,2),
+      github:{owner:state.settings.githubOwner||'osvaldosereia',repositorio:state.settings.githubRepo||'SUCEDOAN12',branch:state.settings.githubBranch||'main',json_path:DA_BANNERS_JSON_PATH}
+    });
+    for(const extra of files.slice(1)){
+      try{await daCallBannerWebhook({acao:'apagar_arquivo_banner',versao_contrato:6,banner_id:banner.id,arquivo_excluir:extra,github:{owner:state.settings.githubOwner||'osvaldosereia',repositorio:state.settings.githubRepo||'SUCEDOAN12',branch:state.settings.githubBranch||'main',json_path:DA_BANNERS_JSON_PATH}});}catch(error){console.warn('Não foi possível apagar uma arte legada adicional:',extra,error);}
+    }
+    state.bannerManager.catalog = next;
+    await daRenderBannerManager();
+    renderProducts();
+    return true;
+  }
+  daDeleteBanner = async function(id){
+    const banner = state.bannerManager.catalog?.banners?.find(item=>item.id === id);
+    if(!banner) return;
+    setStatus('Removendo banner, imagem e marcação do produto...','warn');
+    await daV6DeleteBannerFromCatalog(banner,{confirmUser:true});
+    setStatus('Banner removido do JSON, imagem enviada para exclusão e produto desmarcado.','ok');
+  };
+
+  const daV6ToggleBannerBase = daToggleBanner;
+  daToggleBanner = async function(id){const result=await daV6ToggleBannerBase(id);renderProducts();return result;};
+  const daV6PublishBannerBase = daPublishBannerArtwork;
+  daPublishBannerArtwork = async function(data,existing=null){const result=await daV6PublishBannerBase(data,existing);renderProducts();return result;};
+  const daV6SaveBannerEditBase = daSaveBannerEdit;
+  daSaveBannerEdit = async function(){const result=await daV6SaveBannerEditBase();renderProducts();return result;};
+
+  async function daV6CleanupExpiredBanners(){
+    if(state.bannerManager.cleaningExpired || !state.bannerManager.catalog) return;
+    const expired = (state.bannerManager.catalog.banners || []).filter(banner=>{
+      const end = daV6ExpiryTime(banner);
+      return Number.isFinite(end) && end < DA_V6_NOW();
+    }).sort((a,b)=>daV6ExpiryTime(a)-daV6ExpiryTime(b));
+    if(!expired.length) return;
+    state.bannerManager.cleaningExpired = true;
+    try{
+      for(const banner of expired){
+        try{await daV6DeleteBannerFromCatalog(banner,{expired:true});}
+        catch(error){console.error('Falha ao remover banner vencido:',banner.id,error);state.bannerManager.error=`O banner vencido ${banner.titulo || banner.id} não pôde ser removido automaticamente: ${error.message}`;}
+      }
+      renderProducts();
+    }finally{state.bannerManager.cleaningExpired = false;}
+  }
+  const daV6LoadBannerCatalogBase = daLoadBannerCatalog;
+  daLoadBannerCatalog = async function(force=false){
+    const catalog = await daV6LoadBannerCatalogBase(force);
+    await daV6CleanupExpiredBanners();
+    renderProducts();
+    return state.bannerManager.catalog || catalog;
+  };
+
+  /* Criador de kits: percentual grande e preço calculado pelo percentual digitado. */
+  const daV6RenderKitEditorBase = renderKitEditor;
+  renderKitEditor = function(){
+    daV6RenderKitEditorBase();
+    const kit = currentKit(), editor = document.getElementById('kitEditor');
+    if(!kit || !editor) return;
+    const total = kitRetailTotal(kit);
+    const percent = total > 0 && toNum(kit.preco) > 0 ? Math.max(0,Math.round((1-toNum(kit.preco)/total)*10000)/100) : 0;
+    const health = editor.querySelector('.kit-health');
+    if(!health || editor.querySelector('.kit-discount-editor')) return;
+    health.insertAdjacentHTML('afterend',`<section class="kit-discount-editor"><div class="kit-discount-big"><strong>${esc(percent.toLocaleString('pt-BR',{maximumFractionDigits:2}))}% OFF</strong><span>Desconto atual do kit</span></div><div class="kit-discount-controls"><div class="field"><label>Definir desconto pelo percentual</label><div class="kit-discount-input-line"><input class="input" id="kitDiscountPercentInput" type="number" min="0.01" max="99.99" step="0.01" inputmode="decimal" value="${esc(percent || '')}" placeholder="Ex.: 15"><button class="btn primary" type="button" data-action="apply-kit-discount-percent">Aplicar %</button></div><small class="tiny">Base de cálculo: ${esc(brl(total))}. Ao aplicar, o preço promocional será atualizado automaticamente.</small></div></div></section>`);
+  };
+  function daV6ApplyKitDiscountPercent(){
+    const kit = currentKit(); if(!kit) return;
+    const input = document.getElementById('kitDiscountPercentInput');
+    const percent = Math.min(99.99,Math.max(0,daV6ParseNumber(input?.value)));
+    const total = kitRetailTotal(kit);
+    if(total <= 0) throw new Error('Adicione produtos ao kit antes de aplicar um percentual de desconto.');
+    if(percent <= 0) throw new Error('Digite um percentual maior que zero.');
+    kit.preco = Math.round((total * (1-percent/100) + Number.EPSILON)*100)/100;
+    recalcKit(kit);
+    mark('kits');
+    renderKitsList();
+    renderKitEditor();
+    refreshJson();
+    setStatus(`Desconto de ${percent.toLocaleString('pt-BR')}% aplicado ao kit.`,'ok');
+  }
+  document.addEventListener('click',event=>{
+    const button = event.target.closest('[data-action="apply-kit-discount-percent"]');
+    if(!button) return;
+    try{daV6ApplyKitDiscountPercent();}catch(error){alert(error.message);}
+  },true);
+
+  const daV6RenderAllBase = renderAll;
+  renderAll = function(){const result=daV6RenderAllBase();daV6EnsureBannerProductFilter();return result;};
+  const daV6LoadDataBase = loadData;
+  loadData = async function(){
+    const result = await daV6LoadDataBase();
+    try{await daLoadBannerCatalog(true);}catch(error){console.warn('Catálogo de banners não carregado no início:',error);}
+    daV6EnsureBannerProductFilter();
+    renderProducts();
+    return result;
+  };
+
+  if(!document.getElementById('daV6FixStyles')){
+    const style = document.createElement('style');
+    style.id = 'daV6FixStyles';
+    style.textContent = `
+      .product-workbench.has-active-banner{border:2px solid #198754!important;box-shadow:0 0 0 4px rgba(25,135,84,.10),0 14px 34px rgba(25,135,84,.12)!important}
+      .banner-active-chip{font-size:12px!important;font-weight:950!important;box-shadow:0 0 0 2px rgba(21,115,71,.10)}
+      .kit-discount-editor{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(320px,1.2fr);gap:14px;align-items:stretch;margin:14px 0;padding:16px;border:2px solid #f2b8b5;border-radius:20px;background:linear-gradient(135deg,#fff1ef,#fffaf0)}
+      .kit-discount-big{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:132px;border-radius:17px;background:#b42318;color:#fff;text-align:center;padding:16px}
+      .kit-discount-big strong{font-size:clamp(34px,5vw,64px);line-height:.95;letter-spacing:-.055em}.kit-discount-big span{margin-top:9px;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+      .kit-discount-controls{display:flex;align-items:center}.kit-discount-controls>.field{width:100%}.kit-discount-input-line{display:grid;grid-template-columns:1fr auto;gap:8px}.kit-discount-input-line .input{font-size:24px;font-weight:950;min-height:54px}
+      @media(max-width:760px){.kit-discount-editor{grid-template-columns:1fr}.kit-discount-input-line{grid-template-columns:1fr}.kit-discount-input-line .btn{min-height:48px}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  window.setInterval(()=>{daV6CleanupExpiredBanners().catch(error=>console.warn(error));},60000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden) daV6CleanupExpiredBanners().catch(error=>console.warn(error));});
+})();
+
   loadData();
 })(); 
 </script>
