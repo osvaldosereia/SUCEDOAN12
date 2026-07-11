@@ -80,6 +80,12 @@
 .da-banner-zone.is-carousel .da-banner-card{flex:0 0 calc((100% - var(--da-banner-gap))/2)}
 .da-banner-zone:not(.is-carousel) .da-banner-card{width:100%}
 @media (min-width:768px){
+  .da-banner-zone{--da-banner-gap:14px;margin:25px 0 27px!important}
+  .da-banner-track{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .da-banner-zone.is-carousel .da-banner-card{flex-basis:calc((100% - (var(--da-banner-gap) * 2))/3)}
+  .da-banner-card{border-radius:22px}
+}
+@media (min-width:1100px){
   .da-banner-zone{--da-banner-gap:18px;margin:28px 0 30px!important}
   .da-banner-track{grid-template-columns:repeat(4,minmax(0,1fr))}
   .da-banner-zone.is-carousel .da-banner-card{flex-basis:calc((100% - (var(--da-banner-gap) * 3))/4)}
@@ -216,13 +222,13 @@
       PRODUCT_HOME_CACHE_KEY: 'da_produtos_home_cache_v1',
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
       KIT_CACHE_KEY: 'da_kits_cache_v1',
-      BANNER_CACHE_KEY: 'da_banners_cache_v4',
+      BANNER_CACHE_KEY: 'da_banners_cache_v5',
       CART_STORAGE_KEY: 'da_carrinho_v1',
       CHECKOUT_CLIENT_KEY: 'da_checkout_cliente_v1',
       COUPON_STORAGE_KEY: 'da_cupom_ativo_v1',
       FAVORITES_STORAGE_KEY: 'da_favoritos_v1',
       COUPON_URLS: ['site/cuponsativos.json', 'cuponsativos.json'],
-      BANNER_URLS: ['site/banners/banners.json', 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/banners/banners.json', 'banners.json', 'site/banners/exemplo.json'],
+      BANNER_URLS: ['site/banners/banners.json', 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/banners/banners.json'],
       CART_MAX_AGE_MS: 6 * 60 * 60 * 1000,
       MIN_ORDER: 75,
       DEFAULT_DDD: '65'
@@ -243,7 +249,7 @@
       kits: [],
       banners: [],
       bannerTimers: [],
-      bannerConfig: { automatico: true, manual: true, intervalo_ms: 5200, loop: true, pausar_hover: true },
+      bannerConfig: { desktop_columns:4, tablet_columns:3, mobile_columns:2, show_arrows:true, show_dots:true, show_hint:true, autoplay:false, intervalo_ms:5200, loop:false, pausar_hover:true },
       favorites: new Set(),
       cart: {},
       cartOrder: [],
@@ -782,7 +788,7 @@
         let local = String(exhibition.local || b.posicao || b.position || 'home.hero').trim();
         let target = String(exhibition.alvo || b.alvo || b.target || '').trim();
         local = aliases[local] || local;
-        const dynamicMatch = local.match(/^(categoria|subcategoria|marca|produto)\.(.+?)(?:\.topo)?$/i);
+        const dynamicMatch = local.match(/^(categoria|subcategoria|marca|produto|kit|cesta)\.(.+?)(?:\.topo)?$/i);
         if (dynamicMatch) {
           local = dynamicMatch[1].toLowerCase();
           target = target || dynamicMatch[2];
@@ -850,7 +856,7 @@
     function getBanners(position, targetOrTargets) {
       const requested = bannerPositionKey(position);
       const targets = (Array.isArray(targetOrTargets) ? targetOrTargets : [targetOrTargets]).filter(Boolean);
-      const dynamic = ['categoria','subcategoria','marca','produto'].includes(requested);
+      const dynamic = ['categoria','subcategoria','marca','produto','kit','cesta'].includes(requested);
       return state.banners.filter(b => {
         if (!bannerIsCurrent(b)) return false;
         if (bannerPositionKey(b.local) !== requested) return false;
@@ -885,10 +891,16 @@
       const external = /^https?:/i.test(href);
       return `<article class="da-banner-card" data-banner-index="${index}">
         <a class="da-banner-link" href="${escapeHtml(href)}"${external ? ' target="_blank" rel="noopener"' : ''} aria-label="${escapeHtml(banner.alt)}">
-          <span class="da-banner-picture"><img src="${escapeHtml(banner.imagem)}" alt="${escapeHtml(banner.alt)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async"${eager ? ' fetchpriority="high"' : ''} onerror="this.closest('.da-banner-card').style.display='none'"></span>
+          <span class="da-banner-picture"><img src="${escapeHtml(banner.imagem)}" alt="${escapeHtml(banner.alt)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async"${eager ? ' fetchpriority="high"' : ''} onerror="window.__daBannerImageError(this)"></span>
         </a>
       </article>`;
     }
+
+    window.__daBannerImageError = function(img) {
+      const card = img && img.closest ? img.closest('.da-banner-card') : null;
+      if (card) card.style.display = 'none';
+      scheduleBannerSetup();
+    };
 
     function scheduleBannerSetup() {
       if (state.bannerSetupFrame) cancelAnimationFrame(state.bannerSetupFrame);
@@ -927,9 +939,11 @@
         const next = zone.querySelector('[data-banner-next]');
         const dotsWrap = zone.querySelector('[data-banner-dots]');
         const counter = zone.querySelector('[data-banner-counter]');
+        if (prev?.parentElement) prev.parentElement.style.display = state.bannerConfig.show_arrows === false ? 'none' : '';
+        if (dotsWrap) dotsWrap.style.display = state.bannerConfig.show_dots === false ? 'none' : '';
         if (!track || !cards.length) { zone.remove(); return; }
         const width = window.innerWidth;
-        const columns = width >= 768 ? Number(state.bannerConfig.desktop_columns || 4) : Number(state.bannerConfig.mobile_columns || 2);
+        const columns = width >= 1100 ? Number(state.bannerConfig.desktop_columns || 4) : (width >= 768 ? Number(state.bannerConfig.tablet_columns || 3) : Number(state.bannerConfig.mobile_columns || 2));
         const pageCount = Math.max(1, Math.ceil(cards.length / columns));
         const carousel = cards.length > columns;
         zone.classList.toggle('is-carousel', carousel);
@@ -2358,7 +2372,8 @@
       const decoded = decodeURIComponent(subcategory || '');
       const products = state.products.filter(p => isAvailable(p) && norm(p.subcategoria) === norm(decoded));
       const canonical = products[0]?.subcategoria || decoded;
-      app.innerHTML = `<div class="container">${pageHeader(canonical, `${products.length} produtos encontrados`, '#/categorias')}${bannerSlotHtml('subcategoria', { target: canonical, label: `Destaques de ${canonical}` })}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Nenhum produto disponível</strong>Esta subcategoria não possui itens disponíveis agora.</div>`}</div>`;
+      const subcategoryBannerTargets = [canonical, ...new Set(products.map(p => p.categoria).filter(Boolean))].map((v,i) => i===0 ? v : `${v}::${canonical}`);
+      app.innerHTML = `<div class="container">${pageHeader(canonical, `${products.length} produtos encontrados`, '#/categorias')}${bannerSlotHtml('subcategoria', { targets: subcategoryBannerTargets, label: `Destaques de ${canonical}` })}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Nenhum produto disponível</strong>Esta subcategoria não possui itens disponíveis agora.</div>`}</div>`;
       setActiveNav('categorias');
       updateMeta(`${canonical} - Dona Antônia`, `Compre produtos de ${canonical.toLowerCase()} com entrega em Cuiabá e Várzea Grande.`, `/?subcategoria=${encodeURIComponent(canonical)}`);
     }
@@ -2443,7 +2458,7 @@
       const discount = kitDiscountPercent(kit);
       const saving = Math.max(0, original - Number(kit.preco || 0));
       const kitRatio = original > 0 ? Math.min(1, Number(kit.preco || 0) / original) : 1;
-      app.innerHTML = `<div class="container kit-detail-container">${pageHeader(kit.nome, '', '#/kits')}
+      app.innerHTML = `<div class="container kit-detail-container">${pageHeader(kit.nome, '', '#/kits')}${bannerSlotHtml('kit', { targets:[kit.id,kit.codigo,kit.nome].filter(Boolean), label:`Destaque de ${kit.nome}` })}
         <article class="kit-deal-card">
           <div class="kit-deal-top kit-deal-top-stacked">
             <img class="kit-deal-img" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
@@ -2636,7 +2651,7 @@
       const draft = ensureBasketDraft(basket.id);
       const total = basketDraftTotal(basket.id);
       const draftChanged = basketDraftChanged(basket.id);
-      app.innerHTML = `<div class="container basket-detail-container">${pageHeader(basket.nome, '', '#/cestas')}
+      app.innerHTML = `<div class="container basket-detail-container">${pageHeader(basket.nome, '', '#/cestas')}${bannerSlotHtml('cesta', { targets:[basket.id,basket.nome].filter(Boolean), label:`Destaque de ${basket.nome}` })}
         <article class="basket-card wide basket-detail-hero" style="margin-bottom:12px">
           <div class="basket-imgbox"><img src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}" onerror="window.__daFallbackImg(this)"></div>
           <div class="basket-body"><div class="basket-name">${escapeHtml(basket.nome)}</div><div class="price">${basket.preco ? fmt(basket.preco) : fmt(total)}</div><button class="add-btn" type="button" data-action="add-basket" data-id="${escapeHtml(basket.id)}">Adicionar cesta padrão</button></div>
