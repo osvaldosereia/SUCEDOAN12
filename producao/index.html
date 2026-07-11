@@ -562,11 +562,11 @@
       <div class="notice red" style="margin-bottom:14px"><strong>Atenção:</strong> tokens no navegador só devem ser usados em arquivo administrativo privado. Não publique esse HTML com token em site público.</div>
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
-        <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho kitspromocionais.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="img/produtos"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
+        <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho site/kits.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos_3"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="site/img/produtos_3"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
         <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners do site</label><input class="input" id="setMakeBannerWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">O webhook de banners recebe o produto e a posição escolhida no card, gera as versões mobile e desktop, salva em <strong>site/banners/gerados</strong> e atualiza <strong>site/banners/exemplo.json</strong>.</div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
-      <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar kitspromocionais.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
+      <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar site/kits.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
     </section>
 
     <section class="panel hidden" id="tab-json">
@@ -576,7 +576,7 @@
         <div class="card pad json-panel"><h3>produtos_meta.csv (Meta catálogo gerado automaticamente)</h3><textarea class="textarea" id="jsonMeta" readonly></textarea></div>
         <div class="card pad json-panel"><h3>produtos_admin_meta.json</h3><textarea class="textarea" id="jsonAdminMeta"></textarea></div>
         <div class="card pad json-panel"><h3>produtos-cesta-basica.json</h3><textarea class="textarea" id="jsonCestas"></textarea></div>
-        <div class="card pad json-panel"><h3>kitspromocionais.json</h3><textarea class="textarea" id="jsonKits"></textarea></div>
+        <div class="card pad json-panel"><h3>site/kits.json</h3><textarea class="textarea" id="jsonKits"></textarea></div>
       </div>
     </section>
   </main>
@@ -628,8 +628,8 @@
     githubCestasPath: "site/produtos-cesta-basica.json",
     githubKitsPath: "site/kits.json",
     githubAnotacoesPath: "site/anotacoes.json",
-    githubImagesPath: "site/img/produtos_2",
-    imagePublicBase: "img/produtos_2",
+    githubImagesPath: "site/img/produtos_3",
+    imagePublicBase: "site/img/produtos_3",
     githubKitImagesPath: "site/img/kits",
     kitImagePublicBase: "img/kits",
     autoGithub: false,
@@ -648,6 +648,10 @@
     {value:"home.kits.topo",label:"Home · Antes dos kits promocionais"},
     {value:"home.ofertas.topo",label:"Home · Antes das ofertas"},
     {value:"home.compra-mes.topo",label:"Home · Compra do mês"},
+    {value:"rotina.compra-mes.topo",label:"Rotina · Compra do mês"},
+    {value:"rotina.limpeza.topo",label:"Rotina · Limpeza"},
+    {value:"rotina.higiene.topo",label:"Rotina · Higiene"},
+    {value:"rotina.cafe.topo",label:"Rotina · Café"},
     {value:"home.limpeza.topo",label:"Home · Limpeza"},
     {value:"home.higiene.topo",label:"Home · Higiene e beleza"},
     {value:"home.cafe.topo",label:"Home · Café da manhã"},
@@ -923,16 +927,15 @@
     try{
       const saved=JSON.parse(localStorage.getItem(LS_SETTINGS)||"{}");
       if(!saved.githubCestasPath || saved.githubCestasPath==="site/cestas.json") saved.githubCestasPath="site/produtos-cesta-basica.json";
-      if(!saved.githubKitsPath||saved.githubKitsPath==="site/kitspromocionais.json")saved.githubKitsPath="site/kits.json";
+      if(!saved.githubKitsPath||saved.githubKitsPath==="site/site/kits.json")saved.githubKitsPath="site/kits.json";
       if(!saved.githubAdminMetaPath) saved.githubAdminMetaPath = saved.githubMetaPath && !["site/produtos_meta.json","site/produtos_meta.csv"].includes(saved.githubMetaPath) ? saved.githubMetaPath : "site/produtos_admin_meta.json";
       if(!saved.githubMetaPath || saved.githubMetaPath==="site/produtos_meta.json") saved.githubMetaPath="site/produtos_meta.csv";
       if(!saved.siteBaseUrl) saved.siteBaseUrl=defaultSettings.siteBaseUrl;
 
-      // PADRÃO CORRIGIDO: o fluxo de IA dos produtos trabalha em produtos_2.
-      // Se o navegador ainda estiver com o padrão antigo salvo, migramos para evitar que
-      // a imagem nova seja gerada/salva em uma pasta e o sistema procure em outra.
-      if(!saved.githubImagesPath || saved.githubImagesPath==="site/img/produtos") saved.githubImagesPath="site/img/produtos_2";
-      if(!saved.imagePublicBase || saved.imagePublicBase==="img/produtos") saved.imagePublicBase="img/produtos_2";
+      // PADRÃO 2026-07: imagens novas no GitHub usam subpastas por bucket/data.
+      // Pastas antigas ficam apenas como legado/fallback; nada novo deve ir para produtos/produtos_2.
+      if(!saved.githubImagesPath || ["site/img/produtos","site/img/produtos_2"].includes(saved.githubImagesPath)) saved.githubImagesPath="site/img/produtos_3";
+      if(!saved.imagePublicBase || ["img/produtos","img/produtos_2"].includes(saved.imagePublicBase)) saved.imagePublicBase="site/img/produtos_3";
 
       return {...defaultSettings, ...saved}
     }catch{return {...defaultSettings}}
@@ -970,8 +973,6 @@
   function buildAdminMetaPayload(){const meta=deepClone(state.meta); meta.atualizado_em=nowIso(); meta.estatisticas = makeStats(); meta.categorias = sortCategories(meta.categorias); meta.tags = uniq(meta.tags); meta.marcas = uniq(meta.marcas); meta.fornecedores = (meta.fornecedores||[]).filter(f=>f && f.nome).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),"pt-BR")); return meta}
   function makeStats(){const ativos=state.produtos.filter(isActive).length, semEstoque=state.produtos.filter(p=>toNum(p.estoque)<=0).length, semGtin=state.produtos.filter(p=>!String(p.gtin||p.ean||"").trim()).length, semFoto=state.produtos.filter(p=>!String(p.url_imagem||p.imagem||"").trim()).length; return {total_produtos:state.produtos.length, ativos, inativos:state.produtos.length-ativos, sem_estoque:semEstoque, sem_gtin:semGtin, sem_foto:semFoto, cestas:state.cestas.length, kits:state.kits.length, produtos_em_cestas:totalBasketProductsSet().size, produtos_em_kits:totalKitProductsSet().size} }
   function sortCategories(cats){return (cats||[]).filter(c=>c && c.categoria).sort((a,b)=>[a.categoria,a.subcategoria,a.subsubcategoria].join("|").localeCompare([b.categoria,b.subcategoria,b.subsubcategoria].join("|"),"pt-BR"))}
-
-  async function loadData(){setStatus("Carregando Firebase...","warn"); renderLoading(); try{ const [p,m,c,k]=await Promise.allSettled([fetchJson(firebaseUrl(state.settings.produtosNode)), fetchJson(firebaseUrl(state.settings.metaNode)), fetchJson(firebaseUrl(state.settings.cestasNode)), fetchJson(firebaseUrl(state.settings.kitsNode))]); state.produtos = p.status==="fulfilled" ? normalizeProducts(p.value) : normalizeProducts(JSON.parse(localStorage.getItem(LS_PRODUCTS)||"[]")); state.meta = m.status==="fulfilled" ? normalizeMeta(m.value) : normalizeMeta(JSON.parse(localStorage.getItem(LS_META)||"{}")); state.cestas = c.status==="fulfilled" ? normalizeCestas(c.value) : normalizeCestas(JSON.parse(localStorage.getItem(LS_CESTAS)||"[]")); state.kits = k.status==="fulfilled" ? normalizeKits(k.value) : normalizeKits(JSON.parse(localStorage.getItem(LS_KITS)||"[]")); if(!state.cestas.length) state.cestas=normalizeCestas(DEFAULT_CESTAS); if(!state.meta.categorias.length && state.produtos.length) rebuildMeta(false); state.selectedBasketId = state.selectedBasketId || state.cestas[0]?.id || null; state.selectedKitId = state.selectedKitId || state.kits[0]?.id || null; markProductsReloaded(); state.dirtyCestas=false; state.dirtyKits=false; state.dirtyMeta=false; setStatus(`Carregado: ${state.produtos.length} produtos, ${state.cestas.length} cestas, ${state.kits.length} kits`,"ok"); }catch(e){console.error(e); state.produtos=normalizeProducts(JSON.parse(localStorage.getItem(LS_PRODUCTS)||"[]")); state.meta=normalizeMeta(JSON.parse(localStorage.getItem(LS_META)||"{}")); state.cestas=normalizeCestas(JSON.parse(localStorage.getItem(LS_CESTAS)||"[]")); state.kits=normalizeKits(JSON.parse(localStorage.getItem(LS_KITS)||"[]")); if(!state.cestas.length) state.cestas=normalizeCestas(DEFAULT_CESTAS); state.selectedKitId = state.kits[0]?.id || null; markProductsReloaded(); setStatus("Falha no Firebase. Usando backup local.","err"); } finally{ renderAll(); }}
   function sanitizeProductForFirebase(product){
     const result=validateProductForSite(product);
     if(result.errors.length)throw new Error(`${getName(product)}: corrija ${result.errors.join(", ")}.`);
@@ -1077,7 +1078,42 @@
   async function prepareKitImageBlob(file){return compressImageToWebp(file,{maxBytes:IMAGE_MAX_BYTES,maxDimension:900,square:true})}
   function selectedProductPhotoFile(){const input=$("#productPhotoFile"); return input?.files?.[0]||null}
   async function useSelectedPhotoLocal(){const p=productByKey(state.editingProductKey); const file=selectedProductPhotoFile(); if(!p||!file) return alert("Selecione uma imagem primeiro."); const prepared=await prepareProductImageBlob(file); p.url_imagem=await blobToDataUrl(prepared.blob); p.imagem=p.url_imagem; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem']); mark('products'); renderProductEditor(false); setStatus(`Foto aplicada em WebP (${formatBytes(prepared.bytes)})`, "ok")}
-  async function uploadSelectedPhotoGithub(){const p=productByKey(state.editingProductKey); const file=selectedProductPhotoFile(); if(!p||!file) return alert("Selecione uma imagem primeiro."); try{readSettingsFromUi(); setStatus("Compactando e enviando foto SEO ao GitHub...", "warn"); const prepared=await prepareProductImageBlob(file); const oldSources=currentProductImageSources(p); const fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"); const basePath=String(state.settings.githubImagesPath||"site/img/produtos_2").replace(/\/+$/,''); const path=`${basePath}/${fileName}`; await githubUpsertRaw(path, await prepared.blob.arrayBuffer(), `Atualiza foto SEO do produto ${p.codigo||getName(p)}`); const src=publicProductImageSrc(fileName); oldSources.forEach(x=>markGithubProductImageForDelete(x)); p.url_imagem=src; p.imagem=src; p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]); p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem','imagens']); mark('products'); renderProductEditor(false); setStatus(`Foto SEO enviada ao GitHub em WebP (${formatBytes(prepared.bytes)})`, "ok"); alert(`Foto SEO compactada em WebP (${formatBytes(prepared.bytes)}) e enviada como ${fileName}. Clique em Salvar geral para publicar e limpar imagens antigas.`)}catch(e){console.error(e); setStatus("Erro na foto", "err"); alert("Erro ao enviar foto: "+e.message)}}
+  async function uploadSelectedPhotoGithub(){
+    const p=productByKey(state.editingProductKey);
+    const file=selectedProductPhotoFile();
+    if(!p||!file)return alert("Selecione uma imagem primeiro.");
+    try{
+      readSettingsFromUi();
+      setStatus("Compactando e enviando foto SEO ao GitHub no novo padrão de pastas...", "warn");
+      const prepared=await prepareProductImageBlob(file);
+      const oldSources=currentProductImageSources(p);
+      const fileName=productSeoImageFileName(p,"foto-principal-fundo-branco");
+      const path=githubProductImageFullPath(p,fileName);
+      await githubUpsertRaw(path,await prepared.blob.arrayBuffer(),`Atualiza foto SEO do produto ${p.codigo||getName(p)}`);
+      const src=githubRawFileUrl(path);
+      p.imagem_anterior=oldSources.find(x=>x&&x!==src)||p.imagem_anterior||"";
+      p.url_imagem=src;
+      p.imagem=src;
+      p.imagem_url=src;
+      p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]);
+      p.imagem_path=path;
+      p.imagem_storage="github";
+      p.imagem_origem="admin_upload";
+      p.imagem_status="ok";
+      p.imagem_gerada_em=nowIso();
+      p.last_update=Date.now();
+      p.updated_at=nowIso();
+      markProductDirty(getKey(p),["url_imagem","imagem","imagem_url","imagens","imagem_path","imagem_storage","imagem_origem","imagem_status","imagem_gerada_em","imagem_anterior"]);
+      mark("products");
+      renderProductEditor(false);
+      setStatus(`Foto SEO enviada ao GitHub em ${path} (${formatBytes(prepared.bytes)})`, "ok");
+      alert(`Foto SEO compactada em WebP (${formatBytes(prepared.bytes)}) e enviada para ${path}. Clique em Salvar geral para publicar e limpar imagens antigas.`);
+    }catch(e){
+      console.error(e);
+      setStatus("Erro na foto", "err");
+      alert("Erro ao enviar foto: "+e.message);
+    }
+  }
   function removeProductPhoto(){const p=productByKey(state.editingProductKey); if(!p) return; if(!confirm("Remover a foto deste produto?")) return; p.url_imagem=""; p.imagem=""; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['url_imagem','imagem']); mark('products'); renderProductEditor(false)}
   function copyProductPhotoUrl(){const p=productByKey(state.editingProductKey); if(!p) return; navigator.clipboard?.writeText(p.url_imagem||p.imagem||""); alert("URL da foto copiada.")}
   function toggleProductTag(tag,checked){const p=productByKey(state.editingProductKey); if(!p) return; let tags=parseTags(p.tags); if(checked && !tags.includes(tag)) tags.push(tag); if(!checked) tags=tags.filter(t=>t!==tag); p.tags=tags; p.last_update=Date.now(); p.updated_at=nowIso(); markProductDirty(getKey(p), ['tags']); mark('products'); renderProductEditor(false)}
@@ -1085,12 +1121,42 @@
   function selectedKitImageFile(){const input=$("#kitImageFile"); return input?.files?.[0]||null}
   function currentKit(){return state.kits.find(x=>x.id===state.selectedKitId)||null}
   async function useSelectedKitImageLocal(){const c=currentKit(); const file=selectedKitImageFile(); if(!c||!file) return alert("Selecione uma imagem quadrada do kit primeiro."); const prepared=await prepareKitImageBlob(file); c.imagem=await blobToDataUrl(prepared.blob); mark('kits'); renderKitsList(); renderKitEditor(); setStatus(`Foto do kit aplicada em WebP quadrado (${formatBytes(prepared.bytes)})`, "ok")}
-  async function uploadSelectedKitImageGithub(){const c=currentKit(); const file=selectedKitImageFile(); if(!c||!file) return alert("Selecione uma imagem quadrada do kit primeiro."); try{readSettingsFromUi(); setStatus("Compactando e enviando foto do kit...", "warn"); const prepared=await prepareKitImageBlob(file); const code=slug(c.codigo||c.nome||Date.now()); const fileName=`${code||Date.now()}.webp`; const basePath=String(state.settings.githubKitImagesPath||"site/img/kits").replace(/\/+$/,''); const path=`${basePath}/${fileName}`; await githubUpsertRaw(path, await prepared.blob.arrayBuffer(), `Atualiza foto do kit ${c.codigo||c.nome}`); const publicBase=String(state.settings.kitImagePublicBase||"img/kits").replace(/\/+$/,''); c.imagem=`${publicBase}/${fileName}`; mark('kits'); renderKitsList(); renderKitEditor(); setStatus(`Foto do kit enviada em WebP quadrado (${formatBytes(prepared.bytes)})`, "ok"); alert(`Foto quadrada do kit enviada para ${path} com ${formatBytes(prepared.bytes)}. Clique em Salvar kits para gravar o kitspromocionais.json.`)}catch(e){console.error(e); setStatus("Erro na foto do kit", "err"); alert("Erro ao enviar foto do kit: "+e.message)}}
-  async function uploadSelectedKitImageGithub(){const c=currentKit(),file=selectedKitImageFile();if(!c||!file)return alert("Selecione uma imagem quadrada do kit primeiro.");try{readSettingsFromUi();setStatus("Compactando e enviando capa do kit...","warn");const prepared=await prepareKitImageBlob(file),fileName=`${slug(c.codigo||c.nome)||Date.now()}.webp`,path=`site/img/${fileName}`;await githubUpsertRaw(path,await prepared.blob.arrayBuffer(),`Atualiza capa do kit ${c.codigo||c.nome}`);c.imagem=`img/${fileName}`;mark('kits');renderKitsList();renderKitEditor();setStatus(`Capa do kit salva em img/${fileName}`,"ok");alert(`Capa enviada para ${path}. Salve os kits para gravar o JSON.`)}catch(e){console.error(e);setStatus("Erro na capa do kit","err");alert("Erro ao enviar capa: "+e.message)}}
+  async function uploadSelectedKitImageGithub(){
+    const c=currentKit();
+    const file=selectedKitImageFile();
+    if(!c||!file)return alert("Selecione uma imagem quadrada do kit primeiro.");
+    try{
+      readSettingsFromUi();
+      setStatus("Compactando e enviando capa do kit para o GitHub...", "warn");
+      const prepared=await prepareKitImageBlob(file);
+      const fileName=kitImageFileName(c);
+      const path=githubKitImageFullPath(c,fileName);
+      await githubUpsertRaw(path,await prepared.blob.arrayBuffer(),`Atualiza capa do kit ${c.codigo||c.nome}`);
+      const url=githubRawFileUrl(path);
+      c.imagem=url;
+      c.imagem_url=url;
+      c.imagem_path=path;
+      c.imagem_storage="github";
+      c.imagem_origem="admin_upload";
+      c.imagem_gerada_em=nowIso();
+      mark("kits");
+      saveLocal();
+      renderKitsList();
+      renderKitEditor();
+      refreshJson();
+      setStatus(`Capa do kit salva no GitHub (${formatBytes(prepared.bytes)})`, "ok");
+      alert(`Capa enviada para ${path}. Clique em Salvar geral para gravar o site/kits.json.`);
+    }catch(e){
+      console.error(e);
+      setStatus("Erro na capa do kit", "err");
+      alert("Erro ao enviar capa do kit: "+e.message);
+    }
+  }
 
-  async function saveGithubFiles({produtos,metaCatalogCsv,adminMeta,cestas,kits}={}){readSettingsFromUi(); const ops=[]; if(produtos) ops.push(githubUpsert(state.settings.githubProdutosPath, produtos, "Atualiza produtos.json pelo admin Dona Antônia")); if(metaCatalogCsv) ops.push(githubUpsertText(state.settings.githubMetaPath, metaCatalogCsv, "Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")); if(adminMeta) ops.push(githubUpsert(state.settings.githubAdminMetaPath, adminMeta, "Atualiza produtos_admin_meta.json pelo admin Dona Antônia")); if(cestas) ops.push(githubUpsert(state.settings.githubCestasPath, cestas, "Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")); if(kits) ops.push(githubUpsert(state.settings.githubKitsPath, kits, "Atualiza kitspromocionais.json pelo admin Dona Antônia")); await Promise.all(ops)}
+
+  async function saveGithubFiles({produtos,metaCatalogCsv,adminMeta,cestas,kits}={}){readSettingsFromUi(); const ops=[]; if(produtos) ops.push(githubUpsert(state.settings.githubProdutosPath, produtos, "Atualiza produtos.json pelo admin Dona Antônia")); if(metaCatalogCsv) ops.push(githubUpsertText(state.settings.githubMetaPath, metaCatalogCsv, "Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")); if(adminMeta) ops.push(githubUpsert(state.settings.githubAdminMetaPath, adminMeta, "Atualiza produtos_admin_meta.json pelo admin Dona Antônia")); if(cestas) ops.push(githubUpsert(state.settings.githubCestasPath, cestas, "Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")); if(kits) ops.push(githubUpsert(state.settings.githubKitsPath, kits, "Atualiza site/kits.json pelo admin Dona Antônia")); await Promise.all(ops)}
   async function testGithub(){try{readSettingsFromUi(); await githubContent(state.settings.githubProdutosPath); setStatus("GitHub conectado", "ok"); alert("Conexão com GitHub OK.")}catch(e){console.error(e); setStatus("Erro no GitHub","err"); alert("Erro no GitHub: "+e.message)}}
-  async function saveGithubNow(){try{setStatus("Enviando arquivos ao GitHub...","warn"); await saveGithubFiles({produtos:productsObject(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits}); setStatus("GitHub atualizado","ok"); alert("produtos.json, produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e kitspromocionais.json enviados ao GitHub.")}catch(e){console.error(e); setStatus("Erro ao enviar GitHub","err"); alert("Erro ao enviar GitHub: "+e.message)}}
+  async function saveGithubNow(){try{setStatus("Enviando arquivos ao GitHub...","warn"); await saveGithubFiles({produtos:productsObject(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits}); setStatus("GitHub atualizado","ok"); alert("produtos.json, produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e site/kits.json enviados ao GitHub.")}catch(e){console.error(e); setStatus("Erro ao enviar GitHub","err"); alert("Erro ao enviar GitHub: "+e.message)}}
 
   function renderAll(){restoreLegacyBasketStock(); renderTabs(); renderSettingsUi(); renderFilterOptions(); renderSummary(); renderProducts(); renderBasketsList(); renderBasketEditor(); renderKitsList(); renderKitEditor(); renderCatalogs(); renderNotes(); updateNotesIndicator(); renderScannerEditor(); renderScannerHistory(); refreshJson();}
   function renderLoading(){ $("#productsGrid").innerHTML=`<div class="empty">Carregando produtos...</div>`; $("#basketsList").innerHTML=""; $("#basketEditor").innerHTML=`<div class="empty">Carregando cestas...</div>`; if($("#kitsList")) $("#kitsList").innerHTML=""; if($("#kitEditor")) $("#kitEditor").innerHTML=`<div class="empty">Carregando kits...</div>` }
@@ -1291,8 +1357,7 @@
   function deleteBasket(){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(!c||!confirm(`Excluir ${c.nome}?`)) return; state.cestas=state.cestas.filter(x=>x.id!==c.id); state.selectedBasketId=state.cestas[0]?.id||null; mark('cestas'); renderAll()}
 
   function renderKitsList(){const el=$("#kitsList"); if(!el) return; const q=textNorm($("#kitSearch")?.value||""); const list=state.kits.filter(c=>!q||textNorm([c.nome,c.codigo].join(' ')).includes(q)); el.innerHTML=list.map(c=>`<button class="side-card ${c.id===state.selectedKitId?'active':''}" data-action="select-kit" data-id="${esc(c.id)}"><img src="${esc(c.imagem||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><span><strong>${esc(c.nome)}</strong><small>${brl(c.preco)} · ${itemCount(c)} itens</small></span></button>`).join('') || `<div class="empty">Nenhum kit promocional.</div>`}
-  function renderKitEditor(){const el=$("#kitEditor"); if(!el) return; const c=currentKit(); if(!c){el.innerHTML=`<div class="empty">Selecione ou crie um kit promocional.</div>`; return} const rows=(c.produtos||[]).map(i=>renderKitRow(c,i)).join('') || `<div class="empty">Kit sem produtos.</div>`; el.innerHTML=`<div class="panel-head"><div class="panel-title"><h2>${esc(c.nome)}</h2><p>${esc(c.codigo)} · ${itemCount(c)} itens · salvo em kitspromocionais.json</p></div><div class="toolbar"><button class="btn red" data-action="delete-kit">Excluir kit</button></div></div><div class="form-grid"><div class="field"><label>Nome</label><input class="input" data-kfield="nome" value="${esc(c.nome)}"></div><div class="field"><label>Código</label><input class="input" data-kfield="codigo" value="${esc(c.codigo)}"></div><div class="field"><label>Preço promocional</label><input class="input" data-kfield="preco" value="${esc(c.preco)}"></div><div class="field"><label>Imagem do kit</label><input class="input" data-kfield="imagem" value="${esc(c.imagem)}"></div></div><div class="photo-tools"><h4>Foto quadrada do kit</h4><p class="tiny">A imagem é compactada em WebP com limite de 30 KB. No GitHub ela será salva em <strong>site/img/kits/</strong> e aplicada como <strong>img/kits/arquivo.webp</strong>.</p><div class="photo-tools-grid"><div class="photo-preview-box"><img src="${esc(c.imagem||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"></div><div><div class="field"><label>Subir foto quadrada</label><input class="input" id="kitImageFile" type="file" accept="image/*"></div><div class="photo-actions"><button class="btn green" data-action="use-kit-image-local">Aplicar local compactada</button><button class="btn blue" data-action="upload-kit-image-github">Enviar para GitHub / site/img/kits</button></div></div></div></div><div style="margin-top:14px"><div class="field"><label>Buscar produto para adicionar/substituir</label><input class="input" id="kitProductSearch" value="${esc(state.kitProductSearch)}" placeholder="Digite nome, código, marca ou GTIN..."></div><div class="search-results" id="kitProductResults">${renderKitSearchResults()}</div></div><div class="basket-list">${rows}</div>`}
-  function renderKitRow(c,item){const it=parseBasketItem(item), p=productByCode(it.codigo); return `<div class="basket-row"><img src="${esc(p?getImg(p):PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(p?getName(p):'Produto não encontrado')}</strong><div class="tiny">Código: ${esc(it.codigo)} ${p?`· ${brl(p.preco)}`:''}</div></div><div class="field"><label>Qtd</label><input class="input" data-action="kit-qtd" data-code="${esc(it.codigo)}" value="${esc(it.qtd)}"></div><button class="btn small blue" data-action="start-kit-replace" data-code="${esc(it.codigo)}">Substituir</button><button class="btn small red" data-action="remove-from-kit" data-code="${esc(it.codigo)}">Remover</button></div>`}
+  function renderKitEditor(){const el=$("#kitEditor"); if(!el) return; const c=currentKit(); if(!c){el.innerHTML=`<div class="empty">Selecione ou crie um kit promocional.</div>`; return} const rows=(c.produtos||[]).map(i=>renderKitRow(c,i)).join('') || `<div class="empty">Kit sem produtos.</div>`; el.innerHTML=`<div class="panel-head"><div class="panel-title"><h2>${esc(c.nome)}</h2><p>${esc(c.codigo)} · ${itemCount(c)} itens · salvo em site/kits.json</p></div><div class="toolbar"><button class="btn red" data-action="delete-kit">Excluir kit</button></div></div><div class="form-grid"><div class="field"><label>Nome</label><input class="input" data-kfield="nome" value="${esc(c.nome)}"></div><div class="field"><label>Código</label><input class="input" data-kfield="codigo" value="${esc(c.codigo)}"></div><div class="field"><label>Preço promocional</label><input class="input" data-kfield="preco" value="${esc(c.preco)}"></div><div class="field"><label>Imagem do kit</label><input class="input" data-kfield="imagem" value="${esc(c.imagem)}"></div></div><div class="photo-tools"><h4>Foto quadrada do kit</h4><p class="tiny">A imagem é compactada em WebP com limite de 30 KB. No GitHub ela será salva em <strong>site/img/kits/</strong> e aplicada como <strong>img/kits/arquivo.webp</strong>.</p><div class="photo-tools-grid"><div class="photo-preview-box"><img src="${esc(c.imagem||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"></div><div><div class="field"><label>Subir foto quadrada</label><input class="input" id="kitImageFile" type="file" accept="image/*"></div><div class="photo-actions"><button class="btn green" data-action="use-kit-image-local">Aplicar local compactada</button><button class="btn blue" data-action="upload-kit-image-github">Enviar para GitHub / site/img/kits</button></div></div></div></div><div style="margin-top:14px"><div class="field"><label>Buscar produto para adicionar/substituir</label><input class="input" id="kitProductSearch" value="${esc(state.kitProductSearch)}" placeholder="Digite nome, código, marca ou GTIN..."></div><div class="search-results" id="kitProductResults">${renderKitSearchResults()}</div></div><div class="basket-list">${rows}</div>`}
   function renderKitRow(c,item){const it=parseBasketItem(item), p=productByCode(it.codigo); return `<div class="basket-row"><img src="${esc(p?getImg(p):PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(p?getName(p):'Produto não encontrado')}</strong><div class="tiny">Código: ${esc(it.codigo)} ${p?`· ${brl(p.preco)}`:''}</div><div class="meta-line" style="margin-top:6px"><span class="chip green">${p?'Disponível no kit: 99999':'Produto indisponível'}</span>${p?`<span class="chip">Estoque real: ${esc(toNum(p.estoque))}</span>`:''}</div></div><div class="field"><label>Qtd</label><input class="input" data-action="kit-qtd" data-code="${esc(it.codigo)}" value="${esc(it.qtd)}"></div><button class="btn small blue" data-action="start-kit-replace" data-code="${esc(it.codigo)}">Substituir</button><button class="btn small red" data-action="remove-from-kit" data-code="${esc(it.codigo)}">Remover</button></div>`}
   function renderKitSearchResults(){const q=textNorm(state.kitProductSearch); if(!q) return state.kitReplace?`<div class="notice gold">Escolha o produto substituto do kit.</div>`:''; return state.produtos.filter(p=>textNorm([getName(p),p.codigo,p.gtin,p.marca,p.categoria].join(' ')).includes(q)).slice(0,30).map(p=>`<div class="result-row"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(getName(p))}</strong><div class="tiny">${esc(p.codigo||getCode(p))} · ${brl(p.preco)}</div></div><button class="btn small ${state.kitReplace?'blue':'green'}" data-action="${state.kitReplace?'confirm-kit-replace':'add-to-kit'}" data-code="${esc(getCode(p))}">${state.kitReplace?'Usar como substituto':'Adicionar'}</button></div>`).join('') || `<div class="empty">Nenhum produto encontrado.</div>`}
   function addToKit(code,qtd=1){const c=currentKit(); if(!c) return; const n=norm(code); const idx=(c.produtos||[]).findIndex(i=>parseBasketItem(i).codigo===n); if(idx>=0){const it=parseBasketItem(c.produtos[idx]); c.produtos[idx]=fmtBasketItem(it.qtd+Number(qtd||1),n)} else c.produtos.push(fmtBasketItem(qtd,n)); state.kitProductSearch=''; mark('kits'); renderAll()}
@@ -2647,13 +2712,14 @@
         alt:`${getName(product)} por ${brl(newPrice)} na Dona Antônia`,
         link:{tipo:"produto",valor:code||getKey(product)},
         arquivos:{
-          desktop:`site/banners/gerados/${bannerId}-desktop.webp`,
-          mobile:`site/banners/gerados/${bannerId}-mobile.webp`
+          desktop:githubImageFullPath("site/banners/gerados",product,`${bannerId}-desktop.webp`),
+          mobile:githubImageFullPath("site/banners/gerados",product,`${bannerId}-mobile.webp`)
         },
         formatos:{
-          desktop:{largura:1600,altura:450,proporcao:"32:9"},
-          mobile:{largura:1080,altura:1350,proporcao:"4:5"}
-        }
+          desktop:{largura:3072,altura:1024,proporcao:"3:1"},
+          mobile:{largura:2048,altura:1152,proporcao:"16:9"}
+        },
+        storage_destino:"github"
       },
       github:{
         owner:state.settings.githubOwner||"osvaldosereia",
@@ -2663,7 +2729,7 @@
         pasta_imagens:"site/banners/gerados"
       },
       diretrizes:{
-        prompt_base:"Crie um banner publicitário premium e altamente vendável para e-commerce brasileiro usando fielmente a foto real do produto. Preserve embalagem, marca, cores, textos e proporções do produto. Destaque o produto, o nome e o preço promocional; mostre o preço anterior riscado somente quando houver desconto. Use alto contraste, hierarquia clara, acabamento fotográfico, fundo coerente com a categoria e áreas seguras para recorte. Não invente selos, benefícios, pesos, ingredientes nem informações que não estejam no payload. Produza versões independentes, uma desktop 1600x450 e uma mobile 1080x1350, ambas em WebP.",
+        prompt_base:"Crie um banner publicitário premium e altamente vendável para e-commerce brasileiro usando fielmente a foto real do produto. Preserve embalagem, marca, cores, textos e proporções do produto. Destaque o produto, o nome e o preço promocional; mostre o preço anterior riscado somente quando houver desconto. Use alto contraste, hierarquia clara, acabamento fotográfico, fundo coerente com a categoria e áreas seguras para recorte. Não invente selos, benefícios, pesos, ingredientes nem informações que não estejam no payload. Produza versões independentes, uma desktop horizontal 3072x1024 e uma mobile horizontal 2048x1152, ambas em WebP.",
         fundo:"publicitário, limpo, contrastado e coerente com o produto",
         fidelidade_produto:"máxima",
         idioma:"pt-BR",
@@ -2881,23 +2947,85 @@
     const time=stamp||new Date().toISOString().replace(/[-:TZ.]/g,"").slice(0,14);
     return `${productSeoImageBase(p)}-${suffix}-${time}.webp`;
   }
+  function imageBucketFor(value=""){
+    const s=String(value||"produto").trim()||"produto";
+    let h=0;
+    for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%1000003;
+    return "b"+String(Math.abs(h)%100).padStart(2,"0");
+  }
+  function imageDateParts(stamp=""){
+    const raw=String(stamp||"").replace(/\D/g,"");
+    if(raw.length>=6)return {year:raw.slice(0,4),month:raw.slice(4,6)};
+    const d=new Date();
+    return {year:String(d.getFullYear()),month:String(d.getMonth()+1).padStart(2,"0")};
+  }
+  function cleanImageFileName(fileName,fallback="imagem.webp"){
+    let name=String(fileName||fallback).split(/[\\/]/).pop().trim();
+    name=slug(name.replace(/\.(webp|png|jpe?g)$/i,""))||slug(fallback.replace(/\.(webp|png|jpe?g)$/i,""))||"imagem";
+    if(name.length>150)name=name.slice(0,150).replace(/-+$/,"");
+    return `${name}.webp`;
+  }
+  function githubProductImagesRoot(){
+    const root=String(state.settings.githubImagesPath||"site/img/produtos_3").replace(/^\/+|\/+$/g,"");
+    return ["site/img/produtos","site/img/produtos_2","img/produtos","img/produtos_2"].includes(root)?"site/img/produtos_3":root;
+  }
+  function githubKitImagesRoot(){
+    const root=String(state.settings.githubKitImagesPath||"site/img/kits").replace(/^\/+|\/+$/g,"");
+    return root==="img/kits"?"site/img/kits":root;
+  }
+  function githubImageFullPath(root,entity,fileName,stamp=""){
+    const cleanRoot=String(root||"site/img/produtos_3").replace(/^\/+|\/+$/g,"");
+    const id=entity?.codigo||entity?.gtin||entity?.ean||getKey(entity)||entity?.id||entity?.nome||fileName||"imagem";
+    const bucket=imageBucketFor(id);
+    const d=imageDateParts(stamp);
+    return `${cleanRoot}/${bucket}/${d.year}/${d.month}/${cleanImageFileName(fileName)}`;
+  }
+  function githubProductImageFullPath(p,fileName,stamp=""){
+    const raw=String(fileName||"").replace(/^\/+/,"");
+    if(/^site\/img\//i.test(raw))return raw;
+    if(/^img\//i.test(raw))return `site/${raw}`;
+    return githubImageFullPath(githubProductImagesRoot(),p,fileName,stamp);
+  }
+  function kitImageFileName(k,stamp=""){
+    const time=stamp||new Date().toISOString().replace(/[-:TZ.]/g,"").slice(0,14);
+    return cleanImageFileName(`kit-${slug(k?.codigo||k?.nome||"promocional")}-${time}.webp`,"kit.webp");
+  }
+  function githubKitImageFullPath(k,fileName,stamp=""){
+    const raw=String(fileName||"").replace(/^\/+/,"");
+    if(/^site\/img\//i.test(raw))return raw;
+    if(/^img\//i.test(raw))return `site/${raw}`;
+    return githubImageFullPath(githubKitImagesRoot(),k,fileName,stamp);
+  }
   function productSeoImagePlan(p,stamp=""){
     const time=stamp||new Date().toISOString().replace(/[-:TZ.]/g,"").slice(0,14);
+    const file=productSeoImageFileName(p,"info-lado-a-lado",time);
+    const fullPath=githubProductImageFullPath(p,file,time);
+    const folder=fullPath.split("/").slice(0,-1).join("/");
     return {
       base:productSeoImageBase(p),
-      pasta:String(state.settings.githubImagesPath||"site/img/produtos_2").replace(/\/+$/,""),
-      publico:String(state.settings.imagePublicBase||"img/produtos_2").replace(/\/+$/,""),
-      principal:productSeoImageFileName(p,"info-lado-a-lado",time),
-      informativa:productSeoImageFileName(p,"info-lado-a-lado",time)
+      pasta:folder,
+      publico:folder,
+      principal:file,
+      informativa:file,
+      principal_path:fullPath,
+      informativa_path:fullPath,
+      imagem_path:fullPath,
+      url_imagem:githubRawFileUrl(fullPath),
+      storage_destino:"github"
     };
   }
+
   function currentProductImageSources(p){return uniq([p?.url_imagem||"",p?.imagem||"",p?.imagem_url||"",...(Array.isArray(p?.imagens)?p.imagens:[])]).filter(Boolean)}
-  function publicProductImageSrc(fileName){
-    const relative=`${String(state.settings.imagePublicBase||"img/produtos_2").replace(/\/+$/,'')}/${String(fileName||"").replace(/^\/+/,"")}`;
-    // Persiste a URL ja confirmada no GitHub: assim produto e admin nao ficam
-    // dependentes do deploy do dominio publico para exibir a foto nova.
-    return githubRawProductImageUrl(relative)||relative;
+  function publicProductImageSrc(fileNameOrPath,p=null,stamp=""){
+    const raw=String(fileNameOrPath||"").trim().replace(/\\/g,"/").replace(/^\/+/, "");
+    if(!raw)return "";
+    if(/^https?:\/\//i.test(raw))return normalizeGithubRawImageUrl(raw);
+    if(/^site\/img\//i.test(raw))return githubRawFileUrl(raw);
+    if(/^img\//i.test(raw))return githubRawFileUrl(`site/${raw}`);
+    const fullPath=githubProductImageFullPath(p||{},raw,stamp);
+    return githubRawFileUrl(fullPath);
   }
+
 
   function buildAiImageStrategy(count){
     return {
@@ -2908,7 +3036,7 @@
   }
   function isAiGeneratedProductImageSrc(src){
     const s=String(src||"").toLowerCase();
-    return /info-lado-a-lado|informacoes-rotulo|foto-principal-fundo-branco|mockup-uso-real|produtos_2|imagem[-_]?ia|ia[-_]?produto/.test(s);
+    return /info-lado-a-lado|informacoes-rotulo|foto-principal-fundo-branco|mockup-uso-real|produtos_2|produtos_3|imagem[-_]?ia|ia[-_]?produto/.test(s);
   }
   function loadImageElementForAi(src){
     return new Promise((resolve,reject)=>{
@@ -2929,23 +3057,20 @@
     return await new Promise((resolve,reject)=>cv.toBlob(b=>b?resolve(b):reject(new Error("Nao foi possivel converter a imagem de referencia para PNG.")),"image/png",0.92));
   }
   async function prepareProductReferenceImageForMake(p,batchId){
-    const originalSrc=p.url_imagem||p.imagem||p.imagem_url||(Array.isArray(p.imagens)?p.imagens[0]:"")||"";
-    // Envia para o Make a URL RAW do GitHub sempre que possível. Isso evita cache do site
-    // e evita o erro antigo de tentar baixar /img/... quando o arquivo real está em /site/img/...
+    const originalSrc=p.url_imagem||p.imagem_url||p.imagem||(Array.isArray(p.imagens)?p.imagens[0]:"")||"";
     let referenceUrl=makeDownloadImageUrl(originalSrc)||publicAssetUrl(originalSrc);
     const needsPreparedReference=/^data:image\//i.test(referenceUrl)||isAiGeneratedProductImageSrc(originalSrc)||isAiGeneratedProductImageSrc(referenceUrl);
     if(!needsPreparedReference)return referenceUrl;
     if(!state.settings.githubToken||!state.settings.githubOwner||!state.settings.githubRepo){
       if(/^https?:\/\//i.test(referenceUrl))return referenceUrl;
-      throw new Error("Esta imagem gerada antiga esta em base64. Configure o token/owner/repositorio do GitHub para eu criar uma referencia publica antes de chamar o Make.");
+      throw new Error("Esta imagem antiga esta em base64. Configure o token/owner/repositorio do GitHub para eu criar uma referencia publica antes de chamar o Make.");
     }
-    setStatus("Preparando imagem de referencia para o Make...","warn");
+    setStatus("Preparando imagem de referencia para o Make no novo padrão de pastas...","warn");
     const srcForCanvas=/^data:image\//i.test(originalSrc)?originalSrc:referenceUrl;
     try{
       const blob=await imageSrcToPngBlobForAi(srcForCanvas);
       const fileName=productSeoImageFileName(p,"referencia-make",batchId).replace(/\.webp$/i,".png");
-      const basePath=String(state.settings.githubImagesPath||"site/img/produtos_2").replace(/\/+$/,"");
-      const fullPath=`${basePath}/${fileName}`;
+      const fullPath=githubProductImageFullPath(p,fileName,batchId).replace(/\.webp$/i,".png");
       await githubUpsertRaw(fullPath,await blob.arrayBuffer(),`Prepara referencia PNG para IA do produto ${p.codigo||getName(p)}`);
       markGithubProductImageForDelete(githubRawFileUrl(fullPath));
       return githubRawFileUrl(fullPath);
@@ -2957,12 +3082,13 @@
       throw err;
     }
   }
+
   function isGithubRawProductAsset(src){
     try{
       const u=new URL(String(src||""));
       const s=state.settings||{};
       const owner=String(s.githubOwner||"").trim(),repo=String(s.githubRepo||"").trim(),branch=String(s.githubBranch||"main").trim()||"main";
-      const folder=String(s.githubImagesPath||"site/img/produtos_2").replace(/^\/+|\/+$/g,"");
+      const folder=String(s.githubImagesPath||"site/img/produtos_3").replace(/^\/+|\/+$/g,"");
       return u.hostname.toLowerCase()==="raw.githubusercontent.com" && decodeURIComponent(u.pathname).startsWith(`/${owner}/${repo}/${branch}/${folder}/`);
     }catch{return false}
   }
@@ -2972,9 +3098,6 @@
 
     readSettingsFromUi();
     const canSaveToGithub=!!(state.settings.githubToken&&state.settings.githubOwner&&state.settings.githubRepo&&state.settings.githubBranch);
-    // O cenário novo já grava no GitHub e devolve download_url. Não reenviar
-    // esse mesmo arquivo: além de ser redundante, a rotina antiga trocava a
-    // URL raw válida por um caminho relativo que o domínio público retorna 404.
     const shouldStoreResult=/^(data:image\/|https?:\/\/)/i.test(finalSrc) && !isGithubRawProductAsset(finalSrc);
 
     if(canSaveToGithub&&shouldStoreResult){
@@ -2987,42 +3110,61 @@
           if(!response.ok)throw new Error(`Erro ${response.status} ao baixar a imagem gerada.`);
           blob=await response.blob();
         }
-        const kind='info-lado-a-lado';
+        const kind="info-lado-a-lado";
         let seoName=String(fileName||productSeoImageFileName(p,kind,batchId)).split(/[\/]/).pop().trim();
         if(!seoName||!/\.webp$/i.test(seoName))seoName=productSeoImageFileName(p,kind,batchId);
-        const basePath=String(state.settings.githubImagesPath||'site/img/produtos_2').replace(/\/+$/,'');
-        const fullPath=`${basePath}/${seoName}`;
+        const fullPath=githubProductImageFullPath(p,seoName,batchId);
         await githubUpsertRaw(fullPath,await blob.arrayBuffer(),`Substitui imagem principal por IA do produto ${p.codigo||getName(p)} (${kind})`);
-        finalSrc=publicProductImageSrc(seoName);
+        finalSrc=githubRawFileUrl(fullPath);
+        p.imagem_path=fullPath;
+        p.imagem_storage="github";
+        p.imagem_origem="ia_make";
+        p.imagem_gerada_em=nowIso();
+        p.imagem_status="ok";
       }catch(err){
-        console.warn('Nao foi possivel salvar a imagem gerada no GitHub pelo admin:',err);
+        console.warn("Nao foi possivel salvar a imagem gerada no GitHub pelo admin:",err);
         if(/^data:image\//i.test(finalSrc)){
           throw new Error(`A IA devolveu base64, mas o admin não conseguiu salvar no GitHub: ${err.message}`);
         }
       }
     }
-
+    finalSrc=normalizeGithubRawImageUrl(finalSrc);
+    const finalPath=productImagePathFromUrl(finalSrc);
+    if(finalPath){
+      p.imagem_path=finalPath;
+      p.imagem_storage="github";
+      p.imagem_origem=p.imagem_origem||"ia_make";
+      p.imagem_status="ok";
+      p.imagem_gerada_em=p.imagem_gerada_em||nowIso();
+    }
     return finalSrc;
   }
   async function persistGeneratedProductImageInFirebase(p){
     const key=getKey(p);
     if(!key)throw new Error("Produto sem chave para salvar a imagem no Firebase.");
+    const main=String(p.url_imagem||p.imagem_url||p.imagem||"").trim();
     const payload={
-      url_imagem:String(p.url_imagem||p.imagem||p.imagem_url||""),
-      imagem:String(p.imagem||p.url_imagem||p.imagem_url||""),
-      imagem_url:String(p.url_imagem||p.imagem||p.imagem_url||""),
-      imagens:Array.isArray(p.imagens)?p.imagens.slice(0,1):[],
+      url_imagem:main,
+      imagem:main,
+      imagem_url:main,
+      imagens:main?[main]:[],
+      imagem_path:String(p.imagem_path||""),
+      imagem_storage:String(p.imagem_storage||"github"),
+      imagem_origem:String(p.imagem_origem||"ia_make"),
+      imagem_status:String(p.imagem_status||"ok"),
+      imagem_gerada_em:String(p.imagem_gerada_em||nowIso()),
+      imagem_anterior:String(p.imagem_anterior||""),
       last_update:Date.now(),
       updated_at:nowIso()
     };
     await patchJson(firebaseProductUrl(key),payload);
-    p.last_update=payload.last_update;
-    p.updated_at=payload.updated_at;
-    clearProductDirtyFields(key,["url_imagem","imagem","imagem_url","imagens"]);
+    Object.assign(p,payload);
+    clearProductDirtyFields(key,["url_imagem","imagem","imagem_url","imagens","imagem_path","imagem_storage","imagem_origem","imagem_status","imagem_gerada_em","imagem_anterior"]);
     state.productSyncMeta[key]=productSyncSnapshot(p);
     saveLocal();
     return payload;
   }
+
   async function aiProductImage(key){
     const p=productByKey(key);if(!p)return;
     if(!p.url_imagem&&!p.imagem&&!(p.imagens||[]).length)throw new Error('Este produto ainda não tem imagem de referência para melhorar.');
@@ -3035,6 +3177,8 @@
       produto:{...compactProductForAi(p),imagem_url:referenceImageUrl},
       estrategia:plan.label,
       seo_imagens:seoPlan,
+      imagem_path:seoPlan.imagem_path,
+      storage_destino:"github",
       substituir_imagens_existentes:true,
       instrucoes:'Gerar exatamente 1 imagem quadrada premium do produto, com fundo branco puro #FFFFFF, liso e absoluto, sem textura, sem degradê, sem ambientação, sem mesa, sem cenário, sem texto adicional e com fidelidade total à embalagem.'
     };
@@ -3051,14 +3195,21 @@
     const expectedName=seoPlan.informativa||seoPlan.principal;
     const newSrc=await saveGeneratedProductImageToGithub(p,generated[0].src,1,batchId,generated[0].fileName||expectedName);
     if(!isUsableAiImageSrc(newSrc))throw new Error('A URL devolvida pelo Make não é uma imagem válida para o sistema.');
+    const aiResult=unwrapAiResult(result);
+    if(aiResult.imagem_path||aiResult.path)p.imagem_path=String(aiResult.imagem_path||aiResult.path).replace(/^\/+/,"");
 
+    p.imagem_anterior=oldSources.find(src=>src&&src!==newSrc)||p.imagem_anterior||"";
     p.url_imagem=newSrc;
     p.imagem=newSrc;
     p.imagem_url=newSrc;
     p.imagens=[newSrc];
+    p.imagem_storage=p.imagem_storage||"github";
+    p.imagem_origem=p.imagem_origem||"ia_make";
+    p.imagem_status="ok";
+    p.imagem_gerada_em=p.imagem_gerada_em||nowIso();
     p.last_update=Date.now();
     p.updated_at=nowIso();
-    markProductDirty(getKey(p),['url_imagem','imagem','imagem_url','imagens']);
+    markProductDirty(getKey(p),['url_imagem','imagem','imagem_url','imagens','imagem_path','imagem_storage','imagem_origem','imagem_status','imagem_gerada_em','imagem_anterior']);
     mark('products');
     saveLocal();
     renderProducts();
@@ -3110,6 +3261,8 @@
       acao:"gerar_capa_kit",
       quantidade_imagens:1,
       kit:{...kit,referencias_imagens:kit.referencias_imagens},
+      imagem_path:githubKitImageFullPath(k,kitImageFileName(k)),
+      storage_destino:"github",
       instrucoes:"Crie apenas 1 capa promocional quadrada para e-commerce usando as fotos reais dos produtos do kit. O Make enviara as imagens dos produtos como referencias visuais. Preserve embalagens, marcas, variantes, volumes e cores. Mostrar nome do kit, preco anterior, preco promocional e economia/desconto. Estilo limpo, legivel e pronto para loja online."
     };
 
@@ -3118,24 +3271,26 @@
     let img=imageFromAiResult(result);
     if(!img)throw new Error("O Make nao retornou URL ou base64 da capa. O Webhook Response deve retornar o campo imagem.");
 
-    const basePath=String(state.settings.githubKitImagesPath||"site/img/kits").replace(/\/+$/,'');
-    let publicBase=String(state.settings.kitImagePublicBase||"").replace(/\/+$/,'');
-    if(!/^https?:\/\//i.test(publicBase)){
-      const owner=String(state.settings.githubOwner||"osvaldosereia").trim();
-      const repo=String(state.settings.githubRepo||"SUCEDOAN12").trim();
-      const branch=String(state.settings.githubBranch||"main").trim();
-      publicBase=`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${basePath}`;
-    }
-
     if(/^data:image\//i.test(img)){
-      setStatus("Salvando a unica capa gerada no GitHub em site/img/kits...","warn");
+      setStatus("Salvando a unica capa gerada no GitHub no novo padrão de pastas...","warn");
       const blob=await (await fetch(img)).blob();
-      const fileName=`${slug(k.codigo||k.nome)||Date.now()}.webp`;
-      await githubUpsertRaw(`${basePath}/${fileName}`,await blob.arrayBuffer(),`Atualiza capa IA do kit ${k.codigo||k.nome}`);
-      img=`${publicBase}/${fileName}`;
-      toast(`Capa do kit salva no GitHub em ${basePath}/${fileName}`,'ok',5200);
+      const fileName=kitImageFileName(k);
+      const fullPath=githubKitImageFullPath(k,fileName);
+      await githubUpsertRaw(fullPath,await blob.arrayBuffer(),`Atualiza capa IA do kit ${k.codigo||k.nome}`);
+      img=githubRawFileUrl(fullPath);
+      k.imagem_path=fullPath;
+      toast(`Capa do kit salva no GitHub em ${fullPath}`,'ok',5200);
+    }else{
+      const normalized=normalizeGithubRawImageUrl(img);
+      img=normalized;
+      const path=productImagePathFromUrl(normalized);
+      if(path)k.imagem_path=path;
     }
     k.imagem=img;
+    k.imagem_url=img;
+    k.imagem_storage="github";
+    k.imagem_origem="ia_make";
+    k.imagem_gerada_em=nowIso();
     mark("kits");
     saveLocal();
     renderKitsList();
@@ -3154,7 +3309,7 @@
     if(action==="delete-note"){if(!confirm("Excluir esta anotação?"))return;state.anotacoes=state.anotacoes.filter(n=>n.id!==b.dataset.id);mark("notes");renderNotes();updateNotesIndicator();await saveNotes(false)}
     if(action==="workbench-use-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{setStatus("Processando imagem...","warn");const prepared=await addWorkbenchPhoto(p,file);setStatus(`Imagem aplicada (${formatBytes(prepared.bytes)})`,"ok")}catch(err){alert("Erro na imagem: "+err.message)}}
     if(action==="workbench-edit-photo"&&p){try{const file=workbenchPhotoInput(key)?.files?.[0],src=p.url_imagem||p.imagem||(p.imagens||[])[0];if(!file&&!src)return alert("Selecione, cole ou cadastre uma imagem primeiro.");state.editingProductKey=key;pendingProductPhotoFile=file||null;pendingProductPhotoKey=key;ensureImageEditor();editorImage=file?await loadImageFromFile(file):await loadImageFromSource(src);$("#imageEditorModal").classList.add("open");previewImageEditor()}catch(err){alert(err.message)}}
-    if(action==="workbench-upload-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{readSettingsFromUi();setStatus("Enviando imagem SEO ao GitHub...","warn");const prepared=await prepareProductImageBlob(file),oldSources=currentProductImageSources(p),fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"),path=`${String(state.settings.githubImagesPath||"site/img/produtos_2").replace(/\/+$/,"")}/${fileName}`;await githubUpsertRaw(path,await prepared.blob.arrayBuffer(),`Atualiza foto SEO do produto ${p.codigo||getName(p)}`);const src=publicProductImageSrc(fileName);oldSources.forEach(x=>markGithubProductImageForDelete(x));p.url_imagem=p.imagem=p.imagem_url=src;p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]);markProductDirty(key,["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProducts();setStatus("Imagem SEO enviada ao GitHub","ok")}catch(err){alert("Erro ao enviar imagem: "+err.message)}}
+    if(action==="workbench-upload-photo"&&p){const file=workbenchPhotoInput(key)?.files?.[0];if(!file)return alert("Selecione uma imagem neste card.");try{readSettingsFromUi();setStatus("Enviando imagem SEO ao GitHub...","warn");const prepared=await prepareProductImageBlob(file),oldSources=currentProductImageSources(p),fileName=productSeoImageFileName(p,"foto-principal-fundo-branco"),path=githubProductImageFullPath(p,fileName);await githubUpsertRaw(path,await prepared.blob.arrayBuffer(),`Atualiza foto SEO do produto ${p.codigo||getName(p)}`);const src=githubRawFileUrl(path);oldSources.forEach(x=>markGithubProductImageForDelete(x));p.imagem_anterior=oldSources.find(x=>x&&x!==src)||p.imagem_anterior||"";p.url_imagem=p.imagem=p.imagem_url=src;p.imagens=uniq([src,...(p.imagens||[]).filter(x=>!oldSources.includes(x))]);p.imagem_path=path;p.imagem_storage="github";p.imagem_origem="admin_upload";p.imagem_status="ok";p.imagem_gerada_em=nowIso();markProductDirty(key,["url_imagem","imagem","imagem_url","imagens","imagem_path","imagem_storage","imagem_origem","imagem_status","imagem_gerada_em","imagem_anterior"]);mark("products");renderProducts();setStatus("Imagem SEO enviada ao GitHub","ok")}catch(err){alert("Erro ao enviar imagem: "+err.message)}}
     if(action==="workbench-remove-photo"&&p){if(!confirm("Remover a imagem principal deste produto?"))return;const old=p.url_imagem||p.imagem||"";p.url_imagem=p.imagem=p.imagem_url="";if(old)p.imagens=(p.imagens||[]).filter(x=>x!==old);markProductDirty(key,["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProducts()}
     if(action==="workbench-make-primary"&&p){p.url_imagem=p.imagem=p.imagem_url=b.dataset.src;markProductDirty(key,["url_imagem","imagem","imagem_url"]);mark("products");renderProducts()}
     if(action==="workbench-remove-gallery"&&p){const src=b.dataset.src;p.imagens=(p.imagens||[]).filter(x=>x!==src);if((p.url_imagem||p.imagem)===src)p.url_imagem=p.imagem=p.imagem_url=p.imagens[0]||"";markProductDirty(key,["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProducts()}
@@ -3289,7 +3444,7 @@
     return /\.(webp|png|jpe?g|gif)$/i.test(p) && folders.some(folder=>p.startsWith(`${folder}/`));
   }
   function productImageFolders(){
-    return uniqClean([state.settings.githubImagesPath||"site/img/produtos_2","site/img/produtos","site/img/produtos_2"])
+    return uniqClean([state.settings.githubImagesPath||"site/img/produtos_3","site/img/produtos_3","site/img/produtos","site/img/produtos_2"])
       .map(p=>String(p).replace(/^\/+/ ,"").replace(/\/+$/,""));
   }
   function markGithubProductImageForDelete(src=""){
