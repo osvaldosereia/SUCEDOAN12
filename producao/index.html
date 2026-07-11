@@ -367,6 +367,23 @@
     @media(max-width:760px){.workbench-banner-control{grid-template-columns:1fr}.create-banner-btn{grid-column:auto;width:100%}.workbench-media{border-right:0;border-bottom:2px solid #c2cad2}}
   </style>
 
+
+  <style id="da-optimize-image-css">
+    .optimize-image-overlay[hidden]{display:none!important}
+    .optimize-image-overlay{position:fixed;inset:0;z-index:126;display:grid;place-items:center;padding:18px;background:rgba(15,23,42,.56)}
+    .optimize-image-dialog{width:min(980px,96vw);max-height:90vh;overflow:auto;padding:20px;border-radius:24px;background:#fff;box-shadow:0 30px 90px rgba(0,0,0,.28)}
+    .optimize-image-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}
+    .optimize-image-head h2{margin:0;font-size:22px}.optimize-image-head p{margin:5px 0 0;color:var(--muted);font-size:13px}
+    .optimize-image-form{display:grid;grid-template-columns:1fr 1.4fr 1fr 1fr;gap:10px;padding:14px;border:1px solid var(--line);border-radius:18px;background:#fafafa}
+    .optimize-image-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+    .optimize-image-metric{padding:12px;border:1px solid var(--line);border-radius:14px;background:#fff}.optimize-image-metric strong{display:block;font-size:20px}.optimize-image-metric span{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-weight:800}
+    .optimize-image-progress{height:12px;background:#eeeae1;border-radius:999px;overflow:hidden;border:1px solid var(--line);margin:10px 0}.optimize-image-progress>div{height:100%;width:0;background:#111;transition:.2s}
+    .optimize-image-table-wrap{overflow:auto;max-height:280px;border:1px solid var(--line);border-radius:15px}.optimize-image-table{width:100%;border-collapse:collapse;font-size:12px}.optimize-image-table th,.optimize-image-table td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.optimize-image-table th{position:sticky;top:0;background:#f4f1e9;color:#705512;font-size:11px;text-transform:uppercase;letter-spacing:.03em}.optimize-image-table td:first-child{white-space:normal;min-width:220px;font-weight:800}
+    .optimize-image-log{margin-top:12px;max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:14px;background:#fafafa;padding:8px;font-size:12px}.optimize-image-log-row{padding:5px 6px;border-bottom:1px solid #eee}.optimize-image-log-row.ok{color:var(--green)}.optimize-image-log-row.err{color:var(--red)}.optimize-image-log-row.warn{color:#8a6116}
+    .optimize-image-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:15px}
+    @media(max-width:760px){.optimize-image-dialog{padding:15px}.optimize-image-form{grid-template-columns:1fr 1fr}.optimize-image-summary{grid-template-columns:1fr 1fr}.optimize-image-actions .btn{flex:1 1 140px}.optimize-image-table td:first-child{min-width:170px}}
+    @media(max-width:460px){.optimize-image-form{grid-template-columns:1fr}.optimize-image-summary{grid-template-columns:1fr}.optimize-image-head{align-items:center}.optimize-image-head p{font-size:11px}}
+  </style>
 </head>
 <body>
   <header class="topbar">
@@ -420,7 +437,7 @@
         <button class="btn primary" type="button" data-action="save-products">✓ Salvar produtos</button>
         <button class="btn gold" type="button" data-action="open-low-stock">⚠ Estoque 0 a 5</button>
         <button class="btn blue" type="button" data-action="open-bulk-price">％ Reajuste em massa</button>
-        <button class="btn gold" type="button" data-action="open-ai-image-batch">🖼 IA imagens em massa</button>
+        <button class="btn gold" type="button" data-action="open-ai-image-batch">🖼 IA imagens em massa</button><button class="btn green" type="button" data-action="open-optimize-image-batch">⚡ Otimizar imagens</button>
         <button class="btn" type="button" data-action="reload">↻ Recarregar dados</button>
       </div>
       <button class="btn blue block" style="margin-top:8px" type="button" data-action="open-settings">⚙ Configurações</button>
@@ -486,7 +503,7 @@
 
   <main class="app">
     <section class="panel" id="tab-produtos">
-      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Ficha completa para editar produtos, imagens, cestas e kits sem sair da página.</p></div><div class="toolbar"><button class="btn notes-home-btn" id="notesHomeBtn" type="button" data-action="go-notes">📝 Notas <span class="notes-count">0</span></button><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn blue" data-action="normalize-products-site">✓ Adequar ao site</button><button class="btn blue" data-action="open-bulk-price">％ Reajuste em massa</button><button class="btn gold" data-action="open-ai-image-batch">🖼 IA imagens em massa</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
+      <div class="panel-head"><div class="panel-title"><h2>Produtos</h2><p>Ficha completa para editar produtos, imagens, cestas e kits sem sair da página.</p></div><div class="toolbar"><button class="btn notes-home-btn" id="notesHomeBtn" type="button" data-action="go-notes">📝 Notas <span class="notes-count">0</span></button><button class="btn green" data-action="new-product">＋ Novo produto</button><button class="btn primary" data-action="save-products">✓ Salvar produtos</button><button class="btn blue" data-action="normalize-products-site">✓ Adequar ao site</button><button class="btn blue" data-action="open-bulk-price">％ Reajuste em massa</button><button class="btn gold" data-action="open-ai-image-batch">🖼 IA imagens em massa</button><button class="btn green" type="button" data-action="open-optimize-image-batch">⚡ Otimizar imagens</button><button class="btn gold" data-action="open-low-stock">⚠ Estoque 0 a 5</button><button class="btn" data-action="export-products-json">↓ Exportar JSON</button><label class="btn">↑ Importar JSON<input id="productsFile" hidden type="file" accept=".json,application/json"></label></div></div>
       <div class="products-grid" id="productsGrid"></div>
       <div class="pagination" id="pagination"></div>
     </section>
@@ -4043,6 +4060,196 @@ createProductBanner = async function(key){
   setStatus(`Banner criado e enviado para ${position}. O site carregará o novo JSON automaticamente.`,"ok");return result;
 };
 
+
+
+
+/* DA_OPTIMIZE_CURRENT_IMAGES_20260711 */
+const DA_OPTIMIZE_IMAGE_DELAY_DEFAULT_MS = 10000;
+state.optimizeImageBatch = state.optimizeImageBatch || {running:false,stopRequested:false,queue:[],total:0,index:0,success:0,failed:0,errors:[],logs:[],currentKey:null,timer:null,delayResolve:null,nextAt:null,catalogPublished:false,catalogError:""};
+
+function productCurrentImageSource(p){
+  return String(p?.url_imagem||p?.imagem_url||p?.imagem||(Array.isArray(p?.imagens)?p.imagens[0]:"")||"").trim();
+}
+function optimizedImageBatchId(){return new Date().toISOString().replace(/[-:TZ.]/g,"").slice(0,14)}
+function isOptimizedProductImage(p){
+  const path=String(p?.imagem_path||productImagePathFromUrl(productCurrentImageSource(p))||"").toLowerCase();
+  const src=String(productCurrentImageSource(p)||"").toLowerCase();
+  return path.includes("site/img/produtos_3/") || src.includes("/site/img/produtos_3/");
+}
+function sourceForCanvasFromProduct(p){
+  const raw=productCurrentImageSource(p);
+  return makeDownloadImageUrl(raw)||publicAssetUrl(raw)||raw;
+}
+async function imageSrcToOptimizedProductWebpBlob(src){
+  const img=await loadImageElementForAi(src);
+  const targetBytes=160*1024;
+  const sizes=[820,760,700,640,600,560,512,448,384];
+  const qualities=[.82,.76,.70,.64,.58,.52,.46,.40,.34,.28];
+  let best=null;
+  for(const size of sizes){
+    const cv=document.createElement("canvas"),cx=cv.getContext("2d");
+    cv.width=size;cv.height=size;
+    cx.fillStyle="#fff";cx.fillRect(0,0,size,size);
+    const scale=Math.min(size/(img.naturalWidth||img.width),size/(img.naturalHeight||img.height));
+    const w=Math.max(1,Math.round((img.naturalWidth||img.width)*scale)),h=Math.max(1,Math.round((img.naturalHeight||img.height)*scale));
+    cx.imageSmoothingEnabled=true;cx.imageSmoothingQuality="high";
+    cx.drawImage(img,Math.round((size-w)/2),Math.round((size-h)/2),w,h);
+    for(const quality of qualities){
+      const blob=await new Promise((resolve,reject)=>cv.toBlob(b=>b?resolve(b):reject(new Error("Não foi possível converter a imagem atual para WebP.")),"image/webp",quality));
+      if(!blob)continue;
+      if(!best||blob.size<best.blob.size)best={blob,size,quality};
+      if(blob.size<=targetBytes)return {blob,size,quality,targetBytes};
+    }
+  }
+  if(best)return {...best,targetBytes};
+  throw new Error("Não foi possível otimizar a imagem atual.");
+}
+async function optimizeCurrentProductImage(key,{silent=false,batchId=""}={}){
+  const p=productByKey(key); if(!p)throw new Error("Produto não encontrado.");
+  readSettingsFromUi();
+  if(!state.settings.githubToken||!state.settings.githubOwner||!state.settings.githubRepo)throw new Error("Configure token, owner e repositório do GitHub antes de otimizar imagens.");
+  const original=productCurrentImageSource(p);
+  if(!original)throw new Error("Este produto não tem imagem atual para otimizar.");
+  const source=sourceForCanvasFromProduct(p);
+  if(!/^https?:\/\//i.test(source)&&!/^data:image\//i.test(source))throw new Error("A imagem atual precisa estar em URL pública ou base64 para ser otimizada.");
+  if(!silent)setStatus(`Otimizando foto atual de ${getName(p)}...`,"warn");
+  const prepared=await imageSrcToOptimizedProductWebpBlob(source);
+  const stamp=batchId||optimizedImageBatchId();
+  const fileName=productSeoImageFileName(p,"foto-atual-otimizada",stamp);
+  const path=githubProductImageFullPath(p,fileName,stamp);
+  await githubUpsertRaw(path,await prepared.blob.arrayBuffer(),`Otimiza foto atual em WebP do produto ${p.codigo||getName(p)}`);
+  const src=githubRawFileUrl(path);
+  const oldSources=currentProductImageSources(p);
+  p.imagem_anterior=oldSources.find(x=>x&&x!==src)||p.imagem_anterior||"";
+  p.url_imagem=src; p.imagem=src; p.imagem_url=src; p.imagens=[src];
+  p.imagem_path=path; p.imagem_storage="github"; p.imagem_origem="otimizacao_admin"; p.imagem_status="ok"; p.imagem_gerada_em=nowIso();
+  p.last_update=Date.now(); p.updated_at=nowIso();
+  await persistGeneratedProductImageInFirebase(p);
+  oldSources.filter(x=>x&&x!==src).forEach(x=>markGithubProductImageForDelete(x));
+  renderProducts(); if(state.editingProductKey===key)renderProductEditor(false); refreshJson();
+  if(!silent){setStatus(`Foto atual otimizada em WebP e salva no Firebase (${formatBytes(prepared.blob.size)})`,"ok");toast(`Foto otimizada salva: ${formatBytes(prepared.blob.size)}`,"ok",7000)}
+  return {url:src,path,bytes:prepared.blob.size,size:prepared.size,quality:prepared.quality};
+}
+
+const daBaseRenderProductWorkbenchForOptimize = renderProductWorkbench;
+renderProductWorkbench = function(p){
+  let html=daBaseRenderProductWorkbenchForOptimize(p);
+  if(!html.includes('data-action="optimize-current-product-image"')){
+    html=html.replace('<button class="btn gold" type="button" data-action="ai-product-image"', '<button class="btn green" type="button" data-action="optimize-current-product-image" data-key="'+esc(getKey(p))+'">Otimizar atual</button><button class="btn gold" type="button" data-action="ai-product-image"');
+  }
+  return html;
+};
+
+function ensureOptimizeImageBatchModal(){
+  if($("#optimizeImageBatchModal"))return;
+  document.body.insertAdjacentHTML("beforeend",`<div class="optimize-image-overlay" id="optimizeImageBatchModal" hidden>
+    <section class="optimize-image-dialog" role="dialog" aria-modal="true" aria-labelledby="optimizeImageBatchTitle">
+      <div class="optimize-image-head"><div><h2 id="optimizeImageBatchTitle">Otimizar imagens atuais em massa</h2><p>Compacta a imagem atual em WebP, salva em <strong>site/img/produtos_3/bXX/ANO/MES/</strong> e atualiza o Firebase. Não usa OpenAI nem Make.</p></div><button class="btn" type="button" data-action="close-optimize-image-batch">Fechar</button></div>
+      <div class="optimize-image-form">
+        <div class="field"><label>Agrupar por</label><select class="select" id="optimizeImageScope"><option value="categoria">Categoria</option><option value="subcategoria">Subcategoria</option><option value="marca">Marca</option><option value="todos">Todos</option></select></div>
+        <div class="field"><label>Selecionar grupo</label><select class="select" id="optimizeImageValue"></select></div>
+        <div class="field"><label>Intervalo</label><select class="select" id="optimizeImageDelay"><option value="10000">10 segundos</option><option value="15000">15 segundos</option><option value="30000">30 segundos</option></select></div>
+        <label class="checkline" style="align-self:end"><input type="checkbox" id="optimizeImageSkipOptimized" checked> Pular quem já está em produtos_3</label>
+      </div>
+      <div class="notice gold" id="optimizeImageStatus" style="margin-top:10px">Selecione uma categoria para montar a fila.</div>
+      <div class="optimize-image-summary" id="optimizeImageSummary"></div>
+      <div class="optimize-image-progress"><div id="optimizeImageProgressBar"></div></div>
+      <div class="optimize-image-table-wrap"><table class="optimize-image-table"><thead><tr><th>Produto</th><th>Código</th><th>Status atual</th><th>Origem</th></tr></thead><tbody id="optimizeImagePreview"></tbody></table></div>
+      <div class="optimize-image-log" id="optimizeImageLog"></div>
+      <div class="optimize-image-actions"><button class="btn" type="button" data-action="close-optimize-image-batch">Cancelar</button><button class="btn red" type="button" data-action="stop-optimize-image-batch">Parar após o atual</button><button class="btn primary" id="optimizeImageStartBtn" type="button" data-action="start-optimize-image-batch">Iniciar otimização</button></div>
+    </section>
+  </div>`);
+}
+function optimizeImageGroupValues(scope){
+  if(scope==="todos")return ["Todos os produtos com imagem"];
+  return uniqClean(state.produtos.map(p=>p[scope])).filter(Boolean);
+}
+function renderOptimizeImageBatchSelectors(preserveValue=true){
+  const scope=$("#optimizeImageScope")?.value||"categoria",select=$("#optimizeImageValue"); if(!select)return;
+  const old=preserveValue?select.value:"",values=optimizeImageGroupValues(scope);
+  select.disabled=scope==="todos";
+  select.innerHTML=values.map(v=>`<option value="${esc(v)}" ${String(v)===String(old)?"selected":""}>${esc(v)}</option>`).join("");
+}
+function optimizeImageBatchCandidates(){
+  const scope=$("#optimizeImageScope")?.value||"categoria",value=$("#optimizeImageValue")?.value||"",skip=$("#optimizeImageSkipOptimized")?.checked!==false;
+  return state.produtos.filter(p=>{
+    if(!productCurrentImageSource(p))return false;
+    if(skip&&isOptimizedProductImage(p))return false;
+    if(scope==="todos")return true;
+    return String(p[scope]||"")===String(value||"");
+  });
+}
+function optimizeImageStatusForProduct(p){return isOptimizedProductImage(p)?"já em produtos_3":"pendente"}
+function renderOptimizeImageBatchModal(){
+  ensureOptimizeImageBatchModal();
+  const b=state.optimizeImageBatch;
+  const candidates=b.running?b.queue.map(productByKey).filter(Boolean):optimizeImageBatchCandidates();
+  const total=b.running?b.total:candidates.length;
+  const pct=b.total?Math.round(((b.success+b.failed)/b.total)*100):0;
+  const current=b.currentKey?productByKey(b.currentKey):null;
+  const summary=$("#optimizeImageSummary");
+  if(summary)summary.innerHTML=`<div class="optimize-image-metric"><strong>${total}</strong><span>na fila</span></div><div class="optimize-image-metric"><strong>${b.success}</strong><span>otimizadas</span></div><div class="optimize-image-metric"><strong>${b.failed}</strong><span>com erro</span></div><div class="optimize-image-metric"><strong>${b.running?Math.max(0,b.total-b.index):total}</strong><span>${b.running?"restantes":"prévia"}</span></div>`;
+  const bar=$("#optimizeImageProgressBar"); if(bar)bar.style.width=`${pct}%`;
+  const status=$("#optimizeImageStatus");
+  if(status){status.className="notice "+(b.running?"gold":(b.failed?"red":""));status.innerHTML=b.running?`Rodando: <strong>${esc(current?getName(current):"preparando")}</strong>. Não feche esta aba.`:(total?`Fila pronta com ${total} produto(s).`:`Nenhum produto com imagem para esta seleção.`)}
+  const tbody=$("#optimizeImagePreview");
+  if(tbody){tbody.innerHTML=(candidates||[]).slice(0,300).map(p=>`<tr><td>${esc(getName(p))}</td><td>${esc(p.codigo||getKey(p))}</td><td>${esc(optimizeImageStatusForProduct(p))}</td><td>${esc(productImagePathFromUrl(productCurrentImageSource(p))||productCurrentImageSource(p)).slice(0,110)}</td></tr>`).join("")||`<tr><td colspan="4">Nenhum produto encontrado.</td></tr>`}
+  const log=$("#optimizeImageLog"); if(log)log.innerHTML=(b.logs||[]).slice(-60).reverse().map(x=>`<div class="optimize-image-log-row ${esc(x.type||"")}">${esc(x.time||"")} — ${esc(x.text||"")}</div>`).join("");
+  const start=$("#optimizeImageStartBtn"); if(start){start.disabled=!!b.running||!total;start.textContent=b.running?"Otimizando...":"Iniciar otimização"}
+}
+function openOptimizeImageBatchModal(){ensureOptimizeImageBatchModal();$("#optimizeImageBatchModal").hidden=false;renderOptimizeImageBatchSelectors(false);renderOptimizeImageBatchModal()}
+function closeOptimizeImageBatchModal(){if(state.optimizeImageBatch.running){alert("A otimização em massa está rodando. Use 'Parar após o atual' antes de fechar.");return}$("#optimizeImageBatchModal")?.setAttribute("hidden","")}
+function optimizeImageBatchLog(type,text){const b=state.optimizeImageBatch;b.logs.push({type,text,time:new Date().toLocaleTimeString("pt-BR")});renderOptimizeImageBatchModal()}
+function optimizeImageBatchDelay(ms){return new Promise(resolve=>{const b=state.optimizeImageBatch;b.nextAt=Date.now()+ms;b.delayResolve=resolve;b.timer=setTimeout(()=>{b.timer=null;b.delayResolve=null;resolve()},ms)})}
+async function startOptimizeImageBatch(){
+  if(state.optimizeImageBatch.running)return;
+  renderOptimizeImageBatchSelectors(true);
+  const queue=optimizeImageBatchCandidates().map(getKey).filter(Boolean);
+  if(!queue.length)return alert("Nenhum produto encontrado para otimizar nesta seleção.");
+  const delay=Math.max(1000,Number($("#optimizeImageDelay")?.value||DA_OPTIMIZE_IMAGE_DELAY_DEFAULT_MS));
+  const scope=$("#optimizeImageScope")?.value||"categoria",value=$("#optimizeImageValue")?.value||"";
+  if(!confirm(`Otimizar a imagem atual de ${queue.length} produto(s)?\n\nGrupo: ${scope==="todos"?"todos":value}\nIntervalo: ${Math.round(delay/1000)} segundos entre produtos\n\nNão usa OpenAI nem Make. Mantenha esta aba aberta.`))return;
+  state.optimizeImageBatch={running:true,stopRequested:false,queue,total:queue.length,index:0,success:0,failed:0,errors:[],logs:[],currentKey:null,timer:null,delayResolve:null,nextAt:null,catalogPublished:false,catalogError:""};
+  optimizeImageBatchLog("warn",`Fila iniciada com ${queue.length} produto(s).`);
+  setStatus(`Otimizando imagens atuais: ${queue.length} produto(s)...`,"warn");
+  renderOptimizeImageBatchModal();
+  for(let i=0;i<queue.length;i++){
+    const b=state.optimizeImageBatch; if(!b.running||b.stopRequested)break;
+    b.index=i; b.currentKey=queue[i]; renderOptimizeImageBatchModal();
+    const p=productByKey(queue[i]);
+    if(!p){b.failed++;b.errors.push({key:queue[i],message:"Produto não encontrado"});optimizeImageBatchLog("err",`Produto ${queue[i]} não encontrado.`)}
+    else{
+      optimizeImageBatchLog("warn",`Otimizando ${i+1}/${queue.length}: ${getName(p)}`);
+      try{const out=await optimizeCurrentProductImage(queue[i],{silent:true,batchId:optimizedImageBatchId()});b.success++;optimizeImageBatchLog("ok",`${getName(p)} · ${formatBytes(out.bytes)}`)}
+      catch(err){b.failed++;b.errors.push({key:queue[i],message:err?.message||String(err)});console.error("Erro na otimização em massa:",p,err);optimizeImageBatchLog("err",`${getName(p)}: ${err?.message||err}`)}
+    }
+    b.index=i+1; b.currentKey=null; renderOptimizeImageBatchModal();
+    if(i<queue.length-1&&!b.stopRequested){setStatus(`Aguardando ${Math.round(delay/1000)} segundos para o próximo produto...`,"warn");await optimizeImageBatchDelay(delay)}
+  }
+  const final=state.optimizeImageBatch; final.running=false; final.currentKey=null; final.index=final.total;
+  if(final.success>0){
+    try{setStatus("Publicando produtos.json no GitHub uma única vez...","warn");optimizeImageBatchLog("warn",`Publicando produtos.json com ${final.success} imagem(ns) otimizada(s)...`);await saveGithubFiles({produtos:productsObject()});final.catalogPublished=true;optimizeImageBatchLog("ok","produtos.json publicado no GitHub.")}
+    catch(err){final.catalogError=err?.message||String(err);optimizeImageBatchLog("err",`Imagens salvas no Firebase, mas produtos.json não foi publicado: ${final.catalogError}`)}
+  }
+  const publishMsg=final.catalogPublished?" Catálogo publicado no GitHub.":(final.catalogError?" Imagens ficaram no Firebase, mas produtos.json não foi publicado.":"");
+  setStatus(`Otimização concluída. ${final.success} salva(s), ${final.failed} erro(s).${publishMsg}`,final.failed||final.catalogError?"err":"ok");
+  optimizeImageBatchLog(final.failed||final.catalogError?"err":"ok",`Processo concluído. ${final.success} salva(s), ${final.failed} erro(s).${publishMsg}`);
+  renderOptimizeImageBatchSelectors(true);renderOptimizeImageBatchModal();
+}
+function stopOptimizeImageBatch(){const b=state.optimizeImageBatch;if(!b.running)return;b.stopRequested=true;if(b.timer){clearTimeout(b.timer);b.timer=null}if(b.delayResolve){const r=b.delayResolve;b.delayResolve=null;r()}optimizeImageBatchLog("warn","Parada solicitada. O produto atual termina e a fila não continua.");setStatus("Parando otimização em massa após o produto atual...","warn");renderOptimizeImageBatchModal()}
+
+document.addEventListener("click",async e=>{
+  const b=e.target.closest?.("[data-action]"); if(!b)return;
+  const action=b.dataset.action,key=b.dataset.key;
+  if(action==="optimize-current-product-image"){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();await runUiAction(b,"Otimizando...",()=>optimizeCurrentProductImage(key));return}
+  if(action==="open-optimize-image-batch"){e.preventDefault();openOptimizeImageBatchModal();return}
+  if(action==="close-optimize-image-batch"){e.preventDefault();closeOptimizeImageBatchModal();return}
+  if(action==="start-optimize-image-batch"){e.preventDefault();startOptimizeImageBatch();return}
+  if(action==="stop-optimize-image-batch"){e.preventDefault();stopOptimizeImageBatch();return}
+},true);
+document.addEventListener("input",e=>{const el=e.target;if(el&&/^optimizeImage/.test(el.id||"")){if(el.id==="optimizeImageScope")renderOptimizeImageBatchSelectors(false);renderOptimizeImageBatchModal()}},true);
+document.addEventListener("change",e=>{const el=e.target;if(el&&/^optimizeImage/.test(el.id||"")){if(el.id==="optimizeImageScope")renderOptimizeImageBatchSelectors(false);renderOptimizeImageBatchModal()}},true);
+window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running){e.preventDefault();e.returnValue="Otimização de imagens em massa em andamento.";return e.returnValue}});
 
   loadData();
 })(); 
