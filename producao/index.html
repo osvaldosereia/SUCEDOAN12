@@ -632,6 +632,7 @@
     imagePublicBase: "site/img/produtos_3",
     githubKitImagesPath: "site/img/kits",
     kitImagePublicBase: "img/kits",
+    githubAiTempPath: "site/tmp/ia-referencias",
     autoGithub: false,
     makeTextWebhookUrl: "",
     makeImageWebhookUrl: "",
@@ -936,6 +937,7 @@
       // Pastas antigas ficam apenas como legado/fallback; nada novo deve ir para produtos/produtos_2.
       if(!saved.githubImagesPath || ["site/img/produtos","site/img/produtos_2"].includes(saved.githubImagesPath)) saved.githubImagesPath="site/img/produtos_3";
       if(!saved.imagePublicBase || ["img/produtos","img/produtos_2"].includes(saved.imagePublicBase)) saved.imagePublicBase="site/img/produtos_3";
+      if(!saved.githubAiTempPath) saved.githubAiTempPath="site/tmp/ia-referencias";
 
       return {...defaultSettings, ...saved}
     }catch{return {...defaultSettings}}
@@ -2973,6 +2975,14 @@
     const root=String(state.settings.githubKitImagesPath||"site/img/kits").replace(/^\/+|\/+$/g,"");
     return root==="img/kits"?"site/img/kits":root;
   }
+  function githubAiTempRoot(kind="produtos"){
+    const base=String(state.settings.githubAiTempPath||"site/tmp/ia-referencias").replace(/^\/+|\/+$/g,"")||"site/tmp/ia-referencias";
+    const cleanKind=slug(kind)||"produtos";
+    return `${base}/${cleanKind}`;
+  }
+  function githubTemporaryAiReferenceFullPath(kind,entity,fileName,stamp=""){
+    return githubImageFullPath(githubAiTempRoot(kind),entity,fileName,stamp);
+  }
   function githubImageFullPath(root,entity,fileName,stamp=""){
     const cleanRoot=String(root||"site/img/produtos_3").replace(/^\/+|\/+$/g,"");
     const id=entity?.codigo||entity?.gtin||entity?.ean||getKey(entity)||entity?.id||entity?.nome||fileName||"imagem";
@@ -3047,14 +3057,30 @@
       img.src=src;
     });
   }
-  async function imageSrcToPngBlobForAi(src){
+  async function imageSrcToLightWebpBlobForAi(src){
     const img=await loadImageElementForAi(src);
-    const size=1024,cv=document.createElement("canvas"),cx=cv.getContext("2d");
-    cv.width=size;cv.height=size;
-    cx.fillStyle="#fff";cx.fillRect(0,0,size,size);
-    const scale=Math.min(size/img.naturalWidth,size/img.naturalHeight),w=Math.max(1,Math.round(img.naturalWidth*scale)),h=Math.max(1,Math.round(img.naturalHeight*scale));
-    cx.drawImage(img,Math.round((size-w)/2),Math.round((size-h)/2),w,h);
-    return await new Promise((resolve,reject)=>cv.toBlob(b=>b?resolve(b):reject(new Error("Nao foi possivel converter a imagem de referencia para PNG.")),"image/png",0.92));
+    const targetBytes=110*1024;
+    const sizes=[640,560,512,448,384,320];
+    const qualities=[.78,.68,.58,.48,.38,.30,.24,.18];
+    let best=null;
+    for(const size of sizes){
+      const cv=document.createElement("canvas"),cx=cv.getContext("2d");
+      cv.width=size;cv.height=size;
+      cx.fillStyle="#fff";cx.fillRect(0,0,size,size);
+      const scale=Math.min(size/img.naturalWidth,size/img.naturalHeight);
+      const w=Math.max(1,Math.round(img.naturalWidth*scale)),h=Math.max(1,Math.round(img.naturalHeight*scale));
+      cx.imageSmoothingEnabled=true;
+      cx.imageSmoothingQuality="high";
+      cx.drawImage(img,Math.round((size-w)/2),Math.round((size-h)/2),w,h);
+      for(const quality of qualities){
+        const blob=await new Promise((resolve,reject)=>cv.toBlob(b=>b?resolve(b):reject(new Error("Nao foi possivel converter a imagem de referencia para WebP leve.")),"image/webp",quality));
+        if(!blob)continue;
+        if(!best||blob.size<best.size)best=blob;
+        if(blob.size<=targetBytes)return blob;
+      }
+    }
+    if(best)return best;
+    throw new Error("Nao foi possivel preparar a imagem de referencia WebP leve.");
   }
   async function prepareProductReferenceImageForMake(p,batchId){
     const originalSrc=p.url_imagem||p.imagem_url||p.imagem||(Array.isArray(p.imagens)?p.imagens[0]:"")||"";
@@ -3065,18 +3091,18 @@
       if(/^https?:\/\//i.test(referenceUrl))return referenceUrl;
       throw new Error("Esta imagem antiga esta em base64. Configure o token/owner/repositorio do GitHub para eu criar uma referencia publica antes de chamar o Make.");
     }
-    setStatus("Preparando imagem de referencia para o Make no novo padrão de pastas...","warn");
+    setStatus("Preparando referencia temporaria WebP leve para o Make em site/tmp/ia-referencias...","warn");
     const srcForCanvas=/^data:image\//i.test(originalSrc)?originalSrc:referenceUrl;
     try{
-      const blob=await imageSrcToPngBlobForAi(srcForCanvas);
-      const fileName=productSeoImageFileName(p,"referencia-make",batchId).replace(/\.webp$/i,".png");
-      const fullPath=githubProductImageFullPath(p,fileName,batchId).replace(/\.webp$/i,".png");
-      await githubUpsertRaw(fullPath,await blob.arrayBuffer(),`Prepara referencia PNG para IA do produto ${p.codigo||getName(p)}`);
-      markGithubProductImageForDelete(githubRawFileUrl(fullPath));
+      const blob=await imageSrcToLightWebpBlobForAi(srcForCanvas);
+      const fileName=productSeoImageFileName(p,"referencia-make-leve",batchId);
+      const fullPath=githubTemporaryAiReferenceFullPath("produtos",p,fileName,batchId);
+      await githubUpsertRaw(fullPath,await blob.arrayBuffer(),`Prepara referencia temporaria WebP leve para IA do produto ${p.codigo||getName(p)}`);
+      // Arquivo temporario leve: fica concentrado em site/tmp/ia-referencias/produtos/ para limpeza manual no GitHub.
       return githubRawFileUrl(fullPath);
     }catch(err){
       if(/^https?:\/\//i.test(referenceUrl)){
-        console.warn("Nao foi possivel preparar PNG de referencia; usando URL atual.",err);
+        console.warn("Nao foi possivel preparar referencia WebP leve; usando URL atual.",err);
         return referenceUrl;
       }
       throw err;
