@@ -4509,17 +4509,30 @@ const DA_BANNER_IMAGE_WIDTH = 1024;
 const DA_BANNER_IMAGE_HEIGHT = 1536;
 const DA_BANNER_MAX_PRODUCTS = 4;
 const DA_BANNER_PLACEMENTS = [
-  {value:"home.inicio",label:"Início · primeira faixa"},
-  {value:"home.cestas",label:"Início · cestas básicas"},
-  {value:"home.mercado",label:"Início · mercado"},
-  {value:"home.ofertas",label:"Início · ofertas"},
-  {value:"categoria",label:"Página/faixa de uma categoria",needsTarget:true,targetType:"categoria"},
-  {value:"subcategoria",label:"Página/faixa de uma subcategoria",needsTarget:true,targetType:"subcategoria"},
-  {value:"marca",label:"Página/faixa de uma marca",needsTarget:true,targetType:"marca"},
-  {value:"busca",label:"Resultados de busca"},
-  {value:"favoritos",label:"Favoritos"},
+  {value:"home.hero",label:"Home · primeira faixa de destaques"},
+  {value:"home.cestas.topo",label:"Home · antes das cestas básicas"},
+  {value:"home.kits.topo",label:"Home · antes dos kits promocionais"},
+  {value:"home.ofertas.topo",label:"Home · antes das ofertas"},
+  {value:"home.compra-mes.topo",label:"Home · antes da compra do mês"},
+  {value:"home.limpeza.topo",label:"Home · antes de limpeza"},
+  {value:"home.higiene.topo",label:"Home · antes de higiene e beleza"},
+  {value:"home.cafe.topo",label:"Home · antes do café da manhã"},
+  {value:"home.categorias.topo",label:"Home · antes das categorias"},
+  {value:"categorias.topo",label:"Página geral de categorias"},
+  {value:"ofertas.topo",label:"Página de ofertas"},
+  {value:"cestas.topo",label:"Página de cestas básicas"},
+  {value:"kits.topo",label:"Página de kits promocionais"},
+  {value:"rotina.compra-mes.topo",label:"Página · compra do mês"},
+  {value:"rotina.limpeza.topo",label:"Página · limpeza"},
+  {value:"rotina.higiene.topo",label:"Página · higiene e beleza"},
+  {value:"rotina.cafe.topo",label:"Página · café da manhã"},
+  {value:"busca.topo",label:"Resultados de busca"},
+  {value:"favoritos.topo",label:"Favoritos"},
+  {value:"categoria",label:"Categoria específica",needsTarget:true,targetType:"categoria"},
+  {value:"subcategoria",label:"Subcategoria específica",needsTarget:true,targetType:"subcategoria"},
+  {value:"marca",label:"Marca específica",needsTarget:true,targetType:"marca"},
   {value:"produto",label:"Página de um produto",needsTarget:true,targetType:"produto"}
-];
+]
 state.bannerManager = state.bannerManager || {catalog:null,loading:false,error:"",query:"",editingId:null,selectedKeys:new Set(),prefill:null};
 
 function daBannerDefaultCatalog(){
@@ -4687,7 +4700,7 @@ function daOpenBannerModal(mode='create',banner=null,prefill={}){
   const products=banner?daBannerRelatedProducts(banner):(prefill.products||[]);state.bannerManager.selectedKeys=new Set(products.map(p=>getKey(p)||p.firebaseKey||p.codigo).filter(Boolean));
   const sourceType=banner?.origem?.tipo||prefill.sourceType||(products.length===1?'produto':'selecionados');
   const sourceValue=banner?.origem?.valor||prefill.sourceValue||(products[0]?getKey(products[0]):'');
-  const placement=banner?.exibicao?.local||prefill.position||'home.inicio',target=banner?.exibicao?.alvo||prefill.target||'';
+  const placement=banner?.exibicao?.local||prefill.position||'home.hero',target=banner?.exibicao?.alvo||prefill.target||'';
   const link=banner?.link||prefill.link||{tipo:products.length===1?'produto':'rota',valor:products.length===1?String(products[0].codigo||getKey(products[0])):'#/mercado'};
   document.getElementById('bannerModalTitle').textContent=mode==='edit'?'Editar banner':'Criar banner profissional';
   document.getElementById('bannerModalSubtitle').textContent=mode==='edit'?'Edite metadados, posição, período e link.':'A mesma imagem será usada no desktop e no celular.';
@@ -4715,7 +4728,7 @@ function daCloseBannerModal(){document.getElementById('bannerManagerModal')?.cla
 function daBannerFormData(){
   const sourceType=document.getElementById('bannerSourceType')?.value||'produto',sourceValue=document.getElementById('bannerSourceValue')?.value||'';
   const selected=[...state.bannerManager.selectedKeys].map(k=>productByKey(k)).filter(Boolean).slice(0,DA_BANNER_MAX_PRODUCTS);
-  return {sourceType,sourceValue,selected,placement:document.getElementById('bannerPlacement')?.value||'home.inicio',target:document.getElementById('bannerPlacementTarget')?.value.trim()||'',title:document.getElementById('bannerTitle')?.value.trim()||'',alt:document.getElementById('bannerAlt')?.value.trim()||'',link:{tipo:document.getElementById('bannerLinkType')?.value||'rota',valor:document.getElementById('bannerLinkValue')?.value.trim()||''},order:Number(document.getElementById('bannerOrder')?.value)||Date.now(),start:document.getElementById('bannerStart')?.value||null,end:document.getElementById('bannerEnd')?.value||null,active:document.getElementById('bannerActive')?.value!=='false'};
+  return {sourceType,sourceValue,selected,placement:document.getElementById('bannerPlacement')?.value||'home.hero',target:document.getElementById('bannerPlacementTarget')?.value.trim()||'',title:document.getElementById('bannerTitle')?.value.trim()||'',alt:document.getElementById('bannerAlt')?.value.trim()||'',link:{tipo:document.getElementById('bannerLinkType')?.value||'rota',valor:document.getElementById('bannerLinkValue')?.value.trim()||''},order:Number(document.getElementById('bannerOrder')?.value)||Date.now(),start:document.getElementById('bannerStart')?.value||null,end:document.getElementById('bannerEnd')?.value||null,active:document.getElementById('bannerActive')?.value!=='false'};
 }
 function daValidateBannerForm(d,editing=false){
   if(!editing&&!d.selected.length)throw new Error('Selecione ao menos um produto de referência.');
@@ -4759,7 +4772,7 @@ function daOpenBannerLink(b){
   if(!b?.link?.valor)return;const t=b.link.tipo,v=b.link.valor;
   if(t==='url')return window.open(v,'_blank','noopener');
   const site=String(state.settings.siteBaseUrl||'https://www.donaantonia.com.br').replace(/\/$/,'');
-  const routes={produto:`?p=${encodeURIComponent(v)}`,categoria:`#/categoria/${encodeURIComponent(v)}`,subcategoria:`#/subcategoria/${encodeURIComponent(v)}`,marca:`#/marca/${encodeURIComponent(v)}`,rota:v.startsWith('#')?v:`#/${v.replace(/^\/+/, '')}`};window.open(site+'/'+(routes[t]||v),'_blank','noopener');
+  const routes={produto:`#/produto/${encodeURIComponent(v)}`,categoria:`#/categoria/${encodeURIComponent(v)}`,subcategoria:`#/subcategoria/${encodeURIComponent(v)}`,marca:`#/marca/${encodeURIComponent(v)}`,rota:v.startsWith('#')?v:`#/${v.replace(/^\/+/, '')}`};window.open(site+'/'+(routes[t]||v),'_blank','noopener');
 }
 function daShowBannerJson(){const data=JSON.stringify(state.bannerManager.catalog||daBannerDefaultCatalog(),null,2);const w=window.open('','_blank');if(w){w.document.write(`<pre style="white-space:pre-wrap;font:13px ui-monospace;padding:20px">${esc(data)}</pre>`);w.document.close()}}
 
@@ -4767,14 +4780,14 @@ const daOriginalRenderTabsForBanners=renderTabs;
 renderTabs=function(){daOriginalRenderTabsForBanners();daEnsureBannerUi();document.getElementById('tab-banners')?.classList.toggle('hidden',state.activeTab!=='banners');if(state.activeTab==='banners'){daRenderBannerManager();if(!state.bannerManager.catalog&&!state.bannerManager.loading)daLoadBannerCatalog(true).then(daRenderBannerManager).catch(()=>daRenderBannerManager())}};
 
 bannerPositionOptionsHtml=function(p){
-  const current=state.bannerPositions?.[getKey(p)]||'home.inicio';
+  const current=state.bannerPositions?.[getKey(p)]||'home.hero';
   const category=String(p?.categoria||'').trim(),subcategory=String(p?.subcategoria||'').trim(),brand=String(p?.marca||'').trim();
   const opts=[...DA_BANNER_PLACEMENTS.filter(x=>!x.needsTarget).map(x=>({value:x.value,label:x.label})),...(category?[{value:`categoria::${category}`,label:`Categoria · ${category}`}]:[]),...(subcategory?[{value:`subcategoria::${subcategory}`,label:`Subcategoria · ${subcategory}`}]:[]),...(brand?[{value:`marca::${brand}`,label:`Marca · ${brand}`}]:[])];
   return opts.map(x=>`<option value="${esc(x.value)}" ${x.value===current?'selected':''}>${esc(x.label)}</option>`).join('');
 };
 createProductBanner=async function(key){
   const p=productByKey(key);if(!p)throw new Error('Produto não encontrado.');
-  let raw=state.bannerPositions?.[key]||'home.inicio',position=raw,target='';if(raw.includes('::'))[position,target]=raw.split('::');
+  let raw=state.bannerPositions?.[key]||'home.hero',position=raw,target='';if(raw.includes('::'))[position,target]=raw.split('::');
   state.activeTab='banners';renderAll();window.scrollTo({top:0,behavior:'smooth'});
   setTimeout(()=>daOpenBannerModal('create',null,{products:[p],sourceType:'produto',sourceValue:getKey(p),position,target,title:`${getName(p)}`,alt:`${getName(p)} na Dona Antônia`,link:{tipo:'produto',valor:String(p.codigo||getKey(p))}}),60);
   return {ok:true,abriu_gerenciador:true};
