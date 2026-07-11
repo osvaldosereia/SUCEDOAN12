@@ -19,6 +19,7 @@
   <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-11-produtos-home-v1" as="fetch" type="application/json" crossorigin="anonymous">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -171,12 +172,14 @@
     const CONFIG = {
       SITE_BASE_URL: 'https://www.donaantonia.com.br',
       PRODUCT_URL: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json',
+      PRODUCT_HOME_URLS: ['site/produtos-home.json', 'produtos-home.json'],
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-11-pagespeed-lcp-v2',
+      APP_VERSION: '2026-07-11-produtos-home-v1',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
+      PRODUCT_HOME_CACHE_KEY: 'da_produtos_home_cache_v1',
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
       KIT_CACHE_KEY: 'da_kits_cache_v1',
       BANNER_CACHE_KEY: 'da_banners_cache_v2',
@@ -226,6 +229,7 @@
       checkoutOfferScrollLeft: 0,
       catalogLoadedAt: 0,
       catalogSource: '',
+      catalogMode: '',
       isReady: false
     };
 
@@ -448,6 +452,7 @@
     function clearSavedCatalogAndCart() {
       try {
         localStorage.removeItem(CONFIG.PRODUCT_CACHE_KEY);
+        localStorage.removeItem(CONFIG.PRODUCT_HOME_CACHE_KEY);
         localStorage.removeItem(CONFIG.BASKET_CACHE_KEY);
         localStorage.removeItem(CONFIG.KIT_CACHE_KEY);
         localStorage.removeItem(CONFIG.CART_STORAGE_KEY);
@@ -532,7 +537,7 @@
       if (couponIsValid(getCouponByCode(savedCode))) state.activeCouponCode = savedCode.toUpperCase();
     }
 
-    function normalizeProducts(raw) {
+    function normalizeProducts(raw, options) {
       const entries = Array.isArray(raw)
         ? raw.map((value, index) => [String(index), value]).filter(([, value]) => value)
         : Object.entries(raw || {});
@@ -548,7 +553,36 @@
         });
       });
       state.products = products;
+      state.catalogMode = options && options.mode ? options.mode : state.catalogMode;
       rebuildVirtualFees();
+    }
+
+    async function loadHomeProducts() {
+      const cache = readCache(CONFIG.PRODUCT_HOME_CACHE_KEY || 'da_produtos_home_cache_v1');
+      let lastError = null;
+      const urls = Array.isArray(CONFIG.PRODUCT_HOME_URLS) && CONFIG.PRODUCT_HOME_URLS.length ? CONFIG.PRODUCT_HOME_URLS : ['site/produtos-home.json'];
+      for (const url of urls) {
+        try {
+          const data = await fetchJson(withCacheBust(url), 6500, { cache: 'no-cache' });
+          normalizeProducts(data, { mode: 'lite' });
+          state.catalogLoadedAt = Date.now();
+          state.catalogSource = 'produtos-home';
+          state.catalogMode = 'lite';
+          writeCache(CONFIG.PRODUCT_HOME_CACHE_KEY || 'da_produtos_home_cache_v1', { savedAt: Date.now(), appVersion: CONFIG.APP_VERSION, data });
+          return true;
+        } catch (e) {
+          lastError = e;
+        }
+      }
+      if (cache && cache.data) {
+        normalizeProducts(cache.data, { mode: 'lite' });
+        state.catalogLoadedAt = Number(cache.savedAt || 0);
+        state.catalogSource = 'produtos-home-cache';
+        state.catalogMode = 'lite';
+        return true;
+      }
+      if (lastError) console.warn('produtos-home.json indisponivel:', lastError.message || lastError);
+      throw lastError || new Error('produtos-home indisponivel');
     }
 
     async function loadProducts(options) {
@@ -556,15 +590,17 @@
       try {
         const forceFresh = !!(options && options.forceFresh);
         const data = await fetchJson(withCacheBust(CONFIG.PRODUCT_URL, forceFresh), 9000, { cache: forceFresh ? 'no-store' : 'no-cache' });
-        normalizeProducts(data);
+        normalizeProducts(data, { mode: 'full' });
         state.catalogLoadedAt = Date.now();
         state.catalogSource = 'firebase-live';
+        state.catalogMode = 'full';
         writeCache(CONFIG.PRODUCT_CACHE_KEY, { savedAt: Date.now(), appVersion: CONFIG.APP_VERSION, data });
       } catch (err) {
         if (cache && cache.data) {
-          normalizeProducts(cache.data);
+          normalizeProducts(cache.data, { mode: 'full-cache' });
           state.catalogLoadedAt = Number(cache.savedAt || 0);
           state.catalogSource = 'cache-fallback';
+          state.catalogMode = 'full-cache';
           console.warn('Firebase indisponivel. Usando cache de produtos:', err.message || err);
           return;
         }
@@ -2682,6 +2718,22 @@
       app.scrollTop = 0;
     }
 
+
+    function ensureFullCatalogInBackground() {
+      if (state.catalogMode === 'full' || state.catalogMode === 'full-cache' || state.fullCatalogLoading) return;
+      state.fullCatalogLoading = true;
+      loadProducts().then(() => {
+        state.fullCatalogLoading = false;
+        rebuildVirtualFees();
+        renderSiteMenuContent();
+        handleRoute();
+        updateCartUI();
+      }).catch(err => {
+        state.fullCatalogLoading = false;
+        console.warn('Catálogo completo não carregou em segundo plano:', err && err.message ? err.message : err);
+      });
+    }
+
     function handleRoute() {
       updateProductStructuredData(null);
       if (!state.isReady) return;
@@ -2696,7 +2748,11 @@
       if (parts[0] === 'ofertas') return renderOffers();
       if (parts[0] === 'favoritos') return renderFavorites();
       if (parts[0] === 'rotina') return renderRoutine(parts[1]);
-      if (parts[0] === 'produto') return renderProduct(parts.slice(1).join('/'));
+      if (parts[0] === 'produto') {
+        const result = renderProduct(parts.slice(1).join('/'));
+        ensureFullCatalogInBackground();
+        return result;
+      }
       if (parts[0] === 'cesta') return renderBasketDetail(parts.slice(1).join('/'));
       if (parts[0] === 'cestas') return renderCestas();
       if (parts[0] === 'kit') return renderKitDetail(parts.slice(1).join('/'));
@@ -3691,9 +3747,12 @@
 
       try {
         if (home) {
-          // Home: carregar dados leves primeiro para melhorar LCP. O catálogo grande do Firebase vem em seguida.
+          // Home: renderiza imediatamente e carrega o catálogo leve site/produtos-home.json.
+          // O Firebase completo só é carregado quando for necessário, especialmente na validação do pedido.
           state.isReady = true;
           renderSiteMenuContent();
+          handleRoute();
+          updateCartUI();
 
           const auxPromise = Promise.allSettled([loadBanners(), loadCestas(), loadKits(), loadCoupons()]).then(() => {
             rebuildVirtualFees();
@@ -3702,24 +3761,28 @@
             updateCartUI();
           });
 
-          // Não deixar a tela inicial esperando o JSON grande de produtos.
-          await Promise.race([auxPromise, sleep(1200)]);
-          handleRoute();
-          updateCartUI();
-
-          loadProducts().then(() => {
+          loadHomeProducts().then(() => {
             rebuildVirtualFees();
             renderSiteMenuContent();
             removeMissingCartItems();
             handleRoute();
             updateCartUI();
           }).catch(err => {
-            console.error('Não foi possível carregar produtos:', err);
+            console.warn('Catálogo leve indisponível; tentando Firebase completo:', err && err.message ? err.message : err);
+            loadProducts().then(() => {
+              rebuildVirtualFees();
+              renderSiteMenuContent();
+              removeMissingCartItems();
+              handleRoute();
+              updateCartUI();
+            }).catch(error => console.error('Não foi possível carregar produtos:', error));
           });
+
+          await Promise.race([auxPromise, sleep(900)]);
           return;
         }
 
-        // Rotas de produto/categoria/busca precisam do catálogo completo antes de renderizar.
+        // Rotas de produto/categoria/busca entram com o catálogo completo para evitar detalhe incompleto.
         await Promise.allSettled([loadBanners(), loadCestas(), loadKits(), loadCoupons()]);
         await loadProducts();
         state.isReady = true;
@@ -3730,17 +3793,9 @@
         updateCartUI();
       } catch(err) {
         console.error(err);
-        app.innerHTML = `<div class="container"><div class="empty"><strong>Não foi possível carregar os produtos</strong>Verifique a conexão e tente novamente.</div></div>`;
+        app.innerHTML = `<div class="container"><div class="empty"><strong>Não conseguimos carregar o catálogo.</strong>Tente novamente em alguns instantes.</div></div>`;
       }
     }
-
-    window.addToCart = addToCart;
-    window.openCheckout = openCheckout;
-    window.closeCheckout = closeCheckout;
-    window.sendOrder = sendOrder;
-    window.clearSearch = clearSearch;
-    window.clearCart = clearCart;
-
     init();
   })();
 </script>
