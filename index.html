@@ -173,7 +173,7 @@
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-10-banners-carrossel-v3-horizontal',
+      APP_VERSION: '2026-07-11-github-buckets-img-v1',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
@@ -287,11 +287,24 @@
 
     function siteAssetUrl(value) {
       const img = String(value || '').trim();
-      const assetBase = 'https://donaantonia.com.br';
-      if (!img) return `${assetBase}/site/img/logoantonia5.png`;
-      if (/^(https?:|data:)/i.test(img)) return img;
+      const siteBase = 'https://donaantonia.com.br';
+      const githubRawBase = 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main';
+      if (!img) return `${siteBase}/img/logoantonia5.png`;
+      if (/^data:/i.test(img)) return img;
+      if (/^https?:\/\//i.test(img)) return img;
       const clean = img.replace(/^(\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
-      return `${assetBase}/${clean.startsWith('site/') ? clean : `site/${clean}`}`;
+      if (!clean) return `${siteBase}/img/logoantonia5.png`;
+      // Imagens novas e arquivos publicados pelo admin/Make ficam no GitHub.
+      // Usar raw evita depender de deploy do domínio para cada imagem nova.
+      if (/^(site\/img\/(produtos_3|produtos_2|produtos|kits)\/|site\/banners\/gerados\/)/i.test(clean)) {
+        return `${githubRawBase}/${clean}`;
+      }
+      // Caminhos antigos sem o prefixo site/ continuam aceitos como legado.
+      if (/^img\/(produtos_3|produtos_2|produtos|kits)\//i.test(clean)) {
+        return `${githubRawBase}/site/${clean}`;
+      }
+      if (clean.startsWith('site/')) return `${siteBase}/${clean}`;
+      return `${siteBase}/${clean}`;
     }
 
     function productImagesFor(raw, product) {
@@ -299,14 +312,24 @@
       const push = value => {
         const src = String(value || '').trim();
         if (!src) return;
+        // Nunca usar referência temporária como imagem pública do produto.
+        if (/site\/tmp\/ia-referencias\//i.test(src) || /\/site\/tmp\/ia-referencias\//i.test(src)) return;
         const url = siteAssetUrl(src);
-        if (!list.includes(url)) list.push(url);
+        if (url && !/ia-referencias/i.test(url) && !list.includes(url)) list.push(url);
       };
-      push(raw.url_imagem || raw.imagem || raw.image || raw.img || raw.foto || raw.foto_url || raw.urlImagem || raw.imagem_url || '');
+      // Ordem oficial da estratégia nova: URL final salva no Firebase primeiro.
+      push(raw.url_imagem || '');
+      push(raw.imagem_url || raw.urlImagem || '');
+      push(raw.imagem || raw.image || raw.img || raw.foto || raw.foto_url || '');
       if (Array.isArray(raw.imagens)) raw.imagens.forEach(push);
       if (Array.isArray(raw.images)) raw.images.forEach(push);
+      // Se o admin salvou apenas o path novo, montar a URL raw do GitHub.
+      if (!list.length && raw.imagem_path) push(raw.imagem_path);
       const code = String(product.codigo || product.id || product.firebaseKey || '').trim();
-      if (!list.length && code) push(`img/produtos/${encodeURIComponent(code)}.webp`);
+      if (!list.length && code) {
+        push(`img/produtos_2/${encodeURIComponent(code)}.webp`);
+        push(`img/produtos/${encodeURIComponent(code)}.webp`);
+      }
       if (!list.length) push('img/logoantonia5.png');
       return list;
     }
@@ -634,11 +657,10 @@
     function normalizeRelativeImage(value) {
       const img = String(value || '').trim();
       if (!img) return 'https://donaantonia.com.br/img/logoantonia5.png';
+      if (/site\/tmp\/ia-referencias\//i.test(img)) return 'https://donaantonia.com.br/img/logoantonia5.png';
       if (/^(https?:|data:)/i.test(img)) return img;
       const clean = img.replace(/^(\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
-      if (clean.startsWith('site/')) return `https://donaantonia.com.br/${clean}`;
-      if (clean.startsWith('img/')) return `https://donaantonia.com.br/${clean}`;
-      return `https://donaantonia.com.br/img/${clean}`;
+      return siteAssetUrl(clean);
     }
 
     function normalizeBannerImage(value) {
@@ -737,9 +759,10 @@
     function bannerPictureHtml(banner, kind, eager) {
       const desktop = banner.desktop || banner.mobile;
       const mobile = banner.mobile || banner.desktop;
+      const priority = eager ? ' fetchpriority="high"' : '';
       return `<picture class="da-banner-picture da-banner-picture-${escapeHtml(kind || 'section')}">
         <source media="(min-width: 768px)" srcset="${escapeHtml(desktop)}">
-        <img src="${escapeHtml(mobile)}" alt="${escapeHtml(banner.alt)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async" onerror="this.closest('.da-banner').style.display='none'">
+        <img src="${escapeHtml(mobile)}" alt="${escapeHtml(banner.alt)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async"${priority} onerror="this.closest('.da-banner').style.display='none'">
       </picture>`;
     }
 
@@ -1766,19 +1789,23 @@
 
     function fallbackImg(el) {
       if (!el) return;
-      const logo = siteAssetUrl('img/logoantonia5.png');
+      const logo = 'https://donaantonia.com.br/img/logoantonia5.png';
       const current = String(el.currentSrc || el.src || '').trim();
       const declared = String(el.getAttribute('data-fallback-images') || '').split('|').map(v => v.trim()).filter(Boolean);
       const variants = [];
       const add = src => {
         const clean = String(src || '').trim();
-        if (clean && !variants.includes(clean)) variants.push(clean);
+        if (clean && !/ia-referencias/i.test(clean) && !variants.includes(clean)) variants.push(clean);
       };
       declared.forEach(add);
       if (current) {
         if (/raw\.githubusercontent\.com/i.test(current) && !/\.(webp|png|jpe?g)(?:\?|$)/i.test(current)) add(current + '.webp');
-        if (/\/produtos\//i.test(current) && !/\/produtos_2\//i.test(current)) add(current.replace('/produtos/', '/produtos_2/'));
+        // Fallback legado entre pastas antigas. Produtos_3 é destino final novo e não deve cair para pasta antiga automaticamente.
+        if (/\/produtos\//i.test(current) && !/\/produtos_2\//i.test(current) && !/\/produtos_3\//i.test(current)) add(current.replace('/produtos/', '/produtos_2/'));
         if (/\/produtos_2\//i.test(current)) add(current.replace('/produtos_2/', '/produtos/'));
+        if (/\/site\/img\/(produtos_3|produtos_2|produtos|kits)\//i.test(current) && !/raw\.githubusercontent\.com/i.test(current)) {
+          add(current.replace(/^https?:\/\/(?:www\.)?donaantonia\.com\.br\//i, 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/'));
+        }
       }
       add(logo);
       const used = String(el.getAttribute('data-fallback-used') || '').split('|').filter(Boolean);
@@ -3648,15 +3675,24 @@
       loadFavorites();
       loadCart();
       updateCartUI();
+      app.innerHTML = `<div class="container"><div class="empty"><strong>Carregando produtos...</strong>Aguarde um instante.</div></div>`;
       try {
         await loadProducts();
-        await Promise.allSettled([loadCestas(), loadKits(), loadCoupons(), loadBanners()]);
+        state.isReady = true;
         rebuildVirtualFees();
         renderSiteMenuContent();
         removeMissingCartItems();
-        state.isReady = true;
         handleRoute();
         updateCartUI();
+
+        // Dados auxiliares não podem bloquear a primeira tela.
+        Promise.allSettled([loadCestas(), loadKits(), loadCoupons(), loadBanners()]).then(() => {
+          rebuildVirtualFees();
+          renderSiteMenuContent();
+          removeMissingCartItems();
+          handleRoute();
+          updateCartUI();
+        }).catch(err => console.warn('Falha ao carregar dados auxiliares:', err));
       } catch(err) {
         console.error(err);
         app.innerHTML = `<div class="container"><div class="empty"><strong>Não foi possível carregar os produtos</strong>Verifique a conexão e tente novamente.</div></div>`;
