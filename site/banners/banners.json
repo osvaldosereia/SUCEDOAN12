@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-12T22:44:30.095Z",
+  "updated_at": "2026-07-12T22:51:09.090Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -2188,6 +2188,98 @@
         "posicao_escolhida": "marca",
         "alvo_escolhido": "Elma Chips",
         "rotulo_posicao": "Marca específica · Elma Chips",
+        "carga_ativa_antes": 0,
+        "candidatos_avaliados": 17
+      }
+    },
+    {
+      "id": "banner-auto-p0233-20260712225109",
+      "ativo": true,
+      "titulo": "Oferta · Paulista Macarrão Penne 500g",
+      "alt": "Paulista Macarrão Penne 500g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338124210",
+        "produtos": [
+          {
+            "firebaseKey": "1776338124210",
+            "id": "1776338124210",
+            "codigo": "P0233",
+            "gtin": "7896763621223",
+            "nome": "Paulista Macarrão Penne 500g",
+            "marca": "Paulista",
+            "categoria": "MACARRÃO E MOLHOS",
+            "subcategoria": "MACARRÃO",
+            "embalagem": "500g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b05/2026/07/paulista-macarrao-penne-500g-paulista-500g-macarrao-e-molhos-macarrao-7896763621223-foto-atual-otimizada-20260711044724.webp",
+            "preco_antigo": 4.4,
+            "preco_novo": 4.18,
+            "preco_antigo_formatado": "R$ 4,40",
+            "preco_novo_formatado": "R$ 4,18",
+            "desconto_percentual": 5,
+            "validade_oferta": "2026-11-12T23:59:59-04:00",
+            "exibir_validade_oferta_na_arte": false,
+            "validade_oferta_apenas_para_elegibilidade": true
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "marca",
+        "alvo": "Paulista",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-auto-p0233-20260712225109/banner-20260712225109.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P0233"
+      },
+      "periodo": {
+        "inicio": "2026-07-12T22:51:09.090Z",
+        "fim": "2026-07-19T22:51:09.090Z"
+      },
+      "banner_inicio": "2026-07-12T22:51:09.090Z",
+      "banner_fim": "2026-07-19T22:51:09.090Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": true,
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 7,
+        "arquivo_preservado_apos_expirar": true,
+        "registro_preservado_apos_expirar": true
+      },
+      "oferta": {
+        "preco_antigo": 4.4,
+        "preco_novo": 4.18,
+        "desconto_percentual": 5,
+        "validade_oferta": "2026-11-12T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "criado_em": "2026-07-12T22:51:09.090Z",
+      "atualizado_em": "2026-07-12T22:51:09.090Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "quality": "low",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "automacao": {
+        "criada_automaticamente": true,
+        "quantidade_produtos": 1,
+        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "dias_sem_repetir": 30,
+        "origem_dados": "firebase_produtos_em_oferta",
+        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
+        "grupo_categoria": "outros",
+        "posicao_escolhida": "marca",
+        "alvo_escolhido": "Paulista",
+        "rotulo_posicao": "Marca específica · Paulista",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17
       }
