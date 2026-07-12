@@ -1783,29 +1783,132 @@
     return JSON.parse(text);
   }
 
+  function resetProductViewForStartup(){
+    state.activeTab="produtos";
+    state.productPage=1;
+    ["#f-q","#f-categoria","#f-subcategoria","#f-subsubcategoria","#f-marca","#f-fornecedor","#f-tag","#f-situacao","#f-qualidade","#f-cesta"].forEach(selector=>{
+      const element=$(selector);
+      if(element)element.value="";
+    });
+    const bannerFilter=document.getElementById(typeof DA_V6_BANNER_FILTER_ID!=="undefined"?DA_V6_BANNER_FILTER_ID:"");
+    if(bannerFilter)bannerFilter.value="";
+  }
+
+  async function loadProductsFromGithub(){
+    const s=state.settings;
+    const owner=String(s.githubOwner||defaultSettings.githubOwner).trim();
+    const repo=String(s.githubRepo||defaultSettings.githubRepo).trim();
+    const branch=String(s.githubBranch||defaultSettings.githubBranch).trim();
+    const path=String(s.githubProdutosPath||defaultSettings.githubProdutosPath).replace(/^\/+/,"").trim();
+    const errors=[];
+
+    const rawUrl=`https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${path.split("/").map(encodeURIComponent).join("/")}?v=${Date.now()}`;
+    try{
+      const data=await fetchJson(rawUrl);
+      const products=normalizeProducts(data);
+      if(products.length)return {products,source:"GitHub raw"};
+      errors.push("GitHub raw retornou catálogo vazio");
+    }catch(error){errors.push(`GitHub raw: ${error.message||error}`)}
+
+    try{
+      const apiUrl=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(branch)}`;
+      const headers={Accept:"application/vnd.github+json"};
+      if(s.githubToken)headers.Authorization=`Bearer ${s.githubToken}`;
+      const response=await fetch(apiUrl,{headers,cache:"no-store"});
+      if(!response.ok)throw new Error(`Erro ${response.status}`);
+      const file=await response.json();
+      const encoded=String(file.content||"").replace(/\s/g,"");
+      if(!encoded)throw new Error("arquivo sem conteúdo");
+      const binary=atob(encoded);
+      const bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));
+      const data=JSON.parse(new TextDecoder("utf-8").decode(bytes));
+      const products=normalizeProducts(data);
+      if(products.length)return {products,source:"GitHub API"};
+      errors.push("GitHub API retornou catálogo vazio");
+    }catch(error){errors.push(`GitHub API: ${error.message||error}`)}
+
+    for(const localPath of ["produtos-home.json","produtos.json","site/produtos.json"]){
+      try{
+        const data=await fetchJson(`${localPath}?v=${Date.now()}`);
+        const products=normalizeProducts(data);
+        if(products.length)return {products,source:`arquivo local ${localPath}`};
+        errors.push(`${localPath} retornou catálogo vazio`);
+      }catch(error){errors.push(`${localPath}: ${error.message||error}`)}
+    }
+    throw new Error(errors.join(" | "));
+  }
+
+  async function loadProductsWithFallback(){
+    const errors=[];
+    try{
+      const data=await fetchJson(firebaseUrl(state.settings.produtosNode));
+      const products=normalizeProducts(data);
+      if(products.length)return {products,source:"Firebase"};
+      errors.push("Firebase retornou catálogo vazio");
+    }catch(error){errors.push(`Firebase: ${error.message||error}`)}
+
+    try{return await loadProductsFromGithub()}
+    catch(error){errors.push(error.message||String(error))}
+
+    if(Array.isArray(state.produtos)&&state.produtos.length){
+      console.warn("Não foi possível atualizar o catálogo; mantendo os produtos já carregados.",errors);
+      return {products:[...state.produtos],source:"memória da sessão",warning:errors.join(" | ")};
+    }
+    throw new Error(errors.join(" | "));
+  }
+
   async function loadData(){
-    setStatus("Carregando produtos, cestas, kits e metadados...","warn");renderLoading();
+    resetProductViewForStartup();
+    setStatus("Carregando produtos, cestas, kits e metadados...","warn");
+    renderLoading();
+    let productSource="";
+    let productWarning="";
     try{
       const [p,m,c,k]=await Promise.allSettled([
-        fetchJson(firebaseUrl(state.settings.produtosNode)),
+        loadProductsWithFallback(),
         loadAdminMetaFromGithub(),
         loadCestasFromGithub(),
         loadKitsFromGithub()
       ]);
-      state.produtos=p.status==="fulfilled"?normalizeProducts(p.value):[];
-      if(p.status!=="fulfilled") console.warn("Firebase produtos falhou; backup local completo foi desativado para evitar quota do navegador.", p.reason);
-      state.meta=m.status==="fulfilled"?normalizeMeta(m.value):normalizeMeta(JSON.parse(localStorage.getItem(LS_META)||"{}"));
-      state.cestas=c.status==="fulfilled"?normalizeCestas(c.value):normalizeCestas(JSON.parse(localStorage.getItem(LS_CESTAS)||"[]"));
-      state.kits=k.status==="fulfilled"?normalizeKits(k.value):normalizeKits(JSON.parse(localStorage.getItem(LS_KITS)||"[]"));
+
+      if(p.status==="fulfilled"){
+        state.produtos=p.value.products;
+        productSource=p.value.source||"fonte configurada";
+        productWarning=p.value.warning||"";
+      }else{
+        console.error("Nenhuma fonte de produtos pôde ser carregada.",p.reason);
+        if(!state.produtos.length)throw p.reason;
+        productSource="memória da sessão";
+        productWarning=p.reason?.message||String(p.reason||"");
+      }
+
+      const readLocalJson=(key,fallback)=>{
+        try{return JSON.parse(localStorage.getItem(key)||fallback)}catch{return JSON.parse(fallback)}
+      };
+      state.meta=m.status==="fulfilled"?normalizeMeta(m.value):normalizeMeta(readLocalJson(LS_META,"{}"));
+      state.cestas=c.status==="fulfilled"?normalizeCestas(c.value):normalizeCestas(readLocalJson(LS_CESTAS,"[]"));
+      state.kits=k.status==="fulfilled"?normalizeKits(k.value):normalizeKits(readLocalJson(LS_KITS,"[]"));
       if(!state.cestas.length)state.cestas=normalizeCestas(DEFAULT_CESTAS);
       if(!state.meta.categorias.length&&state.produtos.length)rebuildMeta(false);
       state.selectedBasketId=state.selectedBasketId||state.cestas[0]?.id||null;
       state.selectedKitId=state.selectedKitId||state.kits[0]?.id||null;
       markProductsReloaded();
       state.dirtyCestas=state.dirtyKits=state.dirtyMeta=false;
-      setStatus(`Carregado: ${state.produtos.length} produtos, ${state.cestas.length} cestas, ${state.kits.length} kits`,"ok");
-    }catch(e){console.error(e);setStatus("Falha ao carregar. Usando backups locais.","err")}
-    finally{renderAll()}
+      resetProductViewForStartup();
+      const warningText=productWarning?" · catálogo anterior preservado após falha de atualização":"";
+      setStatus(`Carregado: ${state.produtos.length} produtos via ${productSource}${warningText}, ${state.cestas.length} cestas, ${state.kits.length} kits`,productWarning?"warn":"ok");
+    }catch(e){
+      console.error(e);
+      setStatus(`Não foi possível carregar os produtos: ${e.message||e}`,"err");
+    }finally{
+      resetProductViewForStartup();
+      renderAll();
+      requestAnimationFrame(()=>{
+        state.activeTab="produtos";
+        renderTabs();
+        renderProducts();
+      });
+    }
   }
 
   /* ===== Ajustes funcionais solicitados ===== */
@@ -5301,6 +5404,45 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   document.addEventListener('visibilitychange',()=>{if(!document.hidden) daV6CleanupExpiredBanners().catch(error=>console.warn(error));});
 })();
 
+  /* DA_BANNER_V6_PUBLIC_BRIDGE_20260712
+     Os recursos V9 ficam fora do IIFE V6. Estes helpers mantêm o mesmo contrato
+     sem depender de identificadores privados do bloco anterior. */
+  const DA_V6_BANNER_FILTER_ID = 'f-banner-ativo';
+  function daV6BannerReferenceValues(banner){
+    const refs=Array.isArray(banner?.origem?.produtos)?banner.origem.produtos:[];
+    const values=refs.flatMap(ref=>[ref?.firebaseKey,ref?.id,ref?.codigo,ref?.gtin,ref?.ean,ref?.nome]);
+    if(banner?.origem?.tipo==='produto')values.push(banner.origem.valor);
+    if(String(banner?.link?.tipo||'').toLowerCase()==='produto')values.push(banner.link.valor);
+    return values.map(value=>String(value||'').trim()).filter(Boolean);
+  }
+  function daV6BannerBelongsToProduct(banner,product){
+    const values=new Set(daV6BannerReferenceValues(banner).map(value=>textNorm(value)));
+    return [getKey(product),product?.id,product?.codigo,product?.gtin,product?.ean,getName(product)].some(value=>value&&values.has(textNorm(value)));
+  }
+  function daV6CatalogEntries(value){
+    if(Array.isArray(value))return value.map((raw,index)=>({raw,key:String(raw?.id||raw?.banner_id||index)}));
+    const source=value&&typeof value==='object'?(value.banners??value.items??value):{};
+    if(Array.isArray(source))return source.map((raw,index)=>({raw,key:String(raw?.id||raw?.banner_id||index)}));
+    if(source&&typeof source==='object')return Object.entries(source).filter(([,raw])=>raw&&typeof raw==='object').map(([key,raw])=>({raw,key}));
+    return [];
+  }
+  function daV6EnsureBannerProductFilter(){
+    const form=document.getElementById('productFilters');
+    if(!form||document.getElementById(DA_V6_BANNER_FILTER_ID))return;
+    const field=document.createElement('div');
+    field.className='field';
+    field.innerHTML=`<label>Banners</label><select class="select" id="${DA_V6_BANNER_FILTER_ID}"><option value="">Todos</option><option value="com_banner">Com banner ativo</option><option value="sem_banner">Sem banner ativo</option></select>`;
+    const basketField=document.getElementById('f-cesta')?.closest('.field');
+    if(basketField)basketField.insertAdjacentElement('afterend',field);
+    else form.appendChild(field);
+  }
+  function daV6ExpiryTime(banner){
+    const value=banner?.periodo?.fim;
+    if(!value)return Number.POSITIVE_INFINITY;
+    const time=new Date(value).getTime();
+    return Number.isFinite(time)?time:Number.POSITIVE_INFINITY;
+  }
+
 
   /* DA_BANNER_VALIDITY_INDEPENDENT_V7_20260711 */
   const DA_BANNER_EXPIRY_STORAGE_V7 = 'dona-antonia-banner-expiry-v7';
@@ -5824,89 +5966,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     `;document.head.appendChild(style);
   }
 
-
-  /* DA_ADMIN_ABRIR_SEMPRE_NOS_PRODUTOS_V10_20260712 */
-  function daV10ClearStartupProductFilters(){
-    const selectors=['#f-q','#f-categoria','#f-subcategoria','#f-subsubcategoria','#f-marca','#f-fornecedor','#f-tag','#f-situacao','#f-qualidade','#f-cesta'];
-    selectors.forEach(selector=>{const element=document.querySelector(selector);if(element)element.value='';});
-    const bannerFilter=document.getElementById(DA_V6_BANNER_FILTER_ID);
-    if(bannerFilter)bannerFilter.value='';
-    state.productPage=1;
-  }
-
-  function daV10ForceProductsTabVisible(){
-    state.activeTab='produtos';
-    document.querySelectorAll('.tab[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab==='produtos'));
-    document.querySelectorAll('main.app > .panel').forEach(panel=>panel.classList.toggle('hidden',panel.id!=='tab-produtos'));
-    const productsPanel=document.getElementById('tab-produtos');
-    if(productsPanel){productsPanel.classList.remove('hidden');productsPanel.removeAttribute('hidden');}
-    document.getElementById('backToProductsBtn')?.classList.add('hidden');
-  }
-
-  const daV10RenderProductsBase=renderProducts;
-  renderProducts=function(){
-    const grid=document.getElementById('productsGrid'),pagination=document.getElementById('pagination');
-    if(!grid)return;
-    try{
-      return daV10RenderProductsBase();
-    }catch(error){
-      console.error('Falha na renderização completa dos produtos. Aplicando renderização resiliente:',error);
-      let all=[];
-      try{all=filteredProducts();}catch(filterError){console.error('Falha nos filtros; exibindo todos os produtos:',filterError);all=[...(state.produtos||[])];}
-      const filters=(()=>{try{return getFilters();}catch{return {pageSize:24}}})();
-      const pageSize=Math.max(1,Number(filters.pageSize)||24),pages=Math.max(1,Math.ceil(all.length/pageSize));
-      state.productPage=Math.max(1,Math.min(Number(state.productPage)||1,pages));
-      const start=(state.productPage-1)*pageSize,list=all.slice(start,start+pageSize);
-      grid.className='products-grid professional-list';
-      grid.innerHTML=list.length?list.map(product=>{
-        try{return renderProductWorkbench(product);}catch(productError){
-          console.error('Produto não renderizado:',getKey(product),productError);
-          return `<article class="product-card product-workbench"><div class="product-body"><h3 class="product-name">${esc(getName(product)||'Produto sem nome')}</h3><div class="meta-line"><span class="chip">Código: ${esc(getCode(product)||getKey(product)||'-')}</span></div><div class="notice red">Este card teve um erro isolado, mas os demais produtos continuam visíveis.</div><div class="workbench-actions"><button class="btn small" type="button" data-action="edit-product" data-key="${esc(getKey(product))}">Abrir cadastro</button></div></div></article>`;
-        }
-      }).join(''):'<div class="empty">Nenhum produto encontrado.</div>';
-      if(pagination)pagination.innerHTML=`<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`;
-    }
-  };
-
-  function daV10RenderProductsAfterLoad(){
-    daV10ForceProductsTabVisible();
-    try{renderFilterOptions();}catch(error){console.warn('Filtros não atualizados na abertura:',error);}
-    try{daV9EnsureBannerFilterOptions();}catch(error){console.warn('Filtro de banners não atualizado na abertura:',error);}
-    try{renderSummary();}catch(error){console.warn('Resumo não atualizado na abertura:',error);}
-    renderProducts();
-  }
-
-  const daV10LoadDataBase=loadData;
-  loadData=async function(){
-    daV10ClearStartupProductFilters();
-    daV10ForceProductsTabVisible();
-    let loadError=null,result;
-    try{
-      result=await daV10LoadDataBase();
-    }catch(error){
-      loadError=error;
-      console.error('A inicialização geral apresentou erro, mas os produtos serão exibidos:',error);
-    }finally{
-      daV10ClearStartupProductFilters();
-      daV10RenderProductsAfterLoad();
-      requestAnimationFrame(()=>{
-        daV10RenderProductsAfterLoad();
-        requestAnimationFrame(daV10RenderProductsAfterLoad);
-      });
-    }
-    if(loadError && !(state.produtos||[]).length){
-      setStatus(`Não foi possível carregar os produtos: ${loadError.message||loadError}`,'err');
-    }else if((state.produtos||[]).length){
-      setStatus(`Carregado: ${state.produtos.length} produtos · exibindo automaticamente`,'ok');
-    }
-    return result;
-  };
-
-  loadData().catch(error=>{
-    console.error('Falha final ao iniciar o admin:',error);
-    daV10ForceProductsTabVisible();
-    try{renderProducts();}catch(renderError){console.error(renderError);}
-  });
+  loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
 </script>
 </body>
