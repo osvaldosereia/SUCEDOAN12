@@ -19,7 +19,7 @@
   <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-11-produtos-home-v1" as="fetch" type="application/json" crossorigin="anonymous">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-12-validade-v2" as="fetch" type="application/json" crossorigin="anonymous">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -279,10 +279,10 @@
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-11-banners-card-v4',
+      APP_VERSION: '2026-07-12-validade-catalogo-v2',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
-      PRODUCT_HOME_CACHE_KEY: 'da_produtos_home_cache_v1',
+      PRODUCT_HOME_CACHE_KEY: 'da_produtos_home_cache_v2',
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
       KIT_CACHE_KEY: 'da_kits_cache_v1',
       BANNER_CACHE_KEY: 'da_banners_cache_v5',
@@ -447,6 +447,18 @@
       return m ? m[0].replace(',', '.') : '';
     }
 
+    function productExpiryValue(raw) {
+      const candidates = [
+        raw.validade, raw.vencimento, raw.data_validade, raw.validade_produto,
+        raw.dataValidade, raw.expiry, raw.expiry_date, raw.expiration_date
+      ];
+      [raw.lotes, raw.lotes_estoque, raw.estoque_lotes, raw.batches].forEach(collection => {
+        if (Array.isArray(collection)) collection.forEach(lot => candidates.push(lot?.validade, lot?.vencimento, lot?.data_validade, lot?.expiry_date));
+        else if (collection && typeof collection === 'object') Object.values(collection).forEach(lot => candidates.push(lot?.validade, lot?.vencimento, lot?.data_validade, lot?.expiry_date));
+      });
+      return candidates.find(value => String(value ?? '').trim()) || '';
+    }
+
     function normalizeProduct(raw, key, index) {
       const name = formatName(raw.nome || raw.name || raw.descricao || 'Produto');
       const id = String(raw.codigo || raw.id || key || index || slug(name)).trim();
@@ -474,7 +486,7 @@
         localizacao: String(raw.localizacao || '').trim(),
         preco_oferta: parseMoney(raw.preco_oferta || raw.precoOferta || 0),
         validade_oferta: raw.validade_oferta || raw.validadeOferta || '',
-        validade: raw.validade || raw.vencimento || '',
+        validade: productExpiryValue(raw),
         tag_global: raw.tag_global || raw.tagGlobal || raw.tags || raw.tag || raw.global || '',
         rawProduto: raw
       };
@@ -2232,7 +2244,7 @@
           </div>
           <div class="product-body">
             <a class="product-name" href="#/produto/${route}" title="${escapeHtml(p.name)}">${escapeHtml(cardName)}</a>
-            ${p.validade && formatProductExpiry(p.validade) ? `<div class="product-expiry product-expiry-card">Val. ${escapeHtml(formatProductExpiry(p.validade))}</div>` : ''}
+            ${p.validade && formatProductExpiry(p.validade) ? `<div class="product-expiry product-expiry-card" aria-label="Validade do produto">Val. ${escapeHtml(formatProductExpiry(p.validade))}</div>` : ''}
             <div class="product-card-bottom">
               <div class="price-wrap">${productCardPriceHtml(display)}</div>
               <div class="add-area compact-add" data-card-controls="${escapeHtml(id)}" data-control-mode="card">${productCardControlsHtml(id, qty, unavailable)}</div>
@@ -4301,6 +4313,3 @@
 </script>
 </body>
 </html>
- 
-
- 
