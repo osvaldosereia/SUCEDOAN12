@@ -4315,6 +4315,461 @@
   }
 })();
 
+    /* ======================================================================
+       DONA ANTÔNIA — PERSONALIZAÇÃO LOCAL FASE 1
+       - Não envia dados de navegação para Firebase, Make, OpenAI ou terceiros.
+       - Não altera webhooks, checkout, catálogo, carrinho ou integrações atuais.
+       - Usa apenas localStorage após consentimento explícito.
+       ====================================================================== */
+    (() => {
+      const PERSONALIZATION_KEY = 'da_personalizacao_v1';
+      const PERSONALIZATION_VERSION = 1;
+      const MAX_RECENT = 30;
+      const MAX_PRODUCTS = 100;
+      const MAX_DIMENSIONS = 50;
+      const MAX_PURCHASES = 3;
+      const VIEW_DWELL_MS = 8000;
+      const TRACK_COOLDOWN_MS = 30 * 60 * 1000;
+      let productViewTimer = null;
+      let activeViewedProductId = '';
+
+      function emptyPersonalization() {
+        return {
+          version: PERSONALIZATION_VERSION,
+          consent: null,
+          consentAt: '',
+          updatedAt: '',
+          profile: { products: {}, categories: {}, subcategories: {}, brands: {} },
+          recentlyViewed: [],
+          purchases: [],
+          cooldowns: {}
+        };
+      }
+
+      function loadPersonalizationData() {
+        const fallback = emptyPersonalization();
+        try {
+          const parsed = JSON.parse(localStorage.getItem(PERSONALIZATION_KEY) || 'null');
+          if (!parsed || typeof parsed !== 'object' || Number(parsed.version) !== PERSONALIZATION_VERSION) return fallback;
+          parsed.profile = parsed.profile && typeof parsed.profile === 'object' ? parsed.profile : fallback.profile;
+          ['products','categories','subcategories','brands'].forEach(key => {
+            if (!parsed.profile[key] || typeof parsed.profile[key] !== 'object') parsed.profile[key] = {};
+          });
+          parsed.recentlyViewed = Array.isArray(parsed.recentlyViewed) ? parsed.recentlyViewed : [];
+          parsed.purchases = Array.isArray(parsed.purchases) ? parsed.purchases : [];
+          parsed.cooldowns = parsed.cooldowns && typeof parsed.cooldowns === 'object' ? parsed.cooldowns : {};
+          return parsed;
+        } catch (_) {
+          return fallback;
+        }
+      }
+
+      let personalization = loadPersonalizationData();
+
+      function savePersonalizationData() {
+        personalization.updatedAt = new Date().toISOString();
+        try { localStorage.setItem(PERSONALIZATION_KEY, JSON.stringify(personalization)); } catch (_) {}
+      }
+
+      function personalizationEnabled() {
+        return personalization.consent === true;
+      }
+
+      function trimObject(obj, max) {
+        const entries = Object.entries(obj || {});
+        if (entries.length <= max) return obj;
+        entries.sort((a,b) => {
+          const av = Number(a[1]?.points || 0);
+          const bv = Number(b[1]?.points || 0);
+          const at = Date.parse(a[1]?.lastAt || 0) || 0;
+          const bt = Date.parse(b[1]?.lastAt || 0) || 0;
+          return (bv - av) || (bt - at);
+        });
+        return Object.fromEntries(entries.slice(0, max));
+      }
+
+      function prunePersonalization() {
+        const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+        Object.keys(personalization.profile).forEach(group => {
+          Object.entries(personalization.profile[group]).forEach(([key, item]) => {
+            const ts = Date.parse(item?.lastAt || 0) || 0;
+            if (ts && ts < cutoff) delete personalization.profile[group][key];
+          });
+        });
+        personalization.profile.products = trimObject(personalization.profile.products, MAX_PRODUCTS);
+        personalization.profile.categories = trimObject(personalization.profile.categories, 30);
+        personalization.profile.subcategories = trimObject(personalization.profile.subcategories, MAX_DIMENSIONS);
+        personalization.profile.brands = trimObject(personalization.profile.brands, 30);
+        personalization.recentlyViewed = personalization.recentlyViewed
+          .filter(item => (Date.parse(item.viewedAt || 0) || 0) >= Date.now() - 30 * 24 * 60 * 60 * 1000)
+          .slice(0, MAX_RECENT);
+        personalization.purchases = personalization.purchases.slice(0, MAX_PURCHASES);
+        const cooldownCutoff = Date.now() - 2 * 24 * 60 * 60 * 1000;
+        Object.entries(personalization.cooldowns).forEach(([key, value]) => {
+          if (Number(value || 0) < cooldownCutoff) delete personalization.cooldowns[key];
+        });
+      }
+
+      function cooldownAllows(key, duration = TRACK_COOLDOWN_MS) {
+        const now = Date.now();
+        const last = Number(personalization.cooldowns[key] || 0);
+        if (last && now - last < duration) return false;
+        personalization.cooldowns[key] = now;
+        return true;
+      }
+
+      function bump(group, rawKey, points) {
+        if (!personalizationEnabled()) return;
+        const key = norm(rawKey);
+        if (!key) return;
+        const now = new Date().toISOString();
+        const current = personalization.profile[group][key] || { points: 0, lastAt: now, interactions: 0 };
+        current.points = Math.max(-20, Math.min(250, Number(current.points || 0) + Number(points || 0)));
+        current.lastAt = now;
+        current.interactions = Number(current.interactions || 0) + 1;
+        personalization.profile[group][key] = current;
+      }
+
+      function bumpProduct(product, points, source, useCooldown = true) {
+        if (!personalizationEnabled() || !product || product.isFee) return;
+        const id = String(product.id || '');
+        if (!id) return;
+        const cdKey = `${source || 'event'}:product:${id}`;
+        if (useCooldown && !cooldownAllows(cdKey)) return;
+        bump('products', id, points);
+        if (product.categoria) bump('categories', product.categoria, Math.max(1, points * 0.65));
+        if (product.subcategoria) bump('subcategories', product.subcategoria, Math.max(1, points * 0.75));
+        if (product.marca) bump('brands', product.marca, Math.max(1, points * 0.45));
+        prunePersonalization();
+        savePersonalizationData();
+      }
+
+      function addRecentlyViewed(product) {
+        if (!personalizationEnabled() || !product || product.isFee) return;
+        const id = String(product.id || '');
+        personalization.recentlyViewed = personalization.recentlyViewed.filter(item => String(item.productId) !== id);
+        personalization.recentlyViewed.unshift({ productId: id, viewedAt: new Date().toISOString() });
+        personalization.recentlyViewed = personalization.recentlyViewed.slice(0, MAX_RECENT);
+        savePersonalizationData();
+      }
+
+      function effectivePoints(entry) {
+        if (!entry) return 0;
+        const ageDays = Math.max(0, (Date.now() - (Date.parse(entry.lastAt || 0) || Date.now())) / 86400000);
+        let weight = 1;
+        if (ageDays > 90) weight = 0;
+        else if (ageDays > 60) weight = 0.25;
+        else if (ageDays > 30) weight = 0.5;
+        else if (ageDays > 7) weight = 0.75;
+        return Number(entry.points || 0) * weight;
+      }
+
+      function scoreProduct(product) {
+        if (!product || !isAvailable(product) || product.isFee) return -Infinity;
+        const profile = personalization.profile;
+        const productScore = effectivePoints(profile.products[norm(product.id)]);
+        const categoryScore = effectivePoints(profile.categories[norm(product.categoria)]);
+        const subcategoryScore = effectivePoints(profile.subcategories[norm(product.subcategoria)]);
+        const brandScore = effectivePoints(profile.brands[norm(product.marca)]);
+        const display = productDisplayPricing(product);
+        const offerBonus = display && Number(display.effective || 0) < Number(product.price || 0) ? 7 : 0;
+        const inCartPenalty = state.cart[String(product.id)] ? 8 : 0;
+        const recentIndex = personalization.recentlyViewed.findIndex(item => String(item.productId) === String(product.id));
+        const recentBonus = recentIndex >= 0 ? Math.max(0, 5 - recentIndex * 0.25) : 0;
+        return productScore * 5 + subcategoryScore * 3 + categoryScore * 2 + brandScore * 1.5 + offerBonus + recentBonus - inCartPenalty;
+      }
+
+      function hasEnoughSignals() {
+        if (!personalizationEnabled()) return false;
+        const p = personalization.profile;
+        const count = Object.keys(p.products).length + Object.keys(p.categories).length + Object.keys(p.subcategories).length + Object.keys(p.brands).length;
+        return count >= 3 || personalization.recentlyViewed.length >= 2 || personalization.purchases.length > 0;
+      }
+
+      function diversifiedRecommendations(limit = 8) {
+        if (!hasEnoughSignals()) return [];
+        const ranked = state.products
+          .filter(product => isAvailable(product) && !product.isFee)
+          .map(product => ({ product, score: scoreProduct(product) }))
+          .filter(item => Number.isFinite(item.score) && item.score > 0)
+          .sort((a,b) => b.score - a.score);
+        const picked = [];
+        const subCounts = new Map();
+        const brandCounts = new Map();
+        for (const item of ranked) {
+          const sub = norm(item.product.subcategoria || item.product.categoria);
+          const brand = norm(item.product.marca);
+          if (sub && Number(subCounts.get(sub) || 0) >= 3) continue;
+          if (brand && Number(brandCounts.get(brand) || 0) >= 4) continue;
+          picked.push(item.product);
+          if (sub) subCounts.set(sub, Number(subCounts.get(sub) || 0) + 1);
+          if (brand) brandCounts.set(brand, Number(brandCounts.get(brand) || 0) + 1);
+          if (picked.length >= limit) break;
+        }
+        return picked;
+      }
+
+      function recentProducts(limit = 8) {
+        if (!personalizationEnabled()) return [];
+        return personalization.recentlyViewed
+          .map(item => getProductById(String(item.productId)))
+          .filter(product => product && isAvailable(product) && !product.isFee)
+          .slice(0, limit);
+      }
+
+      function buyAgainProducts(limit = 8) {
+        if (!personalizationEnabled() || !personalization.purchases.length) return [];
+        const latest = personalization.purchases[0];
+        return (latest.items || [])
+          .map(item => getProductById(String(item.productId)))
+          .filter(product => product && isAvailable(product) && !product.isFee)
+          .slice(0, limit);
+      }
+
+      function renderPersonalizedHomeSections() {
+        if (!personalizationEnabled() || !isHomeRoute()) return;
+        const container = app.querySelector('.container');
+        if (!container || container.querySelector('[data-personalization-section]')) return;
+        const chosen = diversifiedRecommendations(8);
+        const recent = recentProducts(8);
+        const buyAgain = buyAgainProducts(8);
+        const sections = [];
+        if (chosen.length) sections.push(`<div data-personalization-section="chosen">${shelf('Escolhidos para você','Uma seleção baseada no que você visitou neste aparelho.',chosen,'')}</div>`);
+        if (recent.length) sections.push(`<div data-personalization-section="recent">${shelf('Vistos recentemente','Volte rapidamente aos produtos que você consultou.',recent,'')}</div>`);
+        if (buyAgain.length) sections.push(`<div data-personalization-section="buy-again">${shelf('Compre novamente','Itens disponíveis do último pedido enviado neste aparelho.',buyAgain,'')}</div>`);
+        if (!sections.length) return;
+        const allSections = Array.from(container.querySelectorAll(':scope > section.section'));
+        const offerSection = allSections.find(section => norm(section.querySelector('.section-title')?.textContent) === 'ofertas de hoje');
+        const anchor = offerSection || container.querySelector('.home-quick-links') || container.firstElementChild;
+        if (anchor) anchor.insertAdjacentHTML('afterend', sections.join(''));
+      }
+
+      function recordPurchaseFromCart() {
+        if (!personalizationEnabled()) return;
+        const items = getCartItems()
+          .filter(item => item.product && !item.product.isFee && isAvailable(item.product))
+          .map(item => ({ productId: String(item.product.id), qty: Number(item.qty || 1) }));
+        if (!items.length) return;
+        personalization.purchases.unshift({ at: new Date().toISOString(), items });
+        personalization.purchases = personalization.purchases.slice(0, MAX_PURCHASES);
+        items.forEach(item => {
+          const product = getProductById(item.productId);
+          bumpProduct(product, 12, `purchase:${Date.now()}`, false);
+        });
+        prunePersonalization();
+        savePersonalizationData();
+      }
+
+      function setConsent(value) {
+        personalization.consent = value === true;
+        personalization.consentAt = new Date().toISOString();
+        if (!value) {
+          const keepConsent = { ...emptyPersonalization(), consent: false, consentAt: personalization.consentAt };
+          personalization = keepConsent;
+        }
+        savePersonalizationData();
+        closePersonalizationPanel();
+        removeConsentBanner();
+        if (isHomeRoute()) handleRoute();
+        showToast(value ? 'Personalização ativada neste aparelho.' : 'Personalização desativada.');
+      }
+
+      function clearPersonalizationHistory() {
+        const consent = personalization.consent;
+        const consentAt = personalization.consentAt;
+        personalization = emptyPersonalization();
+        personalization.consent = consent;
+        personalization.consentAt = consentAt;
+        savePersonalizationData();
+        closePersonalizationPanel();
+        if (isHomeRoute()) handleRoute();
+        showToast('Histórico de personalização apagado.');
+      }
+
+      function removeConsentBanner() {
+        document.getElementById('da-personalization-consent')?.remove();
+      }
+
+      function showConsentBanner() {
+        if (personalization.consent !== null || document.getElementById('da-personalization-consent')) return;
+        const banner = document.createElement('section');
+        banner.id = 'da-personalization-consent';
+        banner.className = 'da-personalization-consent';
+        banner.setAttribute('aria-label','Preferências de personalização');
+        banner.innerHTML = `<div class="da-personalization-consent-copy"><strong>Podemos te indicar produtos e ofertas?</strong><span>Usamos apenas sua navegação neste aparelho para melhorar as sugestões. Você pode desativar quando quiser.</span></div><div class="da-personalization-consent-actions"><button type="button" data-personalization-action="decline">Agora não</button><button class="primary" type="button" data-personalization-action="accept">Sim, quero</button></div>`;
+        document.body.appendChild(banner);
+      }
+
+      function openPersonalizationPanel() {
+        let overlay = document.getElementById('da-personalization-overlay');
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.id = 'da-personalization-overlay';
+          overlay.className = 'da-personalization-overlay';
+          document.body.appendChild(overlay);
+        }
+        overlay.innerHTML = `<div class="da-personalization-panel" role="dialog" aria-modal="true" aria-labelledby="da-personalization-title"><div class="da-personalization-panel-head"><div><strong id="da-personalization-title">Privacidade e personalização</strong><span>Controle os dados salvos somente neste navegador.</span></div><button type="button" data-personalization-action="close" aria-label="Fechar">×</button></div><div class="da-personalization-status"><span>Personalização</span><strong>${personalizationEnabled() ? 'Ativada' : 'Desativada'}</strong></div><p>Quando ativada, o site usa produtos vistos, categorias, favoritos, carrinho e pedidos enviados para organizar recomendações locais. Não guarda nome, CPF, telefone, e-mail ou endereço neste perfil.</p><div class="da-personalization-panel-actions">${personalizationEnabled() ? '<button type="button" data-personalization-action="clear">Apagar histórico</button><button class="danger" type="button" data-personalization-action="disable">Desativar personalização</button>' : '<button class="primary" type="button" data-personalization-action="enable">Ativar personalização</button>'}</div></div>`;
+        overlay.classList.add('show');
+      }
+
+      function closePersonalizationPanel() {
+        document.getElementById('da-personalization-overlay')?.classList.remove('show');
+      }
+
+      function injectPersonalizationStyles() {
+        if (document.getElementById('da-personalization-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'da-personalization-styles';
+        style.textContent = `.da-personalization-consent{position:fixed;z-index:120;left:12px;right:12px;bottom:calc(var(--bottom-h) + var(--safe-bottom) + 10px);max-width:980px;margin:0 auto;padding:15px;border:1px solid var(--line);border-radius:18px;background:rgba(255,253,248,.98);box-shadow:0 18px 55px rgba(20,40,28,.18);display:grid;gap:12px}.da-personalization-consent-copy{display:grid;gap:5px}.da-personalization-consent-copy strong{font-size:15px;font-weight:850;color:var(--ink)}.da-personalization-consent-copy span{font-size:12.5px;line-height:1.45;color:var(--muted)}.da-personalization-consent-actions{display:grid;grid-template-columns:1fr;gap:8px}.da-personalization-consent-actions button,.da-personalization-panel-actions button{min-height:42px;padding:0 14px;border-radius:12px;border:1px solid var(--line-strong);background:#fff;color:var(--ink);font-size:13px;font-weight:800}.da-personalization-consent-actions button.primary,.da-personalization-panel-actions button.primary{background:var(--brand);border-color:var(--brand);color:#fff}.da-personalization-overlay{position:fixed;z-index:140;inset:0;padding:16px;background:rgba(15,23,42,.44);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s ease}.da-personalization-overlay.show{opacity:1;pointer-events:auto}.da-personalization-panel{width:min(100%,520px);padding:20px;border-radius:22px;background:#fff;box-shadow:0 24px 70px rgba(15,23,42,.24);display:grid;gap:16px}.da-personalization-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.da-personalization-panel-head>div{display:grid;gap:4px}.da-personalization-panel-head strong{font-size:19px;color:var(--ink)}.da-personalization-panel-head span,.da-personalization-panel p{font-size:13px;line-height:1.5;color:var(--muted)}.da-personalization-panel-head button{width:38px;height:38px;border-radius:999px;border:1px solid var(--line);font-size:24px}.da-personalization-status{display:flex;justify-content:space-between;gap:12px;padding:13px;border-radius:14px;background:var(--surface-soft);font-size:14px}.da-personalization-status strong{color:var(--brand)}.da-personalization-panel-actions{display:grid;gap:8px}.da-personalization-panel-actions button.danger{color:#9f1239;background:#fff1f2;border-color:#fecdd3}.da-personalization-menu-button{width:100%;min-height:48px;padding:0 13px;border-radius:16px;background:#faf9f5;border:1px solid rgba(23,32,26,.08);display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--ink);font-size:13px;font-weight:800}.da-personalization-menu-button span:last-child{color:var(--brand)}[data-personalization-section]{display:block}@media(min-width:768px){.da-personalization-consent{bottom:18px;grid-template-columns:1fr auto;align-items:center;padding:16px 18px}.da-personalization-consent-actions{grid-template-columns:auto auto}.da-personalization-overlay{align-items:center}.da-personalization-panel-actions{grid-template-columns:1fr 1fr}.da-personalization-panel-actions .primary:only-child{grid-column:1/-1}}`;
+        document.head.appendChild(style);
+      }
+
+      function appendPrivacyMenuCard() {
+        const menu = $('site-menu-content');
+        if (!menu || menu.querySelector('[data-personalization-menu]')) return;
+        const section = document.createElement('section');
+        section.className = 'menu-section-card';
+        section.setAttribute('data-personalization-menu','');
+        section.innerHTML = `<div class="menu-section-title">Privacidade</div><button class="da-personalization-menu-button" type="button" data-personalization-action="settings"><span>Personalização neste aparelho</span><span>${personalizationEnabled() ? 'Ativada' : 'Configurar'}</span></button>`;
+        menu.appendChild(section);
+      }
+
+      const originalRenderHome = renderHome;
+      renderHome = function(...args) {
+        const result = originalRenderHome.apply(this,args);
+        renderPersonalizedHomeSections();
+        return result;
+      };
+
+      const originalRenderProduct = renderProduct;
+      renderProduct = function(routeId) {
+        clearTimeout(productViewTimer);
+        const result = originalRenderProduct.call(this,routeId);
+        const product = findProductByRoute(routeId);
+        if (product && personalizationEnabled()) {
+          activeViewedProductId = String(product.id);
+          addRecentlyViewed(product);
+          bumpProduct(product,1,'open');
+          productViewTimer = setTimeout(() => {
+            const currentHash = decodeURIComponent(location.hash || '');
+            if (activeViewedProductId === String(product.id) && currentHash.includes('/produto/')) bumpProduct(product,2,'dwell');
+          },VIEW_DWELL_MS);
+        }
+        return result;
+      };
+
+      const originalRenderCategory = renderCategory;
+      renderCategory = function(cat) {
+        const result = originalRenderCategory.call(this,cat);
+        const decoded = decodeURIComponent(cat || '');
+        if (personalizationEnabled() && cooldownAllows(`category:${norm(decoded)}`)) {
+          bump('categories',decoded,2); prunePersonalization(); savePersonalizationData();
+        }
+        return result;
+      };
+
+      const originalRenderSubcategory = renderSubcategory;
+      renderSubcategory = function(sub) {
+        const result = originalRenderSubcategory.call(this,sub);
+        const decoded = decodeURIComponent(sub || '');
+        if (personalizationEnabled() && cooldownAllows(`subcategory:${norm(decoded)}`)) {
+          bump('subcategories',decoded,3); prunePersonalization(); savePersonalizationData();
+        }
+        return result;
+      };
+
+      const originalRenderBrand = renderBrand;
+      renderBrand = function(brand) {
+        const result = originalRenderBrand.call(this,brand);
+        const decoded = decodeURIComponent(brand || '');
+        if (personalizationEnabled() && cooldownAllows(`brand:${norm(decoded)}`)) {
+          bump('brands',decoded,2); prunePersonalization(); savePersonalizationData();
+        }
+        return result;
+      };
+
+      const originalRenderSearch = renderSearch;
+      renderSearch = function(query) {
+        const result = originalRenderSearch.call(this,query);
+        const q = String(query || '').trim();
+        if (personalizationEnabled() && q.length >= 3 && cooldownAllows(`search:${norm(q)}`,2*60*60*1000)) {
+          const results = searchProducts(q).slice(0,12);
+          const categories = [...new Set(results.map(p => p.categoria).filter(Boolean))].slice(0,3);
+          const subcategories = [...new Set(results.map(p => p.subcategoria).filter(Boolean))].slice(0,3);
+          const brands = [...new Set(results.map(p => p.marca).filter(Boolean))].slice(0,3);
+          categories.forEach(value => bump('categories',value,1));
+          subcategories.forEach(value => bump('subcategories',value,1));
+          brands.forEach(value => bump('brands',value,0.5));
+          prunePersonalization(); savePersonalizationData();
+        }
+        return result;
+      };
+
+      const originalSetQty = setQty;
+      setQty = function(id,qty,options) {
+        const key = String(id);
+        const before = Number(state.cart[key] || 0);
+        const result = originalSetQty.call(this,id,qty,options);
+        const after = Number(state.cart[key] || 0);
+        const product = getProductById(key);
+        if (personalizationEnabled() && product && !product.isFee && before !== after && !(options && options.silent)) {
+          if (after > before) bumpProduct(product,6,'cart-add');
+          else bumpProduct(product,-2,'cart-remove');
+        }
+        return result;
+      };
+
+      const originalToggleFavorite = toggleFavorite;
+      toggleFavorite = function(id,kind) {
+        const wasFavorite = isFavorite(id,kind);
+        const result = originalToggleFavorite.call(this,id,kind);
+        if (personalizationEnabled() && kind !== 'kit') {
+          const product = getProductById(String(id));
+          if (product) bumpProduct(product,wasFavorite ? -5 : 8,wasFavorite ? 'favorite-remove' : 'favorite-add',false);
+        }
+        return result;
+      };
+
+      const originalOpenWhatsAppOrder = abrirWhatsAppPedido;
+      abrirWhatsAppPedido = function(message) {
+        recordPurchaseFromCart();
+        return originalOpenWhatsAppOrder.call(this,message);
+      };
+
+      const originalRenderSiteMenuContent = renderSiteMenuContent;
+      renderSiteMenuContent = function(...args) {
+        const result = originalRenderSiteMenuContent.apply(this,args);
+        appendPrivacyMenuCard();
+        return result;
+      };
+
+      document.addEventListener('click', event => {
+        const actionButton = event.target.closest('[data-personalization-action]');
+        if (!actionButton) return;
+        const action = actionButton.getAttribute('data-personalization-action');
+        if (action === 'accept' || action === 'enable') setConsent(true);
+        if (action === 'decline' || action === 'disable') setConsent(false);
+        if (action === 'settings') openPersonalizationPanel();
+        if (action === 'clear') clearPersonalizationHistory();
+        if (action === 'close') closePersonalizationPanel();
+      });
+
+      document.addEventListener('click', event => {
+        const overlay = document.getElementById('da-personalization-overlay');
+        if (overlay && event.target === overlay) closePersonalizationPanel();
+      });
+
+      window.addEventListener('hashchange', () => {
+        clearTimeout(productViewTimer);
+        activeViewedProductId = '';
+      });
+
+      injectPersonalizationStyles();
+      prunePersonalization();
+      savePersonalizationData();
+      setTimeout(showConsentBanner,900);
+    })();
+
     init();
   })();
 </script>
