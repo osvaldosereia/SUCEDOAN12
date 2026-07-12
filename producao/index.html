@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dona Antônia — Admin Produtos, Cestas, Kits e Integrações</title>
+  <title>Dona Antônia — Admin com Banners Automáticos e Posição Inteligente</title>
   <meta name="robots" content="noindex,nofollow" />
   <style>
     :root{--bg:#f7f7f4;--card:#fff;--soft:#faf9f6;--ink:#191919;--muted:#6b7280;--line:#e7e2d7;--gold:#c9a349;--gold2:#fff7df;--green:#157347;--green2:#edf8f1;--red:#b42318;--red2:#fff1ef;--blue:#175cd3;--blue2:#eff6ff;--radius:18px;--shadow:0 18px 48px rgba(0,0,0,.065);--max:1480px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
@@ -580,7 +580,7 @@
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
         <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho site/kits.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos_3"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="site/img/produtos_3"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
-        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners do site</label><input class="input" id="setMakeBannerWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">O webhook de banners recebe o produto, a posição e o período próprio do banner, gera uma única arte vertical WebP 1024×1536, salva em <strong>site/banners/ativos</strong> e atualiza <strong>site/banners/banners.json</strong>. A validade da oferta não deve aparecer na arte.</div></div>
+        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners do site · criação manual</label><input class="input" id="setMakeBannerWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners · criação automática</label><input class="input" id="setMakeBannerAutomaticWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn green" type="button" data-action="banner-auto-run">🎯 Criar banner automático com posição inteligente</button></div><div class="notice gold" style="margin-top:10px"><strong>Posicionamento inteligente:</strong> beleza, higiene, shampoo e condicionador, sabonete, desodorante e bebê usam <code>home.higiene.topo</code>; limpeza e lavanderia usam <code>home.limpeza.topo</code>; café da manhã usa <code>home.cafe.topo</code>. As demais categorias são distribuídas entre os outros locais compatíveis pela menor quantidade de banners ativos. O fluxo manual continua disponível, o banner sai do ar após 7 dias e seu registro e imagem são preservados.</div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
       <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar site/kits.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
@@ -655,6 +655,7 @@
     makeImageWebhookUrl: "",
     makeInstagramKitWebhookUrl: "",
     makeBannerWebhookUrl: "",
+    makeBannerAutomaticWebhookUrl: "",
     blingToken: "",
     blingDeposito: "",
     blingUnidade: "UN"
@@ -2511,20 +2512,22 @@
   const aiBaseRenderSettingsUi=renderSettingsUi;
   renderSettingsUi=function(){
     aiBaseRenderSettingsUi();
-    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl"),instagramKit=$("#setMakeInstagramKitWebhookUrl"),banner=$("#setMakeBannerWebhookUrl");
+    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl"),instagramKit=$("#setMakeInstagramKitWebhookUrl"),banner=$("#setMakeBannerWebhookUrl"),bannerAutomatic=$("#setMakeBannerAutomaticWebhookUrl");
     if(text&&text.value!==String(state.settings.makeTextWebhookUrl||""))text.value=state.settings.makeTextWebhookUrl||"";
     if(image&&image.value!==String(state.settings.makeImageWebhookUrl||""))image.value=state.settings.makeImageWebhookUrl||"";
     if(instagramKit&&instagramKit.value!==String(state.settings.makeInstagramKitWebhookUrl||""))instagramKit.value=state.settings.makeInstagramKitWebhookUrl||"";
     if(banner&&banner.value!==String(state.settings.makeBannerWebhookUrl||""))banner.value=state.settings.makeBannerWebhookUrl||"";
+    if(bannerAutomatic&&bannerAutomatic.value!==String(state.settings.makeBannerAutomaticWebhookUrl||""))bannerAutomatic.value=state.settings.makeBannerAutomaticWebhookUrl||"";
   };
   const aiBaseReadSettingsFromUi=readSettingsFromUi;
   readSettingsFromUi=function(){
     aiBaseReadSettingsFromUi();
-    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl"),instagramKit=$("#setMakeInstagramKitWebhookUrl"),banner=$("#setMakeBannerWebhookUrl");
+    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl"),instagramKit=$("#setMakeInstagramKitWebhookUrl"),banner=$("#setMakeBannerWebhookUrl"),bannerAutomatic=$("#setMakeBannerAutomaticWebhookUrl");
     if(text)state.settings.makeTextWebhookUrl=text.value.trim();
     if(image)state.settings.makeImageWebhookUrl=image.value.trim();
     if(instagramKit)state.settings.makeInstagramKitWebhookUrl=instagramKit.value.trim();
     if(banner)state.settings.makeBannerWebhookUrl=banner.value.trim();
+    if(bannerAutomatic)state.settings.makeBannerAutomaticWebhookUrl=bannerAutomatic.value.trim();
   };
 
   function normalizeGithubRawImageUrl(src){
@@ -4067,12 +4070,40 @@ normalizeProductForSite = function(product,key){
 };
 function daLoadBannerPositions(){try{return JSON.parse(localStorage.getItem(DA_BANNER_POSITIONS_STORAGE)||"{}")||{}}catch{return {}}}
 function daSaveBannerPosition(key,value){if(!key||!value)return;state.bannerPositions=state.bannerPositions||daLoadBannerPositions();state.bannerPositions[String(key)]=String(value);try{localStorage.setItem(DA_BANNER_POSITIONS_STORAGE,JSON.stringify(state.bannerPositions))}catch{}}
+const DA_AUTO_CATEGORY_GROUPS = {
+  higieneBeleza:new Set(["BELEZA","HIGIENE","SHAMPOO E CONDICIONADOR","SABONETE","DESODORANTE","BEBE"]),
+  limpeza:new Set(["LIMPEZA","LAVANDERIA"]),
+  cafe:new Set(["CAFE DA MANHA"])
+};
+const DA_AUTO_GENERAL_POSITION_VALUES = [
+  "home.hero","home.cestas.topo","home.kits.topo","home.ofertas.topo","home.compra-mes.topo",
+  "home.categorias.topo","categorias.topo","ofertas.topo","cestas.topo","kits.topo",
+  "rotina.compra-mes.topo","busca.topo","favoritos.topo"
+];
+function daBannerRuleKey(value){return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]+/g," ").trim()}
+function daBannerCategoryGroup(p){
+  const category=daBannerRuleKey(p?.categoria);
+  if(DA_AUTO_CATEGORY_GROUPS.higieneBeleza.has(category))return "higiene_beleza";
+  if(DA_AUTO_CATEGORY_GROUPS.limpeza.has(category))return "limpeza";
+  if(DA_AUTO_CATEGORY_GROUPS.cafe.has(category))return "cafe_manha";
+  return "outros";
+}
+function daBannerStableHash(value){let hash=2166136261>>>0;for(const char of String(value||"")){hash^=char.charCodeAt(0);hash=Math.imul(hash,16777619)}return hash>>>0}
+function daAutomaticPositionValuesForProduct(p){
+  const values=[...DA_AUTO_GENERAL_POSITION_VALUES],key=String(getKey(p)||""),category=String(p?.categoria||"").trim(),subcategory=String(p?.subcategoria||"").trim(),brand=String(p?.marca||"").trim();
+  if(category)values.push(`categoria::${category}`);
+  if(category&&subcategory)values.push(`subcategoria::${category}::${subcategory}`);
+  if(brand)values.push(`marca::${brand}`);
+  if(key)values.push(`produto::${key}`);
+  return values;
+}
 function daDefaultBannerPositionForProduct(p){
-  const text=textNorm([p?.categoria,p?.subcategoria,p?.subsubcategoria,getName(p)].filter(Boolean).join(" "));
-  if(text.includes("higiene")||text.includes("beleza")||text.includes("perfumaria"))return "home.higiene.topo";
-  if(text.includes("limpeza"))return "home.limpeza.topo";
-  if(text.includes("cafe")||text.includes("café")||text.includes("matinal"))return "home.cafe.topo";
-  return "home.hero";
+  const group=daBannerCategoryGroup(p);
+  if(group==="higiene_beleza")return "home.higiene.topo";
+  if(group==="limpeza")return "home.limpeza.topo";
+  if(group==="cafe_manha")return "home.cafe.topo";
+  const values=daAutomaticPositionValuesForProduct(p);
+  return values[daBannerStableHash(getKey(p)||p?.codigo||getName(p))%values.length]||"home.hero";
 }
 state.bannerPositions = state.bannerPositions || daLoadBannerPositions();
 bannerPositionOptionsHtml = function(p){
@@ -4630,7 +4661,7 @@ function daBannerStatus(b){
 function daBannerCatalogStats(){const banners=state.bannerManager.catalog?.banners||[];return {total:banners.length,active:banners.filter(b=>daBannerStatus(b).text==="Ativo").length,scheduled:banners.filter(b=>daBannerStatus(b).text==="Agendado").length,inactive:banners.filter(b=>!b.ativo).length}}
 function daEnsureBannerUi(){
   if(!document.querySelector('[data-tab="banners"]'))document.querySelectorAll('.tabs').forEach(nav=>{const btn=document.createElement('button');btn.className='tab';btn.type='button';btn.dataset.tab='banners';btn.textContent='Banners';const anchor=nav.querySelector('[data-tab="kits"]');anchor?.insertAdjacentElement('afterend',btn)});
-  if(!document.getElementById('tab-banners')){const panel=document.createElement('section');panel.className='panel hidden';panel.id='tab-banners';panel.innerHTML=`<div class="panel-head"><div class="panel-title"><h2>Gerenciador profissional de banners</h2><p>Criação, edição, regeneração e remoção usando uma única arte vertical WebP 1024×1536 em todas as versões do site.</p></div><div class="toolbar"><button class="btn" type="button" data-action="banner-refresh">↻ Atualizar</button><button class="btn green" type="button" data-action="banner-new">＋ Criar banner</button></div></div><div id="bannerManagerBody"></div>`;document.querySelector('main.app')?.appendChild(panel)}
+  if(!document.getElementById('tab-banners')){const panel=document.createElement('section');panel.className='panel hidden';panel.id='tab-banners';panel.innerHTML=`<div class="panel-head"><div class="panel-title"><h2>Gerenciador profissional de banners</h2><p>Criação, edição, regeneração e remoção usando uma única arte vertical WebP 1024×1536 em todas as versões do site.</p></div><div class="toolbar"><button class="btn" type="button" data-action="banner-refresh">↻ Atualizar</button><button class="btn blue" type="button" data-action="banner-auto-run">🎯 Criar automático · posição inteligente</button><button class="btn green" type="button" data-action="banner-new">＋ Criar banner manual</button></div></div><div id="bannerManagerBody"></div>`;document.querySelector('main.app')?.appendChild(panel)}
   if(!document.getElementById('bannerManagerModal')){const modal=document.createElement('div');modal.className='modal-overlay';modal.id='bannerManagerModal';modal.innerHTML=`<div class="modal da-banner-modal"><div class="modal-head"><div><h3 id="bannerModalTitle">Criar banner</h3><p id="bannerModalSubtitle">Configure a arte, o posicionamento exato e o destino do clique.</p></div><button class="btn small" type="button" data-action="banner-modal-close">Fechar</button></div><div class="modal-body" id="bannerModalBody"></div></div>`;document.body.appendChild(modal)}
 }
 function daBannerManagerCss(){
@@ -4758,7 +4789,7 @@ function daShowBannerJson(){const data=JSON.stringify(state.bannerManager.catalo
 
 const daOriginalRenderTabsForBanners=renderTabs;
 renderTabs=function(){daOriginalRenderTabsForBanners();daEnsureBannerUi();document.getElementById('tab-banners')?.classList.toggle('hidden',state.activeTab!=='banners');if(state.activeTab==='banners'){daRenderBannerManager();if(!state.bannerManager.catalog&&!state.bannerManager.loading)daLoadBannerCatalog(true).then(daRenderBannerManager).catch(()=>daRenderBannerManager())}};
-bannerPositionOptionsHtml=function(p){const current=state.bannerPositions?.[getKey(p)]||'home.hero',category=String(p?.categoria||'').trim(),subcategory=String(p?.subcategoria||'').trim(),brand=String(p?.marca||'').trim();const opts=[...DA_BANNER_PLACEMENTS.filter(x=>!x.targetKind).map(x=>({value:x.value,label:x.label})),...(category?[{value:`categoria::${category}`,label:`Categoria específica · ${category}`}]:[]),...(subcategory?[{value:`subcategoria::${category}::${subcategory}`,label:`Subcategoria específica · ${category} › ${subcategory}`}]:[]),...(brand?[{value:`marca::${brand}`,label:`Marca específica · ${brand}`}]:[]),{value:`produto::${getKey(p)}`,label:`Produto específico · ${getName(p)}`}];return opts.map(x=>`<option value="${esc(x.value)}" ${x.value===current?'selected':''}>${esc(x.label)}</option>`).join('')};
+bannerPositionOptionsHtml=function(p){const current=state.bannerPositions?.[getKey(p)]||daDefaultBannerPositionForProduct(p),category=String(p?.categoria||'').trim(),subcategory=String(p?.subcategoria||'').trim(),brand=String(p?.marca||'').trim();const opts=[...DA_BANNER_PLACEMENTS.filter(x=>!x.targetKind).map(x=>({value:x.value,label:x.label})),...(category?[{value:`categoria::${category}`,label:`Categoria específica · ${category}`}]:[]),...(subcategory?[{value:`subcategoria::${category}::${subcategory}`,label:`Subcategoria específica · ${category} › ${subcategory}`}]:[]),...(brand?[{value:`marca::${brand}`,label:`Marca específica · ${brand}`}]:[]),{value:`produto::${getKey(p)}`,label:`Produto específico · ${getName(p)}`}];return opts.map(x=>`<option value="${esc(x.value)}" ${x.value===current?'selected':''}>${esc(x.label)}</option>`).join('')};
 createProductBanner=async function(key){
   const p=productByKey(key);
   if(!p)throw new Error('Produto não encontrado.');
@@ -5115,7 +5146,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
       const status = daBannerStatus(banner).text.toLowerCase();
       return (!query || search.includes(query)) && (statusFilter === 'todos' || status === statusFilter) && (placeFilter === 'todos' || banner.exibicao?.local === placeFilter);
     }).sort((a,b)=>daV6ExpiryTime(a)-daV6ExpiryTime(b) || (Number(a.exibicao?.ordem)||0)-(Number(b.exibicao?.ordem)||0) || String(a.id).localeCompare(String(b.id),'pt-BR'));
-    body.innerHTML = `${state.bannerManager.error?`<div class="notice red" style="margin-bottom:12px">${esc(state.bannerManager.error)}</div>`:''}<div class="banner-summary"><div class="summary-card"><strong>${stats.total}</strong><span>Total</span></div><div class="summary-card"><strong>${stats.active}</strong><span>Ativos</span></div><div class="summary-card"><strong>${stats.scheduled}</strong><span>Agendados</span></div><div class="summary-card"><strong>${stats.inactive}</strong><span>Inativos</span></div></div><div class="banner-manager-toolbar"><input class="input" id="bannerManagerSearch" placeholder="Buscar banner, produto, marca ou posição" value="${esc(state.bannerManager.query||'')}"><select class="select" id="bannerStatusFilter"><option value="todos">Todos os status</option><option value="ativo">Ativos</option><option value="inativo">Inativos</option><option value="agendado">Agendados</option><option value="encerrado">Encerrados</option></select><select class="select" id="bannerPlaceFilter"><option value="todos">Todos os direcionamentos</option>${DA_BANNER_PLACEMENTS.map(item=>`<option value="${esc(item.value)}">${esc(item.label)}</option>`).join('')}</select><button class="btn blue" type="button" data-action="banner-open-json">Ver JSON</button></div><div class="banner-schema-note" style="margin-bottom:14px"><strong>Ordem automática:</strong> os banners mais próximos de vencer aparecem primeiro. Banners vencidos são removidos do JSON e suas imagens são enviadas para exclusão automática.</div><div class="banner-admin-grid">${list.length?list.map(daBannerCardHtml).join(''):'<div class="empty">Ainda não há banners criados. Use “Criar banner” para publicar o primeiro.</div>'}</div>`;
+    body.innerHTML = `${state.bannerManager.error?`<div class="notice red" style="margin-bottom:12px">${esc(state.bannerManager.error)}</div>`:''}<div class="banner-summary"><div class="summary-card"><strong>${stats.total}</strong><span>Total</span></div><div class="summary-card"><strong>${stats.active}</strong><span>Ativos</span></div><div class="summary-card"><strong>${stats.scheduled}</strong><span>Agendados</span></div><div class="summary-card"><strong>${stats.inactive}</strong><span>Inativos</span></div></div><div class="banner-manager-toolbar"><input class="input" id="bannerManagerSearch" placeholder="Buscar banner, produto, marca ou posição" value="${esc(state.bannerManager.query||'')}"><select class="select" id="bannerStatusFilter"><option value="todos">Todos os status</option><option value="ativo">Ativos</option><option value="inativo">Inativos</option><option value="agendado">Agendados</option><option value="encerrado">Encerrados</option></select><select class="select" id="bannerPlaceFilter"><option value="todos">Todos os direcionamentos</option>${DA_BANNER_PLACEMENTS.map(item=>`<option value="${esc(item.value)}">${esc(item.label)}</option>`).join('')}</select><button class="btn blue" type="button" data-action="banner-open-json">Ver JSON</button></div><div class="banner-schema-note" style="margin-bottom:14px"><strong>Ordem automática:</strong> os banners mais próximos de vencer aparecem primeiro. Banners vencidos são marcados como inativos; o registro no JSON e a imagem no GitHub são preservados.</div><div class="banner-admin-grid">${list.length?list.map(daBannerCardHtml).join(''):'<div class="empty">Ainda não há banners criados. Use “Criar banner” para publicar o primeiro.</div>'}</div>`;
     const sf=document.getElementById('bannerStatusFilter'),pf=document.getElementById('bannerPlaceFilter'); if(sf) sf.value=statusFilter; if(pf) pf.value=placeFilter;
   };
 
@@ -5160,18 +5191,43 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
 
   async function daV6CleanupExpiredBanners(){
     if(state.bannerManager.cleaningExpired || !state.bannerManager.catalog) return;
+    const now = DA_V6_NOW();
     const expired = (state.bannerManager.catalog.banners || []).filter(banner=>{
       const end = daV6ExpiryTime(banner);
-      return Number.isFinite(end) && end < DA_V6_NOW();
+      return banner?.ativo !== false && Number.isFinite(end) && end < now;
     }).sort((a,b)=>daV6ExpiryTime(a)-daV6ExpiryTime(b));
     if(!expired.length) return;
     state.bannerManager.cleaningExpired = true;
     try{
-      for(const banner of expired){
-        try{await daV6DeleteBannerFromCatalog(banner,{expired:true});}
-        catch(error){console.error('Falha ao remover banner vencido:',banner.id,error);state.bannerManager.error=`O banner vencido ${banner.titulo || banner.id} não pôde ser removido automaticamente: ${error.message}`;}
-      }
+      const catalog = daNormalizeBannerCatalog(state.bannerManager.catalog);
+      const expiredIds = new Set(expired.map(banner=>String(banner.id)));
+      const disabledAt = nowIso();
+      catalog.banners = catalog.banners.map(banner=>{
+        if(!expiredIds.has(String(banner.id))) return banner;
+        return {
+          ...banner,
+          ativo:false,
+          atualizado_em:disabledAt,
+          desativado_em:disabledAt,
+          motivo_desativacao:'periodo_encerrado',
+          controle:{...(banner.controle||{}),retirada_automatica:true,arquivo_preservado:true,registro_preservado:true}
+        };
+      });
+      catalog.updated_at = disabledAt;
+      await daCallBannerWebhook({
+        acao:'salvar_catalogo_banners',
+        versao_contrato:8,
+        motivo:'desativacao_automatica_sem_exclusao',
+        banners_desativados:[...expiredIds],
+        catalogo_json:JSON.stringify(catalog,null,2),
+        github:{owner:state.settings.githubOwner||'osvaldosereia',repositorio:state.settings.githubRepo||'SUCEDOAN12',branch:state.settings.githubBranch||'main',json_path:DA_BANNERS_JSON_PATH}
+      });
+      state.bannerManager.catalog = catalog;
+      await daRenderBannerManager();
       renderProducts();
+    }catch(error){
+      console.error('Falha ao desativar banners vencidos sem excluí-los:',error);
+      state.bannerManager.error=`Não foi possível desativar automaticamente ${expired.length} banner(s) vencido(s): ${error.message}`;
     }finally{state.bannerManager.cleaningExpired = false;}
   }
   const daV6LoadBannerCatalogBase = daLoadBannerCatalog;
@@ -5397,8 +5453,376 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     const result=await daBannerRenderManagerV7Base();
     const body=document.getElementById('bannerManagerBody');
     if(body&&!body.querySelector('.banner-validity-manager-v7'))body.insertAdjacentHTML('afterbegin','<div class="notice blue banner-validity-manager-v7" style="margin-bottom:14px"><strong>Validade do banner separada da oferta:</strong> o banner usa <code>periodo.inicio</code> e <code>periodo.fim</code>. A validade da oferta permanece apenas no produto, pode ser usada para selecionar ofertas automáticas e nunca aparece na imagem. Banners rápidos são configurados, por padrão, para sair do ar 7 dias após a criação.</div>');
+    if(body&&!body.querySelector('.banner-position-strategy-v8'))body.insertAdjacentHTML('afterbegin','<div class="notice green banner-position-strategy-v8" style="margin-bottom:14px"><strong>Estratégia automática de posição:</strong> higiene/beleza → antes de higiene e beleza; limpeza/lavanderia → antes de limpeza; café da manhã → antes do café da manhã. Outros produtos usam o local compatível com menos banners ativos, incluindo posições gerais e o próprio contexto de categoria, subcategoria, marca ou produto. Posições específicas de kit e cesta não entram no sorteio porque exigem um vínculo que o produto sozinho não informa.</div>');
     return result;
   };
+
+
+  async function daRunAutomaticBanner(){
+    readSettingsFromUi();
+    const webhook=String(state.settings.makeBannerAutomaticWebhookUrl||'').trim();
+    if(!webhook)throw new Error('Configure o webhook de criação automática de banners na aba Integrações.');
+    const buttons=[...document.querySelectorAll('[data-action="banner-auto-run"]')];
+    buttons.forEach(button=>{button.disabled=true;button.dataset.originalText=button.textContent;button.textContent='Gerando banner automático...';});
+    setStatus('Buscando uma oferta ativa, calculando a posição com menor carga e criando o banner...','warn');
+    try{
+      const response=await fetch(webhook,{
+        method:'POST',
+        headers:{Accept:'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({
+          acao:'criar_banner_automatico',
+          versao_contrato:1,
+          origem:'admin-dona-antonia',
+          solicitado_em:nowIso(),
+          duracao_dias:7,
+          quantidade_produtos:1,
+          preservar_apos_expirar:true,
+          estrategia_posicionamento:"categoria_fixa_e_balanceamento_por_menor_carga_v2",
+          categorias_higiene_beleza:["BELEZA","HIGIENE","SHAMPOO E CONDICIONADOR","SABONETE","DESODORANTE","BEBÊ"],
+          categorias_limpeza:["LIMPEZA","LAVANDERIA"],
+          categoria_cafe_da_manha:"CAFÉ DA MANHÃ"
+        })
+      });
+      const raw=await response.text();
+      let data=null;
+      try{data=raw?JSON.parse(raw):null}catch{}
+      if(!response.ok)throw new Error(`Make retornou ${response.status}: ${raw.slice(0,500)||'sem detalhes'}`);
+      await daLoadBannerCatalog(true);
+      await daRenderBannerManager();
+      renderProducts();
+      const nome=data?.produto?.nome||data?.produto_nome||'produto selecionado';
+      const fim=data?.banner?.fim||data?.banner_fim||'7 dias';
+      const local=data?.banner?.rotulo_posicao||data?.rotulo_posicao_banner||data?.banner?.posicao||data?.posicao_banner||'posição automática';
+      const alvo=data?.banner?.alvo||data?.alvo_banner||'';
+      setStatus(`Banner automático criado para ${nome} em ${local}${alvo?` · ${alvo}`:''}. Retirada programada: ${fim}.`,'ok');
+      return data;
+    }finally{
+      buttons.forEach(button=>{button.disabled=false;button.textContent=button.dataset.originalText||'🎯 Criar automático · posição inteligente';delete button.dataset.originalText;});
+    }
+  }
+
+  document.addEventListener('click',event=>{
+    const button=event.target.closest?.('[data-action="banner-auto-run"]');
+    if(!button)return;
+    event.preventDefault();
+    daRunAutomaticBanner().catch(error=>{
+      console.error(error);
+      setStatus(`Falha ao criar banner automático: ${error.message}`,'err');
+      alert(error.message);
+    });
+  },true);
+
+
+  /* DA_BANNERS_MULTIPLOS_LOCAIS_E_STATUS_V9_20260712 */
+  const DA_BANNER_MULTI_STORAGE_V9 = 'dona-antonia-banner-multiple-placements-v9';
+
+  function daV9PlacementValue(local,target=''){
+    return `${String(local||'').trim()}::${String(target||'').trim()}`;
+  }
+  function daV9ParsePlacementValue(value){
+    const parts=String(value||'').split('::');
+    const local=parts.shift()||'';
+    return {local,target:parts.join('::')};
+  }
+  function daV9UniquePlacements(values){
+    const seen=new Set(),result=[];
+    (values||[]).forEach(item=>{
+      const parsed=typeof item==='string'?daV9ParsePlacementValue(item):{local:String(item?.local||''),target:String(item?.target||item?.alvo||'')};
+      if(!parsed.local)return;
+      const key=daV9PlacementValue(parsed.local,parsed.target);
+      if(seen.has(key))return;
+      seen.add(key);result.push(parsed);
+    });
+    return result;
+  }
+  function daV9BannerGroupId(banner){
+    return String(banner?.grupo_id||banner?.grupo_exibicao_id||banner?.asset_id||banner?.id||'').trim();
+  }
+  function daV9BannerGroupRecords(banner,catalog=state.bannerManager.catalog){
+    if(!banner)return [];
+    const groupId=daV9BannerGroupId(banner);
+    return (catalog?.banners||[]).filter(item=>daV9BannerGroupId(item)===groupId);
+  }
+  function daV9PlacementsForBanner(banner,catalog=state.bannerManager.catalog){
+    const declared=Array.isArray(banner?.exibicoes)?banner.exibicoes:[];
+    if(declared.length)return daV9UniquePlacements(declared.map(item=>({local:item.local||item.posicao, target:item.alvo||item.target||''})));
+    const siblings=daV9BannerGroupRecords(banner,catalog);
+    const records=siblings.length?siblings:[banner];
+    return daV9UniquePlacements(records.map(item=>({local:item?.exibicao?.local||'',target:item?.exibicao?.alvo||''})));
+  }
+  function daV9PlacementLabel(item){
+    return daBannerPlacementLabel(item?.local||'',item?.target||item?.alvo||'');
+  }
+  function daV9ObjectId(item,prefix){
+    return String(item?.id||item?.key||item?.codigo||item?.slug||slug(item?.nome||prefix)||`${prefix}-${Date.now()}`).trim();
+  }
+  function daV9PlacementGroup(local){
+    if(String(local).startsWith('home.'))return 'Home';
+    if(String(local).startsWith('rotina.'))return 'Páginas por rotina';
+    if(['categorias.topo','ofertas.topo','cestas.topo','kits.topo','busca.topo','favoritos.topo'].includes(local))return 'Páginas gerais';
+    if(local==='kit')return 'Kits específicos';
+    if(local==='cesta')return 'Cestas específicas';
+    return 'Direcionamentos específicos';
+  }
+  function daV9PlacementChoicesForProducts(products=[]){
+    const selected=(products||[]).filter(Boolean),choices=[];
+    DA_BANNER_PLACEMENTS.filter(item=>!item.targetKind).forEach(item=>choices.push({local:item.value,target:'',label:item.label,group:daV9PlacementGroup(item.value)}));
+    uniq(selected.map(product=>String(product.categoria||'').trim()).filter(Boolean)).forEach(category=>choices.push({local:'categoria',target:category,label:`Categoria específica · ${category}`,group:'Direcionamentos específicos'}));
+    const subs=[];
+    selected.forEach(product=>{const category=String(product.categoria||'').trim(),subcategory=String(product.subcategoria||'').trim();if(subcategory)subs.push({category,subcategory})});
+    const subSeen=new Set();subs.forEach(item=>{const target=`${item.category}::${item.subcategory}`;if(subSeen.has(target))return;subSeen.add(target);choices.push({local:'subcategoria',target,label:`Subcategoria específica · ${item.category?`${item.category} › `:''}${item.subcategory}`,group:'Direcionamentos específicos'})});
+    uniq(selected.map(product=>String(product.marca||'').trim()).filter(Boolean)).forEach(brand=>choices.push({local:'marca',target:brand,label:`Marca específica · ${brand}`,group:'Direcionamentos específicos'}));
+    selected.forEach(product=>{const target=String(getKey(product)||product.id||product.codigo||'').trim();if(target)choices.push({local:'produto',target,label:`Produto específico · ${getName(product)}`,group:'Direcionamentos específicos'})});
+    (state.kits||[]).forEach(kit=>{const target=daV9ObjectId(kit,'kit');choices.push({local:'kit',target,label:`Kit específico · ${kit.nome||target}`,group:'Kits específicos'})});
+    (state.cestas||[]).forEach(cesta=>{const target=daV9ObjectId(cesta,'cesta');choices.push({local:'cesta',target,label:`Cesta específica · ${cesta.nome||target}`,group:'Cestas específicas'})});
+    const seen=new Set();
+    return choices.filter(choice=>{const key=daV9PlacementValue(choice.local,choice.target);if(seen.has(key))return false;seen.add(key);return true});
+  }
+  function daV9QuickPlacementMap(){try{return JSON.parse(localStorage.getItem(DA_BANNER_MULTI_STORAGE_V9)||'{}')||{}}catch{return {}}}
+  function daV9QuickPlacementValues(product){
+    const key=String(getKey(product)||'');
+    const saved=daV9QuickPlacementMap()[key];
+    if(Array.isArray(saved)&&saved.length)return saved;
+    const suggested=daDefaultBannerPositionForProduct(product)||'home.hero';
+    return [String(suggested).includes('::')?suggested:daV9PlacementValue(suggested,'')];
+  }
+  function daV9SaveQuickPlacementValues(key,values){
+    const map=daV9QuickPlacementMap();map[String(key)]=[...new Set((values||[]).filter(Boolean))];
+    try{localStorage.setItem(DA_BANNER_MULTI_STORAGE_V9,JSON.stringify(map))}catch{}
+  }
+  function daV9PlacementChecklistHtml(choices,selectedValues,{inputAttr='data-banner-placement-choice',key='',modal=false}={}){
+    const selected=new Set(selectedValues||[]),groups=new Map();
+    choices.forEach(choice=>{const group=choice.group||'Outros';if(!groups.has(group))groups.set(group,[]);groups.get(group).push(choice)});
+    return [...groups.entries()].map(([group,items])=>`<section class="banner-placement-group"><h5>${esc(group)} <span>${items.length}</span></h5><div class="banner-placement-options">${items.map(choice=>{const value=daV9PlacementValue(choice.local,choice.target);return `<label class="banner-placement-option ${selected.has(value)?'selected':''}"><input type="checkbox" ${inputAttr} ${key?`data-key="${esc(key)}"`:''} value="${esc(value)}" ${selected.has(value)?'checked':''}><span><strong>${esc(choice.label)}</strong><small><code>${esc(choice.local)}</code>${choice.target?` · ${esc(choice.target)}`:''}</small></span></label>`}).join('')}</div></section>`).join('');
+  }
+  function daV9QuickPlacementField(product){
+    const key=String(getKey(product)||''),choices=daV9PlacementChoicesForProducts([product]),selected=daV9QuickPlacementValues(product);
+    return `<div class="workbench-banner-field banner-multi-field"><label>Onde o banner aparecerá</label><details class="banner-multi-select" data-banner-multi-details data-key="${esc(key)}"><summary><span data-banner-placement-summary>${selected.length} ${selected.length===1?'local selecionado':'locais selecionados'}</span><span aria-hidden="true">▾</span></summary><div class="banner-multi-panel"><div class="banner-multi-actions"><button class="btn small" type="button" data-action="banner-select-suggested" data-key="${esc(key)}">Usar posição sugerida</button><button class="btn small blue" type="button" data-action="banner-select-all-locations" data-key="${esc(key)}">Marcar todos</button><button class="btn small" type="button" data-action="banner-clear-locations" data-key="${esc(key)}">Limpar</button></div><div class="banner-placement-scroll">${daV9PlacementChecklistHtml(choices,selected,{key})}</div></div></details><small>Você pode marcar vários locais. A imagem é gerada uma única vez e reutilizada em todos eles.</small></div>`;
+  }
+  function daV9BannerRecordsForProduct(product){
+    return (state.bannerManager.catalog?.banners||[]).filter(banner=>daV6BannerBelongsToProduct(banner,product));
+  }
+  function daV9GroupedProductBanners(product){
+    const map=new Map();
+    daV9BannerRecordsForProduct(product).forEach(record=>{const id=daV9BannerGroupId(record);if(!map.has(id))map.set(id,[]);map.get(id).push(record)});
+    return [...map.entries()].map(([id,records])=>({id,records,representative:records[0],placements:daV9PlacementsForBanner(records[0],{banners:records})}));
+  }
+  function daV9ProductBannerStatusHtml(product){
+    const groups=daV9GroupedProductBanners(product);
+    if(!groups.length)return `<div class="banner-product-status none"><strong>Sem banner gerado</strong><small>Este produto ainda não possui arte cadastrada.</small></div>`;
+    const allRecords=groups.flatMap(group=>group.records),active=allRecords.filter(item=>daBannerStatus(item).text==='Ativo'),scheduled=allRecords.filter(item=>daBannerStatus(item).text==='Agendado'),ended=allRecords.filter(item=>['Encerrado','Inativo'].includes(daBannerStatus(item).text));
+    const locations=daV9UniquePlacements(groups.flatMap(group=>group.placements));
+    const labels=locations.slice(0,4).map(daV9PlacementLabel);
+    const extra=Math.max(0,locations.length-labels.length);
+    return `<div class="banner-product-status ${active.length?'active':'created'}"><strong>✓ Banner já criado · ${groups.length} ${groups.length===1?'arte':'artes'} · ${locations.length} ${locations.length===1?'local':'locais'}</strong><small>${active.length?`${active.length} exibição(ões) ativa(s)`:scheduled.length?`${scheduled.length} exibição(ões) agendada(s)`:'Nenhuma exibição ativa agora'}${ended.length?` · ${ended.length} inativa(s)/encerrada(s)`:''}</small><div class="banner-product-locations">${labels.map(label=>`<span class="chip ${active.length?'green':'gold'}">${esc(label)}</span>`).join('')}${extra?`<span class="chip">+${extra}</span>`:''}</div></div>`;
+  }
+
+  const daV9NormalizeCatalogBase=daNormalizeBannerCatalog;
+  daNormalizeBannerCatalog=function(value){
+    const normalized=daV9NormalizeCatalogBase(value),rawEntries=daV6CatalogEntries(value),rawById=new Map();
+    rawEntries.forEach(({raw,key},index)=>{const id=String(raw?.id||raw?.banner_id||key||`banner-${index+1}`);rawById.set(id,raw||{})});
+    normalized.banners=(normalized.banners||[]).map(item=>{
+      const raw=rawById.get(String(item.id))||{};
+      return {...raw,...item,exibicao:{...(raw.exibicao||{}),...(item.exibicao||{})},periodo:{...(raw.periodo||{}),...(item.periodo||{})},origem:{...(raw.origem||{}),...(item.origem||{})},link:{...(raw.link||{}),...(item.link||{})},grupo_id:String(raw.grupo_id||raw.grupo_exibicao_id||raw.asset_id||item.grupo_id||item.id),asset_id:String(raw.asset_id||raw.grupo_id||item.asset_id||raw.grupo_exibicao_id||item.id),exibicoes:Array.isArray(raw.exibicoes)?raw.exibicoes:[],controle:{...(raw.controle||{}),...(item.controle||{})},oferta:{...(raw.oferta||{}),...(item.oferta||{})},automacao:{...(raw.automacao||{}),...(item.automacao||{})},geracao:{...(raw.geracao||{}),...(item.geracao||{})}};
+    });
+    return normalized;
+  };
+
+  const daV9RenderWorkbenchBase=renderProductWorkbench;
+  renderProductWorkbench=function(product){
+    let html=daV9RenderWorkbenchBase(product);
+    html=html.replace(/<span class="chip green banner-active-chip">[\s\S]*?<\/span>/,'');
+    html=html.replace('product-card product-workbench has-active-banner','product-card product-workbench');
+    const groups=daV9GroupedProductBanners(product),hasActive=groups.some(group=>group.records.some(item=>daBannerStatus(item).text==='Ativo'));
+    if(groups.length)html=html.replace('product-card product-workbench','product-card product-workbench has-any-banner'+(hasActive?' has-active-banner':''));
+    html=html.replace('<div class="workbench-actions">',`${daV9ProductBannerStatusHtml(product)}<div class="workbench-actions">`);
+    html=html.replace(/<div class="workbench-banner-field"><label>Onde o banner aparecerá<\/label><select class="select" data-banner-position[\s\S]*?<\/select><\/div>/,daV9QuickPlacementField(product));
+    html=html.replace('escolha a posição e informe quando o banner deve sair do ar','marque um ou mais locais e informe quando o banner deve sair do ar');
+    return html;
+  };
+
+  function daV9UpdateQuickSummary(container){
+    if(!container)return;const checked=[...container.querySelectorAll('[data-banner-placement-choice]:checked')];const summary=container.querySelector('[data-banner-placement-summary]');if(summary)summary.textContent=`${checked.length} ${checked.length===1?'local selecionado':'locais selecionados'}`;
+    container.querySelectorAll('.banner-placement-option').forEach(label=>label.classList.toggle('selected',!!label.querySelector('input:checked')));
+  }
+  document.addEventListener('change',event=>{
+    const input=event.target.closest?.('[data-banner-placement-choice]');if(!input)return;
+    const details=input.closest('[data-banner-multi-details]'),key=input.dataset.key||details?.dataset.key||'';
+    const values=[...(details?.querySelectorAll('[data-banner-placement-choice]:checked')||[])].map(item=>item.value);
+    daV9SaveQuickPlacementValues(key,values);daV9UpdateQuickSummary(details);
+  },true);
+  document.addEventListener('click',event=>{
+    const button=event.target.closest?.('[data-action="banner-select-suggested"],[data-action="banner-select-all-locations"],[data-action="banner-clear-locations"]');if(!button)return;
+    event.preventDefault();const key=button.dataset.key,product=productByKey(key),details=button.closest('[data-banner-multi-details]');if(!product||!details)return;
+    const inputs=[...details.querySelectorAll('[data-banner-placement-choice]')];
+    if(button.dataset.action==='banner-select-all-locations')inputs.forEach(input=>input.checked=true);
+    if(button.dataset.action==='banner-clear-locations')inputs.forEach(input=>input.checked=false);
+    if(button.dataset.action==='banner-select-suggested'){
+      const suggested=daDefaultBannerPositionForProduct(product)||'home.hero',value=String(suggested).includes('::')?suggested:daV9PlacementValue(suggested,'');
+      inputs.forEach(input=>input.checked=input.value===value);
+    }
+    inputs.forEach(input=>input.closest('.banner-placement-option')?.classList.toggle('selected',input.checked));
+    daV9SaveQuickPlacementValues(key,inputs.filter(input=>input.checked).map(input=>input.value));daV9UpdateQuickSummary(details);
+  },true);
+
+  function daV9ModalProducts(){
+    const type=document.getElementById('bannerContentType')?.value||'produto';
+    if(type==='produto'){const product=productByKey(document.getElementById('bannerMainProduct')?.value||'');return product?[product]:[]}
+    return [...state.bannerManager.selectedKeys].map(key=>productByKey(key)).filter(Boolean).slice(0,DA_BANNER_MAX_PRODUCTS);
+  }
+  function daV9RenderModalPlacements(selectedValues=null){
+    const wrap=document.getElementById('bannerMultiPlacements');if(!wrap)return;
+    const current=selectedValues||[...wrap.querySelectorAll('[data-banner-modal-placement]:checked')].map(input=>input.value),products=daV9ModalProducts();
+    const choices=daV9PlacementChoicesForProducts(products),choiceValues=new Set(choices.map(choice=>daV9PlacementValue(choice.local,choice.target)));
+    (current||[]).forEach(value=>{if(choiceValues.has(value))return;const parsed=daV9ParsePlacementValue(value);choices.push({local:parsed.local,target:parsed.target,label:daBannerPlacementLabel(parsed.local,parsed.target),group:'Direcionamentos já cadastrados'});choiceValues.add(value)});
+    let selected=(current||[]).filter(Boolean);
+    if(!selected.length){const suggested=products[0]?daDefaultBannerPositionForProduct(products[0]):'home.hero';selected=[String(suggested).includes('::')?suggested:daV9PlacementValue(suggested,'')]}
+    wrap.innerHTML=`<div class="banner-multi-head"><div><strong>Locais de exibição</strong><small>Marque todos os pontos em que esta mesma arte deve aparecer.</small></div><span class="chip blue" id="bannerModalPlacementCount">${selected.length} selecionado(s)</span></div><div class="banner-multi-actions"><button class="btn small blue" type="button" data-action="banner-modal-select-all">Marcar todos</button><button class="btn small" type="button" data-action="banner-modal-clear">Limpar</button></div><div class="banner-placement-scroll modal">${daV9PlacementChecklistHtml(choices,selected,{inputAttr:'data-banner-modal-placement',modal:true})}</div>`;
+    daV9SyncModalPlacementSelection();
+  }
+  function daV9SyncModalPlacementSelection(){
+    const inputs=[...document.querySelectorAll('[data-banner-modal-placement]')],checked=inputs.filter(input=>input.checked);inputs.forEach(input=>input.closest('.banner-placement-option')?.classList.toggle('selected',input.checked));
+    const count=document.getElementById('bannerModalPlacementCount');if(count)count.textContent=`${checked.length} selecionado(s)`;
+    const first=checked[0]?daV9ParsePlacementValue(checked[0].value):null,legacy=document.getElementById('bannerPlacement');
+    if(first&&legacy){legacy.value=first.local;if(daBannerPlacement(first.local)?.targetKind)daRenderBannerTargetField(first.target);const target=document.getElementById('bannerPlacementTarget');if(target)target.value=first.target}
+  }
+  const daV9OpenBannerModalBase=daOpenBannerModal;
+  daOpenBannerModal=function(mode='create',banner=null,prefill={}){
+    daV9OpenBannerModalBase(mode,banner,prefill);
+    const placement=document.getElementById('bannerPlacement'),field=placement?.closest('.field'),targetWrap=document.getElementById('bannerPlacementTargetWrap');
+    if(field)field.classList.add('hidden');if(targetWrap)targetWrap.classList.add('hidden');
+    const selected=banner?daV9PlacementsForBanner(banner):daV9UniquePlacements(prefill?.placements||[{local:prefill?.position||placement?.value||'home.hero',target:prefill?.target||''}]);
+    const selectedValues=selected.map(item=>daV9PlacementValue(item.local,item.target));
+    const anchor=document.getElementById('bannerLinkType')?.closest('.field');
+    if(anchor&&!document.getElementById('bannerMultiPlacements'))anchor.insertAdjacentHTML('beforebegin','<div class="span-4 banner-content-box" id="bannerMultiPlacements"></div>');
+    daV9RenderModalPlacements(selectedValues);
+  };
+  document.addEventListener('change',event=>{
+    if(event.target.closest?.('[data-banner-modal-placement]')){daV9SyncModalPlacementSelection();return}
+    if(['bannerMainProduct','bannerContentType'].includes(event.target.id))setTimeout(()=>daV9RenderModalPlacements(),0);
+  },true);
+  document.addEventListener('click',event=>{
+    const button=event.target.closest?.('[data-action="banner-modal-select-all"],[data-action="banner-modal-clear"]');if(button){event.preventDefault();const inputs=[...document.querySelectorAll('[data-banner-modal-placement]')];inputs.forEach(input=>input.checked=button.dataset.action==='banner-modal-select-all');daV9SyncModalPlacementSelection();return}
+    if(event.target.closest?.('.banner-picker-item'))setTimeout(()=>daV9RenderModalPlacements(),0);
+  },true);
+
+  const daV9BannerFormDataBase=daBannerFormData;
+  daBannerFormData=function(){
+    daV9SyncModalPlacementSelection();
+    const data=daV9BannerFormDataBase(),placements=daV9UniquePlacements([...document.querySelectorAll('[data-banner-modal-placement]:checked')].map(input=>input.value));
+    if(placements.length){data.placements=placements;data.placement=placements[0].local;data.target=placements[0].target;const linkType=document.getElementById('bannerLinkType')?.value||'automatico';if(linkType==='automatico')data.link=daDefaultLinkForPlacement(data.placement,data.target)}else data.placements=[];
+    return data;
+  };
+  const daV9ValidateBannerBase=daValidateBannerForm;
+  daValidateBannerForm=function(data,options={}){daV9ValidateBannerBase(data,options);const placements=daV9UniquePlacements(data.placements||[{local:data.placement,target:data.target}]);if(!placements.length)throw new Error('Marque pelo menos um local para o banner aparecer.');};
+
+  function daV9NextOrder(catalog,local,target,ignoreGroup=''){
+    const values=(catalog?.banners||[]).filter(item=>daV9BannerGroupId(item)!==ignoreGroup&&String(item?.exibicao?.local||'')===String(local)&&String(item?.exibicao?.alvo||'')===String(target||'')).map(item=>Number(item?.exibicao?.ordem)||0);
+    return Math.max(0,...values)+1;
+  }
+  function daV9BuildGroupRecords(data,existing,imagePath,catalog){
+    const placements=daV9UniquePlacements(data.placements||[{local:data.placement,target:data.target}]);
+    if(!placements.length)throw new Error('Nenhum local de exibição foi selecionado.');
+    const existingGroup=existing?daV9BannerGroupRecords(existing,catalog):[],groupId=existing?daV9BannerGroupId(existing):'';
+    const oldOrders=new Map(existingGroup.map(item=>[daV9PlacementValue(item?.exibicao?.local,item?.exibicao?.alvo),Number(item?.exibicao?.ordem)||1]));
+    const first=placements[0],baseData={...data,placement:first.local,target:first.target,order:Number(data.order)||1};
+    const base=daBuildBanner(baseData,existing?{...existing,id:groupId||existing.id}:null,imagePath);
+    const finalGroupId=groupId||base.id;
+    const exhibitions=placements.map((placement,index)=>{const key=daV9PlacementValue(placement.local,placement.target),old=oldOrders.get(key);const order=old||((index===0&&Number(data.order)>0)?Number(data.order):daV9NextOrder(catalog,placement.local,placement.target,finalGroupId));return {local:placement.local,alvo:placement.target||'',ordem:Math.max(1,order)}});
+    return exhibitions.map((exhibition,index)=>{
+      const id=index===0?finalGroupId:`${finalGroupId}--local-${index+1}-${slug(`${exhibition.local}-${exhibition.alvo||'geral'}`)}`;
+      return {...deepClone(base),id,grupo_id:finalGroupId,grupo_exibicao_id:finalGroupId,asset_id:finalGroupId,imagem_compartilhada:true,exibicao_indice:index+1,exibicao_total:exhibitions.length,exibicao:deepClone(exhibition),exibicoes:deepClone(exhibitions),geracao:{...(base.geracao||{}),asset_unico:true,reutilizado_em_multiplos_locais:exhibitions.length>1},atualizado_em:nowIso()};
+    });
+  }
+  async function daV9SaveCatalog(catalog,action='salvar_catalogo_banners'){
+    await daCallBannerWebhook({acao:action,versao_contrato:9,catalogo_json:JSON.stringify(catalog,null,2),github:{owner:state.settings.githubOwner||'osvaldosereia',repositorio:state.settings.githubRepo||'SUCEDOAN12',branch:state.settings.githubBranch||'main',json_path:DA_BANNERS_JSON_PATH}});
+  }
+
+  daPublishBannerArtwork=async function(data,existing=null){
+    daValidateBannerForm(data,{requireArtwork:true});
+    const catalog=daNormalizeBannerCatalog(state.bannerManager.catalog||await daLoadBannerCatalog()),groupId=existing?daV9BannerGroupId(existing):'',oldGroup=existing?daV9BannerGroupRecords(existing,catalog):[];
+    if(groupId)catalog.banners=catalog.banners.filter(item=>daV9BannerGroupId(item)!==groupId);
+    const provisionalId=groupId||`banner-${data.contentType}-${slug(data.selected[0]?.codigo||data.title)}-${Date.now()}`,imagePath=`site/banners/ativos/${slug(provisionalId)}/banner-${Date.now()}.webp`;
+    const buildExisting={...(existing||{}),id:provisionalId,grupo_id:groupId||provisionalId,asset_id:groupId||provisionalId};const records=daV9BuildGroupRecords(data,buildExisting,imagePath,catalog),primary=records[0];
+    catalog.banners.push(...records);catalog.updated_at=nowIso();
+    const snapshots=data.selected.map(daBannerProductSnapshot),refs=snapshots.map(product=>product.imagem_url);while(refs.length<DA_BANNER_MAX_PRODUCTS)refs.push(refs[0]);
+    setStatus(existing?'Regenerando uma arte e atualizando todos os locais...':`Gerando uma arte para ${records.length} local(is)...`,'warn');
+    await daCallBannerWebhook({acao:'criar_banner',versao_contrato:9,origem:'admin-gerenciador-banners',requisicao_id:`${primary.id}-${Date.now()}`,banner:primary,exibicoes:primary.exibicoes,locais_total:records.length,produtos:snapshots,imagem_1_url:refs[0],imagem_2_url:refs[1],imagem_3_url:refs[2],prompt:daBannerPrompt(data,snapshots),catalogo_json:JSON.stringify(catalog,null,2),github:{owner:state.settings.githubOwner||'osvaldosereia',repositorio:state.settings.githubRepo||'SUCEDOAN12',branch:state.settings.githubBranch||'main',json_path:DA_BANNERS_JSON_PATH}});
+    state.bannerManager.catalog=catalog;
+    const oldImage=oldGroup[0]?.imagem||existing?.imagem;
+    if(oldImage&&oldImage!==imagePath){try{await daCallBannerWebhook({acao:'apagar_arquivo_banner',versao_contrato:9,banner_id:primary.id,arquivo_excluir:oldImage,catalogo_json:JSON.stringify(catalog,null,2),github:{owner:state.settings.githubOwner||'osvaldosereia',repositorio:state.settings.githubRepo||'SUCEDOAN12',branch:state.settings.githubBranch||'main',json_path:DA_BANNERS_JSON_PATH}})}catch(error){console.warn('A arte anterior não pôde ser apagada:',error)}}
+    daCloseBannerModal();await daRenderBannerManager();renderProducts();setStatus(`Banner publicado em ${records.length} local(is) usando uma única imagem.`,'ok');
+    return {banner:primary,records};
+  };
+  daSaveBannerEdit=async function(){
+    const id=state.bannerManager.editingId,catalog=daNormalizeBannerCatalog(state.bannerManager.catalog),current=catalog.banners.find(item=>item.id===id);if(!current)throw new Error('Banner não encontrado.');
+    const data=daBannerFormData();daValidateBannerForm(data);
+    const oldType=current.tipo_conteudo||(current.origem?.tipo==='produto'?'produto':'personalizado'),oldText=String(current.texto_arte||'').trim(),oldRefs=(current.origem?.produtos||[]).map(ref=>String(ref.firebaseKey||ref.codigo||ref.id||'')).sort(),newRefs=data.selected.map(product=>String(getKey(product)||product.codigo||product.id||'')).sort();
+    if(oldType!==data.contentType||oldText!==String(data.artText||'').trim()||JSON.stringify(oldRefs)!==JSON.stringify(newRefs))throw new Error('Você alterou produtos, tipo de conteúdo ou texto da arte. Use “Regenerar arte e salvar”.');
+    const groupId=daV9BannerGroupId(current);catalog.banners=catalog.banners.filter(item=>daV9BannerGroupId(item)!==groupId);const records=daV9BuildGroupRecords(data,current,current.imagem,catalog);catalog.banners.push(...records);catalog.updated_at=nowIso();
+    setStatus('Salvando os locais do banner sem gerar outra imagem...','warn');await daV9SaveCatalog(catalog);state.bannerManager.catalog=catalog;daCloseBannerModal();await daRenderBannerManager();renderProducts();setStatus(`Banner atualizado em ${records.length} local(is), sem gastar crédito de imagem.`,'ok');
+  };
+  daToggleBanner=async function(id){
+    const catalog=daNormalizeBannerCatalog(state.bannerManager.catalog),current=catalog.banners.find(item=>item.id===id);if(!current)return;const groupId=daV9BannerGroupId(current),group=catalog.banners.filter(item=>daV9BannerGroupId(item)===groupId),activate=!group.some(item=>item.ativo===true);group.forEach(item=>{item.ativo=activate;item.atualizado_em=nowIso()});catalog.updated_at=nowIso();await daV9SaveCatalog(catalog);state.bannerManager.catalog=catalog;await daRenderBannerManager();renderProducts();setStatus(`Banner ${activate?'ativado':'desativado'} em todos os ${group.length} locais.`,'ok');
+  };
+  daDeleteBanner=async function(id){
+    const catalog=daNormalizeBannerCatalog(state.bannerManager.catalog),current=catalog.banners.find(item=>item.id===id);if(!current)return;const groupId=daV9BannerGroupId(current),group=catalog.banners.filter(item=>daV9BannerGroupId(item)===groupId);if(!confirm(`Remover definitivamente esta arte e seus ${group.length} local(is) de exibição? A imagem compartilhada também será apagada do GitHub.`))return;
+    catalog.banners=catalog.banners.filter(item=>daV9BannerGroupId(item)!==groupId);catalog.updated_at=nowIso();setStatus('Removendo o banner de todos os locais...','warn');await daCallBannerWebhook({acao:'remover_banner',versao_contrato:9,banner_id:groupId,arquivo_excluir:current.imagem,catalogo_json:JSON.stringify(catalog,null,2),github:{owner:state.settings.githubOwner||'osvaldosereia',repositorio:state.settings.githubRepo||'SUCEDOAN12',branch:state.settings.githubBranch||'main',json_path:DA_BANNERS_JSON_PATH}});state.bannerManager.catalog=catalog;await daRenderBannerManager();renderProducts();setStatus('Banner removido de todos os locais e imagem apagada.','ok');
+  };
+
+  const daV9BannerCardBase=daBannerCardHtml;
+  daBannerCardHtml=function(banner){
+    let html=daV9BannerCardBase(banner),placements=daV9PlacementsForBanner(banner),labels=placements.map(daV9PlacementLabel);
+    const locations=`<div class="tiny banner-card-locations"><strong>Locais (${placements.length}):</strong><div>${labels.map(label=>`<span class="chip blue">${esc(label)}</span>`).join('')}</div></div>`;
+    html=html.replace(/<div class="tiny"><strong>Exibição:<\/strong>[\s\S]*?<\/div>/,locations);
+    return html;
+  };
+  function daV9GroupRepresentatives(catalog){
+    const map=new Map();(catalog?.banners||[]).forEach(item=>{const id=daV9BannerGroupId(item);if(!map.has(id))map.set(id,[]);map.get(id).push(item)});
+    return [...map.values()].map(records=>{const representative=deepClone(records[0]);representative.exibicoes=daV9UniquePlacements(records.flatMap(item=>daV9PlacementsForBanner(item,{banners:records}))).map(item=>({local:item.local,alvo:item.target}));representative.exibicao_total=representative.exibicoes.length;representative.ativo=records.some(item=>item.ativo===true);return representative});
+  }
+  daRenderBannerManager=async function(){
+    daEnsureBannerUi();daBannerManagerCss();daV6EnsureBannerProductFilter();const body=document.getElementById('bannerManagerBody');if(!body)return;
+    if(state.bannerManager.loading){body.innerHTML='<div class="notice gold">Carregando catálogo de banners...</div>';return}if(!state.bannerManager.catalog){body.innerHTML='<div class="notice gold">Clique em Atualizar para carregar os banners.</div>';return}
+    const groups=daV9GroupRepresentatives(state.bannerManager.catalog),query=textNorm(state.bannerManager.query||''),statusFilter=state.bannerManager.statusFilter||'todos',placeFilter=state.bannerManager.placeFilter||'todos';
+    const list=groups.filter(banner=>{const placements=daV9PlacementsForBanner(banner),search=textNorm([banner.id,banner.titulo,banner.alt,banner.texto_arte,...placements.flatMap(item=>[item.local,item.target,daV9PlacementLabel(item)]),banner.origem?.tipo,banner.origem?.valor,daBannerLinkLabel(banner.link),...daV6BannerReferenceValues(banner)].join(' ')),status=daBannerStatus(banner).text.toLowerCase();return(!query||search.includes(query))&&(statusFilter==='todos'||status===statusFilter)&&(placeFilter==='todos'||placements.some(item=>item.local===placeFilter))}).sort((a,b)=>daV6ExpiryTime(a)-daV6ExpiryTime(b)||String(a.id).localeCompare(String(b.id),'pt-BR'));
+    const statusList=groups.map(daBannerStatus),stats={total:groups.length,active:statusList.filter(item=>item.text==='Ativo').length,scheduled:statusList.filter(item=>item.text==='Agendado').length,inactive:statusList.filter(item=>['Inativo','Encerrado'].includes(item.text)).length};
+    body.innerHTML=`${state.bannerManager.error?`<div class="notice red" style="margin-bottom:12px">${esc(state.bannerManager.error)}</div>`:''}<div class="banner-summary"><div class="summary-card"><strong>${stats.total}</strong><span>Artes</span></div><div class="summary-card"><strong>${stats.active}</strong><span>Ativas</span></div><div class="summary-card"><strong>${stats.scheduled}</strong><span>Agendadas</span></div><div class="summary-card"><strong>${stats.inactive}</strong><span>Inativas</span></div></div><div class="banner-manager-toolbar"><input class="input" id="bannerManagerSearch" placeholder="Buscar banner, produto, marca ou posição" value="${esc(state.bannerManager.query||'')}"><select class="select" id="bannerStatusFilter"><option value="todos">Todos os status</option><option value="ativo">Ativos</option><option value="inativo">Inativos</option><option value="agendado">Agendados</option><option value="encerrado">Encerrados</option></select><select class="select" id="bannerPlaceFilter"><option value="todos">Todos os locais</option>${DA_BANNER_PLACEMENTS.map(item=>`<option value="${esc(item.value)}">${esc(item.label)}</option>`).join('')}</select><button class="btn blue" type="button" data-action="banner-open-json">Ver JSON</button></div><div class="notice green" style="margin-bottom:14px"><strong>Uma arte, vários locais:</strong> cada local é gravado como uma entrada compatível no <code>banners.json</code>, mas todas compartilham a mesma imagem e são administradas como um único banner.</div><div class="banner-admin-grid">${list.length?list.map(daBannerCardHtml).join(''):'<div class="empty">Ainda não há banners criados.</div>'}</div>`;
+    const sf=document.getElementById('bannerStatusFilter'),pf=document.getElementById('bannerPlaceFilter');if(sf)sf.value=statusFilter;if(pf)pf.value=placeFilter;
+  };
+
+  createProductBanner=async function(key){
+    const product=productByKey(key);if(!product)throw new Error('Produto não encontrado.');const card=document.querySelector(`[data-product-key="${CSS.escape(String(key))}"]`),checked=[...(card?.querySelectorAll('[data-banner-placement-choice]:checked')||[])].map(input=>input.value),placements=daV9UniquePlacements(checked.length?checked:daV9QuickPlacementValues(product));if(!placements.length)throw new Error('Marque pelo menos um local para o banner aparecer.');
+    const image=getImg(product);if(!image||image===PLACEHOLDER)throw new Error('Cadastre uma foto válida no produto antes de gerar o banner.');const regular=toNum(product.preco),offer=toNum(product.preco_oferta);if(regular<=0)throw new Error('Informe o valor antigo do produto antes de gerar o banner.');if(offer<=0)throw new Error('Informe o valor da oferta do produto antes de gerar o banner.');if(offer>=regular)throw new Error('O valor da oferta deve ser menor que o valor antigo.');
+    const expiry=card?.querySelector('[data-banner-expiry]')?.value||daBannerExpiryForProduct(key);if(!expiry)throw new Error('Informe quando o banner deve sair do ar.');const endDate=new Date(`${expiry}T23:59:00`);if(Number.isNaN(endDate.getTime())||endDate.getTime()<=Date.now())throw new Error('A data para retirar o banner deve estar no futuro.');daSaveBannerExpiryForProduct(key,expiry);daV9SaveQuickPlacementValues(key,placements.map(item=>daV9PlacementValue(item.local,item.target)));
+    const first=placements[0],data={contentType:'produto',selected:[product],artText:'',placements,placement:first.local,target:first.target,title:`Oferta · ${getName(product)}`,alt:`${getName(product)} em oferta na Dona Antônia`,link:{tipo:'produto',valor:String(product.codigo||getKey(product)||'')},order:1,start:daBannerNowLocal(),end:`${expiry}T23:59`,active:true,hideOfferValidity:true};
+    setStatus(`Gerando uma arte de ${getName(product)} para ${placements.length} local(is)...`,'warn');await daPublishBannerArtwork(data);return{ok:true,modo:'direto_multiplos_locais',locais:placements,banner_inicio:data.start,banner_fim:data.end};
+  };
+
+
+  function daV9EnsureBannerFilterOptions(){
+    daV6EnsureBannerProductFilter();const select=document.getElementById(DA_V6_BANNER_FILTER_ID);if(!select)return;const current=select.value;
+    select.innerHTML='<option value="">Todos</option><option value="com_qualquer_banner">Com qualquer banner gerado</option><option value="com_banner">Com banner ativo</option><option value="sem_banner_gerado">Sem nenhum banner gerado</option><option value="sem_banner">Sem banner ativo agora</option>';
+    if([...select.options].some(option=>option.value===current))select.value=current;
+  }
+  const daV9FilteredProductsBase=filteredProducts;
+  filteredProducts=function(){
+    let list=daV9FilteredProductsBase(),mode=document.getElementById(DA_V6_BANNER_FILTER_ID)?.value||'';
+    if(mode==='com_qualquer_banner')list=list.filter(product=>daV9BannerRecordsForProduct(product).length>0);
+    if(mode==='sem_banner_gerado')list=list.filter(product=>daV9BannerRecordsForProduct(product).length===0);
+    return list;
+  };
+  const daV9RenderAllBase=renderAll;
+  renderAll=function(){const result=daV9RenderAllBase();daV9EnsureBannerFilterOptions();return result};
+
+  if(!document.getElementById('daBannerMultiV9Styles')){
+    const style=document.createElement('style');style.id='daBannerMultiV9Styles';style.textContent=`
+      .product-workbench.has-any-banner{border-color:#c59a2e!important}.product-workbench.has-active-banner{border-color:#198754!important}
+      .banner-product-status{min-width:250px;max-width:420px;border:1px solid var(--line);border-radius:14px;padding:9px 10px;background:#fafafa}.banner-product-status.active{background:var(--green2);border-color:#9bd4b2}.banner-product-status.created{background:var(--gold2);border-color:#e5cf8b}.banner-product-status.none{background:#f7f7f7;color:var(--muted)}.banner-product-status strong,.banner-product-status small{display:block}.banner-product-status strong{font-size:12px}.banner-product-status small{font-size:10px;margin-top:3px}.banner-product-locations{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}.banner-product-locations .chip{font-size:9px;padding:3px 6px}
+      .banner-multi-field{min-width:300px}.banner-multi-select{position:relative}.banner-multi-select>summary{list-style:none;min-height:41px;border:1px solid #7896b9;border-radius:12px;background:#fff;padding:10px 11px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:900;cursor:pointer}.banner-multi-select>summary::-webkit-details-marker{display:none}.banner-multi-panel{position:absolute;z-index:32;top:calc(100% + 6px);right:0;width:min(720px,88vw);max-height:68vh;overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 22px 60px rgba(0,0,0,.2);padding:12px}.banner-multi-actions{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px}.banner-placement-scroll{max-height:52vh;overflow:auto;padding-right:4px}.banner-placement-scroll.modal{max-height:430px}.banner-placement-group{margin-bottom:12px}.banner-placement-group h5{display:flex;justify-content:space-between;margin:0 0 6px;padding-bottom:5px;border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;color:var(--muted)}.banner-placement-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.banner-placement-option{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:11px;padding:8px;background:#fff;cursor:pointer}.banner-placement-option.selected{background:var(--blue2);border-color:#85afea}.banner-placement-option input{margin-top:2px}.banner-placement-option strong,.banner-placement-option small{display:block}.banner-placement-option strong{font-size:11px;line-height:1.25}.banner-placement-option small{font-size:9px;color:var(--muted);margin-top:3px;word-break:break-word}.banner-multi-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:9px}.banner-multi-head strong,.banner-multi-head small{display:block}.banner-multi-head small{font-size:11px;color:var(--muted);margin-top:3px}.banner-card-locations>div{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}.banner-card-locations .chip{font-size:9px}
+      @media(max-width:900px){.banner-product-status{max-width:none;width:100%}.workbench-header{flex-wrap:wrap}.banner-placement-options{grid-template-columns:1fr}.banner-multi-panel{position:fixed;inset:8vh 4vw auto;width:92vw;max-height:84vh}.banner-placement-scroll{max-height:66vh}}
+    `;document.head.appendChild(style);
+  }
 
   loadData();
 })(); 
