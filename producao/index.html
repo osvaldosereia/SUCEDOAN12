@@ -347,7 +347,7 @@
     .chip{border-color:#aeb8c2;color:#303a44;background:#f8fafc}
     .workbench-banner-control{
       display:grid;
-      grid-template-columns:minmax(210px,1fr) minmax(260px,1.35fr) auto;
+      grid-template-columns:minmax(210px,1fr) minmax(240px,1.15fr) minmax(185px,.75fr) auto;
       gap:12px;
       align-items:end;
       padding:13px;
@@ -580,7 +580,7 @@
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
         <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho site/kits.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos_3"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="site/img/produtos_3"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
-        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners do site</label><input class="input" id="setMakeBannerWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">O webhook de banners recebe o produto e a posição escolhida no card, gera uma única arte vertical WebP 1024×1536, salva em <strong>site/banners/ativos</strong> e atualiza <strong>site/banners/banners.json</strong>.</div></div>
+        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners do site</label><input class="input" id="setMakeBannerWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="notice gold" style="margin-top:10px">O webhook de banners recebe o produto, a posição e o período próprio do banner, gera uma única arte vertical WebP 1024×1536, salva em <strong>site/banners/ativos</strong> e atualiza <strong>site/banners/banners.json</strong>. A validade da oferta não deve aparecer na arte.</div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
       <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar site/kits.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
@@ -2282,8 +2282,9 @@
           </div>
         </div>
         <div class="workbench-banner-control">
-          <div class="workbench-banner-copy"><strong>Banner rápido do produto</strong><small>Configure a oferta no próprio card, escolha a posição e clique em gerar. O admin envia direto ao Make a foto real, o nome, a embalagem, o preço antigo, o preço de oferta e o período promocional.</small></div>
+          <div class="workbench-banner-copy"><strong>Banner rápido do produto</strong><small>Configure a oferta no próprio card, escolha a posição e informe quando o banner deve sair do ar. A validade do banner é independente da validade da oferta e não aparece na imagem.</small></div>
           <div class="workbench-banner-field"><label>Onde o banner aparecerá</label><select class="select" data-banner-position data-key="${esc(key)}">${bannerPositionOptionsHtml(p)}</select></div>
+          <div class="workbench-banner-field"><label>Retirar banner do ar em</label><input class="input" type="date" data-banner-expiry data-key="${esc(key)}" value="${esc(daBannerExpiryForProduct(key))}" min="${esc(daBannerToday())}"><small>Independente da validade da oferta.</small></div>
           <button class="btn create-banner-btn" type="button" data-action="create-product-banner" data-key="${esc(key)}">✨ Gerar banner agora</button>
         </div>
         <div class="workbench-sections">
@@ -4677,7 +4678,7 @@ function daOpenBannerModal(mode='create',banner=null,prefill={}){
   const placement=banner?.exibicao?.local||prefill.position||'home.hero',target=banner?.exibicao?.alvo||prefill.target||'',storedLink=banner?.link||prefill.link||daDefaultLinkForPlacement(placement,target),linkType=banner?(storedLink.tipo||'rota'):'automatico';
   document.getElementById('bannerModalTitle').textContent=mode==='edit'?'Editar banner':'Criar banner profissional';document.getElementById('bannerModalSubtitle').textContent=mode==='edit'?'Altere o direcionamento, os produtos, o texto ou regenere a arte.':'A mesma imagem vertical será usada no desktop e no celular.';
   const preview=mode==='edit'?`<div class="span-4 banner-content-box banner-current-preview"><img src="${esc(daBannerPublicUrl(banner.imagem))}" alt="${esc(banner.alt||banner.titulo||'Banner atual')}"><div><strong>Arte atual</strong><div class="banner-help">Salvar metadados não gasta crédito de imagem. “Regenerar arte” cria um novo WebP e remove o arquivo anterior.</div></div></div>`:'';
-  document.getElementById('bannerModalBody').innerHTML=`<div class="banner-form-grid">${preview}<div class="field"><label>Tipo de conteúdo</label><select class="select" id="bannerContentType"><option value="produto">Produto específico</option><option value="personalizado">Campanha personalizada</option></select></div><div class="field span-2"><label>Nome interno do banner</label><input class="input" id="bannerTitle" value="${esc(banner?.titulo||prefill.title||'')}" placeholder="Ex.: Oferta arroz julho"></div><div class="field"><label>Status</label><select class="select" id="bannerActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></div><div class="span-4 banner-content-box" id="bannerProductModeBox"><div class="field"><label>Produto do banner</label><select class="select" id="bannerMainProduct"><option value="">Selecione o produto...</option>${daBannerProductOptions(mainProduct)}</select><small class="banner-help">A arte receberá automaticamente imagem, nome, embalagem, preço antigo, preço novo, desconto e validade da oferta.</small></div></div><div class="span-4 banner-content-box" id="bannerCustomModeBox"><div class="field"><label>Texto exato que deve aparecer na arte</label><textarea class="textarea" id="bannerArtworkText" maxlength="220" placeholder="Ex.: Monte sua despensa com economia. Escolha seus favoritos.">${esc(banner?.texto_arte||prefill.artText||'')}</textarea><small class="banner-help">Obrigatório. A IA deve reproduzir este texto e não inventar outras promoções.</small></div><div class="field" style="margin-top:10px"><label>Buscar até 3 produtos para usar como referência visual</label><input class="input" id="bannerProductSearch" placeholder="Nome, código, marca ou categoria"><div class="tiny" id="bannerSelectedCount"></div></div><div class="banner-product-picker" id="bannerProductPicker"></div></div><div class="field span-2"><label>Onde o banner aparecerá</label><select class="select" id="bannerPlacement">${DA_BANNER_PLACEMENTS.map(x=>`<option value="${esc(x.value)}" ${x.value===placement?'selected':''}>${esc(x.label)}</option>`).join('')}</select></div><div class="field span-2" id="bannerPlacementTargetWrap"></div><div class="field"><label>Destino do clique</label><select class="select" id="bannerLinkType"><option value="automatico">Automático pelo direcionamento</option><option value="produto">Produto</option><option value="categoria">Categoria</option><option value="subcategoria">Subcategoria</option><option value="marca">Marca</option><option value="kit">Kit</option><option value="cesta">Cesta</option><option value="rota">Rota interna</option><option value="url">URL externa</option></select></div><div class="field span-2"><label>Valor/destino do link</label><input class="input" id="bannerLinkValue" value="${esc(storedLink.valor||'')}"></div><div class="field"><label>Ordem na posição</label><input class="input" type="number" min="1" id="bannerOrder" value="${Number(banner?.exibicao?.ordem)||daNextBannerOrder(placement,target)}"></div><div class="field span-2"><label>Texto alternativo (SEO/acessibilidade)</label><input class="input" id="bannerAlt" value="${esc(banner?.alt||prefill.alt||'')}" placeholder="Descreva objetivamente a oferta"></div><div class="field"><label>Início opcional</label><input class="input" type="datetime-local" id="bannerStart" value="${esc(banner?.periodo?.inicio?String(banner.periodo.inicio).slice(0,16):'')}"></div><div class="field"><label>Fim opcional</label><input class="input" type="datetime-local" id="bannerEnd" value="${esc(banner?.periodo?.fim?String(banner.periodo.fim).slice(0,16):'')}"></div><div class="field"><label>Formato fixo</label><input class="input" value="1024 × 1536 · WebP · 2:3" readonly></div><div class="span-4 banner-schema-note"><strong>Comportamento no site:</strong> o banner ocupa exatamente uma coluna de produto. Celular mostra 2 colunas, tablet 3 e desktop 4. Só vira carrossel quando houver mais banners do que colunas disponíveis naquela posição.</div></div><div class="banner-form-actions"><button class="btn" type="button" data-action="banner-modal-close">Cancelar</button>${mode==='edit'?'<button class="btn blue" type="button" data-action="banner-save-edit">Salvar sem regenerar</button><button class="btn primary" type="button" data-action="banner-regenerate">Regenerar arte e salvar</button>':'<button class="btn primary" type="button" data-action="banner-create-confirm">Gerar e publicar banner</button>'}</div>`;
+  document.getElementById('bannerModalBody').innerHTML=`<div class="banner-form-grid">${preview}<div class="field"><label>Tipo de conteúdo</label><select class="select" id="bannerContentType"><option value="produto">Produto específico</option><option value="personalizado">Campanha personalizada</option></select></div><div class="field span-2"><label>Nome interno do banner</label><input class="input" id="bannerTitle" value="${esc(banner?.titulo||prefill.title||'')}" placeholder="Ex.: Oferta arroz julho"></div><div class="field"><label>Status</label><select class="select" id="bannerActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></div><div class="span-4 banner-content-box" id="bannerProductModeBox"><div class="field"><label>Produto do banner</label><select class="select" id="bannerMainProduct"><option value="">Selecione o produto...</option>${daBannerProductOptions(mainProduct)}</select><small class="banner-help">A arte receberá automaticamente imagem, nome, embalagem, preço antigo, preço novo e desconto. Nenhuma data de oferta ou de validade será impressa.</small></div></div><div class="span-4 banner-content-box" id="bannerCustomModeBox"><div class="field"><label>Texto exato que deve aparecer na arte</label><textarea class="textarea" id="bannerArtworkText" maxlength="220" placeholder="Ex.: Monte sua despensa com economia. Escolha seus favoritos.">${esc(banner?.texto_arte||prefill.artText||'')}</textarea><small class="banner-help">Obrigatório. A IA deve reproduzir este texto e não inventar outras promoções.</small></div><div class="field" style="margin-top:10px"><label>Buscar até 3 produtos para usar como referência visual</label><input class="input" id="bannerProductSearch" placeholder="Nome, código, marca ou categoria"><div class="tiny" id="bannerSelectedCount"></div></div><div class="banner-product-picker" id="bannerProductPicker"></div></div><div class="field span-2"><label>Onde o banner aparecerá</label><select class="select" id="bannerPlacement">${DA_BANNER_PLACEMENTS.map(x=>`<option value="${esc(x.value)}" ${x.value===placement?'selected':''}>${esc(x.label)}</option>`).join('')}</select></div><div class="field span-2" id="bannerPlacementTargetWrap"></div><div class="field"><label>Destino do clique</label><select class="select" id="bannerLinkType"><option value="automatico">Automático pelo direcionamento</option><option value="produto">Produto</option><option value="categoria">Categoria</option><option value="subcategoria">Subcategoria</option><option value="marca">Marca</option><option value="kit">Kit</option><option value="cesta">Cesta</option><option value="rota">Rota interna</option><option value="url">URL externa</option></select></div><div class="field span-2"><label>Valor/destino do link</label><input class="input" id="bannerLinkValue" value="${esc(storedLink.valor||'')}"></div><div class="field"><label>Ordem na posição</label><input class="input" type="number" min="1" id="bannerOrder" value="${Number(banner?.exibicao?.ordem)||daNextBannerOrder(placement,target)}"></div><div class="field span-2"><label>Texto alternativo (SEO/acessibilidade)</label><input class="input" id="bannerAlt" value="${esc(banner?.alt||prefill.alt||'')}" placeholder="Descreva objetivamente a oferta"></div><div class="field"><label>Início opcional</label><input class="input" type="datetime-local" id="bannerStart" value="${esc(banner?.periodo?.inicio?String(banner.periodo.inicio).slice(0,16):'')}"></div><div class="field"><label>Fim opcional</label><input class="input" type="datetime-local" id="bannerEnd" value="${esc(banner?.periodo?.fim?String(banner.periodo.fim).slice(0,16):'')}"></div><div class="field"><label>Formato fixo</label><input class="input" value="1024 × 1536 · WebP · 2:3" readonly></div><div class="span-4 banner-schema-note"><strong>Comportamento no site:</strong> o banner ocupa exatamente uma coluna de produto. Celular mostra 2 colunas, tablet 3 e desktop 4. Só vira carrossel quando houver mais banners do que colunas disponíveis naquela posição.</div></div><div class="banner-form-actions"><button class="btn" type="button" data-action="banner-modal-close">Cancelar</button>${mode==='edit'?'<button class="btn blue" type="button" data-action="banner-save-edit">Salvar sem regenerar</button><button class="btn primary" type="button" data-action="banner-regenerate">Regenerar arte e salvar</button>':'<button class="btn primary" type="button" data-action="banner-create-confirm">Gerar e publicar banner</button>'}</div>`;
   document.getElementById('bannerContentType').value=contentType;document.getElementById('bannerActive').value=String(banner?.ativo!==false);document.getElementById('bannerLinkType').value=linkType;daRenderBannerTargetField(target);document.getElementById('bannerManagerModal').classList.add('open');daSyncBannerContentVisibility();if(contentType==='personalizado')daRenderBannerProductPicker();daSyncBannerLinkFields(false);
 }
 function daCloseBannerModal(){document.getElementById('bannerManagerModal')?.classList.remove('open');state.bannerManager.editingId=null;state.bannerManager.prefill=null}
@@ -4983,7 +4984,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
       exibicao:{local,alvo:target,ordem:Number(exhibition.ordem ?? raw.ordem ?? raw.order ?? index+1)},
       imagem:files[0] || '',
       link:daV6NormalizeBannerLink(raw.link,raw),
-      periodo:{inicio:period.inicio || raw.inicio || raw.data_inicio || raw.inicio_oferta || null,fim:period.fim || raw.fim || raw.data_fim || raw.validade_oferta || null},
+      periodo:{inicio:period.inicio || raw.banner_inicio || raw.inicio_banner || raw.inicio || raw.data_inicio || null,fim:period.fim || raw.banner_fim || raw.fim_banner || raw.fim || raw.data_fim || null},
       criado_em:raw.criado_em || raw.created_at || raw.createdAt || null,
       atualizado_em:raw.atualizado_em || raw.updated_at || raw.updatedAt || null
     };
@@ -5218,6 +5219,161 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   window.setInterval(()=>{daV6CleanupExpiredBanners().catch(error=>console.warn(error));},60000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden) daV6CleanupExpiredBanners().catch(error=>console.warn(error));});
 })();
+
+
+  /* DA_BANNER_VALIDITY_INDEPENDENT_V7_20260711 */
+  const DA_BANNER_EXPIRY_STORAGE_V7 = 'dona-antonia-banner-expiry-v7';
+  function daBannerDateInputValue(value){
+    if(!value) return '';
+    const date = value instanceof Date ? value : new Date(value);
+    if(Number.isNaN(date.getTime())) return String(value).slice(0,10);
+    const local = new Date(date.getTime() - date.getTimezoneOffset()*60000);
+    return local.toISOString().slice(0,10);
+  }
+  function daBannerDateTimeLocalValue(value){
+    if(!value) return '';
+    const date = value instanceof Date ? value : new Date(value);
+    if(Number.isNaN(date.getTime())) return String(value).slice(0,16);
+    const local = new Date(date.getTime() - date.getTimezoneOffset()*60000);
+    return local.toISOString().slice(0,16);
+  }
+  function daBannerToday(){return daBannerDateInputValue(new Date())}
+  function daBannerNowLocal(){return daBannerDateTimeLocalValue(new Date())}
+  function daBannerDefaultEndLocal(days=7){const date=new Date();date.setDate(date.getDate()+days);date.setHours(23,59,0,0);return daBannerDateTimeLocalValue(date)}
+  function daBannerDefaultExpiryDate(days=7){const date=new Date();date.setDate(date.getDate()+days);return daBannerDateInputValue(date)}
+  function daBannerExpiryMap(){try{return JSON.parse(localStorage.getItem(DA_BANNER_EXPIRY_STORAGE_V7)||'{}')||{}}catch{return {}}}
+  function daBannerExpiryForProduct(key){const value=daBannerExpiryMap()[String(key||'')];return value&&/^\d{4}-\d{2}-\d{2}$/.test(value)?value:daBannerDefaultExpiryDate(7)}
+  function daSaveBannerExpiryForProduct(key,value){if(!key||!value)return;const map=daBannerExpiryMap();map[String(key)]=String(value);try{localStorage.setItem(DA_BANNER_EXPIRY_STORAGE_V7,JSON.stringify(map))}catch{}}
+  function daBannerDaysBetween(start,end){const a=new Date(start).getTime(),b=new Date(end).getTime();return Number.isFinite(a)&&Number.isFinite(b)?Math.max(1,Math.ceil((b-a)/86400000)):7}
+
+  document.addEventListener('change',event=>{
+    const input=event.target.closest?.('[data-banner-expiry]');
+    if(!input)return;
+    daSaveBannerExpiryForProduct(input.dataset.key,input.value);
+  },true);
+
+  const daBannerRenderWorkbenchV7Base = renderProductWorkbench;
+  renderProductWorkbench = function(product){
+    let html = daBannerRenderWorkbenchV7Base(product);
+    if(html.includes('data-banner-expiry')) return html;
+    const key = getKey(product);
+    const button = `<button class="btn create-banner-btn" type="button" data-action="create-product-banner" data-key="${esc(key)}">✨ Gerar banner agora</button>`;
+    const field = `<div class="workbench-banner-field"><label>Retirar banner do ar em</label><input class="input" type="date" data-banner-expiry data-key="${esc(key)}" value="${esc(daBannerExpiryForProduct(key))}" min="${esc(daBannerToday())}"><small>Independente da validade da oferta.</small></div>`;
+    html = html.replace(button,field+button);
+    return html;
+  };
+
+  const daBannerOpenModalV7Base = daOpenBannerModal;
+  daOpenBannerModal = function(mode='create',banner=null,prefill={}){
+    const nextPrefill = {...(prefill||{})};
+    if(mode!=='edit'){
+      nextPrefill.start = nextPrefill.start || daBannerNowLocal();
+      nextPrefill.end = nextPrefill.end || daBannerDefaultEndLocal(7);
+    }
+    daBannerOpenModalV7Base(mode,banner,nextPrefill);
+    const start=document.getElementById('bannerStart'),end=document.getElementById('bannerEnd');
+    if(start){start.closest('.field')?.querySelector('label')?.replaceChildren(document.createTextNode('Entrar no ar'));if(!start.value)start.value=daBannerDateTimeLocalValue(banner?.periodo?.inicio||nextPrefill.start||daBannerNowLocal())}
+    if(end){end.closest('.field')?.querySelector('label')?.replaceChildren(document.createTextNode('Retirar do ar automaticamente'));if(!end.value)end.value=daBannerDateTimeLocalValue(banner?.periodo?.fim||nextPrefill.end||daBannerDefaultEndLocal(7));end.required=true}
+    const productHelp=document.querySelector('#bannerProductModeBox .banner-help');
+    if(productHelp)productHelp.textContent='A arte recebe imagem, nome, embalagem, preço antigo, preço novo e desconto. Datas da oferta e a data de retirada do banner não aparecem na imagem.';
+    const form=document.querySelector('#bannerManagerModal .banner-form-grid');
+    if(form&&!form.querySelector('.banner-validity-v7-note'))form.insertAdjacentHTML('beforeend','<div class="span-4 banner-schema-note banner-validity-v7-note"><strong>Validade independente:</strong> o período acima controla somente quando o banner entra e sai do site. A validade da oferta continua no cadastro do produto e serve apenas para regras comerciais e seleção automática; ela nunca é impressa na arte.</div>');
+  };
+
+  const daBannerFormDataV7Base = daBannerFormData;
+  daBannerFormData = function(){
+    const data=daBannerFormDataV7Base();
+    data.start=data.start||daBannerNowLocal();
+    data.end=data.end||daBannerDefaultEndLocal(7);
+    data.hideOfferValidity=true;
+    return data;
+  };
+
+  const daBannerValidateV7Base = daValidateBannerForm;
+  daValidateBannerForm = function(data,options={}){
+    daBannerValidateV7Base(data,options);
+    if(!data.end)throw new Error('Informe quando o banner deve sair do ar automaticamente.');
+    if(new Date(data.end).getTime()<=Date.now())throw new Error('A data para retirar o banner deve estar no futuro.');
+  };
+
+  daBannerPrompt = function(data,products){
+    const lines=products.map((p,i)=>`${i+1}. Nome: ${p.nome}\n   Marca: ${p.marca||'não informada'}\n   Embalagem: ${p.embalagem||'não informada'}\n   Preço antigo: ${p.preco_antigo_formatado}\n   Preço da oferta: ${p.preco_novo_formatado}\n   Desconto: ${p.desconto_percentual||0}%`).join('\n');
+    const specific=data.contentType==='produto'
+      ? `MODO PRODUTO ESPECÍFICO:\n- Use somente o produto real enviado.\n- Priorize o produto, o nome, o preço antigo riscado, o preço da oferta e o percentual de desconto.\n- Use o mínimo de informação possível: somente o básico necessário para vender.\n- NÃO mostre data de validade da oferta, data de validade do produto, período promocional, data de criação ou data de retirada do banner.\n- Nunca invente datas.`
+      : `MODO CAMPANHA PERSONALIZADA:\n- Reproduza exatamente este texto na arte, sem trocar palavras, números ou pontuação: "${data.artText}"\n- Não acrescente preços, percentuais, datas, slogans ou benefícios que não estejam nesse texto.\n- Use os ${products.length} produtos enviados apenas como referências visuais reais.`;
+    return `ATUE COMO UM PUBLICITÁRIO SÊNIOR ESPECIALISTA EM BANNERS DE SITES DE E-COMMERCE.\n\nCRIE UMA ÚNICA ARTE PUBLICITÁRIA VERTICAL PARA E-COMMERCE.\n\nSAÍDA TÉCNICA OBRIGATÓRIA:\n- Exatamente 1024 x 1536 pixels, proporção 2:3.\n- Uma única imagem WebP para desktop, tablet e celular.\n- Composição equivalente ao tamanho visual de um card de produto.\n- Margem segura mínima de 7% em todos os lados.\n- Layout limpo, minimalista e sem poluição visual.\n\n${specific}\n\nDADOS DOS PRODUTOS:\n${lines}\n\nREGRAS DE FIDELIDADE:\n- Preserve embalagem, marca, variante, cor, rótulo, formato e proporção de cada foto.\n- Não invente produtos, pesos, sabores, selos, QR code, telefone, URL, prêmio, benefício ou informação nutricional.\n- Não duplique o mesmo produto quando as referências repetirem a imagem.\n- Produto(s) grandes, legíveis e integrados a um cenário publicitário limpo, moderno e profissional.\n- Fundo coerente com a campanha, iluminação fotográfica, contraste alto e leitura perfeita em miniatura.\n- Texto somente em português do Brasil.\n- Não crie moldura externa; a borda arredondada será aplicada pelo site.\n- Não inclua nenhuma data na arte.\n\nRESULTADO: exatamente um banner vertical WebP 1024x1536, leve, sem versões alternativas.`;
+  };
+
+  const daBannerBuildV7Base = daBuildBanner;
+  daBuildBanner = function(data,existing=null,newImagePath=null){
+    const banner=daBannerBuildV7Base(data,existing,newImagePath);
+    const snapshots=data.selected.map(daBannerProductSnapshot),main=snapshots[0]||{};
+    const start=data.start?new Date(data.start).toISOString():new Date().toISOString();
+    const end=data.end?new Date(data.end).toISOString():new Date(Date.now()+7*86400000).toISOString();
+    banner.periodo={inicio:start,fim:end};
+    banner.banner_inicio=start;
+    banner.banner_fim=end;
+    banner.controle={...(banner.controle||{}),retirada_automatica:true,validade_independente_da_oferta:true,exibir_validade_oferta_na_arte:false,duracao_dias:daBannerDaysBetween(start,end)};
+    banner.oferta={preco_antigo:main.preco_antigo||0,preco_novo:main.preco_novo||0,desconto_percentual:main.desconto_percentual||0,validade_oferta:main.validade_oferta||null,usar_validade_apenas_para_elegibilidade:true,exibir_validade_na_arte:false};
+    return banner;
+  };
+
+  const daBannerSnapshotV7Base = daBannerProductSnapshot;
+  daBannerProductSnapshot = function(product){return {...daBannerSnapshotV7Base(product),exibir_validade_oferta_na_arte:false,validade_oferta_apenas_para_elegibilidade:true}};
+
+  const daBannerCallWebhookV7Base = daCallBannerWebhook;
+  daCallBannerWebhook = async function(payload){
+    if(payload&&['criar_banner','salvar_catalogo_banners','remover_banner','apagar_arquivo_banner'].includes(payload.acao)){
+      payload={...payload,versao_contrato:7,validade_banner_independente:true,exibir_validade_oferta_na_arte:false};
+      if(payload.banner){
+        payload.banner_inicio=payload.banner.periodo?.inicio||payload.banner.banner_inicio||null;
+        payload.banner_fim=payload.banner.periodo?.fim||payload.banner.banner_fim||null;
+        payload.retirar_automaticamente=true;
+      }
+    }
+    return daBannerCallWebhookV7Base(payload);
+  };
+
+  createProductBanner = async function(key){
+    const product=productByKey(key);
+    if(!product)throw new Error('Produto não encontrado.');
+    const card=document.querySelector(`[data-product-key="${CSS.escape(String(key))}"]`);
+    const positionSelect=card?.querySelector('[data-banner-position]');
+    const raw=positionSelect?.value||state.bannerPositions?.[key]||`produto::${key}`;
+    const parts=String(raw).split('::'),placement=parts.shift()||'produto';let target=parts.join('::');
+    if(!target&&['categoria','subcategoria','marca','produto'].includes(placement))target=placement==='produto'?key:(placement==='subcategoria'?`${product.categoria||''}::${product.subcategoria||''}`:String(product[placement]||''));
+    if((placement==='kit'||placement==='cesta')&&!target)throw new Error('Para usar kit ou cesta específica, faça a criação pelo gerenciador de banners.');
+    const image=getImg(product);
+    if(!image||image===PLACEHOLDER)throw new Error('Cadastre uma foto válida no produto antes de gerar o banner.');
+    const regular=toNum(product.preco),offer=toNum(product.preco_oferta);
+    if(regular<=0)throw new Error('Informe o valor antigo do produto antes de gerar o banner.');
+    if(offer<=0)throw new Error('Informe o valor da oferta do produto antes de gerar o banner.');
+    if(offer>=regular)throw new Error('O valor da oferta deve ser menor que o valor antigo para o banner rápido de produto.');
+    const expiryInput=card?.querySelector('[data-banner-expiry]');
+    const expiry=expiryInput?.value||daBannerExpiryForProduct(key);
+    if(!expiry)throw new Error('Informe quando o banner deve sair do ar.');
+    const endDate=new Date(`${expiry}T23:59:00`);
+    if(Number.isNaN(endDate.getTime())||endDate.getTime()<=Date.now())throw new Error('A data para retirar o banner deve estar no futuro.');
+    daSaveBannerExpiryForProduct(key,expiry);
+    const catalog=daNormalizeBannerCatalog(state.bannerManager.catalog||await daLoadBannerCatalog());
+    const samePlacement=catalog.banners.filter(b=>String(b?.exibicao?.local||'')===String(placement)&&String(b?.exibicao?.alvo||'')===String(target||''));
+    const nextOrder=(samePlacement.reduce((max,b)=>Math.max(max,Number(b?.exibicao?.ordem)||0),0)||0)+1;
+    const data={contentType:'produto',selected:[product],artText:'',placement,target,title:`Oferta · ${getName(product)}`,alt:`${getName(product)} em oferta na Dona Antônia`,link:{tipo:'produto',valor:String(product.codigo||getKey(product)||'')},order:nextOrder,start:daBannerNowLocal(),end:`${expiry}T23:59`,active:true,hideOfferValidity:true};
+    setStatus(`Gerando banner de ${getName(product)} até ${expiry.split('-').reverse().join('/')}...`,'warn');
+    await daPublishBannerArtwork(data);
+    return {ok:true,modo:'direto',placement,target,banner_inicio:data.start,banner_fim:data.end,validade_oferta_na_arte:false};
+  };
+
+  const daBannerCardV7Base = daBannerCardHtml;
+  daBannerCardHtml = function(banner){return daBannerCardV7Base(banner).replace('<strong>Vencimento:</strong>','<strong>Sai do ar:</strong>')};
+
+  const daBannerRenderManagerV7Base = daRenderBannerManager;
+  daRenderBannerManager = async function(){
+    const result=await daBannerRenderManagerV7Base();
+    const body=document.getElementById('bannerManagerBody');
+    if(body&&!body.querySelector('.banner-validity-manager-v7'))body.insertAdjacentHTML('afterbegin','<div class="notice blue banner-validity-manager-v7" style="margin-bottom:14px"><strong>Validade do banner separada da oferta:</strong> o banner usa <code>periodo.inicio</code> e <code>periodo.fim</code>. A validade da oferta permanece apenas no produto, pode ser usada para selecionar ofertas automáticas e nunca aparece na imagem. Banners rápidos são configurados, por padrão, para sair do ar 7 dias após a criação.</div>');
+    return result;
+  };
 
   loadData();
 })(); 
