@@ -95,6 +95,64 @@
 }
 @media (prefers-reduced-motion:reduce){.da-banner-track{scroll-behavior:auto!important}.da-banner-card{transition:none!important}}
 </style>
+
+<style id="daRequestedAdjustments20260712">
+/* Ajustes solicitados: favoritos, validade, descontos, imagens e área segura inferior. */
+.header-favorites-btn{display:none;position:relative;width:46px;height:46px;min-width:46px;border-radius:16px;border:1px solid var(--line);background:#fff;color:var(--ink);align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(26,34,29,.055)}
+.header-favorites-btn .svg-icon{width:22px;height:22px}
+.header-favorites-btn.has-favorites,.header-favorites-btn.active{color:var(--danger);border-color:rgba(201,54,76,.25);background:#fff5f6}
+.header-favorites-count,.favorites-badge{position:absolute;display:none;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--danger);color:#fff;border:2px solid #fff;font-size:10px;font-weight:850;line-height:1}
+.header-favorites-count{top:-5px;right:-5px}
+.nav-favorites-item{position:relative}
+.nav-favorites-item .favorites-badge{top:7px;right:9px}
+.product-media-wrap,.kit-deal-media{position:relative}
+.media-discount-badge{position:absolute;z-index:5;top:50px;right:8px;display:inline-flex;align-items:center;justify-content:center;min-width:46px;min-height:25px;padding:4px 8px;border-radius:999px;background:var(--danger);color:#fff;font-size:11px;line-height:1;font-weight:900;letter-spacing:.01em;box-shadow:0 7px 16px rgba(201,54,76,.2)}
+.product-expiry-card{min-height:14px;margin-top:-2px;color:#7d857d!important;font-size:10px!important;line-height:1.2!important;font-weight:500!important;letter-spacing:0!important}
+.detail-favorite-btn{position:static!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;padding:0!important;border-radius:999px!important;display:inline-grid!important;place-items:center!important;gap:0!important}
+.detail-favorite-btn span{display:none!important}
+.kit-card .product-meta .discount{display:none!important}
+.basket-imgbox,.kit-deal-media,.basket-deal-media{background:transparent!important}
+.basket-imgbox img,.kit-deal-img{padding:0!important;mix-blend-mode:normal!important;filter:none!important;object-fit:contain!important;transform:scale(1.06);transform-origin:center}
+.kit-deal-media{width:100%;aspect-ratio:1/1;border-radius:22px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.kit-deal-media .kit-deal-img{width:100%!important;height:100%!important;aspect-ratio:1/1!important;border-radius:0!important;background:transparent!important}
+.basket-type-badge{display:inline-flex;align-items:center;min-height:30px;padding:6px 11px;border-radius:999px;background:#eaf7ef;color:var(--brand);font-size:12px;font-weight:850}
+.basket-deal-card{margin-bottom:12px}
+.basket-product-image-link{display:block;width:100%}
+.basket-product-image-link img{width:100%!important}
+.basket-editor-name[href]{display:-webkit-box;color:inherit;text-decoration:none}
+.favorites-page .favorites-section:first-of-type{margin-top:12px}
+.favorites-page .favorites-section+ .favorites-section{padding-top:22px;border-top:1px solid var(--line)}
+.app{scroll-padding-bottom:64px!important}
+.drawer-body{padding-bottom:calc(36px + var(--safe-bottom))!important;scroll-padding-bottom:calc(36px + var(--safe-bottom))!important}
+@media (max-width:767px){
+  .header-favorites-btn{display:inline-flex!important}
+  .header .brand{max-width:calc(100% - 158px)!important}
+  .header-actions{gap:5px!important}
+  .header-cart-btn,.header-menu-btn,.header-favorites-btn{width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important}
+  #nav-favoritos{display:none!important}
+  .media-discount-badge{top:46px;right:6px;min-width:42px;min-height:23px;padding:4px 7px;font-size:10px}
+  .app{padding-bottom:calc(var(--bottom-h) + var(--safe-bottom) + 112px)!important;scroll-padding-bottom:calc(var(--bottom-h) + var(--safe-bottom) + 112px)!important}
+  .app>.container,.app .container{padding-bottom:26px}
+  .app .container>*:last-child{margin-bottom:24px!important}
+  .basket-detail-container,.kit-detail-container,.favorites-page{padding-bottom:calc(var(--bottom-h) + var(--safe-bottom) + 126px)!important}
+  .basket-detail-container .basket-total-card,.kit-products-section{margin-bottom:34px!important}
+  .basket-imgbox img,.kit-deal-img{transform:scale(1.1)}
+}
+@media (max-width:360px){
+  .header .brand{max-width:calc(100% - 150px)!important}
+  .header .brand-logo{width:108px!important}
+  .header-cart-btn,.header-menu-btn,.header-favorites-btn{width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important}
+}
+@media (min-width:768px){
+  .nav-favorites-item{display:flex!important}
+  .app{padding-bottom:64px!important;scroll-padding-bottom:64px!important}
+  .basket-imgbox img,.kit-deal-img{transform:scale(1.08)}
+}
+@media (min-width:1100px){
+  .header-favorites-btn{display:none!important}
+  .nav-favorites-item{display:flex!important}
+}
+</style>
 </head>
 <body>
   <header class="header">
@@ -105,6 +163,10 @@
           <span class="brand-text"><strong>Dona Antônia</strong><span>Supermercado e cestas</span></span>
         </a>
         <div class="header-actions" aria-label="Ações rápidas">
+          <a class="header-favorites-btn" id="header-favorites-btn" href="#/favoritos" aria-label="Ver favoritos">
+            <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            <span class="header-favorites-count" id="header-favorites-count">0</span>
+          </a>
           <button class="header-cart-btn" id="header-cart-btn" type="button" aria-label="Abrir minha compra">
             <span class="header-cart-icon"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg><span class="header-cart-count" id="header-cart-count">0</span></span>
             <span><small>Minha compra</small><strong id="header-cart-total">R$ 0,00</strong></span>
@@ -135,6 +197,7 @@
       <a class="nav-item" id="nav-home" href="#/"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><path d="M9 22V12h6v10"></path></svg><span>Início</span></a>
       <a class="nav-item" id="nav-categorias" href="#/categorias"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"></path></svg><span>Categorias</span></a>
       <a class="nav-item" id="nav-ofertas" href="#/ofertas"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg><span>Ofertas</span></a>
+      <a class="nav-item nav-favorites-item" id="nav-favoritos" href="#/favoritos"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"></path></svg><span>Favoritos</span><span class="favorites-badge" id="favorites-badge">0</span></a>
       <a class="nav-item" id="nav-info" href="#/informacoes"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 17h.01M12 13v-2a4 4 0 10-4-4"></path><circle cx="12" cy="12" r="10"></circle></svg><span>Info</span></a>
       <button class="nav-item" id="nav-cart" type="button"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg><span>Compra</span><span class="cart-badge" id="cart-badge">0</span></button>
     </div>
@@ -1033,39 +1096,83 @@
       try { localStorage.setItem(CONFIG.FAVORITES_STORAGE_KEY, JSON.stringify(Array.from(state.favorites))); } catch(e) {}
     }
 
-    function isFavorite(id) {
-      return state.favorites.has(String(id));
+    function favoriteStorageKey(id, kind) {
+      const type = kind === 'kit' ? 'kit' : 'product';
+      return type === 'kit' ? `kit:${String(id || '')}` : String(id || '');
     }
 
-    function favoriteButtonHtml(id, label) {
-      const active = isFavorite(id);
-      return `<button class="favorite-btn ${active ? 'active' : ''}${label ? ' detail-favorite-btn' : ''}" type="button" data-action="toggle-favorite" data-id="${escapeHtml(id)}" aria-label="${active ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" aria-pressed="${active ? 'true' : 'false'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"></path></svg>${label ? `<span>${active ? 'Favorito' : 'Favoritar'}</span>` : ''}</button>`;
+    function isFavorite(id, kind) {
+      return state.favorites.has(favoriteStorageKey(id, kind));
     }
 
-    function syncFavoriteButtons(id) {
+    function favoriteButtonHtml(id, detail, kind) {
+      const favoriteKind = kind === 'kit' ? 'kit' : 'product';
+      const active = isFavorite(id, favoriteKind);
+      return `<button class="favorite-btn ${active ? 'active' : ''}${detail ? ' detail-favorite-btn' : ''}" type="button" data-action="toggle-favorite" data-id="${escapeHtml(id)}" data-favorite-kind="${favoriteKind}" aria-label="${active ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" aria-pressed="${active ? 'true' : 'false'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"></path></svg></button>`;
+    }
+
+    function favoriteCollections() {
+      const products = [];
+      const kits = [];
+      state.favorites.forEach(key => {
+        const raw = String(key || '');
+        if (raw.startsWith('kit:')) {
+          const id = raw.slice(4);
+          const kit = state.kits.find(item => String(item.id) === id || String(item.codigo) === id);
+          if (kit && kitIsVisible(kit)) kits.push(kit);
+          return;
+        }
+        const product = getProductById(raw);
+        if (product && isAvailable(product)) products.push(product);
+      });
+      return { products, kits, total: products.length + kits.length };
+    }
+
+    function updateFavoritesUI() {
+      const total = favoriteCollections().total;
+      const badge = $('favorites-badge');
+      const headerBadge = $('header-favorites-count');
+      const headerButton = $('header-favorites-btn');
+      if (badge) {
+        badge.textContent = String(total);
+        badge.style.display = total > 0 ? 'inline-flex' : 'none';
+      }
+      if (headerBadge) {
+        headerBadge.textContent = String(total);
+        headerBadge.style.display = total > 0 ? 'inline-flex' : 'none';
+      }
+      if (headerButton) {
+        headerButton.classList.toggle('has-favorites', total > 0);
+        headerButton.setAttribute('aria-label', total > 0 ? `Ver ${total} favorito(s)` : 'Ver favoritos');
+      }
+    }
+
+    function syncFavoriteButtons(id, kind) {
+      const wantedKind = kind === 'kit' ? 'kit' : 'product';
       document.querySelectorAll('[data-action="toggle-favorite"]').forEach(btn => {
-        if (id && String(btn.getAttribute('data-id')) !== String(id)) return;
-        const active = isFavorite(btn.getAttribute('data-id'));
+        const btnKind = btn.getAttribute('data-favorite-kind') === 'kit' ? 'kit' : 'product';
+        if (id && (String(btn.getAttribute('data-id')) !== String(id) || btnKind !== wantedKind)) return;
+        const active = isFavorite(btn.getAttribute('data-id'), btnKind);
         btn.classList.toggle('active', active);
         btn.setAttribute('aria-pressed', active ? 'true' : 'false');
         btn.setAttribute('aria-label', active ? 'Remover dos favoritos' : 'Adicionar aos favoritos');
-        const label = btn.querySelector('span');
-        if (label) label.textContent = active ? 'Favorito' : 'Favoritar';
       });
+      updateFavoritesUI();
     }
 
-    function toggleFavorite(id) {
-      const key = String(id || '');
+    function toggleFavorite(id, kind) {
+      const favoriteKind = kind === 'kit' ? 'kit' : 'product';
+      const key = favoriteStorageKey(id, favoriteKind);
       if (!key) return;
       if (state.favorites.has(key)) {
         state.favorites.delete(key);
         showToast('Removido dos favoritos.');
       } else {
         state.favorites.add(key);
-        showToast('Produto salvo nos favoritos.');
+        showToast(favoriteKind === 'kit' ? 'Kit salvo nos favoritos.' : 'Produto salvo nos favoritos.');
       }
       saveFavorites();
-      syncFavoriteButtons(key);
+      syncFavoriteButtons(id, favoriteKind);
       renderSiteMenuContent();
       if ((location.hash || '').startsWith('#/favoritos')) renderFavorites();
     }
@@ -2120,10 +2227,12 @@
             <a class="product-imgbox" href="#/produto/${route}" aria-label="Ver ${escapeHtml(p.name)}">
               <img loading="lazy" decoding="async" src="${escapeHtml(p.img)}" data-fallback-images="${escapeHtml(imageFallbackList(p.images))}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)">
             </a>
-            ${favoriteButtonHtml(id)}
+            ${favoriteButtonHtml(id, false, 'product')}
+            ${display.discountPercent > 0 ? `<span class="media-discount-badge">-${display.discountPercent}%</span>` : ''}
           </div>
           <div class="product-body">
             <a class="product-name" href="#/produto/${route}" title="${escapeHtml(p.name)}">${escapeHtml(cardName)}</a>
+            ${p.validade && formatProductExpiry(p.validade) ? `<div class="product-expiry product-expiry-card">Val. ${escapeHtml(formatProductExpiry(p.validade))}</div>` : ''}
             <div class="product-card-bottom">
               <div class="price-wrap">${productCardPriceHtml(display)}</div>
               <div class="add-area compact-add" data-card-controls="${escapeHtml(id)}" data-control-mode="card">${productCardControlsHtml(id, qty, unavailable)}</div>
@@ -2178,10 +2287,14 @@
       const priceBlock = `<div>${original > kit.preco ? `<div class="old-price">${fmt(original)}</div>` : ''}<div class="price">${kit.preco ? fmt(kit.preco) : 'Ver itens'}</div></div>`;
       if (mode === 'compact') {
         return `
-          <article class="${classes.join(' ')} basket-card-simple">
-            <a class="basket-imgbox" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}">
-              <img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
-            </a>
+          <article class="${classes.join(' ')} basket-card-simple kit-card">
+            <div class="product-media-wrap kit-media-wrap">
+              <a class="basket-imgbox" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}">
+                <img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
+              </a>
+              ${favoriteButtonHtml(kit.id, false, 'kit')}
+              ${discount > 0 ? `<span class="media-discount-badge">-${discount}%</span>` : ''}
+            </div>
             <div class="basket-body">
               <div class="basket-name">${escapeHtml(kit.nome)}</div>
               <div class="price-row">${priceBlock}</div>
@@ -2192,10 +2305,14 @@
           </article>`;
       }
       return `
-        <article class="${classes.join(' ')}">
-          <a class="basket-imgbox" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}">
-            <img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
-          </a>
+        <article class="${classes.join(' ')} kit-card">
+          <div class="product-media-wrap kit-media-wrap">
+            <a class="basket-imgbox" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}">
+              <img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
+            </a>
+            ${favoriteButtonHtml(kit.id, false, 'kit')}
+            ${discount > 0 ? `<span class="media-discount-badge">-${discount}%</span>` : ''}
+          </div>
           <div class="basket-body">
             <div class="product-meta">${discount > 0 ? `<span class="discount">-${discount}%</span>` : '&nbsp;'}</div>
             <div class="basket-name">${escapeHtml(kit.nome)}</div>
@@ -2461,7 +2578,11 @@
       app.innerHTML = `<div class="container kit-detail-container">${pageHeader(kit.nome, '', '#/kits')}${bannerSlotHtml('kit', { targets:[kit.id,kit.codigo,kit.nome].filter(Boolean), label:`Destaque de ${kit.nome}` })}
         <article class="kit-deal-card">
           <div class="kit-deal-top kit-deal-top-stacked">
-            <img class="kit-deal-img" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
+            <div class="kit-deal-media product-media-wrap">
+              <img class="kit-deal-img" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
+              ${favoriteButtonHtml(kit.id, false, 'kit')}
+              ${discount > 0 ? `<span class="media-discount-badge">-${discount}%</span>` : ''}
+            </div>
             <div class="kit-deal-copy">
               <div class="kit-badge-row">
                 ${discount > 0 ? `<span class="kit-discount-badge">-${discount}% OFF</span>` : ''}
@@ -2688,10 +2809,14 @@
     }
 
     function renderFavorites() {
-      const favIds = Array.from(state.favorites);
-      const products = favIds.map(id => getProductById(id)).filter(p => p && isAvailable(p));
-      app.innerHTML = `<div class="container">${pageHeader('Favoritos', `${products.length} ${products.length === 1 ? 'produto salvo' : 'produtos salvos'}`, '#/')}${bannerSlotHtml('favoritos.topo', { kind: 'section' })}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Nenhum favorito ainda</strong>Toque no coração dos produtos para salvar aqui.<div class="favorites-empty-actions"><a class="secondary-btn" href="#/ofertas">Ver ofertas</a><a class="secondary-btn" href="#/categorias">Ver categorias</a></div></div>`}</div>`;
-      setActiveNav('home');
+      const favorites = favoriteCollections();
+      const productsSection = favorites.products.length ? `<section class="section favorites-section"><div class="section-head"><div><h2 class="section-title">Produtos favoritados</h2><p class="section-caption">${favorites.products.length} ${favorites.products.length === 1 ? 'produto salvo' : 'produtos salvos'}</p></div></div><div class="product-grid">${favorites.products.map(product => productCard(product)).join('')}</div></section>` : '';
+      const kitsSection = favorites.kits.length ? `<section class="section favorites-section"><div class="section-head"><div><h2 class="section-title">Kits favoritados</h2><p class="section-caption">${favorites.kits.length} ${favorites.kits.length === 1 ? 'kit salvo' : 'kits salvos'}</p></div></div><div class="basket-list">${favorites.kits.map(kit => kitCard(kit, 'wide')).join('')}</div></section>` : '';
+      const empty = `<div class="empty"><strong>Nenhum favorito ainda</strong>Toque no coração dos produtos e kits para salvar aqui.<div class="favorites-empty-actions"><a class="secondary-btn" href="#/ofertas">Ver ofertas</a><a class="secondary-btn" href="#/kits">Ver kits</a></div></div>`;
+      app.innerHTML = `<div class="container favorites-page">${pageHeader('Favoritos', `${favorites.total} ${favorites.total === 1 ? 'item salvo' : 'itens salvos'}`, '#/')}${bannerSlotHtml('favoritos.topo', { kind: 'section' })}${favorites.total ? `${productsSection}${kitsSection}` : empty}</div>`;
+      setActiveNav('favoritos');
+      updateOfferCountdowns();
+      updateFavoritesUI();
     }
 
     function productBackHref() {
@@ -2725,7 +2850,7 @@
             <h1 class="detail-title">${escapeHtml(p.name)}</h1>
             ${hasExpiryBulkDiscount(p) ? `<div class="expiry-bulk-note">Leve 3 ou mais unidades e ganhe mais 10% no checkout.</div>` : ''}
             ${productPriceHtml(display, true)}
-            <div class="detail-actions-row">${favoriteButtonHtml(p.id, true)}</div>
+            <div class="detail-actions-row">${favoriteButtonHtml(p.id, true, 'product')}</div>
             <div data-card-controls="${escapeHtml(p.id)}" data-control-mode="detail">${qtyControlHtml(p.id, Number(state.cart[p.id] || 0))}</div>
             ${descHtml}
           </div>
@@ -2825,7 +2950,7 @@
       const brands = Array.from(countsByBrand.entries()).sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt-BR')).slice(0, 10);
       const count = cartCount();
       const total = subtotalCart(true);
-      const favCount = Array.from(state.favorites).filter(id => getProductById(id)).length;
+      const favCount = favoriteCollections().total;
       el.innerHTML = `
         <section class="menu-hero-card">
           <div class="menu-hero-kicker">Supermercado online local</div>
@@ -2863,6 +2988,7 @@
             <div><strong>WhatsApp</strong><span>Pedido conferido antes do envio</span></div>
           </div>
         </section>`;
+      updateFavoritesUI();
     }
 
     function scrollPageTop() {
@@ -2966,10 +3092,12 @@
     }
 
     function setActiveNav(name) {
-      ['home','categorias','ofertas','info'].forEach(k => {
+      ['home','categorias','ofertas','favoritos','info'].forEach(k => {
         const el = $('nav-' + k);
         if (el) el.classList.toggle('active', k === name);
       });
+      const headerFavorites = $('header-favorites-btn');
+      if (headerFavorites) headerFavorites.classList.toggle('active', name === 'favoritos');
     }
 
     function updateCartUI() {
@@ -3816,7 +3944,7 @@
         if (!btn) return;
         const action = btn.getAttribute('data-action');
         const id = btn.getAttribute('data-id');
-        if (action === 'toggle-favorite') { toggleFavorite(id); return; }
+        if (action === 'toggle-favorite') { toggleFavorite(id, btn.getAttribute('data-favorite-kind')); return; }
         if (action === 'add') addToCart(id, 1);
         if (action === 'inc') addToCart(id, 1);
         if (action === 'dec') setQty(id, Number(state.cart[id] || 0) - 1);
@@ -4135,19 +4263,31 @@
     const draft = ensureBasketDraft(basket.id);
     const total = basketDraftTotal(basket.id);
     const draftChanged = basketDraftChanged(basket.id);
+    const standardPrice = basket.preco ? Number(basket.preco) : basketDefaultProductTotal(basket.id);
+    const originalPrice = Math.max(Number(basket.precoOriginal || 0), standardPrice);
     const basketProductIds = new Set(rows.map(row=>String(row.product?.id || '')));
     const allOffers = getTopOffers(240);
     const offers = [...allOffers.filter(product=>!basketProductIds.has(String(product.id))),...allOffers.filter(product=>basketProductIds.has(String(product.id)))].slice(0,24);
-    app.innerHTML = `<div class="container basket-detail-container">${pageHeader(basket.nome,'','#/cestas')}${bannerSlotHtml('cesta',{targets:[basket.id,basket.nome].filter(Boolean),label:`Destaque de ${basket.nome}`})}
-      <article class="basket-card wide basket-detail-hero" style="margin-bottom:12px"><div class="basket-imgbox"><img src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}" onerror="window.__daFallbackImg(this)"></div><div class="basket-body"><div class="basket-name">${escapeHtml(basket.nome)}</div><div class="price">${basket.preco ? fmt(basket.preco) : fmt(total)}</div><button class="add-btn" type="button" data-action="add-basket" data-id="${escapeHtml(basket.id)}">Adicionar cesta padrão</button></div></article>
-      <section class="section"><div class="section-head"><div><h2 class="section-title">Produtos da cesta</h2></div></div>${rows.length ? `<div class="basket-editor">${rows.map(({product})=>{const qty=Number(draft[product.id]||0);return `<div class="basket-editor-row" data-basket-row="${escapeHtml(product.id)}"><img src="${escapeHtml(product.img)}" data-fallback-images="${escapeHtml(imageFallbackList(product.images))}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)"><div><div class="basket-editor-name">${escapeHtml(product.name)}</div><div class="basket-editor-price">${fmt(product.price)} cada</div></div><div class="cart-qty"><button type="button" data-action="basket-dec" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(product.id)}">−</button><span>${qty}</span><button type="button" data-action="basket-inc" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(product.id)}">+</button></div></div>`;}).join('')}</div>` : `<div class="empty"><strong>Itens não localizados</strong>Não conseguimos relacionar os produtos dessa cesta ao cadastro atual.</div>`}</section>
-      <section class="basket-total-card"><div class="summary-row"><span>Valor da cesta padrão</span><span>${basket.preco ? fmt(basket.preco) : fmt(basketDefaultProductTotal(basket.id))}</span></div><div class="summary-row total"><span>Total da cesta editada</span><span>${fmt(total)}</span></div><div class="desc">O total mantém o valor predefinido da cesta. Se retirar produto, o valor do item é abatido; se adicionar, o valor do item é somado.</div><button class="send-btn" type="button" data-action="add-basket-custom" data-id="${escapeHtml(basket.id)}" ${rows.length ? '' : 'disabled'}>Adicionar cesta ${draftChanged ? 'alterada' : 'padrão'}</button></section>
+    app.innerHTML = `<div class="container basket-detail-container kit-detail-container">${pageHeader(basket.nome,'','#/cestas')}${bannerSlotHtml('cesta',{targets:[basket.id,basket.nome].filter(Boolean),label:`Destaque de ${basket.nome}`})}
+      <article class="kit-deal-card basket-deal-card">
+        <div class="kit-deal-top kit-deal-top-stacked">
+          <div class="kit-deal-media basket-deal-media"><img class="kit-deal-img" src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}" onerror="window.__daFallbackImg(this)"></div>
+          <div class="kit-deal-copy">
+            <div class="kit-badge-row"><span class="basket-type-badge">Cesta básica</span></div>
+            <h2 class="kit-deal-title">${escapeHtml(basket.nome)}</h2>
+            <div class="kit-price-box">${originalPrice > standardPrice ? `<div class="old-price">De ${fmt(originalPrice)}</div>` : ''}<div class="kit-price-main">${fmt(standardPrice)}</div></div>
+            <button class="add-btn" type="button" data-action="add-basket" data-id="${escapeHtml(basket.id)}">Adicionar cesta padrão</button>
+          </div>
+        </div>
+        <details class="kit-description-toggle"><summary>Ver detalhes da cesta</summary><p>${escapeHtml(basket.descricao || 'Cesta básica pronta e editável.')}</p></details>
+      </article>
+      <section class="section kit-products-section basket-products-section"><div class="section-head"><div><h2 class="section-title">Produtos da cesta</h2><p class="section-caption">Ajuste as quantidades antes de adicionar a cesta.</p></div></div>${rows.length ? `<div class="basket-editor">${rows.map(({product})=>{const qty=Number(draft[product.id]||0);return `<div class="basket-editor-row" data-basket-row="${escapeHtml(product.id)}"><a class="basket-product-image-link" href="#/produto/${productRouteKey(product)}" aria-label="Abrir ${escapeHtml(product.name)}"><img src="${escapeHtml(product.img)}" data-fallback-images="${escapeHtml(imageFallbackList(product.images))}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)"></a><div><a class="basket-editor-name" href="#/produto/${productRouteKey(product)}">${escapeHtml(product.name)}</a><div class="basket-editor-price">${fmt(product.price)} cada</div></div><div class="cart-qty"><button type="button" data-action="basket-dec" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(product.id)}">−</button><span>${qty}</span><button type="button" data-action="basket-inc" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(product.id)}">+</button></div></div>`;}).join('')}</div>` : `<div class="empty"><strong>Itens não localizados</strong>Não conseguimos relacionar os produtos dessa cesta ao cadastro atual.</div>`}</section>
+      <section class="basket-total-card"><div class="summary-row"><span>Valor da cesta padrão</span><span>${fmt(standardPrice)}</span></div><div class="summary-row total"><span>Total da cesta editada</span><span>${fmt(total)}</span></div><div class="desc">O valor é recalculado conforme você retira ou adiciona unidades.</div><button class="send-btn" type="button" data-action="add-basket-custom" data-id="${escapeHtml(basket.id)}" ${rows.length ? '' : 'disabled'}>Adicionar cesta ${draftChanged ? 'alterada' : 'padrão'}</button></section>
       ${offers.length ? `<section class="section basket-detail-offers"><div class="section-head"><div><h2 class="section-title">Ofertas para completar sua compra</h2><p class="section-caption">Produtos promocionais exibidos depois da lista completa da cesta.</p></div><a class="see-all" href="#/ofertas">Ver todas</a></div><div class="product-grid">${offers.map(product=>productCard(product)).join('')}</div></section>` : ''}
     </div>`;
     setActiveNav('home');
     updateOfferCountdowns();
   };
-
   if(!document.getElementById('daSiteV6Styles')){
     const style = document.createElement('style');
     style.id = 'daSiteV6Styles';
