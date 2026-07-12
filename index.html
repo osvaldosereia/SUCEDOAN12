@@ -160,6 +160,55 @@
   .nav-favorites-item{display:flex!important}
 }
 </style>
+  <style id="da-home-modular-styles">
+/* DONA ANTÔNIA — HOME MODULAR V1 */
+.da-home-modular{--da-home-gap:clamp(12px,1.7vw,20px)}
+.da-home-section{margin-top:clamp(28px,4vw,46px)}
+.da-home-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:16px}
+.da-home-section-head h2{margin:0;color:var(--ink);font-size:clamp(21px,2.2vw,28px);line-height:1.06;font-weight:850;letter-spacing:-.045em}
+.da-home-section-head p{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.4;font-weight:520}
+.da-home-section-head>a{flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 13px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font-size:12.5px;font-weight:800}
+.da-home-standard-grid,.da-home-collection-products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 14px}
+.da-home-standard-grid .product-card,.da-home-collection-products .product-card{min-width:0}
+.da-home-offer-grid{display:flex;gap:12px;overflow-x:auto;padding:2px 1px 8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.da-home-offer-card{position:relative;flex:0 0 min(46vw,168px);scroll-snap-align:start;display:flex;flex-direction:column;min-width:0;padding:9px;border:1px solid #f0dcc7;border-radius:20px;background:#fffaf4;overflow:hidden}
+.da-home-offer-media{position:relative;aspect-ratio:1/1;border-radius:15px;background:#fff;overflow:hidden}
+.da-home-offer-media>a{display:block;width:100%;height:100%}
+.da-home-offer-media img{width:100%;height:100%;object-fit:contain;padding:9px}
+.da-home-offer-media .favorite-btn{top:7px;right:7px}
+.da-home-offer-discount,.da-home-kit-discount{position:absolute;left:7px;top:7px;z-index:2;display:inline-flex;align-items:center;min-height:27px;padding:0 8px;border-radius:999px;background:#c9364c;color:#fff;font-size:11px;font-weight:900}
+.da-home-offer-body{display:flex;flex:1;flex-direction:column;gap:6px;padding:10px 2px 1px}
+.da-home-card-name{min-height:36px;color:var(--ink);font-size:12.7px;line-height:1.35;font-weight:720;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.da-home-card-expiry{color:var(--muted);font-size:10px;font-weight:650}
+.da-home-offer-bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:7px;margin-top:auto}
+.da-home-offer-price{min-width:0;flex:1}
+.da-home-offer-price .price{font-size:18px!important;color:var(--danger)!important}
+.da-home-offer-price .coupon-price-card{grid-template-columns:1fr;gap:4px}
+.da-home-offer-price .coupon-price-before{display:none}
+.da-home-offer-price .coupon-price-pay{padding:6px 7px}
+.da-home-offer-price .coupon-price-pay strong{font-size:16px}
+.da-home-small-control,.da-home-tiny-control,.da-home-mosaic-control,.da-home-buy-control{flex:0 0 auto}
+.da-home-small-control .add-plus,.da-home-tiny-control .add-plus{width:36px!important;height:36px!important;min-height:36px!important;border-radius:12px!important}
+.da-home-small-control .qty-control-mini,.da-home-tiny-control .qty-control-mini{width:82px!important;height:36px!important;min-height:36px!important}
+.da-home-basket-grid,.da-home-kit-grid{display:flex;gap:14px;overflow-x:auto;padding:2px 1px 8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.da-home-basket-card,.da-home-kit-card{flex:0 0 min(84vw,310px);scroll-snap-align:start;min-width:0;padding:12px;border:1px solid var(--line);border-radius:22px;background:#fff}
+.da-home-square-media{display:block;width:100%;aspect-ratio:1/1;border-radius:17px;background:#f5f5f2;overflow:hidden}
+.da-home-square-media img{width:100%;height:100%;object-fit:contain;padding:10px}
+.da-home-basket-body,.da-home-kit-body{display:grid;gap:9px;padding:12px 2px 1px}
+.da-home-basket-name{min-height:38px;color:var(--ink);font-size:15px;line-height:1.28;font-weight:800;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.da-home-basket-price,.da-home-kit-price{display:grid;gap:2px}.da-home-basket-price s,.da-home-kit-price s{color:var(--muted-2);font-size:11px;font-weight:650}.da-home-basket-price strong,.da-home-kit-price strong{color:var(--brand);font-size:22px;line-height:1;font-weight:900;letter-spacing:-.045em}
+.da-home-view-products{display:flex;align-items:center;justify-content:center;min-height:43px;border:1px solid var(--line-strong);border-radius:13px;background:#fff;color:var(--ink);font-size:13px;font-weight:850}
+.da-home-kit-media{position:relative}.da-home-kit-media>.favorite-btn{top:9px;right:9px}.da-home-kit-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.da-home-kit-actions a,.da-home-kit-actions button{display:flex;align-items:center;justify-content:center;min-height:42px;border-radius:13px;font-size:12.5px;font-weight:850}.da-home-kit-actions a{border:1px solid var(--line-strong);background:#fff;color:var(--ink)}.da-home-kit-actions button{background:var(--ink);color:#fff}
+.da-home-buy-grid{display:grid;grid-template-columns:1fr;gap:10px}.da-home-buy-card{display:grid;grid-template-columns:82px minmax(0,1fr) auto;align-items:center;gap:11px;min-width:0;padding:10px;border:1px solid var(--line);border-radius:18px;background:#fff}.da-home-buy-media{width:82px;aspect-ratio:1/1;border-radius:14px;background:#f5f5f2;overflow:hidden}.da-home-buy-media img{width:100%;height:100%;object-fit:contain;padding:7px}.da-home-buy-copy{display:grid;gap:4px;min-width:0}.da-home-buy-copy>span{color:var(--muted);font-size:10.5px;font-weight:700}.da-home-buy-copy>a{color:var(--ink);font-size:12.5px;line-height:1.3;font-weight:760;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}.da-home-buy-copy>strong{color:var(--brand);font-size:17px;font-weight:900}.da-home-buy-control .add-plus{width:39px!important;height:39px!important;min-height:39px!important}.da-home-buy-control .qty-control-mini{width:88px!important}
+.da-home-personalized-section{padding:clamp(15px,2.2vw,24px);border:1px solid #dfe9df;border-radius:26px;background:linear-gradient(145deg,#f4faf5,#fbf7ee)}
+.da-home-personalized-mosaic{display:grid;gap:12px}.da-home-mosaic-main{display:grid;grid-template-columns:112px minmax(0,1fr);gap:13px;align-items:center;padding:10px;border-radius:19px;background:#fff}.da-home-mosaic-main-media{width:112px;aspect-ratio:1/1;border-radius:15px;background:#f5f5f2;overflow:hidden}.da-home-mosaic-main-media img{width:100%;height:100%;object-fit:contain;padding:8px}.da-home-mosaic-main-copy{display:grid;gap:6px;min-width:0}.da-home-mosaic-main-copy>span{color:var(--brand);font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.05em}.da-home-mosaic-main-copy>a{color:var(--ink);font-size:14px;line-height:1.3;font-weight:800;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}.da-home-mosaic-main-copy>div{display:flex;align-items:center;justify-content:space-between;gap:8px}.da-home-mosaic-main-copy strong{color:var(--brand);font-size:20px;font-weight:900}.da-home-mosaic-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.da-home-mosaic-mini{display:grid;grid-template-columns:74px minmax(0,1fr);gap:9px;align-items:center;min-width:0;padding:8px;border-radius:16px;background:#fff}.da-home-mosaic-mini-media{width:74px;aspect-ratio:1/1;border-radius:12px;background:#f5f5f2;overflow:hidden}.da-home-mosaic-mini-media img{width:100%;height:100%;object-fit:contain;padding:6px}.da-home-mosaic-mini>div{display:grid;gap:5px;min-width:0}.da-home-mosaic-mini>div>a{color:var(--ink);font-size:11.5px;line-height:1.25;font-weight:730;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}.da-home-mosaic-mini>div>div{display:flex;align-items:center;justify-content:space-between;gap:5px}.da-home-mosaic-mini strong{color:var(--brand);font-size:14px;font-weight:900}.da-home-mosaic-mini:nth-child(n+5){display:none}
+.da-home-recent-track{display:flex;gap:10px;overflow-x:auto;padding:2px 1px 8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}.da-home-recent-card{flex:0 0 132px;scroll-snap-align:start;min-width:0}.da-home-recent-media{display:block;width:100%;aspect-ratio:1/1;border-radius:15px;background:#f5f5f2;overflow:hidden}.da-home-recent-media img{width:100%;height:100%;object-fit:contain;padding:7px}.da-home-recent-body{display:grid;gap:6px;padding:8px 2px 0}.da-home-recent-body>a{min-height:32px;color:var(--ink);font-size:11.5px;line-height:1.3;font-weight:700;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}.da-home-recent-body>div{display:flex;align-items:center;justify-content:space-between;gap:6px}.da-home-recent-body strong{color:var(--brand);font-size:15px;font-weight:900}
+.da-home-collection-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.da-home-collection-card{display:grid;grid-template-columns:minmax(0,1fr) 84px;align-items:center;gap:10px;min-width:0;padding:11px;border:1px solid var(--line);border-radius:18px;background:#fff}.da-home-collection-media{grid-column:2;grid-row:1;width:84px;aspect-ratio:1/1;border-radius:14px;background:#f5f5f2;overflow:hidden}.da-home-collection-media img{width:100%;height:100%;object-fit:contain;padding:7px}.da-home-collection-copy{grid-column:1;grid-row:1;display:grid;gap:4px;min-width:0}.da-home-collection-copy strong{color:var(--ink);font-size:13px;line-height:1.2;font-weight:820}.da-home-collection-copy small{color:var(--muted);font-size:10.5px;line-height:1.3;font-weight:520;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}.da-home-collection-copy em{color:var(--brand);font-size:10px;font-style:normal;font-weight:800}.da-home-collection-highlight-head{display:flex;align-items:center;justify-content:space-between;margin:17px 0 11px;padding-top:16px;border-top:1px solid var(--line)}.da-home-collection-highlight-head strong{font-size:13px;font-weight:830;color:var(--ink)}
+@media(max-width:767px){.da-home-section{margin-top:30px}.da-home-section-head{align-items:flex-start}.da-home-section-head h2{font-size:22px}.da-home-section-head p{font-size:12px}.da-home-section-head>a{min-height:34px;padding:0 10px;font-size:11px}.da-home-standard-grid,.da-home-collection-products{gap:18px 12px}.da-home-offers-section .da-home-section-head{margin-bottom:12px}.da-home-personalized-section .da-home-section-head{display:block}.da-home-personalized-section .da-home-section-head>a{margin-top:10px}.da-home-mosaic-mini:nth-child(n+5){display:none}.da-home-collection-card{grid-template-columns:minmax(0,1fr) 68px;padding:9px}.da-home-collection-media{width:68px}.da-home-collection-copy small{display:none}}
+@media(min-width:768px){.da-home-standard-grid,.da-home-collection-products{grid-template-columns:repeat(4,minmax(0,1fr));gap:24px 18px}.da-home-basket-grid,.da-home-kit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}.da-home-basket-card,.da-home-kit-card{width:auto;max-width:none}.da-home-offer-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible;gap:14px}.da-home-offer-card{width:auto;max-width:none}.da-home-offer-card:nth-child(n+5){display:none}.da-home-buy-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.da-home-personalized-mosaic{grid-template-columns:minmax(250px,38%) minmax(0,1fr);align-items:stretch}.da-home-mosaic-main{display:flex;flex-direction:column;align-items:stretch}.da-home-mosaic-main-media{width:100%;max-height:275px}.da-home-mosaic-main-copy{padding:2px}.da-home-mosaic-main-copy>a{-webkit-line-clamp:2;font-size:16px}.da-home-mosaic-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:10px}.da-home-mosaic-mini{grid-template-columns:72px minmax(0,1fr);height:100%}.da-home-mosaic-mini:nth-child(n){display:grid}.da-home-recent-track{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible}.da-home-recent-card{width:auto}.da-home-collection-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.da-home-collection-card{min-height:112px;grid-template-columns:minmax(0,1fr) 86px}.da-home-collection-media{width:86px}.da-home-collection-copy strong{font-size:14px}.da-home-collection-copy small{font-size:11px}}
+@media(min-width:1100px){.da-home-basket-grid,.da-home-kit-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.da-home-offer-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}.da-home-offer-card:nth-child(n+5){display:flex}.da-home-offer-card:nth-child(n+6){display:none}.da-home-buy-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.da-home-personalized-mosaic{grid-template-columns:minmax(285px,37%) minmax(0,1fr)}.da-home-mosaic-grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}.da-home-mosaic-mini{grid-template-columns:1fr;align-content:start}.da-home-mosaic-mini-media{width:min(100%,110px);justify-self:center}.da-home-mosaic-mini>div>a{min-height:29px}.da-home-recent-track{grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}.da-home-collection-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.da-home-collection-card{display:flex;flex-direction:column-reverse;align-items:stretch}.da-home-collection-media{width:100%;grid-column:auto;grid-row:auto}.da-home-collection-copy{grid-column:auto;grid-row:auto}.da-home-collection-copy strong{font-size:14px}}
+
+  </style>
 </head>
 <body>
   <header class="header">
@@ -2289,9 +2338,8 @@
             <div class="basket-name">${escapeHtml(cesta.nome)}</div>
             <div class="basket-desc">${escapeHtml(cesta.descricao || 'Kit pronto para facilitar sua compra.')}</div>
             <div class="price-row">${priceBlock}</div>
-            <div class="basket-actions">
+            <div class="basket-actions basket-actions-simple">
               <a class="secondary-btn" href="#/cesta/${encodeURIComponent(cesta.id)}">Ver produtos</a>
-              <button class="add-btn" type="button" data-action="add-basket" data-id="${escapeHtml(cesta.id)}">Adicionar</button>
             </div>
           </div>
         </article>`;
@@ -2346,15 +2394,7 @@
         </article>`;
     }
 
-    function shelf(title, caption, items, href, type) {
-      if (!items || !items.length) return '';
-      const limit = type === 'basket' ? 12 : 8;
-      const visible = items.slice(0, limit);
-      const cards = visible.map(item => type === 'kit' ? kitCard(item, 'compact') : (type === 'basket' ? basketCard(item, 'compact') : productCard(item, 'compact'))).join('');
-      const moreLabel = type === 'basket' ? 'Ver todas as cestas' : (type === 'kit' ? 'Ver todos os kits' : 'Ver todos');
-      const bottomAction = href ? `<div class="section-actions"><a class="section-see-all-btn" href="${href}">${moreLabel}<svg class="svg-icon" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="M13 5l7 7-7 7"></path></svg></a></div>` : '';
-      return `<section class="section"><div class="section-head"><div><h2 class="section-title">${escapeHtml(title)}</h2>${caption ? `<div class="section-caption">${escapeHtml(caption)}</div>` : ''}</div></div><div class="section-grid">${cards}</div>${bottomAction}</section>`;
-    }
+    
 
     function productDetailChipsHtml(p) {
       const chips = [];
@@ -2445,41 +2485,9 @@
       </section>`;
     }
 
-    function renderHome() {
-      const offers = getTopOffers(40);
-      const essentials = productsByRoutine('compra-mes', 40);
-      const limpeza = productsByRoutine('limpeza', 24);
-      const cafe = productsByRoutine('cafe', 24);
-      const higiene = productsByRoutine('higiene', 24);
-      const kits = getActiveKits();
-      const html = `
-        <div class="container home-clean">
-          ${bannerSlotHtml('home.hero', { carousel: true, kind: 'hero' })}
-          ${homeQuickLinksHtml()}
-          ${bannerSlotHtml('home.cestas.topo', { kind: 'section' })}
-          ${shelf('Cestas básicas', 'Kits prontos para facilitar sua compra e acelerar o pedido.', state.cestas, '#/cestas', 'basket')}
-          ${bannerSlotHtml('home.kits.topo', { kind: 'section' })}
-          ${shelf('Kits promocionais', 'Combos com desconto real e disponibilidade limitada.', kits, '#/kits', 'kit')}
-          ${bannerSlotHtml('home.ofertas.topo', { kind: 'section' })}
-          ${shelf('Ofertas de hoje', 'Economize nos produtos disponíveis agora.', offers, '#/ofertas')}
-          ${bannerSlotHtml('home.compra-mes.topo', { kind: 'section' })}
-          ${shelf('Compra do mês', 'Os itens que não podem faltar na despensa.', essentials, '#/rotina/compra-mes')}
-          ${bannerSlotHtml('home.limpeza.topo', { kind: 'section' })}
-          ${shelf('Limpeza da casa', 'Produtos para lavanderia, cozinha e cuidados com a casa.', limpeza, '#/rotina/limpeza')}
-          ${bannerSlotHtml('home.higiene.topo', { kind: 'section' })}
-          ${shelf('Higiene e beleza', 'Cuidados pessoais com navegação simples.', higiene, '#/rotina/higiene')}
-          ${bannerSlotHtml('home.cafe.topo', { kind: 'section' })}
-          ${shelf('Café da manhã', 'Café, biscoitos, achocolatados e itens para o dia começar.', cafe, '#/rotina/cafe')}
-          ${brandStripHtml()}
-          ${bannerSlotHtml('home.categorias.topo', { kind: 'section' })}
-          ${categoryButtonsHtml()}
-        </div>`;
-      app.innerHTML = html;
-      setupBannerCarousels();
-      updateOfferCountdowns();
-      updateMeta('Dona Antônia - Supermercado e Cestas', 'Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.', '/');
-      setActiveNav('home');
-    }
+    let renderHome;
+
+    
 
     function renderCategories() {
       const cats = getCategories();
@@ -4241,6 +4249,8 @@
     </section>`;
   }
 
+  window.__daSiteBannerListHtml = daSiteBannerListHtml;
+
   renderCategory = function(cat){
     const decoded = decodeURIComponent(cat || '');
     const products = state.products.filter(product=>isAvailable(product) && norm(product.categoria) === norm(decoded));
@@ -4314,6 +4324,333 @@
     document.head.appendChild(style);
   }
 })();
+
+    /* DONA ANTÔNIA — HOME MODULAR V1 + BANNERS CONTEXTUAIS POR PRODUTO */
+    (function(){
+      function daHomeSectionHead(title, caption, href, label){
+        return `<div class="da-home-section-head"><div><h2>${escapeHtml(title)}</h2>${caption ? `<p>${escapeHtml(caption)}</p>` : ''}</div>${href ? `<a href="${escapeHtml(href)}">${escapeHtml(label || 'Ver todos')}<span aria-hidden="true">→</span></a>` : ''}</div>`;
+      }
+    
+      function daHomeProductImage(product, className){
+        return `<img class="${className || ''}" loading="lazy" decoding="async" src="${escapeHtml(product.img)}" data-fallback-images="${escapeHtml(imageFallbackList(product.images))}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">`;
+      }
+    
+      function daHomeControls(product, extraClass){
+        const id = String(product.id);
+        const qty = Number(state.cart[id] || 0);
+        return `<div class="${extraClass || ''}" data-card-controls="${escapeHtml(id)}" data-control-mode="card">${productCardControlsHtml(id, qty, !isAvailable(product))}</div>`;
+      }
+    
+      function daHomeStandardShelfHtml(title, caption, products, href){
+        const items = (products || []).filter(isAvailable).slice(0,4);
+        if(!items.length) return '';
+        return `<section class="da-home-section da-home-standard-section" data-home-section="standard">${daHomeSectionHead(title,caption,href,'Ver todos')}<div class="da-home-standard-grid">${items.map(product=>productCard(product)).join('')}</div></section>`;
+      }
+    
+      function daHomeOfferCardHtml(product){
+        const id = String(product.id);
+        const display = productDisplayPricing(product);
+        const route = productRouteKey(product);
+        return `<article class="da-home-offer-card" data-card-id="${escapeHtml(id)}">
+          <div class="da-home-offer-media">
+            <a href="#/produto/${route}" aria-label="Ver ${escapeHtml(product.name)}">${daHomeProductImage(product)}</a>
+            ${favoriteButtonHtml(id,false,'product')}
+            ${display.discountPercent > 0 ? `<span class="da-home-offer-discount">-${display.discountPercent}%</span>` : ''}
+          </div>
+          <div class="da-home-offer-body">
+            <a class="da-home-card-name" href="#/produto/${route}">${escapeHtml(truncateText(product.name,44))}</a>
+            ${product.validade && formatProductExpiry(product.validade) ? `<div class="da-home-card-expiry">Val. ${escapeHtml(formatProductExpiry(product.validade))}</div>` : ''}
+            <div class="da-home-offer-bottom"><div class="da-home-offer-price">${productCardPriceHtml(display)}</div>${daHomeControls(product,'da-home-small-control')}</div>
+          </div>
+        </article>`;
+      }
+    
+      function daHomeOfferShelfHtml(products){
+        const items = (products || []).filter(isAvailable).slice(0,10);
+        if(!items.length) return '';
+        return `<section class="da-home-section da-home-offers-section" data-home-section="offers">${daHomeSectionHead('Ofertas de hoje','Preços especiais nos produtos disponíveis agora.','#/ofertas','Ver todas as ofertas')}<div class="da-home-offer-grid">${items.map(daHomeOfferCardHtml).join('')}</div></section>`;
+      }
+    
+      function daHomeBasketCardHtml(basket){
+        const price = Number(basket.preco || 0);
+        const original = Math.max(Number(basket.precoOriginal || 0),price);
+        return `<article class="da-home-basket-card">
+          <a class="da-home-square-media" href="#/cesta/${encodeURIComponent(basket.id)}" aria-label="Ver produtos de ${escapeHtml(basket.nome)}"><img loading="lazy" decoding="async" src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}" onerror="window.__daFallbackImg(this)"></a>
+          <div class="da-home-basket-body"><a class="da-home-basket-name" href="#/cesta/${encodeURIComponent(basket.id)}">${escapeHtml(basket.nome)}</a><div class="da-home-basket-price">${original > price && price > 0 ? `<s>${fmt(original)}</s>` : ''}<strong>${price ? fmt(price) : 'Consulte os itens'}</strong></div><a class="da-home-view-products" href="#/cesta/${encodeURIComponent(basket.id)}">Ver produtos</a></div>
+        </article>`;
+      }
+    
+      function daHomeBasketShelfHtml(baskets){
+        const items = (baskets || []).slice(0,6);
+        if(!items.length) return '';
+        return `<section class="da-home-section da-home-baskets-section" data-home-section="baskets">${daHomeSectionHead('Cestas básicas','Veja todos os produtos antes de escolher sua cesta.','#/cestas','Ver todas as cestas')}<div class="da-home-basket-grid">${items.map(daHomeBasketCardHtml).join('')}</div></section>`;
+      }
+    
+      function daHomeKitCardHtml(kit){
+        const original = kitOriginalPrice(kit);
+        const discount = kitDiscountPercent(kit);
+        return `<article class="da-home-kit-card">
+          <div class="da-home-kit-media"><a class="da-home-square-media" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}"><img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)"></a>${favoriteButtonHtml(kit.id,false,'kit')}${discount > 0 ? `<span class="da-home-kit-discount">-${discount}%</span>` : ''}</div>
+          <div class="da-home-kit-body"><a class="da-home-basket-name" href="#/kit/${encodeURIComponent(kit.id)}">${escapeHtml(kit.nome)}</a><div class="da-home-kit-price">${original > Number(kit.preco || 0) ? `<s>${fmt(original)}</s>` : ''}<strong>${kit.preco ? fmt(kit.preco) : 'Ver produtos'}</strong></div><div class="da-home-kit-actions"><a href="#/kit/${encodeURIComponent(kit.id)}">Ver produtos</a><button type="button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar</button></div></div>
+        </article>`;
+      }
+    
+      function daHomeKitShelfHtml(kits){
+        const items = (kits || []).slice(0,6);
+        if(!items.length) return '';
+        return `<section class="da-home-section da-home-kits-section" data-home-section="kits">${daHomeSectionHead('Kits promocionais','Combos com desconto e produtos selecionados.','#/kits','Ver todos os kits')}<div class="da-home-kit-grid">${items.map(daHomeKitCardHtml).join('')}</div></section>`;
+      }
+    
+      function daHomeRecentCardHtml(product){
+        const id = String(product.id);
+        const route = productRouteKey(product);
+        const display = productDisplayPricing(product);
+        return `<article class="da-home-recent-card" data-card-id="${escapeHtml(id)}"><a class="da-home-recent-media" href="#/produto/${route}">${daHomeProductImage(product)}</a><div class="da-home-recent-body"><a href="#/produto/${route}">${escapeHtml(truncateText(product.name,34))}</a><div><strong>${fmt(display.effective)}</strong>${daHomeControls(product,'da-home-tiny-control')}</div></div></article>`;
+      }
+    
+      function daHomeRecentShelfHtml(products){
+        const items = (products || []).filter(isAvailable).slice(0,10);
+        if(!items.length) return '';
+        return `<section class="da-home-section da-home-recent-section" data-personalization-section="recent">${daHomeSectionHead('Vistos recentemente','Continue de onde parou.','','')}<div class="da-home-recent-track">${items.map(daHomeRecentCardHtml).join('')}</div></section>`;
+      }
+    
+      function daHomeBuyAgainCardHtml(product){
+        const id = String(product.id);
+        const route = productRouteKey(product);
+        const display = productDisplayPricing(product);
+        const previousQty = Math.max(1,Number(product.__daLastPurchaseQty || 1));
+        return `<article class="da-home-buy-card" data-card-id="${escapeHtml(id)}"><a class="da-home-buy-media" href="#/produto/${route}">${daHomeProductImage(product)}</a><div class="da-home-buy-copy"><span>Comprado anteriormente${previousQty > 1 ? ` · ${previousQty} un.` : ''}</span><a href="#/produto/${route}">${escapeHtml(truncateText(product.name,46))}</a><strong>${fmt(display.effective)}</strong></div>${daHomeControls(product,'da-home-buy-control')}</article>`;
+      }
+    
+      function daHomeBuyAgainShelfHtml(products){
+        const items = (products || []).filter(isAvailable).slice(0,6);
+        if(!items.length) return '';
+        return `<section class="da-home-section da-home-buy-section" data-personalization-section="buy-again">${daHomeSectionHead('Compre novamente','Itens disponíveis da sua última compra neste aparelho.','','')}<div class="da-home-buy-grid">${items.map(daHomeBuyAgainCardHtml).join('')}</div></section>`;
+      }
+    
+      function daHomeMosaicMiniHtml(product,index){
+        const id = String(product.id);
+        const route = productRouteKey(product);
+        const display = productDisplayPricing(product);
+        return `<article class="da-home-mosaic-mini da-home-mosaic-item-${index}" data-card-id="${escapeHtml(id)}"><a class="da-home-mosaic-mini-media" href="#/produto/${route}">${daHomeProductImage(product)}</a><div><a href="#/produto/${route}">${escapeHtml(truncateText(product.name,30))}</a><div><strong>${fmt(display.effective)}</strong>${daHomeControls(product,'da-home-tiny-control')}</div></div></article>`;
+      }
+    
+      function daHomePersonalizedMosaicHtml(products){
+        const items = (products || []).filter(isAvailable).slice(0,7);
+        if(!items.length) return '';
+        const main = items[0];
+        const display = productDisplayPricing(main);
+        const id = String(main.id);
+        const route = productRouteKey(main);
+        return `<section class="da-home-section da-home-personalized-section" data-personalization-section="chosen">${daHomeSectionHead('Escolhidos para você','Sugestões baseadas no que você visitou neste aparelho.','','')}<div class="da-home-personalized-mosaic"><article class="da-home-mosaic-main" data-card-id="${escapeHtml(id)}"><a class="da-home-mosaic-main-media" href="#/produto/${route}">${daHomeProductImage(main)}</a><div class="da-home-mosaic-main-copy"><span>Recomendado para você</span><a href="#/produto/${route}">${escapeHtml(truncateText(main.name,58))}</a><div><strong>${fmt(display.effective)}</strong>${daHomeControls(main,'da-home-mosaic-control')}</div></div></article><div class="da-home-mosaic-grid">${items.slice(1).map((product,index)=>daHomeMosaicMiniHtml(product,index+2)).join('')}</div></div></section>`;
+      }
+    
+      function daHomeNormalizeSet(values){
+        return new Set((values || []).map(value=>norm(value)).filter(Boolean));
+      }
+    
+      function daHomeCollectionDefinitions(key){
+        if(key === 'limpeza') return [
+          {title:'Lavanderia',copy:'Lava-roupas, amaciantes e acessórios.',href:'#/categoria/LAVANDERIA',match:p=>norm(p.categoria)==='lavanderia'},
+          {title:'Detergentes e cozinha',copy:'Detergentes e limpadores para o dia a dia.',href:'#/categoria/LIMPEZA?sub=DETERGENTE',match:p=>norm(p.categoria)==='limpeza' && daHomeNormalizeSet(['DETERGENTE','LIMPADOR']).has(norm(p.subcategoria))},
+          {title:'Banheiro e desinfecção',copy:'Desinfetantes, água sanitária e limpeza pesada.',href:'#/categoria/LIMPEZA?sub=DESINFETANTE',match:p=>norm(p.categoria)==='limpeza' && daHomeNormalizeSet(['DESINFETANTE','BANHEIRO','ÁGUA SANITÁRIA','ÁLCOOL']).has(norm(p.subcategoria))},
+          {title:'Panos e acessórios',copy:'Panos, sacos de lixo, vassouras, rodos e pás.',href:'#/categoria/LIMPEZA?sub=PANOS%20E%20PAPÉIS',match:p=>norm(p.categoria)==='limpeza' && daHomeNormalizeSet(['PANOS E PAPÉIS','VASSOURA, RODO E PÁ','SACO DE LIXO']).has(norm(p.subcategoria))}
+        ];
+        if(key === 'higiene') return [
+          {title:'Cabelos',copy:'Shampoo, condicionador e tratamentos.',href:'#/categoria/SHAMPOO%20E%20CONDICIONADOR',match:p=>norm(p.categoria)==='shampoo e condicionador' || (norm(p.categoria)==='beleza' && norm(p.subcategoria)==='cabelo')},
+          {title:'Banho e sabonetes',copy:'Sabonetes em barra, líquidos e cuidados para banho.',href:'#/categoria/SABONETE',match:p=>norm(p.categoria)==='sabonete' || (norm(p.categoria)==='higiene' && norm(p.subcategoria)==='banho')},
+          {title:'Higiene bucal',copy:'Creme dental, escovas e cuidados com a boca.',href:'#/categoria/HIGIENE?sub=HIGIENE%20BUCAL',match:p=>(norm(p.categoria)==='higiene' && norm(p.subcategoria)==='higiene bucal') || (norm(p.categoria)==='beleza' && norm(p.subcategoria)==='boca')},
+          {title:'Desodorantes',copy:'Aerossol, roll-on e creme.',href:'#/categoria/DESODORANTE',match:p=>norm(p.categoria)==='desodorante'}
+        ];
+        return [
+          {title:'Cafés',copy:'Cafés para todos os momentos do dia.',href:'#/categoria/CAFÉ%20DA%20MANHÃ?sub=CAFÉ',match:p=>norm(p.categoria)==='cafe da manha' && norm(p.subcategoria)==='cafe'},
+          {title:'Acompanhamentos',copy:'Itens para completar o café da manhã.',href:'#/categoria/CAFÉ%20DA%20MANHÃ?sub=ACOMPANHAMENTOS',match:p=>norm(p.categoria)==='cafe da manha' && norm(p.subcategoria)==='acompanhamentos'},
+          {title:'Cereais e achocolatados',copy:'Opções práticas para começar o dia.',href:'#/categoria/CAFÉ%20DA%20MANHÃ?sub=CEREAIS',match:p=>norm(p.categoria)==='cafe da manha' && daHomeNormalizeSet(['CEREAIS','ACHOCOLATADO']).has(norm(p.subcategoria))},
+          {title:'Biscoitos e bolachas',copy:'Doces, salgadas e wafers.',href:'#/categoria/BOLACHAS%20E%20BISCOITOS',match:p=>norm(p.categoria)==='bolachas e biscoitos'}
+        ];
+      }
+    
+      function daHomeCollectionCardHtml(definition){
+        const matches = state.products.filter(product=>isAvailable(product) && definition.match(product));
+        const image = pickProductImage(matches.slice(0,18));
+        return `<a class="da-home-collection-card" href="${definition.href}"><span class="da-home-collection-media"><img loading="lazy" decoding="async" src="${escapeHtml(image)}" alt="" onerror="window.__daFallbackImg(this)"></span><span class="da-home-collection-copy"><strong>${escapeHtml(definition.title)}</strong><small>${escapeHtml(definition.copy)}</small><em>${matches.length} ${matches.length === 1 ? 'produto' : 'produtos'}</em></span></a>`;
+      }
+    
+      function daHomeDiversifiedProducts(products,limit){
+        const picked=[];
+        const seenSubs=new Set();
+        for(const product of (products || []).filter(isAvailable)){
+          const sub=norm(product.subcategoria || product.categoria);
+          if(sub && seenSubs.has(sub) && picked.length < Math.ceil(limit/2)) continue;
+          picked.push(product);
+          if(sub) seenSubs.add(sub);
+          if(picked.length>=limit) break;
+        }
+        if(picked.length<limit){
+          for(const product of (products || []).filter(isAvailable)){
+            if(picked.some(item=>String(item.id)===String(product.id))) continue;
+            picked.push(product);
+            if(picked.length>=limit) break;
+          }
+        }
+        return picked;
+      }
+    
+      function daHomeCollectionSectionHtml(key,title,caption,products,href){
+        const definitions=daHomeCollectionDefinitions(key);
+        const highlights=daHomeDiversifiedProducts(products,4);
+        return `<section class="da-home-section da-home-collection-section" data-home-section="collection-${escapeHtml(key)}">${daHomeSectionHead(title,caption,href,'Ver todos')}<div class="da-home-collection-grid">${definitions.map(daHomeCollectionCardHtml).join('')}</div>${highlights.length ? `<div class="da-home-collection-highlight-head"><strong>Produtos em destaque</strong></div><div class="da-home-collection-products">${highlights.map(product=>productCard(product)).join('')}</div>` : ''}</section>`;
+      }
+    
+      window.daHomeBuyAgainShelfHtml=daHomeBuyAgainShelfHtml;
+      window.daHomeRecentShelfHtml=daHomeRecentShelfHtml;
+      window.daHomePersonalizedMosaicHtml=daHomePersonalizedMosaicHtml;
+    
+      renderHome=function(){
+        const offers=getTopOffers(40);
+        const essentials=productsByRoutine('compra-mes',40);
+        const limpeza=productsByRoutine('limpeza',80);
+        const higiene=productsByRoutine('higiene',120);
+        const cafe=productsByRoutine('cafe',100);
+        const kits=getActiveKits();
+        app.innerHTML=`<div class="container home-clean da-home-modular">
+          ${bannerSlotHtml('home.hero',{carousel:true,kind:'hero'})}
+          ${homeQuickLinksHtml()}
+          <div data-home-personalization-slot="buy-again"></div>
+          ${bannerSlotHtml('home.cestas.topo',{kind:'section'})}
+          ${daHomeBasketShelfHtml(state.cestas)}
+          ${bannerSlotHtml('home.kits.topo',{kind:'section'})}
+          ${daHomeKitShelfHtml(kits)}
+          ${bannerSlotHtml('home.ofertas.topo',{kind:'section'})}
+          ${daHomeOfferShelfHtml(offers)}
+          <div data-home-personalization-slot="chosen"></div>
+          ${bannerSlotHtml('home.compra-mes.topo',{kind:'section'})}
+          ${daHomeStandardShelfHtml('Compra do mês','Os itens essenciais para abastecer a casa.',essentials,'#/rotina/compra-mes')}
+          ${bannerSlotHtml('home.limpeza.topo',{kind:'section'})}
+          ${daHomeCollectionSectionHtml('limpeza','Limpeza da casa','Encontre rapidamente o tipo de limpeza que precisa.',limpeza,'#/rotina/limpeza')}
+          ${bannerSlotHtml('home.higiene.topo',{kind:'section'})}
+          ${daHomeCollectionSectionHtml('higiene','Higiene e beleza','Cuidados pessoais organizados por necessidade.',higiene,'#/rotina/higiene')}
+          ${bannerSlotHtml('home.cafe.topo',{kind:'section'})}
+          ${daHomeCollectionSectionHtml('cafe','Café da manhã','Tudo para começar o dia com praticidade.',cafe,'#/rotina/cafe')}
+          <div data-home-personalization-slot="recent"></div>
+          ${brandStripHtml()}
+          ${bannerSlotHtml('home.categorias.topo',{kind:'section'})}
+          ${categoryButtonsHtml()}
+        </div>`;
+        setupBannerCarousels();
+        updateOfferCountdowns();
+        updateMeta('Dona Antônia - Supermercado e Cestas','Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.','/');
+        setActiveNav('home');
+      };
+    
+      function daContextProductRef(product){
+        return [product?.id,product?.firebaseKey,product?.codigo,product?.gtin,product?.ean,product?.name].map(value=>norm(String(value || ''))).filter(Boolean);
+      }
+    
+      function daContextBannerProductRefs(banner){
+        const refs=[];
+        const originProducts=Array.isArray(banner?.origem?.produtos) ? banner.origem.produtos : [];
+        originProducts.forEach(ref=>refs.push(ref?.firebaseKey,ref?.codigo,ref?.id,ref?.gtin,ref?.ean,ref?.nome));
+        if(norm(banner?.origem?.tipo)==='produto') refs.push(banner?.origem?.valor);
+        if(norm(banner?.link?.tipo)==='produto') refs.push(banner?.link?.valor);
+        return refs.map(value=>norm(String(value || ''))).filter(Boolean);
+      }
+    
+      function daContextBannersForProducts(products){
+        const wanted=new Set();
+        (products || []).forEach(product=>daContextProductRef(product).forEach(ref=>wanted.add(ref)));
+        if(!wanted.size) return [];
+        return state.banners.filter(banner=>bannerIsCurrent(banner) && daContextBannerProductRefs(banner).some(ref=>wanted.has(ref)));
+      }
+    
+      function daContextUnique(list){
+        const seen=new Set();
+        return (list || []).filter(banner=>banner && !seen.has(banner.id) && seen.add(banner.id));
+      }
+    
+      function daContextBannerHtml(products,directBanners,label,position){
+        const list=daContextUnique([...(directBanners || []),...daContextBannersForProducts(products)]).slice(0,24);
+        if(!list.length || typeof window.__daSiteBannerListHtml!=='function') return '';
+        return window.__daSiteBannerListHtml(position || 'produtos-contextuais',list,label || 'Destaques relacionados');
+      }
+    
+      renderCategory=function(cat){
+        const decoded=decodeURIComponent(cat || '');
+        const products=state.products.filter(product=>isAvailable(product) && norm(product.categoria)===norm(decoded));
+        const canonicalCategory=products[0]?.categoria || decoded;
+        const subs=Array.from(new Set(products.map(product=>product.subcategoria).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+        const currentSub=new URLSearchParams(location.hash.split('?')[1] || '').get('sub') || 'Todos';
+        const filtered=currentSub==='Todos' ? products : products.filter(product=>norm(product.subcategoria)===norm(currentSub));
+        const chips=`<div class="chips"><a class="chip ${currentSub==='Todos'?'active':''}" href="#/categoria/${encodeURIComponent(canonicalCategory)}">Todos</a>${subs.map(sub=>`<a class="chip ${currentSub===sub?'active':''}" href="#/categoria/${encodeURIComponent(canonicalCategory)}?sub=${encodeURIComponent(sub)}">${escapeHtml(sub)}</a>`).join('')}</div>`;
+        const isBeauty=/(beleza|higiene|perfumaria)/.test(norm(canonicalCategory));
+        const direct=[...getBanners('categoria',canonicalCategory),...(currentSub!=='Todos'?getBanners('subcategoria',[currentSub,`${canonicalCategory}::${currentSub}`]):[])];
+        const contextual=daContextBannerHtml(filtered,direct,currentSub==='Todos'?`Destaques de ${canonicalCategory}`:`Destaques de ${currentSub}`,'categoria-produtos-contextuais');
+        app.innerHTML=`<div class="container">${pageHeader(canonicalCategory,`${filtered.length} produtos encontrados`,'#/categorias')}${contextual}${isBeauty?beautyBannerHtml(products):''}${chips}<div class="product-grid">${filtered.map(product=>productCard(product)).join('')}</div></div>`;
+        setActiveNav('categorias');
+        updateMeta(`${canonicalCategory} - Dona Antônia`,`Compre ${canonicalCategory.toLowerCase()} com entrega em Cuiabá e Várzea Grande.`,`/?categoria=${encodeURIComponent(canonicalCategory)}`);
+      };
+    
+      renderSubcategory=function(subcategory){
+        const decoded=decodeURIComponent(subcategory || '');
+        const products=state.products.filter(product=>isAvailable(product) && norm(product.subcategoria)===norm(decoded));
+        const canonical=products[0]?.subcategoria || decoded;
+        const targets=[canonical,...new Set(products.map(product=>product.categoria).filter(Boolean))].map((value,index)=>index===0?value:`${value}::${canonical}`);
+        const contextual=daContextBannerHtml(products,getBanners('subcategoria',targets),`Destaques de ${canonical}`,'subcategoria-produtos-contextuais');
+        app.innerHTML=`<div class="container">${pageHeader(canonical,`${products.length} produtos encontrados`,'#/categorias')}${contextual}${products.length?`<div class="product-grid">${products.map(product=>productCard(product)).join('')}</div>`:`<div class="empty"><strong>Nenhum produto disponível</strong>Esta subcategoria não possui itens disponíveis agora.</div>`}</div>`;
+        setActiveNav('categorias');
+        updateMeta(`${canonical} - Dona Antônia`,`Compre produtos de ${canonical.toLowerCase()} com entrega em Cuiabá e Várzea Grande.`,`/?subcategoria=${encodeURIComponent(canonical)}`);
+      };
+    
+      renderBrand=function(brand){
+        const decoded=decodeURIComponent(brand || '');
+        const products=state.products.filter(product=>isAvailable(product) && norm(product.marca)===norm(decoded));
+        const canonical=products[0]?.marca || decoded;
+        const contextual=daContextBannerHtml(products,getBanners('marca',canonical),`Destaques da marca ${canonical}`,'marca-produtos-contextuais');
+        app.innerHTML=`<div class="container">${pageHeader(canonical,`${products.length} produtos encontrados`,'#/')}${contextual}${products.length?`<div class="product-grid">${products.map(product=>productCard(product)).join('')}</div>`:`<div class="empty"><strong>Nenhum produto disponível</strong>Esta marca não possui itens disponíveis agora.</div>`}</div>`;
+        setActiveNav('home');
+        updateMeta(`${canonical} - Dona Antônia`,`Compre produtos ${canonical} com entrega em Cuiabá e Várzea Grande.`,`/?marca=${encodeURIComponent(canonical)}`);
+      };
+    
+      renderOffers=function(){
+        const products=getTopOffers(200);
+        const contextual=daContextBannerHtml(products,[],`Destaques dos produtos em oferta`,'ofertas-produtos-contextuais');
+        app.innerHTML=`<div class="container">${pageHeader('Ofertas','Produtos com desconto disponíveis agora.','#/')}${contextual}${bannerSlotHtml('ofertas.topo',{kind:'section'})}${products.length?`<div class="product-grid">${products.map(product=>productCard(product)).join('')}</div>`:`<div class="empty"><strong>Sem ofertas no momento</strong>Volte mais tarde ou navegue pelas categorias.</div>`}</div>`;
+        setActiveNav('ofertas');
+        updateMeta('Ofertas - Dona Antônia','Ofertas de supermercado com entrega em Cuiabá e Várzea Grande.','/?secao=ofertas');
+      };
+    
+      renderRoutine=function(key){
+        const routine=ROUTINES[key] || ROUTINES['compra-mes'];
+        if(key==='compra-mes'){
+          const allProducts=productsByRoutine('compra-mes',240);
+          const groups=productsByCategoryForMonth(8);
+          const contextual=daContextBannerHtml(allProducts,[],`Destaques para a compra do mês`,'rotina-compra-mes-produtos-contextuais');
+          app.innerHTML=`<div class="container">${pageHeader('Compra do mês','','#/')}${contextual}${bannerSlotHtml('rotina.compra-mes.topo',{kind:'section'})}${groups.length?groups.map(group=>`<section class="month-group"><h2 class="month-group-title">${escapeHtml(group.category)}</h2><div class="product-grid">${group.products.map(product=>productCard(product)).join('')}</div></section>`).join(''):`<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
+        }else{
+          let products=productsByRoutine(key,200);
+          if(key==='higiene'){
+            const beautyCoupon=getCouponByCode('BELEZA20');
+            products=products.filter(product=>couponMatchesProduct(beautyCoupon,product));
+          }
+          const contextual=daContextBannerHtml(products,[],`Destaques de ${routine.title}` ,`rotina-${key}-produtos-contextuais`);
+          app.innerHTML=`<div class="container">${pageHeader(routine.title,'','#/')}${contextual}${bannerSlotHtml(`rotina.${key}.topo`,{kind:'section'})}${key==='higiene'?beautyBannerHtml(products):''}${products.length?`<div class="product-grid">${products.map(product=>productCard(product)).join('')}</div>`:`<div class="empty"><strong>Nenhum produto encontrado</strong>Use a busca para encontrar o que precisa.</div>`}</div>`;
+        }
+        setActiveNav('home');
+      };
+    
+      renderSearch=function(query){
+        const q=String(query || '').trim();
+        state.searchQuery=q;
+        const searchInput=$('search-input');
+        if(searchInput && searchInput.value!==q) searchInput.value=q;
+        updateSearchButtons();
+        const products=searchProducts(q);
+        const contextual=q?daContextBannerHtml(products,[],`Ofertas relacionadas à sua busca`,'busca-produtos-contextuais'):'';
+        app.innerHTML=`<div class="container">${pageHeader(q?`Busca: ${q}`:'Busca',q?`${products.length} resultado(s)`:'Digite o produto na busca acima.','#/')}${contextual}${bannerSlotHtml('busca.topo',{kind:'section'})}${q?(products.length?`<div class="product-list">${products.map(product=>productCard(product,'list')).join('')}</div>`:`<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`):''}</div>`;
+        setActiveNav('home');
+      };
+    })();
+    
 
     /* ======================================================================
        DONA ANTÔNIA — PERSONALIZAÇÃO LOCAL FASE 1
@@ -4521,27 +4858,29 @@
         if (!personalizationEnabled() || !personalization.purchases.length) return [];
         const latest = personalization.purchases[0];
         return (latest.items || [])
-          .map(item => getProductById(String(item.productId)))
+          .map(item => {
+            const product = getProductById(String(item.productId));
+            return product ? { ...product, __daLastPurchaseQty: Math.max(1, Number(item.qty || 1)) } : null;
+          })
           .filter(product => product && isAvailable(product) && !product.isFee)
           .slice(0, limit);
       }
 
       function renderPersonalizedHomeSections() {
         if (!personalizationEnabled() || !isHomeRoute()) return;
-        const container = app.querySelector('.container');
-        if (!container || container.querySelector('[data-personalization-section]')) return;
-        const chosen = diversifiedRecommendations(8);
-        const recent = recentProducts(8);
-        const buyAgain = buyAgainProducts(8);
-        const sections = [];
-        if (chosen.length) sections.push(`<div data-personalization-section="chosen">${shelf('Escolhidos para você','Uma seleção baseada no que você visitou neste aparelho.',chosen,'')}</div>`);
-        if (recent.length) sections.push(`<div data-personalization-section="recent">${shelf('Vistos recentemente','Volte rapidamente aos produtos que você consultou.',recent,'')}</div>`);
-        if (buyAgain.length) sections.push(`<div data-personalization-section="buy-again">${shelf('Compre novamente','Itens disponíveis do último pedido enviado neste aparelho.',buyAgain,'')}</div>`);
-        if (!sections.length) return;
-        const allSections = Array.from(container.querySelectorAll(':scope > section.section'));
-        const offerSection = allSections.find(section => norm(section.querySelector('.section-title')?.textContent) === 'ofertas de hoje');
-        const anchor = offerSection || container.querySelector('.home-quick-links') || container.firstElementChild;
-        if (anchor) anchor.insertAdjacentHTML('afterend', sections.join(''));
+        const container = app.querySelector('.da-home-modular');
+        if (!container) return;
+        const chosen = diversifiedRecommendations(7);
+        const recent = recentProducts(10);
+        const buyAgain = buyAgainProducts(6);
+        const buySlot = container.querySelector('[data-home-personalization-slot="buy-again"]');
+        const chosenSlot = container.querySelector('[data-home-personalization-slot="chosen"]');
+        const recentSlot = container.querySelector('[data-home-personalization-slot="recent"]');
+        if (buySlot) buySlot.innerHTML = buyAgain.length && typeof window.daHomeBuyAgainShelfHtml === 'function' ? window.daHomeBuyAgainShelfHtml(buyAgain) : '';
+        if (chosenSlot) chosenSlot.innerHTML = chosen.length && typeof window.daHomePersonalizedMosaicHtml === 'function' ? window.daHomePersonalizedMosaicHtml(chosen) : '';
+        if (recentSlot) recentSlot.innerHTML = recent.length && typeof window.daHomeRecentShelfHtml === 'function' ? window.daHomeRecentShelfHtml(recent) : '';
+        syncVisibleCards();
+        updateFavoritesUI();
       }
 
       function recordPurchaseFromCart() {
