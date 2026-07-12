@@ -735,6 +735,18 @@
   }
   function roundCatalogMoney(value){return Math.round(Math.max(0,toNum(value))*100)/100}
   function normalizeCatalogLabel(value){return cleanCatalogText(value).toLocaleUpperCase("pt-BR")}
+  function productExpirySourceValue(source={}){
+    const direct=[
+      source.validade,source.vencimento,source.data_validade,source.validade_produto,
+      source.dataValidade,source.expiry,source.expiry_date,source.expiration_date
+    ];
+    const lotCollections=[source.lotes,source.lotes_estoque,source.estoque_lotes,source.batches];
+    lotCollections.forEach(collection=>{
+      if(Array.isArray(collection)) collection.forEach(lot=>direct.push(lot?.validade,lot?.vencimento,lot?.data_validade,lot?.expiry_date));
+      else if(collection&&typeof collection==="object") Object.values(collection).forEach(lot=>direct.push(lot?.validade,lot?.vencimento,lot?.data_validade,lot?.expiry_date));
+    });
+    return direct.find(value=>String(value??"").trim())||"";
+  }
   function normalizeProductForSite(product,key){
     const source=product&&typeof product==="object"?deepClone(product):{};
     const firebaseKey=cleanCatalogText(key||source.firebaseKey||source.id||source.codigo||`produto_${Date.now()}`);
@@ -755,7 +767,7 @@
     copy.situacao=isActive(source)?"A":"I";
     copy.gtin=String(source.gtin||source.ean||"").replace(/\D/g,"");
     copy.ncm=String(source.ncm||"").replace(/\D/g,"");
-    copy.validade=normalizeCatalogDate(source.validade||source.vencimento||"");
+    copy.validade=normalizeCatalogDate(productExpirySourceValue(source));
     const rawImagePath=cleanCatalogText(source.url_imagem||source.imagem||source.image||source.img||source.foto||"");
     // O catalogo publicado tambem precisa usar a URL que ja existe no GitHub;
     // o host publico pode nao ter recebido a imagem nova ainda.
@@ -1276,7 +1288,6 @@
   function getFilters(){return {q:$("#f-q")?.value||"",categoria:$("#f-categoria")?.value||"",subcategoria:$("#f-subcategoria")?.value||"",subsubcategoria:$("#f-subsubcategoria")?.value||"",marca:$("#f-marca")?.value||"",fornecedor:$("#f-fornecedor")?.value||"",tag:$("#f-tag")?.value||"",situacao:$("#f-situacao")?.value||"",qualidade:$("#f-qualidade")?.value||"",cesta:$("#f-cesta")?.value||"",sort:$("#f-sort")?.value||"nome",pageSize:Number($("#f-page-size")?.value||24)}}
   function filteredProducts(){const f=getFilters(); let list=[...state.produtos]; const q=textNorm(f.q); if(q) list=list.filter(p=>textNorm([p.nome,p.codigo,p.gtin,p.ean,p.marca,p.categoria,p.subcategoria,p.subsubcategoria,p.fornecedor,p.descricao,parseTags(p.tags).join(' ')].join(' ')).includes(q)); ['categoria','subcategoria','subsubcategoria','marca','fornecedor'].forEach(k=>{if(f[k]) list=list.filter(p=>String(p[k]||'')===f[k])}); if(f.tag) list=list.filter(p=>parseTags(p.tags).includes(f.tag)); if(f.situacao==='A') list=list.filter(isActive); if(f.situacao==='I') list=list.filter(p=>!isActive(p)); if(f.situacao==='sem_estoque') list=list.filter(p=>toNum(p.estoque)<=0); if(f.situacao==='com_estoque') list=list.filter(p=>toNum(p.estoque)>0); if(f.qualidade==='sem_foto') list=list.filter(p=>!String(p.url_imagem||p.imagem||'').trim()); if(f.qualidade==='sem_gtin') list=list.filter(p=>!String(p.gtin||p.ean||'').trim()); if(f.qualidade==='sem_descricao') list=list.filter(p=>!String(p.descricao||'').trim()); if(f.qualidade==='com_oferta') list=list.filter(p=>toNum(p.preco_oferta)>0); if(f.cesta==='em_cesta') list=list.filter(p=>basketsByProduct(p).length); if(f.cesta==='fora_cesta') list=list.filter(p=>!basketsByProduct(p).length); const sorters={nome:(a,b)=>getName(a).localeCompare(getName(b),'pt-BR'),codigo:(a,b)=>getCode(a).localeCompare(getCode(b),'pt-BR'),preco_desc:(a,b)=>toNum(b.preco)-toNum(a.preco),preco_asc:(a,b)=>toNum(a.preco)-toNum(b.preco),estoque_desc:(a,b)=>toNum(b.estoque)-toNum(a.estoque),atualizado_desc:(a,b)=>toNum(b.last_update)-toNum(a.last_update)}; return list.sort(sorters[f.sort]||sorters.nome)}
   function renderProducts(){const all=filteredProducts(); const f=getFilters(); const pages=Math.max(1,Math.ceil(all.length/f.pageSize)); state.productPage=Math.min(state.productPage,pages); const start=(state.productPage-1)*f.pageSize; const list=all.slice(start,start+f.pageSize); const grid=$("#productsGrid"); grid.classList.toggle("list-view",state.productView==="list"); grid.innerHTML = list.length ? list.map(renderProductCardV3).join("") : `<div class="empty">Nenhum produto encontrado.</div>`; $$('[data-action="view-products-grid"],[data-action="view-products-list"]').forEach(b=>b.classList.toggle("active",(state.productView==="list")===b.dataset.action.endsWith("list"))); $("#pagination").innerHTML = `<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`; }
-  function renderProductCard(p){const code=getCode(p); const baskets=basketsByProduct(p); const basketBadges=baskets.map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join(""); const tags=parseTags(p.tags).slice(0,4).map(t=>`<span class="chip">#${esc(t)}</span>`).join(""); return `<article class="product-card"><div class="product-img"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'" alt="${esc(getName(p))}" loading="lazy"></div><div class="product-body"><h3 class="product-name">${esc(getName(p))}</h3><div class="meta-line"><span class="chip">Cód: ${esc(p.codigo||p.firebaseKey||code)}</span>${p.gtin?`<span class="chip">GTIN: ${esc(p.gtin)}</span>`:''}${p.marca?`<span class="chip">${esc(p.marca)}</span>`:''}${isActive(p)?'<span class="chip green">ativo</span>':'<span class="chip red">inativo</span>'}</div><div class="price-row"><div class="price">${brl(p.preco)}</div><div class="stock">Estoque: ${esc(p.estoque??0)}</div></div><div class="tiny">${esc([p.categoria,p.subcategoria,p.subsubcategoria].filter(Boolean).join(' › '))}</div><div class="meta-line">${tags}</div>${basketBadges?`<div class="meta-line">${basketBadges}</div>`:''}<div class="card-actions"><button class="btn small" data-action="edit-product" data-key="${esc(getKey(p))}">Editar produto</button><button class="btn small gold" data-action="edit-membership" data-code="${esc(code)}">Editar cestas</button><button class="btn small blue" data-action="duplicate-product" data-key="${esc(getKey(p))}">Duplicar</button><button class="btn small red" data-action="delete-product" data-key="${esc(getKey(p))}">Excluir</button></div></div></article>`}
 
   function quickField(p,field,label,value,type="text",wide=false){return `<div class="quick-field ${wide?'wide':''}"><label>${esc(label)}</label><input class="quick-input" type="${type}" data-card-field="${esc(field)}" data-key="${esc(getKey(p))}" value="${esc(value??'')}"></div>`}
   function renderProductCardV2(p){
@@ -2835,7 +2846,18 @@
     }
     return true;
   }
-  function markProductAiChange(product,fields=[]){
+  function refreshProductCardInPlace(product){
+    const key=getKey(product);
+    const current=[...document.querySelectorAll('[data-product-key]')].find(card=>card.dataset.productKey===String(key));
+    if(!current)return false;
+    const template=document.createElement('template');
+    template.innerHTML=renderProductCardV3(product).trim();
+    const replacement=template.content.firstElementChild;
+    if(!replacement)return false;
+    current.replaceWith(replacement);
+    return true;
+  }
+  function markProductAiChange(product,fields=[],options={}){
     if(!product)return;
     const key=getKey(product);
     const changed=uniq((Array.isArray(fields)?fields:[fields]).map(f=>String(f||"").trim()).filter(Boolean));
@@ -2844,7 +2866,10 @@
     markProductDirty(key,changed.length?changed:["__ai"]);
     mark("products");
     saveLocal();
-    renderProducts();
+    const renderMode=options.renderMode||"full";
+    if(renderMode==="card"){
+      if(!refreshProductCardInPlace(product))renderProducts();
+    }else if(renderMode!=="none")renderProducts();
     if(state.editingProductKey===key)renderProductEditor(false);
     refreshJson();
   }
@@ -2958,7 +2983,7 @@
     p.descricao=String(desc).trim();
     if(result.descricao_curta)p.descricao_curta=String(result.descricao_curta).trim();
     if(Array.isArray(result.tags_sugeridas))p.tags=uniq([...parseTags(p.tags),...result.tags_sugeridas]).join(", ");
-    markProductAiChange(p,["descricao","descricao_curta","tags"]);
+    markProductAiChange(p,["descricao","descricao_curta","tags"],{renderMode:"card"});
     setStatus("Descricao gerada pela IA e aplicada ao produto","ok");
   }
   async function aiProductName(key){
@@ -5157,7 +5182,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     return state.bannerManager.catalog || catalog;
   };
 
-  /* Criador de kits: percentual grande e preço calculado pelo percentual digitado. */
+  /* Criador de kits: percentual e preço no mesmo padrão visual das demais métricas. */
   const daV6RenderKitEditorBase = renderKitEditor;
   renderKitEditor = function(){
     daV6RenderKitEditorBase();
@@ -5167,7 +5192,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     const percent = total > 0 && toNum(kit.preco) > 0 ? Math.max(0,Math.round((1-toNum(kit.preco)/total)*10000)/100) : 0;
     const health = editor.querySelector('.kit-health');
     if(!health || editor.querySelector('.kit-discount-editor')) return;
-    health.insertAdjacentHTML('afterend',`<section class="kit-discount-editor"><div class="kit-discount-big"><strong>${esc(percent.toLocaleString('pt-BR',{maximumFractionDigits:2}))}% OFF</strong><span>Desconto atual do kit</span></div><div class="kit-discount-controls"><div class="field"><label>Definir desconto pelo percentual</label><div class="kit-discount-input-line"><input class="input" id="kitDiscountPercentInput" type="number" min="0.01" max="99.99" step="0.01" inputmode="decimal" value="${esc(percent || '')}" placeholder="Ex.: 15"><button class="btn primary" type="button" data-action="apply-kit-discount-percent">Aplicar %</button></div><small class="tiny">Base de cálculo: ${esc(brl(total))}. Ao aplicar, o preço promocional será atualizado automaticamente.</small></div></div></section>`);
+    health.insertAdjacentHTML('afterend',`<section class="kit-discount-editor"><div class="kit-discount-summary"><span>Desconto atual</span><strong>${esc(percent.toLocaleString('pt-BR',{maximumFractionDigits:2}))}%</strong><small>Economia sobre ${esc(brl(total))}</small></div><div class="kit-discount-controls"><div class="field"><label>Definir desconto pelo percentual</label><div class="kit-discount-input-line"><input class="input" id="kitDiscountPercentInput" type="number" min="0.01" max="99.99" step="0.01" inputmode="decimal" value="${esc(percent || '')}" placeholder="Ex.: 15"><button class="btn primary" type="button" data-action="apply-kit-discount-percent">Aplicar %</button></div><small class="tiny">O preço promocional do kit será calculado sobre o valor avulso de ${esc(brl(total))}.</small></div></div></section>`);
   };
   function daV6ApplyKitDiscountPercent(){
     const kit = currentKit(); if(!kit) return;
@@ -5207,11 +5232,11 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     style.textContent = `
       .product-workbench.has-active-banner{border:2px solid #198754!important;box-shadow:0 0 0 4px rgba(25,135,84,.10),0 14px 34px rgba(25,135,84,.12)!important}
       .banner-active-chip{font-size:12px!important;font-weight:950!important;box-shadow:0 0 0 2px rgba(21,115,71,.10)}
-      .kit-discount-editor{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(320px,1.2fr);gap:14px;align-items:stretch;margin:14px 0;padding:16px;border:2px solid #f2b8b5;border-radius:20px;background:linear-gradient(135deg,#fff1ef,#fffaf0)}
-      .kit-discount-big{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:132px;border-radius:17px;background:#b42318;color:#fff;text-align:center;padding:16px}
-      .kit-discount-big strong{font-size:clamp(34px,5vw,64px);line-height:.95;letter-spacing:-.055em}.kit-discount-big span{margin-top:9px;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
-      .kit-discount-controls{display:flex;align-items:center}.kit-discount-controls>.field{width:100%}.kit-discount-input-line{display:grid;grid-template-columns:1fr auto;gap:8px}.kit-discount-input-line .input{font-size:24px;font-weight:950;min-height:54px}
-      @media(max-width:760px){.kit-discount-editor{grid-template-columns:1fr}.kit-discount-input-line{grid-template-columns:1fr}.kit-discount-input-line .btn{min-height:48px}}
+      .kit-discount-editor{display:grid;grid-template-columns:minmax(180px,.55fr) minmax(320px,1.45fr);gap:10px;align-items:stretch;margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:16px;background:#fff}
+      .kit-discount-summary{display:flex;flex-direction:column;justify-content:center;min-height:92px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--red2);color:var(--red)}
+      .kit-discount-summary span{font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.04em}.kit-discount-summary strong{margin-top:4px;font-size:22px;line-height:1;font-weight:950;letter-spacing:-.035em}.kit-discount-summary small{margin-top:6px;color:var(--muted);font-size:11px;font-weight:700}
+      .kit-discount-controls{display:flex;align-items:center}.kit-discount-controls>.field{width:100%}.kit-discount-input-line{display:grid;grid-template-columns:minmax(120px,1fr) auto;gap:8px}.kit-discount-input-line .input{min-height:42px;font-size:14px;font-weight:800}
+      @media(max-width:760px){.kit-discount-editor{grid-template-columns:1fr}.kit-discount-input-line{grid-template-columns:1fr}.kit-discount-input-line .btn{min-height:44px}}
     `;
     document.head.appendChild(style);
   }
@@ -5380,5 +5405,3 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
 </script>
 </body>
 </html>
- 
- 
