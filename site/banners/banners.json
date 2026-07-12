@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-12T22:51:09.090Z",
+  "updated_at": "2026-07-12T22:51:52.410Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -2280,6 +2280,98 @@
         "posicao_escolhida": "marca",
         "alvo_escolhido": "Paulista",
         "rotulo_posicao": "Marca específica · Paulista",
+        "carga_ativa_antes": 0,
+        "candidatos_avaliados": 17
+      }
+    },
+    {
+      "id": "banner-auto-pfa31-20260712225152",
+      "ativo": true,
+      "titulo": "Oferta · Amendoim Salgado Dori Japonês 500g",
+      "alt": "Amendoim Salgado Dori Japonês 500g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338125384",
+        "produtos": [
+          {
+            "firebaseKey": "1776338125384",
+            "id": "1776338125384",
+            "codigo": "Pfa31",
+            "gtin": "7896058505023",
+            "nome": "Amendoim Salgado Dori Japonês 500g",
+            "marca": "Dori",
+            "categoria": "SALGADINHOS E PETISCOS",
+            "subcategoria": "AMENDOIM",
+            "embalagem": "500g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b78/2026/07/amendoim-salgado-dori-japones-500g-dori-500g-salgadinhos-e-petiscos-amendoim-7896058505023-foto-atual-otimizada-20260711050502.webp",
+            "preco_antigo": 18.9,
+            "preco_novo": 13.23,
+            "preco_antigo_formatado": "R$ 18,90",
+            "preco_novo_formatado": "R$ 13,23",
+            "desconto_percentual": 30,
+            "validade_oferta": "2026-08-20T23:59:59-04:00",
+            "exibir_validade_oferta_na_arte": false,
+            "validade_oferta_apenas_para_elegibilidade": true
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "subcategoria",
+        "alvo": "SALGADINHOS E PETISCOS::AMENDOIM",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-auto-pfa31-20260712225152/banner-20260712225152.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "Pfa31"
+      },
+      "periodo": {
+        "inicio": "2026-07-12T22:51:52.410Z",
+        "fim": "2026-07-19T22:51:52.410Z"
+      },
+      "banner_inicio": "2026-07-12T22:51:52.410Z",
+      "banner_fim": "2026-07-19T22:51:52.410Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": true,
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 7,
+        "arquivo_preservado_apos_expirar": true,
+        "registro_preservado_apos_expirar": true
+      },
+      "oferta": {
+        "preco_antigo": 18.9,
+        "preco_novo": 13.23,
+        "desconto_percentual": 30,
+        "validade_oferta": "2026-08-20T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "criado_em": "2026-07-12T22:51:52.410Z",
+      "atualizado_em": "2026-07-12T22:51:52.410Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "quality": "low",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "automacao": {
+        "criada_automaticamente": true,
+        "quantidade_produtos": 1,
+        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "dias_sem_repetir": 30,
+        "origem_dados": "firebase_produtos_em_oferta",
+        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
+        "grupo_categoria": "outros",
+        "posicao_escolhida": "subcategoria",
+        "alvo_escolhido": "SALGADINHOS E PETISCOS::AMENDOIM",
+        "rotulo_posicao": "Subcategoria específica · SALGADINHOS E PETISCOS › AMENDOIM",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17
       }
