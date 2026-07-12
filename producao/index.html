@@ -5824,7 +5824,89 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     `;document.head.appendChild(style);
   }
 
-  loadData();
+
+  /* DA_ADMIN_ABRIR_SEMPRE_NOS_PRODUTOS_V10_20260712 */
+  function daV10ClearStartupProductFilters(){
+    const selectors=['#f-q','#f-categoria','#f-subcategoria','#f-subsubcategoria','#f-marca','#f-fornecedor','#f-tag','#f-situacao','#f-qualidade','#f-cesta'];
+    selectors.forEach(selector=>{const element=document.querySelector(selector);if(element)element.value='';});
+    const bannerFilter=document.getElementById(DA_V6_BANNER_FILTER_ID);
+    if(bannerFilter)bannerFilter.value='';
+    state.productPage=1;
+  }
+
+  function daV10ForceProductsTabVisible(){
+    state.activeTab='produtos';
+    document.querySelectorAll('.tab[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab==='produtos'));
+    document.querySelectorAll('main.app > .panel').forEach(panel=>panel.classList.toggle('hidden',panel.id!=='tab-produtos'));
+    const productsPanel=document.getElementById('tab-produtos');
+    if(productsPanel){productsPanel.classList.remove('hidden');productsPanel.removeAttribute('hidden');}
+    document.getElementById('backToProductsBtn')?.classList.add('hidden');
+  }
+
+  const daV10RenderProductsBase=renderProducts;
+  renderProducts=function(){
+    const grid=document.getElementById('productsGrid'),pagination=document.getElementById('pagination');
+    if(!grid)return;
+    try{
+      return daV10RenderProductsBase();
+    }catch(error){
+      console.error('Falha na renderização completa dos produtos. Aplicando renderização resiliente:',error);
+      let all=[];
+      try{all=filteredProducts();}catch(filterError){console.error('Falha nos filtros; exibindo todos os produtos:',filterError);all=[...(state.produtos||[])];}
+      const filters=(()=>{try{return getFilters();}catch{return {pageSize:24}}})();
+      const pageSize=Math.max(1,Number(filters.pageSize)||24),pages=Math.max(1,Math.ceil(all.length/pageSize));
+      state.productPage=Math.max(1,Math.min(Number(state.productPage)||1,pages));
+      const start=(state.productPage-1)*pageSize,list=all.slice(start,start+pageSize);
+      grid.className='products-grid professional-list';
+      grid.innerHTML=list.length?list.map(product=>{
+        try{return renderProductWorkbench(product);}catch(productError){
+          console.error('Produto não renderizado:',getKey(product),productError);
+          return `<article class="product-card product-workbench"><div class="product-body"><h3 class="product-name">${esc(getName(product)||'Produto sem nome')}</h3><div class="meta-line"><span class="chip">Código: ${esc(getCode(product)||getKey(product)||'-')}</span></div><div class="notice red">Este card teve um erro isolado, mas os demais produtos continuam visíveis.</div><div class="workbench-actions"><button class="btn small" type="button" data-action="edit-product" data-key="${esc(getKey(product))}">Abrir cadastro</button></div></div></article>`;
+        }
+      }).join(''):'<div class="empty">Nenhum produto encontrado.</div>';
+      if(pagination)pagination.innerHTML=`<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`;
+    }
+  };
+
+  function daV10RenderProductsAfterLoad(){
+    daV10ForceProductsTabVisible();
+    try{renderFilterOptions();}catch(error){console.warn('Filtros não atualizados na abertura:',error);}
+    try{daV9EnsureBannerFilterOptions();}catch(error){console.warn('Filtro de banners não atualizado na abertura:',error);}
+    try{renderSummary();}catch(error){console.warn('Resumo não atualizado na abertura:',error);}
+    renderProducts();
+  }
+
+  const daV10LoadDataBase=loadData;
+  loadData=async function(){
+    daV10ClearStartupProductFilters();
+    daV10ForceProductsTabVisible();
+    let loadError=null,result;
+    try{
+      result=await daV10LoadDataBase();
+    }catch(error){
+      loadError=error;
+      console.error('A inicialização geral apresentou erro, mas os produtos serão exibidos:',error);
+    }finally{
+      daV10ClearStartupProductFilters();
+      daV10RenderProductsAfterLoad();
+      requestAnimationFrame(()=>{
+        daV10RenderProductsAfterLoad();
+        requestAnimationFrame(daV10RenderProductsAfterLoad);
+      });
+    }
+    if(loadError && !(state.produtos||[]).length){
+      setStatus(`Não foi possível carregar os produtos: ${loadError.message||loadError}`,'err');
+    }else if((state.produtos||[]).length){
+      setStatus(`Carregado: ${state.produtos.length} produtos · exibindo automaticamente`,'ok');
+    }
+    return result;
+  };
+
+  loadData().catch(error=>{
+    console.error('Falha final ao iniciar o admin:',error);
+    daV10ForceProductsTabVisible();
+    try{renderProducts();}catch(renderError){console.error(renderError);}
+  });
 })(); 
 </script>
 </body>
