@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-13T20:41:22.796Z",
+  "updated_at": "2026-07-13T22:41:21.608Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -4494,6 +4494,98 @@
         "posicao_escolhida": "busca.topo",
         "alvo_escolhido": "",
         "rotulo_posicao": "Resultados de busca",
+        "carga_ativa_antes": 0,
+        "candidatos_avaliados": 17
+      }
+    },
+    {
+      "id": "banner-auto-p0153-20260713224121",
+      "ativo": true,
+      "titulo": "Oferta · Sinhá Farinha Milho Cuscuz 500g",
+      "alt": "Sinhá Farinha Milho Cuscuz 500g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338127713",
+        "produtos": [
+          {
+            "firebaseKey": "1776338127713",
+            "id": "1776338127713",
+            "codigo": "P0153",
+            "gtin": "07892300000698",
+            "nome": "Sinhá Farinha Milho Cuscuz 500g",
+            "marca": "Sinhá",
+            "categoria": "MERCEARIA BÁSICA",
+            "subcategoria": "FARINHAS",
+            "embalagem": "500g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b06/2026/07/sinha-farinha-milho-cuscuz-500g-sinha-500g-mercearia-basica-farinhas-07892300000698-foto-atual-otimizada-20260711053612.webp",
+            "preco_antigo": 3.79,
+            "preco_novo": 3.6,
+            "preco_antigo_formatado": "R$ 3,79",
+            "preco_novo_formatado": "R$ 3,60",
+            "desconto_percentual": 5,
+            "validade_oferta": "2026-10-23T23:59:59-04:00",
+            "exibir_validade_oferta_na_arte": false,
+            "validade_oferta_apenas_para_elegibilidade": true
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "produto",
+        "alvo": "1776338127713",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-auto-p0153-20260713224121/banner-20260713224121.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P0153"
+      },
+      "periodo": {
+        "inicio": "2026-07-13T22:41:21.608Z",
+        "fim": "2026-07-20T22:41:21.608Z"
+      },
+      "banner_inicio": "2026-07-13T22:41:21.608Z",
+      "banner_fim": "2026-07-20T22:41:21.608Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": true,
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 7,
+        "arquivo_preservado_apos_expirar": true,
+        "registro_preservado_apos_expirar": true
+      },
+      "oferta": {
+        "preco_antigo": 3.79,
+        "preco_novo": 3.6,
+        "desconto_percentual": 5,
+        "validade_oferta": "2026-10-23T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "criado_em": "2026-07-13T22:41:21.608Z",
+      "atualizado_em": "2026-07-13T22:41:21.608Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "quality": "low",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "automacao": {
+        "criada_automaticamente": true,
+        "quantidade_produtos": 1,
+        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "dias_sem_repetir": 30,
+        "origem_dados": "firebase_produtos_em_oferta",
+        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
+        "grupo_categoria": "outros",
+        "posicao_escolhida": "produto",
+        "alvo_escolhido": "1776338127713",
+        "rotulo_posicao": "Produto específico · Sinhá Farinha Milho Cuscuz 500g",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17
       }
