@@ -1,7 +1,7 @@
 /* Módulo de entrada de NF-e — carregado depois do painel principal. */
 (()=>{
   const bridge=window.__DA_NFE_BRIDGE__;if(!bridge){console.error('Ponte da NF-e não encontrada.');return}
-  const {state,norm,getKey,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,syncProductsToFirebase,saveLocal,renderProducts,renderSummary,openProduct,aiProductCadastro,aiProductImage}=bridge;
+  const {state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,syncProductsToFirebase,saveLocal,renderProducts,renderSummary,openProduct,aiProductCadastro,aiProductImage}=bridge;
   const store={items:[],note:null,message:'Envie ou cole um XML de NF-e para começar.'}; state.nfeImport=store;
   const el=id=>document.getElementById(id), num=v=>Number(String(v??'').replace(',','.'))||0, key=()=>`nfe_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
   const txt=(p,t)=>String(p?.getElementsByTagName(t)?.[0]?.textContent||'').trim();
