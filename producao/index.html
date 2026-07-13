@@ -566,11 +566,36 @@
 
     <section class="panel hidden" id="tab-cadastros">
       <div class="panel-head"><div class="panel-title"><h2>Categorias, marcas, tags e fornecedores</h2><p>Cadastros auxiliares organizados para edição rápida e salvos no produtos_admin_meta.json.</p></div><div class="toolbar"><button class="btn gold" data-action="rebuild-meta">Reconstruir a partir dos produtos</button><button class="btn primary" data-action="save-meta">Salvar metadados</button></div></div>
-      <div class="catalog-grid">
-        <div class="card pad category-manager"><h3>Hierarquia de categorias</h3><p class="tiny">Cada categoria principal contém suas subcategorias e subsubcategorias. Você pode editar qualquer nível diretamente.</p><div class="form-grid"><div class="field"><label>Categoria</label><input class="input" id="newCat"></div><div class="field"><label>Subcategoria</label><input class="input" id="newSub"></div><div class="field"><label>Subsubcategoria</label><input class="input" id="newSubSub"></div><div class="field"><label>&nbsp;</label><button class="btn green" data-action="add-category">Adicionar hierarquia</button></div></div><div class="catalog-list" id="categoriesList"></div></div>
-        <div class="card pad"><h3>Tags universais</h3><p class="tiny">Tags globais salvas no produtos_admin_meta.json. Elas aparecem no editor de todos os produtos.</p><div class="form-grid"><div class="field span-3"><label>Nova tag universal</label><input class="input" id="newTag"></div><div class="field"><label>&nbsp;</label><button class="btn green" data-action="add-tag">Adicionar</button></div></div><div class="catalog-list" id="tagsList"></div></div>
-        <div class="card pad"><h3>Fornecedores</h3><div class="form-grid"><div class="field"><label>Nome</label><input class="input" id="newFornecedorNome"></div><div class="field"><label>Telefone</label><input class="input" id="newFornecedorTel"></div><div class="field"><label>Observação</label><input class="input" id="newFornecedorObs"></div><div class="field"><label>&nbsp;</label><button class="btn green" data-action="add-fornecedor">Adicionar</button></div></div><div class="catalog-list" id="fornecedoresList"></div></div>
-        <div class="card pad"><h3>Marcas</h3><div class="form-grid"><div class="field span-3"><label>Nova marca</label><input class="input" id="newMarca"></div><div class="field"><label>&nbsp;</label><button class="btn green" data-action="add-marca">Adicionar</button></div></div><div class="catalog-list" id="marcasList"></div></div>
+      <div class="registry-workspace">
+        <aside class="registry-nav card" aria-label="Seções de cadastros">
+          <div class="registry-nav-title"><strong>Cadastros</strong><small>Selecione uma seção</small></div>
+          <button class="registry-nav-button active" type="button" data-registry-view="categorias"><span><strong>Categorias</strong><small>Hierarquia do catálogo</small></span><b data-registry-nav-count="categorias">0</b></button>
+          <button class="registry-nav-button" type="button" data-registry-view="tags"><span><strong>Tags</strong><small>Marcadores universais</small></span><b data-registry-nav-count="tags">0</b></button>
+          <button class="registry-nav-button" type="button" data-registry-view="fornecedores"><span><strong>Fornecedores</strong><small>Contatos comerciais</small></span><b data-registry-nav-count="fornecedores">0</b></button>
+          <button class="registry-nav-button" type="button" data-registry-view="marcas"><span><strong>Marcas</strong><small>Fabricantes e linhas</small></span><b data-registry-nav-count="marcas">0</b></button>
+        </aside>
+        <div class="registry-main">
+          <section class="card pad registry-panel" data-registry-panel="categorias">
+            <div class="registry-panel-head"><div><h3>Hierarquia de categorias</h3><p class="tiny">Organize categoria, subcategoria e subsubcategoria.</p></div><div class="registry-search"><span>⌕</span><input class="input" id="registrySearchCategories" placeholder="Buscar na hierarquia..."></div></div>
+            <div class="registry-create-grid category-create-grid"><div class="field"><label>Categoria</label><input class="input" id="newCat"></div><div class="field"><label>Subcategoria</label><input class="input" id="newSub"></div><div class="field"><label>Subsubcategoria</label><input class="input" id="newSubSub"></div><button class="btn green" type="button" data-action="add-category">＋ Adicionar</button></div>
+            <div class="catalog-list" id="categoriesList"></div>
+          </section>
+          <section class="card pad registry-panel hidden" data-registry-panel="tags">
+            <div class="registry-panel-head"><div><h3>Tags universais</h3><p class="tiny">Disponíveis no editor de todos os produtos.</p></div><div class="registry-search"><span>⌕</span><input class="input" id="registrySearchTags" placeholder="Buscar tag..."></div></div>
+            <div class="registry-create-grid simple-create-grid"><div class="field"><label>Nova tag universal</label><input class="input" id="newTag"></div><button class="btn green" type="button" data-action="add-tag">＋ Adicionar tag</button></div>
+            <div class="catalog-list" id="tagsList"></div>
+          </section>
+          <section class="card pad registry-panel hidden" data-registry-panel="fornecedores">
+            <div class="registry-panel-head"><div><h3>Fornecedores</h3><p class="tiny">Centralize contatos e observações comerciais.</p></div><div class="registry-search"><span>⌕</span><input class="input" id="registrySearchSuppliers" placeholder="Buscar fornecedor..."></div></div>
+            <div class="registry-create-grid supplier-create-grid"><div class="field"><label>Nome</label><input class="input" id="newFornecedorNome"></div><div class="field"><label>Telefone</label><input class="input" id="newFornecedorTel"></div><div class="field"><label>Observação</label><input class="input" id="newFornecedorObs"></div><button class="btn green" type="button" data-action="add-fornecedor">＋ Adicionar</button></div>
+            <div class="catalog-list" id="fornecedoresList"></div>
+          </section>
+          <section class="card pad registry-panel hidden" data-registry-panel="marcas">
+            <div class="registry-panel-head"><div><h3>Marcas</h3><p class="tiny">Mantenha os nomes usados no catálogo padronizados.</p></div><div class="registry-search"><span>⌕</span><input class="input" id="registrySearchBrands" placeholder="Buscar marca..."></div></div>
+            <div class="registry-create-grid simple-create-grid"><div class="field"><label>Nova marca</label><input class="input" id="newMarca"></div><button class="btn green" type="button" data-action="add-marca">＋ Adicionar marca</button></div>
+            <div class="catalog-list" id="marcasList"></div>
+          </section>
+        </div>
       </div>
     </section>
 
@@ -1430,7 +1455,12 @@
   function renderCatalogs(){renderCategories(); renderTags(); renderFornecedores(); renderMarcas()}
   function renderCategories(){
     const el=$("#categoriesList"); if(!el) return;
-    const indexed=(state.meta.categorias||[]).map((value,index)=>({value,index}));
+    let rows=typeof daNormalizeCategoryRows==="function"?daNormalizeCategoryRows(state.meta.categorias||[]):(state.meta.categorias||[]);
+    if(!rows.length&&state.produtos.length){
+      rows=typeof daNormalizeCategoryRows==="function"?daNormalizeCategoryRows(state.produtos.map(p=>({categoria:p.categoria||"",subcategoria:p.subcategoria||"",subsubcategoria:p.subsubcategoria||""}))):[];
+    }
+    state.meta.categorias=rows;
+    const indexed=rows.map((value,index)=>({value,index}));
     const groups=new Map();
     indexed.forEach(entry=>{const key=String(entry.value.categoria||"");if(!groups.has(key))groups.set(key,[]);groups.get(key).push(entry)});
     const sorted=[...groups.entries()].sort((a,b)=>(a[0]||"").localeCompare(b[0]||"","pt-BR"));
@@ -1441,7 +1471,7 @@
       const subHtml=[...subgroups.entries()].sort((a,b)=>(a[0]||"").localeCompare(b[0]||"","pt-BR")).map(([sub,subRows])=>`
         <div class="subcategory-tree">
           <div class="subcategory-tree-head">
-            <div><label>Subcategoria</label><input class="input" data-subcategory-group data-category="${esc(category)}" data-old-value="${esc(sub)}" value="${esc(sub)}" placeholder="Nome da subcategoria"></div>
+            <div class="registry-name-block"><span>Subcategoria</span><strong>${esc(sub||"Sem subcategoria")}</strong><label>Renomear</label><input class="input" data-subcategory-group data-category="${esc(category)}" data-old-value="${esc(sub)}" value="${esc(sub)}" placeholder="Nome da subcategoria"></div>
             <button class="btn small red" type="button" data-action="delete-subcategory-group" data-category="${esc(category)}" data-subcategory="${esc(sub)}">Excluir ramo</button>
           </div>
           <div class="subsubcategory-list">
@@ -1451,7 +1481,7 @@
         </div>`).join("");
       return `<div class="category-tree-card">
         <div class="category-tree-head">
-          <div><label>Categoria principal</label><input class="input" data-category-group data-old-value="${esc(category)}" value="${esc(category)}" placeholder="Nome da categoria"></div>
+          <div class="registry-name-block"><span>Categoria principal</span><strong>${esc(category||"Categoria sem nome")}</strong><label>Renomear</label><input class="input" data-category-group data-old-value="${esc(category)}" value="${esc(category)}" placeholder="Nome da categoria"></div>
           <button class="btn small red" type="button" data-action="delete-category-group" data-category="${esc(category)}">Excluir categoria</button>
         </div>
         <div class="category-tree-body">${subHtml||'<div class="category-tree-empty">Nenhuma subcategoria cadastrada.</div>'}
@@ -1468,7 +1498,7 @@
     el.innerHTML=[...groups.entries()].map(([letter,rows])=>`<div class="registry-letter"><div class="registry-letter-head">${esc(letter)} · ${rows.length}</div><div class="registry-items">${rows.map(({value,index})=>`<div class="registry-item"><input class="input" data-${kind}-index="${index}" value="${esc(value)}"><button class="btn small red" type="button" data-action="delete-${kind}" data-index="${index}">Excluir</button></div>`).join("")}</div></div>`).join("")||`<div class="empty">Nenhum item cadastrado.</div>`;
   }
   function renderTags(){renderFlatRegistry($("#tagsList"),state.meta.tags,"tag")}
-  function renderFornecedores(){const el=$("#fornecedoresList"); if(!el) return; el.innerHTML=(state.meta.fornecedores||[]).map((f,i)=>`<div class="catalog-row multi"><input class="input" data-forn-index="${i}" data-forn-field="nome" value="${esc(f.nome)}"><input class="input" data-forn-index="${i}" data-forn-field="telefone" value="${esc(f.telefone||'')}"><input class="input" data-forn-index="${i}" data-forn-field="observacoes" value="${esc(f.observacoes||'')}"><button class="btn small red" data-action="delete-fornecedor" data-index="${i}">Excluir</button></div>`).join('') || `<div class="empty">Nenhum fornecedor.</div>`}
+  function renderFornecedores(){const el=$("#fornecedoresList"); if(!el) return; el.innerHTML=(state.meta.fornecedores||[]).map((f,i)=>`<div class="catalog-row multi"><input class="input" aria-label="Nome do fornecedor" placeholder="Nome" data-forn-index="${i}" data-forn-field="nome" value="${esc(f.nome)}"><input class="input" aria-label="Telefone do fornecedor" placeholder="Telefone" data-forn-index="${i}" data-forn-field="telefone" value="${esc(f.telefone||'')}"><input class="input" aria-label="Observações do fornecedor" placeholder="Observações" data-forn-index="${i}" data-forn-field="observacoes" value="${esc(f.observacoes||'')}"><button class="btn small red" data-action="delete-fornecedor" data-index="${i}">Excluir</button></div>`).join('') || `<div class="empty">Nenhum fornecedor.</div>`}
   function renderMarcas(){renderFlatRegistry($("#marcasList"),state.meta.marcas,"marca")}
 
   function renderSettingsUi(){const s=state.settings; const ids={setFirebaseUrl:'firebaseUrl',setProdutosNode:'produtosNode',setMetaNode:'metaNode',setGithubToken:'githubToken',setGithubOwner:'githubOwner',setGithubRepo:'githubRepo',setGithubBranch:'githubBranch',setSiteBaseUrl:'siteBaseUrl',setGithubProdutosPath:'githubProdutosPath',setGithubMetaPath:'githubMetaPath',setGithubAdminMetaPath:'githubAdminMetaPath',setCestasNode:'cestasNode',setKitsNode:'kitsNode',setGithubCestasPath:'githubCestasPath',setGithubKitsPath:'githubKitsPath',setGithubImagesPath:'githubImagesPath',setImagePublicBase:'imagePublicBase',setGithubKitImagesPath:'githubKitImagesPath',setKitImagePublicBase:'kitImagePublicBase',setBlingToken:'blingToken',setBlingDeposito:'blingDeposito',setBlingUnidade:'blingUnidade'}; Object.entries(ids).forEach(([id,k])=>{const el=$("#"+id); if(el && el.value!==String(s[k]||'')) el.value=s[k]||''}); const auto=$("#setAutoGithub"); if(auto) auto.checked=!!s.autoGithub}
@@ -6087,11 +6117,34 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     return state.meta;
   }
   function daRegistryCount(selector,count,label){
-    const host=document.querySelector(selector),card=host?.closest(".card"),title=card?.querySelector("h3");
-    if(!title)return;
-    let badge=title.querySelector(".registry-count");
-    if(!badge){badge=document.createElement("span");badge.className="registry-count";title.appendChild(badge)}
-    badge.textContent=`${count} ${count===1?label:`${label}s`}`;
+    const section=String(selector||"").replace(/^#/,"").replace(/List$/,"").replace("categories","categorias").replace("suppliers","fornecedores").replace("brands","marcas");
+    const badge=document.querySelector(`[data-registry-nav-count="${section}"]`);
+    if(badge)badge.textContent=String(count);
+  }
+  const DA_REGISTRY_VIEW_KEY="donaantonia_registry_view";
+  function daSetRegistryView(view){
+    const valid=["categorias","tags","fornecedores","marcas"];
+    const selected=valid.includes(view)?view:"categorias";
+    state.activeRegistryView=selected;
+    try{localStorage.setItem(DA_REGISTRY_VIEW_KEY,selected)}catch{}
+    document.querySelectorAll("[data-registry-view]").forEach(button=>button.classList.toggle("active",button.dataset.registryView===selected));
+    document.querySelectorAll("[data-registry-panel]").forEach(panel=>panel.classList.toggle("hidden",panel.dataset.registryPanel!==selected));
+  }
+  function daFilterRegistry(inputId,listId,itemSelector){
+    const input=document.getElementById(inputId),list=document.getElementById(listId);
+    if(!input||!list)return;
+    const query=textNorm(input.value.trim());
+    list.querySelectorAll(itemSelector).forEach(item=>{item.style.display=!query||textNorm(item.textContent).includes(query)?"":"none"});
+    list.querySelectorAll(".registry-letter").forEach(group=>{
+      const visible=[...group.querySelectorAll(".registry-item")].some(item=>item.style.display!=="none");
+      group.style.display=visible?"":"none";
+    });
+  }
+  function daApplyRegistryFilters(){
+    daFilterRegistry("registrySearchCategories","categoriesList",".category-tree-card");
+    daFilterRegistry("registrySearchTags","tagsList",".registry-item");
+    daFilterRegistry("registrySearchSuppliers","fornecedoresList",".catalog-row.multi");
+    daFilterRegistry("registrySearchBrands","marcasList",".registry-item");
   }
   renderCatalogs=function(){
     const meta=daEnsureMetaCollections();
@@ -6111,9 +6164,21 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
         if(host)host.innerHTML=`<div class="notice red"><strong>Não foi possível mostrar ${esc(label)}.</strong><div class="tiny" style="margin-top:5px">Use “Reconstruir a partir dos produtos” para recuperar este cadastro.</div></div>`;
       }
     });
+    daSetRegistryView(state.activeRegistryView||localStorage.getItem(DA_REGISTRY_VIEW_KEY)||"categorias");
+    daApplyRegistryFilters();
     const panel=document.querySelector("#tab-cadastros");
     if(panel)panel.dataset.registryReady="true";
   };
+
+  document.addEventListener("click",event=>{
+    const button=event.target.closest?.("[data-registry-view]");
+    if(!button)return;
+    event.preventDefault();
+    daSetRegistryView(button.dataset.registryView);
+  });
+  document.addEventListener("input",event=>{
+    if(event.target.matches?.("#registrySearchCategories,#registrySearchTags,#registrySearchSuppliers,#registrySearchBrands"))daApplyRegistryFilters();
+  });
 
   const daRenderTabsCadastrosBase=renderTabs;
   renderTabs=function(){
@@ -6235,17 +6300,36 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
 
   if(!document.getElementById("daFinalAdminFixStyles")){
     const style=document.createElement("style");style.id="daFinalAdminFixStyles";style.textContent=`
-      #tab-cadastros .catalog-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important;align-items:start!important}
-      #tab-cadastros .category-manager{grid-column:1/-1!important}
-      #tab-cadastros .catalog-list{display:flex!important;flex-direction:column!important;min-height:72px!important;max-height:none!important;overflow:visible!important;visibility:visible!important;opacity:1!important}
-      #tab-cadastros .card{display:block!important;visibility:visible!important;opacity:1!important;overflow:visible!important}
-      #tab-cadastros .category-tree-card{overflow:hidden!important}
-      #tab-cadastros .card>h3{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-      #tab-cadastros .registry-count{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;background:#fff;padding:4px 8px;color:var(--muted);font-size:10px;font-weight:900;white-space:nowrap}
+      #tab-cadastros .registry-workspace{display:grid;grid-template-columns:245px minmax(0,1fr);gap:16px;align-items:start}
+      #tab-cadastros .registry-nav{position:sticky;top:132px;padding:8px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.045)}
+      #tab-cadastros .registry-nav-title{padding:10px 11px 12px;border-bottom:1px solid var(--line);margin-bottom:5px}
+      #tab-cadastros .registry-nav-title strong,#tab-cadastros .registry-nav-title small{display:block}
+      #tab-cadastros .registry-nav-title strong{font-size:14px}#tab-cadastros .registry-nav-title small{margin-top:3px;color:var(--muted);font-size:11px}
+      #tab-cadastros .registry-nav-button{width:100%;border:0;background:transparent;border-radius:12px;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;color:var(--ink)}
+      #tab-cadastros .registry-nav-button:hover{background:#f7f5ef}#tab-cadastros .registry-nav-button.active{background:#111;color:#fff}
+      #tab-cadastros .registry-nav-button span strong,#tab-cadastros .registry-nav-button span small{display:block}#tab-cadastros .registry-nav-button span strong{font-size:12px}#tab-cadastros .registry-nav-button span small{margin-top:2px;font-size:10px;color:var(--muted)}#tab-cadastros .registry-nav-button.active span small{color:#cfcfcf}
+      #tab-cadastros .registry-nav-button b{min-width:27px;height:27px;border-radius:999px;background:#ece9e1;display:grid;place-items:center;font-size:10px}#tab-cadastros .registry-nav-button.active b{background:#fff;color:#111}
+      #tab-cadastros .registry-main{min-width:0}#tab-cadastros .registry-panel{overflow:hidden!important;box-shadow:0 10px 30px rgba(0,0,0,.045)}
+      #tab-cadastros .registry-panel-head{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-bottom:13px;border-bottom:1px solid var(--line)}
+      #tab-cadastros .registry-panel-head h3{margin:0;font-size:17px}#tab-cadastros .registry-panel-head p{margin:4px 0 0}
+      #tab-cadastros .registry-search{position:relative;flex:0 1 320px}#tab-cadastros .registry-search span{position:absolute;left:11px;top:50%;transform:translateY(-52%);color:var(--muted);font-size:18px;pointer-events:none}#tab-cadastros .registry-search .input{padding-left:34px;background:#fafafa}
+      #tab-cadastros .registry-create-grid{display:grid;gap:9px;align-items:end;padding:12px;margin:12px 0;background:#faf9f6;border:1px solid var(--line);border-radius:14px}
+      #tab-cadastros .category-create-grid{grid-template-columns:repeat(3,minmax(130px,1fr)) auto}#tab-cadastros .simple-create-grid{grid-template-columns:minmax(220px,1fr) auto}#tab-cadastros .supplier-create-grid{grid-template-columns:minmax(180px,1.2fr) minmax(140px,.8fr) minmax(200px,1.5fr) auto}
+      #tab-cadastros .registry-panel .catalog-list{display:flex!important;flex-direction:column!important;min-height:260px!important;max-height:calc(100vh - 390px)!important;overflow:auto!important;visibility:visible!important;opacity:1!important;padding-right:5px;scrollbar-gutter:stable}
+      #tab-cadastros .category-tree-card{overflow:hidden!important;border-color:var(--line)!important;background:#fff!important}#tab-cadastros .registry-letter{flex:0 0 auto}
+      #tab-cadastros .category-tree-head{background:#f7f6f2!important;border-bottom:1px solid var(--line)!important;padding:12px 14px!important}
+      #tab-cadastros .registry-name-block{display:grid;grid-template-columns:minmax(180px,1fr) minmax(200px,280px);grid-template-rows:auto auto;column-gap:14px;align-items:end;min-width:0}
+      #tab-cadastros .registry-name-block>span{grid-column:1;grid-row:1;color:var(--muted);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+      #tab-cadastros .registry-name-block>strong{grid-column:1;grid-row:2;margin-top:3px;font-size:15px;line-height:1.2;color:var(--ink);word-break:break-word}
+      #tab-cadastros .registry-name-block>label{grid-column:2;grid-row:1;margin-bottom:4px!important;color:var(--muted);font-size:9px!important;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+      #tab-cadastros .registry-name-block>.input{grid-column:2;grid-row:2;background:#fff}
+      #tab-cadastros .subcategory-tree{background:#fafcff!important;border-left-color:#a9c7ee!important}
+      #tab-cadastros .subcategory-tree-head{align-items:start!important}
       #tab-cadastros[data-registry-ready="true"] .catalog-list:empty::after{content:"Nenhum cadastro encontrado.";display:block;padding:20px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px;background:#fff}
       #tab-cadastros .catalog-row.multi{grid-template-columns:minmax(160px,1.2fr) minmax(130px,.8fr) minmax(180px,1.5fr) auto!important}
       .kit-queue-consultation{margin-bottom:11px}.kit-generated-badge{color:var(--green)!important;font-weight:900!important;margin-top:4px!important}
-      @media(max-width:900px){#tab-cadastros .catalog-grid{grid-template-columns:1fr!important}#tab-cadastros .category-manager{grid-column:auto!important}#tab-cadastros .catalog-row.multi{grid-template-columns:1fr!important}.kit-instagram-box .toolbar .btn{width:100%}}
+      @media(max-width:1000px){#tab-cadastros .registry-workspace{grid-template-columns:1fr}#tab-cadastros .registry-nav{position:relative;top:auto;display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:6px;overflow:auto}#tab-cadastros .registry-nav-title{display:none}#tab-cadastros .registry-nav-button span small{display:none}#tab-cadastros .registry-panel .catalog-list{max-height:60vh!important}#tab-cadastros .supplier-create-grid{grid-template-columns:1fr 1fr}#tab-cadastros .supplier-create-grid .btn{min-height:42px}}
+      @media(max-width:700px){#tab-cadastros .panel-head,#tab-cadastros .registry-panel-head{flex-direction:column;align-items:stretch}#tab-cadastros .panel-head .toolbar .btn{flex:1}#tab-cadastros .registry-nav{grid-template-columns:repeat(2,minmax(130px,1fr))}#tab-cadastros .category-create-grid,#tab-cadastros .simple-create-grid,#tab-cadastros .supplier-create-grid{grid-template-columns:1fr}#tab-cadastros .catalog-row.multi{grid-template-columns:1fr!important}#tab-cadastros .registry-search{flex-basis:auto}#tab-cadastros .registry-name-block{grid-template-columns:1fr;grid-template-rows:auto auto auto auto}#tab-cadastros .registry-name-block>span,#tab-cadastros .registry-name-block>strong,#tab-cadastros .registry-name-block>label,#tab-cadastros .registry-name-block>.input{grid-column:1}#tab-cadastros .registry-name-block>span{grid-row:1}#tab-cadastros .registry-name-block>strong{grid-row:2;margin-bottom:8px}#tab-cadastros .registry-name-block>label{grid-row:3}#tab-cadastros .registry-name-block>.input{grid-row:4}.kit-instagram-box .toolbar .btn{width:100%}}
     `;document.head.appendChild(style);
   }
 
