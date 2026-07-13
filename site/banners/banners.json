@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-13T02:58:24.268Z",
+  "updated_at": "2026-07-13T03:26:44.113Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -2741,7 +2741,8 @@
           "alvo": "LIMPEZA",
           "ordem": 1
         }
-      ]
+      ],
+      "automacao": {}
     },
     {
       "id": "banner-personalizado-259044s-1783813321179--local-2-ofertas-topo-geral",
@@ -2833,7 +2834,8 @@
           "alvo": "LIMPEZA",
           "ordem": 1
         }
-      ]
+      ],
+      "automacao": {}
     },
     {
       "id": "banner-personalizado-259044s-1783813321179--local-3-categoria-limpeza",
@@ -2923,6 +2925,82 @@
         {
           "local": "categoria",
           "alvo": "LIMPEZA",
+          "ordem": 1
+        }
+      ],
+      "automacao": {}
+    },
+    {
+      "id": "banner-produto-p-1n06-1783913204113",
+      "ativo": true,
+      "titulo": "Oferta · Café Guacira Mel Silvestre 270g",
+      "alt": "Café Guacira Mel Silvestre 270g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "177956953884617229",
+        "produtos": [
+          {
+            "firebaseKey": "177956953884617229",
+            "id": "177956953884617229",
+            "codigo": "P-1N06",
+            "nome": "Café Guacira Mel Silvestre 270g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b85/2026/07/guacira-mel-silvestre-unidade-guacira-unidade-cafe-da-manha-cafe-7896063701663-foto-atual-otimizada-20260711083743.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "home.cafe.topo",
+        "alvo": "",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-produto-p-1n06-1783913204113/banner-1783913204113.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P-1N06"
+      },
+      "periodo": {
+        "inicio": "2026-07-13T03:26:00.000Z",
+        "fim": "2026-07-21T02:59:00.000Z"
+      },
+      "criado_em": "2026-07-13T03:26:44.113Z",
+      "atualizado_em": "2026-07-13T03:26:44.113Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 38,
+        "asset_unico": true,
+        "reutilizado_em_multiplos_locais": false
+      },
+      "banner_inicio": "2026-07-13T03:26:00.000Z",
+      "banner_fim": "2026-07-21T02:59:00.000Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": true,
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 8
+      },
+      "oferta": {
+        "preco_antigo": 24.9,
+        "preco_novo": 19.17,
+        "desconto_percentual": 23,
+        "validade_oferta": "2026-09-04T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "grupo_id": "banner-produto-p-1n06-1783913204113",
+      "grupo_exibicao_id": "banner-produto-p-1n06-1783913204113",
+      "asset_id": "banner-produto-p-1n06-1783913204113",
+      "imagem_compartilhada": true,
+      "exibicao_indice": 1,
+      "exibicao_total": 1,
+      "exibicoes": [
+        {
+          "local": "home.cafe.topo",
+          "alvo": "",
           "ordem": 1
         }
       ]
