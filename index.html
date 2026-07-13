@@ -5,11 +5,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="da-build-version" content="2026-07-13-cache-definitivo-v1">
+  <meta name="da-build-version" content="2026-07-13-pedidos-firebase-fila-v2">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-13-cache-definitivo-v1';
+    const BUILD = '2026-07-13-pedidos-firebase-fila-v2';
     const CLEAN_MARKER = 'da_browser_cache_clean_build_v2';
     window.__DA_BUILD_VERSION__ = BUILD;
 
@@ -71,7 +71,7 @@
   <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-13-cache-definitivo-v1" as="fetch" type="application/json" crossorigin="anonymous">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-13-pedidos-firebase-fila-v2" as="fetch" type="application/json" crossorigin="anonymous">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -738,9 +738,13 @@
       PRODUCT_URL: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json',
       PRODUCT_HOME_URLS: ['site/produtos-home.json', 'produtos-home.json'],
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
+      FIREBASE_ORDERS_URL: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/pedidos',
+      ORDER_DELIVERY_QUEUE_KEY: 'da_pedidos_pendentes_v2',
+      ORDER_DELIVERY_MAX_ITEMS: 20,
+      ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-13-cache-definitivo-v1',
+      APP_VERSION: '2026-07-13-pedidos-firebase-fila-v2',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -4203,6 +4207,344 @@
       if (first) $(first.id).scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
+    let orderDeliveryProcessing = false;
+
+    function readOrderDeliveryQueue() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(CONFIG.ORDER_DELIVERY_QUEUE_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed.filter(item => item && item.id && item.makePayload) : [];
+      } catch(e) {
+        return [];
+      }
+    }
+
+    function writeOrderDeliveryQueue(queue) {
+      try {
+        const normalized = (Array.isArray(queue) ? queue : [])
+          .filter(item => item && item.id && item.makePayload)
+          .slice(-CONFIG.ORDER_DELIVERY_MAX_ITEMS);
+        localStorage.setItem(CONFIG.ORDER_DELIVERY_QUEUE_KEY, JSON.stringify(normalized));
+      } catch(e) {
+        console.warn('Não foi possível salvar a fila local de pedidos:', e);
+      }
+    }
+
+    function updateOrderDeliveryEntry(orderId, changes) {
+      const id = String(orderId || '');
+      const queue = readOrderDeliveryQueue();
+      const index = queue.findIndex(item => String(item.id) === id);
+      if (index < 0) return null;
+      queue[index] = Object.assign({}, queue[index], changes || {}, { updatedAt: Date.now() });
+      writeOrderDeliveryQueue(queue);
+      return queue[index];
+    }
+
+    function removeOrderDeliveryEntry(orderId) {
+      const id = String(orderId || '');
+      writeOrderDeliveryQueue(readOrderDeliveryQueue().filter(item => String(item.id) !== id));
+    }
+
+    function buildFirebaseOrder(makePayload) {
+      const pedido = makePayload && makePayload.pedido ? makePayload.pedido : {};
+      const cliente = pedido.cliente || {};
+      const nowIso = new Date().toISOString();
+      const itens = (Array.isArray(pedido.itens) ? pedido.itens : []).map(item => ({
+        firebaseKey: String(item.firebaseKey || ''),
+        sku: String(item.sku || ''),
+        codigo: String(item.sku || ''),
+        nome: String(item.nome || ''),
+        quantidade: Number(item.qtd || 0),
+        preco_unitario: Number(item.price || 0),
+        subtotal: roundMoney(Number(item.qtd || 0) * Number(item.price || 0)),
+        gtin: String(item.gtin || item.ean || ''),
+        ean: String(item.ean || item.gtin || ''),
+        url_imagem: String(item.url_imagem || '../site/img/produtos/sem-imagem.webp'),
+        gondola: String(item.gondola || 'Z-Sem Gôndola'),
+        prateleira: String(item.prateleira || '-'),
+        localizacao: String(item.localizacao || ''),
+        categoria: String(item.categoria || ''),
+        subcategoria: String(item.subcategoria || ''),
+        subsubcategoria: String(item.subsubcategoria || ''),
+        marca: String(item.marca || ''),
+        embalagem: String(item.embalagem || ''),
+        status_separacao: 'pendente',
+        quantidade_separada: 0,
+        separado_em: '',
+        separador: ''
+      }));
+
+      return {
+        id: String(pedido.id || ''),
+        numero_pedido: String(pedido.id || ''),
+        origem: 'site',
+        status: 'recebido',
+        status_separacao: 'pendente',
+        criado_em: nowIso,
+        atualizado_em: nowIso,
+        link_pedido: `${CONFIG.SITE_BASE_URL}/pedido.html?id=${encodeURIComponent(String(pedido.id || ''))}`,
+        firebase_path: `/pedidos/${String(pedido.id || '')}`,
+        mini_site_interno: `${CONFIG.SITE_BASE_URL}/pedidos.html?id=${encodeURIComponent(String(pedido.id || ''))}`,
+        separacao: {
+          status: 'pendente',
+          iniciado_em: '',
+          finalizado_em: '',
+          separador: '',
+          total_itens: itens.length,
+          itens_separados: 0,
+          itens_pendentes: itens.length,
+          observacoes_internas: ''
+        },
+        bling: {
+          status: 'aguardando_make',
+          id_contato: '',
+          id_pedido_venda: '',
+          numero_pedido_bling: ''
+        },
+        integracao: {
+          whatsapp: 'aberto',
+          firebase: 'salvo_pelo_site',
+          make: 'pendente',
+          criado_pelo_site_em: nowIso
+        },
+        cliente: {
+          nome: String(cliente.nome || 'Cliente Site'),
+          cpf: String(cliente.cpf || ''),
+          telefone: String(cliente.telefone || ''),
+          telefoneFormatado: String(cliente.telefoneFormatado || ''),
+          celular: String(cliente.celular || cliente.telefone || ''),
+          email: String(cliente.email || '')
+        },
+        entrega: {
+          agendamento: String(cliente.agendamento || ''),
+          cep: String(cliente.cep || ''),
+          cepFormatado: String(cliente.cepFormatado || ''),
+          cidade: String(cliente.cidade || ''),
+          uf: String(cliente.uf || 'MT'),
+          bairro: String(cliente.bairro || ''),
+          rua: String(cliente.rua || ''),
+          numero: String(cliente.numero || cliente.casa || ''),
+          casa: String(cliente.casa || ''),
+          quadra: String(cliente.quadra || ''),
+          complemento: String(cliente.complemento || ''),
+          frente: String(cliente.frente || ''),
+          endereco_completo: [
+            String(cliente.rua || ''),
+            String(cliente.numero || cliente.casa || ''),
+            cliente.quadra ? `Quadra ${cliente.quadra}` : '',
+            String(cliente.bairro || ''),
+            [String(cliente.cidade || ''), String(cliente.uf || 'MT')].filter(Boolean).join('/'),
+            cliente.cepFormatado ? `CEP ${cliente.cepFormatado}` : ''
+          ].filter(Boolean).join(', ')
+        },
+        pagamento: {
+          forma: String(cliente.pagamento || ''),
+          codigo: String(cliente.pagamentoCodigo || ''),
+          total: Number(pedido.total || 0),
+          totalProdutos: Number(pedido.totalProdutos || 0),
+          desconto: Number(pedido.desconto || 0),
+          outrasDespesasBling: Number(pedido.outrasDespesasBling || 0),
+          descontoBling: Number(pedido.descontoBling || 0),
+          total_texto: fmt(Number(pedido.total || 0))
+        },
+        cupom: pedido.cupom || null,
+        kitPromocional: pedido.kitPromocional || null,
+        atacado: pedido.atacado || null,
+        validadeQuantidade: pedido.validadeQuantidade || null,
+        observacoes: String(pedido.observacoes || ''),
+        itens,
+        envio: {
+          status: 'aguardando_separacao',
+          entregador: '',
+          saiu_em: '',
+          entregue_em: '',
+          tentativas: [],
+          observacoes: ''
+        },
+        historico: [{
+          data: nowIso,
+          acao: 'pedido_recebido_site',
+          usuario: 'site',
+          observacao: 'Pedido salvo diretamente pelo site antes do processamento do Make/Bling.'
+        }],
+        controle: {
+          pedido_original_site: true,
+          bloquear_alteracao_por_whatsapp: true,
+          aguardando_processamento_make: true,
+          observacao_interna: 'WhatsApp é o canal prioritário. O pedido foi preservado no Firebase e aguarda integração secundária com Make/Bling.'
+        }
+      };
+    }
+
+    function enqueueOrderDelivery(makePayload) {
+      const pedido = makePayload && makePayload.pedido ? makePayload.pedido : {};
+      const id = String(pedido.id || '');
+      if (!id) return null;
+      const queue = readOrderDeliveryQueue();
+      const existingIndex = queue.findIndex(item => String(item.id) === id);
+      const current = existingIndex >= 0 ? queue[existingIndex] : null;
+      const entry = {
+        id,
+        makePayload,
+        firebaseOrder: buildFirebaseOrder(makePayload),
+        createdAt: current ? current.createdAt : Date.now(),
+        updatedAt: Date.now(),
+        firebaseStatus: current ? current.firebaseStatus : 'pending',
+        makeStatus: current ? current.makeStatus : 'pending',
+        makeAttempts: current ? Number(current.makeAttempts || 0) : 0,
+        lastMakeAttemptAt: current ? Number(current.lastMakeAttemptAt || 0) : 0,
+        lastError: ''
+      };
+      if (existingIndex >= 0) queue[existingIndex] = entry;
+      else queue.push(entry);
+      writeOrderDeliveryQueue(queue);
+      return entry;
+    }
+
+    async function fetchWithTimeout(url, options, timeoutMs) {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs || 8000) : null;
+      try {
+        return await fetch(url, Object.assign({}, options || {}, controller ? { signal: controller.signal } : {}));
+      } finally {
+        if (timeout) clearTimeout(timeout);
+      }
+    }
+
+    async function readFirebaseOrder(orderId) {
+      try {
+        const response = await fetchWithTimeout(`${CONFIG.FIREBASE_ORDERS_URL}/${encodeURIComponent(String(orderId))}.json`, {
+          method: 'GET',
+          cache: 'no-store'
+        }, 6000);
+        if (!response.ok) return null;
+        return await response.json();
+      } catch(e) {
+        return null;
+      }
+    }
+
+    function firebaseOrderHasBling(order) {
+      return !!(order && order.bling && (order.bling.id_pedido_venda || order.bling.numero_pedido_bling));
+    }
+
+    async function saveQueuedOrderToFirebase(entry) {
+      if (!entry || entry.firebaseStatus === 'sent') return true;
+      const response = await fetchWithTimeout(`${CONFIG.FIREBASE_ORDERS_URL}/${encodeURIComponent(String(entry.id))}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry.firebaseOrder),
+        cache: 'no-store',
+        keepalive: true
+      }, 8000);
+      if (!response.ok) throw new Error(`Firebase respondeu ${response.status}`);
+      updateOrderDeliveryEntry(entry.id, { firebaseStatus: 'sent', lastError: '' });
+      return true;
+    }
+
+    async function sendQueuedOrderToMake(entry) {
+      if (!entry || entry.makeStatus === 'sent') return true;
+      const now = Date.now();
+      const previousAttempts = Number(entry.makeAttempts || 0);
+      const lastAttemptAt = Number(entry.lastMakeAttemptAt || 0);
+
+      if (previousAttempts > 0) {
+        const existingOrder = await readFirebaseOrder(entry.id);
+        if (firebaseOrderHasBling(existingOrder)) {
+          updateOrderDeliveryEntry(entry.id, { firebaseStatus: 'sent', makeStatus: 'sent', lastError: '' });
+          return true;
+        }
+        if (lastAttemptAt && now - lastAttemptAt < CONFIG.ORDER_DELIVERY_RETRY_MS) return false;
+      }
+
+      updateOrderDeliveryEntry(entry.id, {
+        makeStatus: 'sending',
+        makeAttempts: previousAttempts + 1,
+        lastMakeAttemptAt: now,
+        lastError: ''
+      });
+
+      try {
+        const response = await fetchWithTimeout(CONFIG.MAKE_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(entry.makePayload),
+          cache: 'no-store',
+          keepalive: true
+        }, 12000);
+        if (!response.ok) throw new Error(`Make respondeu ${response.status}`);
+        updateOrderDeliveryEntry(entry.id, { makeStatus: 'sent', lastError: '' });
+        return true;
+      } catch(e) {
+        updateOrderDeliveryEntry(entry.id, {
+          makeStatus: 'pending',
+          lastError: e && e.message ? e.message : 'Falha ao enviar ao Make'
+        });
+        console.warn(`Pedido ${entry.id} preservado para novo envio ao Make.`, e);
+        return false;
+      }
+    }
+
+    async function processPendingOrderDeliveries(priorityOrderId) {
+      if (orderDeliveryProcessing || !navigator.onLine) return;
+      orderDeliveryProcessing = true;
+      try {
+        let queue = readOrderDeliveryQueue();
+        if (priorityOrderId) {
+          const priority = String(priorityOrderId);
+          queue.sort((a, b) => (String(a.id) === priority ? -1 : String(b.id) === priority ? 1 : Number(a.createdAt || 0) - Number(b.createdAt || 0)));
+        } else {
+          queue.sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0));
+        }
+
+        for (const snapshot of queue.slice(0, 4)) {
+          let entry = readOrderDeliveryQueue().find(item => String(item.id) === String(snapshot.id));
+          if (!entry) continue;
+
+          if (entry.makeStatus === 'sent' && entry.firebaseStatus !== 'sent') {
+            const existingOrder = await readFirebaseOrder(entry.id);
+            if (existingOrder) updateOrderDeliveryEntry(entry.id, { firebaseStatus: 'sent', lastError: '' });
+          }
+
+          entry = readOrderDeliveryQueue().find(item => String(item.id) === String(snapshot.id));
+          if (!entry) continue;
+
+          if (entry.firebaseStatus !== 'sent' && entry.makeStatus !== 'sent') {
+            try {
+              await saveQueuedOrderToFirebase(entry);
+            } catch(e) {
+              updateOrderDeliveryEntry(entry.id, {
+                firebaseStatus: 'pending',
+                lastError: e && e.message ? e.message : 'Falha ao salvar no Firebase'
+              });
+              console.warn(`Pedido ${entry.id} permanece salvo na fila local; Firebase indisponível.`, e);
+            }
+          }
+
+          entry = readOrderDeliveryQueue().find(item => String(item.id) === String(snapshot.id));
+          if (!entry) continue;
+          await sendQueuedOrderToMake(entry);
+
+          entry = readOrderDeliveryQueue().find(item => String(item.id) === String(snapshot.id));
+          if (entry && entry.firebaseStatus === 'sent' && entry.makeStatus === 'sent') removeOrderDeliveryEntry(entry.id);
+        }
+      } finally {
+        orderDeliveryProcessing = false;
+      }
+    }
+
+    function bindOrderDeliveryRetryEvents() {
+      if (window.__daOrderDeliveryRetryBound) return;
+      window.__daOrderDeliveryRetryBound = true;
+      window.addEventListener('online', () => setTimeout(() => processPendingOrderDeliveries(), 250), { passive: true });
+      window.addEventListener('pageshow', () => setTimeout(() => processPendingOrderDeliveries(), 700), { passive: true });
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') setTimeout(() => processPendingOrderDeliveries(), 350);
+      });
+      setInterval(() => {
+        if (document.visibilityState === 'visible') processPendingOrderDeliveries();
+      }, 60000);
+    }
+
     async function sendOrder(btn) {
       const original = btn ? btn.innerHTML : '';
       if (btn) {
@@ -4395,12 +4737,6 @@
       if (casa) dadosOpcionais.push(`Nº: ${casa}`);
       if (frente) dadosOpcionais.push(`Referência para entrega: ${frente}`);
       const dadosCliente = `\n*👤 DADOS PARA ATENDIMENTO*\nNome: ${nome}\nTelefone/WhatsApp: ${formatarTelefone(telefone)}\nCidade: ${cidade}/${uf}\nBairro: ${bairro}${dadosOpcionais.length ? `\n${dadosOpcionais.join('\n')}` : '\nEndereço completo: confirmar no atendimento'}\n📅 *Agendamento:* ${formatOrderDate(dataAgendamento)}\n💳 *Pagamento:* ${pagamentoBling.nome}`;
-      fetch(CONFIG.MAKE_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(makePayload),
-        keepalive: true
-      }).catch(err => console.error('Erro na integração Make:', err));
       itemsTxt = buildGroupedItemsText(items, basketMessage);
       const basketHeader = basketMessage.headers.length ? `\n${basketMessage.headers.join('\n')}` : '';
       const removedSection = hasBasket
@@ -4413,9 +4749,17 @@
       const savingsSummary = pricing.discount > 0 ? `\n✅ *ECONOMIA TOTAL:* − ${fmt(pricing.discount)}` : '';
       const msg = `*PEDIDO #${orderId}*${basketHeader}\n*ENTREGA:* ${formatOrderDate(dataAgendamento)}\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*\nValor normal sem descontos: ${fmt(pricing.subtotalBefore)}${couponSummary}${kitSummary}${expiryBulkSummary}${wholesaleSummary}${savingsSummary}\n💰 *TOTAL FINAL:* ${fmt(totalSite)}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.${removedSection}`;
 
+      // Preserva o pedido localmente antes de abrir o WhatsApp. Nenhuma chamada de rede bloqueia o cliente.
+      enqueueOrderDelivery(makePayload);
+
+      // Prioridade absoluta: o WhatsApp é aberto primeiro.
       abrirWhatsAppPedido(msg);
       closeCheckout();
       showToast('Pedido pronto no WhatsApp.');
+
+      // Firebase e Make são processados em segundo plano. Se o navegador suspender a página,
+      // a fila local será retomada quando o cliente voltar, ficar online ou abrir o site novamente.
+      setTimeout(() => processPendingOrderDeliveries(orderId), 80);
       setTimeout(() => { if (btn) { btn.disabled = false; btn.innerHTML = original; } }, 1500);
     }
 
@@ -4437,8 +4781,14 @@
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       const urlMobile = `https://api.whatsapp.com/send?phone=${CONFIG.WHATSAPP_NUMBER}&text=${texto}&type=phone_number&app_absent=0`;
       const urlDesktop = `https://web.whatsapp.com/send?phone=${CONFIG.WHATSAPP_NUMBER}&text=${texto}`;
-      if (isMobile) window.location.href = urlMobile;
-      else window.open(urlDesktop, '_blank', 'noopener,noreferrer');
+      const link = document.createElement('a');
+      link.href = isMobile ? urlMobile : urlDesktop;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     }
 
     function showToast(message) {
@@ -4626,6 +4976,8 @@
       if (redirectedToLatest) return;
       try { sessionStorage.removeItem('da_version_reload_attempts_v1'); } catch(e) {}
       bindEvents();
+      bindOrderDeliveryRetryEvents();
+      setTimeout(() => processPendingOrderDeliveries(), 900);
       enforceAppVersion();
       startDeploymentVersionWatch();
       loadFavorites();
