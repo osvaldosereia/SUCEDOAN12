@@ -1784,7 +1784,7 @@
   }
 
   function resetProductViewForStartup(){
-    state.activeTab="produtos";
+    if(!state.activeTab)state.activeTab="produtos";
     state.productPage=1;
     ["#f-q","#f-categoria","#f-subcategoria","#f-subsubcategoria","#f-marca","#f-fornecedor","#f-tag","#f-situacao","#f-qualidade","#f-cesta"].forEach(selector=>{
       const element=$(selector);
@@ -1904,7 +1904,7 @@
       resetProductViewForStartup();
       renderAll();
       requestAnimationFrame(()=>{
-        state.activeTab="produtos";
+        if(!state.activeTab)state.activeTab="produtos";
         renderTabs();
         renderProducts();
       });
@@ -6077,20 +6077,49 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     };
   };
 
+  function daEnsureMetaCollections(){
+    const normalized=normalizeMeta(state.meta);
+    state.meta={...state.meta,...normalized};
+    state.meta.categorias=Array.isArray(normalized.categorias)?normalized.categorias:[];
+    state.meta.tags=Array.isArray(normalized.tags)?normalized.tags:[];
+    state.meta.fornecedores=Array.isArray(normalized.fornecedores)?normalized.fornecedores:[];
+    state.meta.marcas=Array.isArray(normalized.marcas)?normalized.marcas:[];
+    return state.meta;
+  }
+  function daRegistryCount(selector,count,label){
+    const host=document.querySelector(selector),card=host?.closest(".card"),title=card?.querySelector("h3");
+    if(!title)return;
+    let badge=title.querySelector(".registry-count");
+    if(!badge){badge=document.createElement("span");badge.className="registry-count";title.appendChild(badge)}
+    badge.textContent=`${count} ${count===1?label:`${label}s`}`;
+  }
   renderCatalogs=function(){
+    const meta=daEnsureMetaCollections();
     const sections=[
-      [renderCategories,"#categoriesList","categorias"],
-      [renderTags,"#tagsList","tags"],
-      [renderFornecedores,"#fornecedoresList","fornecedores"],
-      [renderMarcas,"#marcasList","marcas"]
+      [renderCategories,"#categoriesList","categorias",meta.categorias.length,"hierarquia"],
+      [renderTags,"#tagsList","tags",meta.tags.length,"tag"],
+      [renderFornecedores,"#fornecedoresList","fornecedores",meta.fornecedores.length,"fornecedor"],
+      [renderMarcas,"#marcasList","marcas",meta.marcas.length,"marca"]
     ];
-    sections.forEach(([renderer,selector,label])=>{
-      try{renderer()}catch(error){
+    sections.forEach(([renderer,selector,label,count,singular])=>{
+      try{
+        renderer();
+        daRegistryCount(selector,count,singular);
+      }catch(error){
         console.error(`Falha ao mostrar ${label}:`,error);
         const host=document.querySelector(selector);
-        if(host)host.innerHTML=`<div class="notice red">Não foi possível mostrar ${esc(label)}. Use “Reconstruir a partir dos produtos” ou revise o arquivo produtos_admin_meta.json.</div>`;
+        if(host)host.innerHTML=`<div class="notice red"><strong>Não foi possível mostrar ${esc(label)}.</strong><div class="tiny" style="margin-top:5px">Use “Reconstruir a partir dos produtos” para recuperar este cadastro.</div></div>`;
       }
     });
+    const panel=document.querySelector("#tab-cadastros");
+    if(panel)panel.dataset.registryReady="true";
+  };
+
+  const daRenderTabsCadastrosBase=renderTabs;
+  renderTabs=function(){
+    const result=daRenderTabsCadastrosBase();
+    if(state.activeTab==="cadastros")requestAnimationFrame(()=>renderCatalogs());
+    return result;
   };
 
   const DA_KIT_QUEUE_PATH="carrosseis-kits/fila.json";
@@ -6194,8 +6223,11 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
 
   const daLoadDataWithQueueBase=loadData;
   loadData=async function(){
+    const requestedTab=state.activeTab;
     await daLoadDataWithQueueBase();
     state.meta=normalizeMeta(state.meta);
+    if(requestedTab&&requestedTab!=="produtos")state.activeTab=requestedTab;
+    renderTabs();
     renderCatalogs();
     await daLoadKitCarouselQueue(true);
     renderKitsList();renderKitEditor();
@@ -6205,11 +6237,15 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     const style=document.createElement("style");style.id="daFinalAdminFixStyles";style.textContent=`
       #tab-cadastros .catalog-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important;align-items:start!important}
       #tab-cadastros .category-manager{grid-column:1/-1!important}
-      #tab-cadastros .catalog-list{display:flex!important;flex-direction:column!important;min-height:72px!important;visibility:visible!important;opacity:1!important}
+      #tab-cadastros .catalog-list{display:flex!important;flex-direction:column!important;min-height:72px!important;max-height:none!important;overflow:visible!important;visibility:visible!important;opacity:1!important}
       #tab-cadastros .card{display:block!important;visibility:visible!important;opacity:1!important;overflow:visible!important}
       #tab-cadastros .category-tree-card{overflow:hidden!important}
+      #tab-cadastros .card>h3{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+      #tab-cadastros .registry-count{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;background:#fff;padding:4px 8px;color:var(--muted);font-size:10px;font-weight:900;white-space:nowrap}
+      #tab-cadastros[data-registry-ready="true"] .catalog-list:empty::after{content:"Nenhum cadastro encontrado.";display:block;padding:20px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px;background:#fff}
+      #tab-cadastros .catalog-row.multi{grid-template-columns:minmax(160px,1.2fr) minmax(130px,.8fr) minmax(180px,1.5fr) auto!important}
       .kit-queue-consultation{margin-bottom:11px}.kit-generated-badge{color:var(--green)!important;font-weight:900!important;margin-top:4px!important}
-      @media(max-width:760px){#tab-cadastros .catalog-grid{grid-template-columns:1fr!important}.kit-instagram-box .toolbar .btn{width:100%}}
+      @media(max-width:900px){#tab-cadastros .catalog-grid{grid-template-columns:1fr!important}#tab-cadastros .category-manager{grid-column:auto!important}#tab-cadastros .catalog-row.multi{grid-template-columns:1fr!important}.kit-instagram-box .toolbar .btn{width:100%}}
     `;document.head.appendChild(style);
   }
 
