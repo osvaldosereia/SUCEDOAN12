@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-13T03:35:22.308Z",
+  "updated_at": "2026-07-13T04:51:12.138Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -3669,6 +3669,98 @@
           "ordem": 1
         }
       ]
+    },
+    {
+      "id": "banner-auto-4422670103-20260713045112",
+      "ativo": true,
+      "titulo": "Oferta · Linea Geleia de Goiaba 420g",
+      "alt": "Linea Geleia de Goiaba 420g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "17788714422673640",
+        "produtos": [
+          {
+            "firebaseKey": "17788714422673640",
+            "id": "17788714422673640",
+            "codigo": "4422670103",
+            "gtin": "7896001215245",
+            "nome": "Linea Geleia de Goiaba 420g",
+            "marca": "Linea",
+            "categoria": "CAFÉ DA MANHÃ",
+            "subcategoria": "ACOMPANHAMENTOS",
+            "embalagem": "420g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b45/2026/07/linea-geleia-de-goiaba-420g-linea-420g-cafe-da-manha-acompanhamentos-7896001215245-foto-atual-otimizada-20260711080700.webp",
+            "preco_antigo": 21.9,
+            "preco_novo": 19.71,
+            "preco_antigo_formatado": "R$ 21,90",
+            "preco_novo_formatado": "R$ 19,71",
+            "desconto_percentual": 10,
+            "validade_oferta": "2026-10-10T23:59:59-04:00",
+            "exibir_validade_oferta_na_arte": false,
+            "validade_oferta_apenas_para_elegibilidade": true
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "home.cafe.topo",
+        "alvo": "",
+        "ordem": 11
+      },
+      "imagem": "site/banners/ativos/banner-auto-4422670103-20260713045112/banner-20260713045112.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "4422670103"
+      },
+      "periodo": {
+        "inicio": "2026-07-13T04:51:12.138Z",
+        "fim": "2026-07-20T04:51:12.138Z"
+      },
+      "banner_inicio": "2026-07-13T04:51:12.138Z",
+      "banner_fim": "2026-07-20T04:51:12.138Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": true,
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 7,
+        "arquivo_preservado_apos_expirar": true,
+        "registro_preservado_apos_expirar": true
+      },
+      "oferta": {
+        "preco_antigo": 21.9,
+        "preco_novo": 19.71,
+        "desconto_percentual": 10,
+        "validade_oferta": "2026-10-10T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "criado_em": "2026-07-13T04:51:12.138Z",
+      "atualizado_em": "2026-07-13T04:51:12.138Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "quality": "low",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "automacao": {
+        "criada_automaticamente": true,
+        "quantidade_produtos": 1,
+        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "dias_sem_repetir": 30,
+        "origem_dados": "firebase_produtos_em_oferta",
+        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "regra_posicionamento": "categoria_fixa_cafe_da_manha",
+        "grupo_categoria": "cafe_manha",
+        "posicao_escolhida": "home.cafe.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Home · antes do café da manhã",
+        "carga_ativa_antes": 11,
+        "candidatos_avaliados": 1
+      }
     }
   ]
 }
