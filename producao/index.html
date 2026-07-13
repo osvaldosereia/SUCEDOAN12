@@ -6628,10 +6628,10 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     `;document.head.appendChild(style)}
   })();
 
-  window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,syncProductsToFirebase,saveLocal,renderProducts,renderSummary,openProduct,aiProductCadastro,aiProductImage};
+  window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,saveLocal,renderProducts,renderSummary,openProduct,aiProductCadastro,aiProductImage};
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
 </script>
-<script src="nfe-import.js?v=20260713-7"></script>
+<script src="nfe-import.js?v=20260713-9"></script>
 </body>
 </html>
