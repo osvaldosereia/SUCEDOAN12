@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-13T04:51:12.138Z",
+  "updated_at": "2026-07-13T06:51:19.022Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -3760,6 +3760,98 @@
         "rotulo_posicao": "Home · antes do café da manhã",
         "carga_ativa_antes": 11,
         "candidatos_avaliados": 1
+      }
+    },
+    {
+      "id": "banner-auto-p-r97b-20260713065119",
+      "ativo": true,
+      "titulo": "Oferta · Billy & Jack Molho Tasty 200g",
+      "alt": "Billy & Jack Molho Tasty 200g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "177956972480607462",
+        "produtos": [
+          {
+            "firebaseKey": "177956972480607462",
+            "id": "177956972480607462",
+            "codigo": "P-R97B",
+            "gtin": "7898416520471",
+            "nome": "Billy & Jack Molho Tasty 200g",
+            "marca": "Billy & Jack",
+            "categoria": "MOLHOS E CONDIMENTOS",
+            "subcategoria": "MOLHOS ESPECIAIS",
+            "embalagem": "200g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b33/2026/07/billy-jack-molho-tasty-200g-billy-jack-200g-molhos-e-condimentos-molhos-especiais-7898416520471-foto-atual-otimizada-20260711083756.webp",
+            "preco_antigo": 12.9,
+            "preco_novo": 10.32,
+            "preco_antigo_formatado": "R$ 12,90",
+            "preco_novo_formatado": "R$ 10,32",
+            "desconto_percentual": 20,
+            "validade_oferta": "2026-09-17T23:59:59-04:00",
+            "exibir_validade_oferta_na_arte": false,
+            "validade_oferta_apenas_para_elegibilidade": true
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "rotina.compra-mes.topo",
+        "alvo": "",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-auto-p-r97b-20260713065119/banner-20260713065119.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P-R97B"
+      },
+      "periodo": {
+        "inicio": "2026-07-13T06:51:19.022Z",
+        "fim": "2026-07-20T06:51:19.022Z"
+      },
+      "banner_inicio": "2026-07-13T06:51:19.022Z",
+      "banner_fim": "2026-07-20T06:51:19.022Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": true,
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 7,
+        "arquivo_preservado_apos_expirar": true,
+        "registro_preservado_apos_expirar": true
+      },
+      "oferta": {
+        "preco_antigo": 12.9,
+        "preco_novo": 10.32,
+        "desconto_percentual": 20,
+        "validade_oferta": "2026-09-17T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "criado_em": "2026-07-13T06:51:19.022Z",
+      "atualizado_em": "2026-07-13T06:51:19.022Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "quality": "low",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "automacao": {
+        "criada_automaticamente": true,
+        "quantidade_produtos": 1,
+        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "dias_sem_repetir": 30,
+        "origem_dados": "firebase_produtos_em_oferta",
+        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
+        "grupo_categoria": "outros",
+        "posicao_escolhida": "rotina.compra-mes.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Página · compra do mês",
+        "carga_ativa_antes": 0,
+        "candidatos_avaliados": 17
       }
     }
   ]
