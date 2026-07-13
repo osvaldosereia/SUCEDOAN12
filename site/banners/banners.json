@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-13T14:41:24.018Z",
+  "updated_at": "2026-07-13T16:41:22.012Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -4218,6 +4218,98 @@
         "posicao_escolhida": "favoritos.topo",
         "alvo_escolhido": "",
         "rotulo_posicao": "Favoritos",
+        "carga_ativa_antes": 0,
+        "candidatos_avaliados": 17
+      }
+    },
+    {
+      "id": "banner-auto-216319a-20260713164122",
+      "ativo": true,
+      "titulo": "Oferta · Nestlé Chocolate Bis Original ao Leite 100,8G",
+      "alt": "Nestlé Chocolate Bis Original ao Leite 100,8G em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338131368",
+        "produtos": [
+          {
+            "firebaseKey": "1776338131368",
+            "id": "1776338131368",
+            "codigo": "216319A",
+            "gtin": "7622210575975",
+            "nome": "Nestlé Chocolate Bis Original ao Leite 100,8G",
+            "marca": "Nestlé",
+            "categoria": "CHOCOLATES E DOCES",
+            "subcategoria": "CHOCOLATE",
+            "embalagem": "100,8G",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b58/2026/07/nestle-chocolate-bis-original-ao-leite-100-8g-nestle-100-8g-chocolates-e-doces-chocolate-7622210575975-foto-atual-otimizada-20260711063344.webp",
+            "preco_antigo": 8.3,
+            "preco_novo": 6.64,
+            "preco_antigo_formatado": "R$ 8,30",
+            "preco_novo_formatado": "R$ 6,64",
+            "desconto_percentual": 20,
+            "validade_oferta": "2026-09-05T23:59:59-04:00",
+            "exibir_validade_oferta_na_arte": false,
+            "validade_oferta_apenas_para_elegibilidade": true
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "kits.topo",
+        "alvo": "",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-auto-216319a-20260713164122/banner-20260713164122.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "216319A"
+      },
+      "periodo": {
+        "inicio": "2026-07-13T16:41:22.012Z",
+        "fim": "2026-07-20T16:41:22.012Z"
+      },
+      "banner_inicio": "2026-07-13T16:41:22.012Z",
+      "banner_fim": "2026-07-20T16:41:22.012Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": true,
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 7,
+        "arquivo_preservado_apos_expirar": true,
+        "registro_preservado_apos_expirar": true
+      },
+      "oferta": {
+        "preco_antigo": 8.3,
+        "preco_novo": 6.64,
+        "desconto_percentual": 20,
+        "validade_oferta": "2026-09-05T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "criado_em": "2026-07-13T16:41:22.012Z",
+      "atualizado_em": "2026-07-13T16:41:22.012Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "quality": "low",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "automacao": {
+        "criada_automaticamente": true,
+        "quantidade_produtos": 1,
+        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "dias_sem_repetir": 30,
+        "origem_dados": "firebase_produtos_em_oferta",
+        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
+        "grupo_categoria": "outros",
+        "posicao_escolhida": "kits.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Página de kits promocionais",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17
       }
