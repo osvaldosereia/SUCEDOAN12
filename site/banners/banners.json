@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-13T06:51:19.022Z",
+  "updated_at": "2026-07-13T08:51:21.053Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -3852,6 +3852,98 @@
         "rotulo_posicao": "Página · compra do mês",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17
+      }
+    },
+    {
+      "id": "banner-auto-p0040-20260713085121",
+      "ativo": true,
+      "titulo": "Oferta · Naturale Barra de Cereal Natural Castanha e Aveia 25g",
+      "alt": "Naturale Barra de Cereal Natural Castanha e Aveia 25g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338130229",
+        "produtos": [
+          {
+            "firebaseKey": "1776338130229",
+            "id": "1776338130229",
+            "codigo": "P0040",
+            "gtin": "7898055420316",
+            "nome": "Naturale Barra de Cereal Natural Castanha e Aveia 25g",
+            "marca": "Naturale",
+            "categoria": "CAFÉ DA MANHÃ",
+            "subcategoria": "CEREAIS",
+            "embalagem": "25g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b11/2026/07/naturale-barra-de-cereal-natural-castanha-e-aveia-25g-naturale-25g-cafe-da-manha-cereais-7898055420316-foto-atual-otimizada-20260711061138.webp",
+            "preco_antigo": 1.5,
+            "preco_novo": 1.42,
+            "preco_antigo_formatado": "R$ 1,50",
+            "preco_novo_formatado": "R$ 1,42",
+            "desconto_percentual": 5,
+            "validade_oferta": "2026-11-11T23:59:59-04:00",
+            "exibir_validade_oferta_na_arte": false,
+            "validade_oferta_apenas_para_elegibilidade": true
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "home.cafe.topo",
+        "alvo": "",
+        "ordem": 12
+      },
+      "imagem": "site/banners/ativos/banner-auto-p0040-20260713085121/banner-20260713085121.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P0040"
+      },
+      "periodo": {
+        "inicio": "2026-07-13T08:51:21.053Z",
+        "fim": "2026-07-20T08:51:21.053Z"
+      },
+      "banner_inicio": "2026-07-13T08:51:21.053Z",
+      "banner_fim": "2026-07-20T08:51:21.053Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": true,
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 7,
+        "arquivo_preservado_apos_expirar": true,
+        "registro_preservado_apos_expirar": true
+      },
+      "oferta": {
+        "preco_antigo": 1.5,
+        "preco_novo": 1.42,
+        "desconto_percentual": 5,
+        "validade_oferta": "2026-11-11T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "criado_em": "2026-07-13T08:51:21.053Z",
+      "atualizado_em": "2026-07-13T08:51:21.053Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "quality": "low",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "automacao": {
+        "criada_automaticamente": true,
+        "quantidade_produtos": 1,
+        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "dias_sem_repetir": 30,
+        "origem_dados": "firebase_produtos_em_oferta",
+        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "regra_posicionamento": "categoria_fixa_cafe_da_manha",
+        "grupo_categoria": "cafe_manha",
+        "posicao_escolhida": "home.cafe.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Home · antes do café da manhã",
+        "carga_ativa_antes": 12,
+        "candidatos_avaliados": 1
       }
     }
   ]
