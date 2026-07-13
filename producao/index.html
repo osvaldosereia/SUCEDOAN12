@@ -644,7 +644,6 @@
     githubAdminMetaPath: "site/produtos_admin_meta.json",
     githubCestasPath: "site/produtos-cesta-basica.json",
     githubKitsPath: "site/kits.json",
-    githubInstagramKitQueuePath: "carrosseis-kits/fila.json",
     githubAnotacoesPath: "site/anotacoes.json",
     githubImagesPath: "site/img/produtos_3",
     imagePublicBase: "site/img/produtos_3",
@@ -1208,6 +1207,7 @@
   }
 
 
+  async function saveGithubFiles({produtos,metaCatalogCsv,adminMeta,cestas,kits}={}){readSettingsFromUi(); const ops=[]; if(produtos) ops.push(githubUpsert(state.settings.githubProdutosPath, produtos, "Atualiza produtos.json pelo admin Dona Antônia")); if(metaCatalogCsv) ops.push(githubUpsertText(state.settings.githubMetaPath, metaCatalogCsv, "Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")); if(adminMeta) ops.push(githubUpsert(state.settings.githubAdminMetaPath, adminMeta, "Atualiza produtos_admin_meta.json pelo admin Dona Antônia")); if(cestas) ops.push(githubUpsert(state.settings.githubCestasPath, cestas, "Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")); if(kits) ops.push(githubUpsert(state.settings.githubKitsPath, kits, "Atualiza site/kits.json pelo admin Dona Antônia")); await Promise.all(ops)}
   async function testGithub(){try{readSettingsFromUi(); await githubContent(state.settings.githubProdutosPath); setStatus("GitHub conectado", "ok"); alert("Conexão com GitHub OK.")}catch(e){console.error(e); setStatus("Erro no GitHub","err"); alert("Erro no GitHub: "+e.message)}}
   async function saveGithubNow(){try{setStatus("Enviando arquivos ao GitHub...","warn"); await saveGithubFiles({produtos:productsObject(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits}); setStatus("GitHub atualizado","ok"); alert("produtos.json, produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e site/kits.json enviados ao GitHub.")}catch(e){console.error(e); setStatus("Erro ao enviar GitHub","err"); alert("Erro ao enviar GitHub: "+e.message)}}
 
@@ -1409,6 +1409,7 @@
   function deleteBasket(){const c=state.cestas.find(x=>x.id===state.selectedBasketId); if(!c||!confirm(`Excluir ${c.nome}?`)) return; state.cestas=state.cestas.filter(x=>x.id!==c.id); state.selectedBasketId=state.cestas[0]?.id||null; mark('cestas'); renderAll()}
 
   function renderKitsList(){const el=$("#kitsList"); if(!el) return; const q=textNorm($("#kitSearch")?.value||""); const list=state.kits.filter(c=>!q||textNorm([c.nome,c.codigo].join(' ')).includes(q)); el.innerHTML=list.map(c=>`<button class="side-card ${c.id===state.selectedKitId?'active':''}" data-action="select-kit" data-id="${esc(c.id)}"><img src="${esc(c.imagem||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><span><strong>${esc(c.nome)}</strong><small>${brl(c.preco)} · ${itemCount(c)} itens</small></span></button>`).join('') || `<div class="empty">Nenhum kit promocional.</div>`}
+  function renderKitEditor(){const el=$("#kitEditor"); if(!el) return; const c=currentKit(); if(!c){el.innerHTML=`<div class="empty">Selecione ou crie um kit promocional.</div>`; return} const rows=(c.produtos||[]).map(i=>renderKitRow(c,i)).join('') || `<div class="empty">Kit sem produtos.</div>`; el.innerHTML=`<div class="panel-head"><div class="panel-title"><h2>${esc(c.nome)}</h2><p>${esc(c.codigo)} · ${itemCount(c)} itens · salvo em site/kits.json</p></div><div class="toolbar"><button class="btn red" data-action="delete-kit">Excluir kit</button></div></div><div class="form-grid"><div class="field"><label>Nome</label><input class="input" data-kfield="nome" value="${esc(c.nome)}"></div><div class="field"><label>Código</label><input class="input" data-kfield="codigo" value="${esc(c.codigo)}"></div><div class="field"><label>Preço promocional</label><input class="input" data-kfield="preco" value="${esc(c.preco)}"></div><div class="field"><label>Imagem do kit</label><input class="input" data-kfield="imagem" value="${esc(c.imagem)}"></div></div><div class="photo-tools"><h4>Foto quadrada do kit</h4><p class="tiny">A imagem é compactada em WebP com limite de 30 KB. No GitHub ela será salva em <strong>site/img/kits/</strong> e aplicada como <strong>img/kits/arquivo.webp</strong>.</p><div class="photo-tools-grid"><div class="photo-preview-box"><img src="${esc(c.imagem||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"></div><div><div class="field"><label>Subir foto quadrada</label><input class="input" id="kitImageFile" type="file" accept="image/*"></div><div class="photo-actions"><button class="btn green" data-action="use-kit-image-local">Aplicar local compactada</button><button class="btn blue" data-action="upload-kit-image-github">Enviar para GitHub / site/img/kits</button></div></div></div></div><div style="margin-top:14px"><div class="field"><label>Buscar produto para adicionar/substituir</label><input class="input" id="kitProductSearch" value="${esc(state.kitProductSearch)}" placeholder="Digite nome, código, marca ou GTIN..."></div><div class="search-results" id="kitProductResults">${renderKitSearchResults()}</div></div><div class="basket-list">${rows}</div>`}
   function renderKitRow(c,item){const it=parseBasketItem(item), p=productByCode(it.codigo); return `<div class="basket-row"><img src="${esc(p?getImg(p):PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(p?getName(p):'Produto não encontrado')}</strong><div class="tiny">Código: ${esc(it.codigo)} ${p?`· ${brl(p.preco)}`:''}</div><div class="meta-line" style="margin-top:6px"><span class="chip green">${p?'Disponível no kit: 99999':'Produto indisponível'}</span>${p?`<span class="chip">Estoque real: ${esc(toNum(p.estoque))}</span>`:''}</div></div><div class="field"><label>Qtd</label><input class="input" data-action="kit-qtd" data-code="${esc(it.codigo)}" value="${esc(it.qtd)}"></div><button class="btn small blue" data-action="start-kit-replace" data-code="${esc(it.codigo)}">Substituir</button><button class="btn small red" data-action="remove-from-kit" data-code="${esc(it.codigo)}">Remover</button></div>`}
   function renderKitSearchResults(){const q=textNorm(state.kitProductSearch); if(!q) return state.kitReplace?`<div class="notice gold">Escolha o produto substituto do kit.</div>`:''; return state.produtos.filter(p=>textNorm([getName(p),p.codigo,p.gtin,p.marca,p.categoria].join(' ')).includes(q)).slice(0,30).map(p=>`<div class="result-row"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(getName(p))}</strong><div class="tiny">${esc(p.codigo||getCode(p))} · ${brl(p.preco)}</div></div><button class="btn small ${state.kitReplace?'blue':'green'}" data-action="${state.kitReplace?'confirm-kit-replace':'add-to-kit'}" data-code="${esc(getCode(p))}">${state.kitReplace?'Usar como substituto':'Adicionar'}</button></div>`).join('') || `<div class="empty">Nenhum produto encontrado.</div>`}
   function addToKit(code,qtd=1){const c=currentKit(); if(!c) return; const n=norm(code); const idx=(c.produtos||[]).findIndex(i=>parseBasketItem(i).codigo===n); if(idx>=0){const it=parseBasketItem(c.produtos[idx]); c.produtos[idx]=fmtBasketItem(it.qtd+Number(qtd||1),n)} else c.produtos.push(fmtBasketItem(qtd,n)); state.kitProductSearch=''; mark('kits'); renderAll()}
@@ -3860,11 +3861,7 @@
     if(!k)return alert("Selecione um kit promocional.");
     const errors=validateKit(k).concat(validateKitForInstagram(k));
     if(errors.length)return alert(`Revise o kit antes de enviar ao Instagram:\n• ${errors.join("\n• ")}`);
-    const existingInstagram=daKitInstagramEntry(k);
-    const instagramQuestion=existingInstagram
-      ? `Este kit já possui um carrossel gerado (${daKitInstagramStatusLabel(existingInstagram)}).\n\nDeseja gerar outro carrossel e adicionar uma nova entrada à fila?`
-      : `Enviar o kit "${k.nome}" para o Instagram?\n\nSerão ${kitInstagramSlideCount(k)} páginas: capa + ${k.produtos.length} produto(s) + CTA.`;
-    if(!confirm(instagramQuestion))return;
+    if(!confirm(`Enviar o kit "${k.nome}" para o Instagram?\n\nSerão ${kitInstagramSlideCount(k)} páginas: capa + ${k.produtos.length} produto(s) + CTA.`))return;
     await ensureKitCoverPublicUrl(k);
     const payload=buildKitInstagramPayload(k);
     setStatus("Gerando carrossel do kit e colocando na fila do GitHub...","warn");
@@ -3876,7 +3873,6 @@
     k.instagram_fila_json=result.fila_json||"";
     k.instagram_carrossel_id=result.id_carrossel||result.carrossel_id||"";
     k.instagram_imagens=result.imagens||result.urls_imagens||[];
-    daRememberKitInstagramEntry(k,{...result,status:k.instagram_status,fila_status:k.instagram_status,criado_em:k.instagram_enviado_em,id_carrossel:k.instagram_carrossel_id||k.instagram_post_id,kit_codigo:k.codigo,kit_nome:k.nome,total_paginas:kitInstagramSlideCount(k),dados_path:k.instagram_dados_json,fila_json:k.instagram_fila_json,files:(k.instagram_imagens||[]).map(image_url=>({image_url,media_type:"IMAGE"}))});
     mark("kits");
     saveLocal();
     renderKitsList();
@@ -5225,6 +5221,12 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     if(filter) filter.value = '';
   },true);
 
+  function daV6ExpiryTime(banner){
+    const value = banner?.periodo?.fim;
+    if(!value) return Number.POSITIVE_INFINITY;
+    const time = new Date(value).getTime();
+    return Number.isFinite(time) ? time : Number.POSITIVE_INFINITY;
+  }
   function daV6FormatDateTime(value){
     if(!value) return 'Sem vencimento';
     const date = new Date(value);
@@ -5236,7 +5238,20 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     const imageUrl = daBannerPublicUrl(banner.imagem);
     return `<article class="card banner-admin-card" data-banner-id="${esc(banner.id)}"><div class="banner-admin-preview"><img loading="lazy" src="${esc(imageUrl)}" alt="${esc(banner.alt||banner.titulo||'Banner')}" onerror="this.closest('.banner-admin-preview').classList.add('image-error');this.style.display='none'"><div class="banner-admin-badges"><span class="chip ${status.cls}">${esc(status.text)}</span><span class="chip blue">${esc(kind)}</span></div></div><div class="banner-admin-body"><div class="banner-admin-title">${esc(banner.titulo||banner.alt||banner.id)}</div>${banner.texto_arte?`<div class="banner-art-text"><strong>Texto da arte:</strong> ${esc(banner.texto_arte)}</div>`:''}<div class="tiny"><strong>Vencimento:</strong> ${esc(daV6FormatDateTime(banner.periodo?.fim))}</div><div class="tiny"><strong>Exibição:</strong> ${esc(daBannerPlacementLabel(banner.exibicao?.local,banner.exibicao?.alvo))}</div><div class="tiny"><strong>Link:</strong> ${esc(daBannerLinkLabel(banner.link))}</div><div class="banner-products-mini">${related.slice(0,3).map(product=>`<img title="${esc(getName(product)||product.nome||'Produto')}" src="${esc(getImg(product)||product.imagem_url||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'">`).join('')}</div><div class="banner-admin-actions"><button class="btn small" type="button" data-action="banner-edit" data-id="${esc(banner.id)}">Editar</button><button class="btn small ${banner.ativo?'gold':'green'}" type="button" data-action="banner-toggle" data-id="${esc(banner.id)}">${banner.ativo?'Desativar':'Ativar'}</button><button class="btn small blue" type="button" data-action="banner-open-link" data-id="${esc(banner.id)}">Abrir link</button><button class="btn small red" type="button" data-action="banner-delete" data-id="${esc(banner.id)}">Remover</button></div></div></article>`;
   };
-  /* Implementação legada do gerenciador removida: a versão agrupada e ordenada por criação é definida adiante. */
+  daRenderBannerManager = async function(){
+    daEnsureBannerUi(); daBannerManagerCss(); daV6EnsureBannerProductFilter();
+    const body = document.getElementById('bannerManagerBody'); if(!body) return;
+    if(state.bannerManager.loading){body.innerHTML='<div class="notice gold">Carregando catálogo de banners...</div>';return;}
+    if(!state.bannerManager.catalog){body.innerHTML='<div class="notice gold">Clique em Atualizar para carregar os banners.</div>';return;}
+    const stats = daBannerCatalogStats(), query = textNorm(state.bannerManager.query || ''), statusFilter = state.bannerManager.statusFilter || 'todos', placeFilter = state.bannerManager.placeFilter || 'todos';
+    const list = (state.bannerManager.catalog.banners || []).filter(banner=>{
+      const search = textNorm([banner.id,banner.titulo,banner.alt,banner.texto_arte,banner.exibicao?.local,banner.exibicao?.alvo,banner.origem?.tipo,banner.origem?.valor,daBannerLinkLabel(banner.link),...daV6BannerReferenceValues(banner)].join(' '));
+      const status = daBannerStatus(banner).text.toLowerCase();
+      return (!query || search.includes(query)) && (statusFilter === 'todos' || status === statusFilter) && (placeFilter === 'todos' || banner.exibicao?.local === placeFilter);
+    }).sort((a,b)=>daV6ExpiryTime(a)-daV6ExpiryTime(b) || (Number(a.exibicao?.ordem)||0)-(Number(b.exibicao?.ordem)||0) || String(a.id).localeCompare(String(b.id),'pt-BR'));
+    body.innerHTML = `${state.bannerManager.error?`<div class="notice red" style="margin-bottom:12px">${esc(state.bannerManager.error)}</div>`:''}<div class="banner-summary"><div class="summary-card"><strong>${stats.total}</strong><span>Total</span></div><div class="summary-card"><strong>${stats.active}</strong><span>Ativos</span></div><div class="summary-card"><strong>${stats.scheduled}</strong><span>Agendados</span></div><div class="summary-card"><strong>${stats.inactive}</strong><span>Inativos</span></div></div><div class="banner-manager-toolbar"><input class="input" id="bannerManagerSearch" placeholder="Buscar banner, produto, marca ou posição" value="${esc(state.bannerManager.query||'')}"><select class="select" id="bannerStatusFilter"><option value="todos">Todos os status</option><option value="ativo">Ativos</option><option value="inativo">Inativos</option><option value="agendado">Agendados</option><option value="encerrado">Encerrados</option></select><select class="select" id="bannerPlaceFilter"><option value="todos">Todos os direcionamentos</option>${DA_BANNER_PLACEMENTS.map(item=>`<option value="${esc(item.value)}">${esc(item.label)}</option>`).join('')}</select><button class="btn blue" type="button" data-action="banner-open-json">Ver JSON</button></div><div class="banner-schema-note" style="margin-bottom:14px"><strong>Ordem automática:</strong> os banners mais próximos de vencer aparecem primeiro. Banners vencidos são marcados como inativos; o registro no JSON e a imagem no GitHub são preservados.</div><div class="banner-admin-grid">${list.length?list.map(daBannerCardHtml).join(''):'<div class="empty">Ainda não há banners criados. Use “Criar banner” para publicar o primeiro.</div>'}</div>`;
+    const sf=document.getElementById('bannerStatusFilter'),pf=document.getElementById('bannerPlaceFilter'); if(sf) sf.value=statusFilter; if(pf) pf.value=placeFilter;
+  };
 
   function daV6FilesForBanner(banner){return [...new Set(daV6BannerFiles(banner || {}).map(value=>String(value || '').trim()).filter(Boolean))];}
   async function daV6DeleteBannerFromCatalog(banner,{confirmUser=false,expired=false}={}){
@@ -5912,9 +5927,9 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     daEnsureBannerUi();daBannerManagerCss();daV6EnsureBannerProductFilter();const body=document.getElementById('bannerManagerBody');if(!body)return;
     if(state.bannerManager.loading){body.innerHTML='<div class="notice gold">Carregando catálogo de banners...</div>';return}if(!state.bannerManager.catalog){body.innerHTML='<div class="notice gold">Clique em Atualizar para carregar os banners.</div>';return}
     const groups=daV9GroupRepresentatives(state.bannerManager.catalog),query=textNorm(state.bannerManager.query||''),statusFilter=state.bannerManager.statusFilter||'todos',placeFilter=state.bannerManager.placeFilter||'todos';
-    const list=groups.filter(banner=>{const placements=daV9PlacementsForBanner(banner),search=textNorm([banner.id,banner.titulo,banner.alt,banner.texto_arte,...placements.flatMap(item=>[item.local,item.target,daV9PlacementLabel(item)]),banner.origem?.tipo,banner.origem?.valor,daBannerLinkLabel(banner.link),...daV6BannerReferenceValues(banner)].join(' ')),status=daBannerStatus(banner).text.toLowerCase();return(!query||search.includes(query))&&(statusFilter==='todos'||status===statusFilter)&&(placeFilter==='todos'||placements.some(item=>item.local===placeFilter))}).sort((a,b)=>daBannerCreatedTime(b)-daBannerCreatedTime(a)||String(b.id).localeCompare(String(a.id),'pt-BR'));
+    const list=groups.filter(banner=>{const placements=daV9PlacementsForBanner(banner),search=textNorm([banner.id,banner.titulo,banner.alt,banner.texto_arte,...placements.flatMap(item=>[item.local,item.target,daV9PlacementLabel(item)]),banner.origem?.tipo,banner.origem?.valor,daBannerLinkLabel(banner.link),...daV6BannerReferenceValues(banner)].join(' ')),status=daBannerStatus(banner).text.toLowerCase();return(!query||search.includes(query))&&(statusFilter==='todos'||status===statusFilter)&&(placeFilter==='todos'||placements.some(item=>item.local===placeFilter))}).sort((a,b)=>daV6ExpiryTime(a)-daV6ExpiryTime(b)||String(a.id).localeCompare(String(b.id),'pt-BR'));
     const statusList=groups.map(daBannerStatus),stats={total:groups.length,active:statusList.filter(item=>item.text==='Ativo').length,scheduled:statusList.filter(item=>item.text==='Agendado').length,inactive:statusList.filter(item=>['Inativo','Encerrado'].includes(item.text)).length};
-    body.innerHTML=`${state.bannerManager.error?`<div class="notice red" style="margin-bottom:12px">${esc(state.bannerManager.error)}</div>`:''}<div class="banner-summary"><div class="summary-card"><strong>${stats.total}</strong><span>Artes</span></div><div class="summary-card"><strong>${stats.active}</strong><span>Ativas</span></div><div class="summary-card"><strong>${stats.scheduled}</strong><span>Agendadas</span></div><div class="summary-card"><strong>${stats.inactive}</strong><span>Inativas</span></div></div><div class="banner-manager-toolbar"><input class="input" id="bannerManagerSearch" placeholder="Buscar banner, produto, marca ou posição" value="${esc(state.bannerManager.query||'')}"><select class="select" id="bannerStatusFilter"><option value="todos">Todos os status</option><option value="ativo">Ativos</option><option value="inativo">Inativos</option><option value="agendado">Agendados</option><option value="encerrado">Encerrados</option></select><select class="select" id="bannerPlaceFilter"><option value="todos">Todos os locais</option>${DA_BANNER_PLACEMENTS.map(item=>`<option value="${esc(item.value)}">${esc(item.label)}</option>`).join('')}</select><button class="btn blue" type="button" data-action="banner-open-json">Ver JSON</button></div><div class="notice green" style="margin-bottom:14px"><strong>Mais recentes primeiro:</strong> o último banner gerado aparece sempre no início. Cada local é gravado como uma entrada compatível no <code>banners.json</code>, mas todos compartilham a mesma imagem e são administrados como um único banner.</div><div class="banner-admin-grid">${list.length?list.map(daBannerCardHtml).join(''):'<div class="empty">Ainda não há banners criados.</div>'}</div>`;
+    body.innerHTML=`${state.bannerManager.error?`<div class="notice red" style="margin-bottom:12px">${esc(state.bannerManager.error)}</div>`:''}<div class="banner-summary"><div class="summary-card"><strong>${stats.total}</strong><span>Artes</span></div><div class="summary-card"><strong>${stats.active}</strong><span>Ativas</span></div><div class="summary-card"><strong>${stats.scheduled}</strong><span>Agendadas</span></div><div class="summary-card"><strong>${stats.inactive}</strong><span>Inativas</span></div></div><div class="banner-manager-toolbar"><input class="input" id="bannerManagerSearch" placeholder="Buscar banner, produto, marca ou posição" value="${esc(state.bannerManager.query||'')}"><select class="select" id="bannerStatusFilter"><option value="todos">Todos os status</option><option value="ativo">Ativos</option><option value="inativo">Inativos</option><option value="agendado">Agendados</option><option value="encerrado">Encerrados</option></select><select class="select" id="bannerPlaceFilter"><option value="todos">Todos os locais</option>${DA_BANNER_PLACEMENTS.map(item=>`<option value="${esc(item.value)}">${esc(item.label)}</option>`).join('')}</select><button class="btn blue" type="button" data-action="banner-open-json">Ver JSON</button></div><div class="notice green" style="margin-bottom:14px"><strong>Uma arte, vários locais:</strong> cada local é gravado como uma entrada compatível no <code>banners.json</code>, mas todas compartilham a mesma imagem e são administradas como um único banner.</div><div class="banner-admin-grid">${list.length?list.map(daBannerCardHtml).join(''):'<div class="empty">Ainda não há banners criados.</div>'}</div>`;
     const sf=document.getElementById('bannerStatusFilter'),pf=document.getElementById('bannerPlaceFilter');if(sf)sf.value=statusFilter;if(pf)pf.value=placeFilter;
   };
 
@@ -5948,260 +5963,6 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
       .banner-product-status{min-width:250px;max-width:420px;border:1px solid var(--line);border-radius:14px;padding:9px 10px;background:#fafafa}.banner-product-status.active{background:var(--green2);border-color:#9bd4b2}.banner-product-status.created{background:var(--gold2);border-color:#e5cf8b}.banner-product-status.none{background:#f7f7f7;color:var(--muted)}.banner-product-status strong,.banner-product-status small{display:block}.banner-product-status strong{font-size:12px}.banner-product-status small{font-size:10px;margin-top:3px}.banner-product-locations{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}.banner-product-locations .chip{font-size:9px;padding:3px 6px}
       .banner-multi-field{min-width:300px}.banner-multi-select{position:relative}.banner-multi-select>summary{list-style:none;min-height:41px;border:1px solid #7896b9;border-radius:12px;background:#fff;padding:10px 11px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:900;cursor:pointer}.banner-multi-select>summary::-webkit-details-marker{display:none}.banner-multi-panel{position:absolute;z-index:32;top:calc(100% + 6px);right:0;width:min(720px,88vw);max-height:68vh;overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 22px 60px rgba(0,0,0,.2);padding:12px}.banner-multi-actions{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px}.banner-placement-scroll{max-height:52vh;overflow:auto;padding-right:4px}.banner-placement-scroll.modal{max-height:430px}.banner-placement-group{margin-bottom:12px}.banner-placement-group h5{display:flex;justify-content:space-between;margin:0 0 6px;padding-bottom:5px;border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;color:var(--muted)}.banner-placement-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.banner-placement-option{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:11px;padding:8px;background:#fff;cursor:pointer}.banner-placement-option.selected{background:var(--blue2);border-color:#85afea}.banner-placement-option input{margin-top:2px}.banner-placement-option strong,.banner-placement-option small{display:block}.banner-placement-option strong{font-size:11px;line-height:1.25}.banner-placement-option small{font-size:9px;color:var(--muted);margin-top:3px;word-break:break-word}.banner-multi-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:9px}.banner-multi-head strong,.banner-multi-head small{display:block}.banner-multi-head small{font-size:11px;color:var(--muted);margin-top:3px}.banner-card-locations>div{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}.banner-card-locations .chip{font-size:9px}
       @media(max-width:900px){.banner-product-status{max-width:none;width:100%}.workbench-header{flex-wrap:wrap}.banner-placement-options{grid-template-columns:1fr}.banner-multi-panel{position:fixed;inset:8vh 4vw auto;width:92vw;max-height:84vh}.banner-placement-scroll{max-height:66vh}}
-    `;document.head.appendChild(style);
-  }
-
-
-  /* ===== Correções finais consolidadas: cadastros, fila Instagram e ordenação de banners ===== */
-  function daMetaStringList(value,fields=[]){
-    const source=Array.isArray(value)?value:(value&&typeof value==="object"?Object.values(value):[]);
-    return uniq(source.map(item=>{
-      if(item&&typeof item==="object")return fields.map(field=>item[field]).find(v=>String(v??"").trim())||"";
-      return item;
-    }).map(v=>String(v??"").trim()).filter(Boolean));
-  }
-  function daNormalizeCategoryRows(value){
-    const rows=[];
-    const push=(categoria="",subcategoria="",subsubcategoria="")=>{
-      const row={categoria:String(categoria??"").trim(),subcategoria:String(subcategoria??"").trim(),subsubcategoria:String(subsubcategoria??"").trim()};
-      if(row.categoria||row.subcategoria||row.subsubcategoria)rows.push(row);
-    };
-    const consumeRow=item=>{
-      if(typeof item==="string")return push(item,"","");
-      if(!item||typeof item!=="object")return;
-      push(item.categoria??item.category??item.nome??item.name??"",item.subcategoria??item.subcategory??item.sub??"",item.subsubcategoria??item.subsubcategory??item.subsub??"");
-    };
-    if(Array.isArray(value))value.forEach(consumeRow);
-    else if(value&&typeof value==="object")Object.entries(value).forEach(([category,subtree])=>{
-      if(Array.isArray(subtree)){
-        if(!subtree.length)push(category,"","");
-        subtree.forEach(item=>{
-          if(typeof item==="string")push(category,item,"");
-          else if(item&&typeof item==="object")push(item.categoria||category,item.subcategoria||item.nome||item.name||"",item.subsubcategoria||item.subsub||"");
-        });
-        return;
-      }
-      if(subtree&&typeof subtree==="object"){
-        const entries=Object.entries(subtree);
-        if(!entries.length)push(category,"","");
-        entries.forEach(([subcategory,leaf])=>{
-          if(Array.isArray(leaf)){
-            if(!leaf.length)push(category,subcategory,"");
-            leaf.forEach(item=>typeof item==="string"?push(category,subcategory,item):consumeRow({...item,categoria:item?.categoria||category,subcategoria:item?.subcategoria||subcategory}));
-          }else if(leaf&&typeof leaf==="object"){
-            const names=Object.keys(leaf).filter(name=>!['nome','name','id','categoria','subcategoria'].includes(name));
-            if(names.length)names.forEach(name=>push(category,subcategory,name));else push(category,subcategory,leaf.subsubcategoria||leaf.nome||leaf.name||"");
-          }else push(category,subcategory,leaf||"");
-        });
-        return;
-      }
-      push(category,subtree||"","");
-    });
-    const seen=new Set();
-    return rows.filter(row=>{const key=[row.categoria,row.subcategoria,row.subsubcategoria].map(textNorm).join("|");if(seen.has(key))return false;seen.add(key);return true});
-  }
-  normalizeMeta=function(data){
-    const source=data&&typeof data==="object"?data:{};
-    const categories=source.categorias??source.categories??source.hierarquia_categorias??[];
-    const suppliersRaw=source.fornecedores??source.suppliers??[];
-    const suppliers=(Array.isArray(suppliersRaw)?suppliersRaw:Object.values(suppliersRaw||{})).map((item,index)=>{
-      if(typeof item==="string")return{id:slug(item)||`fornecedor-${index+1}`,nome:item,telefone:"",observacoes:""};
-      const nome=String(item?.nome??item?.name??item?.fornecedor??"").trim();
-      return{id:String(item?.id||slug(nome)||`fornecedor-${index+1}`),nome,telefone:String(item?.telefone??item?.phone??""),observacoes:String(item?.observacoes??item?.observação??item?.notes??"")};
-    }).filter(item=>item.nome);
-    return{
-      ...makeEmptyMeta(),...source,
-      categorias:daNormalizeCategoryRows(categories),
-      tags:daMetaStringList(source.tags??source.tags_universais??source.universal_tags??[],['nome','name','tag','valor','value']),
-      fornecedores:suppliers,
-      marcas:daMetaStringList(source.marcas??source.brands??[],['nome','name','marca','valor','value']),
-      estatisticas:source.estatisticas&&typeof source.estatisticas==="object"?source.estatisticas:{}
-    };
-  };
-  function daEnsureMetaFromProducts(){
-    state.meta=normalizeMeta(state.meta);
-    const productCategories=[];
-    state.produtos.forEach(product=>{if(product.categoria||product.subcategoria||product.subsubcategoria)productCategories.push({categoria:product.categoria||"",subcategoria:product.subcategoria||"",subsubcategoria:product.subsubcategoria||""})});
-    state.meta.categorias=daNormalizeCategoryRows([...state.meta.categorias,...productCategories]);
-    state.meta.tags=uniq([...state.meta.tags,...state.produtos.flatMap(product=>parseTags(product.tags))].map(v=>String(v||"").trim()).filter(Boolean));
-    state.meta.marcas=uniq([...state.meta.marcas,...state.produtos.map(product=>String(product.marca||"").trim())].filter(Boolean));
-    const supplierMap=new Map((state.meta.fornecedores||[]).map(item=>[textNorm(item.nome),item]));
-    state.produtos.map(product=>String(product.fornecedor||"").trim()).filter(Boolean).forEach(nome=>{if(!supplierMap.has(textNorm(nome)))supplierMap.set(textNorm(nome),{id:slug(nome),nome,telefone:"",observacoes:""})});
-    state.meta.fornecedores=[...supplierMap.values()].sort((a,b)=>a.nome.localeCompare(b.nome,"pt-BR"));
-    state.meta.estatisticas=makeStats();
-  }
-  renderCatalogs=function(){
-    state.meta=normalizeMeta(state.meta);
-    renderCategories();renderTags();renderFornecedores();renderMarcas();
-  };
-  function daRenderGuard(label,callback,fallbackSelector=""){
-    try{return callback()}catch(error){
-      console.error(`Falha ao renderizar ${label}:`,error);
-      const target=fallbackSelector?document.querySelector(fallbackSelector):null;
-      if(target)target.innerHTML=`<div class="notice red"><strong>Não foi possível montar esta área.</strong><div class="tiny" style="margin-top:5px">${esc(error?.message||String(error))}</div></div>`;
-      return null;
-    }
-  }
-  renderAll=function(){
-    daRenderGuard("ajustes de estoque",restoreLegacyBasketStock);
-    daRenderGuard("abas",renderTabs);
-    daRenderGuard("configurações",renderSettingsUi,"#tab-integracoes");
-    daRenderGuard("filtros",renderFilterOptions);
-    daRenderGuard("resumo",renderSummary);
-    daRenderGuard("produtos",renderProducts,"#productsGrid");
-    daRenderGuard("lista de cestas",renderBasketsList,"#basketsList");
-    daRenderGuard("editor de cestas",renderBasketEditor,"#basketEditor");
-    daRenderGuard("lista de kits",renderKitsList,"#kitsList");
-    daRenderGuard("editor de kits",renderKitEditor,"#kitEditor");
-    daRenderGuard("cadastros",renderCatalogs,"#categoriesList");
-    daRenderGuard("anotações",renderNotes,"#openNotesList");
-    daRenderGuard("indicador de anotações",updateNotesIndicator);
-    daRenderGuard("leitor",renderScannerEditor);
-    daRenderGuard("histórico do leitor",renderScannerHistory);
-    daRenderGuard("JSON",refreshJson);
-    if(typeof daV9EnsureBannerFilterOptions==="function")daRenderGuard("filtro de banners",daV9EnsureBannerFilterOptions);
-  };
-
-  function daEnsureInstagramQueueSettingUi(){
-    if(document.getElementById("setGithubInstagramKitQueuePath"))return;
-    const kitsPath=document.getElementById("setGithubKitsPath")?.closest(".field");
-    if(!kitsPath)return;
-    const field=document.createElement("div");field.className="field";
-    field.innerHTML='<label>Caminho da fila de carrosséis dos kits</label><input class="input" id="setGithubInstagramKitQueuePath" placeholder="carrosseis-kits/fila.json">';
-    kitsPath.insertAdjacentElement("afterend",field);
-  }
-  const daFinalRenderSettingsBase=renderSettingsUi;
-  renderSettingsUi=function(){daEnsureInstagramQueueSettingUi();daFinalRenderSettingsBase();const input=document.getElementById("setGithubInstagramKitQueuePath");if(input&&input.value!==String(state.settings.githubInstagramKitQueuePath||""))input.value=state.settings.githubInstagramKitQueuePath||"carrosseis-kits/fila.json"};
-  const daFinalReadSettingsBase=readSettingsFromUi;
-  readSettingsFromUi=function(){daFinalReadSettingsBase();const input=document.getElementById("setGithubInstagramKitQueuePath");if(input)state.settings.githubInstagramKitQueuePath=input.value.trim()||"carrosseis-kits/fila.json"};
-
-  state.kitInstagramRegistry=state.kitInstagramRegistry||{items:[],loading:false,loaded:false,error:"",loadedAt:""};
-  function daKitInstagramRows(value){
-    if(Array.isArray(value))return value.filter(Boolean);
-    if(value&&typeof value==="object"){
-      for(const key of ["fila","items","carrosseis","entries","registros"])if(Array.isArray(value[key]))return value[key].filter(Boolean);
-      return Object.values(value).filter(item=>item&&typeof item==="object");
-    }
-    return[];
-  }
-  function daKitInstagramTime(entry){
-    for(const value of [entry?.criado_em,entry?.created_at,entry?.gerado_em,entry?.atualizado_em,entry?.postado_em]){const time=new Date(value||"").getTime();if(Number.isFinite(time))return time}
-    const match=String(entry?.id_carrossel||entry?.id||"").match(/^(\d{8})[-_](\d{6})/);if(match){const d=match[1],t=match[2],time=new Date(`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}T${t.slice(0,2)}:${t.slice(2,4)}:${t.slice(4,6)}`).getTime();if(Number.isFinite(time))return time}
-    return 0;
-  }
-  function daKitInstagramEntry(k){
-    if(!k)return null;
-    const code=norm(k.codigo||""),id=norm(k.id||""),name=textNorm(k.nome||"");
-    const items=state.kitInstagramRegistry?.items||[];
-    return items.find(entry=>code&&norm(entry.kit_codigo||entry.kit?.codigo||entry.codigo_kit||"")===code)
-      ||items.find(entry=>id&&norm(entry.kit_id||entry.kit?.id||"")===id)
-      ||items.find(entry=>name&&textNorm(entry.kit_nome||entry.kit?.nome||"")===name)
-      ||null;
-  }
-  function daKitInstagramStatusLabel(entry){
-    const status=textNorm(entry?.fila_status||entry?.status||"");
-    if(status.includes("postado")||status.includes("publicado"))return"Publicado no Instagram";
-    if(status.includes("process"))return"Em processamento";
-    if(status.includes("erro")||status.includes("falha"))return"Erro na geração";
-    if(status.includes("novo")||status.includes("fila"))return"Gerado e aguardando na fila";
-    return status?String(entry.fila_status||entry.status):"Carrossel já gerado";
-  }
-  function daKitInstagramStatusClass(entry){const status=textNorm(entry?.fila_status||entry?.status||"");return status.includes("erro")||status.includes("falha")?"red":status.includes("process")?"gold":"green"}
-  function daRememberKitInstagramEntry(k,entry={}){
-    if(!k)return;
-    const normalized={...entry,kit_codigo:entry.kit_codigo||k.codigo||"",kit_nome:entry.kit_nome||k.nome||"",status:entry.status||entry.fila_status||"novo",fila_status:entry.fila_status||entry.status||"novo",criado_em:entry.criado_em||nowIso()};
-    const current=(state.kitInstagramRegistry.items||[]).filter(item=>String(item.id_carrossel||item.id||"")!==String(normalized.id_carrossel||normalized.id||""));
-    current.push(normalized);state.kitInstagramRegistry.items=current.sort((a,b)=>daKitInstagramTime(b)-daKitInstagramTime(a));state.kitInstagramRegistry.loaded=true;state.kitInstagramRegistry.loadedAt=nowIso();
-  }
-  async function daFetchGithubJson(path){
-    const clean=String(path||"").replace(/^\/+/,"");
-    const rawUrl=githubRawFileUrl(clean);
-    let rawError=null;
-    if(rawUrl)try{const response=await fetch(`${rawUrl}?v=${Date.now()}`,{cache:"no-store",headers:{Accept:"application/json"}});if(response.ok)return await response.json();rawError=new Error(`GitHub raw ${response.status}`)}catch(error){rawError=error}
-    const owner=state.settings.githubOwner,repo=state.settings.githubRepo,branch=state.settings.githubBranch||"main";
-    const headers={Accept:"application/vnd.github+json"};if(state.settings.githubToken)headers.Authorization=`Bearer ${state.settings.githubToken}`;
-    const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURI(clean)}?ref=${encodeURIComponent(branch)}&_=${Date.now()}`;
-    const response=await fetch(url,{cache:"no-store",headers});
-    if(response.status===404)return[];
-    if(!response.ok)throw rawError||new Error(`GitHub ${response.status}`);
-    const file=await response.json(),binary=atob(String(file.content||"").replace(/\s/g,"")),bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));
-    return JSON.parse(new TextDecoder("utf-8").decode(bytes));
-  }
-  async function loadKitInstagramRegistry({force=false,silent=false,render=true}={}){
-    const registry=state.kitInstagramRegistry;
-    if(registry.loading)return registry.items;
-    if(registry.loaded&&!force)return registry.items;
-    registry.loading=true;registry.error="";
-    try{
-      readSettingsFromUi();
-      const data=await daFetchGithubJson(state.settings.githubInstagramKitQueuePath||"carrosseis-kits/fila.json");
-      registry.items=daKitInstagramRows(data).sort((a,b)=>daKitInstagramTime(b)-daKitInstagramTime(a));registry.loaded=true;registry.loadedAt=nowIso();
-      if(!silent)setStatus(`Fila do Instagram consultada: ${registry.items.length} carrossel(is).`,"ok");
-      return registry.items;
-    }catch(error){registry.error=error?.message||String(error);if(!silent)setStatus(`Não foi possível consultar a fila do Instagram: ${registry.error}`,"err");return registry.items}
-    finally{registry.loading=false;if(render){renderKitsList();renderKitEditor()}}
-  }
-  function daKitInstagramDate(value){const date=new Date(value||"");return Number.isNaN(date.getTime())?"":date.toLocaleString("pt-BR")}
-  function daKitInstagramFolderUrl(entry){
-    const path=String(entry?.pasta||entry?.dados_path||"").replace(/\/dados\.json$/i,"").replace(/^\/+/,"");
-    if(!path)return"";
-    return `https://github.com/${encodeURIComponent(state.settings.githubOwner)}/${encodeURIComponent(state.settings.githubRepo)}/tree/${encodeURIComponent(state.settings.githubBranch||"main")}/${path.split("/").map(encodeURIComponent).join("/")}`;
-  }
-  renderKitsList=function(){
-    const el=document.getElementById("kitsList");if(!el)return;
-    const query=textNorm(document.getElementById("kitSearch")?.value||"");
-    const list=state.kits.filter(kit=>!query||textNorm([kit.nome,kit.codigo].join(" ")).includes(query));
-    el.innerHTML=list.map(kit=>{
-      const entry=daKitInstagramEntry(kit),localGenerated=!entry&&!!kit.instagram_status,statusEntry=entry||{status:kit.instagram_status,fila_status:kit.instagram_status};
-      const status=(entry||localGenerated)?`<span class="chip ${daKitInstagramStatusClass(statusEntry)}" style="margin-top:5px">📲 ${esc(daKitInstagramStatusLabel(statusEntry))}</span>`:"";
-      return `<button class="side-card ${kit.id===state.selectedKitId?"active":""}" data-action="select-kit" data-id="${esc(kit.id)}"><img src="${esc(kit.imagem||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><span><strong>${esc(kit.nome)}</strong><small>${brl(kit.preco)} · ${itemCount(kit)} itens</small>${status}</span></button>`;
-    }).join("")||'<div class="empty">Nenhum kit promocional.</div>';
-  };
-  const daKitEditorStatusBase=renderKitEditor;
-  renderKitEditor=function(){
-    daKitEditorStatusBase();
-    const el=document.getElementById("kitEditor"),kit=currentKit();if(!el||!kit)return;
-    const box=el.querySelector(".kit-instagram-box");if(!box)return;
-    const entry=daKitInstagramEntry(kit),localEntry=!entry&&kit.instagram_status?{status:kit.instagram_status,fila_status:kit.instagram_status,criado_em:kit.instagram_enviado_em,id_carrossel:kit.instagram_carrossel_id||kit.instagram_post_id,total_paginas:(kit.instagram_imagens||[]).length}:null,info=entry||localEntry;
-    const errors=validateKitForInstagram(kit),folderUrl=daKitInstagramFolderUrl(info),dataUrl=info?.dados_raw_url||"",generated=!!info;
-    const registryNotice=state.kitInstagramRegistry.loading?'<div class="notice gold" style="margin-top:10px">Consultando a fila no GitHub...</div>':state.kitInstagramRegistry.error?`<div class="notice red" style="margin-top:10px">Falha ao consultar a fila: ${esc(state.kitInstagramRegistry.error)}</div>`:"";
-    const generatedHtml=generated?`<div class="kit-instagram-generated"><div><strong>✅ Carrossel já gerado</strong><small>${esc(daKitInstagramStatusLabel(info))}${daKitInstagramDate(info.criado_em)?` · ${esc(daKitInstagramDate(info.criado_em))}`:""}</small></div><div class="meta-line"><span class="chip ${daKitInstagramStatusClass(info)}">${esc(info.fila_status||info.status||"gerado")}</span>${info.id_carrossel?`<span class="chip blue">ID ${esc(info.id_carrossel)}</span>`:""}${Number(info.total_paginas)>0?`<span class="chip">${esc(info.total_paginas)} páginas</span>`:""}</div></div>`:'<div class="notice" style="margin-top:10px">Nenhum carrossel anterior foi localizado para este kit.</div>';
-    box.innerHTML=`<div class="kit-instagram-head"><div><h4>📲 Instagram do kit</h4><div class="tiny">O admin consulta <strong>${esc(state.settings.githubInstagramKitQueuePath||"carrosseis-kits/fila.json")}</strong> e identifica o kit pelo código, ID ou nome.</div></div><button class="btn small" type="button" data-action="refresh-kit-instagram-status">↻ Consultar fila</button></div><div class="meta-line" style="margin-top:8px"><span class="chip blue">${kitInstagramSlideCount(kit)} página(s) previstas</span><span class="chip ${errors.length?"red":"green"}">${errors.length?"Revisar antes de enviar":"Pronto para fila"}</span></div>${errors.length?`<div class="notice red" style="margin-top:10px">${esc(errors.join(" · "))}</div>`:""}${generatedHtml}${registryNotice}<div class="toolbar"><button class="btn blue" type="button" data-action="send-kit-instagram">📲 ${generated?"Gerar novamente para fila":"Gerar para fila"}</button>${folderUrl?`<a class="btn green" href="${esc(folderUrl)}" target="_blank" rel="noopener">Abrir pasta do carrossel</a>`:""}${dataUrl?`<a class="btn" href="${esc(dataUrl)}" target="_blank" rel="noopener">Abrir dados.json</a>`:""}</div>`;
-  };
-  document.addEventListener("click",event=>{
-    const refresh=event.target.closest?.('[data-action="refresh-kit-instagram-status"]');
-    if(refresh){event.preventDefault();runUiAction(refresh,"Consultando...",()=>loadKitInstagramRegistry({force:true,silent:false,render:true}));return}
-    const tab=event.target.closest?.('.tab[data-tab="kits"]');if(tab)setTimeout(()=>loadKitInstagramRegistry({force:true,silent:true,render:true}),0);
-  },true);
-
-  function daBannerCreatedTime(banner){
-    for(const value of [banner?.criado_em,banner?.gerado_em,banner?.created_at,banner?.geracao?.criado_em]){const time=new Date(value||"").getTime();if(Number.isFinite(time))return time}
-    const matches=String(banner?.id||"").match(/(\d{13})/g);if(matches?.length){const time=Number(matches[matches.length-1]);if(Number.isFinite(time))return time}
-    const updated=new Date(banner?.atualizado_em||"").getTime();return Number.isFinite(updated)?updated:0;
-  }
-  const daFinalBannerCardBase=daBannerCardHtml;
-  daBannerCardHtml=function(banner){
-    let html=daFinalBannerCardBase(banner),created=daKitInstagramDate(banner?.criado_em||banner?.gerado_em||banner?.created_at);
-    if(created)html=html.replace('<div class="tiny"><strong>Vencimento:</strong>',`<div class="tiny"><strong>Gerado em:</strong> ${esc(created)}</div><div class="tiny"><strong>Vencimento:</strong>`);
-    return html;
-  };
-
-  const daFinalLoadDataBase=loadData;
-  loadData=async function(){
-    await daFinalLoadDataBase();
-    daEnsureMetaFromProducts();
-    state.dirtyMeta=false;
-    await loadKitInstagramRegistry({force:true,silent:true,render:false});
-    renderAll();
-  };
-
-  if(!document.getElementById("daFinalAdminFixStyles")){
-    const style=document.createElement("style");style.id="daFinalAdminFixStyles";style.textContent=`
-      .side-card{grid-template-columns:54px minmax(0,1fr)}.side-card .chip{white-space:normal;text-align:left;line-height:1.2}
-      .kit-instagram-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.kit-instagram-head h4{margin:0 0 5px}
-      .kit-instagram-generated{margin-top:11px;padding:12px;border:1px solid #83caa5;border-radius:14px;background:var(--green2);display:grid;gap:8px}.kit-instagram-generated strong,.kit-instagram-generated small{display:block}.kit-instagram-generated small{margin-top:4px;color:var(--muted)}
-      #tab-cadastros .catalog-grid{min-height:180px}#tab-cadastros .catalog-list>.notice{margin-top:8px}
-      @media(max-width:700px){.kit-instagram-head{flex-direction:column}.kit-instagram-head .btn{width:100%}}
     `;document.head.appendChild(style);
   }
 
