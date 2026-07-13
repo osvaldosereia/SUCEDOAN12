@@ -6628,6 +6628,8 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     `;document.head.appendChild(style)}
   })();
 
+  /* Ponte pública restrita para o módulo de entrada de NF-e. */
+  window.__DA_NFE_BRIDGE__={state,norm,getKey,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,syncProductsToFirebase,saveLocal,renderProducts,renderSummary,openProduct,aiProductCadastro,aiProductImage};
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
 </script>
