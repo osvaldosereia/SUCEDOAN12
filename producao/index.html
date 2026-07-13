@@ -6333,6 +6333,183 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     `;document.head.appendChild(style);
   }
 
+  /* ===== Cadastros compactos: edição direta, busca real e exclusão segura ===== */
+  (function daEnableCompactRegistries(){
+    const panel=document.getElementById("tab-cadastros");
+    if(!panel)return;
+
+    const heading=panel.querySelector(".panel-title h2"),subtitle=panel.querySelector(".panel-title p");
+    if(heading)heading.textContent="Cadastros rápidos";
+    if(subtitle)subtitle.textContent="Cadastre, busque e edite direto na lista. As alterações ficam prontas para salvar nos metadados.";
+    panel.querySelectorAll(".registry-search").forEach(search=>{
+      const input=search.querySelector("input");
+      if(!input||search.querySelector("[data-registry-clear]"))return;
+      search.insertAdjacentHTML("beforeend",`<button class="registry-search-clear" type="button" data-registry-clear="${esc(input.id)}" aria-label="Limpar busca" title="Limpar busca">×</button>`);
+    });
+    const shorterButtons={
+      "add-category":"Adicionar",
+      "add-tag":"Adicionar",
+      "add-fornecedor":"Adicionar",
+      "add-marca":"Adicionar"
+    };
+    Object.entries(shorterButtons).forEach(([action,label])=>{
+      const button=panel.querySelector(`[data-action="${action}"]`);
+      if(button)button.textContent=`＋ ${label}`;
+    });
+
+    renderCategories=function(){
+      const el=document.getElementById("categoriesList");
+      if(!el)return;
+      const rows=daNormalizeCategoryRows(state.meta.categorias||[]);
+      state.meta.categorias=rows;
+      const entries=rows.map((value,index)=>({value,index})).sort((a,b)=>{
+        const left=[a.value.categoria,a.value.subcategoria,a.value.subsubcategoria].join(" ");
+        const right=[b.value.categoria,b.value.subcategoria,b.value.subsubcategoria].join(" ");
+        return left.localeCompare(right,"pt-BR");
+      });
+      el.className="catalog-list compact-registry-list categories-compact-list";
+      el.innerHTML=entries.length?`<div class="registry-table-head category-table-head"><span>Categoria</span><span>Subcategoria</span><span>3º nível</span><span></span></div>${entries.map(({value,index})=>`
+        <div class="category-tree-card compact-registry-row category-compact-row">
+          <input class="input" aria-label="Categoria" data-cat-index="${index}" data-cat-field="categoria" value="${esc(value.categoria||"")}" placeholder="Categoria">
+          <input class="input" aria-label="Subcategoria" data-cat-index="${index}" data-cat-field="subcategoria" value="${esc(value.subcategoria||"")}" placeholder="Subcategoria">
+          <input class="input" aria-label="Terceiro nível" data-cat-index="${index}" data-cat-field="subsubcategoria" value="${esc(value.subsubcategoria||"")}" placeholder="Opcional">
+          <button class="btn small red registry-delete" type="button" data-action="delete-category" data-index="${index}" aria-label="Excluir categoria" title="Excluir">🗑</button>
+        </div>`).join("")}`:`<div class="empty">Nenhuma categoria cadastrada.</div>`;
+    };
+
+    renderFlatRegistry=function(el,items,kind){
+      if(!el)return;
+      const entries=(items||[]).map((value,index)=>({value:String(value||""),index})).filter(item=>item.value.trim()).sort((a,b)=>a.value.localeCompare(b.value,"pt-BR"));
+      const label=kind==="tag"?"tag":"marca";
+      el.className="catalog-list compact-registry-list";
+      el.innerHTML=entries.length?entries.map(({value,index})=>`<div class="registry-item compact-registry-row simple-compact-row"><input class="input" aria-label="Editar ${label}" data-${kind}-index="${index}" value="${esc(value)}"><button class="btn small red registry-delete" type="button" data-action="delete-${kind}" data-index="${index}" aria-label="Excluir ${label}" title="Excluir">🗑</button></div>`).join(""):`<div class="empty">Nenhum item cadastrado.</div>`;
+    };
+
+    renderFornecedores=function(){
+      const el=document.getElementById("fornecedoresList");
+      if(!el)return;
+      const entries=(state.meta.fornecedores||[]).map((value,index)=>({value,index})).sort((a,b)=>String(a.value.nome||"").localeCompare(String(b.value.nome||""),"pt-BR"));
+      el.className="catalog-list compact-registry-list suppliers-compact-list";
+      el.innerHTML=entries.length?`<div class="registry-table-head supplier-table-head"><span>Fornecedor</span><span>Telefone</span><span>Observação</span><span></span></div>${entries.map(({value,index})=>`
+        <div class="catalog-row multi compact-registry-row supplier-compact-row">
+          <input class="input" aria-label="Nome do fornecedor" data-forn-index="${index}" data-forn-field="nome" value="${esc(value.nome||"")}" placeholder="Nome">
+          <input class="input" aria-label="Telefone do fornecedor" data-forn-index="${index}" data-forn-field="telefone" value="${esc(value.telefone||"")}" placeholder="Telefone">
+          <input class="input" aria-label="Observações do fornecedor" data-forn-index="${index}" data-forn-field="observacoes" value="${esc(value.observacoes||"")}" placeholder="Observação">
+          <button class="btn small red registry-delete" type="button" data-action="delete-fornecedor" data-index="${index}" aria-label="Excluir fornecedor" title="Excluir">🗑</button>
+        </div>`).join("")}`:`<div class="empty">Nenhum fornecedor cadastrado.</div>`;
+    };
+
+    daFilterRegistry=function(inputId,listId,itemSelector){
+      const input=document.getElementById(inputId),list=document.getElementById(listId);
+      if(!input||!list)return;
+      const query=textNorm(input.value.trim());
+      const items=[...list.querySelectorAll(itemSelector)];
+      items.forEach(item=>{
+        const fieldValues=[...item.querySelectorAll("input,textarea,select")].map(field=>field.value||"").join(" ");
+        const searchable=textNorm(`${item.textContent||""} ${fieldValues}`);
+        item.style.display=!query||searchable.includes(query)?"":"none";
+      });
+      list.classList.toggle("registry-filter-empty",!!query&&items.length>0&&!items.some(item=>item.style.display!=="none"));
+    };
+
+    document.addEventListener("click",event=>{
+      const clear=event.target.closest?.("[data-registry-clear]");
+      if(clear){
+        const input=document.getElementById(clear.dataset.registryClear);
+        if(input){input.value="";daApplyRegistryFilters();input.focus()}
+      }
+    });
+
+    document.addEventListener("keydown",event=>{
+      const target=event.target;
+      const enterActions={newCat:"add-category",newSub:"add-category",newSubSub:"add-category",newTag:"add-tag",newFornecedorNome:"add-fornecedor",newFornecedorTel:"add-fornecedor",newFornecedorObs:"add-fornecedor",newMarca:"add-marca"};
+      if(event.key==="Enter"&&enterActions[target.id]){
+        event.preventDefault();
+        panel.querySelector(`[data-action="${enterActions[target.id]}"]`)?.click();
+      }
+      if(event.key==="Escape"&&target.matches?.("#registrySearchCategories,#registrySearchTags,#registrySearchSuppliers,#registrySearchBrands")){
+        target.value="";daApplyRegistryFilters();target.blur();
+      }
+    });
+
+    document.addEventListener("click",event=>{
+      const button=event.target.closest?.("[data-action]");
+      const actions={"delete-category":"categorias","delete-tag":"tags","delete-fornecedor":"fornecedores","delete-marca":"marcas"};
+      const collection=button&&actions[button.dataset.action];
+      if(!collection)return;
+      event.preventDefault();event.stopImmediatePropagation();
+      const index=Number(button.dataset.index),items=state.meta[collection]||[],item=items[index];
+      if(!item)return;
+      const name=collection==="categorias"?[item.categoria,item.subcategoria,item.subsubcategoria].filter(Boolean).join(" › "):collection==="fornecedores"?item.nome:String(item);
+      if(!confirm(`Excluir "${name||"cadastro sem nome"}"?`))return;
+      items.splice(index,1);mark("meta");renderCatalogs();
+      setStatus("Cadastro excluído. Clique em Salvar metadados para gravar.","warn");
+    },true);
+
+    if(!document.getElementById("daCompactRegistryStyles")){
+      const style=document.createElement("style");style.id="daCompactRegistryStyles";style.textContent=`
+        #tab-cadastros{--registry-row-height:38px}
+        #tab-cadastros>.panel-head{margin-bottom:10px;align-items:center}
+        #tab-cadastros>.panel-head .panel-title h2{font-size:21px}
+        #tab-cadastros>.panel-head .panel-title p{max-width:720px}
+        #tab-cadastros>.panel-head .toolbar{gap:6px}
+        #tab-cadastros>.panel-head .btn{min-height:36px;padding:8px 11px}
+        #tab-cadastros .registry-workspace{display:block!important}
+        #tab-cadastros .registry-nav{position:sticky!important;top:126px!important;z-index:8;display:grid!important;grid-template-columns:repeat(4,minmax(130px,1fr))!important;gap:5px!important;padding:5px!important;margin-bottom:8px;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);box-shadow:0 5px 18px rgba(0,0,0,.05)!important}
+        #tab-cadastros .registry-nav-title{display:none!important}
+        #tab-cadastros .registry-nav-button{min-height:39px!important;border-radius:9px!important;padding:6px 9px!important;display:flex!important;justify-content:space-between;gap:8px!important}
+        #tab-cadastros .registry-nav-button span strong{font-size:12px!important}
+        #tab-cadastros .registry-nav-button span small{display:none!important}
+        #tab-cadastros .registry-nav-button b{min-width:24px!important;height:24px!important;font-size:10px!important}
+        #tab-cadastros .registry-panel{padding:11px!important;border-radius:14px!important;box-shadow:0 5px 18px rgba(0,0,0,.035)!important}
+        #tab-cadastros .registry-panel-head{padding-bottom:8px!important;gap:10px!important}
+        #tab-cadastros .registry-panel-head h3{font-size:15px!important}
+        #tab-cadastros .registry-panel-head p{font-size:10px!important;margin-top:2px!important}
+        #tab-cadastros .registry-search{flex:0 1 300px!important}
+        #tab-cadastros .registry-search .input{min-height:36px;padding:7px 34px 7px 31px!important}
+        #tab-cadastros .registry-search-clear{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:27px;height:27px;border:0;border-radius:8px;background:transparent;color:var(--muted);font-size:18px;line-height:1;cursor:pointer}
+        #tab-cadastros .registry-search-clear:hover{background:#ece9e1;color:var(--ink)}
+        #tab-cadastros .registry-create-grid{padding:8px!important;margin:8px 0!important;gap:6px!important;border-radius:10px!important}
+        #tab-cadastros .registry-create-grid .field label{font-size:9px;margin-bottom:3px}
+        #tab-cadastros .registry-create-grid .input{min-height:36px;padding:7px 9px}
+        #tab-cadastros .registry-create-grid .btn{min-height:36px;padding:7px 11px}
+        #tab-cadastros .registry-panel .catalog-list{min-height:120px!important;max-height:calc(100vh - 330px)!important;margin-top:0!important;gap:4px!important;padding-right:3px!important;overflow-y:auto!important;overscroll-behavior:contain}
+        #tab-cadastros .registry-table-head{display:grid;position:sticky;top:0;z-index:2;flex:0 0 auto!important;gap:5px;padding:5px 7px;background:#f5f3ed;border-bottom:1px solid var(--line);color:var(--muted);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+        #tab-cadastros .category-table-head,#tab-cadastros .category-compact-row{grid-template-columns:minmax(120px,1fr) minmax(120px,1fr) minmax(120px,1fr) 34px}
+        #tab-cadastros .supplier-table-head,#tab-cadastros .supplier-compact-row{grid-template-columns:minmax(160px,1.2fr) minmax(120px,.75fr) minmax(180px,1.35fr) 34px!important}
+        #tab-cadastros .compact-registry-row{display:grid;flex:0 0 auto!important;min-height:46px!important;gap:5px;align-items:center;padding:4px 5px!important;border:1px solid var(--line)!important;border-radius:9px!important;background:#fff!important;box-shadow:none!important}
+        #tab-cadastros .compact-registry-row:hover{border-color:#c7c2b6!important;background:#fffefa!important}
+        #tab-cadastros .compact-registry-row .input{display:block!important;height:var(--registry-row-height)!important;min-height:var(--registry-row-height)!important;padding:7px 9px!important;border-radius:8px;background:#fff!important;color:#101418!important;font-size:12px!important;line-height:18px!important;opacity:1!important}
+        #tab-cadastros .simple-compact-row{grid-template-columns:minmax(180px,1fr) 34px}
+        #tab-cadastros .registry-delete{width:34px;height:34px;min-height:34px;padding:0!important;display:grid;place-items:center;border-radius:8px;font-size:13px}
+        #tab-cadastros .registry-filter-empty::after{content:"Nenhum resultado para esta busca.";display:block;padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px;background:#fff}
+        #tab-cadastros .registry-filter-empty .registry-table-head{display:none}
+        @media(max-width:800px){
+          #tab-cadastros .registry-nav{top:116px!important;display:flex!important;overflow-x:auto;scrollbar-width:thin}
+          #tab-cadastros .registry-nav-button{flex:0 0 145px}
+          #tab-cadastros .registry-panel .catalog-list{max-height:58vh!important}
+          #tab-cadastros .category-create-grid,#tab-cadastros .supplier-create-grid{grid-template-columns:1fr 1fr!important}
+          #tab-cadastros .category-create-grid .btn,#tab-cadastros .supplier-create-grid .btn{grid-column:1/-1}
+          #tab-cadastros .registry-table-head{display:none}
+          #tab-cadastros .category-compact-row,#tab-cadastros .supplier-compact-row{grid-template-columns:1fr 1fr 34px!important;min-height:88px!important}
+          #tab-cadastros .category-compact-row input:nth-child(3),#tab-cadastros .supplier-compact-row input:nth-child(3){grid-column:1/3}
+          #tab-cadastros .category-compact-row .registry-delete,#tab-cadastros .supplier-compact-row .registry-delete{grid-column:3;grid-row:1/3;height:100%}
+        }
+        @media(max-width:520px){
+          #tab-cadastros>.panel-head{align-items:stretch}
+          #tab-cadastros>.panel-head .toolbar{display:grid;grid-template-columns:1fr 1fr}
+          #tab-cadastros .registry-panel-head{align-items:stretch!important}
+          #tab-cadastros .registry-search{flex-basis:auto!important}
+          #tab-cadastros .category-create-grid,#tab-cadastros .supplier-create-grid{grid-template-columns:1fr!important}
+          #tab-cadastros .category-create-grid .btn,#tab-cadastros .supplier-create-grid .btn{grid-column:auto}
+          #tab-cadastros .category-compact-row,#tab-cadastros .supplier-compact-row{grid-template-columns:1fr 34px!important;min-height:130px!important}
+          #tab-cadastros .category-compact-row input,#tab-cadastros .supplier-compact-row input,#tab-cadastros .category-compact-row input:nth-child(3),#tab-cadastros .supplier-compact-row input:nth-child(3){grid-column:1!important}
+          #tab-cadastros .category-compact-row .registry-delete,#tab-cadastros .supplier-compact-row .registry-delete{grid-column:2!important;grid-row:1/4!important}
+        }
+      `;document.head.appendChild(style);
+    }
+  })();
+
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
 </script>
