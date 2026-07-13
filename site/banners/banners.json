@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-13T16:41:22.012Z",
+  "updated_at": "2026-07-13T18:41:28.433Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -4310,6 +4310,98 @@
         "posicao_escolhida": "kits.topo",
         "alvo_escolhido": "",
         "rotulo_posicao": "Página de kits promocionais",
+        "carga_ativa_antes": 0,
+        "candidatos_avaliados": 17
+      }
+    },
+    {
+      "id": "banner-auto-p0164-20260713184128",
+      "ativo": true,
+      "titulo": "Oferta · Sinhá Fuba Milho 500g",
+      "alt": "Sinhá Fuba Milho 500g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338132780",
+        "produtos": [
+          {
+            "firebaseKey": "1776338132780",
+            "id": "1776338132780",
+            "codigo": "P0164",
+            "gtin": "7892300026629",
+            "nome": "Sinhá Fuba Milho 500g",
+            "marca": "Sinhá",
+            "categoria": "MERCEARIA BÁSICA",
+            "subcategoria": "FARINHAS",
+            "embalagem": "500g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b38/2026/07/sinha-fuba-milho-500g-sinha-500g-mercearia-basica-farinhas-7892300026629-foto-atual-otimizada-20260711065740.webp",
+            "preco_antigo": 2.69,
+            "preco_novo": 2.56,
+            "preco_antigo_formatado": "R$ 2,69",
+            "preco_novo_formatado": "R$ 2,56",
+            "desconto_percentual": 5,
+            "validade_oferta": "2026-10-23T23:59:59-04:00",
+            "exibir_validade_oferta_na_arte": false,
+            "validade_oferta_apenas_para_elegibilidade": true
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "categoria",
+        "alvo": "MERCEARIA BÁSICA",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-auto-p0164-20260713184128/banner-20260713184128.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P0164"
+      },
+      "periodo": {
+        "inicio": "2026-07-13T18:41:28.433Z",
+        "fim": "2026-07-20T18:41:28.433Z"
+      },
+      "banner_inicio": "2026-07-13T18:41:28.433Z",
+      "banner_fim": "2026-07-20T18:41:28.433Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": true,
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 7,
+        "arquivo_preservado_apos_expirar": true,
+        "registro_preservado_apos_expirar": true
+      },
+      "oferta": {
+        "preco_antigo": 2.69,
+        "preco_novo": 2.56,
+        "desconto_percentual": 5,
+        "validade_oferta": "2026-10-23T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "criado_em": "2026-07-13T18:41:28.433Z",
+      "atualizado_em": "2026-07-13T18:41:28.433Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "quality": "low",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "automacao": {
+        "criada_automaticamente": true,
+        "quantidade_produtos": 1,
+        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "dias_sem_repetir": 30,
+        "origem_dados": "firebase_produtos_em_oferta",
+        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
+        "grupo_categoria": "outros",
+        "posicao_escolhida": "categoria",
+        "alvo_escolhido": "MERCEARIA BÁSICA",
+        "rotulo_posicao": "Categoria específica · MERCEARIA BÁSICA",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17
       }
