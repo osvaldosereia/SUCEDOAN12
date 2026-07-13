@@ -234,6 +234,277 @@
 @media(min-width:1100px){.da-home-here-grid{grid-template-columns:repeat(10,minmax(0,1fr));gap:12px}}
 
   </style>
+
+  <style id="da-layout-fixes-20260712">
+  /* AJUSTES 12/07/2026 — checkout, mini cards, escolhidos, ofertas e imagens de kits/cestas */
+
+  /* Checkout: impede que regras globais de grid/largura encavalem os cards do carrossel. */
+  #checkout-offers-rail.checkout-offers-rail{
+    display:flex!important;
+    flex-flow:row nowrap!important;
+    align-items:stretch!important;
+    gap:12px!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    padding:2px 2px 10px!important;
+    scroll-snap-type:x proximity;
+    overscroll-behavior-x:contain;
+    scrollbar-width:none;
+  }
+  #checkout-offers-rail.checkout-offers-rail::-webkit-scrollbar{display:none}
+  #checkout-offers-rail.checkout-offers-rail>.product-card.compact{
+    display:flex!important;
+    flex:0 0 148px!important;
+    flex-direction:column!important;
+    width:148px!important;
+    min-width:148px!important;
+    max-width:148px!important;
+    height:auto!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+    scroll-snap-align:start;
+    overflow:hidden!important;
+  }
+  #checkout-offers-rail .product-media-wrap,
+  #checkout-offers-rail .product-imgbox,
+  #checkout-offers-rail .product-body,
+  #checkout-offers-rail .product-card-bottom,
+  #checkout-offers-rail .price-wrap{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  #checkout-offers-rail .product-imgbox{
+    height:auto!important;
+    aspect-ratio:1/1!important;
+  }
+  #checkout-offers-rail .product-body{
+    display:flex!important;
+    flex:1 1 auto!important;
+    flex-direction:column!important;
+  }
+  #checkout-offers-rail .product-card-bottom{margin-top:auto!important}
+  #checkout-offers-rail .product-name{
+    width:100%!important;
+    max-width:100%!important;
+    min-height:34px!important;
+    font-size:12px!important;
+    overflow:hidden!important;
+  }
+
+  /* Mini cards: o texto permanece dentro da coluna e nunca invade a imagem. */
+  .category-button-single,
+  .da-home-collection-card{
+    min-width:0!important;
+    overflow:hidden!important;
+  }
+  .category-button-single .category-card-copy,
+  .da-home-collection-card .da-home-collection-copy{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow:hidden!important;
+  }
+  .category-button-single .category-card-copy strong,
+  .da-home-collection-card .da-home-collection-copy strong{
+    width:100%!important;
+    max-width:100%!important;
+    white-space:normal!important;
+    overflow:hidden!important;
+    overflow-wrap:anywhere!important;
+    word-break:normal!important;
+  }
+
+  /* Kits e cestas: remove o zoom que cortava as pontas e preserva a imagem inteira. */
+  .basket-imgbox,
+  .kit-deal-media,
+  .basket-deal-media,
+  .da-home-square-media{
+    background:transparent!important;
+    overflow:hidden!important;
+  }
+  .basket-imgbox img,
+  .kit-deal-img,
+  .kit-deal-media .kit-deal-img,
+  .basket-deal-media .kit-deal-img,
+  .da-home-square-media img{
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    padding:4px!important;
+    margin:0!important;
+    transform:none!important;
+    transform-origin:center!important;
+    mix-blend-mode:normal!important;
+    filter:none!important;
+    background:transparent!important;
+    box-sizing:border-box!important;
+  }
+  .kit-deal-media .kit-deal-img,
+  .basket-deal-media .kit-deal-img{border-radius:18px!important}
+
+  @media (max-width:767px){
+    /* Categorias/mini cards: reserva largura real para o título. */
+    .category-button-single{
+      grid-template-columns:52px minmax(0,1fr)!important;
+      gap:9px!important;
+    }
+    .category-button-single .category-card-copy strong{
+      font-size:12.5px!important;
+      line-height:1.18!important;
+      -webkit-line-clamp:2!important;
+    }
+    .da-home-collection-card{
+      grid-template-columns:minmax(0,1fr) 68px!important;
+      gap:8px!important;
+    }
+
+    /* Escolhidos para você: seis cards menores, verticais, em três colunas. */
+    .da-home-personalized-mosaic{
+      display:grid!important;
+      grid-template-columns:1fr!important;
+      gap:12px!important;
+      min-width:0!important;
+    }
+    .da-home-mosaic-grid{
+      display:grid!important;
+      grid-template-columns:repeat(3,minmax(0,1fr))!important;
+      gap:8px!important;
+      width:100%!important;
+      min-width:0!important;
+    }
+    .da-home-mosaic-mini,
+    .da-home-mosaic-mini:nth-child(n){
+      display:flex!important;
+      flex-direction:column!important;
+      align-items:stretch!important;
+      justify-content:flex-start!important;
+      gap:7px!important;
+      width:100%!important;
+      min-width:0!important;
+      height:100%!important;
+      padding:7px!important;
+      overflow:hidden!important;
+    }
+    .da-home-mosaic-mini-media{
+      display:block!important;
+      width:100%!important;
+      max-width:100%!important;
+      min-width:0!important;
+      aspect-ratio:1/1!important;
+      flex:0 0 auto!important;
+    }
+    .da-home-mosaic-mini-media img{
+      width:100%!important;
+      height:100%!important;
+      object-fit:contain!important;
+      padding:0!important;
+      transform:none!important;
+    }
+    .da-home-mosaic-mini>div{
+      display:flex!important;
+      flex:1 1 auto!important;
+      flex-direction:column!important;
+      gap:6px!important;
+      width:100%!important;
+      max-width:100%!important;
+      min-width:0!important;
+      overflow:hidden!important;
+    }
+    .da-home-mosaic-mini>div>a{
+      display:-webkit-box!important;
+      width:100%!important;
+      max-width:100%!important;
+      min-height:43px!important;
+      font-size:10.5px!important;
+      line-height:1.28!important;
+      -webkit-box-orient:vertical!important;
+      -webkit-line-clamp:3!important;
+      overflow:hidden!important;
+      overflow-wrap:anywhere!important;
+    }
+    .da-home-mosaic-mini>div>div{
+      display:flex!important;
+      flex-direction:column!important;
+      align-items:stretch!important;
+      justify-content:flex-end!important;
+      gap:6px!important;
+      width:100%!important;
+      min-width:0!important;
+      margin-top:auto!important;
+    }
+    .da-home-mosaic-mini strong{
+      display:block!important;
+      width:100%!important;
+      font-size:13px!important;
+      line-height:1.1!important;
+      white-space:nowrap!important;
+      overflow:hidden!important;
+      text-overflow:ellipsis!important;
+    }
+    .da-home-mosaic-mini .da-home-tiny-control,
+    .da-home-mosaic-mini .compact-add{
+      width:100%!important;
+      max-width:100%!important;
+    }
+    .da-home-mosaic-mini .add-plus,
+    .da-home-mosaic-mini .qty-control-mini{
+      width:100%!important;
+      max-width:100%!important;
+      min-width:0!important;
+      height:34px!important;
+      min-height:34px!important;
+      border-radius:10px!important;
+    }
+    .da-home-mosaic-mini .qty-control-mini button{width:30px!important;min-width:30px!important}
+
+    /* Ofertas de hoje: mostra aproximadamente 2,3 cards no celular. */
+    .da-home-offer-grid{
+      display:flex!important;
+      flex-flow:row nowrap!important;
+      gap:10px!important;
+      width:100%!important;
+      overflow-x:auto!important;
+      overflow-y:hidden!important;
+      padding:2px 1px 9px!important;
+      scroll-snap-type:x proximity!important;
+      overscroll-behavior-x:contain;
+    }
+    .da-home-offer-card{
+      display:flex!important;
+      flex:0 0 clamp(132px,41.5%,170px)!important;
+      width:clamp(132px,41.5%,170px)!important;
+      min-width:132px!important;
+      max-width:170px!important;
+      scroll-snap-align:start!important;
+    }
+
+    /* Maior respiro interno sem cortar as bordas externas das artes. */
+    .basket-imgbox img,
+    .kit-deal-img,
+    .kit-deal-media .kit-deal-img,
+    .basket-deal-media .kit-deal-img,
+    .da-home-square-media img{padding:5px!important}
+  }
+
+  @media (min-width:768px){
+    #checkout-offers-rail.checkout-offers-rail>.product-card.compact{
+      flex-basis:150px!important;
+      width:150px!important;
+      min-width:150px!important;
+      max-width:150px!important;
+    }
+  }
+  </style>
+
 </head>
 <body>
   <header class="header">
