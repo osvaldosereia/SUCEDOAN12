@@ -2,6 +2,58 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="da-build-version" content="2026-07-13-cache-definitivo-v1">
+  <script>
+  (function(){
+    'use strict';
+    const BUILD = '2026-07-13-cache-definitivo-v1';
+    const CLEAN_MARKER = 'da_browser_cache_clean_build_v2';
+    window.__DA_BUILD_VERSION__ = BUILD;
+
+    function versionedLocation(version, forceNonce) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('__da_v', String(version || BUILD));
+      if (forceNonce) url.searchParams.set('__da_r', String(Date.now()));
+      return url.pathname + url.search + url.hash;
+    }
+
+    try {
+      const current = new URL(window.location.href).searchParams.get('__da_v');
+      if (!current) {
+        window.location.replace(versionedLocation(BUILD, true));
+        return;
+      }
+    } catch (_) {}
+
+    // Evita que a restauração instantânea do navegador (bfcache) reapresente HTML antigo.
+    window.addEventListener('pageshow', function(event) {
+      if (!event.persisted) return;
+      try {
+        const requested = new URL(window.location.href).searchParams.get('__da_v') || BUILD;
+        window.location.replace(versionedLocation(requested, true));
+      } catch (_) { window.location.reload(); }
+    });
+
+    // Remove Service Workers e Cache Storage deixados por versões antigas.
+    Promise.resolve().then(async function() {
+      try {
+        if (localStorage.getItem(CLEAN_MARKER) === BUILD) return;
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map(function(registration) { return registration.unregister(); }));
+        }
+        if ('caches' in window) {
+          const names = await caches.keys();
+          await Promise.all(names.map(function(name) { return caches.delete(name); }));
+        }
+        localStorage.setItem(CLEAN_MARKER, BUILD);
+      } catch (_) {}
+    });
+  })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Dona Antônia - Supermercado e Cestas</title>
   <meta name="description" id="meta-description" content="Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.">
@@ -19,7 +71,7 @@
   <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-12-validade-v2" as="fetch" type="application/json" crossorigin="anonymous">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-13-cache-definitivo-v1" as="fetch" type="application/json" crossorigin="anonymous">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -631,8 +683,9 @@
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-12-validade-catalogo-v2',
+      APP_VERSION: '2026-07-13-cache-definitivo-v1',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
+      VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
       PRODUCT_HOME_CACHE_KEY: 'da_produtos_home_cache_v2',
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
@@ -917,13 +970,13 @@
     }
 
     function clearSavedCatalogAndCart() {
+      // Nome mantido por compatibilidade. Não apaga carrinho nem dados do cliente.
       try {
         localStorage.removeItem(CONFIG.PRODUCT_CACHE_KEY);
         localStorage.removeItem(CONFIG.PRODUCT_HOME_CACHE_KEY);
         localStorage.removeItem(CONFIG.BASKET_CACHE_KEY);
         localStorage.removeItem(CONFIG.KIT_CACHE_KEY);
-        localStorage.removeItem(CONFIG.CART_STORAGE_KEY);
-        localStorage.removeItem(CONFIG.COUPON_STORAGE_KEY);
+        localStorage.removeItem(CONFIG.BANNER_CACHE_KEY);
       } catch(e) {}
     }
 
@@ -935,6 +988,71 @@
           localStorage.setItem(CONFIG.VERSION_STORAGE_KEY, CONFIG.APP_VERSION);
         }
       } catch(e) {}
+    }
+
+    async function purgeBrowserRuntimeCaches() {
+      try {
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map(registration => registration.unregister()));
+        }
+      } catch(e) {}
+      try {
+        if ('caches' in window) {
+          const names = await caches.keys();
+          await Promise.all(names.map(name => caches.delete(name)));
+        }
+      } catch(e) {}
+      clearSavedCatalogAndCart();
+    }
+
+    async function ensureLatestDeployment(options) {
+      const shouldReload = !options || options.reload !== false;
+      try {
+        const separator = String(CONFIG.VERSION_URL).includes('?') ? '&' : '?';
+        const response = await fetch(`${CONFIG.VERSION_URL}${separator}t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            Accept: 'application/json',
+            'Cache-Control': 'no-cache, no-store, max-age=0',
+            Pragma: 'no-cache'
+          }
+        });
+        if (!response.ok) return false;
+        const data = await response.json();
+        const latest = String(data && (data.version || data.build || data.appVersion) || '').trim();
+        if (!latest || latest === CONFIG.APP_VERSION) return false;
+
+        await purgeBrowserRuntimeCaches();
+        if (!shouldReload) return true;
+
+        const attemptsKey = 'da_version_reload_attempts_v1';
+        const attempts = Number(sessionStorage.getItem(attemptsKey) || 0);
+        if (attempts >= 3) {
+          console.warn('Nova versão detectada, mas o provedor ainda não entregou o novo index.html.');
+          return false;
+        }
+        sessionStorage.setItem(attemptsKey, String(attempts + 1));
+        const url = new URL(window.location.href);
+        url.searchParams.set('__da_v', latest);
+        url.searchParams.set('__da_r', String(Date.now()));
+        window.location.replace(url.pathname + url.search + url.hash);
+        return true;
+      } catch(e) {
+        // A falta temporária do arquivo de versão nunca pode derrubar a loja.
+        return false;
+      }
+    }
+
+    function startDeploymentVersionWatch() {
+      if (window.__daVersionWatchStarted) return;
+      window.__daVersionWatchStarted = true;
+      const check = () => ensureLatestDeployment().catch(() => false);
+      window.setInterval(check, 5 * 60 * 1000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') check();
+      });
+      window.addEventListener('online', check);
     }
 
     function withCacheBust(url, forceFresh) {
@@ -958,11 +1076,11 @@
       const timer = setTimeout(() => controller.abort(), timeoutMs || 6500);
       try {
         const res = await fetch(url, {
-          cache: options && options.cache ? options.cache : 'default',
+          cache: options && options.cache ? options.cache : 'no-store',
           signal: controller.signal,
           headers: {
             Accept: 'application/json',
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'no-cache, no-store, max-age=0',
             Pragma: 'no-cache'
           }
         });
@@ -2025,21 +2143,28 @@
     async function validateLiveCatalogBeforeOrder() {
       try {
         await loadProducts({ forceFresh: true });
+
+        // A conferência só pode alterar ou impedir a compra quando o Firebase
+        // respondeu ao vivo. Cache ou falha de rede nunca devem bloquear o cliente.
+        if (state.catalogSource !== 'firebase-live') {
+          console.warn('Catálogo ao vivo indisponível. Pedido seguirá com os produtos já carregados no site.');
+          return { ok: true, removed: [], catalogVerified: false };
+        }
       } catch(e) {
-        return {
-          ok: false,
-          reason: 'Não consegui conferir o catálogo atual. Para evitar produto antigo, o pedido não será enviado agora.'
-        };
+        console.warn('Não foi possível conferir o catálogo ao vivo. Pedido seguirá normalmente:', e);
+        return { ok: true, removed: [], catalogVerified: false };
       }
+
       const removed = removeMissingCartItems({ silent: true });
       if (removed.length) {
         return {
           ok: false,
           removed,
+          catalogVerified: true,
           reason: 'Algum produto saiu do site, ficou sem estoque ou foi inativado. Removemos da compra antes do envio.'
         };
       }
-      return { ok: true, removed: [] };
+      return { ok: true, removed: [], catalogVerified: true };
     }
 
     function rebuildVirtualFees() {
@@ -4433,8 +4558,12 @@
     }
 
     async function init() {
+      const redirectedToLatest = await ensureLatestDeployment();
+      if (redirectedToLatest) return;
+      try { sessionStorage.removeItem('da_version_reload_attempts_v1'); } catch(e) {}
       bindEvents();
       enforceAppVersion();
+      startDeploymentVersionWatch();
       loadFavorites();
       loadCart();
       updateCartUI();
