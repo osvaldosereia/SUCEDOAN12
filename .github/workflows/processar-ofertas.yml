@@ -1,0 +1,47 @@
+name: Processar ofertas automaticas
+
+on:
+  repository_dispatch:
+    types: [processar_ofertas]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ofertas-automaticas
+  cancel-in-progress: false
+
+jobs:
+  processar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Baixar configuracao atual
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Criar, encerrar e sincronizar ofertas
+        env:
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
+        run: node scripts/processar-ofertas.mjs
+
+      - name: Publicar catalogos e historico
+        run: |
+          if git diff --quiet; then
+            echo "Nenhuma alteracao de catalogo para publicar."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/produtos.json site/produtos-home.json site/ofertas-automaticas-estado.json
+          git commit -m "Atualiza ofertas automaticas"
+          git push
+
