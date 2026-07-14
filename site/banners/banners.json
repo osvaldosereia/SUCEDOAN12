@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-14T04:41:24.455Z",
+  "updated_at": "2026-07-14T06:41:26.945Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -4862,6 +4862,98 @@
         "posicao_escolhida": "produto",
         "alvo_escolhido": "1776338126742",
         "rotulo_posicao": "Produto específico · Chocolate Lacta Sonho de Valsa Barra 80g",
+        "carga_ativa_antes": 0,
+        "candidatos_avaliados": 17
+      }
+    },
+    {
+      "id": "banner-auto-p-ptou-20260714064126",
+      "ativo": true,
+      "titulo": "Oferta · Maggi Caldo Menos Sodio Carne 57g",
+      "alt": "Maggi Caldo Menos Sodio Carne 57g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1779462987997181484",
+        "produtos": [
+          {
+            "firebaseKey": "1779462987997181484",
+            "id": "1779462987997181484",
+            "codigo": "P-PTOU",
+            "gtin": "7891000253564",
+            "nome": "Maggi Caldo Menos Sodio Carne 57g",
+            "marca": "Maggi",
+            "categoria": "TEMPEROS",
+            "subcategoria": "CALDO",
+            "embalagem": "57g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b61/2026/07/maggi-caldo-menos-sodio-carne-57g-maggi-57g-temperos-caldo-7891000253564-foto-atual-otimizada-20260711082843.webp",
+            "preco_antigo": 3.99,
+            "preco_novo": 2.99,
+            "preco_antigo_formatado": "R$ 3,99",
+            "preco_novo_formatado": "R$ 2,99",
+            "desconto_percentual": 25,
+            "validade_oferta": "2026-09-01T23:59:59-04:00",
+            "exibir_validade_oferta_na_arte": false,
+            "validade_oferta_apenas_para_elegibilidade": true
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "subcategoria",
+        "alvo": "TEMPEROS::CALDO",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-auto-p-ptou-20260714064126/banner-20260714064126.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P-PTOU"
+      },
+      "periodo": {
+        "inicio": "2026-07-14T06:41:26.945Z",
+        "fim": "2026-07-21T06:41:26.945Z"
+      },
+      "banner_inicio": "2026-07-14T06:41:26.945Z",
+      "banner_fim": "2026-07-21T06:41:26.945Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": true,
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 7,
+        "arquivo_preservado_apos_expirar": true,
+        "registro_preservado_apos_expirar": true
+      },
+      "oferta": {
+        "preco_antigo": 3.99,
+        "preco_novo": 2.99,
+        "desconto_percentual": 25,
+        "validade_oferta": "2026-09-01T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "criado_em": "2026-07-14T06:41:26.945Z",
+      "atualizado_em": "2026-07-14T06:41:26.945Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "quality": "low",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "automacao": {
+        "criada_automaticamente": true,
+        "quantidade_produtos": 1,
+        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "dias_sem_repetir": 30,
+        "origem_dados": "firebase_produtos_em_oferta",
+        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
+        "grupo_categoria": "outros",
+        "posicao_escolhida": "subcategoria",
+        "alvo_escolhido": "TEMPEROS::CALDO",
+        "rotulo_posicao": "Subcategoria específica · TEMPEROS › CALDO",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17
       }
