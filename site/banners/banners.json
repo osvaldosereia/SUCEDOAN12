@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-14T00:41:21.779Z",
+  "updated_at": "2026-07-14T02:41:22.266Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -4680,6 +4680,98 @@
         "rotulo_posicao": "Home · antes do café da manhã",
         "carga_ativa_antes": 13,
         "candidatos_avaliados": 1
+      }
+    },
+    {
+      "id": "banner-auto-32675205-20260714024122",
+      "ativo": true,
+      "titulo": "Oferta · Heinz Maionese Tradicional 390g",
+      "alt": "Heinz Maionese Tradicional 390g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338131374",
+        "produtos": [
+          {
+            "firebaseKey": "1776338131374",
+            "id": "1776338131374",
+            "codigo": "32675205",
+            "gtin": "7896102583182",
+            "nome": "Heinz Maionese Tradicional 390g",
+            "marca": "Heinz",
+            "categoria": "MOLHOS E CONDIMENTOS",
+            "subcategoria": "MAIONESE",
+            "embalagem": "390g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b98/2026/07/heinz-maionese-tradicional-390g-heinz-390g-molhos-e-condimentos-maionese-7896102583182-foto-atual-otimizada-20260711063357.webp",
+            "preco_antigo": 13.9,
+            "preco_novo": 9.73,
+            "preco_antigo_formatado": "R$ 13,90",
+            "preco_novo_formatado": "R$ 9,73",
+            "desconto_percentual": 30,
+            "validade_oferta": "2026-08-20T23:59:59-04:00",
+            "exibir_validade_oferta_na_arte": false,
+            "validade_oferta_apenas_para_elegibilidade": true
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "categoria",
+        "alvo": "MOLHOS E CONDIMENTOS",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-auto-32675205-20260714024122/banner-20260714024122.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "32675205"
+      },
+      "periodo": {
+        "inicio": "2026-07-14T02:41:22.266Z",
+        "fim": "2026-07-21T02:41:22.266Z"
+      },
+      "banner_inicio": "2026-07-14T02:41:22.266Z",
+      "banner_fim": "2026-07-21T02:41:22.266Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": true,
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 7,
+        "arquivo_preservado_apos_expirar": true,
+        "registro_preservado_apos_expirar": true
+      },
+      "oferta": {
+        "preco_antigo": 13.9,
+        "preco_novo": 9.73,
+        "desconto_percentual": 30,
+        "validade_oferta": "2026-08-20T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "criado_em": "2026-07-14T02:41:22.266Z",
+      "atualizado_em": "2026-07-14T02:41:22.266Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "quality": "low",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "automacao": {
+        "criada_automaticamente": true,
+        "quantidade_produtos": 1,
+        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "dias_sem_repetir": 30,
+        "origem_dados": "firebase_produtos_em_oferta",
+        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
+        "grupo_categoria": "outros",
+        "posicao_escolhida": "categoria",
+        "alvo_escolhido": "MOLHOS E CONDIMENTOS",
+        "rotulo_posicao": "Categoria específica · MOLHOS E CONDIMENTOS",
+        "carga_ativa_antes": 0,
+        "candidatos_avaliados": 17
       }
     }
   ]
