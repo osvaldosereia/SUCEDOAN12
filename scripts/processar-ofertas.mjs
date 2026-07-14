@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createSign } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -17,6 +18,7 @@ const money = value => Math.round(Math.max(0, number(value)) * 100) / 100;
 const text = value => String(value ?? "").trim();
 const normalizedText = value => text(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleUpperCase("pt-BR");
 const nowIso = clock => clock.toISOString();
+let firebaseAccessToken;
 
 function saoPauloDate(clock) {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(clock);
@@ -235,8 +237,44 @@ function firebaseUrl(pathname) {
   return `${base}/${pathname.replace(/^\/+/, "")}.json${auth ? `?auth=${encodeURIComponent(auth)}` : ""}`;
 }
 
+function base64Url(value) {
+  return Buffer.from(typeof value === "string" ? value : JSON.stringify(value)).toString("base64url");
+}
+
+async function firebaseHeaders() {
+  if (firebaseAccessToken) return { Authorization: `Bearer ${firebaseAccessToken}` };
+  const source = text(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+  if (!source) return {};
+  let credentials;
+  try { credentials = JSON.parse(source); }
+  catch { throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON nao contem um JSON valido."); }
+  if (!credentials.client_email || !credentials.private_key) throw new Error("A service account do Firebase precisa de client_email e private_key.");
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const unsigned = `${base64Url({ alg: "RS256", typ: "JWT" })}.${base64Url({
+    iss: credentials.client_email,
+    scope: "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/firebase.database",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: issuedAt,
+    exp: issuedAt + 3600
+  })}`;
+  const signer = createSign("RSA-SHA256");
+  signer.update(unsigned);
+  signer.end();
+  const assertion = `${unsigned}.${signer.sign(credentials.private_key, "base64url")}`;
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion })
+  });
+  if (!response.ok) throw new Error(`Google OAuth para Firebase: ${response.status} ${await response.text()}`);
+  const data = await response.json();
+  if (!data.access_token) throw new Error("Google OAuth nao retornou access_token para o Firebase.");
+  firebaseAccessToken = data.access_token;
+  return { Authorization: `Bearer ${firebaseAccessToken}` };
+}
+
 async function loadFirebaseProducts() {
-  const response = await fetch(firebaseUrl("produtos"), { headers: { Accept: "application/json" } });
+  const response = await fetch(firebaseUrl("produtos"), { headers: { Accept: "application/json", ...await firebaseHeaders() } });
   if (!response.ok) throw new Error(`Firebase GET produtos: ${response.status} ${await response.text()}`);
   const data = await response.json();
   if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("Firebase retornou produtos em formato invÃ¡lido.");
@@ -246,7 +284,7 @@ async function loadFirebaseProducts() {
 async function syncFirebase(changed) {
   for (const item of changed) {
     const response = await fetch(firebaseUrl(`produtos/${encodeURIComponent(item.key)}`), {
-      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(firebasePatchFor(item.product, item.opening))
+      method: "PATCH", headers: { "Content-Type": "application/json", ...await firebaseHeaders() }, body: JSON.stringify(firebasePatchFor(item.product, item.opening))
     });
     if (!response.ok) throw new Error(`Firebase PATCH produto ${item.key}: ${response.status} ${await response.text()}`);
   }
