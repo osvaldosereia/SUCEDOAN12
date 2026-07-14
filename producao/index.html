@@ -6628,6 +6628,355 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     `;document.head.appendChild(style)}
   })();
 
+
+  /* ===== BANNERS V10 · POSICIONAMENTO REAL DO SITE + LIMITE 4 POR ESPAÇO ===== */
+  const DA_BANNER_MAX_ACTIVE_PER_SPACE_V10 = 4;
+  const DA_BANNER_AUTOMATIC_STRATEGY_V10 = "espaco_primeiro_produto_depois_balanceamento_uniforme_v3";
+  const DA_BANNER_LEGACY_POSITION_MAP_V10 = {
+    "home.cestas.topo":"cestas.topo",
+    "home.kits.topo":"kits.topo",
+    "home.ofertas.topo":"ofertas.topo",
+    "home.limpeza.topo":"rotina.limpeza.topo",
+    "home.cafe.topo":"rotina.cafe.topo",
+    "home.categorias.topo":"categorias.topo"
+  };
+  const DA_BANNER_SITE_FIXED_SLOTS_V10 = [
+    {value:"home.hero",label:"Home · banner principal",group:"Home",automatic:true,compat:"all"},
+    {value:"home.compra-mes.topo",label:"Home · antes da compra do mês",group:"Home",automatic:true,compat:"all"},
+    {value:"home.higiene.topo",label:"Home · antes de higiene da família",group:"Home",automatic:true,compat:"higiene"},
+    {value:"categorias.topo",label:"Página · categorias",group:"Páginas gerais",automatic:true,compat:"all"},
+    {value:"ofertas.topo",label:"Página · ofertas",group:"Páginas gerais",automatic:true,compat:"all"},
+    {value:"cestas.topo",label:"Página · cestas básicas",group:"Páginas gerais",automatic:true,compat:"all"},
+    {value:"kits.topo",label:"Página · kits promocionais",group:"Páginas gerais",automatic:true,compat:"all"},
+    {value:"busca.topo",label:"Página · resultados da busca",group:"Páginas gerais",automatic:true,compat:"all"},
+    {value:"favoritos.topo",label:"Página · favoritos",group:"Páginas gerais",automatic:true,compat:"all"},
+    {value:"rotina.compra-mes.topo",label:"Rotina · compra do mês",group:"Rotinas",automatic:true,compat:"all"},
+    {value:"rotina.limpeza.topo",label:"Rotina · limpeza",group:"Rotinas",automatic:true,compat:"limpeza"},
+    {value:"rotina.higiene.topo",label:"Rotina · higiene",group:"Rotinas",automatic:true,compat:"higiene"},
+    {value:"rotina.cafe.topo",label:"Rotina · café",group:"Rotinas",automatic:true,compat:"cafe"}
+  ];
+  const DA_BANNER_CONTEXTUAL_PLACEMENTS_V10 = [
+    {value:"categoria",label:"Categoria específica",targetKind:"categoria"},
+    {value:"subcategoria",label:"Subcategoria específica",targetKind:"subcategoria"},
+    {value:"marca",label:"Marca específica",targetKind:"marca"},
+    {value:"produto",label:"Produto específico",targetKind:"produto"},
+    {value:"kit",label:"Kit promocional específico",targetKind:"kit"},
+    {value:"cesta",label:"Cesta básica específica",targetKind:"cesta"}
+  ];
+  const DA_BANNER_REAL_PLACEMENT_SET_V10 = new Set([
+    ...DA_BANNER_SITE_FIXED_SLOTS_V10.map(item=>item.value),
+    ...DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>item.value)
+  ]);
+
+  // Substitui a lista antiga do admin pelas posições que o site realmente renderiza hoje.
+  if(Array.isArray(DA_BANNER_PLACEMENTS)){
+    DA_BANNER_PLACEMENTS.splice(0,DA_BANNER_PLACEMENTS.length,
+      ...DA_BANNER_SITE_FIXED_SLOTS_V10.map(({value,label})=>({value,label})),
+      ...DA_BANNER_CONTEXTUAL_PLACEMENTS_V10
+    );
+  }
+
+  function daV10CategoryGroup(product){
+    const values=[product?.categoria,product?.subcategoria,product?.subsubcategoria,product?.nome].map(textNorm).join(" ");
+    if(/beleza|higiene|shampoo|condicionador|sabonete|desodorante|absorvente|cabelo|corpo|rosto|bebe|bebê|fralda|creme dental|oral/.test(values))return "higiene";
+    if(/limpeza|lavanderia|detergente|sabao|sabão|amaciante|desinfetante|alvejante|multiuso|esponja|saco de lixo/.test(values))return "limpeza";
+    if(/cafe|café|achocolatado|biscoito|bolacha|pao|pão|leite|cereal|matinal/.test(values))return "cafe";
+    return "geral";
+  }
+  function daV10BannerProductSnapshot(banner){
+    return Array.isArray(banner?.origem?.produtos)&&banner.origem.produtos.length?banner.origem.produtos[0]:{};
+  }
+  function daV10CompatibleAutomaticSlots(product){
+    const group=daV10CategoryGroup(product);
+    return DA_BANNER_SITE_FIXED_SLOTS_V10.filter(slot=>slot.automatic!==false&&(slot.compat==="all"||slot.compat===group));
+  }
+  function daV10PlacementKey(local,target=""){
+    return `${String(local||"").trim()}::${String(target||"").trim()}`;
+  }
+  function daV10NormalizeLegacyLocal(local){
+    const value=String(local||"").trim();
+    return DA_BANNER_LEGACY_POSITION_MAP_V10[value]||value;
+  }
+  function daV10BannerTime(banner){
+    const value=banner?.atualizado_em||banner?.criado_em||banner?.created_at||banner?.periodo?.inicio||"";
+    const time=Date.parse(value);return Number.isFinite(time)?time:0;
+  }
+  function daV10BannerActiveNow(banner){
+    if(!banner||banner.ativo===false)return false;
+    const now=Date.now(),start=Date.parse(banner?.periodo?.inicio||banner?.banner_inicio||""),end=Date.parse(banner?.periodo?.fim||banner?.banner_fim||"");
+    if(Number.isFinite(start)&&now<start)return false;
+    if(Number.isFinite(end)&&now>end)return false;
+    return true;
+  }
+  function daV10IsAutomaticBanner(banner){
+    return banner?.automacao?.criada_automaticamente===true||/^banner-auto-/i.test(String(banner?.id||""))||/autom/i.test(String(banner?.origem_automacao||banner?.origem?.tipo||""));
+  }
+  function daV10CurrentActiveLoads(catalog,{excludeGroupId=""}={}){
+    const loads=new Map();
+    (catalog?.banners||[]).forEach(banner=>{
+      if(!daV10BannerActiveNow(banner))return;
+      if(excludeGroupId&&typeof daV9BannerGroupId==="function"&&daV9BannerGroupId(banner)===excludeGroupId)return;
+      const local=daV10NormalizeLegacyLocal(banner?.exibicao?.local||banner?.posicao||"");
+      const target=String(banner?.exibicao?.alvo||banner?.alvo||"").trim();
+      const key=daV10PlacementKey(local,target);loads.set(key,(loads.get(key)||0)+1);
+    });
+    return loads;
+  }
+  function daV10BestAutomaticSlot(product,catalog,loadsInput){
+    const loads=loadsInput||daV10CurrentActiveLoads(catalog||state.bannerManager.catalog||{banners:[]});
+    const candidates=daV10CompatibleAutomaticSlots(product)
+      .map(slot=>({...slot,load:loads.get(daV10PlacementKey(slot.value,""))||0}))
+      .filter(slot=>slot.load<DA_BANNER_MAX_ACTIVE_PER_SPACE_V10)
+      .sort((a,b)=>a.load-b.load||DA_BANNER_SITE_FIXED_SLOTS_V10.findIndex(item=>item.value===a.value)-DA_BANNER_SITE_FIXED_SLOTS_V10.findIndex(item=>item.value===b.value));
+    return candidates[0]||null;
+  }
+  function daV10AutomaticConfig(){
+    return {
+      version:3,
+      strategy:DA_BANNER_AUTOMATIC_STRATEGY_V10,
+      selection_order:"escolher_espaco_menos_preenchido_depois_produto_compativel",
+      max_active_per_space:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,
+      active_site_positions:DA_BANNER_SITE_FIXED_SLOTS_V10.map(item=>({local:item.value,label:item.label,compatibility:item.compat})),
+      automatic_positions:DA_BANNER_SITE_FIXED_SLOTS_V10.filter(item=>item.automatic!==false).map(item=>item.value),
+      manual_only_context_positions:DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>item.value),
+      removed_home_positions:Object.keys(DA_BANNER_LEGACY_POSITION_MAP_V10),
+      balance_metric:"menor_quantidade_de_banners_ativos_por_espaco_real_do_site",
+      tie_breaker:"ordem_estavel_dos_espacos",
+      product_repeat_control:"preservar_historico_existente"
+    };
+  }
+
+  // Sugestão padrão do card: somente posições existentes e sempre a menos ocupada entre as compatíveis.
+  daDefaultBannerPositionForProduct=function(product){
+    const best=daV10BestAutomaticSlot(product,state.bannerManager.catalog||{banners:[]});
+    return best?.value||"home.hero";
+  };
+
+  if(typeof daV9QuickPlacementValues==="function"){
+    const daV10QuickPlacementValuesBase=daV9QuickPlacementValues;
+    daV9QuickPlacementValues=function(product){
+      const values=(daV10QuickPlacementValuesBase(product)||[]).filter(value=>{
+        const parsed=typeof daV9ParsePlacementValue==="function"?daV9ParsePlacementValue(value):{local:String(value).split("::")[0]};
+        return DA_BANNER_REAL_PLACEMENT_SET_V10.has(daV10NormalizeLegacyLocal(parsed.local));
+      });
+      if(values.length)return values.map(value=>{
+        const parsed=daV9ParsePlacementValue(value);return daV9PlacementValue(daV10NormalizeLegacyLocal(parsed.local),parsed.target||"");
+      });
+      const best=daV10BestAutomaticSlot(product,state.bannerManager.catalog||{banners:[]});
+      return [daV9PlacementValue(best?.value||"home.hero","")];
+    };
+  }
+
+  // Limite real de 4 banners ativos por espaço, inclusive em criações manuais.
+  if(typeof daPublishBannerArtwork==="function"){
+    const daV10PublishBannerArtworkBase=daPublishBannerArtwork;
+    daPublishBannerArtwork=async function(data){
+      const rawPlacements=Array.isArray(data?.placements)&&data.placements.length?data.placements:[{local:data?.placement||data?.local||"",target:data?.target||data?.alvo||""}];
+      const placements=typeof daV9UniquePlacements==="function"?daV9UniquePlacements(rawPlacements):rawPlacements;
+      const currentCatalog=daNormalizeBannerCatalog(state.bannerManager.catalog||daBannerDefaultCatalog());
+      const editingBanner=currentCatalog.banners.find(item=>item.id===state.bannerManager.editingId);
+      const excludeGroupId=editingBanner&&typeof daV9BannerGroupId==="function"?daV9BannerGroupId(editingBanner):"";
+      const loads=daV10CurrentActiveLoads(currentCatalog,{excludeGroupId});
+      for(const placement of placements){
+        const local=daV10NormalizeLegacyLocal(placement.local||placement.posicao||"");
+        const target=String(placement.target||placement.alvo||"").trim();
+        if(!DA_BANNER_REAL_PLACEMENT_SET_V10.has(local))throw new Error(`O local “${local}” não existe mais no site atual.`);
+        const load=loads.get(daV10PlacementKey(local,target))||0;
+        if(load>=DA_BANNER_MAX_ACTIVE_PER_SPACE_V10)throw new Error(`O espaço “${daBannerPlacementLabel(local,target)}” já possui ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners ativos. Escolha outro local ou desative um banner existente.`);
+      }
+      data={...data,placements:placements.map(item=>({...item,local:daV10NormalizeLegacyLocal(item.local||item.posicao||"")}))};
+      return daV10PublishBannerArtworkBase(data);
+    };
+  }
+
+  // Prompt mais limpo: produto é o protagonista, texto mínimo e nenhuma data de oferta.
+  daBannerPrompt=function(data,snapshots){
+    const products=(snapshots||[]).filter(Boolean).slice(0,3);
+    const names=products.map(item=>item.nome).filter(Boolean).join(" + ");
+    const primary=products[0]||{};
+    const oldPrice=primary.preco_antigo_formatado||primary.preco_antigo||"";
+    const newPrice=primary.preco_novo_formatado||primary.preco_novo||"";
+    const custom=String(data?.artText||data?.texto_arte||"").trim();
+    return `Crie um banner vertical 2:3 para o site de e-commerce Dona Antônia usando fielmente a imagem real de referência do produto${products.length>1?" e dos produtos":""}.
+
+PRIORIDADE ABSOLUTA
+- O produto é o protagonista e deve ocupar aproximadamente 55% a 70% da composição.
+- Preserve embalagem, marca, rótulo, formato, cores e proporções reais. Não redesenhe nem invente detalhes do produto.
+- Visual limpo, sofisticado, comercial e fácil de entender em menos de 2 segundos.
+
+TEXTO NA ARTE
+- Use o mínimo possível de texto.
+- Nunca mostre data de validade da oferta, data de término, código, SKU, GTIN, estoque ou condições longas.
+- Para produto único, use no máximo: nome curto do produto, preço promocional e, somente quando ajudar, preço anterior menor e riscado.
+- Evite repetir o nome se ele já estiver claramente legível na embalagem.
+- Não use parágrafos, listas, excesso de selos, explosões gráficas, estrelas, muitos ícones ou chamadas gigantes.
+- Não invente benefícios, peso, volume, sabor, ingredientes ou promessas que não estejam nos dados.
+
+COMPOSIÇÃO
+- Fundo discreto e coerente com a categoria, preferencialmente claro, neutro ou com gradiente suave.
+- Use bastante respiro e hierarquia visual organizada.
+- Preço deve ser legível, mas não pode disputar protagonismo com a imagem do produto.
+- Tipografia simples, profissional e sem exageros.
+- Evite cores neon, contraste agressivo, excesso de vermelho/amarelo e aparência de panfleto popular poluído.
+- Não inclua a data da oferta.
+
+DADOS DISPONÍVEIS
+Produto(s): ${names||"produto em oferta"}
+Preço anterior: ${oldPrice||"não informado"}
+Preço promocional: ${newPrice||"não informado"}
+${custom?`Texto adicional autorizado: ${custom}`:"Nenhum texto adicional é necessário."}
+
+Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápida e forte prioridade visual para o produto.`;
+  };
+
+  function daV10MigrateCatalog(catalogInput){
+    const catalog=daNormalizeBannerCatalog(deepClone(catalogInput||daBannerDefaultCatalog()));
+    catalog.settings=catalog.settings&&typeof catalog.settings==="object"?catalog.settings:{};
+    catalog.settings.automatic_positioning=daV10AutomaticConfig();
+    catalog.settings.banner_limits={max_active_per_space:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,scope:"local_e_alvo",enforced_by_admin:true};
+    const loads=new Map();
+    const active=[...catalog.banners].filter(daV10BannerActiveNow).sort((a,b)=>daV10BannerTime(b)-daV10BannerTime(a));
+    const inactive=[...catalog.banners].filter(item=>!daV10BannerActiveNow(item));
+    let moved=0,deactivated=0,legacyFixed=0,autoRebalanced=0;
+
+    function reserve(local,target=""){
+      const key=daV10PlacementKey(local,target),before=loads.get(key)||0;
+      if(before>=DA_BANNER_MAX_ACTIVE_PER_SPACE_V10)return {ok:false,before};
+      loads.set(key,before+1);return {ok:true,before,order:before+1};
+    }
+    function deactivateOverflow(banner,reason){
+      banner.ativo=false;banner.atualizado_em=nowIso();banner.desativado_em=nowIso();banner.motivo_desativacao=reason;
+      banner.controle={...(banner.controle||{}),preservado_no_json:true,limite_4_por_espaco:true};deactivated++;
+    }
+
+    active.forEach(banner=>{
+      banner.exibicao=banner.exibicao&&typeof banner.exibicao==="object"?banner.exibicao:{};
+      const oldLocal=String(banner.exibicao.local||banner.posicao||"home.hero").trim();
+      const oldTarget=String(banner.exibicao.alvo||banner.alvo||"").trim();
+      const normalizedLocal=daV10NormalizeLegacyLocal(oldLocal);
+      const automatic=daV10IsAutomaticBanner(banner);
+
+      if(automatic){
+        const product=daV10BannerProductSnapshot(banner);
+        const compatible=daV10CompatibleAutomaticSlots(product)
+          .map(slot=>({...slot,load:loads.get(daV10PlacementKey(slot.value,""))||0}))
+          .filter(slot=>slot.load<DA_BANNER_MAX_ACTIVE_PER_SPACE_V10)
+          .sort((a,b)=>a.load-b.load||DA_BANNER_SITE_FIXED_SLOTS_V10.findIndex(item=>item.value===a.value)-DA_BANNER_SITE_FIXED_SLOTS_V10.findIndex(item=>item.value===b.value));
+        const chosen=compatible[0];
+        if(!chosen){deactivateOverflow(banner,"limite_4_por_espaco_sem_slot_compativel");return;}
+        const reserved=reserve(chosen.value,"");
+        if(oldLocal!==chosen.value||oldTarget){moved++;autoRebalanced++;}
+        banner.exibicao={...(banner.exibicao||{}),local:chosen.value,alvo:"",ordem:reserved.order};
+        banner.automacao={...(banner.automacao||{}),estrategia_posicionamento:DA_BANNER_AUTOMATIC_STRATEGY_V10,modo_selecao:"espaco_primeiro_produto_depois",max_banners_por_espaco:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,posicao_escolhida:chosen.value,alvo_escolhido:"",rotulo_posicao:chosen.label,carga_ativa_antes:reserved.before};
+        return;
+      }
+
+      let local=normalizedLocal,target=oldTarget;
+      if(oldLocal!==normalizedLocal){legacyFixed++;moved++;}
+      if(!DA_BANNER_REAL_PLACEMENT_SET_V10.has(local))local="home.hero";
+      const reserved=reserve(local,target);
+      if(!reserved.ok){deactivateOverflow(banner,"limite_4_por_espaco_migracao");return;}
+      banner.exibicao={...(banner.exibicao||{}),local,alvo:target,ordem:reserved.order};
+    });
+
+    inactive.forEach(banner=>{
+      if(!banner.exibicao||typeof banner.exibicao!=="object")banner.exibicao={};
+      const old=String(banner.exibicao.local||banner.posicao||"").trim();
+      const mapped=daV10NormalizeLegacyLocal(old);
+      if(old&&mapped!==old){banner.exibicao.local=mapped;legacyFixed++;moved++;}
+    });
+
+    catalog.updated_at=nowIso();
+    catalog.migration={...(catalog.migration||{}),layout_site_v10:{executado_em:nowIso(),strategy:DA_BANNER_AUTOMATIC_STRATEGY_V10,max_active_per_space:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,moved,automatic_rebalanced:autoRebalanced,legacy_positions_fixed:legacyFixed,deactivated_overflow:deactivated}};
+    return {catalog,stats:{moved,autoRebalanced,legacyFixed,deactivated,activeLoads:Object.fromEntries([...loads.entries()].sort())}};
+  }
+
+  async function daV10PersistMigratedCatalog(){
+    if(!confirm("Reorganizar agora os banners existentes conforme os espaços reais do site e limitar a 4 banners ativos por espaço? Banners excedentes serão preservados no JSON, porém desativados."))return;
+    const current=await daLoadBannerCatalog(true);
+    const result=daV10MigrateCatalog(current);
+    setStatus("Reorganizando banners existentes e salvando o JSON corrigido...","warn");
+    await daCallBannerWebhook({
+      acao:"salvar_catalogo_banners",
+      versao_contrato:10,
+      origem:"admin-migracao-layout-banners-v10",
+      catalogo_json:JSON.stringify(result.catalog,null,2),
+      github:{owner:state.settings.githubOwner||"osvaldosereia",repositorio:state.settings.githubRepo||"SUCEDOAN12",branch:state.settings.githubBranch||"main",json_path:DA_BANNERS_JSON_PATH}
+    });
+    state.bannerManager.catalog=result.catalog;
+    await daRenderBannerManager();renderProducts();
+    const s=result.stats;
+    setStatus(`JSON corrigido: ${s.moved} reposicionado(s), ${s.autoRebalanced} automático(s) balanceado(s), ${s.deactivated} excedente(s) desativado(s).`,"ok");
+    alert(`Banners reorganizados com sucesso.\n\nReposicionados: ${s.moved}\nAutomáticos redistribuídos: ${s.autoRebalanced}\nPosições antigas corrigidas: ${s.legacyFixed}\nExcedentes preservados e desativados: ${s.deactivated}\n\nNovo limite: até ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners ativos por espaço.`);
+  }
+
+  // O disparo automático envia ao Make a estratégia correta: espaço primeiro, produto depois.
+  async function daRunAutomaticBannerV10(){
+    readSettingsFromUi();
+    const webhook=String(state.settings.makeBannerAutomaticWebhookUrl||state.settings.makeBannerWebhookUrl||"").trim();
+    if(!webhook)throw new Error("Configure o webhook de banners automáticos na aba Integrações.");
+    const buttons=[...document.querySelectorAll('[data-action="banner-auto-run"]')];
+    buttons.forEach(button=>{button.disabled=true;button.dataset.originalText=button.textContent;button.textContent="Selecionando espaço e produto...";});
+    setStatus("Calculando o espaço menos preenchido e, depois, escolhendo um produto compatível...","warn");
+    try{
+      const response=await fetch(webhook,{method:"POST",headers:{Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify({
+        acao:"criar_banner_automatico",
+        versao_contrato:10,
+        origem:"admin-dona-antonia",
+        solicitado_em:nowIso(),
+        duracao_dias:7,
+        quantidade_produtos:1,
+        preservar_apos_expirar:true,
+        estrategia_posicionamento:DA_BANNER_AUTOMATIC_STRATEGY_V10,
+        modo_selecao:"espaco_primeiro_produto_depois",
+        max_banners_por_espaco:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,
+        posicoes_automaticas:DA_BANNER_SITE_FIXED_SLOTS_V10.filter(item=>item.automatic!==false).map(item=>({local:item.value,rotulo:item.label,compatibilidade:item.compat})),
+        posicoes_manuais_contextuais:DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>item.value),
+        posicoes_removidas:Object.keys(DA_BANNER_LEGACY_POSITION_MAP_V10),
+        prioridade_produto_na_arte:true,
+        exibir_validade_oferta_na_arte:false
+      })});
+      const raw=await response.text();let data=null;try{data=raw?JSON.parse(raw):null}catch{}
+      if(!response.ok)throw new Error(`Make retornou ${response.status}: ${raw.slice(0,500)||"sem detalhes"}`);
+      await daLoadBannerCatalog(true);await daRenderBannerManager();renderProducts();
+      const nome=data?.produto?.nome||data?.produto_nome||data?.selected_product||"produto selecionado";
+      const local=data?.banner?.rotulo_posicao||data?.rotulo_posicao_banner||data?.banner?.posicao||data?.posicao_banner||"espaço balanceado";
+      setStatus(`Banner automático criado para ${nome} em ${local}.`,"ok");return data;
+    }finally{buttons.forEach(button=>{button.disabled=false;button.textContent=button.dataset.originalText||"🎯 Criar banner automático";delete button.dataset.originalText;});}
+  }
+
+  // Intercepta antes do handler legado para evitar duas chamadas ao webhook.
+  document.addEventListener("click",event=>{
+    const button=event.target.closest?.('[data-action="banner-auto-run"]');if(!button)return;
+    event.preventDefault();event.stopImmediatePropagation();
+    daRunAutomaticBannerV10().catch(error=>{console.error(error);setStatus(`Falha ao criar banner automático: ${error.message}`,"err");alert(error.message);});
+  },true);
+
+  const daV10RenderBannerManagerBase=daRenderBannerManager;
+  daRenderBannerManager=async function(){
+    const result=await daV10RenderBannerManagerBase();
+    const body=document.getElementById("bannerManagerBody");
+    if(body&&!body.querySelector(".banner-layout-v10-notice"))body.insertAdjacentHTML("afterbegin",`<div class="notice blue banner-layout-v10-notice" style="margin-bottom:14px"><strong>Posicionamento sincronizado com o site atual:</strong> o automático escolhe primeiro o espaço menos preenchido e depois um produto compatível. Cada espaço aceita no máximo <strong>${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners ativos</strong>. Posições antigas da Home foram removidas do seletor.</div><div class="toolbar" style="justify-content:flex-start;margin:-4px 0 14px"><button class="btn gold" type="button" data-action="banner-migrate-layout-v10">↻ Reorganizar JSON atual pelos novos espaços</button></div>`);
+    return result;
+  };
+
+  document.addEventListener("click",event=>{
+    const button=event.target.closest?.('[data-action="banner-migrate-layout-v10"]');if(!button)return;
+    event.preventDefault();button.disabled=true;const old=button.textContent;button.textContent="Reorganizando...";
+    daV10PersistMigratedCatalog().catch(error=>{console.error(error);setStatus(`Falha ao reorganizar banners: ${error.message}`,"err");alert(error.message);}).finally(()=>{button.disabled=false;button.textContent=old;});
+  });
+
+  // Atualiza a explicação antiga da integração para não sugerir posições que deixaram de existir na Home.
+  const daV10RenderSettingsBase=renderSettings;
+  renderSettings=function(){
+    const result=daV10RenderSettingsBase();
+    const autoButton=document.querySelector('[data-action="banner-auto-run"]');
+    const card=autoButton?.closest(".card");
+    const note=card?.querySelector(".notice.gold");
+    if(note)note.innerHTML=`<strong>Seleção automática balanceada:</strong> o Make deve escolher primeiro o espaço real do site com menor quantidade de banners ativos e só depois escolher um produto compatível. Limite de ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners ativos por espaço. O admin continua sendo usado para escolha manual e exceções.`;
+    return result;
+  };
+
   window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,saveLocal,renderProducts,renderSummary,openProduct,aiProductCadastro,aiProductImage};
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
