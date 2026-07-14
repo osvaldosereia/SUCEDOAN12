@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-13T22:41:21.608Z",
+  "updated_at": "2026-07-14T00:41:21.779Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -4588,6 +4588,98 @@
         "rotulo_posicao": "Produto específico · Sinhá Farinha Milho Cuscuz 500g",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17
+      }
+    },
+    {
+      "id": "banner-auto-c0089-20260714004121",
+      "ativo": true,
+      "titulo": "Oferta · Leão Leo Ch Mate 100g",
+      "alt": "Leão Leo Ch Mate 100g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338129231",
+        "produtos": [
+          {
+            "firebaseKey": "1776338129231",
+            "id": "1776338129231",
+            "codigo": "C0089",
+            "gtin": "7891098000026",
+            "nome": "Leão Leo Ch Mate 100g",
+            "marca": "Leão",
+            "categoria": "CAFÉ DA MANHÃ",
+            "subcategoria": "CAFÉ",
+            "embalagem": "100g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b07/2026/07/leao-leo-ch-mate-100g-leao-100g-cafe-da-manha-cafe-7891098000026-foto-atual-otimizada-20260711055944.webp",
+            "preco_antigo": 5.99,
+            "preco_novo": 5.69,
+            "preco_antigo_formatado": "R$ 5,99",
+            "preco_novo_formatado": "R$ 5,69",
+            "desconto_percentual": 5,
+            "validade_oferta": "2026-10-23T23:59:59-04:00",
+            "exibir_validade_oferta_na_arte": false,
+            "validade_oferta_apenas_para_elegibilidade": true
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "home.cafe.topo",
+        "alvo": "",
+        "ordem": 13
+      },
+      "imagem": "site/banners/ativos/banner-auto-c0089-20260714004121/banner-20260714004121.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "C0089"
+      },
+      "periodo": {
+        "inicio": "2026-07-14T00:41:21.779Z",
+        "fim": "2026-07-21T00:41:21.779Z"
+      },
+      "banner_inicio": "2026-07-14T00:41:21.779Z",
+      "banner_fim": "2026-07-21T00:41:21.779Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": true,
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 7,
+        "arquivo_preservado_apos_expirar": true,
+        "registro_preservado_apos_expirar": true
+      },
+      "oferta": {
+        "preco_antigo": 5.99,
+        "preco_novo": 5.69,
+        "desconto_percentual": 5,
+        "validade_oferta": "2026-10-23T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "criado_em": "2026-07-14T00:41:21.779Z",
+      "atualizado_em": "2026-07-14T00:41:21.779Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "quality": "low",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "automacao": {
+        "criada_automaticamente": true,
+        "quantidade_produtos": 1,
+        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "dias_sem_repetir": 30,
+        "origem_dados": "firebase_produtos_em_oferta",
+        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "regra_posicionamento": "categoria_fixa_cafe_da_manha",
+        "grupo_categoria": "cafe_manha",
+        "posicao_escolhida": "home.cafe.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Home · antes do café da manhã",
+        "carga_ativa_antes": 13,
+        "candidatos_avaliados": 1
       }
     }
   ]
