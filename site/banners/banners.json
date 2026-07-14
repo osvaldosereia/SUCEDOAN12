@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-14T20:17:28.025Z",
+  "updated_at": "2026-07-14T22:17:27.337Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -5269,6 +5269,98 @@
         "posicao_escolhida": "marca",
         "alvo_escolhido": "Sol",
         "rotulo_posicao": "Marca específica · Sol",
+        "carga_ativa_antes": 0,
+        "candidatos_avaliados": 17
+      }
+    },
+    {
+      "id": "banner-auto-p19-20260714221727",
+      "ativo": true,
+      "titulo": "Oferta · Liane Biscoito Salgado Trad 90g",
+      "alt": "Liane Biscoito Salgado Trad 90g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338130385",
+        "produtos": [
+          {
+            "firebaseKey": "1776338130385",
+            "id": "1776338130385",
+            "codigo": "P19",
+            "gtin": "7896080872032",
+            "nome": "Liane Biscoito Salgado Trad 90g",
+            "marca": "Liane",
+            "categoria": "BOLACHAS E BISCOITOS",
+            "subcategoria": "SALGADA",
+            "embalagem": "90g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b56/2026/07/liane-biscoito-salgado-trad-90g-liane-90g-bolachas-e-biscoitos-salgada-7896080872032-foto-atual-otimizada-20260711061526.webp",
+            "preco_antigo": 1.99,
+            "preco_novo": 1.39,
+            "preco_antigo_formatado": "R$ 1,99",
+            "preco_novo_formatado": "R$ 1,39",
+            "desconto_percentual": 30,
+            "validade_oferta": "2026-08-23T23:59:59-04:00",
+            "exibir_validade_oferta_na_arte": false,
+            "validade_oferta_apenas_para_elegibilidade": true
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "subcategoria",
+        "alvo": "BOLACHAS E BISCOITOS::SALGADA",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-auto-p19-20260714221727/banner-20260714221727.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P19"
+      },
+      "periodo": {
+        "inicio": "2026-07-14T22:17:27.337Z",
+        "fim": "2026-07-21T22:17:27.337Z"
+      },
+      "banner_inicio": "2026-07-14T22:17:27.337Z",
+      "banner_fim": "2026-07-21T22:17:27.337Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": true,
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 7,
+        "arquivo_preservado_apos_expirar": true,
+        "registro_preservado_apos_expirar": true
+      },
+      "oferta": {
+        "preco_antigo": 1.99,
+        "preco_novo": 1.39,
+        "desconto_percentual": 30,
+        "validade_oferta": "2026-08-23T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "criado_em": "2026-07-14T22:17:27.337Z",
+      "atualizado_em": "2026-07-14T22:17:27.337Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "quality": "low",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "automacao": {
+        "criada_automaticamente": true,
+        "quantidade_produtos": 1,
+        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "dias_sem_repetir": 30,
+        "origem_dados": "firebase_produtos_em_oferta",
+        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
+        "grupo_categoria": "outros",
+        "posicao_escolhida": "subcategoria",
+        "alvo_escolhido": "BOLACHAS E BISCOITOS::SALGADA",
+        "rotulo_posicao": "Subcategoria específica · BOLACHAS E BISCOITOS › SALGADA",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17
       }
