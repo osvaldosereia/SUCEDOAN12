@@ -5,11 +5,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="da-build-version" content="2026-07-14-home-funil-v1">
+  <meta name="da-build-version" content="2026-07-14-home-funil-v3-stable">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-14-home-funil-v1';
+    const BUILD = '2026-07-14-home-funil-v3-stable';
     const CLEAN_MARKER = 'da_browser_cache_clean_build_v2';
     window.__DA_BUILD_VERSION__ = BUILD;
 
@@ -71,7 +71,7 @@
   <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-14-home-funil-v1" as="fetch" type="application/json" crossorigin="anonymous">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-14-home-funil-v3-stable" as="fetch" type="application/json" crossorigin="anonymous">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -617,7 +617,7 @@
 
   <style id="da-home-funnel-20260714">
   /* HOME 14/07/2026 — funil de compra, menos banners, mais hierarquia e respiro. */
-  .da-home-funnel{--da-band-offers:#fff5f1;--da-band-baskets:#fbf7ee;--da-band-kits:#f5f8f4;--da-band-month:#fbf7ee;--da-band-reminder:#f2f8f4;--da-band-clean:#f1f8f4;--da-band-care:#f7f4f8;--da-band-bargain:#fff8ee;--da-band-coffee:#fff9ec;--da-band-utility:#f4f6f5;--da-band-treat:#fff6f2}
+  .da-home-funnel{}
   .da-home-funnel .da-banner-zone-clean{margin-top:clamp(22px,3vw,34px)}
   .da-home-funnel>.da-banner-zone-clean:first-child{margin-top:0}
   .da-home-funnel .da-banner-zone-clean .da-banner-controls{margin-top:9px}
@@ -626,19 +626,8 @@
   .da-home-funnel .da-home-section-head h2{font-size:clamp(27px,3.15vw,38px);line-height:1.02;font-weight:860;letter-spacing:-.052em;text-wrap:balance}
   .da-home-funnel .da-home-section-head p{max-width:690px;margin-top:8px;font-size:clamp(13px,1.25vw,15px);line-height:1.5;color:var(--muted)}
   .da-home-funnel .da-home-section-head>a{min-height:40px;padding:0 14px;background:rgba(255,255,255,.78);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
-  .da-home-funnel .da-home-band{position:relative;isolation:isolate;padding:clamp(28px,3.6vw,46px) 0;margin-top:clamp(52px,6vw,78px)}
-  .da-home-funnel .da-home-band::before{content:"";position:absolute;z-index:-1;top:0;bottom:0;left:50%;width:100vw;transform:translateX(-50%);background:var(--da-band-bg,#f7f7f4);pointer-events:none}
-  .da-home-funnel .da-home-band-offers{--da-band-bg:var(--da-band-offers)}
-  .da-home-funnel .da-home-band-baskets{--da-band-bg:var(--da-band-baskets)}
-  .da-home-funnel .da-home-band-kits{--da-band-bg:var(--da-band-kits)}
-  .da-home-funnel .da-home-band-month{--da-band-bg:var(--da-band-month)}
-  .da-home-funnel .da-home-band-reminder{--da-band-bg:var(--da-band-reminder)}
-  .da-home-funnel .da-home-band-clean{--da-band-bg:var(--da-band-clean)}
-  .da-home-funnel .da-home-band-care{--da-band-bg:var(--da-band-care)}
-  .da-home-funnel .da-home-band-bargain{--da-band-bg:var(--da-band-bargain)}
-  .da-home-funnel .da-home-band-coffee{--da-band-bg:var(--da-band-coffee)}
-  .da-home-funnel .da-home-band-utility{--da-band-bg:var(--da-band-utility)}
-  .da-home-funnel .da-home-band-treat{--da-band-bg:var(--da-band-treat)}
+  .da-home-funnel .da-home-band{position:relative;padding:0;margin-top:clamp(52px,6vw,78px)}
+  .da-home-funnel .da-home-band::before{display:none!important;content:none!important}
 
   .da-home-offer-feature{display:grid;grid-template-columns:minmax(190px,34%) minmax(0,1fr);gap:clamp(18px,3vw,38px);align-items:center;margin-bottom:22px;padding:clamp(14px,2vw,22px);border:1px solid rgba(190,76,50,.14);border-radius:24px;background:rgba(255,255,255,.88);box-shadow:0 12px 32px rgba(122,62,45,.07);overflow:hidden}
   .da-home-offer-feature-media{position:relative;min-width:0;aspect-ratio:1/1;border-radius:20px;background:#fff;overflow:hidden}
@@ -671,6 +660,13 @@
   .da-home-compact-rail .product-imgbox{aspect-ratio:1/1!important}
   .da-home-compact-rail .product-card-bottom{margin-top:auto}
 
+  .da-stable-loading-shell{min-height:72vh;display:grid;align-content:start;gap:18px;padding-top:8px}
+  .da-stable-loading-hero,.da-stable-loading-row{border-radius:20px;background:linear-gradient(90deg,rgba(23,49,38,.055) 25%,rgba(255,255,255,.65) 50%,rgba(23,49,38,.055) 75%);background-size:220% 100%;animation:daStableLoading 1.35s ease-in-out infinite}
+  .da-stable-loading-hero{width:100%;aspect-ratio:2.65/1;min-height:150px}
+  .da-stable-loading-row{height:120px}
+  @keyframes daStableLoading{0%{background-position:100% 0}100%{background-position:-100% 0}}
+  @media(prefers-reduced-motion:reduce){.da-stable-loading-hero,.da-stable-loading-row{animation:none}}
+
   .da-home-funnel [data-home-personalization-slot]:empty{display:none}
   .da-home-funnel [data-home-personalization-slot]:not(:empty){display:block}
   .da-home-funnel [data-home-personalization-slot]:not(:empty)>.da-home-section{margin-top:clamp(52px,6vw,78px)}
@@ -679,7 +675,7 @@
 
   @media(max-width:767px){
     .da-home-funnel .da-home-section{margin-top:46px}
-    .da-home-funnel .da-home-band{margin-top:46px;padding:26px 0}
+    .da-home-funnel .da-home-band{margin-top:46px;padding:0}
     .da-home-funnel .da-home-section-head{align-items:flex-start;gap:12px;margin-bottom:17px}
     .da-home-funnel .da-home-section-head h2{font-size:26px;line-height:1.04}
     .da-home-funnel .da-home-section-head p{font-size:12.5px;line-height:1.45}
@@ -703,16 +699,62 @@
   }
 
   @media(min-width:768px){
-    .da-home-journey-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .da-home-compact-rail>.product-card.compact{flex-basis:188px;width:188px;min-width:188px;max-width:188px}
+    /* Desktop/tablet: as prateleiras novas viram grids reais. O mobile continua em trilho horizontal. */
+    .da-home-compact-rail{
+      display:grid!important;
+      grid-template-columns:repeat(3,minmax(0,1fr))!important;
+      gap:24px 18px!important;
+      overflow:visible!important;
+      padding:2px 0 8px!important;
+      scroll-snap-type:none!important;
+    }
+    .da-home-compact-rail>.product-card.compact{
+      width:100%!important;
+      min-width:0!important;
+      max-width:none!important;
+      flex:none!important;
+      align-self:stretch!important;
+    }
+    .da-home-compact-rail .product-imgbox{
+      width:100%!important;
+      height:auto!important;
+      aspect-ratio:1/1!important;
+      min-height:0!important;
+    }
+    .da-home-compact-rail .product-imgbox img{
+      width:100%!important;
+      height:100%!important;
+      object-fit:contain!important;
+    }
+    .da-home-journey-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:16px!important}
+    .da-home-journey-card{min-width:0!important}
   }
 
   @media(min-width:1100px){
-    .da-home-journey-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
-    .da-home-journey-card{display:flex;flex-direction:column-reverse;align-items:stretch;min-height:210px}
-    .da-home-journey-media{width:100%;border-radius:18px}
-    .da-home-journey-copy small{min-height:46px}
-    .da-home-compact-rail>.product-card.compact{flex-basis:198px;width:198px;min-width:198px;max-width:198px}
+    /* Em telas largas evitamos seis cards estreitos na mesma linha. */
+    .da-home-compact-rail{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:30px 20px!important}
+    .da-home-journey-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:18px!important}
+    .da-home-journey-card{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr) 104px!important;
+      align-items:center!important;
+      min-height:142px!important;
+      padding:18px!important;
+    }
+    .da-home-journey-media{width:104px!important;border-radius:20px!important}
+    .da-home-journey-copy small{min-height:0!important}
+
+    /* Os mini cards de Limpeza/Higiene/Café também mantêm uma largura confortável. */
+    .da-home-collection-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:16px!important}
+    .da-home-collection-card{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr) 104px!important;
+      align-items:center!important;
+      min-height:142px!important;
+      padding:16px!important;
+    }
+    .da-home-collection-media{width:104px!important;grid-column:2!important;grid-row:1!important}
+    .da-home-collection-copy{grid-column:1!important;grid-row:1!important}
   }
   </style>
 
@@ -846,7 +888,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-14-home-funil-v1',
+      APP_VERSION: '2026-07-14-home-funil-v3-stable',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -5088,44 +5130,32 @@
       loadFavorites();
       loadCart();
       updateCartUI();
-      app.innerHTML = `<div class="container"><div class="empty"><strong>Carregando...</strong>Preparando ofertas e produtos.</div></div>`;
+      app.innerHTML = `<div class="container da-stable-loading-shell" aria-busy="true" aria-label="Carregando catálogo"><div class="da-stable-loading-hero"></div><div class="da-stable-loading-row"></div><div class="da-stable-loading-row"></div></div>`;
 
       const home = isHomeRoute();
 
       try {
         if (home) {
-          // Home: renderiza imediatamente e carrega o catálogo leve site/produtos-home.json.
-          // O Firebase completo só é carregado quando for necessário, especialmente na validação do pedido.
+          // Home estável: carrega os dados necessários em paralelo e faz uma única renderização completa.
+          // Evita o efeito de partes da página aparecendo em momentos diferentes.
+          const auxPromise = Promise.allSettled([loadBanners(), loadCestas(), loadKits(), loadCoupons()]);
+          let homeCatalogError = null;
+          try {
+            await loadHomeProducts();
+          } catch (err) {
+            homeCatalogError = err;
+            console.warn('Catálogo leve indisponível; tentando Firebase completo:', err && err.message ? err.message : err);
+            await loadProducts();
+          }
+          await auxPromise;
+
           state.isReady = true;
+          rebuildVirtualFees();
           renderSiteMenuContent();
+          removeMissingCartItems();
           handleRoute();
           updateCartUI();
-
-          const auxPromise = Promise.allSettled([loadBanners(), loadCestas(), loadKits(), loadCoupons()]).then(() => {
-            rebuildVirtualFees();
-            renderSiteMenuContent();
-            handleRoute();
-            updateCartUI();
-          });
-
-          loadHomeProducts().then(() => {
-            rebuildVirtualFees();
-            renderSiteMenuContent();
-            removeMissingCartItems();
-            handleRoute();
-            updateCartUI();
-          }).catch(err => {
-            console.warn('Catálogo leve indisponível; tentando Firebase completo:', err && err.message ? err.message : err);
-            loadProducts().then(() => {
-              rebuildVirtualFees();
-              renderSiteMenuContent();
-              removeMissingCartItems();
-              handleRoute();
-              updateCartUI();
-            }).catch(error => console.error('Não foi possível carregar produtos:', error));
-          });
-
-          await Promise.race([auxPromise, sleep(900)]);
+          if (homeCatalogError) console.info('Home carregada pelo catálogo completo após falha do catálogo leve.');
           return;
         }
 
@@ -5369,7 +5399,7 @@
       }
     
       function daHomeStandardShelfHtml(title, caption, products, href, tone){
-        const items = (products || []).filter(isAvailable).slice(0,4);
+        const items = daHomeUniqueProducts((products || []).filter(isAvailable)).slice(0,4);
         if(!items.length) return '';
         const bandClass = tone ? ` da-home-band da-home-band-${escapeHtml(tone)}` : '';
         return `<section class="da-home-section da-home-standard-section${bandClass}" data-home-section="standard">${daHomeSectionHead(title,caption,href,'Ver todos')}<div class="da-home-standard-grid">${items.map(product=>productCard(product)).join('')}</div></section>`;
@@ -5377,7 +5407,7 @@
 
       function daHomeHereTemProducts(){
         const available = state.products.filter(isAvailable);
-        const takeDiversified = (category, limit) => daHomeDiversifiedProducts(
+        const takeDiversified = (category, limit) => daHomeRandomizedDiverseProducts(
           available.filter(product => norm(product.categoria) === norm(category)),
           limit
         );
@@ -5566,6 +5596,20 @@
         return `<a class="da-home-collection-card" href="${definition.href}"><span class="da-home-collection-media"><img loading="lazy" decoding="async" src="${escapeHtml(image)}" alt="" onerror="window.__daFallbackImg(this)"></span><span class="da-home-collection-copy"><strong>${escapeHtml(definition.title)}</strong><small>${escapeHtml(definition.copy)}</small><em>${matches.length} ${matches.length === 1 ? 'produto' : 'produtos'}</em></span></a>`;
       }
     
+      function daHomeShuffle(products){
+        const shuffled=[...(products || [])];
+        for(let index=shuffled.length-1;index>0;index-=1){
+          const swapIndex=Math.floor(Math.random()*(index+1));
+          [shuffled[index],shuffled[swapIndex]]=[shuffled[swapIndex],shuffled[index]];
+        }
+        return shuffled;
+      }
+
+      function daHomeRandomizedDiverseProducts(products,limit){
+        const unique=daHomeUniqueProducts((products || []).filter(isAvailable));
+        return daHomeDiversifiedProducts(daHomeShuffle(unique),limit);
+      }
+
       function daHomeDiversifiedProducts(products,limit){
         const picked=[];
         const seenSubs=new Set();
@@ -5713,7 +5757,7 @@
     
       renderHome=function(){
         const offers=getTopOffers(40);
-        const essentials=productsByRoutine('compra-mes',40);
+        const essentials=daHomeRandomizedDiverseProducts(productsByRoutine('compra-mes',120),4);
         const limpeza=productsByRoutine('limpeza',80);
         const higiene=productsByRoutine('higiene',120);
         const cafe=productsByRoutine('cafe',100);
