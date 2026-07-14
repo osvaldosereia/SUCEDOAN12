@@ -55,6 +55,12 @@ function isAutomaticOffer(product) {
   return text(product.oferta_origem) === "campanha_automatica";
 }
 
+function hasProtectedOffer(product) {
+  const offer = money(product.preco_oferta ?? product.precoOferta);
+  const regular = money(product.preco ?? product.price ?? product.valor);
+  return offer > 0 && regular > offer && !isAutomaticOffer(product);
+}
+
 function closeAutomaticOffer(product, timestamp) {
   delete product.preco_oferta;
   delete product.precoOferta;
@@ -171,7 +177,7 @@ function calculateExecution({ products, config: rawConfig, state: rawState, exec
       const category = normalizedText(rule.categoria);
       const candidates = Object.entries(products)
         .filter(([key, product]) => !selected.has(key) && !closedKeys.has(key) && normalizedText(product.categoria) === category && isActive(product) && number(product.estoque) > 0 && money(product.preco ?? product.price ?? product.valor) > 0)
-        .filter(([, product]) => !hasCurrentOffer(product, clock))
+        .filter(([, product]) => !hasCurrentOffer(product, clock) && !hasProtectedOffer(product))
         .sort(([keyA, productA], [keyB, productB]) => {
           const historyA = new Date(state.historico_produtos[keyA]?.ultima_oferta_em || 0).getTime() || 0;
           const historyB = new Date(state.historico_produtos[keyB]?.ultima_oferta_em || 0).getTime() || 0;
