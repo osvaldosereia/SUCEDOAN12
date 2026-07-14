@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "updated_at": "2026-07-14T22:17:27.337Z",
+  "updated_at": "2026-07-14T23:45:37.459Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -25,73 +25,122 @@
       "pausar_hover": true
     },
     "automatic_positioning": {
-      "version": 2,
-      "strategy": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
-      "fixed_rules": {
-        "higiene_beleza": {
-          "categories": [
-            "BELEZA",
-            "HIGIENE",
-            "SHAMPOO E CONDICIONADOR",
-            "SABONETE",
-            "DESODORANTE",
-            "BEBÊ"
-          ],
-          "local": "home.higiene.topo"
+      "version": 3,
+      "strategy": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
+      "selection_order": "escolher_espaco_menos_preenchido_depois_produto_compativel",
+      "max_active_per_space": 4,
+      "active_site_positions": [
+        {
+          "local": "home.hero",
+          "label": "Home · banner principal",
+          "compatibility": "all"
         },
-        "limpeza": {
-          "categories": [
-            "LIMPEZA",
-            "LAVANDERIA"
-          ],
-          "local": "home.limpeza.topo"
+        {
+          "local": "home.compra-mes.topo",
+          "label": "Home · antes da compra do mês",
+          "compatibility": "all"
         },
-        "cafe_manha": {
-          "categories": [
-            "CAFÉ DA MANHÃ"
-          ],
-          "local": "home.cafe.topo"
+        {
+          "local": "home.higiene.topo",
+          "label": "Home · antes de higiene da família",
+          "compatibility": "higiene"
+        },
+        {
+          "local": "categorias.topo",
+          "label": "Página · categorias",
+          "compatibility": "all"
+        },
+        {
+          "local": "ofertas.topo",
+          "label": "Página · ofertas",
+          "compatibility": "all"
+        },
+        {
+          "local": "cestas.topo",
+          "label": "Página · cestas básicas",
+          "compatibility": "all"
+        },
+        {
+          "local": "kits.topo",
+          "label": "Página · kits promocionais",
+          "compatibility": "all"
+        },
+        {
+          "local": "busca.topo",
+          "label": "Página · resultados da busca",
+          "compatibility": "all"
+        },
+        {
+          "local": "favoritos.topo",
+          "label": "Página · favoritos",
+          "compatibility": "all"
+        },
+        {
+          "local": "rotina.compra-mes.topo",
+          "label": "Rotina · compra do mês",
+          "compatibility": "all"
+        },
+        {
+          "local": "rotina.limpeza.topo",
+          "label": "Rotina · limpeza",
+          "compatibility": "limpeza"
+        },
+        {
+          "local": "rotina.higiene.topo",
+          "label": "Rotina · higiene",
+          "compatibility": "higiene"
+        },
+        {
+          "local": "rotina.cafe.topo",
+          "label": "Rotina · café",
+          "compatibility": "cafe"
         }
-      },
-      "balanced_general_locations": [
+      ],
+      "automatic_positions": [
         "home.hero",
-        "home.cestas.topo",
-        "home.kits.topo",
-        "home.ofertas.topo",
         "home.compra-mes.topo",
-        "home.categorias.topo",
+        "home.higiene.topo",
         "categorias.topo",
         "ofertas.topo",
         "cestas.topo",
         "kits.topo",
-        "rotina.compra-mes.topo",
         "busca.topo",
-        "favoritos.topo"
+        "favoritos.topo",
+        "rotina.compra-mes.topo",
+        "rotina.limpeza.topo",
+        "rotina.higiene.topo",
+        "rotina.cafe.topo"
       ],
-      "balanced_context_locations": [
+      "manual_only_context_positions": [
         "categoria",
         "subcategoria",
         "marca",
-        "produto"
+        "produto",
+        "kit",
+        "cesta"
       ],
-      "excluded_from_automatic_distribution": {
-        "thematic_pages": [
-          "rotina.limpeza.topo",
-          "rotina.higiene.topo",
-          "rotina.cafe.topo"
-        ],
-        "missing_relationship_target": [
-          "kit",
-          "cesta"
-        ]
-      },
-      "balance_metric": "menor_quantidade_de_banners_ativos_no_mesmo_local_e_alvo"
+      "removed_home_positions": [
+        "home.cestas.topo",
+        "home.kits.topo",
+        "home.ofertas.topo",
+        "home.limpeza.topo",
+        "home.cafe.topo",
+        "home.categorias.topo"
+      ],
+      "balance_metric": "menor_quantidade_de_banners_ativos_por_espaco_real_do_site",
+      "tie_breaker": "ordem_estavel_dos_espacos",
+      "product_repeat_control": "preservar_historico_existente"
+    },
+    "banner_limits": {
+      "max_active_per_space": 4,
+      "scope": "local_e_alvo",
+      "enforced_by_admin": true
     }
   },
   "banners": [
     {
       "id": "banner-produto-88091616-1783805763726",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Giovanna Baby Desodorante Roll-On Classic 50ml",
       "alt": "Giovanna Baby Desodorante Roll-On Classic 50ml em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -124,7 +173,7 @@
         "fim": "2026-07-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-11T21:36:03.727Z",
-      "atualizado_em": "2026-07-11T21:36:03.727Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -136,13 +185,18 @@
       "grupo_id": "banner-produto-88091616-1783805763726",
       "asset_id": "banner-produto-88091616-1783805763726",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-228944b-1783805821490",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · NIVEA Creme Facial Antissinais Ultraleve 7 em 1 - 100g",
       "alt": "NIVEA Creme Facial Antissinais Ultraleve 7 em 1 - 100g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -175,7 +229,7 @@
         "fim": "2026-07-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-11T21:37:01.490Z",
-      "atualizado_em": "2026-07-11T21:37:01.490Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -187,13 +241,18 @@
       "grupo_id": "banner-produto-228944b-1783805821490",
       "asset_id": "banner-produto-228944b-1783805821490",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-61000598-1783806155571",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Giovanna Baby Desodorante Roll-On Blue 50ml",
       "alt": "Giovanna Baby Desodorante Roll-On Blue 50ml em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -226,7 +285,7 @@
         "fim": "2026-07-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-11T21:42:35.572Z",
-      "atualizado_em": "2026-07-11T21:42:35.572Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -238,13 +297,18 @@
       "grupo_id": "banner-produto-61000598-1783806155571",
       "asset_id": "banner-produto-61000598-1783806155571",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-868319k-1783806247864",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Creme de Pentear Elseve Glycolic Gloss 250ml",
       "alt": "Creme de Pentear Elseve Glycolic Gloss 250ml em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -277,7 +341,7 @@
         "fim": "2026-07-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-11T21:44:07.864Z",
-      "atualizado_em": "2026-07-11T21:44:07.864Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -289,13 +353,18 @@
       "grupo_id": "banner-produto-868319k-1783806247864",
       "asset_id": "banner-produto-868319k-1783806247864",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-p8-1783806356486",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Sabonete em Barra Dove Original 90g",
       "alt": "Sabonete em Barra Dove Original 90g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -328,7 +397,7 @@
         "fim": "2026-07-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-11T21:45:56.487Z",
-      "atualizado_em": "2026-07-11T21:45:56.487Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -340,13 +409,18 @@
       "grupo_id": "banner-produto-p8-1783806356486",
       "asset_id": "banner-produto-p8-1783806356486",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-561705e-1783806382533",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Sabonete Dove Erva-Doce 90g",
       "alt": "Sabonete Dove Erva-Doce 90g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -379,7 +453,7 @@
         "fim": "2026-07-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-11T21:46:22.533Z",
-      "atualizado_em": "2026-07-11T21:46:22.533Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -391,13 +465,18 @@
       "grupo_id": "banner-produto-561705e-1783806382533",
       "asset_id": "banner-produto-561705e-1783806382533",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-457468m-1783807224895",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · VALE Molho de Tomate Triturado Fertil Vidro 1kg",
       "alt": "VALE Molho de Tomate Triturado Fertil Vidro 1kg em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -430,7 +509,7 @@
         "fim": "2026-07-24T05:59:00.000Z"
       },
       "criado_em": "2026-07-11T22:00:24.895Z",
-      "atualizado_em": "2026-07-11T22:08:31.576Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -442,13 +521,18 @@
       "grupo_id": "banner-produto-457468m-1783807224895",
       "asset_id": "banner-produto-457468m-1783807224895",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-3528220487-1783807356860",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Macarrão Urbano Espaguete Integral Sem Glúten 500g",
       "alt": "Macarrão Urbano Espaguete Integral Sem Glúten 500g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -481,7 +565,7 @@
         "fim": "2026-07-20T05:59:00.000Z"
       },
       "criado_em": "2026-07-11T22:02:36.860Z",
-      "atualizado_em": "2026-07-12T00:14:30.612Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -493,13 +577,18 @@
       "grupo_id": "banner-produto-3528220487-1783807356860",
       "asset_id": "banner-produto-3528220487-1783807356860",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-943962i-1783807899807",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Leite em Pó Nestlé Ninho Integral Instantâneo 975g",
       "alt": "Leite em Pó Nestlé Ninho Integral Instantâneo 975g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -532,7 +621,7 @@
         "fim": "2026-10-02T02:59:00.000Z"
       },
       "criado_em": "2026-07-11T22:11:39.807Z",
-      "atualizado_em": "2026-07-11T22:11:39.807Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -544,13 +633,18 @@
       "grupo_id": "banner-produto-943962i-1783807899807",
       "asset_id": "banner-produto-943962i-1783807899807",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-p4k98-1783807966936",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · NIVEA Creme Hidratante Lata 145g",
       "alt": "NIVEA Creme Hidratante Lata 145g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -583,7 +677,7 @@
         "fim": "2026-08-01T02:59:00.000Z"
       },
       "criado_em": "2026-07-11T22:12:46.936Z",
-      "atualizado_em": "2026-07-11T22:12:46.936Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -595,13 +689,18 @@
       "grupo_id": "banner-produto-p4k98-1783807966936",
       "asset_id": "banner-produto-p4k98-1783807966936",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-56819249-1783808116915",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Petisco Pedigree Biscrok Sabor Leite 1kg",
       "alt": "Petisco Pedigree Biscrok Sabor Leite 1kg em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -634,7 +733,7 @@
         "fim": "2026-11-23T02:59:00.000Z"
       },
       "criado_em": "2026-07-11T22:15:16.915Z",
-      "atualizado_em": "2026-07-11T22:15:16.915Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -646,13 +745,18 @@
       "grupo_id": "banner-produto-56819249-1783808116915",
       "asset_id": "banner-produto-56819249-1783808116915",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-p1345o-1783808154445",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Ração Úmida Pedigree Frango ao Molho 100g",
       "alt": "Ração Úmida Pedigree Frango ao Molho 100g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -685,7 +789,7 @@
         "fim": "2026-07-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-11T22:15:54.445Z",
-      "atualizado_em": "2026-07-11T22:15:54.445Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -697,13 +801,18 @@
       "grupo_id": "banner-produto-p1345o-1783808154445",
       "asset_id": "banner-produto-p1345o-1783808154445",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-977530x-1783811220395",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Molho Ketchup Heinz Picles 397g",
       "alt": "Molho Ketchup Heinz Picles 397g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -736,7 +845,7 @@
         "fim": "2026-09-10T02:59:00.000Z"
       },
       "criado_em": "2026-07-11T23:07:00.395Z",
-      "atualizado_em": "2026-07-11T23:07:00.395Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -748,13 +857,18 @@
       "grupo_id": "banner-produto-977530x-1783811220395",
       "asset_id": "banner-produto-977530x-1783811220395",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-p33ewq-1783811366326",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Bombom Sonho de Valsa e Ouro Branco Caixa com 220g",
       "alt": "Bombom Sonho de Valsa e Ouro Branco Caixa com 220g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -787,7 +901,7 @@
         "fim": "2026-09-26T02:59:00.000Z"
       },
       "criado_em": "2026-07-11T23:09:26.326Z",
-      "atualizado_em": "2026-07-11T23:09:26.326Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -799,9 +913,14 @@
       "grupo_id": "banner-produto-p33ewq-1783811366326",
       "asset_id": "banner-produto-p33ewq-1783811366326",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-p532-1783814782422",
@@ -824,9 +943,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.limpeza.topo",
+        "local": "rotina.limpeza.topo",
         "alvo": "",
-        "ordem": 10
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-produto-p532-1783814782422/banner-1783814782422.webp",
       "link": {
@@ -875,9 +994,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.limpeza.topo",
+        "local": "rotina.limpeza.topo",
         "alvo": "",
-        "ordem": 11
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-produto-92238569-1783814838857/banner-1783814838857.webp",
       "link": {
@@ -907,7 +1026,7 @@
     },
     {
       "id": "banner-produto-p562-1783815421434",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Achocolatado em Pó 3 Corações 350g",
       "alt": "Achocolatado em Pó 3 Corações 350g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -940,7 +1059,7 @@
         "fim": "2026-07-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T00:17:01.434Z",
-      "atualizado_em": "2026-07-12T00:17:01.434Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -952,13 +1071,18 @@
       "grupo_id": "banner-produto-p562-1783815421434",
       "asset_id": "banner-produto-p562-1783815421434",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-c0090-1783815518864",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Chá Mate Mate Rico 250g",
       "alt": "Chá Mate Mate Rico 250g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -991,7 +1115,7 @@
         "fim": "2026-07-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T00:18:38.864Z",
-      "atualizado_em": "2026-07-12T00:18:38.864Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1003,13 +1127,18 @@
       "grupo_id": "banner-produto-c0090-1783815518864",
       "asset_id": "banner-produto-c0090-1783815518864",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-877500j-1783815635704",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Cereal Matinal Nestlé KitKat Snow Flakes 210g + 230g",
       "alt": "Cereal Matinal Nestlé KitKat Snow Flakes 210g + 230g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1042,7 +1171,7 @@
         "fim": "2026-11-01T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T00:20:35.704Z",
-      "atualizado_em": "2026-07-12T00:20:35.704Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1054,13 +1183,18 @@
       "grupo_id": "banner-produto-877500j-1783815635704",
       "asset_id": "banner-produto-877500j-1783815635704",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-59854062-1783817455580",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Café Torrado e Moído Café Brasileiro Tradicional 250g",
       "alt": "Café Torrado e Moído Café Brasileiro Tradicional 250g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1093,7 +1227,7 @@
         "fim": "2026-07-15T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T00:50:55.581Z",
-      "atualizado_em": "2026-07-12T00:50:55.581Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1105,13 +1239,18 @@
       "grupo_id": "banner-produto-59854062-1783817455580",
       "asset_id": "banner-produto-59854062-1783817455580",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-c0098-1783817500333",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Café Coador de Tecido com Suporte Madeira Unidade",
       "alt": "Café Coador de Tecido com Suporte Madeira Unidade em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1144,7 +1283,7 @@
         "fim": "2026-08-01T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T00:51:40.334Z",
-      "atualizado_em": "2026-07-12T00:51:40.334Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1156,13 +1295,18 @@
       "grupo_id": "banner-produto-c0098-1783817500333",
       "asset_id": "banner-produto-c0098-1783817500333",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-327989k-1783817575958",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Chá Leão Erva-Doce 25 sachês",
       "alt": "Chá Leão Erva-Doce 25 sachês em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1195,7 +1339,7 @@
         "fim": "2026-07-21T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T00:52:55.959Z",
-      "atualizado_em": "2026-07-12T00:52:55.959Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1207,13 +1351,18 @@
       "grupo_id": "banner-produto-327989k-1783817575958",
       "asset_id": "banner-produto-327989k-1783817575958",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-p-bc9y-1783817643979",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Geleia de Amora Forno Velho Clássica 400g",
       "alt": "Geleia de Amora Forno Velho Clássica 400g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1246,7 +1395,7 @@
         "fim": "2026-07-21T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T00:54:03.979Z",
-      "atualizado_em": "2026-07-12T00:54:03.979Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1258,13 +1407,18 @@
       "grupo_id": "banner-produto-p-bc9y-1783817643979",
       "asset_id": "banner-produto-p-bc9y-1783817643979",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-p-jhor-1783817689737",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Geleia de Menta Companhia das Ervas 260g",
       "alt": "Geleia de Menta Companhia das Ervas 260g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1297,7 +1451,7 @@
         "fim": "2026-07-21T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T00:54:49.738Z",
-      "atualizado_em": "2026-07-12T00:54:49.738Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1309,13 +1463,18 @@
       "grupo_id": "banner-produto-p-jhor-1783817689737",
       "asset_id": "banner-produto-p-jhor-1783817689737",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-863822p-1783817757175",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Granola Jasmine Sem Glúten Cranberries e Açaí Pouch",
       "alt": "Granola Jasmine Sem Glúten Cranberries e Açaí Pouch em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1348,7 +1507,7 @@
         "fim": "2026-08-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T00:55:57.175Z",
-      "atualizado_em": "2026-07-12T00:55:57.175Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1360,9 +1519,14 @@
       "grupo_id": "banner-produto-863822p-1783817757175",
       "asset_id": "banner-produto-863822p-1783817757175",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-8989800348-1783817849472",
@@ -1385,9 +1549,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "rotina.cafe.topo",
         "alvo": "",
-        "ordem": 9
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-produto-8989800348-1783817849472/banner-1783817849472.webp",
       "link": {
@@ -1417,7 +1581,7 @@
     },
     {
       "id": "banner-produto-p0027-1783818389052",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Azeite Extra Virgem Andorinha 500ml",
       "alt": "Azeite Extra Virgem Andorinha 500ml em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1450,7 +1614,7 @@
         "fim": "2026-07-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T01:06:29.053Z",
-      "atualizado_em": "2026-07-12T01:06:29.053Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1462,13 +1626,18 @@
       "grupo_id": "banner-produto-p0027-1783818389052",
       "asset_id": "banner-produto-p0027-1783818389052",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-p-iym5-1783818436908",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Billy & Jack Molho Sabor Chipotle 200g",
       "alt": "Billy & Jack Molho Sabor Chipotle 200g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1501,7 +1670,7 @@
         "fim": "2026-09-11T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T01:07:16.908Z",
-      "atualizado_em": "2026-07-12T01:07:16.908Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1513,13 +1682,18 @@
       "grupo_id": "banner-produto-p-iym5-1783818436908",
       "asset_id": "banner-produto-p-iym5-1783818436908",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-p468-1783818500714",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Gota Molho de Pimenta 150ml",
       "alt": "Gota Molho de Pimenta 150ml em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1552,7 +1726,7 @@
         "fim": "2026-07-21T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T01:08:20.714Z",
-      "atualizado_em": "2026-07-12T01:08:20.714Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1564,13 +1738,18 @@
       "grupo_id": "banner-produto-p468-1783818500714",
       "asset_id": "banner-produto-p468-1783818500714",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-4860470916-1783818537995",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Amarelinha Batata Palha 800g",
       "alt": "Amarelinha Batata Palha 800g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1603,7 +1782,7 @@
         "fim": "2026-08-25T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T01:08:57.996Z",
-      "atualizado_em": "2026-07-12T01:08:57.996Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1615,13 +1794,18 @@
       "grupo_id": "banner-produto-4860470916-1783818537995",
       "asset_id": "banner-produto-4860470916-1783818537995",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-p-0utk-1783818660712",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Fralda Cremer Hiper Tamanho G 60 unidades",
       "alt": "Fralda Cremer Hiper Tamanho G 60 unidades em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1654,7 +1838,7 @@
         "fim": "2026-07-17T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T01:11:00.713Z",
-      "atualizado_em": "2026-07-12T01:11:00.713Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1666,9 +1850,14 @@
       "grupo_id": "banner-produto-p-0utk-1783818660712",
       "asset_id": "banner-produto-p-0utk-1783818660712",
       "exibicoes": [],
-      "controle": {},
+      "controle": {
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
+      },
       "oferta": {},
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-812309u-1783818729228",
@@ -1691,9 +1880,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.ofertas.topo",
+        "local": "ofertas.topo",
         "alvo": "",
-        "ordem": 3
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-produto-812309u-1783818729228/banner-1783818729228.webp",
       "link": {
@@ -1723,7 +1912,7 @@
     },
     {
       "id": "banner-produto-p0054-1783887969250",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Mabel Biscoito Cream Cracker 300g",
       "alt": "Mabel Biscoito Cream Cracker 300g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1756,7 +1945,7 @@
         "fim": "2026-07-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T20:26:09.250Z",
-      "atualizado_em": "2026-07-12T20:26:09.250Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1771,7 +1960,9 @@
         "retirada_automatica": true,
         "validade_independente_da_oferta": true,
         "exibir_validade_oferta_na_arte": false,
-        "duracao_dias": 8
+        "duracao_dias": 8,
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
       },
       "oferta": {
         "preco_antigo": 6.49,
@@ -1784,7 +1975,9 @@
       "grupo_id": "banner-produto-p0054-1783887969250",
       "asset_id": "banner-produto-p0054-1783887969250",
       "exibicoes": [],
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-p0059-1783888003106",
@@ -1807,9 +2000,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.cestas.topo",
+        "local": "cestas.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-produto-p0059-1783888003106/banner-1783888003106.webp",
       "link": {
@@ -1853,7 +2046,7 @@
     },
     {
       "id": "banner-produto-0780020425-1783888082284",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · ÁGUA SANITÁRIA Veja X-14 Cloro Ativo 1000ml",
       "alt": "ÁGUA SANITÁRIA Veja X-14 Cloro Ativo 1000ml em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1886,7 +2079,7 @@
         "fim": "2026-07-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T20:28:02.284Z",
-      "atualizado_em": "2026-07-12T20:28:02.284Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -1901,7 +2094,9 @@
         "retirada_automatica": true,
         "validade_independente_da_oferta": true,
         "exibir_validade_oferta_na_arte": false,
-        "duracao_dias": 8
+        "duracao_dias": 8,
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
       },
       "oferta": {
         "preco_antigo": 16.9,
@@ -1914,7 +2109,9 @@
       "grupo_id": "banner-produto-0780020425-1783888082284",
       "asset_id": "banner-produto-0780020425-1783888082284",
       "exibicoes": [],
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-p11fa3-1783889879176",
@@ -1939,7 +2136,7 @@
       "exibicao": {
         "local": "home.compra-mes.topo",
         "alvo": "",
-        "ordem": 7
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-produto-p11fa3-1783889879176/banner-1783889879176.webp",
       "link": {
@@ -1983,7 +2180,7 @@
     },
     {
       "id": "banner-produto-p-e0u0-1783889940920",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Doce de Abacaxi Engenho Velho Colonial 400g",
       "alt": "Doce de Abacaxi Engenho Velho Colonial 400g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -2016,7 +2213,7 @@
         "fim": "2026-07-20T02:59:00.000Z"
       },
       "criado_em": "2026-07-12T20:59:00.921Z",
-      "atualizado_em": "2026-07-12T20:59:00.921Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -2031,7 +2228,9 @@
         "retirada_automatica": true,
         "validade_independente_da_oferta": true,
         "exibir_validade_oferta_na_arte": false,
-        "duracao_dias": 8
+        "duracao_dias": 8,
+        "preservado_no_json": true,
+        "limite_4_por_espaco": true
       },
       "oferta": {
         "preco_antigo": 15.9,
@@ -2044,7 +2243,9 @@
       "grupo_id": "banner-produto-p-e0u0-1783889940920",
       "asset_id": "banner-produto-p-e0u0-1783889940920",
       "exibicoes": [],
-      "automacao": {}
+      "automacao": {},
+      "desativado_em": "2026-07-14T23:45:37.459Z",
+      "motivo_desativacao": "limite_4_por_espaco_migracao"
     },
     {
       "id": "banner-produto-3362280788-1783890034877",
@@ -2067,9 +2268,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.kits.topo",
+        "local": "kits.topo",
         "alvo": "",
-        "ordem": 2
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-produto-3362280788-1783890034877/banner-1783890034877.webp",
       "link": {
@@ -2134,7 +2335,7 @@
       "exibicao": {
         "local": "home.hero",
         "alvo": "",
-        "ordem": 11
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-produto-p-bu9h-1783890061736/banner-1783890061736.webp",
       "link": {
@@ -2210,9 +2411,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "busca.topo",
         "alvo": "",
-        "ordem": 10
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-auto-95807313-20260712223252/banner-20260712223252.webp",
       "link": {
@@ -2255,17 +2456,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "categoria_fixa_cafe_da_manha",
         "grupo_categoria": "cafe_manha",
-        "posicao_escolhida": "home.cafe.topo",
+        "posicao_escolhida": "busca.topo",
         "alvo_escolhido": "",
-        "rotulo_posicao": "Home · antes do café da manhã",
-        "carga_ativa_antes": 9,
-        "candidatos_avaliados": 1
+        "rotulo_posicao": "Página · resultados da busca",
+        "carga_ativa_antes": 2,
+        "candidatos_avaliados": 1,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-95807313-20260712223252",
       "asset_id": "banner-auto-95807313-20260712223252",
@@ -2305,9 +2507,9 @@
         ]
       },
       "exibicao": {
-        "local": "marca",
-        "alvo": "Elma Chips",
-        "ordem": 1
+        "local": "cestas.topo",
+        "alvo": "",
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-auto-7892840822521-20260712224430/banner-20260712224430.webp",
       "link": {
@@ -2350,17 +2552,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "marca",
-        "alvo_escolhido": "Elma Chips",
-        "rotulo_posicao": "Marca específica · Elma Chips",
-        "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "posicao_escolhida": "cestas.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Página · cestas básicas",
+        "carga_ativa_antes": 2,
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-7892840822521-20260712224430",
       "asset_id": "banner-auto-7892840822521-20260712224430",
@@ -2400,9 +2603,9 @@
         ]
       },
       "exibicao": {
-        "local": "marca",
-        "alvo": "Paulista",
-        "ordem": 1
+        "local": "categorias.topo",
+        "alvo": "",
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-auto-p0233-20260712225109/banner-20260712225109.webp",
       "link": {
@@ -2445,17 +2648,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "marca",
-        "alvo_escolhido": "Paulista",
-        "rotulo_posicao": "Marca específica · Paulista",
-        "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "posicao_escolhida": "categorias.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Página · categorias",
+        "carga_ativa_antes": 2,
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-p0233-20260712225109",
       "asset_id": "banner-auto-p0233-20260712225109",
@@ -2495,9 +2699,9 @@
         ]
       },
       "exibicao": {
-        "local": "subcategoria",
-        "alvo": "SALGADINHOS E PETISCOS::AMENDOIM",
-        "ordem": 1
+        "local": "home.compra-mes.topo",
+        "alvo": "",
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-auto-pfa31-20260712225152/banner-20260712225152.webp",
       "link": {
@@ -2540,17 +2744,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "subcategoria",
-        "alvo_escolhido": "SALGADINHOS E PETISCOS::AMENDOIM",
-        "rotulo_posicao": "Subcategoria específica · SALGADINHOS E PETISCOS › AMENDOIM",
-        "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "posicao_escolhida": "home.compra-mes.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Home · antes da compra do mês",
+        "carga_ativa_antes": 2,
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-pfa31-20260712225152",
       "asset_id": "banner-auto-pfa31-20260712225152",
@@ -2590,9 +2795,9 @@
         ]
       },
       "exibicao": {
-        "local": "subcategoria",
-        "alvo": "BOLACHAS E BISCOITOS::DOCE",
-        "ordem": 1
+        "local": "home.hero",
+        "alvo": "",
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-auto-p0061-20260713005117/banner-20260713005117.webp",
       "link": {
@@ -2635,17 +2840,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "subcategoria",
-        "alvo_escolhido": "BOLACHAS E BISCOITOS::DOCE",
-        "rotulo_posicao": "Subcategoria específica · BOLACHAS E BISCOITOS › DOCE",
-        "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "posicao_escolhida": "home.hero",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Home · banner principal",
+        "carga_ativa_antes": 2,
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-p0061-20260713005117",
       "asset_id": "banner-auto-p0061-20260713005117",
@@ -2679,9 +2885,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.limpeza.topo",
+        "local": "rotina.limpeza.topo",
         "alvo": "",
-        "ordem": 9
+        "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-personalizado-259044s-1783813321179/banner-1783814427758.webp",
       "link": {
@@ -2774,7 +2980,7 @@
       "exibicao": {
         "local": "ofertas.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-personalizado-259044s-1783813321179/banner-1783814427758.webp",
       "link": {
@@ -2951,9 +3157,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "rotina.cafe.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-produto-p-1n06-1783913204113/banner-1783913204113.webp",
       "link": {
@@ -3029,7 +3235,7 @@
       "exibicao": {
         "local": "home.higiene.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-produto-683081r-1783913264439/banner-1783913264439.webp",
       "link": {
@@ -3105,7 +3311,7 @@
       "exibicao": {
         "local": "home.higiene.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-produto-p-vxr8-1783913341460/banner-1783913341460.webp",
       "link": {
@@ -3179,9 +3385,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.kits.topo",
+        "local": "kits.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-produto-ssep7-1783913483391/banner-1783913483391.webp",
       "link": {
@@ -3257,7 +3463,7 @@
       "exibicao": {
         "local": "home.higiene.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-produto-p0115-1783913616723/banner-1783913616723.webp",
       "link": {
@@ -3344,9 +3550,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "rotina.cafe.topo",
         "alvo": "",
-        "ordem": 11
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-auto-4422670103-20260713045112/banner-20260713045112.webp",
       "link": {
@@ -3389,17 +3595,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "categoria_fixa_cafe_da_manha",
         "grupo_categoria": "cafe_manha",
-        "posicao_escolhida": "home.cafe.topo",
+        "posicao_escolhida": "rotina.cafe.topo",
         "alvo_escolhido": "",
-        "rotulo_posicao": "Home · antes do café da manhã",
-        "carga_ativa_antes": 11,
-        "candidatos_avaliados": 1
+        "rotulo_posicao": "Rotina · café",
+        "carga_ativa_antes": 1,
+        "candidatos_avaliados": 1,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-4422670103-20260713045112",
       "asset_id": "banner-auto-4422670103-20260713045112",
@@ -3441,7 +3648,7 @@
       "exibicao": {
         "local": "rotina.compra-mes.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-auto-p-r97b-20260713065119/banner-20260713065119.webp",
       "link": {
@@ -3484,17 +3691,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
         "posicao_escolhida": "rotina.compra-mes.topo",
         "alvo_escolhido": "",
-        "rotulo_posicao": "Página · compra do mês",
-        "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "rotulo_posicao": "Rotina · compra do mês",
+        "carga_ativa_antes": 1,
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-p-r97b-20260713065119",
       "asset_id": "banner-auto-p-r97b-20260713065119",
@@ -3534,9 +3742,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "favoritos.topo",
         "alvo": "",
-        "ordem": 12
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-auto-p0040-20260713085121/banner-20260713085121.webp",
       "link": {
@@ -3579,17 +3787,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "categoria_fixa_cafe_da_manha",
         "grupo_categoria": "cafe_manha",
-        "posicao_escolhida": "home.cafe.topo",
+        "posicao_escolhida": "favoritos.topo",
         "alvo_escolhido": "",
-        "rotulo_posicao": "Home · antes do café da manhã",
-        "carga_ativa_antes": 12,
-        "candidatos_avaliados": 1
+        "rotulo_posicao": "Página · favoritos",
+        "carga_ativa_antes": 1,
+        "candidatos_avaliados": 1,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-p0040-20260713085121",
       "asset_id": "banner-auto-p0040-20260713085121",
@@ -3629,9 +3838,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.categorias.topo",
+        "local": "busca.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-auto-56472897-20260713105122/banner-20260713105122.webp",
       "link": {
@@ -3674,17 +3883,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "home.categorias.topo",
+        "posicao_escolhida": "busca.topo",
         "alvo_escolhido": "",
-        "rotulo_posicao": "Home · antes das categorias",
-        "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "rotulo_posicao": "Página · resultados da busca",
+        "carga_ativa_antes": 1,
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-56472897-20260713105122",
       "asset_id": "banner-auto-56472897-20260713105122",
@@ -3724,9 +3934,9 @@
         ]
       },
       "exibicao": {
-        "local": "categorias.topo",
+        "local": "kits.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-auto-p490-20260713124124/banner-20260713124124.webp",
       "link": {
@@ -3769,17 +3979,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "categorias.topo",
+        "posicao_escolhida": "kits.topo",
         "alvo_escolhido": "",
-        "rotulo_posicao": "Página geral de categorias",
-        "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "rotulo_posicao": "Página · kits promocionais",
+        "carga_ativa_antes": 1,
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-p490-20260713124124",
       "asset_id": "banner-auto-p490-20260713124124",
@@ -3819,9 +4030,9 @@
         ]
       },
       "exibicao": {
-        "local": "favoritos.topo",
+        "local": "cestas.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-auto-p572-20260713144124/banner-20260713144124.webp",
       "link": {
@@ -3864,17 +4075,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "favoritos.topo",
+        "posicao_escolhida": "cestas.topo",
         "alvo_escolhido": "",
-        "rotulo_posicao": "Favoritos",
-        "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "rotulo_posicao": "Página · cestas básicas",
+        "carga_ativa_antes": 1,
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-p572-20260713144124",
       "asset_id": "banner-auto-p572-20260713144124",
@@ -3914,9 +4126,9 @@
         ]
       },
       "exibicao": {
-        "local": "kits.topo",
+        "local": "ofertas.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-auto-216319a-20260713164122/banner-20260713164122.webp",
       "link": {
@@ -3959,17 +4171,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "kits.topo",
+        "posicao_escolhida": "ofertas.topo",
         "alvo_escolhido": "",
-        "rotulo_posicao": "Página de kits promocionais",
-        "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "rotulo_posicao": "Página · ofertas",
+        "carga_ativa_antes": 1,
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-216319a-20260713164122",
       "asset_id": "banner-auto-216319a-20260713164122",
@@ -4009,9 +4222,9 @@
         ]
       },
       "exibicao": {
-        "local": "categoria",
-        "alvo": "MERCEARIA BÁSICA",
-        "ordem": 1
+        "local": "categorias.topo",
+        "alvo": "",
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-auto-p0164-20260713184128/banner-20260713184128.webp",
       "link": {
@@ -4054,17 +4267,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "categoria",
-        "alvo_escolhido": "MERCEARIA BÁSICA",
-        "rotulo_posicao": "Categoria específica · MERCEARIA BÁSICA",
-        "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "posicao_escolhida": "categorias.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Página · categorias",
+        "carga_ativa_antes": 1,
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-p0164-20260713184128",
       "asset_id": "banner-auto-p0164-20260713184128",
@@ -4104,9 +4318,9 @@
         ]
       },
       "exibicao": {
-        "local": "busca.topo",
+        "local": "home.compra-mes.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-auto-p0267-20260713204122/banner-20260713204122.webp",
       "link": {
@@ -4149,17 +4363,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "busca.topo",
+        "posicao_escolhida": "home.compra-mes.topo",
         "alvo_escolhido": "",
-        "rotulo_posicao": "Resultados de busca",
-        "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "rotulo_posicao": "Home · antes da compra do mês",
+        "carga_ativa_antes": 1,
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-p0267-20260713204122",
       "asset_id": "banner-auto-p0267-20260713204122",
@@ -4199,9 +4414,9 @@
         ]
       },
       "exibicao": {
-        "local": "produto",
-        "alvo": "1776338127713",
-        "ordem": 1
+        "local": "home.hero",
+        "alvo": "",
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-auto-p0153-20260713224121/banner-20260713224121.webp",
       "link": {
@@ -4244,17 +4459,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "produto",
-        "alvo_escolhido": "1776338127713",
-        "rotulo_posicao": "Produto específico · Sinhá Farinha Milho Cuscuz 500g",
-        "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "posicao_escolhida": "home.hero",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Home · banner principal",
+        "carga_ativa_antes": 1,
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-p0153-20260713224121",
       "asset_id": "banner-auto-p0153-20260713224121",
@@ -4294,9 +4510,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "rotina.cafe.topo",
         "alvo": "",
-        "ordem": 13
+        "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-auto-c0089-20260714004121/banner-20260714004121.webp",
       "link": {
@@ -4339,17 +4555,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "categoria_fixa_cafe_da_manha",
         "grupo_categoria": "cafe_manha",
-        "posicao_escolhida": "home.cafe.topo",
+        "posicao_escolhida": "rotina.cafe.topo",
         "alvo_escolhido": "",
-        "rotulo_posicao": "Home · antes do café da manhã",
-        "carga_ativa_antes": 13,
-        "candidatos_avaliados": 1
+        "rotulo_posicao": "Rotina · café",
+        "carga_ativa_antes": 0,
+        "candidatos_avaliados": 1,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-c0089-20260714004121",
       "asset_id": "banner-auto-c0089-20260714004121",
@@ -4389,8 +4606,8 @@
         ]
       },
       "exibicao": {
-        "local": "categoria",
-        "alvo": "MOLHOS E CONDIMENTOS",
+        "local": "rotina.compra-mes.topo",
+        "alvo": "",
         "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-auto-32675205-20260714024122/banner-20260714024122.webp",
@@ -4434,17 +4651,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "categoria",
-        "alvo_escolhido": "MOLHOS E CONDIMENTOS",
-        "rotulo_posicao": "Categoria específica · MOLHOS E CONDIMENTOS",
+        "posicao_escolhida": "rotina.compra-mes.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Rotina · compra do mês",
         "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-32675205-20260714024122",
       "asset_id": "banner-auto-32675205-20260714024122",
@@ -4484,8 +4702,8 @@
         ]
       },
       "exibicao": {
-        "local": "produto",
-        "alvo": "1776338126742",
+        "local": "favoritos.topo",
+        "alvo": "",
         "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-auto-35913176-20260714044124/banner-20260714044124.webp",
@@ -4529,17 +4747,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "produto",
-        "alvo_escolhido": "1776338126742",
-        "rotulo_posicao": "Produto específico · Chocolate Lacta Sonho de Valsa Barra 80g",
+        "posicao_escolhida": "favoritos.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Página · favoritos",
         "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-35913176-20260714044124",
       "asset_id": "banner-auto-35913176-20260714044124",
@@ -4579,8 +4798,8 @@
         ]
       },
       "exibicao": {
-        "local": "subcategoria",
-        "alvo": "TEMPEROS::CALDO",
+        "local": "busca.topo",
+        "alvo": "",
         "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-auto-p-ptou-20260714064126/banner-20260714064126.webp",
@@ -4624,17 +4843,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "subcategoria",
-        "alvo_escolhido": "TEMPEROS::CALDO",
-        "rotulo_posicao": "Subcategoria específica · TEMPEROS › CALDO",
+        "posicao_escolhida": "busca.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Página · resultados da busca",
         "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-p-ptou-20260714064126",
       "asset_id": "banner-auto-p-ptou-20260714064126",
@@ -4674,8 +4894,8 @@
         ]
       },
       "exibicao": {
-        "local": "produto",
-        "alvo": "1776699494091",
+        "local": "kits.topo",
+        "alvo": "",
         "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-auto-7896058597738-20260714084129/banner-20260714084129.webp",
@@ -4719,17 +4939,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "produto",
-        "alvo_escolhido": "1776699494091",
-        "rotulo_posicao": "Produto específico · Amendoim Torrado Dori Boteco Lascas de Cebola 90g",
+        "posicao_escolhida": "kits.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Página · kits promocionais",
         "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-7896058597738-20260714084129",
       "asset_id": "banner-auto-7896058597738-20260714084129",
@@ -4769,8 +4990,8 @@
         ]
       },
       "exibicao": {
-        "local": "subcategoria",
-        "alvo": "MERCEARIA BÁSICA::FARINHAS",
+        "local": "cestas.topo",
+        "alvo": "",
         "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-auto-p0237-20260714121032/banner-20260714121032.webp",
@@ -4814,17 +5035,18 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "subcategoria",
-        "alvo_escolhido": "MERCEARIA BÁSICA::FARINHAS",
-        "rotulo_posicao": "Subcategoria específica · MERCEARIA BÁSICA › FARINHAS",
+        "posicao_escolhida": "cestas.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Página · cestas básicas",
         "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
       },
       "grupo_id": "banner-auto-p0237-20260714121032",
       "asset_id": "banner-auto-p0237-20260714121032",
@@ -4903,7 +5125,8 @@
           "alvo": "SUCOS, REFRI E ENERGÉTICOS",
           "ordem": 1
         }
-      ]
+      ],
+      "automacao": {}
     },
     {
       "id": "banner-auto-p0002-20260714141731",
@@ -4941,7 +5164,7 @@
       "exibicao": {
         "local": "home.higiene.topo",
         "alvo": "",
-        "ordem": 6
+        "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-auto-p0002-20260714141731/banner-20260714141731.webp",
       "link": {
@@ -4984,18 +5207,22 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "categoria_fixa_higiene_beleza",
         "grupo_categoria": "higiene_beleza",
         "posicao_escolhida": "home.higiene.topo",
         "alvo_escolhido": "",
-        "rotulo_posicao": "Home · antes de higiene e beleza",
-        "carga_ativa_antes": 9,
-        "candidatos_avaliados": 1
-      }
+        "rotulo_posicao": "Home · antes de higiene da família",
+        "carga_ativa_antes": 0,
+        "candidatos_avaliados": 1,
+        "max_banners_por_espaco": 4
+      },
+      "grupo_id": "banner-auto-p0002-20260714141731",
+      "asset_id": "banner-auto-p0002-20260714141731",
+      "exibicoes": []
     },
     {
       "id": "banner-auto-p575-20260714161729",
@@ -5031,9 +5258,9 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "ofertas.topo",
         "alvo": "",
-        "ordem": 14
+        "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-auto-p575-20260714161729/banner-20260714161729.webp",
       "link": {
@@ -5076,18 +5303,22 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "categoria_fixa_cafe_da_manha",
         "grupo_categoria": "cafe_manha",
-        "posicao_escolhida": "home.cafe.topo",
+        "posicao_escolhida": "ofertas.topo",
         "alvo_escolhido": "",
-        "rotulo_posicao": "Home · antes do café da manhã",
-        "carga_ativa_antes": 14,
-        "candidatos_avaliados": 1
-      }
+        "rotulo_posicao": "Página · ofertas",
+        "carga_ativa_antes": 0,
+        "candidatos_avaliados": 1,
+        "max_banners_por_espaco": 4
+      },
+      "grupo_id": "banner-auto-p575-20260714161729",
+      "asset_id": "banner-auto-p575-20260714161729",
+      "exibicoes": []
     },
     {
       "id": "banner-auto-36134367-20260714181728",
@@ -5123,8 +5354,8 @@
         ]
       },
       "exibicao": {
-        "local": "subcategoria",
-        "alvo": "CHOCOLATES E DOCES::CHOCOLATE",
+        "local": "categorias.topo",
+        "alvo": "",
         "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-auto-36134367-20260714181728/banner-20260714181728.webp",
@@ -5168,18 +5399,22 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "subcategoria",
-        "alvo_escolhido": "CHOCOLATES E DOCES::CHOCOLATE",
-        "rotulo_posicao": "Subcategoria específica · CHOCOLATES E DOCES › CHOCOLATE",
+        "posicao_escolhida": "categorias.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Página · categorias",
         "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
-      }
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
+      },
+      "grupo_id": "banner-auto-36134367-20260714181728",
+      "asset_id": "banner-auto-36134367-20260714181728",
+      "exibicoes": []
     },
     {
       "id": "banner-auto-7896005219959-20260714201728",
@@ -5215,8 +5450,8 @@
         ]
       },
       "exibicao": {
-        "local": "marca",
-        "alvo": "Sol",
+        "local": "home.compra-mes.topo",
+        "alvo": "",
         "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-auto-7896005219959-20260714201728/banner-20260714201728.webp",
@@ -5260,18 +5495,22 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "marca",
-        "alvo_escolhido": "Sol",
-        "rotulo_posicao": "Marca específica · Sol",
+        "posicao_escolhida": "home.compra-mes.topo",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Home · antes da compra do mês",
         "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
-      }
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
+      },
+      "grupo_id": "banner-auto-7896005219959-20260714201728",
+      "asset_id": "banner-auto-7896005219959-20260714201728",
+      "exibicoes": []
     },
     {
       "id": "banner-auto-p19-20260714221727",
@@ -5307,8 +5546,8 @@
         ]
       },
       "exibicao": {
-        "local": "subcategoria",
-        "alvo": "BOLACHAS E BISCOITOS::SALGADA",
+        "local": "home.hero",
+        "alvo": "",
         "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-auto-p19-20260714221727/banner-20260714221727.webp",
@@ -5352,18 +5591,33 @@
       "automacao": {
         "criada_automaticamente": true,
         "quantidade_produtos": 1,
-        "modo_selecao": "aleatorio_sem_repetir_historico_recente",
+        "modo_selecao": "espaco_primeiro_produto_depois",
         "dias_sem_repetir": 30,
         "origem_dados": "firebase_produtos_em_oferta",
-        "estrategia_posicionamento": "categoria_fixa_e_balanceamento_por_menor_carga_v2",
+        "estrategia_posicionamento": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "regra_posicionamento": "balanceamento_por_menor_carga_ativa",
         "grupo_categoria": "outros",
-        "posicao_escolhida": "subcategoria",
-        "alvo_escolhido": "BOLACHAS E BISCOITOS::SALGADA",
-        "rotulo_posicao": "Subcategoria específica · BOLACHAS E BISCOITOS › SALGADA",
+        "posicao_escolhida": "home.hero",
+        "alvo_escolhido": "",
+        "rotulo_posicao": "Home · banner principal",
         "carga_ativa_antes": 0,
-        "candidatos_avaliados": 17
-      }
+        "candidatos_avaliados": 17,
+        "max_banners_por_espaco": 4
+      },
+      "grupo_id": "banner-auto-p19-20260714221727",
+      "asset_id": "banner-auto-p19-20260714221727",
+      "exibicoes": []
     }
-  ]
+  ],
+  "migration": {
+    "layout_site_v10": {
+      "executado_em": "2026-07-14T23:45:37.459Z",
+      "strategy": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
+      "max_active_per_space": 4,
+      "moved": 44,
+      "automatic_rebalanced": 24,
+      "legacy_positions_fixed": 20,
+      "deactivated_overflow": 31
+    }
+  }
 }
