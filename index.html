@@ -5,11 +5,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="da-build-version" content="2026-07-13-pedidos-firebase-fila-v2">
+  <meta name="da-build-version" content="2026-07-14-home-funil-v1">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-13-pedidos-firebase-fila-v2';
+    const BUILD = '2026-07-14-home-funil-v1';
     const CLEAN_MARKER = 'da_browser_cache_clean_build_v2';
     window.__DA_BUILD_VERSION__ = BUILD;
 
@@ -71,7 +71,7 @@
   <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-13-pedidos-firebase-fila-v2" as="fetch" type="application/json" crossorigin="anonymous">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-14-home-funil-v1" as="fetch" type="application/json" crossorigin="anonymous">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -614,6 +614,108 @@
   }
   </style>
 
+
+  <style id="da-home-funnel-20260714">
+  /* HOME 14/07/2026 — funil de compra, menos banners, mais hierarquia e respiro. */
+  .da-home-funnel{--da-band-offers:#fff5f1;--da-band-baskets:#fbf7ee;--da-band-kits:#f5f8f4;--da-band-month:#fbf7ee;--da-band-reminder:#f2f8f4;--da-band-clean:#f1f8f4;--da-band-care:#f7f4f8;--da-band-bargain:#fff8ee;--da-band-coffee:#fff9ec;--da-band-utility:#f4f6f5;--da-band-treat:#fff6f2}
+  .da-home-funnel .da-banner-zone-clean{margin-top:clamp(22px,3vw,34px)}
+  .da-home-funnel>.da-banner-zone-clean:first-child{margin-top:0}
+  .da-home-funnel .da-banner-zone-clean .da-banner-controls{margin-top:9px}
+  .da-home-funnel .da-home-section{margin-top:clamp(52px,6vw,78px)}
+  .da-home-funnel .da-home-section-head{margin-bottom:clamp(18px,2.2vw,26px);align-items:flex-end}
+  .da-home-funnel .da-home-section-head h2{font-size:clamp(27px,3.15vw,38px);line-height:1.02;font-weight:860;letter-spacing:-.052em;text-wrap:balance}
+  .da-home-funnel .da-home-section-head p{max-width:690px;margin-top:8px;font-size:clamp(13px,1.25vw,15px);line-height:1.5;color:var(--muted)}
+  .da-home-funnel .da-home-section-head>a{min-height:40px;padding:0 14px;background:rgba(255,255,255,.78);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+  .da-home-funnel .da-home-band{position:relative;isolation:isolate;padding:clamp(28px,3.6vw,46px) 0;margin-top:clamp(52px,6vw,78px)}
+  .da-home-funnel .da-home-band::before{content:"";position:absolute;z-index:-1;top:0;bottom:0;left:50%;width:100vw;transform:translateX(-50%);background:var(--da-band-bg,#f7f7f4);pointer-events:none}
+  .da-home-funnel .da-home-band-offers{--da-band-bg:var(--da-band-offers)}
+  .da-home-funnel .da-home-band-baskets{--da-band-bg:var(--da-band-baskets)}
+  .da-home-funnel .da-home-band-kits{--da-band-bg:var(--da-band-kits)}
+  .da-home-funnel .da-home-band-month{--da-band-bg:var(--da-band-month)}
+  .da-home-funnel .da-home-band-reminder{--da-band-bg:var(--da-band-reminder)}
+  .da-home-funnel .da-home-band-clean{--da-band-bg:var(--da-band-clean)}
+  .da-home-funnel .da-home-band-care{--da-band-bg:var(--da-band-care)}
+  .da-home-funnel .da-home-band-bargain{--da-band-bg:var(--da-band-bargain)}
+  .da-home-funnel .da-home-band-coffee{--da-band-bg:var(--da-band-coffee)}
+  .da-home-funnel .da-home-band-utility{--da-band-bg:var(--da-band-utility)}
+  .da-home-funnel .da-home-band-treat{--da-band-bg:var(--da-band-treat)}
+
+  .da-home-offer-feature{display:grid;grid-template-columns:minmax(190px,34%) minmax(0,1fr);gap:clamp(18px,3vw,38px);align-items:center;margin-bottom:22px;padding:clamp(14px,2vw,22px);border:1px solid rgba(190,76,50,.14);border-radius:24px;background:rgba(255,255,255,.88);box-shadow:0 12px 32px rgba(122,62,45,.07);overflow:hidden}
+  .da-home-offer-feature-media{position:relative;min-width:0;aspect-ratio:1/1;border-radius:20px;background:#fff;overflow:hidden}
+  .da-home-offer-feature-media>a{display:block;width:100%;height:100%}
+  .da-home-offer-feature-media img{width:100%;height:100%;object-fit:contain;padding:8px;mix-blend-mode:normal!important;filter:none!important}
+  .da-home-offer-feature-discount{position:absolute;left:10px;top:10px;display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 11px;border-radius:999px;background:#c9364c;color:#fff;font-size:14px;font-weight:900;box-shadow:0 8px 18px rgba(201,54,76,.2)}
+  .da-home-offer-feature-copy{display:grid;align-content:center;gap:10px;min-width:0}
+  .da-home-offer-feature-kicker{width:max-content;max-width:100%;padding:6px 10px;border-radius:999px;background:#fff0e9;color:#a43d29;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+  .da-home-offer-feature-name{max-width:650px;color:var(--ink);font-size:clamp(22px,3vw,34px);line-height:1.08;font-weight:820;letter-spacing:-.045em}
+  .da-home-offer-feature-expiry{font-size:12px;color:var(--muted);font-weight:650}
+  .da-home-offer-feature-price .old-price{font-size:13px}
+  .da-home-offer-feature-price .price{font-size:clamp(28px,4vw,42px)}
+  .da-home-offer-feature-control{width:min(100%,260px)}
+  .da-home-offer-feature-control .add-btn,.da-home-offer-feature-control .qty-control{min-height:48px}
+  .da-home-offers-section .da-home-offer-grid{padding-top:4px}
+
+  .da-home-journey-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .da-home-journey-card{display:grid;grid-template-columns:minmax(0,1fr) 76px;gap:12px;align-items:center;min-width:0;min-height:118px;padding:14px;border:1px solid rgba(23,49,38,.09);border-radius:20px;background:rgba(255,255,255,.82);transition:transform .18s ease,border-color .18s ease,background .18s ease}
+  .da-home-journey-card:hover{transform:translateY(-2px);border-color:rgba(22,92,56,.24);background:#fff}
+  .da-home-journey-copy{display:grid;gap:5px;min-width:0}
+  .da-home-journey-copy strong{font-size:15px;line-height:1.15;font-weight:830;letter-spacing:-.025em;color:var(--ink)}
+  .da-home-journey-copy small{font-size:11.5px;line-height:1.35;color:var(--muted)}
+  .da-home-journey-copy em{font-size:10.5px;font-style:normal;font-weight:800;color:var(--brand)}
+  .da-home-journey-media{width:76px;aspect-ratio:1/1;border-radius:17px;background:#fff;overflow:hidden}
+  .da-home-journey-media img{width:100%;height:100%;object-fit:contain;padding:5px;mix-blend-mode:normal!important;filter:none!important}
+
+  .da-home-compact-rail{display:flex;gap:12px;width:100%;overflow-x:auto;overflow-y:hidden;padding:2px 1px 10px;scroll-snap-type:x proximity;overscroll-behavior-x:contain;scrollbar-width:none}
+  .da-home-compact-rail::-webkit-scrollbar{display:none}
+  .da-home-compact-rail>.product-card.compact{flex:0 0 168px;width:168px;min-width:168px;max-width:168px;scroll-snap-align:start}
+  .da-home-compact-rail .product-imgbox{aspect-ratio:1/1!important}
+  .da-home-compact-rail .product-card-bottom{margin-top:auto}
+
+  .da-home-funnel [data-home-personalization-slot]:empty{display:none}
+  .da-home-funnel [data-home-personalization-slot]:not(:empty){display:block}
+  .da-home-funnel [data-home-personalization-slot]:not(:empty)>.da-home-section{margin-top:clamp(52px,6vw,78px)}
+  .da-home-funnel .brand-section,.da-home-funnel .category-section{margin-top:clamp(56px,6.5vw,84px)}
+  .da-home-funnel .brand-section .section-title,.da-home-funnel .category-section .section-title{font-size:clamp(26px,3vw,36px);letter-spacing:-.05em}
+
+  @media(max-width:767px){
+    .da-home-funnel .da-home-section{margin-top:46px}
+    .da-home-funnel .da-home-band{margin-top:46px;padding:26px 0}
+    .da-home-funnel .da-home-section-head{align-items:flex-start;gap:12px;margin-bottom:17px}
+    .da-home-funnel .da-home-section-head h2{font-size:26px;line-height:1.04}
+    .da-home-funnel .da-home-section-head p{font-size:12.5px;line-height:1.45}
+    .da-home-funnel .da-home-section-head>a{min-height:36px;padding:0 11px;font-size:11.5px}
+    .da-home-offer-feature{grid-template-columns:118px minmax(0,1fr);gap:13px;padding:11px;border-radius:20px}
+    .da-home-offer-feature-media{border-radius:16px}
+    .da-home-offer-feature-discount{left:7px;top:7px;min-height:28px;padding:0 8px;font-size:11px}
+    .da-home-offer-feature-copy{gap:7px}
+    .da-home-offer-feature-kicker{padding:5px 7px;font-size:9px}
+    .da-home-offer-feature-name{font-size:18px;line-height:1.08;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+    .da-home-offer-feature-price .price{font-size:25px}
+    .da-home-offer-feature-control{width:100%}
+    .da-home-offer-feature-control .add-btn,.da-home-offer-feature-control .qty-control{min-height:42px}
+    .da-home-journey-grid{grid-template-columns:1fr 1fr;gap:9px}
+    .da-home-journey-card{grid-template-columns:minmax(0,1fr) 58px;gap:8px;min-height:104px;padding:10px;border-radius:16px}
+    .da-home-journey-copy strong{font-size:13px}
+    .da-home-journey-copy small{display:none}
+    .da-home-journey-copy em{font-size:9.5px}
+    .da-home-journey-media{width:58px;border-radius:14px}
+    .da-home-compact-rail>.product-card.compact{flex-basis:148px;width:148px;min-width:148px;max-width:148px}
+  }
+
+  @media(min-width:768px){
+    .da-home-journey-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .da-home-compact-rail>.product-card.compact{flex-basis:188px;width:188px;min-width:188px;max-width:188px}
+  }
+
+  @media(min-width:1100px){
+    .da-home-journey-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+    .da-home-journey-card{display:flex;flex-direction:column-reverse;align-items:stretch;min-height:210px}
+    .da-home-journey-media{width:100%;border-radius:18px}
+    .da-home-journey-copy small{min-height:46px}
+    .da-home-compact-rail>.product-card.compact{flex-basis:198px;width:198px;min-width:198px;max-width:198px}
+  }
+  </style>
+
 </head>
 <body>
   <header class="header">
@@ -744,7 +846,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-13-pedidos-firebase-fila-v2',
+      APP_VERSION: '2026-07-14-home-funil-v1',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -1540,13 +1642,16 @@
     function bannerSlotHtml(position, options) {
       const opts = options || {};
       const targets = opts.targets || opts.target || null;
-      const banners = bannersInAccessOrder(position, getBanners(position, targets));
+      const orderedBanners = bannersInAccessOrder(position, getBanners(position, targets));
+      const requestedLimit = Math.max(0, Number(opts.limit || 0));
+      const banners = requestedLimit ? orderedBanners.slice(0, requestedLimit) : orderedBanners;
       if (!banners.length) return '';
       const label = opts.label || 'Destaques selecionados';
       const hint = state.bannerConfig.show_hint === false ? '' : 'Deslize para ver mais';
+      const head = opts.hideHead ? '' : `<div class="da-banner-zone-head"><div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(hint)}</span></div><span class="da-banner-page-counter" data-banner-counter>1 / 1</span></div>`;
       scheduleBannerSetup();
-      return `<section class="da-banner-zone" data-banner-zone data-banner-position="${escapeHtml(position)}" aria-label="${escapeHtml(label)}">
-        <div class="da-banner-zone-head"><div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(hint)}</span></div><span class="da-banner-page-counter" data-banner-counter>1 / 1</span></div>
+      return `<section class="da-banner-zone${opts.hideHead ? ' da-banner-zone-clean' : ''}" data-banner-zone data-banner-position="${escapeHtml(position)}" aria-label="${escapeHtml(label)}">
+        ${head}
         <div class="da-banner-track" data-banner-track>${banners.map((b,i) => bannerCardHtml(b, i, i < 2 && position === 'home.hero')).join('')}</div>
         <div class="da-banner-controls">
           <div class="da-banner-arrows"><button class="da-banner-arrow" type="button" data-banner-prev aria-label="Ver banners anteriores">‹</button><button class="da-banner-arrow" type="button" data-banner-next aria-label="Ver próximos banners">›</button></div>
@@ -3014,12 +3119,12 @@
 
     function homeQuickLinksHtml() {
       const cards = [
-        { href: '#/cestas', title: 'Cestas básicas', copy: 'Kits prontos e editáveis', img: cestasThumb(), cls: 'primary' },
-        { href: '#/ofertas', title: 'Ofertas de hoje', copy: 'Produtos com desconto ativo', img: offersThumb(), cls: 'offer' },
-        { href: '#/rotina/compra-mes', title: 'Compra do mês', copy: 'Básicos para abastecer a casa', img: routineThumb('compra-mes') },
-        { href: '#/rotina/limpeza', title: 'Limpeza', copy: 'Casa, lavanderia e cozinha', img: routineThumb('limpeza') }
+        { href: '#/rotina/compra-mes', title: 'Fazer compra do mês', copy: 'Comece pelos itens essenciais', img: routineThumb('compra-mes'), cls: 'primary' },
+        { href: '#/cestas', title: 'Cestas básicas', copy: 'Opções prontas e editáveis', img: cestasThumb() },
+        { href: '#/ofertas', title: 'Ofertas de hoje', copy: 'Aproveite os melhores preços', img: offersThumb(), cls: 'offer' },
+        { href: '#/rotina/limpeza', title: 'Limpeza e casa', copy: 'Casa, lavanderia e cozinha', img: routineThumb('limpeza') }
       ];
-      return `<section class="home-quick-grid" aria-label="Atalhos de compra">${cards.map(card => `<a class="home-quick-card ${card.cls || ''}" href="${card.href}"><div><strong>${escapeHtml(card.title)}</strong><span>${escapeHtml(card.copy)}</span></div><img loading="lazy" decoding="async" src="${escapeHtml(card.img)}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}</section>`;
+      return `<section class="home-quick-grid" aria-label="Atalhos principais de compra">${cards.map(card => `<a class="home-quick-card ${card.cls || ''}" href="${card.href}"><div><strong>${escapeHtml(card.title)}</strong><span>${escapeHtml(card.copy)}</span></div><img loading="lazy" decoding="async" src="${escapeHtml(card.img)}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}</section>`;
     }
 
     function brandStripHtml() {
@@ -5263,10 +5368,11 @@
         return `<div class="${extraClass || ''}" data-card-controls="${escapeHtml(id)}" data-control-mode="card">${productCardControlsHtml(id, qty, !isAvailable(product))}</div>`;
       }
     
-      function daHomeStandardShelfHtml(title, caption, products, href){
+      function daHomeStandardShelfHtml(title, caption, products, href, tone){
         const items = (products || []).filter(isAvailable).slice(0,4);
         if(!items.length) return '';
-        return `<section class="da-home-section da-home-standard-section" data-home-section="standard">${daHomeSectionHead(title,caption,href,'Ver todos')}<div class="da-home-standard-grid">${items.map(product=>productCard(product)).join('')}</div></section>`;
+        const bandClass = tone ? ` da-home-band da-home-band-${escapeHtml(tone)}` : '';
+        return `<section class="da-home-section da-home-standard-section${bandClass}" data-home-section="standard">${daHomeSectionHead(title,caption,href,'Ver todos')}<div class="da-home-standard-grid">${items.map(product=>productCard(product)).join('')}</div></section>`;
       }
 
       function daHomeHereTemProducts(){
@@ -5316,10 +5422,43 @@
         </article>`;
       }
     
+      function daHomeOfferPriorityDays(product){
+        const raw = String(product?.validade || '').trim();
+        if(!raw) return Number.POSITIVE_INFINITY;
+        const timestamp = Date.parse(/^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T23:59:59` : raw);
+        if(!Number.isFinite(timestamp)) return Number.POSITIVE_INFINITY;
+        const days = Math.ceil((timestamp - Date.now()) / 86400000);
+        return days >= 0 && days <= 120 ? days : Number.POSITIVE_INFINITY;
+      }
+
+      function daHomeOfferFeaturedHtml(product){
+        const id = String(product.id);
+        const display = productDisplayPricing(product);
+        const route = productRouteKey(product);
+        const expiry = product.validade && formatProductExpiry(product.validade) ? formatProductExpiry(product.validade) : '';
+        return `<article class="da-home-offer-feature" data-card-id="${escapeHtml(id)}">
+          <div class="da-home-offer-feature-media"><a href="#/produto/${route}" aria-label="Ver ${escapeHtml(product.name)}">${daHomeProductImage(product)}</a>${favoriteButtonHtml(id,false,'product')}${display.discountPercent > 0 ? `<span class="da-home-offer-feature-discount">-${display.discountPercent}%</span>` : ''}</div>
+          <div class="da-home-offer-feature-copy"><span class="da-home-offer-feature-kicker">Oferta em destaque</span><a class="da-home-offer-feature-name" href="#/produto/${route}">${escapeHtml(product.name)}</a>${expiry ? `<span class="da-home-offer-feature-expiry">Val. ${escapeHtml(expiry)}</span>` : ''}<div class="da-home-offer-feature-price">${productCardPriceHtml(display)}</div>${daHomeControls(product,'da-home-offer-feature-control')}</div>
+        </article>`;
+      }
+
       function daHomeOfferShelfHtml(products){
-        const items = (products || []).filter(isAvailable).slice(0,10);
+        const items = (products || []).filter(isAvailable).slice(0,14).sort((a,b)=>{
+          const daysA = daHomeOfferPriorityDays(a);
+          const daysB = daHomeOfferPriorityDays(b);
+          if(daysA !== daysB){
+            if(!Number.isFinite(daysA)) return 1;
+            if(!Number.isFinite(daysB)) return -1;
+            return daysA - daysB;
+          }
+          const displayA = productDisplayPricing(a);
+          const displayB = productDisplayPricing(b);
+          return Number(displayB.discountPercent || 0) - Number(displayA.discountPercent || 0) || displayA.effective - displayB.effective;
+        });
         if(!items.length) return '';
-        return `<section class="da-home-section da-home-offers-section" data-home-section="offers">${daHomeSectionHead('Ofertas de hoje','Preços especiais nos produtos disponíveis agora.','#/ofertas','Ver todas as ofertas')}<div class="da-home-offer-grid">${items.map(daHomeOfferCardHtml).join('')}</div></section>`;
+        const featured = items[0];
+        const remaining = items.slice(1,11);
+        return `<section class="da-home-section da-home-offers-section da-home-band da-home-band-offers" data-home-section="offers">${daHomeSectionHead('Ofertas de hoje','Oportunidades que merecem ser vistas primeiro. Aproveite enquanto houver estoque.','#/ofertas','Ver todas as ofertas')}${daHomeOfferFeaturedHtml(featured)}${remaining.length ? `<div class="da-home-offer-grid">${remaining.map(daHomeOfferCardHtml).join('')}</div>` : ''}</section>`;
       }
     
       function daHomeBasketCardHtml(basket){
@@ -5334,7 +5473,7 @@
       function daHomeBasketShelfHtml(baskets){
         const items = (baskets || []);
         if(!items.length) return '';
-        return `<section class="da-home-section da-home-baskets-section" data-home-section="baskets">${daHomeSectionHead('Cestas básicas','Veja todos os produtos antes de escolher sua cesta.','#/cestas','Ver todas as cestas')}<div class="da-home-basket-grid">${items.map(daHomeBasketCardHtml).join('')}</div></section>`;
+        return `<section class="da-home-section da-home-baskets-section da-home-band da-home-band-baskets" data-home-section="baskets">${daHomeSectionHead('Cestas básicas','Veja todos os produtos antes de escolher sua cesta.','#/cestas','Ver todas as cestas')}<div class="da-home-basket-grid">${items.map(daHomeBasketCardHtml).join('')}</div></section>`;
       }
     
       function daHomeKitCardHtml(kit){
@@ -5349,7 +5488,7 @@
       function daHomeKitShelfHtml(kits){
         const items = (kits || []);
         if(!items.length) return '';
-        return `<section class="da-home-section da-home-kits-section" data-home-section="kits">${daHomeSectionHead('Kits promocionais','Combos com desconto e produtos selecionados.','#/kits','Ver todos os kits')}<div class="da-home-kit-grid">${items.map(daHomeKitCardHtml).join('')}</div></section>`;
+        return `<section class="da-home-section da-home-kits-section da-home-band da-home-band-kits" data-home-section="kits">${daHomeSectionHead('Kits promocionais','Combos com desconto e produtos selecionados.','#/kits','Ver todos os kits')}<div class="da-home-kit-grid">${items.map(daHomeKitCardHtml).join('')}</div></section>`;
       }
     
       function daHomeRecentCardHtml(product){
@@ -5447,12 +5586,127 @@
         return picked;
       }
     
-      function daHomeCollectionSectionHtml(key,title,caption,products,href){
+      function daHomeCollectionSectionHtml(key,title,caption,products,href,tone){
         const definitions=daHomeCollectionDefinitions(key);
         const highlights=daHomeDiversifiedProducts(products,4);
-        return `<section class="da-home-section da-home-collection-section" data-home-section="collection-${escapeHtml(key)}">${daHomeSectionHead(title,caption,href,'Ver todos')}<div class="da-home-collection-grid">${definitions.map(daHomeCollectionCardHtml).join('')}</div>${highlights.length ? `<div class="da-home-collection-highlight-head"><strong>Produtos em destaque</strong></div><div class="da-home-collection-products">${highlights.map(product=>productCard(product)).join('')}</div>` : ''}</section>`;
+        const bandClass = tone ? ` da-home-band da-home-band-${escapeHtml(tone)}` : '';
+        return `<section class="da-home-section da-home-collection-section${bandClass}" data-home-section="collection-${escapeHtml(key)}">${daHomeSectionHead(title,caption,href,'Ver todos')}<div class="da-home-collection-grid">${definitions.map(daHomeCollectionCardHtml).join('')}</div>${highlights.length ? `<div class="da-home-collection-highlight-head"><strong>Produtos em destaque</strong></div><div class="da-home-collection-products">${highlights.map(product=>productCard(product)).join('')}</div>` : ''}</section>`;
       }
     
+      function daHomeUniqueProducts(products){
+        const seen = new Set();
+        return (products || []).filter(product=>{
+          const id = String(product?.id || '');
+          if(!id || seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+      }
+
+      function daHomeEffectivePrice(product){
+        try { return Number(productDisplayPricing(product).effective || product.price || 0); }
+        catch(_) { return Number(product?.price || 0); }
+      }
+
+      function daHomeCommercialSort(products){
+        return [...(products || [])].sort((a,b)=>{
+          const displayA = productDisplayPricing(a);
+          const displayB = productDisplayPricing(b);
+          return Number(displayB.discountPercent || 0) - Number(displayA.discountPercent || 0)
+            || daHomeEffectivePrice(a) - daHomeEffectivePrice(b)
+            || String(a.name || '').localeCompare(String(b.name || ''),'pt-BR');
+        });
+      }
+
+      function daHomeDiversifyByCategory(products,limit){
+        const pool = daHomeCommercialSort(daHomeUniqueProducts((products || []).filter(isAvailable)));
+        const selected = [];
+        const usedCategories = new Set();
+        for(const product of pool){
+          const category = norm(product.categoria || product.subcategoria || 'outros');
+          if(usedCategories.has(category)) continue;
+          selected.push(product);
+          usedCategories.add(category);
+          if(selected.length >= limit) return selected;
+        }
+        for(const product of pool){
+          if(selected.some(item=>String(item.id)===String(product.id))) continue;
+          selected.push(product);
+          if(selected.length >= limit) break;
+        }
+        return selected;
+      }
+
+      function daHomeCompactShelfHtml(title,caption,products,href,tone,label){
+        const items = daHomeUniqueProducts((products || []).filter(isAvailable)).slice(0,10);
+        if(!items.length) return '';
+        const bandClass = tone ? ` da-home-band da-home-band-${escapeHtml(tone)}` : '';
+        return `<section class="da-home-section da-home-compact-section${bandClass}" data-home-section="compact">${daHomeSectionHead(title,caption,href,label || 'Ver todos')}<div class="da-home-compact-rail">${items.map(product=>productCard(product,'compact')).join('')}</div></section>`;
+      }
+
+      function daHomeJourneyDefinitions(){
+        return [
+          {title:'Despensa básica',copy:'Arroz, feijão, açúcar e básicos para abastecer a casa.',href:'#/categoria/MERCEARIA%20BÁSICA',match:p=>norm(p.categoria)==='mercearia basica'},
+          {title:'Macarrão e molhos',copy:'Refeições rápidas e acompanhamentos para o dia a dia.',href:'#/categoria/MACARRÃO%20E%20MOLHOS',match:p=>norm(p.categoria)==='macarrao e molhos' || norm(p.categoria)==='molhos e condimentos'},
+          {title:'Café da manhã',copy:'Café, biscoitos e itens para começar o dia.',href:'#/rotina/cafe',match:p=>norm(p.categoria)==='cafe da manha' || norm(p.categoria)==='bolachas e biscoitos'},
+          {title:'Limpeza da casa',copy:'Pia, banheiro e superfícies da casa.',href:'#/rotina/limpeza',match:p=>norm(p.categoria)==='limpeza'},
+          {title:'Lavanderia',copy:'Sabão, lava-roupas, amaciante e acessórios.',href:'#/categoria/LAVANDERIA',match:p=>norm(p.categoria)==='lavanderia'},
+          {title:'Higiene da família',copy:'Banho, higiene bucal e cuidados do dia a dia.',href:'#/rotina/higiene',match:p=>['higiene','sabonete','desodorante'].includes(norm(p.categoria))}
+        ];
+      }
+
+      function daHomeJourneyCardHtml(definition){
+        const matches = state.products.filter(product=>isAvailable(product) && definition.match(product));
+        const image = pickProductImage(daHomeCommercialSort(matches).slice(0,18));
+        return `<a class="da-home-journey-card" href="${definition.href}"><span class="da-home-journey-copy"><strong>${escapeHtml(definition.title)}</strong><small>${escapeHtml(definition.copy)}</small><em>${matches.length} ${matches.length === 1 ? 'produto' : 'produtos'}</em></span><span class="da-home-journey-media"><img loading="lazy" decoding="async" src="${escapeHtml(image)}" alt="" onerror="window.__daFallbackImg(this)"></span></a>`;
+      }
+
+      function daHomePurchaseJourneyHtml(){
+        const definitions = daHomeJourneyDefinitions().filter(definition=>state.products.some(product=>isAvailable(product) && definition.match(product)));
+        if(!definitions.length) return '';
+        return `<section class="da-home-section da-home-journey-section da-home-band da-home-band-month" data-home-section="purchase-journey">${daHomeSectionHead('Faça sua compra do mês','Um caminho rápido pelos setores que normalmente entram na compra básica.','','')}<div class="da-home-journey-grid">${definitions.map(daHomeJourneyCardHtml).join('')}</div></section>`;
+      }
+
+      function daHomeProductSearchText(product){
+        return norm([product?.name,product?.categoria,product?.subcategoria,product?.subsubcategoria,product?.marca,product?.embalagem].filter(Boolean).join(' '));
+      }
+
+      function daHomeReminderProducts(){
+        const reminders = [
+          ['detergente'],['esponja','bucha'],['saco de lixo'],['filtro de cafe'],['papel higienico'],
+          ['creme dental','pasta de dente'],['sabonete'],['absorvente'],['amaciante'],['prendedor de roupa','prendedor']
+        ];
+        const available = daHomeCommercialSort(state.products.filter(isAvailable));
+        const selected = [];
+        for(const terms of reminders){
+          const product = available.find(item=>!selected.some(chosen=>String(chosen.id)===String(item.id)) && terms.some(term=>daHomeProductSearchText(item).includes(norm(term))));
+          if(product) selected.push(product);
+        }
+        return selected.slice(0,10);
+      }
+
+      function daHomeCareProducts(){
+        const allowed = new Set(['beleza','shampoo e condicionador','desodorante']);
+        const pool = state.products.filter(product=>isAvailable(product) && allowed.has(norm(product.categoria)));
+        return daHomeDiversifiedProducts(daHomeCommercialSort(pool),10);
+      }
+
+      function daHomeBargainProducts(){
+        const pool = state.products.filter(product=>isAvailable(product) && daHomeEffectivePrice(product) > 0 && daHomeEffectivePrice(product) <= 10);
+        return daHomeDiversifyByCategory(pool,10);
+      }
+
+      function daHomeUsefulProducts(){
+        const pool = state.products.filter(product=>isAvailable(product) && norm(product.categoria)==='utensilios e utilidades');
+        return daHomeDiversifiedProducts(daHomeCommercialSort(pool),10);
+      }
+
+      function daHomeTreatProducts(){
+        const categories = new Set(['chocolates e doces','salgadinhos e petiscos','bolachas e biscoitos','balas e chicletes']);
+        const pool = state.products.filter(product=>isAvailable(product) && categories.has(norm(product.categoria)));
+        return daHomeDiversifyByCategory(pool,10);
+      }
+
       window.daHomeBuyAgainShelfHtml=daHomeBuyAgainShelfHtml;
       window.daHomeRecentShelfHtml=daHomeRecentShelfHtml;
       window.daHomePersonalizedMosaicHtml=daHomePersonalizedMosaicHtml;
@@ -5464,29 +5718,34 @@
         const higiene=productsByRoutine('higiene',120);
         const cafe=productsByRoutine('cafe',100);
         const kits=getActiveKits();
-        app.innerHTML=`<div class="container home-clean da-home-modular">
-          ${bannerSlotHtml('home.hero',{carousel:true,kind:'hero'})}
+        const reminders=daHomeReminderProducts();
+        const care=daHomeCareProducts();
+        const bargains=daHomeBargainProducts();
+        const useful=daHomeUsefulProducts();
+        const treats=daHomeTreatProducts();
+        app.innerHTML=`<div class="container home-clean da-home-modular da-home-funnel">
+          ${bannerSlotHtml('home.hero',{carousel:true,kind:'hero',limit:6,hideHead:true,label:'Destaques da Dona Antônia'})}
           ${homeQuickLinksHtml()}
-          <div data-home-personalization-slot="buy-again"></div>
-          ${bannerSlotHtml('home.cestas.topo',{kind:'section'})}
-          ${daHomeBasketShelfHtml(state.cestas)}
-          ${bannerSlotHtml('home.kits.topo',{kind:'section'})}
-          ${daHomeKitShelfHtml(kits)}
-          ${bannerSlotHtml('home.ofertas.topo',{kind:'section'})}
           ${daHomeOfferShelfHtml(offers)}
+          <div data-home-personalization-slot="buy-again"></div>
+          ${daHomeBasketShelfHtml(state.cestas)}
+          ${daHomeKitShelfHtml(kits)}
+          ${bannerSlotHtml('home.compra-mes.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques para a compra do mês'})}
+          ${daHomePurchaseJourneyHtml()}
+          ${daHomeStandardShelfHtml('Essenciais da compra do mês','Uma seleção rápida para começar a abastecer a casa.',essentials,'#/rotina/compra-mes','month')}
+          ${daHomeCompactShelfHtml('Você já conferiu?','Itens que a gente costuma lembrar somente quando estão acabando.',reminders,'#/rotina/compra-mes','reminder','Continuar comprando')}
+          ${daHomeCollectionSectionHtml('limpeza','Limpeza da casa','Encontre rapidamente o tipo de limpeza que precisa.',limpeza,'#/rotina/limpeza','clean')}
           <div data-home-personalization-slot="chosen"></div>
-          ${bannerSlotHtml('home.compra-mes.topo',{kind:'section'})}
-          ${daHomeStandardShelfHtml('Compra do mês','Os itens essenciais para abastecer a casa.',essentials,'#/rotina/compra-mes')}
-          ${bannerSlotHtml('home.limpeza.topo',{kind:'section'})}
-          ${daHomeCollectionSectionHtml('limpeza','Limpeza da casa','Encontre rapidamente o tipo de limpeza que precisa.',limpeza,'#/rotina/limpeza')}
-          ${bannerSlotHtml('home.higiene.topo',{kind:'section'})}
-          ${daHomeCollectionSectionHtml('higiene','Higiene e beleza','Cuidados pessoais organizados por necessidade.',higiene,'#/rotina/higiene')}
-          ${bannerSlotHtml('home.cafe.topo',{kind:'section'})}
-          ${daHomeCollectionSectionHtml('cafe','Café da manhã','Tudo para começar o dia com praticidade.',cafe,'#/rotina/cafe')}
+          ${bannerSlotHtml('home.higiene.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques de cuidados pessoais'})}
+          ${daHomeCollectionSectionHtml('higiene','Higiene da família','Cuidados essenciais organizados por necessidade.',higiene,'#/rotina/higiene','care')}
+          ${daHomeCompactShelfHtml('Um cuidado para você','Pequenos cuidados que também podem entrar na compra do mês.',care,'#/categoria/BELEZA','care','Ver beleza')}
+          ${daHomeCompactShelfHtml('Achadinhos por até R$ 10','Produtos baratos, úteis e oportunidades que cabem facilmente no carrinho.',bargains,'#/categorias','bargain','Explorar categorias')}
+          ${daHomeCollectionSectionHtml('cafe','Para acompanhar o café','Café, biscoitos e acompanhamentos para deixar esse momento mais gostoso.',cafe,'#/rotina/cafe','coffee')}
+          ${daHomeCompactShelfHtml('Pode ser útil ter em casa','Pequenas utilidades que resolvem o dia a dia e muitas vezes ficam para depois.',useful,'#/categoria/UTENSÍLIOS%20E%20UTILIDADES','utility','Ver utilidades')}
+          ${daHomeCompactShelfHtml('Uma coisinha gostosa para depois','Doces, biscoitos e petiscos para colocar um pequeno agrado na compra.',treats,'#/categorias','treat','Ver categorias')}
           <div data-home-personalization-slot="recent"></div>
           ${daHomeHereTemHtml()}
           ${brandStripHtml()}
-          ${bannerSlotHtml('home.categorias.topo',{kind:'section'})}
           ${categoryButtonsHtml()}
         </div>`;
         setupBannerCarousels();
