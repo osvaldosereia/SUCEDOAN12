@@ -1,6 +1,6 @@
 {
   "schema_version": 6,
-  "updated_at": "2026-07-15T00:23:03.942Z",
+  "updated_at": "2026-07-14T20:32:20-04:00",
   "settings": {
     "image": {
       "width": 1024,
@@ -1836,7 +1836,7 @@
     },
     {
       "id": "banner-produto-812309u-1783818729228",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Fralda descartável Personal Tamanho RN/P 44 unidades",
       "alt": "Fralda descartável Personal Tamanho RN/P 44 unidades em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1883,7 +1883,11 @@
       "exibicoes": [],
       "controle": {},
       "oferta": {},
-      "automacao": {}
+      "automacao": {
+        "desativado_por": "limite_maximo_por_espaco",
+        "desativado_em": "2026-07-14T20:32:20-04:00",
+        "limite_aplicado": 4
+      }
     },
     {
       "id": "banner-produto-p0054-1783887969250",
@@ -2224,7 +2228,7 @@
     },
     {
       "id": "banner-produto-3362280788-1783890034877",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Doce de Abóbora com Coco Engenho Velho 400g",
       "alt": "Doce de Abóbora com Coco Engenho Velho 400g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -2285,7 +2289,11 @@
       "grupo_id": "banner-produto-3362280788-1783890034877",
       "asset_id": "banner-produto-3362280788-1783890034877",
       "exibicoes": [],
-      "automacao": {}
+      "automacao": {
+        "desativado_por": "limite_maximo_por_espaco",
+        "desativado_em": "2026-07-14T20:32:20-04:00",
+        "limite_aplicado": 4
+      }
     },
     {
       "id": "banner-produto-p-bu9h-1783890061736",
@@ -5818,6 +5826,69 @@
           "ordem": 1
         }
       ]
+    },
+    {
+      "id": "banner-produto-p1m77-1784075540000",
+      "ativo": true,
+      "titulo": "Oferta · Above Desodorante Aerosol Fresh 150ml",
+      "alt": "Above Desodorante Aerosol Fresh 150ml em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338131710",
+        "produtos": [
+          {
+            "firebaseKey": "1776338131710",
+            "id": "1776338131710",
+            "codigo": "P1m77",
+            "nome": "Above Desodorante Aerosol Fresh 150ml",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b48/2026/07/p1m77-above-desodorante-aerosol-fresh-150ml-20260710-231526897.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "rotina.higiene.topo",
+        "alvo": "",
+        "ordem": 2
+      },
+      "imagem": "site/banners/ativos/banner-produto-p1m77-1784075540000/banner-1784075540000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P1m77"
+      },
+      "periodo": {
+        "inicio": "2026-07-14T20:32:20-04:00",
+        "fim": "2026-07-22T00:32:20.000Z"
+      },
+      "criado_em": "2026-07-14T20:32:20-04:00",
+      "atualizado_em": "2026-07-14T20:32:20-04:00",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-p1m77-1784075540000",
+      "asset_id": "banner-produto-p1m77-1784075540000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 9.9,
+        "preco_oferta": 7.92,
+        "percentual_desconto": 20
+      },
+      "automacao": {
+        "automatico": true,
+        "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "rotina.higiene.topo",
+        "carga_antes": 1,
+        "limite_por_espaco": 4,
+        "dias_sem_repetir": 30
+      }
     }
   ]
 }
