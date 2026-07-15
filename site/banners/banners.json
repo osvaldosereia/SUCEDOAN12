@@ -1,6 +1,6 @@
 {
   "schema_version": 6,
-  "updated_at": "2026-07-14T20:06:32-04:00",
+  "updated_at": "2026-07-14T20:07:44-04:00",
   "settings": {
     "image": {
       "width": 1024,
@@ -5641,6 +5641,68 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "rotina.higiene.topo",
         "carga_antes": 0,
+        "limite_por_espaco": 4,
+        "dias_sem_repetir": 30
+      }
+    },
+    {
+      "id": "banner-produto-67793151-1784074064000",
+      "ativo": true,
+      "titulo": "Oferta · Baby Free Lenço Umedecido 50 lenços",
+      "alt": "Baby Free Lenço Umedecido 50 lenços em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338130542",
+        "produtos": [
+          {
+            "firebaseKey": "1776338130542",
+            "id": "1776338130542",
+            "codigo": "67793151",
+            "nome": "Baby Free Lenço Umedecido 50 lenços",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b19/2026/07/baby-free-lenco-umedecido-50-lencos-baby-free-50-lencos-bebe-higiene-7898620010836-foto-atual-otimizada-20260711061746.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "rotina.higiene.topo",
+        "alvo": "",
+        "ordem": 2
+      },
+      "imagem": "site/banners/ativos/banner-produto-67793151-1784074064000/banner-1784074064000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "67793151"
+      },
+      "periodo": {
+        "inicio": "2026-07-14T20:07:44-04:00",
+        "fim": "2026-07-22T00:07:44.000Z"
+      },
+      "criado_em": "2026-07-14T20:07:44-04:00",
+      "atualizado_em": "2026-07-14T20:07:44-04:00",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-67793151-1784074064000",
+      "asset_id": "banner-produto-67793151-1784074064000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 6.5,
+        "preco_oferta": 5.53
+      },
+      "automacao": {
+        "automatico": true,
+        "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "rotina.higiene.topo",
+        "carga_antes": 1,
         "limite_por_espaco": 4,
         "dias_sem_repetir": 30
       }
