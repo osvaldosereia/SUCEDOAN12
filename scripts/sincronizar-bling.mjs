@@ -6,6 +6,7 @@ const APPLY = process.argv.includes('--apply');
 const stateArg = process.argv.indexOf('--state');
 const STATE_FILE = stateArg >= 0 ? process.argv[stateArg + 1] : '.automation/bling-sync-state.json';
 const BATCH_SIZE = 999; // mesmo teto da importação de produtos do Bling
+const MAX_PRODUCTS = Math.max(0, Number.parseInt(process.env.MAX_PRODUCTS || '0', 10) || 0); // 0 = todos
 const API_BASE = 'https://api.bling.com.br/Api/v3';
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const text = value => String(value ?? '').trim();
@@ -110,47 +111,85 @@ async function blingProducts(accessToken) {
     const response = await fetchWithRetry(`${API_BASE}/produtos?pagina=${page}&limite=100`, { headers }, { label: `Listagem Bling página ${page}` });
     const body = await response.json();
     const rows = Array.isArray(body.data) ? body.data : [];
-    for (const row of rows) if (text(row.codigo) && row.id !== undefined) byCode.set(text(row.codigo), row.id);
+    // A listagem pode trazer tipo/formato. Quando não trouxer, buscamos o
+    // detalhe do produto antes do PUT para não remover campos obrigatórios.
+    for (const row of rows) {
+      if (text(row.codigo) && row.id !== undefined) {
+        byCode.set(text(row.codigo), { id: row.id, tipo: text(row.tipo), formato: text(row.formato) });
+      }
+    }
     if (rows.length < 100) break;
     await sleep(450); // 2,2 req/s: abaixo do limite global de 3 req/s do Bling
   }
   return byCode;
 }
 
-async function sendProduct(accessToken, existingId, payload) {
+async function blingProductDetail(accessToken, id) {
+  const response = await fetchWithRetry(`${API_BASE}/produtos/${encodeURIComponent(id)}`, {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json', 'enable-jwt': '1' }
+  }, { label: `Detalhe do produto Bling ${id}` });
+  const body = await response.json();
+  return body?.data || {};
+}
+
+async function sendProduct(accessToken, existing, payload) {
+  const existingId = typeof existing === 'object' ? existing?.id : existing;
   const method = existingId ? 'PUT' : 'POST';
   const url = existingId ? `${API_BASE}/produtos/${encodeURIComponent(existingId)}` : `${API_BASE}/produtos`;
+  const requestPayload = { ...payload };
+
+  if (existingId) {
+    let tipo = text(existing?.tipo);
+    let formato = text(existing?.formato);
+    if (!tipo || !formato) {
+      const detail = await blingProductDetail(accessToken, existingId);
+      tipo = text(detail.tipo);
+      formato = text(detail.formato);
+      await sleep(450); // mantém o total abaixo de 3 requisições/segundo
+    }
+    if (!tipo || !formato) throw new Error(`Produto ${payload.codigo}: Bling não retornou tipo e formato obrigatórios.`);
+    requestPayload.tipo = tipo;
+    requestPayload.formato = formato;
+  } else {
+    // Produto novo simples. Os itens existentes sempre usam os valores já
+    // cadastrados no Bling, preservando suas estruturas ou variações.
+    requestPayload.tipo = 'P';
+    requestPayload.formato = 'S';
+  }
+
   const response = await fetchWithRetry(url, {
     method,
     headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json', 'enable-jwt': '1' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(requestPayload)
   }, { label: `${method} produto ${payload.codigo}` });
   const body = await response.json().catch(() => ({}));
   return existingId || body?.data?.id || null;
 }
 
-const report = { startedAt: new Date().toISOString(), mode: APPLY ? 'production' : 'dry-run', created: 0, updated: 0, unchanged: 0, invalid: [], errors: [], batches: 0 };
+const report = { startedAt: new Date().toISOString(), mode: APPLY ? 'production' : 'dry-run', created: 0, updated: 0, unchanged: 0, deferred: 0, invalid: [], errors: [], batches: 0 };
 try {
   const state = readState();
   const { products, skipped } = await firebaseProducts();
   report.invalid.push(...skipped);
   const changed = products.filter(product => state.products[product.firebaseKey]?.hash !== hash(product.payload));
+  const selected = MAX_PRODUCTS > 0 ? changed.slice(0, MAX_PRODUCTS) : changed;
   report.unchanged = products.length - changed.length;
-  const batches = Array.from({ length: Math.ceil(changed.length / BATCH_SIZE) }, (_, index) => changed.slice(index * BATCH_SIZE, (index + 1) * BATCH_SIZE));
+  report.deferred = changed.length - selected.length;
+  const batches = Array.from({ length: Math.ceil(selected.length / BATCH_SIZE) }, (_, index) => selected.slice(index * BATCH_SIZE, (index + 1) * BATCH_SIZE));
   report.batches = batches.length;
-  console.log(`${products.length} produtos no Firebase; ${changed.length} pendentes; ${batches.length} lote(s) de até ${BATCH_SIZE}.`);
+  console.log(`${products.length} produtos no Firebase; ${changed.length} pendentes; ${selected.length} selecionado(s); ${batches.length} lote(s) de até ${BATCH_SIZE}.`);
 
-  if (APPLY && changed.length) {
+  if (APPLY && selected.length) {
     const accessToken = await token();
     const existingByCode = await blingProducts(accessToken);
     for (const [index, batch] of batches.entries()) {
       console.log(`Processando lote ${index + 1}/${batches.length} (${batch.length} produtos).`);
       for (const product of batch) {
         try {
-          const existingId = existingByCode.get(product.payload.codigo);
-          const id = await sendProduct(accessToken, existingId, product.payload);
+          const existing = existingByCode.get(product.payload.codigo);
+          const id = await sendProduct(accessToken, existing, product.payload);
           state.products[product.firebaseKey] = { hash: hash(product.payload), blingId: id, codigo: product.payload.codigo, syncedAt: new Date().toISOString() };
-          if (existingId) report.updated++; else { report.created++; if (id) existingByCode.set(product.payload.codigo, id); }
+          if (existing) report.updated++; else { report.created++; if (id) existingByCode.set(product.payload.codigo, { id, tipo: 'P', formato: 'S' }); }
         } catch (error) { report.errors.push({ firebaseKey: product.firebaseKey, codigo: product.payload.codigo, reason: error.message }); }
         await sleep(450);
       }
