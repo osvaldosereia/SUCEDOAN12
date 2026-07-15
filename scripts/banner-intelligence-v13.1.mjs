@@ -381,10 +381,10 @@ export function buildBannerRecord(decision,{nowMs=Date.now(),imagePath,requestId
     imagem:finalImagePath,link:{tipo:'produto',valor:code},
     periodo:{inicio:new Date(offer.effectiveStartMs).toISOString(),fim:new Date(offer.effectiveEndMs).toISOString(),fuso_horario:'America/Cuiaba',regra_duracao:'periodo_da_oferta_limitado_pelo_vencimento_produto',encurtado_pelo_vencimento_produto:Number.isFinite(offer.productEndMs)&&offer.productEndMs<offer.offerEndMs},
     criado_em:new Date(nowMs).toISOString(),atualizado_em:new Date(nowMs).toISOString(),
-    geracao:{largura:1024,altura:1536,proporcao:'2:3',formato:'webp',compression:25,asset_unico:true,modelo:text(globalThis.process?.env?.OPENAI_IMAGE_MODEL || 'gpt-image-2')},
+    geracao:{largura:1024,altura:1536,proporcao:'2:3',formato:'webp',compression:25,asset_unico:true,modelo:'make_openai_nativo'},
     grupo_id:bannerId,asset_id:bannerId,exibicoes:[],controle:{},
     oferta:{preco_anterior:offer.regular,preco_oferta:offer.offer,percentual_desconto:offer.discountPct,inicio:offer.start||null,fim:offer.end},
-    automacao:{automatico:true,motor:'github_actions_v13',requisicao_id:requestId,estrategia:'familia_menos_preenchida_primeiro_oferta_ideal_depois',ordem_selecao:'posicao_depois_oferta',espaco_escolhido:decision.family.local,alvo_escolhido:decision.target,carga_familia_antes:decision.family.loadBefore,carga_alvo_antes:decision.targetLoadBefore,pontuacao_comercial:decision.commercialScore,limite_por_posicao:MAX_PER_POSITION,dias_sem_repetir:NO_REPEAT_DAYS,repeticao_estrita:true}
+    automacao:{automatico:true,motor:'github_actions_selecao_make_geracao_v13_1',requisicao_id:requestId,estrategia:'familia_menos_preenchida_primeiro_oferta_ideal_depois_v13_1',ordem_selecao:'posicao_depois_oferta',espaco_escolhido:decision.family.local,alvo_escolhido:decision.target,carga_familia_antes:decision.family.loadBefore,carga_alvo_antes:decision.targetLoadBefore,pontuacao_comercial:decision.commercialScore,limite_por_posicao:MAX_PER_POSITION,dias_sem_repetir:NO_REPEAT_DAYS,repeticao_estrita:true}
   };
 }
 
@@ -394,60 +394,14 @@ async function fetchJson(url) {
   return response.json();
 }
 
-async function generateImage(referenceUrl,prompt) {
-  const reference = await fetch(referenceUrl);
-  if (!reference.ok) throw new Error(`Falha ao baixar imagem do produto: HTTP ${reference.status}`);
-  const referenceBytes = await reference.arrayBuffer();
-  const referenceType = reference.headers.get('content-type') || 'image/webp';
-  const form = new FormData();
-  form.set('model',text(process.env.OPENAI_IMAGE_MODEL || 'gpt-image-2'));
-  form.set('prompt',prompt);
-  form.set('size','1024x1536');
-  form.set('quality',text(process.env.OPENAI_IMAGE_QUALITY || 'low'));
-  form.set('output_format','webp');
-  form.set('output_compression',text(process.env.OPENAI_IMAGE_COMPRESSION || '25'));
-  form.set('input_fidelity','high');
-  form.append('image',new Blob([referenceBytes],{type:referenceType}),'produto.webp');
-  const response = await fetch('https://api.openai.com/v1/images/edits',{
-    method:'POST',headers:{authorization:`Bearer ${process.env.OPENAI_API_KEY}`},body:form
-  });
-  const payload = await response.json();
-  if (!response.ok) throw new Error(`Falha na geração da imagem: HTTP ${response.status} · ${payload?.error?.message || 'erro desconhecido'}`);
-  const encoded = payload?.data?.[0]?.b64_json;
-  if (!encoded) throw new Error('A API não retornou a imagem em base64.');
-  return Buffer.from(encoded,'base64');
-}
-
-function applyEngineSettings(catalog,nowMs) {
-  catalog.schema_version = Math.max(13,number(catalog.schema_version));
-  catalog.updated_at = new Date(nowMs).toISOString();
-  catalog.settings = catalog.settings && typeof catalog.settings === 'object' ? catalog.settings : {};
-  catalog.settings.automatic_positioning = {
-    version:13,
-    strategy:'familia_menos_preenchida_primeiro_oferta_ideal_depois',
-    selection_order:'1_escolher_familia_com_menor_carga_2_filtrar_produtos_compativeis_3_pontuar_ofertas_4_criar_e_publicar',
-    max_active_per_position_family:MAX_PER_POSITION,
-    active_site_positions:FIXED_POSITIONS,
-    automatic_context_positions:CONTEXT_POSITIONS,
-    automatic_positions:POSITION_FAMILIES.map(position=>position.local),
-    balance_metric:'quantidade_ativa_ou_agendada_por_familia_de_posicao',
-    tie_breaker:'ordem_estavel_das_19_familias',
-    product_score:['afinidade_semantica','percentual_de_desconto','estoque','economia_absoluta','urgencia_da_oferta','diversidade_de_alvo'],
-    product_repeat_control:'estrito_30_dias_sem_fallback',
-    kit_source:'site/kits.json',
-    cesta_source:'site/produtos-cesta-basica.json'
-  };
-  catalog.settings.banner_limits = {max_active_per_position_family:MAX_PER_POSITION,scope:'familia_de_posicao',visible_at_once:4};
-  return catalog;
-}
-
 export async function run() {
-  const root = process.cwd();
-  const bannersPath = text(process.env.BANNERS_PATH || 'site/banners/banners.json');
-  const kitsPath = text(process.env.KITS_PATH || 'site/kits.json');
-  const cestasPath = text(process.env.CESTAS_PATH || 'site/produtos-cesta-basica.json');
-  const firebaseUrl = text(process.env.FIREBASE_PRODUTOS_URL || 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json');
-  const dryRun = normalized(process.env.DRY_RUN) === 'true' || process.env.DRY_RUN === '1';
+  const runtime = globalThis.process;
+  const root = runtime.cwd();
+  const bannersPath = text(runtime.env.BANNERS_PATH || 'site/banners/banners.json');
+  const kitsPath = text(runtime.env.KITS_PATH || 'site/kits.json');
+  const cestasPath = text(runtime.env.CESTAS_PATH || 'site/produtos-cesta-basica.json');
+  const firebaseUrl = text(runtime.env.FIREBASE_PRODUTOS_URL || 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json');
+  const dryRun = normalized(runtime.env.DRY_RUN) === 'true' || runtime.env.DRY_RUN === '1';
   const nowMs = Date.now();
   const [catalogRaw,kitsRaw,cestasRaw,products] = await Promise.all([
     fs.readFile(path.join(root,bannersPath),'utf8'),
@@ -459,28 +413,59 @@ export async function run() {
   const decision = selectBannerDecision({catalog,products,kits:JSON.parse(kitsRaw),cestas:JSON.parse(cestasRaw),nowMs});
   if (!decision.ok) {
     console.log(JSON.stringify({status:decision.status,ofertas_elegiveis:decision.eligibleProducts,ofertas_nao_repetidas:decision.freshProducts,desativados_por_produto:decision.deactivatedByProduct,cargas_por_familia:decision.familyLoads},null,2));
-    if (!dryRun && decision.deactivatedByProduct > 0) {
-      applyEngineSettings(decision.catalog,nowMs);
-      await fs.writeFile(path.join(root,bannersPath),`${JSON.stringify(decision.catalog,null,2)}\n`,'utf8');
-    }
     return decision;
   }
-  const record = buildBannerRecord(decision,{nowMs,requestId:text(process.env.REQUEST_ID)});
+  const requestId = text(runtime.env.REQUEST_ID || runtime.env.GITHUB_RUN_ID || nowMs);
+  const record = buildBannerRecord(decision,{nowMs,requestId});
   const prompt = buildPrompt(decision);
-  const summary = {status:dryRun?'dry_run':'publicando',posicao:decision.family.local,alvo:decision.target,produto:record.origem.produtos[0].nome,codigo:record.origem.produtos[0].codigo,pontuacao:decision.commercialScore,carga_antes:decision.family.loadBefore,ofertas_elegiveis:decision.eligibleProducts,ofertas_nao_repetidas:decision.freshProducts,inicio:record.periodo.inicio,fim:record.periodo.fim};
+  const summary = {
+    status:dryRun?'dry_run':'enviando_ao_make',
+    posicao:decision.family.local,
+    alvo:decision.target,
+    produto:record.origem.produtos[0].nome,
+    codigo:record.origem.produtos[0].codigo,
+    pontuacao:decision.commercialScore,
+    carga_antes:decision.family.loadBefore,
+    ofertas_elegiveis:decision.eligibleProducts,
+    ofertas_nao_repetidas:decision.freshProducts,
+    inicio:record.periodo.inicio,
+    fim:record.periodo.fim
+  };
   console.log(JSON.stringify(summary,null,2));
   if (dryRun) return {...decision,record,prompt};
-  if (!process.env.OPENAI_API_KEY) throw new Error('Configure o secret OPENAI_API_KEY no GitHub antes de executar sem dry-run.');
-  const image = await generateImage(productImage(decision.product),prompt);
-  const absoluteImagePath = path.join(root,record.imagem);
-  await fs.mkdir(path.dirname(absoluteImagePath),{recursive:true});
-  await fs.writeFile(absoluteImagePath,image);
-  decision.catalog.banners.push(record);
-  applyEngineSettings(decision.catalog,nowMs);
-  await fs.writeFile(path.join(root,bannersPath),`${JSON.stringify(decision.catalog,null,2)}\n`,'utf8');
-  return {...decision,record,prompt};
+  const makeWebhook = text(runtime.env.MAKE_BANNER_WEBHOOK_URL);
+  if (!makeWebhook) throw new Error('Configure o secret MAKE_BANNER_WEBHOOK_URL no GitHub.');
+  const payload = {
+    acao:'criar_banner_preselecionado',
+    versao_contrato:'13.1',
+    origem:'github-actions-seletor-v13.1',
+    requisicao_id:requestId,
+    banner_id:record.id,
+    banner_path:record.imagem,
+    imagem_url:productImage(decision.product),
+    prompt,
+    catalogo_gerado_json:JSON.stringify({schema_version:13,banners:[record]}),
+    selecao:{
+      local:decision.family.local,
+      alvo:decision.target,
+      rotulo:decision.targetLabel || decision.family.label,
+      carga_familia_antes:decision.family.loadBefore,
+      carga_alvo_antes:decision.targetLoadBefore,
+      pontuacao_comercial:decision.commercialScore,
+      produto_id:productId(decision.product),
+      produto_codigo:productCode(decision.product),
+      produto_nome:text(decision.product.nome),
+      inicio_banner:record.periodo.inicio,
+      fim_banner:record.periodo.fim
+    }
+  };
+  const response = await fetch(makeWebhook,{method:'POST',headers:{accept:'application/json','content-type':'application/json'},body:JSON.stringify(payload)});
+  const responseText = await response.text();
+  if (!response.ok) throw new Error(`Make recusou o banner preselecionado: HTTP ${response.status} · ${responseText.slice(0,500)}`);
+  console.log(JSON.stringify({status:'make_aceitou',http:response.status,requisicao_id:requestId,resposta:responseText.slice(0,500)},null,2));
+  return {...decision,record,prompt,makeStatus:response.status};
 }
 
 if (globalThis.process?.argv?.[1] && import.meta.url === pathToFileURL(globalThis.process.argv[1]).href) {
-  run().catch(error=>{console.error(error?.stack || error);process.exitCode=1;});
+  run().catch(error=>{console.error(error?.stack || error);globalThis.process.exitCode=1;});
 }
