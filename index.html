@@ -3531,7 +3531,7 @@
       const q = String(query || '').trim();
       state.searchQuery = q;
       const searchInput = $('search-input');
-      if (searchInput && searchInput.value !== q) searchInput.value = q;
+      if (searchInput && document.activeElement !== searchInput && searchInput.value !== q) searchInput.value = q;
       updateSearchButtons();
       const products = searchProducts(q);
       app.innerHTML = `<div class="container">${pageHeader(q ? `Busca: ${q}` : 'Busca', q ? `${products.length} resultado(s)` : 'Digite o produto na busca acima.', '#/')}${bannerSlotHtml('busca.topo', { kind: 'section' })}${q ? (products.length ? `<div class="product-list">${products.map(p => productCard(p, 'list')).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`) : ''}</div>`;
@@ -5340,7 +5340,7 @@
     const q = String(query || '').trim();
     state.searchQuery = q;
     const searchInput = $('search-input');
-    if(searchInput && searchInput.value !== q) searchInput.value = q;
+    if(searchInput && document.activeElement !== searchInput && searchInput.value !== q) searchInput.value = q;
     updateSearchButtons();
     const products = searchProducts(q);
     const categories = [...new Set(products.map(product=>product.categoria).filter(Boolean))];
@@ -5907,7 +5907,7 @@
         const q=String(query || '').trim();
         state.searchQuery=q;
         const searchInput=$('search-input');
-        if(searchInput && searchInput.value!==q) searchInput.value=q;
+        if(searchInput && document.activeElement !== searchInput && searchInput.value!==q) searchInput.value=q;
         updateSearchButtons();
         const products=searchProducts(q);
         let contextual='';
@@ -6383,4 +6383,3 @@
 </script>
 </body>
 </html>
- 
