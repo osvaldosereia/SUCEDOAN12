@@ -1,6 +1,6 @@
 {
   "schema_version": 6,
-  "updated_at": "2026-07-15T02:35:01-04:00",
+  "updated_at": "2026-07-15T04:07:08-04:00",
   "settings": {
     "image": {
       "width": 1024,
@@ -5824,6 +5824,69 @@
         "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "categorias.topo",
+        "carga_antes": 3,
+        "limite_por_espaco": 4,
+        "dias_sem_repetir": 30
+      }
+    },
+    {
+      "id": "banner-produto-55551620-1784102788000",
+      "ativo": true,
+      "titulo": "Oferta · Anglo Salsicha ao Molho - 300g",
+      "alt": "Anglo Salsicha ao Molho - 300g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776955551620",
+        "produtos": [
+          {
+            "firebaseKey": "1776955551620",
+            "id": "1776955551620",
+            "codigo": "55551620",
+            "nome": "Anglo Salsicha ao Molho - 300g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b36/2026/07/anglo-salsicha-ao-molho-300g-anglo-300g-mercearia-basica-enlatados-7899567245220-foto-atual-otimizada-20260711072652.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "ofertas.topo",
+        "alvo": "",
+        "ordem": 4
+      },
+      "imagem": "site/banners/ativos/banner-produto-55551620-1784102788000/banner-1784102788000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "55551620"
+      },
+      "periodo": {
+        "inicio": "2026-07-15T04:06:28-04:00",
+        "fim": "2026-07-22T08:06:28.000Z"
+      },
+      "criado_em": "2026-07-15T04:06:28-04:00",
+      "atualizado_em": "2026-07-15T04:06:28-04:00",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-55551620-1784102788000",
+      "asset_id": "banner-produto-55551620-1784102788000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 4.79,
+        "preco_oferta": 4.41,
+        "percentual_desconto": 8
+      },
+      "automacao": {
+        "automatico": true,
+        "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "ofertas.topo",
         "carga_antes": 3,
         "limite_por_espaco": 4,
         "dias_sem_repetir": 30
