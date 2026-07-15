@@ -4422,7 +4422,8 @@
 
       return {
         id: String(pedido.id || ''),
-        numero_pedido: String(pedido.id || ''),
+        numero_pedido: String(pedido.numero || pedido.id || ''),
+        idempotency_key: String(pedido.idempotencyKey || pedido.id || ''),
         origem: 'site',
         status: 'recebido',
         status_separacao: 'pendente',
@@ -4766,7 +4767,9 @@
       saveCheckoutClient();
       if (btn) btn.textContent = 'Processando...';
 
-      const orderId = String(Date.now()).slice(-6);
+      const orderTimestamp = Date.now();
+      const orderNumber = String(orderTimestamp).slice(-6);
+      const orderId = `${orderTimestamp}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
       let itemsTxt = '';
       let totalBruto = 0;
       let totalTaxasExtras = 0;
@@ -4821,6 +4824,8 @@
       const makePayload = {
         pedido: {
           id: orderId,
+          numero: orderNumber,
+          idempotencyKey: orderId,
           itens: pedidoItens,
           total: totalSite,
           totalProdutos: totalProdutosBling,
@@ -4894,7 +4899,7 @@
       const expiryBulkSummary = pricing.expiryBulkDiscount > 0 ? `\n⏳ *VALIDADE + 3 UNIDADES:* − ${fmt(pricing.expiryBulkDiscount)}` : '';
       const wholesaleSummary = pricing.wholesaleDiscount > 0 ? `\n📦 *DESCONTO ATACADO:* − ${fmt(pricing.wholesaleDiscount)}` : '';
       const savingsSummary = pricing.discount > 0 ? `\n✅ *ECONOMIA TOTAL:* − ${fmt(pricing.discount)}` : '';
-      const msg = `*PEDIDO #${orderId}*${basketHeader}\n*ENTREGA:* ${formatOrderDate(dataAgendamento)}\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*\nValor normal sem descontos: ${fmt(pricing.subtotalBefore)}${couponSummary}${kitSummary}${expiryBulkSummary}${wholesaleSummary}${savingsSummary}\n💰 *TOTAL FINAL:* ${fmt(totalSite)}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.${removedSection}`;
+      const msg = `*PEDIDO #${orderNumber}*${basketHeader}\n*ENTREGA:* ${formatOrderDate(dataAgendamento)}\n------------------------------\n*ITENS SELECIONADOS*\n${itemsTxt}\n*RESUMO DE VALORES*\nValor normal sem descontos: ${fmt(pricing.subtotalBefore)}${couponSummary}${kitSummary}${expiryBulkSummary}${wholesaleSummary}${savingsSummary}\n💰 *TOTAL FINAL:* ${fmt(totalSite)}\n------------------------------${dadosCliente}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.${removedSection}`;
 
       // Preserva o pedido localmente antes de abrir o WhatsApp. Nenhuma chamada de rede bloqueia o cliente.
       enqueueOrderDelivery(makePayload);
