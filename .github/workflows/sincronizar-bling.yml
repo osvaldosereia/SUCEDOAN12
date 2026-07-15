@@ -1,0 +1,61 @@
+name: Sincronizar Firebase para Bling
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run apenas confere; production envia alterações ao Bling"
+        required: true
+        default: dry-run
+        type: choice
+        options: [dry-run, production]
+  repository_dispatch:
+    types: [bling-sync]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bling-product-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+      BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
+      BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
+      BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
+      SYNC_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || github.event.client_payload.mode || 'dry-run' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Sincronizar produtos
+        run: |
+          if [ "$SYNC_MODE" = "production" ]; then
+            node scripts/sincronizar-bling.mjs --apply --state .automation/bling-sync-state.json
+          else
+            node scripts/sincronizar-bling.mjs --state .automation/bling-sync-state.json
+          fi
+
+      - name: Guardar estado da sincronização
+        if: success() && env.SYNC_MODE == 'production'
+        run: |
+          if git diff --quiet -- .automation/bling-sync-state.json; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .automation/bling-sync-state.json
+          git commit -m "chore: atualiza estado da sincronização Bling"
+          git push
+
+      - name: Publicar relatório da execução
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-bling-${{ github.run_id }}
+          path: bling-sync-report.json
+          if-no-files-found: ignore
