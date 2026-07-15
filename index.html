@@ -152,6 +152,8 @@
   .da-banner-zone-head strong{font-size:17px}
   .da-banner-zone-head span{font-size:12px}
 }
+@keyframes daBannerQueueIn{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+.da-banner-card[data-queue-visible="true"]{animation:daBannerQueueIn .38s ease both}
 @media (prefers-reduced-motion:reduce){.da-banner-track{scroll-behavior:auto!important}.da-banner-card{transition:none!important}}
 </style>
 
@@ -922,7 +924,7 @@
       kits: [],
       banners: [],
       bannerTimers: [],
-      bannerConfig: { desktop_columns:4, tablet_columns:3, mobile_columns:2, show_arrows:true, show_dots:true, show_hint:true, autoplay:false, intervalo_ms:5200, loop:false, pausar_hover:true },
+      bannerConfig: { desktop_columns:4, tablet_columns:3, mobile_columns:2, show_arrows:true, show_dots:true, show_hint:true, autoplay:false, intervalo_ms:5200, loop:false, pausar_hover:true, queue_capacity:12, visible_limit:4, queue_interval_ms:9000, queue_random:true },
       favorites: new Set(),
       cart: {},
       cartOrder: [],
@@ -1512,6 +1514,7 @@
     function applyBannersData(data) {
       const settings = data && data.settings ? data.settings : {};
       const carousel = settings.carousel || data?.configuracao_carrossel || data?.carousel_config || data?.configuracao || {};
+      const queue = settings.banner_queue || settings.fila_banners || {};
       state.bannerConfig = {
         desktop_columns: Math.max(1, Number(carousel.desktop_columns || 4)),
         tablet_columns: Math.max(1, Number(carousel.tablet_columns || 3)),
@@ -1522,14 +1525,24 @@
         autoplay: carousel.autoplay === true || carousel.automatico === true,
         intervalo_ms: Math.max(3000, Number(carousel.intervalo_ms || carousel.interval || 5200)),
         loop: carousel.loop === true,
-        pausar_hover: carousel.pausar_hover !== false
+        pausar_hover: carousel.pausar_hover !== false,
+        queue_capacity: Math.min(12, Math.max(4, Number(queue.capacity_per_space || queue.capacidade_por_posicao || 12))),
+        visible_limit: Math.min(4, Math.max(1, Number(queue.visible_at_once || queue.visiveis_por_vez || 4))),
+        queue_interval_ms: Math.max(5000, Number(queue.rotation_interval_ms || queue.intervalo_rotacao_ms || 9000)),
+        queue_random: queue.random !== false && queue.aleatoria !== false
       };
       const aliases = {
         'home.inicio': 'home.hero',
-        'home.cestas': 'home.cestas.topo',
-        'home.kits': 'home.kits.topo',
+        'home.cestas': 'cestas.topo',
+        'home.cestas.topo': 'cestas.topo',
+        'home.kits': 'kits.topo',
+        'home.kits.topo': 'kits.topo',
         'home.mercado': 'home.compra-mes.topo',
-        'home.ofertas': 'home.ofertas.topo'
+        'home.ofertas': 'ofertas.topo',
+        'home.ofertas.topo': 'ofertas.topo',
+        'home.limpeza.topo': 'rotina.limpeza.topo',
+        'home.cafe.topo': 'rotina.cafe.topo',
+        'home.categorias.topo': 'categorias.topo'
       };
       const source = Array.isArray(data?.banners) ? data.banners : (Array.isArray(data) ? data : Object.values(data?.banners || data || {}));
       state.banners = source.map((b, index) => {
@@ -1587,14 +1600,55 @@
       return norm(String(value || '')).replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '');
     }
 
+    function bannerProductReferenceGroups(banner) {
+      const origin = banner?.origem && typeof banner.origem === 'object' ? banner.origem : {};
+      const snapshots = Array.isArray(origin.produtos) ? origin.produtos.filter(Boolean) : [];
+      const groups = snapshots.map(snapshot => [
+        snapshot.firebaseKey, snapshot.id, snapshot.codigo, snapshot.gtin, snapshot.ean, snapshot.nome
+      ].map(value => norm(String(value || ''))).filter(Boolean));
+      const isProductLinked = norm(origin.tipo) === 'produto' || norm(banner?.link?.tipo) === 'produto' || groups.length > 0;
+      if (!groups.length && isProductLinked) {
+        groups.push([origin.valor, banner?.link?.valor].map(value => norm(String(value || ''))).filter(Boolean));
+      }
+      return isProductLinked ? groups.filter(group => group.length) : [];
+    }
+
+    function bannerProductExpiryTimestamp(product) {
+      const raw = String(product?.validade || product?.rawProduto?.validade || product?.rawProduto?.vencimento || product?.rawProduto?.data_validade || '').trim();
+      if (!raw) return NaN;
+      let match = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (match) return new Date(`${match[3]}-${match[2]}-${match[1]}T23:59:59-04:00`).getTime();
+      match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (match) return new Date(`${match[1]}-${match[2]}-${match[3]}T23:59:59-04:00`).getTime();
+      return new Date(raw).getTime();
+    }
+
+    function bannerLinkedProductsAreAvailable(banner) {
+      const groups = bannerProductReferenceGroups(banner);
+      if (!groups.length) return true;
+      const products = Array.isArray(state.products) ? state.products : [];
+      return groups.every(group => {
+        const product = products.find(item => [
+          item?.id, item?.firebaseKey, item?.codigo, item?.gtin, item?.ean, item?.name
+        ].some(value => group.includes(norm(String(value || '')))));
+        if (!product || !isAvailable(product)) return false;
+        const expiry = bannerProductExpiryTimestamp(product);
+        return !Number.isFinite(expiry) || Date.now() < expiry;
+      });
+    }
+
     function bannerIsCurrent(banner) {
       if (!banner || banner.ativo === false) return false;
       const now = Date.now();
-      const start = banner.periodo?.inicio ? new Date(banner.periodo.inicio).getTime() : NaN;
-      const end = banner.periodo?.fim ? new Date(banner.periodo.fim).getTime() : NaN;
+      const startRaw = String(banner.periodo?.inicio || '').trim();
+      const endRaw = String(banner.periodo?.fim || '').trim();
+      const start = startRaw ? new Date(startRaw).getTime() : NaN;
+      const end = endRaw ? new Date(endRaw).getTime() : NaN;
+      if (startRaw && !Number.isFinite(start)) return false;
+      if (endRaw && !Number.isFinite(end)) return false;
       if (Number.isFinite(start) && now < start) return false;
-      if (Number.isFinite(end) && now > end) return false;
-      return true;
+      if (Number.isFinite(end) && now >= end) return false;
+      return bannerLinkedProductsAreAvailable(banner);
     }
 
     function bannerTargetMatches(actual, candidates) {
@@ -1636,10 +1690,10 @@
       return valor || '#/';
     }
 
-    function bannerCardHtml(banner, index, eager) {
+    function bannerCardHtml(banner, index, eager, hidden) {
       const href = bannerLinkHref(banner.link);
       const external = /^https?:/i.test(href);
-      return `<article class="da-banner-card" data-banner-index="${index}">
+      return `<article class="da-banner-card" data-banner-index="${index}" data-banner-id="${escapeHtml(banner.id)}" data-queue-visible="${hidden ? 'false' : 'true'}"${hidden ? ' style="display:none"' : ''}>
         <a class="da-banner-link" href="${escapeHtml(href)}"${external ? ' target="_blank" rel="noopener"' : ''} aria-label="${escapeHtml(banner.alt)}">
           <span class="da-banner-picture"><img src="${escapeHtml(banner.imagem)}" alt="${escapeHtml(banner.alt)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async"${eager ? ' fetchpriority="high"' : ''} onerror="window.__daBannerImageError(this)"></span>
         </a>
@@ -1685,21 +1739,85 @@
       const opts = options || {};
       const targets = opts.targets || opts.target || null;
       const orderedBanners = bannersInAccessOrder(position, getBanners(position, targets));
-      const requestedLimit = Math.max(0, Number(opts.limit || 0));
-      const banners = requestedLimit ? orderedBanners.slice(0, requestedLimit) : orderedBanners;
+      const capacity = Math.min(12, Math.max(4, Number(state.bannerConfig.queue_capacity || 12)));
+      const visibleLimit = Math.min(4, Math.max(1, Number(state.bannerConfig.visible_limit || 4)));
+      const banners = orderedBanners.slice(0, capacity);
       if (!banners.length) return '';
       const label = opts.label || 'Destaques selecionados';
-      const hint = state.bannerConfig.show_hint === false ? '' : 'Deslize para ver mais';
+      const hint = state.bannerConfig.show_hint === false ? '' : (banners.length > visibleLimit ? `${visibleLimit} de ${banners.length} por vez · alternância automática` : 'Destaques disponíveis');
       const head = opts.hideHead ? '' : `<div class="da-banner-zone-head"><div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(hint)}</span></div><span class="da-banner-page-counter" data-banner-counter>1 / 1</span></div>`;
       scheduleBannerSetup();
-      return `<section class="da-banner-zone${opts.hideHead ? ' da-banner-zone-clean' : ''}" data-banner-zone data-banner-position="${escapeHtml(position)}" aria-label="${escapeHtml(label)}">
+      return `<section class="da-banner-zone${opts.hideHead ? ' da-banner-zone-clean' : ''}" data-banner-zone data-banner-position="${escapeHtml(position)}" data-banner-queue-total="${banners.length}" aria-label="${escapeHtml(label)}">
         ${head}
-        <div class="da-banner-track" data-banner-track>${banners.map((b,i) => bannerCardHtml(b, i, i < 2 && position === 'home.hero')).join('')}</div>
+        <div class="da-banner-track" data-banner-track>${banners.map((b,i) => bannerCardHtml(b, i, i < 2 && position === 'home.hero', i >= visibleLimit)).join('')}</div>
         <div class="da-banner-controls">
           <div class="da-banner-arrows"><button class="da-banner-arrow" type="button" data-banner-prev aria-label="Ver banners anteriores">‹</button><button class="da-banner-arrow" type="button" data-banner-next aria-label="Ver próximos banners">›</button></div>
           <div class="da-banner-dots" data-banner-dots aria-label="Páginas do carrossel"></div>
         </div>
       </section>`;
+    }
+
+    function shuffledBannerQueueIndexes(total) {
+      const indexes = Array.from({length:total}, (_,index)=>index);
+      if (state.bannerConfig.queue_random === false) return indexes;
+      for (let index = indexes.length - 1; index > 0; index -= 1) {
+        const swap = Math.floor(Math.random() * (index + 1));
+        [indexes[index], indexes[swap]] = [indexes[swap], indexes[index]];
+      }
+      return indexes;
+    }
+
+    function nextBannerQueueBatch(queueState, total, visibleLimit) {
+      const wanted = Math.min(total, visibleLimit);
+      const selected = [];
+      while (selected.length < wanted) {
+        if (queueState.cursor >= queueState.order.length) {
+          queueState.order = shuffledBannerQueueIndexes(total);
+          queueState.cursor = 0;
+          queueState.cycles += 1;
+        }
+        const next = queueState.order[queueState.cursor++];
+        if (!selected.includes(next)) selected.push(next);
+      }
+      return selected;
+    }
+
+    function setupBannerQueue(zone, track) {
+      const cards = Array.from(zone.querySelectorAll('.da-banner-card'));
+      const total = cards.length;
+      const visibleLimit = Math.min(4, Math.max(1, Number(state.bannerConfig.visible_limit || 4)));
+      if (!total) return;
+      if (total <= visibleLimit) {
+        cards.forEach(card=>{card.style.removeProperty('display');card.dataset.queueVisible='true';});
+        if (zone.__daBannerQueueState?.timer) clearInterval(zone.__daBannerQueueState.timer);
+        zone.__daBannerQueueState = null;
+        return;
+      }
+      const signature = cards.map(card=>card.dataset.bannerId || card.dataset.bannerIndex).join('|');
+      let queueState = zone.__daBannerQueueState;
+      if (queueState && queueState.signature === signature) return;
+      if (queueState?.timer) clearInterval(queueState.timer);
+      queueState = {signature,order:shuffledBannerQueueIndexes(total),cursor:0,cycles:0,timer:null};
+      zone.__daBannerQueueState = queueState;
+      const applyBatch = (schedule=false) => {
+        const visible = new Set(nextBannerQueueBatch(queueState,total,visibleLimit));
+        cards.forEach((card,index)=>{
+          const show = visible.has(index);
+          card.style.display = show ? '' : 'none';
+          card.dataset.queueVisible = show ? 'true' : 'false';
+          card.setAttribute('aria-hidden', show ? 'false' : 'true');
+        });
+        track.scrollLeft = 0;
+        zone.dataset.bannerQueueCycle = String(queueState.cycles);
+        if (schedule) scheduleBannerSetup();
+      };
+      applyBatch(false);
+      queueState.timer = setInterval(()=>{
+        if (!zone.isConnected) { clearInterval(queueState.timer); return; }
+        if (document.hidden) return;
+        if (state.bannerConfig.pausar_hover && (zone.matches(':hover') || zone.contains(document.activeElement))) return;
+        applyBatch(true);
+      }, Math.max(5000, Number(state.bannerConfig.queue_interval_ms || 9000)));
     }
 
     function setupBannerCarousels() {
@@ -1708,6 +1826,8 @@
       document.querySelectorAll('[data-banner-zone]').forEach(zone => {
         if (typeof zone.__daBannerCleanup === 'function') zone.__daBannerCleanup();
         const track = zone.querySelector('[data-banner-track]');
+        if (!track) { zone.remove(); return; }
+        setupBannerQueue(zone, track);
         const cards = Array.from(zone.querySelectorAll('.da-banner-card')).filter(card => card.style.display !== 'none');
         const prev = zone.querySelector('[data-banner-prev]');
         const next = zone.querySelector('[data-banner-next]');
@@ -1715,7 +1835,7 @@
         const counter = zone.querySelector('[data-banner-counter]');
         if (prev?.parentElement) prev.parentElement.style.display = state.bannerConfig.show_arrows === false ? 'none' : '';
         if (dotsWrap) dotsWrap.style.display = state.bannerConfig.show_dots === false ? 'none' : '';
-        if (!track || !cards.length) { zone.remove(); return; }
+        if (!cards.length) { zone.remove(); return; }
         const width = window.innerWidth;
         const columns = width >= 1100 ? Number(state.bannerConfig.desktop_columns || 4) : (width >= 768 ? Number(state.bannerConfig.tablet_columns || 3) : Number(state.bannerConfig.mobile_columns || 2));
         const pageCount = Math.max(1, Math.ceil(cards.length / columns));
@@ -5230,6 +5350,7 @@
   applyBannersData = function(data){
     const settings = data && data.settings ? data.settings : (data?.configuracao || {});
     const carousel = settings.carousel || data?.configuracao_carrossel || data?.carousel_config || data?.configuracao || {};
+    const queue = settings.banner_queue || settings.fila_banners || {};
     state.bannerConfig = {
       desktop_columns: Math.max(1, Number(carousel.desktop_columns || 4)),
       tablet_columns: Math.max(1, Number(carousel.tablet_columns || 3)),
@@ -5240,9 +5361,22 @@
       autoplay: carousel.autoplay === true || carousel.automatico === true,
       intervalo_ms: Math.max(3000, Number(carousel.intervalo_ms || carousel.interval || 5200)),
       loop: carousel.loop === true,
-      pausar_hover: carousel.pausar_hover !== false
+      pausar_hover: carousel.pausar_hover !== false,
+      queue_capacity: Math.min(12, Math.max(4, Number(queue.capacity_per_space || queue.capacidade_por_posicao || 12))),
+      visible_limit: Math.min(4, Math.max(1, Number(queue.visible_at_once || queue.visiveis_por_vez || 4))),
+      queue_interval_ms: Math.max(5000, Number(queue.rotation_interval_ms || queue.intervalo_rotacao_ms || 9000)),
+      queue_random: queue.random !== false && queue.aleatoria !== false
     };
-    const aliases = {'home.inicio':'home.hero','home.cestas':'home.cestas.topo','home.kits':'home.kits.topo','home.mercado':'home.compra-mes.topo','home.ofertas':'home.ofertas.topo'};
+    const aliases = {
+      'home.inicio':'home.hero',
+      'home.cestas':'cestas.topo','home.cestas.topo':'cestas.topo',
+      'home.kits':'kits.topo','home.kits.topo':'kits.topo',
+      'home.mercado':'home.compra-mes.topo',
+      'home.ofertas':'ofertas.topo','home.ofertas.topo':'ofertas.topo',
+      'home.limpeza.topo':'rotina.limpeza.topo',
+      'home.cafe.topo':'rotina.cafe.topo',
+      'home.categorias.topo':'categorias.topo'
+    };
     const seen = new Set();
     state.banners = daSiteBannerEntries(data).map(({raw,key},index)=>{
       if(!raw || typeof raw !== 'object') return null;
@@ -5268,7 +5402,9 @@
         link:daSiteNormalizeLink(raw),
         periodo:{inicio:period.inicio || raw.inicio || raw.data_inicio || raw.inicio_oferta || null,fim:period.fim || raw.fim || raw.data_fim || raw.validade_oferta || null},
         origem:daSiteNormalizeOrigin(raw),
-        tipo_conteudo:String(raw.tipo_conteudo || raw.tipo || raw?.origem?.tipo || 'personalizado')
+        tipo_conteudo:String(raw.tipo_conteudo || raw.tipo || raw?.origem?.tipo || 'personalizado'),
+        automacao:raw.automacao && typeof raw.automacao === 'object' ? {...raw.automacao} : {},
+        oferta:raw.oferta && typeof raw.oferta === 'object' ? {...raw.oferta} : {}
       };
     }).filter(banner=>{
       if(!banner || !banner.id || !banner.imagem || seen.has(banner.id)) return false;
@@ -5305,13 +5441,15 @@
     return (list || []).filter(banner=>banner && !seen.has(banner.id) && seen.add(banner.id));
   }
   function daSiteBannerListHtml(position,banners,label){
-    const list = bannersInAccessOrder(position, daSiteUniqueBanners(banners).filter(bannerIsCurrent));
+    const capacity = Math.min(12, Math.max(4, Number(state.bannerConfig.queue_capacity || 12)));
+    const visibleLimit = Math.min(4, Math.max(1, Number(state.bannerConfig.visible_limit || 4)));
+    const list = bannersInAccessOrder(position, daSiteUniqueBanners(banners).filter(bannerIsCurrent)).slice(0,capacity);
     if(!list.length) return '';
-    const hint = state.bannerConfig.show_hint === false ? '' : 'Deslize para ver mais';
+    const hint = state.bannerConfig.show_hint === false ? '' : (list.length > visibleLimit ? `${visibleLimit} de ${list.length} por vez · alternância automática` : 'Destaques disponíveis');
     scheduleBannerSetup();
-    return `<section class="da-banner-zone" data-banner-zone data-banner-position="${escapeHtml(position)}" aria-label="${escapeHtml(label || 'Destaques selecionados')}">
+    return `<section class="da-banner-zone" data-banner-zone data-banner-position="${escapeHtml(position)}" data-banner-queue-total="${list.length}" aria-label="${escapeHtml(label || 'Destaques selecionados')}">
       <div class="da-banner-zone-head"><div><strong>${escapeHtml(label || 'Destaques selecionados')}</strong><span>${escapeHtml(hint)}</span></div><span class="da-banner-page-counter" data-banner-counter>1 / 1</span></div>
-      <div class="da-banner-track" data-banner-track>${list.map((banner,index)=>bannerCardHtml(banner,index,index<2)).join('')}</div>
+      <div class="da-banner-track" data-banner-track>${list.map((banner,index)=>bannerCardHtml(banner,index,index<2,index>=visibleLimit)).join('')}</div>
       <div class="da-banner-controls"><div class="da-banner-arrows"><button class="da-banner-arrow" type="button" data-banner-prev aria-label="Ver banners anteriores">‹</button><button class="da-banner-arrow" type="button" data-banner-next aria-label="Ver próximos banners">›</button></div><div class="da-banner-dots" data-banner-dots aria-label="Páginas do carrossel"></div></div>
     </section>`;
   }
@@ -5825,7 +5963,9 @@
         const wanted=new Set();
         (products || []).forEach(product=>daContextProductRef(product).forEach(ref=>wanted.add(ref)));
         if(!wanted.size) return [];
-        return state.banners.filter(banner=>bannerIsCurrent(banner) && daContextBannerProductRefs(banner).some(ref=>wanted.has(ref)));
+        // Um banner só pode aparecer fora do local mapeado quando houver opt-in explícito.
+        // Isso impede que um banner de home.hero surja também em busca, categoria e rotina.
+        return state.banners.filter(banner=>banner?.automacao?.contextual_inteligente===true && bannerIsCurrent(banner) && daContextBannerProductRefs(banner).some(ref=>wanted.has(ref)));
       }
     
       function daContextUnique(list){
