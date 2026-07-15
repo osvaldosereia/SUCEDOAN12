@@ -5746,7 +5746,7 @@
       }
 
       function daHomeBargainProducts(){
-        const pool = state.products.filter(product=>isAvailable(product) && daHomeEffectivePrice(product) > 0 && daHomeEffectivePrice(product) <= 10);
+        const pool = state.products.filter(product=>isAvailable(product) && daHomeEffectivePrice(product) > 0 && daHomeEffectivePrice(product) <= 3);
         return daHomeDiversifyByCategory(pool,10);
       }
 
@@ -5793,7 +5793,7 @@
           ${bannerSlotHtml('home.higiene.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques de cuidados pessoais'})}
           ${daHomeCollectionSectionHtml('higiene','Higiene da família','Cuidados essenciais organizados por necessidade.',higiene,'#/rotina/higiene','care')}
           ${daHomeCompactShelfHtml('Um cuidado para você','Pequenos cuidados que também podem entrar na compra do mês.',care,'#/categoria/BELEZA','care','Ver beleza')}
-          ${daHomeCompactShelfHtml('Achadinhos por até R$ 10','Produtos baratos, úteis e oportunidades que cabem facilmente no carrinho.',bargains,'#/categorias','bargain','Explorar categorias')}
+          ${daHomeCompactShelfHtml('Achadinhos por até R$ 3','Produtos baratos, úteis e oportunidades que cabem facilmente no carrinho.',bargains,'#/categorias','bargain','Explorar categorias')}
           ${daHomeCollectionSectionHtml('cafe','Para acompanhar o café','Café, biscoitos e acompanhamentos para deixar esse momento mais gostoso.',cafe,'#/rotina/cafe','coffee')}
           ${daHomeCompactShelfHtml('Pode ser útil ter em casa','Pequenas utilidades que resolvem o dia a dia e muitas vezes ficam para depois.',useful,'#/categoria/UTENSÍLIOS%20E%20UTILIDADES','utility','Ver utilidades')}
           ${daHomeCompactShelfHtml('Uma coisinha gostosa para depois','Doces, biscoitos e petiscos para colocar um pequeno agrado na compra.',treats,'#/categorias','treat','Ver categorias')}
