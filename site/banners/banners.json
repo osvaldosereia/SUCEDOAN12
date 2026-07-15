@@ -1,6 +1,6 @@
 {
   "schema_version": 6,
-  "updated_at": "2026-07-15T07:06:14-04:00",
+  "updated_at": "2026-07-15T08:34:55-04:00",
   "settings": {
     "image": {
       "width": 1024,
@@ -6013,6 +6013,69 @@
         "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "busca.topo",
+        "carga_antes": 3,
+        "limite_por_espaco": 4,
+        "dias_sem_repetir": 30
+      }
+    },
+    {
+      "id": "banner-produto-p515-1784118862000",
+      "ativo": true,
+      "titulo": "Oferta · Fugini Ketchup Sachê Bico 180g",
+      "alt": "Fugini Ketchup Sachê Bico 180g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338124932",
+        "produtos": [
+          {
+            "firebaseKey": "1776338124932",
+            "id": "1776338124932",
+            "codigo": "P515",
+            "nome": "Fugini Ketchup Sachê Bico 180g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b79/2026/07/fugini-ketchup-sache-bico-180g-fugini-180g-molhos-e-condimentos-ketchup-7897517207540-foto-atual-otimizada-20260711045805.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "favoritos.topo",
+        "alvo": "",
+        "ordem": 4
+      },
+      "imagem": "site/banners/ativos/banner-produto-p515-1784118862000/banner-1784118862000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P515"
+      },
+      "periodo": {
+        "inicio": "2026-07-15T08:34:22-04:00",
+        "fim": "2026-07-22T12:34:22.000Z"
+      },
+      "criado_em": "2026-07-15T08:34:22-04:00",
+      "atualizado_em": "2026-07-15T08:34:22-04:00",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-p515-1784118862000",
+      "asset_id": "banner-produto-p515-1784118862000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 3.2,
+        "preco_oferta": 2.24,
+        "percentual_desconto": 30
+      },
+      "automacao": {
+        "automatico": true,
+        "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "favoritos.topo",
         "carga_antes": 3,
         "limite_por_espaco": 4,
         "dias_sem_repetir": 30
