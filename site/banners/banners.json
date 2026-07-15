@@ -1,6 +1,6 @@
 {
   "schema_version": 6,
-  "updated_at": "2026-07-15T03:50:12.892Z",
+  "updated_at": "2026-07-15T01:04:44-04:00",
   "settings": {
     "image": {
       "width": 1024,
@@ -5698,6 +5698,69 @@
         "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "rotina.higiene.topo",
+        "carga_antes": 2,
+        "limite_por_espaco": 4,
+        "dias_sem_repetir": 30
+      }
+    },
+    {
+      "id": "banner-produto-p0269-1784091856000",
+      "ativo": true,
+      "titulo": "Oferta · Águia Branca Prendedor de Roupa Madeira com 12 un",
+      "alt": "Águia Branca Prendedor de Roupa Madeira com 12 un em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338124758",
+        "produtos": [
+          {
+            "firebaseKey": "1776338124758",
+            "id": "1776338124758",
+            "codigo": "P0269",
+            "nome": "Águia Branca Prendedor de Roupa Madeira com 12 un",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b04/2026/07/aguia-branca-prendedor-de-roupa-madeira-com-12-un-aguia-branca-unidade-lavanderia-acessorios-7898198252522-foto-atual-otimizada-20260711045700.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "rotina.limpeza.topo",
+        "alvo": "",
+        "ordem": 3
+      },
+      "imagem": "site/banners/ativos/banner-produto-p0269-1784091856000/banner-1784091856000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P0269"
+      },
+      "periodo": {
+        "inicio": "2026-07-15T01:04:16-04:00",
+        "fim": "2026-07-22T05:04:16.000Z"
+      },
+      "criado_em": "2026-07-15T01:04:16-04:00",
+      "atualizado_em": "2026-07-15T01:04:16-04:00",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-p0269-1784091856000",
+      "asset_id": "banner-produto-p0269-1784091856000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 1.99,
+        "preco_oferta": 1.69,
+        "percentual_desconto": 15
+      },
+      "automacao": {
+        "automatico": true,
+        "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "rotina.limpeza.topo",
         "carga_antes": 2,
         "limite_por_espaco": 4,
         "dias_sem_repetir": 30
