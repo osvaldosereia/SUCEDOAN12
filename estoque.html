@@ -55,7 +55,6 @@
     .btn.red{background:var(--red-soft);border-color:#ffd3cf;color:var(--red)}
     .btn:disabled{opacity:.55;cursor:not-allowed}
     .product{display:grid;gap:12px}
-    .sheet-toolbar{display:none}
     .product-head{display:grid;grid-template-columns:92px 1fr;gap:12px;align-items:center}
     .photo{width:92px;height:92px;border-radius:16px;object-fit:contain;background:#faf8f3;border:1px solid var(--line)}
     .name{font-size:20px;font-weight:900;line-height:1.1;margin:0}
@@ -101,9 +100,8 @@
         z-index:41;
         width:100%;
         max-width:520px;
-        height:90vh;
-        height:90dvh;
-        max-height:90dvh;
+        height:auto;
+        max-height:calc(100dvh - 8px);
         margin:0 auto;
         padding:0 8px 8px;
         overflow:hidden;
@@ -120,41 +118,18 @@
         pointer-events:auto;
       }
       #productCard .product{
-        height:100%;
         gap:6px;
-        grid-template-rows:auto auto auto auto minmax(0,1fr);
       }
-      .sheet-toolbar{
-        display:block;
-        position:sticky;
-        top:0;
-        z-index:15;
-        order:0;
-        margin:0 -8px;
-        padding:8px;
-        background:#fff;
-        border-bottom:1px solid var(--line);
-      }
-      .sheet-close{
-        width:100%;
-        min-height:44px;
-        border:0;
-        border-radius:15px;
-        background:#111;
-        color:#fff;
-        font-size:15px;
-        font-weight:900;
-      }
-      #productCard .savebar{order:1;position:static;grid-template-columns:1fr 1fr;gap:6px;margin:0;background:#fff}
-      #productCard .location-grid{order:2;grid-template-columns:1fr 1fr;gap:6px}
-      #productCard .details-grid{order:3;grid-template-columns:1fr 1fr 1fr;gap:5px}
+      #productCard .savebar{order:0;position:static;grid-template-columns:1fr 1fr;gap:6px;margin:0;background:#fff}
+      #productCard .location-grid{order:1;grid-template-columns:1fr 1fr;gap:6px}
+      #productCard .details-grid{order:2;grid-template-columns:1fr 1fr 1fr;gap:5px}
       #productCard .field{gap:3px;margin-top:3px}
       #productCard .field label{font-size:9px;white-space:nowrap}
       #productCard .input{min-height:38px;border-radius:9px;padding:6px 7px;font-size:13px}
       #productCard .hint{display:none}
-      #productCard .product-head{order:4;grid-template-columns:minmax(92px,38%) 1fr;gap:10px;align-self:end;min-height:0}
-      #productCard .photo{width:100%;height:min(24dvh,150px);border-radius:12px}
-      #productCard .name{font-size:17px;line-height:1.12}
+      #productCard .product-head{order:3;grid-template-columns:minmax(125px,46%) 1fr;gap:10px;min-height:0}
+      #productCard .photo{width:100%;height:auto;aspect-ratio:1/1;border-radius:12px}
+      #productCard .name{font-size:14px;line-height:1.12}
       #productCard .savebar .btn{min-height:44px;border-radius:11px;padding:7px;font-size:13px}
     }
     @media (max-width:380px){
@@ -162,7 +137,7 @@
       #productCard .location-grid,#productCard .savebar{grid-template-columns:1fr 1fr}
       #productCard .details-grid{grid-template-columns:1fr 1fr 1fr}
       #productCard .input{font-size:12px;padding:5px}
-      #productCard .name{font-size:15px}
+      #productCard .name{font-size:13px}
     }
   </style>
 </head>
@@ -240,6 +215,34 @@
     const esc = (v="") => String(v ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
     const norm = (v="") => String(v ?? "").trim().replace(/\s+/g, "").toUpperCase();
 
+    function formatDateBR(value) {
+      const raw = String(value ?? "").trim();
+      if (!raw) return "";
+
+      const makeDate = (day, month, year) => {
+        const d = Number(day), m = Number(month), y = Number(year);
+        if (!Number.isInteger(d) || !Number.isInteger(m) || !Number.isInteger(y) || y < 1900 || y > 2200) return raw;
+        const check = new Date(Date.UTC(y, m - 1, d));
+        if (check.getUTCFullYear() !== y || check.getUTCMonth() !== m - 1 || check.getUTCDate() !== d) return raw;
+        return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${String(y).padStart(4, "0")}`;
+      };
+
+      let match = raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+      if (match) return makeDate(match[1], match[2], match[3]);
+
+      match = raw.match(/^(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})(?:[T\s].*)?$/);
+      if (match) return makeDate(match[3], match[2], match[1]);
+
+      if (/^\d{12,13}$/.test(raw)) {
+        const date = new Date(Number(raw));
+        if (!Number.isNaN(date.getTime())) {
+          return makeDate(date.getDate(), date.getMonth() + 1, date.getFullYear());
+        }
+      }
+
+      return raw;
+    }
+
     function getCodeVariants(value) {
       const normalized = norm(value);
       if (!normalized) return [];
@@ -292,6 +295,7 @@
 
     const normalizeFieldValue = (field, value) => {
       if (field === "estoque") return toNum(value);
+      if (field === "validade") return formatDateBR(value);
       return String(value ?? "").trim();
     };
 
@@ -631,9 +635,6 @@
 
       host.innerHTML = `
         <div class="product">
-          <div class="sheet-toolbar">
-            <button id="closeProductBtn" class="sheet-close" type="button">Fechar</button>
-          </div>
           <div class="product-head">
             <img class="photo" src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'">
             <div>
@@ -644,7 +645,7 @@
           <div class="details-grid">
             <div class="field">
               <label>Validade</label>
-              <input class="input" data-field="validade" value="${esc(p.validade || "")}" placeholder="dd/mm/aaaa" autocomplete="off">
+              <input class="input" inputmode="numeric" data-field="validade" value="${esc(formatDateBR(p.validade))}" placeholder="dd/mm/aaaa" autocomplete="off">
             </div>
 
             <div class="field">
@@ -802,6 +803,7 @@
         beep("save");
         showToast("salvo");
         renderProduct();
+        closeProductPanel();
         setStatus(`OK. Salvo: ${changed.join(", ")}.`, "ok", true);
       } catch (e) {
         console.error(e);
@@ -953,10 +955,6 @@
         openProductByCode($("#codeInput").value);
         return;
       }
-      if (e.target.id === "closeProductBtn" || e.target.id === "productBackdrop") {
-        closeProductPanel();
-        return;
-      }
       if (e.target.id === "saveBtn") {
         saveCurrentProduct();
         return;
@@ -985,10 +983,6 @@
     });
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && $("#productCard")?.classList.contains("open")) {
-        closeProductPanel();
-        return;
-      }
       if (e.target.id === "codeInput" && e.key === "Enter") {
         e.preventDefault();
         openProductByCode(e.target.value);
