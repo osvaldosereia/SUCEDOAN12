@@ -1,0 +1,58 @@
+name: Banner inteligente V13
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Apenas escolher posição e oferta, sem gerar ou publicar
+        required: true
+        default: true
+        type: boolean
+  repository_dispatch:
+    types: [criar_banner_inteligente]
+
+concurrency:
+  group: banner-inteligente-v13
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  criar-banner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_IMAGE_MODEL: gpt-image-2
+      OPENAI_IMAGE_QUALITY: low
+      OPENAI_IMAGE_COMPRESSION: '25'
+      FIREBASE_PRODUTOS_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json
+      BANNERS_PATH: site/banners/banners.json
+      KITS_PATH: site/kits.json
+      CESTAS_PATH: site/produtos-cesta-basica.json
+      REQUEST_ID: ${{ github.event.client_payload.requisicao_id || github.run_id }}
+      DRY_RUN: ${{ inputs.dry_run || github.event.client_payload.dry_run || 'false' }}
+
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Selecionar posição, escolher oferta e criar banner
+        run: node automation/banner-intelligence-v13.mjs
+
+      - name: Publicar imagem e catálogo
+        if: env.DRY_RUN != 'true'
+        shell: bash
+        run: |
+          if git diff --quiet -- site/banners; then
+            echo "Nenhuma alteração para publicar."
+            exit 0
+          fi
+          git config user.name "dona-antonia-banner-bot"
+          git config user.email "banner-bot@users.noreply.github.com"
+          git add site/banners/banners.json site/banners/ativos
+          git commit -m "Banner inteligente V13 · posição menos preenchida"
+          git push
