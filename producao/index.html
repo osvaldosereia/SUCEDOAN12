@@ -605,7 +605,7 @@
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
         <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho site/kits.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos_3"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="site/img/produtos_3"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
-        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners do site · criação manual</label><input class="input" id="setMakeBannerWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners · criação automática</label><input class="input" id="setMakeBannerAutomaticWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn green" type="button" data-action="banner-auto-run">🎯 Criar banner automático com posição inteligente</button></div><div class="notice gold" style="margin-top:10px"><strong>Posicionamento inteligente:</strong> as 13 posições fixas e as 6 contextuais participam da automação. Cada local e alvo aceita até 12 banners na fila; o site mostra 4 por vez e alterna entre todos. Kit e cesta exigem vínculo real do produto.</div></div>
+        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners do site · criação manual</label><input class="input" id="setMakeBannerWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners · criação automática</label><input class="input" id="setMakeBannerAutomaticWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn green" type="button" data-action="banner-auto-run">🎯 Criar banner automático com posição inteligente</button></div><div class="notice gold" style="margin-top:10px"><strong>Posicionamento inteligente:</strong> as 13 posições fixas e as 6 contextuais participam da automação. Cada família de posição aceita até 12 banners na fila; o site mostra 4 por vez e alterna entre todos. Kit e cesta exigem vínculo real do produto.</div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
       <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar site/kits.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
@@ -5600,7 +5600,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   const daBannerCallWebhookV7Base = daCallBannerWebhook;
   daCallBannerWebhook = async function(payload){
     if(payload&&['criar_banner','salvar_catalogo_banners','remover_banner','apagar_arquivo_banner'].includes(payload.acao)){
-      payload={...payload,versao_contrato:12,validade_banner_independente:false,regra_duracao:'periodo_da_oferta',exibir_validade_oferta_na_arte:false};
+      payload={...payload,versao_contrato:13,validade_banner_independente:false,regra_duracao:'periodo_da_oferta',exibir_validade_oferta_na_arte:false};
       if(payload.banner){
         payload.banner_inicio=payload.banner.periodo?.inicio||payload.banner.banner_inicio||null;
         payload.banner_fim=payload.banner.periodo?.fim||payload.banner.banner_fim||null;
@@ -6650,7 +6650,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   /* ===== BANNERS V10 · POSICIONAMENTO REAL DO SITE + LIMITE 4 POR ESPAÇO ===== */
   const DA_BANNER_MAX_ACTIVE_PER_SPACE_V10 = 12;
   const DA_BANNER_VISIBLE_PER_SPACE_V12 = 4;
-  const DA_BANNER_AUTOMATIC_STRATEGY_V10 = "posicoes_fixas_e_contextuais_relacionadas_ao_produto_v6";
+  const DA_BANNER_AUTOMATIC_STRATEGY_V10 = "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13";
   const DA_BANNER_LEGACY_POSITION_MAP_V10 = {
     "home.cestas.topo":"cestas.topo",
     "home.kits.topo":"kits.topo",
@@ -6737,21 +6737,21 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
       if(excludeGroupId&&typeof daV9BannerGroupId==="function"&&daV9BannerGroupId(banner)===excludeGroupId)return;
       const local=daV10NormalizeLegacyLocal(banner?.exibicao?.local||banner?.posicao||"");
       const target=String(banner?.exibicao?.alvo||banner?.alvo||"").trim();
-      const key=daV10PlacementKey(local,target);loads.set(key,(loads.get(key)||0)+1);
+      const key=local;loads.set(key,(loads.get(key)||0)+1);
     });
     return loads;
   }
   function daV10BestAutomaticSlot(product,catalog,loadsInput){
     const loads=loadsInput||daV10CurrentActiveLoads(catalog||state.bannerManager.catalog||{banners:[]});
     const candidates=daV10CompatibleAutomaticSlots(product)
-      .map(slot=>({...slot,load:loads.get(daV10PlacementKey(slot.value,""))||0}))
+      .map(slot=>({...slot,load:loads.get(slot.value)||0}))
       .filter(slot=>slot.load<DA_BANNER_MAX_ACTIVE_PER_SPACE_V10)
       .sort((a,b)=>a.load-b.load||DA_BANNER_SITE_FIXED_SLOTS_V10.findIndex(item=>item.value===a.value)-DA_BANNER_SITE_FIXED_SLOTS_V10.findIndex(item=>item.value===b.value));
     return candidates[0]||null;
   }
   function daV10AutomaticConfig(){
     return {
-      version:6,
+      version:13,
       strategy:DA_BANNER_AUTOMATIC_STRATEGY_V10,
       selection_order:"escolher_posicao_fixa_ou_contextual_menos_preenchida_depois_produto_relacionado",
       max_active_per_space:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,
@@ -6760,8 +6760,8 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
       automatic_context_positions:DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>item.value),
       manual_only_context_positions:[],
       removed_home_positions:Object.keys(DA_BANNER_LEGACY_POSITION_MAP_V10),
-      balance_metric:"menor_quantidade_de_banners_ativos_por_espaco_real_do_site",
-      tie_breaker:"ordem_estavel_dos_espacos",
+      balance_metric:"quantidade_ativa_ou_agendada_por_familia_de_posicao",
+      tie_breaker:"ordem_estavel_das_19_familias",
       product_repeat_control:"preservar_historico_existente"
     };
   }
@@ -6801,7 +6801,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
         const local=daV10NormalizeLegacyLocal(placement.local||placement.posicao||"");
         const target=String(placement.target||placement.alvo||"").trim();
         if(!DA_BANNER_REAL_PLACEMENT_SET_V10.has(local))throw new Error(`O local “${local}” não existe mais no site atual.`);
-        const load=loads.get(daV10PlacementKey(local,target))||0;
+        const load=loads.get(local)||0;
         if(load>=DA_BANNER_MAX_ACTIVE_PER_SPACE_V10)throw new Error(`O espaço “${daBannerPlacementLabel(local,target)}” já possui ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners ativos. Escolha outro local ou desative um banner existente.`);
       }
       data={...data,placements:placements.map(item=>({...item,local:daV10NormalizeLegacyLocal(item.local||item.posicao||"")}))};
@@ -6853,14 +6853,14 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     const catalog=daNormalizeBannerCatalog(deepClone(catalogInput||daBannerDefaultCatalog()));
     catalog.settings=catalog.settings&&typeof catalog.settings==="object"?catalog.settings:{};
     catalog.settings.automatic_positioning=daV10AutomaticConfig();
-    catalog.settings.banner_limits={max_active_per_space:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,scope:"local_e_alvo",enforced_by_admin:true};
+    catalog.settings.banner_limits={max_active_per_space:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,scope:"familia_de_posicao",enforced_by_admin:true};
     const loads=new Map();
     const active=[...catalog.banners].filter(daV10BannerActiveNow).sort((a,b)=>daV10BannerTime(b)-daV10BannerTime(a));
     const inactive=[...catalog.banners].filter(item=>!daV10BannerActiveNow(item));
     let moved=0,deactivated=0,legacyFixed=0,autoRebalanced=0;
 
     function reserve(local,target=""){
-      const key=daV10PlacementKey(local,target),before=loads.get(key)||0;
+      const key=local,before=loads.get(key)||0;
       if(before>=DA_BANNER_MAX_ACTIVE_PER_SPACE_V10)return {ok:false,before};
       loads.set(key,before+1);return {ok:true,before,order:before+1};
     }
@@ -6879,7 +6879,7 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
       if(automatic){
         const product=daV10BannerProductSnapshot(banner);
         const compatible=daV10CompatibleAutomaticSlots(product)
-          .map(slot=>({...slot,load:loads.get(daV10PlacementKey(slot.value,""))||0}))
+          .map(slot=>({...slot,load:loads.get(slot.value)||0}))
           .filter(slot=>slot.load<DA_BANNER_MAX_ACTIVE_PER_SPACE_V10)
           .sort((a,b)=>a.load-b.load||DA_BANNER_SITE_FIXED_SLOTS_V10.findIndex(item=>item.value===a.value)-DA_BANNER_SITE_FIXED_SLOTS_V10.findIndex(item=>item.value===b.value));
         const chosen=compatible[0];
@@ -6887,7 +6887,7 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
         const reserved=reserve(chosen.value,"");
         if(oldLocal!==chosen.value||oldTarget){moved++;autoRebalanced++;}
         banner.exibicao={...(banner.exibicao||{}),local:chosen.value,alvo:"",ordem:reserved.order};
-        banner.automacao={...(banner.automacao||{}),estrategia_posicionamento:DA_BANNER_AUTOMATIC_STRATEGY_V10,modo_selecao:"espaco_primeiro_produto_depois",max_banners_por_espaco:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,posicao_escolhida:chosen.value,alvo_escolhido:"",rotulo_posicao:chosen.label,carga_ativa_antes:reserved.before};
+        banner.automacao={...(banner.automacao||{}),estrategia_posicionamento:DA_BANNER_AUTOMATIC_STRATEGY_V10,modo_selecao:"posicao_primeiro_oferta_ideal_depois",max_banners_por_espaco:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,posicao_escolhida:chosen.value,alvo_escolhido:"",rotulo_posicao:chosen.label,carga_ativa_antes:reserved.before};
         return;
       }
 
@@ -6951,21 +6951,21 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     if(!webhook)throw new Error("Configure o webhook de banners automáticos na aba Integrações.");
     const buttons=[...document.querySelectorAll('[data-action="banner-auto-run"]')];
     buttons.forEach(button=>{button.disabled=true;button.dataset.originalText=button.textContent;button.textContent="Selecionando espaço e produto...";});
-    setStatus("Calculando o espaço menos preenchido e, depois, escolhendo um produto compatível...","warn");
+    setStatus("Identificando a família de posição menos preenchida e pontuando a melhor oferta para ela...","warn");
     const requestId=`banner-auto-${Date.now()}-${Math.random().toString(36).slice(2,9)}`;
     const knownIds=new Set((state.bannerManager.catalog?.banners||[]).map(banner=>String(banner?.id||"")));
     try{
       const response=await fetch(webhook,{method:"POST",headers:{Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify({
         acao:"criar_banner_automatico",
         requisicao_id:requestId,
-        versao_contrato:12,
+        versao_contrato:13,
         origem:"admin-dona-antonia",
         solicitado_em:nowIso(),
         duracao:"periodo_da_oferta",
         quantidade_produtos:1,
         preservar_apos_expirar:true,
         estrategia_posicionamento:DA_BANNER_AUTOMATIC_STRATEGY_V10,
-        modo_selecao:"espaco_primeiro_produto_depois",
+        modo_selecao:"posicao_primeiro_oferta_ideal_depois",
         max_banners_por_espaco:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,
         posicoes_automaticas:[...DA_BANNER_SITE_FIXED_SLOTS_V10.map(item=>({local:item.value,rotulo:item.label,compatibilidade:item.compat||"relacao_produto"})),...DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>({local:item.value,rotulo:item.label,compatibilidade:"relacao_produto",requer_vinculo:item.requiresMembership===true}))],
         posicoes_contextuais_automaticas:DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>item.value),
@@ -7002,7 +7002,7 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   daRenderBannerManager=async function(){
     const result=await daV10RenderBannerManagerBase();
     const body=document.getElementById("bannerManagerBody");
-    if(body&&!body.querySelector(".banner-layout-v10-notice"))body.insertAdjacentHTML("afterbegin",`<div class="notice blue banner-layout-v10-notice" style="margin-bottom:14px"><strong>Fila inteligente:</strong> cada local e alvo aceita até <strong>${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners</strong>. O site mostra somente <strong>${DA_BANNER_VISIBLE_PER_SPACE_V12} por vez</strong> e alterna aleatoriamente entre os demais, sem deixar a fila escondida esquecida.</div><div class="toolbar" style="justify-content:flex-start;margin:-4px 0 14px"><button class="btn gold" type="button" data-action="banner-migrate-layout-v10">↻ Reorganizar JSON atual pelos novos espaços</button></div>`);
+    if(body&&!body.querySelector(".banner-layout-v10-notice"))body.insertAdjacentHTML("afterbegin",`<div class="notice blue banner-layout-v10-notice" style="margin-bottom:14px"><strong>Fila inteligente:</strong> cada família de posição aceita até <strong>${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners</strong>. O site mostra somente <strong>${DA_BANNER_VISIBLE_PER_SPACE_V12} por vez</strong> e alterna aleatoriamente entre os demais, sem deixar a fila escondida esquecida.</div><div class="toolbar" style="justify-content:flex-start;margin:-4px 0 14px"><button class="btn gold" type="button" data-action="banner-migrate-layout-v10">↻ Reorganizar JSON atual pelos novos espaços</button></div>`);
     return result;
   };
 
@@ -7019,7 +7019,7 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     const autoButton=document.querySelector('[data-action="banner-auto-run"]');
     const card=autoButton?.closest(".card");
     const note=card?.querySelector(".notice.gold");
-    if(note)note.innerHTML=`<strong>Seleção automática balanceada:</strong> as 19 posições participam da distribuição. Cada local e alvo mantém fila de até ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners; o site exibe ${DA_BANNER_VISIBLE_PER_SPACE_V12} por vez e faz rotação aleatória justa.`;
+    if(note)note.innerHTML=`<strong>Seleção automática balanceada:</strong> as 19 posições participam da distribuição. Cada família de posição mantém fila de até ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners; o site exibe ${DA_BANNER_VISIBLE_PER_SPACE_V12} por vez e faz rotação aleatória justa.`;
     return result;
   };
 
