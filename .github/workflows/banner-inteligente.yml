@@ -41,7 +41,7 @@ jobs:
           fetch-depth: 0
 
       - name: Selecionar posição, escolher oferta e criar banner
-        run: node automation/banner-intelligence-v13.mjs
+        run: node scripts/banner-intelligence-v13.mjs
 
       - name: Publicar imagem e catálogo
         if: env.DRY_RUN != 'true'
