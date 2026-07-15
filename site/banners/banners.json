@@ -1,6 +1,6 @@
 {
-  "schema_version": 6,
-  "updated_at": "2026-07-15T13:04:53-04:00",
+  "schema_version": 10,
+  "updated_at": "2026-07-15T18:05:40.080Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -25,75 +25,88 @@
       "pausar_hover": true
     },
     "automatic_positioning": {
-      "version": 3,
-      "strategy": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
-      "selection_order": "escolher_espaco_menos_preenchido_depois_produto_compativel",
-      "max_active_per_space": 4,
+      "version": 6,
+      "strategy": "posicoes_fixas_e_contextuais_relacionadas_ao_produto_v6",
+      "selection_order": "escolher_posicao_fixa_ou_contextual_menos_preenchida_depois_produto_relacionado_com_oferta_valida",
+      "max_active_per_space": 12,
       "active_site_positions": [
         {
           "local": "home.hero",
           "label": "Home · banner principal",
-          "compatibility": "all"
+          "compatibility": "all",
+          "automatic": true
         },
         {
           "local": "home.compra-mes.topo",
           "label": "Home · antes da compra do mês",
-          "compatibility": "all"
+          "compatibility": "all",
+          "automatic": true
         },
         {
           "local": "home.higiene.topo",
           "label": "Home · antes de higiene da família",
-          "compatibility": "higiene"
+          "compatibility": "higiene",
+          "automatic": true
         },
         {
           "local": "categorias.topo",
           "label": "Página · categorias",
-          "compatibility": "all"
+          "compatibility": "all",
+          "automatic": true
         },
         {
           "local": "ofertas.topo",
           "label": "Página · ofertas",
-          "compatibility": "all"
+          "compatibility": "all",
+          "automatic": true
         },
         {
           "local": "cestas.topo",
           "label": "Página · cestas básicas",
-          "compatibility": "all"
+          "compatibility": "all",
+          "automatic": true
         },
         {
           "local": "kits.topo",
           "label": "Página · kits promocionais",
-          "compatibility": "all"
+          "compatibility": "all",
+          "automatic": true
         },
         {
           "local": "busca.topo",
           "label": "Página · resultados da busca",
-          "compatibility": "all"
+          "compatibility": "all",
+          "automatic": true
         },
         {
           "local": "favoritos.topo",
           "label": "Página · favoritos",
-          "compatibility": "all"
+          "compatibility": "all",
+          "automatic": true
         },
         {
           "local": "rotina.compra-mes.topo",
           "label": "Rotina · compra do mês",
-          "compatibility": "all"
+          "compatibility": "all",
+          "automatic": true
         },
         {
           "local": "rotina.limpeza.topo",
           "label": "Rotina · limpeza",
-          "compatibility": "limpeza"
+          "compatibility": "limpeza",
+          "automatic": true
         },
         {
           "local": "rotina.higiene.topo",
           "label": "Rotina · higiene",
-          "compatibility": "higiene"
+          "compatibility": "higiene",
+          "automatic": true
         },
         {
           "local": "rotina.cafe.topo",
           "label": "Rotina · café",
-          "compatibility": "cafe"
+          "compatibility": "cafe",
+          "automatic": true
         }
       ],
       "legacy_position_map": {
@@ -105,11 +118,82 @@
         "home.categorias.topo": "categorias.topo"
       },
       "balance_metric": "menor_quantidade_de_banners_ativos_por_espaco_real_do_site",
-      "tie_breaker": "ordem_estavel_dos_espacos"
+      "tie_breaker": "ordem_estavel_dos_espacos",
+      "automatic_positions": [
+        "home.hero",
+        "home.compra-mes.topo",
+        "home.higiene.topo",
+        "categorias.topo",
+        "ofertas.topo",
+        "cestas.topo",
+        "kits.topo",
+        "busca.topo",
+        "favoritos.topo",
+        "rotina.compra-mes.topo",
+        "rotina.limpeza.topo",
+        "rotina.higiene.topo",
+        "rotina.cafe.topo",
+        "categoria",
+        "subcategoria",
+        "marca",
+        "produto",
+        "kit",
+        "cesta"
+      ],
+      "automatic_context_positions": [
+        "categoria",
+        "subcategoria",
+        "marca",
+        "produto",
+        "kit",
+        "cesta"
+      ],
+      "manual_only_fixed_positions": [],
+      "manual_only_context_positions": [],
+      "context_relation_rules": {
+        "categoria": "produto.categoria",
+        "subcategoria": "produto.categoria::produto.subcategoria",
+        "marca": "produto.marca",
+        "produto": "produto.firebaseKey_ou_codigo",
+        "kit": "somente_se_produto_constar_na_composicao_do_kit",
+        "cesta": "somente_se_produto_constar_na_composicao_da_cesta"
+      },
+      "product_repeat_control": "estrito_30_dias_sem_fallback"
     },
     "banner_limits": {
-      "max_active_per_space": 4,
-      "scope": "local_e_alvo"
+      "max_active_per_space": 12,
+      "scope": "local_e_alvo",
+      "visible_at_once": 4
+    },
+    "product_guard": {
+      "enabled": true,
+      "policy": "ocultar_no_site_imediatamente_e_desativar_no_catalogo_na_proxima_execucao",
+      "conditions": [
+        "produto_excluido",
+        "produto_inativo",
+        "estoque_menor_ou_igual_a_zero",
+        "preco_menor_ou_igual_a_zero",
+        "produto_vencido"
+      ],
+      "all_linked_products_must_be_available": true
+    },
+    "scheduling": {
+      "timezone": "America/Cuiaba",
+      "automatic_end_rule": "fim_da_oferta_ou_vencimento_do_produto_o_que_ocorrer_primeiro",
+      "end_is_exclusive": true,
+      "invalid_dates_hide_banner": true,
+      "automatic_start_rule": "inicio_da_oferta_ou_agora_se_a_oferta_ja_comecou"
+    },
+    "banner_queue": {
+      "enabled": true,
+      "capacity_per_space": 12,
+      "visible_at_once": 4,
+      "hidden_waiting": 8,
+      "rotation_mode": "fila_aleatoria_sem_repetir_antes_do_ciclo",
+      "rotation_interval_ms": 9000,
+      "random": true,
+      "pause_when_hidden": true,
+      "pause_on_hover_or_focus": true
     }
   },
   "banners": [
@@ -144,8 +228,11 @@
         "valor": "88091616"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-11T03:00:00.0000000+00:00",
+        "fim": "2026-07-14T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T21:36:03.727Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -167,7 +254,7 @@
       "oferta": {},
       "automacao": {},
       "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "motivo_desativacao": "oferta_encerrada_ou_produto_vencido"
     },
     {
       "id": "banner-produto-228944b-1783805821490",
@@ -223,11 +310,11 @@
       "oferta": {},
       "automacao": {},
       "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "motivo_desativacao": "oferta_sem_fim_produto_inativo_sem_estoque_ou_excluido"
     },
     {
       "id": "banner-produto-61000598-1783806155571",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Giovanna Baby Desodorante Roll-On Blue 50ml",
       "alt": "Giovanna Baby Desodorante Roll-On Blue 50ml em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -256,8 +343,11 @@
         "valor": "61000598"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T21:42:35.572Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -277,13 +367,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-868319k-1783806247864",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Creme de Pentear Elseve Glycolic Gloss 250ml",
       "alt": "Creme de Pentear Elseve Glycolic Gloss 250ml em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -312,8 +406,11 @@
         "valor": "868319K"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T21:44:07.864Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -333,13 +430,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-p8-1783806356486",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Sabonete em Barra Dove Original 90g",
       "alt": "Sabonete em Barra Dove Original 90g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -368,8 +469,11 @@
         "valor": "P8"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T21:45:56.487Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -389,13 +493,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-561705e-1783806382533",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Sabonete Dove Erva-Doce 90g",
       "alt": "Sabonete Dove Erva-Doce 90g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -424,8 +532,11 @@
         "valor": "561705E"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T21:46:22.533Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -445,13 +556,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-457468m-1783807224895",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · VALE Molho de Tomate Triturado Fertil Vidro 1kg",
       "alt": "VALE Molho de Tomate Triturado Fertil Vidro 1kg em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -480,8 +595,11 @@
         "valor": "457468M"
       },
       "periodo": {
-        "inicio": "2026-07-11T06:00:00.000Z",
-        "fim": "2026-07-24T05:59:00.000Z"
+        "inicio": "2026-07-18T04:00:00.0000000+00:00",
+        "fim": "2026-07-24T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T22:00:24.895Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -501,13 +619,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-3528220487-1783807356860",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Macarrão Urbano Espaguete Integral Sem Glúten 500g",
       "alt": "Macarrão Urbano Espaguete Integral Sem Glúten 500g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -536,8 +658,11 @@
         "valor": "#/"
       },
       "periodo": {
-        "inicio": "2026-07-11T06:00:00.000Z",
-        "fim": "2026-07-20T05:59:00.000Z"
+        "inicio": "2026-07-18T04:00:00.0000000+00:00",
+        "fim": "2026-07-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T22:02:36.860Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -557,13 +682,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-943962i-1783807899807",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Leite em Pó Nestlé Ninho Integral Instantâneo 975g",
       "alt": "Leite em Pó Nestlé Ninho Integral Instantâneo 975g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -592,8 +721,11 @@
         "valor": "943962I"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-10-02T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-10-02T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T22:11:39.807Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -613,13 +745,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-p4k98-1783807966936",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · NIVEA Creme Hidratante Lata 145g",
       "alt": "NIVEA Creme Hidratante Lata 145g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -648,8 +784,11 @@
         "valor": "P4K98"
       },
       "periodo": {
-        "inicio": "2026-07-01T03:00:00.000Z",
-        "fim": "2026-08-01T02:59:00.000Z"
+        "inicio": "2026-07-01T04:00:00.0000000+00:00",
+        "fim": "2026-08-01T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T22:12:46.936Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -669,13 +808,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-56819249-1783808116915",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Petisco Pedigree Biscrok Sabor Leite 1kg",
       "alt": "Petisco Pedigree Biscrok Sabor Leite 1kg em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -704,8 +847,11 @@
         "valor": "56819249"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-11-23T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-11-13T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": true
       },
       "criado_em": "2026-07-11T22:15:16.915Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -725,13 +871,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-p1345o-1783808154445",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Ração Úmida Pedigree Frango ao Molho 100g",
       "alt": "Ração Úmida Pedigree Frango ao Molho 100g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -760,8 +910,11 @@
         "valor": "P1345O"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T22:15:54.445Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -781,13 +934,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-977530x-1783811220395",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Molho Ketchup Heinz Picles 397g",
       "alt": "Molho Ketchup Heinz Picles 397g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -816,8 +973,11 @@
         "valor": "977530X"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-09-10T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-09-10T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T23:07:00.395Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -837,13 +997,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-p33ewq-1783811366326",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Bombom Sonho de Valsa e Ouro Branco Caixa com 220g",
       "alt": "Bombom Sonho de Valsa e Ouro Branco Caixa com 220g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -872,8 +1036,11 @@
         "valor": "P33EWQ"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-09-26T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-09-26T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T23:09:26.326Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -893,9 +1060,13 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-p532-1783814782422",
@@ -920,7 +1091,7 @@
       "exibicao": {
         "local": "rotina.limpeza.topo",
         "alvo": "",
-        "ordem": 3
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-produto-p532-1783814782422/banner-1783814782422.webp",
       "link": {
@@ -928,8 +1099,11 @@
         "valor": "P532"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-23T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-23T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T00:06:22.423Z",
       "atualizado_em": "2026-07-12T00:06:22.423Z",
@@ -946,7 +1120,10 @@
       "exibicoes": [],
       "controle": {},
       "oferta": {},
-      "automacao": {}
+      "automacao": {
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      }
     },
     {
       "id": "banner-produto-92238569-1783814838857",
@@ -971,7 +1148,7 @@
       "exibicao": {
         "local": "rotina.limpeza.topo",
         "alvo": "",
-        "ordem": 2
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-produto-92238569-1783814838857/banner-1783814838857.webp",
       "link": {
@@ -979,8 +1156,11 @@
         "valor": "92238569"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-08-01T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-08-01T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T00:07:18.858Z",
       "atualizado_em": "2026-07-12T00:07:18.858Z",
@@ -997,11 +1177,14 @@
       "exibicoes": [],
       "controle": {},
       "oferta": {},
-      "automacao": {}
+      "automacao": {
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      }
     },
     {
       "id": "banner-produto-p562-1783815421434",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Achocolatado em Pó 3 Corações 350g",
       "alt": "Achocolatado em Pó 3 Corações 350g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1030,8 +1213,11 @@
         "valor": "P562"
       },
       "periodo": {
-        "inicio": "2026-07-01T03:00:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-01T04:00:00.0000000+00:00",
+        "fim": "2026-07-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T00:17:01.434Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -1051,13 +1237,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-c0090-1783815518864",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Chá Mate Mate Rico 250g",
       "alt": "Chá Mate Mate Rico 250g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1086,8 +1276,11 @@
         "valor": "C0090"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T00:18:38.864Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -1107,13 +1300,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-877500j-1783815635704",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Cereal Matinal Nestlé KitKat Snow Flakes 210g + 230g",
       "alt": "Cereal Matinal Nestlé KitKat Snow Flakes 210g + 230g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1142,8 +1339,11 @@
         "valor": "877500J"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-11-01T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-10-02T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": true
       },
       "criado_em": "2026-07-12T00:20:35.704Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -1163,9 +1363,13 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-59854062-1783817455580",
@@ -1198,8 +1402,11 @@
         "valor": "59854062"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-15T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-15T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T00:50:55.581Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -1221,11 +1428,11 @@
       "oferta": {},
       "automacao": {},
       "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "motivo_desativacao": "oferta_encerrada_ou_produto_vencido"
     },
     {
       "id": "banner-produto-c0098-1783817500333",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Café Coador de Tecido com Suporte Madeira Unidade",
       "alt": "Café Coador de Tecido com Suporte Madeira Unidade em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1254,8 +1461,11 @@
         "valor": "C0098"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-08-01T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-08-01T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T00:51:40.334Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -1275,13 +1485,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-327989k-1783817575958",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Chá Leão Erva-Doce 25 sachês",
       "alt": "Chá Leão Erva-Doce 25 sachês em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1310,8 +1524,11 @@
         "valor": "327989K"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-21T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-21T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T00:52:55.959Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -1331,13 +1548,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-p-bc9y-1783817643979",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Geleia de Amora Forno Velho Clássica 400g",
       "alt": "Geleia de Amora Forno Velho Clássica 400g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1366,8 +1587,11 @@
         "valor": "P-BC9Y"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-21T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-21T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T00:54:03.979Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -1387,13 +1611,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-p-jhor-1783817689737",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Geleia de Menta Companhia das Ervas 260g",
       "alt": "Geleia de Menta Companhia das Ervas 260g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1422,8 +1650,11 @@
         "valor": "P-JHOR"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-21T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-21T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T00:54:49.738Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -1443,13 +1674,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-863822p-1783817757175",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Granola Jasmine Sem Glúten Cranberries e Açaí Pouch",
       "alt": "Granola Jasmine Sem Glúten Cranberries e Açaí Pouch em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1478,8 +1713,11 @@
         "valor": "863822P"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-08-20T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-08-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T00:55:57.175Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -1499,9 +1737,13 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-8989800348-1783817849472",
@@ -1534,8 +1776,11 @@
         "valor": "8989800348"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-10-13T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-10-13T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T00:57:29.473Z",
       "atualizado_em": "2026-07-12T00:57:29.473Z",
@@ -1552,11 +1797,14 @@
       "exibicoes": [],
       "controle": {},
       "oferta": {},
-      "automacao": {}
+      "automacao": {
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      }
     },
     {
       "id": "banner-produto-p0027-1783818389052",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Azeite Extra Virgem Andorinha 500ml",
       "alt": "Azeite Extra Virgem Andorinha 500ml em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1585,8 +1833,11 @@
         "valor": "P0027"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T01:06:29.053Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -1606,13 +1857,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-p-iym5-1783818436908",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Billy & Jack Molho Sabor Chipotle 200g",
       "alt": "Billy & Jack Molho Sabor Chipotle 200g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1641,8 +1896,11 @@
         "valor": "P-IYM5"
       },
       "periodo": {
-        "inicio": "2026-07-01T03:00:00.000Z",
-        "fim": "2026-09-11T02:59:00.000Z"
+        "inicio": "2026-07-01T04:00:00.0000000+00:00",
+        "fim": "2026-09-11T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T01:07:16.908Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -1662,13 +1920,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-p468-1783818500714",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Gota Molho de Pimenta 150ml",
       "alt": "Gota Molho de Pimenta 150ml em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1697,8 +1959,11 @@
         "valor": "P468"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-21T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-21T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T01:08:20.714Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -1718,9 +1983,13 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-4860470916-1783818537995",
@@ -1753,8 +2022,11 @@
         "valor": "4860470916"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-08-25T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-08-25T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T01:08:57.996Z",
       "atualizado_em": "2026-07-15T16:47:15.101Z",
@@ -1774,13 +2046,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-p-0utk-1783818660712",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Fralda Cremer Hiper Tamanho G 60 unidades",
       "alt": "Fralda Cremer Hiper Tamanho G 60 unidades em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1809,8 +2085,11 @@
         "valor": "P-0UTK"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-17T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-17T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T01:11:00.713Z",
       "atualizado_em": "2026-07-14T23:45:37.459Z",
@@ -1830,13 +2109,17 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-812309u-1783818729228",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Fralda descartável Personal Tamanho RN/P 44 unidades",
       "alt": "Fralda descartável Personal Tamanho RN/P 44 unidades em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1865,8 +2148,11 @@
         "valor": "812309U"
       },
       "periodo": {
-        "inicio": "2026-07-11T03:00:00.000Z",
-        "fim": "2026-07-18T02:59:00.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-18T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T01:12:09.229Z",
       "atualizado_em": "2026-07-12T01:12:09.229Z",
@@ -1884,9 +2170,12 @@
       "controle": {},
       "oferta": {},
       "automacao": {
-        "desativado_por": "limite_maximo_por_espaco",
         "desativado_em": "2026-07-14T20:32:20-04:00",
-        "limite_aplicado": 4
+        "limite_aplicado": 12,
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
@@ -1912,7 +2201,7 @@
       "exibicao": {
         "local": "home.compra-mes.topo",
         "alvo": "",
-        "ordem": 5
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-produto-p0054-1783887969250/banner-1783887969250.webp",
       "link": {
@@ -1920,8 +2209,11 @@
         "valor": "P0054"
       },
       "periodo": {
-        "inicio": "2026-07-12T20:26:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-12T04:00:00.0000000+00:00",
+        "fim": "2026-08-12T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T20:26:09.250Z",
       "atualizado_em": "2026-07-15T16:47:11.650Z",
@@ -1937,7 +2229,7 @@
       "banner_fim": "2026-07-20T02:59:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 8,
         "preservado_no_json": true,
@@ -1954,9 +2246,13 @@
       "grupo_id": "banner-produto-p0054-1783887969250",
       "asset_id": "banner-produto-p0054-1783887969250",
       "exibicoes": [],
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-p0059-1783888003106",
@@ -1989,8 +2285,11 @@
         "valor": "P0059"
       },
       "periodo": {
-        "inicio": "2026-07-12T20:26:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-12T20:26:00.0000000+00:00",
+        "fim": "2026-07-28T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T20:26:43.107Z",
       "atualizado_em": "2026-07-12T20:26:43.107Z",
@@ -2006,7 +2305,7 @@
       "banner_fim": "2026-07-20T02:59:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 8
       },
@@ -2021,7 +2320,10 @@
       "grupo_id": "banner-produto-p0059-1783888003106",
       "asset_id": "banner-produto-p0059-1783888003106",
       "exibicoes": [],
-      "automacao": {}
+      "automacao": {
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      }
     },
     {
       "id": "banner-produto-0780020425-1783888082284",
@@ -2046,7 +2348,7 @@
       "exibicao": {
         "local": "home.compra-mes.topo",
         "alvo": "",
-        "ordem": 6
+        "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-produto-0780020425-1783888082284/banner-1783888082284.webp",
       "link": {
@@ -2054,8 +2356,11 @@
         "valor": "0780020425"
       },
       "periodo": {
-        "inicio": "2026-07-12T20:28:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-12T04:00:00.0000000+00:00",
+        "fim": "2026-07-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T20:28:02.284Z",
       "atualizado_em": "2026-07-15T16:47:19.323Z",
@@ -2071,7 +2376,7 @@
       "banner_fim": "2026-07-20T02:59:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 8,
         "preservado_no_json": true,
@@ -2088,13 +2393,17 @@
       "grupo_id": "banner-produto-0780020425-1783888082284",
       "asset_id": "banner-produto-0780020425-1783888082284",
       "exibicoes": [],
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-p11fa3-1783889879176",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Ração Úmida Friskies Sabor Peixe Branco 85g",
       "alt": "Ração Úmida Friskies Sabor Peixe Branco 85g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -2115,7 +2424,7 @@
       "exibicao": {
         "local": "home.compra-mes.topo",
         "alvo": "",
-        "ordem": 4
+        "ordem": 6
       },
       "imagem": "site/banners/ativos/banner-produto-p11fa3-1783889879176/banner-1783889879176.webp",
       "link": {
@@ -2123,11 +2432,14 @@
         "valor": "P11FA3"
       },
       "periodo": {
-        "inicio": "2026-07-12T20:57:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-12T04:00:00.0000000+00:00",
+        "fim": "2026-07-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T20:57:59.176Z",
-      "atualizado_em": "2026-07-12T20:57:59.176Z",
+      "atualizado_em": "2026-07-15T17:11:23.6216634+00:00",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -2140,7 +2452,7 @@
       "banner_fim": "2026-07-20T02:59:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 8
       },
@@ -2156,10 +2468,13 @@
       "asset_id": "banner-produto-p11fa3-1783889879176",
       "exibicoes": [],
       "automacao": {
-        "desativado_por": "limite_maximo_por_espaco",
-        "desativado_em": "2026-07-15T13:04:53-04:00",
-        "limite_aplicado": 4
-      }
+        "desativado_em": "2026-07-15T17:11:23.6216634+00:00",
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-15T17:11:23.6216634+00:00"
     },
     {
       "id": "banner-produto-p-e0u0-1783889940920",
@@ -2192,8 +2507,11 @@
         "valor": "P-E0U0"
       },
       "periodo": {
-        "inicio": "2026-07-12T20:59:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-12T04:00:00.0000000+00:00",
+        "fim": "2026-08-11T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T20:59:00.921Z",
       "atualizado_em": "2026-07-15T16:47:07.410Z",
@@ -2209,7 +2527,7 @@
       "banner_fim": "2026-07-20T02:59:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 8,
         "preservado_no_json": true,
@@ -2226,9 +2544,13 @@
       "grupo_id": "banner-produto-p-e0u0-1783889940920",
       "asset_id": "banner-produto-p-e0u0-1783889940920",
       "exibicoes": [],
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "limite_4_por_espaco_migracao"
+      "automacao": {
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-14T23:45:37.459Z"
     },
     {
       "id": "banner-produto-3362280788-1783890034877",
@@ -2253,7 +2575,7 @@
       "exibicao": {
         "local": "kits.topo",
         "alvo": "",
-        "ordem": 4
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-produto-3362280788-1783890034877/banner-1783890034877.webp",
       "link": {
@@ -2261,8 +2583,11 @@
         "valor": "3362280788"
       },
       "periodo": {
-        "inicio": "2026-07-12T21:00:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-12T04:00:00.0000000+00:00",
+        "fim": "2026-09-10T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T21:00:34.877Z",
       "atualizado_em": "2026-07-15T16:46:52.859Z",
@@ -2278,7 +2603,7 @@
       "banner_fim": "2026-07-20T02:59:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 8
       },
@@ -2294,14 +2619,17 @@
       "asset_id": "banner-produto-3362280788-1783890034877",
       "exibicoes": [],
       "automacao": {
-        "desativado_por": "limite_maximo_por_espaco",
         "desativado_em": "2026-07-14T20:32:20-04:00",
-        "limite_aplicado": 4
+        "limite_aplicado": 12,
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
       "id": "banner-produto-p-bu9h-1783890061736",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Doce de Figo Engenho Velho Colonial 400g",
       "alt": "Doce de Figo Engenho Velho Colonial 400g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -2330,8 +2658,11 @@
         "valor": "P-BU9H"
       },
       "periodo": {
-        "inicio": "2026-07-12T21:01:00.000Z",
-        "fim": "2026-07-20T02:59:00.000Z"
+        "inicio": "2026-07-12T04:00:00.0000000+00:00",
+        "fim": "2026-08-11T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T21:01:01.736Z",
       "atualizado_em": "2026-07-12T21:01:01.736Z",
@@ -2347,7 +2678,7 @@
       "banner_fim": "2026-07-20T02:59:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 8
       },
@@ -2362,7 +2693,11 @@
       "grupo_id": "banner-produto-p-bu9h-1783890061736",
       "asset_id": "banner-produto-p-bu9h-1783890061736",
       "exibicoes": [],
-      "automacao": {}
+      "automacao": {
+        "desativado_por": "limite_12_fila_espera",
+        "limite_aplicado": 12
+      },
+      "motivo_desativacao": "limite_12_fila_espera"
     },
     {
       "id": "banner-auto-95807313-20260712223252",
@@ -2400,7 +2735,7 @@
       "exibicao": {
         "local": "busca.topo",
         "alvo": "",
-        "ordem": 3
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-auto-95807313-20260712223252/banner-20260712223252.webp",
       "link": {
@@ -2408,14 +2743,17 @@
         "valor": "95807313"
       },
       "periodo": {
-        "inicio": "2026-07-12T22:32:52.204Z",
-        "fim": "2026-07-19T22:32:52.204Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-19T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-12T22:32:52.204Z",
       "banner_fim": "2026-07-19T22:32:52.204Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -2454,7 +2792,9 @@
         "rotulo_posicao": "Página · resultados da busca",
         "carga_ativa_antes": 2,
         "candidatos_avaliados": 1,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-95807313-20260712223252",
       "asset_id": "banner-auto-95807313-20260712223252",
@@ -2504,14 +2844,17 @@
         "valor": "7892840822521"
       },
       "periodo": {
-        "inicio": "2026-07-12T22:44:30.095Z",
-        "fim": "2026-07-19T22:44:30.095Z"
+        "inicio": "2026-07-12T22:44:30.0950000+00:00",
+        "fim": "2026-10-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-12T22:44:30.095Z",
       "banner_fim": "2026-07-19T22:44:30.095Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -2550,7 +2893,9 @@
         "rotulo_posicao": "Página · cestas básicas",
         "carga_ativa_antes": 2,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-7892840822521-20260712224430",
       "asset_id": "banner-auto-7892840822521-20260712224430",
@@ -2592,7 +2937,7 @@
       "exibicao": {
         "local": "categorias.topo",
         "alvo": "",
-        "ordem": 3
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-auto-p0233-20260712225109/banner-20260712225109.webp",
       "link": {
@@ -2600,14 +2945,17 @@
         "valor": "P0233"
       },
       "periodo": {
-        "inicio": "2026-07-12T22:51:09.090Z",
-        "fim": "2026-07-19T22:51:09.090Z"
+        "inicio": "2026-07-12T22:51:09.0900000+00:00",
+        "fim": "2026-11-13T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-12T22:51:09.090Z",
       "banner_fim": "2026-07-19T22:51:09.090Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -2646,7 +2994,9 @@
         "rotulo_posicao": "Página · categorias",
         "carga_ativa_antes": 2,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p0233-20260712225109",
       "asset_id": "banner-auto-p0233-20260712225109",
@@ -2654,7 +3004,7 @@
     },
     {
       "id": "banner-auto-pfa31-20260712225152",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Amendoim Salgado Dori Japonês 500g",
       "alt": "Amendoim Salgado Dori Japonês 500g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -2688,7 +3038,7 @@
       "exibicao": {
         "local": "home.compra-mes.topo",
         "alvo": "",
-        "ordem": 3
+        "ordem": 5
       },
       "imagem": "site/banners/ativos/banner-auto-pfa31-20260712225152/banner-20260712225152.webp",
       "link": {
@@ -2696,14 +3046,17 @@
         "valor": "Pfa31"
       },
       "periodo": {
-        "inicio": "2026-07-12T22:51:52.410Z",
-        "fim": "2026-07-19T22:51:52.410Z"
+        "inicio": "2026-07-12T22:51:52.4100000+00:00",
+        "fim": "2026-08-21T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-12T22:51:52.410Z",
       "banner_fim": "2026-07-19T22:51:52.410Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -2718,7 +3071,7 @@
         "exibir_validade_na_arte": false
       },
       "criado_em": "2026-07-12T22:51:52.410Z",
-      "atualizado_em": "2026-07-12T22:51:52.410Z",
+      "atualizado_em": "2026-07-15T17:11:23.6216634+00:00",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -2742,14 +3095,17 @@
         "rotulo_posicao": "Home · antes da compra do mês",
         "carga_ativa_antes": 2,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4,
-        "desativado_por": "limite_maximo_por_espaco",
-        "desativado_em": "2026-07-15T13:04:53-04:00",
-        "limite_aplicado": 4
+        "max_banners_por_espaco": 12,
+        "desativado_em": "2026-07-15T17:11:23.6216634+00:00",
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-pfa31-20260712225152",
       "asset_id": "banner-auto-pfa31-20260712225152",
-      "exibicoes": []
+      "exibicoes": [],
+      "desativado_em": "2026-07-15T17:11:23.6216634+00:00"
     },
     {
       "id": "banner-auto-p0061-20260713005117",
@@ -2795,14 +3151,17 @@
         "valor": "P0061"
       },
       "periodo": {
-        "inicio": "2026-07-13T00:51:17.875Z",
-        "fim": "2026-07-20T00:51:17.875Z"
+        "inicio": "2026-07-13T00:51:17.8750000+00:00",
+        "fim": "2026-08-06T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-13T00:51:17.875Z",
       "banner_fim": "2026-07-20T00:51:17.875Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -2841,7 +3200,9 @@
         "rotulo_posicao": "Home · banner principal",
         "carga_ativa_antes": 2,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p0061-20260713005117",
       "asset_id": "banner-auto-p0061-20260713005117",
@@ -2878,8 +3239,11 @@
         "valor": "P-1N06"
       },
       "periodo": {
-        "inicio": "2026-07-13T03:26:00.000Z",
-        "fim": "2026-07-21T02:59:00.000Z"
+        "inicio": "2026-07-01T04:00:00.0000000+00:00",
+        "fim": "2026-09-05T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-13T03:26:44.113Z",
       "atualizado_em": "2026-07-13T03:26:44.113Z",
@@ -2896,7 +3260,7 @@
       "banner_fim": "2026-07-21T02:59:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 8
       },
@@ -2921,7 +3285,10 @@
           "ordem": 1
         }
       ],
-      "automacao": {}
+      "automacao": {
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      }
     },
     {
       "id": "banner-produto-683081r-1783913264439",
@@ -2954,8 +3321,11 @@
         "valor": "683081R"
       },
       "periodo": {
-        "inicio": "2026-07-13T03:27:00.000Z",
-        "fim": "2026-07-21T02:59:00.000Z"
+        "inicio": "2026-07-17T04:00:00.0000000+00:00",
+        "fim": "2026-07-21T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-13T03:27:44.439Z",
       "atualizado_em": "2026-07-13T03:27:44.439Z",
@@ -2972,7 +3342,7 @@
       "banner_fim": "2026-07-21T02:59:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 8
       },
@@ -2997,7 +3367,10 @@
           "ordem": 1
         }
       ],
-      "automacao": {}
+      "automacao": {
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      }
     },
     {
       "id": "banner-produto-p-vxr8-1783913341460",
@@ -3030,8 +3403,11 @@
         "valor": "P-VXR8"
       },
       "periodo": {
-        "inicio": "2026-07-13T03:29:00.000Z",
-        "fim": "2026-07-29T02:59:00.000Z"
+        "inicio": "2026-07-17T04:00:00.0000000+00:00",
+        "fim": "2026-07-30T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-13T03:29:01.460Z",
       "atualizado_em": "2026-07-13T03:29:01.460Z",
@@ -3048,7 +3424,7 @@
       "banner_fim": "2026-07-29T02:59:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 16
       },
@@ -3073,11 +3449,14 @@
           "ordem": 1
         }
       ],
-      "automacao": {}
+      "automacao": {
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      }
     },
     {
       "id": "banner-produto-ssep7-1783913483391",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Cogumelo Inteiro Castelo Sachê 80g",
       "alt": "Cogumelo Inteiro Castelo Sachê 80g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -3098,7 +3477,7 @@
       "exibicao": {
         "local": "kits.topo",
         "alvo": "",
-        "ordem": 3
+        "ordem": 6
       },
       "imagem": "site/banners/ativos/banner-produto-ssep7-1783913483391/banner-1783913483391.webp",
       "link": {
@@ -3106,11 +3485,14 @@
         "valor": "sseP7"
       },
       "periodo": {
-        "inicio": "2026-07-13T03:31:00.000Z",
-        "fim": "2026-07-31T02:59:00.000Z"
+        "inicio": "2026-07-20T04:00:00.0000000+00:00",
+        "fim": "2026-08-01T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-13T03:31:23.391Z",
-      "atualizado_em": "2026-07-13T03:31:23.391Z",
+      "atualizado_em": "2026-07-15T17:11:23.6216634+00:00",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -3124,7 +3506,7 @@
       "banner_fim": "2026-07-31T02:59:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 18
       },
@@ -3150,10 +3532,13 @@
         }
       ],
       "automacao": {
-        "desativado_por": "limite_maximo_por_espaco",
-        "desativado_em": "2026-07-15T13:04:53-04:00",
-        "limite_aplicado": 4
-      }
+        "desativado_em": "2026-07-15T17:11:23.6216634+00:00",
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      },
+      "desativado_em": "2026-07-15T17:11:23.6216634+00:00"
     },
     {
       "id": "banner-produto-p0115-1783913616723",
@@ -3186,8 +3571,11 @@
         "valor": "P0115"
       },
       "periodo": {
-        "inicio": "2026-07-13T03:33:00.000Z",
-        "fim": "2026-08-09T02:59:00.000Z"
+        "inicio": "2026-07-19T04:00:00.0000000+00:00",
+        "fim": "2026-08-14T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-13T03:33:36.723Z",
       "atualizado_em": "2026-07-13T03:33:36.723Z",
@@ -3204,7 +3592,7 @@
       "banner_fim": "2026-08-09T02:59:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 27
       },
@@ -3229,7 +3617,10 @@
           "ordem": 1
         }
       ],
-      "automacao": {}
+      "automacao": {
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      }
     },
     {
       "id": "banner-auto-4422670103-20260713045112",
@@ -3275,14 +3666,17 @@
         "valor": "4422670103"
       },
       "periodo": {
-        "inicio": "2026-07-13T04:51:12.138Z",
-        "fim": "2026-07-20T04:51:12.138Z"
+        "inicio": "2026-07-13T04:51:12.1380000+00:00",
+        "fim": "2026-10-11T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-13T04:51:12.138Z",
       "banner_fim": "2026-07-20T04:51:12.138Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -3321,7 +3715,9 @@
         "rotulo_posicao": "Rotina · café",
         "carga_ativa_antes": 1,
         "candidatos_avaliados": 1,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-4422670103-20260713045112",
       "asset_id": "banner-auto-4422670103-20260713045112",
@@ -3363,7 +3759,7 @@
       "exibicao": {
         "local": "rotina.compra-mes.topo",
         "alvo": "",
-        "ordem": 2
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-auto-p-r97b-20260713065119/banner-20260713065119.webp",
       "link": {
@@ -3371,14 +3767,17 @@
         "valor": "P-R97B"
       },
       "periodo": {
-        "inicio": "2026-07-13T06:51:19.022Z",
-        "fim": "2026-07-20T06:51:19.022Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-09-18T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-13T06:51:19.022Z",
       "banner_fim": "2026-07-20T06:51:19.022Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -3417,7 +3816,9 @@
         "rotulo_posicao": "Rotina · compra do mês",
         "carga_ativa_antes": 1,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p-r97b-20260713065119",
       "asset_id": "banner-auto-p-r97b-20260713065119",
@@ -3459,7 +3860,7 @@
       "exibicao": {
         "local": "favoritos.topo",
         "alvo": "",
-        "ordem": 2
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-auto-p0040-20260713085121/banner-20260713085121.webp",
       "link": {
@@ -3467,14 +3868,17 @@
         "valor": "P0040"
       },
       "periodo": {
-        "inicio": "2026-07-13T08:51:21.053Z",
-        "fim": "2026-07-20T08:51:21.053Z"
+        "inicio": "2026-07-13T08:51:21.0530000+00:00",
+        "fim": "2026-11-12T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-13T08:51:21.053Z",
       "banner_fim": "2026-07-20T08:51:21.053Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -3513,7 +3917,9 @@
         "rotulo_posicao": "Página · favoritos",
         "carga_ativa_antes": 1,
         "candidatos_avaliados": 1,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p0040-20260713085121",
       "asset_id": "banner-auto-p0040-20260713085121",
@@ -3555,7 +3961,7 @@
       "exibicao": {
         "local": "busca.topo",
         "alvo": "",
-        "ordem": 2
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-auto-56472897-20260713105122/banner-20260713105122.webp",
       "link": {
@@ -3563,14 +3969,17 @@
         "valor": "56472897"
       },
       "periodo": {
-        "inicio": "2026-07-13T10:51:22.511Z",
-        "fim": "2026-07-20T10:51:22.511Z"
+        "inicio": "2026-07-13T10:51:22.5110000+00:00",
+        "fim": "2026-10-21T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-13T10:51:22.511Z",
       "banner_fim": "2026-07-20T10:51:22.511Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -3609,7 +4018,9 @@
         "rotulo_posicao": "Página · resultados da busca",
         "carga_ativa_antes": 1,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-56472897-20260713105122",
       "asset_id": "banner-auto-56472897-20260713105122",
@@ -3617,7 +4028,7 @@
     },
     {
       "id": "banner-auto-p490-20260713124124",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Feijão Carioca Da Casa Tipo 1 1kg",
       "alt": "Feijão Carioca Da Casa Tipo 1 1kg em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -3651,7 +4062,7 @@
       "exibicao": {
         "local": "kits.topo",
         "alvo": "",
-        "ordem": 2
+        "ordem": 5
       },
       "imagem": "site/banners/ativos/banner-auto-p490-20260713124124/banner-20260713124124.webp",
       "link": {
@@ -3659,14 +4070,17 @@
         "valor": "P490"
       },
       "periodo": {
-        "inicio": "2026-07-13T12:41:24.861Z",
-        "fim": "2026-07-20T12:41:24.861Z"
+        "inicio": "2026-07-13T12:41:24.8610000+00:00",
+        "fim": "2026-11-14T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-13T12:41:24.861Z",
       "banner_fim": "2026-07-20T12:41:24.861Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -3681,7 +4095,7 @@
         "exibir_validade_na_arte": false
       },
       "criado_em": "2026-07-13T12:41:24.861Z",
-      "atualizado_em": "2026-07-13T12:41:24.861Z",
+      "atualizado_em": "2026-07-15T17:11:23.6216634+00:00",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -3705,14 +4119,17 @@
         "rotulo_posicao": "Página · kits promocionais",
         "carga_ativa_antes": 1,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4,
-        "desativado_por": "limite_maximo_por_espaco",
-        "desativado_em": "2026-07-15T13:04:53-04:00",
-        "limite_aplicado": 4
+        "max_banners_por_espaco": 12,
+        "desativado_em": "2026-07-15T17:11:23.6216634+00:00",
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p490-20260713124124",
       "asset_id": "banner-auto-p490-20260713124124",
-      "exibicoes": []
+      "exibicoes": [],
+      "desativado_em": "2026-07-15T17:11:23.6216634+00:00"
     },
     {
       "id": "banner-auto-p572-20260713144124",
@@ -3758,14 +4175,17 @@
         "valor": "P572"
       },
       "periodo": {
-        "inicio": "2026-07-13T14:41:24.018Z",
-        "fim": "2026-07-20T14:41:24.018Z"
+        "inicio": "2026-07-13T14:41:24.0180000+00:00",
+        "fim": "2026-08-01T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-13T14:41:24.018Z",
       "banner_fim": "2026-07-20T14:41:24.018Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -3804,7 +4224,9 @@
         "rotulo_posicao": "Página · cestas básicas",
         "carga_ativa_antes": 1,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p572-20260713144124",
       "asset_id": "banner-auto-p572-20260713144124",
@@ -3812,7 +4234,7 @@
     },
     {
       "id": "banner-auto-216319a-20260713164122",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Nestlé Chocolate Bis Original ao Leite 100,8G",
       "alt": "Nestlé Chocolate Bis Original ao Leite 100,8G em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -3846,7 +4268,7 @@
       "exibicao": {
         "local": "ofertas.topo",
         "alvo": "",
-        "ordem": 2
+        "ordem": 5
       },
       "imagem": "site/banners/ativos/banner-auto-216319a-20260713164122/banner-20260713164122.webp",
       "link": {
@@ -3854,14 +4276,17 @@
         "valor": "216319A"
       },
       "periodo": {
-        "inicio": "2026-07-13T16:41:22.012Z",
-        "fim": "2026-07-20T16:41:22.012Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-09-06T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-13T16:41:22.012Z",
       "banner_fim": "2026-07-20T16:41:22.012Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -3876,7 +4301,7 @@
         "exibir_validade_na_arte": false
       },
       "criado_em": "2026-07-13T16:41:22.012Z",
-      "atualizado_em": "2026-07-13T16:41:22.012Z",
+      "atualizado_em": "2026-07-15T17:11:23.6216634+00:00",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -3900,14 +4325,17 @@
         "rotulo_posicao": "Página · ofertas",
         "carga_ativa_antes": 1,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4,
-        "desativado_por": "limite_maximo_por_espaco",
-        "desativado_em": "2026-07-15T13:04:53-04:00",
-        "limite_aplicado": 4
+        "max_banners_por_espaco": 12,
+        "desativado_em": "2026-07-15T17:11:23.6216634+00:00",
+        "reativado_para_fila_v12_2": true,
+        "reativado_em": "2026-07-15T18:05:40.080Z",
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-216319a-20260713164122",
       "asset_id": "banner-auto-216319a-20260713164122",
-      "exibicoes": []
+      "exibicoes": [],
+      "desativado_em": "2026-07-15T17:11:23.6216634+00:00"
     },
     {
       "id": "banner-auto-p0164-20260713184128",
@@ -3945,7 +4373,7 @@
       "exibicao": {
         "local": "categorias.topo",
         "alvo": "",
-        "ordem": 2
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-auto-p0164-20260713184128/banner-20260713184128.webp",
       "link": {
@@ -3953,14 +4381,17 @@
         "valor": "P0164"
       },
       "periodo": {
-        "inicio": "2026-07-13T18:41:28.433Z",
-        "fim": "2026-07-20T18:41:28.433Z"
+        "inicio": "2026-07-13T18:41:28.4330000+00:00",
+        "fim": "2026-10-24T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-13T18:41:28.433Z",
       "banner_fim": "2026-07-20T18:41:28.433Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -3999,7 +4430,9 @@
         "rotulo_posicao": "Página · categorias",
         "carga_ativa_antes": 1,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p0164-20260713184128",
       "asset_id": "banner-auto-p0164-20260713184128",
@@ -4041,7 +4474,7 @@
       "exibicao": {
         "local": "home.compra-mes.topo",
         "alvo": "",
-        "ordem": 2
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-auto-p0267-20260713204122/banner-20260713204122.webp",
       "link": {
@@ -4049,14 +4482,17 @@
         "valor": "P0267"
       },
       "periodo": {
-        "inicio": "2026-07-13T20:41:22.796Z",
-        "fim": "2026-07-20T20:41:22.796Z"
+        "inicio": "2026-07-13T20:41:22.7960000+00:00",
+        "fim": "2026-10-02T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-13T20:41:22.796Z",
       "banner_fim": "2026-07-20T20:41:22.796Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -4095,7 +4531,9 @@
         "rotulo_posicao": "Home · antes da compra do mês",
         "carga_ativa_antes": 1,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p0267-20260713204122",
       "asset_id": "banner-auto-p0267-20260713204122",
@@ -4145,14 +4583,17 @@
         "valor": "P0153"
       },
       "periodo": {
-        "inicio": "2026-07-13T22:41:21.608Z",
-        "fim": "2026-07-20T22:41:21.608Z"
+        "inicio": "2026-07-13T22:41:21.6080000+00:00",
+        "fim": "2026-10-24T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-13T22:41:21.608Z",
       "banner_fim": "2026-07-20T22:41:21.608Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -4191,7 +4632,9 @@
         "rotulo_posicao": "Home · banner principal",
         "carga_ativa_antes": 1,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p0153-20260713224121",
       "asset_id": "banner-auto-p0153-20260713224121",
@@ -4241,14 +4684,17 @@
         "valor": "C0089"
       },
       "periodo": {
-        "inicio": "2026-07-14T00:41:21.779Z",
-        "fim": "2026-07-21T00:41:21.779Z"
+        "inicio": "2026-07-14T00:41:21.7790000+00:00",
+        "fim": "2026-10-24T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-14T00:41:21.779Z",
       "banner_fim": "2026-07-21T00:41:21.779Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -4287,7 +4733,9 @@
         "rotulo_posicao": "Rotina · café",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 1,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-c0089-20260714004121",
       "asset_id": "banner-auto-c0089-20260714004121",
@@ -4329,7 +4777,7 @@
       "exibicao": {
         "local": "rotina.compra-mes.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-auto-32675205-20260714024122/banner-20260714024122.webp",
       "link": {
@@ -4337,14 +4785,17 @@
         "valor": "32675205"
       },
       "periodo": {
-        "inicio": "2026-07-14T02:41:22.266Z",
-        "fim": "2026-07-21T02:41:22.266Z"
+        "inicio": "2026-07-14T02:41:22.2660000+00:00",
+        "fim": "2026-08-21T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-14T02:41:22.266Z",
       "banner_fim": "2026-07-21T02:41:22.266Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -4383,7 +4834,9 @@
         "rotulo_posicao": "Rotina · compra do mês",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-32675205-20260714024122",
       "asset_id": "banner-auto-32675205-20260714024122",
@@ -4425,7 +4878,7 @@
       "exibicao": {
         "local": "favoritos.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-auto-35913176-20260714044124/banner-20260714044124.webp",
       "link": {
@@ -4433,14 +4886,17 @@
         "valor": "35913176"
       },
       "periodo": {
-        "inicio": "2026-07-14T04:41:24.455Z",
-        "fim": "2026-07-21T04:41:24.455Z"
+        "inicio": "2026-07-14T04:41:24.4550000+00:00",
+        "fim": "2026-08-08T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-14T04:41:24.455Z",
       "banner_fim": "2026-07-21T04:41:24.455Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -4479,7 +4935,9 @@
         "rotulo_posicao": "Página · favoritos",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-35913176-20260714044124",
       "asset_id": "banner-auto-35913176-20260714044124",
@@ -4521,7 +4979,7 @@
       "exibicao": {
         "local": "busca.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-auto-p-ptou-20260714064126/banner-20260714064126.webp",
       "link": {
@@ -4529,14 +4987,17 @@
         "valor": "P-PTOU"
       },
       "periodo": {
-        "inicio": "2026-07-14T06:41:26.945Z",
-        "fim": "2026-07-21T06:41:26.945Z"
+        "inicio": "2026-07-14T06:41:26.9450000+00:00",
+        "fim": "2026-09-02T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-14T06:41:26.945Z",
       "banner_fim": "2026-07-21T06:41:26.945Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -4575,7 +5036,9 @@
         "rotulo_posicao": "Página · resultados da busca",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p-ptou-20260714064126",
       "asset_id": "banner-auto-p-ptou-20260714064126",
@@ -4617,7 +5080,7 @@
       "exibicao": {
         "local": "kits.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-auto-7896058597738-20260714084129/banner-20260714084129.webp",
       "link": {
@@ -4625,14 +5088,17 @@
         "valor": "7896058597738"
       },
       "periodo": {
-        "inicio": "2026-07-14T08:41:29.474Z",
-        "fim": "2026-07-21T08:41:29.474Z"
+        "inicio": "2026-07-14T08:41:29.4740000+00:00",
+        "fim": "2026-08-23T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-14T08:41:29.474Z",
       "banner_fim": "2026-07-21T08:41:29.474Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -4671,7 +5137,9 @@
         "rotulo_posicao": "Página · kits promocionais",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-7896058597738-20260714084129",
       "asset_id": "banner-auto-7896058597738-20260714084129",
@@ -4721,14 +5189,17 @@
         "valor": "P0237"
       },
       "periodo": {
-        "inicio": "2026-07-14T12:10:32.623Z",
-        "fim": "2026-07-21T12:10:32.623Z"
+        "inicio": "2026-07-14T12:10:32.6230000+00:00",
+        "fim": "2026-11-07T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-14T12:10:32.623Z",
       "banner_fim": "2026-07-21T12:10:32.623Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -4767,7 +5238,9 @@
         "rotulo_posicao": "Página · cestas básicas",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p0237-20260714121032",
       "asset_id": "banner-auto-p0237-20260714121032",
@@ -4775,7 +5248,7 @@
     },
     {
       "id": "banner-produto-pccs225-1783913722307",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Suco Concentrado Dafruta Uva 500ml",
       "alt": "Suco Concentrado Dafruta Uva 500ml em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -4822,7 +5295,7 @@
       "banner_fim": "2026-08-01T05:59:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 19
       },
@@ -4847,7 +5320,8 @@
           "ordem": 1
         }
       ],
-      "automacao": {}
+      "automacao": {},
+      "motivo_desativacao": "oferta_sem_fim_produto_inativo_sem_estoque_ou_excluido"
     },
     {
       "id": "banner-auto-p0002-20260714141731",
@@ -4893,14 +5367,17 @@
         "valor": "P0002"
       },
       "periodo": {
-        "inicio": "2026-07-14T14:17:31.724Z",
-        "fim": "2026-07-21T14:17:31.724Z"
+        "inicio": "2026-07-14T04:00:00.0000000+00:00",
+        "fim": "2026-07-30T02:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-14T14:17:31.724Z",
       "banner_fim": "2026-07-21T14:17:31.724Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -4939,7 +5416,9 @@
         "rotulo_posicao": "Home · antes de higiene da família",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 1,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p0002-20260714141731",
       "asset_id": "banner-auto-p0002-20260714141731",
@@ -4981,7 +5460,7 @@
       "exibicao": {
         "local": "ofertas.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 4
       },
       "imagem": "site/banners/ativos/banner-auto-p575-20260714161729/banner-20260714161729.webp",
       "link": {
@@ -4989,14 +5468,17 @@
         "valor": "P575"
       },
       "periodo": {
-        "inicio": "2026-07-14T16:17:29.736Z",
-        "fim": "2026-07-21T16:17:29.736Z"
+        "inicio": "2026-07-14T16:17:29.7360000+00:00",
+        "fim": "2026-10-22T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-14T16:17:29.736Z",
       "banner_fim": "2026-07-21T16:17:29.736Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -5035,7 +5517,9 @@
         "rotulo_posicao": "Página · ofertas",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 1,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p575-20260714161729",
       "asset_id": "banner-auto-p575-20260714161729",
@@ -5077,7 +5561,7 @@
       "exibicao": {
         "local": "categorias.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-auto-36134367-20260714181728/banner-20260714181728.webp",
       "link": {
@@ -5085,14 +5569,17 @@
         "valor": "36134367"
       },
       "periodo": {
-        "inicio": "2026-07-14T18:17:28.963Z",
-        "fim": "2026-07-21T18:17:28.963Z"
+        "inicio": "2026-07-14T18:17:28.9630000+00:00",
+        "fim": "2026-08-27T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-14T18:17:28.963Z",
       "banner_fim": "2026-07-21T18:17:28.963Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -5131,7 +5618,9 @@
         "rotulo_posicao": "Página · categorias",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-36134367-20260714181728",
       "asset_id": "banner-auto-36134367-20260714181728",
@@ -5173,7 +5662,7 @@
       "exibicao": {
         "local": "home.compra-mes.topo",
         "alvo": "",
-        "ordem": 1
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-auto-7896005219959-20260714201728/banner-20260714201728.webp",
       "link": {
@@ -5181,14 +5670,17 @@
         "valor": "7896005219959"
       },
       "periodo": {
-        "inicio": "2026-07-14T20:17:28.025Z",
-        "fim": "2026-07-21T20:17:28.025Z"
+        "inicio": "2026-07-14T20:17:28.0250000+00:00",
+        "fim": "2026-10-04T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-14T20:17:28.025Z",
       "banner_fim": "2026-07-21T20:17:28.025Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -5227,7 +5719,9 @@
         "rotulo_posicao": "Home · antes da compra do mês",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-7896005219959-20260714201728",
       "asset_id": "banner-auto-7896005219959-20260714201728",
@@ -5277,14 +5771,17 @@
         "valor": "P19"
       },
       "periodo": {
-        "inicio": "2026-07-14T22:17:27.337Z",
-        "fim": "2026-07-21T22:17:27.337Z"
+        "inicio": "2026-07-14T22:17:27.3370000+00:00",
+        "fim": "2026-08-24T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "banner_inicio": "2026-07-14T22:17:27.337Z",
       "banner_fim": "2026-07-21T22:17:27.337Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 7,
         "arquivo_preservado_apos_expirar": true,
@@ -5323,7 +5820,9 @@
         "rotulo_posicao": "Home · banner principal",
         "carga_ativa_antes": 0,
         "candidatos_avaliados": 17,
-        "max_banners_por_espaco": 4
+        "max_banners_por_espaco": 12,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p19-20260714221727",
       "asset_id": "banner-auto-p19-20260714221727",
@@ -5352,7 +5851,7 @@
       "exibicao": {
         "local": "ofertas.topo",
         "alvo": "",
-        "ordem": 2
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-produto-67793151-1784074064000/banner-1784074064000.webp",
       "link": {
@@ -5360,8 +5859,11 @@
         "valor": "67793151"
       },
       "periodo": {
-        "inicio": "2026-07-14T23:07:00.000Z",
-        "fim": "2026-07-22T03:07:00.000Z"
+        "inicio": "2026-07-14T04:00:00.0000000+00:00",
+        "fim": "2026-07-30T02:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-14T20:07:44-04:00",
       "atualizado_em": "2026-07-15T00:22:15.974Z",
@@ -5378,7 +5880,7 @@
       "banner_fim": "2026-07-22T03:07:00.000Z",
       "controle": {
         "retirada_automatica": true,
-        "validade_independente_da_oferta": true,
+        "validade_independente_da_oferta": false,
         "exibir_validade_oferta_na_arte": false,
         "duracao_dias": 8
       },
@@ -5403,7 +5905,10 @@
           "ordem": 2
         }
       ],
-      "automacao": {}
+      "automacao": {
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
+      }
     },
     {
       "id": "banner-produto-p1m77-1784075540000",
@@ -5428,7 +5933,7 @@
       "exibicao": {
         "local": "rotina.higiene.topo",
         "alvo": "",
-        "ordem": 2
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-produto-p1m77-1784075540000/banner-1784075540000.webp",
       "link": {
@@ -5436,8 +5941,11 @@
         "valor": "P1m77"
       },
       "periodo": {
-        "inicio": "2026-07-14T20:32:20-04:00",
-        "fim": "2026-07-22T00:32:20.000Z"
+        "inicio": "2026-07-14T04:00:00.0000000+00:00",
+        "fim": "2026-07-30T02:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-14T20:32:20-04:00",
       "atualizado_em": "2026-07-14T20:32:20-04:00",
@@ -5464,8 +5972,10 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "rotina.higiene.topo",
         "carga_antes": 1,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
@@ -5499,8 +6009,11 @@
         "valor": "489678D"
       },
       "periodo": {
-        "inicio": "2026-07-14T22:01:12-04:00",
-        "fim": "2026-07-22T02:01:12.000Z"
+        "inicio": "2026-07-14T04:00:00.0000000+00:00",
+        "fim": "2026-07-30T02:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-14T22:01:12-04:00",
       "atualizado_em": "2026-07-14T22:01:12-04:00",
@@ -5527,8 +6040,10 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "rotina.higiene.topo",
         "carga_antes": 1,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
@@ -5554,7 +6069,7 @@
       "exibicao": {
         "local": "favoritos.topo",
         "alvo": "",
-        "ordem": 3
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-produto-p0075-1784081298000/banner-1784081298000.webp",
       "link": {
@@ -5562,8 +6077,11 @@
         "valor": "P0075"
       },
       "periodo": {
-        "inicio": "2026-07-14T22:08:18-04:00",
-        "fim": "2026-07-22T02:08:18.000Z"
+        "inicio": "2026-07-15T02:08:18.0000000+00:00",
+        "fim": "2026-08-09T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-14T22:08:18-04:00",
       "atualizado_em": "2026-07-14T22:08:18-04:00",
@@ -5590,8 +6108,10 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "favoritos.topo",
         "carga_antes": 2,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
@@ -5617,7 +6137,7 @@
       "exibicao": {
         "local": "rotina.compra-mes.topo",
         "alvo": "",
-        "ordem": 3
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-produto-p574-1784082627000/banner-1784082627000.webp",
       "link": {
@@ -5625,8 +6145,11 @@
         "valor": "P574"
       },
       "periodo": {
-        "inicio": "2026-07-14T22:30:27-04:00",
-        "fim": "2026-07-22T02:30:27.000Z"
+        "inicio": "2026-07-15T02:30:27.0000000+00:00",
+        "fim": "2026-11-15T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-14T22:30:27-04:00",
       "atualizado_em": "2026-07-14T22:30:27-04:00",
@@ -5653,8 +6176,10 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "rotina.compra-mes.topo",
         "carga_antes": 2,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
@@ -5680,7 +6205,7 @@
       "exibicao": {
         "local": "rotina.higiene.topo",
         "alvo": "",
-        "ordem": 3
+        "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-produto-p30-1784083156000/banner-1784083156000.webp",
       "link": {
@@ -5688,8 +6213,11 @@
         "valor": "P30"
       },
       "periodo": {
-        "inicio": "2026-07-14T22:39:16-04:00",
-        "fim": "2026-07-22T02:39:16.000Z"
+        "inicio": "2026-07-14T04:00:00.0000000+00:00",
+        "fim": "2026-07-30T02:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-14T22:39:16-04:00",
       "atualizado_em": "2026-07-14T22:39:16-04:00",
@@ -5716,8 +6244,10 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "rotina.higiene.topo",
         "carga_antes": 2,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
@@ -5743,7 +6273,7 @@
       "exibicao": {
         "local": "rotina.limpeza.topo",
         "alvo": "",
-        "ordem": 3
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-produto-p0269-1784091856000/banner-1784091856000.webp",
       "link": {
@@ -5751,8 +6281,11 @@
         "valor": "P0269"
       },
       "periodo": {
-        "inicio": "2026-07-15T01:04:16-04:00",
-        "fim": "2026-07-22T05:04:16.000Z"
+        "inicio": "2026-07-14T04:00:00.0000000+00:00",
+        "fim": "2026-07-30T02:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-15T01:04:16-04:00",
       "atualizado_em": "2026-07-15T01:04:16-04:00",
@@ -5779,8 +6312,10 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "rotina.limpeza.topo",
         "carga_antes": 2,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
@@ -5806,7 +6341,7 @@
       "exibicao": {
         "local": "categorias.topo",
         "alvo": "",
-        "ordem": 4
+        "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-produto-7892840822484-1784097258000/banner-1784097258000.webp",
       "link": {
@@ -5814,8 +6349,11 @@
         "valor": "7892840822484"
       },
       "periodo": {
-        "inicio": "2026-07-15T02:34:18-04:00",
-        "fim": "2026-07-22T06:34:18.000Z"
+        "inicio": "2026-07-15T06:34:18.0000000+00:00",
+        "fim": "2026-10-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-15T02:34:18-04:00",
       "atualizado_em": "2026-07-15T02:34:18-04:00",
@@ -5842,8 +6380,10 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "categorias.topo",
         "carga_antes": 3,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
@@ -5869,7 +6409,7 @@
       "exibicao": {
         "local": "ofertas.topo",
         "alvo": "",
-        "ordem": 4
+        "ordem": 2
       },
       "imagem": "site/banners/ativos/banner-produto-55551620-1784102788000/banner-1784102788000.webp",
       "link": {
@@ -5877,8 +6417,11 @@
         "valor": "55551620"
       },
       "periodo": {
-        "inicio": "2026-07-15T04:06:28-04:00",
-        "fim": "2026-07-22T08:06:28.000Z"
+        "inicio": "2026-07-15T04:00:00.0000000+00:00",
+        "fim": "2026-07-23T02:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-15T04:06:28-04:00",
       "atualizado_em": "2026-07-15T04:06:28-04:00",
@@ -5905,8 +6448,10 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "ofertas.topo",
         "carga_antes": 3,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
@@ -5932,7 +6477,7 @@
       "exibicao": {
         "local": "kits.topo",
         "alvo": "",
-        "ordem": 4
+        "ordem": 3
       },
       "imagem": "site/banners/ativos/banner-produto-p0206-1784108105000/banner-1784108105000.webp",
       "link": {
@@ -5940,8 +6485,11 @@
         "valor": "P0206"
       },
       "periodo": {
-        "inicio": "2026-07-15T05:35:05-04:00",
-        "fim": "2026-07-22T09:35:05.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-21T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-15T05:35:05-04:00",
       "atualizado_em": "2026-07-15T05:35:05-04:00",
@@ -5968,8 +6516,10 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "kits.topo",
         "carga_antes": 3,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
@@ -5995,7 +6545,7 @@
       "exibicao": {
         "local": "busca.topo",
         "alvo": "",
-        "ordem": 4
+        "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-produto-313050e-1784113543000/banner-1784113543000.webp",
       "link": {
@@ -6003,8 +6553,11 @@
         "valor": "313050E"
       },
       "periodo": {
-        "inicio": "2026-07-15T07:05:43-04:00",
-        "fim": "2026-07-22T11:05:43.000Z"
+        "inicio": "2026-07-15T04:00:00.0000000+00:00",
+        "fim": "2026-07-23T02:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-15T07:05:43-04:00",
       "atualizado_em": "2026-07-15T07:05:43-04:00",
@@ -6031,8 +6584,10 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "busca.topo",
         "carga_antes": 3,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
@@ -6058,7 +6613,7 @@
       "exibicao": {
         "local": "favoritos.topo",
         "alvo": "",
-        "ordem": 4
+        "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-produto-p515-1784118862000/banner-1784118862000.webp",
       "link": {
@@ -6066,8 +6621,11 @@
         "valor": "P515"
       },
       "periodo": {
-        "inicio": "2026-07-15T08:34:22-04:00",
-        "fim": "2026-07-22T12:34:22.000Z"
+        "inicio": "2026-07-15T12:34:22.0000000+00:00",
+        "fim": "2026-08-02T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-15T08:34:22-04:00",
       "atualizado_em": "2026-07-15T08:34:22-04:00",
@@ -6094,8 +6652,10 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "favoritos.topo",
         "carga_antes": 3,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
@@ -6121,7 +6681,7 @@
       "exibicao": {
         "local": "rotina.compra-mes.topo",
         "alvo": "",
-        "ordem": 4
+        "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-produto-381712p-1784124327000/banner-1784124327000.webp",
       "link": {
@@ -6129,8 +6689,11 @@
         "valor": "381712P"
       },
       "periodo": {
-        "inicio": "2026-07-15T10:05:27-04:00",
-        "fim": "2026-07-22T14:05:27.000Z"
+        "inicio": "2026-07-11T04:00:00.0000000+00:00",
+        "fim": "2026-07-20T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-15T10:05:27-04:00",
       "atualizado_em": "2026-07-15T10:05:27-04:00",
@@ -6157,8 +6720,10 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "rotina.compra-mes.topo",
         "carga_antes": 3,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     },
     {
@@ -6184,7 +6749,7 @@
       "exibicao": {
         "local": "rotina.limpeza.topo",
         "alvo": "",
-        "ordem": 4
+        "ordem": 1
       },
       "imagem": "site/banners/ativos/banner-produto-p0175-1784129660000/banner-1784129660000.webp",
       "link": {
@@ -6192,8 +6757,11 @@
         "valor": "P0175"
       },
       "periodo": {
-        "inicio": "2026-07-15T11:34:20-04:00",
-        "fim": "2026-07-22T15:34:20.000Z"
+        "inicio": "2026-07-15T15:34:20.0000000+00:00",
+        "fim": "2026-09-17T03:59:59.0000000+00:00",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-15T11:34:20-04:00",
       "atualizado_em": "2026-07-15T11:34:20-04:00",
@@ -6220,72 +6788,33 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "rotina.limpeza.topo",
         "carga_antes": 3,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
-      }
-    },
-    {
-      "id": "banner-produto-55016206-1784135061000",
-      "ativo": true,
-      "titulo": "Oferta · Bebêla Salgadinho Sabor Queijo 50g",
-      "alt": "Bebêla Salgadinho Sabor Queijo 50g em oferta na Dona Antônia",
-      "tipo_conteudo": "produto",
-      "texto_arte": "",
-      "origem": {
-        "tipo": "produto",
-        "valor": "1776338123490",
-        "produtos": [
-          {
-            "firebaseKey": "1776338123490",
-            "id": "1776338123490",
-            "codigo": "55016206",
-            "nome": "Bebêla Salgadinho Sabor Queijo 50g",
-            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b93/2026/07/bebela-salgadinho-sabor-queijo-50g-bebela-50g-salgadinhos-e-petiscos-salgadinhos-7896635190895-foto-atual-otimizada-20260711043348.webp"
-          }
-        ]
-      },
-      "exibicao": {
-        "local": "rotina.higiene.topo",
-        "alvo": "",
-        "ordem": 4
-      },
-      "imagem": "site/banners/ativos/banner-produto-55016206-1784135061000/banner-1784135061000.webp",
-      "link": {
-        "tipo": "produto",
-        "valor": "55016206"
-      },
-      "periodo": {
-        "inicio": "2026-07-15T13:04:21-04:00",
-        "fim": "2026-07-22T17:04:21.000Z"
-      },
-      "criado_em": "2026-07-15T13:04:21-04:00",
-      "atualizado_em": "2026-07-15T13:04:21-04:00",
-      "geracao": {
-        "largura": 1024,
-        "altura": 1536,
-        "proporcao": "2:3",
-        "formato": "webp",
-        "compression": 25,
-        "asset_unico": true
-      },
-      "grupo_id": "banner-produto-55016206-1784135061000",
-      "asset_id": "banner-produto-55016206-1784135061000",
-      "exibicoes": [],
-      "controle": {},
-      "oferta": {
-        "preco_anterior": 1.95,
-        "preco_oferta": 1.66,
-        "percentual_desconto": 15
-      },
-      "automacao": {
-        "automatico": true,
-        "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
-        "ordem_selecao": "espaco_primeiro_produto_depois",
-        "espaco_escolhido": "rotina.higiene.topo",
-        "carga_antes": 3,
-        "limite_por_espaco": 4,
-        "dias_sem_repetir": 30
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "capacidade_fila": 12,
+        "visiveis_por_vez": 4
       }
     }
-  ]
+  ],
+  "auditoria_v12_1": {
+    "executada_em": "2026-07-15T17:11:23.6216634+00:00",
+    "banners_preservados": 85,
+    "excedentes_desativados": 5,
+    "maximo_ativo_por_local_e_alvo": 4,
+    "colunas_da_lista_no_admin_desktop": 6,
+    "posicoes_fixadas_no_site": 13,
+    "posicoes_contextuais_manuais": 0,
+    "posicoes_contextuais_automaticas": 6,
+    "posicoes_automaticas_semanticas": 19,
+    "periodos_sincronizados_com_oferta": 83,
+    "desativados_por_oferta_estoque_ou_validade_nesta_revisao": 1
+  },
+  "auditoria_v12_2": {
+    "executada_em": "2026-07-15T18:05:40.080Z",
+    "capacidade_por_local_e_alvo": 12,
+    "visiveis_por_vez": 4,
+    "escondidos_na_fila": 8,
+    "reativados_do_limite_antigo": 30,
+    "desativados_acima_da_nova_capacidade": 1,
+    "rotacao": "aleatoria_sem_repetir_antes_de_passar_por_toda_a_fila"
+  }
 }
