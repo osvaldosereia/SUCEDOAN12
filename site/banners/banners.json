@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-15T20:47:02.000Z",
+  "updated_at": "2026-07-15T20:53:21.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -26,7 +26,7 @@
     },
     "automatic_positioning": {
       "version": 13,
-      "strategy": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13_1_hibrido",
+      "strategy": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13",
       "selection_order": "1_escolher_familia_menos_preenchida_2_pontuar_ofertas_compativeis_3_criar_publicar",
       "max_active_per_space": 12,
       "active_site_positions": [
@@ -6798,115 +6798,6 @@
         "capacidade_fila": 12,
         "visiveis_por_vez": 4
       }
-    },
-    {
-      "id": "banner-produto-p0086-1784148395781",
-      "ativo": true,
-      "titulo": "Oferta · Nestlé Cereal Matinal Crunch Sachê 120g",
-      "alt": "Nestlé Cereal Matinal Crunch Sachê 120g em oferta na Dona Antônia",
-      "tipo_conteudo": "produto",
-      "texto_arte": "",
-      "origem": {
-        "tipo": "produto",
-        "valor": "1776338124295",
-        "produtos": [
-          {
-            "firebaseKey": "1776338124295",
-            "id": "1776338124295",
-            "codigo": "P0086",
-            "nome": "Nestlé Cereal Matinal Crunch Sachê 120g",
-            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b41/2026/07/nestle-cereal-matinal-crunch-sache-120g-nestle-120g-cafe-da-manha-cereais-7891000255445-foto-atual-otimizada-20260711044852.webp"
-          }
-        ]
-      },
-      "exibicao": {
-        "local": "categoria",
-        "alvo": "CAFÉ DA MANHÃ",
-        "ordem": 1
-      },
-      "imagem": "site/banners/ativos/banner-produto-p0086-1784148395781/banner-1784148395781.webp",
-      "link": {
-        "tipo": "produto",
-        "valor": "P0086"
-      },
-      "periodo": {
-        "inicio": "2026-07-15T20:46:35.781Z",
-        "fim": "2026-07-19T03:59:59.000Z",
-        "fuso_horario": "America/Cuiaba",
-        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
-        "encurtado_pelo_vencimento_produto": false
-      },
-      "criado_em": "2026-07-15T20:46:35.781Z",
-      "atualizado_em": "2026-07-15T20:46:35.781Z",
-      "geracao": {
-        "largura": 1024,
-        "altura": 1536,
-        "proporcao": "2:3",
-        "formato": "webp",
-        "compression": 25,
-        "asset_unico": true,
-        "modelo": "make_openai_nativo"
-      },
-      "grupo_id": "banner-produto-p0086-1784148395781",
-      "asset_id": "banner-produto-p0086-1784148395781",
-      "exibicoes": [],
-      "controle": {},
-      "oferta": {
-        "preco_anterior": 8.99,
-        "preco_oferta": 4.5,
-        "percentual_desconto": 50,
-        "inicio": null,
-        "fim": "2026-07-18T23:59:59-04:00"
-      },
-      "automacao": {
-        "automatico": true,
-        "motor": "github_actions_selecao_make_geracao_v13_1",
-        "requisicao_id": "29449547049",
-        "estrategia": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13_1",
-        "ordem_selecao": "posicao_depois_oferta",
-        "espaco_escolhido": "categoria",
-        "alvo_escolhido": "CAFÉ DA MANHÃ",
-        "carga_familia_antes": 0,
-        "carga_alvo_antes": 0,
-        "pontuacao_comercial": 273.37,
-        "limite_por_posicao": 12,
-        "dias_sem_repetir": 30,
-        "repeticao_estrita": true
-      }
     }
-  ],
-  "auditoria_v12_1": {
-    "executada_em": "2026-07-15T17:11:23.6216634+00:00",
-    "banners_preservados": 85,
-    "excedentes_desativados": 5,
-    "maximo_ativo_por_local_e_alvo": 4,
-    "colunas_da_lista_no_admin_desktop": 6,
-    "posicoes_fixadas_no_site": 13,
-    "posicoes_contextuais_manuais": 0,
-    "posicoes_contextuais_automaticas": 6,
-    "posicoes_automaticas_semanticas": 19,
-    "periodos_sincronizados_com_oferta": 83,
-    "desativados_por_oferta_estoque_ou_validade_nesta_revisao": 1
-  },
-  "auditoria_v12_2": {
-    "executada_em": "2026-07-15T18:05:40.080Z",
-    "capacidade_por_local_e_alvo": 12,
-    "visiveis_por_vez": 4,
-    "escondidos_na_fila": 8,
-    "reativados_do_limite_antigo": 30,
-    "desativados_acima_da_nova_capacidade": 1,
-    "rotacao": "aleatoria_sem_repetir_antes_de_passar_por_toda_a_fila"
-  },
-  "auditoria_v13": {
-    "executada_em": "2026-07-15T19:24:55.710Z",
-    "motor": "posicao_primeiro_oferta_ideal_depois",
-    "familias_automaticas": 19,
-    "capacidade_por_familia": 12,
-    "visiveis_por_vez": 4
-  },
-  "auditoria_v13_1": {
-    "executada_em": "2026-07-15T20:19:33.369Z",
-    "arquitetura": "github_seleciona_make_gera_publica",
-    "chave_openai_no_github": false
-  }
+  ]
 }
