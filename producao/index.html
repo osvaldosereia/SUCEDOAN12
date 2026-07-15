@@ -5600,7 +5600,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   const daBannerCallWebhookV7Base = daCallBannerWebhook;
   daCallBannerWebhook = async function(payload){
     if(payload&&['criar_banner','salvar_catalogo_banners','remover_banner','apagar_arquivo_banner'].includes(payload.acao)){
-      payload={...payload,versao_contrato:13,validade_banner_independente:false,regra_duracao:'periodo_da_oferta',exibir_validade_oferta_na_arte:false};
+      payload={...payload,versao_contrato:"13.1",validade_banner_independente:false,regra_duracao:'periodo_da_oferta',exibir_validade_oferta_na_arte:false};
       if(payload.banner){
         payload.banner_inicio=payload.banner.periodo?.inicio||payload.banner.banner_inicio||null;
         payload.banner_fim=payload.banner.periodo?.fim||payload.banner.banner_fim||null;
@@ -6940,7 +6940,7 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
         (!knownIds.has(String(banner?.id||""))&&banner?.automacao?.automatico===true)
       );
       if(created)return created;
-      setStatus(`O Make aceitou a criação. Processando imagem e publicação… tentativa ${attempt}/${attempts}.`,"warn");
+      setStatus(`A seleção foi acionada. GitHub escolhe a oferta e o Make gera e publica… tentativa ${attempt}/${attempts}.`,"warn");
     }
     return null;
   }
@@ -6958,7 +6958,7 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
       const response=await fetch(webhook,{method:"POST",headers:{Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify({
         acao:"criar_banner_automatico",
         requisicao_id:requestId,
-        versao_contrato:13,
+        versao_contrato:"13.1",
         origem:"admin-dona-antonia",
         solicitado_em:nowIso(),
         duracao:"periodo_da_oferta",
@@ -6981,7 +6981,7 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
       const banner=response.status===202?await daV12WaitForAutomaticBanner(requestId,knownIds):null;
       await daLoadBannerCatalog(true);await daRenderBannerManager();renderProducts();
       if(!banner){
-        setStatus("O Make aceitou a solicitação, mas a publicação ainda não apareceu no catálogo. Consulte o histórico da execução.","warn");
+        setStatus("A automação híbrida aceitou a solicitação, mas a publicação ainda não apareceu no catálogo. Consulte o histórico da execução.","warn");
         return {...(data||{}),requisicao_id:requestId,publicacao_confirmada:false};
       }
       const nome=banner?.origem?.produtos?.[0]?.nome||banner?.titulo||"produto selecionado";
