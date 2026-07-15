@@ -3801,19 +3801,24 @@
       $('search-submit').classList.toggle('show', has);
     }
 
-    function runInstantSearch() {
-      const q = $('search-input').value.trim();
+    function runInstantSearch(event) {
+      const input = $('search-input');
+      if (!input) return;
+      const q = input.value.trim();
       state.searchQuery = q;
       updateSearchButtons();
       clearTimeout(state.searchTimer);
+      if (event && event.isComposing) return;
       state.searchTimer = setTimeout(() => {
         if (q) {
           const target = '#/busca/' + encodeURIComponent(q);
-          if ((location.hash || '') !== target) history.replaceState(null, '', target);
+          if ((location.hash || '') !== target) {
+            try { history.replaceState(null, '', target); } catch (_) {}
+          }
           renderSearch(q);
           scrollPageTop();
         } else if ((location.hash || '').startsWith('#/busca')) {
-          history.replaceState(null, '', '#/');
+          try { history.replaceState(null, '', '#/'); } catch (_) {}
           renderHome();
           scrollPageTop();
         }
@@ -5905,7 +5910,11 @@
         if(searchInput && searchInput.value!==q) searchInput.value=q;
         updateSearchButtons();
         const products=searchProducts(q);
-        const contextual=q?daContextBannerHtml(products,[],`Ofertas relacionadas à sua busca`,'busca-produtos-contextuais'):'';
+        let contextual='';
+        if(q){
+          try{ contextual=daContextBannerHtml(products,[],`Ofertas relacionadas à sua busca`,'busca-produtos-contextuais'); }
+          catch(error){ console.warn('Banner contextual da busca ignorado:',error); }
+        }
         app.innerHTML=`<div class="container">${pageHeader(q?`Busca: ${q}`:'Busca',q?`${products.length} resultado(s)`:'Digite o produto na busca acima.','#/')}${contextual}${bannerSlotHtml('busca.topo',{kind:'section'})}${q?(products.length?`<div class="product-list">${products.map(product=>productCard(product,'list')).join('')}</div>`:`<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`):''}</div>`;
         setActiveNav('home');
       };
