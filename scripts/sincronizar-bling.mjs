@@ -64,6 +64,13 @@ async function token() {
   }, { label: 'OAuth do Bling' });
   const data = await response.json();
   if (!text(data.access_token)) throw new Error('OAuth do Bling não retornou access_token.');
+  // O Bling devolve refresh_token também nas renovações. Nunca o colocamos em
+  // log ou no relatório: no Actions ele fica só em um arquivo temporário,
+  // consumido pelo passo seguinte para atualizar a secret do repositório.
+  if (text(data.refresh_token) && text(process.env.BLING_REFRESH_TOKEN_FILE)) {
+    writeFileSync(process.env.BLING_REFRESH_TOKEN_FILE, text(data.refresh_token), { encoding: 'utf8', mode: 0o600 });
+    console.log('Refresh token do Bling renovado com segurança.');
+  }
   return data.access_token;
 }
 
