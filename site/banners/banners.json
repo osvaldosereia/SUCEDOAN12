@@ -1,6 +1,6 @@
 {
-  "schema_version": 5,
-  "updated_at": "2026-07-14T23:45:37.459Z",
+  "schema_version": 6,
+  "updated_at": "2026-07-14T20:06:32-04:00",
   "settings": {
     "image": {
       "width": 1024,
@@ -96,45 +96,20 @@
           "compatibility": "cafe"
         }
       ],
-      "automatic_positions": [
-        "home.hero",
-        "home.compra-mes.topo",
-        "home.higiene.topo",
-        "categorias.topo",
-        "ofertas.topo",
-        "cestas.topo",
-        "kits.topo",
-        "busca.topo",
-        "favoritos.topo",
-        "rotina.compra-mes.topo",
-        "rotina.limpeza.topo",
-        "rotina.higiene.topo",
-        "rotina.cafe.topo"
-      ],
-      "manual_only_context_positions": [
-        "categoria",
-        "subcategoria",
-        "marca",
-        "produto",
-        "kit",
-        "cesta"
-      ],
-      "removed_home_positions": [
-        "home.cestas.topo",
-        "home.kits.topo",
-        "home.ofertas.topo",
-        "home.limpeza.topo",
-        "home.cafe.topo",
-        "home.categorias.topo"
-      ],
+      "legacy_position_map": {
+        "home.cestas.topo": "cestas.topo",
+        "home.kits.topo": "kits.topo",
+        "home.ofertas.topo": "ofertas.topo",
+        "home.limpeza.topo": "rotina.limpeza.topo",
+        "home.cafe.topo": "rotina.cafe.topo",
+        "home.categorias.topo": "categorias.topo"
+      },
       "balance_metric": "menor_quantidade_de_banners_ativos_por_espaco_real_do_site",
-      "tie_breaker": "ordem_estavel_dos_espacos",
-      "product_repeat_control": "preservar_historico_existente"
+      "tie_breaker": "ordem_estavel_dos_espacos"
     },
     "banner_limits": {
       "max_active_per_space": 4,
-      "scope": "local_e_alvo",
-      "enforced_by_admin": true
+      "scope": "local_e_alvo"
     }
   },
   "banners": [
@@ -1045,7 +1020,7 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "rotina.cafe.topo",
         "alvo": "",
         "ordem": 1
       },
@@ -1101,7 +1076,7 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "rotina.cafe.topo",
         "alvo": "",
         "ordem": 2
       },
@@ -1213,7 +1188,7 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "rotina.cafe.topo",
         "alvo": "",
         "ordem": 3
       },
@@ -1269,7 +1244,7 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "rotina.cafe.topo",
         "alvo": "",
         "ordem": 4
       },
@@ -1325,7 +1300,7 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "rotina.cafe.topo",
         "alvo": "",
         "ordem": 5
       },
@@ -1381,7 +1356,7 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "rotina.cafe.topo",
         "alvo": "",
         "ordem": 6
       },
@@ -1437,7 +1412,7 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "rotina.cafe.topo",
         "alvo": "",
         "ordem": 7
       },
@@ -1493,7 +1468,7 @@
         ]
       },
       "exibicao": {
-        "local": "home.cafe.topo",
+        "local": "rotina.cafe.topo",
         "alvo": "",
         "ordem": 8
       },
@@ -1768,7 +1743,7 @@
         ]
       },
       "exibicao": {
-        "local": "home.ofertas.topo",
+        "local": "ofertas.topo",
         "alvo": "",
         "ordem": 1
       },
@@ -1824,7 +1799,7 @@
         ]
       },
       "exibicao": {
-        "local": "home.ofertas.topo",
+        "local": "ofertas.topo",
         "alvo": "",
         "ordem": 2
       },
@@ -2199,7 +2174,7 @@
         ]
       },
       "exibicao": {
-        "local": "home.kits.topo",
+        "local": "kits.topo",
         "alvo": "",
         "ordem": 1
       },
@@ -5607,6 +5582,68 @@
       "grupo_id": "banner-auto-p19-20260714221727",
       "asset_id": "banner-auto-p19-20260714221727",
       "exibicoes": []
+    },
+    {
+      "id": "banner-produto-00748460-1784073992000",
+      "ativo": true,
+      "titulo": "Oferta · Biscoito Água e Sal Adoralle 350g",
+      "alt": "Biscoito Água e Sal Adoralle 350g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338128456",
+        "produtos": [
+          {
+            "firebaseKey": "1776338128456",
+            "id": "1776338128456",
+            "codigo": "00748460",
+            "nome": "Biscoito Água e Sal Adoralle 350g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b28/2026/07/biscoito-agua-e-sal-adoralle-350g-adoralle-350g-bolachas-e-biscoitos-salgada-7898616501782-foto-atual-otimizada-20260711054741.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "rotina.higiene.topo",
+        "alvo": "",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-produto-00748460-1784073992000/banner-1784073992000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "00748460"
+      },
+      "periodo": {
+        "inicio": "2026-07-14T20:06:32-04:00",
+        "fim": "2026-07-22T00:06:32.000Z"
+      },
+      "criado_em": "2026-07-14T20:06:32-04:00",
+      "atualizado_em": "2026-07-14T20:06:32-04:00",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-00748460-1784073992000",
+      "asset_id": "banner-produto-00748460-1784073992000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 5.99,
+        "preco_oferta": 4.49
+      },
+      "automacao": {
+        "automatico": true,
+        "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "rotina.higiene.topo",
+        "carga_antes": 0,
+        "limite_por_espaco": 4,
+        "dias_sem_repetir": 30
+      }
     }
   ],
   "migration": {
