@@ -1,6 +1,6 @@
 {
-  "schema_version": 10,
-  "updated_at": "2026-07-15T18:05:40.080Z",
+  "schema_version": 13,
+  "updated_at": "2026-07-15T19:24:55.710Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -25,10 +25,10 @@
       "pausar_hover": true
     },
     "automatic_positioning": {
-      "version": 6,
-      "strategy": "posicoes_fixas_e_contextuais_relacionadas_ao_produto_v6",
-      "selection_order": "escolher_posicao_fixa_ou_contextual_menos_preenchida_depois_produto_relacionado_com_oferta_valida",
-      "max_active_per_space": 12,
+      "version": 13,
+      "strategy": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13",
+      "selection_order": "1_escolher_familia_com_menor_carga_2_filtrar_produtos_compativeis_3_pontuar_ofertas_4_criar_e_publicar",
+      "max_active_per_position_family": 12,
       "active_site_positions": [
         {
           "local": "home.hero",
@@ -109,16 +109,14 @@
           "automatic": true
         }
       ],
-      "legacy_position_map": {
-        "home.cestas.topo": "cestas.topo",
-        "home.kits.topo": "kits.topo",
-        "home.ofertas.topo": "ofertas.topo",
-        "home.limpeza.topo": "rotina.limpeza.topo",
-        "home.cafe.topo": "rotina.cafe.topo",
-        "home.categorias.topo": "categorias.topo"
-      },
-      "balance_metric": "menor_quantidade_de_banners_ativos_por_espaco_real_do_site",
-      "tie_breaker": "ordem_estavel_dos_espacos",
+      "automatic_context_positions": [
+        "categoria",
+        "subcategoria",
+        "marca",
+        "produto",
+        "kit",
+        "cesta"
+      ],
       "automatic_positions": [
         "home.hero",
         "home.compra-mes.topo",
@@ -140,29 +138,23 @@
         "kit",
         "cesta"
       ],
-      "automatic_context_positions": [
-        "categoria",
-        "subcategoria",
-        "marca",
-        "produto",
-        "kit",
-        "cesta"
+      "balance_metric": "quantidade_ativa_ou_agendada_por_familia_de_posicao",
+      "tie_breaker": "ordem_estavel_das_19_familias",
+      "product_score": [
+        "afinidade_semantica",
+        "percentual_de_desconto",
+        "estoque",
+        "economia_absoluta",
+        "urgencia_da_oferta",
+        "diversidade_de_alvo"
       ],
-      "manual_only_fixed_positions": [],
-      "manual_only_context_positions": [],
-      "context_relation_rules": {
-        "categoria": "produto.categoria",
-        "subcategoria": "produto.categoria::produto.subcategoria",
-        "marca": "produto.marca",
-        "produto": "produto.firebaseKey_ou_codigo",
-        "kit": "somente_se_produto_constar_na_composicao_do_kit",
-        "cesta": "somente_se_produto_constar_na_composicao_da_cesta"
-      },
-      "product_repeat_control": "estrito_30_dias_sem_fallback"
+      "product_repeat_control": "estrito_30_dias_sem_fallback",
+      "kit_source": "site/kits.json",
+      "cesta_source": "site/produtos-cesta-basica.json"
     },
     "banner_limits": {
-      "max_active_per_space": 12,
-      "scope": "local_e_alvo",
+      "max_active_per_position_family": 12,
+      "scope": "familia_de_posicao",
       "visible_at_once": 4
     },
     "product_guard": {
@@ -194,6 +186,12 @@
       "random": true,
       "pause_when_hidden": true,
       "pause_on_hover_or_focus": true
+    },
+    "automation_execution": {
+      "primary": "github_actions",
+      "make_role": "apenas_disparador",
+      "workflow": ".github/workflows/banner-inteligente.yml",
+      "engine": "automation/banner-intelligence-v13.mjs"
     }
   },
   "banners": [
@@ -6816,5 +6814,12 @@
     "reativados_do_limite_antigo": 30,
     "desativados_acima_da_nova_capacidade": 1,
     "rotacao": "aleatoria_sem_repetir_antes_de_passar_por_toda_a_fila"
+  },
+  "auditoria_v13": {
+    "executada_em": "2026-07-15T19:24:55.710Z",
+    "motor": "posicao_primeiro_oferta_ideal_depois",
+    "familias_automaticas": 19,
+    "capacidade_por_familia": 12,
+    "visiveis_por_vez": 4
   }
 }
