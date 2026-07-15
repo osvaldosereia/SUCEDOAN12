@@ -1,10 +1,10 @@
-name: Banner inteligente V13
+name: Banner inteligente V13.1 híbrido
 
 on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: Apenas escolher posição e oferta, sem gerar ou publicar
+        description: Apenas escolher posição e oferta, sem chamar o Make
         required: true
         default: true
         type: boolean
@@ -12,21 +12,18 @@ on:
     types: [criar_banner_inteligente]
 
 concurrency:
-  group: banner-inteligente-v13
+  group: banner-inteligente-v13-1
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  criar-banner:
+  selecionar-e-enviar:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      OPENAI_IMAGE_MODEL: gpt-image-2
-      OPENAI_IMAGE_QUALITY: low
-      OPENAI_IMAGE_COMPRESSION: '25'
+      MAKE_BANNER_WEBHOOK_URL: ${{ secrets.MAKE_BANNER_WEBHOOK_URL }}
       FIREBASE_PRODUTOS_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json
       BANNERS_PATH: site/banners/banners.json
       KITS_PATH: site/kits.json
@@ -36,23 +33,7 @@ jobs:
 
     steps:
       - name: Baixar repositório
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v7
 
-      - name: Selecionar posição, escolher oferta e criar banner
-        run: node scripts/banner-intelligence-v13.mjs
-
-      - name: Publicar imagem e catálogo
-        if: env.DRY_RUN != 'true'
-        shell: bash
-        run: |
-          if git diff --quiet -- site/banners; then
-            echo "Nenhuma alteração para publicar."
-            exit 0
-          fi
-          git config user.name "dona-antonia-banner-bot"
-          git config user.email "banner-bot@users.noreply.github.com"
-          git add site/banners/banners.json site/banners/ativos
-          git commit -m "Banner inteligente V13 · posição menos preenchida"
-          git push
+      - name: Escolher posição e oferta e enviar ao Make
+        run: node scripts/banner-intelligence-v13.1.mjs
