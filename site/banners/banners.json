@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-15T20:19:33.369Z",
+  "updated_at": "2026-07-15T20:47:02.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -26,96 +26,109 @@
     },
     "automatic_positioning": {
       "version": 13,
-      "strategy": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13",
-      "selection_order": "1_escolher_familia_com_menor_carga_2_filtrar_produtos_compativeis_3_pontuar_ofertas_4_criar_e_publicar",
-      "max_active_per_position_family": 12,
+      "strategy": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13_1_hibrido",
+      "selection_order": "1_escolher_familia_menos_preenchida_2_pontuar_ofertas_compativeis_3_criar_publicar",
+      "max_active_per_space": 12,
       "active_site_positions": [
         {
           "local": "home.hero",
           "label": "Home · banner principal",
-          "compatibility": "all",
-          "automatic": true
+          "compatibility": "all"
         },
         {
           "local": "home.compra-mes.topo",
           "label": "Home · antes da compra do mês",
-          "compatibility": "all",
-          "automatic": true
+          "compatibility": "all"
         },
         {
           "local": "home.higiene.topo",
           "label": "Home · antes de higiene da família",
-          "compatibility": "higiene",
-          "automatic": true
+          "compatibility": "higiene"
         },
         {
           "local": "categorias.topo",
           "label": "Página · categorias",
-          "compatibility": "all",
-          "automatic": true
+          "compatibility": "all"
         },
         {
           "local": "ofertas.topo",
           "label": "Página · ofertas",
-          "compatibility": "all",
-          "automatic": true
+          "compatibility": "all"
         },
         {
           "local": "cestas.topo",
           "label": "Página · cestas básicas",
-          "compatibility": "all",
-          "automatic": true
+          "compatibility": "all"
         },
         {
           "local": "kits.topo",
           "label": "Página · kits promocionais",
-          "compatibility": "all",
-          "automatic": true
+          "compatibility": "all"
         },
         {
           "local": "busca.topo",
           "label": "Página · resultados da busca",
-          "compatibility": "all",
-          "automatic": true
+          "compatibility": "all"
         },
         {
           "local": "favoritos.topo",
           "label": "Página · favoritos",
-          "compatibility": "all",
-          "automatic": true
+          "compatibility": "all"
         },
         {
           "local": "rotina.compra-mes.topo",
           "label": "Rotina · compra do mês",
-          "compatibility": "all",
-          "automatic": true
+          "compatibility": "all"
         },
         {
           "local": "rotina.limpeza.topo",
           "label": "Rotina · limpeza",
-          "compatibility": "limpeza",
-          "automatic": true
+          "compatibility": "limpeza"
         },
         {
           "local": "rotina.higiene.topo",
           "label": "Rotina · higiene",
-          "compatibility": "higiene",
-          "automatic": true
+          "compatibility": "higiene"
         },
         {
           "local": "rotina.cafe.topo",
           "label": "Rotina · café",
-          "compatibility": "cafe",
-          "automatic": true
+          "compatibility": "cafe"
         }
       ],
       "automatic_context_positions": [
-        "categoria",
-        "subcategoria",
-        "marca",
-        "produto",
-        "kit",
-        "cesta"
+        {
+          "local": "categoria",
+          "label": "Categoria específica",
+          "relation": "categoria"
+        },
+        {
+          "local": "subcategoria",
+          "label": "Subcategoria específica",
+          "relation": "subcategoria"
+        },
+        {
+          "local": "marca",
+          "label": "Marca específica",
+          "relation": "marca"
+        },
+        {
+          "local": "produto",
+          "label": "Produto específico",
+          "relation": "produto"
+        },
+        {
+          "local": "kit",
+          "label": "Kit promocional específico",
+          "relation": "kit",
+          "requiresMembership": true
+        },
+        {
+          "local": "cesta",
+          "label": "Cesta básica específica",
+          "relation": "cesta",
+          "requiresMembership": true
+        }
       ],
       "automatic_positions": [
         "home.hero",
@@ -138,24 +151,21 @@
         "kit",
         "cesta"
       ],
+      "manual_only_context_positions": [],
+      "legacy_position_map": {
+        "home.cestas.topo": "cestas.topo",
+        "home.kits.topo": "kits.topo",
+        "home.ofertas.topo": "ofertas.topo",
+        "home.limpeza.topo": "rotina.limpeza.topo",
+        "home.cafe.topo": "rotina.cafe.topo",
+        "home.categorias.topo": "categorias.topo"
+      },
       "balance_metric": "quantidade_ativa_ou_agendada_por_familia_de_posicao",
-      "tie_breaker": "ordem_estavel_das_19_familias",
-      "product_score": [
-        "afinidade_semantica",
-        "percentual_de_desconto",
-        "estoque",
-        "economia_absoluta",
-        "urgencia_da_oferta",
-        "diversidade_de_alvo"
-      ],
-      "product_repeat_control": "estrito_30_dias_sem_fallback",
-      "kit_source": "site/kits.json",
-      "cesta_source": "site/produtos-cesta-basica.json"
+      "tie_breaker": "ordem_estavel_das_19_familias"
     },
     "banner_limits": {
-      "max_active_per_position_family": 12,
-      "scope": "familia_de_posicao",
-      "visible_at_once": 4
+      "max_active_per_space": 12,
+      "scope": "familia_de_posicao"
     },
     "product_guard": {
       "enabled": true,
@@ -177,25 +187,18 @@
       "automatic_start_rule": "inicio_da_oferta_ou_agora_se_a_oferta_ja_comecou"
     },
     "banner_queue": {
-      "enabled": true,
       "capacity_per_space": 12,
       "visible_at_once": 4,
       "hidden_waiting": 8,
       "rotation_mode": "fila_aleatoria_sem_repetir_antes_do_ciclo",
       "rotation_interval_ms": 9000,
-      "random": true,
-      "pause_when_hidden": true,
-      "pause_on_hover_or_focus": true
+      "random": true
     },
     "automation_execution": {
-      "version": "13.1",
-      "architecture": "hibrida",
       "selection": "github_actions",
       "generation": "make_openai_nativo",
       "publication": "make",
-      "openai_key_on_github_required": false,
-      "github_secret_required": "MAKE_BANNER_WEBHOOK_URL",
-      "make_callback_action": "criar_banner_preselecionado"
+      "version": "13.1"
     }
   },
   "banners": [
@@ -6794,6 +6797,81 @@
         "dias_sem_repetir": 30,
         "capacidade_fila": 12,
         "visiveis_por_vez": 4
+      }
+    },
+    {
+      "id": "banner-produto-p0086-1784148395781",
+      "ativo": true,
+      "titulo": "Oferta · Nestlé Cereal Matinal Crunch Sachê 120g",
+      "alt": "Nestlé Cereal Matinal Crunch Sachê 120g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338124295",
+        "produtos": [
+          {
+            "firebaseKey": "1776338124295",
+            "id": "1776338124295",
+            "codigo": "P0086",
+            "nome": "Nestlé Cereal Matinal Crunch Sachê 120g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b41/2026/07/nestle-cereal-matinal-crunch-sache-120g-nestle-120g-cafe-da-manha-cereais-7891000255445-foto-atual-otimizada-20260711044852.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "categoria",
+        "alvo": "CAFÉ DA MANHÃ",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-produto-p0086-1784148395781/banner-1784148395781.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P0086"
+      },
+      "periodo": {
+        "inicio": "2026-07-15T20:46:35.781Z",
+        "fim": "2026-07-19T03:59:59.000Z",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
+        "encurtado_pelo_vencimento_produto": false
+      },
+      "criado_em": "2026-07-15T20:46:35.781Z",
+      "atualizado_em": "2026-07-15T20:46:35.781Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true,
+        "modelo": "make_openai_nativo"
+      },
+      "grupo_id": "banner-produto-p0086-1784148395781",
+      "asset_id": "banner-produto-p0086-1784148395781",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 8.99,
+        "preco_oferta": 4.5,
+        "percentual_desconto": 50,
+        "inicio": null,
+        "fim": "2026-07-18T23:59:59-04:00"
+      },
+      "automacao": {
+        "automatico": true,
+        "motor": "github_actions_selecao_make_geracao_v13_1",
+        "requisicao_id": "29449547049",
+        "estrategia": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13_1",
+        "ordem_selecao": "posicao_depois_oferta",
+        "espaco_escolhido": "categoria",
+        "alvo_escolhido": "CAFÉ DA MANHÃ",
+        "carga_familia_antes": 0,
+        "carga_alvo_antes": 0,
+        "pontuacao_comercial": 273.37,
+        "limite_por_posicao": 12,
+        "dias_sem_repetir": 30,
+        "repeticao_estrita": true
       }
     }
   ],
