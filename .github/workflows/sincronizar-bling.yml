@@ -33,7 +33,6 @@ jobs:
       BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
       BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
       BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
-      BLING_REFRESH_TOKEN_FILE: ${{ runner.temp }}/bling-refresh-token
       SYNC_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || github.event.client_payload.mode || 'dry-run' }}
       MAX_PRODUCTS: ${{ github.event_name == 'workflow_dispatch' && inputs.max_products || github.event.client_payload.max_products || '0' }}
     steps:
@@ -43,6 +42,8 @@ jobs:
 
       - name: Sincronizar produtos
         id: sync
+        env:
+          BLING_REFRESH_TOKEN_FILE: ${{ runner.temp }}/bling-refresh-token
         run: |
           if [ "$SYNC_MODE" = "production" ]; then
             node scripts/sincronizar-bling.mjs --apply --state .automation/bling-sync-state.json
@@ -54,6 +55,7 @@ jobs:
         if: always() && env.SYNC_MODE == 'production'
         env:
           GH_TOKEN: ${{ secrets.GH_SECRETS_TOKEN }}
+          BLING_REFRESH_TOKEN_FILE: ${{ runner.temp }}/bling-refresh-token
         run: |
           if [ ! -s "$BLING_REFRESH_TOKEN_FILE" ]; then exit 0; fi
           if [ -z "$GH_TOKEN" ]; then
