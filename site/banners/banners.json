@@ -1,6 +1,6 @@
 {
   "schema_version": 6,
-  "updated_at": "2026-07-15T08:34:55-04:00",
+  "updated_at": "2026-07-15T10:06:02-04:00",
   "settings": {
     "image": {
       "width": 1024,
@@ -6076,6 +6076,69 @@
         "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "favoritos.topo",
+        "carga_antes": 3,
+        "limite_por_espaco": 4,
+        "dias_sem_repetir": 30
+      }
+    },
+    {
+      "id": "banner-produto-381712p-1784124327000",
+      "ativo": true,
+      "titulo": "Oferta · Petisco Pedigree Multi Sabor 1kg",
+      "alt": "Petisco Pedigree Multi Sabor 1kg em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338132582",
+        "produtos": [
+          {
+            "firebaseKey": "1776338132582",
+            "id": "1776338132582",
+            "codigo": "381712P",
+            "nome": "Petisco Pedigree Multi Sabor 1kg",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b04/2026/07/pedigree-racao-petisco-biscrok-para-caes-adultos-multi-sabor-1kg-pedigree-1kg-pets-caes-7896029041956-foto-atual-otimizada-20260711065406.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "rotina.compra-mes.topo",
+        "alvo": "",
+        "ordem": 4
+      },
+      "imagem": "site/banners/ativos/banner-produto-381712p-1784124327000/banner-1784124327000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "381712P"
+      },
+      "periodo": {
+        "inicio": "2026-07-15T10:05:27-04:00",
+        "fim": "2026-07-22T14:05:27.000Z"
+      },
+      "criado_em": "2026-07-15T10:05:27-04:00",
+      "atualizado_em": "2026-07-15T10:05:27-04:00",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-381712p-1784124327000",
+      "asset_id": "banner-produto-381712p-1784124327000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 38.9,
+        "preco_oferta": 29.9,
+        "percentual_desconto": 23
+      },
+      "automacao": {
+        "automatico": true,
+        "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "rotina.compra-mes.topo",
         "carga_antes": 3,
         "limite_por_espaco": 4,
         "dias_sem_repetir": 30
