@@ -681,6 +681,7 @@
     makeInstagramKitWebhookUrl: "",
     makeBannerWebhookUrl: "",
     makeBannerAutomaticWebhookUrl: "",
+    makeBlingWebhookUrl: "",
     blingToken: "",
     blingDeposito: "",
     blingUnidade: "UN"
@@ -1015,13 +1016,30 @@
       if(!saved.imagePublicBase || ["img/produtos","img/produtos_2"].includes(saved.imagePublicBase)) saved.imagePublicBase="site/img/produtos_3";
       if(!saved.githubAiTempPath) saved.githubAiTempPath="site/tmp/ia-referencias";
 
-      return {...defaultSettings, ...saved}
+      // Configurações antigas podem ter persistido campos vazios no navegador.
+      // Não deixe que elas substituam a fonte padrão e impeçam o carregamento automático.
+      const settings={...defaultSettings, ...saved};
+      ["firebaseUrl","produtosNode","githubOwner","githubRepo","githubBranch","githubProdutosPath"].forEach(key=>{
+        if(!String(settings[key]||"").trim())settings[key]=defaultSettings[key];
+      });
+      return settings
     }catch{return {...defaultSettings}}
   }
   function saveSettings(){readSettingsFromUi(); safeLocalSet(LS_SETTINGS, JSON.stringify(state.settings), "configurações"); setStatus("Configurações salvas", "ok"); alert("Configurações salvas neste navegador.")}
 
   function firebaseUrl(node){return `${String(state.settings.firebaseUrl).replace(/\/$/,"")}/${node}.json`}
-  async function fetchJson(url){const r=await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error(`Erro ${r.status}: ${url}`); return await r.json()}
+  async function fetchJson(url,timeoutMs=15000){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),timeoutMs);
+    try{
+      const r=await fetch(url,{cache:"no-store",signal:controller.signal});
+      if(!r.ok) throw new Error(`Erro ${r.status}: ${url}`);
+      return await r.json();
+    }catch(error){
+      if(error?.name==="AbortError")throw new Error(`Tempo esgotado ao consultar ${url}`);
+      throw error;
+    }finally{clearTimeout(timer)}
+  }
   async function putJson(url, data){const r=await fetch(url,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(data,null,2)}); if(!r.ok) throw new Error(`Erro ${r.status} ao salvar ${url}`); return await r.json().catch(()=>null)}
   async function patchJson(url, data){const r=await fetch(url,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)}); if(!r.ok){const detail=await r.text().catch(()=>"");throw new Error(`Erro ${r.status} ao atualizar ${url}${detail?`: ${detail.slice(0,220)}`:""}`)} return await r.json().catch(()=>null)}
   async function deleteJson(url){const r=await fetch(url,{method:"DELETE"}); if(!r.ok) throw new Error(`Erro ${r.status} ao excluir ${url}`); return await r.json().catch(()=>null)}
@@ -1619,7 +1637,8 @@
     const dd=String(d.getDate()).padStart(2,'0'), mm=String(d.getMonth()+1).padStart(2,'0'), yy=d.getFullYear();
     return `${dd}/${mm}/${yy}`;
   }
-  function blingCategoriaProduto(p){return 'GERAL'}
+  // A importação não deve criar nem vincular categorias/grupos no Bling.
+  function blingCategoriaProduto(p){return ''}
   function blingLocalizacao(p){return String(p.localizacao||p.localização||[p.gondola,p.prateleira].map(x=>String(x||'').trim()).filter(Boolean).join(' - ')||'').trim()}
   function blingRows(produtos=state.produtos){
     return [...(produtos||[])].sort((a,b)=>getCode(a).localeCompare(getCode(b),'pt-BR')).map(p=>({
@@ -1660,7 +1679,7 @@
       'Tributos':p.tributos||'',
       'Código Pai':p.codigo_pai||'',
       'Código Integração':p.codigo_integracao||p.codigo_integração||getKey(p),
-      'Grupo de produtos':'GERAL',
+      'Grupo de produtos':'',
       'Marca':p.marca||'',
       'CEST':p.cest||p.CEST||'',
       'Volumes':blingInt(p.volumes),
@@ -1680,7 +1699,7 @@
       'Valor base ICMS ST para retenção':blingMoney(p.valor_base_icms_st_retencao||p.valor_base_icms_st_retenção),
       'Valor ICMS ST para retenção':blingMoney(p.valor_icms_st_retencao||p.valor_icms_st_retenção),
       'Valor ICMS próprio do substituto':blingMoney(p.valor_icms_proprio_substituto||p.valor_icms_próprio_substituto),
-      'Categoria do produto':'GERAL',
+      'Categoria do produto':'',
       'Informações Adicionais':p.informacoes_adicionais||p.informações_adicionais||''
     }));
   }
@@ -1694,7 +1713,7 @@
       const name=chunks.length===1?'produtos-bling.csv':`produtos-bling-parte-${String(index+1).padStart(2,'0')}.csv`;
       setTimeout(()=>download(name, buildBlingCsv(chunk), 'text/csv;charset=utf-8'), index*350);
     });
-    setTimeout(()=>alert(`Exportação Bling concluída: ${rows.length} produto(s) em ${chunks.length} arquivo(s), com no máximo ${BLING_MAX_PRODUTOS_POR_ARQUIVO} produtos por arquivo. Categoria: GERAL. Fornecedor em branco.`), chunks.length*350+80);
+    setTimeout(()=>alert(`Exportação Bling concluída: ${rows.length} produto(s) em ${chunks.length} arquivo(s), com no máximo ${BLING_MAX_PRODUTOS_POR_ARQUIVO} produtos por arquivo. Categoria, grupo e fornecedor foram deixados em branco.`), chunks.length*350+80);
   }
   function exportBlingJson(){download('produtos-bling.json', blingRows(state.produtos))}
 
@@ -1870,12 +1889,16 @@
 
   async function loadProductsWithFallback(){
     const errors=[];
-    try{
-      const data=await fetchJson(firebaseUrl(state.settings.produtosNode));
-      const products=normalizeProducts(data);
-      if(products.length)return {products,source:"Firebase"};
-      errors.push("Firebase retornou catálogo vazio");
-    }catch(error){errors.push(`Firebase: ${error.message||error}`)}
+    // Uma segunda tentativa resolve falhas transitórias de rede/RTDB sem exigir clique em "Atualizar".
+    for(let attempt=1;attempt<=2;attempt++){
+      try{
+        const data=await fetchJson(firebaseUrl(state.settings.produtosNode));
+        const products=normalizeProducts(data);
+        if(products.length)return {products,source:"Firebase"};
+        errors.push(`Firebase retornou catálogo vazio (tentativa ${attempt})`);
+      }catch(error){errors.push(`Firebase (tentativa ${attempt}): ${error.message||error}`)}
+      if(attempt===1)await new Promise(resolve=>setTimeout(resolve,700));
+    }
 
     try{return await loadProductsFromGithub()}
     catch(error){errors.push(error.message||String(error))}
@@ -6982,5 +7005,36 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
 })(); 
 </script>
 <script src="nfe-import.js?v=20260713-10"></script>
+<script>
+  // Ponte segura: o admin chama somente o webhook do Make; nenhum token do Bling/GitHub fica no navegador.
+  (()=>{
+    const bridge=window.__DA_NFE_BRIDGE__;
+    if(!bridge)return;
+    const card=document.querySelector('#setMakeBannerAutomaticWebhookUrl')?.closest('.card');
+    if(!card)return;
+    const field=document.createElement('div');
+    field.className='field';
+    field.innerHTML='<label>Webhook Make → sincronizar Bling</label><input class="input" id="setMakeBlingWebhookUrl" placeholder="https://hook.us2.make.com/...">';
+    const toolbar=card.querySelector('.toolbar');
+    toolbar?.before(field);
+    const button=document.createElement('button');
+    button.className='btn blue'; button.type='button'; button.textContent='☁ Sincronizar Bling agora';
+    toolbar?.appendChild(button);
+    const input=field.querySelector('input');
+    input.value=bridge.state.settings.makeBlingWebhookUrl||'';
+    input.addEventListener('change',()=>{bridge.state.settings.makeBlingWebhookUrl=input.value.trim()});
+    button.addEventListener('click',async()=>{
+      const url=input.value.trim();
+      if(!url){bridge.setStatus('Informe o webhook Make → sincronizar Bling e salve as configurações.','err');return}
+      button.disabled=true;
+      try{
+        const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({acao:'sincronizar_bling',origem:'admin',solicitado_em:bridge.nowIso()})});
+        if(!response.ok)throw new Error(`Make retornou ${response.status}`);
+        bridge.setStatus('Sincronização solicitada. Acompanhe a execução em GitHub Actions.','ok');
+      }catch(error){bridge.setStatus(`Não foi possível solicitar a sincronização: ${error.message}`,'err')}
+      finally{button.disabled=false}
+    });
+  })();
+</script>
 </body>
 </html>
