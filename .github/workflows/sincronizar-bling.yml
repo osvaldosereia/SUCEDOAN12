@@ -9,6 +9,11 @@ on:
         default: dry-run
         type: choice
         options: [dry-run, production]
+      max_products:
+        description: "0 envia todos; use 1 no primeiro teste em production"
+        required: false
+        default: "0"
+        type: string
   repository_dispatch:
     types: [bling-sync]
 
@@ -29,6 +34,7 @@ jobs:
       BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
       BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
       SYNC_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || github.event.client_payload.mode || 'dry-run' }}
+      MAX_PRODUCTS: ${{ github.event_name == 'workflow_dispatch' && inputs.max_products || github.event.client_payload.max_products || '0' }}
     steps:
       - uses: actions/checkout@v4
         with:
