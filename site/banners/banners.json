@@ -1,6 +1,6 @@
 {
   "schema_version": 6,
-  "updated_at": "2026-07-15T00:45:26.642Z",
+  "updated_at": "2026-07-14T22:01:12-04:00",
   "settings": {
     "image": {
       "width": 1024,
@@ -5719,6 +5719,69 @@
         "preco_anterior": 9.9,
         "preco_oferta": 7.92,
         "percentual_desconto": 20
+      },
+      "automacao": {
+        "automatico": true,
+        "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "rotina.higiene.topo",
+        "carga_antes": 1,
+        "limite_por_espaco": 4,
+        "dias_sem_repetir": 30
+      }
+    },
+    {
+      "id": "banner-produto-489678d-1784080872000",
+      "ativo": true,
+      "titulo": "Oferta · Água Micelar Elseve Efeito Matte 5 em 1 200ml",
+      "alt": "Água Micelar Elseve Efeito Matte 5 em 1 200ml em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776032632363",
+        "produtos": [
+          {
+            "firebaseKey": "1776032632363",
+            "id": "1776032632363",
+            "codigo": "489678D",
+            "nome": "Água Micelar Elseve Efeito Matte 5 em 1 200ml",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b17/2026/07/agua-micelar-elseve-efeito-matte-5-em-1-200ml-elseve-200ml-beleza-rosto-7899706180887-foto-atual-otimizada-20260711041945.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "rotina.higiene.topo",
+        "alvo": "",
+        "ordem": 2
+      },
+      "imagem": "site/banners/ativos/banner-produto-489678d-1784080872000/banner-1784080872000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "489678D"
+      },
+      "periodo": {
+        "inicio": "2026-07-14T22:01:12-04:00",
+        "fim": "2026-07-22T02:01:12.000Z"
+      },
+      "criado_em": "2026-07-14T22:01:12-04:00",
+      "atualizado_em": "2026-07-14T22:01:12-04:00",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-489678d-1784080872000",
+      "asset_id": "banner-produto-489678d-1784080872000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 26.9,
+        "preco_oferta": 22.87,
+        "percentual_desconto": 15
       },
       "automacao": {
         "automatico": true,
