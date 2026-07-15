@@ -1,6 +1,6 @@
 {
   "schema_version": 6,
-  "updated_at": "2026-07-15T01:04:44-04:00",
+  "updated_at": "2026-07-15T02:35:01-04:00",
   "settings": {
     "image": {
       "width": 1024,
@@ -5762,6 +5762,69 @@
         "ordem_selecao": "espaco_primeiro_produto_depois",
         "espaco_escolhido": "rotina.limpeza.topo",
         "carga_antes": 2,
+        "limite_por_espaco": 4,
+        "dias_sem_repetir": 30
+      }
+    },
+    {
+      "id": "banner-produto-7892840822484-1784097258000",
+      "ativo": true,
+      "titulo": "Oferta · Salgadinho Elma Chips Costelinha com Limão 35g",
+      "alt": "Salgadinho Elma Chips Costelinha com Limão 35g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776695941015",
+        "produtos": [
+          {
+            "firebaseKey": "1776695941015",
+            "id": "1776695941015",
+            "codigo": "7892840822484",
+            "nome": "Salgadinho Elma Chips Costelinha com Limão 35g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b03/2026/07/salgadinho-elma-chips-costelinha-com-limao-35g-elma-chips-35g-salgadinhos-e-petiscos-salgadinhos-7892840822484-foto-atual-otimizada-20260711071738.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "categorias.topo",
+        "alvo": "",
+        "ordem": 4
+      },
+      "imagem": "site/banners/ativos/banner-produto-7892840822484-1784097258000/banner-1784097258000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "7892840822484"
+      },
+      "periodo": {
+        "inicio": "2026-07-15T02:34:18-04:00",
+        "fim": "2026-07-22T06:34:18.000Z"
+      },
+      "criado_em": "2026-07-15T02:34:18-04:00",
+      "atualizado_em": "2026-07-15T02:34:18-04:00",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-7892840822484-1784097258000",
+      "asset_id": "banner-produto-7892840822484-1784097258000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 1.9,
+        "preco_oferta": 1.81,
+        "percentual_desconto": 5
+      },
+      "automacao": {
+        "automatico": true,
+        "estrategia": "espaco_primeiro_produto_depois_balanceamento_uniforme_v3",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "categorias.topo",
+        "carga_antes": 3,
         "limite_por_espaco": 4,
         "dias_sem_repetir": 30
       }
