@@ -605,7 +605,7 @@
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
         <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho site/kits.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos_3"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="site/img/produtos_3"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
-        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners do site · criação manual</label><input class="input" id="setMakeBannerWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners · criação automática</label><input class="input" id="setMakeBannerAutomaticWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn green" type="button" data-action="banner-auto-run">🎯 Criar banner automático com posição inteligente</button></div><div class="notice gold" style="margin-top:10px"><strong>Posicionamento inteligente:</strong> beleza, higiene, shampoo e condicionador, sabonete, desodorante e bebê usam <code>home.higiene.topo</code>; limpeza e lavanderia usam <code>home.limpeza.topo</code>; café da manhã usa <code>home.cafe.topo</code>. As demais categorias são distribuídas entre os outros locais compatíveis pela menor quantidade de banners ativos. O fluxo manual continua disponível, o banner sai do ar após 7 dias e seu registro e imagem são preservados.</div></div>
+        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners do site · criação manual</label><input class="input" id="setMakeBannerWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners · criação automática</label><input class="input" id="setMakeBannerAutomaticWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn green" type="button" data-action="banner-auto-run">🎯 Criar banner automático com posição inteligente</button></div><div class="notice gold" style="margin-top:10px"><strong>Posicionamento inteligente:</strong> as 13 posições fixas e as 6 contextuais participam da automação. Cada local e alvo aceita até 12 banners na fila; o site mostra 4 por vez e alterna entre todos. Kit e cesta exigem vínculo real do produto.</div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
       <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar site/kits.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
@@ -2450,9 +2450,9 @@
           </div>
         </div>
         <div class="workbench-banner-control">
-          <div class="workbench-banner-copy"><strong>Banner rápido do produto</strong><small>Configure a oferta no próprio card, escolha a posição e informe quando o banner deve sair do ar. A validade do banner é independente da validade da oferta e não aparece na imagem.</small></div>
+          <div class="workbench-banner-copy"><strong>Banner rápido do produto</strong><small>Configure a oferta no próprio card e escolha os locais. A duração acompanha automaticamente a oferta e pode terminar antes se o produto vencer.</small></div>
           <div class="workbench-banner-field"><label>Onde o banner aparecerá</label><select class="select" data-banner-position data-key="${esc(key)}">${bannerPositionOptionsHtml(p)}</select></div>
-          <div class="workbench-banner-field"><label>Retirar banner do ar em</label><input class="input" type="date" data-banner-expiry data-key="${esc(key)}" value="${esc(daBannerExpiryForProduct(key))}" min="${esc(daBannerToday())}"><small>Independente da validade da oferta.</small></div>
+          <div class="workbench-banner-field"><label>Duração automática</label><input type="hidden" data-banner-expiry data-key="${esc(key)}" value=""><small>Até o fim da oferta ou o vencimento do produto, o que ocorrer primeiro.</small></div>
           <button class="btn create-banner-btn" type="button" data-action="create-product-banner" data-key="${esc(key)}">✨ Gerar banner agora</button>
         </div>
         <div class="workbench-sections">
@@ -4890,7 +4890,7 @@ function daOpenBannerModal(mode='create',banner=null,prefill={}){
   const placement=banner?.exibicao?.local||prefill.position||'home.hero',target=banner?.exibicao?.alvo||prefill.target||'',storedLink=banner?.link||prefill.link||daDefaultLinkForPlacement(placement,target),linkType=banner?(storedLink.tipo||'rota'):'automatico';
   document.getElementById('bannerModalTitle').textContent=mode==='edit'?'Editar banner':'Criar banner profissional';document.getElementById('bannerModalSubtitle').textContent=mode==='edit'?'Altere o direcionamento, os produtos, o texto ou regenere a arte.':'A mesma imagem vertical será usada no desktop e no celular.';
   const preview=mode==='edit'?`<div class="span-4 banner-content-box banner-current-preview"><img src="${esc(daBannerPublicUrl(banner.imagem))}" alt="${esc(banner.alt||banner.titulo||'Banner atual')}"><div><strong>Arte atual</strong><div class="banner-help">Salvar metadados não gasta crédito de imagem. “Regenerar arte” cria um novo WebP e remove o arquivo anterior.</div></div></div>`:'';
-  document.getElementById('bannerModalBody').innerHTML=`<div class="banner-form-grid">${preview}<div class="field"><label>Tipo de conteúdo</label><select class="select" id="bannerContentType"><option value="produto">Produto específico</option><option value="personalizado">Campanha personalizada</option></select></div><div class="field span-2"><label>Nome interno do banner</label><input class="input" id="bannerTitle" value="${esc(banner?.titulo||prefill.title||'')}" placeholder="Ex.: Oferta arroz julho"></div><div class="field"><label>Status</label><select class="select" id="bannerActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></div><div class="span-4 banner-content-box" id="bannerProductModeBox"><div class="field"><label>Produto do banner</label><select class="select" id="bannerMainProduct"><option value="">Selecione o produto...</option>${daBannerProductOptions(mainProduct)}</select><small class="banner-help">A arte receberá automaticamente imagem, nome, embalagem, preço antigo, preço novo e desconto. Nenhuma data de oferta ou de validade será impressa.</small></div></div><div class="span-4 banner-content-box" id="bannerCustomModeBox"><div class="field"><label>Texto exato que deve aparecer na arte</label><textarea class="textarea" id="bannerArtworkText" maxlength="220" placeholder="Ex.: Monte sua despensa com economia. Escolha seus favoritos.">${esc(banner?.texto_arte||prefill.artText||'')}</textarea><small class="banner-help">Obrigatório. A IA deve reproduzir este texto e não inventar outras promoções.</small></div><div class="field" style="margin-top:10px"><label>Buscar até 3 produtos para usar como referência visual</label><input class="input" id="bannerProductSearch" placeholder="Nome, código, marca ou categoria"><div class="tiny" id="bannerSelectedCount"></div></div><div class="banner-product-picker" id="bannerProductPicker"></div></div><div class="field span-2"><label>Onde o banner aparecerá</label><select class="select" id="bannerPlacement">${DA_BANNER_PLACEMENTS.map(x=>`<option value="${esc(x.value)}" ${x.value===placement?'selected':''}>${esc(x.label)}</option>`).join('')}</select></div><div class="field span-2" id="bannerPlacementTargetWrap"></div><div class="field"><label>Destino do clique</label><select class="select" id="bannerLinkType"><option value="automatico">Automático pelo direcionamento</option><option value="produto">Produto</option><option value="categoria">Categoria</option><option value="subcategoria">Subcategoria</option><option value="marca">Marca</option><option value="kit">Kit</option><option value="cesta">Cesta</option><option value="rota">Rota interna</option><option value="url">URL externa</option></select></div><div class="field span-2"><label>Valor/destino do link</label><input class="input" id="bannerLinkValue" value="${esc(storedLink.valor||'')}"></div><div class="field"><label>Ordem na posição</label><input class="input" type="number" min="1" id="bannerOrder" value="${Number(banner?.exibicao?.ordem)||daNextBannerOrder(placement,target)}"></div><div class="field span-2"><label>Texto alternativo (SEO/acessibilidade)</label><input class="input" id="bannerAlt" value="${esc(banner?.alt||prefill.alt||'')}" placeholder="Descreva objetivamente a oferta"></div><div class="field"><label>Início opcional</label><input class="input" type="datetime-local" id="bannerStart" value="${esc(banner?.periodo?.inicio?String(banner.periodo.inicio).slice(0,16):'')}"></div><div class="field"><label>Fim opcional</label><input class="input" type="datetime-local" id="bannerEnd" value="${esc(banner?.periodo?.fim?String(banner.periodo.fim).slice(0,16):'')}"></div><div class="field"><label>Formato fixo</label><input class="input" value="1024 × 1536 · WebP · 2:3" readonly></div><div class="span-4 banner-schema-note"><strong>Comportamento no site:</strong> o banner ocupa exatamente uma coluna de produto. Celular mostra 2 colunas, tablet 3 e desktop 4. Só vira carrossel quando houver mais banners do que colunas disponíveis naquela posição.</div></div><div class="banner-form-actions"><button class="btn" type="button" data-action="banner-modal-close">Cancelar</button>${mode==='edit'?'<button class="btn blue" type="button" data-action="banner-save-edit">Salvar sem regenerar</button><button class="btn primary" type="button" data-action="banner-regenerate">Regenerar arte e salvar</button>':'<button class="btn primary" type="button" data-action="banner-create-confirm">Gerar e publicar banner</button>'}</div>`;
+  document.getElementById('bannerModalBody').innerHTML=`<div class="banner-form-grid">${preview}<div class="field"><label>Tipo de conteúdo</label><select class="select" id="bannerContentType"><option value="produto">Produto específico</option><option value="personalizado">Campanha personalizada</option></select></div><div class="field span-2"><label>Nome interno do banner</label><input class="input" id="bannerTitle" value="${esc(banner?.titulo||prefill.title||'')}" placeholder="Ex.: Oferta arroz julho"></div><div class="field"><label>Status</label><select class="select" id="bannerActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></div><div class="span-4 banner-content-box" id="bannerProductModeBox"><div class="field"><label>Produto do banner</label><select class="select" id="bannerMainProduct"><option value="">Selecione o produto...</option>${daBannerProductOptions(mainProduct)}</select><small class="banner-help">A arte receberá automaticamente imagem, nome, embalagem, preço antigo, preço novo e desconto. Nenhuma data de oferta ou de validade será impressa.</small></div></div><div class="span-4 banner-content-box" id="bannerCustomModeBox"><div class="field"><label>Texto exato que deve aparecer na arte</label><textarea class="textarea" id="bannerArtworkText" maxlength="220" placeholder="Ex.: Monte sua despensa com economia. Escolha seus favoritos.">${esc(banner?.texto_arte||prefill.artText||'')}</textarea><small class="banner-help">Obrigatório. A IA deve reproduzir este texto e não inventar outras promoções.</small></div><div class="field" style="margin-top:10px"><label>Buscar até 3 produtos para usar como referência visual</label><input class="input" id="bannerProductSearch" placeholder="Nome, código, marca ou categoria"><div class="tiny" id="bannerSelectedCount"></div></div><div class="banner-product-picker" id="bannerProductPicker"></div></div><div class="field span-2"><label>Onde o banner aparecerá</label><select class="select" id="bannerPlacement">${DA_BANNER_PLACEMENTS.map(x=>`<option value="${esc(x.value)}" ${x.value===placement?'selected':''}>${esc(x.label)}</option>`).join('')}</select></div><div class="field span-2" id="bannerPlacementTargetWrap"></div><div class="field"><label>Destino do clique</label><select class="select" id="bannerLinkType"><option value="automatico">Automático pelo direcionamento</option><option value="produto">Produto</option><option value="categoria">Categoria</option><option value="subcategoria">Subcategoria</option><option value="marca">Marca</option><option value="kit">Kit</option><option value="cesta">Cesta</option><option value="rota">Rota interna</option><option value="url">URL externa</option></select></div><div class="field span-2"><label>Valor/destino do link</label><input class="input" id="bannerLinkValue" value="${esc(storedLink.valor||'')}"></div><div class="field"><label>Ordem na posição</label><input class="input" type="number" min="1" id="bannerOrder" value="${Number(banner?.exibicao?.ordem)||daNextBannerOrder(placement,target)}"></div><div class="field span-2"><label>Texto alternativo (SEO/acessibilidade)</label><input class="input" id="bannerAlt" value="${esc(banner?.alt||prefill.alt||'')}" placeholder="Descreva objetivamente a oferta"></div><div class="field"><label>Início opcional</label><input class="input" type="datetime-local" id="bannerStart" value="${esc(banner?.periodo?.inicio?daBannerDateTimeLocalValue(banner.periodo.inicio):'')}"></div><div class="field"><label>Fim opcional</label><input class="input" type="datetime-local" id="bannerEnd" value="${esc(banner?.periodo?.fim?daBannerDateTimeLocalValue(banner.periodo.fim):'')}"></div><div class="field"><label>Formato fixo</label><input class="input" value="1024 × 1536 · WebP · 2:3" readonly></div><div class="span-4 banner-schema-note"><strong>Comportamento no site:</strong> o banner ocupa exatamente uma coluna de produto. Celular mostra 2 colunas, tablet 3 e desktop 4. Só vira carrossel quando houver mais banners do que colunas disponíveis naquela posição.</div></div><div class="banner-form-actions"><button class="btn" type="button" data-action="banner-modal-close">Cancelar</button>${mode==='edit'?'<button class="btn blue" type="button" data-action="banner-save-edit">Salvar sem regenerar</button><button class="btn primary" type="button" data-action="banner-regenerate">Regenerar arte e salvar</button>':'<button class="btn primary" type="button" data-action="banner-create-confirm">Gerar e publicar banner</button>'}</div>`;
   document.getElementById('bannerContentType').value=contentType;document.getElementById('bannerActive').value=String(banner?.ativo!==false);document.getElementById('bannerLinkType').value=linkType;daRenderBannerTargetField(target);document.getElementById('bannerManagerModal').classList.add('open');daSyncBannerContentVisibility();if(contentType==='personalizado')daRenderBannerProductPicker();daSyncBannerLinkFields(false);
 }
 function daCloseBannerModal(){document.getElementById('bannerManagerModal')?.classList.remove('open');state.bannerManager.editingId=null;state.bannerManager.prefill=null}
@@ -5589,7 +5589,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     banner.periodo={inicio:start,fim:end};
     banner.banner_inicio=start;
     banner.banner_fim=end;
-    banner.controle={...(banner.controle||{}),retirada_automatica:true,validade_independente_da_oferta:true,exibir_validade_oferta_na_arte:false,duracao_dias:daBannerDaysBetween(start,end)};
+    banner.controle={...(banner.controle||{}),retirada_automatica:true,validade_independente_da_oferta:false,regra_duracao:'periodo_da_oferta',exibir_validade_oferta_na_arte:false,duracao_dias:daBannerDaysBetween(start,end)};
     banner.oferta={preco_antigo:main.preco_antigo||0,preco_novo:main.preco_novo||0,desconto_percentual:main.desconto_percentual||0,validade_oferta:main.validade_oferta||null,usar_validade_apenas_para_elegibilidade:true,exibir_validade_na_arte:false};
     return banner;
   };
@@ -5600,7 +5600,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   const daBannerCallWebhookV7Base = daCallBannerWebhook;
   daCallBannerWebhook = async function(payload){
     if(payload&&['criar_banner','salvar_catalogo_banners','remover_banner','apagar_arquivo_banner'].includes(payload.acao)){
-      payload={...payload,versao_contrato:7,validade_banner_independente:true,exibir_validade_oferta_na_arte:false};
+      payload={...payload,versao_contrato:12,validade_banner_independente:false,regra_duracao:'periodo_da_oferta',exibir_validade_oferta_na_arte:false};
       if(payload.banner){
         payload.banner_inicio=payload.banner.periodo?.inicio||payload.banner.banner_inicio||null;
         payload.banner_fim=payload.banner.periodo?.fim||payload.banner.banner_fim||null;
@@ -5625,17 +5625,12 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     if(regular<=0)throw new Error('Informe o valor antigo do produto antes de gerar o banner.');
     if(offer<=0)throw new Error('Informe o valor da oferta do produto antes de gerar o banner.');
     if(offer>=regular)throw new Error('O valor da oferta deve ser menor que o valor antigo para o banner rápido de produto.');
-    const expiryInput=card?.querySelector('[data-banner-expiry]');
-    const expiry=expiryInput?.value||daBannerExpiryForProduct(key);
-    if(!expiry)throw new Error('Informe quando o banner deve sair do ar.');
-    const endDate=new Date(`${expiry}T23:59:00`);
-    if(Number.isNaN(endDate.getTime())||endDate.getTime()<=Date.now())throw new Error('A data para retirar o banner deve estar no futuro.');
-    daSaveBannerExpiryForProduct(key,expiry);
+    const schedule=daV12ProductBannerSchedule(product);
     const catalog=daNormalizeBannerCatalog(state.bannerManager.catalog||await daLoadBannerCatalog());
     const samePlacement=catalog.banners.filter(b=>String(b?.exibicao?.local||'')===String(placement)&&String(b?.exibicao?.alvo||'')===String(target||''));
     const nextOrder=(samePlacement.reduce((max,b)=>Math.max(max,Number(b?.exibicao?.ordem)||0),0)||0)+1;
-    const data={contentType:'produto',selected:[product],artText:'',placement,target,title:`Oferta · ${getName(product)}`,alt:`${getName(product)} em oferta na Dona Antônia`,link:{tipo:'produto',valor:String(product.codigo||getKey(product)||'')},order:nextOrder,start:daBannerNowLocal(),end:`${expiry}T23:59`,active:true,hideOfferValidity:true};
-    setStatus(`Gerando banner de ${getName(product)} até ${expiry.split('-').reverse().join('/')}...`,'warn');
+    const data={contentType:'produto',selected:[product],artText:'',placement,target,title:`Oferta · ${getName(product)}`,alt:`${getName(product)} em oferta na Dona Antônia`,link:{tipo:'produto',valor:String(product.codigo||getKey(product)||'')},order:nextOrder,start:schedule.start,end:schedule.end,active:true,hideOfferValidity:true};
+    setStatus(`Gerando banner de ${getName(product)} durante o período válido da oferta...`,'warn');
     await daPublishBannerArtwork(data);
     return {ok:true,modo:'direto',placement,target,banner_inicio:data.start,banner_fim:data.end,validade_oferta_na_arte:false};
   };
@@ -5647,8 +5642,8 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   daRenderBannerManager = async function(){
     const result=await daBannerRenderManagerV7Base();
     const body=document.getElementById('bannerManagerBody');
-    if(body&&!body.querySelector('.banner-validity-manager-v7'))body.insertAdjacentHTML('afterbegin','<div class="notice blue banner-validity-manager-v7" style="margin-bottom:14px"><strong>Validade do banner separada da oferta:</strong> o banner usa <code>periodo.inicio</code> e <code>periodo.fim</code>. A validade da oferta permanece apenas no produto, pode ser usada para selecionar ofertas automáticas e nunca aparece na imagem. Banners rápidos são configurados, por padrão, para sair do ar 7 dias após a criação.</div>');
-    if(body&&!body.querySelector('.banner-position-strategy-v8'))body.insertAdjacentHTML('afterbegin','<div class="notice green banner-position-strategy-v8" style="margin-bottom:14px"><strong>Estratégia automática de posição:</strong> higiene/beleza → antes de higiene e beleza; limpeza/lavanderia → antes de limpeza; café da manhã → antes do café da manhã. Outros produtos usam o local compatível com menos banners ativos, incluindo posições gerais e o próprio contexto de categoria, subcategoria, marca ou produto. Posições específicas de kit e cesta não entram no sorteio porque exigem um vínculo que o produto sozinho não informa.</div>');
+    if(body&&!body.querySelector('.banner-validity-manager-v7'))body.insertAdjacentHTML('afterbegin','<div class="notice blue banner-validity-manager-v7" style="margin-bottom:14px"><strong>Duração sincronizada com a oferta:</strong> banners de produto usam o início e o fim da oferta. Se o produto vencer antes, o banner termina no vencimento; estoque zerado, produto inativo ou excluído também retiram o banner do site.</div>');
+    if(body&&!body.querySelector('.banner-position-strategy-v8'))body.insertAdjacentHTML('afterbegin','<div class="notice green banner-position-strategy-v8" style="margin-bottom:14px"><strong>Estratégia automática de posição:</strong> todas as posições fixas e contextuais entram no balanceamento. Categoria, subcategoria, marca e produto vêm do cadastro do produto; kit e cesta são usados somente quando a composição confirma o vínculo.</div>');
     return result;
   };
 
@@ -5669,10 +5664,10 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
           versao_contrato:1,
           origem:'admin-dona-antonia',
           solicitado_em:nowIso(),
-          duracao_dias:7,
+          duracao:'periodo_da_oferta',
           quantidade_produtos:1,
           preservar_apos_expirar:true,
-          estrategia_posicionamento:"categoria_fixa_e_balanceamento_por_menor_carga_v2",
+          estrategia_posicionamento:"todas_posicoes_primeiro_oferta_depois_balanceamento_uniforme_v5",
           categorias_higiene_beleza:["BELEZA","HIGIENE","SHAMPOO E CONDICIONADOR","SABONETE","DESODORANTE","BEBÊ"],
           categorias_limpeza:["LIMPEZA","LAVANDERIA"],
           categoria_cafe_da_manha:"CAFÉ DA MANHÃ"
@@ -5686,7 +5681,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
       await daRenderBannerManager();
       renderProducts();
       const nome=data?.produto?.nome||data?.produto_nome||'produto selecionado';
-      const fim=data?.banner?.fim||data?.banner_fim||'7 dias';
+      const fim=data?.banner?.fim||data?.banner_fim||'fim da oferta';
       const local=data?.banner?.rotulo_posicao||data?.rotulo_posicao_banner||data?.banner?.posicao||data?.posicao_banner||'posição automática';
       const alvo=data?.banner?.alvo||data?.alvo_banner||'';
       setStatus(`Banner automático criado para ${nome} em ${local}${alvo?` · ${alvo}`:''}. Retirada programada: ${fim}.`,'ok');
@@ -5832,7 +5827,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     if(groups.length)html=html.replace('product-card product-workbench','product-card product-workbench has-any-banner'+(hasActive?' has-active-banner':''));
     html=html.replace('<div class="workbench-actions">',`${daV9ProductBannerStatusHtml(product)}<div class="workbench-actions">`);
     html=html.replace(/<div class="workbench-banner-field"><label>Onde o banner aparecerá<\/label><select class="select" data-banner-position[\s\S]*?<\/select><\/div>/,daV9QuickPlacementField(product));
-    html=html.replace('escolha a posição e informe quando o banner deve sair do ar','marque um ou mais locais e informe quando o banner deve sair do ar');
+    html=html.replace('escolha a posição','marque um ou mais locais');
     return html;
   };
 
@@ -5989,8 +5984,8 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   createProductBanner=async function(key){
     const product=productByKey(key);if(!product)throw new Error('Produto não encontrado.');const card=document.querySelector(`[data-product-key="${CSS.escape(String(key))}"]`),checked=[...(card?.querySelectorAll('[data-banner-placement-choice]:checked')||[])].map(input=>input.value),placements=daV9UniquePlacements(checked.length?checked:daV9QuickPlacementValues(product));if(!placements.length)throw new Error('Marque pelo menos um local para o banner aparecer.');
     const image=getImg(product);if(!image||image===PLACEHOLDER)throw new Error('Cadastre uma foto válida no produto antes de gerar o banner.');const regular=toNum(product.preco),offer=toNum(product.preco_oferta);if(regular<=0)throw new Error('Informe o valor antigo do produto antes de gerar o banner.');if(offer<=0)throw new Error('Informe o valor da oferta do produto antes de gerar o banner.');if(offer>=regular)throw new Error('O valor da oferta deve ser menor que o valor antigo.');
-    const expiry=card?.querySelector('[data-banner-expiry]')?.value||daBannerExpiryForProduct(key);if(!expiry)throw new Error('Informe quando o banner deve sair do ar.');const endDate=new Date(`${expiry}T23:59:00`);if(Number.isNaN(endDate.getTime())||endDate.getTime()<=Date.now())throw new Error('A data para retirar o banner deve estar no futuro.');daSaveBannerExpiryForProduct(key,expiry);daV9SaveQuickPlacementValues(key,placements.map(item=>daV9PlacementValue(item.local,item.target)));
-    const first=placements[0],data={contentType:'produto',selected:[product],artText:'',placements,placement:first.local,target:first.target,title:`Oferta · ${getName(product)}`,alt:`${getName(product)} em oferta na Dona Antônia`,link:{tipo:'produto',valor:String(product.codigo||getKey(product)||'')},order:1,start:daBannerNowLocal(),end:`${expiry}T23:59`,active:true,hideOfferValidity:true};
+    const schedule=daV12ProductBannerSchedule(product);daV9SaveQuickPlacementValues(key,placements.map(item=>daV9PlacementValue(item.local,item.target)));
+    const first=placements[0],data={contentType:'produto',selected:[product],artText:'',placements,placement:first.local,target:first.target,title:`Oferta · ${getName(product)}`,alt:`${getName(product)} em oferta na Dona Antônia`,link:{tipo:'produto',valor:String(product.codigo||getKey(product)||'')},order:1,start:schedule.start,end:schedule.end,active:true,hideOfferValidity:true};
     setStatus(`Gerando uma arte de ${getName(product)} para ${placements.length} local(is)...`,'warn');await daPublishBannerArtwork(data);return{ok:true,modo:'direto_multiplos_locais',locais:placements,banner_inicio:data.start,banner_fim:data.end};
   };
 
@@ -6653,8 +6648,9 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
 
 
   /* ===== BANNERS V10 · POSICIONAMENTO REAL DO SITE + LIMITE 4 POR ESPAÇO ===== */
-  const DA_BANNER_MAX_ACTIVE_PER_SPACE_V10 = 4;
-  const DA_BANNER_AUTOMATIC_STRATEGY_V10 = "espaco_primeiro_produto_depois_balanceamento_uniforme_v3";
+  const DA_BANNER_MAX_ACTIVE_PER_SPACE_V10 = 12;
+  const DA_BANNER_VISIBLE_PER_SPACE_V12 = 4;
+  const DA_BANNER_AUTOMATIC_STRATEGY_V10 = "posicoes_fixas_e_contextuais_relacionadas_ao_produto_v6";
   const DA_BANNER_LEGACY_POSITION_MAP_V10 = {
     "home.cestas.topo":"cestas.topo",
     "home.kits.topo":"kits.topo",
@@ -6679,12 +6675,12 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     {value:"rotina.cafe.topo",label:"Rotina · café",group:"Rotinas",automatic:true,compat:"cafe"}
   ];
   const DA_BANNER_CONTEXTUAL_PLACEMENTS_V10 = [
-    {value:"categoria",label:"Categoria específica",targetKind:"categoria"},
-    {value:"subcategoria",label:"Subcategoria específica",targetKind:"subcategoria"},
-    {value:"marca",label:"Marca específica",targetKind:"marca"},
-    {value:"produto",label:"Produto específico",targetKind:"produto"},
-    {value:"kit",label:"Kit promocional específico",targetKind:"kit"},
-    {value:"cesta",label:"Cesta básica específica",targetKind:"cesta"}
+    {value:"categoria",label:"Categoria específica",targetKind:"categoria",automatic:true},
+    {value:"subcategoria",label:"Subcategoria específica",targetKind:"subcategoria",automatic:true},
+    {value:"marca",label:"Marca específica",targetKind:"marca",automatic:true},
+    {value:"produto",label:"Produto específico",targetKind:"produto",automatic:true},
+    {value:"kit",label:"Kit promocional específico",targetKind:"kit",automatic:true,requiresMembership:true},
+    {value:"cesta",label:"Cesta básica específica",targetKind:"cesta",automatic:true,requiresMembership:true}
   ];
   const DA_BANNER_REAL_PLACEMENT_SET_V10 = new Set([
     ...DA_BANNER_SITE_FIXED_SLOTS_V10.map(item=>item.value),
@@ -6727,7 +6723,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   function daV10BannerActiveNow(banner){
     if(!banner||banner.ativo===false)return false;
     const now=Date.now(),start=Date.parse(banner?.periodo?.inicio||banner?.banner_inicio||""),end=Date.parse(banner?.periodo?.fim||banner?.banner_fim||"");
-    if(Number.isFinite(start)&&now<start)return false;
+    // Banners agendados também reservam vaga na fila de até 12.
     if(Number.isFinite(end)&&now>end)return false;
     return true;
   }
@@ -6755,13 +6751,14 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   }
   function daV10AutomaticConfig(){
     return {
-      version:3,
+      version:6,
       strategy:DA_BANNER_AUTOMATIC_STRATEGY_V10,
-      selection_order:"escolher_espaco_menos_preenchido_depois_produto_compativel",
+      selection_order:"escolher_posicao_fixa_ou_contextual_menos_preenchida_depois_produto_relacionado",
       max_active_per_space:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,
       active_site_positions:DA_BANNER_SITE_FIXED_SLOTS_V10.map(item=>({local:item.value,label:item.label,compatibility:item.compat})),
-      automatic_positions:DA_BANNER_SITE_FIXED_SLOTS_V10.filter(item=>item.automatic!==false).map(item=>item.value),
-      manual_only_context_positions:DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>item.value),
+      automatic_positions:[...DA_BANNER_SITE_FIXED_SLOTS_V10,...DA_BANNER_CONTEXTUAL_PLACEMENTS_V10].filter(item=>item.automatic!==false).map(item=>item.value),
+      automatic_context_positions:DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>item.value),
+      manual_only_context_positions:[],
       removed_home_positions:Object.keys(DA_BANNER_LEGACY_POSITION_MAP_V10),
       balance_metric:"menor_quantidade_de_banners_ativos_por_espaco_real_do_site",
       tie_breaker:"ordem_estavel_dos_espacos",
@@ -6934,6 +6931,20 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   }
 
   // O disparo automático envia ao Make a estratégia correta: espaço primeiro, produto depois.
+  async function daV12WaitForAutomaticBanner(requestId,knownIds,{attempts=30,delayMs=4000}={}){
+    for(let attempt=1;attempt<=attempts;attempt++){
+      if(attempt>1)await new Promise(resolve=>setTimeout(resolve,delayMs));
+      const catalog=await daLoadBannerCatalog(true);
+      const created=(catalog?.banners||[]).find(banner=>
+        banner?.automacao?.requisicao_id===requestId||
+        (!knownIds.has(String(banner?.id||""))&&banner?.automacao?.automatico===true)
+      );
+      if(created)return created;
+      setStatus(`O Make aceitou a criação. Processando imagem e publicação… tentativa ${attempt}/${attempts}.`,"warn");
+    }
+    return null;
+  }
+
   async function daRunAutomaticBannerV10(){
     readSettingsFromUi();
     const webhook=String(state.settings.makeBannerAutomaticWebhookUrl||state.settings.makeBannerWebhookUrl||"").trim();
@@ -6941,30 +6952,42 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     const buttons=[...document.querySelectorAll('[data-action="banner-auto-run"]')];
     buttons.forEach(button=>{button.disabled=true;button.dataset.originalText=button.textContent;button.textContent="Selecionando espaço e produto...";});
     setStatus("Calculando o espaço menos preenchido e, depois, escolhendo um produto compatível...","warn");
+    const requestId=`banner-auto-${Date.now()}-${Math.random().toString(36).slice(2,9)}`;
+    const knownIds=new Set((state.bannerManager.catalog?.banners||[]).map(banner=>String(banner?.id||"")));
     try{
       const response=await fetch(webhook,{method:"POST",headers:{Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify({
         acao:"criar_banner_automatico",
-        versao_contrato:10,
+        requisicao_id:requestId,
+        versao_contrato:12,
         origem:"admin-dona-antonia",
         solicitado_em:nowIso(),
-        duracao_dias:7,
+        duracao:"periodo_da_oferta",
         quantidade_produtos:1,
         preservar_apos_expirar:true,
         estrategia_posicionamento:DA_BANNER_AUTOMATIC_STRATEGY_V10,
         modo_selecao:"espaco_primeiro_produto_depois",
         max_banners_por_espaco:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,
-        posicoes_automaticas:DA_BANNER_SITE_FIXED_SLOTS_V10.filter(item=>item.automatic!==false).map(item=>({local:item.value,rotulo:item.label,compatibilidade:item.compat})),
-        posicoes_manuais_contextuais:DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>item.value),
+        posicoes_automaticas:[...DA_BANNER_SITE_FIXED_SLOTS_V10.map(item=>({local:item.value,rotulo:item.label,compatibilidade:item.compat||"relacao_produto"})),...DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>({local:item.value,rotulo:item.label,compatibilidade:"relacao_produto",requer_vinculo:item.requiresMembership===true}))],
+        posicoes_contextuais_automaticas:DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>item.value),
+        posicoes_manuais_contextuais:[],
+        cestas_json:JSON.stringify((state.cestas||[]).map(({id,codigo,nome,ativo,status,produtos})=>({id,codigo,nome,ativo,status,produtos}))),
+        kits_json:JSON.stringify((state.kits||[]).map(({id,codigo,nome,ativo,status,estoque_disponivel,data_inicio,data_fim,produtos})=>({id,codigo,nome,ativo,status,estoque_disponivel,data_inicio,data_fim,produtos}))),
         posicoes_removidas:Object.keys(DA_BANNER_LEGACY_POSITION_MAP_V10),
         prioridade_produto_na_arte:true,
         exibir_validade_oferta_na_arte:false
       })});
       const raw=await response.text();let data=null;try{data=raw?JSON.parse(raw):null}catch{}
       if(!response.ok)throw new Error(`Make retornou ${response.status}: ${raw.slice(0,500)||"sem detalhes"}`);
+      const banner=response.status===202?await daV12WaitForAutomaticBanner(requestId,knownIds):null;
       await daLoadBannerCatalog(true);await daRenderBannerManager();renderProducts();
-      const nome=data?.produto?.nome||data?.produto_nome||data?.selected_product||"produto selecionado";
-      const local=data?.banner?.rotulo_posicao||data?.rotulo_posicao_banner||data?.banner?.posicao||data?.posicao_banner||"espaço balanceado";
-      setStatus(`Banner automático criado para ${nome} em ${local}.`,"ok");return data;
+      if(!banner){
+        setStatus("O Make aceitou a solicitação, mas a publicação ainda não apareceu no catálogo. Consulte o histórico da execução.","warn");
+        return {...(data||{}),requisicao_id:requestId,publicacao_confirmada:false};
+      }
+      const nome=banner?.origem?.produtos?.[0]?.nome||banner?.titulo||"produto selecionado";
+      const local=daBannerPlacementLabel(banner?.exibicao?.local,banner?.exibicao?.alvo);
+      setStatus(`Banner automático criado para ${nome} em ${local}.`,"ok");
+      return {...(data||{}),requisicao_id:requestId,publicacao_confirmada:true,banner};
     }finally{buttons.forEach(button=>{button.disabled=false;button.textContent=button.dataset.originalText||"🎯 Criar banner automático";delete button.dataset.originalText;});}
   }
 
@@ -6979,7 +7002,7 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   daRenderBannerManager=async function(){
     const result=await daV10RenderBannerManagerBase();
     const body=document.getElementById("bannerManagerBody");
-    if(body&&!body.querySelector(".banner-layout-v10-notice"))body.insertAdjacentHTML("afterbegin",`<div class="notice blue banner-layout-v10-notice" style="margin-bottom:14px"><strong>Posicionamento sincronizado com o site atual:</strong> o automático escolhe primeiro o espaço menos preenchido e depois um produto compatível. Cada espaço aceita no máximo <strong>${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners ativos</strong>. Posições antigas da Home foram removidas do seletor.</div><div class="toolbar" style="justify-content:flex-start;margin:-4px 0 14px"><button class="btn gold" type="button" data-action="banner-migrate-layout-v10">↻ Reorganizar JSON atual pelos novos espaços</button></div>`);
+    if(body&&!body.querySelector(".banner-layout-v10-notice"))body.insertAdjacentHTML("afterbegin",`<div class="notice blue banner-layout-v10-notice" style="margin-bottom:14px"><strong>Fila inteligente:</strong> cada local e alvo aceita até <strong>${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners</strong>. O site mostra somente <strong>${DA_BANNER_VISIBLE_PER_SPACE_V12} por vez</strong> e alterna aleatoriamente entre os demais, sem deixar a fila escondida esquecida.</div><div class="toolbar" style="justify-content:flex-start;margin:-4px 0 14px"><button class="btn gold" type="button" data-action="banner-migrate-layout-v10">↻ Reorganizar JSON atual pelos novos espaços</button></div>`);
     return result;
   };
 
@@ -6996,9 +7019,62 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     const autoButton=document.querySelector('[data-action="banner-auto-run"]');
     const card=autoButton?.closest(".card");
     const note=card?.querySelector(".notice.gold");
-    if(note)note.innerHTML=`<strong>Seleção automática balanceada:</strong> o Make deve escolher primeiro o espaço real do site com menor quantidade de banners ativos e só depois escolher um produto compatível. Limite de ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners ativos por espaço. O admin continua sendo usado para escolha manual e exceções.`;
+    if(note)note.innerHTML=`<strong>Seleção automática balanceada:</strong> as 19 posições participam da distribuição. Cada local e alvo mantém fila de até ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners; o site exibe ${DA_BANNER_VISIBLE_PER_SPACE_V12} por vez e faz rotação aleatória justa.`;
     return result;
   };
+
+  /* ===== BANNERS V12 · OFERTA, VENCIMENTO, ESTOQUE + GRADE PROFISSIONAL ===== */
+  const daV12BannerValidationBase=daValidateBannerForm;
+  function daV12DateTimestamp(value,{endOfDay=false}={}){
+    const raw=String(value||"").trim();if(!raw)return NaN;
+    let match=raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if(match)return Date.parse(`${match[3]}-${match[2]}-${match[1]}T${endOfDay?'23:59:59':'00:00:00'}-04:00`);
+    match=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(match)return Date.parse(`${match[1]}-${match[2]}-${match[3]}T${endOfDay?'23:59:59':'00:00:00'}-04:00`);
+    return Date.parse(raw);
+  }
+  function daV12ProductBannerSchedule(product){
+    const now=Date.now();
+    const offerStart=daV12DateTimestamp(daBannerOfferStart(product));
+    const offerEnd=daV12DateTimestamp(daBannerOfferValidity(product),{endOfDay:true});
+    if(!Number.isFinite(offerEnd))throw new Error(`A oferta de ${getName(product)} precisa ter data final para definir a duração do banner.`);
+    const productEnd=daV12DateTimestamp(product?.validade||product?.vencimento||product?.data_validade||product?.rawProduto?.validade||product?.rawProduto?.vencimento||product?.rawProduto?.data_validade,{endOfDay:true});
+    const start=Math.max(now,Number.isFinite(offerStart)?offerStart:now);
+    const end=Number.isFinite(productEnd)?Math.min(offerEnd,productEnd):offerEnd;
+    if(end<=start)throw new Error(`A oferta ou a validade de ${getName(product)} já terminou.`);
+    return {start:daBannerDateTimeLocalValue(new Date(start)),end:daBannerDateTimeLocalValue(new Date(end)),offerEnd,productEnd};
+  }
+  function daV12ProductIsSellable(product){
+    if(!product)return false;
+    const status=String(product.situacao||product.status||"A").trim().toLowerCase();
+    const stock=toNum(product.estoque??product.stock??product.quantidade??0);
+    const price=toNum(product.preco??product.price??0);
+    const productEnd=daV12DateTimestamp(product?.validade||product?.vencimento||product?.data_validade||product?.rawProduto?.validade||product?.rawProduto?.vencimento||product?.rawProduto?.data_validade,{endOfDay:true});
+    return !["i","inativo","inactive","false","0"].includes(status)&&stock>0&&price>0&&(!Number.isFinite(productEnd)||productEnd>Date.now());
+  }
+  daValidateBannerForm=function(data,options){
+    if(data?.contentType==='produto'&&data?.selected?.[0]){
+      const schedule=daV12ProductBannerSchedule(data.selected[0]);
+      data.start=schedule.start;data.end=schedule.end;
+    }
+    daV12BannerValidationBase(data,options);
+    if(data?.active!==false){
+      const unavailable=(data?.selected||[]).filter(product=>!daV12ProductIsSellable(product));
+      if(unavailable.length)throw new Error(`Banner ativo não pode usar produto fora do ar, sem estoque, sem preço ou vencido: ${unavailable.map(getName).join(", ")}.`);
+    }
+  };
+  const daV12Style=document.createElement("style");
+  daV12Style.textContent=`
+    @media (min-width:1200px){
+      .banner-admin-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:10px}
+      .banner-admin-body{padding:10px;gap:6px}
+      .banner-admin-title{font-size:12px}
+      .banner-admin-body .tiny{font-size:9px}
+      .banner-admin-actions{gap:5px}
+      .banner-admin-actions .btn.small{padding:6px 5px;font-size:9px}
+    }
+  `;
+  document.head.appendChild(daV12Style);
 
   window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,saveLocal,renderProducts,renderSummary,openProduct,aiProductCadastro,aiProductImage};
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
