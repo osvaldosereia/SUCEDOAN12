@@ -1,6 +1,6 @@
 {
-  "schema_version": 13,
-  "updated_at": "2026-07-16T20:22:16.000Z",
+  "schema_version": 14,
+  "updated_at": "2026-07-16T21:41:45.165Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -19,153 +19,27 @@
       "show_arrows": true,
       "show_dots": true,
       "show_hint": true,
-      "autoplay": false,
+      "autoplay": true,
       "intervalo_ms": 5200,
-      "loop": false,
+      "loop": true,
       "pausar_hover": true
     },
     "automatic_positioning": {
-      "version": 13,
-      "strategy": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13",
-      "selection_order": "1_escolher_familia_menos_preenchida_2_pontuar_ofertas_compativeis_3_criar_publicar",
-      "max_active_per_space": 12,
-      "active_site_positions": [
-        {
-          "local": "home.hero",
-          "label": "Home · banner principal",
-          "compatibility": "all"
-        },
-        {
-          "local": "home.compra-mes.topo",
-          "label": "Home · antes da compra do mês",
-          "compatibility": "all"
-        },
-        {
-          "local": "home.higiene.topo",
-          "label": "Home · antes de higiene da família",
-          "compatibility": "higiene"
-        },
-        {
-          "local": "categorias.topo",
-          "label": "Página · categorias",
-          "compatibility": "all"
-        },
-        {
-          "local": "ofertas.topo",
-          "label": "Página · ofertas",
-          "compatibility": "all"
-        },
-        {
-          "local": "cestas.topo",
-          "label": "Página · cestas básicas",
-          "compatibility": "all"
-        },
-        {
-          "local": "kits.topo",
-          "label": "Página · kits promocionais",
-          "compatibility": "all"
-        },
-        {
-          "local": "busca.topo",
-          "label": "Página · resultados da busca",
-          "compatibility": "all"
-        },
-        {
-          "local": "favoritos.topo",
-          "label": "Página · favoritos",
-          "compatibility": "all"
-        },
-        {
-          "local": "rotina.compra-mes.topo",
-          "label": "Rotina · compra do mês",
-          "compatibility": "all"
-        },
-        {
-          "local": "rotina.limpeza.topo",
-          "label": "Rotina · limpeza",
-          "compatibility": "limpeza"
-        },
-        {
-          "local": "rotina.higiene.topo",
-          "label": "Rotina · higiene",
-          "compatibility": "higiene"
-        },
-        {
-          "local": "rotina.cafe.topo",
-          "label": "Rotina · café",
-          "compatibility": "cafe"
-        }
-      ],
-      "automatic_context_positions": [
-        {
-          "local": "categoria",
-          "label": "Categoria específica",
-          "relation": "categoria"
-        },
-        {
-          "local": "subcategoria",
-          "label": "Subcategoria específica",
-          "relation": "subcategoria"
-        },
-        {
-          "local": "marca",
-          "label": "Marca específica",
-          "relation": "marca"
-        },
-        {
-          "local": "produto",
-          "label": "Produto específico",
-          "relation": "produto"
-        },
-        {
-          "local": "kit",
-          "label": "Kit promocional específico",
-          "relation": "kit",
-          "requiresMembership": true
-        },
-        {
-          "local": "cesta",
-          "label": "Cesta básica específica",
-          "relation": "cesta",
-          "requiresMembership": true
-        }
-      ],
+      "version": 14,
+      "strategy": "categoria_menos_preenchida_ate_8_v14",
+      "selection_order": "1_categoria_com_menos_banners_2_produto_menos_usado_3_gerar_publicar",
       "automatic_positions": [
-        "home.hero",
-        "home.compra-mes.topo",
-        "home.higiene.topo",
-        "categorias.topo",
-        "ofertas.topo",
-        "cestas.topo",
-        "kits.topo",
-        "busca.topo",
-        "favoritos.topo",
-        "rotina.compra-mes.topo",
-        "rotina.limpeza.topo",
-        "rotina.higiene.topo",
-        "rotina.cafe.topo",
-        "categoria",
-        "subcategoria",
-        "marca",
-        "produto",
-        "kit",
-        "cesta"
+        "categoria"
       ],
-      "manual_only_context_positions": [],
-      "legacy_position_map": {
-        "home.cestas.topo": "cestas.topo",
-        "home.kits.topo": "kits.topo",
-        "home.ofertas.topo": "ofertas.topo",
-        "home.limpeza.topo": "rotina.limpeza.topo",
-        "home.cafe.topo": "rotina.cafe.topo",
-        "home.categorias.topo": "categorias.topo"
-      },
-      "balance_metric": "quantidade_ativa_ou_agendada_por_familia_de_posicao",
-      "tie_breaker": "ordem_estavel_das_19_familias"
+      "max_active_per_category": 8,
+      "balance_metric": "quantidade_ativa_ou_agendada_por_categoria",
+      "refill_rule": "criar_um_por_execucao_ate_todas_as_categorias_terem_8",
+      "home_display": "misturar_banners_de_produto_das_categorias_compatíveis",
+      "search_display": "categoria_do_primeiro_produto_do_resultado"
     },
     "banner_limits": {
-      "max_active_per_space": 12,
-      "scope": "familia_de_posicao"
+      "max_active_per_category": 8,
+      "scope": "categoria"
     },
     "product_guard": {
       "enabled": true,
@@ -187,11 +61,11 @@
       "automatic_start_rule": "inicio_da_oferta_ou_agora_se_a_oferta_ja_comecou"
     },
     "banner_queue": {
-      "capacity_per_space": 12,
-      "visible_at_once": 4,
-      "hidden_waiting": 8,
-      "rotation_mode": "fila_aleatoria_sem_repetir_antes_do_ciclo",
-      "rotation_interval_ms": 9000,
+      "capacity_per_category": 8,
+      "visible_at_once": 8,
+      "hidden_waiting": 0,
+      "rotation_mode": "carrossel_com_ordem_embaralhada_a_cada_acesso",
+      "rotation_interval_ms": 5200,
       "random": true
     },
     "automation_execution": {
