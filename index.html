@@ -5,11 +5,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="da-build-version" content="2026-07-16-images-fast-v1">
+  <meta name="da-build-version" content="2026-07-16-banners-8-category-v1">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-16-images-fast-v1';
+    const BUILD = '2026-07-16-banners-8-category-v1';
     const CLEAN_MARKER = 'da_browser_cache_clean_build_v2';
     window.__DA_BUILD_VERSION__ = BUILD;
 
@@ -71,7 +71,7 @@
   <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-16-images-fast-v1" as="fetch" type="application/json" crossorigin="anonymous">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-16-banners-8-category-v1" as="fetch" type="application/json" crossorigin="anonymous">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -965,7 +965,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-16-images-fast-v1',
+      APP_VERSION: '2026-07-16-banners-8-category-v1',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -1665,14 +1665,14 @@
         show_arrows: carousel.show_arrows !== false && carousel.manual !== false,
         show_dots: carousel.show_dots !== false,
         show_hint: carousel.show_hint !== false,
-        autoplay: carousel.autoplay === true || carousel.automatico === true,
+        autoplay: true,
         intervalo_ms: Math.max(3000, Number(carousel.intervalo_ms || carousel.interval || 5200)),
-        loop: carousel.loop === true,
+        loop: true,
         pausar_hover: carousel.pausar_hover !== false,
-        queue_capacity: Math.min(12, Math.max(4, Number(queue.capacity_per_space || queue.capacidade_por_posicao || 12))),
-        visible_limit: Math.min(4, Math.max(1, Number(queue.visible_at_once || queue.visiveis_por_vez || 4))),
+        queue_capacity: 8,
+        visible_limit: 8,
         queue_interval_ms: Math.max(5000, Number(queue.rotation_interval_ms || queue.intervalo_rotacao_ms || 9000)),
-        queue_random: queue.random !== false && queue.aleatoria !== false
+        queue_random: true
       };
       const aliases = {
         'home.inicio': 'home.hero',
@@ -1887,8 +1887,8 @@
       const opts = options || {};
       const targets = opts.targets || opts.target || null;
       const orderedBanners = bannersInAccessOrder(position, getBanners(position, targets));
-      const capacity = Math.min(12, Math.max(4, Number(state.bannerConfig.queue_capacity || 12)));
-      const visibleLimit = Math.min(4, Math.max(1, Number(state.bannerConfig.visible_limit || 4)));
+      const capacity = 8;
+      const visibleLimit = 8;
       const banners = orderedBanners.slice(0, capacity);
       if (!banners.length) return '';
       const label = opts.label || 'Destaques selecionados';
@@ -1933,7 +1933,7 @@
     function setupBannerQueue(zone, track) {
       const cards = Array.from(zone.querySelectorAll('.da-banner-card'));
       const total = cards.length;
-      const visibleLimit = Math.min(4, Math.max(1, Number(state.bannerConfig.visible_limit || 4)));
+      const visibleLimit = 8;
       const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (!total) return;
       if (total <= visibleLimit) {
@@ -5756,9 +5756,25 @@
     const seen = new Set();
     return (list || []).filter(banner=>banner && !seen.has(banner.id) && seen.add(banner.id));
   }
+  function daCategoryBannerPool(categories){
+    const targets=[...new Set((categories||[]).map(value=>String(value||'').trim()).filter(Boolean))];
+    if(!targets.length) return [];
+    const direct=getBanners('categoria',targets);
+    if(direct.length>=8) return direct;
+    const directIds=new Set(direct.map(banner=>banner.id));
+    const legacy=daSiteBannersForCategories(targets).filter(banner=>!directIds.has(banner.id) && bannerPositionKey(banner.local)!=='categoria');
+    return [...direct,...legacy];
+  }
+  function daAllProductBannerPool(){
+    const categories=[...new Set(state.products.filter(isAvailable).map(product=>product.categoria).filter(Boolean))];
+    const direct=getBanners('categoria',categories);
+    const directIds=new Set(direct.map(banner=>banner.id));
+    const legacy=state.banners.filter(banner=>bannerIsCurrent(banner) && !directIds.has(banner.id) && daSiteBannerProducts(banner).length);
+    return [...direct,...legacy];
+  }
   function daSiteBannerListHtml(position,banners,label){
-    const capacity = Math.min(12, Math.max(4, Number(state.bannerConfig.queue_capacity || 12)));
-    const visibleLimit = Math.min(4, Math.max(1, Number(state.bannerConfig.visible_limit || 4)));
+    const capacity = 8;
+    const visibleLimit = 8;
     const list = bannersInAccessOrder(position, daSiteUniqueBanners(banners).filter(bannerIsCurrent)).slice(0,capacity);
     if(!list.length) return '';
     const hint = state.bannerConfig.show_hint === false ? '' : (list.length > visibleLimit ? `${visibleLimit} de ${list.length} por vez · alternância automática` : 'Destaques disponíveis');
@@ -6286,7 +6302,7 @@
           ${daHomeStandardShelfHtml('Essenciais da compra do mês','Uma seleção rápida para começar a abastecer a casa.',essentials,'#/rotina/compra-mes','month')}
           ${daHomeCompactShelfHtml('Você já conferiu?','Itens que a gente costuma lembrar somente quando estão acabando.',reminders,'#/rotina/compra-mes','reminder','Continuar comprando')}
           ${daHomeCollectionSectionHtml('limpeza','Limpeza da casa','Encontre rapidamente o tipo de limpeza que precisa.',limpeza,'#/rotina/limpeza','clean')}
-          ${bannerSlotHtml('home.higiene.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques de cuidados pessoais'})}
+          ${daSiteBannerListHtml('home.higiene.topo',daCategoryBannerPool([...new Set(higiene.map(product=>product.categoria).filter(Boolean))]),'Destaques de cuidados pessoais')}
           ${daHomeCollectionSectionHtml('higiene','Higiene da família','Cuidados essenciais organizados por necessidade.',higiene,'#/rotina/higiene','care')}
           <div data-home-tail-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando mais setores…')}</div>`;
         setupBannerCarousels();
@@ -6321,12 +6337,12 @@
         const kits=getActiveKits();
         app.innerHTML=`<div class="container home-clean da-home-modular da-home-funnel">
           <h1 class="sr-only">Dona Antônia - Supermercado e Cestas</h1>
-          ${bannerSlotHtml('home.hero',{carousel:true,kind:'hero',limit:6,hideHead:true,label:'Destaques da Dona Antônia'})}
+          ${daSiteBannerListHtml('home.hero',daAllProductBannerPool(),'Destaques da Dona Antônia')}
           ${homeQuickLinksHtml()}
           <div data-home-personalization-slot="buy-again"></div>
           ${daHomePurchaseJourneyHtml()}
           ${daHomeOfferShelfHtml(offers)}
-          ${bannerSlotHtml('home.compra-mes.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques para a compra do mês'})}
+          ${daSiteBannerListHtml('home.compra-mes.topo',daCategoryBannerPool([...new Set(productsByRoutine('compra-mes',240).map(product=>product.categoria).filter(Boolean))]),'Destaques para a compra do mês')}
           ${daHomeBasketShelfHtml(state.cestas)}
           ${daHomeKitShelfHtml(kits)}
           <div data-home-secondary-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando os setores da compra do mês…')}</div>
@@ -6382,9 +6398,8 @@
         const filtered=currentSub==='Todos' ? products : products.filter(product=>norm(product.subcategoria)===norm(currentSub));
         const chips=`<div class="chips"><a class="chip ${currentSub==='Todos'?'active':''}" href="#/categoria/${encodeURIComponent(canonicalCategory)}">Todos</a>${subs.map(sub=>`<a class="chip ${currentSub===sub?'active':''}" href="#/categoria/${encodeURIComponent(canonicalCategory)}?sub=${encodeURIComponent(sub)}">${escapeHtml(sub)}</a>`).join('')}</div>`;
         const isBeauty=/(beleza|higiene|perfumaria)/.test(norm(canonicalCategory));
-        const direct=[...getBanners('categoria',canonicalCategory),...(currentSub!=='Todos'?getBanners('subcategoria',[currentSub,`${canonicalCategory}::${currentSub}`]):[])];
-        const contextual=daContextBannerHtml(filtered,direct,currentSub==='Todos'?`Destaques de ${canonicalCategory}`:`Destaques de ${currentSub}`,'categoria-produtos-contextuais');
-        app.innerHTML=`<div class="container">${pageHeader(canonicalCategory,`${filtered.length} produtos encontrados`,'#/categorias')}${contextual}${isBeauty?beautyBannerHtml(products):''}${chips}<div class="product-grid">${filtered.map(product=>productCard(product)).join('')}</div></div>`;
+        const categoryBanners=daSiteBannerListHtml('categoria',daCategoryBannerPool([canonicalCategory]),`Destaques de ${canonicalCategory}`);
+        app.innerHTML=`<div class="container">${pageHeader(canonicalCategory,`${filtered.length} produtos encontrados`,'#/categorias')}${categoryBanners}${isBeauty?beautyBannerHtml(products):''}${chips}<div class="product-grid">${filtered.map(product=>productCard(product)).join('')}</div></div>`;
         setActiveNav('categorias');
         updateMeta(`${canonicalCategory} - Dona Antônia`,`Compre ${canonicalCategory.toLowerCase()} com entrega em Cuiabá e Várzea Grande.`,`/?categoria=${encodeURIComponent(canonicalCategory)}`);
       };
@@ -6444,12 +6459,9 @@
         if(searchInput && document.activeElement !== searchInput && searchInput.value!==q) searchInput.value=q;
         updateSearchButtons();
         const products=searchProducts(q);
-        let contextual='';
-        if(q){
-          try{ contextual=daContextBannerHtml(products,[],`Ofertas relacionadas à sua busca`,'busca-produtos-contextuais'); }
-          catch(error){ console.warn('Banner contextual da busca ignorado:',error); }
-        }
-        app.innerHTML=`<div class="container search-results-page">${pageHeader(q?`Busca: ${q}`:'Busca',q?`${products.length} resultado(s)`:'Digite o produto na busca acima.','#/')}${q?(products.length?`<div class="product-list">${products.map(product=>productCard(product,'list')).join('')}</div>`:`<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`):''}${contextual}${bannerSlotHtml('busca.topo',{kind:'section'})}</div>`;
+        const firstCategory=products[0]?.categoria||'';
+        const searchBanners=q&&firstCategory?daSiteBannerListHtml('busca-categoria',daCategoryBannerPool([firstCategory]),`Destaques de ${firstCategory}`):'';
+        app.innerHTML=`<div class="container search-results-page">${pageHeader(q?`Busca: ${q}`:'Busca',q?`${products.length} resultado(s)`:'Digite o produto na busca acima.','#/')}${searchBanners}${q?(products.length?`<div class="product-list">${products.map(product=>productCard(product,'list')).join('')}</div>`:`<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`):''}</div>`;
         setActiveNav('home');
       };
     })();
