@@ -243,6 +243,48 @@
       return raw;
     }
 
+    const DATE_MASK = "__/__/____";
+    const DATE_DIGIT_POSITIONS = [0, 1, 3, 4, 6, 7, 8, 9];
+
+    function dateMaskFromDigits(value) {
+      const dateDigits = String(value ?? "").replace(/\D/g, "").slice(0, 8);
+      const chars = DATE_MASK.split("");
+      dateDigits.split("").forEach((digit, index) => {
+        chars[DATE_DIGIT_POSITIONS[index]] = digit;
+      });
+      return chars.join("");
+    }
+
+    function dateMaskValue(value) {
+      const formatted = formatDateBR(value);
+      return dateMaskFromDigits(formatted);
+    }
+
+    function dateValueFromMask(value) {
+      const dateDigits = String(value ?? "").replace(/\D/g, "").slice(0, 8);
+      return dateDigits.length ? dateMaskFromDigits(dateDigits) : "";
+    }
+
+    function selectNextDateDigit(input) {
+      if (!input || typeof input.setSelectionRange !== "function") return;
+      const count = String(input.value || "").replace(/\D/g, "").slice(0, 8).length;
+      if (count >= DATE_DIGIT_POSITIONS.length) {
+        input.setSelectionRange(DATE_MASK.length, DATE_MASK.length);
+        return;
+      }
+      const position = DATE_DIGIT_POSITIONS[count];
+      input.setSelectionRange(position, position + 1);
+    }
+
+    function isValidDateBR(value) {
+      const match = String(value || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (!match) return false;
+      const day = Number(match[1]), month = Number(match[2]), year = Number(match[3]);
+      if (year < 1900 || year > 2200) return false;
+      const check = new Date(Date.UTC(year, month - 1, day));
+      return check.getUTCFullYear() === year && check.getUTCMonth() === month - 1 && check.getUTCDate() === day;
+    }
+
     function getCodeVariants(value) {
       const normalized = norm(value);
       if (!normalized) return [];
@@ -645,7 +687,7 @@
           <div class="details-grid">
             <div class="field">
               <label>Validade</label>
-              <input class="input" inputmode="numeric" data-field="validade" value="${esc(formatDateBR(p.validade))}" placeholder="dd/mm/aaaa" autocomplete="off">
+              <input class="input" inputmode="numeric" maxlength="10" data-field="validade" data-date-mask value="${esc(dateMaskValue(p.validade))}" aria-label="Validade no formato dia mês ano" autocomplete="off">
             </div>
 
             <div class="field">
@@ -781,6 +823,16 @@
 
     async function saveCurrentProduct() {
       if (!state.currentKey || !state.currentProduct || !state.originalProduct) return;
+      const changedBeforeValidation = getChangedFields();
+      if (changedBeforeValidation.includes("validade")) {
+        const validity = String(state.currentProduct.validade || "").trim();
+        if (validity && !isValidDateBR(validity)) {
+          setStatus("Validade incompleta ou inválida. Digite os 8 números de dia, mês e ano.", "err");
+          const input = document.querySelector('[data-field="validade"]');
+          input?.focus();
+          return;
+        }
+      }
       const { patch, changed } = buildPatch();
 
       if (!changed.length) {
@@ -967,13 +1019,28 @@
     document.addEventListener("input", (e) => {
       const field = e.target.dataset.field;
       if (!field) return;
+      if (field === "validade") {
+        const maskedValue = dateMaskFromDigits(e.target.value);
+        e.target.value = maskedValue;
+        updateLocalProduct(field, dateValueFromMask(maskedValue));
+        requestAnimationFrame(() => selectNextDateDigit(e.target));
+        return;
+      }
       updateLocalProduct(field, e.target.value);
+    });
+
+    document.addEventListener("focusin", (e) => {
+      if (!e.target.matches?.('[data-field="validade"]')) return;
+      requestAnimationFrame(() => {
+        e.target.value = dateMaskValue(state.currentProduct?.validade || "");
+        e.target.select();
+      });
     });
 
     document.addEventListener("change", (e) => {
       const field = e.target.dataset.field;
       if (field) {
-        updateLocalProduct(field, e.target.value);
+        updateLocalProduct(field, field === "validade" ? dateValueFromMask(e.target.value) : e.target.value);
         return;
       }
       if (e.target.id === "cameraCaptureInput" && e.target.files?.[0]) {
