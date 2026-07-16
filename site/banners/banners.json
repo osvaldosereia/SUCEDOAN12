@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-16T00:34:48.000Z",
+  "updated_at": "2026-07-16T02:01:23.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -2634,7 +2634,7 @@
     },
     {
       "id": "banner-produto-p-bu9h-1783890061736",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Doce de Figo Engenho Velho Colonial 400g",
       "alt": "Doce de Figo Engenho Velho Colonial 400g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -2670,7 +2670,7 @@
         "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T21:01:01.736Z",
-      "atualizado_em": "2026-07-12T21:01:01.736Z",
+      "atualizado_em": "2026-07-16T02:01:18.522Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -3114,7 +3114,7 @@
     },
     {
       "id": "banner-auto-p0061-20260713005117",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Rancheiro Rosquinha Coco 500g",
       "alt": "Rancheiro Rosquinha Coco 500g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -3207,7 +3207,10 @@
         "candidatos_avaliados": 17,
         "max_banners_por_espaco": 12,
         "capacidade_fila": 12,
-        "visiveis_por_vez": 4
+        "visiveis_por_vez": 4,
+        "desativado_por": "limite_maximo_por_espaco",
+        "desativado_em": "2026-07-16T02:01:23.000Z",
+        "limite_aplicado": 12
       },
       "grupo_id": "banner-auto-p0061-20260713005117",
       "asset_id": "banner-auto-p0061-20260713005117",
