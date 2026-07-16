@@ -405,6 +405,7 @@
       <nav class="tabs" aria-label="Navegação principal">
         <button class="btn red tab-reload-products" type="button" data-action="reload" title="Recarregar os produtos do Firebase">↻ Recarregar produtos</button>
         <button class="tab active" type="button" data-tab="produtos">Produtos</button>
+        <button class="tab" type="button" data-tab="nfe">Entrada de NF-e</button>
         <button class="tab" type="button" data-tab="leitura">Leitura rápida</button>
         <button class="tab" type="button" data-tab="cestas">Cestas básicas</button>
         <button class="tab" type="button" data-tab="kits">Kits promocionais</button>
@@ -448,6 +449,7 @@
       <h3>Abas do sistema</h3>
       <nav class="tabs drawer-tabs">
         <button class="tab active" type="button" data-tab="produtos">Produtos</button>
+        <button class="tab" type="button" data-tab="nfe">Entrada de NF-e</button>
         <button class="tab" type="button" data-tab="leitura">Leitura rápida</button>
         <button class="tab" type="button" data-tab="cestas">Cestas básicas</button>
         <button class="tab" type="button" data-tab="kits">Kits promocionais</button>
@@ -1364,7 +1366,7 @@
     renderScannerEditor();
     setScannerStatus(fromCamera?`Produto ${getName(p)} encontrado pela câmera.`:`Produto ${getName(p)} carregado.`, "ok");
   }
-  function renderTabs(){ $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===state.activeTab)); ["produtos","leitura","cestas","kits","notas","cadastros","integracoes","json"].forEach(t=>$("#tab-"+t)?.classList.toggle("hidden",t!==state.activeTab)); $("#backToProductsBtn")?.classList.toggle("hidden", state.activeTab==="produtos"); if(state.activeTab!=="leitura") stopScanner(); else {renderScannerEditor(); renderScannerHistory(); setTimeout(()=>{const input=$("#scannerCodeInput"); if(input) input.value=state.scannerCode||""; setScannerStatus(state.scannerStatus,state.scannerStatusType)},0)} }
+  function renderTabs(){ $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===state.activeTab)); ["produtos","nfe","leitura","cestas","kits","notas","cadastros","integracoes","json","banners"].forEach(t=>$("#tab-"+t)?.classList.toggle("hidden",t!==state.activeTab)); $("#backToProductsBtn")?.classList.toggle("hidden", state.activeTab==="produtos"); if(state.activeTab!=="leitura") stopScanner(); else {renderScannerEditor(); renderScannerHistory(); setTimeout(()=>{const input=$("#scannerCodeInput"); if(input) input.value=state.scannerCode||""; setScannerStatus(state.scannerStatus,state.scannerStatusType)},0)} }
   function renderSummary(){const st=makeStats(); $("#summary").innerHTML=[['Produtos',st.total_produtos],['Ativos',st.ativos],['Sem estoque',st.sem_estoque],['Sem GTIN',st.sem_gtin],['Sem NCM',st.sem_ncm],['Sem foto',st.sem_foto],['Cadastro incompleto',st.cadastro_incompleto],['Cestas',st.cestas],['Kits',st.kits],['Em kits',st.produtos_em_kits],['Notas abertas',state.anotacoes.filter(n=>!n.feito).length],['Pendências',(state.dirtyProducts||state.dirtyCestas||state.dirtyKits||state.dirtyMeta||state.dirtyNotes)?'Sim':'Não']].map(([l,v])=>`<div class="summary-card"><strong>${esc(v)}</strong><span>${esc(l)}</span></div>`).join("")}
   function renderFilterOptions(){ fillSelect("#f-categoria", uniq([...state.produtos.map(p=>p.categoria), ...state.meta.categorias.map(c=>c.categoria)])); fillSelect("#f-subcategoria", uniq([...state.produtos.map(p=>p.subcategoria), ...state.meta.categorias.map(c=>c.subcategoria)])); fillSelect("#f-subsubcategoria", uniq([...state.produtos.map(p=>p.subsubcategoria), ...state.meta.categorias.map(c=>c.subsubcategoria)])); fillSelect("#f-marca", uniq([...state.produtos.map(p=>p.marca), ...state.meta.marcas])); fillSelect("#f-fornecedor", uniq([...state.produtos.map(p=>p.fornecedor), ...state.meta.fornecedores.map(f=>f.nome)])); fillSelect("#f-tag", uniq([...state.produtos.flatMap(p=>parseTags(p.tags)), ...state.meta.tags])); }
   function fillSelect(sel, values){const el=$(sel); if(!el) return; const cur=el.value; const first=el.querySelector('option')?.outerHTML || '<option value="">Todos</option>'; el.innerHTML = first + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join(""); el.value = values.includes(cur)?cur:""}
@@ -7458,11 +7460,82 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   `;
   document.head.appendChild(daV12Style);
 
-  window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,saveLocal,renderProducts,renderSummary,openProduct,aiProductCadastro,aiProductImage};
+  
+  function daNfeDateTimestamp(value){
+    const raw=String(value||"").trim();
+    let match=raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if(match){
+      const date=new Date(Number(match[3]),Number(match[2])-1,Number(match[1]),12);
+      return date.getFullYear()===Number(match[3])&&date.getMonth()===Number(match[2])-1&&date.getDate()===Number(match[1])?date.getTime():NaN;
+    }
+    match=raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return match?new Date(Number(match[1]),Number(match[2])-1,Number(match[3]),12).getTime():NaN;
+  }
+  function daNfeEarlierValidity(current,incoming){
+    const currentTs=daNfeDateTimestamp(current),incomingTs=daNfeDateTimestamp(incoming);
+    if(!Number.isFinite(incomingTs))return String(current||"");
+    if(!Number.isFinite(currentTs))return String(incoming||"");
+    return incomingTs<currentTs?String(incoming):String(current);
+  }
+  function daNfeCollection(value){
+    if(Array.isArray(value))return value.slice();
+    if(value&&typeof value==="object")return Object.values(value);
+    return [];
+  }
+  async function syncNfeProductToFirebase(operation={}){
+    const key=String(operation.key||"").trim();
+    if(!key)throw new Error("Produto sem chave para salvar no Firebase.");
+    const local=productByKey(key);
+    if(local&&state.dirtyProductKeys.has(key)){
+      throw new Error(`${getName(local)} possui alterações pendentes no admin. Salve o produto antes de aplicar a NF-e.`);
+    }
+    const remote=await fetchJson(firebaseProductUrl(key));
+    const base=deepClone(remote&&typeof remote==="object"?remote:(local&&typeof local==="object"?local:{}));
+    const entry=deepClone(operation.entry||null);
+    const entries=daNfeCollection(base.entradas_nfe);
+    if(entry?.id&&entries.some(item=>String(item?.id||"")===String(entry.id))){
+      if(remote&&typeof remote==="object"){
+        if(local)replaceProductState(key,remote);else state.produtos.unshift({...remote,firebaseKey:remote.firebaseKey||key,id:remote.id||key});
+        state.productSyncMeta[key]=productSyncSnapshot(remote);
+      }
+      return {key,duplicate:true,product:remote||base};
+    }
+    Object.assign(base,deepClone(operation.patch||{}));
+    base.firebaseKey=base.firebaseKey||key;
+    base.id=base.id||key;
+    base.codigo=base.codigo||key;
+    if(entry?.id)entries.push(entry);
+    base.entradas_nfe=entries.slice(-200);
+    const delta=toNum(operation.stockDelta);
+    if(delta){
+      base.estoque=Math.max(0,Math.floor(toNum(remote?.estoque??base.estoque)+delta));
+      base.stock_updated_at=nowIso();
+    }else{
+      base.estoque=Math.max(0,Math.floor(toNum(base.estoque)));
+    }
+    const lot=deepClone(operation.lot||null);
+    if(lot?.id){
+      const lots=daNfeCollection(base.lotes);
+      if(!lots.some(item=>String(item?.id||"")===String(lot.id)))lots.push(lot);
+      base.lotes=lots.slice(-200);
+    }
+    if(operation.validity)base.validade=daNfeEarlierValidity(base.validade,operation.validity);
+    base.updated_at=nowIso();
+    base.last_update=Date.now();
+    await putJson(firebaseProductUrl(key),base);
+    if(local)replaceProductState(key,base);else state.produtos.unshift(deepClone(base));
+    state.productSyncMeta[key]=productSyncSnapshot(base);
+    clearProductDirtyState(key);
+    syncPendingProductsFlag();
+    saveLocal();
+    return {key,duplicate:false,product:base};
+  }
+
+  window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,syncNfeProductToFirebase,saveLocal,renderProducts,renderSummary,openProduct,aiProductCadastro,aiProductImage};
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
 </script>
-<script src="nfe-import.js?v=20260713-10"></script>
+<script src="nfe-import.js?v=20260716-1"></script>
 <script>
   // Ponte segura: o admin chama somente o webhook do Make; nenhum token do Bling/GitHub fica no navegador.
   (()=>{
