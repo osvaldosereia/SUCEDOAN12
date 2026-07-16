@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-16T02:01:53.000Z",
+  "updated_at": "2026-07-16T02:02:27.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -259,7 +259,7 @@
       "oferta": {},
       "automacao": {
         "desativado_por": "periodo_encerrado",
-        "desativado_em": "2026-07-16T02:01:53.000Z"
+        "desativado_em": "2026-07-16T02:02:27.000Z"
       },
       "desativado_em": "2026-07-14T23:45:37.459Z",
       "motivo_desativacao": "oferta_encerrada_ou_produto_vencido"
@@ -2636,78 +2636,6 @@
       }
     },
     {
-      "id": "banner-produto-p-bu9h-1783890061736",
-      "ativo": true,
-      "titulo": "Oferta · Doce de Figo Engenho Velho Colonial 400g",
-      "alt": "Doce de Figo Engenho Velho Colonial 400g em oferta na Dona Antônia",
-      "tipo_conteudo": "produto",
-      "texto_arte": "",
-      "origem": {
-        "tipo": "produto",
-        "valor": "177930177948741021",
-        "produtos": [
-          {
-            "firebaseKey": "177930177948741021",
-            "id": "177930177948741021",
-            "codigo": "P-BU9H",
-            "nome": "Doce de Figo Engenho Velho Colonial 400g",
-            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b56/2026/07/doce-de-figo-engenho-velho-colonial-400g-engenho-velho-pote-de-400g-chocolates-e-doces-chocolate-7898307830573-foto-atual-otimizada-20260711081620.webp"
-          }
-        ]
-      },
-      "exibicao": {
-        "local": "home.hero",
-        "alvo": "",
-        "ordem": 4
-      },
-      "imagem": "site/banners/ativos/banner-produto-p-bu9h-1783890061736/banner-1783890061736.webp",
-      "link": {
-        "tipo": "produto",
-        "valor": "P-BU9H"
-      },
-      "periodo": {
-        "inicio": "2026-07-12T04:00:00.0000000+00:00",
-        "fim": "2026-08-11T03:59:59.0000000+00:00",
-        "fuso_horario": "America/Cuiaba",
-        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
-        "encurtado_pelo_vencimento_produto": false
-      },
-      "criado_em": "2026-07-12T21:01:01.736Z",
-      "atualizado_em": "2026-07-16T02:01:48.582Z",
-      "geracao": {
-        "largura": 1024,
-        "altura": 1536,
-        "proporcao": "2:3",
-        "formato": "webp",
-        "compression": 38,
-        "asset_unico": true
-      },
-      "banner_inicio": "2026-07-12T21:01:00.000Z",
-      "banner_fim": "2026-07-20T02:59:00.000Z",
-      "controle": {
-        "retirada_automatica": true,
-        "validade_independente_da_oferta": false,
-        "exibir_validade_oferta_na_arte": false,
-        "duracao_dias": 8
-      },
-      "oferta": {
-        "preco_antigo": 15.9,
-        "preco_novo": 12.9,
-        "desconto_percentual": 19,
-        "validade_oferta": "2026-08-10T23:59:59-04:00",
-        "usar_validade_apenas_para_elegibilidade": true,
-        "exibir_validade_na_arte": false
-      },
-      "grupo_id": "banner-produto-p-bu9h-1783890061736",
-      "asset_id": "banner-produto-p-bu9h-1783890061736",
-      "exibicoes": [],
-      "automacao": {
-        "desativado_por": "limite_12_fila_espera",
-        "limite_aplicado": 12
-      },
-      "motivo_desativacao": "limite_12_fila_espera"
-    },
-    {
       "id": "banner-auto-95807313-20260712223252",
       "ativo": true,
       "titulo": "Oferta · Leite UHT Integral Tirol 1L",
@@ -3117,7 +3045,7 @@
     },
     {
       "id": "banner-auto-p0061-20260713005117",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Rancheiro Rosquinha Coco 500g",
       "alt": "Rancheiro Rosquinha Coco 500g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -3210,10 +3138,7 @@
         "candidatos_avaliados": 17,
         "max_banners_por_espaco": 12,
         "capacidade_fila": 12,
-        "visiveis_por_vez": 4,
-        "desativado_por": "limite_maximo_por_espaco",
-        "desativado_em": "2026-07-16T02:01:53.000Z",
-        "limite_aplicado": 12
+        "visiveis_por_vez": 4
       },
       "grupo_id": "banner-auto-p0061-20260713005117",
       "asset_id": "banner-auto-p0061-20260713005117",
@@ -7041,6 +6966,82 @@
         "fim_da_oferta": "2026-07-31T23:59:59-04:00",
         "fim_limitado_pelo_vencimento_produto": false
       }
+    },
+    {
+      "id": "banner-produto-p-bu9h-1783890061736",
+      "ativo": false,
+      "titulo": "Oferta · Doce de Figo Engenho Velho Colonial 400g",
+      "alt": "Doce de Figo Engenho Velho Colonial 400g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "177930177948741021",
+        "produtos": [
+          {
+            "firebaseKey": "177930177948741021",
+            "id": "177930177948741021",
+            "codigo": "P-BU9H",
+            "nome": "Doce de Figo Engenho Velho Colonial 400g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b56/2026/07/doce-de-figo-engenho-velho-colonial-400g-engenho-velho-pote-de-400g-chocolates-e-doces-chocolate-7898307830573-foto-atual-otimizada-20260711081620.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "marca",
+        "alvo": "Forno Velho",
+        "ordem": 4
+      },
+      "imagem": "site/banners/ativos/banner-produto-p-bu9h-1783890061736/banner-1783890061736.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P-BU9H"
+      },
+      "periodo": {
+        "inicio": "2026-07-12T04:00:00.000Z",
+        "fim": "2026-08-11T03:59:00.000Z"
+      },
+      "criado_em": "2026-07-12T21:01:01.736Z",
+      "atualizado_em": "2026-07-16T02:02:22.282Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 38,
+        "asset_unico": true,
+        "reutilizado_em_multiplos_locais": false
+      },
+      "banner_inicio": "2026-07-12T04:00:00.000Z",
+      "banner_fim": "2026-08-11T03:59:00.000Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": false,
+        "regra_duracao": "periodo_da_oferta",
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 30
+      },
+      "oferta": {
+        "preco_antigo": 15.9,
+        "preco_novo": 12.9,
+        "desconto_percentual": 19,
+        "validade_oferta": "2026-08-10T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "grupo_id": "banner-produto-p-bu9h-1783890061736",
+      "grupo_exibicao_id": "banner-produto-p-bu9h-1783890061736",
+      "asset_id": "banner-produto-p-bu9h-1783890061736",
+      "imagem_compartilhada": true,
+      "exibicao_indice": 1,
+      "exibicao_total": 1,
+      "exibicoes": [
+        {
+          "local": "marca",
+          "alvo": "Forno Velho",
+          "ordem": 4
+        }
+      ]
     }
   ]
 }
