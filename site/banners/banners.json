@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-16T02:03:29.000Z",
+  "updated_at": "2026-07-16T02:03:40.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -1378,65 +1378,6 @@
         "visiveis_por_vez": 4
       },
       "desativado_em": "2026-07-14T23:45:37.459Z"
-    },
-    {
-      "id": "banner-produto-59854062-1783817455580",
-      "ativo": false,
-      "titulo": "Oferta · Café Torrado e Moído Café Brasileiro Tradicional 250g",
-      "alt": "Café Torrado e Moído Café Brasileiro Tradicional 250g em oferta na Dona Antônia",
-      "tipo_conteudo": "produto",
-      "texto_arte": "",
-      "origem": {
-        "tipo": "produto",
-        "valor": "1776359854062",
-        "produtos": [
-          {
-            "firebaseKey": "1776359854062",
-            "id": "1776359854062",
-            "codigo": "59854062",
-            "nome": "Café Torrado e Moído Café Brasileiro Tradicional 250g",
-            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b38/2026/07/cafe-brasileiro-tradicional-250g-cafe-brasileiro-250g-cafe-da-manha-cafe-7891018427582-foto-atual-otimizada-20260711070130.webp"
-          }
-        ]
-      },
-      "exibicao": {
-        "local": "rotina.cafe.topo",
-        "alvo": "",
-        "ordem": 3
-      },
-      "imagem": "site/banners/ativos/banner-produto-59854062-1783817455580/banner-1783817455580.webp",
-      "link": {
-        "tipo": "produto",
-        "valor": "59854062"
-      },
-      "periodo": {
-        "inicio": "2026-07-11T04:00:00.0000000+00:00",
-        "fim": "2026-07-15T03:59:59.0000000+00:00",
-        "fuso_horario": "America/Cuiaba",
-        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
-        "encurtado_pelo_vencimento_produto": false
-      },
-      "criado_em": "2026-07-12T00:50:55.581Z",
-      "atualizado_em": "2026-07-14T23:45:37.459Z",
-      "geracao": {
-        "largura": 1024,
-        "altura": 1536,
-        "proporcao": "2:3",
-        "formato": "webp",
-        "compression": 38,
-        "asset_unico": true
-      },
-      "grupo_id": "banner-produto-59854062-1783817455580",
-      "asset_id": "banner-produto-59854062-1783817455580",
-      "exibicoes": [],
-      "controle": {
-        "preservado_no_json": true,
-        "limite_4_por_espaco": true
-      },
-      "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "oferta_encerrada_ou_produto_vencido"
     },
     {
       "id": "banner-produto-c0098-1783817500333",
@@ -7043,6 +6984,82 @@
         }
       ],
       "automacao": {}
+    },
+    {
+      "id": "banner-produto-59854062-1783817455580",
+      "ativo": true,
+      "titulo": "Oferta · Café Torrado e Moído Café Brasileiro Tradicional 250g",
+      "alt": "Café Torrado e Moído Café Brasileiro Tradicional 250g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776359854062",
+        "produtos": [
+          {
+            "firebaseKey": "1776359854062",
+            "id": "1776359854062",
+            "codigo": "59854062",
+            "nome": "Café Torrado e Moído Café Brasileiro Tradicional 250g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b38/2026/07/cafe-brasileiro-tradicional-250g-cafe-brasileiro-250g-cafe-da-manha-cafe-7891018427582-foto-atual-otimizada-20260711070130.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "marca",
+        "alvo": "Café Brasileiro",
+        "ordem": 3
+      },
+      "imagem": "site/banners/ativos/banner-produto-59854062-1783817455580/banner-1783817455580.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "59854062"
+      },
+      "periodo": {
+        "inicio": "2026-07-11T04:00:00.000Z",
+        "fim": "2026-07-21T03:59:00.000Z"
+      },
+      "criado_em": "2026-07-12T00:50:55.581Z",
+      "atualizado_em": "2026-07-16T02:03:35.454Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 38,
+        "asset_unico": true,
+        "reutilizado_em_multiplos_locais": false
+      },
+      "banner_inicio": "2026-07-11T04:00:00.000Z",
+      "banner_fim": "2026-07-21T03:59:00.000Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": false,
+        "regra_duracao": "periodo_da_oferta",
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 10
+      },
+      "oferta": {
+        "preco_antigo": 14.9,
+        "preco_novo": 12.9,
+        "desconto_percentual": 13,
+        "validade_oferta": "2026-07-14T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "grupo_id": "banner-produto-59854062-1783817455580",
+      "grupo_exibicao_id": "banner-produto-59854062-1783817455580",
+      "asset_id": "banner-produto-59854062-1783817455580",
+      "imagem_compartilhada": true,
+      "exibicao_indice": 1,
+      "exibicao_total": 1,
+      "exibicoes": [
+        {
+          "local": "marca",
+          "alvo": "Café Brasileiro",
+          "ordem": 3
+        }
+      ]
     }
   ]
 }
