@@ -2024,37 +2024,63 @@
     throw new Error(errors.join(" | "));
   }
 
+  function firebaseProductsSources(){
+    const configuredBase=String(state.settings.firebaseUrl||'').trim().replace(/\/+$/,'');
+    const configuredNode=String(state.settings.produtosNode||'produtos').trim().replace(/^\/+|\/+$/g,'');
+    const officialBase=String(defaultSettings.firebaseUrl||'').trim().replace(/\/+$/,'');
+    const officialNode=String(defaultSettings.produtosNode||'produtos').trim().replace(/^\/+|\/+$/g,'');
+    const seen=new Set();
+    return [[officialBase,officialNode],[configuredBase,configuredNode]].filter(([base,node])=>{
+      const key=`${base}/${node}`;
+      if(!base||!node||seen.has(key))return false;
+      seen.add(key);return true;
+    }).map(([base,node])=>`${base}/${node}.json`);
+  }
+
+  async function loadProductsFromFirebase({attempts=3}={}){
+    const errors=[],sources=firebaseProductsSources();
+    for(let attempt=1;attempt<=attempts;attempt++){
+      const timeout=attempt===1?10000:15000;
+      for(const source of sources){
+        try{
+          const separator=source.includes('?')?'&':'?';
+          const data=await fetchJson(`${source}${separator}_admin=${Date.now()}_${attempt}`,timeout);
+          const products=normalizeProducts(data);
+          if(products.length)return {products,source:'Firebase',firebaseUrl:source,attempt};
+          errors.push(`${source}: catálogo vazio na tentativa ${attempt}`);
+        }catch(error){errors.push(`${source}: ${error.message||error}`)}
+      }
+      if(attempt<attempts)await new Promise(resolve=>setTimeout(resolve,700*attempt));
+    }
+    throw new Error(errors.join(' | '));
+  }
+
   async function loadProductsWithFallback(){
     const errors=[];
     let cached=null;
     try{cached=await readProductsCache()}catch(error){errors.push(`Cache local: ${error.message||error}`)}
 
-    for(let attempt=1;attempt<=3;attempt++){
-      try{
-        const data=await fetchJson(firebaseUrl(state.settings.produtosNode),attempt===1?8000:12000);
-        const products=normalizeProducts(data);
-        if(products.length){writeProductsCache(products,"Firebase").catch(error=>console.warn("Cache de produtos não atualizado:",error));return {products,source:"Firebase"}}
-        errors.push(`Firebase retornou catálogo vazio (tentativa ${attempt})`);
-      }catch(error){errors.push(`Firebase (tentativa ${attempt}): ${error.message||error}`)}
-      if(attempt===1&&cached?.products?.length){
-        setTimeout(()=>refreshProductsSilently(),1800);
-        return {products:cached.products,source:"cache local seguro",warning:errors.join(" | ")};
-      }
-      if(attempt<3)await new Promise(resolve=>setTimeout(resolve,650*attempt));
-    }
+    // O cache já é exibido provisoriamente por loadData. Não finalize o carregamento
+    // com ele após a primeira demora: continue consultando o Firebase até esgotar
+    // as tentativas. Isso elimina a necessidade de clicar em "Recarregar dados".
+    try{
+      const firebase=await loadProductsFromFirebase({attempts:3});
+      writeProductsCache(firebase.products,'Firebase').catch(error=>console.warn('Cache de produtos não atualizado:',error));
+      return firebase;
+    }catch(error){errors.push(`Firebase: ${error.message||error}`)}
 
     try{
       const github=await loadProductsFromGithub();
-      writeProductsCache(github.products,github.source).catch(error=>console.warn("Cache de produtos não atualizado:",error));
-      return github;
+      writeProductsCache(github.products,github.source).catch(error=>console.warn('Cache de produtos não atualizado:',error));
+      return {...github,warning:errors.join(' | ')};
     }catch(error){errors.push(error.message||String(error))}
 
-    if(cached?.products?.length)return {products:cached.products,source:"cache local seguro",warning:errors.join(" | ")};
+    if(cached?.products?.length)return {products:cached.products,source:'cache local seguro',warning:errors.join(' | ')};
     if(Array.isArray(state.produtos)&&state.produtos.length){
-      console.warn("Não foi possível atualizar o catálogo; mantendo os produtos já carregados.",errors);
-      return {products:[...state.produtos],source:"memória da sessão",warning:errors.join(" | ")};
+      console.warn('Não foi possível atualizar o catálogo; mantendo os produtos já carregados.',errors);
+      return {products:[...state.produtos],source:'memória da sessão',warning:errors.join(' | ')};
     }
-    throw new Error(errors.join(" | "));
+    throw new Error(errors.join(' | '));
   }
 
   let productsSilentRefreshRunning=false;
@@ -2063,17 +2089,15 @@
     productsSilentRefreshRunning=true;
     try{
       let fresh=null;
-      try{
-        const data=await fetchJson(firebaseUrl(state.settings.produtosNode),12000),products=normalizeProducts(data);
-        if(products.length)fresh={products,source:"Firebase"};
-      }catch(error){console.warn("Atualização silenciosa pelo Firebase falhou:",error)}
-      if(!fresh){try{fresh=await loadProductsFromGithub()}catch(error){console.warn("Atualização silenciosa pelo GitHub falhou:",error)}}
+      try{fresh=await loadProductsFromFirebase({attempts:2})}
+      catch(error){console.warn('Atualização silenciosa pelo Firebase falhou:',error)}
+      if(!fresh){try{fresh=await loadProductsFromGithub()}catch(error){console.warn('Atualização silenciosa pelo GitHub falhou:',error)}}
       if(!fresh?.products?.length)return false;
       state.produtos=fresh.products;
       markProductsReloaded();
       await writeProductsCache(state.produtos,fresh.source).catch(()=>false);
       renderAll();
-      setStatus(`Produtos atualizados automaticamente: ${state.produtos.length} via ${fresh.source}`,"ok");
+      setStatus(`Produtos atualizados automaticamente: ${state.produtos.length} via ${fresh.source}`,'ok');
       return true;
     }finally{productsSilentRefreshRunning=false}
   }
@@ -2129,6 +2153,7 @@
       resetProductViewForStartup();
       const warningText=productWarning?" · catálogo anterior preservado após falha de atualização":"";
       setStatus(`Carregado: ${state.produtos.length} produtos via ${productSource}${warningText}, ${state.cestas.length} cestas, ${state.kits.length} kits`,productWarning?"warn":"ok");
+      if(productSource!=="Firebase")setTimeout(()=>refreshProductsSilently().catch(error=>console.warn(error)),5000);
     }catch(e){
       console.error(e);
       setStatus(`Não foi possível carregar os produtos: ${e.message||e}`,"err");
