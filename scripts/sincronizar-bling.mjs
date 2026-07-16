@@ -21,6 +21,30 @@ const number = value => {
 const hash = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 const SYNC_STOCK = /^(1|true|yes|sim)$/i.test(text(process.env.SYNC_STOCK));
+const keyName = value => text(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+const identity = value => text(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').toLowerCase();
+
+function sourceValue(source, ...names) {
+  for (const name of names) {
+    if (hasOwn(source, name) && source[name] !== undefined && source[name] !== null && text(source[name]) !== '') return source[name];
+  }
+  const wanted = new Set(names.map(keyName));
+  for (const [key, value] of Object.entries(source)) {
+    if (wanted.has(keyName(key)) && value !== undefined && value !== null && text(value) !== '') return value;
+  }
+  return undefined;
+}
+function sourceText(source, ...names) { return text(sourceValue(source, ...names)); }
+function sourceNumber(source, ...names) {
+  const value = sourceValue(source, ...names);
+  return value === undefined ? undefined : number(value);
+}
+function sourceBoolean(source, ...names) {
+  const value = sourceValue(source, ...names);
+  if (value === undefined) return undefined;
+  if (typeof value === 'boolean') return value;
+  return /^(1|true|sim|yes|s)$/i.test(text(value));
+}
 
 for (const key of ['FIREBASE_DATABASE_URL', 'BLING_CLIENT_ID', 'BLING_CLIENT_SECRET', 'BLING_REFRESH_TOKEN']) {
   if (!text(process.env[key])) throw new Error(`A secret ${key} não foi configurada.`);
@@ -78,7 +102,7 @@ async function token() {
 
 function optional(target, key, value) { if (value !== undefined && value !== null && text(value) !== '') target[key] = value; }
 function ncm(source) {
-  const value = source.ncm ?? source.NCM ?? source.Ncm ?? source.codigoNcm ?? source.codigo_ncm;
+  const value = sourceValue(source, 'ncm', 'codigoNcm', 'codigo_ncm');
   const digits = text(value).replace(/\D/g, '');
   if (!digits) return '';
   if (digits.length !== 8) throw new Error(`NCM invalido (${text(value)}): informe os 8 digitos`);
@@ -117,6 +141,86 @@ function sourceToPayload(source) {
   return payload;
 }
 
+function sourceCategoryPath(source) {
+  const raw = sourceText(source, 'categoria', 'categoriaProduto', 'categoria do produto', 'departamento');
+  return raw.split(/\s*(?:>>|>)\s*/).map(text).filter(Boolean);
+}
+function sourceSupplier(source) {
+  const nome = sourceText(source, 'fornecedor', 'nomeFornecedor', 'supplier');
+  if (!nome) return null;
+  return {
+    nome,
+    codigo: sourceText(source, 'codigoFornecedor', 'codigo fornecedor', 'codFornecedor', 'cod no fornecedor'),
+    descricao: sourceText(source, 'descricaoFornecedor', 'descricao do produto no fornecedor'),
+    precoCusto: sourceNumber(source, 'precoCusto', 'preco de custo'),
+    precoCompra: sourceNumber(source, 'precoCompra', 'preco de compra'),
+    garantia: sourceNumber(source, 'garantiaFornecedor', 'meses garantia no fornecedor')
+  };
+}
+function sourceToProduct(source) {
+  const codigo = sourceText(source, 'codigo', 'sku', 'id');
+  const nome = sourceText(source, 'nome', 'descricao', 'name');
+  if (!codigo || !nome) throw new Error('produto sem codigo ou descricao');
+  const payload = {
+    codigo,
+    nome,
+    preco: number(sourceValue(source, 'preco')),
+    unidade: sourceText(source, 'unidade') || 'UN',
+    situacao: sourceValue(source, 'ativo') === false || /^inativ/i.test(sourceText(source, 'situacao')) ? 'I' : 'A'
+  };
+  optional(payload, 'descricaoCurta', sourceText(source, 'descricaoCurta', 'descricao_curta', 'descricao curta'));
+  optional(payload, 'descricaoComplementar', sourceText(source, 'descricaoComplementar', 'descricao_complementar', 'descricao complementar'));
+  optional(payload, 'dataValidade', sourceText(source, 'dataValidade', 'data validade'));
+  optional(payload, 'pesoLiquido', sourceNumber(source, 'pesoLiquido', 'peso liquido'));
+  optional(payload, 'pesoBruto', sourceNumber(source, 'pesoBruto', 'peso bruto'));
+  optional(payload, 'volumes', sourceNumber(source, 'volumes'));
+  optional(payload, 'itensPorCaixa', sourceNumber(source, 'itensPorCaixa', 'itens p caixa', 'itens por caixa'));
+  optional(payload, 'gtin', sourceText(source, 'gtin', 'ean', 'gtin ean'));
+  optional(payload, 'gtinEmbalagem', sourceText(source, 'gtinEmbalagem', 'gtin embalagem', 'eanEmbalagem', 'ean embalagem', 'gtin ean da embalagem'));
+  optional(payload, 'tipoProducao', sourceText(source, 'tipoProducao', 'tipo producao'));
+  optional(payload, 'condicao', sourceText(source, 'condicao', 'condicao do produto'));
+  optional(payload, 'freteGratis', sourceBoolean(source, 'freteGratis', 'frete gratis'));
+  optional(payload, 'marca', sourceText(source, 'marca'));
+  optional(payload, 'observacoes', sourceText(source, 'observacoes'));
+  optional(payload, 'linkExterno', sourceText(source, 'linkExterno', 'link externo'));
+
+  const estoque = {};
+  optional(estoque, 'minimo', sourceNumber(source, 'estoqueMinimo', 'estoque minimo'));
+  optional(estoque, 'maximo', sourceNumber(source, 'estoqueMaximo', 'estoque maximo'));
+  optional(estoque, 'crossDocking', sourceNumber(source, 'crossDocking', 'cross docking'));
+  optional(estoque, 'localizacao', sourceText(source, 'localizacao'));
+  if (Object.keys(estoque).length) payload.estoque = estoque;
+
+  const dimensoes = {};
+  optional(dimensoes, 'largura', sourceNumber(source, 'largura', 'largura do produto'));
+  optional(dimensoes, 'altura', sourceNumber(source, 'altura', 'altura do produto'));
+  optional(dimensoes, 'profundidade', sourceNumber(source, 'profundidade', 'profundidade do produto'));
+  optional(dimensoes, 'unidadeMedida', sourceText(source, 'unidadeMedida', 'unidade de medida'));
+  if (Object.keys(dimensoes).length) payload.dimensoes = dimensoes;
+
+  const tributacao = {};
+  optional(tributacao, 'ncm', ncm(source));
+  optional(tributacao, 'origem', sourceNumber(source, 'origem'));
+  optional(tributacao, 'cest', sourceText(source, 'cest'));
+  optional(tributacao, 'valorIpiFixo', sourceNumber(source, 'valorIpiFixo', 'valor ipi fixo'));
+  optional(tributacao, 'classeEnquadramentoIpi', sourceText(source, 'classeEnquadramentoIpi', 'classe de enquadramento do ipi'));
+  optional(tributacao, 'codigoListaServicos', sourceText(source, 'codigoListaServicos', 'codigo da lista de servicos'));
+  optional(tributacao, 'spedTipoItem', sourceText(source, 'spedTipoItem', 'tipo do item'));
+  if (Object.keys(tributacao).length) payload.tributacao = tributacao;
+
+  const video = sourceText(source, 'video');
+  const imagens = sourceText(source, 'urlImagensExternas', 'url imagens externas');
+  if (video || imagens) {
+    payload.midia = {};
+    if (video) payload.midia.video = { url: video };
+    if (imagens) payload.midia.imagens = { externas: imagens.split(/\s*[;,]\s*/).filter(Boolean).map(link => ({ link })) };
+  }
+  const categoryPath = sourceCategoryPath(source);
+  const supplier = sourceSupplier(source);
+  const productGroup = sourceText(source, 'grupoProduto', 'grupo de produtos');
+  return { payload, categoryPath, supplier, productGroup, fingerprint: { payload, categoryPath, supplier, productGroup } };
+}
+
 async function firebaseProducts() {
   const url = `${process.env.FIREBASE_DATABASE_URL.replace(/\/$/, '')}/produtos.json`;
   const response = await fetchWithRetry(url, { headers: { Accept: 'application/json' } }, { label: 'Firebase' });
@@ -127,7 +231,7 @@ async function firebaseProducts() {
     if (!value || typeof value !== 'object') continue;
     try {
       const stock = sourceStock(value);
-      products.push({ firebaseKey: key, payload: sourceToPayload(value), stock });
+      products.push({ firebaseKey: key, ...sourceToProduct(value), stock });
     }
     catch (error) { skipped.push({ firebaseKey: key, reason: error.message }); }
   }
@@ -196,6 +300,141 @@ async function sendProduct(accessToken, existing, payload) {
   return existingId || body?.data?.id || null;
 }
 
+const authHeaders = accessToken => ({ Authorization: `Bearer ${accessToken}`, Accept: 'application/json', 'enable-jwt': '1' });
+const referenceKey = (parentId, descricao) => `${parentId ?? 'root'}|${identity(descricao)}`;
+
+async function blingCategories(accessToken) {
+  const byParentAndDescription = new Map();
+  for (let page = 1; page <= 1000; page++) {
+    const response = await fetchWithRetry(`${API_BASE}/categorias/produtos?pagina=${page}&limite=100`, { headers: authHeaders(accessToken) }, { label: `Categorias do Bling pagina ${page}` });
+    const rows = (await response.json())?.data || [];
+    for (const row of rows) {
+      if (row?.id !== undefined && text(row.descricao)) byParentAndDescription.set(referenceKey(row.categoriaPai?.id, row.descricao), row.id);
+    }
+    if (rows.length < 100) break;
+    await sleep(450);
+  }
+  return byParentAndDescription;
+}
+
+async function ensureCategoryPath(accessToken, path, categories) {
+  let parentId;
+  for (const descricao of path) {
+    const key = referenceKey(parentId, descricao);
+    let id = categories.get(key);
+    if (id !== undefined) {
+      report.categoriesReused++;
+    } else {
+      const payload = { descricao };
+      if (parentId !== undefined) payload.categoriaPai = { id: parentId };
+      const response = await fetchWithRetry(`${API_BASE}/categorias/produtos`, {
+        method: 'POST', headers: { ...authHeaders(accessToken), 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      }, { label: `Criar categoria ${descricao}` });
+      id = (await response.json())?.data?.id;
+      if (id === undefined || id === null) throw new Error(`Criar categoria ${descricao}: o Bling nao retornou o ID.`);
+      categories.set(key, id);
+      report.categoriesCreated++;
+      await sleep(450);
+    }
+    parentId = id;
+  }
+  return parentId;
+}
+
+async function blingContacts(accessToken) {
+  const byName = new Map();
+  for (let page = 1; page <= 1000; page++) {
+    const response = await fetchWithRetry(`${API_BASE}/contatos?pagina=${page}&limite=100`, { headers: authHeaders(accessToken) }, { label: `Contatos do Bling pagina ${page}` });
+    const rows = (await response.json())?.data || [];
+    for (const row of rows) if (row?.id !== undefined && text(row.nome) && !byName.has(identity(row.nome))) byName.set(identity(row.nome), row.id);
+    if (rows.length < 100) break;
+    await sleep(450);
+  }
+  return byName;
+}
+
+async function ensureSupplier(accessToken, supplier, contacts) {
+  const key = identity(supplier.nome);
+  let id = contacts.get(key);
+  if (id !== undefined) {
+    report.suppliersReused++;
+    return id;
+  }
+  // O contato e criado somente com nome e situacao. Documento, endereco e
+  // outros dados nao sao inventados pela automacao; podem ser completados no Bling.
+  const response = await fetchWithRetry(`${API_BASE}/contatos`, {
+    method: 'POST', headers: { ...authHeaders(accessToken), 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: supplier.nome, situacao: 'A' })
+  }, { label: `Criar fornecedor ${supplier.nome}` });
+  id = (await response.json())?.data?.id;
+  if (id === undefined || id === null) throw new Error(`Criar fornecedor ${supplier.nome}: o Bling nao retornou o ID.`);
+  contacts.set(key, id);
+  report.suppliersCreated++;
+  await sleep(450);
+  return id;
+}
+
+async function blingSupplierLinks(accessToken) {
+  const byProductAndSupplier = new Map();
+  for (let page = 1; page <= 1000; page++) {
+    const response = await fetchWithRetry(`${API_BASE}/produtos/fornecedores?pagina=${page}&limite=100`, { headers: authHeaders(accessToken) }, { label: `Fornecedores dos produtos pagina ${page}` });
+    const rows = (await response.json())?.data || [];
+    for (const row of rows) {
+      if (row?.id !== undefined && row.produto?.id !== undefined && row.fornecedor?.id !== undefined) {
+        byProductAndSupplier.set(`${row.produto.id}|${row.fornecedor.id}`, row.id);
+      }
+    }
+    if (rows.length < 100) break;
+    await sleep(450);
+  }
+  return byProductAndSupplier;
+}
+
+async function upsertSupplierLink(accessToken, productId, supplierId, supplier, links) {
+  const key = `${productId}|${supplierId}`;
+  const existingId = links.get(key);
+  const payload = { produto: { id: productId }, fornecedor: { id: supplierId }, padrao: true };
+  optional(payload, 'codigo', supplier.codigo);
+  optional(payload, 'descricao', supplier.descricao);
+  optional(payload, 'precoCusto', supplier.precoCusto);
+  optional(payload, 'precoCompra', supplier.precoCompra);
+  optional(payload, 'garantia', supplier.garantia);
+  const response = await fetchWithRetry(`${API_BASE}/produtos/fornecedores${existingId !== undefined ? `/${encodeURIComponent(existingId)}` : ''}`, {
+    method: existingId !== undefined ? 'PUT' : 'POST', headers: { ...authHeaders(accessToken), 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+  }, { label: `${existingId !== undefined ? 'Atualizar' : 'Criar'} fornecedor do produto ${productId}` });
+  const createdId = (await response.json().catch(() => ({})))?.data?.id;
+  const id = existingId ?? createdId;
+  if (id === undefined || id === null) throw new Error(`Fornecedor do produto ${productId}: o Bling nao retornou o ID.`);
+  links.set(key, id);
+  if (existingId !== undefined) report.supplierLinksUpdated++; else report.supplierLinksCreated++;
+  await sleep(450);
+  return id;
+}
+
+function configuredProductGroupId(name) {
+  if (!name || !text(process.env.BLING_PRODUCT_GROUPS_JSON)) return null;
+  try {
+    const groups = JSON.parse(process.env.BLING_PRODUCT_GROUPS_JSON);
+    const entry = Object.entries(groups).find(([description]) => identity(description) === identity(name));
+    return entry ? entry[1] : null;
+  } catch { throw new Error('BLING_PRODUCT_GROUPS_JSON precisa ser um JSON valido no formato {"Nome do grupo": 123}.'); }
+}
+
+async function resolveProductReferences(accessToken, product, references) {
+  const payload = structuredClone(product.payload);
+  if (product.categoryPath.length) payload.categoria = { id: await ensureCategoryPath(accessToken, product.categoryPath, references.categories) };
+  const supplierId = product.supplier ? await ensureSupplier(accessToken, product.supplier, references.contacts) : null;
+  const groupName = product.productGroup;
+  if (groupName) {
+    const groupId = configuredProductGroupId(groupName);
+    if (groupId !== null && groupId !== undefined && groupId !== '') {
+      payload.tributacao = { ...(payload.tributacao || {}), grupoProduto: { id: groupId } };
+    } else if (!report.unresolvedProductGroups.includes(groupName)) {
+      report.unresolvedProductGroups.push(groupName);
+    }
+  }
+  return { payload, supplierId };
+}
+
 async function defaultDeposit(accessToken) {
   const response = await fetchWithRetry(`${API_BASE}/depositos?pagina=1&limite=100&situacao=1`, {
     headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json', 'enable-jwt': '1' }
@@ -251,6 +490,8 @@ async function reconcileStock(accessToken, { productId, depositId, desired, curr
 const report = {
   startedAt: new Date().toISOString(), mode: APPLY ? 'production' : 'dry-run',
   stockSync: SYNC_STOCK, created: 0, updated: 0, unchanged: 0, deferred: 0,
+  categoriesCreated: 0, categoriesReused: 0, suppliersCreated: 0, suppliersReused: 0, supplierLinksCreated: 0, supplierLinksUpdated: 0,
+  unresolvedProductGroups: [],
   stockChecked: 0, stockUpdated: 0, stockUnchanged: 0, stockSkipped: 0,
   invalid: [], errors: [], batches: 0
 };
@@ -258,7 +499,9 @@ try {
   const state = readState();
   const { products, skipped } = await firebaseProducts();
   report.invalid.push(...skipped);
-  const changed = products.filter(product => state.products[product.firebaseKey]?.hash !== hash(product.payload));
+  // O fingerprint inclui categoria e fornecedor. Assim, uma mudanca nessas
+  // referencias gera uma nova sincronizacao mesmo que o preco nao mude.
+  const changed = products.filter(product => state.products[product.firebaseKey]?.hash !== hash(product.fingerprint));
   // Com SYNC_STOCK=yes, sempre conciliamos o saldo: uma venda ou ajuste no
   // Bling nao pode vencer a fonte oficial, mesmo sem nova edicao no Firebase.
   const stockCandidates = SYNC_STOCK ? products.filter(product => product.stock.present) : [];
@@ -280,6 +523,11 @@ try {
   if (APPLY && selected.length) {
     const accessToken = await token();
     const existingByCode = await blingProducts(accessToken);
+    const references = {
+      categories: selected.some(product => product.categoryPath.length) ? await blingCategories(accessToken) : new Map(),
+      contacts: selected.some(product => product.supplier) ? await blingContacts(accessToken) : new Map(),
+      supplierLinks: selected.some(product => product.supplier) ? await blingSupplierLinks(accessToken) : new Map()
+    };
     const deposit = SYNC_STOCK && report.stockChecked ? await defaultDeposit(accessToken) : null;
     const productIdsForStock = selected
       .filter(product => product.stock.present && SYNC_STOCK)
@@ -293,13 +541,26 @@ try {
           let madeBlingRequest = false;
           const existing = existingByCode.get(product.payload.codigo);
           let id = existing?.id || state.products[product.firebaseKey]?.blingId || null;
+          let supplierId = null;
           if (product.catalogChanged || !id) {
-            id = await sendProduct(accessToken, existing, product.payload);
+            const resolved = await resolveProductReferences(accessToken, product, references);
+            supplierId = resolved.supplierId;
+            id = await sendProduct(accessToken, existing, resolved.payload);
             madeBlingRequest = true;
-            state.products[product.firebaseKey] = { hash: hash(product.payload), blingId: id, codigo: product.payload.codigo, syncedAt: new Date().toISOString() };
+            state.products[product.firebaseKey] = { ...state.products[product.firebaseKey], hash: hash(product.fingerprint), blingId: id, codigo: product.payload.codigo, syncedAt: new Date().toISOString() };
             if (existing) report.updated++; else {
               report.created++;
               if (id) existingByCode.set(product.payload.codigo, { id, tipo: 'P', formato: 'S' });
+            }
+          }
+          if (product.supplier && id) {
+            supplierId ||= await ensureSupplier(accessToken, product.supplier, references.contacts);
+            const entry = state.products[product.firebaseKey] || {};
+            const supplierHash = hash(product.supplier);
+            if (entry.supplierHash !== supplierHash || !entry.supplierLinkId) {
+              const supplierLinkId = await upsertSupplierLink(accessToken, id, supplierId, product.supplier, references.supplierLinks);
+              state.products[product.firebaseKey] = { ...entry, supplierHash, supplierLinkId };
+              madeBlingRequest = true;
             }
           }
           if (product.stock.present && SYNC_STOCK) {
