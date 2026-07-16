@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-16T10:22:53.000Z",
+  "updated_at": "2026-07-16T11:56:19.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -6520,87 +6520,6 @@
       }
     },
     {
-      "id": "banner-produto-p0086-1784151256000",
-      "ativo": false,
-      "titulo": "Oferta · Nestlé Cereal Matinal Crunch Sachê 120g",
-      "alt": "Nestlé Cereal Matinal Crunch Sachê 120g em oferta na Dona Antônia",
-      "tipo_conteudo": "produto",
-      "texto_arte": "",
-      "origem": {
-        "tipo": "produto",
-        "valor": "1776338124295",
-        "produtos": [
-          {
-            "firebaseKey": "1776338124295",
-            "id": "1776338124295",
-            "codigo": "P0086",
-            "nome": "Nestlé Cereal Matinal Crunch Sachê 120g",
-            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b41/2026/07/nestle-cereal-matinal-crunch-sache-120g-nestle-120g-cafe-da-manha-cereais-7891000255445-foto-atual-otimizada-20260711044852.webp"
-          }
-        ]
-      },
-      "exibicao": {
-        "local": "categoria",
-        "alvo": "CAFÉ DA MANHÃ",
-        "ordem": 3
-      },
-      "imagem": "site/banners/ativos/banner-produto-p0086-1784151256000/banner-1784151256000.webp",
-      "link": {
-        "tipo": "produto",
-        "valor": "P0086"
-      },
-      "periodo": {
-        "inicio": "2026-07-15T21:34:16.000Z",
-        "fim": "2026-07-19T03:59:59.000Z",
-        "fuso_horario": "America/Cuiaba",
-        "regra_duracao": "periodo_da_oferta",
-        "duracao_efetiva_horas": 78.43,
-        "encurtado_pelo_vencimento_produto": false
-      },
-      "criado_em": "2026-07-15T21:34:16.000Z",
-      "atualizado_em": "2026-07-15T21:34:16.000Z",
-      "geracao": {
-        "largura": 1024,
-        "altura": 1536,
-        "proporcao": "2:3",
-        "formato": "webp",
-        "compression": 25,
-        "asset_unico": true
-      },
-      "grupo_id": "banner-produto-p0086-1784151256000",
-      "asset_id": "banner-produto-p0086-1784151256000",
-      "exibicoes": [],
-      "controle": {},
-      "oferta": {
-        "preco_anterior": 8.99,
-        "preco_oferta": 4.5,
-        "percentual_desconto": 50,
-        "inicio": null,
-        "fim": "2026-07-18T23:59:59-04:00"
-      },
-      "automacao": {
-        "automatico": true,
-        "requisicao_id": "",
-        "estrategia": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13",
-        "ordem_selecao": "espaco_primeiro_produto_depois",
-        "espaco_escolhido": "categoria",
-        "alvo_escolhido": "CAFÉ DA MANHÃ",
-        "relacao_contextual": "categoria",
-        "carga_antes": 0,
-        "carga_alvo_antes": 0,
-        "pontuacao_comercial": 273.4,
-        "limite_por_espaco": 12,
-        "dias_sem_repetir": 30,
-        "repeticao_estrita": true,
-        "duracao": "periodo_da_oferta",
-        "duracao_efetiva_horas": 78.43,
-        "fim_da_oferta": "2026-07-18T23:59:59-04:00",
-        "fim_limitado_pelo_vencimento_produto": false,
-        "desativado_por": "produto_excluido_inativo_sem_estoque_sem_preco_ou_vencido",
-        "desativado_em": "2026-07-16T04:13:42.000Z"
-      }
-    },
-    {
       "id": "banner-produto-p482-1784156654000",
       "ativo": true,
       "titulo": "Oferta · Apti Mistura para Bolo Coco 400g",
@@ -7461,16 +7380,5 @@
         "fim_limitado_pelo_vencimento_produto": false
       }
     }
-  ],
-  "migration": {
-    "layout_site_v10": {
-      "executado_em": "2026-07-16T04:12:24.989Z",
-      "strategy": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13",
-      "max_active_per_space": 12,
-      "moved": 22,
-      "automatic_rebalanced": 22,
-      "legacy_positions_fixed": 0,
-      "deactivated_overflow": 0
-    }
-  }
+  ]
 }
