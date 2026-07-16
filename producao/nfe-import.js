@@ -56,6 +56,7 @@
   const randomId = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
   function discardDrafts(items = model.items) {
+    items.filter(item => item && !item.isDraft).forEach(item => restoreAutoPreview(item));
     items.filter(item => item?.isDraft && item.key).forEach(item => removeNfeDraftProduct?.(item.key));
   }
 
@@ -375,6 +376,9 @@
           validity: model.globalValidity,
           validityMode: 'earliest',
           noExpiry: false,
+          original: null,
+          autoFieldValues: {},
+          manualCardFields: {},
           choices: {
             name: 'old',
             gtin: 'old',
@@ -413,6 +417,7 @@
       if (product) item.key = getKey(product);
       item.duplicate = model.globalDuplicate || registeredGroups.has(item.groupKey) || alreadyApplied(item, product);
       if (product) {
+        item.original = snapshotProduct(product);
         item.choices.ncm = product.ncm ? 'old' : 'nfe';
         item.choices.packaging = product.embalagem ? 'old' : 'nfe';
         item.choices.gtin = (product.gtin || product.ean) ? 'old' : 'nfe';
@@ -421,6 +426,7 @@
 
     recalculateAll();
     model.items.filter(item => !item.key).forEach(item => createDraftForItem(item));
+    model.items.filter(item => !item.duplicate).forEach(item => syncCalculatedPreview(item, { resetCalculated: true }));
     const duplicates = model.items.filter(item => item.duplicate).length;
     model.message = model.globalDuplicate
       ? `NF-e ${note.key} já importada em ${model.importRecord?.concluida_em || 'data anterior'}. A nota inteira foi bloqueada para não duplicar o estoque.`
@@ -488,8 +494,22 @@
     `;
   }
 
-  function currentValue(product, field) {
+  function snapshotProduct(product) {
+    return {
+      name: product?.nome || product?.name || '',
+      gtin: product?.gtin || product?.ean || '',
+      ncm: product?.ncm || '',
+      packaging: product?.embalagem || '',
+      cost: number(product?.preco_custo),
+      price: number(product?.preco),
+      stock: number(product?.estoque),
+      validity: String(product?.validade || '')
+    };
+  }
+
+  function currentValue(item, product, field) {
     if (!product) return '';
+    if (item?.original && Object.prototype.hasOwnProperty.call(item.original, field)) return item.original[field];
     const map = {
       name: product.nome || product.name || '',
       gtin: product.gtin || product.ean || '',
@@ -499,6 +519,86 @@
       price: number(product.preco)
     };
     return map[field];
+  }
+
+  function earlierValidity(current, incoming) {
+    const currentTime = dateTimestamp(current);
+    const incomingTime = dateTimestamp(incoming);
+    if (!Number.isFinite(currentTime)) return String(incoming || '');
+    if (!Number.isFinite(incomingTime)) return String(current || '');
+    return incomingTime < currentTime ? String(incoming) : String(current);
+  }
+
+  function projectedStock(item, product = selectedProduct(item)) {
+    const base = item?.original ? number(item.original.stock) : number(product?.estoque);
+    return round(base + (item?.addStock ? number(item.incomingUnits) : 0));
+  }
+
+  function restoreAutoPreview(item) {
+    const product = selectedProduct(item);
+    if (!product || product.__nfe_draft || !item?.original || item.done) return;
+    const originalByField = {
+      nome: item.original.name, gtin: item.original.gtin, ncm: item.original.ncm,
+      embalagem: item.original.packaging, preco_custo: item.original.cost,
+      preco: item.original.price, validade: item.original.validity
+    };
+    Object.entries(item.autoFieldValues || {}).forEach(([field, autoValue]) => {
+      if (item.manualCardFields?.[field]) return;
+      if (String(product[field] ?? '') !== String(autoValue ?? '')) return;
+      product[field] = originalByField[field] ?? product[field];
+    });
+    item.autoFieldValues = {};
+  }
+
+  function syncCalculatedPreview(item, { resetCalculated = false } = {}) {
+    const product = selectedProduct(item);
+    if (!product || item.done || item.duplicate || model.globalDuplicate) return;
+    const isDraft = !!product.__nfe_draft;
+    item.manualCardFields = item.manualCardFields || {};
+    item.autoFieldValues = item.autoFieldValues || {};
+    if (resetCalculated) {
+      delete item.manualCardFields.preco_custo;
+      delete item.manualCardFields.preco;
+    }
+
+    const assignAuto = (field, value) => {
+      if (item.manualCardFields[field]) return;
+      if (String(product[field] ?? '') === String(value ?? '')) return;
+      product[field] = value;
+      product.last_update = Date.now();
+      product.updated_at = nowIso();
+      item.autoFieldValues[field] = value;
+    };
+
+    if (isDraft || item.choices.cost === 'nfe') assignAuto('preco_custo', round(item.unitCost));
+    if (isDraft || item.choices.price === 'nfe') assignAuto('preco', round(item.salePrice));
+
+    if (item.noExpiry) {
+      if (isDraft) assignAuto('validade', '');
+      return;
+    }
+    if (!validDate(item.validity)) return;
+    const originalValidity = isDraft ? '' : String(item.original?.validity || product.validade || '');
+    if (item.validityMode === 'keep' && !isDraft) assignAuto('validade', originalValidity);
+    else if (item.validityMode === 'replace') assignAuto('validade', item.validity);
+    else assignAuto('validade', earlierValidity(originalValidity, item.validity));
+  }
+
+  function syncChoicePreview(item, field) {
+    const product = selectedProduct(item);
+    if (!product || product.__nfe_draft) return;
+    const targetByField = { name: 'nome', gtin: 'gtin', ncm: 'ncm', packaging: 'embalagem', cost: 'preco_custo', price: 'preco' };
+    const target = targetByField[field];
+    if (!target) return;
+    item.manualCardFields = item.manualCardFields || {};
+    item.autoFieldValues = item.autoFieldValues || {};
+    delete item.manualCardFields[target];
+    const value = item.choices[field] === 'nfe' ? importedValue(item, field) : item.original?.[field];
+    if (value === undefined) return;
+    product[target] = value;
+    product.last_update = Date.now();
+    product.updated_at = nowIso();
+    item.autoFieldValues[target] = value;
   }
 
   function importedValue(item, field) {
@@ -522,7 +622,7 @@
     return `
       <tr>
         <th>${safe(label)}</th>
-        <td><label><input type="radio" name="${safe(item.id + field)}" data-nfe-choice="${safe(field)}" value="old" ${choice === 'old' ? 'checked' : ''}> ${safe(formatField(field, currentValue(product, field)))}</label></td>
+        <td><label><input type="radio" name="${safe(item.id + field)}" data-nfe-choice="${safe(field)}" value="old" ${choice === 'old' ? 'checked' : ''}> ${safe(formatField(field, currentValue(item, product, field)))}</label></td>
         <td><label><input type="radio" name="${safe(item.id + field)}" data-nfe-choice="${safe(field)}" value="nfe" ${choice === 'nfe' ? 'checked' : ''}> ${safe(formatField(field, importedValue(item, field)))}</label></td>
       </tr>
     `;
@@ -549,7 +649,9 @@
     const duplicate = item.duplicate || alreadyApplied(item, product);
     const statusClass = item.done ? 'green' : duplicate ? 'red' : isDraft ? 'gold' : product ? 'green' : 'red';
     const statusText = item.done ? 'Entrada aplicada' : duplicate ? 'Esta NF-e já foi aplicada' : isDraft ? 'Produto novo — cadastro completo' : product ? 'Produto encontrado' : 'Produto sem correspondência';
-    const currentValidity = product?.validade || 'não cadastrada';
+    const currentValidity = (!isDraft && item.original && !item.done ? item.original.validity : product?.validade) || 'não cadastrada';
+    const currentStock = !isDraft && item.original && !item.done ? item.original.stock : number(product?.estoque);
+    const stockAfterEntry = projectedStock(item, product);
     const futureValidity = item.noExpiry ? 'sem validade' : (item.validity || 'não informada');
 
     return `
@@ -560,7 +662,7 @@
             <h3>${safe(item.name)}</h3>
             <small>EAN ${safe(item.ean || 'não informado')} · código fornecedor ${safe(item.supplierCodes.join(', ') || '—')} · linha(s) ${safe(item.lines.join(', '))}</small>
           </div>
-          ${product ? `<div class="nfe-current"><strong>${safe(getName(product))}</strong><small>Estoque atual: ${number(product.estoque)} · validade atual: ${safe(currentValidity)}</small></div>` : ''}
+          ${product ? `<div class="nfe-current"><strong>${safe(getName(product))}</strong><small>Estoque atual: ${number(currentStock)} · após entrada: ${stockAfterEntry} · validade atual: ${safe(currentValidity)}</small></div>` : ''}
         </div>
 
         <div class="nfe-metrics">
@@ -624,7 +726,7 @@
           </div>
         ` : `<div class="notice red">Não foi possível preparar o cadastro completo deste produto. Recarregue o XML.</div>`}
 
-        ${product ? `<div class="nfe-full-product-card">${renderProductWorkbench(product,model.globalDuplicate||duplicate||item.done?{}:{context:'nfe',itemId:item.id})}</div>` : ''}
+        ${product ? `<div class="nfe-full-product-card">${renderProductWorkbench(product,model.globalDuplicate||duplicate||item.done?{}:{context:'nfe',itemId:item.id,stockPreview:stockAfterEntry})}</div>` : ''}
       </article>
     `;
   }
@@ -758,7 +860,7 @@
       price: 'preco'
     };
     Object.entries(map).forEach(([field, target]) => {
-      if (item.choices[field] === 'nfe') patch[target] = importedValue(item, field);
+      if (item.choices[field] === 'nfe' && !item.manualCardFields?.[target]) patch[target] = importedValue(item, field);
     });
     if (item.ean && norm(item.ean) !== norm(product.gtin || product.ean)) {
       patch.ean_aliases = [...new Set([
@@ -1029,6 +1131,13 @@
     const item = itemFromElement(target);
     if (!item) return;
 
+    if (target.dataset.cardField) {
+      item.manualCardFields = item.manualCardFields || {};
+      item.manualCardFields[target.dataset.cardField] = true;
+      if (item.autoFieldValues) delete item.autoFieldValues[target.dataset.cardField];
+      return;
+    }
+
     if (target.hasAttribute('data-nfe-search')) {
       item.search = target.value;
       item.searched = false;
@@ -1080,11 +1189,31 @@
       return;
     }
 
+    if (target.id === 'nfeMargin') {
+      model.margin = Math.min(95, Math.max(0, number(target.value)));
+      model.items.forEach(item => {
+        if (!item.isDraft) item.choices.price = 'nfe';
+        recalculateItem(item);
+        syncCalculatedPreview(item, { resetCalculated: true });
+      });
+      render();
+      return;
+    }
+
     const item = itemFromElement(target);
     if (!item) return;
 
+    if (target.dataset.cardField) {
+      item.manualCardFields = item.manualCardFields || {};
+      item.manualCardFields[target.dataset.cardField] = true;
+      if (item.autoFieldValues) delete item.autoFieldValues[target.dataset.cardField];
+      return;
+    }
+
     if (target.dataset.nfeChoice) {
-      item.choices[target.dataset.nfeChoice] = target.value;
+      const choiceField = target.dataset.nfeChoice;
+      item.choices[choiceField] = target.value;
+      syncChoicePreview(item, choiceField);
       render();
       return;
     }
@@ -1095,14 +1224,24 @@
     if (field === 'multiplier') {
       item.multiplier = Math.max(1, Math.floor(number(target.value) || 1));
       item.multiplierSource = 'Ajustado manualmente';
+      if (!item.isDraft) {
+        item.choices.cost = 'nfe';
+        item.choices.price = 'nfe';
+      }
       recalculateItem(item);
+      syncCalculatedPreview(item, { resetCalculated: true });
       render();
     } else if (field === 'validityMode') {
       item.validityMode = target.value;
+      syncCalculatedPreview(item);
+      render();
+    } else if (field === 'validity') {
+      syncCalculatedPreview(item);
       render();
     } else if (field === 'addStock' || field === 'skipped' || field === 'noExpiry') {
       item[field] = target.checked;
       if (field === 'noExpiry' && target.checked) item.validity = '';
+      syncCalculatedPreview(item);
       render();
     }
   });
@@ -1149,8 +1288,7 @@
       model.items.forEach(row => {
         row.validity = value;
         row.noExpiry = false;
-        const product = selectedProduct(row);
-        if (product?.__nfe_draft) product.validade = value;
+        syncCalculatedPreview(row);
       });
       model.message = `Validade ${value} aplicada a todos os produtos da nota.`;
       model.messageType = 'green';
@@ -1172,9 +1310,13 @@
       item.duplicate = alreadyApplied(item);
       const product = selectedProduct(item);
       if (product) {
+        item.original = snapshotProduct(product);
+        item.autoFieldValues = {};
+        item.manualCardFields = {};
         item.choices.ncm = product.ncm ? 'old' : 'nfe';
         item.choices.packaging = product.embalagem ? 'old' : 'nfe';
         item.choices.gtin = (product.gtin || product.ean) ? 'old' : 'nfe';
+        syncCalculatedPreview(item, { resetCalculated: true });
       }
       render();
       return;
