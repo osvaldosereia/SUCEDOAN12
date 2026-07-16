@@ -780,6 +780,8 @@
 
     const ignoredGroupKeys = model.items.filter(row => row.skipped).map(row => row.groupKey);
     let importStarted = false;
+    let productWriteCompleted = false;
+    const productWasAlreadyApplied = !!(product && alreadyApplied(item, product));
     try {
       model.importRecord = await beginNfeImport({
         note: model.note,
@@ -789,7 +791,7 @@
       });
       importStarted = true;
 
-      if (product && alreadyApplied(item, product)) {
+      if (productWasAlreadyApplied) {
         model.importRecord = await finishNfeImportItem({
           noteKey: model.note.key,
           groupKey: item.groupKey,
@@ -856,6 +858,7 @@
         validity: item.noExpiry ? '' : item.validity,
         validityMode: item.validityMode
       });
+      productWriteCompleted = !result?.duplicate;
 
       model.importRecord = await finishNfeImportItem({
         noteKey: model.note.key,
@@ -884,7 +887,13 @@
       if (importStarted && typeof abortNfeImport === 'function') {
         await abortNfeImport({ noteKey: model.note?.key, error: error.message }).catch(() => {});
       }
-      throw error;
+      if (productWriteCompleted) {
+        throw new Error(`ATENÇÃO: o produto e o estoque foram salvos no Firebase, mas o registro final da NF-e falhou: ${error.message} Reabra o mesmo XML para o sistema conciliar sem somar novamente.`);
+      }
+      if (productWasAlreadyApplied) {
+        throw new Error(`A entrada deste produto já estava no Firebase, mas não foi possível atualizar o controle da NF-e: ${error.message} Nenhum estoque foi somado nesta tentativa.`);
+      }
+      throw new Error(`${error.message} Nenhum produto foi cadastrado e nenhum estoque foi alterado nesta tentativa.`);
     }
   }
 
@@ -1037,7 +1046,7 @@
       file.text()
         .then(parseXml)
         .catch(error => {
-          model.message = error.message;
+          model.message = `${error.message} O XML não foi aplicado; nenhum produto ou estoque foi alterado.`;
           model.messageType = 'red';
           render();
         });
@@ -1094,7 +1103,7 @@
     if (action === 'read-pasted') {
       runUiAction(button, 'Verificando código do XML...', () => parseXml($('nfePaste')?.value || ''))
         .catch(error => {
-          model.message = error.message;
+          model.message = `${error.message} O XML não foi aplicado; nenhum produto ou estoque foi alterado.`;
           model.messageType = 'red';
           render();
         });
