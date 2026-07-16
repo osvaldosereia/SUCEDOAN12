@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-16T08:23:08.000Z",
+  "updated_at": "2026-07-16T10:22:53.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -7379,6 +7379,85 @@
         "duracao": "periodo_da_oferta",
         "duracao_efetiva_horas": 403.64,
         "fim_da_oferta": "2026-08-01T23:59:59-04:00",
+        "fim_limitado_pelo_vencimento_produto": false
+      }
+    },
+    {
+      "id": "banner-produto-33687210-1784197307000",
+      "ativo": true,
+      "titulo": "Oferta · Gatorade Morango 500ml",
+      "alt": "Gatorade Morango 500ml em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338132825",
+        "produtos": [
+          {
+            "firebaseKey": "1776338132825",
+            "id": "1776338132825",
+            "codigo": "33687210",
+            "nome": "Gatorade Morango 500ml",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b41/2026/07/gatorade-morango-500ml-gatorade-500ml-sucos-refri-e-energeticos-isotonico-33687210-foto-atual-otimizada-20260711065806.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "produto",
+        "alvo": "1776338132825",
+        "ordem": 2
+      },
+      "imagem": "site/banners/ativos/banner-produto-33687210-1784197307000/banner-1784197307000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "33687210"
+      },
+      "periodo": {
+        "inicio": "2026-07-16T10:21:47.000Z",
+        "fim": "2026-07-27T03:59:59.000Z",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta",
+        "duracao_efetiva_horas": 257.64,
+        "encurtado_pelo_vencimento_produto": false
+      },
+      "criado_em": "2026-07-16T10:21:47.000Z",
+      "atualizado_em": "2026-07-16T10:21:47.000Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-33687210-1784197307000",
+      "asset_id": "banner-produto-33687210-1784197307000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 6.29,
+        "preco_oferta": 3.77,
+        "percentual_desconto": 40,
+        "inicio": null,
+        "fim": "2026-07-26T23:59:59-04:00"
+      },
+      "automacao": {
+        "automatico": true,
+        "requisicao_id": "",
+        "estrategia": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "produto",
+        "alvo_escolhido": "1776338132825",
+        "relacao_contextual": "produto",
+        "carga_antes": 1,
+        "carga_alvo_antes": 0,
+        "pontuacao_comercial": 198.71,
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "repeticao_estrita": true,
+        "duracao": "periodo_da_oferta",
+        "duracao_efetiva_horas": 257.64,
+        "fim_da_oferta": "2026-07-26T23:59:59-04:00",
         "fim_limitado_pelo_vencimento_produto": false
       }
     }
