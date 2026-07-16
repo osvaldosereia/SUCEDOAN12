@@ -660,7 +660,6 @@
   const defaultSettings = {
     firebaseUrl: "https://cedar-chemist-310801-default-rtdb.firebaseio.com",
     produtosNode: "produtos",
-    nfeImportNode: "nfe_importadas",
     metaNode: "produtos_meta",
     cestasNode: "cestas",
     kitsNode: "kitspromocionais",
@@ -7499,36 +7498,43 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     return key;
   }
 
-  function daNfeImportUrl(noteKey){
-    const base=String(state.settings.firebaseUrl||"").replace(/\/$/,"");
-    const node=String(state.settings.nfeImportNode||"nfe_importadas").replace(/^\/+|\/+$/g,"");
-    if(!base)throw new Error("Firebase não configurado no admin.");
-    return `${base}/${node}/${encodeURIComponent(daNfeImportKey(noteKey))}.json`;
+  function daNfeRegistryPath(noteKey){
+    return `fiscal/nfe-importadas/registros/${daNfeImportKey(noteKey)}.json`;
   }
 
-  async function daNfeReadImport(noteKey,withEtag=false){
-    const headers={Accept:"application/json"};
-    if(withEtag)headers["X-Firebase-ETag"]="true";
-    const response=await fetch(daNfeImportUrl(noteKey),{cache:"no-store",headers});
-    if(!response.ok)throw new Error(`Firebase registro NF-e: ${response.status}`);
-    return {record:await response.json(),etag:response.headers.get("ETag")||response.headers.get("etag")||"null_etag"};
+  async function daNfeReadImport(noteKey){
+    readSettingsFromUi();
+    if(!state.settings.githubToken)return {record:null,file:null,path:daNfeRegistryPath(noteKey)};
+    const path=daNfeRegistryPath(noteKey);
+    const file=await githubContent(path);
+    if(!file)return {record:null,file:null,path};
+    try{
+      return {record:JSON.parse(daNfeDecodeGithubText(file)),file,path};
+    }catch{
+      throw new Error(`O registro da NF-e ${daNfeImportKey(noteKey)} no GitHub está inválido. Nenhum produto foi alterado.`);
+    }
   }
 
   async function daNfeMutateImport(noteKey,updater){
+    readSettingsFromUi();
+    const s=state.settings;
+    if(!s.githubToken||!s.githubOwner||!s.githubRepo)throw new Error("Configure token, owner e repositório do GitHub. Nenhum produto foi alterado.");
+    const path=daNfeRegistryPath(noteKey);
+    const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}`;
     for(let attempt=1;attempt<=7;attempt++){
-      const current=await daNfeReadImport(noteKey,true);
+      const current=await daNfeReadImport(noteKey);
       const next=await updater(deepClone(current.record||{}));
       if(next===undefined)return current.record||null;
-      const response=await fetch(daNfeImportUrl(noteKey),{
-        method:"PUT",cache:"no-store",
-        headers:{Accept:"application/json","Content-Type":"application/json","if-match":current.etag},
-        body:JSON.stringify(next)
-      });
-      if(response.ok)return response.json();
-      if(response.status!==412)throw new Error(`Firebase registro NF-e: ${response.status}`);
-      await new Promise(resolve=>setTimeout(resolve,120*attempt));
+      next.registro_path=path;
+      const body={message:`Atualiza registro da NF-e ${daNfeImportKey(noteKey)}`,branch:s.githubBranch,content:b64(JSON.stringify(next,null,2))};
+      if(current.file?.sha)body.sha=current.file.sha;
+      const response=await fetch(url,{method:"PUT",cache:"no-store",headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},body:JSON.stringify(body)});
+      if(response.ok)return next;
+      const detail=await response.text();
+      if(![409,422].includes(response.status))throw new Error(`GitHub registro NF-e: ${response.status} ${detail.slice(0,180)}. Nenhum produto foi alterado.`);
+      await new Promise(resolve=>setTimeout(resolve,180*attempt));
     }
-    throw new Error("Outra operação alterou esta NF-e ao mesmo tempo. Tente novamente.");
+    throw new Error("Outra operação alterou esta NF-e ao mesmo tempo. Nenhum produto foi alterado; tente novamente.");
   }
 
   function daNfeDecodeGithubText(file){
@@ -7546,7 +7552,7 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   }
 
   async function inspectNfeImport(noteKey){
-    return (await daNfeReadImport(noteKey,false)).record||null;
+    return (await daNfeReadImport(noteKey)).record||null;
   }
 
   async function beginNfeImport({note,rawXml,xmlHash,totalItems}={}){
@@ -7744,7 +7750,7 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
 </script>
-<script src="nfe-import.js?v=20260716-5"></script>
+<script src="nfe-import.js?v=20260716-6"></script>
 <script>
   // Ponte segura: o admin chama somente o webhook do Make; nenhum token do Bling/GitHub fica no navegador.
   (()=>{
