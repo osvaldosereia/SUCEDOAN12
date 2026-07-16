@@ -2092,17 +2092,20 @@
     let productSource="";
     let productWarning="";
     try{
-      const [p,m,c,k]=await Promise.allSettled([
-        loadProductsWithFallback(),
-        loadAdminMetaFromGithub(),
-        loadCestasFromGithub(),
-        loadKitsFromGithub()
-      ]);
+      const productsPromise=loadProductsWithFallback();
+      const metaPromise=loadAdminMetaFromGithub();
+      const basketsPromise=loadCestasFromGithub();
+      const kitsPromise=loadKitsFromGithub();
+      const p=await productsPromise.then(value=>({status:"fulfilled",value}),reason=>({status:"rejected",reason}));
 
       if(p.status==="fulfilled"){
         state.produtos=p.value.products;
         productSource=p.value.source||"fonte configurada";
         productWarning=p.value.warning||"";
+        markProductsReloaded();
+        resetProductViewForStartup();
+        renderAll();
+        setStatus(`Produtos disponíveis: ${state.produtos.length} via ${productSource}. Carregando dados auxiliares...`,productWarning?"warn":"ok");
       }else{
         console.error("Nenhuma fonte de produtos pôde ser carregada.",p.reason);
         if(!state.produtos.length)throw p.reason;
@@ -2110,6 +2113,7 @@
         productWarning=p.reason?.message||String(p.reason||"");
       }
 
+      const [m,c,k]=await Promise.allSettled([metaPromise,basketsPromise,kitsPromise]);
       const readLocalJson=(key,fallback)=>{
         try{return JSON.parse(localStorage.getItem(key)||fallback)}catch{return JSON.parse(fallback)}
       };
@@ -6763,26 +6767,82 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     }
   })();
 
-  /* ===== Painel de regras das ofertas automáticas ===== */
+  /* ===== Ofertas automáticas · regras, histórico e reativação ===== */
   (function daEnableAutomaticOffersPanel(){
     const CONFIG_PATH="site/ofertas-automaticas.json";
     const STATE_PATH="site/ofertas-automaticas-estado.json";
-    const DEFAULT_CONFIG={versao:1,ativo:true,exigir_quantidade_completa:true,timezone:"America/Sao_Paulo",atualizado_em:null,regras:[]};
-    const DEFAULT_STATE={versao:1,ultima_execucao:null,ultima_execucao_status:"nunca_executada",ofertas_ativas:[],historico_produtos:{},execucoes:[]};
-    state.offerAutomation={config:deepClone(DEFAULT_CONFIG),runtime:deepClone(DEFAULT_STATE),loading:false,saving:false,running:false,dirty:false,error:"",message:""};
+    const HISTORY_PATH="site/ofertas-historico.json";
+    const DEFAULT_CONFIG={versao:1,ativo:true,exigir_quantidade_completa:true,timezone:"America/Cuiaba",atualizado_em:null,regras:[]};
+    const DEFAULT_STATE={versao:2,ultima_execucao:null,ultima_execucao_status:"nunca_executada",ofertas_ativas:[],historico_produtos:{},solicitacoes_reativacao:[],reativacoes:[],execucoes:[]};
+    const DEFAULT_HISTORY={versao:1,atualizado_em:null,ofertas:[],eventos:[]};
+    state.offerAutomation={
+      config:deepClone(DEFAULT_CONFIG),runtime:deepClone(DEFAULT_STATE),history:deepClone(DEFAULT_HISTORY),
+      loading:false,saving:false,running:false,reactivating:false,dirty:false,error:"",message:"",
+      historyQuery:"",historyStatus:"todos",historySelected:new Set()
+    };
 
     function daOfferNormalizeConfig(raw){
       const source=raw&&typeof raw==="object"?raw:{};
-      return {versao:1,ativo:source.ativo!==false,exigir_quantidade_completa:source.exigir_quantidade_completa!==false,timezone:source.timezone||"America/Sao_Paulo",atualizado_em:source.atualizado_em||null,regras:(Array.isArray(source.regras)?source.regras:[]).map((rule,index)=>({
+      return {versao:1,ativo:source.ativo!==false,exigir_quantidade_completa:source.exigir_quantidade_completa!==false,timezone:"America/Cuiaba",atualizado_em:source.atualizado_em||null,regras:(Array.isArray(source.regras)?source.regras:[]).map((rule,index)=>({
         id:String(rule.id||`regra-${index+1}`),categoria:String(rule.categoria||"").trim(),desconto_percentual:Math.min(50,Math.max(1,toNum(rule.desconto_percentual)||1)),duracao_dias:Math.min(365,Math.max(1,Math.floor(toNum(rule.duracao_dias)||7))),quantidade_por_execucao:Math.min(100,Math.max(1,Math.floor(toNum(rule.quantidade_por_execucao)||1))),status:["ativa","pausada","cancelada"].includes(rule.status)?rule.status:"ativa",encerrar_ofertas_ativas:rule.encerrar_ofertas_ativas===true,criado_em:rule.criado_em||null,atualizado_em:rule.atualizado_em||null
       })).filter(rule=>rule.categoria)};
     }
-    function daOfferNormalizeState(raw){const source=raw&&typeof raw==="object"?raw:{};return {versao:1,ultima_execucao:source.ultima_execucao||null,ultima_execucao_status:source.ultima_execucao_status||"nunca_executada",ofertas_ativas:Array.isArray(source.ofertas_ativas)?source.ofertas_ativas:[],historico_produtos:source.historico_produtos&&typeof source.historico_produtos==="object"?source.historico_produtos:{},execucoes:Array.isArray(source.execucoes)?source.execucoes:[]}}
+    function daOfferNormalizeState(raw){
+      const source=raw&&typeof raw==="object"?raw:{};
+      return {versao:2,ultima_execucao:source.ultima_execucao||null,ultima_execucao_status:source.ultima_execucao_status||"nunca_executada",ofertas_ativas:Array.isArray(source.ofertas_ativas)?source.ofertas_ativas:[],historico_produtos:source.historico_produtos&&typeof source.historico_produtos==="object"?source.historico_produtos:{},solicitacoes_reativacao:Array.isArray(source.solicitacoes_reativacao)?source.solicitacoes_reativacao:[],reativacoes:Array.isArray(source.reativacoes)?source.reativacoes:[],execucoes:Array.isArray(source.execucoes)?source.execucoes:[]};
+    }
+    function daOfferNormalizeHistory(raw){
+      const source=raw&&typeof raw==="object"?raw:{};
+      return {versao:1,atualizado_em:source.atualizado_em||null,ofertas:Array.isArray(source.ofertas)?source.ofertas.filter(Boolean):[],eventos:Array.isArray(source.eventos)?source.eventos.filter(Boolean):[]};
+    }
     function daOfferRuleId(category){return `regra-${slug(category)||"categoria"}-${Date.now()}`}
     function daOfferDate(value){if(!value)return"Nunca";const date=new Date(value);return Number.isNaN(date.getTime())?String(value):date.toLocaleString("pt-BR")}
+    function daOfferShortDate(value){if(!value)return"—";const date=new Date(value);return Number.isNaN(date.getTime())?String(value).slice(0,10):date.toLocaleDateString("pt-BR")}
     function daOfferMoney(value){return Number(value||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
     function daOfferCategories(){return uniq([...(state.meta?.categorias||[]).map(item=>item.categoria),...(state.produtos||[]).map(item=>item.categoria)]).filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"))}
     function daOfferStatusChip(status){const map={ativa:["green","Ativa"],pausada:["gold","Pausada"],cancelada:["red","Cancelada"]},item=map[status]||["","Indefinida"];return `<span class="chip ${item[0]}">${item[1]}</span>`}
+    function daOfferHistoryEffectiveStatus(record){
+      if(record?.status==="ativa"&&record?.fim){const end=new Date(record.fim);if(!Number.isNaN(end.getTime())&&end.getTime()<Date.now())return"vencida"}
+      return String(record?.status||"encerrada");
+    }
+    function daOfferHistoryStatusChip(record){
+      const status=daOfferHistoryEffectiveStatus(record),map={ativa:["green","Ativa"],vencida:["red","Vencida"],cancelada:["red","Cancelada"],encerrada:["gold","Encerrada"],falha:["red","Falha"]},item=map[status]||["","Encerrada"];
+      return `<span class="chip ${item[0]}">${item[1]}</span>`;
+    }
+    function daOfferProduct(record){
+      const refs=[record?.produto_key,record?.codigo].map(textNorm).filter(Boolean);
+      return state.produtos.find(product=>[getKey(product),product.codigo,product.id,product.firebaseKey,product.gtin,product.ean].map(textNorm).some(value=>refs.includes(value)))||null;
+    }
+    function daOfferProductAvailable(record){
+      const product=daOfferProduct(record);if(!product)return {ok:false,reason:"Produto não encontrado"};
+      const status=String(product.situacao||product.status||"A").trim().toLowerCase();
+      if(["i","inativo","inactive","false","0","excluido"].includes(status))return {ok:false,reason:"Produto inativo"};
+      if(toNum(product.estoque)<=0)return {ok:false,reason:"Estoque zerado"};
+      if(toNum(product.preco)<=0)return {ok:false,reason:"Preço normal inválido"};
+      return {ok:true,product};
+    }
+    function daOfferBannerRefs(banner){
+      const refs=[banner?.origem?.valor,banner?.link?.valor,banner?.produto_key,banner?.produto_id,banner?.produto_codigo];
+      (banner?.origem?.produtos||[]).forEach(item=>refs.push(item?.firebaseKey,item?.id,item?.codigo,item?.sku,item?.gtin,item?.ean));
+      return refs.map(textNorm).filter(Boolean);
+    }
+    function daOfferLinkedBanners(record){
+      const ids=new Set((record?.banner_ids||[]).map(String));
+      const refs=[record?.produto_key,record?.codigo].map(textNorm).filter(Boolean);
+      const banners=state.bannerManager?.catalog?.banners||[];
+      banners.forEach(banner=>{if(daOfferBannerRefs(banner).some(value=>refs.includes(value)))ids.add(String(banner.id||""))});
+      return banners.filter(banner=>ids.has(String(banner.id||"")));
+    }
+    function daOfferHistoryVisible(){
+      const store=state.offerAutomation,query=textNorm(store.historyQuery),filter=store.historyStatus;
+      return [...(store.history.ofertas||[])].filter(record=>{
+        const status=daOfferHistoryEffectiveStatus(record);
+        if(filter!=="todos"&&status!==filter)return false;
+        if(!query)return true;
+        return textNorm([record.nome,record.codigo,record.categoria,record.produto_key,record.regra_id,record.motivo_encerramento].filter(Boolean).join(" ")).includes(query);
+      }).sort((a,b)=>Date.parse(b.criada_em||b.inicio||0)-Date.parse(a.criada_em||a.inicio||0));
+    }
+    function daOfferCanReactivate(record){return daOfferHistoryEffectiveStatus(record)!=="ativa"&&daOfferProductAvailable(record).ok}
 
     function daOfferEnsureUi(){
       document.querySelectorAll(".primary-nav .tabs,.drawer-tabs").forEach(nav=>{
@@ -6792,12 +6852,12 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
       });
       if(document.getElementById("tab-ofertas-auto"))return;
       const section=document.createElement("section");section.className="panel hidden";section.id="tab-ofertas-auto";section.innerHTML=`
-        <div class="panel-head offer-auto-page-head"><div class="panel-title"><h2>Ofertas automáticas</h2><p>Defina quantas ofertas cada categoria cria em toda execução do GitHub Action.</p></div><div class="toolbar"><button class="btn" type="button" data-action="offer-auto-refresh">↻ Atualizar</button><button class="btn primary" type="button" data-action="offer-auto-save">✓ Salvar regras</button><button class="btn green" type="button" data-action="offer-auto-run">▶ Executar agora</button></div></div>
+        <div class="panel-head offer-auto-page-head"><div class="panel-title"><h2>Ofertas automáticas</h2><p>Regras, ofertas atuais, histórico permanente e reativação rápida com os banners já criados.</p></div><div class="toolbar"><button class="btn" type="button" data-action="offer-auto-refresh">↻ Atualizar</button><button class="btn primary" type="button" data-action="offer-auto-save">✓ Salvar regras</button><button class="btn green" type="button" data-action="offer-auto-run">▶ Executar agora</button></div></div>
         <div id="offerAutoFeedback"></div>
         <div class="offer-auto-summary" id="offerAutoSummary"></div>
         <div class="offer-auto-layout">
           <aside class="card pad offer-auto-create">
-            <div class="offer-auto-section-head"><div><h3>Nova regra</h3><p>Esta quantidade será criada novamente em cada execução.</p></div></div>
+            <div class="offer-auto-section-head"><div><h3>Nova regra</h3><p>Esta quantidade será criada novamente em cada execução agendada.</p></div></div>
             <div class="field"><label>Categoria</label><select class="select" id="offerAutoNewCategory"></select></div>
             <div class="offer-auto-create-grid">
               <div class="field"><label>Desconto</label><div class="offer-auto-number"><input class="input" id="offerAutoNewDiscount" type="number" min="1" max="50" step="0.01" value="15"><span>%</span></div></div>
@@ -6805,12 +6865,24 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
               <div class="field"><label>Ofertas por execução</label><input class="input" id="offerAutoNewQuantity" type="number" min="1" max="100" step="1" value="1"></div>
             </div>
             <button class="btn green block" type="button" data-action="offer-auto-add">＋ Criar regra</button>
-            <div class="notice gold offer-auto-explanation"><strong>Como funciona:</strong> se uma regra tiver quantidade 3 e o Make disparar quatro vezes no dia, o sistema tentará criar até 12 novas ofertas nessa categoria.</div>
+            <div class="notice gold offer-auto-explanation"><strong>Reativação:</strong> usa o desconto e a duração registrados no histórico. Você pode trocar apenas a duração antes de reativar.</div>
           </aside>
           <main class="offer-auto-main">
             <section class="card pad"><div class="offer-auto-section-head"><div><h3>Regras ativas e pausadas</h3><p>Pausar impede novas ofertas. Cancelar encerra as ofertas da regra na próxima execução.</p></div><label class="offer-auto-master"><input type="checkbox" id="offerAutoMasterEnabled"> Automação geral ativa</label></div><div id="offerAutoRules"></div></section>
-            <section class="card pad"><div class="offer-auto-section-head"><div><h3>Ofertas em andamento</h3><p>Dados registrados pela última execução do GitHub Action.</p></div><span class="chip" id="offerAutoActiveCount">0</span></div><div class="offer-auto-table-wrap"><table class="offer-auto-table"><thead><tr><th>Produto</th><th>Categoria</th><th>Origem</th><th>Desconto</th><th>Preço</th><th>Período</th></tr></thead><tbody id="offerAutoOffers"></tbody></table></div></section>
-            <section class="card pad"><div class="offer-auto-section-head"><div><h3>Últimas execuções</h3><p>Resumo das últimas ativações feitas pelo Make, GitHub ou painel.</p></div></div><div id="offerAutoRuns"></div></section>
+            <section class="card pad"><div class="offer-auto-section-head"><div><h3>Ofertas em andamento</h3><p>Ofertas automáticas atualmente gravadas nos produtos.</p></div><span class="chip" id="offerAutoActiveCount">0</span></div><div class="offer-auto-table-wrap"><table class="offer-auto-table"><thead><tr><th>Produto</th><th>Categoria</th><th>Origem</th><th>Desconto</th><th>Preço</th><th>Período</th></tr></thead><tbody id="offerAutoOffers"></tbody></table></div></section>
+            <section class="card pad offer-history-card">
+              <div class="offer-auto-section-head"><div><h3>Histórico de ofertas</h3><p>Cada ativação vira um registro permanente. Ofertas vencidas podem ser reativadas individualmente ou em grupo.</p></div><span class="chip" id="offerHistoryCount">0</span></div>
+              <div class="offer-history-toolbar">
+                <input class="input" id="offerHistorySearch" placeholder="Buscar produto, código, categoria ou regra">
+                <select class="select" id="offerHistoryStatus"><option value="todos">Todos os status</option><option value="vencida">Vencidas</option><option value="encerrada">Encerradas</option><option value="cancelada">Canceladas</option><option value="ativa">Ativas</option></select>
+                <div class="offer-history-duration"><input class="input" id="offerHistoryDuration" type="number" min="1" max="365" value="3"><span>dias</span></div>
+                <button class="btn" type="button" data-action="offer-history-select-visible">Selecionar visíveis</button>
+                <button class="btn green" type="button" data-action="offer-history-reactivate-selected">↻ Reativar selecionadas</button>
+              </div>
+              <div class="notice green" style="margin-bottom:10px"><strong>Banner vinculado:</strong> quando o produto possui banner no catálogo, a mesma imagem é reativada automaticamente com o novo período da oferta. Nenhum crédito de imagem é gasto.</div>
+              <div class="offer-auto-table-wrap offer-history-wrap"><table class="offer-auto-table offer-history-table"><thead><tr><th></th><th>Produto</th><th>Status</th><th>Oferta</th><th>Período</th><th>Banner</th><th></th></tr></thead><tbody id="offerHistoryBody"></tbody></table></div>
+            </section>
+            <section class="card pad"><div class="offer-auto-section-head"><div><h3>Últimas execuções</h3><p>Resumo das últimas ativações, encerramentos e reativações.</p></div></div><div id="offerAutoRuns"></div></section>
           </main>
         </div>`;
       document.getElementById("tab-cadastros")?.insertAdjacentElement("beforebegin",section);
@@ -6820,67 +6892,91 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
       daOfferEnsureUi();
       const store=state.offerAutomation,config=store.config,runtime=store.runtime;
       const feedback=document.getElementById("offerAutoFeedback");
-      if(feedback)feedback.innerHTML=store.loading?'<div class="notice gold">Carregando regras e execuções do GitHub...</div>':store.error?`<div class="notice red"><strong>Não foi possível carregar a automação.</strong><div class="tiny" style="margin-top:5px">${esc(store.error)}</div></div>`:store.dirty?'<div class="notice gold"><strong>Alterações ainda não salvas.</strong> Clique em “Salvar regras” antes do próximo disparo do Make.</div>':store.message?`<div class="notice green">${esc(store.message)}</div>`:'';
-      const active=config.regras.filter(rule=>rule.status==="ativa"),paused=config.regras.filter(rule=>rule.status==="pausada"),canceled=config.regras.filter(rule=>rule.status==="cancelada"),offers=runtime.ofertas_ativas||[];
-      const summary=document.getElementById("offerAutoSummary");if(summary)summary.innerHTML=`<div class="summary-card"><strong>${active.length}</strong><span>Regras ativas</span></div><div class="summary-card"><strong>${paused.length}</strong><span>Regras pausadas</span></div><div class="summary-card"><strong>${offers.length}</strong><span>Ofertas em andamento</span></div><div class="summary-card"><strong>${esc(daOfferDate(runtime.ultima_execucao))}</strong><span>Última execução</span></div>`;
+      if(feedback)feedback.innerHTML=store.loading?'<div class="notice gold">Carregando regras, histórico e execuções...</div>':store.error?`<div class="notice red"><strong>Não foi possível carregar as ofertas.</strong><div class="tiny" style="margin-top:5px">${esc(store.error)}</div></div>`:store.dirty?'<div class="notice gold"><strong>Alterações ainda não salvas.</strong> Clique em “Salvar regras”.</div>':store.message?`<div class="notice green">${esc(store.message)}</div>`:'';
+      const active=config.regras.filter(rule=>rule.status==="ativa"),paused=config.regras.filter(rule=>rule.status==="pausada"),canceled=config.regras.filter(rule=>rule.status==="cancelada"),offers=runtime.ofertas_ativas||[],history=store.history.ofertas||[];
+      const expired=history.filter(record=>["vencida","encerrada","cancelada"].includes(daOfferHistoryEffectiveStatus(record))).length;
+      const summary=document.getElementById("offerAutoSummary");if(summary)summary.innerHTML=`<div class="summary-card"><strong>${active.length}</strong><span>Regras ativas</span></div><div class="summary-card"><strong>${offers.length}</strong><span>Ofertas em andamento</span></div><div class="summary-card"><strong>${expired}</strong><span>Ofertas no histórico</span></div><div class="summary-card"><strong>${esc(daOfferDate(runtime.ultima_execucao))}</strong><span>Última execução</span></div>`;
       const categorySelect=document.getElementById("offerAutoNewCategory");if(categorySelect){const current=categorySelect.value,categories=daOfferCategories();categorySelect.innerHTML=categories.length?`<option value="">Selecione...</option>${categories.map(category=>`<option value="${esc(category)}">${esc(category)}</option>`).join("")}`:'<option value="">Nenhuma categoria disponível</option>';if(categories.includes(current))categorySelect.value=current}
       const master=document.getElementById("offerAutoMasterEnabled");if(master)master.checked=config.ativo!==false;
-      const rules=document.getElementById("offerAutoRules");if(rules){
-        const visible=[...active,...paused];
-        rules.innerHTML=visible.length?`<div class="offer-auto-rules">${visible.map(rule=>`<article class="offer-auto-rule ${rule.status}">
-          <div class="offer-auto-rule-title"><div><strong>${esc(rule.categoria)}</strong><div class="tiny">ID: ${esc(rule.id)}</div></div>${daOfferStatusChip(rule.status)}</div>
-          <div class="offer-auto-rule-grid">
-            <div class="field"><label>Categoria</label><select class="select" data-offer-rule-field="categoria" data-id="${esc(rule.id)}">${daOfferCategories().map(category=>`<option value="${esc(category)}" ${category===rule.categoria?'selected':''}>${esc(category)}</option>`).join("")}</select></div>
-            <div class="field"><label>Desconto</label><div class="offer-auto-number"><input class="input" type="number" min="1" max="50" step="0.01" data-offer-rule-field="desconto_percentual" data-id="${esc(rule.id)}" value="${esc(rule.desconto_percentual)}"><span>%</span></div></div>
-            <div class="field"><label>Duração</label><div class="offer-auto-number"><input class="input" type="number" min="1" max="365" step="1" data-offer-rule-field="duracao_dias" data-id="${esc(rule.id)}" value="${esc(rule.duracao_dias)}"><span>dias</span></div></div>
-            <div class="field"><label>Ofertas por execução</label><input class="input" type="number" min="1" max="100" step="1" data-offer-rule-field="quantidade_por_execucao" data-id="${esc(rule.id)}" value="${esc(rule.quantidade_por_execucao)}"></div>
-          </div>
-          <div class="offer-auto-rule-actions">${rule.status==="ativa"?`<button class="btn small gold" type="button" data-action="offer-auto-pause" data-id="${esc(rule.id)}">Pausar</button>`:`<button class="btn small green" type="button" data-action="offer-auto-resume" data-id="${esc(rule.id)}">Retomar</button>`}<button class="btn small red" type="button" data-action="offer-auto-cancel" data-id="${esc(rule.id)}">Cancelar regra</button></div>
-        </article>`).join("")}</div>${canceled.length?`<details class="offer-auto-canceled"><summary>${canceled.length} regra(s) cancelada(s)</summary>${canceled.map(rule=>`<div><span>${esc(rule.categoria)}</span>${daOfferStatusChip(rule.status)}</div>`).join("")}</details>`:''}`:'<div class="empty">Nenhuma regra criada. Use o formulário ao lado.</div>';
-      }
+      const rules=document.getElementById("offerAutoRules");if(rules){const visible=[...active,...paused];rules.innerHTML=visible.length?`<div class="offer-auto-rules">${visible.map(rule=>`<article class="offer-auto-rule ${rule.status}"><div class="offer-auto-rule-title"><div><strong>${esc(rule.categoria)}</strong><div class="tiny">ID: ${esc(rule.id)}</div></div>${daOfferStatusChip(rule.status)}</div><div class="offer-auto-rule-grid"><div class="field"><label>Categoria</label><select class="select" data-offer-rule-field="categoria" data-id="${esc(rule.id)}">${daOfferCategories().map(category=>`<option value="${esc(category)}" ${category===rule.categoria?'selected':''}>${esc(category)}</option>`).join("")}</select></div><div class="field"><label>Desconto</label><input class="input" data-offer-rule-field="desconto_percentual" data-id="${esc(rule.id)}" type="number" min="1" max="50" step="0.01" value="${esc(rule.desconto_percentual)}"></div><div class="field"><label>Duração (dias)</label><input class="input" data-offer-rule-field="duracao_dias" data-id="${esc(rule.id)}" type="number" min="1" max="365" step="1" value="${esc(rule.duracao_dias)}"></div><div class="field"><label>Por execução</label><input class="input" data-offer-rule-field="quantidade_por_execucao" data-id="${esc(rule.id)}" type="number" min="1" max="100" step="1" value="${esc(rule.quantidade_por_execucao)}"></div></div><div class="offer-auto-rule-actions">${rule.status==="ativa"?`<button class="btn gold small" data-action="offer-auto-pause" data-id="${esc(rule.id)}">Pausar</button>`:`<button class="btn green small" data-action="offer-auto-resume" data-id="${esc(rule.id)}">Reativar regra</button>`}<button class="btn red small" data-action="offer-auto-cancel" data-id="${esc(rule.id)}">Cancelar</button></div></article>`).join("")}</div>${canceled.length?`<details class="offer-auto-canceled"><summary>${canceled.length} regra(s) cancelada(s)</summary>${canceled.map(rule=>`<div><span>${esc(rule.categoria)}</span>${daOfferStatusChip(rule.status)}</div>`).join("")}</details>`:''}`:'<div class="empty">Nenhuma regra criada. Use o formulário ao lado.</div>'}
       const count=document.getElementById("offerAutoActiveCount");if(count)count.textContent=String(offers.length);
-      const body=document.getElementById("offerAutoOffers");if(body)body.innerHTML=offers.length?offers.map(offer=>`<tr><td><strong>${esc(offer.nome||offer.produto_key)}</strong><small>${esc(offer.produto_key||"")}</small></td><td>${esc(offer.categoria||"—")}</td><td><span class="chip ${offer.origem==="validade"?'red':offer.origem==="campanha_automatica"?'green':'gold'}">${esc(offer.origem||"manual")}</span></td><td><strong>${esc(offer.desconto_percentual||0)}%</strong></td><td><span class="offer-auto-old-price">${esc(daOfferMoney(offer.preco_normal))}</span><strong>${esc(daOfferMoney(offer.preco_oferta))}</strong></td><td>${esc(offer.inicio||"—")} → ${esc(offer.fim||"sem fim")}</td></tr>`).join(""):'<tr><td colspan="6"><div class="empty">Nenhuma oferta registrada na última execução.</div></td></tr>';
-      const runs=document.getElementById("offerAutoRuns"),executions=[...(runtime.execucoes||[])].slice(-8).reverse();if(runs)runs.innerHTML=executions.length?`<div class="offer-auto-run-list">${executions.map(run=>`<div class="offer-auto-run"><div><strong>${esc(daOfferDate(run.executado_em))}</strong><small>${esc(run.id||"")}</small></div><div class="offer-auto-run-metrics"><span>＋ ${esc(run.resumo?.ofertas_criadas||0)}/${esc(run.resumo?.ofertas_solicitadas??run.resumo?.ofertas_criadas??0)} criadas</span>${toNum(run.resumo?.ofertas_nao_criadas)>0?`<span class="offer-auto-missing">! ${esc(run.resumo.ofertas_nao_criadas)} não criadas</span>`:''}<span>↩ ${esc(run.resumo?.ofertas_encerradas||0)} encerradas</span><span>⚠ ${esc(run.resumo?.vencidos||0)} vencidos</span></div></div>`).join("")}</div>`:'<div class="empty">A automação ainda não registrou execuções.</div>';
+      const body=document.getElementById("offerAutoOffers");if(body)body.innerHTML=offers.length?offers.map(offer=>`<tr><td><strong>${esc(offer.nome||offer.produto_key)}</strong><small>${esc(offer.produto_key||"")}</small></td><td>${esc(offer.categoria||"—")}</td><td><span class="chip ${offer.origem==="reativacao_historico"?'blue':'green'}">${esc(offer.origem==="reativacao_historico"?'reativada':'automática')}</span></td><td><strong>${esc(offer.desconto_percentual||0)}%</strong></td><td><span class="offer-auto-old-price">${esc(daOfferMoney(offer.preco_normal))}</span><strong>${esc(daOfferMoney(offer.preco_oferta))}</strong></td><td>${esc(daOfferShortDate(offer.inicio))} → ${esc(daOfferShortDate(offer.fim))}</td></tr>`).join(""):'<tr><td colspan="6"><div class="empty">Nenhuma oferta automática em andamento.</div></td></tr>';
+
+      const visibleHistory=daOfferHistoryVisible(),historyCount=document.getElementById("offerHistoryCount");if(historyCount)historyCount.textContent=String(history.length);
+      const historyBody=document.getElementById("offerHistoryBody");if(historyBody)historyBody.innerHTML=visibleHistory.length?visibleHistory.map(record=>{
+        const availability=daOfferProductAvailable(record),canReactivate=daOfferCanReactivate(record),linked=daOfferLinkedBanners(record),selected=store.historySelected.has(String(record.id));
+        const bannerText=linked.length?`${linked.length} banner${linked.length>1?'s':''}`:(record.banner_ids||[]).length?`${record.banner_ids.length} registrado${record.banner_ids.length>1?'s':''}`:'Sem banner';
+        return `<tr class="${selected?'offer-history-selected':''}"><td>${canReactivate?`<input type="checkbox" data-offer-history-select="${esc(record.id)}" ${selected?'checked':''}>`:''}</td><td><strong>${esc(record.nome||record.produto_key)}</strong><small>${esc(record.codigo||record.produto_key||"")} · ${esc(record.categoria||"Sem categoria")}</small>${record.dados_estimados?'<small class="offer-history-estimated">Dados antigos estimados</small>':''}</td><td>${daOfferHistoryStatusChip(record)}${record.motivo_encerramento?`<small>${esc(record.motivo_encerramento.replaceAll('_',' '))}</small>`:''}</td><td><span class="offer-auto-old-price">${esc(daOfferMoney(record.preco_normal))}</span><strong>${esc(daOfferMoney(record.preco_oferta))}</strong><small>${esc(record.desconto_percentual||0)}% de desconto</small></td><td><strong>${esc(daOfferShortDate(record.inicio))} → ${esc(daOfferShortDate(record.fim))}</strong><small>${esc(record.duracao_dias||'—')} dias</small></td><td><span class="chip ${linked.length?'blue':''}">${esc(bannerText)}</span></td><td>${canReactivate?`<button class="btn green small" data-action="offer-history-reactivate" data-id="${esc(record.id)}">↻ Reativar</button>`:`<span class="tiny">${esc(availability.reason||'Em andamento')}</span>`}</td></tr>`;
+      }).join(""):'<tr><td colspan="7"><div class="empty">O histórico será preenchido automaticamente na próxima execução. Os registros antigos existentes serão migrados.</div></td></tr>';
+      const search=document.getElementById("offerHistorySearch");if(search&&search.value!==store.historyQuery)search.value=store.historyQuery;
+      const filter=document.getElementById("offerHistoryStatus");if(filter)filter.value=store.historyStatus;
+
+      const runs=document.getElementById("offerAutoRuns"),executions=[...(runtime.execucoes||[])].slice(-10).reverse();if(runs)runs.innerHTML=executions.length?`<div class="offer-auto-run-list">${executions.map(run=>`<div class="offer-auto-run"><div><strong>${esc(daOfferDate(run.executado_em))}</strong><small>${esc(run.id||"")} · ${esc(run.modo||'completo')}</small></div><div class="offer-auto-run-metrics"><span>＋ ${esc(run.resumo?.ofertas_criadas||0)} criadas</span><span>↻ ${esc(run.resumo?.ofertas_reativadas||0)} reativadas</span><span>🖼 ${esc(run.resumo?.banners_reativados||0)} banners</span><span>↩ ${esc(run.resumo?.ofertas_encerradas||0)} encerradas</span>${toNum(run.resumo?.reativacoes_com_falha)>0?`<span class="offer-auto-missing">! ${esc(run.resumo.reativacoes_com_falha)} falhas</span>`:''}</div></div>`).join("")}</div>`:'<div class="empty">A automação ainda não registrou execuções.</div>';
       document.querySelectorAll('[data-action="offer-auto-save"]').forEach(button=>{button.disabled=store.saving;button.textContent=store.saving?'Salvando...':'✓ Salvar regras'});
       document.querySelectorAll('[data-action="offer-auto-run"]').forEach(button=>{button.disabled=store.running;button.textContent=store.running?'Disparando...':'▶ Executar agora'});
+      document.querySelectorAll('[data-action="offer-history-reactivate-selected"]').forEach(button=>{button.disabled=store.reactivating||!store.historySelected.size;button.textContent=store.reactivating?'Enviando...':`↻ Reativar selecionadas${store.historySelected.size?` (${store.historySelected.size})`:''}`});
     }
 
     async function daOfferReadGithubJson(path,defaultValue){
       readSettingsFromUi();const settings=state.settings,headers={Accept:"application/vnd.github+json"};if(settings.githubToken)headers.Authorization=`Bearer ${settings.githubToken}`;
       const url=`https://api.github.com/repos/${encodeURIComponent(settings.githubOwner)}/${encodeURIComponent(settings.githubRepo)}/contents/${encodeURI(path)}?ref=${encodeURIComponent(settings.githubBranch||"main")}`;
-      const response=await fetch(url,{headers});if(response.status===404)return deepClone(defaultValue);if(!response.ok)throw new Error(`GitHub retornou ${response.status} ao ler ${path}.`);const data=await response.json(),binary=atob(String(data.content||"").replace(/\s/g,"")),bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));return JSON.parse(new TextDecoder().decode(bytes));
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+      try{const response=await fetch(url,{headers,signal:controller.signal,cache:"no-store"});if(response.status===404)return deepClone(defaultValue);if(!response.ok)throw new Error(`GitHub retornou ${response.status} ao ler ${path}.`);const data=await response.json(),binary=atob(String(data.content||"").replace(/\s/g,"")),bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));return JSON.parse(new TextDecoder().decode(bytes))}catch(error){if(error.name==="AbortError")throw new Error(`Tempo excedido ao ler ${path}.`);throw error}finally{clearTimeout(timer)}
     }
-    async function daOfferLoad(){const store=state.offerAutomation;store.loading=true;store.error="";store.message="";daOfferRender();try{const [config,runtime]=await Promise.all([daOfferReadGithubJson(CONFIG_PATH,DEFAULT_CONFIG),daOfferReadGithubJson(STATE_PATH,DEFAULT_STATE)]);store.config=daOfferNormalizeConfig(config);store.runtime=daOfferNormalizeState(runtime);store.dirty=false}catch(error){store.error=error.message||String(error)}finally{store.loading=false;daOfferRender()}}
+    async function daOfferLoad(){
+      const store=state.offerAutomation;if(store.loading)return;store.loading=true;store.error="";store.message="";daOfferRender();
+      try{const [config,runtime,history]=await Promise.all([daOfferReadGithubJson(CONFIG_PATH,DEFAULT_CONFIG),daOfferReadGithubJson(STATE_PATH,DEFAULT_STATE),daOfferReadGithubJson(HISTORY_PATH,DEFAULT_HISTORY)]);store.config=daOfferNormalizeConfig(config);store.runtime=daOfferNormalizeState(runtime);store.history=daOfferNormalizeHistory(history);store.dirty=false;store.historySelected.clear()}catch(error){store.error=error.message||String(error)}finally{store.loading=false;daOfferRender()}
+    }
     function daOfferValidate(){const config=state.offerAutomation.config,activeCategories=new Set();for(const rule of config.regras){if(!rule.categoria)throw new Error("Todas as regras precisam de uma categoria.");if(rule.desconto_percentual<1||rule.desconto_percentual>50)throw new Error(`Desconto inválido em ${rule.categoria}. Use de 1% a 50%.`);if(rule.duracao_dias<1)throw new Error(`Duração inválida em ${rule.categoria}.`);if(rule.quantidade_por_execucao<1)throw new Error(`Quantidade inválida em ${rule.categoria}.`);if(rule.status!=="cancelada"){const key=textNorm(rule.categoria);if(activeCategories.has(key))throw new Error(`Existe mais de uma regra ativa/pausada para ${rule.categoria}.`);activeCategories.add(key)}}}
-    async function daOfferSave(){const store=state.offerAutomation;daOfferValidate();store.saving=true;store.error="";store.message="";daOfferRender();try{readSettingsFromUi();store.config.atualizado_em=nowIso();await githubUpsert(CONFIG_PATH,store.config,"Atualiza regras de ofertas automáticas");store.dirty=false;store.message="Regras salvas no GitHub. O próximo disparo já usará esta configuração.";setStatus("Regras de ofertas automáticas salvas","ok");return true}catch(error){store.error=error.message||String(error);setStatus("Erro ao salvar regras de ofertas","err");throw error}finally{store.saving=false;daOfferRender()}}
-    async function daOfferDispatch(){const store=state.offerAutomation;store.running=true;store.error="";store.message="";daOfferRender();try{if(store.dirty)await daOfferSave();readSettingsFromUi();const settings=state.settings;if(!settings.githubToken)throw new Error("Configure o token do GitHub na aba Integrações.");const response=await fetch(`https://api.github.com/repos/${encodeURIComponent(settings.githubOwner)}/${encodeURIComponent(settings.githubRepo)}/dispatches`,{method:"POST",headers:{Accept:"application/vnd.github+json",Authorization:`Bearer ${settings.githubToken}`,"Content-Type":"application/json","X-GitHub-Api-Version":"2022-11-28"},body:JSON.stringify({event_type:"processar_ofertas",client_payload:{origem:"painel-admin",solicitado_em:nowIso()}})});if(!response.ok)throw new Error(`GitHub não aceitou a execução: ${response.status} ${(await response.text()).slice(0,240)}`);store.message="Execução enviada ao GitHub Actions. Atualize este painel em alguns instantes para ver as novas ofertas.";setStatus("Automação de ofertas enviada ao GitHub","ok")}catch(error){store.error=error.message||String(error);setStatus("Falha ao executar ofertas automáticas","err");throw error}finally{store.running=false;daOfferRender()}}
+    async function daOfferSave(){const store=state.offerAutomation;daOfferValidate();store.saving=true;store.error="";store.message="";daOfferRender();try{readSettingsFromUi();store.config.atualizado_em=nowIso();await githubUpsert(CONFIG_PATH,store.config,"Atualiza regras de ofertas automáticas");store.dirty=false;store.message="Regras salvas. O próximo disparo do Make já usará esta configuração.";setStatus("Regras de ofertas automáticas salvas","ok");return true}catch(error){store.error=error.message||String(error);setStatus("Erro ao salvar regras de ofertas","err");throw error}finally{store.saving=false;daOfferRender()}}
+    async function daOfferDispatch(mode="completo",origin="painel-admin"){
+      const store=state.offerAutomation;readSettingsFromUi();const settings=state.settings;if(!settings.githubToken)throw new Error("Configure o token do GitHub na aba Integrações.");
+      const response=await fetch(`https://api.github.com/repos/${encodeURIComponent(settings.githubOwner)}/${encodeURIComponent(settings.githubRepo)}/dispatches`,{method:"POST",headers:{Accept:"application/vnd.github+json",Authorization:`Bearer ${settings.githubToken}`,"Content-Type":"application/json","X-GitHub-Api-Version":"2022-11-28"},body:JSON.stringify({event_type:"processar_ofertas",client_payload:{origem:origin,modo:mode,solicitado_em:nowIso(),execucao_id:`${origin}-${Date.now()}`}})});
+      if(!response.ok)throw new Error(`GitHub não aceitou a execução: ${response.status} ${(await response.text()).slice(0,240)}`);
+      return true;
+    }
+    async function daOfferRun(){const store=state.offerAutomation;store.running=true;store.error="";store.message="";daOfferRender();try{if(store.dirty)await daOfferSave();await daOfferDispatch("completo","painel-admin");store.message="Execução enviada. O disparador agendado do Make continua funcionando normalmente.";setStatus("Automação de ofertas enviada ao GitHub","ok")}catch(error){store.error=error.message||String(error);setStatus("Falha ao executar ofertas automáticas","err");throw error}finally{store.running=false;daOfferRender()}}
+    function daOfferHistoryDuration(record){const override=Math.floor(toNum(document.getElementById("offerHistoryDuration")?.value));return Math.max(1,Math.min(365,override||Math.floor(toNum(record?.duracao_dias))||3))}
+    async function daOfferQueueReactivation(records){
+      const store=state.offerAutomation,unique=[...new Map(records.map(record=>[String(record.id),record])).values()].filter(daOfferCanReactivate);if(!unique.length)throw new Error("Nenhuma oferta vencida disponível para reativar.");
+      const unavailable=unique.map(record=>({record,...daOfferProductAvailable(record)})).filter(item=>!item.ok);if(unavailable.length)throw new Error(`Não foi possível reativar: ${unavailable.map(item=>`${item.record.nome||item.record.produto_key} (${item.reason})`).join(", ")}`);
+      store.reactivating=true;store.error="";store.message="";daOfferRender();
+      try{
+        const pending=[...(store.runtime.solicitacoes_reativacao||[])],pendingProducts=new Set(pending.map(item=>String(item.produto_key)));
+        unique.forEach(record=>{if(pendingProducts.has(String(record.produto_key)))return;pending.push({id:`reativacao-${String(record.produto_key).replace(/[^a-z0-9]/gi,'-')}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,historico_id:String(record.id),produto_key:String(record.produto_key),desconto_percentual:toNum(record.desconto_percentual),duracao_dias:daOfferHistoryDuration(record),solicitado_em:nowIso(),solicitado_por:"painel-admin"});pendingProducts.add(String(record.produto_key))});
+        store.runtime.solicitacoes_reativacao=pending;readSettingsFromUi();await githubUpsert(STATE_PATH,store.runtime,`Solicita reativação de ${unique.length} oferta(s)`);await daOfferDispatch("somente_reativacoes","reativacao-historico");
+        store.historySelected.clear();store.message=`${unique.length} oferta(s) enviada(s) para reativação. Os banners vinculados serão reativados no mesmo processamento.`;setStatus(`${unique.length} oferta(s) enviada(s) para reativação`,`ok`);
+      }catch(error){store.error=error.message||String(error);setStatus("Falha ao solicitar reativação","err");throw error}finally{store.reactivating=false;daOfferRender()}
+    }
     function daOfferMarkDirty(){state.offerAutomation.dirty=true;state.offerAutomation.message="";daOfferRender()}
 
-    document.addEventListener("input",event=>{const input=event.target.closest?.("[data-offer-rule-field]");if(!input)return;const rule=state.offerAutomation.config.regras.find(item=>item.id===input.dataset.id);if(!rule)return;const field=input.dataset.offerRuleField;rule[field]=field==="categoria"?input.value:field==="desconto_percentual"?Math.min(50,Math.max(1,toNum(input.value)||1)):Math.max(1,Math.floor(toNum(input.value)||1));rule.atualizado_em=nowIso();state.offerAutomation.dirty=true;state.offerAutomation.message=""});
-    document.addEventListener("change",event=>{if(event.target.id==="offerAutoMasterEnabled"){state.offerAutomation.config.ativo=event.target.checked;daOfferMarkDirty()}const input=event.target.closest?.('[data-offer-rule-field="categoria"]');if(input)daOfferRender()});
+    document.addEventListener("input",event=>{const input=event.target.closest?.("[data-offer-rule-field]");if(input){const rule=state.offerAutomation.config.regras.find(item=>item.id===input.dataset.id);if(!rule)return;const field=input.dataset.offerRuleField;rule[field]=field==="categoria"?input.value:field==="desconto_percentual"?Math.min(50,Math.max(1,toNum(input.value)||1)):Math.max(1,Math.floor(toNum(input.value)||1));rule.atualizado_em=nowIso();state.offerAutomation.dirty=true;state.offerAutomation.message="";return}if(event.target.id==="offerHistorySearch"){state.offerAutomation.historyQuery=event.target.value;daOfferRender()}});
+    document.addEventListener("change",event=>{if(event.target.id==="offerAutoMasterEnabled"){state.offerAutomation.config.ativo=event.target.checked;daOfferMarkDirty();return}const input=event.target.closest?.('[data-offer-rule-field="categoria"]');if(input){daOfferRender();return}if(event.target.id==="offerHistoryStatus"){state.offerAutomation.historyStatus=event.target.value;daOfferRender();return}if(event.target.matches?.("[data-offer-history-select]")){const id=String(event.target.dataset.offerHistorySelect);event.target.checked?state.offerAutomation.historySelected.add(id):state.offerAutomation.historySelected.delete(id);daOfferRender()}});
     document.addEventListener("click",event=>{const button=event.target.closest?.("[data-action]");if(!button)return;const action=button.dataset.action,store=state.offerAutomation;
       if(action==="offer-auto-add"){const category=document.getElementById("offerAutoNewCategory")?.value.trim(),discount=Math.min(50,Math.max(1,toNum(document.getElementById("offerAutoNewDiscount")?.value)||1)),days=Math.max(1,Math.floor(toNum(document.getElementById("offerAutoNewDays")?.value)||7)),quantity=Math.max(1,Math.floor(toNum(document.getElementById("offerAutoNewQuantity")?.value)||1));if(!category)return alert("Selecione uma categoria.");if(store.config.regras.some(rule=>rule.status!=="cancelada"&&textNorm(rule.categoria)===textNorm(category)))return alert("Já existe uma regra ativa ou pausada para esta categoria.");store.config.regras.push({id:daOfferRuleId(category),categoria:category,desconto_percentual:discount,duracao_dias:days,quantidade_por_execucao:quantity,status:"ativa",encerrar_ofertas_ativas:false,criado_em:nowIso(),atualizado_em:nowIso()});daOfferMarkDirty();return}
       const rule=store.config.regras.find(item=>item.id===button.dataset.id);
       if(action==="offer-auto-pause"&&rule){rule.status="pausada";rule.atualizado_em=nowIso();daOfferMarkDirty();return}
       if(action==="offer-auto-resume"&&rule){rule.status="ativa";rule.encerrar_ofertas_ativas=false;rule.atualizado_em=nowIso();daOfferMarkDirty();return}
-      if(action==="offer-auto-cancel"&&rule){if(!confirm(`Cancelar a regra de ${rule.categoria}? Na próxima execução, as ofertas criadas por ela serão encerradas e voltarão ao preço normal.`))return;rule.status="cancelada";rule.encerrar_ofertas_ativas=true;rule.atualizado_em=nowIso();daOfferMarkDirty();return}
+      if(action==="offer-auto-cancel"&&rule){if(!confirm(`Cancelar a regra de ${rule.categoria}? Na próxima execução, as ofertas criadas por ela serão encerradas.`))return;rule.status="cancelada";rule.encerrar_ofertas_ativas=true;rule.atualizado_em=nowIso();daOfferMarkDirty();return}
       if(action==="offer-auto-refresh"){daOfferLoad();return}
       if(action==="offer-auto-save"){daOfferSave().catch(error=>alert(error.message));return}
-      if(action==="offer-auto-run"){daOfferDispatch().catch(error=>alert(error.message));return}
+      if(action==="offer-auto-run"){daOfferRun().catch(error=>alert(error.message));return}
+      if(action==="offer-history-select-visible"){const visible=daOfferHistoryVisible().filter(daOfferCanReactivate),allSelected=visible.length&&visible.every(record=>store.historySelected.has(String(record.id)));visible.forEach(record=>allSelected?store.historySelected.delete(String(record.id)):store.historySelected.add(String(record.id)));daOfferRender();return}
+      if(action==="offer-history-reactivate"){const record=store.history.ofertas.find(item=>String(item.id)===String(button.dataset.id));if(record)daOfferQueueReactivation([record]).catch(error=>alert(error.message));return}
+      if(action==="offer-history-reactivate-selected"){const records=store.history.ofertas.filter(item=>store.historySelected.has(String(item.id)));daOfferQueueReactivation(records).catch(error=>alert(error.message));return}
     });
 
-    const daOfferRenderTabsBase=renderTabs;renderTabs=function(){const result=daOfferRenderTabsBase();daOfferEnsureUi();document.getElementById("tab-ofertas-auto")?.classList.toggle("hidden",state.activeTab!=="ofertas-auto");if(state.activeTab==="ofertas-auto")daOfferRender();return result};
+    const daOfferRenderTabsBase=renderTabs;renderTabs=function(){const result=daOfferRenderTabsBase();daOfferEnsureUi();document.getElementById("tab-ofertas-auto")?.classList.toggle("hidden",state.activeTab!=="ofertas-auto");if(state.activeTab==="ofertas-auto"){daOfferRender();if(!state.offerAutomation.loading&&!state.offerAutomation.history.atualizado_em)daOfferLoad()}return result};
     const daOfferRenderAllBase=renderAll;renderAll=function(){const result=daOfferRenderAllBase();if(state.activeTab==="ofertas-auto")daOfferRender();return result};
-    const daOfferLoadDataBase=loadData;loadData=async function(){const result=await daOfferLoadDataBase();await daOfferLoad();return result};
+    const daOfferLoadDataBase=loadData;let daOfferLoadDataRunning=null;loadData=function(){if(daOfferLoadDataRunning)return daOfferLoadDataRunning;daOfferLoadDataRunning=(async()=>{const result=await daOfferLoadDataBase();daOfferLoad().catch(error=>console.warn("Ofertas automáticas não carregadas:",error));return result})();return daOfferLoadDataRunning.finally(()=>{daOfferLoadDataRunning=null})};
     daOfferEnsureUi();
 
     if(!document.getElementById("daOfferAutomationStyles")){const style=document.createElement("style");style.id="daOfferAutomationStyles";style.textContent=`
-      #tab-ofertas-auto .offer-auto-page-head{align-items:center}.offer-auto-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:10px}.offer-auto-summary .summary-card strong{font-size:18px}.offer-auto-summary .summary-card:last-child strong{font-size:12px;line-height:1.3}.offer-auto-layout{display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:11px;align-items:start}.offer-auto-create{position:sticky;top:132px}.offer-auto-main{display:grid;gap:11px}.offer-auto-section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}.offer-auto-section-head h3{margin:0;font-size:16px}.offer-auto-section-head p{margin:3px 0 0;color:var(--muted);font-size:11px}.offer-auto-create-grid{display:grid;gap:8px;margin:10px 0}.offer-auto-number{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;border:1px solid #aeb8c2;border-radius:12px;background:#fff;overflow:hidden}.offer-auto-number .input{border:0!important;border-radius:0!important;box-shadow:none!important}.offer-auto-number span{padding:0 10px;color:var(--muted);font-size:11px;font-weight:900}.offer-auto-explanation{margin-top:10px;font-size:11px}.offer-auto-master{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:850;white-space:nowrap}.offer-auto-rules{display:grid;gap:8px}.offer-auto-rule{border:1px solid var(--line);border-left:4px solid var(--green);border-radius:14px;padding:10px;background:#fff}.offer-auto-rule.pausada{border-left-color:var(--gold);background:#fffdf6}.offer-auto-rule-title,.offer-auto-rule-actions{display:flex;align-items:center;justify-content:space-between;gap:8px}.offer-auto-rule-title{margin-bottom:8px}.offer-auto-rule-title strong{font-size:14px}.offer-auto-rule-grid{display:grid;grid-template-columns:minmax(150px,1.2fr) repeat(3,minmax(120px,.7fr));gap:7px}.offer-auto-rule-grid .field label{font-size:9px}.offer-auto-rule-grid .input,.offer-auto-rule-grid .select{min-height:36px;padding:7px 9px}.offer-auto-rule-actions{justify-content:flex-end;margin-top:8px}.offer-auto-canceled{margin-top:10px;padding:9px;border:1px dashed var(--line);border-radius:12px}.offer-auto-canceled summary{cursor:pointer;font-size:11px;font-weight:900}.offer-auto-canceled>div{display:flex;justify-content:space-between;align-items:center;padding:6px 2px;border-bottom:1px solid var(--line);font-size:11px}.offer-auto-table-wrap{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:12px}.offer-auto-table{width:100%;border-collapse:collapse;font-size:11px}.offer-auto-table th,.offer-auto-table td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}.offer-auto-table th{position:sticky;top:0;z-index:1;background:#f5f3ed;color:var(--muted);font-size:9px;text-transform:uppercase}.offer-auto-table td strong,.offer-auto-table td small{display:block}.offer-auto-old-price{text-decoration:line-through;color:var(--muted);display:block}.offer-auto-run-list{display:grid;gap:6px}.offer-auto-run{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px;border:1px solid var(--line);border-radius:11px;background:#fafafa}.offer-auto-run strong,.offer-auto-run small{display:block}.offer-auto-run small{margin-top:2px;color:var(--muted);font-size:9px}.offer-auto-run-metrics{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.offer-auto-run-metrics span{padding:5px 7px;border-radius:8px;background:#fff;border:1px solid var(--line);font-size:10px;font-weight:850}.offer-auto-run-metrics .offer-auto-missing{background:var(--red2);color:var(--red);border-color:#ffd3cf}
-      @media(max-width:1000px){.offer-auto-layout{grid-template-columns:1fr}.offer-auto-create{position:relative;top:auto}.offer-auto-create-grid{grid-template-columns:repeat(3,1fr)}.offer-auto-rule-grid{grid-template-columns:1fr 1fr}.offer-auto-summary{grid-template-columns:1fr 1fr}}
-      @media(max-width:650px){#tab-ofertas-auto .panel-head{align-items:stretch}.offer-auto-create-grid,.offer-auto-rule-grid{grid-template-columns:1fr}.offer-auto-summary{grid-template-columns:1fr 1fr}.offer-auto-section-head,.offer-auto-run{flex-direction:column;align-items:stretch}.offer-auto-run-metrics{justify-content:flex-start}.offer-auto-table{min-width:760px}}
+      #tab-ofertas-auto .offer-auto-page-head{align-items:center}.offer-auto-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:10px}.offer-auto-summary .summary-card strong{font-size:18px}.offer-auto-summary .summary-card:last-child strong{font-size:12px;line-height:1.3}.offer-auto-layout{display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:11px;align-items:start}.offer-auto-create{position:sticky;top:132px}.offer-auto-main{display:grid;gap:11px}.offer-auto-section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}.offer-auto-section-head h3{margin:0;font-size:16px}.offer-auto-section-head p{margin:3px 0 0;color:var(--muted);font-size:11px}.offer-auto-create-grid{display:grid;gap:8px;margin:10px 0}.offer-auto-number,.offer-history-duration{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;border:1px solid #aeb8c2;border-radius:12px;background:#fff;overflow:hidden}.offer-auto-number .input,.offer-history-duration .input{border:0!important;border-radius:0!important;box-shadow:none!important}.offer-auto-number span,.offer-history-duration span{padding:0 10px;color:var(--muted);font-size:11px;font-weight:900}.offer-auto-explanation{margin-top:10px;font-size:11px}.offer-auto-master{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:850;white-space:nowrap}.offer-auto-rules{display:grid;gap:8px}.offer-auto-rule{border:1px solid var(--line);border-left:4px solid var(--green);border-radius:14px;padding:10px;background:#fff}.offer-auto-rule.pausada{border-left-color:var(--gold);background:#fffdf6}.offer-auto-rule-title,.offer-auto-rule-actions{display:flex;align-items:center;justify-content:space-between;gap:8px}.offer-auto-rule-title{margin-bottom:8px}.offer-auto-rule-title strong{font-size:14px}.offer-auto-rule-grid{display:grid;grid-template-columns:minmax(150px,1.2fr) repeat(3,minmax(120px,.7fr));gap:7px}.offer-auto-rule-grid .field label{font-size:9px}.offer-auto-rule-grid .input,.offer-auto-rule-grid .select{min-height:36px;padding:7px 9px}.offer-auto-rule-actions{justify-content:flex-end;margin-top:8px}.offer-auto-canceled{margin-top:10px;padding:9px;border:1px dashed var(--line);border-radius:12px}.offer-auto-canceled summary{cursor:pointer;font-size:11px;font-weight:900}.offer-auto-canceled>div{display:flex;justify-content:space-between;align-items:center;padding:6px 2px;border-bottom:1px solid var(--line);font-size:11px}.offer-auto-table-wrap{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:12px}.offer-auto-table{width:100%;border-collapse:collapse;font-size:11px}.offer-auto-table th,.offer-auto-table td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}.offer-auto-table th{position:sticky;top:0;z-index:1;background:#f5f3ed;color:var(--muted);font-size:9px;text-transform:uppercase}.offer-auto-table td strong,.offer-auto-table td small{display:block}.offer-auto-table td small{margin-top:3px;color:var(--muted)}.offer-auto-old-price{text-decoration:line-through;color:var(--muted);display:block}.offer-auto-run-list{display:grid;gap:6px}.offer-auto-run{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px;border:1px solid var(--line);border-radius:11px;background:#fafafa}.offer-auto-run strong,.offer-auto-run small{display:block}.offer-auto-run small{margin-top:2px;color:var(--muted);font-size:9px}.offer-auto-run-metrics{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.offer-auto-run-metrics span{padding:5px 7px;border-radius:8px;background:#fff;border:1px solid var(--line);font-size:10px;font-weight:850}.offer-auto-run-metrics .offer-auto-missing{background:var(--red2);color:var(--red);border-color:#ffd3cf}.offer-history-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) 150px 105px auto auto;gap:8px;margin-bottom:10px}.offer-history-wrap{max-height:540px}.offer-history-table{min-width:940px}.offer-history-table tr.offer-history-selected{background:var(--green2)}.offer-history-estimated{color:#936b13!important}.offer-history-table input[type=checkbox]{width:17px;height:17px}
+      @media(max-width:1150px){.offer-history-toolbar{grid-template-columns:1fr 150px 105px}.offer-history-toolbar .btn{width:100%}.offer-auto-layout{grid-template-columns:1fr}.offer-auto-create{position:relative;top:auto}.offer-auto-create-grid{grid-template-columns:repeat(3,1fr)}.offer-auto-rule-grid{grid-template-columns:1fr 1fr}.offer-auto-summary{grid-template-columns:1fr 1fr}}
+      @media(max-width:650px){#tab-ofertas-auto .panel-head{align-items:stretch}.offer-auto-create-grid,.offer-auto-rule-grid,.offer-history-toolbar{grid-template-columns:1fr}.offer-auto-summary{grid-template-columns:1fr 1fr}.offer-auto-section-head,.offer-auto-run{flex-direction:column;align-items:stretch}.offer-auto-run-metrics{justify-content:flex-start}.offer-auto-table{min-width:760px}}
     `;document.head.appendChild(style)}
   })();
-
 
   /* ===== BANNERS V10 · POSICIONAMENTO REAL DO SITE + LIMITE 4 POR ESPAÇO ===== */
   const DA_BANNER_MAX_ACTIVE_PER_SPACE_V10 = 12;
@@ -7233,11 +7329,32 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     daRunAutomaticBannerV10().catch(error=>{console.error(error);setStatus(`Falha ao criar banner automático: ${error.message}`,"err");alert(error.message);});
   },true);
 
+  function daBannerPositionReportHtml(){
+    const catalog=daNormalizeBannerCatalog(state.bannerManager.catalog),banners=catalog.banners||[],families=[...DA_BANNER_SITE_FIXED_SLOTS_V10,...DA_BANNER_CONTEXTUAL_PLACEMENTS_V10];
+    const rows=[];
+    families.forEach(position=>{
+      const matches=banners.filter(banner=>String(banner?.exibicao?.local||"")===String(position.value));
+      const targets=position.targetKind?uniq(matches.map(banner=>String(banner?.exibicao?.alvo||"").trim()).filter(Boolean)): [""];
+      const targetList=targets.length?targets:[""];
+      targetList.forEach(target=>{
+        const list=matches.filter(banner=>!position.targetKind||String(banner?.exibicao?.alvo||"").trim()===target);
+        const active=list.filter(banner=>daBannerStatus(banner).text==="Ativo"),scheduled=list.filter(banner=>daBannerStatus(banner).text==="Agendado"),ended=list.filter(banner=>["Encerrado","Inativo"].includes(daBannerStatus(banner).text));
+        const label=target?`${position.label} · ${target}`:position.label;
+        rows.push({label,list,active,scheduled,ended});
+      });
+    });
+    return `<details class="banner-position-report" open><summary><strong>Relatório por posicionamento</strong><span>${banners.length} registros distribuídos</span></summary><div class="banner-position-report-grid">${rows.map(row=>`<article class="banner-position-report-card"><div class="banner-position-report-head"><div><strong>${esc(row.label)}</strong><small>${row.list.length} de ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} na fila</small></div><div class="banner-position-metrics"><span class="chip green">${row.active.length} ativos</span><span class="chip blue">${row.scheduled.length} agendados</span><span class="chip">${row.ended.length} encerrados</span></div></div><div class="banner-position-list">${row.list.length?row.list.map(banner=>`<button type="button" class="banner-position-item" data-action="banner-edit" data-id="${esc(banner.id)}"><span>${esc(banner.titulo||banner.id)}</span><small>${esc(daBannerStatus(banner).text)} · ${esc((()=>{const value=banner?.periodo?.fim;if(!value)return"sem fim";const date=new Date(value);return Number.isNaN(date.getTime())?String(value).slice(0,10):date.toLocaleDateString("pt-BR")})())}</small></button>`).join(""):'<div class="tiny">Nenhum banner neste posicionamento.</div>'}</div></article>`).join("")}</div></details>`;
+  }
+
   const daV10RenderBannerManagerBase=daRenderBannerManager;
   daRenderBannerManager=async function(){
     const result=await daV10RenderBannerManagerBase();
     const body=document.getElementById("bannerManagerBody");
-    if(body&&!body.querySelector(".banner-layout-v10-notice"))body.insertAdjacentHTML("afterbegin",`<div class="notice blue banner-layout-v10-notice" style="margin-bottom:14px"><strong>Fila inteligente:</strong> cada família de posição aceita até <strong>${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners</strong>. O site mostra somente <strong>${DA_BANNER_VISIBLE_PER_SPACE_V12} por vez</strong> e alterna aleatoriamente entre os demais, sem deixar a fila escondida esquecida.</div><div class="toolbar" style="justify-content:flex-start;margin:-4px 0 14px"><button class="btn gold" type="button" data-action="banner-migrate-layout-v10">↻ Reorganizar JSON atual pelos novos espaços</button></div>`);
+    if(body){
+      body.querySelector(".banner-layout-v10-notice")?.remove();
+      body.querySelector(".banner-position-report")?.remove();
+      body.insertAdjacentHTML("afterbegin",`<div class="notice blue banner-layout-v10-notice" style="margin-bottom:14px"><strong>Fila inteligente:</strong> cada família aceita até <strong>${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners</strong>. O site mostra <strong>${DA_BANNER_VISIBLE_PER_SPACE_V12} por vez</strong>; no admin, o notebook exibe seis cards por linha.</div><div class="toolbar" style="justify-content:flex-start;margin:-4px 0 14px"><button class="btn gold" type="button" data-action="banner-migrate-layout-v10">↻ Reorganizar JSON atual pelos novos espaços</button></div>${daBannerPositionReportHtml()}`);
+    }
     return result;
   };
 
@@ -7303,9 +7420,8 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     .banner-admin-grid{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
     @media (min-width:700px){.banner-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
     @media (min-width:900px){.banner-admin-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
-    @media (min-width:1080px){.banner-admin-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
-    @media (min-width:1280px){.banner-admin-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}}
-    @media (min-width:1450px){.banner-admin-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}}
+    @media (min-width:1080px){.banner-admin-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}}
+    .banner-position-report{margin-bottom:14px;border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden}.banner-position-report>summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#faf9f6}.banner-position-report>summary span{font-size:11px;color:var(--muted)}.banner-position-report-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px}.banner-position-report-card{border:1px solid var(--line);border-radius:12px;padding:9px;min-width:0}.banner-position-report-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.banner-position-report-head strong,.banner-position-report-head small{display:block}.banner-position-report-head strong{font-size:11px;line-height:1.25}.banner-position-report-head small{font-size:9px;color:var(--muted);margin-top:3px}.banner-position-metrics{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:3px}.banner-position-metrics .chip{font-size:8px;padding:3px 5px}.banner-position-list{display:grid;gap:4px;margin-top:8px;max-height:150px;overflow:auto}.banner-position-item{border:0;border-top:1px solid var(--line);background:transparent;padding:6px 2px;text-align:left;color:var(--ink)}.banner-position-item span,.banner-position-item small{display:block}.banner-position-item span{font-size:10px;font-weight:800}.banner-position-item small{font-size:8px;color:var(--muted);margin-top:2px}@media(max-width:1100px){.banner-position-report-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.banner-position-report-grid{grid-template-columns:1fr}}
     @media (min-width:1080px){
       .banner-admin-body{padding:10px;gap:6px}
       .banner-admin-title{font-size:12px}
