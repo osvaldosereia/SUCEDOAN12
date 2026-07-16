@@ -15,17 +15,30 @@ concurrency:
 jobs:
   processar:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Baixar configuracao atual
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
+
+      - name: Preservar base para reconciliacao
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/ofertas-publicacao"
+          mkdir -p "$dir"
+          cp site/banners/banners.json "$dir/base-banners.json"
+          if [ -f site/ofertas-automaticas-estado.json ]; then
+            cp site/ofertas-automaticas-estado.json "$dir/base-estado.json"
+          else
+            printf '{}\n' > "$dir/base-estado.json"
+          fi
 
       - name: Criar, encerrar, reativar e sincronizar ofertas
         env:
@@ -36,19 +49,55 @@ jobs:
           BANNERS_PATH: site/banners/banners.json
         run: node scripts/processar-ofertas.mjs
 
-      - name: Publicar catalogos, historico e banners
+      - name: Preservar resultados processados
+        shell: bash
         run: |
-          if git diff --quiet; then
-            echo "Nenhuma alteracao de catalogo para publicar."
-            exit 0
-          fi
+          set -euo pipefail
+          dir="$RUNNER_TEMP/ofertas-publicacao"
+          cp site/produtos.json "$dir/gerado-produtos.json"
+          cp site/produtos-home.json "$dir/gerado-produtos-home.json"
+          cp site/ofertas-automaticas-estado.json "$dir/gerado-estado.json"
+          cp site/ofertas-historico.json "$dir/gerado-historico.json"
+          cp site/banners/banners.json "$dir/gerado-banners.json"
+
+      - name: Publicar com reconciliacao e novas tentativas
+        shell: bash
+        env:
+          OFFERS_PUBLICATION_DIR: ${{ runner.temp }}/ofertas-publicacao
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            site/produtos.json \
-            site/produtos-home.json \
-            site/ofertas-automaticas-estado.json \
-            site/ofertas-historico.json \
-            site/banners/banners.json
-          git commit -m "Atualiza ofertas, historico e banners vinculados"
-          git push
+          branch="${GITHUB_REF_NAME:-main}"
+
+          for tentativa in 1 2 3 4 5; do
+            echo "Publicacao: tentativa ${tentativa} de 5 na branch ${branch}."
+            git fetch origin "$branch"
+            git reset --hard "origin/${branch}"
+
+            node scripts/reconciliar-publicacao-ofertas.mjs
+
+            git add \
+              site/produtos.json \
+              site/produtos-home.json \
+              site/ofertas-automaticas-estado.json \
+              site/ofertas-historico.json \
+              site/banners/banners.json
+
+            if git diff --cached --quiet; then
+              echo "Nenhuma alteracao de catalogo para publicar."
+              exit 0
+            fi
+
+            git commit -m "Atualiza ofertas, historico e banners vinculados"
+            if git push origin "HEAD:${branch}"; then
+              echo "Publicacao concluida na tentativa ${tentativa}."
+              exit 0
+            fi
+
+            echo "A branch recebeu outro commit durante a publicacao. Reconciliando novamente sem apagar banners novos."
+            sleep $((tentativa * 3))
+          done
+
+          echo "Falha ao publicar depois de 5 tentativas por atualizacoes concorrentes na branch ${branch}." >&2
+          exit 1
