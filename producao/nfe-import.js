@@ -74,6 +74,11 @@
     return raw.length ? dateMaskFromDigits(raw) : '';
   }
 
+  function dateInputValue(value) {
+    const raw = digits(value).slice(0, 8);
+    return raw.length ? dateMaskFromDigits(raw) : '';
+  }
+
   function selectNextDateDigit(input) {
     if (!input || typeof input.setSelectionRange !== 'function') return;
     const count = digits(input.value).slice(0, 8).length;
@@ -520,15 +525,15 @@
           </div>
           <div class="field">
             <label>Validade do lote recebido</label>
-            <input class="input" inputmode="numeric" maxlength="10" data-nfe-field="validity" value="${safe(dateMaskFromDigits(item.validity))}" ${item.noExpiry ? 'disabled' : ''}>
+            <input class="input" type="text" inputmode="numeric" pattern="[0-9]*" data-nfe-field="validity" value="${safe(dateInputValue(item.validity))}" placeholder="__/__/____" autocomplete="off" aria-label="Validade do lote no formato dia mês ano" ${item.noExpiry ? 'disabled' : ''}>
             <small class="tiny">Digite somente os 8 números. Cadastro atual: ${safe(currentValidity)}.</small>
           </div>
           <div class="field">
             <label>Como atualizar a validade do cadastro</label>
             <select class="select" data-nfe-field="validityMode" ${item.noExpiry ? 'disabled' : ''}>
+              ${product ? `<option value="keep" ${item.validityMode === 'keep' || item.validityMode === 'history' ? 'selected' : ''}>Manter a validade do estoque atual</option>` : ''}
               <option value="earliest" ${item.validityMode === 'earliest' ? 'selected' : ''}>Manter a validade mais próxima</option>
               <option value="replace" ${item.validityMode === 'replace' ? 'selected' : ''}>Substituir pela validade deste lote</option>
-              <option value="history" ${item.validityMode === 'history' ? 'selected' : ''}>Registrar somente no lote</option>
             </select>
           </div>
           <label class="checkline"><input type="checkbox" data-nfe-field="noExpiry" ${item.noExpiry ? 'checked' : ''}> Produto sem validade</label>
@@ -605,7 +610,7 @@
         <div class="field">
           <label>Validade para todos os produtos</label>
           <div class="nfe-inline">
-            <input class="input" id="nfeGlobalValidity" inputmode="numeric" maxlength="10" value="${safe(dateMaskFromDigits(model.globalValidity))}">
+            <input class="input" id="nfeGlobalValidity" type="text" inputmode="numeric" pattern="[0-9]*" value="${safe(dateInputValue(model.globalValidity))}" placeholder="__/__/____" autocomplete="off" aria-label="Validade para todos os produtos no formato dia mês ano">
             <button class="btn blue" type="button" data-nfe-action="apply-validity-all">Aplicar validade em todos</button>
           </div>
         </div>
@@ -868,6 +873,41 @@
     return itemById(element.closest?.('[data-item-id]')?.dataset.itemId);
   }
 
+  function updateDateTarget(target, rawDigits) {
+    const raw = digits(rawDigits).slice(0, 8);
+    const masked = raw.length ? dateMaskFromDigits(raw) : '';
+    target.value = masked;
+
+    if (target.id === 'nfeGlobalValidity') {
+      model.globalValidity = dateValueFromMask(masked);
+    } else {
+      const item = itemFromElement(target);
+      if (item) item.validity = dateValueFromMask(masked);
+    }
+    requestAnimationFrame(() => selectNextDateDigit(target));
+  }
+
+  document.addEventListener('keydown', event => {
+    const target = event.target;
+    if (target.id !== 'nfeGlobalValidity' && target.dataset.nfeField !== 'validity') return;
+    if (target.disabled || event.ctrlKey || event.metaKey || event.altKey) return;
+
+    if (/^\d$/.test(event.key)) {
+      event.preventDefault();
+      const current = digits(target.value).slice(0, 8);
+      const allSelected = target.selectionStart === 0 && target.selectionEnd === target.value.length;
+      const base = allSelected || current.length >= 8 ? '' : current;
+      updateDateTarget(target, `${base}${event.key}`);
+      return;
+    }
+
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      event.preventDefault();
+      const current = digits(target.value).slice(0, 8);
+      updateDateTarget(target, current.slice(0, -1));
+    }
+  });
+
   document.addEventListener('input', event => {
     const target = event.target;
     if (target.id === 'nfeAccessKey') {
@@ -875,9 +915,7 @@
       return;
     }
     if (target.id === 'nfeGlobalValidity') {
-      target.value = dateMaskFromDigits(target.value);
-      model.globalValidity = dateValueFromMask(target.value);
-      requestAnimationFrame(() => selectNextDateDigit(target));
+      updateDateTarget(target, target.value);
       return;
     }
     if (target.id === 'nfeMargin') {
@@ -897,9 +935,7 @@
     const field = target.dataset.nfeField;
     if (!field) return;
     if (field === 'validity') {
-      target.value = dateMaskFromDigits(target.value);
-      item.validity = dateValueFromMask(target.value);
-      requestAnimationFrame(() => selectNextDateDigit(target));
+      updateDateTarget(target, target.value);
       return;
     }
     if (field === 'name' || field === 'ean' || field === 'ncm' || field === 'packaging') {
@@ -919,7 +955,10 @@
   document.addEventListener('focusin', event => {
     const target = event.target;
     if (target.id !== 'nfeGlobalValidity' && target.dataset.nfeField !== 'validity') return;
-    requestAnimationFrame(() => target.select());
+    requestAnimationFrame(() => {
+      if (digits(target.value).length) target.select();
+      else selectNextDateDigit(target);
+    });
   });
 
   document.addEventListener('change', event => {
