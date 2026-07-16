@@ -1,9 +1,8 @@
 name: Corrigir carregamento de produtos
 
 on:
-  push:
-    paths:
-      - '.github/workflows/corrigir-carregamento-produtos.yml'
+  issues:
+    types: [opened]
   workflow_dispatch:
 
 permissions:
@@ -11,6 +10,7 @@ permissions:
 
 jobs:
   corrigir:
+    if: github.event_name == 'workflow_dispatch' || github.event.issue.title == 'EXECUTAR CORRECAO URGENTE DO SITE'
     runs-on: ubuntu-latest
     steps:
       - name: Baixar repositório
@@ -19,14 +19,14 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Corrigir index e atualizar versão
+      - name: Corrigir catálogo, redirecionamento e cache
         shell: python
         run: |
           from pathlib import Path
           import json
           from datetime import datetime, timezone
 
-          version = '2026-07-16-produtos-cors-cache-v3'
+          version = '2026-07-16-produtos-cache-v5'
           path = Path('index.html')
           text = path.read_text(encoding='utf-8')
           original = text
@@ -46,27 +46,72 @@ jobs:
           new_headers = """headers: {
             Accept: 'application/json'
           }"""
-          if old_headers in text:
-              text = text.replace(old_headers, new_headers, 1)
-          elif new_headers not in text:
-              raise SystemExit('Bloco fetchJson não encontrado')
+          text = text.replace(old_headers, new_headers)
+
+          old_initial_redirect = """    try {
+      const current = new URL(window.location.href).searchParams.get('__da_v');
+      if (!current) {
+        window.location.replace(versionedLocation(BUILD, true));
+        return;
+      }
+    } catch (_) {}"""
+          new_initial_redirect = """    try {
+      const currentUrl = new URL(window.location.href);
+      if (currentUrl.searchParams.has('__da_v') || currentUrl.searchParams.has('__da_r')) {
+        currentUrl.searchParams.delete('__da_v');
+        currentUrl.searchParams.delete('__da_r');
+        window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search + currentUrl.hash);
+      }
+    } catch (_) {}"""
+          if old_initial_redirect in text:
+              text = text.replace(old_initial_redirect, new_initial_redirect, 1)
+          elif new_initial_redirect not in text:
+              raise SystemExit('Redirecionamento inicial não encontrado')
+
+          old_pageshow = """    window.addEventListener('pageshow', function(event) {
+      if (!event.persisted) return;
+      try {
+        const requested = new URL(window.location.href).searchParams.get('__da_v') || BUILD;
+        window.location.replace(versionedLocation(requested, true));
+      } catch (_) { window.location.reload(); }
+    });"""
+          new_pageshow = """    window.addEventListener('pageshow', function(event) {
+      if (event.persisted) window.location.reload();
+    });"""
+          if old_pageshow in text:
+              text = text.replace(old_pageshow, new_pageshow, 1)
+          elif new_pageshow not in text:
+              raise SystemExit('Tratamento pageshow não encontrado')
+
+          old_deploy_redirect = """        const url = new URL(window.location.href);
+        url.searchParams.set('__da_v', latest);
+        url.searchParams.set('__da_r', String(Date.now()));
+        window.location.replace(url.pathname + url.search + url.hash);
+        return true;"""
+          new_deploy_redirect = """        window.location.reload();
+        return true;"""
+          if old_deploy_redirect in text:
+              text = text.replace(old_deploy_redirect, new_deploy_redirect, 1)
+          elif new_deploy_redirect not in text:
+              raise SystemExit('Redirecionamento de versão não encontrado')
 
           for old_version in [
               '2026-07-16-banners-8-category-v1',
-              '2026-07-16-produtos-cors-v2'
+              '2026-07-16-images-fast-v1',
+              '2026-07-16-produtos-cors-cache-v3',
+              '2026-07-16-produtos-cache-v4'
           ]:
               text = text.replace(old_version, version)
 
           if text == original:
-              print('Index já estava corrigido; mantendo conteúdo.')
-          else:
-              path.write_text(text, encoding='utf-8')
+              raise SystemExit('Nenhuma alteração foi aplicada ao index')
+          path.write_text(text, encoding='utf-8')
 
           version_path = Path('site/app-version.json')
           version_data = {
               'version': version,
               'updatedAt': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
-              'purpose': 'Correção do acesso aos produtos e atualização automática do cache do site Dona Antônia'
+              'purpose': 'Corrige carregamento dos produtos, remove redirecionamento por query e força atualização segura do cache'
           }
           version_path.write_text(json.dumps(version_data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
@@ -78,14 +123,15 @@ jobs:
 
           text = Path('index.html').read_text(encoding='utf-8')
           assert "PRODUCT_HOME_URLS: ['/site/produtos-home.json', 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/produtos-home.json', 'site/produtos-home.json']" in text
-          assert "headers: {\n            Accept: 'application/json'\n          }" in text
-          assert "Accept: 'application/json',\n            'Cache-Control':" not in text
-          assert "2026-07-16-produtos-cors-cache-v3" in text
+          assert "'Cache-Control': 'no-cache, no-store, max-age=0'" not in text
+          assert "window.location.replace(versionedLocation(BUILD, true))" not in text
+          assert "url.searchParams.set('__da_v', latest)" not in text
+          assert "2026-07-16-produtos-cache-v5" in text
           assert text.lstrip().startswith('<!DOCTYPE html>')
           assert text.rstrip().endswith('</html>')
 
           version = json.loads(Path('site/app-version.json').read_text(encoding='utf-8'))
-          assert version['version'] == '2026-07-16-produtos-cors-cache-v3'
+          assert version['version'] == '2026-07-16-produtos-cache-v5'
 
       - name: Publicar correção e remover executor temporário
         run: |
@@ -93,9 +139,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html site/app-version.json .github/workflows/corrigir-carregamento-produtos.yml
-          if git diff --cached --quiet; then
-            echo "Nenhuma alteração pendente"
-            exit 0
-          fi
-          git commit -m "Corrige produtos e atualiza cache do site"
+          git commit -m "Corrige carregamento dos produtos e cache"
           git push origin main
