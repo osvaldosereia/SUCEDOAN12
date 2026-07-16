@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-16T11:56:19.000Z",
+  "updated_at": "2026-07-16T12:22:35.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -7377,6 +7377,85 @@
         "duracao": "periodo_da_oferta",
         "duracao_efetiva_horas": 257.64,
         "fim_da_oferta": "2026-07-26T23:59:59-04:00",
+        "fim_limitado_pelo_vencimento_produto": false
+      }
+    },
+    {
+      "id": "banner-produto-61224287-1784204513000",
+      "ativo": true,
+      "titulo": "Oferta · Crocantíssimo Orginial Churrasco 40g",
+      "alt": "Crocantíssimo Orginial Churrasco 40g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776361224287",
+        "produtos": [
+          {
+            "firebaseKey": "1776361224287",
+            "id": "1776361224287",
+            "codigo": "61224287",
+            "nome": "Crocantíssimo Orginial Churrasco 40g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b07/2026/07/crocantissimo-orginial-churrasco-40g-grupo-bimbo-40g-salgadinhos-e-petiscos-salgadinhos-7896002302449-foto-atual-otimizada-20260711070212.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "categoria",
+        "alvo": "SALGADINHOS E PETISCOS",
+        "ordem": 3
+      },
+      "imagem": "site/banners/ativos/banner-produto-61224287-1784204513000/banner-1784204513000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "61224287"
+      },
+      "periodo": {
+        "inicio": "2026-07-16T12:21:53.000Z",
+        "fim": "2026-07-29T03:59:59.000Z",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta",
+        "duracao_efetiva_horas": 303.64,
+        "encurtado_pelo_vencimento_produto": false
+      },
+      "criado_em": "2026-07-16T12:21:53.000Z",
+      "atualizado_em": "2026-07-16T12:21:53.000Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-61224287-1784204513000",
+      "asset_id": "banner-produto-61224287-1784204513000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 3.79,
+        "preco_oferta": 2.27,
+        "percentual_desconto": 40,
+        "inicio": null,
+        "fim": "2026-07-28T23:59:59-04:00"
+      },
+      "automacao": {
+        "automatico": true,
+        "requisicao_id": "",
+        "estrategia": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "categoria",
+        "alvo_escolhido": "SALGADINHOS E PETISCOS",
+        "relacao_contextual": "categoria",
+        "carga_antes": 2,
+        "carga_alvo_antes": 0,
+        "pontuacao_comercial": 195.12,
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "repeticao_estrita": true,
+        "duracao": "periodo_da_oferta",
+        "duracao_efetiva_horas": 303.64,
+        "fim_da_oferta": "2026-07-28T23:59:59-04:00",
         "fim_limitado_pelo_vencimento_produto": false
       }
     }
