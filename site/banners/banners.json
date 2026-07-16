@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-16T18:22:26.000Z",
+  "updated_at": "2026-07-16T20:22:16.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -7614,6 +7614,85 @@
         "duracao": "periodo_da_oferta",
         "duracao_efetiva_horas": 681.64,
         "fim_da_oferta": "2026-08-13T23:59:59-04:00",
+        "fim_limitado_pelo_vencimento_produto": false
+      }
+    },
+    {
+      "id": "banner-produto-1579080745-1784233308000",
+      "ativo": true,
+      "titulo": "Oferta · Macarrão Urbano Integral Parafuso Zero Glúten 500g",
+      "alt": "Macarrão Urbano Integral Parafuso Zero Glúten 500g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "178092415790850298",
+        "produtos": [
+          {
+            "firebaseKey": "178092415790850298",
+            "id": "178092415790850298",
+            "codigo": "1579080745",
+            "nome": "Macarrão Urbano Integral Parafuso Zero Glúten 500g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b10/2026/07/urbano-macarrao-integral-parafuso-zero-gluten-500g-urbano-500g-macarrao-e-molhos-macarrao-7896038311194-foto-atual-otimizada-20260711090014.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "produto",
+        "alvo": "178092415790850298",
+        "ordem": 3
+      },
+      "imagem": "site/banners/ativos/banner-produto-1579080745-1784233308000/banner-1784233308000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "1579080745"
+      },
+      "periodo": {
+        "inicio": "2026-07-16T20:21:48.000Z",
+        "fim": "2026-07-20T03:59:59.000Z",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta",
+        "duracao_efetiva_horas": 79.64,
+        "encurtado_pelo_vencimento_produto": false
+      },
+      "criado_em": "2026-07-16T20:21:48.000Z",
+      "atualizado_em": "2026-07-16T20:21:48.000Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-1579080745-1784233308000",
+      "asset_id": "banner-produto-1579080745-1784233308000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 8.9,
+        "preco_oferta": 5.99,
+        "percentual_desconto": 33,
+        "inicio": "2026-07-11",
+        "fim": "2026-07-19T23:59:59-04:00"
+      },
+      "automacao": {
+        "automatico": true,
+        "requisicao_id": "",
+        "estrategia": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "produto",
+        "alvo_escolhido": "178092415790850298",
+        "relacao_contextual": "produto",
+        "carga_antes": 2,
+        "carga_alvo_antes": 0,
+        "pontuacao_comercial": 185.4,
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "repeticao_estrita": true,
+        "duracao": "periodo_da_oferta",
+        "duracao_efetiva_horas": 79.64,
+        "fim_da_oferta": "2026-07-19T23:59:59-04:00",
         "fim_limitado_pelo_vencimento_produto": false
       }
     }
