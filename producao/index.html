@@ -660,6 +660,7 @@
   const defaultSettings = {
     firebaseUrl: "https://cedar-chemist-310801-default-rtdb.firebaseio.com",
     produtosNode: "produtos",
+    nfeImportNode: "nfe_importadas",
     metaNode: "produtos_meta",
     cestasNode: "cestas",
     kitsNode: "kitspromocionais",
@@ -7490,6 +7491,150 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   }
 }
 
+  const DA_NFE_IMPORT_SESSION = (globalThis.crypto?.randomUUID?.() || `nfe_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+
+  function daNfeImportKey(value){
+    const key=String(value||"").replace(/\D/g,"");
+    if(key.length!==44)throw new Error("A NF-e precisa ter uma chave de acesso válida com 44 números.");
+    return key;
+  }
+
+  function daNfeImportUrl(noteKey){
+    const base=String(state.settings.firebaseUrl||"").replace(/\/$/,"");
+    const node=String(state.settings.nfeImportNode||"nfe_importadas").replace(/^\/+|\/+$/g,"");
+    if(!base)throw new Error("Firebase não configurado no admin.");
+    return `${base}/${node}/${encodeURIComponent(daNfeImportKey(noteKey))}.json`;
+  }
+
+  async function daNfeReadImport(noteKey,withEtag=false){
+    const headers={Accept:"application/json"};
+    if(withEtag)headers["X-Firebase-ETag"]="true";
+    const response=await fetch(daNfeImportUrl(noteKey),{cache:"no-store",headers});
+    if(!response.ok)throw new Error(`Firebase registro NF-e: ${response.status}`);
+    return {record:await response.json(),etag:response.headers.get("ETag")||response.headers.get("etag")||"null_etag"};
+  }
+
+  async function daNfeMutateImport(noteKey,updater){
+    for(let attempt=1;attempt<=7;attempt++){
+      const current=await daNfeReadImport(noteKey,true);
+      const next=await updater(deepClone(current.record||{}));
+      if(next===undefined)return current.record||null;
+      const response=await fetch(daNfeImportUrl(noteKey),{
+        method:"PUT",cache:"no-store",
+        headers:{Accept:"application/json","Content-Type":"application/json","if-match":current.etag},
+        body:JSON.stringify(next)
+      });
+      if(response.ok)return response.json();
+      if(response.status!==412)throw new Error(`Firebase registro NF-e: ${response.status}`);
+      await new Promise(resolve=>setTimeout(resolve,120*attempt));
+    }
+    throw new Error("Outra operação alterou esta NF-e ao mesmo tempo. Tente novamente.");
+  }
+
+  function daNfeDecodeGithubText(file){
+    const encoded=String(file?.content||"").replace(/\s/g,"");
+    return encoded?decodeURIComponent(escape(atob(encoded))):"";
+  }
+
+  function daNfeArchivePath(note){
+    const raw=String(note?.issuedAt||"");
+    const match=raw.match(/^(\d{4})-(\d{2})/);
+    const now=new Date();
+    const year=match?.[1]||String(now.getFullYear());
+    const month=match?.[2]||String(now.getMonth()+1).padStart(2,"0");
+    return `fiscal/nfe-importadas/${year}/${month}/${daNfeImportKey(note?.key)}.xml`;
+  }
+
+  async function inspectNfeImport(noteKey){
+    return (await daNfeReadImport(noteKey,false)).record||null;
+  }
+
+  async function beginNfeImport({note,rawXml,xmlHash,totalItems}={}){
+    const key=daNfeImportKey(note?.key);
+    const xml=String(rawXml||"").trim();
+    if(!xml||!xml.startsWith("<")&&!xml.startsWith("<?xml"))throw new Error("O XML completo da NF-e não está disponível para arquivamento.");
+    readSettingsFromUi();
+    if(!state.settings.githubToken)throw new Error("Configure o token do GitHub para arquivar o XML antes de aplicar a NF-e.");
+    const now=Date.now(),lockLimit=10*60*1000;
+
+    await daNfeMutateImport(key,record=>{
+      if(record.status==="concluida")throw new Error(`A NF-e ${key} já foi importada e está bloqueada contra duplicidade.`);
+      if(record.xml_sha256&&xmlHash&&String(record.xml_sha256)!==String(xmlHash)){
+        throw new Error(`A chave ${key} já foi registrada com outro conteúdo XML. A importação foi bloqueada para conferência.`);
+      }
+      const lockedAt=Date.parse(record.bloqueada_em||0)||0;
+      if(record.status==="em_processamento"&&record.sessao&&record.sessao!==DA_NFE_IMPORT_SESSION&&now-lockedAt<lockLimit){
+        throw new Error("Esta NF-e está sendo importada em outra aba ou aparelho.");
+      }
+      return {
+        ...record,
+        chave_nfe:key,
+        codigo_xml:key,
+        numero_nfe:String(note?.number||record.numero_nfe||""),
+        serie_nfe:String(note?.series||record.serie_nfe||""),
+        fornecedor:String(note?.supplier||record.fornecedor||""),
+        fornecedor_documento:String(note?.supplierCnpj||record.fornecedor_documento||""),
+        emitida_em:String(note?.issuedAt||record.emitida_em||""),
+        valor_total:toNum(note?.total??record.valor_total),
+        xml_sha256:String(xmlHash||record.xml_sha256||""),
+        total_itens:Math.max(0,Math.floor(toNum(totalItems||record.total_itens))),
+        itens_aplicados:Array.isArray(record.itens_aplicados)?record.itens_aplicados:[],
+        itens_ignorados:Array.isArray(record.itens_ignorados)?record.itens_ignorados:[],
+        status:"em_processamento",
+        sessao:DA_NFE_IMPORT_SESSION,
+        bloqueada_em:nowIso(),
+        atualizada_em:nowIso()
+      };
+    });
+
+    const path=daNfeArchivePath(note);
+    try{
+      const existing=await githubContent(path);
+      if(existing){
+        const archived=daNfeDecodeGithubText(existing).trim();
+        if(archived!==xml)throw new Error(`Já existe outro conteúdo arquivado para a chave ${key}. O arquivo não foi sobrescrito.`);
+      }else{
+        await githubUpsertText(path,xml,`Arquiva XML da NF-e ${key}`);
+      }
+      return await daNfeMutateImport(key,record=>({
+        ...record,xml_path:path,xml_arquivado_em:record.xml_arquivado_em||nowIso(),xml_sha256:String(xmlHash||record.xml_sha256||""),atualizada_em:nowIso()
+      }));
+    }catch(error){
+      await abortNfeImport({noteKey:key,error:error.message}).catch(()=>{});
+      throw error;
+    }
+  }
+
+  async function finishNfeImportItem({noteKey,groupKey,productKey,totalItems,ignoredGroupKeys=[]}={}){
+    const key=daNfeImportKey(noteKey);
+    return daNfeMutateImport(key,record=>{
+      if(record.status==="concluida")return record;
+      const applied=Array.isArray(record.itens_aplicados)?record.itens_aplicados.slice():[];
+      const group=String(groupKey||"");
+      if(group&&!applied.some(item=>String(item?.grupo||"")===group)){
+        applied.push({grupo:group,produto_key:String(productKey||""),aplicado_em:nowIso()});
+      }
+      const ignored=[...new Set([...(Array.isArray(record.itens_ignorados)?record.itens_ignorados:[]),...ignoredGroupKeys.map(String)].filter(Boolean))];
+      const covered=new Set([...applied.map(item=>String(item?.grupo||"")),...ignored]);
+      const total=Math.max(0,Math.floor(toNum(totalItems||record.total_itens)));
+      const complete=total>0&&covered.size>=total;
+      const next={
+        ...record,total_itens:total,itens_aplicados:applied,itens_ignorados:ignored,
+        status:complete?"concluida":"parcial",sessao:null,bloqueada_em:null,atualizada_em:nowIso()
+      };
+      if(complete)next.concluida_em=record.concluida_em||nowIso();
+      return next;
+    });
+  }
+
+  async function abortNfeImport({noteKey,error}={}){
+    const key=daNfeImportKey(noteKey);
+    return daNfeMutateImport(key,record=>{
+      if(record.status==="concluida"||record.sessao&&record.sessao!==DA_NFE_IMPORT_SESSION)return record;
+      return {...record,status:(record.itens_aplicados||[]).length?"parcial":"arquivada",sessao:null,bloqueada_em:null,ultimo_erro:String(error||""),atualizada_em:nowIso()};
+    });
+  }
+
   async function syncNfeProductToFirebase(operation = {}) {
   const key = String(operation.key || "").trim();
   if (!key) throw new Error("Produto sem chave para salvar no Firebase.");
@@ -7595,11 +7740,11 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   return { key, duplicate: false, product: base, preservedPendingFields: [...pendingFields].filter(field => !managedFields.has(field)) };
 }
 
-  window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,syncNfeProductToFirebase,saveLocal,renderProducts,renderSummary};
+  window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,syncNfeProductToFirebase,inspectNfeImport,beginNfeImport,finishNfeImportItem,abortNfeImport,saveLocal,renderProducts,renderSummary};
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
 </script>
-<script src="nfe-import.js?v=20260716-4"></script>
+<script src="nfe-import.js?v=20260716-5"></script>
 <script>
   // Ponte segura: o admin chama somente o webhook do Make; nenhum token do Bling/GitHub fica no navegador.
   (()=>{
