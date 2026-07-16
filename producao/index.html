@@ -2660,6 +2660,7 @@
     const renderOptions=options&&typeof options==="object"&&!Array.isArray(options)?options:{};
     const nfeContext=renderOptions.context==="nfe";
     const nfeDisabled=nfeContext&&!!renderOptions.disabled;
+    const nfeStockPreview=nfeContext&&Number.isFinite(Number(renderOptions.stockPreview))?Number(renderOptions.stockPreview):toNum(p.estoque);
     const key=getKey(p),code=getCode(p),images=uniq([p.url_imagem||p.imagem||"",...(Array.isArray(p.imagens)?p.imagens:[])]).filter(Boolean);
     const baskets=basketsByProduct(p),kits=kitsByProduct(p),dirty=state.dirtyProductKeys.has(key)||!!p.__nfe_draft;
     const gallery=images.slice(0,9).map((src,index)=>`<div class="workbench-thumb ${src===(p.url_imagem||p.imagem)?"primary":""}" title="Clique para tornar principal"><img src="${esc(src)}" data-action="workbench-make-primary" data-key="${esc(key)}" data-src="${esc(src)}" onerror="this.src='${PLACEHOLDER}'"><button type="button" data-action="workbench-remove-gallery" data-key="${esc(key)}" data-src="${esc(src)}" title="Remover imagem">×</button></div>`).join("");
@@ -2721,7 +2722,7 @@
               ${workbenchField(p,"preco_custo","Custo",p.preco_custo??0,{span:3,type:"number"})}
               ${workbenchField(p,"preco","Valor antigo",p.preco??0,{span:3,type:"number"})}
               ${workbenchField(p,"preco_oferta","Preço oferta",p.preco_oferta??"",{span:3,type:"number"})}
-              ${workbenchField(p,"estoque",nfeContext?"Estoque atual (somado pela NF-e)":"Estoque real",p.estoque??0,{span:3,type:"number",disabled:nfeContext})}
+              ${workbenchField(p,"estoque",nfeContext?"Estoque após esta entrada":"Estoque real",nfeContext?nfeStockPreview:(p.estoque??0),{span:3,type:"number",disabled:nfeContext})}
               ${workbenchField(p,"data_inicio_oferta","Início da oferta",workbenchDateValue(p.data_inicio_oferta),{span:3,type:"date"})}
               ${workbenchField(p,"validade_oferta","Fim da oferta",workbenchDateValue(p.validade_oferta),{span:3,type:"date"})}
               ${workbenchField(p,"validade","Validade do produto",workbenchDateValue(p.validade),{span:4,type:"date"})}
@@ -7808,7 +7809,7 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
 </script>
-<script src="nfe-import.js?v=20260716-7"></script>
+<script src="nfe-import.js?v=20260716-8"></script>
 <script>
   // Ponte segura: o admin chama somente o webhook do Make; nenhum token do Bling/GitHub fica no navegador.
   (()=>{
