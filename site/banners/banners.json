@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-16T16:22:45.000Z",
+  "updated_at": "2026-07-16T18:22:26.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -7535,6 +7535,85 @@
         "duracao": "periodo_da_oferta",
         "duracao_efetiva_horas": 347.64,
         "fim_da_oferta": "2026-07-30T23:59:59-04:00",
+        "fim_limitado_pelo_vencimento_produto": false
+      }
+    },
+    {
+      "id": "banner-produto-p-tgyd-1784226110000",
+      "ativo": true,
+      "titulo": "Oferta · Santa Clara Queijo Ralado 40g",
+      "alt": "Santa Clara Queijo Ralado 40g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "177946088488533453",
+        "produtos": [
+          {
+            "firebaseKey": "177946088488533453",
+            "id": "177946088488533453",
+            "codigo": "P-TGYD",
+            "nome": "Santa Clara Queijo Ralado 40g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b25/2026/07/santa-clara-queijo-ralado-40g-santa-clara-40g-macarrao-e-molhos-macarrao-7896504306105-foto-atual-otimizada-20260711082418.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "marca",
+        "alvo": "Santa Clara",
+        "ordem": 3
+      },
+      "imagem": "site/banners/ativos/banner-produto-p-tgyd-1784226110000/banner-1784226110000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P-TGYD"
+      },
+      "periodo": {
+        "inicio": "2026-07-16T18:21:50.000Z",
+        "fim": "2026-08-14T03:59:59.000Z",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta",
+        "duracao_efetiva_horas": 681.64,
+        "encurtado_pelo_vencimento_produto": false
+      },
+      "criado_em": "2026-07-16T18:21:50.000Z",
+      "atualizado_em": "2026-07-16T18:21:50.000Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-p-tgyd-1784226110000",
+      "asset_id": "banner-produto-p-tgyd-1784226110000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 4.99,
+        "preco_oferta": 3.24,
+        "percentual_desconto": 35,
+        "inicio": null,
+        "fim": "2026-08-13T23:59:59-04:00"
+      },
+      "automacao": {
+        "automatico": true,
+        "requisicao_id": "",
+        "estrategia": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "marca",
+        "alvo_escolhido": "Santa Clara",
+        "relacao_contextual": "marca",
+        "carga_antes": 2,
+        "carga_alvo_antes": 0,
+        "pontuacao_comercial": 190.98,
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "repeticao_estrita": true,
+        "duracao": "periodo_da_oferta",
+        "duracao_efetiva_horas": 681.64,
+        "fim_da_oferta": "2026-08-13T23:59:59-04:00",
         "fim_limitado_pelo_vencimento_produto": false
       }
     }
