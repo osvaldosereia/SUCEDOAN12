@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-16T06:22:24.000Z",
+  "updated_at": "2026-07-16T08:23:08.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -7300,6 +7300,85 @@
         "duracao": "periodo_da_oferta",
         "duracao_efetiva_horas": 357.64,
         "fim_da_oferta": "2026-07-30T23:59:59-04:00",
+        "fim_limitado_pelo_vencimento_produto": false
+      }
+    },
+    {
+      "id": "banner-produto-p-6b6t-1784190112000",
+      "ativo": true,
+      "titulo": "Oferta · Maggi Tempero Granulado Carne 50g",
+      "alt": "Maggi Tempero Granulado Carne 50g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "17794629879969782",
+        "produtos": [
+          {
+            "firebaseKey": "17794629879969782",
+            "id": "17794629879969782",
+            "codigo": "P-6B6T",
+            "nome": "Maggi Tempero Granulado Carne 50g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b24/2026/07/maggi-tempero-granulado-carne-50g-maggi-50g-temperos-tempero-7891000418284-foto-atual-otimizada-20260711082753.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "subcategoria",
+        "alvo": "TEMPEROS::TEMPERO",
+        "ordem": 2
+      },
+      "imagem": "site/banners/ativos/banner-produto-p-6b6t-1784190112000/banner-1784190112000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P-6B6T"
+      },
+      "periodo": {
+        "inicio": "2026-07-16T08:21:52.000Z",
+        "fim": "2026-08-02T03:59:59.000Z",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta",
+        "duracao_efetiva_horas": 403.64,
+        "encurtado_pelo_vencimento_produto": false
+      },
+      "criado_em": "2026-07-16T08:21:52.000Z",
+      "atualizado_em": "2026-07-16T08:21:52.000Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-p-6b6t-1784190112000",
+      "asset_id": "banner-produto-p-6b6t-1784190112000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 5.49,
+        "preco_oferta": 3.57,
+        "percentual_desconto": 35,
+        "inicio": null,
+        "fim": "2026-08-01T23:59:59-04:00"
+      },
+      "automacao": {
+        "automatico": true,
+        "requisicao_id": "",
+        "estrategia": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "subcategoria",
+        "alvo_escolhido": "TEMPEROS::TEMPERO",
+        "relacao_contextual": "subcategoria",
+        "carga_antes": 1,
+        "carga_alvo_antes": 0,
+        "pontuacao_comercial": 204.2,
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "repeticao_estrita": true,
+        "duracao": "periodo_da_oferta",
+        "duracao_efetiva_horas": 403.64,
+        "fim_da_oferta": "2026-08-01T23:59:59-04:00",
         "fim_limitado_pelo_vencimento_produto": false
       }
     }
