@@ -23,7 +23,8 @@
   const {
     state, norm, getKey, getName, productByKey, esc, textNorm, toNum, nowIso,
     setStatus, toast, runUiAction, saveLocal, renderProducts, renderSummary,
-    syncNfeProductToFirebase
+    syncNfeProductToFirebase, inspectNfeImport, beginNfeImport,
+    finishNfeImportItem, abortNfeImport
   } = bridge;
 
   const model = {
@@ -34,7 +35,11 @@
     scannedKey: '',
     globalValidity: '',
     margin: 40,
-    busy: false
+    busy: false,
+    rawXml: '',
+    xmlHash: '',
+    importRecord: null,
+    globalDuplicate: false
   };
 
   const $ = id => document.getElementById(id);
@@ -47,6 +52,12 @@
   const itemById = id => model.items.find(item => item.id === id);
   const selectedProduct = item => item?.key ? productByKey(item.key) : null;
   const randomId = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+  async function sha256Hex(value) {
+    if (!globalThis.crypto?.subtle) throw new Error('Este navegador não oferece a verificação segura do código do XML.');
+    const buffer = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(value ?? '')));
+    return [...new Uint8Array(buffer)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+  }
 
   function nodeText(parent, ...names) {
     for (const name of names) {
@@ -233,7 +244,7 @@
     model.items.forEach(item => recalculateItem(item));
   }
 
-  function parseXml(rawXml) {
+  async function parseXml(rawXml) {
     const raw = String(rawXml || '').trim();
     if (!raw) throw new Error('Selecione ou cole o XML completo da NF-e.');
     if (!raw.includes('<')) {
@@ -261,6 +272,8 @@
     const protocolKey = nodeText(documentXml, 'chNFe');
     const accessKey = digits(infId || protocolKey);
 
+    if (accessKey.length !== 44) throw new Error('O XML não possui uma chave de acesso válida com 44 números. A nota não pode ser registrada com segurança.');
+
     if (model.scannedKey && accessKey && model.scannedKey !== accessKey) {
       throw new Error('A chave escaneada não corresponde ao XML selecionado.');
     }
@@ -277,6 +290,7 @@
       total: number(nodeText(totals, 'vNF')),
       lineCount: details.length
     };
+    note.xmlHash = await sha256Hex(raw);
 
     const grouped = new Map();
 
@@ -357,11 +371,17 @@
 
     model.note = note;
     model.items = [...grouped.values()];
+    model.rawXml = raw;
+    model.xmlHash = note.xmlHash;
+    model.importRecord = typeof inspectNfeImport === 'function' ? await inspectNfeImport(note.key) : null;
+    model.globalDuplicate = model.importRecord?.status === 'concluida';
+    const registeredGroups = new Set((Array.isArray(model.importRecord?.itens_aplicados) ? model.importRecord.itens_aplicados : [])
+      .map(entry => String(entry?.grupo || '')).filter(Boolean));
 
     for (const item of model.items) {
       const product = findByEan(item.ean);
       if (product) item.key = getKey(product);
-      item.duplicate = alreadyApplied(item, product);
+      item.duplicate = model.globalDuplicate || registeredGroups.has(item.groupKey) || alreadyApplied(item, product);
       if (product) {
         item.choices.ncm = product.ncm ? 'old' : 'nfe';
         item.choices.packaging = product.embalagem ? 'old' : 'nfe';
@@ -371,8 +391,10 @@
 
     recalculateAll();
     const duplicates = model.items.filter(item => item.duplicate).length;
-    model.message = `${note.lineCount} linha(s) agrupadas em ${model.items.length} produto(s). Desconto rateado igualmente: ${money(note.discount)}.${duplicates ? ` ${duplicates} entrada(s) já aplicada(s) foram bloqueadas.` : ''}`;
-    model.messageType = duplicates ? 'red' : 'green';
+    model.message = model.globalDuplicate
+      ? `NF-e ${note.key} já importada em ${model.importRecord?.concluida_em || 'data anterior'}. A nota inteira foi bloqueada para não duplicar o estoque.`
+      : `${note.lineCount} linha(s) agrupadas em ${model.items.length} produto(s). Código XML: ${note.key}.${duplicates ? ` ${duplicates} entrada(s) já registradas foram bloqueadas.` : ''}`;
+    model.messageType = model.globalDuplicate || duplicates ? 'red' : 'green';
     render();
   }
 
@@ -402,7 +424,7 @@
       <div class="panel-head">
         <div class="panel-title">
           <h2>Entrada por XML de Nota Fiscal</h2>
-          <p>Confira os produtos, registre lote e validade e atualize o Firebase com segurança.</p>
+          <p>A chave é verificada no Firebase, o XML é arquivado no GitHub e a mesma NF-e não pode somar estoque duas vezes.</p>
         </div>
         <label class="btn primary">↑ Selecionar XML da nota
           <input id="nfeFile" hidden type="file" accept=".xml,text/xml,application/xml">
@@ -426,6 +448,7 @@
           </div>
         </div>
         <div id="nfeMessage" class="notice gold" style="margin-top:10px"></div>
+        <div class="notice gold" style="margin-top:10px"><strong>Arquivo fiscal:</strong> os XMLs aplicados são guardados em <code>fiscal/nfe-importadas/ano/mês/chave.xml</code>. Se o repositório configurado for público, esses documentos também serão públicos.</div>
       </div>
 
       <div id="nfeControls"></div>
@@ -556,8 +579,8 @@
           </table>
 
           <div class="toolbar nfe-actions">
-            <button class="btn green" type="button" data-nfe-action="save-stock" ${duplicate || item.done ? 'disabled' : ''}>Atualizar estoque e validade</button>
-            <button class="btn primary" type="button" data-nfe-action="save-full" ${duplicate || item.done ? 'disabled' : ''}>Atualizar cadastro, estoque e validade</button>
+            <button class="btn green" type="button" data-nfe-action="save-stock" ${model.globalDuplicate || duplicate || item.done ? 'disabled' : ''}>Atualizar estoque e validade</button>
+            <button class="btn primary" type="button" data-nfe-action="save-full" ${model.globalDuplicate || duplicate || item.done ? 'disabled' : ''}>Atualizar cadastro, estoque e validade</button>
           </div>
         ` : `
           <div class="nfe-new-product">
@@ -578,7 +601,7 @@
 
             <div class="notice gold">O produto novo será criado inativo e na categoria “A CLASSIFICAR” para revisão.</div>
 
-            <button class="btn green block" type="button" data-nfe-action="create-product" ${duplicate || item.done ? 'disabled' : ''}>Criar produto e aplicar entrada no Firebase</button>
+            <button class="btn green block" type="button" data-nfe-action="create-product" ${model.globalDuplicate || duplicate || item.done ? 'disabled' : ''}>Criar produto e aplicar entrada no Firebase</button>
           </div>
         `}
       </article>
@@ -620,7 +643,7 @@
         </div>
         <div class="notice gold"><strong>Rateio:</strong> o desconto total da nota é dividido igualmente entre os produtos agrupados, sem permitir custo negativo.</div>
         <div class="toolbar">
-          <button class="btn primary" type="button" data-nfe-action="apply-all">Aplicar entrada completa da nota</button>
+          <button class="btn primary" type="button" data-nfe-action="apply-all" ${model.globalDuplicate ? 'disabled' : ''}>Aplicar entrada completa da nota</button>
           <button class="btn red" type="button" data-nfe-action="clear-note">Limpar nota</button>
         </div>
       </div>
@@ -635,6 +658,7 @@
         <div><span>Valor da nota</span><b>${money(model.note.total)}</b><small>Desconto ${money(model.note.discount)}</small></div>
         <div><span>Produtos</span><b>${model.items.length}</b><small>${matchedCount} encontrados · ${duplicateCount} já aplicados</small></div>
       </div>
+      ${model.globalDuplicate ? `<div class="notice red"><strong>Importação bloqueada:</strong> esta chave já está concluída no registro global.${model.importRecord?.xml_path ? ` XML arquivado em <code>${safe(model.importRecord.xml_path)}</code>.` : ''}</div>` : model.importRecord ? `<div class="notice gold"><strong>Importação retomada:</strong> o sistema encontrou um registro ${safe(model.importRecord.status || 'parcial')} desta NF-e e manterá os itens já aplicados bloqueados.</div>` : `<div class="notice green"><strong>NF-e ainda não importada.</strong> Ao aplicar o primeiro produto, o XML será arquivado no GitHub e a chave será registrada no Firebase.</div>`}
     `;
     list.innerHTML = model.items.map(itemCard).join('');
   }
@@ -731,13 +755,11 @@
   async function applyItem(item, { onlyStock = false, create = false, deferRender = false } = {}) {
     if (!item || item.skipped || item.done) return { skipped: true };
     if (typeof syncNfeProductToFirebase !== 'function') throw new Error('A rotina segura de salvamento da NF-e não foi carregada.');
+    if (typeof beginNfeImport !== 'function' || typeof finishNfeImportItem !== 'function') throw new Error('O registro global de NF-e não foi carregado. Recarregue o admin.');
+    if (model.globalDuplicate) throw new Error(`A NF-e ${model.note?.key || ''} já foi importada e não pode ser aplicada novamente.`);
 
     let product = selectedProduct(item);
     if (!product && !create) throw new Error(`${item.name}: selecione um produto ou use “Criar produto”.`);
-    if (product && alreadyApplied(item, product)) {
-      item.duplicate = true;
-      throw new Error(`${item.name}: esta NF-e já foi aplicada e não pode somar o estoque novamente.`);
-    }
 
     item.multiplier = Math.max(1, Math.floor(number(item.multiplier) || 1));
     recalculateItem(item, true);
@@ -756,9 +778,37 @@
       item.key = getKey(product);
     }
 
-    const patch = buildPatch(item, product, onlyStock);
-    const entryId = noteEntryId(item);
-    const entry = {
+    const ignoredGroupKeys = model.items.filter(row => row.skipped).map(row => row.groupKey);
+    let importStarted = false;
+    try {
+      model.importRecord = await beginNfeImport({
+        note: model.note,
+        rawXml: model.rawXml,
+        xmlHash: model.xmlHash,
+        totalItems: model.items.length
+      });
+      importStarted = true;
+
+      if (product && alreadyApplied(item, product)) {
+        model.importRecord = await finishNfeImportItem({
+          noteKey: model.note.key,
+          groupKey: item.groupKey,
+          productKey: getKey(product),
+          totalItems: model.items.length,
+          ignoredGroupKeys
+        });
+        item.done = true;
+        item.duplicate = true;
+        model.globalDuplicate = model.importRecord?.status === 'concluida';
+        model.message = `${item.name}: esta entrada já existia no produto e foi conciliada com o registro global da NF-e.`;
+        model.messageType = 'gold';
+        if (!deferRender) render();
+        return { duplicate: true, reconciled: true, key: getKey(product) };
+      }
+
+      const patch = buildPatch(item, product, onlyStock);
+      const entryId = noteEntryId(item);
+      const entry = {
       id: entryId,
       chave_nfe: model.note?.key || '',
       numero_nfe: model.note?.number || '',
@@ -782,9 +832,9 @@
       modo_validade: item.validityMode,
       sem_validade: item.noExpiry,
       atualizou_cadastro: !onlyStock
-    };
+      };
 
-    const lot = stockDelta > 0 ? {
+      const lot = stockDelta > 0 ? {
       id: entryId,
       chave_nfe: model.note?.key || '',
       numero_nfe: model.note?.number || '',
@@ -795,38 +845,51 @@
       quantidade_restante: stockDelta,
       custo_unitario: round(item.unitCost),
       recebido_em: nowIso()
-    } : null;
+      } : null;
 
-    const result = await syncNfeProductToFirebase({
-      key: item.key,
-      patch,
-      stockDelta,
-      entry,
-      lot,
-      validity: item.noExpiry ? '' : item.validity,
-      validityMode: item.validityMode
-    });
+      const result = await syncNfeProductToFirebase({
+        key: item.key,
+        patch,
+        stockDelta,
+        entry,
+        lot,
+        validity: item.noExpiry ? '' : item.validity,
+        validityMode: item.validityMode
+      });
 
-    if (result?.duplicate) {
-      item.duplicate = true;
-      throw new Error(`${item.name}: esta entrada já estava registrada no Firebase.`);
+      model.importRecord = await finishNfeImportItem({
+        noteKey: model.note.key,
+        groupKey: item.groupKey,
+        productKey: result?.key || item.key,
+        totalItems: model.items.length,
+        ignoredGroupKeys
+      });
+
+      item.key = result?.key || item.key;
+      item.done = true;
+      item.duplicate = !!result?.duplicate;
+      model.globalDuplicate = model.importRecord?.status === 'concluida';
+      model.message = result?.duplicate
+        ? `${item.name}: entrada já existente conciliada sem somar o estoque novamente.`
+        : `${item.name}: entrada aplicada. XML arquivado e código da NF-e registrado.`;
+      model.messageType = result?.duplicate ? 'gold' : 'green';
+      saveLocal();
+      if (!deferRender) {
+        renderProducts();
+        renderSummary();
+        render();
+      }
+      return result;
+    } catch (error) {
+      if (importStarted && typeof abortNfeImport === 'function') {
+        await abortNfeImport({ noteKey: model.note?.key, error: error.message }).catch(() => {});
+      }
+      throw error;
     }
-
-    item.key = result?.key || item.key;
-    item.done = true;
-    item.duplicate = false;
-    model.message = `${item.name}: entrada aplicada com sucesso no Firebase.`;
-    model.messageType = 'green';
-    saveLocal();
-    if (!deferRender) {
-      renderProducts();
-      renderSummary();
-      render();
-    }
-    return result;
   }
 
   async function applyAll(button) {
+    if (model.globalDuplicate) throw new Error(`A NF-e ${model.note?.key || ''} já foi importada e está bloqueada.`);
     const pending = model.items.filter(item => !item.skipped && !item.done && !item.duplicate);
     if (!pending.length) throw new Error('Não há itens pendentes para aplicar.');
 
@@ -860,6 +923,10 @@
     model.message = 'Nota limpa. Selecione outro XML para começar.';
     model.messageType = 'gold';
     model.scannedKey = '';
+    model.rawXml = '';
+    model.xmlHash = '';
+    model.importRecord = null;
+    model.globalDuplicate = false;
     const keyInput = $('nfeAccessKey');
     const paste = $('nfePaste');
     const file = $('nfeFile');
@@ -1025,13 +1092,12 @@
     }
 
     if (action === 'read-pasted') {
-      try {
-        parseXml($('nfePaste')?.value || '');
-      } catch (error) {
-        model.message = error.message;
-        model.messageType = 'red';
-        render();
-      }
+      runUiAction(button, 'Verificando código do XML...', () => parseXml($('nfePaste')?.value || ''))
+        .catch(error => {
+          model.message = error.message;
+          model.messageType = 'red';
+          render();
+        });
       return;
     }
 
