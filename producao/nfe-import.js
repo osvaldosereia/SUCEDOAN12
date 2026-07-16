@@ -24,7 +24,9 @@
     state, norm, getKey, getName, productByKey, esc, textNorm, toNum, nowIso,
     setStatus, toast, runUiAction, saveLocal, renderProducts, renderSummary,
     syncNfeProductToFirebase, inspectNfeImport, beginNfeImport,
-    finishNfeImportItem, abortNfeImport
+    finishNfeImportItem, abortNfeImport,
+    renderProductWorkbench, createNfeDraftProduct, removeNfeDraftProduct,
+    nfeCompleteProductPatch
   } = bridge;
 
   const model = {
@@ -52,6 +54,33 @@
   const itemById = id => model.items.find(item => item.id === id);
   const selectedProduct = item => item?.key ? productByKey(item.key) : null;
   const randomId = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+  function discardDrafts(items = model.items) {
+    items.filter(item => item?.isDraft && item.key).forEach(item => removeNfeDraftProduct?.(item.key));
+  }
+
+  function createDraftForItem(item) {
+    if (typeof createNfeDraftProduct !== 'function') throw new Error('O editor completo de produtos da NF-e não foi carregado. Recarregue o admin.');
+    const preferred = digits(item.ean);
+    const draft = createNfeDraftProduct({
+      firebaseKey: preferred && !productByKey(preferred) ? preferred : '',
+      codigo: preferred || item.supplierCodes[0] || `NFE${String(Date.now()).slice(-8)}`,
+      nome: item.name,
+      gtin: item.ean,
+      ncm: item.ncm,
+      embalagem: item.packaging || 'UN',
+      preco_custo: item.unitCost,
+      preco: item.salePrice,
+      fornecedor: model.note?.supplier || '',
+      categoria: 'A CLASSIFICAR',
+      validade: item.validity || '',
+      __nfe_note_key: model.note?.key || '',
+      __nfe_group_key: item.groupKey
+    });
+    item.key = getKey(draft);
+    item.isDraft = true;
+    return draft;
+  }
 
   async function sha256Hex(value) {
     if (!globalThis.crypto?.subtle) throw new Error('Este navegador não oferece a verificação segura do código do XML.');
@@ -369,6 +398,7 @@
       }
     });
 
+    discardDrafts();
     model.note = note;
     model.items = [...grouped.values()];
     model.rawXml = raw;
@@ -390,6 +420,7 @@
     }
 
     recalculateAll();
+    model.items.filter(item => !item.key).forEach(item => createDraftForItem(item));
     const duplicates = model.items.filter(item => item.duplicate).length;
     model.message = model.globalDuplicate
       ? `NF-e ${note.key} já importada em ${model.importRecord?.concluida_em || 'data anterior'}. A nota inteira foi bloqueada para não duplicar o estoque.`
@@ -424,7 +455,7 @@
       <div class="panel-head">
         <div class="panel-title">
           <h2>Entrada por XML de Nota Fiscal</h2>
-          <p>A chave é verificada no Firebase, o XML é arquivado no GitHub e a mesma NF-e não pode somar estoque duas vezes.</p>
+          <p>A chave e o XML são registrados no GitHub, e a mesma NF-e não pode somar estoque duas vezes.</p>
         </div>
         <label class="btn primary">↑ Selecionar XML da nota
           <input id="nfeFile" hidden type="file" accept=".xml,text/xml,application/xml">
@@ -514,14 +545,15 @@
 
   function itemCard(item) {
     const product = selectedProduct(item);
+    const isDraft = !!(item.isDraft && product?.__nfe_draft);
     const duplicate = item.duplicate || alreadyApplied(item, product);
-    const statusClass = item.done ? 'green' : duplicate ? 'red' : product ? 'green' : 'gold';
-    const statusText = item.done ? 'Entrada aplicada' : duplicate ? 'Esta NF-e já foi aplicada' : product ? 'Produto encontrado' : 'Produto sem correspondência';
+    const statusClass = item.done ? 'green' : duplicate ? 'red' : isDraft ? 'gold' : product ? 'green' : 'red';
+    const statusText = item.done ? 'Entrada aplicada' : duplicate ? 'Esta NF-e já foi aplicada' : isDraft ? 'Produto novo — cadastro completo' : product ? 'Produto encontrado' : 'Produto sem correspondência';
     const currentValidity = product?.validade || 'não cadastrada';
     const futureValidity = item.noExpiry ? 'sem validade' : (item.validity || 'não informada');
 
     return `
-      <article class="card nfe-card ${product ? 'matched' : ''} ${duplicate ? 'duplicate' : ''} ${item.done ? 'done' : ''}" data-item-id="${safe(item.id)}">
+      <article class="card nfe-card ${product && !isDraft ? 'matched' : ''} ${isDraft ? 'draft' : ''} ${duplicate ? 'duplicate' : ''} ${item.done ? 'done' : ''}" data-item-id="${safe(item.id)}">
         <div class="nfe-card-head">
           <div>
             <span class="chip ${statusClass}">${safe(statusText)}</span>
@@ -554,7 +586,7 @@
           <div class="field">
             <label>Como atualizar a validade do cadastro</label>
             <select class="select" data-nfe-field="validityMode" ${item.noExpiry ? 'disabled' : ''}>
-              ${product ? `<option value="keep" ${item.validityMode === 'keep' || item.validityMode === 'history' ? 'selected' : ''}>Manter a validade do estoque atual</option>` : ''}
+              ${product && !isDraft ? `<option value="keep" ${item.validityMode === 'keep' || item.validityMode === 'history' ? 'selected' : ''}>Manter a validade do estoque atual</option>` : ''}
               <option value="earliest" ${item.validityMode === 'earliest' ? 'selected' : ''}>Manter a validade mais próxima</option>
               <option value="replace" ${item.validityMode === 'replace' ? 'selected' : ''}>Substituir pela validade deste lote</option>
             </select>
@@ -564,7 +596,7 @@
           <label class="checkline"><input type="checkbox" data-nfe-field="skipped" ${item.skipped ? 'checked' : ''}> Ignorar este item</label>
         </div>
 
-        ${product ? `
+        ${product && !isDraft ? `
           <table class="nfe-table">
             <thead><tr><th>Campo</th><th>Cadastro atual</th><th>Usar dados da NF-e</th></tr></thead>
             <tbody>
@@ -580,30 +612,19 @@
 
           <div class="toolbar nfe-actions">
             <button class="btn green" type="button" data-nfe-action="save-stock" ${model.globalDuplicate || duplicate || item.done ? 'disabled' : ''}>Atualizar estoque e validade</button>
-            <button class="btn primary" type="button" data-nfe-action="save-full" ${model.globalDuplicate || duplicate || item.done ? 'disabled' : ''}>Atualizar cadastro, estoque e validade</button>
           </div>
-        ` : `
+        ` : isDraft ? `
           <div class="nfe-new-product">
-            <div class="nfe-edit-grid">
-              <label>Nome<input class="input" data-nfe-field="name" value="${safe(item.name)}"></label>
-              <label>EAN<input class="input" inputmode="numeric" data-nfe-field="ean" value="${safe(item.ean)}"></label>
-              <label>NCM<input class="input" inputmode="numeric" data-nfe-field="ncm" value="${safe(item.ncm)}"></label>
-              <label>Embalagem<input class="input" data-nfe-field="packaging" value="${safe(item.packaging)}"></label>
-              <label>Custo unitário<input class="input" data-nfe-field="unitCost" value="${safe(item.unitCost)}"></label>
-              <label>Preço sugerido<input class="input" data-nfe-field="salePrice" value="${safe(item.salePrice)}"></label>
-            </div>
-
             <div class="nfe-manual-search">
               <input class="input" data-nfe-search value="${safe(item.search)}" placeholder="Buscar produto existente por nome, código ou EAN">
               <button class="btn blue" type="button" data-nfe-action="find-product">Buscar no Firebase</button>
             </div>
             ${searchResultsHtml(item)}
-
-            <div class="notice gold">O produto novo será criado inativo e na categoria “A CLASSIFICAR” para revisão.</div>
-
-            <button class="btn green block" type="button" data-nfe-action="create-product" ${model.globalDuplicate || duplicate || item.done ? 'disabled' : ''}>Criar produto e aplicar entrada no Firebase</button>
+            <div class="notice gold"><strong>Cadastro novo:</strong> complete o card abaixo. O rascunho só será enviado ao Firebase quando você salvar a entrada da NF-e.</div>
           </div>
-        `}
+        ` : `<div class="notice red">Não foi possível preparar o cadastro completo deste produto. Recarregue o XML.</div>`}
+
+        ${product ? `<div class="nfe-full-product-card">${renderProductWorkbench(product,model.globalDuplicate||duplicate||item.done?{}:{context:'nfe',itemId:item.id})}</div>` : ''}
       </article>
     `;
   }
@@ -650,7 +671,7 @@
     `;
 
     const duplicateCount = model.items.filter(item => item.duplicate || alreadyApplied(item)).length;
-    const matchedCount = model.items.filter(item => selectedProduct(item)).length;
+    const matchedCount = model.items.filter(item => selectedProduct(item) && !item.isDraft).length;
     summary.innerHTML = `
       <div class="nfe-summary">
         <div><span>NF-e</span><b>${safe(model.note.number || '—')}</b><small>Série ${safe(model.note.series || '—')}</small></div>
@@ -658,7 +679,7 @@
         <div><span>Valor da nota</span><b>${money(model.note.total)}</b><small>Desconto ${money(model.note.discount)}</small></div>
         <div><span>Produtos</span><b>${model.items.length}</b><small>${matchedCount} encontrados · ${duplicateCount} já aplicados</small></div>
       </div>
-      ${model.globalDuplicate ? `<div class="notice red"><strong>Importação bloqueada:</strong> esta chave já está concluída no registro global.${model.importRecord?.xml_path ? ` XML arquivado em <code>${safe(model.importRecord.xml_path)}</code>.` : ''}</div>` : model.importRecord ? `<div class="notice gold"><strong>Importação retomada:</strong> o sistema encontrou um registro ${safe(model.importRecord.status || 'parcial')} desta NF-e e manterá os itens já aplicados bloqueados.</div>` : `<div class="notice green"><strong>NF-e ainda não importada.</strong> Ao aplicar o primeiro produto, o XML será arquivado no GitHub e a chave será registrada no Firebase.</div>`}
+      ${model.globalDuplicate ? `<div class="notice red"><strong>Importação bloqueada:</strong> esta chave já está concluída no registro global.${model.importRecord?.xml_path ? ` XML arquivado em <code>${safe(model.importRecord.xml_path)}</code>.` : ''}</div>` : model.importRecord ? `<div class="notice gold"><strong>Importação retomada:</strong> o sistema encontrou um registro ${safe(model.importRecord.status || 'parcial')} desta NF-e e manterá os itens já aplicados bloqueados.</div>` : `<div class="notice green"><strong>NF-e ainda não importada.</strong> Ao aplicar o primeiro produto, o XML e o registro da chave serão arquivados no GitHub.</div>`}
     `;
     list.innerHTML = model.items.map(itemCard).join('');
   }
@@ -702,7 +723,9 @@
 
   function buildPatch(item, product, onlyStock) {
     if (onlyStock) return {};
-    const patch = {};
+    const patch = product && typeof nfeCompleteProductPatch === 'function'
+      ? nfeCompleteProductPatch(product)
+      : {};
 
     if (!product) {
       patch.firebaseKey = item.key;
@@ -765,6 +788,7 @@
     recalculateItem(item, true);
 
     const stockDelta = item.addStock ? round(item.incomingUnits) : 0;
+    if (!item.noExpiry && !item.validity && product?.validade) item.validity = String(product.validade);
     if (stockDelta > 0 && !item.noExpiry) {
       if (!item.validity) throw new Error(`${item.name}: informe a validade do lote ou marque “Produto sem validade”.`);
       if (!validDate(item.validity)) throw new Error(`${item.name}: a validade deve estar no formato dia/mês/ano.`);
@@ -856,7 +880,8 @@
         entry,
         lot,
         validity: item.noExpiry ? '' : item.validity,
-        validityMode: item.validityMode
+        validityMode: item.validityMode,
+        completeProduct: !onlyStock
       });
       productWriteCompleted = !result?.duplicate;
 
@@ -869,6 +894,7 @@
       });
 
       item.key = result?.key || item.key;
+      item.isDraft = false;
       item.done = true;
       item.duplicate = !!result?.duplicate;
       model.globalDuplicate = model.importRecord?.status === 'concluida';
@@ -927,6 +953,7 @@
   }
 
   function clearNote() {
+    discardDrafts();
     model.items = [];
     model.note = null;
     model.message = 'Nota limpa. Selecione outro XML para começar.';
@@ -1122,6 +1149,8 @@
       model.items.forEach(row => {
         row.validity = value;
         row.noExpiry = false;
+        const product = selectedProduct(row);
+        if (product?.__nfe_draft) product.validade = value;
       });
       model.message = `Validade ${value} aplicada a todos os produtos da nota.`;
       model.messageType = 'green';
@@ -1135,7 +1164,9 @@
     }
 
     if (action === 'select-match' && item) {
+      if (item.isDraft && item.key) removeNfeDraftProduct?.(item.key);
       item.key = button.dataset.key;
+      item.isDraft = false;
       item.searchResults = [];
       item.searched = false;
       item.duplicate = alreadyApplied(item);
@@ -1215,6 +1246,18 @@
 
   });
 
+  let workbenchRefreshQueued = false;
+  function queueWorkbenchRefresh() {
+    if (workbenchRefreshQueued || !model.items.length) return;
+    workbenchRefreshQueued = true;
+    setTimeout(() => {
+      workbenchRefreshQueued = false;
+      if (model.items.length) render();
+    }, 0);
+  }
+  window.addEventListener('da:products-rendered', queueWorkbenchRefresh);
+  window.addEventListener('da:nfe-product-changed', queueWorkbenchRefresh);
+
   const style = document.createElement('style');
   style.textContent = `
     .nfe-import-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -1223,6 +1266,7 @@
     .nfe-list{display:grid;gap:14px;margin-top:14px}
     .nfe-card{padding:16px;border-left:5px solid var(--gold)}
     .nfe-card.matched{border-left-color:var(--green)}
+    .nfe-card.draft{border-left-color:var(--gold)}
     .nfe-card.duplicate{border-left-color:var(--red);opacity:.82}
     .nfe-card.done{border-left-color:var(--green);background:#fbfffc}
     .nfe-card-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
@@ -1256,6 +1300,9 @@
     .nfe-summary b{font-size:14px;margin:4px 0}
     .nfe-global-controls{display:grid;grid-template-columns:1fr .55fr 1.3fr auto;gap:12px;align-items:end;margin-top:13px}
     .nfe-actions{margin-top:12px}
+    .nfe-full-product-card{margin-top:14px}
+    .nfe-full-product-card>.product-workbench{margin:0;width:100%;max-width:none}
+    .nfe-full-product-card .workbench-main{min-width:0}
     @media(max-width:1150px){
       .nfe-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
       .nfe-entry-settings{grid-template-columns:1fr 1fr}
