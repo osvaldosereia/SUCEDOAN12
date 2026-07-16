@@ -7482,60 +7482,123 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     if(value&&typeof value==="object")return Object.values(value);
     return [];
   }
-  async function syncNfeProductToFirebase(operation={}){
-    const key=String(operation.key||"").trim();
-    if(!key)throw new Error("Produto sem chave para salvar no Firebase.");
-    const local=productByKey(key);
-    if(local&&state.dirtyProductKeys.has(key)){
-      throw new Error(`${getName(local)} possui alterações pendentes no admin. Salve o produto antes de aplicar a NF-e.`);
-    }
-    const remote=await fetchJson(firebaseProductUrl(key));
-    const base=deepClone(remote&&typeof remote==="object"?remote:(local&&typeof local==="object"?local:{}));
-    const entry=deepClone(operation.entry||null);
-    const entries=daNfeCollection(base.entradas_nfe);
-    if(entry?.id&&entries.some(item=>String(item?.id||"")===String(entry.id))){
-      if(remote&&typeof remote==="object"){
-        if(local)replaceProductState(key,remote);else state.produtos.unshift({...remote,firebaseKey:remote.firebaseKey||key,id:remote.id||key});
-        state.productSyncMeta[key]=productSyncSnapshot(remote);
-      }
-      return {key,duplicate:true,product:remote||base};
-    }
-    Object.assign(base,deepClone(operation.patch||{}));
-    base.firebaseKey=base.firebaseKey||key;
-    base.id=base.id||key;
-    base.codigo=base.codigo||key;
-    if(entry?.id)entries.push(entry);
-    base.entradas_nfe=entries.slice(-200);
-    const delta=toNum(operation.stockDelta);
-    if(delta){
-      base.estoque=Math.max(0,Math.floor(toNum(remote?.estoque??base.estoque)+delta));
-      base.stock_updated_at=nowIso();
-    }else{
-      base.estoque=Math.max(0,Math.floor(toNum(base.estoque)));
-    }
-    const lot=deepClone(operation.lot||null);
-    if(lot?.id){
-      const lots=daNfeCollection(base.lotes);
-      if(!lots.some(item=>String(item?.id||"")===String(lot.id)))lots.push(lot);
-      base.lotes=lots.slice(-200);
-    }
-    if(operation.validity)base.validade=daNfeEarlierValidity(base.validade,operation.validity);
-    base.updated_at=nowIso();
-    base.last_update=Date.now();
-    await putJson(firebaseProductUrl(key),base);
-    if(local)replaceProductState(key,base);else state.produtos.unshift(deepClone(base));
-    state.productSyncMeta[key]=productSyncSnapshot(base);
-    clearProductDirtyState(key);
-    syncPendingProductsFlag();
-    saveLocal();
-    return {key,duplicate:false,product:base};
+  function daNfeValueEqual(left, right) {
+  try {
+    return JSON.stringify(left) === JSON.stringify(right);
+  } catch {
+    return left === right;
+  }
+}
+
+  async function syncNfeProductToFirebase(operation = {}) {
+  const key = String(operation.key || "").trim();
+  if (!key) throw new Error("Produto sem chave para salvar no Firebase.");
+
+  const local = productByKey(key);
+  const remote = await fetchJson(firebaseProductUrl(key));
+  const remoteProduct = remote && typeof remote === "object" ? remote : null;
+  const base = deepClone(remoteProduct || (local && typeof local === "object" ? local : {}));
+  const patch = deepClone(operation.patch || {});
+  const dirtyMap = state.dirtyProductFields[key] || {};
+  const pendingFields = new Set(Object.keys(dirtyMap).filter(field => field !== "__all"));
+
+  if (dirtyMap.__all && local) {
+    const comparison = remoteProduct || {};
+    new Set([...Object.keys(local), ...Object.keys(comparison)]).forEach(field => {
+      if (!daNfeValueEqual(local[field], comparison[field])) pendingFields.add(field);
+    });
   }
 
-  window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,syncNfeProductToFirebase,saveLocal,renderProducts,renderSummary,openProduct,aiProductCadastro,aiProductImage};
+  const managedFields = new Set(Object.keys(patch));
+  const entry = deepClone(operation.entry || null);
+  const entries = daNfeCollection(base.entradas_nfe);
+
+  if (entry?.id && entries.some(item => String(item?.id || "") === String(entry.id))) {
+    if (remoteProduct) {
+      if (local && !state.dirtyProductKeys.has(key)) replaceProductState(key, remoteProduct);
+      else if (!local) state.produtos.unshift({ ...remoteProduct, firebaseKey: remoteProduct.firebaseKey || key, id: remoteProduct.id || key });
+      state.productSyncMeta[key] = productSyncSnapshot(remoteProduct);
+    }
+    return { key, duplicate: true, product: remoteProduct || base };
+  }
+
+  Object.assign(base, patch);
+  base.firebaseKey = base.firebaseKey || key;
+  base.id = base.id || key;
+  base.codigo = base.codigo || key;
+
+  if (entry?.id) entries.push(entry);
+  base.entradas_nfe = entries.slice(-200);
+  managedFields.add("entradas_nfe");
+
+  const delta = toNum(operation.stockDelta);
+  if (delta) {
+    base.estoque = Math.max(0, Math.floor(toNum(remoteProduct?.estoque ?? base.estoque) + delta));
+    base.stock_updated_at = nowIso();
+    managedFields.add("estoque");
+    managedFields.add("stock_updated_at");
+  } else {
+    base.estoque = Math.max(0, Math.floor(toNum(base.estoque)));
+  }
+
+  const lot = deepClone(operation.lot || null);
+  if (lot?.id) {
+    const lots = daNfeCollection(base.lotes);
+    if (!lots.some(item => String(item?.id || "") === String(lot.id))) lots.push(lot);
+    base.lotes = lots.slice(-200);
+    managedFields.add("lotes");
+  }
+
+  if (operation.validity) {
+    if (operation.validityMode === "replace") {
+      base.validade = String(operation.validity);
+      managedFields.add("validade");
+    } else if (operation.validityMode !== "history") {
+      base.validade = daNfeEarlierValidity(base.validade, operation.validity);
+      managedFields.add("validade");
+    }
+  }
+
+  base.updated_at = nowIso();
+  base.last_update = Date.now();
+  managedFields.add("updated_at");
+  managedFields.add("last_update");
+
+  await putJson(firebaseProductUrl(key), base);
+
+  const localAfterSave = deepClone(base);
+  if (local && pendingFields.size) {
+    pendingFields.forEach(field => {
+      if (managedFields.has(field)) return;
+      if (Object.prototype.hasOwnProperty.call(local, field)) localAfterSave[field] = deepClone(local[field]);
+      else delete localAfterSave[field];
+    });
+  }
+
+  if (local) replaceProductState(key, localAfterSave);
+  else state.produtos.unshift(deepClone(base));
+  state.productSyncMeta[key] = productSyncSnapshot(base);
+
+  if (state.dirtyProductKeys.has(key)) {
+    if (!dirtyMap.__all) {
+      managedFields.forEach(field => delete dirtyMap[field]);
+      if (Object.keys(dirtyMap).length) state.dirtyProductFields[key] = dirtyMap;
+      else clearProductDirtyState(key);
+    }
+  } else {
+    clearProductDirtyState(key);
+  }
+
+  syncPendingProductsFlag();
+  saveLocal();
+  return { key, duplicate: false, product: base, preservedPendingFields: [...pendingFields].filter(field => !managedFields.has(field)) };
+}
+
+  window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,syncNfeProductToFirebase,saveLocal,renderProducts,renderSummary};
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
 </script>
-<script src="nfe-import.js?v=20260716-2"></script>
+<script src="nfe-import.js?v=20260716-3"></script>
 <script>
   // Ponte segura: o admin chama somente o webhook do Make; nenhum token do Bling/GitHub fica no navegador.
   (()=>{
