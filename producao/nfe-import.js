@@ -4,6 +4,19 @@
   const bridge = window.__DA_NFE_BRIDGE__;
   if (!bridge) {
     console.error('Entrada de NF-e: a ponte do admin não foi carregada.');
+    let panel = document.getElementById('tab-nfe');
+    if (!panel) {
+      panel = document.createElement('section');
+      panel.id = 'tab-nfe';
+      panel.className = 'panel hidden';
+      document.querySelector('main.app')?.appendChild(panel);
+    }
+    if (panel) {
+      const notice = document.createElement('div');
+      notice.className = 'notice red';
+      notice.textContent = 'A Entrada de NF-e não conseguiu iniciar porque o admin foi interrompido por outro erro. Recarregue a página; se continuar, esta mensagem identifica uma falha no index.';
+      panel.replaceChildren(notice);
+    }
     return;
   }
 
