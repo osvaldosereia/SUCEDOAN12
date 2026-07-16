@@ -1,0 +1,78 @@
+name: Corrigir carregamento de produtos
+
+on:
+  push:
+    paths:
+      - '.github/workflows/corrigir-carregamento-produtos.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  corrigir:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Corrigir index da raiz
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          original = text
+
+          old_urls = "PRODUCT_HOME_URLS: ['site/produtos-home.json', 'produtos-home.json']"
+          new_urls = "PRODUCT_HOME_URLS: ['/site/produtos-home.json', 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/produtos-home.json', 'site/produtos-home.json']"
+          if old_urls in text:
+              text = text.replace(old_urls, new_urls, 1)
+          elif new_urls not in text:
+              raise SystemExit('Configuração PRODUCT_HOME_URLS não encontrada no formato esperado')
+
+          old_headers = """headers: {
+            Accept: 'application/json',
+            'Cache-Control': 'no-cache, no-store, max-age=0',
+            Pragma: 'no-cache'
+          }"""
+          new_headers = """headers: {
+            Accept: 'application/json'
+          }"""
+          if old_headers in text:
+              text = text.replace(old_headers, new_headers, 1)
+          elif new_headers not in text:
+              raise SystemExit('Bloco de cabeçalhos do fetchJson não encontrado no formato esperado')
+
+          old_version = '2026-07-16-banners-8-category-v1'
+          new_version = '2026-07-16-produtos-cors-v2'
+          text = text.replace(old_version, new_version)
+
+          if text == original:
+              raise SystemExit('Nenhuma alteração foi necessária')
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Validar correção
+        shell: python
+        run: |
+          from pathlib import Path
+          text = Path('index.html').read_text(encoding='utf-8')
+          assert "'Cache-Control': 'no-cache, no-store, max-age=0'" not in text
+          assert "Pragma: 'no-cache'" not in text
+          assert "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/produtos-home.json" in text
+          assert "2026-07-16-produtos-cors-v2" in text
+          assert text.lstrip().startswith('<!DOCTYPE html>')
+          assert text.rstrip().endswith('</html>')
+
+      - name: Publicar correção e remover executor temporário
+        run: |
+          rm -f .github/workflows/corrigir-carregamento-produtos.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html .github/workflows/corrigir-carregamento-produtos.yml
+          git commit -m "Corrige acesso aos produtos no site"
+          git push origin main
