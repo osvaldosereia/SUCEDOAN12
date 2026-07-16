@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-16T02:02:55.000Z",
+  "updated_at": "2026-07-16T02:03:29.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -240,7 +240,7 @@
         "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T21:36:03.727Z",
-      "atualizado_em": "2026-07-16T02:01:23.795Z",
+      "atualizado_em": "2026-07-16T02:03:24.738Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -254,15 +254,15 @@
       "exibicoes": [],
       "controle": {
         "preservado_no_json": true,
-        "limite_4_por_espaco": true
+        "limite_4_por_espaco": true,
+        "retirada_automatica": true,
+        "arquivo_preservado": true,
+        "registro_preservado": true
       },
       "oferta": {},
-      "automacao": {
-        "desativado_por": "periodo_encerrado",
-        "desativado_em": "2026-07-16T02:02:55.000Z"
-      },
-      "desativado_em": "2026-07-14T23:45:37.459Z",
-      "motivo_desativacao": "oferta_encerrada_ou_produto_vencido"
+      "automacao": {},
+      "desativado_em": "2026-07-16T02:03:24.738Z",
+      "motivo_desativacao": "periodo_encerrado"
     },
     {
       "id": "banner-produto-228944b-1783805821490",
@@ -7041,7 +7041,8 @@
           "alvo": "Forno Velho",
           "ordem": 4
         }
-      ]
+      ],
+      "automacao": {}
     }
   ]
 }
