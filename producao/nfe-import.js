@@ -23,7 +23,7 @@
   const {
     state, norm, getKey, getName, productByKey, esc, textNorm, toNum, nowIso,
     setStatus, toast, runUiAction, saveLocal, renderProducts, renderSummary,
-    openProduct, aiProductCadastro, aiProductImage, syncNfeProductToFirebase
+    syncNfeProductToFirebase
   } = bridge;
 
   const model = {
@@ -57,11 +57,32 @@
     return '';
   }
 
-  function normalizeDateInput(value) {
+  const DATE_MASK = '__/__/____';
+  const DATE_DIGIT_POSITIONS = [0, 1, 3, 4, 6, 7, 8, 9];
+
+  function dateMaskFromDigits(value) {
     const raw = digits(value).slice(0, 8);
-    if (raw.length <= 2) return raw;
-    if (raw.length <= 4) return `${raw.slice(0, 2)}/${raw.slice(2)}`;
-    return `${raw.slice(0, 2)}/${raw.slice(2, 4)}/${raw.slice(4)}`;
+    const chars = DATE_MASK.split('');
+    raw.split('').forEach((digit, index) => {
+      chars[DATE_DIGIT_POSITIONS[index]] = digit;
+    });
+    return chars.join('');
+  }
+
+  function dateValueFromMask(value) {
+    const raw = digits(value).slice(0, 8);
+    return raw.length ? dateMaskFromDigits(raw) : '';
+  }
+
+  function selectNextDateDigit(input) {
+    if (!input || typeof input.setSelectionRange !== 'function') return;
+    const count = digits(input.value).slice(0, 8).length;
+    if (count >= DATE_DIGIT_POSITIONS.length) {
+      input.setSelectionRange(DATE_MASK.length, DATE_MASK.length);
+      return;
+    }
+    const position = DATE_DIGIT_POSITIONS[count];
+    input.setSelectionRange(position, position + 1);
   }
 
   function dateTimestamp(value) {
@@ -304,8 +325,8 @@
           done: false,
           duplicate: false,
           validity: model.globalValidity,
+          validityMode: 'earliest',
           noExpiry: false,
-          photo: '',
           choices: {
             name: 'old',
             gtin: 'old',
@@ -470,7 +491,6 @@
     const statusText = item.done ? 'Entrada aplicada' : duplicate ? 'Esta NF-e já foi aplicada' : product ? 'Produto encontrado' : 'Produto sem correspondência';
     const currentValidity = product?.validade || 'não cadastrada';
     const futureValidity = item.noExpiry ? 'sem validade' : (item.validity || 'não informada');
-    const photo = item.photo || product?.url_imagem || product?.imagem || '';
 
     return `
       <article class="card nfe-card ${product ? 'matched' : ''} ${duplicate ? 'duplicate' : ''} ${item.done ? 'done' : ''}" data-item-id="${safe(item.id)}">
@@ -500,8 +520,16 @@
           </div>
           <div class="field">
             <label>Validade do lote recebido</label>
-            <input class="input" inputmode="numeric" maxlength="10" data-nfe-field="validity" value="${safe(item.validity)}" placeholder="dd/mm/aaaa" ${item.noExpiry ? 'disabled' : ''}>
-            <small class="tiny">Cadastro atual: ${safe(currentValidity)} · após a entrada prevalece a validade mais próxima.</small>
+            <input class="input" inputmode="numeric" maxlength="10" data-nfe-field="validity" value="${safe(dateMaskFromDigits(item.validity))}" ${item.noExpiry ? 'disabled' : ''}>
+            <small class="tiny">Digite somente os 8 números. Cadastro atual: ${safe(currentValidity)}.</small>
+          </div>
+          <div class="field">
+            <label>Como atualizar a validade do cadastro</label>
+            <select class="select" data-nfe-field="validityMode" ${item.noExpiry ? 'disabled' : ''}>
+              <option value="earliest" ${item.validityMode === 'earliest' ? 'selected' : ''}>Manter a validade mais próxima</option>
+              <option value="replace" ${item.validityMode === 'replace' ? 'selected' : ''}>Substituir pela validade deste lote</option>
+              <option value="history" ${item.validityMode === 'history' ? 'selected' : ''}>Registrar somente no lote</option>
+            </select>
           </div>
           <label class="checkline"><input type="checkbox" data-nfe-field="noExpiry" ${item.noExpiry ? 'checked' : ''}> Produto sem validade</label>
           <label class="checkline"><input type="checkbox" data-nfe-field="addStock" ${item.addStock ? 'checked' : ''}> Somar ${round(item.incomingUnits)} un. ao estoque</label>
@@ -522,22 +550,9 @@
             </tbody>
           </table>
 
-          <div class="nfe-photo">
-            <img src="${safe(photo)}" ${photo ? '' : 'hidden'} alt="">
-            <div>
-              <label>Trocar foto por URL
-                <input class="input" data-nfe-field="photo" value="${safe(item.photo)}" placeholder="https://...">
-              </label>
-              <small>Se ficar vazio, a foto atual será mantida.</small>
-            </div>
-          </div>
-
           <div class="toolbar nfe-actions">
-            <button class="btn green" type="button" data-nfe-action="save-stock" ${duplicate || item.done ? 'disabled' : ''}>Atualizar somente estoque/lote</button>
-            <button class="btn primary" type="button" data-nfe-action="save-full" ${duplicate || item.done ? 'disabled' : ''}>Atualizar cadastro e estoque</button>
-            <button class="btn" type="button" data-nfe-action="open-product" data-key="${safe(getKey(product))}">Editar cadastro</button>
-            <button class="btn gold" type="button" data-nfe-action="ai-text">✨ Melhorar descrição</button>
-            <button class="btn gold" type="button" data-nfe-action="ai-image">🖼 Melhorar foto</button>
+            <button class="btn green" type="button" data-nfe-action="save-stock" ${duplicate || item.done ? 'disabled' : ''}>Atualizar estoque e validade</button>
+            <button class="btn primary" type="button" data-nfe-action="save-full" ${duplicate || item.done ? 'disabled' : ''}>Atualizar cadastro, estoque e validade</button>
           </div>
         ` : `
           <div class="nfe-new-product">
@@ -556,13 +571,7 @@
             </div>
             ${searchResultsHtml(item)}
 
-            <div class="nfe-photo">
-              <img src="${safe(item.photo)}" ${item.photo ? '' : 'hidden'} alt="">
-              <div>
-                <label>Foto por URL<input class="input" data-nfe-field="photo" value="${safe(item.photo)}" placeholder="https://..."></label>
-                <small>O produto novo será criado inativo e na categoria “A CLASSIFICAR” para revisão.</small>
-              </div>
-            </div>
+            <div class="notice gold">O produto novo será criado inativo e na categoria “A CLASSIFICAR” para revisão.</div>
 
             <button class="btn green block" type="button" data-nfe-action="create-product" ${duplicate || item.done ? 'disabled' : ''}>Criar produto e aplicar entrada no Firebase</button>
           </div>
@@ -596,7 +605,7 @@
         <div class="field">
           <label>Validade para todos os produtos</label>
           <div class="nfe-inline">
-            <input class="input" id="nfeGlobalValidity" inputmode="numeric" maxlength="10" value="${safe(model.globalValidity)}" placeholder="dd/mm/aaaa">
+            <input class="input" id="nfeGlobalValidity" inputmode="numeric" maxlength="10" value="${safe(dateMaskFromDigits(model.globalValidity))}">
             <button class="btn blue" type="button" data-nfe-action="apply-validity-all">Aplicar validade em todos</button>
           </div>
         </div>
@@ -705,11 +714,6 @@
         item.ean
       ].filter(Boolean))];
     }
-    if (item.photo) {
-      patch.url_imagem = item.photo;
-      patch.imagem = item.photo;
-      patch.imagem_url = item.photo;
-    }
     return patch;
   }
 
@@ -770,6 +774,7 @@
       valor_liquido: round(item.net),
       custo_unitario: round(item.unitCost),
       validade: item.noExpiry ? '' : item.validity,
+      modo_validade: item.validityMode,
       sem_validade: item.noExpiry,
       atualizou_cadastro: !onlyStock
     };
@@ -793,7 +798,8 @@
       stockDelta,
       entry,
       lot,
-      validity: item.noExpiry ? '' : item.validity
+      validity: item.noExpiry ? '' : item.validity,
+      validityMode: item.validityMode
     });
 
     if (result?.duplicate) {
@@ -869,8 +875,9 @@
       return;
     }
     if (target.id === 'nfeGlobalValidity') {
-      target.value = normalizeDateInput(target.value);
-      model.globalValidity = target.value;
+      target.value = dateMaskFromDigits(target.value);
+      model.globalValidity = dateValueFromMask(target.value);
+      requestAnimationFrame(() => selectNextDateDigit(target));
       return;
     }
     if (target.id === 'nfeMargin') {
@@ -890,11 +897,12 @@
     const field = target.dataset.nfeField;
     if (!field) return;
     if (field === 'validity') {
-      target.value = normalizeDateInput(target.value);
-      item.validity = target.value;
+      target.value = dateMaskFromDigits(target.value);
+      item.validity = dateValueFromMask(target.value);
+      requestAnimationFrame(() => selectNextDateDigit(target));
       return;
     }
-    if (field === 'name' || field === 'ean' || field === 'ncm' || field === 'packaging' || field === 'photo') {
+    if (field === 'name' || field === 'ean' || field === 'ncm' || field === 'packaging') {
       item[field] = target.value;
       return;
     }
@@ -906,6 +914,12 @@
       item.salePrice = round(target.value);
       item.manualSale = true;
     }
+  });
+
+  document.addEventListener('focusin', event => {
+    const target = event.target;
+    if (target.id !== 'nfeGlobalValidity' && target.dataset.nfeField !== 'validity') return;
+    requestAnimationFrame(() => target.select());
   });
 
   document.addEventListener('change', event => {
@@ -940,6 +954,9 @@
       item.multiplier = Math.max(1, Math.floor(number(target.value) || 1));
       item.multiplierSource = 'Ajustado manualmente';
       recalculateItem(item);
+      render();
+    } else if (field === 'validityMode') {
+      item.validityMode = target.value;
       render();
     } else if (field === 'addStock' || field === 'skipped' || field === 'noExpiry') {
       item[field] = target.checked;
@@ -980,7 +997,7 @@
     }
 
     if (action === 'apply-validity-all') {
-      const value = normalizeDateInput($('nfeGlobalValidity')?.value || model.globalValidity);
+      const value = dateValueFromMask($('nfeGlobalValidity')?.value || model.globalValidity);
       if (!validDate(value)) {
         model.message = 'Informe uma validade válida no formato dia/mês/ano.';
         model.messageType = 'red';
@@ -1015,11 +1032,6 @@
         item.choices.gtin = (product.gtin || product.ean) ? 'old' : 'nfe';
       }
       render();
-      return;
-    }
-
-    if (action === 'open-product') {
-      openProduct(button.dataset.key);
       return;
     }
 
@@ -1086,20 +1098,7 @@
       return;
     }
 
-    if (action === 'ai-text' && item) {
-      if (!item.key) return;
-      runUiAction(button, 'Melhorando descrição...', () => aiProductCadastro(item.key))
-        .then(render)
-        .catch(error => toast(error.message, 'err'));
-      return;
-    }
 
-    if (action === 'ai-image' && item) {
-      if (!item.key) return;
-      runUiAction(button, 'Melhorando foto...', () => aiProductImage(item.key))
-        .then(render)
-        .catch(error => toast(error.message, 'err'));
-    }
   });
 
   const style = document.createElement('style');
@@ -1119,7 +1118,7 @@
     .nfe-metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin:13px 0}
     .nfe-metrics span{padding:8px;border:1px solid var(--line);border-radius:10px;background:#fafafa;font-size:10px}
     .nfe-metrics b{display:block;margin-top:3px;font-size:12px}
-    .nfe-entry-settings{display:grid;grid-template-columns:1.2fr 1.2fr auto auto auto;gap:10px;align-items:end;padding:12px;border:1px solid var(--line);border-radius:14px;background:#fffdf7}
+    .nfe-entry-settings{display:grid;grid-template-columns:1fr 1fr 1.2fr auto auto auto;gap:10px;align-items:end;padding:12px;border:1px solid var(--line);border-radius:14px;background:#fffdf7}
     .nfe-entry-settings .checkline{padding-bottom:9px}
     .nfe-table{width:100%;margin-top:12px;border-collapse:collapse;font-size:11px}
     .nfe-table th,.nfe-table td{padding:8px;border:1px solid var(--line);text-align:left;vertical-align:top}
