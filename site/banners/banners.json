@@ -1,6 +1,6 @@
 {
   "schema_version": 14,
-  "updated_at": "2026-07-16T21:41:45.165Z",
+  "updated_at": "2026-07-16T22:31:49.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -33,9 +33,7 @@
       ],
       "max_active_per_category": 8,
       "balance_metric": "quantidade_ativa_ou_agendada_por_categoria",
-      "refill_rule": "criar_um_por_execucao_ate_todas_as_categorias_terem_8",
-      "home_display": "misturar_banners_de_produto_das_categorias_compatíveis",
-      "search_display": "categoria_do_primeiro_produto_do_resultado"
+      "refill_rule": "criar_um_por_execucao_ate_todas_as_categorias_terem_8"
     },
     "banner_limits": {
       "max_active_per_category": 8,
@@ -7568,6 +7566,81 @@
         "duracao_efetiva_horas": 79.64,
         "fim_da_oferta": "2026-07-19T23:59:59-04:00",
         "fim_limitado_pelo_vencimento_produto": false
+      }
+    },
+    {
+      "id": "banner-produto-7898568540617-1784241075000",
+      "ativo": true,
+      "titulo": "Destaque · Tempero Diodoro Chimichurri 15g",
+      "alt": "Tempero Diodoro Chimichurri 15g na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "7898568540617",
+        "produtos": [
+          {
+            "firebaseKey": "7898568540617",
+            "id": "7898568540617",
+            "codigo": "7898568540617",
+            "nome": "Tempero Diodoro Chimichurri 15g",
+            "categoria": "A CLASSIFICAR",
+            "subcategoria": "",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b58/2026/07/7898568540617-tempero-diodoro-chimichurri-15g-fd-20260716-162855334.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "categoria",
+        "alvo": "A CLASSIFICAR",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-produto-7898568540617-1784241075000/banner-1784241075000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "7898568540617"
+      },
+      "periodo": {
+        "inicio": "2026-07-16T22:31:15.000Z",
+        "fim": "2026-07-23T22:31:15.000Z",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "sete_dias_ou_validade_do_produto",
+        "encurtado_pelo_vencimento_produto": false
+      },
+      "criado_em": "2026-07-16T22:31:15.000Z",
+      "atualizado_em": "2026-07-16T22:31:15.000Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-7898568540617-1784241075000",
+      "asset_id": "banner-produto-7898568540617-1784241075000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": null,
+        "preco_oferta": null,
+        "preco_regular": 3.9,
+        "percentual_desconto": 0,
+        "inicio": null,
+        "fim": null
+      },
+      "automacao": {
+        "automatico": true,
+        "requisicao_id": "",
+        "estrategia": "categoria_menos_preenchida_ate_8_v14",
+        "ordem_selecao": "categoria_primeiro_produto_menos_usado_depois",
+        "categoria_escolhida": "A CLASSIFICAR",
+        "carga_categoria_antes": 0,
+        "limite_por_categoria": 8,
+        "dias_sem_repetir": 30,
+        "repeticao_como_fallback": true,
+        "produto_uso_ativo_antes": 0,
+        "duracao": "sete_dias"
       }
     }
   ]
