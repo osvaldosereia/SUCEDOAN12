@@ -1092,7 +1092,6 @@
   }
   function normalizeCestas(data){ const arr=Array.isArray(data)?data:(data&&typeof data==="object"?Object.values(data):[]); return arr.filter(Boolean).map((c,i)=>({id:String(c.id||`cesta${i+1}`),nome:String(c.nome||`Cesta ${i+1}`),codigo:String(c.codigo||slug(c.nome||`cesta-${i+1}`)),preco:toNum(c.preco),imagem:String(c.imagem||""),produtos:Array.isArray(c.produtos)?c.produtos.map(parseBasketItem).map(it=>fmtBasketItem(it.qtd,it.codigo,it.substitutos)):[]})) }
   function normalizeKits(data){ const arr=Array.isArray(data)?data:(data&&typeof data==="object"?Object.values(data):[]); return arr.filter(Boolean).map((c,i)=>({id:String(c.id||`kit${i+1}`),nome:String(c.nome||`Kit Promocional ${i+1}`),codigo:String(c.codigo||slug(c.nome||`kit-promocional-${i+1}`)),preco:toNum(c.preco),imagem:String(c.imagem||""),produtos:Array.isArray(c.produtos)?c.produtos.map(parseBasketItem).map(it=>fmtBasketItem(it.qtd,it.codigo,it.substitutos)):[]})) }
-  function normalizeMeta(data){const m = data && typeof data==="object" ? data : {}; return {...makeEmptyMeta(), ...m, categorias:Array.isArray(m.categorias)?m.categorias:[], tags:Array.isArray(m.tags)?m.tags:[], fornecedores:Array.isArray(m.fornecedores)?m.fornecedores:[], marcas:Array.isArray(m.marcas)?m.marcas:[]} }
   function restoreLegacyBasketStock(){state.produtos.forEach(p=>{if(Object.prototype.hasOwnProperty.call(p,"estoque_real_cesta")){p.estoque=toNum(p.estoque_real_cesta);delete p.estoque_real_cesta;delete p.estoque_protegido_cesta}})}
   function productsObject(){
     restoreLegacyBasketStock();
@@ -1169,36 +1168,10 @@
     if(!state.dirtyProductKeys.size&&!state.deletedProductKeys.size)writeProductsCache(state.produtos,"Firebase após salvamento").catch(error=>console.warn("Cache de produtos não atualizado após salvar:",error));
     return {saved, deleted, conflicts};
   }
-  async function saveProducts(){
-    try{
-      if(state.settings.autoGithub&&!ensureCatalogReadyForFullExport())return;
-      setStatus("Salvando produtos alterados no Firebase e catálogos no GitHub...","warn");
-      const syncResult=await syncProductsToFirebase();
-      const payload=productsObject();
-      const adminMeta=buildAdminMetaPayload();
-      const metaCatalogCsv=buildMetaCatalogCsv();
-      await saveGithubFiles({metaCatalogCsv,adminMeta});
-      state.meta=adminMeta;
-      state.dirtyMeta=false;
-      saveLocal();
-      if(state.settings.autoGithub) await saveGithubFiles({produtos:payload});
-      const conflictMsg=syncResult.conflicts.length?`\nConflitos de estoque: ${syncResult.conflicts.join(", ")}. Recarregue esses produtos antes de ajustar estoque manualmente.`:"";
-      setStatus(`Produtos salvos: ${syncResult.saved} atualizados, ${syncResult.deleted} excluídos`, "ok");
-      alert(`Produtos alterados salvos no Firebase sem regravar o banco inteiro. produtos_meta.csv (Meta) e produtos_admin_meta.json foram salvos no GitHub.${state.settings.autoGithub ? " produtos.json também foi enviado ao GitHub." : ""}${conflictMsg}`);
-      renderAll();
-    }catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar produtos. Backup local feito.","err"); alert("Erro ao salvar produtos: "+e.message)}
-  }
-  async function saveMeta(){try{setStatus("Salvando produtos_meta.csv e admin meta no GitHub...","warn"); const adminMeta=buildAdminMetaPayload(); const metaCatalogCsv=buildMetaCatalogCsv(); await saveGithubFiles({metaCatalogCsv,adminMeta}); state.meta=adminMeta; state.dirtyMeta=false; saveLocal(); setStatus("Catálogos salvos no GitHub","ok"); alert("site/produtos_meta.csv (Meta) e site/produtos_admin_meta.json foram salvos no GitHub."); renderAll();}catch(e){console.error(e); saveLocal(); alert("Erro ao salvar catálogos no GitHub: "+e.message); setStatus("Erro em produtos_meta","err")}}
-  async function saveCestas(){try{setStatus("Salvando cestas no GitHub...","warn"); await saveGithubFiles({cestas:state.cestas}); state.dirtyCestas=false; saveLocal(); setStatus("Cestas salvas no GitHub", "ok"); alert("site/produtos-cesta-basica.json salvo no GitHub. Nenhum dado de cestas foi enviado ao Firebase."); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar cestas. Backup local feito.","err"); alert("Erro ao salvar cestas no GitHub: "+e.message)}}
-  async function saveKits(){try{setStatus("Salvando kits exclusivamente no GitHub...","warn"); await saveGithubFiles({kits:state.kits}); state.dirtyKits=false; saveLocal(); setStatus("Kits salvos no GitHub em site/kits.json","ok"); alert("Kits salvos exclusivamente no GitHub em site/kits.json."); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar kits. Backup local feito.","err"); alert("Erro ao salvar kits no GitHub: "+e.message)}}
   async function saveAll(){await saveProducts(); await saveCestas(); await saveKits(); await saveNotes(false);}
 
   function b64(str){return btoa(unescape(encodeURIComponent(str)))}
-  async function githubContent(path){const s=state.settings; const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}?ref=${encodeURIComponent(s.githubBranch)}`; const r=await fetch(url,{headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json"}}); if(r.status===404) return null; if(!r.ok) throw new Error(`GitHub GET ${path}: ${r.status}`); return r.json()}
-  async function githubUpsert(path, data, message){const s=state.settings; if(!s.githubToken || !s.githubOwner || !s.githubRepo) throw new Error("Configure token, owner e repositório do GitHub."); const old=await githubContent(path); const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}`; const body={message, branch:s.githubBranch, content:b64(JSON.stringify(data,null,2))}; if(old?.sha) body.sha=old.sha; const r=await fetch(url,{method:"PUT",headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},body:JSON.stringify(body)}); if(!r.ok){const t=await r.text(); throw new Error(`GitHub PUT ${path}: ${r.status} ${t.slice(0,180)}`)} return r.json()}
-  async function githubUpsertText(path, text, message){const s=state.settings; if(!s.githubToken || !s.githubOwner || !s.githubRepo) throw new Error("Configure token, owner e repositório do GitHub."); const old=await githubContent(path); const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}`; const body={message, branch:s.githubBranch, content:b64(String(text??""))}; if(old?.sha) body.sha=old.sha; const r=await fetch(url,{method:"PUT",headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},body:JSON.stringify(body)}); if(!r.ok){const t=await r.text(); throw new Error(`GitHub PUT ${path}: ${r.status} ${t.slice(0,180)}`)} return r.json()}
   function arrayBufferToBase64(buffer){let binary=""; const bytes=new Uint8Array(buffer); const chunk=0x8000; for(let i=0;i<bytes.length;i+=chunk){binary+=String.fromCharCode.apply(null, bytes.subarray(i,i+chunk))} return btoa(binary)}
-  async function githubUpsertRaw(path, arrayBuffer, message){const s=state.settings; if(!s.githubToken || !s.githubOwner || !s.githubRepo) throw new Error("Configure token, owner e repositório do GitHub."); const old=await githubContent(path); const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}`; const body={message, branch:s.githubBranch, content:arrayBufferToBase64(arrayBuffer)}; if(old?.sha) body.sha=old.sha; const r=await fetch(url,{method:"PUT",headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},body:JSON.stringify(body)}); if(!r.ok){const t=await r.text(); throw new Error(`GitHub PUT ${path}: ${r.status} ${t.slice(0,180)}`)} return r.json()}
   function githubRawFileUrl(path=""){const s=state.settings||{}; const owner=String(s.githubOwner||"").trim(); const repo=String(s.githubRepo||"").trim(); const branch=String(s.githubBranch||"main").trim()||"main"; const clean=String(path||"").replace(/^\/+/,""); return owner&&repo&&clean?`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${clean}`:""}
   const IMAGE_MAX_BYTES = 30 * 1024;
   function formatBytes(bytes){return `${Math.max(1,Math.round((bytes||0)/1024))} KB`}
@@ -1288,9 +1261,7 @@
   }
 
 
-  async function saveGithubFiles({produtos,metaCatalogCsv,adminMeta,cestas,kits}={}){readSettingsFromUi(); const ops=[]; if(produtos) ops.push(githubUpsert(state.settings.githubProdutosPath, produtos, "Atualiza produtos.json pelo admin Dona Antônia")); if(metaCatalogCsv) ops.push(githubUpsertText(state.settings.githubMetaPath, metaCatalogCsv, "Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")); if(adminMeta) ops.push(githubUpsert(state.settings.githubAdminMetaPath, adminMeta, "Atualiza produtos_admin_meta.json pelo admin Dona Antônia")); if(cestas) ops.push(githubUpsert(state.settings.githubCestasPath, cestas, "Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")); if(kits) ops.push(githubUpsert(state.settings.githubKitsPath, kits, "Atualiza site/kits.json pelo admin Dona Antônia")); await Promise.all(ops)}
   async function testGithub(){try{readSettingsFromUi(); await githubContent(state.settings.githubProdutosPath); setStatus("GitHub conectado", "ok"); alert("Conexão com GitHub OK.")}catch(e){console.error(e); setStatus("Erro no GitHub","err"); alert("Erro no GitHub: "+e.message)}}
-  async function saveGithubNow(){try{setStatus("Enviando arquivos ao GitHub...","warn"); await saveGithubFiles({produtos:productsObject(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits}); setStatus("GitHub atualizado","ok"); alert("produtos.json, produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e site/kits.json enviados ao GitHub.")}catch(e){console.error(e); setStatus("Erro ao enviar GitHub","err"); alert("Erro ao enviar GitHub: "+e.message)}}
 
   function renderAll(){restoreLegacyBasketStock(); renderTabs(); renderSettingsUi(); renderFilterOptions(); renderSummary(); renderProducts(); renderBasketsList(); renderBasketEditor(); renderKitsList(); renderKitEditor(); renderCatalogs(); renderNotes(); updateNotesIndicator(); renderScannerEditor(); renderScannerHistory(); refreshJson();}
   function renderLoading(){ $("#productsGrid").innerHTML=`<div class="empty">Carregando produtos...</div>`; $("#basketsList").innerHTML=""; $("#basketEditor").innerHTML=`<div class="empty">Carregando cestas...</div>`; if($("#kitsList")) $("#kitsList").innerHTML=""; if($("#kitEditor")) $("#kitEditor").innerHTML=`<div class="empty">Carregando kits...</div>` }
@@ -1468,7 +1439,6 @@
     };
     return list.sort(f.vencimento&&f.vencimento!=="sem_validade"?expirySort:(sorters[f.sort]||sorters.nome));
   }
-  function renderProducts(){const all=filteredProducts(); const f=getFilters(); const pages=Math.max(1,Math.ceil(all.length/f.pageSize)); state.productPage=Math.min(state.productPage,pages); const start=(state.productPage-1)*f.pageSize; const list=all.slice(start,start+f.pageSize); const grid=$("#productsGrid"); grid.classList.toggle("list-view",state.productView==="list"); grid.innerHTML = list.length ? list.map(renderProductCardV3).join("") : `<div class="empty">Nenhum produto encontrado.</div>`; $$('[data-action="view-products-grid"],[data-action="view-products-list"]').forEach(b=>b.classList.toggle("active",(state.productView==="list")===b.dataset.action.endsWith("list"))); $("#pagination").innerHTML = `<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`; }
 
   function quickField(p,field,label,value,type="text",wide=false){return `<div class="quick-field ${wide?'wide':''}"><label>${esc(label)}</label><input class="quick-input" type="${type}" data-card-field="${esc(field)}" data-key="${esc(getKey(p))}" value="${esc(value??'')}"></div>`}
   function renderProductCardV2(p){
@@ -1487,12 +1457,6 @@
       .replace('<button class="btn icon-btn blue" data-action="duplicate-product"',`${kitButton}<button class="btn icon-btn blue" data-action="duplicate-product"`);
   }
 
-  function updateProductFromCard(key,field,value){
-    const p=productByKey(key); if(!p) return;
-    if(['preco','preco_custo','estoque','preco_oferta'].includes(field)) p[field]=toNum(value); else p[field]=value;
-    if(field==='gtin') delete p.ean;
-    p.last_update=Date.now(); p.updated_at=nowIso(); if(field==='estoque') p.stock_updated_at=nowIso(); markProductDirty(getKey(p), [field]); mark('products');
-  }
 
   function renderLowStockModal(){
     const list=state.produtos.filter(p=>toNum(p.estoque)>=0&&toNum(p.estoque)<=5).sort((a,b)=>{
@@ -1502,13 +1466,10 @@
     $("#lowStockBody").innerHTML=list.length?`<div class="low-stock-list">${list.map(p=>{const inBasket=basketsByProduct(p).length>0;return `<div class="low-stock-row ${inBasket?'in-basket':''}"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(getName(p))}</strong><small>${esc(p.codigo||getCode(p))} · Estoque real: ${esc(toNum(p.estoque))}</small><div class="meta-line" style="margin-top:5px">${inBasket?'<span class="chip gold">presente em cesta</span>':'<span class="chip empty">fora das cestas</span>'}</div></div><button class="btn small" data-action="open-product-from-stock" data-key="${esc(getKey(p))}">Ver cadastro</button></div>`}).join('')}</div>`:`<div class="empty">Nenhum produto com estoque entre 0 e 5.</div>`;
   }
 
-  function createProduct(){const key=`produto_${Date.now()}`; const p={firebaseKey:key,id:key,codigo:`NOVO${String(Date.now()).slice(-6)}`,nome:"Novo produto",gtin:"",preco:0,preco_custo:0,estoque:0,situacao:"A",ncm:"",validade:"",categoria:"",subcategoria:"",subsubcategoria:"",marca:"",embalagem:"",fornecedor:"",tags:[],url_imagem:"",descricao:"",preco_oferta:"",data_inicio_oferta:"",validade_oferta:"",gondola:"",prateleira:"",last_update:Date.now(),updated_at:nowIso(),stock_updated_at:nowIso()}; state.produtos.unshift(p); markProductDirty(key, ['__all','estoque']); mark('products'); openProduct(getKey(p))}
-  function duplicateProduct(key){const p=productByKey(key); if(!p) return; const nk=`produto_${Date.now()}`; const cp={...deepClone(p),firebaseKey:nk,id:nk,codigo:`${p.codigo||'COPIA'}_COPIA`,nome:`${getName(p)} - Cópia`,last_update:Date.now(),updated_at:nowIso()}; state.produtos.unshift(cp); markProductDirty(nk, ['__all']); mark('products'); openProduct(nk)}
   function deleteProduct(key){const p=productByKey(key); if(!p) return; if(!confirm(`Excluir o produto ${getName(p)}?`)) return; state.produtos=state.produtos.filter(x=>getKey(x)!==String(key)); state.cestas.forEach(c=>c.produtos=(c.produtos||[]).filter(i=>parseBasketItem(i).codigo!==getCode(p))); state.deletedProductKeys.add(String(key)); state.dirtyProductKeys.delete(String(key)); delete state.dirtyProductFields[String(key)]; mark('products'); mark('cestas'); renderAll()}
   function productByKey(key){return state.produtos.find(p=>getKey(p)===String(key))||null}
   function openProduct(key){const p=productByKey(key); if(!p) return; state.editingProductKey=key; $("#productModal").classList.add('open'); renderProductEditor()}
   function closeProduct(){state.editingProductKey=null; $("#productModal").classList.remove('open'); renderAll()}
-  function updateProduct(field, value){const p=productByKey(state.editingProductKey); if(!p) return; if(['preco','preco_custo','estoque','preco_oferta'].includes(field)) p[field]=toNum(value); else if(field==='tags') p.tags=parseTags(value); else p[field]=value; const pricingRuleResult=['preco','preco_oferta','validade'].includes(field)?applyExpiryRules(p):{fields:[]}; p.last_update=Date.now(); p.updated_at=nowIso(); if(field==='estoque') p.stock_updated_at=nowIso(); markProductDirty(getKey(p), [field,...pricingRuleResult.fields]); mark('products'); updateExpiryAlert()}
   function applyProductJson(){const p=productByKey(state.editingProductKey); if(!p) return; try{const next=JSON.parse($("#productJsonEditor").value); const key=getKey(p); const estoqueAntes=toNum(p.estoque); Object.keys(p).forEach(k=>delete p[k]); Object.assign(p,next,{firebaseKey:next.firebaseKey||key,last_update:Date.now(),updated_at:nowIso()}); if(toNum(p.estoque)!==estoqueAntes) p.stock_updated_at=nowIso(); markProductDirty(getKey(p), toNum(p.estoque)!==estoqueAntes?['__all','estoque']:['__all']); mark('products'); renderProductEditor(); alert('JSON aplicado.')}catch(e){alert('JSON inválido: '+e.message)}}
   function renderProductEditor(resetJson=true){const p=productByKey(state.editingProductKey); if(!p) return; $("#productModalTitle").textContent=`Editar: ${getName(p)}`; const catOptions=uniq([...state.meta.categorias.map(c=>c.categoria),...state.produtos.map(x=>x.categoria)]).map(v=>`<option ${p.categoria===v?'selected':''}>${esc(v)}</option>`).join(''); const subOptions=uniq([...state.meta.categorias.map(c=>c.subcategoria),...state.produtos.map(x=>x.subcategoria)]).map(v=>`<option ${p.subcategoria===v?'selected':''}>${esc(v)}</option>`).join(''); const subsubOptions=uniq([...state.meta.categorias.map(c=>c.subsubcategoria),...state.produtos.map(x=>x.subsubcategoria)]).map(v=>`<option ${p.subsubcategoria===v?'selected':''}>${esc(v)}</option>`).join(''); const marcaOptions=uniq([...state.meta.marcas,...state.produtos.map(x=>x.marca)]).map(v=>`<option ${p.marca===v?'selected':''}>${esc(v)}</option>`).join(''); const fornOptions=uniq([...state.meta.fornecedores.map(f=>f.nome),...state.produtos.map(x=>x.fornecedor)]).map(v=>`<option ${p.fornecedor===v?'selected':''}>${esc(v)}</option>`).join(''); const pTags=parseTags(p.tags); const universalTags=state.meta.tags.length?state.meta.tags.map(t=>`<label class="tag-pill ${pTags.includes(t)?'active':''}"><input type="checkbox" data-ptag="${esc(t)}" ${pTags.includes(t)?'checked':''}>${esc(t)}</label>`).join(''):`<div class="notice gold">Nenhuma tag universal cadastrada. Crie uma abaixo ou na aba Cadastros.</div>`; $("#productModalBody").innerHTML=`<div class="editor-preview"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${esc(getName(p))}</strong><div class="meta-line" style="margin-top:8px"><span class="chip">${esc(p.codigo||getCode(p))}</span><span class="chip">${brl(p.preco)}</span>${basketsByProduct(p).map(c=>`<span class="chip gold">${esc(c.nome)}</span>`).join('')}</div></div></div><div class="photo-tools"><h4>Foto do produto</h4><p class="tiny">Adicione, troque ou edite a foto por URL, arquivo local ou envio direto para o GitHub.</p><div class="photo-tools-grid"><div class="photo-preview-box"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"></div><div><div class="field"><label>URL/caminho da imagem</label><input class="input" data-pfield="url_imagem" value="${esc(p.url_imagem||p.imagem||'')}" placeholder="img/produtos/produto.webp ou https://..."></div><div class="field" style="margin-top:10px"><label>Selecionar nova imagem</label><input class="input" id="productPhotoFile" type="file" accept="image/*"></div><div class="photo-actions"><button class="btn blue" type="button" data-action="use-selected-photo-local">Usar arquivo no produto</button><button class="btn gold" type="button" data-action="upload-selected-photo-github">Enviar foto para GitHub</button><button class="btn" type="button" data-action="copy-product-photo-url">Copiar URL</button><button class="btn red" type="button" data-action="remove-product-photo">Remover foto</button></div><p class="tiny" style="margin-top:8px">Para envio ao GitHub, configure token, repositório, pasta das fotos e caminho público em Integrações.</p></div></div></div><div class="universal-tags-box"><h4>Tags universais</h4><p class="tiny">Marque rapidamente as tags globais deste produto. Essas tags ficam salvas no produtos_admin_meta.json.</p><div class="tag-pills">${universalTags}</div><div class="tag-quick-add"><input class="input" id="newUniversalTagFromProduct" placeholder="Criar nova tag universal e aplicar neste produto"><button class="btn green" type="button" data-action="add-universal-tag-from-product">Criar e aplicar</button></div></div><div class="form-grid"><div class="field"><label>Nome</label><input class="input" data-pfield="nome" value="${esc(p.nome||'')}"></div><div class="field"><label>Código</label><input class="input" data-pfield="codigo" value="${esc(p.codigo||'')}"></div><div class="field"><label>GTIN/EAN</label><input class="input" data-pfield="gtin" value="${esc(p.gtin||p.ean||'')}"></div><div class="field"><label>Situação</label><select class="select" data-pfield="situacao"><option value="A" ${isActive(p)?'selected':''}>Ativo</option><option value="I" ${!isActive(p)?'selected':''}>Inativo</option></select></div><div class="field"><label>Preço</label><input class="input" data-pfield="preco" value="${esc(p.preco||0)}"></div><div class="field"><label>Custo</label><input class="input" data-pfield="preco_custo" value="${esc(p.preco_custo||0)}"></div><div class="field"><label>Preço oferta</label><input class="input" data-pfield="preco_oferta" value="${esc(p.preco_oferta||'')}"></div><div class="field"><label>Início da oferta</label><input class="input" type="date" data-pfield="data_inicio_oferta" value="${esc(workbenchDateValue(p.data_inicio_oferta)||'')}"></div><div class="field"><label>Fim da oferta</label><input class="input" type="date" data-pfield="validade_oferta" value="${esc(workbenchDateValue(p.validade_oferta)||'')}"></div><div class="field"><label>Estoque</label><input class="input" data-pfield="estoque" value="${esc(p.estoque||0)}"></div><div class="field"><label>NCM</label><input class="input" data-pfield="ncm" value="${esc(p.ncm||'')}"></div><div class="field"><label>Validade</label><input class="input" data-pfield="validade" value="${esc(p.validade||'')}"></div><div class="field"><label>Embalagem</label><input class="input" data-pfield="embalagem" value="${esc(p.embalagem||'')}"></div>${modalSelectField(p,"categoria","Categoria",categoryValues(p.categoria))}${modalSelectField(p,"subcategoria","Subcategoria",subcategoryValues(p.categoria,p.subcategoria))}${modalSelectField(p,"subsubcategoria","Subsubcategoria",subsubcategoryValues(p.categoria,p.subcategoria,p.subsubcategoria))}<div class="field"><label>Marca</label><input list="marcaList" class="input" data-pfield="marca" value="${esc(p.marca||'')}"><datalist id="marcaList">${marcaOptions}</datalist></div><div class="field"><label>Fornecedor</label><input list="fornList" class="input" data-pfield="fornecedor" value="${esc(p.fornecedor||'')}"><datalist id="fornList">${fornOptions}</datalist></div>${modalSelectField(p,"gondola","Gôndola",locationValues("gondola",p.gondola))}${modalSelectField(p,"prateleira","Prateleira",locationValues("prateleira",p.prateleira))}<div class="field"><label>Tags manuais</label><input class="input" data-pfield="tags" value="${esc(parseTags(p.tags).join(', '))}"></div><div class="field span-4"><label>Descrição</label><textarea class="textarea" data-pfield="descricao">${esc(p.descricao||'')}</textarea></div><div class="field span-4"><label>JSON avançado do produto</label><textarea class="textarea" id="productJsonEditor">${esc(JSON.stringify(p,null,2))}</textarea></div></div><div class="toolbar" style="justify-content:flex-start;margin-top:14px"><button class="btn primary" data-action="close-product-modal">Concluir</button><button class="btn gold" data-action="apply-product-json">Aplicar JSON avançado</button><button class="btn blue" data-action="edit-membership" data-code="${esc(getCode(p))}">Editar cestas deste produto</button><button class="btn red" data-action="delete-product" data-key="${esc(getKey(p))}">Excluir produto</button></div>`; }
 
@@ -1607,57 +1568,42 @@
   function toggleKitMembership(kitId,checked){const k=state.kits.find(x=>x.id===kitId); if(!k) return; if(checked){if(!productInKit(kitId,state.membershipProductCode)) k.produtos.push(fmtBasketItem(1,state.membershipProductCode))}else{k.produtos=(k.produtos||[]).filter(i=>parseBasketItem(i).codigo!==state.membershipProductCode)} mark('kits')}
 
   function rebuildMeta(withRender=true){const cats=[]; state.produtos.forEach(p=>{if(p.categoria||p.subcategoria||p.subsubcategoria) cats.push({categoria:p.categoria||'',subcategoria:p.subcategoria||'',subsubcategoria:p.subsubcategoria||''})}); const seen=new Set(); state.meta.categorias=cats.filter(c=>{const k=[c.categoria,c.subcategoria,c.subsubcategoria].join('|'); if(seen.has(k)) return false; seen.add(k); return true}); state.meta.tags=uniq(state.produtos.flatMap(p=>parseTags(p.tags))); state.meta.marcas=uniq(state.produtos.map(p=>p.marca)); const existing=state.meta.fornecedores||[]; const names=uniq(state.produtos.map(p=>p.fornecedor)); state.meta.fornecedores=names.map(n=>existing.find(f=>f.nome===n)||{id:slug(n),nome:n,telefone:'',observacoes:''}); state.meta.estatisticas=makeStats(); state.meta.atualizado_em=nowIso(); state.dirtyMeta=true; saveLocal(); if(withRender){renderAll(); setStatus('Cadastros reconstruídos','ok')}}
-  function renderCatalogs(){renderCategories(); renderTags(); renderFornecedores(); renderMarcas()}
-  function renderCategories(){
-    const el=$("#categoriesList"); if(!el) return;
-    let rows=typeof daNormalizeCategoryRows==="function"?daNormalizeCategoryRows(state.meta.categorias||[]):(state.meta.categorias||[]);
-    if(!rows.length&&state.produtos.length){
-      rows=typeof daNormalizeCategoryRows==="function"?daNormalizeCategoryRows(state.produtos.map(p=>({categoria:p.categoria||"",subcategoria:p.subcategoria||"",subsubcategoria:p.subsubcategoria||""}))):[];
-    }
-    state.meta.categorias=rows;
-    const indexed=rows.map((value,index)=>({value,index}));
-    const groups=new Map();
-    indexed.forEach(entry=>{const key=String(entry.value.categoria||"");if(!groups.has(key))groups.set(key,[]);groups.get(key).push(entry)});
-    const sorted=[...groups.entries()].sort((a,b)=>(a[0]||"").localeCompare(b[0]||"","pt-BR"));
-    el.className="catalog-list category-tree";
-    el.innerHTML=sorted.map(([category,rows])=>{
-      const subgroups=new Map();
-      rows.forEach(entry=>{const key=String(entry.value.subcategoria||"");if(!subgroups.has(key))subgroups.set(key,[]);subgroups.get(key).push(entry)});
-      const subHtml=[...subgroups.entries()].sort((a,b)=>(a[0]||"").localeCompare(b[0]||"","pt-BR")).map(([sub,subRows])=>`
-        <div class="subcategory-tree">
-          <div class="subcategory-tree-head">
-            <div class="registry-name-block"><span>Subcategoria</span><strong>${esc(sub||"Sem subcategoria")}</strong><label>Renomear</label><input class="input" data-subcategory-group data-category="${esc(category)}" data-old-value="${esc(sub)}" value="${esc(sub)}" placeholder="Nome da subcategoria"></div>
-            <button class="btn small red" type="button" data-action="delete-subcategory-group" data-category="${esc(category)}" data-subcategory="${esc(sub)}">Excluir ramo</button>
-          </div>
-          <div class="subsubcategory-list">
-            ${subRows.map(({value,index})=>`<div class="subsubcategory-row"><span class="tree-branch">↳</span><input class="input" data-cat-index="${index}" data-cat-field="subsubcategoria" value="${esc(value.subsubcategoria||"")}" placeholder="Subsubcategoria (opcional)"><button class="btn small red" type="button" data-action="delete-category" data-index="${index}">Excluir</button></div>`).join("")}
-          </div>
-          <div class="tree-add"><input class="input" data-new-subsub-input placeholder="Adicionar subsubcategoria"><button class="btn small blue" type="button" data-action="add-tree-subsub" data-category="${esc(category)}" data-subcategory="${esc(sub)}">＋ Adicionar nível</button></div>
-        </div>`).join("");
-      return `<div class="category-tree-card">
-        <div class="category-tree-head">
-          <div class="registry-name-block"><span>Categoria principal</span><strong>${esc(category||"Categoria sem nome")}</strong><label>Renomear</label><input class="input" data-category-group data-old-value="${esc(category)}" value="${esc(category)}" placeholder="Nome da categoria"></div>
-          <button class="btn small red" type="button" data-action="delete-category-group" data-category="${esc(category)}">Excluir categoria</button>
-        </div>
-        <div class="category-tree-body">${subHtml||'<div class="category-tree-empty">Nenhuma subcategoria cadastrada.</div>'}
-          <div class="tree-add"><input class="input" data-new-subcat-input placeholder="Nova subcategoria"><button class="btn small green" type="button" data-action="add-tree-subcategory" data-category="${esc(category)}">＋ Adicionar subcategoria</button></div>
-        </div>
-      </div>`;
-    }).join("")||`<div class="empty">Nenhuma categoria. Use os campos acima para criar a primeira hierarquia.</div>`;
-  }
-  function renderFlatRegistry(el,items,kind){
-    if(!el)return;
-    const entries=(items||[]).map((value,index)=>({value:String(value||""),index})).filter(x=>x.value.trim()).sort((a,b)=>a.value.localeCompare(b.value,"pt-BR"));
-    const groups=new Map();
-    entries.forEach(entry=>{const letter=(entry.value.trim()[0]||"#").toLocaleUpperCase("pt-BR");if(!groups.has(letter))groups.set(letter,[]);groups.get(letter).push(entry)});
-    el.innerHTML=[...groups.entries()].map(([letter,rows])=>`<div class="registry-letter"><div class="registry-letter-head">${esc(letter)} · ${rows.length}</div><div class="registry-items">${rows.map(({value,index})=>`<div class="registry-item"><input class="input" data-${kind}-index="${index}" value="${esc(value)}"><button class="btn small red" type="button" data-action="delete-${kind}" data-index="${index}">Excluir</button></div>`).join("")}</div></div>`).join("")||`<div class="empty">Nenhum item cadastrado.</div>`;
-  }
   function renderTags(){renderFlatRegistry($("#tagsList"),state.meta.tags,"tag")}
-  function renderFornecedores(){const el=$("#fornecedoresList"); if(!el) return; el.innerHTML=(state.meta.fornecedores||[]).map((f,i)=>`<div class="catalog-row multi"><input class="input" aria-label="Nome do fornecedor" placeholder="Nome" data-forn-index="${i}" data-forn-field="nome" value="${esc(f.nome)}"><input class="input" aria-label="Telefone do fornecedor" placeholder="Telefone" data-forn-index="${i}" data-forn-field="telefone" value="${esc(f.telefone||'')}"><input class="input" aria-label="Observações do fornecedor" placeholder="Observações" data-forn-index="${i}" data-forn-field="observacoes" value="${esc(f.observacoes||'')}"><button class="btn small red" data-action="delete-fornecedor" data-index="${i}">Excluir</button></div>`).join('') || `<div class="empty">Nenhum fornecedor.</div>`}
   function renderMarcas(){renderFlatRegistry($("#marcasList"),state.meta.marcas,"marca")}
 
-  function renderSettingsUi(){const s=state.settings; const ids={setFirebaseUrl:'firebaseUrl',setProdutosNode:'produtosNode',setMetaNode:'metaNode',setGithubToken:'githubToken',setGithubOwner:'githubOwner',setGithubRepo:'githubRepo',setGithubBranch:'githubBranch',setSiteBaseUrl:'siteBaseUrl',setGithubProdutosPath:'githubProdutosPath',setGithubMetaPath:'githubMetaPath',setGithubAdminMetaPath:'githubAdminMetaPath',setCestasNode:'cestasNode',setKitsNode:'kitsNode',setGithubCestasPath:'githubCestasPath',setGithubKitsPath:'githubKitsPath',setGithubImagesPath:'githubImagesPath',setImagePublicBase:'imagePublicBase',setGithubKitImagesPath:'githubKitImagesPath',setKitImagePublicBase:'kitImagePublicBase',setBlingToken:'blingToken',setBlingDeposito:'blingDeposito',setBlingUnidade:'blingUnidade'}; Object.entries(ids).forEach(([id,k])=>{const el=$("#"+id); if(el && el.value!==String(s[k]||'')) el.value=s[k]||''}); const auto=$("#setAutoGithub"); if(auto) auto.checked=!!s.autoGithub}
-  function readSettingsFromUi(){const ids={setFirebaseUrl:'firebaseUrl',setProdutosNode:'produtosNode',setMetaNode:'metaNode',setGithubToken:'githubToken',setGithubOwner:'githubOwner',setGithubRepo:'githubRepo',setGithubBranch:'githubBranch',setSiteBaseUrl:'siteBaseUrl',setGithubProdutosPath:'githubProdutosPath',setGithubMetaPath:'githubMetaPath',setGithubAdminMetaPath:'githubAdminMetaPath',setCestasNode:'cestasNode',setKitsNode:'kitsNode',setGithubCestasPath:'githubCestasPath',setGithubKitsPath:'githubKitsPath',setGithubImagesPath:'githubImagesPath',setImagePublicBase:'imagePublicBase',setGithubKitImagesPath:'githubKitImagesPath',setKitImagePublicBase:'kitImagePublicBase',setBlingToken:'blingToken',setBlingDeposito:'blingDeposito',setBlingUnidade:'blingUnidade'}; Object.entries(ids).forEach(([id,k])=>{const el=$("#"+id); if(el) state.settings[k]=el.value.trim()}); state.settings.autoGithub=!!$("#setAutoGithub")?.checked}
+  function renderSettingsUi(){
+    if(typeof ensureProdutosHomeSettingField==="function")ensureProdutosHomeSettingField();
+    const settings=state.settings;
+    const fields={
+      setFirebaseUrl:"firebaseUrl",setProdutosNode:"produtosNode",setMetaNode:"metaNode",setCestasNode:"cestasNode",setKitsNode:"kitsNode",
+      setGithubToken:"githubToken",setGithubOwner:"githubOwner",setGithubRepo:"githubRepo",setGithubBranch:"githubBranch",setSiteBaseUrl:"siteBaseUrl",
+      setGithubProdutosPath:"githubProdutosPath",setGithubProdutosHomePath:"githubProdutosHomePath",setGithubMetaPath:"githubMetaPath",setGithubAdminMetaPath:"githubAdminMetaPath",
+      setGithubCestasPath:"githubCestasPath",setGithubKitsPath:"githubKitsPath",setGithubAnotacoesPath:"githubAnotacoesPath",setGithubImagesPath:"githubImagesPath",
+      setImagePublicBase:"imagePublicBase",setGithubKitImagesPath:"githubKitImagesPath",setKitImagePublicBase:"kitImagePublicBase",
+      setMakeTextWebhookUrl:"makeTextWebhookUrl",setMakeImageWebhookUrl:"makeImageWebhookUrl",setMakeInstagramKitWebhookUrl:"makeInstagramKitWebhookUrl",
+      setMakeBannerWebhookUrl:"makeBannerWebhookUrl",setMakeBannerAutomaticWebhookUrl:"makeBannerAutomaticWebhookUrl",setMakeBlingWebhookUrl:"makeBlingWebhookUrl",
+      setBlingToken:"blingToken",setBlingDeposito:"blingDeposito",setBlingUnidade:"blingUnidade"
+    };
+    Object.entries(fields).forEach(([id,key])=>{const element=document.getElementById(id);const value=String(settings[key]??"");if(element&&element.value!==value)element.value=value});
+    const auto=document.getElementById("setAutoGithub");if(auto)auto.checked=!!settings.autoGithub;
+  }
+  function readSettingsFromUi(){
+    if(typeof ensureProdutosHomeSettingField==="function")ensureProdutosHomeSettingField();
+    const fields={
+      setFirebaseUrl:"firebaseUrl",setProdutosNode:"produtosNode",setMetaNode:"metaNode",setCestasNode:"cestasNode",setKitsNode:"kitsNode",
+      setGithubToken:"githubToken",setGithubOwner:"githubOwner",setGithubRepo:"githubRepo",setGithubBranch:"githubBranch",setSiteBaseUrl:"siteBaseUrl",
+      setGithubProdutosPath:"githubProdutosPath",setGithubProdutosHomePath:"githubProdutosHomePath",setGithubMetaPath:"githubMetaPath",setGithubAdminMetaPath:"githubAdminMetaPath",
+      setGithubCestasPath:"githubCestasPath",setGithubKitsPath:"githubKitsPath",setGithubAnotacoesPath:"githubAnotacoesPath",setGithubImagesPath:"githubImagesPath",
+      setImagePublicBase:"imagePublicBase",setGithubKitImagesPath:"githubKitImagesPath",setKitImagePublicBase:"kitImagePublicBase",
+      setMakeTextWebhookUrl:"makeTextWebhookUrl",setMakeImageWebhookUrl:"makeImageWebhookUrl",setMakeInstagramKitWebhookUrl:"makeInstagramKitWebhookUrl",
+      setMakeBannerWebhookUrl:"makeBannerWebhookUrl",setMakeBannerAutomaticWebhookUrl:"makeBannerAutomaticWebhookUrl",setMakeBlingWebhookUrl:"makeBlingWebhookUrl",
+      setBlingToken:"blingToken",setBlingDeposito:"blingDeposito",setBlingUnidade:"blingUnidade"
+    };
+    Object.entries(fields).forEach(([id,key])=>{const element=document.getElementById(id);if(element)state.settings[key]=element.value.trim()});
+    state.settings.githubProdutosHomePath=state.settings.githubProdutosHomePath||"site/produtos-home.json";
+    state.settings.githubAnotacoesPath=state.settings.githubAnotacoesPath||"site/anotacoes.json";
+    state.settings.autoGithub=!!document.getElementById("setAutoGithub")?.checked;
+  }
 
   function refreshJson(){const jp=$("#jsonProdutos"), jm=$("#jsonMeta"), jam=$("#jsonAdminMeta"), jc=$("#jsonCestas"), jk=$("#jsonKits"); if(jp) jp.value=JSON.stringify(productsObject(),null,2); if(jm) jm.value=buildMetaCatalogCsv(); if(jam) jam.value=JSON.stringify(buildAdminMetaPayload(),null,2); if(jc) jc.value=JSON.stringify(state.cestas,null,2); if(jk) jk.value=JSON.stringify(state.kits,null,2)}
   function applyJson(){try{const previousKeys=Object.keys(state.productSyncMeta); state.produtos=normalizeProducts(JSON.parse($("#jsonProdutos").value)); if($("#jsonAdminMeta")) state.meta=normalizeMeta(JSON.parse($("#jsonAdminMeta").value)); state.cestas=normalizeCestas(JSON.parse($("#jsonCestas").value)); state.kits=normalizeKits(JSON.parse($("#jsonKits").value||"[]")); markAllProductsDirty(previousKeys); mark('products'); mark('meta'); mark('cestas'); mark('kits'); renderAll(); alert('JSON aplicado.')}catch(e){alert('JSON inválido: '+e.message)}}
@@ -1857,7 +1803,7 @@
   function copyReport(){const s=makeStats(); const txt=`Relatório Dona Antônia\nProdutos: ${s.total_produtos}\nAtivos: ${s.ativos}\nSem estoque: ${s.sem_estoque}\nSem GTIN: ${s.sem_gtin}\nSem foto: ${s.sem_foto}\nCestas: ${s.cestas}\nProdutos em cestas: ${s.produtos_em_cestas}\nKits promocionais: ${s.kits}\nProdutos em kits: ${s.produtos_em_kits}`; navigator.clipboard?.writeText(txt); alert('Relatório copiado.')}
   function importFile(file,kind){const rd=new FileReader(); rd.onload=()=>{try{const data=JSON.parse(rd.result); if(kind==='products'){const previousKeys=Object.keys(state.productSyncMeta); state.produtos=normalizeProducts(data); markAllProductsDirty(previousKeys); mark('products')} if(kind==='cestas'){state.cestas=normalizeCestas(data); state.selectedBasketId=state.cestas[0]?.id||null; mark('cestas')} if(kind==='kits'){state.kits=normalizeKits(data); state.selectedKitId=state.kits[0]?.id||null; mark('kits')} rebuildMeta(false); renderAll(); alert('Arquivo importado.')}catch(e){alert('Arquivo inválido: '+e.message)}}; rd.readAsText(file)}
 
-  document.addEventListener('click', e => {const b=e.target.closest('[data-action]'); if(!b) return; const a=b.dataset.action; if(a==='toggle-admin-menu') toggleAdminDrawer(true); if(a==='close-admin-menu') toggleAdminDrawer(false); if(a==='reload') loadData(); if(a==='go-products') {state.activeTab='produtos'; renderAll(); window.scrollTo({top:0,behavior:'smooth'});} if(a==='new-product') createProduct(); if(a==='save-products') saveProducts(); if(a==='save-meta') saveMeta(); if(a==='save-cestas') saveCestas(); if(a==='save-kits') saveKits(); if(a==='save-all') saveAll(); if(a==='open-settings') {state.activeTab='integracoes'; renderAll();} if(a==='export-products-json') exportProductsJson(); if(a==='export-meta-json') exportMetaJson(); if(a==='export-admin-meta-json') exportAdminMetaJson(); if(a==='export-cestas-json') exportCestasJson(); if(a==='export-kits-json') exportKitsJson(); if(a==='export-bling-csv') exportBlingCsv(); if(a==='export-bling-json') exportBlingJson(); if(a==='clear-filters'){['#f-q','#f-categoria','#f-subcategoria','#f-subsubcategoria','#f-marca','#f-fornecedor','#f-tag','#f-situacao','#f-qualidade','#f-vencimento','#f-cesta'].forEach(s=>{const el=$(s); if(el) el.value=''}); state.productPage=1; renderProducts()} if(a==='prev-page'){state.productPage=Math.max(1,state.productPage-1); renderProducts()} if(a==='next-page'){state.productPage++; renderProducts()} if(a==='edit-product') openProduct(b.dataset.key); if(a==='close-product-modal') closeProduct(); if(a==='duplicate-product') duplicateProduct(b.dataset.key); if(a==='delete-product') deleteProduct(b.dataset.key); if(a==='apply-product-json') applyProductJson(); if(a==='edit-membership') openMembership(b.dataset.code); if(a==='close-membership-modal') {$('#membershipModal').classList.remove('open'); renderAll()} if(a==='select-basket'){state.selectedBasketId=b.dataset.id; state.basketReplace=null; renderAll()} if(a==='new-cesta') createBasket(); if(a==='delete-basket') deleteBasket(); if(a==='select-kit'){state.selectedKitId=b.dataset.id; state.kitReplace=null; renderAll()} if(a==='new-kit') createKit(); if(a==='delete-kit') deleteKit(); if(a==='add-to-kit') addToKit(b.dataset.code); if(a==='remove-from-kit') removeFromKit(b.dataset.code); if(a==='start-kit-replace'){state.kitReplace=b.dataset.code; state.kitProductSearch=''; renderKitEditor()} if(a==='confirm-kit-replace') replaceInKit(b.dataset.code); if(a==='use-kit-image-local') useSelectedKitImageLocal(); if(a==='upload-kit-image-github') uploadSelectedKitImageGithub(); if(a==='add-to-basket') addToBasket(b.dataset.code); if(a==='remove-from-basket') removeFromBasket(b.dataset.code); if(a==='save-basket-product') saveProductFirebase(b.dataset.key); if(a==='start-replace'){state.basketReplace={mode:'replace-main',code:b.dataset.code}; state.basketProductSearch=''; renderBasketEditor()} if(a==='start-substitute'){state.basketReplace={mode:'replace-substitute',code:b.dataset.code,slot:Number(b.dataset.slot)||0}; state.basketProductSearch=''; renderBasketEditor()} if(a==='clear-substitute') clearBasketSubstitute(b.dataset.code,b.dataset.slot); if(a==='confirm-replace') replaceInBasket(b.dataset.code); if(a==='rebuild-meta') rebuildMeta(); if(a==='add-category'){const c=$('#newCat').value.trim(), s=$('#newSub').value.trim(), ss=$('#newSubSub').value.trim(); if(c||s||ss){state.meta.categorias.push({categoria:c,subcategoria:s,subsubcategoria:ss}); mark('meta'); renderAll(); $('#newCat').value=$('#newSub').value=$('#newSubSub').value=''}} if(a==='delete-category'){state.meta.categorias.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-tag'){const v=$('#newTag').value.trim(); if(v&&!state.meta.tags.includes(v)){state.meta.tags.push(v); $('#newTag').value=''; mark('meta'); renderAll()}} if(a==='delete-tag'){state.meta.tags.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-fornecedor'){const nome=$('#newFornecedorNome').value.trim(); if(nome){state.meta.fornecedores.push({id:slug(nome),nome,telefone:$('#newFornecedorTel').value.trim(),observacoes:$('#newFornecedorObs').value.trim()}); $('#newFornecedorNome').value=$('#newFornecedorTel').value=$('#newFornecedorObs').value=''; mark('meta'); renderAll()}} if(a==='delete-fornecedor'){state.meta.fornecedores.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-marca'){const v=$('#newMarca').value.trim(); if(v&&!state.meta.marcas.includes(v)){state.meta.marcas.push(v); $('#newMarca').value=''; mark('meta'); renderAll()}} if(a==='delete-marca'){state.meta.marcas.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='save-settings') saveSettings(); if(a==='test-github') testGithub(); if(a==='save-github-now') saveGithubNow(); if(a==='refresh-json') refreshJson(); if(a==='apply-json') applyJson(); if(a==='copy-report') copyReport(); if(a==='use-selected-photo-local') useSelectedPhotoLocal(); if(a==='upload-selected-photo-github') uploadSelectedPhotoGithub(); if(a==='remove-product-photo') removeProductPhoto(); if(a==='copy-product-photo-url') copyProductPhotoUrl(); if(a==='add-universal-tag-from-product') addUniversalTagFromProduct(); if(a==='toggle-scanner') toggleScanner(); if(a==='find-scanner-product') openScannerProduct($("#scannerCodeInput")?.value||state.scannerCode); if(a==='save-scanner-product') saveProductFirebase(b.dataset.key); if(a==='clear-scanner-product') clearScannerProduct(); if(a==='use-scanner-history') openScannerProduct(b.dataset.code); });
+  document.addEventListener('click', e => {const b=e.target.closest('[data-action]'); if(!b) return; const a=b.dataset.action; if(a==='toggle-admin-menu') toggleAdminDrawer(true); if(a==='close-admin-menu') toggleAdminDrawer(false); if(a==='reload') loadData({force:true,reason:'manual'}); if(a==='go-products') {state.activeTab='produtos'; renderAll(); window.scrollTo({top:0,behavior:'smooth'});} if(a==='new-product') createProduct(); if(a==='save-products') saveProducts(); if(a==='save-meta') saveMeta(); if(a==='save-cestas') saveCestas(); if(a==='save-kits') saveKits(); if(a==='save-all') saveAll(); if(a==='open-settings') {state.activeTab='integracoes'; renderAll();} if(a==='export-products-json') exportProductsJson(); if(a==='export-meta-json') exportMetaJson(); if(a==='export-admin-meta-json') exportAdminMetaJson(); if(a==='export-cestas-json') exportCestasJson(); if(a==='export-kits-json') exportKitsJson(); if(a==='export-bling-csv') exportBlingCsv(); if(a==='export-bling-json') exportBlingJson(); if(a==='clear-filters'){['#f-q','#f-categoria','#f-subcategoria','#f-subsubcategoria','#f-marca','#f-fornecedor','#f-tag','#f-situacao','#f-qualidade','#f-vencimento','#f-cesta'].forEach(s=>{const el=$(s); if(el) el.value=''}); state.productPage=1; renderProducts()} if(a==='prev-page'){state.productPage=Math.max(1,state.productPage-1); renderProducts()} if(a==='next-page'){state.productPage++; renderProducts()} if(a==='edit-product') openProduct(b.dataset.key); if(a==='close-product-modal') closeProduct(); if(a==='duplicate-product') duplicateProduct(b.dataset.key); if(a==='delete-product') deleteProduct(b.dataset.key); if(a==='apply-product-json') applyProductJson(); if(a==='edit-membership') openMembership(b.dataset.code); if(a==='close-membership-modal') {$('#membershipModal').classList.remove('open'); renderAll()} if(a==='select-basket'){state.selectedBasketId=b.dataset.id; state.basketReplace=null; renderAll()} if(a==='new-cesta') createBasket(); if(a==='delete-basket') deleteBasket(); if(a==='select-kit'){state.selectedKitId=b.dataset.id; state.kitReplace=null; renderAll()} if(a==='new-kit') createKit(); if(a==='delete-kit') deleteKit(); if(a==='add-to-kit') addToKit(b.dataset.code); if(a==='remove-from-kit') removeFromKit(b.dataset.code); if(a==='start-kit-replace'){state.kitReplace=b.dataset.code; state.kitProductSearch=''; renderKitEditor()} if(a==='confirm-kit-replace') replaceInKit(b.dataset.code); if(a==='use-kit-image-local') useSelectedKitImageLocal(); if(a==='upload-kit-image-github') uploadSelectedKitImageGithub(); if(a==='add-to-basket') addToBasket(b.dataset.code); if(a==='remove-from-basket') removeFromBasket(b.dataset.code); if(a==='save-basket-product') saveProductFirebase(b.dataset.key); if(a==='start-replace'){state.basketReplace={mode:'replace-main',code:b.dataset.code}; state.basketProductSearch=''; renderBasketEditor()} if(a==='start-substitute'){state.basketReplace={mode:'replace-substitute',code:b.dataset.code,slot:Number(b.dataset.slot)||0}; state.basketProductSearch=''; renderBasketEditor()} if(a==='clear-substitute') clearBasketSubstitute(b.dataset.code,b.dataset.slot); if(a==='confirm-replace') replaceInBasket(b.dataset.code); if(a==='rebuild-meta') rebuildMeta(); if(a==='add-category'){const c=$('#newCat').value.trim(), s=$('#newSub').value.trim(), ss=$('#newSubSub').value.trim(); if(c||s||ss){state.meta.categorias.push({categoria:c,subcategoria:s,subsubcategoria:ss}); mark('meta'); renderAll(); $('#newCat').value=$('#newSub').value=$('#newSubSub').value=''}} if(a==='delete-category'){state.meta.categorias.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-tag'){const v=$('#newTag').value.trim(); if(v&&!state.meta.tags.includes(v)){state.meta.tags.push(v); $('#newTag').value=''; mark('meta'); renderAll()}} if(a==='delete-tag'){state.meta.tags.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-fornecedor'){const nome=$('#newFornecedorNome').value.trim(); if(nome){state.meta.fornecedores.push({id:slug(nome),nome,telefone:$('#newFornecedorTel').value.trim(),observacoes:$('#newFornecedorObs').value.trim()}); $('#newFornecedorNome').value=$('#newFornecedorTel').value=$('#newFornecedorObs').value=''; mark('meta'); renderAll()}} if(a==='delete-fornecedor'){state.meta.fornecedores.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-marca'){const v=$('#newMarca').value.trim(); if(v&&!state.meta.marcas.includes(v)){state.meta.marcas.push(v); $('#newMarca').value=''; mark('meta'); renderAll()}} if(a==='delete-marca'){state.meta.marcas.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='save-settings') saveSettings(); if(a==='test-github') testGithub(); if(a==='save-github-now') saveGithubNow(); if(a==='refresh-json') refreshJson(); if(a==='apply-json') applyJson(); if(a==='copy-report') copyReport(); if(a==='use-selected-photo-local') useSelectedPhotoLocal(); if(a==='upload-selected-photo-github') uploadSelectedPhotoGithub(); if(a==='remove-product-photo') removeProductPhoto(); if(a==='copy-product-photo-url') copyProductPhotoUrl(); if(a==='add-universal-tag-from-product') addUniversalTagFromProduct(); if(a==='toggle-scanner') toggleScanner(); if(a==='find-scanner-product') openScannerProduct($("#scannerCodeInput")?.value||state.scannerCode); if(a==='save-scanner-product') saveProductFirebase(b.dataset.key); if(a==='clear-scanner-product') clearScannerProduct(); if(a==='use-scanner-history') openScannerProduct(b.dataset.code); });
   document.addEventListener('click', e=>{
     const button=e.target.closest('[data-action="normalize-products-site"]');
     if(button)normalizeCatalogForSite();
@@ -1904,26 +1850,6 @@
       renderProducts();
       if(conflictMsg) alert(`Nem todos os produtos foram salvos.${conflictMsg}`);
     }catch(e){console.error(e);setStatus("Erro ao salvar produtos no Firebase","err");alert("Erro no Firebase: "+e.message)}
-  }
-  async function saveEverything(){
-    try{
-      readSettingsFromUi();
-      if(!ensureCatalogReadyForFullExport())return false;
-      setStatus("Salvando tudo com atualização granular no Firebase...","warn");
-      const syncResult=await syncProductsToFirebase();
-      const produtos=productsObject(),adminMeta=buildAdminMetaPayload(),metaCatalogCsv=buildMetaCatalogCsv();
-      await saveGithubFiles({produtos,metaCatalogCsv,adminMeta,cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});
-      state.meta=adminMeta;
-      state.dirtyMeta=state.dirtyCestas=state.dirtyKits=state.dirtyNotes=false;
-      localStorage.removeItem(LS_NOTES_DIRTY);
-      localStorage.setItem(LS_SETTINGS,JSON.stringify(state.settings));
-      saveLocal();
-      const conflictMsg=syncResult.conflicts.length?`\nConflitos de estoque: ${syncResult.conflicts.join(", ")}.`:"";
-      setStatus("Salvamento geral concluído: Firebase granular e GitHub atualizados","ok");
-      alert(`Salvamento geral concluído. O Firebase recebeu apenas os produtos alterados, e o GitHub recebeu os arquivos completos.${conflictMsg}`);
-      renderAll();
-      return true;
-    }catch(e){console.error(e);saveLocal();setStatus("Salvamento geral incompleto","err");alert("Não foi possível concluir o salvamento geral: "+e.message);return false}
   }
 
   window.addEventListener('beforeunload', e=>{if(state.dirtyProducts||state.dirtyCestas||state.dirtyKits||state.dirtyMeta||state.dirtyNotes){e.preventDefault(); e.returnValue='Existem alterações não salvas.'}});
@@ -2024,123 +1950,203 @@
     throw new Error(errors.join(" | "));
   }
 
-  async function loadProductsWithFallback(){
+  function daWait(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
+  function daWithTimeout(promise,timeoutMs,label="operação"){
+    let timer;
+    return Promise.race([
+      Promise.resolve(promise),
+      new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`Tempo esgotado em ${label}`)),timeoutMs)})
+    ]).finally(()=>clearTimeout(timer));
+  }
+  function daFirebaseProductSources(){
+    const configuredBase=String(state.settings.firebaseUrl||"").trim().replace(/\/+$/,'');
+    const configuredNode=String(state.settings.produtosNode||"").trim().replace(/^\/+|\/+$/g,'');
+    const defaultBase=String(defaultSettings.firebaseUrl||"").trim().replace(/\/+$/,'');
+    const defaultNode=String(defaultSettings.produtosNode||"produtos").trim().replace(/^\/+|\/+$/g,'');
+    const values=[[defaultBase,defaultNode],[configuredBase,configuredNode]];
+    const seen=new Set();
+    return values.filter(([base,node])=>{
+      if(!base||!node)return false;
+      const key=`${base}/${node}`;
+      if(seen.has(key))return false;
+      seen.add(key);return true;
+    }).map(([base,node])=>({base,node,url:`${base}/${node.split('/').map(encodeURIComponent).join('/')}.json`}));
+  }
+  async function daFetchFirebaseProducts({attempts=4,timeoutMs=25000}={}){
     const errors=[];
-    let cached=null;
-    try{cached=await readProductsCache()}catch(error){errors.push(`Cache local: ${error.message||error}`)}
-
-    for(let attempt=1;attempt<=3;attempt++){
-      try{
-        const data=await fetchJson(firebaseUrl(state.settings.produtosNode),attempt===1?8000:12000);
-        const products=normalizeProducts(data);
-        if(products.length){writeProductsCache(products,"Firebase").catch(error=>console.warn("Cache de produtos não atualizado:",error));return {products,source:"Firebase"}}
-        errors.push(`Firebase retornou catálogo vazio (tentativa ${attempt})`);
-      }catch(error){errors.push(`Firebase (tentativa ${attempt}): ${error.message||error}`)}
-      if(attempt===1&&cached?.products?.length){
-        setTimeout(()=>refreshProductsSilently(),1800);
-        return {products:cached.products,source:"cache local seguro",warning:errors.join(" | ")};
+    const sources=daFirebaseProductSources();
+    if(!sources.length)throw new Error("Firebase não configurado.");
+    for(let attempt=1;attempt<=attempts;attempt++){
+      for(const source of sources){
+        const controller=new AbortController();
+        const timer=setTimeout(()=>controller.abort(),timeoutMs);
+        const url=`${source.url}?_admin_load=${Date.now()}_${attempt}`;
+        try{
+          const response=await fetch(url,{cache:"no-store",headers:{Accept:"application/json"},signal:controller.signal});
+          if(!response.ok)throw new Error(`HTTP ${response.status}`);
+          const data=await response.json();
+          const products=normalizeProducts(data);
+          if(!products.length)throw new Error("catálogo vazio");
+          return {products,source:"Firebase",url:source.url,attempt};
+        }catch(error){
+          const detail=error?.name==="AbortError"?`tempo esgotado após ${Math.round(timeoutMs/1000)}s`:(error?.message||String(error));
+          errors.push(`${source.url} · tentativa ${attempt}: ${detail}`);
+        }finally{clearTimeout(timer)}
       }
-      if(attempt<3)await new Promise(resolve=>setTimeout(resolve,650*attempt));
-    }
-
-    try{
-      const github=await loadProductsFromGithub();
-      writeProductsCache(github.products,github.source).catch(error=>console.warn("Cache de produtos não atualizado:",error));
-      return github;
-    }catch(error){errors.push(error.message||String(error))}
-
-    if(cached?.products?.length)return {products:cached.products,source:"cache local seguro",warning:errors.join(" | ")};
-    if(Array.isArray(state.produtos)&&state.produtos.length){
-      console.warn("Não foi possível atualizar o catálogo; mantendo os produtos já carregados.",errors);
-      return {products:[...state.produtos],source:"memória da sessão",warning:errors.join(" | ")};
+      if(attempt<attempts)await daWait(Math.min(4000,700*attempt));
     }
     throw new Error(errors.join(" | "));
   }
-
-  let productsSilentRefreshRunning=false;
-  async function refreshProductsSilently(){
-    if(productsSilentRefreshRunning||state.dirtyProductKeys.size||state.deletedProductKeys.size)return false;
-    productsSilentRefreshRunning=true;
+  function daPrepareProductsAfterLoad(products){
+    state.produtos=products;
+    markProductsReloaded();
+    state.produtos.forEach(product=>{
+      if(!Array.isArray(product.imagens))product.imagens=uniq([product.url_imagem||product.imagem||""]).filter(Boolean);
+      if(!product.video_youtube&&product.video_url)product.video_youtube=product.video_url;
+      if(typeof applyExpiryRules==="function")applyExpiryRules(product);
+    });
+  }
+  let daStartupViewInitialized=false;
+  function daRenderLoadedProducts(result,{provisional=false}={}){
+    daPrepareProductsAfterLoad(result.products);
+    if(!daStartupViewInitialized){resetProductViewForStartup();daStartupViewInitialized=true}
+    renderAll();
+    const warning=result.warning?` · ${result.warning}`:"";
+    setStatus(`${provisional?"Exibindo":"Produtos carregados"}: ${state.produtos.length} via ${result.source}${warning}`,provisional||result.warning?"warn":"ok");
+  }
+  function daReadLocalJson(key,fallback){try{return JSON.parse(localStorage.getItem(key)||fallback)}catch{return JSON.parse(fallback)}}
+  async function daLoadAuxiliaryCatalogs(generation){
+    const tasks=[
+      daWithTimeout(loadAdminMetaFromGithub(),15000,"metadados do GitHub"),
+      daWithTimeout(loadCestasFromGithub(),15000,"cestas do GitHub"),
+      daWithTimeout(loadKitsFromGithub(),15000,"kits do GitHub")
+    ];
+    const [metaResult,cestasResult,kitsResult]=await Promise.allSettled(tasks);
+    if(generation!==daLoadGeneration)return;
+    state.meta=metaResult.status==="fulfilled"?normalizeMeta(metaResult.value):normalizeMeta(daReadLocalJson(LS_META,"{}"));
+    state.cestas=cestasResult.status==="fulfilled"?normalizeCestas(cestasResult.value):normalizeCestas(daReadLocalJson(LS_CESTAS,"[]"));
+    state.kits=kitsResult.status==="fulfilled"?normalizeKits(kitsResult.value):normalizeKits(daReadLocalJson(LS_KITS,"[]"));
+    if(!state.cestas.length)state.cestas=normalizeCestas(DEFAULT_CESTAS);
+    if(!state.meta.categorias.length&&state.produtos.length)rebuildMeta(false);
+    state.selectedBasketId=state.selectedBasketId||state.cestas[0]?.id||null;
+    state.selectedKitId=state.selectedKitId||state.kits[0]?.id||null;
+    state.dirtyCestas=state.dirtyKits=state.dirtyMeta=false;
+    state.kits.forEach(kit=>{if(typeof recalcKit==="function")recalcKit(kit)});
+    renderAll();
+  }
+  async function daLoadNotesDeferred(){
+    if(typeof normalizeNotes!=="function"||typeof loadNotesFromGithub!=="function")return;
+    const localNotes=normalizeNotes(daReadLocalJson(LS_NOTES,"[]"));
+    const hadPending=localStorage.getItem(LS_NOTES_DIRTY)==="1";
     try{
-      let fresh=null;
-      try{
-        const data=await fetchJson(firebaseUrl(state.settings.produtosNode),12000),products=normalizeProducts(data);
-        if(products.length)fresh={products,source:"Firebase"};
-      }catch(error){console.warn("Atualização silenciosa pelo Firebase falhou:",error)}
-      if(!fresh){try{fresh=await loadProductsFromGithub()}catch(error){console.warn("Atualização silenciosa pelo GitHub falhou:",error)}}
-      if(!fresh?.products?.length)return false;
-      state.produtos=fresh.products;
-      markProductsReloaded();
-      await writeProductsCache(state.produtos,fresh.source).catch(()=>false);
-      renderAll();
-      setStatus(`Produtos atualizados automaticamente: ${state.produtos.length} via ${fresh.source}`,"ok");
-      return true;
-    }finally{productsSilentRefreshRunning=false}
+      const remoteNotes=await daWithTimeout(loadNotesFromGithub(),12000,"anotações do GitHub");
+      state.anotacoes=hadPending?localNotes:remoteNotes;
+    }catch(error){console.warn("Anotações remotas não carregadas:",error);state.anotacoes=localNotes}
+    const removed=typeof cleanupExpiredNotes==="function"?cleanupExpiredNotes():0;
+    state.dirtyNotes=hadPending||removed>0;
+    if(state.dirtyNotes)safeLocalSet(LS_NOTES_DIRTY,"1","marcador de anotações pendentes");
+    saveLocal();renderAll();
+    if(typeof updateExpiryAlert==="function")updateExpiryAlert();
+    if(state.dirtyNotes&&state.settings.githubToken&&typeof saveNotes==="function")saveNotes(false).catch(error=>console.warn(error));
+  }
+  function daLoadDeferredModules(generation){
+    const jobs=[daLoadNotesDeferred()];
+    if(typeof daLoadBannerCatalog==="function")jobs.push(daWithTimeout(daLoadBannerCatalog(true),20000,"catálogo de banners").then(()=>renderProducts()));
+    if(typeof daLoadKitCarouselQueue==="function")jobs.push(daWithTimeout(daLoadKitCarouselQueue(true),15000,"fila de carrosséis"));
+    if(typeof daOfferLoad==="function")jobs.push(daWithTimeout(daOfferLoad(),15000,"histórico de ofertas"));
+    Promise.allSettled(jobs).then(results=>{
+      if(generation!==daLoadGeneration)return;
+      results.forEach(result=>{if(result.status==="rejected")console.warn("Módulo auxiliar não carregado:",result.reason)});
+    });
   }
 
-  async function loadData(){
-    resetProductViewForStartup();
-    setStatus("Carregando produtos, cestas, kits e metadados...","warn");
-    let cachedStartup=null;
-    try{cachedStartup=await readProductsCache()}catch{}
-    if(cachedStartup?.products?.length&&!state.produtos.length){
-      state.produtos=cachedStartup.products;
-      markProductsReloaded();
-      renderAll();
-      setStatus(`Exibindo ${state.produtos.length} produtos do cache seguro enquanto atualiza as fontes...`,"warn");
-    }else renderLoading();
-    let productSource="";
-    let productWarning="";
+  let productsSilentRefreshRunning=false;
+  let daProductsRecoveryTimer=null;
+  let daProductsRecoveryAttempt=0;
+  function daScheduleProductsRecovery(force=false){
+    if(daProductsRecoveryTimer||(!force&&state.produtos.length))return;
+    const delay=Math.min(60000,5000*Math.max(1,2**daProductsRecoveryAttempt));
+    daProductsRecoveryTimer=setTimeout(async()=>{
+      daProductsRecoveryTimer=null;daProductsRecoveryAttempt++;
+      if(state.dirtyProductKeys.size||state.deletedProductKeys.size){daScheduleProductsRecovery(true);return}
+      try{
+        const fresh=await daFetchFirebaseProducts({attempts:2,timeoutMs:25000});
+        daRenderLoadedProducts(fresh);await writeProductsCache(fresh.products,"Firebase").catch(()=>false);daProductsRecoveryAttempt=0;
+      }catch(error){console.warn("Nova tentativa automática do Firebase falhou:",error);daScheduleProductsRecovery(true)}
+    },delay);
+  }
+  async function refreshProductsSilently({force=false}={}){
+    if(productsSilentRefreshRunning||(!force&&(state.dirtyProductKeys.size||state.deletedProductKeys.size)))return false;
+    productsSilentRefreshRunning=true;
     try{
-      const productsPromise=loadProductsWithFallback();
-      const metaPromise=loadAdminMetaFromGithub();
-      const basketsPromise=loadCestasFromGithub();
-      const kitsPromise=loadKitsFromGithub();
-      const p=await productsPromise.then(value=>({status:"fulfilled",value}),reason=>({status:"rejected",reason}));
+      let fresh;
+      try{fresh=await daFetchFirebaseProducts({attempts:2,timeoutMs:25000})}
+      catch(firebaseError){
+        console.warn("Atualização silenciosa pelo Firebase falhou:",firebaseError);
+        fresh=await daWithTimeout(loadProductsFromGithub(),25000,"catálogo de produtos no GitHub");
+      }
+      if(!fresh?.products?.length)return false;
+      daRenderLoadedProducts(fresh);
+      await writeProductsCache(state.produtos,fresh.source).catch(()=>false);
+      return true;
+    }catch(error){console.warn("Atualização silenciosa de produtos falhou:",error);if(!state.produtos.length)daScheduleProductsRecovery();return false}
+    finally{productsSilentRefreshRunning=false}
+  }
 
-      if(p.status==="fulfilled"){
-        state.produtos=p.value.products;
-        productSource=p.value.source||"fonte configurada";
-        productWarning=p.value.warning||"";
-        markProductsReloaded();
-        resetProductViewForStartup();
-        renderAll();
-        setStatus(`Produtos disponíveis: ${state.produtos.length} via ${productSource}. Carregando dados auxiliares...`,productWarning?"warn":"ok");
+  let daLoadDataRunning=null;
+  let daLoadGeneration=0;
+  async function loadData(options={}){
+    const force=options===true||options?.force===true;
+    if(daLoadDataRunning&&!force)return daLoadDataRunning;
+    const generation=++daLoadGeneration;
+    const requestedTab=state.activeTab;
+    const task=(async()=>{
+      setStatus("Conectando ao Firebase e carregando produtos...","warn");
+      let cacheResult=null;
+      try{cacheResult=await daWithTimeout(readProductsCache(),3000,"cache local de produtos")}catch(error){console.warn("Cache local indisponível:",error)}
+      if(generation!==daLoadGeneration)return false;
+      if(cacheResult?.products?.length&&!state.produtos.length)daRenderLoadedProducts(cacheResult,{provisional:true});
+      else if(!state.produtos.length)renderLoading();
+
+      let productResult=null;
+      let firebaseError=null;
+      try{productResult=await daFetchFirebaseProducts({attempts:4,timeoutMs:25000})}
+      catch(error){firebaseError=error;console.error("Firebase não respondeu com catálogo válido:",error)}
+      if(generation!==daLoadGeneration)return false;
+
+      if(!productResult){
+        try{productResult=await daWithTimeout(loadProductsFromGithub(),30000,"fallback de produtos no GitHub")}
+        catch(error){console.error("Fallback do GitHub falhou:",error)}
+      }
+      if(generation!==daLoadGeneration)return false;
+
+      if(productResult?.products?.length){
+        daRenderLoadedProducts(productResult);
+        writeProductsCache(productResult.products,productResult.source).catch(error=>console.warn("Cache de produtos não atualizado:",error));
+        if(firebaseError||productResult.source!=="Firebase")daScheduleProductsRecovery(true);
+      }else if(cacheResult?.products?.length){
+        daRenderLoadedProducts({...cacheResult,warning:"Firebase temporariamente indisponível"},{provisional:true});
+        daScheduleProductsRecovery(true);
+      }else if(state.produtos.length){
+        setStatus(`Mantendo ${state.produtos.length} produtos da sessão; o Firebase será consultado novamente automaticamente.`,"warn");
+        daScheduleProductsRecovery(true);
       }else{
-        console.error("Nenhuma fonte de produtos pôde ser carregada.",p.reason);
-        if(!state.produtos.length)throw p.reason;
-        productSource="memória da sessão";
-        productWarning=p.reason?.message||String(p.reason||"");
+        setStatus(`Não foi possível carregar os produtos agora${firebaseError?`: ${firebaseError.message}`:""}. Nova tentativa automática agendada.`,"err");
+        renderAll();daScheduleProductsRecovery();
       }
 
-      const [m,c,k]=await Promise.allSettled([metaPromise,basketsPromise,kitsPromise]);
-      const readLocalJson=(key,fallback)=>{
-        try{return JSON.parse(localStorage.getItem(key)||fallback)}catch{return JSON.parse(fallback)}
-      };
-      state.meta=m.status==="fulfilled"?normalizeMeta(m.value):normalizeMeta(readLocalJson(LS_META,"{}"));
-      state.cestas=c.status==="fulfilled"?normalizeCestas(c.value):normalizeCestas(readLocalJson(LS_CESTAS,"[]"));
-      state.kits=k.status==="fulfilled"?normalizeKits(k.value):normalizeKits(readLocalJson(LS_KITS,"[]"));
-      if(!state.cestas.length)state.cestas=normalizeCestas(DEFAULT_CESTAS);
-      if(!state.meta.categorias.length&&state.produtos.length)rebuildMeta(false);
-      state.selectedBasketId=state.selectedBasketId||state.cestas[0]?.id||null;
-      state.selectedKitId=state.selectedKitId||state.kits[0]?.id||null;
-      markProductsReloaded();
-      state.dirtyCestas=state.dirtyKits=state.dirtyMeta=false;
-      resetProductViewForStartup();
-      const warningText=productWarning?" · catálogo anterior preservado após falha de atualização":"";
-      setStatus(`Carregado: ${state.produtos.length} produtos via ${productSource}${warningText}, ${state.cestas.length} cestas, ${state.kits.length} kits`,productWarning?"warn":"ok");
-    }catch(e){
-      console.error(e);
-      setStatus(`Não foi possível carregar os produtos: ${e.message||e}`,"err");
-    }finally{
-      resetProductViewForStartup();
+      await daLoadAuxiliaryCatalogs(generation).catch(error=>console.warn("Dados auxiliares não carregados:",error));
+      if(generation!==daLoadGeneration)return false;
+      if(requestedTab&&requestedTab!=="leitura")state.activeTab=requestedTab;
+      document.querySelectorAll('[data-tab="leitura"],#tab-leitura').forEach(element=>element.remove());
+      if(state.activeTab==="leitura")state.activeTab="produtos";
       renderAll();
-      requestAnimationFrame(()=>{
-        if(!state.activeTab)state.activeTab="produtos";
-        renderTabs();
-        renderProducts();
-      });
-    }
+      daLoadDeferredModules(generation);
+      return !!state.produtos.length;
+    })();
+    daLoadDataRunning=task;
+    try{return await task}
+    finally{if(daLoadDataRunning===task)daLoadDataRunning=null}
   }
 
   /* ===== Ajustes funcionais solicitados ===== */
@@ -2248,13 +2254,7 @@
   }
   function validateBasket(c){const errors=[];if(!String(c.nome||"").trim())errors.push("nome");if(!String(c.codigo||"").trim())errors.push("código");if(toNum(c.preco)<=0)errors.push("preço");if(!(c.produtos||[]).length)errors.push("ao menos um produto");return errors}
   function validateKit(k){recalcKit(k);const errors=[];if(!String(k.nome||"").trim())errors.push("nome");if(!String(k.codigo||"").trim())errors.push("código");if(!(k.produtos||[]).length)errors.push("ao menos um produto");if(toNum(k.preco)<=0)errors.push("preço promocional");if(kitRetailTotal(k)>0&&toNum(k.preco)>=kitRetailTotal(k))errors.push("desconto real sobre a soma dos produtos");return errors}
-
-  const originalSaveCestas=saveCestas;
-  saveCestas=async function(){const invalid=state.cestas.map(c=>({c,e:validateBasket(c)})).filter(x=>x.e.length);if(invalid.length)return alert(`Revise as cestas antes de salvar:\n${invalid.map(x=>`• ${x.c.nome}: ${x.e.join(", ")}`).join("\n")}`);return originalSaveCestas()};
-  const originalSaveKits=saveKits;
-  saveKits=async function(){state.kits.forEach(k=>recalcKit(k));const invalid=state.kits.map(k=>({k,e:validateKit(k)})).filter(x=>x.e.length);if(invalid.length)return alert(`Revise os kits antes de salvar:\n${invalid.map(x=>`• ${x.k.nome}: ${x.e.join(", ")}`).join("\n")}`);mark("kits");return originalSaveKits()};
-
-  const originalCreateBasket=createBasket;
+const originalCreateBasket=createBasket;
   createBasket=function(){originalCreateBasket();const c=state.cestas.find(x=>x.id===state.selectedBasketId);if(c){c.descricao="";c.ativo=true;renderBasketEditor()}};
   createKit=function(){const id=`kit${Date.now()}`,nome=`Novo kit promocional ${state.kits.length+1}`;state.kits.push({id,nome,codigo:slug(nome),preco:0,imagem:`img/${slug(nome)}.webp`,descricao:"",limite_kits:0,data_inicio:"",data_fim:"",desconto_percentual:0,estoque_disponivel:0,ativo:false,produtos:[]});state.selectedKitId=id;mark("kits");renderAll()};
 
@@ -2404,11 +2404,7 @@
   useSelectedPhotoLocal=async function(){const p=productByKey(state.editingProductKey),file=selectedProductPhotoFile();if(!p||!file)return alert("Selecione uma imagem primeiro.");const prepared=await prepareProductImageBlob(file),src=await blobToDataUrl(prepared.blob);p.imagens=uniq([...(p.imagens||[]),src]);p.url_imagem=p.url_imagem||src;p.imagem=p.url_imagem;p.imagem_url=p.url_imagem;markProductDirty(getKey(p),["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProductEditor(false);setStatus(`Imagem adicionada: 300×300 WebP (${formatBytes(prepared.bytes)})`,"ok")};
   const originalUploadSelectedPhotoGithub=uploadSelectedPhotoGithub;
   uploadSelectedPhotoGithub=async function(){await originalUploadSelectedPhotoGithub();const p=productByKey(state.editingProductKey);if(p&&p.url_imagem){p.imagens=uniq([...(p.imagens||[]),p.url_imagem]);markProductDirty(getKey(p),["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProductEditor(false)}};
-
-  const originalSaveMeta=saveMeta;
-  saveMeta=async function(){try{readSettingsFromUi();const csv=String(buildMetaCatalogCsv()||""),admin=buildAdminMetaPayload();if(!state.settings.githubMetaPath)throw new Error("Informe o caminho do produtos_meta.csv em Integrações.");if(!state.settings.githubAdminMetaPath)throw new Error("Informe o caminho do produtos_admin_meta.json em Integrações.");setStatus("Salvando arquivo Meta...","warn");await githubUpsertText(state.settings.githubMetaPath,csv,"Atualiza catálogo Meta pelo admin Dona Antônia");await githubUpsert(state.settings.githubAdminMetaPath,admin,"Atualiza cadastros administrativos");state.meta=admin;state.dirtyMeta=false;saveLocal();setStatus("Arquivo Meta salvo com sucesso","ok");alert(`Arquivos salvos:\n• ${state.settings.githubMetaPath}\n• ${state.settings.githubAdminMetaPath}`)}catch(e){console.error(e);saveLocal();setStatus("Erro ao salvar arquivo Meta","err");alert("Não foi possível salvar o arquivo Meta: "+e.message)}};
-
-  document.addEventListener("change",e=>{const el=e.target;if(el.matches('[data-pfield="validade"]')){const p=productByKey(state.editingProductKey);if(p){const pct=applyExpiryDiscount(p);markProductDirty(getKey(p),["preco_oferta","validade_oferta","desconto_validade"]);mark("products");renderProductEditor(false);setStatus(pct?`Desconto de validade aplicado: ${pct}%`:"Validade fora da faixa de desconto","ok")}}if(el.matches("#imageZoom,#imageSharpness,#imageRemoveWhite"))previewImageEditor();if(el.matches('[data-action="kit-qtd"],[data-kfield]')){const k=currentKit();if(k){recalcKit(k);renderKitEditor()}}});
+document.addEventListener("change",e=>{const el=e.target;if(el.matches('[data-pfield="validade"]')){const p=productByKey(state.editingProductKey);if(p){const pct=applyExpiryDiscount(p);markProductDirty(getKey(p),["preco_oferta","validade_oferta","desconto_validade"]);mark("products");renderProductEditor(false);setStatus(pct?`Desconto de validade aplicado: ${pct}%`:"Validade fora da faixa de desconto","ok")}}if(el.matches("#imageZoom,#imageSharpness,#imageRemoveWhite"))previewImageEditor();if(el.matches('[data-action="kit-qtd"],[data-kfield]')){const k=currentKit();if(k){recalcKit(k);renderKitEditor()}}});
   document.addEventListener("click",async e=>{const b=e.target.closest("[data-action]");if(!b)return;const a=b.dataset.action,p=productByKey(state.editingProductKey);
     if(a==="make-photo-primary"&&p){const src=(p.imagens||[])[Number(b.dataset.index)];if(src){p.url_imagem=p.imagem=p.imagem_url=src;markProductDirty(getKey(p),["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProductEditor(false)}}
     if(a==="remove-gallery-photo"&&p){const i=Number(b.dataset.index),removed=(p.imagens||[])[i];p.imagens=(p.imagens||[]).filter((_,x)=>x!==i);if((p.url_imagem||p.imagem)===removed)p.url_imagem=p.imagem=p.imagem_url=p.imagens[0]||"";markProductDirty(getKey(p),["url_imagem","imagem","imagem_url","imagens"]);mark("products");renderProductEditor(false)}
@@ -2454,26 +2450,6 @@
 
   // A API Contents cria um commit por arquivo. As gravações precisam ser
   // sequenciais; em caso de corrida externa, buscamos o SHA novo e repetimos.
-  async function githubPutWithFreshSha(path,content,message){
-    const s=state.settings;
-    if(!s.githubToken||!s.githubOwner||!s.githubRepo) throw new Error("Configure token, owner e repositório do GitHub.");
-    const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}`;
-    let lastError="",forcedSha="";
-    for(let attempt=1;attempt<=6;attempt++){
-      const old=forcedSha?{sha:forcedSha}:await githubContent(path);
-      forcedSha="";
-      const body={message,branch:s.githubBranch,content};
-      if(old?.sha) body.sha=old.sha;
-      const r=await fetch(url,{method:"PUT",cache:"no-store",headers:{Authorization:`Bearer ${s.githubToken}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},body:JSON.stringify(body)});
-      if(r.ok) return r.json();
-      lastError=await r.text();
-      if(![409,422].includes(r.status)) throw new Error(`GitHub PUT ${path}: ${r.status} ${lastError.slice(0,240)}`);
-      const current=lastError.match(/is at ([a-f0-9]{40}) but expected/i)?.[1];
-      if(current)forcedSha=current;
-      await new Promise(r=>setTimeout(r,300*attempt));
-    }
-    throw new Error(`GitHub PUT ${path}: conflito persistente. Feche outras abas do admin e tente novamente. ${lastError.slice(0,220)}`);
-  }
   githubContent=async function(path){
     const s=state.settings;
     const url=`https://api.github.com/repos/${encodeURIComponent(s.githubOwner)}/${encodeURIComponent(s.githubRepo)}/contents/${encodeURI(path)}?ref=${encodeURIComponent(s.githubBranch)}&_=${Date.now()}`;
@@ -2481,20 +2457,6 @@
     if(r.status===404) return null;
     if(!r.ok) throw new Error(`GitHub GET ${path}: ${r.status}`);
     return r.json();
-  };
-  githubUpsert=function(path,data,message){return githubPutWithFreshSha(path,b64(JSON.stringify(data,null,2)),message)};
-  githubUpsertText=function(path,text,message){return githubPutWithFreshSha(path,b64(String(text??"")),message)};
-  githubUpsertRaw=function(path,arrayBuffer,message){return githubPutWithFreshSha(path,arrayBufferToBase64(arrayBuffer),message)};
-  saveGithubFiles=async function({produtos,metaCatalogCsv,adminMeta,cestas,kits,anotacoes}={}){
-    readSettingsFromUi();
-    const ops=[];
-    if(produtos) ops.push(()=>githubUpsert(state.settings.githubProdutosPath,produtos,"Atualiza produtos.json pelo admin Dona Antônia"));
-    if(metaCatalogCsv) ops.push(()=>githubUpsertText(state.settings.githubMetaPath,metaCatalogCsv,"Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia"));
-    if(adminMeta) ops.push(()=>githubUpsert(state.settings.githubAdminMetaPath,adminMeta,"Atualiza produtos_admin_meta.json pelo admin Dona Antônia"));
-    if(cestas) ops.push(()=>githubUpsert(state.settings.githubCestasPath,cestas,"Atualiza produtos-cesta-basica.json pelo admin Dona Antônia"));
-    if(kits) ops.push(()=>githubUpsert(state.settings.githubKitsPath,kits,"Atualiza kits.json pelo admin Dona Antônia"));
-    if(anotacoes) ops.push(()=>githubUpsert(state.settings.githubAnotacoesPath||"site/anotacoes.json",anotacoes,"Atualiza anotacoes.json pelo admin Dona Antônia"));
-    for(const operation of ops) await operation();
   };
 
   document.addEventListener("click",e=>{
@@ -2580,12 +2542,6 @@
   }
   function quickMobileSelectField(field,label,current,values){
     return `<div class="field"><label>${esc(label)}</label><select class="select quick-mobile-input" data-quick-field="${esc(field)}">${selectOptionsHtml(values,current,"Selecione")}</select></div>`;
-  }
-  function bannerPositionOptionsHtml(p){
-    const positions=[...BANNER_POSITIONS];
-    const category=String(p?.categoria||"").trim();
-    if(category)positions.push({value:`categoria.${category}.topo`,label:`Categoria atual · ${category}`});
-    return positions.map((item,index)=>`<option value="${esc(item.value)}" ${index===0?"selected":""}>${esc(item.label)}</option>`).join("");
   }
   function workbenchDateValue(value){
     const s=String(value||"").trim(),br=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/),iso=s.match(/^(\d{4}-\d{2}-\d{2})/);
@@ -2685,18 +2641,6 @@
     grid.className="products-grid professional-list";
     grid.innerHTML=list.length?list.map(renderProductWorkbench).join(""):`<div class="empty">Nenhum produto encontrado.</div>`;
     $("#pagination").innerHTML=`<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`;
-  };
-  updateProductFromCard=function(key,field,value){
-    const p=productByKey(key);if(!p)return;
-    if(["preco","preco_custo","estoque","preco_oferta"].includes(field))p[field]=toNum(value);
-    else if(field==="tags")p.tags=parseTags(value);
-    else p[field]=value;
-    if(field==="gtin")delete p.ean;
-    if(field==="video_youtube")delete p.video_url;
-    const pricingRuleResult=["preco","preco_oferta","validade"].includes(field)?applyExpiryRules(p):{fields:[]};
-    p.last_update=Date.now();p.updated_at=nowIso();if(field==="estoque")p.stock_updated_at=nowIso();
-    markProductDirty(getKey(p),[field,...pricingRuleResult.fields]);mark("products");updateExpiryAlert();
-    const card=$(`[data-product-key="${CSS.escape(String(key))}"]`);if(card)card.classList.add("dirty");
   };
   function workbenchPhotoInput(key){return $$("[data-card-photo-key]").find(el=>el.dataset.cardPhotoKey===String(key))||null}
   async function addWorkbenchPhoto(p,file){
@@ -2838,34 +2782,7 @@
     if(btn){btn.classList.toggle("has-open",count>0);const badge=btn.querySelector(".notes-count");if(badge)badge.textContent=count}
     $$(".notes-nav-dot").forEach(dot=>dot.classList.toggle("show",count>0));
   }
-
-  const baseRenderSettingsUi=renderSettingsUi;
-  renderSettingsUi=function(){baseRenderSettingsUi();const el=$("#setGithubAnotacoesPath");if(el&&el.value!==String(state.settings.githubAnotacoesPath||""))el.value=state.settings.githubAnotacoesPath||"site/anotacoes.json"};
-  const baseReadSettingsFromUi=readSettingsFromUi;
-  readSettingsFromUi=function(){baseReadSettingsFromUi();const el=$("#setGithubAnotacoesPath");if(el)state.settings.githubAnotacoesPath=el.value.trim()||"site/anotacoes.json"};
-
-  const aiBaseRenderSettingsUi=renderSettingsUi;
-  renderSettingsUi=function(){
-    aiBaseRenderSettingsUi();
-    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl"),instagramKit=$("#setMakeInstagramKitWebhookUrl"),banner=$("#setMakeBannerWebhookUrl"),bannerAutomatic=$("#setMakeBannerAutomaticWebhookUrl");
-    if(text&&text.value!==String(state.settings.makeTextWebhookUrl||""))text.value=state.settings.makeTextWebhookUrl||"";
-    if(image&&image.value!==String(state.settings.makeImageWebhookUrl||""))image.value=state.settings.makeImageWebhookUrl||"";
-    if(instagramKit&&instagramKit.value!==String(state.settings.makeInstagramKitWebhookUrl||""))instagramKit.value=state.settings.makeInstagramKitWebhookUrl||"";
-    if(banner&&banner.value!==String(state.settings.makeBannerWebhookUrl||""))banner.value=state.settings.makeBannerWebhookUrl||"";
-    if(bannerAutomatic&&bannerAutomatic.value!==String(state.settings.makeBannerAutomaticWebhookUrl||""))bannerAutomatic.value=state.settings.makeBannerAutomaticWebhookUrl||"";
-  };
-  const aiBaseReadSettingsFromUi=readSettingsFromUi;
-  readSettingsFromUi=function(){
-    aiBaseReadSettingsFromUi();
-    const text=$("#setMakeTextWebhookUrl"),image=$("#setMakeImageWebhookUrl"),instagramKit=$("#setMakeInstagramKitWebhookUrl"),banner=$("#setMakeBannerWebhookUrl"),bannerAutomatic=$("#setMakeBannerAutomaticWebhookUrl");
-    if(text)state.settings.makeTextWebhookUrl=text.value.trim();
-    if(image)state.settings.makeImageWebhookUrl=image.value.trim();
-    if(instagramKit)state.settings.makeInstagramKitWebhookUrl=instagramKit.value.trim();
-    if(banner)state.settings.makeBannerWebhookUrl=banner.value.trim();
-    if(bannerAutomatic)state.settings.makeBannerAutomaticWebhookUrl=bannerAutomatic.value.trim();
-  };
-
-  function normalizeGithubRawImageUrl(src){
+function normalizeGithubRawImageUrl(src){
     let value=String(src||"").trim();
     if(!/^https?:\/\//i.test(value))return value;
     try{
@@ -3053,94 +2970,6 @@
     const text=await response.text();
     if(!response.ok)throw new Error(`Make retornou ${response.status}: ${text.slice(0,240)}`);
     try{return JSON.parse(text)}catch{return {ok:true,texto:text}}
-  }
-  async function createProductBanner(key){
-    const product=productByKey(key);
-    if(!product)throw new Error("Produto não encontrado.");
-    readSettingsFromUi();
-    const webhook=String(state.settings.makeBannerWebhookUrl||"").trim();
-    if(!webhook)throw new Error("Configure o webhook IA banners do site na aba Integrações.");
-    const card=document.querySelector(`.product-workbench[data-product-key="${CSS.escape(String(key))}"]`);
-    const position=card?.querySelector("[data-banner-position]")?.value||"home.hero";
-    const image=getImg(product);
-    if(!image||image===PLACEHOLDER)throw new Error("Cadastre uma foto válida no produto antes de criar o banner.");
-    const oldPrice=toNum(product.preco);
-    const offer=toNum(product.preco_oferta);
-    const newPrice=offer>0&&offer<oldPrice?offer:oldPrice;
-    if(oldPrice<=0)throw new Error("Informe o preço de venda do produto antes de criar o banner.");
-    const code=String(product.codigo||getKey(product)||"produto").trim();
-    const bannerId=`produto-${slug(code||getName(product))}-${Date.now()}`;
-    const discount=oldPrice>newPrice?Math.round((1-newPrice/oldPrice)*100):0;
-    const payload={
-      acao:"criar_banner_produto",
-      versao_contrato:1,
-      origem:"producao/index.html",
-      requisicao_id:bannerId,
-      criado_em:nowIso(),
-      produto:{
-        firebaseKey:getKey(product),
-        id:product.id||"",
-        codigo:code,
-        gtin:product.gtin||product.ean||"",
-        nome:getName(product),
-        marca:product.marca||"",
-        categoria:product.categoria||"",
-        subcategoria:product.subcategoria||"",
-        embalagem:product.embalagem||"",
-        imagem_url:makeDownloadImageUrl(image),
-        preco_antigo:oldPrice,
-        preco_novo:newPrice,
-        preco_antigo_formatado:brl(oldPrice),
-        preco_novo_formatado:brl(newPrice),
-        desconto_percentual:discount,
-        em_oferta:discount>0
-      },
-      banner:{
-        id:bannerId,
-        ativo:true,
-        posicao:position,
-        tipo:"carousel",
-        ordem:Date.now(),
-        alt:`${getName(product)} por ${brl(newPrice)} na Dona Antônia`,
-        link:{tipo:"produto",valor:code||getKey(product)},
-        arquivos:{
-          desktop:githubImageFullPath("site/banners/gerados",product,`${bannerId}-desktop.webp`),
-          mobile:githubImageFullPath("site/banners/gerados",product,`${bannerId}-mobile.webp`)
-        },
-        formatos:{
-          desktop:{largura:3072,altura:1024,proporcao:"3:1"},
-          mobile:{largura:2048,altura:1152,proporcao:"16:9"}
-        },
-        storage_destino:"github"
-      },
-      github:{
-        owner:state.settings.githubOwner||"osvaldosereia",
-        repositorio:state.settings.githubRepo||"SUCEDOAN12",
-        branch:state.settings.githubBranch||"main",
-        json_path:"site/banners/banners.json",
-        pasta_imagens:"site/banners/gerados"
-      },
-      diretrizes:{
-        prompt_base:"Crie um banner publicitário premium e altamente vendável para e-commerce brasileiro usando fielmente a foto real do produto. Preserve embalagem, marca, cores, textos e proporções do produto. Destaque o produto, o nome e o preço promocional; mostre o preço anterior riscado somente quando houver desconto. Use alto contraste, hierarquia clara, acabamento fotográfico, fundo coerente com a categoria e áreas seguras para recorte. Não invente selos, benefícios, pesos, ingredientes nem informações que não estejam no payload. Produza versões independentes, uma desktop horizontal 3072x1024 e uma mobile horizontal 2048x1152, ambas em WebP.",
-        fundo:"publicitário, limpo, contrastado e coerente com o produto",
-        fidelidade_produto:"máxima",
-        idioma:"pt-BR",
-        marca_site:"Dona Antônia"
-      }
-    };
-    setStatus(`Criando banner de ${getName(product)} para ${position}...`,"warn");
-    const response=await fetch(webhook,{
-      method:"POST",
-      headers:{"Accept":"application/json","Content-Type":"application/json"},
-      body:JSON.stringify(payload)
-    });
-    const raw=await response.text();
-    let result={};
-    try{result=raw?JSON.parse(raw):{}}catch{result={mensagem:raw}}
-    if(!response.ok)throw new Error(`Make retornou ${response.status}: ${raw.slice(0,280)||"sem detalhes"}`);
-    if(result&&result.ok===false)throw new Error(result.erro||result.error||result.mensagem||"O cenário do Make informou falha.");
-    setStatus(`Banner criado e enviado para ${position}. O site carregará o novo JSON automaticamente.`,"ok");
-    return result;
   }
   function unwrapAiResult(result){
     if(typeof result==="string"){
@@ -3771,24 +3600,6 @@
     const card=e.target.closest?.(".product-workbench"),key=card?.dataset.productKey||state.cardImageTargetKey,p=key?productByKey(key):null,file=item.getAsFile();if(!p||!file)return;
     e.preventDefault();try{setStatus("Processando imagem colada...","warn");const prepared=await addWorkbenchPhoto(p,file);setStatus(`Imagem colada (${formatBytes(prepared.bytes)})`,"ok")}catch(err){alert("Erro ao colar imagem: "+err.message)}
   });
-
-  saveGithubNow=async function(){try{if(!ensureCatalogReadyForFullExport())return;setStatus("Enviando arquivos ao GitHub...","warn");await saveGithubFiles({produtos:productsObject(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});state.dirtyNotes=false;localStorage.removeItem(LS_NOTES_DIRTY);setStatus("GitHub atualizado","ok");alert("Todos os arquivos, incluindo anotacoes.json, foram enviados ao GitHub.")}catch(e){console.error(e);setStatus("Erro ao enviar GitHub","err");alert("Erro ao enviar GitHub: "+e.message)}};
-
-  const originalLoadData=loadData;
-  loadData=async function(){
-    await originalLoadData();
-    document.querySelectorAll('[data-tab="leitura"],#tab-leitura').forEach(x=>x.remove());
-    if(state.activeTab==="leitura")state.activeTab="produtos";
-    state.produtos.forEach(p=>{if(!Array.isArray(p.imagens))p.imagens=uniq([p.url_imagem||p.imagem||""]).filter(Boolean);if(!p.video_youtube&&p.video_url)p.video_youtube=p.video_url;const result=applyExpiryRules(p);if(result.fields.length)markProductDirty(getKey(p),result.fields)});
-    state.kits.forEach(recalcKit);
-    const localNotes=normalizeNotes(JSON.parse(localStorage.getItem(LS_NOTES)||"[]")),hadPending=localStorage.getItem(LS_NOTES_DIRTY)==="1";
-    try{
-      const remoteNotes=await loadNotesFromGithub();
-      state.anotacoes=hadPending?localNotes:remoteNotes;
-    }catch(e){console.error(e);state.anotacoes=localNotes}
-    const removed=cleanupExpiredNotes();state.dirtyNotes=hadPending||removed>0;if(state.dirtyNotes)safeLocalSet(LS_NOTES_DIRTY,"1","marcador de anotações pendentes");saveLocal();renderAll();updateExpiryAlert();
-    if(state.dirtyNotes&&state.settings.githubToken)await saveNotes(false);
-  };
   setInterval(async()=>{const removed=cleanupExpiredNotes();if(removed){mark("notes");renderNotes();updateNotesIndicator();if(state.settings.githubToken)await saveNotes(false)}},60*60*1000);
 
   document.addEventListener("click",async e=>{
@@ -3918,37 +3729,7 @@
     try{localStorage.setItem(LS_PENDING_GITHUB_IMAGE_DELETES,JSON.stringify(kept))}catch{}
     return {deleted,checked};
   }
-
-  const originalUpdateProductFromCardForSelects=updateProductFromCard;
-  updateProductFromCard=function(key,field,value){
-    const p=productByKey(key);
-    const oldImage=p&&field==="url_imagem"?(p.url_imagem||p.imagem||""):"";
-    originalUpdateProductFromCardForSelects(key,field,value);
-    if(p&&field==="url_imagem"&&oldImage&&oldImage!==value)markGithubProductImageForDelete(oldImage);
-    if(p&&field==="categoria"){
-      if(p.subcategoria && !subcategoryValues(p.categoria,p.subcategoria).includes(p.subcategoria)){p.subcategoria="";p.subsubcategoria="";markProductDirty(getKey(p),["subcategoria","subsubcategoria"])}
-      renderProducts();
-    }
-    if(p&&field==="subcategoria"){
-      if(p.subsubcategoria && !subsubcategoryValues(p.categoria,p.subcategoria,p.subsubcategoria).includes(p.subsubcategoria)){p.subsubcategoria="";markProductDirty(getKey(p),["subsubcategoria"])}
-      renderProducts();
-    }
-  };
-
-  const originalSaveEverythingWithImageCleanup=saveEverything;
-  saveEverything=async function(){
-    const savedOk=await originalSaveEverythingWithImageCleanup();
-    if(savedOk===false)return false;
-    try{
-      setStatus("Verificando imagens de produtos sem uso no GitHub...","warn");
-      const res=await cleanupUnusedProductImagesFromGithub();
-      if(res.deleted)setStatus(`Salvamento concluído e ${res.deleted} imagem(ns) de produtos sem uso foram apagadas do GitHub`,"ok");
-      else setStatus("Salvamento concluído. Nenhuma imagem de produto sem uso encontrada no GitHub","ok");
-      return true;
-    }catch(err){console.error(err);setStatus("Salvo, mas a limpeza de imagens do GitHub falhou","err");alert("Os dados foram salvos, mas não foi possível limpar imagens sem uso do GitHub: "+err.message);return true}
-  };
-
-  document.addEventListener("click",e=>{
+document.addEventListener("click",e=>{
     const b=e.target.closest?.("[data-action]");if(!b)return;
     const action=b.dataset.action,key=b.dataset.key,p=key?productByKey(key):null;
     if(action==="workbench-remove-photo"&&p)markGithubProductImageForDelete(p.url_imagem||p.imagem||"");
@@ -4441,41 +4222,7 @@ function daDefaultBannerPositionForProduct(p){
   return values[daBannerStableHash(getKey(p)||p?.codigo||getName(p))%values.length]||"home.hero";
 }
 state.bannerPositions = state.bannerPositions || daLoadBannerPositions();
-bannerPositionOptionsHtml = function(p){
-  const key=getKey(p),positions=[...BANNER_POSITIONS],category=String(p?.categoria||"").trim();
-  if(category)positions.push({value:`categoria.${category}.topo`,label:`Categoria atual · ${category}`});
-  const current=state.bannerPositions?.[key]||daDefaultBannerPositionForProduct(p);
-  return positions.map(item=>`<option value="${esc(item.value)}" ${String(item.value)===String(current)?"selected":""}>${esc(item.label)}</option>`).join("");
-};
 document.addEventListener("change",e=>{const el=e.target;if(el?.matches?.("[data-banner-position]"))daSaveBannerPosition(el.dataset.key,el.value)},true);
-createProductBanner = async function(key){
-  const product=productByKey(key);if(!product)throw new Error("Produto não encontrado.");
-  readSettingsFromUi();
-  const webhook=String(state.settings.makeBannerWebhookUrl||"").trim();if(!webhook)throw new Error("Configure o webhook IA banners do site na aba Integrações.");
-  const card=document.querySelector(`.product-workbench[data-product-key="${CSS.escape(String(key))}"]`);
-  const positionSelect=card?.querySelector("[data-banner-position]");
-  const position=positionSelect?.value||state.bannerPositions?.[key]||daDefaultBannerPositionForProduct(product);
-  daSaveBannerPosition(key,position);
-  const image=getImg(product);if(!image||image===PLACEHOLDER)throw new Error("Cadastre uma foto válida no produto antes de criar o banner.");
-  const oldPrice=toNum(product.preco),offer=toNum(product.preco_oferta),newPrice=offer>0&&offer<oldPrice?offer:oldPrice;
-  if(oldPrice<=0)throw new Error("Informe o preço de venda do produto antes de criar o banner.");
-  const code=String(product.codigo||getKey(product)||"produto").trim(),bannerId=`produto-${slug(code||getName(product))}-${Date.now()}`,discount=oldPrice>newPrice?Math.round((1-newPrice/oldPrice)*100):0;
-  const payload={
-    acao:"criar_banner_produto",versao_contrato:2,origem:"producao/index.html",requisicao_id:bannerId,criado_em:nowIso(),
-    produto:{firebaseKey:getKey(product),id:product.id||"",codigo:code,gtin:product.gtin||product.ean||"",nome:getName(product),marca:product.marca||"",categoria:product.categoria||"",subcategoria:product.subcategoria||"",embalagem:product.embalagem||"",imagem_url:makeDownloadImageUrl(image),preco_antigo:oldPrice,preco_novo:newPrice,preco_antigo_formatado:brl(oldPrice),preco_novo_formatado:brl(newPrice),desconto_percentual:discount,em_oferta:discount>0},
-    banner:{id:bannerId,ativo:true,posicao:position,tipo:"carousel",ordem:Date.now(),alt:`${getName(product)} por ${brl(newPrice)} na Dona Antônia`,link:{tipo:"produto",valor:code||getKey(product)},arquivos:{desktop:`site/banners/gerados/${bannerId}-desktop.webp`,mobile:`site/banners/gerados/${bannerId}-mobile.webp`},formatos:{desktop:{largura:3072,altura:1024,proporcao_saida:"3:1",proporcao_site:"32:9",area_segura:"faixa central 3072x864; nada importante fora dela"},mobile:{largura:2048,altura:1152,proporcao:"16:9"}}},
-    github:{owner:state.settings.githubOwner||"osvaldosereia",repositorio:state.settings.githubRepo||"SUCEDOAN12",branch:state.settings.githubBranch||"main",json_path:"site/banners/banners.json",pasta_imagens:"site/banners/gerados"},
-    diretrizes:{prompt_base:"Crie banners publicitários premium para e-commerce brasileiro usando fielmente a foto real do produto. Preserve embalagem, marca, cores, textos e proporções. Gere duas versões independentes em WebP: DESKTOP com saída técnica 3072x1024, mantendo todo conteúdo importante na faixa central segura 3072x864 equivalente a 32:9; e MOBILE com saída 2048x1152, proporção 16:9. No desktop, áreas superior e inferior devem ser apenas continuação simples do fundo, sem texto nem produto importante. Nunca use formato vertical, story ou pôster. Destaque produto, nome e preço anunciado; mostre preço anterior riscado somente quando houver desconto. Alto contraste, texto curto em pt-BR, sem inventar selos, benefícios, URLs, telefone ou dados não recebidos.",fundo:"publicitário, limpo, contrastado e coerente com o produto",fidelidade_produto:"máxima",idioma:"pt-BR",marca_site:"Dona Antônia"}
-  };
-  setStatus(`Criando banner de ${getName(product)} para ${position}...`,"warn");
-  const response=await fetch(webhook,{method:"POST",headers:{Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify(payload)});
-  const raw=await response.text();let result={};try{result=raw?JSON.parse(raw):{}}catch{result={mensagem:raw}}
-  if(!response.ok)throw new Error(`Make retornou ${response.status}: ${raw.slice(0,280)||"sem detalhes"}`);
-  if(result&&result.ok===false)throw new Error(result.erro||result.error||result.mensagem||"O cenário do Make informou falha.");
-  setStatus(`Banner criado e enviado para ${position}. O site carregará o novo JSON automaticamente.`,"ok");return result;
-};
-
-
 
 
 /* DA_OPTIMIZE_CURRENT_IMAGES_20260711 */
@@ -4680,22 +4427,6 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
     host.insertAdjacentHTML("afterend", `<div class="field"><label>Caminho produtos-home.json leve</label><input class="input" id="setGithubProdutosHomePath" placeholder="site/produtos-home.json"></div>`);
   }
 
-  const daOriginalRenderSettingsUiSmartGithub = renderSettingsUi;
-  renderSettingsUi = function(){
-    ensureProdutosHomeSettingField();
-    daOriginalRenderSettingsUiSmartGithub();
-    ensureProdutosHomeSettingField();
-    const el=$("#setGithubProdutosHomePath");
-    if(el && el.value!==String(state.settings.githubProdutosHomePath||"site/produtos-home.json")) el.value=state.settings.githubProdutosHomePath||"site/produtos-home.json";
-  };
-
-  const daOriginalReadSettingsFromUiSmartGithub = readSettingsFromUi;
-  readSettingsFromUi = function(){
-    ensureProdutosHomeSettingField();
-    daOriginalReadSettingsFromUiSmartGithub();
-    const el=$("#setGithubProdutosHomePath");
-    state.settings.githubProdutosHomePath=(el?.value||state.settings.githubProdutosHomePath||"site/produtos-home.json").trim()||"site/produtos-home.json";
-  };
 
   function firstNonEmptyValue(...values){return values.find(v=>String(v??"").trim())||""}
   function compactHomeText(v="",max=180){return cleanCatalogText(v).slice(0,max)}
@@ -5125,31 +4856,6 @@ function daShowBannerJson(){const data=JSON.stringify(state.bannerManager.catalo
 const daOriginalRenderTabsForBanners=renderTabs;
 renderTabs=function(){daOriginalRenderTabsForBanners();daEnsureBannerUi();document.getElementById('tab-banners')?.classList.toggle('hidden',state.activeTab!=='banners');if(state.activeTab==='banners'){daRenderBannerManager();if(!state.bannerManager.catalog&&!state.bannerManager.loading)daLoadBannerCatalog(true).then(daRenderBannerManager).catch(()=>daRenderBannerManager())}};
 bannerPositionOptionsHtml=function(p){const current=state.bannerPositions?.[getKey(p)]||daDefaultBannerPositionForProduct(p),category=String(p?.categoria||'').trim(),subcategory=String(p?.subcategoria||'').trim(),brand=String(p?.marca||'').trim();const opts=[...DA_BANNER_PLACEMENTS.filter(x=>!x.targetKind).map(x=>({value:x.value,label:x.label})),...(category?[{value:`categoria::${category}`,label:`Categoria específica · ${category}`}]:[]),...(subcategory?[{value:`subcategoria::${category}::${subcategory}`,label:`Subcategoria específica · ${category} › ${subcategory}`}]:[]),...(brand?[{value:`marca::${brand}`,label:`Marca específica · ${brand}`}]:[]),{value:`produto::${getKey(p)}`,label:`Produto específico · ${getName(p)}`}];return opts.map(x=>`<option value="${esc(x.value)}" ${x.value===current?'selected':''}>${esc(x.label)}</option>`).join('')};
-createProductBanner=async function(key){
-  const p=productByKey(key);
-  if(!p)throw new Error('Produto não encontrado.');
-  const card=document.querySelector(`[data-product-key="${CSS.escape(String(key))}"]`);
-  const positionSelect=card?.querySelector('[data-banner-position]');
-  const raw=positionSelect?.value||state.bannerPositions?.[key]||`produto::${key}`;
-  let parts=String(raw).split('::'),placement=parts.shift()||'produto',target=parts.join('::');
-  if(!target&&['categoria','subcategoria','marca','produto'].includes(placement))target=placement==='produto'?key:(placement==='subcategoria'?`${p.categoria||''}::${p.subcategoria||''}`:String(p[placement]||''));
-  if((placement==='kit'||placement==='cesta')&&!target)throw new Error('Para usar kit ou cesta específica, faça a criação pelo gerenciador de banners.');
-  const image=getImg(p);
-  if(!image||image===PLACEHOLDER)throw new Error('Cadastre uma foto válida no produto antes de gerar o banner.');
-  const oldPrice=toNum(p.preco),offerPrice=toNum(p.preco_oferta),start=workbenchDateValue(p.data_inicio_oferta),end=workbenchDateValue(p.validade_oferta);
-  if(oldPrice<=0)throw new Error('Informe o valor antigo do produto antes de gerar o banner.');
-  if(offerPrice<=0)throw new Error('Informe o valor da oferta do produto antes de gerar o banner.');
-  if(offerPrice>=oldPrice)throw new Error('O valor da oferta deve ser menor que o valor antigo para o banner rápido de produto.');
-  if(!start||!end)throw new Error('Preencha a data de início e a data de fim da oferta no card do produto antes de gerar o banner.');
-  if(new Date(`${start}T00:00:00`).getTime()>new Date(`${end}T23:59:59`).getTime())throw new Error('A data de fim da oferta deve ser igual ou posterior à data de início.');
-  const catalog=daNormalizeBannerCatalog(state.bannerManager.catalog||await daLoadBannerCatalog());
-  const samePlacement=catalog.banners.filter(b=>String(b?.exibicao?.local||'')===String(placement)&&String(b?.exibicao?.alvo||'')===String(target||''));
-  const nextOrder=(samePlacement.reduce((max,b)=>Math.max(max,Number(b?.exibicao?.ordem)||0),0)||0)+1;
-  const d={contentType:'produto',selected:[p],artText:'',placement,target,title:`Oferta · ${getName(p)}`,alt:`${getName(p)} em oferta na Dona Antônia`,link:{tipo:'produto',valor:String(p.codigo||getKey(p)||'')},order:nextOrder,start:`${start}T00:00`,end:`${end}T23:59`,active:true};
-  setStatus(`Gerando banner rápido de ${getName(p)}...`,'warn');
-  await daPublishBannerArtwork(d);
-  return {ok:true,modo:'direto',placement,target};
-};
 
 document.addEventListener('click',async e=>{const btn=e.target.closest('[data-action]');if(!btn)return;const action=btn.dataset.action;if(!action.startsWith('banner-'))return;const oldText=btn.textContent;try{if(['banner-create-confirm','banner-save-edit','banner-regenerate','banner-toggle','banner-delete','banner-refresh'].includes(action)){btn.disabled=true;btn.textContent='Processando...'}if(action==='banner-refresh'){state.bannerManager.catalog=null;await daLoadBannerCatalog(true);await daRenderBannerManager()}if(action==='banner-new')daOpenBannerModal('create');if(action==='banner-modal-close')daCloseBannerModal();if(action==='banner-create-confirm')await daPublishBannerArtwork(daBannerFormData());if(action==='banner-save-edit')await daSaveBannerEdit();if(action==='banner-regenerate')await daRegenerateBanner();if(action==='banner-edit'){const banner=state.bannerManager.catalog?.banners?.find(x=>x.id===btn.dataset.id);if(banner)daOpenBannerModal('edit',banner)}if(action==='banner-toggle')await daToggleBanner(btn.dataset.id);if(action==='banner-delete')await daDeleteBanner(btn.dataset.id);if(action==='banner-open-link')daOpenBannerLink(state.bannerManager.catalog?.banners?.find(x=>x.id===btn.dataset.id));if(action==='banner-open-json')daShowBannerJson()}catch(err){console.error(err);alert(err.message);setStatus('Erro no gerenciador de banners','err')}finally{if(btn.isConnected){btn.disabled=false;btn.textContent=oldText}}},true);
 document.addEventListener('input',e=>{if(e.target.id==='bannerManagerSearch'){state.bannerManager.query=e.target.value;daRenderBannerManager()}if(e.target.id==='bannerProductSearch')daRenderBannerProductPicker()},true);
@@ -5608,15 +5314,6 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
 
   const daV6RenderAllBase = renderAll;
   renderAll = function(){const result=daV6RenderAllBase();daV6EnsureBannerProductFilter();return result;};
-  const daV6LoadDataBase = loadData;
-  loadData = async function(){
-    const result = await daV6LoadDataBase();
-    try{await daLoadBannerCatalog(true);}catch(error){console.warn('Catálogo de banners não carregado no início:',error);}
-    daV6EnsureBannerProductFilter();
-    renderProducts();
-    return result;
-  };
-
   if(!document.getElementById('daV6FixStyles')){
     const style = document.createElement('style');
     style.id = 'daV6FixStyles';
@@ -5637,7 +5334,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   document.addEventListener('visibilitychange',()=>{
     if(!document.hidden){
       daV6CleanupExpiredBanners().catch(error=>console.warn(error));
-      if(!state.produtos.length)refreshProductsSilently().catch(error=>console.warn(error));
+      refreshProductsSilently().catch(error=>console.warn(error));
     }
   });
 })();
@@ -5795,30 +5492,6 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     return daBannerCallWebhookV7Base(payload);
   };
 
-  createProductBanner = async function(key){
-    const product=productByKey(key);
-    if(!product)throw new Error('Produto não encontrado.');
-    const card=document.querySelector(`[data-product-key="${CSS.escape(String(key))}"]`);
-    const positionSelect=card?.querySelector('[data-banner-position]');
-    const raw=positionSelect?.value||state.bannerPositions?.[key]||`produto::${key}`;
-    const parts=String(raw).split('::'),placement=parts.shift()||'produto';let target=parts.join('::');
-    if(!target&&['categoria','subcategoria','marca','produto'].includes(placement))target=placement==='produto'?key:(placement==='subcategoria'?`${product.categoria||''}::${product.subcategoria||''}`:String(product[placement]||''));
-    if((placement==='kit'||placement==='cesta')&&!target)throw new Error('Para usar kit ou cesta específica, faça a criação pelo gerenciador de banners.');
-    const image=getImg(product);
-    if(!image||image===PLACEHOLDER)throw new Error('Cadastre uma foto válida no produto antes de gerar o banner.');
-    const regular=toNum(product.preco),offer=toNum(product.preco_oferta);
-    if(regular<=0)throw new Error('Informe o valor antigo do produto antes de gerar o banner.');
-    if(offer<=0)throw new Error('Informe o valor da oferta do produto antes de gerar o banner.');
-    if(offer>=regular)throw new Error('O valor da oferta deve ser menor que o valor antigo para o banner rápido de produto.');
-    const schedule=daV12ProductBannerSchedule(product);
-    const catalog=daNormalizeBannerCatalog(state.bannerManager.catalog||await daLoadBannerCatalog());
-    const samePlacement=catalog.banners.filter(b=>String(b?.exibicao?.local||'')===String(placement)&&String(b?.exibicao?.alvo||'')===String(target||''));
-    const nextOrder=(samePlacement.reduce((max,b)=>Math.max(max,Number(b?.exibicao?.ordem)||0),0)||0)+1;
-    const data={contentType:'produto',selected:[product],artText:'',placement,target,title:`Oferta · ${getName(product)}`,alt:`${getName(product)} em oferta na Dona Antônia`,link:{tipo:'produto',valor:String(product.codigo||getKey(product)||'')},order:nextOrder,start:schedule.start,end:schedule.end,active:true,hideOfferValidity:true};
-    setStatus(`Gerando banner de ${getName(product)} durante o período válido da oferta...`,'warn');
-    await daPublishBannerArtwork(data);
-    return {ok:true,modo:'direto',placement,target,banner_inicio:data.start,banner_fim:data.end,validade_oferta_na_arte:false};
-  };
 
   const daBannerCardV7Base = daBannerCardHtml;
   daBannerCardHtml = function(banner){return daBannerCardV7Base(banner).replace('<strong>Vencimento:</strong>','<strong>Sai do ar:</strong>')};
@@ -6542,19 +6215,6 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     event.preventDefault();
     runUiAction(button,"Consultando...",()=>daLoadKitCarouselQueue(true));
   },true);
-
-  const daLoadDataWithQueueBase=loadData;
-  loadData=async function(){
-    const requestedTab=state.activeTab;
-    await daLoadDataWithQueueBase();
-    state.meta=normalizeMeta(state.meta);
-    if(requestedTab&&requestedTab!=="produtos")state.activeTab=requestedTab;
-    renderTabs();
-    renderCatalogs();
-    await daLoadKitCarouselQueue(true);
-    renderKitsList();renderKitEditor();
-  };
-
   if(!document.getElementById("daFinalAdminFixStyles")){
     const style=document.createElement("style");style.id="daFinalAdminFixStyles";style.textContent=`
       #tab-cadastros .registry-workspace{display:grid;grid-template-columns:245px minmax(0,1fr);gap:16px;align-items:start}
@@ -6968,7 +6628,6 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
 
     const daOfferRenderTabsBase=renderTabs;renderTabs=function(){const result=daOfferRenderTabsBase();daOfferEnsureUi();document.getElementById("tab-ofertas-auto")?.classList.toggle("hidden",state.activeTab!=="ofertas-auto");if(state.activeTab==="ofertas-auto"){daOfferRender();if(!state.offerAutomation.loading&&!state.offerAutomation.history.atualizado_em)daOfferLoad()}return result};
     const daOfferRenderAllBase=renderAll;renderAll=function(){const result=daOfferRenderAllBase();if(state.activeTab==="ofertas-auto")daOfferRender();return result};
-    const daOfferLoadDataBase=loadData;let daOfferLoadDataRunning=null;loadData=function(){if(daOfferLoadDataRunning)return daOfferLoadDataRunning;daOfferLoadDataRunning=(async()=>{const result=await daOfferLoadDataBase();daOfferLoad().catch(error=>console.warn("Ofertas automáticas não carregadas:",error));return result})();return daOfferLoadDataRunning.finally(()=>{daOfferLoadDataRunning=null})};
     daOfferEnsureUi();
 
     if(!document.getElementById("daOfferAutomationStyles")){const style=document.createElement("style");style.id="daOfferAutomationStyles";style.textContent=`
@@ -6978,7 +6637,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     `;document.head.appendChild(style)}
   })();
 
-  /* ===== BANNERS V10 · POSICIONAMENTO REAL DO SITE + LIMITE 4 POR ESPAÇO ===== */
+  /* ===== BANNERS · POSICIONAMENTO REAL DO SITE E FILA DE ATÉ 12 POR ESPAÇO ===== */
   const DA_BANNER_MAX_ACTIVE_PER_SPACE_V10 = 12;
   const DA_BANNER_VISIBLE_PER_SPACE_V12 = 4;
   const DA_BANNER_AUTOMATIC_STRATEGY_V10 = "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13";
@@ -7118,7 +6777,7 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     };
   }
 
-  // Limite real de 4 banners ativos por espaço, inclusive em criações manuais.
+  // Limite real de 12 banners ativos ou agendados por família de posição.
   if(typeof daPublishBannerArtwork==="function"){
     const daV10PublishBannerArtworkBase=daPublishBannerArtwork;
     daPublishBannerArtwork=async function(data){
