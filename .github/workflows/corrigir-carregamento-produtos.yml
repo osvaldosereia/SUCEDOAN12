@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/corrigir-carregamento-produtos.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,11 +19,14 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Corrigir index da raiz
+      - name: Corrigir index e atualizar versão
         shell: python
         run: |
           from pathlib import Path
+          import json
+          from datetime import datetime, timezone
 
+          version = '2026-07-16-produtos-cors-cache-v3'
           path = Path('index.html')
           text = path.read_text(encoding='utf-8')
           original = text
@@ -32,7 +36,7 @@ jobs:
           if old_urls in text:
               text = text.replace(old_urls, new_urls, 1)
           elif new_urls not in text:
-              raise SystemExit('Configuração PRODUCT_HOME_URLS não encontrada no formato esperado')
+              raise SystemExit('Configuração PRODUCT_HOME_URLS não encontrada')
 
           old_headers = """headers: {
             Accept: 'application/json',
@@ -45,34 +49,53 @@ jobs:
           if old_headers in text:
               text = text.replace(old_headers, new_headers, 1)
           elif new_headers not in text:
-              raise SystemExit('Bloco de cabeçalhos do fetchJson não encontrado no formato esperado')
+              raise SystemExit('Bloco fetchJson não encontrado')
 
-          old_version = '2026-07-16-banners-8-category-v1'
-          new_version = '2026-07-16-produtos-cors-v2'
-          text = text.replace(old_version, new_version)
+          for old_version in [
+              '2026-07-16-banners-8-category-v1',
+              '2026-07-16-produtos-cors-v2'
+          ]:
+              text = text.replace(old_version, version)
 
           if text == original:
-              raise SystemExit('Nenhuma alteração foi necessária')
+              print('Index já estava corrigido; mantendo conteúdo.')
+          else:
+              path.write_text(text, encoding='utf-8')
 
-          path.write_text(text, encoding='utf-8')
+          version_path = Path('site/app-version.json')
+          version_data = {
+              'version': version,
+              'updatedAt': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+              'purpose': 'Correção do acesso aos produtos e atualização automática do cache do site Dona Antônia'
+          }
+          version_path.write_text(json.dumps(version_data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
       - name: Validar correção
         shell: python
         run: |
           from pathlib import Path
+          import json
+
           text = Path('index.html').read_text(encoding='utf-8')
-          assert "'Cache-Control': 'no-cache, no-store, max-age=0'" not in text
-          assert "Pragma: 'no-cache'" not in text
-          assert "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/produtos-home.json" in text
-          assert "2026-07-16-produtos-cors-v2" in text
+          assert "PRODUCT_HOME_URLS: ['/site/produtos-home.json', 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/produtos-home.json', 'site/produtos-home.json']" in text
+          assert "headers: {\n            Accept: 'application/json'\n          }" in text
+          assert "Accept: 'application/json',\n            'Cache-Control':" not in text
+          assert "2026-07-16-produtos-cors-cache-v3" in text
           assert text.lstrip().startswith('<!DOCTYPE html>')
           assert text.rstrip().endswith('</html>')
+
+          version = json.loads(Path('site/app-version.json').read_text(encoding='utf-8'))
+          assert version['version'] == '2026-07-16-produtos-cors-cache-v3'
 
       - name: Publicar correção e remover executor temporário
         run: |
           rm -f .github/workflows/corrigir-carregamento-produtos.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html .github/workflows/corrigir-carregamento-produtos.yml
-          git commit -m "Corrige acesso aos produtos no site"
+          git add index.html site/app-version.json .github/workflows/corrigir-carregamento-produtos.yml
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteração pendente"
+            exit 0
+          fi
+          git commit -m "Corrige produtos e atualiza cache do site"
           git push origin main
