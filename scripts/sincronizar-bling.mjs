@@ -301,7 +301,10 @@ async function sendProduct(accessToken, existing, payload) {
 }
 
 const authHeaders = accessToken => ({ Authorization: `Bearer ${accessToken}`, Accept: 'application/json', 'enable-jwt': '1' });
-const referenceKey = (parentId, descricao) => `${parentId ?? 'root'}|${identity(descricao)}`;
+// A listagem do Bling pode representar a categoria raiz sem pai como `null`,
+// ausente ou `{ id: 0 }`. Todas as tres formas representam o mesmo nivel.
+const categoryParentKey = parentId => parentId === undefined || parentId === null || String(parentId) === '0' ? 'root' : String(parentId);
+const referenceKey = (parentId, descricao) => `${categoryParentKey(parentId)}|${identity(descricao)}`;
 
 async function blingCategories(accessToken) {
   const byParentAndDescription = new Map();
