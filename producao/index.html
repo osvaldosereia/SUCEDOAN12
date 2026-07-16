@@ -3090,7 +3090,6 @@
         preco_antigo_unitario:toNum(item?.preco_antigo_unitario)||(p?toNum(p.preco):0),
         preco_novo_unitario_kit:toNum(item?.preco_novo_unitario_kit),
         economia_unitaria_kit:toNum(item?.economia_unitaria_kit),
-        imagem:img,
         imagem_url:makeDownloadImageUrl(img)
       };
     });
@@ -4773,7 +4772,8 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
   function compactHomeText(v="",max=180){return cleanCatalogText(v).slice(0,max)}
   function productHomeImageValue(p){
     const img=firstNonEmptyValue(p.url_imagem,p.imagem_url,p.imagem,Array.isArray(p.imagens)?p.imagens[0]:"",p.image,p.img,p.foto,p.foto_url,p.urlImagem,p.imagem_path);
-    return String(img||"").trim();
+    const repositoryPath=cleanCatalogText(p.imagem_path||"")||productImagePathFromUrl(img);
+    return repositoryPath||String(img||"").trim();
   }
   function productsHomePayload(){
     restoreLegacyBasketStock();
@@ -4801,9 +4801,6 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
         situacao:cleanCatalogText(p.situacao||""),
         url_imagem:img,
         imagem:img,
-        imagem_url:img,
-        imagem_path:cleanCatalogText(p.imagem_path||""),
-        imagem_storage:cleanCatalogText(p.imagem_storage||""),
         slug:slug(nome||codigo||key),
         tags:Array.isArray(p.tags)?p.tags.map(x=>cleanCatalogText(x)).filter(Boolean).slice(0,8):[],
         descricao_curta:compactHomeText(firstNonEmptyValue(p.descricao_curta,p.descricao),180),
@@ -4897,7 +4894,7 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
     readSettingsFromUi();
     const ops=[];
     if(produtos) ops.push({label:"produtos.json",run:()=>githubUpsert(state.settings.githubProdutosPath,produtos,"Atualiza produtos.json pelo admin Dona Antônia")});
-    if(produtosHome) ops.push({label:"produtos-home.json",run:()=>githubUpsert(state.settings.githubProdutosHomePath||"site/produtos-home.json",produtosHome,"Atualiza produtos-home.json leve pelo admin Dona Antônia")});
+    if(produtosHome) ops.push({label:"produtos-home.json",run:()=>githubUpsertText(state.settings.githubProdutosHomePath||"site/produtos-home.json",JSON.stringify(produtosHome),"Atualiza produtos-home.json leve pelo admin Dona Antônia")});
     if(metaCatalogCsv) ops.push({label:"produtos_meta.csv",run:()=>githubUpsertText(state.settings.githubMetaPath,metaCatalogCsv,"Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")});
     if(adminMeta) ops.push({label:"produtos_admin_meta.json",run:()=>githubUpsert(state.settings.githubAdminMetaPath,adminMeta,"Atualiza produtos_admin_meta.json pelo admin Dona Antônia")});
     if(cestas) ops.push({label:"produtos-cesta-basica.json",run:()=>githubUpsert(state.settings.githubCestasPath,cestas,"Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")});
