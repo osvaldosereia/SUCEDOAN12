@@ -77,6 +77,13 @@ async function token() {
 }
 
 function optional(target, key, value) { if (value !== undefined && value !== null && text(value) !== '') target[key] = value; }
+function ncm(source) {
+  const value = source.ncm ?? source.NCM ?? source.Ncm ?? source.codigoNcm ?? source.codigo_ncm;
+  const digits = text(value).replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.length !== 8) throw new Error(`NCM invalido (${text(value)}): informe os 8 digitos`);
+  return digits;
+}
 function sourceStock(source) {
   // Nao use "quantidade" generico: em alguns cadastros ele e quantidade de
   // embalagem. Somente campos explicitamente de estoque podem alterar saldo.
@@ -100,6 +107,7 @@ function sourceToPayload(source) {
   };
   optional(payload, 'descricaoCurta', text(source.descricao_curta || source.descrição_curta));
   optional(payload, 'descricaoComplementar', text(source.descricao || source.descrição));
+  optional(payload, 'ncm', ncm(source));
   optional(payload, 'gtin', text(source.gtin || source.ean));
   optional(payload, 'gtinEmbalagem', text(source.gtin_embalagem || source.ean_embalagem));
   optional(payload, 'marca', text(source.marca));
