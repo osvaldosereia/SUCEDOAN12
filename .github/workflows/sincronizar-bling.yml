@@ -39,6 +39,7 @@ jobs:
       BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
       BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
       BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
+      BLING_PRODUCT_GROUPS_JSON: ${{ secrets.BLING_PRODUCT_GROUPS_JSON }}
       SYNC_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || github.event.client_payload.mode || 'dry-run' }}
       MAX_PRODUCTS: ${{ github.event_name == 'workflow_dispatch' && inputs.max_products || github.event.client_payload.max_products || '0' }}
       SYNC_STOCK: ${{ github.event_name == 'workflow_dispatch' && inputs.sync_stock || github.event.client_payload.sync_stock || 'no' }}
