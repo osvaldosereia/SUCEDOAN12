@@ -472,9 +472,10 @@
         <div class="field"><label>Fornecedor</label><select class="select" id="f-fornecedor"><option value="">Todos</option></select></div>
         <div class="field"><label>Tag</label><select class="select" id="f-tag"><option value="">Todas</option></select></div>
         <div class="field"><label>Situação</label><select class="select" id="f-situacao"><option value="">Todas</option><option value="A">Ativos</option><option value="I">Inativos</option><option value="sem_estoque">Sem estoque</option><option value="com_estoque">Com estoque</option></select></div>
-        <div class="field"><label>Foto / GTIN</label><select class="select" id="f-qualidade"><option value="">Todos</option><option value="sem_foto">Sem foto</option><option value="sem_gtin">Sem GTIN</option><option value="sem_descricao">Sem descrição</option><option value="com_oferta">Com oferta</option></select></div>
+        <div class="field"><label>Pendências do cadastro</label><select class="select" id="f-qualidade"><option value="">Todos</option><option value="cadastro_incompleto">Cadastro incompleto (qualquer campo obrigatório)</option><option value="sem_foto">Sem foto</option><option value="sem_nome">Sem nome</option><option value="sem_codigo">Sem código</option><option value="sem_gtin">Sem GTIN / EAN</option><option value="sem_ncm">Sem NCM</option><option value="sem_categoria">Sem categoria</option><option value="sem_subcategoria">Sem subcategoria</option><option value="sem_subsubcategoria">Sem subsubcategoria</option><option value="sem_marca">Sem marca</option><option value="sem_fornecedor">Sem fornecedor</option><option value="sem_embalagem">Sem embalagem</option><option value="sem_descricao">Sem descrição</option><option value="sem_preco">Sem preço de venda</option><option value="sem_preco_custo">Sem preço de custo</option><option value="sem_validade">Sem validade</option><option value="sem_gondola">Sem gôndola</option><option value="sem_prateleira">Sem prateleira</option><option value="sem_tags">Sem tags</option><option value="sem_video">Sem vídeo</option><option value="com_oferta">Com oferta</option></select></div>
+        <div class="field"><label>Vencimento</label><select class="select" id="f-vencimento"><option value="">Todas as validades</option><option value="5">Vence nos próximos 5 dias</option><option value="10">Vence nos próximos 10 dias</option><option value="15">Vence nos próximos 15 dias</option><option value="20">Vence nos próximos 20 dias</option><option value="25">Vence nos próximos 25 dias</option><option value="30">Vence nos próximos 30 dias</option><option value="vencidos">Já vencidos</option><option value="sem_validade">Sem validade informada</option></select></div>
         <div class="field"><label>Cestas</label><select class="select" id="f-cesta"><option value="">Todos</option><option value="em_cesta">Em alguma cesta</option><option value="fora_cesta">Fora das cestas</option></select></div>
-        <div class="field"><label>Ordenar</label><select class="select" id="f-sort"><option value="nome">Nome</option><option value="codigo">Código</option><option value="preco_desc">Maior preço</option><option value="preco_asc">Menor preço</option><option value="estoque_desc">Maior estoque</option><option value="atualizado_desc">Mais atualizados</option></select></div>
+        <div class="field"><label>Ordenar</label><select class="select" id="f-sort"><option value="nome">Nome</option><option value="validade_asc">Vencimento mais próximo</option><option value="codigo">Código</option><option value="preco_desc">Maior preço</option><option value="preco_asc">Menor preço</option><option value="estoque_desc">Maior estoque</option><option value="atualizado_desc">Mais atualizados</option></select></div>
         <div class="field"><label>Itens por página</label><select class="select" id="f-page-size"><option>24</option><option>48</option><option>96</option><option>200</option><option value="999999">Todos</option></select></div>
         <div class="filter-actions"><button class="btn primary" type="button" data-action="apply-filters">Buscar com filtros</button><button class="btn" type="button" data-action="clear-filters">Limpar filtros</button><button class="btn gold" type="button" data-action="rebuild-meta">Atualizar cadastros</button></div>
       </form>
@@ -1040,6 +1041,42 @@
       throw error;
     }finally{clearTimeout(timer)}
   }
+  const DA_PRODUCTS_CACHE_DB="dona_antonia_admin_cache_v1";
+  const DA_PRODUCTS_CACHE_STORE="catalogos";
+  const DA_PRODUCTS_CACHE_KEY="produtos";
+  function openProductsCacheDb(){
+    return new Promise((resolve,reject)=>{
+      if(!window.indexedDB)return reject(new Error("IndexedDB indisponível"));
+      const request=indexedDB.open(DA_PRODUCTS_CACHE_DB,1);
+      request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(DA_PRODUCTS_CACHE_STORE))db.createObjectStore(DA_PRODUCTS_CACHE_STORE)};
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error||new Error("Falha ao abrir cache de produtos"));
+    });
+  }
+  async function readProductsCache(){
+    const db=await openProductsCacheDb();
+    try{
+      const value=await new Promise((resolve,reject)=>{
+        const tx=db.transaction(DA_PRODUCTS_CACHE_STORE,"readonly"),request=tx.objectStore(DA_PRODUCTS_CACHE_STORE).get(DA_PRODUCTS_CACHE_KEY);
+        request.onsuccess=()=>resolve(request.result||null);request.onerror=()=>reject(request.error);
+      });
+      const products=normalizeProducts(value?.products||value?.produtos||[]);
+      return products.length?{products,source:value?.source||"cache local",savedAt:value?.savedAt||""}:null;
+    }finally{db.close()}
+  }
+  async function writeProductsCache(products,source="fonte remota"){
+    const normalized=normalizeProducts(products);
+    if(!normalized.length)return false;
+    const db=await openProductsCacheDb();
+    try{
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(DA_PRODUCTS_CACHE_STORE,"readwrite");
+        tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error("Cache cancelado"));
+        tx.objectStore(DA_PRODUCTS_CACHE_STORE).put({products:normalized,source,savedAt:nowIso()},DA_PRODUCTS_CACHE_KEY);
+      });
+      return true;
+    }finally{db.close()}
+  }
   async function putJson(url, data){const r=await fetch(url,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(data,null,2)}); if(!r.ok) throw new Error(`Erro ${r.status} ao salvar ${url}`); return await r.json().catch(()=>null)}
   async function patchJson(url, data){const r=await fetch(url,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)}); if(!r.ok){const detail=await r.text().catch(()=>"");throw new Error(`Erro ${r.status} ao atualizar ${url}${detail?`: ${detail.slice(0,220)}`:""}`)} return await r.json().catch(()=>null)}
   async function deleteJson(url){const r=await fetch(url,{method:"DELETE"}); if(!r.ok) throw new Error(`Erro ${r.status} ao excluir ${url}`); return await r.json().catch(()=>null)}
@@ -1067,7 +1104,7 @@
     return out;
   }
   function buildAdminMetaPayload(){const meta=deepClone(state.meta); meta.atualizado_em=nowIso(); meta.estatisticas = makeStats(); meta.categorias = sortCategories(meta.categorias); meta.tags = uniq(meta.tags); meta.marcas = uniq(meta.marcas); meta.fornecedores = (meta.fornecedores||[]).filter(f=>f && f.nome).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),"pt-BR")); return meta}
-  function makeStats(){const ativos=state.produtos.filter(isActive).length, semEstoque=state.produtos.filter(p=>toNum(p.estoque)<=0).length, semGtin=state.produtos.filter(p=>!String(p.gtin||p.ean||"").trim()).length, semFoto=state.produtos.filter(p=>!String(p.url_imagem||p.imagem||"").trim()).length; return {total_produtos:state.produtos.length, ativos, inativos:state.produtos.length-ativos, sem_estoque:semEstoque, sem_gtin:semGtin, sem_foto:semFoto, cestas:state.cestas.length, kits:state.kits.length, produtos_em_cestas:totalBasketProductsSet().size, produtos_em_kits:totalKitProductsSet().size} }
+  function makeStats(){const ativos=state.produtos.filter(isActive).length, semEstoque=state.produtos.filter(p=>toNum(p.estoque)<=0).length, semGtin=state.produtos.filter(p=>!String(p.gtin||p.ean||"").trim()).length, semNcm=state.produtos.filter(p=>!String(p.ncm||"").trim()).length, semFoto=state.produtos.filter(p=>!String(p.url_imagem||p.imagem||p.imagem_url||"").trim()).length, incompletos=state.produtos.filter(p=>typeof productMissingRegistrationField==="function"&&productMissingRegistrationField(p,"cadastro_incompleto")).length; return {total_produtos:state.produtos.length, ativos, inativos:state.produtos.length-ativos, sem_estoque:semEstoque, sem_gtin:semGtin, sem_ncm:semNcm, sem_foto:semFoto, cadastro_incompleto:incompletos, cestas:state.cestas.length, kits:state.kits.length, produtos_em_cestas:totalBasketProductsSet().size, produtos_em_kits:totalKitProductsSet().size} }
   function sortCategories(cats){return (cats||[]).filter(c=>c && c.categoria).sort((a,b)=>[a.categoria,a.subcategoria,a.subsubcategoria].join("|").localeCompare([b.categoria,b.subcategoria,b.subsubcategoria].join("|"),"pt-BR"))}
   function sanitizeProductForFirebase(product){
     const result=validateProductForSite(product);
@@ -1129,6 +1166,7 @@
 
     syncPendingProductsFlag();
     saveLocal();
+    if(!state.dirtyProductKeys.size&&!state.deletedProductKeys.size)writeProductsCache(state.produtos,"Firebase após salvamento").catch(error=>console.warn("Cache de produtos não atualizado após salvar:",error));
     return {saved, deleted, conflicts};
   }
   async function saveProducts(){
@@ -1326,11 +1364,110 @@
     setScannerStatus(fromCamera?`Produto ${getName(p)} encontrado pela câmera.`:`Produto ${getName(p)} carregado.`, "ok");
   }
   function renderTabs(){ $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===state.activeTab)); ["produtos","leitura","cestas","kits","notas","cadastros","integracoes","json"].forEach(t=>$("#tab-"+t)?.classList.toggle("hidden",t!==state.activeTab)); $("#backToProductsBtn")?.classList.toggle("hidden", state.activeTab==="produtos"); if(state.activeTab!=="leitura") stopScanner(); else {renderScannerEditor(); renderScannerHistory(); setTimeout(()=>{const input=$("#scannerCodeInput"); if(input) input.value=state.scannerCode||""; setScannerStatus(state.scannerStatus,state.scannerStatusType)},0)} }
-  function renderSummary(){const st=makeStats(); $("#summary").innerHTML=[['Produtos',st.total_produtos],['Ativos',st.ativos],['Sem estoque',st.sem_estoque],['Sem GTIN',st.sem_gtin],['Sem foto',st.sem_foto],['Cestas',st.cestas],['Kits',st.kits],['Em kits',st.produtos_em_kits],['Notas abertas',state.anotacoes.filter(n=>!n.feito).length],['Pendências',(state.dirtyProducts||state.dirtyCestas||state.dirtyKits||state.dirtyMeta||state.dirtyNotes)?'Sim':'Não']].map(([l,v])=>`<div class="summary-card"><strong>${esc(v)}</strong><span>${esc(l)}</span></div>`).join("")}
+  function renderSummary(){const st=makeStats(); $("#summary").innerHTML=[['Produtos',st.total_produtos],['Ativos',st.ativos],['Sem estoque',st.sem_estoque],['Sem GTIN',st.sem_gtin],['Sem NCM',st.sem_ncm],['Sem foto',st.sem_foto],['Cadastro incompleto',st.cadastro_incompleto],['Cestas',st.cestas],['Kits',st.kits],['Em kits',st.produtos_em_kits],['Notas abertas',state.anotacoes.filter(n=>!n.feito).length],['Pendências',(state.dirtyProducts||state.dirtyCestas||state.dirtyKits||state.dirtyMeta||state.dirtyNotes)?'Sim':'Não']].map(([l,v])=>`<div class="summary-card"><strong>${esc(v)}</strong><span>${esc(l)}</span></div>`).join("")}
   function renderFilterOptions(){ fillSelect("#f-categoria", uniq([...state.produtos.map(p=>p.categoria), ...state.meta.categorias.map(c=>c.categoria)])); fillSelect("#f-subcategoria", uniq([...state.produtos.map(p=>p.subcategoria), ...state.meta.categorias.map(c=>c.subcategoria)])); fillSelect("#f-subsubcategoria", uniq([...state.produtos.map(p=>p.subsubcategoria), ...state.meta.categorias.map(c=>c.subsubcategoria)])); fillSelect("#f-marca", uniq([...state.produtos.map(p=>p.marca), ...state.meta.marcas])); fillSelect("#f-fornecedor", uniq([...state.produtos.map(p=>p.fornecedor), ...state.meta.fornecedores.map(f=>f.nome)])); fillSelect("#f-tag", uniq([...state.produtos.flatMap(p=>parseTags(p.tags)), ...state.meta.tags])); }
   function fillSelect(sel, values){const el=$(sel); if(!el) return; const cur=el.value; const first=el.querySelector('option')?.outerHTML || '<option value="">Todos</option>'; el.innerHTML = first + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join(""); el.value = values.includes(cur)?cur:""}
-  function getFilters(){return {q:$("#f-q")?.value||"",categoria:$("#f-categoria")?.value||"",subcategoria:$("#f-subcategoria")?.value||"",subsubcategoria:$("#f-subsubcategoria")?.value||"",marca:$("#f-marca")?.value||"",fornecedor:$("#f-fornecedor")?.value||"",tag:$("#f-tag")?.value||"",situacao:$("#f-situacao")?.value||"",qualidade:$("#f-qualidade")?.value||"",cesta:$("#f-cesta")?.value||"",sort:$("#f-sort")?.value||"nome",pageSize:Number($("#f-page-size")?.value||24)}}
-  function filteredProducts(){const f=getFilters(); let list=[...state.produtos]; const q=textNorm(f.q); if(q) list=list.filter(p=>textNorm([p.nome,p.codigo,p.gtin,p.ean,p.marca,p.categoria,p.subcategoria,p.subsubcategoria,p.fornecedor,p.descricao,parseTags(p.tags).join(' ')].join(' ')).includes(q)); ['categoria','subcategoria','subsubcategoria','marca','fornecedor'].forEach(k=>{if(f[k]) list=list.filter(p=>String(p[k]||'')===f[k])}); if(f.tag) list=list.filter(p=>parseTags(p.tags).includes(f.tag)); if(f.situacao==='A') list=list.filter(isActive); if(f.situacao==='I') list=list.filter(p=>!isActive(p)); if(f.situacao==='sem_estoque') list=list.filter(p=>toNum(p.estoque)<=0); if(f.situacao==='com_estoque') list=list.filter(p=>toNum(p.estoque)>0); if(f.qualidade==='sem_foto') list=list.filter(p=>!String(p.url_imagem||p.imagem||'').trim()); if(f.qualidade==='sem_gtin') list=list.filter(p=>!String(p.gtin||p.ean||'').trim()); if(f.qualidade==='sem_descricao') list=list.filter(p=>!String(p.descricao||'').trim()); if(f.qualidade==='com_oferta') list=list.filter(p=>toNum(p.preco_oferta)>0); if(f.cesta==='em_cesta') list=list.filter(p=>basketsByProduct(p).length); if(f.cesta==='fora_cesta') list=list.filter(p=>!basketsByProduct(p).length); const sorters={nome:(a,b)=>getName(a).localeCompare(getName(b),'pt-BR'),codigo:(a,b)=>getCode(a).localeCompare(getCode(b),'pt-BR'),preco_desc:(a,b)=>toNum(b.preco)-toNum(a.preco),preco_asc:(a,b)=>toNum(a.preco)-toNum(b.preco),estoque_desc:(a,b)=>toNum(b.estoque)-toNum(a.estoque),atualizado_desc:(a,b)=>toNum(b.last_update)-toNum(a.last_update)}; return list.sort(sorters[f.sort]||sorters.nome)}
+  function productExpiryTimestamp(product){
+    const raw=String(productExpirySourceValue(product)||"").trim();
+    if(!raw)return NaN;
+    let match=raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    let year,month,day;
+    if(match){day=Number(match[1]);month=Number(match[2]);year=Number(match[3])}
+    else{
+      match=raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if(match){year=Number(match[1]);month=Number(match[2]);day=Number(match[3])}
+    }
+    if(!year){
+      const parsed=new Date(raw);
+      return Number.isNaN(parsed.getTime())?NaN:new Date(parsed.getFullYear(),parsed.getMonth(),parsed.getDate()).getTime();
+    }
+    const date=new Date(year,month-1,day);
+    return date.getFullYear()===year&&date.getMonth()===month-1&&date.getDate()===day?date.getTime():NaN;
+  }
+  function productMissingRegistrationField(product,mode){
+    const textMissing=value=>!String(value??"").trim();
+    const imageMissing=()=>textMissing(product.url_imagem||product.imagem||product.imagem_url||product.foto);
+    const rules={
+      sem_foto:imageMissing,
+      sem_nome:()=>textMissing(product.nome),
+      sem_codigo:()=>textMissing(product.codigo||product.firebaseKey||product.id),
+      sem_gtin:()=>textMissing(product.gtin||product.ean),
+      sem_ncm:()=>textMissing(product.ncm),
+      sem_categoria:()=>textMissing(product.categoria),
+      sem_subcategoria:()=>textMissing(product.subcategoria),
+      sem_subsubcategoria:()=>textMissing(product.subsubcategoria),
+      sem_marca:()=>textMissing(product.marca),
+      sem_fornecedor:()=>textMissing(product.fornecedor),
+      sem_embalagem:()=>textMissing(product.embalagem),
+      sem_descricao:()=>textMissing(product.descricao),
+      sem_preco:()=>toNum(product.preco)<=0,
+      sem_preco_custo:()=>toNum(product.preco_custo)<=0,
+      sem_validade:()=>!Number.isFinite(productExpiryTimestamp(product)),
+      sem_gondola:()=>textMissing(product.gondola),
+      sem_prateleira:()=>textMissing(product.prateleira),
+      sem_tags:()=>parseTags(product.tags).length===0,
+      sem_video:()=>textMissing(product.video_youtube||product.video_url)
+    };
+    if(mode==="cadastro_incompleto"){
+      const required=["sem_foto","sem_nome","sem_codigo","sem_gtin","sem_ncm","sem_categoria","sem_subcategoria","sem_subsubcategoria","sem_marca","sem_fornecedor","sem_embalagem","sem_descricao","sem_preco","sem_preco_custo","sem_validade","sem_gondola","sem_prateleira","sem_tags"];
+      return required.some(key=>rules[key]());
+    }
+    return rules[mode]?rules[mode]():false;
+  }
+  function getFilters(){
+    return {
+      q:$("#f-q")?.value||"",categoria:$("#f-categoria")?.value||"",subcategoria:$("#f-subcategoria")?.value||"",
+      subsubcategoria:$("#f-subsubcategoria")?.value||"",marca:$("#f-marca")?.value||"",fornecedor:$("#f-fornecedor")?.value||"",
+      tag:$("#f-tag")?.value||"",situacao:$("#f-situacao")?.value||"",qualidade:$("#f-qualidade")?.value||"",
+      vencimento:$("#f-vencimento")?.value||"",cesta:$("#f-cesta")?.value||"",sort:$("#f-sort")?.value||"nome",
+      pageSize:Number($("#f-page-size")?.value||24)
+    };
+  }
+  function filteredProducts(){
+    const f=getFilters();
+    let list=[...state.produtos];
+    const q=textNorm(f.q);
+    if(q)list=list.filter(product=>textNorm([
+      product.nome,product.codigo,product.gtin,product.ean,product.ncm,product.marca,product.categoria,product.subcategoria,
+      product.subsubcategoria,product.fornecedor,product.embalagem,product.descricao,product.gondola,product.prateleira,
+      parseTags(product.tags).join(" ")
+    ].join(" ")).includes(q));
+    ["categoria","subcategoria","subsubcategoria","marca","fornecedor"].forEach(key=>{
+      if(f[key])list=list.filter(product=>String(product[key]||"")===f[key]);
+    });
+    if(f.tag)list=list.filter(product=>parseTags(product.tags).includes(f.tag));
+    if(f.situacao==="A")list=list.filter(isActive);
+    if(f.situacao==="I")list=list.filter(product=>!isActive(product));
+    if(f.situacao==="sem_estoque")list=list.filter(product=>toNum(product.estoque)<=0);
+    if(f.situacao==="com_estoque")list=list.filter(product=>toNum(product.estoque)>0);
+    if(f.qualidade==="com_oferta")list=list.filter(product=>toNum(product.preco_oferta)>0);
+    else if(f.qualidade)list=list.filter(product=>productMissingRegistrationField(product,f.qualidade));
+    if(f.vencimento){
+      const today=new Date();today.setHours(0,0,0,0);
+      const start=today.getTime();
+      if(f.vencimento==="sem_validade")list=list.filter(product=>!Number.isFinite(productExpiryTimestamp(product)));
+      else if(f.vencimento==="vencidos")list=list.filter(product=>{const expiry=productExpiryTimestamp(product);return Number.isFinite(expiry)&&expiry<start});
+      else{
+        const days=Number(f.vencimento),end=start+days*86400000;
+        list=list.filter(product=>{const expiry=productExpiryTimestamp(product);return Number.isFinite(expiry)&&expiry>=start&&expiry<=end});
+      }
+    }
+    if(f.cesta==="em_cesta")list=list.filter(product=>basketsByProduct(product).length);
+    if(f.cesta==="fora_cesta")list=list.filter(product=>!basketsByProduct(product).length);
+    const expirySort=(a,b)=>{
+      const ax=productExpiryTimestamp(a),bx=productExpiryTimestamp(b);
+      if(Number.isFinite(ax)&&Number.isFinite(bx))return ax-bx||getName(a).localeCompare(getName(b),"pt-BR");
+      if(Number.isFinite(ax))return -1;
+      if(Number.isFinite(bx))return 1;
+      return getName(a).localeCompare(getName(b),"pt-BR");
+    };
+    const sorters={
+      nome:(a,b)=>getName(a).localeCompare(getName(b),"pt-BR"),codigo:(a,b)=>getCode(a).localeCompare(getCode(b),"pt-BR"),
+      validade_asc:expirySort,preco_desc:(a,b)=>toNum(b.preco)-toNum(a.preco),preco_asc:(a,b)=>toNum(a.preco)-toNum(b.preco),
+      estoque_desc:(a,b)=>toNum(b.estoque)-toNum(a.estoque),atualizado_desc:(a,b)=>toNum(b.last_update)-toNum(a.last_update)
+    };
+    return list.sort(f.vencimento&&f.vencimento!=="sem_validade"?expirySort:(sorters[f.sort]||sorters.nome));
+  }
   function renderProducts(){const all=filteredProducts(); const f=getFilters(); const pages=Math.max(1,Math.ceil(all.length/f.pageSize)); state.productPage=Math.min(state.productPage,pages); const start=(state.productPage-1)*f.pageSize; const list=all.slice(start,start+f.pageSize); const grid=$("#productsGrid"); grid.classList.toggle("list-view",state.productView==="list"); grid.innerHTML = list.length ? list.map(renderProductCardV3).join("") : `<div class="empty">Nenhum produto encontrado.</div>`; $$('[data-action="view-products-grid"],[data-action="view-products-list"]').forEach(b=>b.classList.toggle("active",(state.productView==="list")===b.dataset.action.endsWith("list"))); $("#pagination").innerHTML = `<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`; }
 
   function quickField(p,field,label,value,type="text",wide=false){return `<div class="quick-field ${wide?'wide':''}"><label>${esc(label)}</label><input class="quick-input" type="${type}" data-card-field="${esc(field)}" data-key="${esc(getKey(p))}" value="${esc(value??'')}"></div>`}
@@ -1720,7 +1857,7 @@
   function copyReport(){const s=makeStats(); const txt=`Relatório Dona Antônia\nProdutos: ${s.total_produtos}\nAtivos: ${s.ativos}\nSem estoque: ${s.sem_estoque}\nSem GTIN: ${s.sem_gtin}\nSem foto: ${s.sem_foto}\nCestas: ${s.cestas}\nProdutos em cestas: ${s.produtos_em_cestas}\nKits promocionais: ${s.kits}\nProdutos em kits: ${s.produtos_em_kits}`; navigator.clipboard?.writeText(txt); alert('Relatório copiado.')}
   function importFile(file,kind){const rd=new FileReader(); rd.onload=()=>{try{const data=JSON.parse(rd.result); if(kind==='products'){const previousKeys=Object.keys(state.productSyncMeta); state.produtos=normalizeProducts(data); markAllProductsDirty(previousKeys); mark('products')} if(kind==='cestas'){state.cestas=normalizeCestas(data); state.selectedBasketId=state.cestas[0]?.id||null; mark('cestas')} if(kind==='kits'){state.kits=normalizeKits(data); state.selectedKitId=state.kits[0]?.id||null; mark('kits')} rebuildMeta(false); renderAll(); alert('Arquivo importado.')}catch(e){alert('Arquivo inválido: '+e.message)}}; rd.readAsText(file)}
 
-  document.addEventListener('click', e => {const b=e.target.closest('[data-action]'); if(!b) return; const a=b.dataset.action; if(a==='toggle-admin-menu') toggleAdminDrawer(true); if(a==='close-admin-menu') toggleAdminDrawer(false); if(a==='reload') loadData(); if(a==='go-products') {state.activeTab='produtos'; renderAll(); window.scrollTo({top:0,behavior:'smooth'});} if(a==='new-product') createProduct(); if(a==='save-products') saveProducts(); if(a==='save-meta') saveMeta(); if(a==='save-cestas') saveCestas(); if(a==='save-kits') saveKits(); if(a==='save-all') saveAll(); if(a==='open-settings') {state.activeTab='integracoes'; renderAll();} if(a==='export-products-json') exportProductsJson(); if(a==='export-meta-json') exportMetaJson(); if(a==='export-admin-meta-json') exportAdminMetaJson(); if(a==='export-cestas-json') exportCestasJson(); if(a==='export-kits-json') exportKitsJson(); if(a==='export-bling-csv') exportBlingCsv(); if(a==='export-bling-json') exportBlingJson(); if(a==='clear-filters'){['#f-q','#f-categoria','#f-subcategoria','#f-subsubcategoria','#f-marca','#f-fornecedor','#f-tag','#f-situacao','#f-qualidade','#f-cesta'].forEach(s=>{const el=$(s); if(el) el.value=''}); state.productPage=1; renderProducts()} if(a==='prev-page'){state.productPage=Math.max(1,state.productPage-1); renderProducts()} if(a==='next-page'){state.productPage++; renderProducts()} if(a==='edit-product') openProduct(b.dataset.key); if(a==='close-product-modal') closeProduct(); if(a==='duplicate-product') duplicateProduct(b.dataset.key); if(a==='delete-product') deleteProduct(b.dataset.key); if(a==='apply-product-json') applyProductJson(); if(a==='edit-membership') openMembership(b.dataset.code); if(a==='close-membership-modal') {$('#membershipModal').classList.remove('open'); renderAll()} if(a==='select-basket'){state.selectedBasketId=b.dataset.id; state.basketReplace=null; renderAll()} if(a==='new-cesta') createBasket(); if(a==='delete-basket') deleteBasket(); if(a==='select-kit'){state.selectedKitId=b.dataset.id; state.kitReplace=null; renderAll()} if(a==='new-kit') createKit(); if(a==='delete-kit') deleteKit(); if(a==='add-to-kit') addToKit(b.dataset.code); if(a==='remove-from-kit') removeFromKit(b.dataset.code); if(a==='start-kit-replace'){state.kitReplace=b.dataset.code; state.kitProductSearch=''; renderKitEditor()} if(a==='confirm-kit-replace') replaceInKit(b.dataset.code); if(a==='use-kit-image-local') useSelectedKitImageLocal(); if(a==='upload-kit-image-github') uploadSelectedKitImageGithub(); if(a==='add-to-basket') addToBasket(b.dataset.code); if(a==='remove-from-basket') removeFromBasket(b.dataset.code); if(a==='save-basket-product') saveProductFirebase(b.dataset.key); if(a==='start-replace'){state.basketReplace={mode:'replace-main',code:b.dataset.code}; state.basketProductSearch=''; renderBasketEditor()} if(a==='start-substitute'){state.basketReplace={mode:'replace-substitute',code:b.dataset.code,slot:Number(b.dataset.slot)||0}; state.basketProductSearch=''; renderBasketEditor()} if(a==='clear-substitute') clearBasketSubstitute(b.dataset.code,b.dataset.slot); if(a==='confirm-replace') replaceInBasket(b.dataset.code); if(a==='rebuild-meta') rebuildMeta(); if(a==='add-category'){const c=$('#newCat').value.trim(), s=$('#newSub').value.trim(), ss=$('#newSubSub').value.trim(); if(c||s||ss){state.meta.categorias.push({categoria:c,subcategoria:s,subsubcategoria:ss}); mark('meta'); renderAll(); $('#newCat').value=$('#newSub').value=$('#newSubSub').value=''}} if(a==='delete-category'){state.meta.categorias.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-tag'){const v=$('#newTag').value.trim(); if(v&&!state.meta.tags.includes(v)){state.meta.tags.push(v); $('#newTag').value=''; mark('meta'); renderAll()}} if(a==='delete-tag'){state.meta.tags.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-fornecedor'){const nome=$('#newFornecedorNome').value.trim(); if(nome){state.meta.fornecedores.push({id:slug(nome),nome,telefone:$('#newFornecedorTel').value.trim(),observacoes:$('#newFornecedorObs').value.trim()}); $('#newFornecedorNome').value=$('#newFornecedorTel').value=$('#newFornecedorObs').value=''; mark('meta'); renderAll()}} if(a==='delete-fornecedor'){state.meta.fornecedores.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-marca'){const v=$('#newMarca').value.trim(); if(v&&!state.meta.marcas.includes(v)){state.meta.marcas.push(v); $('#newMarca').value=''; mark('meta'); renderAll()}} if(a==='delete-marca'){state.meta.marcas.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='save-settings') saveSettings(); if(a==='test-github') testGithub(); if(a==='save-github-now') saveGithubNow(); if(a==='refresh-json') refreshJson(); if(a==='apply-json') applyJson(); if(a==='copy-report') copyReport(); if(a==='use-selected-photo-local') useSelectedPhotoLocal(); if(a==='upload-selected-photo-github') uploadSelectedPhotoGithub(); if(a==='remove-product-photo') removeProductPhoto(); if(a==='copy-product-photo-url') copyProductPhotoUrl(); if(a==='add-universal-tag-from-product') addUniversalTagFromProduct(); if(a==='toggle-scanner') toggleScanner(); if(a==='find-scanner-product') openScannerProduct($("#scannerCodeInput")?.value||state.scannerCode); if(a==='save-scanner-product') saveProductFirebase(b.dataset.key); if(a==='clear-scanner-product') clearScannerProduct(); if(a==='use-scanner-history') openScannerProduct(b.dataset.code); });
+  document.addEventListener('click', e => {const b=e.target.closest('[data-action]'); if(!b) return; const a=b.dataset.action; if(a==='toggle-admin-menu') toggleAdminDrawer(true); if(a==='close-admin-menu') toggleAdminDrawer(false); if(a==='reload') loadData(); if(a==='go-products') {state.activeTab='produtos'; renderAll(); window.scrollTo({top:0,behavior:'smooth'});} if(a==='new-product') createProduct(); if(a==='save-products') saveProducts(); if(a==='save-meta') saveMeta(); if(a==='save-cestas') saveCestas(); if(a==='save-kits') saveKits(); if(a==='save-all') saveAll(); if(a==='open-settings') {state.activeTab='integracoes'; renderAll();} if(a==='export-products-json') exportProductsJson(); if(a==='export-meta-json') exportMetaJson(); if(a==='export-admin-meta-json') exportAdminMetaJson(); if(a==='export-cestas-json') exportCestasJson(); if(a==='export-kits-json') exportKitsJson(); if(a==='export-bling-csv') exportBlingCsv(); if(a==='export-bling-json') exportBlingJson(); if(a==='clear-filters'){['#f-q','#f-categoria','#f-subcategoria','#f-subsubcategoria','#f-marca','#f-fornecedor','#f-tag','#f-situacao','#f-qualidade','#f-vencimento','#f-cesta'].forEach(s=>{const el=$(s); if(el) el.value=''}); state.productPage=1; renderProducts()} if(a==='prev-page'){state.productPage=Math.max(1,state.productPage-1); renderProducts()} if(a==='next-page'){state.productPage++; renderProducts()} if(a==='edit-product') openProduct(b.dataset.key); if(a==='close-product-modal') closeProduct(); if(a==='duplicate-product') duplicateProduct(b.dataset.key); if(a==='delete-product') deleteProduct(b.dataset.key); if(a==='apply-product-json') applyProductJson(); if(a==='edit-membership') openMembership(b.dataset.code); if(a==='close-membership-modal') {$('#membershipModal').classList.remove('open'); renderAll()} if(a==='select-basket'){state.selectedBasketId=b.dataset.id; state.basketReplace=null; renderAll()} if(a==='new-cesta') createBasket(); if(a==='delete-basket') deleteBasket(); if(a==='select-kit'){state.selectedKitId=b.dataset.id; state.kitReplace=null; renderAll()} if(a==='new-kit') createKit(); if(a==='delete-kit') deleteKit(); if(a==='add-to-kit') addToKit(b.dataset.code); if(a==='remove-from-kit') removeFromKit(b.dataset.code); if(a==='start-kit-replace'){state.kitReplace=b.dataset.code; state.kitProductSearch=''; renderKitEditor()} if(a==='confirm-kit-replace') replaceInKit(b.dataset.code); if(a==='use-kit-image-local') useSelectedKitImageLocal(); if(a==='upload-kit-image-github') uploadSelectedKitImageGithub(); if(a==='add-to-basket') addToBasket(b.dataset.code); if(a==='remove-from-basket') removeFromBasket(b.dataset.code); if(a==='save-basket-product') saveProductFirebase(b.dataset.key); if(a==='start-replace'){state.basketReplace={mode:'replace-main',code:b.dataset.code}; state.basketProductSearch=''; renderBasketEditor()} if(a==='start-substitute'){state.basketReplace={mode:'replace-substitute',code:b.dataset.code,slot:Number(b.dataset.slot)||0}; state.basketProductSearch=''; renderBasketEditor()} if(a==='clear-substitute') clearBasketSubstitute(b.dataset.code,b.dataset.slot); if(a==='confirm-replace') replaceInBasket(b.dataset.code); if(a==='rebuild-meta') rebuildMeta(); if(a==='add-category'){const c=$('#newCat').value.trim(), s=$('#newSub').value.trim(), ss=$('#newSubSub').value.trim(); if(c||s||ss){state.meta.categorias.push({categoria:c,subcategoria:s,subsubcategoria:ss}); mark('meta'); renderAll(); $('#newCat').value=$('#newSub').value=$('#newSubSub').value=''}} if(a==='delete-category'){state.meta.categorias.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-tag'){const v=$('#newTag').value.trim(); if(v&&!state.meta.tags.includes(v)){state.meta.tags.push(v); $('#newTag').value=''; mark('meta'); renderAll()}} if(a==='delete-tag'){state.meta.tags.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-fornecedor'){const nome=$('#newFornecedorNome').value.trim(); if(nome){state.meta.fornecedores.push({id:slug(nome),nome,telefone:$('#newFornecedorTel').value.trim(),observacoes:$('#newFornecedorObs').value.trim()}); $('#newFornecedorNome').value=$('#newFornecedorTel').value=$('#newFornecedorObs').value=''; mark('meta'); renderAll()}} if(a==='delete-fornecedor'){state.meta.fornecedores.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='add-marca'){const v=$('#newMarca').value.trim(); if(v&&!state.meta.marcas.includes(v)){state.meta.marcas.push(v); $('#newMarca').value=''; mark('meta'); renderAll()}} if(a==='delete-marca'){state.meta.marcas.splice(Number(b.dataset.index),1); mark('meta'); renderAll()} if(a==='save-settings') saveSettings(); if(a==='test-github') testGithub(); if(a==='save-github-now') saveGithubNow(); if(a==='refresh-json') refreshJson(); if(a==='apply-json') applyJson(); if(a==='copy-report') copyReport(); if(a==='use-selected-photo-local') useSelectedPhotoLocal(); if(a==='upload-selected-photo-github') uploadSelectedPhotoGithub(); if(a==='remove-product-photo') removeProductPhoto(); if(a==='copy-product-photo-url') copyProductPhotoUrl(); if(a==='add-universal-tag-from-product') addUniversalTagFromProduct(); if(a==='toggle-scanner') toggleScanner(); if(a==='find-scanner-product') openScannerProduct($("#scannerCodeInput")?.value||state.scannerCode); if(a==='save-scanner-product') saveProductFirebase(b.dataset.key); if(a==='clear-scanner-product') clearScannerProduct(); if(a==='use-scanner-history') openScannerProduct(b.dataset.code); });
   document.addEventListener('click', e=>{
     const button=e.target.closest('[data-action="normalize-products-site"]');
     if(button)normalizeCatalogForSite();
@@ -1835,7 +1972,7 @@
   function resetProductViewForStartup(){
     if(!state.activeTab)state.activeTab="produtos";
     state.productPage=1;
-    ["#f-q","#f-categoria","#f-subcategoria","#f-subsubcategoria","#f-marca","#f-fornecedor","#f-tag","#f-situacao","#f-qualidade","#f-cesta"].forEach(selector=>{
+    ["#f-q","#f-categoria","#f-subcategoria","#f-subsubcategoria","#f-marca","#f-fornecedor","#f-tag","#f-situacao","#f-qualidade","#f-vencimento","#f-cesta"].forEach(selector=>{
       const element=$(selector);
       if(element)element.value="";
     });
@@ -1889,20 +2026,30 @@
 
   async function loadProductsWithFallback(){
     const errors=[];
-    // Uma segunda tentativa resolve falhas transitórias de rede/RTDB sem exigir clique em "Atualizar".
-    for(let attempt=1;attempt<=2;attempt++){
+    let cached=null;
+    try{cached=await readProductsCache()}catch(error){errors.push(`Cache local: ${error.message||error}`)}
+
+    for(let attempt=1;attempt<=3;attempt++){
       try{
-        const data=await fetchJson(firebaseUrl(state.settings.produtosNode));
+        const data=await fetchJson(firebaseUrl(state.settings.produtosNode),attempt===1?8000:12000);
         const products=normalizeProducts(data);
-        if(products.length)return {products,source:"Firebase"};
+        if(products.length){writeProductsCache(products,"Firebase").catch(error=>console.warn("Cache de produtos não atualizado:",error));return {products,source:"Firebase"}}
         errors.push(`Firebase retornou catálogo vazio (tentativa ${attempt})`);
       }catch(error){errors.push(`Firebase (tentativa ${attempt}): ${error.message||error}`)}
-      if(attempt===1)await new Promise(resolve=>setTimeout(resolve,700));
+      if(attempt===1&&cached?.products?.length){
+        setTimeout(()=>refreshProductsSilently(),1800);
+        return {products:cached.products,source:"cache local seguro",warning:errors.join(" | ")};
+      }
+      if(attempt<3)await new Promise(resolve=>setTimeout(resolve,650*attempt));
     }
 
-    try{return await loadProductsFromGithub()}
-    catch(error){errors.push(error.message||String(error))}
+    try{
+      const github=await loadProductsFromGithub();
+      writeProductsCache(github.products,github.source).catch(error=>console.warn("Cache de produtos não atualizado:",error));
+      return github;
+    }catch(error){errors.push(error.message||String(error))}
 
+    if(cached?.products?.length)return {products:cached.products,source:"cache local seguro",warning:errors.join(" | ")};
     if(Array.isArray(state.produtos)&&state.produtos.length){
       console.warn("Não foi possível atualizar o catálogo; mantendo os produtos já carregados.",errors);
       return {products:[...state.produtos],source:"memória da sessão",warning:errors.join(" | ")};
@@ -1910,10 +2057,38 @@
     throw new Error(errors.join(" | "));
   }
 
+  let productsSilentRefreshRunning=false;
+  async function refreshProductsSilently(){
+    if(productsSilentRefreshRunning||state.dirtyProductKeys.size||state.deletedProductKeys.size)return false;
+    productsSilentRefreshRunning=true;
+    try{
+      let fresh=null;
+      try{
+        const data=await fetchJson(firebaseUrl(state.settings.produtosNode),12000),products=normalizeProducts(data);
+        if(products.length)fresh={products,source:"Firebase"};
+      }catch(error){console.warn("Atualização silenciosa pelo Firebase falhou:",error)}
+      if(!fresh){try{fresh=await loadProductsFromGithub()}catch(error){console.warn("Atualização silenciosa pelo GitHub falhou:",error)}}
+      if(!fresh?.products?.length)return false;
+      state.produtos=fresh.products;
+      markProductsReloaded();
+      await writeProductsCache(state.produtos,fresh.source).catch(()=>false);
+      renderAll();
+      setStatus(`Produtos atualizados automaticamente: ${state.produtos.length} via ${fresh.source}`,"ok");
+      return true;
+    }finally{productsSilentRefreshRunning=false}
+  }
+
   async function loadData(){
     resetProductViewForStartup();
     setStatus("Carregando produtos, cestas, kits e metadados...","warn");
-    renderLoading();
+    let cachedStartup=null;
+    try{cachedStartup=await readProductsCache()}catch{}
+    if(cachedStartup?.products?.length&&!state.produtos.length){
+      state.produtos=cachedStartup.products;
+      markProductsReloaded();
+      renderAll();
+      setStatus(`Exibindo ${state.produtos.length} produtos do cache seguro enquanto atualiza as fontes...`,"warn");
+    }else renderLoading();
     let productSource="";
     let productWarning="";
     try{
@@ -5454,7 +5629,13 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   }
 
   window.setInterval(()=>{daV6CleanupExpiredBanners().catch(error=>console.warn(error));},60000);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden) daV6CleanupExpiredBanners().catch(error=>console.warn(error));});
+  window.addEventListener('online',()=>{refreshProductsSilently().catch(error=>console.warn(error));});
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden){
+      daV6CleanupExpiredBanners().catch(error=>console.warn(error));
+      if(!state.produtos.length)refreshProductsSilently().catch(error=>console.warn(error));
+    }
+  });
 })();
 
   /* DA_BANNER_V6_PUBLIC_BRIDGE_20260712
@@ -6233,35 +6414,89 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   function daKitQueueHaystack(item){
     const kit=item?.kit&&typeof item.kit==="object"?item.kit:{};
     return textNorm([
-      item.id,item.carrossel_id,item.id_carrossel,item.kit_id,item.codigo_kit,item.kit_codigo,item.codigo,item.nome,item.nome_kit,
-      item.pasta,item.path,item.caminho,item.dados_json,item.url,kit.id,kit.codigo,kit.nome
+      item.id,item.carrossel_id,item.id_carrossel,item.kit_id,item.codigo_kit,item.kit_codigo,item.codigo,item.nome,item.nome_kit,item.kit_nome,
+      item.pasta,item.path,item.caminho,item.dados_path,item.dados_json,item.url,kit.id,kit.codigo,kit.nome
     ].filter(Boolean).join(" "));
   }
-  function daKitQueueMatches(kit,item){
-    const hay=daKitQueueHaystack(item);
-    const exact=[kit?.id,kit?.codigo,kit?.instagram_carrossel_id,kit?.instagram_post_id].map(value=>textNorm(value)).filter(value=>value.length>=3);
-    if(exact.some(value=>hay.includes(value)))return true;
-    const nameSlug=slug(kit?.nome||"");
-    return nameSlug.length>=6&&(hay.includes(textNorm(nameSlug))||slug(hay).includes(nameSlug));
+  function daKitQueueExactIdentifiers(item){
+    const nested=item?.kit&&typeof item.kit==="object"?item.kit:{};
+    return [item?.kit_id,item?.codigo_kit,item?.kit_codigo,item?.codigo,nested.id,nested.codigo]
+      .map(value=>textNorm(value)).filter(Boolean);
   }
+  function daKitQueueMatches(kit,item){
+    const kitIds=[kit?.id,kit?.codigo].map(value=>textNorm(value)).filter(value=>value.length>=3);
+    const exactIds=daKitQueueExactIdentifiers(item);
+    if(kitIds.some(value=>exactIds.includes(value)))return true;
+
+    const kitSlugs=[kit?.id,kit?.codigo].map(value=>slug(value)).filter(value=>value.length>=3);
+    const composites=[item?.id_carrossel,item?.carrossel_id,item?.pasta,item?.path,item?.caminho,item?.dados_path]
+      .map(value=>slug(value)).filter(Boolean);
+    if(kitSlugs.some(value=>composites.some(composite=>composite===value||composite.endsWith(`-kit-${value}`)||composite.includes(`-kit-${value}-dados-json`))))return true;
+
+    const kitName=slug(kit?.nome||"");
+    const recordNames=[item?.kit_nome,item?.nome_kit,item?.nome,item?.kit?.nome].map(value=>slug(value)).filter(Boolean);
+    return kitName.length>=6&&recordNames.includes(kitName);
+  }
+
   function daKitQueueRecord(kit){
     return [...(state.kitCarouselQueue.items||[])].filter(item=>daKitQueueMatches(kit,item)).sort((a,b)=>daKitQueueDate(b)-daKitQueueDate(a))[0]||null;
   }
-  function daKitQueueStatus(item){return daMetaText(item?.status??item?.situacao??item?.estado??item?.fila_status??"gerado").toLowerCase()||"gerado"}
+  function daKitQueueStatus(item){return daMetaText(item?.fila_status??item?.status??item?.situacao??item?.estado??"gerado").toLowerCase()||"gerado"}
   function daKitQueueRecordId(item){return daMetaText(item?.carrossel_id??item?.id_carrossel??item?.id??item?.pasta??item?.path??item?.caminho??"")}
+  const DA_KIT_QUEUE_CACHE_KEY="da_kit_carousel_queue_cache_v2";
+  function daReadKitQueueCache(){
+    try{return daNormalizeKitQueue(JSON.parse(localStorage.getItem(DA_KIT_QUEUE_CACHE_KEY)||"[]"))}catch{return []}
+  }
+  function daWriteKitQueueCache(items){
+    try{localStorage.setItem(DA_KIT_QUEUE_CACHE_KEY,JSON.stringify(items||[]))}catch{}
+  }
+  async function daLoadKitQueueFromGithubApi(){
+    const owner=encodeURIComponent(state.settings.githubOwner||"osvaldosereia"),repo=encodeURIComponent(state.settings.githubRepo||"SUCEDOAN12"),branch=encodeURIComponent(state.settings.githubBranch||"main");
+    const url=`https://api.github.com/repos/${owner}/${repo}/contents/${DA_KIT_QUEUE_PATH}?ref=${branch}`;
+    const headers={Accept:"application/vnd.github+json"};if(state.settings.githubToken)headers.Authorization=`Bearer ${state.settings.githubToken}`;
+    const response=await fetch(url,{cache:"no-store",headers});
+    if(!response.ok)throw new Error(`GitHub API retornou ${response.status}`);
+    const file=await response.json(),encoded=String(file.content||"").replace(/\s/g,"");
+    if(!encoded)throw new Error("fila.json sem conteúdo");
+    const bytes=Uint8Array.from(atob(encoded),char=>char.charCodeAt(0));
+    return JSON.parse(new TextDecoder("utf-8").decode(bytes));
+  }
   async function daLoadKitCarouselQueue(force=false){
     const queue=state.kitCarouselQueue;
     if(queue.loading)return queue.items;
     if(queue.loaded&&!force)return queue.items;
     queue.loading=true;queue.error="";renderKitEditor();
+    const errors=[];
     try{
-      const response=await fetch(daKitQueueRawUrl(),{cache:"no-store",headers:{Accept:"application/json"}});
-      if(response.status===404){queue.items=[];queue.loaded=true;queue.updatedAt=nowIso();return queue.items}
-      if(!response.ok)throw new Error(`GitHub retornou ${response.status}`);
-      queue.items=daNormalizeKitQueue(await response.json());queue.loaded=true;queue.updatedAt=nowIso();return queue.items;
-    }catch(error){queue.error=error.message||String(error);queue.loaded=true;console.warn("Não foi possível consultar a fila de carrosséis dos kits:",error);return queue.items}
-    finally{queue.loading=false;renderKitsList();renderKitEditor()}
+      let raw=null;
+      try{
+        const response=await fetch(daKitQueueRawUrl(),{cache:"no-store",headers:{Accept:"application/json"}});
+        if(response.status===404)throw new Error("arquivo não encontrado no GitHub raw");
+        if(!response.ok)throw new Error(`GitHub raw retornou ${response.status}`);
+        raw=await response.json();
+      }catch(error){errors.push(error.message||String(error))}
+      if(!raw){try{raw=await daLoadKitQueueFromGithubApi()}catch(error){errors.push(error.message||String(error))}}
+      if(!raw){
+        try{
+          const response=await fetch(`${DA_KIT_QUEUE_PATH}?v=${Date.now()}`,{cache:"no-store"});
+          if(!response.ok)throw new Error(`arquivo relativo retornou ${response.status}`);
+          raw=await response.json();
+        }catch(error){errors.push(error.message||String(error))}
+      }
+      const items=raw?daNormalizeKitQueue(raw):[];
+      if(items.length){queue.items=items;daWriteKitQueueCache(items);queue.error=""}
+      else{
+        const cached=daReadKitQueueCache();
+        if(cached.length){queue.items=cached;queue.error=`Fila remota indisponível; exibindo última leitura salva. ${errors.join(" | ")}`}
+        else{queue.items=[];queue.error=errors.join(" | ")||"Fila vazia"}
+      }
+      queue.loaded=true;queue.updatedAt=nowIso();return queue.items;
+    }catch(error){
+      const cached=daReadKitQueueCache();queue.items=cached;queue.error=error.message||String(error);queue.loaded=true;
+      console.warn("Não foi possível consultar a fila de carrosséis dos kits:",error);return queue.items;
+    }finally{queue.loading=false;renderKitsList();renderKitEditor()}
   }
+
 
   const daKitQueueRenderListBase=renderKitsList;
   renderKitsList=function(){
@@ -7065,8 +7300,13 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   };
   const daV12Style=document.createElement("style");
   daV12Style.textContent=`
-    @media (min-width:1200px){
-      .banner-admin-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:10px}
+    .banner-admin-grid{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
+    @media (min-width:700px){.banner-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+    @media (min-width:900px){.banner-admin-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+    @media (min-width:1080px){.banner-admin-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+    @media (min-width:1280px){.banner-admin-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}}
+    @media (min-width:1450px){.banner-admin-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}}
+    @media (min-width:1080px){
       .banner-admin-body{padding:10px;gap:6px}
       .banner-admin-title{font-size:12px}
       .banner-admin-body .tiny{font-size:9px}
