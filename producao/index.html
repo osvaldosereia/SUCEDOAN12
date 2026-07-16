@@ -609,7 +609,7 @@
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
         <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho site/kits.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos_3"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="site/img/produtos_3"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
-        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners do site · criação manual</label><input class="input" id="setMakeBannerWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners · criação automática</label><input class="input" id="setMakeBannerAutomaticWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn green" type="button" data-action="banner-auto-run">🎯 Criar banner automático com posição inteligente</button></div><div class="notice gold" style="margin-top:10px"><strong>Posicionamento inteligente:</strong> as 13 posições fixas e as 6 contextuais participam da automação. Cada família de posição aceita até 12 banners na fila; o site mostra 4 por vez e alterna entre todos. Kit e cesta exigem vínculo real do produto.</div></div>
+        <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners do site · criação manual</label><input class="input" id="setMakeBannerWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA banners · criação automática</label><input class="input" id="setMakeBannerAutomaticWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn green" type="button" data-action="banner-auto-run">🎯 Criar próximo banner por categoria</button></div><div class="notice gold" style="margin-top:10px"><strong>Automação por categoria:</strong> cada categoria terá 8 banners de produto. A cada execução, o sistema escolhe a categoria com menor quantidade, cria um banner para ela e pula as categorias que já chegaram a 8.</div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
       <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar site/kits.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
@@ -7047,10 +7047,10 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     `;document.head.appendChild(style)}
   })();
 
-  /* ===== BANNERS V10 · POSICIONAMENTO REAL DO SITE + LIMITE 4 POR ESPAÇO ===== */
-  const DA_BANNER_MAX_ACTIVE_PER_SPACE_V10 = 12;
-  const DA_BANNER_VISIBLE_PER_SPACE_V12 = 4;
-  const DA_BANNER_AUTOMATIC_STRATEGY_V10 = "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13";
+  /* ===== BANNERS V14 · 8 BANNERS DE PRODUTO POR CATEGORIA ===== */
+  const DA_BANNER_MAX_ACTIVE_PER_SPACE_V10 = 8;
+  const DA_BANNER_VISIBLE_PER_SPACE_V12 = 8;
+  const DA_BANNER_AUTOMATIC_STRATEGY_V10 = "categoria_menos_preenchida_ate_8_v14";
   const DA_BANNER_LEGACY_POSITION_MAP_V10 = {
     "home.cestas.topo":"cestas.topo",
     "home.kits.topo":"kits.topo",
@@ -7060,27 +7060,27 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
     "home.categorias.topo":"categorias.topo"
   };
   const DA_BANNER_SITE_FIXED_SLOTS_V10 = [
-    {value:"home.hero",label:"Home · banner principal",group:"Home",automatic:true,compat:"all"},
-    {value:"home.compra-mes.topo",label:"Home · antes da compra do mês",group:"Home",automatic:true,compat:"all"},
-    {value:"home.higiene.topo",label:"Home · antes de higiene da família",group:"Home",automatic:true,compat:"higiene"},
-    {value:"categorias.topo",label:"Página · categorias",group:"Páginas gerais",automatic:true,compat:"all"},
-    {value:"ofertas.topo",label:"Página · ofertas",group:"Páginas gerais",automatic:true,compat:"all"},
-    {value:"cestas.topo",label:"Página · cestas básicas",group:"Páginas gerais",automatic:true,compat:"all"},
-    {value:"kits.topo",label:"Página · kits promocionais",group:"Páginas gerais",automatic:true,compat:"all"},
-    {value:"busca.topo",label:"Página · resultados da busca",group:"Páginas gerais",automatic:true,compat:"all"},
-    {value:"favoritos.topo",label:"Página · favoritos",group:"Páginas gerais",automatic:true,compat:"all"},
-    {value:"rotina.compra-mes.topo",label:"Rotina · compra do mês",group:"Rotinas",automatic:true,compat:"all"},
-    {value:"rotina.limpeza.topo",label:"Rotina · limpeza",group:"Rotinas",automatic:true,compat:"limpeza"},
-    {value:"rotina.higiene.topo",label:"Rotina · higiene",group:"Rotinas",automatic:true,compat:"higiene"},
-    {value:"rotina.cafe.topo",label:"Rotina · café",group:"Rotinas",automatic:true,compat:"cafe"}
+    {value:"home.hero",label:"Home · banner principal",group:"Home",automatic:false,compat:"all"},
+    {value:"home.compra-mes.topo",label:"Home · antes da compra do mês",group:"Home",automatic:false,compat:"all"},
+    {value:"home.higiene.topo",label:"Home · antes de higiene da família",group:"Home",automatic:false,compat:"higiene"},
+    {value:"categorias.topo",label:"Página · categorias",group:"Páginas gerais",automatic:false,compat:"all"},
+    {value:"ofertas.topo",label:"Página · ofertas",group:"Páginas gerais",automatic:false,compat:"all"},
+    {value:"cestas.topo",label:"Página · cestas básicas",group:"Páginas gerais",automatic:false,compat:"all"},
+    {value:"kits.topo",label:"Página · kits promocionais",group:"Páginas gerais",automatic:false,compat:"all"},
+    {value:"busca.topo",label:"Página · resultados da busca",group:"Páginas gerais",automatic:false,compat:"all"},
+    {value:"favoritos.topo",label:"Página · favoritos",group:"Páginas gerais",automatic:false,compat:"all"},
+    {value:"rotina.compra-mes.topo",label:"Rotina · compra do mês",group:"Rotinas",automatic:false,compat:"all"},
+    {value:"rotina.limpeza.topo",label:"Rotina · limpeza",group:"Rotinas",automatic:false,compat:"limpeza"},
+    {value:"rotina.higiene.topo",label:"Rotina · higiene",group:"Rotinas",automatic:false,compat:"higiene"},
+    {value:"rotina.cafe.topo",label:"Rotina · café",group:"Rotinas",automatic:false,compat:"cafe"}
   ];
   const DA_BANNER_CONTEXTUAL_PLACEMENTS_V10 = [
     {value:"categoria",label:"Categoria específica",targetKind:"categoria",automatic:true},
-    {value:"subcategoria",label:"Subcategoria específica",targetKind:"subcategoria",automatic:true},
-    {value:"marca",label:"Marca específica",targetKind:"marca",automatic:true},
-    {value:"produto",label:"Produto específico",targetKind:"produto",automatic:true},
-    {value:"kit",label:"Kit promocional específico",targetKind:"kit",automatic:true,requiresMembership:true},
-    {value:"cesta",label:"Cesta básica específica",targetKind:"cesta",automatic:true,requiresMembership:true}
+    {value:"subcategoria",label:"Subcategoria específica",targetKind:"subcategoria",automatic:false},
+    {value:"marca",label:"Marca específica",targetKind:"marca",automatic:false},
+    {value:"produto",label:"Produto específico",targetKind:"produto",automatic:false},
+    {value:"kit",label:"Kit promocional específico",targetKind:"kit",automatic:false,requiresMembership:true},
+    {value:"cesta",label:"Cesta básica específica",targetKind:"cesta",automatic:false,requiresMembership:true}
   ];
   const DA_BANNER_REAL_PLACEMENT_SET_V10 = new Set([
     ...DA_BANNER_SITE_FIXED_SLOTS_V10.map(item=>item.value),
@@ -7096,18 +7096,23 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
   }
 
   function daV10CategoryGroup(product){
-    const values=[product?.categoria,product?.subcategoria,product?.subsubcategoria,product?.nome].map(textNorm).join(" ");
-    if(/beleza|higiene|shampoo|condicionador|sabonete|desodorante|absorvente|cabelo|corpo|rosto|bebe|bebê|fralda|creme dental|oral/.test(values))return "higiene";
-    if(/limpeza|lavanderia|detergente|sabao|sabão|amaciante|desinfetante|alvejante|multiuso|esponja|saco de lixo/.test(values))return "limpeza";
-    if(/cafe|café|achocolatado|biscoito|bolacha|pao|pão|leite|cereal|matinal/.test(values))return "cafe";
-    return "geral";
+    return String(product?.categoria||"").trim();
+  }
+  function daV10SiteCategories(){
+    const canonical=new Map();
+    (state.produtos||[]).forEach(product=>{
+      const category=String(product?.categoria||"").trim();
+      const key=textNorm(category);
+      if(category&&key&&!canonical.has(key))canonical.set(key,category);
+    });
+    return [...canonical.values()].sort((a,b)=>a.localeCompare(b,"pt-BR"));
   }
   function daV10BannerProductSnapshot(banner){
     return Array.isArray(banner?.origem?.produtos)&&banner.origem.produtos.length?banner.origem.produtos[0]:{};
   }
   function daV10CompatibleAutomaticSlots(product){
-    const group=daV10CategoryGroup(product);
-    return DA_BANNER_SITE_FIXED_SLOTS_V10.filter(slot=>slot.automatic!==false&&(slot.compat==="all"||slot.compat===group));
+    const category=daV10CategoryGroup(product);
+    return category?[{value:"categoria",target:category,label:`Categoria · ${category}`,automatic:true,compat:"categoria"}]:[];
   }
   function daV10PlacementKey(local,target=""){
     return `${String(local||"").trim()}::${String(target||"").trim()}`;
@@ -7137,39 +7142,40 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
       if(excludeGroupId&&typeof daV9BannerGroupId==="function"&&daV9BannerGroupId(banner)===excludeGroupId)return;
       const local=daV10NormalizeLegacyLocal(banner?.exibicao?.local||banner?.posicao||"");
       const target=String(banner?.exibicao?.alvo||banner?.alvo||"").trim();
-      const key=local;loads.set(key,(loads.get(key)||0)+1);
+      if(local!=="categoria"||!target)return;
+      const key=daV10PlacementKey("categoria",textNorm(target));
+      loads.set(key,(loads.get(key)||0)+1);
     });
     return loads;
   }
   function daV10BestAutomaticSlot(product,catalog,loadsInput){
+    const category=daV10CategoryGroup(product);
+    if(!category)return null;
     const loads=loadsInput||daV10CurrentActiveLoads(catalog||state.bannerManager.catalog||{banners:[]});
-    const candidates=daV10CompatibleAutomaticSlots(product)
-      .map(slot=>({...slot,load:loads.get(slot.value)||0}))
-      .filter(slot=>slot.load<DA_BANNER_MAX_ACTIVE_PER_SPACE_V10)
-      .sort((a,b)=>a.load-b.load||DA_BANNER_SITE_FIXED_SLOTS_V10.findIndex(item=>item.value===a.value)-DA_BANNER_SITE_FIXED_SLOTS_V10.findIndex(item=>item.value===b.value));
-    return candidates[0]||null;
+    const load=loads.get(daV10PlacementKey("categoria",textNorm(category)))||0;
+    return load<DA_BANNER_MAX_ACTIVE_PER_SPACE_V10?{value:"categoria",target:category,label:`Categoria · ${category}`,load}:null;
   }
   function daV10AutomaticConfig(){
+    const loads=daV10CurrentActiveLoads(state.bannerManager.catalog||{banners:[]});
     return {
-      version:13,
+      version:14,
       strategy:DA_BANNER_AUTOMATIC_STRATEGY_V10,
-      selection_order:"escolher_posicao_fixa_ou_contextual_menos_preenchida_depois_produto_relacionado",
-      max_active_per_space:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,
-      active_site_positions:DA_BANNER_SITE_FIXED_SLOTS_V10.map(item=>({local:item.value,label:item.label,compatibility:item.compat})),
-      automatic_positions:[...DA_BANNER_SITE_FIXED_SLOTS_V10,...DA_BANNER_CONTEXTUAL_PLACEMENTS_V10].filter(item=>item.automatic!==false).map(item=>item.value),
-      automatic_context_positions:DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>item.value),
-      manual_only_context_positions:[],
-      removed_home_positions:Object.keys(DA_BANNER_LEGACY_POSITION_MAP_V10),
-      balance_metric:"quantidade_ativa_ou_agendada_por_familia_de_posicao",
-      tie_breaker:"ordem_estavel_das_19_familias",
-      product_repeat_control:"preservar_historico_existente"
+      selection_order:"escolher_categoria_com_menos_banners_depois_produto_da_categoria",
+      max_active_per_category:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,
+      automatic_positions:["categoria"],
+      automatic_context_positions:["categoria"],
+      manual_only_context_positions:["subcategoria","marca","produto","kit","cesta"],
+      categories:daV10SiteCategories().map(category=>({categoria:category,ativos:loads.get(daV10PlacementKey("categoria",textNorm(category)))||0,faltam:Math.max(0,DA_BANNER_MAX_ACTIVE_PER_SPACE_V10-(loads.get(daV10PlacementKey("categoria",textNorm(category)))||0))})),
+      balance_metric:"quantidade_ativa_ou_agendada_por_categoria",
+      tie_breaker:"nome_da_categoria",
+      product_repeat_control:"preferir_produto_menos_usado_na_categoria"
     };
   }
 
   // Sugestão padrão do card: somente posições existentes e sempre a menos ocupada entre as compatíveis.
   daDefaultBannerPositionForProduct=function(product){
     const best=daV10BestAutomaticSlot(product,state.bannerManager.catalog||{banners:[]});
-    return best?.value||"home.hero";
+    return best?daV9PlacementValue(best.value,best.target):"categoria::";
   };
 
   if(typeof daV9QuickPlacementValues==="function"){
@@ -7183,11 +7189,11 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
         const parsed=daV9ParsePlacementValue(value);return daV9PlacementValue(daV10NormalizeLegacyLocal(parsed.local),parsed.target||"");
       });
       const best=daV10BestAutomaticSlot(product,state.bannerManager.catalog||{banners:[]});
-      return [daV9PlacementValue(best?.value||"home.hero","")];
+      return [best?daV9PlacementValue(best.value,best.target):"categoria::"];
     };
   }
 
-  // Limite real de 4 banners ativos por espaço, inclusive em criações manuais.
+  // Limite real de 8 banners ativos por categoria, inclusive em criações manuais.
   if(typeof daPublishBannerArtwork==="function"){
     const daV10PublishBannerArtworkBase=daPublishBannerArtwork;
     daPublishBannerArtwork=async function(data){
@@ -7201,8 +7207,8 @@ const bannerNotice=[...document.querySelectorAll('#tab-integracoes .notice.gold'
         const local=daV10NormalizeLegacyLocal(placement.local||placement.posicao||"");
         const target=String(placement.target||placement.alvo||"").trim();
         if(!DA_BANNER_REAL_PLACEMENT_SET_V10.has(local))throw new Error(`O local “${local}” não existe mais no site atual.`);
-        const load=loads.get(local)||0;
-        if(load>=DA_BANNER_MAX_ACTIVE_PER_SPACE_V10)throw new Error(`O espaço “${daBannerPlacementLabel(local,target)}” já possui ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners ativos. Escolha outro local ou desative um banner existente.`);
+        const load=loads.get(daV10PlacementKey(local,textNorm(target)))||0;
+        if(local==="categoria"&&load>=DA_BANNER_MAX_ACTIVE_PER_SPACE_V10)throw new Error(`A categoria “${target}” já possui ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners ativos. Aguarde um sair do ar ou desative um banner existente.`);
       }
       data={...data,placements:placements.map(item=>({...item,local:daV10NormalizeLegacyLocal(item.local||item.posicao||"")}))};
       return daV10PublishBannerArtworkBase(data);
@@ -7252,51 +7258,43 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   function daV10MigrateCatalog(catalogInput){
     const catalog=daNormalizeBannerCatalog(deepClone(catalogInput||daBannerDefaultCatalog()));
     catalog.settings=catalog.settings&&typeof catalog.settings==="object"?catalog.settings:{};
-    catalog.settings.automatic_positioning=daV10AutomaticConfig();
-    catalog.settings.banner_limits={max_active_per_space:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,scope:"familia_de_posicao",enforced_by_admin:true};
     const loads=new Map();
     const active=[...catalog.banners].filter(daV10BannerActiveNow).sort((a,b)=>daV10BannerTime(b)-daV10BannerTime(a));
     const inactive=[...catalog.banners].filter(item=>!daV10BannerActiveNow(item));
     let moved=0,deactivated=0,legacyFixed=0,autoRebalanced=0;
 
-    function reserve(local,target=""){
-      const key=local,before=loads.get(key)||0;
+    function bannerCategory(banner){
+      const snapshot=daV10BannerProductSnapshot(banner);
+      if(snapshot?.categoria)return String(snapshot.categoria).trim();
+      const refs=[snapshot?.firebaseKey,snapshot?.id,snapshot?.codigo,banner?.origem?.valor,banner?.link?.valor].filter(Boolean);
+      const product=refs.map(ref=>productByKey(ref)).find(Boolean);
+      return String(product?.categoria||"").trim();
+    }
+    function reserve(category){
+      const key=daV10PlacementKey("categoria",textNorm(category)),before=loads.get(key)||0;
       if(before>=DA_BANNER_MAX_ACTIVE_PER_SPACE_V10)return {ok:false,before};
       loads.set(key,before+1);return {ok:true,before,order:before+1};
     }
     function deactivateOverflow(banner,reason){
       banner.ativo=false;banner.atualizado_em=nowIso();banner.desativado_em=nowIso();banner.motivo_desativacao=reason;
-      banner.controle={...(banner.controle||{}),preservado_no_json:true,limite_4_por_espaco:true};deactivated++;
+      banner.controle={...(banner.controle||{}),preservado_no_json:true,limite_8_por_categoria:true};deactivated++;
     }
 
     active.forEach(banner=>{
       banner.exibicao=banner.exibicao&&typeof banner.exibicao==="object"?banner.exibicao:{};
       const oldLocal=String(banner.exibicao.local||banner.posicao||"home.hero").trim();
       const oldTarget=String(banner.exibicao.alvo||banner.alvo||"").trim();
-      const normalizedLocal=daV10NormalizeLegacyLocal(oldLocal);
-      const automatic=daV10IsAutomaticBanner(banner);
-
-      if(automatic){
-        const product=daV10BannerProductSnapshot(banner);
-        const compatible=daV10CompatibleAutomaticSlots(product)
-          .map(slot=>({...slot,load:loads.get(slot.value)||0}))
-          .filter(slot=>slot.load<DA_BANNER_MAX_ACTIVE_PER_SPACE_V10)
-          .sort((a,b)=>a.load-b.load||DA_BANNER_SITE_FIXED_SLOTS_V10.findIndex(item=>item.value===a.value)-DA_BANNER_SITE_FIXED_SLOTS_V10.findIndex(item=>item.value===b.value));
-        const chosen=compatible[0];
-        if(!chosen){deactivateOverflow(banner,"limite_4_por_espaco_sem_slot_compativel");return;}
-        const reserved=reserve(chosen.value,"");
-        if(oldLocal!==chosen.value||oldTarget){moved++;autoRebalanced++;}
-        banner.exibicao={...(banner.exibicao||{}),local:chosen.value,alvo:"",ordem:reserved.order};
-        banner.automacao={...(banner.automacao||{}),estrategia_posicionamento:DA_BANNER_AUTOMATIC_STRATEGY_V10,modo_selecao:"posicao_primeiro_oferta_ideal_depois",max_banners_por_espaco:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,posicao_escolhida:chosen.value,alvo_escolhido:"",rotulo_posicao:chosen.label,carga_ativa_antes:reserved.before};
+      const category=bannerCategory(banner);
+      if(!category){
+        const normalized=daV10NormalizeLegacyLocal(oldLocal);
+        if(normalized!==oldLocal){banner.exibicao.local=normalized;legacyFixed++;moved++;}
         return;
       }
-
-      let local=normalizedLocal,target=oldTarget;
-      if(oldLocal!==normalizedLocal){legacyFixed++;moved++;}
-      if(!DA_BANNER_REAL_PLACEMENT_SET_V10.has(local))local="home.hero";
-      const reserved=reserve(local,target);
-      if(!reserved.ok){deactivateOverflow(banner,"limite_4_por_espaco_migracao");return;}
-      banner.exibicao={...(banner.exibicao||{}),local,alvo:target,ordem:reserved.order};
+      const reserved=reserve(category);
+      if(!reserved.ok){deactivateOverflow(banner,"limite_8_por_categoria_migracao");return;}
+      if(oldLocal!=="categoria"||textNorm(oldTarget)!==textNorm(category)){moved++;if(daV10IsAutomaticBanner(banner))autoRebalanced++;}
+      banner.exibicao={...(banner.exibicao||{}),local:"categoria",alvo:category,ordem:reserved.order};
+      banner.automacao={...(banner.automacao||{}),estrategia_posicionamento:DA_BANNER_AUTOMATIC_STRATEGY_V10,modo_selecao:"categoria_menos_preenchida_depois_produto",max_banners_por_categoria:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,categoria_escolhida:category,carga_ativa_antes:reserved.before};
     });
 
     inactive.forEach(banner=>{
@@ -7306,16 +7304,20 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
       if(old&&mapped!==old){banner.exibicao.local=mapped;legacyFixed++;moved++;}
     });
 
+    catalog.schema_version=Math.max(Number(catalog.schema_version||0),14);
     catalog.updated_at=nowIso();
-    catalog.migration={...(catalog.migration||{}),layout_site_v10:{executado_em:nowIso(),strategy:DA_BANNER_AUTOMATIC_STRATEGY_V10,max_active_per_space:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,moved,automatic_rebalanced:autoRebalanced,legacy_positions_fixed:legacyFixed,deactivated_overflow:deactivated}};
+    catalog.settings.automatic_positioning=daV10AutomaticConfig();
+    catalog.settings.banner_limits={max_active_per_category:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,scope:"categoria",enforced_by_admin:true};
+    catalog.settings.banner_queue={capacity_per_category:8,visible_at_once:8,rotation_mode:"carrossel_com_ordem_embaralhada_a_cada_acesso",random:true};
+    catalog.migration={...(catalog.migration||{}),banners_categoria_v14:{executado_em:nowIso(),strategy:DA_BANNER_AUTOMATIC_STRATEGY_V10,max_active_per_category:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,moved,automatic_rebalanced:autoRebalanced,legacy_positions_fixed:legacyFixed,deactivated_overflow:deactivated}};
     return {catalog,stats:{moved,autoRebalanced,legacyFixed,deactivated,activeLoads:Object.fromEntries([...loads.entries()].sort())}};
   }
 
   async function daV10PersistMigratedCatalog(){
-    if(!confirm("Reorganizar agora os banners existentes conforme os espaços reais do site e limitar a 4 banners ativos por espaço? Banners excedentes serão preservados no JSON, porém desativados."))return;
+    if(!confirm("Reorganizar agora os banners de produto por categoria e limitar cada categoria a 8 banners ativos? Banners excedentes serão preservados no JSON, porém desativados."))return;
     const current=await daLoadBannerCatalog(true);
     const result=daV10MigrateCatalog(current);
-    setStatus("Reorganizando banners existentes e salvando o JSON corrigido...","warn");
+    setStatus("Organizando banners de produto por categoria e salvando o JSON...","warn");
     await daCallBannerWebhook({
       acao:"salvar_catalogo_banners",
       versao_contrato:10,
@@ -7326,8 +7328,8 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     state.bannerManager.catalog=result.catalog;
     await daRenderBannerManager();renderProducts();
     const s=result.stats;
-    setStatus(`JSON corrigido: ${s.moved} reposicionado(s), ${s.autoRebalanced} automático(s) balanceado(s), ${s.deactivated} excedente(s) desativado(s).`,"ok");
-    alert(`Banners reorganizados com sucesso.\n\nReposicionados: ${s.moved}\nAutomáticos redistribuídos: ${s.autoRebalanced}\nPosições antigas corrigidas: ${s.legacyFixed}\nExcedentes preservados e desativados: ${s.deactivated}\n\nNovo limite: até ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners ativos por espaço.`);
+    setStatus(`JSON corrigido: ${s.moved} banner(es) vinculado(s) à categoria, ${s.autoRebalanced} automático(s) balanceado(s), ${s.deactivated} excedente(s) desativado(s).`,"ok");
+    alert(`Banners reorganizados com sucesso.\n\nReposicionados: ${s.moved}\nAutomáticos redistribuídos: ${s.autoRebalanced}\nPosições antigas corrigidas: ${s.legacyFixed}\nExcedentes preservados e desativados: ${s.deactivated}\n\nNovo limite: exatamente até ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners ativos por categoria.`);
   }
 
   // O disparo automático envia ao Make a estratégia correta: espaço primeiro, produto depois.
@@ -7350,8 +7352,12 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     const webhook=String(state.settings.makeBannerAutomaticWebhookUrl||state.settings.makeBannerWebhookUrl||"").trim();
     if(!webhook)throw new Error("Configure o webhook de banners automáticos na aba Integrações.");
     const buttons=[...document.querySelectorAll('[data-action="banner-auto-run"]')];
-    buttons.forEach(button=>{button.disabled=true;button.dataset.originalText=button.textContent;button.textContent="Selecionando espaço e produto...";});
-    setStatus("Identificando a família de posição menos preenchida e pontuando a melhor oferta para ela...","warn");
+    const loads=daV10CurrentActiveLoads(state.bannerManager.catalog||{banners:[]});
+    const categories=daV10SiteCategories().map(category=>({categoria:category,ativos:loads.get(daV10PlacementKey("categoria",textNorm(category)))||0})).sort((a,b)=>a.ativos-b.ativos||a.categoria.localeCompare(b.categoria,"pt-BR"));
+    const pending=categories.filter(item=>item.ativos<DA_BANNER_MAX_ACTIVE_PER_SPACE_V10);
+    if(!pending.length){setStatus("Todas as categorias já possuem 8 banners ativos. A automação aguardará um banner sair do ar.","ok");return {ok:true,completo:true};}
+    buttons.forEach(button=>{button.disabled=true;button.dataset.originalText=button.textContent;button.textContent="Selecionando categoria e produto...";});
+    setStatus(`A próxima categoria é ${pending[0].categoria}: ${pending[0].ativos} de 8 banners. Selecionando o produto...`,"warn");
     const requestId=`banner-auto-${Date.now()}-${Math.random().toString(36).slice(2,9)}`;
     const knownIds=new Set((state.bannerManager.catalog?.banners||[]).map(banner=>String(banner?.id||"")));
     try{
@@ -7365,13 +7371,13 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
         quantidade_produtos:1,
         preservar_apos_expirar:true,
         estrategia_posicionamento:DA_BANNER_AUTOMATIC_STRATEGY_V10,
-        modo_selecao:"posicao_primeiro_oferta_ideal_depois",
-        max_banners_por_espaco:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,
-        posicoes_automaticas:[...DA_BANNER_SITE_FIXED_SLOTS_V10.map(item=>({local:item.value,rotulo:item.label,compatibilidade:item.compat||"relacao_produto"})),...DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>({local:item.value,rotulo:item.label,compatibilidade:"relacao_produto",requer_vinculo:item.requiresMembership===true}))],
-        posicoes_contextuais_automaticas:DA_BANNER_CONTEXTUAL_PLACEMENTS_V10.map(item=>item.value),
-        posicoes_manuais_contextuais:[],
-        cestas_json:JSON.stringify((state.cestas||[]).map(({id,codigo,nome,ativo,status,produtos})=>({id,codigo,nome,ativo,status,produtos}))),
-        kits_json:JSON.stringify((state.kits||[]).map(({id,codigo,nome,ativo,status,estoque_disponivel,data_inicio,data_fim,produtos})=>({id,codigo,nome,ativo,status,estoque_disponivel,data_inicio,data_fim,produtos}))),
+        modo_selecao:"categoria_menos_preenchida_depois_produto_da_categoria",
+        max_banners_por_categoria:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10,
+        categorias:pending.map(item=>({...item,faltam:DA_BANNER_MAX_ACTIVE_PER_SPACE_V10-item.ativos})),
+        categoria_prioritaria:pending[0].categoria,
+        posicoes_automaticas:[{local:"categoria",rotulo:"Categoria específica",compatibilidade:"categoria_do_produto"}],
+        posicoes_contextuais_automaticas:["categoria"],
+        posicoes_manuais_contextuais:["subcategoria","marca","produto","kit","cesta"],
         posicoes_removidas:Object.keys(DA_BANNER_LEGACY_POSITION_MAP_V10),
         prioridade_produto_na_arte:true,
         exibir_validade_oferta_na_arte:false
@@ -7399,20 +7405,13 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   },true);
 
   function daBannerPositionReportHtml(){
-    const catalog=daNormalizeBannerCatalog(state.bannerManager.catalog),banners=catalog.banners||[],families=[...DA_BANNER_SITE_FIXED_SLOTS_V10,...DA_BANNER_CONTEXTUAL_PLACEMENTS_V10];
-    const rows=[];
-    families.forEach(position=>{
-      const matches=banners.filter(banner=>String(banner?.exibicao?.local||"")===String(position.value));
-      const targets=position.targetKind?uniq(matches.map(banner=>String(banner?.exibicao?.alvo||"").trim()).filter(Boolean)): [""];
-      const targetList=targets.length?targets:[""];
-      targetList.forEach(target=>{
-        const list=matches.filter(banner=>!position.targetKind||String(banner?.exibicao?.alvo||"").trim()===target);
-        const active=list.filter(banner=>daBannerStatus(banner).text==="Ativo"),scheduled=list.filter(banner=>daBannerStatus(banner).text==="Agendado"),ended=list.filter(banner=>["Encerrado","Inativo"].includes(daBannerStatus(banner).text));
-        const label=target?`${position.label} · ${target}`:position.label;
-        rows.push({label,list,active,scheduled,ended});
-      });
-    });
-    return `<details class="banner-position-report" open><summary><strong>Relatório por posicionamento</strong><span>${banners.length} registros distribuídos</span></summary><div class="banner-position-report-grid">${rows.map(row=>`<article class="banner-position-report-card"><div class="banner-position-report-head"><div><strong>${esc(row.label)}</strong><small>${row.list.length} de ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} na fila</small></div><div class="banner-position-metrics"><span class="chip green">${row.active.length} ativos</span><span class="chip blue">${row.scheduled.length} agendados</span><span class="chip">${row.ended.length} encerrados</span></div></div><div class="banner-position-list">${row.list.length?row.list.map(banner=>`<button type="button" class="banner-position-item" data-action="banner-edit" data-id="${esc(banner.id)}"><span>${esc(banner.titulo||banner.id)}</span><small>${esc(daBannerStatus(banner).text)} · ${esc((()=>{const value=banner?.periodo?.fim;if(!value)return"sem fim";const date=new Date(value);return Number.isNaN(date.getTime())?String(value).slice(0,10):date.toLocaleDateString("pt-BR")})())}</small></button>`).join(""):'<div class="tiny">Nenhum banner neste posicionamento.</div>'}</div></article>`).join("")}</div></details>`;
+    const catalog=daNormalizeBannerCatalog(state.bannerManager.catalog),banners=catalog.banners||[];
+    const rows=daV10SiteCategories().map(category=>{
+      const list=banners.filter(banner=>String(banner?.exibicao?.local||"")==="categoria"&&textNorm(banner?.exibicao?.alvo||"")===textNorm(category));
+      const active=list.filter(banner=>daBannerStatus(banner).text==="Ativo"),scheduled=list.filter(banner=>daBannerStatus(banner).text==="Agendado"),ended=list.filter(banner=>["Encerrado","Inativo"].includes(daBannerStatus(banner).text));
+      return {category,list,active,scheduled,ended,missing:Math.max(0,DA_BANNER_MAX_ACTIVE_PER_SPACE_V10-active.length-scheduled.length)};
+    }).sort((a,b)=>(a.active.length+a.scheduled.length)-(b.active.length+b.scheduled.length)||a.category.localeCompare(b.category,"pt-BR"));
+    return `<details class="banner-position-report" open><summary><strong>Relatório dos 8 banners por categoria</strong><span>${rows.filter(row=>row.missing===0).length} de ${rows.length} categorias completas</span></summary><div class="banner-position-report-grid">${rows.map(row=>`<article class="banner-position-report-card"><div class="banner-position-report-head"><div><strong>${esc(row.category)}</strong><small>${row.active.length+row.scheduled.length} de ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} · faltam ${row.missing}</small></div><div class="banner-position-metrics"><span class="chip green">${row.active.length} ativos</span><span class="chip blue">${row.scheduled.length} agendados</span><span class="chip">${row.ended.length} encerrados</span></div></div><div class="banner-position-list">${row.list.length?row.list.map(banner=>`<button type="button" class="banner-position-item" data-action="banner-edit" data-id="${esc(banner.id)}"><span>${esc(banner.titulo||banner.id)}</span><small>${esc(daBannerStatus(banner).text)} · ${esc((()=>{const value=banner?.periodo?.fim;if(!value)return"sem fim";const date=new Date(value);return Number.isNaN(date.getTime())?String(value).slice(0,10):date.toLocaleDateString("pt-BR")})())}</small></button>`).join(""):'<div class="tiny">Nenhum banner nesta categoria.</div>'}</div></article>`).join("")}</div></details>`;
   }
 
   const daV10RenderBannerManagerBase=daRenderBannerManager;
@@ -7422,7 +7421,7 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     if(body){
       body.querySelector(".banner-layout-v10-notice")?.remove();
       body.querySelector(".banner-position-report")?.remove();
-      body.insertAdjacentHTML("afterbegin",`<div class="notice blue banner-layout-v10-notice" style="margin-bottom:14px"><strong>Fila inteligente:</strong> cada família aceita até <strong>${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners</strong>. O site mostra <strong>${DA_BANNER_VISIBLE_PER_SPACE_V12} por vez</strong>; no admin, o notebook exibe seis cards por linha.</div><div class="toolbar" style="justify-content:flex-start;margin:-4px 0 14px"><button class="btn gold" type="button" data-action="banner-migrate-layout-v10">↻ Reorganizar JSON atual pelos novos espaços</button></div>${daBannerPositionReportHtml()}`);
+      body.insertAdjacentHTML("afterbegin",`<div class="notice blue banner-layout-v10-notice" style="margin-bottom:14px"><strong>Regra única:</strong> cada categoria terá <strong>${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners de produto</strong>. O site carrega os 8 no carrossel, embaralha a ordem a cada acesso e a automação sempre completa primeiro a categoria com menor quantidade.</div><div class="toolbar" style="justify-content:flex-start;margin:-4px 0 14px"><button class="btn gold" type="button" data-action="banner-migrate-layout-v10">↻ Organizar banners atuais por categoria</button></div>${daBannerPositionReportHtml()}`);
     }
     return result;
   };
@@ -7440,11 +7439,11 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     const autoButton=document.querySelector('[data-action="banner-auto-run"]');
     const card=autoButton?.closest(".card");
     const note=card?.querySelector(".notice.gold");
-    if(note)note.innerHTML=`<strong>Seleção automática balanceada:</strong> as 19 posições participam da distribuição. Cada família de posição mantém fila de até ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10} banners; o site exibe ${DA_BANNER_VISIBLE_PER_SPACE_V12} por vez e faz rotação aleatória justa.`;
+    if(note)note.innerHTML=`<strong>Seleção automática por categoria:</strong> somente a categoria participa do balanceamento. A automação cria um banner por execução na categoria com menos banners até todas chegarem a ${DA_BANNER_MAX_ACTIVE_PER_SPACE_V10}.`;
     return result;
   };
 
-  /* ===== BANNERS V12 · OFERTA, VENCIMENTO, ESTOQUE + GRADE PROFISSIONAL ===== */
+  /* ===== BANNERS V14 · OFERTA, VENCIMENTO, ESTOQUE + 8 POR CATEGORIA ===== */
   const daV12BannerValidationBase=daValidateBannerForm;
   function daV12DateTimestamp(value,{endOfDay=false}={}){
     const raw=String(value||"").trim();if(!raw)return NaN;
