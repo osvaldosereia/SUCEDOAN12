@@ -5,11 +5,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="da-build-version" content="2026-07-16-banners-8-category-v1">
+  <meta name="da-build-version" content="2026-07-16-mobile-sales-v4">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-16-banners-8-category-v1';
+    const BUILD = '2026-07-16-mobile-sales-v4';
     const CLEAN_MARKER = 'da_browser_cache_clean_build_v2';
     window.__DA_BUILD_VERSION__ = BUILD;
 
@@ -71,7 +71,7 @@
   <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-16-banners-8-category-v1" as="fetch" type="application/json" crossorigin="anonymous">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-16-mobile-sales-v4" as="fetch" type="application/json" crossorigin="anonymous">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -965,12 +965,11 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-16-banners-8-category-v1',
+      APP_VERSION: '2026-07-16-mobile-sales-v4',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
       PRODUCT_HOME_CACHE_KEY: 'da_produtos_home_cache_v2',
-      PRODUCT_HOME_FAST_CACHE_MS: 10 * 60 * 1000,
       BASKET_CACHE_KEY: 'da_cestas_cache_v5',
       KIT_CACHE_KEY: 'da_kits_cache_v1',
       BANNER_CACHE_KEY: 'da_banners_cache_v5',
@@ -1084,64 +1083,45 @@
       return raw.toLowerCase().replace(/(^|\s|[-/])([a-záéíóúâêôãõç])/g, (m, sep, chr) => sep + chr.toUpperCase()).replace(/\b(kg|g|ml|l|un|und|pct|cx)\b/gi, m => m.toLowerCase());
     }
 
-    function repositoryAssetPath(value) {
-      let raw = String(value || '').trim().replace(/\\/g, '/');
-      if (!raw || /^data:/i.test(raw)) return '';
-      const rawMatch = raw.match(/^https?:\/\/raw\.githubusercontent\.com\/osvaldosereia\/SUCEDOAN12\/(?:main|refs\/heads\/main)\/(.+)$/i);
-      const siteMatch = raw.match(/^https?:\/\/(?:www\.)?donaantonia\.com\.br\/(.+)$/i);
-      if (rawMatch) raw = rawMatch[1];
-      else if (siteMatch) raw = siteMatch[1];
-      else if (/^https?:\/\//i.test(raw)) return '';
-      raw = raw.replace(/^(\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
-      if (/^img\/(produtos_3|produtos_2|produtos|kits)\//i.test(raw)) raw = `site/${raw}`;
-      if (/^(site\/img\/(produtos_3|produtos_2|produtos|kits)\/|site\/banners\/|img\/logoantonia5\.png$)/i.test(raw)) return raw;
-      return '';
-    }
-
-    function githubRawAssetUrl(value) {
-      const path = repositoryAssetPath(value);
-      return path ? `https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/${path}` : '';
-    }
-
     function siteAssetUrl(value) {
       const img = String(value || '').trim();
       const siteBase = 'https://donaantonia.com.br';
+      const githubRawBase = 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main';
       if (!img) return `${siteBase}/img/logoantonia5.png`;
       if (/^data:/i.test(img)) return img;
-      const repositoryPath = repositoryAssetPath(img);
-      if (repositoryPath) return `${siteBase}/${repositoryPath}`;
       if (/^https?:\/\//i.test(img)) return img;
       const clean = img.replace(/^(\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
       if (!clean) return `${siteBase}/img/logoantonia5.png`;
+      // Imagens novas e arquivos publicados pelo admin/Make ficam no GitHub.
+      // Usar raw evita depender de deploy do domínio para cada imagem nova.
+      if (/^(site\/img\/(produtos_3|produtos_2|produtos|kits)\/|site\/banners\/)/i.test(clean)) {
+        return `${githubRawBase}/${clean}`;
+      }
+      // Caminhos antigos sem o prefixo site/ continuam aceitos como legado.
+      if (/^img\/(produtos_3|produtos_2|produtos|kits)\//i.test(clean)) {
+        return `${githubRawBase}/site/${clean}`;
+      }
+      if (clean.startsWith('site/')) return `${siteBase}/${clean}`;
       return `${siteBase}/${clean}`;
-    }
-
-    function imageSourceCandidates(value) {
-      const candidates = [];
-      const add = src => {
-        const clean = String(src || '').trim();
-        if (clean && !candidates.includes(clean)) candidates.push(clean);
-      };
-      add(siteAssetUrl(value));
-      add(githubRawAssetUrl(value));
-      return candidates;
     }
 
     function productImagesFor(raw, product) {
       const list = [];
       const push = value => {
         const src = String(value || '').trim();
-        if (!src || /site\/tmp\/ia-referencias\//i.test(src) || /\/site\/tmp\/ia-referencias\//i.test(src)) return;
-        imageSourceCandidates(src).forEach(url => {
-          if (url && !/ia-referencias/i.test(url) && !list.includes(url)) list.push(url);
-        });
+        if (!src) return;
+        // Nunca usar referência temporária como imagem pública do produto.
+        if (/site\/tmp\/ia-referencias\//i.test(src) || /\/site\/tmp\/ia-referencias\//i.test(src)) return;
+        const url = siteAssetUrl(src);
+        if (url && !/ia-referencias/i.test(url) && !list.includes(url)) list.push(url);
       };
-      // O domínio público é a origem principal; GitHub Raw fica como fallback independente.
+      // Ordem oficial da estratégia nova: URL final salva no Firebase primeiro.
       push(raw.url_imagem || '');
       push(raw.imagem_url || raw.urlImagem || '');
       push(raw.imagem || raw.image || raw.img || raw.foto || raw.foto_url || '');
       if (Array.isArray(raw.imagens)) raw.imagens.forEach(push);
       if (Array.isArray(raw.images)) raw.images.forEach(push);
+      // Se o admin salvou apenas o path novo, montar a URL raw do GitHub.
       if (!list.length && raw.imagem_path) push(raw.imagem_path);
       const code = String(product.codigo || product.id || product.firebaseKey || '').trim();
       if (!list.length && code) {
@@ -1447,69 +1427,27 @@
       rebuildVirtualFees();
     }
 
-    async function fetchHomeProductsNetwork() {
+    async function loadHomeProducts() {
+      const cache = readCache(CONFIG.PRODUCT_HOME_CACHE_KEY || 'da_produtos_home_cache_v1');
       let lastError = null;
-      const urls = Array.isArray(CONFIG.PRODUCT_HOME_URLS) && CONFIG.PRODUCT_HOME_URLS.length
-        ? CONFIG.PRODUCT_HOME_URLS : ['site/produtos-home.json'];
+      const urls = Array.isArray(CONFIG.PRODUCT_HOME_URLS) && CONFIG.PRODUCT_HOME_URLS.length ? CONFIG.PRODUCT_HOME_URLS : ['site/produtos-home.json'];
       for (const url of urls) {
         try {
           const data = await fetchJson(withCacheBust(url), 6500, { cache: 'no-cache' });
-          return { data, url };
-        } catch (error) {
-          lastError = error;
+          normalizeProducts(data, { mode: 'lite' });
+          state.catalogLoadedAt = Date.now();
+          state.catalogSource = 'produtos-home';
+          state.catalogMode = 'lite';
+          writeCache(CONFIG.PRODUCT_HOME_CACHE_KEY || 'da_produtos_home_cache_v1', { savedAt: Date.now(), appVersion: CONFIG.APP_VERSION, data });
+          return true;
+        } catch (e) {
+          lastError = e;
         }
       }
-      throw lastError || new Error('produtos-home indisponivel');
-    }
-
-    async function refreshHomeProductsCache() {
-      try {
-        const { data } = await fetchHomeProductsNetwork();
-        writeCache(CONFIG.PRODUCT_HOME_CACHE_KEY || 'da_produtos_home_cache_v1', {
-          savedAt: Date.now(),
-          appVersion: CONFIG.APP_VERSION,
-          data
-        });
-      } catch (error) {
-        console.warn('Atualização silenciosa do catálogo leve falhou:', error && error.message ? error.message : error);
-      }
-    }
-
-    async function loadHomeProducts() {
-      const cache = readCache(CONFIG.PRODUCT_HOME_CACHE_KEY || 'da_produtos_home_cache_v1');
-      const cacheAge = cache ? Date.now() - Number(cache.savedAt || 0) : Infinity;
-      const cacheMatchesBuild = !!(cache && cache.data && cache.appVersion === CONFIG.APP_VERSION);
-      if (cacheMatchesBuild && cacheAge <= CONFIG.PRODUCT_HOME_FAST_CACHE_MS) {
-        normalizeProducts(cache.data, { mode: 'lite-cache-fast' });
+      if (cache && cache.data) {
+        normalizeProducts(cache.data, { mode: 'lite' });
         state.catalogLoadedAt = Number(cache.savedAt || 0);
-        state.catalogSource = 'produtos-home-cache-fast';
-        state.catalogMode = 'lite';
-        window.setTimeout(refreshHomeProductsCache, 0);
-        return true;
-      }
-
-      let lastError = null;
-      try {
-        const { data } = await fetchHomeProductsNetwork();
-        normalizeProducts(data, { mode: 'lite' });
-        state.catalogLoadedAt = Date.now();
-        state.catalogSource = 'produtos-home';
-        state.catalogMode = 'lite';
-        writeCache(CONFIG.PRODUCT_HOME_CACHE_KEY || 'da_produtos_home_cache_v1', {
-          savedAt: Date.now(),
-          appVersion: CONFIG.APP_VERSION,
-          data
-        });
-        return true;
-      } catch (error) {
-        lastError = error;
-      }
-
-      // Nunca reaproveita catálogo pertencente a outra versão do site.
-      if (cacheMatchesBuild) {
-        normalizeProducts(cache.data, { mode: 'lite-cache-fallback' });
-        state.catalogLoadedAt = Number(cache.savedAt || 0);
-        state.catalogSource = 'produtos-home-cache-fallback';
+        state.catalogSource = 'produtos-home-cache';
         state.catalogMode = 'lite';
         return true;
       }
@@ -1531,7 +1469,7 @@
         state.catalogVerifiedItemIds = state.products.map(product => String(product.id));
         writeCache(CONFIG.PRODUCT_CACHE_KEY, { savedAt: Date.now(), appVersion: CONFIG.APP_VERSION, data });
       } catch (err) {
-        if (cache && cache.data && cache.appVersion === CONFIG.APP_VERSION) {
+        if (cache && cache.data) {
           normalizeProducts(cache.data, { mode: 'full-cache' });
           state.catalogLoadedAt = Number(cache.savedAt || 0);
           state.catalogSource = 'cache-fallback';
@@ -1640,16 +1578,16 @@
       const img = String(value || '').trim();
       if (!img) return 'https://donaantonia.com.br/img/logoantonia5.png';
       if (/site\/tmp\/ia-referencias\//i.test(img)) return 'https://donaantonia.com.br/img/logoantonia5.png';
-      if (/^data:/i.test(img)) return img;
-      return siteAssetUrl(img);
+      if (/^(https?:|data:)/i.test(img)) return img;
+      const clean = img.replace(/^(\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
+      return siteAssetUrl(clean);
     }
 
     function normalizeBannerImage(value) {
       const raw = String(value || '').trim();
       if (!raw) return '';
-      if (/^data:/i.test(raw)) return raw;
+      if (/^(https?:|data:)/i.test(raw)) return raw;
       const clean = raw.replace(/^(\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
-      if (/^https?:\/\//i.test(raw)) return siteAssetUrl(raw);
       if (clean.startsWith('site/') || clean.startsWith('banner/') || clean.includes('/')) return siteAssetUrl(clean);
       return siteAssetUrl(`banner/${clean}`);
     }
@@ -1665,14 +1603,14 @@
         show_arrows: carousel.show_arrows !== false && carousel.manual !== false,
         show_dots: carousel.show_dots !== false,
         show_hint: carousel.show_hint !== false,
-        autoplay: true,
+        autoplay: carousel.autoplay === true || carousel.automatico === true,
         intervalo_ms: Math.max(3000, Number(carousel.intervalo_ms || carousel.interval || 5200)),
-        loop: true,
+        loop: carousel.loop === true,
         pausar_hover: carousel.pausar_hover !== false,
-        queue_capacity: 8,
-        visible_limit: 8,
+        queue_capacity: Math.min(12, Math.max(4, Number(queue.capacity_per_space || queue.capacidade_por_posicao || 12))),
+        visible_limit: Math.min(4, Math.max(1, Number(queue.visible_at_once || queue.visiveis_por_vez || 4))),
         queue_interval_ms: Math.max(5000, Number(queue.rotation_interval_ms || queue.intervalo_rotacao_ms || 9000)),
-        queue_random: true
+        queue_random: queue.random !== false && queue.aleatoria !== false
       };
       const aliases = {
         'home.inicio': 'home.hero',
@@ -1836,19 +1774,14 @@
     function bannerCardHtml(banner, index, eager, hidden) {
       const href = bannerLinkHref(banner.link);
       const external = /^https?:/i.test(href);
-      const fallbackImages = imageFallbackList(imageSourceCandidates(banner.imagem));
       return `<article class="da-banner-card" data-banner-index="${index}" data-banner-id="${escapeHtml(banner.id)}" data-queue-visible="${hidden ? 'false' : 'true'}"${hidden ? ' style="display:none"' : ''}>
         <a class="da-banner-link" href="${escapeHtml(href)}"${external ? ' target="_blank" rel="noopener"' : ''} aria-label="${escapeHtml(banner.alt)}">
-          <span class="da-banner-picture"><img src="${escapeHtml(banner.imagem)}" data-fallback-images="${escapeHtml(fallbackImages)}" data-fallback-final="hide" alt="${escapeHtml(banner.alt)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async"${eager ? ' fetchpriority="high"' : ''} onerror="window.__daBannerImageError(this)"></span>
+          <span class="da-banner-picture"><img src="${escapeHtml(banner.imagem)}" alt="${escapeHtml(banner.alt)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async"${eager ? ' fetchpriority="high"' : ''} onerror="window.__daBannerImageError(this)"></span>
         </a>
       </article>`;
     }
 
     window.__daBannerImageError = function(img) {
-      if (window.__daFallbackImg) {
-        window.__daFallbackImg(img);
-        return;
-      }
       const card = img && img.closest ? img.closest('.da-banner-card') : null;
       if (card) card.style.display = 'none';
       scheduleBannerSetup();
@@ -1887,8 +1820,8 @@
       const opts = options || {};
       const targets = opts.targets || opts.target || null;
       const orderedBanners = bannersInAccessOrder(position, getBanners(position, targets));
-      const capacity = 8;
-      const visibleLimit = 8;
+      const capacity = Math.min(12, Math.max(4, Number(state.bannerConfig.queue_capacity || 12)));
+      const visibleLimit = Math.min(4, Math.max(1, Number(state.bannerConfig.visible_limit || 4)));
       const banners = orderedBanners.slice(0, capacity);
       if (!banners.length) return '';
       const label = opts.label || 'Destaques selecionados';
@@ -1933,7 +1866,7 @@
     function setupBannerQueue(zone, track) {
       const cards = Array.from(zone.querySelectorAll('.da-banner-card'));
       const total = cards.length;
-      const visibleLimit = 8;
+      const visibleLimit = Math.min(4, Math.max(1, Number(state.bannerConfig.visible_limit || 4)));
       const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (!total) return;
       if (total <= visibleLimit) {
@@ -3074,83 +3007,35 @@
       return (images || []).map(src => String(src || '').trim()).filter(Boolean).join('|');
     }
 
-    function imageUrlWithoutRetry(value) {
-      const src = String(value || '').trim();
-      if (!src) return '';
-      try {
-        const url = new URL(src, window.location.href);
-        url.searchParams.delete('__da_ir');
-        return url.href;
-      } catch (_) {
-        return src.replace(/([?&])__da_ir=[^&#]*&?/i, '$1').replace(/[?&]$/, '');
-      }
-    }
-
-    function imageRetryUrl(value, attempt) {
-      const base = imageUrlWithoutRetry(value);
-      try {
-        const url = new URL(base, window.location.href);
-        url.searchParams.set('__da_ir', `${attempt}-${Date.now()}`);
-        return url.href;
-      } catch (_) {
-        return `${base}${base.includes('?') ? '&' : '?'}__da_ir=${attempt}-${Date.now()}`;
-      }
-    }
-
     function fallbackImg(el) {
       if (!el) return;
       const logo = 'https://donaantonia.com.br/img/logoantonia5.png';
-      const current = imageUrlWithoutRetry(el.currentSrc || el.src || '');
-      const runtime = el.__daImageFallbackState || (el.__daImageFallbackState = {
-        attempts: Object.create(null),
-        used: new Set()
-      });
-      const attempt = Number(runtime.attempts[current] || 0);
-
-      // Falhas momentâneas ganham duas novas tentativas antes de trocar a origem.
-      if (current && current !== logo && attempt < 2) {
-        runtime.attempts[current] = attempt + 1;
-        const delay = attempt === 0 ? 240 : 760;
-        window.setTimeout(() => {
-          if (el.isConnected) el.src = imageRetryUrl(current, attempt + 1);
-        }, delay);
-        return;
-      }
-
-      if (current) runtime.used.add(current);
-      const declared = String(el.getAttribute('data-fallback-images') || '')
-        .split('|').map(imageUrlWithoutRetry).filter(Boolean);
+      const current = String(el.currentSrc || el.src || '').trim();
+      const declared = String(el.getAttribute('data-fallback-images') || '').split('|').map(v => v.trim()).filter(Boolean);
       const variants = [];
       const add = src => {
-        const clean = imageUrlWithoutRetry(src);
+        const clean = String(src || '').trim();
         if (clean && !/ia-referencias/i.test(clean) && !variants.includes(clean)) variants.push(clean);
       };
       declared.forEach(add);
-
       if (current) {
-        const rawMatch = current.match(/^https?:\/\/raw\.githubusercontent\.com\/osvaldosereia\/SUCEDOAN12\/(?:main|refs\/heads\/main)\/(.+)$/i);
-        if (rawMatch) add(`https://donaantonia.com.br/${rawMatch[1]}`);
+        if (/raw\.githubusercontent\.com/i.test(current) && !/\.(webp|png|jpe?g)(?:\?|$)/i.test(current)) add(current + '.webp');
+        // Fallback legado entre pastas antigas. Produtos_3 é destino final novo e não deve cair para pasta antiga automaticamente.
         if (/\/produtos\//i.test(current) && !/\/produtos_2\//i.test(current) && !/\/produtos_3\//i.test(current)) add(current.replace('/produtos/', '/produtos_2/'));
         if (/\/produtos_2\//i.test(current)) add(current.replace('/produtos_2/', '/produtos/'));
-        if (/^https?:\/\/(?:www\.)?donaantonia\.com\.br\/(site\/img\/(?:produtos_3|produtos_2|produtos|kits)\/|site\/banners\/)/i.test(current)) {
+        if (/\/site\/img\/(produtos_3|produtos_2|produtos|kits)\//i.test(current) && !/raw\.githubusercontent\.com/i.test(current)) {
           add(current.replace(/^https?:\/\/(?:www\.)?donaantonia\.com\.br\//i, 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/'));
         }
       }
-
-      const hideOnFinal = el.getAttribute('data-fallback-final') === 'hide';
-      if (!hideOnFinal) add(logo);
-      const next = variants.find(src => src !== current && !runtime.used.has(src));
+      add(logo);
+      const used = String(el.getAttribute('data-fallback-used') || '').split('|').filter(Boolean);
+      if (current) used.push(current);
+      const next = variants.find(src => !used.includes(src) && src !== current);
       if (next) {
+        el.setAttribute('data-fallback-used', Array.from(new Set(used)).join('|'));
         el.src = next;
-        return;
-      }
-
-      el.onerror = null;
-      if (hideOnFinal) {
-        const card = el.closest ? el.closest('.da-banner-card') : null;
-        if (card) card.style.display = 'none';
-        scheduleBannerSetup();
-      } else if (current !== logo) {
+      } else {
+        el.onerror = null;
         el.src = logo;
       }
     }
@@ -5756,32 +5641,15 @@
     const seen = new Set();
     return (list || []).filter(banner=>banner && !seen.has(banner.id) && seen.add(banner.id));
   }
-  function daCategoryBannerPool(categories){
-    const targets=[...new Set((categories||[]).map(value=>String(value||'').trim()).filter(Boolean))];
-    if(!targets.length) return [];
-    const direct=getBanners('categoria',targets);
-    if(direct.length>=8) return direct;
-    const directIds=new Set(direct.map(banner=>banner.id));
-    const legacy=daSiteBannersForCategories(targets).filter(banner=>!directIds.has(banner.id) && bannerPositionKey(banner.local)!=='categoria');
-    return [...direct,...legacy];
-  }
-  function daAllProductBannerPool(){
-    const categories=[...new Set(state.products.filter(isAvailable).map(product=>product.categoria).filter(Boolean))];
-    const direct=getBanners('categoria',categories);
-    const directIds=new Set(direct.map(banner=>banner.id));
-    const legacy=state.banners.filter(banner=>bannerIsCurrent(banner) && !directIds.has(banner.id) && daSiteBannerProducts(banner).length);
-    return [...direct,...legacy];
-  }
-  function daSiteBannerListHtml(position,banners,label,hideHead=false){
-    const capacity = 8;
-    const visibleLimit = 8;
+  function daSiteBannerListHtml(position,banners,label){
+    const capacity = Math.min(12, Math.max(4, Number(state.bannerConfig.queue_capacity || 12)));
+    const visibleLimit = Math.min(4, Math.max(1, Number(state.bannerConfig.visible_limit || 4)));
     const list = bannersInAccessOrder(position, daSiteUniqueBanners(banners).filter(bannerIsCurrent)).slice(0,capacity);
     if(!list.length) return '';
     const hint = state.bannerConfig.show_hint === false ? '' : (list.length > visibleLimit ? `${visibleLimit} de ${list.length} por vez · alternância automática` : 'Destaques disponíveis');
-    const head=hideHead?'':`<div class="da-banner-zone-head"><div><strong>${escapeHtml(label || 'Destaques selecionados')}</strong><span>${escapeHtml(hint)}</span></div><span class="da-banner-page-counter" data-banner-counter>1 / 1</span></div>`;
     scheduleBannerSetup();
-    return `<section class="da-banner-zone${hideHead?' da-banner-zone-clean':''}" data-banner-zone data-banner-position="${escapeHtml(position)}" data-banner-queue-total="${list.length}" aria-label="${escapeHtml(label || 'Destaques selecionados')}">
-      ${head}
+    return `<section class="da-banner-zone" data-banner-zone data-banner-position="${escapeHtml(position)}" data-banner-queue-total="${list.length}" aria-label="${escapeHtml(label || 'Destaques selecionados')}">
+      <div class="da-banner-zone-head"><div><strong>${escapeHtml(label || 'Destaques selecionados')}</strong><span>${escapeHtml(hint)}</span></div><span class="da-banner-page-counter" data-banner-counter>1 / 1</span></div>
       <div class="da-banner-track" data-banner-track>${list.map((banner,index)=>bannerCardHtml(banner,index,index<2,index>=visibleLimit)).join('')}</div>
       <div class="da-banner-controls"><div class="da-banner-arrows"><button class="da-banner-arrow" type="button" data-banner-prev aria-label="Ver banners anteriores">‹</button><button class="da-banner-arrow" type="button" data-banner-next aria-label="Ver próximos banners">›</button></div><div class="da-banner-dots" data-banner-dots aria-label="Páginas do carrossel"></div></div>
     </section>`;
@@ -6285,10 +6153,10 @@
         if('IntersectionObserver' in window){
           daHomeTailObserver=new IntersectionObserver(entries=>{
             if(entries.some(entry=>entry.isIntersecting)) load();
-          },{root:app,rootMargin:'700px 0px',threshold:0});
+          },{root:app,rootMargin:'1200px 0px',threshold:0});
           daHomeTailObserver.observe(slot);
         }
-        daHomeTailTimer=window.setTimeout(load,12000);
+        daHomeTailTimer=window.setTimeout(load,3200);
       }
 
       function daRenderHomeSecondary(slot){
@@ -6303,7 +6171,7 @@
           ${daHomeStandardShelfHtml('Essenciais da compra do mês','Uma seleção rápida para começar a abastecer a casa.',essentials,'#/rotina/compra-mes','month')}
           ${daHomeCompactShelfHtml('Você já conferiu?','Itens que a gente costuma lembrar somente quando estão acabando.',reminders,'#/rotina/compra-mes','reminder','Continuar comprando')}
           ${daHomeCollectionSectionHtml('limpeza','Limpeza da casa','Encontre rapidamente o tipo de limpeza que precisa.',limpeza,'#/rotina/limpeza','clean')}
-          ${daSiteBannerListHtml('home.higiene.topo',daCategoryBannerPool([...new Set(higiene.map(product=>product.categoria).filter(Boolean))]),'Destaques de cuidados pessoais',true)}
+          ${bannerSlotHtml('home.higiene.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques de cuidados pessoais'})}
           ${daHomeCollectionSectionHtml('higiene','Higiene da família','Cuidados essenciais organizados por necessidade.',higiene,'#/rotina/higiene','care')}
           <div data-home-tail-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando mais setores…')}</div>`;
         setupBannerCarousels();
@@ -6325,12 +6193,12 @@
         if('IntersectionObserver' in window){
           daHomeSecondaryObserver=new IntersectionObserver(entries=>{
             if(entries.some(entry=>entry.isIntersecting)) load();
-          },{root:app,rootMargin:'700px 0px',threshold:0});
+          },{root:app,rootMargin:'1200px 0px',threshold:0});
           daHomeSecondaryObserver.observe(slot);
         }else{
           load();
         }
-        daHomeSecondaryTimer=window.setTimeout(load,7000);
+        daHomeSecondaryTimer=window.setTimeout(load,1800);
       }
 
       renderHome=function(){
@@ -6338,12 +6206,12 @@
         const kits=getActiveKits();
         app.innerHTML=`<div class="container home-clean da-home-modular da-home-funnel">
           <h1 class="sr-only">Dona Antônia - Supermercado e Cestas</h1>
-          ${daSiteBannerListHtml('home.hero',daAllProductBannerPool(),'Destaques da Dona Antônia',true)}
+          ${bannerSlotHtml('home.hero',{carousel:true,kind:'hero',limit:6,hideHead:true,label:'Destaques da Dona Antônia'})}
           ${homeQuickLinksHtml()}
           <div data-home-personalization-slot="buy-again"></div>
           ${daHomePurchaseJourneyHtml()}
           ${daHomeOfferShelfHtml(offers)}
-          ${daSiteBannerListHtml('home.compra-mes.topo',daCategoryBannerPool([...new Set(productsByRoutine('compra-mes',240).map(product=>product.categoria).filter(Boolean))]),'Destaques para a compra do mês',true)}
+          ${bannerSlotHtml('home.compra-mes.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques para a compra do mês'})}
           ${daHomeBasketShelfHtml(state.cestas)}
           ${daHomeKitShelfHtml(kits)}
           <div data-home-secondary-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando os setores da compra do mês…')}</div>
@@ -6399,8 +6267,9 @@
         const filtered=currentSub==='Todos' ? products : products.filter(product=>norm(product.subcategoria)===norm(currentSub));
         const chips=`<div class="chips"><a class="chip ${currentSub==='Todos'?'active':''}" href="#/categoria/${encodeURIComponent(canonicalCategory)}">Todos</a>${subs.map(sub=>`<a class="chip ${currentSub===sub?'active':''}" href="#/categoria/${encodeURIComponent(canonicalCategory)}?sub=${encodeURIComponent(sub)}">${escapeHtml(sub)}</a>`).join('')}</div>`;
         const isBeauty=/(beleza|higiene|perfumaria)/.test(norm(canonicalCategory));
-        const categoryBanners=daSiteBannerListHtml('categoria',daCategoryBannerPool([canonicalCategory]),`Destaques de ${canonicalCategory}`);
-        app.innerHTML=`<div class="container">${pageHeader(canonicalCategory,`${filtered.length} produtos encontrados`,'#/categorias')}${categoryBanners}${isBeauty?beautyBannerHtml(products):''}${chips}<div class="product-grid">${filtered.map(product=>productCard(product)).join('')}</div></div>`;
+        const direct=[...getBanners('categoria',canonicalCategory),...(currentSub!=='Todos'?getBanners('subcategoria',[currentSub,`${canonicalCategory}::${currentSub}`]):[])];
+        const contextual=daContextBannerHtml(filtered,direct,currentSub==='Todos'?`Destaques de ${canonicalCategory}`:`Destaques de ${currentSub}`,'categoria-produtos-contextuais');
+        app.innerHTML=`<div class="container">${pageHeader(canonicalCategory,`${filtered.length} produtos encontrados`,'#/categorias')}${contextual}${isBeauty?beautyBannerHtml(products):''}${chips}<div class="product-grid">${filtered.map(product=>productCard(product)).join('')}</div></div>`;
         setActiveNav('categorias');
         updateMeta(`${canonicalCategory} - Dona Antônia`,`Compre ${canonicalCategory.toLowerCase()} com entrega em Cuiabá e Várzea Grande.`,`/?categoria=${encodeURIComponent(canonicalCategory)}`);
       };
@@ -6460,9 +6329,12 @@
         if(searchInput && document.activeElement !== searchInput && searchInput.value!==q) searchInput.value=q;
         updateSearchButtons();
         const products=searchProducts(q);
-        const firstCategory=products[0]?.categoria||'';
-        const searchBanners=q&&firstCategory?daSiteBannerListHtml('busca-categoria',daCategoryBannerPool([firstCategory]),`Destaques de ${firstCategory}`):'';
-        app.innerHTML=`<div class="container search-results-page">${pageHeader(q?`Busca: ${q}`:'Busca',q?`${products.length} resultado(s)`:'Digite o produto na busca acima.','#/')}${searchBanners}${q?(products.length?`<div class="product-list">${products.map(product=>productCard(product,'list')).join('')}</div>`:`<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`):''}</div>`;
+        let contextual='';
+        if(q){
+          try{ contextual=daContextBannerHtml(products,[],`Ofertas relacionadas à sua busca`,'busca-produtos-contextuais'); }
+          catch(error){ console.warn('Banner contextual da busca ignorado:',error); }
+        }
+        app.innerHTML=`<div class="container search-results-page">${pageHeader(q?`Busca: ${q}`:'Busca',q?`${products.length} resultado(s)`:'Digite o produto na busca acima.','#/')}${q?(products.length?`<div class="product-list">${products.map(product=>productCard(product,'list')).join('')}</div>`:`<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`):''}${contextual}${bannerSlotHtml('busca.topo',{kind:'section'})}</div>`;
         setActiveNav('home');
       };
     })();
