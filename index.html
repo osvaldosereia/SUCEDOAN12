@@ -5,11 +5,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="da-build-version" content="2026-07-14-home-funil-v3-stable">
+  <meta name="da-build-version" content="2026-07-16-mobile-sales-v4">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-14-home-funil-v3-stable';
+    const BUILD = '2026-07-16-mobile-sales-v4';
     const CLEAN_MARKER = 'da_browser_cache_clean_build_v2';
     window.__DA_BUILD_VERSION__ = BUILD;
 
@@ -71,7 +71,7 @@
   <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-14-home-funil-v3-stable" as="fetch" type="application/json" crossorigin="anonymous">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-16-mobile-sales-v4" as="fetch" type="application/json" crossorigin="anonymous">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -760,6 +760,81 @@
   }
   </style>
 
+  <style id="da-usability-mobile-20260716">
+  .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+  .search-input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
+  .search-clear{width:44px!important;height:44px!important;right:2px!important}
+  .search-input{padding-right:58px!important}
+  .back-btn,.drawer-close,.favorite-btn,.add-plus,.da-banner-arrow{min-width:44px!important;min-height:44px!important}
+  .add-btn,.secondary-btn,.clear-cart-btn,.basket-confirm-primary,.basket-confirm-secondary,.da-home-section-head>a{min-height:44px!important}
+  .da-home-small-control .add-plus,.da-home-tiny-control .add-plus{width:44px!important;height:44px!important;min-height:44px!important}
+  .da-home-small-control .qty-control-mini,.da-home-tiny-control .qty-control-mini{height:44px!important;min-height:44px!important}
+  .da-home-offer-feature-control .add-btn,.da-home-offer-feature-control .qty-control{min-height:44px!important}
+  .qty-control button,.qty-control-mini button,.cart-qty button{min-width:44px!important;min-height:44px!important}
+  .da-banner-dots{gap:0!important;min-height:44px}
+  .da-banner-dot{position:relative!important;width:44px!important;min-width:44px!important;height:44px!important;padding:0!important;background:transparent!important}
+  .da-banner-dot::after{content:"";position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:999px;background:#cfd6d0;transform:translate(-50%,-50%);transition:width .18s ease,background .18s ease}
+  .da-banner-dot.active::after{width:22px;background:var(--brand)}
+  .old-price{color:#66736a!important}
+  .product-expiry,.product-expiry-card,.da-home-card-expiry{color:#5f6f65!important;font-size:max(11px,0.6875rem)!important}
+  .da-home-offer-discount,.da-home-kit-discount,.da-home-offer-feature-discount{min-height:34px!important;padding:0 10px!important;border:1px solid rgba(255,255,255,.72)!important;border-radius:10px!important;background:linear-gradient(135deg,#e11d48,#be123c)!important;color:#fff!important;font-size:12px!important;font-weight:950!important;letter-spacing:.025em!important;box-shadow:0 8px 18px rgba(190,18,60,.28)!important;text-shadow:0 1px 1px rgba(91,10,31,.28)}
+  .da-home-commercial-price{display:grid;gap:1px;align-content:end;min-width:0}
+  .da-home-commercial-old{color:#667085;font-size:11px;line-height:1.2;font-weight:750;white-space:nowrap}
+  .da-home-commercial-old small{margin-right:3px;color:#7b8580;font-size:9px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+  .da-home-commercial-old s{text-decoration-thickness:1.5px}
+  .da-home-commercial-now{display:flex;align-items:baseline;gap:4px;min-width:0;color:#be123c}
+  .da-home-commercial-now small{font-size:9px;font-weight:950;letter-spacing:.06em;text-transform:uppercase}
+  .da-home-commercial-now strong{font-size:21px;line-height:1;font-weight:950;letter-spacing:-.045em;white-space:nowrap}
+  .da-home-offer-feature-price .da-home-commercial-old{font-size:13px}
+  .da-home-offer-feature-price .da-home-commercial-now small{font-size:11px}
+  .da-home-offer-feature-price .da-home-commercial-now strong{font-size:clamp(32px,4vw,44px)}
+  .da-home-kit-price .da-home-commercial-now{color:#14532d}
+  .da-home-kit-price .da-home-commercial-now strong{font-size:24px}
+  .da-home-mobile-see-all{display:none}
+  [data-home-secondary-slot],[data-home-tail-slot]{display:block;min-height:72px}
+  .da-home-progressive-status{display:flex;align-items:center;justify-content:center;gap:10px;min-height:72px;margin-top:34px;color:var(--muted);font-size:12px;font-weight:800}
+  .da-home-progressive-status span{width:18px;height:18px;border:2px solid rgba(20,83,45,.18);border-top-color:var(--brand);border-radius:999px;animation:daHomeProgressiveSpin .8s linear infinite}
+  @keyframes daHomeProgressiveSpin{to{transform:rotate(360deg)}}
+  @media(prefers-reduced-motion:reduce){.da-home-progressive-status span{animation:none;border-top-color:rgba(20,83,45,.18);background:rgba(20,83,45,.12)}}
+  .da-home-funnel .da-home-offer-card,.da-home-funnel .da-home-basket-card,.da-home-funnel .da-home-kit-card{box-shadow:none!important;border-color:rgba(23,49,38,.08)!important}
+
+  @media(max-width:767px){
+    .search-input{padding-right:56px!important}
+    .product-page-container .product-detail{padding:8px!important}
+    .product-page-container .detail-media{padding:0!important}
+    .product-page-container .detail-imgbox{width:100%!important;height:clamp(210px,28vh,260px)!important;min-height:0!important;max-height:260px!important;aspect-ratio:auto!important;border-radius:18px!important}
+    .product-page-container .detail-imgbox img{width:100%!important;height:100%!important;object-fit:contain!important;padding:4px!important}
+    .product-page-container .detail-info{padding:10px 4px 0!important;gap:8px!important}
+    .product-page-container .detail-title{font-size:clamp(22px,6vw,28px)!important;line-height:1.08!important}
+    .product-page-container [data-control-mode="detail"]{margin-top:2px!important}
+    .product-page-container [data-control-mode="detail"] .add-btn,.product-page-container [data-control-mode="detail"] .qty-control{min-height:48px!important}
+    .da-home-section-head>a{display:inline-flex!important;align-items:center!important}
+    .da-home-mobile-see-all{display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;margin-top:12px;border-radius:15px;background:var(--brand);color:#fff;font-size:14px;font-weight:950;box-shadow:0 10px 22px rgba(20,83,45,.18)}
+    .da-home-offer-bottom{display:grid!important;grid-template-columns:minmax(0,1fr) 44px!important;align-items:end!important}
+    .da-home-offer-price{grid-column:1/-1!important;width:100%!important}
+    .da-home-offer-bottom>.da-home-small-control{grid-column:2!important;justify-self:end!important}
+  }
+  @media(max-width:380px){.da-home-off-word{display:none}}
+  @media(max-width:767px) and (max-height:680px){
+    body:has(.product-page-container){--header-h:78px!important}
+    body:has(.product-page-container) .header{height:calc(78px + var(--safe-top))!important;padding:calc(10px + var(--safe-top)) 12px 10px!important}
+    body:has(.product-page-container) .header-inner{grid-template-rows:48px!important}
+    body:has(.product-page-container) .search-wrap{display:none!important}
+    body:has(.product-page-container) .app{top:calc(78px + var(--safe-top))!important;height:calc(100dvh - 78px - var(--safe-top))!important}
+    .product-page-container{padding-bottom:76px!important}
+    .product-page-container .product-detail{display:grid!important;grid-template-columns:112px minmax(0,1fr)!important;align-items:start!important;gap:12px!important}
+    .product-page-container .detail-media,.product-page-container .detail-info{min-width:0!important}
+    .product-page-container .detail-media{grid-column:1!important}
+    .product-page-container .detail-info{grid-column:2!important;padding:0!important;gap:6px!important}
+    .product-page-container .detail-imgbox{width:112px!important;height:112px!important;border-radius:16px!important}
+    .product-page-container .detail-gallery,.product-page-container .detail-chip-row{display:none!important}
+    .product-page-container .detail-title{font-size:18px!important;line-height:1.12!important}
+    .product-page-container .detail-price-area .coupon-price-card{grid-template-columns:1fr!important;gap:4px!important}
+    .product-page-container .detail-price-area .coupon-price-before,.product-page-container .detail-price-area .coupon-price-pay{padding:7px 9px!important}
+    .product-page-container .detail-price-area .coupon-price-pay strong{font-size:20px!important}
+    .product-page-container [data-control-mode="detail"]{position:static!important;width:100%!important;transform:none!important;padding:0!important;background:transparent!important;box-shadow:none!important}
+  }
+  </style>
 </head>
 <body>
   <header class="header">
@@ -786,7 +861,7 @@
       </div>
       <form class="search-wrap" id="search-form" action="javascript:void(0)">
         <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-        <input id="search-input" class="search-input" type="search" placeholder="Buscar produto. Ex: Omo, café, arroz" autocomplete="off" inputmode="search">
+        <input id="search-input" class="search-input" type="search" aria-label="Buscar produto" placeholder="Buscar produto. Ex: Omo, café, arroz" autocomplete="off" inputmode="search">
         <button id="search-submit" class="search-submit" type="submit" aria-label="Buscar"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"></path></svg></button>
         <button id="search-clear" class="search-clear" type="button" aria-label="Limpar busca"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></button>
       </form>
@@ -825,10 +900,10 @@
     </section>
   </div>
   <div id="drawer-overlay" class="drawer-overlay"></div>
-  <aside id="site-menu-drawer" class="drawer site-menu-drawer" aria-label="Menu principal" aria-hidden="true">
+  <aside id="site-menu-drawer" class="drawer site-menu-drawer" role="dialog" aria-modal="true" aria-labelledby="site-menu-title" aria-hidden="true">
     <div class="drawer-head menu-drawer-head">
       <div>
-        <div class="drawer-title">Menu Dona Antônia</div>
+        <div class="drawer-title" id="site-menu-title">Menu Dona Antônia</div>
         <div class="page-subtitle">Navegação, compra e informações</div>
       </div>
       <button class="drawer-close" id="menu-close" type="button" aria-label="Fechar menu"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></button>
@@ -867,9 +942,9 @@
       </section>
     </div>
   </aside>
-  <aside id="checkout-drawer" class="drawer" aria-label="Minha compra" aria-hidden="true">
+  <aside id="checkout-drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="checkout-drawer-title" aria-hidden="true">
     <div class="drawer-head">
-      <div><div class="drawer-title">Minha compra</div><div class="page-subtitle" id="drawer-subtitle">0 itens</div></div>
+      <div><div class="drawer-title" id="checkout-drawer-title">Minha compra</div><div class="page-subtitle" id="drawer-subtitle">0 itens</div></div>
       <button class="drawer-close" id="drawer-close" type="button" aria-label="Fechar"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></button>
     </div>
     <div class="drawer-body" id="checkout-content"></div>
@@ -890,7 +965,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-14-home-funil-v3-stable',
+      APP_VERSION: '2026-07-16-mobile-sales-v4',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -945,6 +1020,9 @@
       catalogLoadedAt: 0,
       catalogSource: '',
       catalogMode: '',
+      catalogVerifiedAt: 0,
+      catalogVerifiedAll: false,
+      catalogVerifiedItemIds: [],
       isReady: false
     };
 
@@ -1386,6 +1464,9 @@
         state.catalogLoadedAt = Date.now();
         state.catalogSource = 'firebase-live';
         state.catalogMode = 'full';
+        state.catalogVerifiedAt = state.catalogLoadedAt;
+        state.catalogVerifiedAll = true;
+        state.catalogVerifiedItemIds = state.products.map(product => String(product.id));
         writeCache(CONFIG.PRODUCT_CACHE_KEY, { savedAt: Date.now(), appVersion: CONFIG.APP_VERSION, data });
       } catch (err) {
         if (cache && cache.data) {
@@ -1786,6 +1867,7 @@
       const cards = Array.from(zone.querySelectorAll('.da-banner-card'));
       const total = cards.length;
       const visibleLimit = Math.min(4, Math.max(1, Number(state.bannerConfig.visible_limit || 4)));
+      const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (!total) return;
       if (total <= visibleLimit) {
         cards.forEach(card=>{card.style.removeProperty('display');card.dataset.queueVisible='true';});
@@ -1812,6 +1894,7 @@
         if (schedule) scheduleBannerSetup();
       };
       applyBatch(false);
+      if (reduceMotion) return;
       queueState.timer = setInterval(()=>{
         if (!zone.isConnected) { clearInterval(queueState.timer); return; }
         if (document.hidden) return;
@@ -1888,7 +1971,8 @@
           });
         }, {passive:true});
         const start = () => {
-          if (!state.bannerConfig.autoplay || timer) return;
+          const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          if (!state.bannerConfig.autoplay || reduceMotion || timer) return;
           timer = setInterval(() => go(currentPage + 1), state.bannerConfig.intervalo_ms);
           state.bannerTimers.push(timer);
         };
@@ -2018,8 +2102,7 @@
         if (!saved || typeof saved !== 'object') return;
         const savedAt = Number(saved.savedAt || 0);
         const expired = !savedAt || (Date.now() - savedAt) > CONFIG.CART_MAX_AGE_MS;
-        const wrongVersion = saved.appVersion && saved.appVersion !== CONFIG.APP_VERSION;
-        if (expired || wrongVersion) {
+        if (expired) {
           localStorage.removeItem(CONFIG.CART_STORAGE_KEY);
           return;
         }
@@ -2468,31 +2551,46 @@
       return removed;
     }
 
-    async function validateLiveCatalogBeforeOrder() {
-      try {
-        await loadProducts({ forceFresh: true });
+    let liveCatalogValidationPromise = null;
+    let liveCatalogValidationFingerprint = '';
 
-        // A conferência só pode alterar ou impedir a compra quando o Firebase
-        // respondeu ao vivo. Cache ou falha de rede nunca devem bloquear o cliente.
-        if (state.catalogSource !== 'firebase-live') {
-          console.warn('Catálogo ao vivo indisponível. Pedido seguirá com os produtos já carregados no site.');
-          return { ok: true, removed: [], catalogVerified: false };
+    function validateLiveCatalogBeforeOrder() {
+      const selectedProducts = getCartItems()
+        .filter(item => item && item.product && !item.product.isFee && !String(item.id).startsWith('fee_'))
+        .map(item => item.product);
+      const fingerprint = selectedProducts.map(product => String(product.id)).sort().join('|');
+      if (liveCatalogValidationPromise && liveCatalogValidationFingerprint === fingerprint) return liveCatalogValidationPromise;
+
+      liveCatalogValidationFingerprint = fingerprint;
+      liveCatalogValidationPromise = (async () => {
+        try {
+          // Conferência independente e curta: não altera carrinho, preços ou mensagem.
+          // O resultado é apenas diagnóstico e nunca participa do caminho crítico de venda.
+          const liveCatalog = await fetchJson(CONFIG.PRODUCT_URL, 2200, { cache: 'no-store' });
+          const liveCodes = new Set();
+          const entries = Array.isArray(liveCatalog)
+            ? liveCatalog.map((value, index) => [String(index), value])
+            : Object.entries(liveCatalog || {});
+          entries.forEach(([key, raw]) => {
+            [key, raw?.id, raw?.codigo, raw?.sku, raw?.firebaseKey, raw?.gtin, raw?.ean].forEach(value => {
+              codeVariants(value).forEach(code => { if (code) liveCodes.add(code); });
+            });
+          });
+          const verifiedIds = selectedProducts
+            .filter(product => [product.id, product.codigo, product.firebaseKey, product.gtin, product.ean]
+              .some(value => codeVariants(value).some(code => liveCodes.has(code))))
+            .map(product => String(product.id));
+          const catalogVerified = verifiedIds.length === selectedProducts.length;
+          state.catalogVerifiedAt = catalogVerified ? Date.now() : 0;
+          state.catalogVerifiedAll = false;
+          state.catalogVerifiedItemIds = verifiedIds;
+          return { ok: true, catalogVerified, validatedAt: state.catalogVerifiedAt || null };
+        } catch(e) {
+          console.warn('Conferência opcional do catálogo indisponível; venda preservada:', e);
+          return { ok: true, catalogVerified: false, validatedAt: null };
         }
-      } catch(e) {
-        console.warn('Não foi possível conferir o catálogo ao vivo. Pedido seguirá normalmente:', e);
-        return { ok: true, removed: [], catalogVerified: false };
-      }
-
-      const removed = removeMissingCartItems({ silent: true });
-      if (removed.length) {
-        return {
-          ok: false,
-          removed,
-          catalogVerified: true,
-          reason: 'Algum produto saiu do site, ficou sem estoque ou foi inativado. Removemos da compra antes do envio.'
-        };
-      }
-      return { ok: true, removed: [], catalogVerified: true };
+      })();
+      return liveCatalogValidationPromise;
     }
 
     function rebuildVirtualFees() {
@@ -3049,6 +3147,11 @@
       return cesta ? cesta.imagem : 'img/logoantonia5.png';
     }
 
+    function kitsThumb() {
+      const kit = getActiveKits().find(item => item.imagem);
+      return kit ? kit.imagem : 'img/logoantonia5.png';
+    }
+
     function productCard(p, mode) {
       const id = String(p.id);
       const qty = Number(state.cart[id] || 0);
@@ -3238,8 +3341,12 @@
       }
     }
 
-    function pageHeader(title, subtitle, backHref) {
-      return `<div class="page-head">${backHref ? `<a class="back-btn" href="${backHref}"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 12H5m7 7l-7-7 7-7"></path></svg></a>` : ''}<div><h1 class="page-title">${escapeHtml(title)}</h1>${subtitle ? `<div class="page-subtitle">${escapeHtml(subtitle)}</div>` : ''}</div></div>`;
+    function pageHeader(title, subtitle, backHref, options) {
+      const semanticHeading = !options || options.semanticHeading !== false;
+      const heading = semanticHeading
+        ? `<h1 class="page-title">${escapeHtml(title)}</h1>`
+        : `<div class="page-title">${escapeHtml(title)}</div>`;
+      return `<div class="page-head">${backHref ? `<a class="back-btn" href="${backHref}" aria-label="Voltar"><svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7 7l-7-7 7-7"></path></svg></a>` : ''}<div>${heading}${subtitle ? `<div class="page-subtitle">${escapeHtml(subtitle)}</div>` : ''}</div></div>`;
     }
 
     function beautyBannerHtml(products) {
@@ -3281,10 +3388,10 @@
 
     function homeQuickLinksHtml() {
       const cards = [
-        { href: '#/rotina/compra-mes', title: 'Fazer compra do mês', copy: 'Comece pelos itens essenciais', img: routineThumb('compra-mes'), cls: 'primary' },
-        { href: '#/cestas', title: 'Cestas básicas', copy: 'Opções prontas e editáveis', img: cestasThumb() },
         { href: '#/ofertas', title: 'Ofertas de hoje', copy: 'Aproveite os melhores preços', img: offersThumb(), cls: 'offer' },
-        { href: '#/rotina/limpeza', title: 'Limpeza e casa', copy: 'Casa, lavanderia e cozinha', img: routineThumb('limpeza') }
+        { href: '#/cestas', title: 'Cestas básicas', copy: 'Opções prontas e editáveis', img: cestasThumb() },
+        { href: '#/kits', title: 'Kits promocionais', copy: 'Combos com desconto ativo', img: kitsThumb() },
+        { href: '#/rotina/compra-mes', title: 'Compra do mês', copy: 'Comece pelos itens essenciais', img: routineThumb('compra-mes'), cls: 'primary' }
       ];
       return `<section class="home-quick-grid" aria-label="Atalhos principais de compra">${cards.map(card => `<a class="home-quick-card ${card.cls || ''}" href="${card.href}"><div><strong>${escapeHtml(card.title)}</strong><span>${escapeHtml(card.copy)}</span></div><img loading="lazy" decoding="async" src="${escapeHtml(card.img)}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}</section>`;
     }
@@ -3654,7 +3761,7 @@
       if (searchInput && document.activeElement !== searchInput && searchInput.value !== q) searchInput.value = q;
       updateSearchButtons();
       const products = searchProducts(q);
-      app.innerHTML = `<div class="container">${pageHeader(q ? `Busca: ${q}` : 'Busca', q ? `${products.length} resultado(s)` : 'Digite o produto na busca acima.', '#/')}${bannerSlotHtml('busca.topo', { kind: 'section' })}${q ? (products.length ? `<div class="product-list">${products.map(p => productCard(p, 'list')).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`) : ''}</div>`;
+      app.innerHTML = `<div class="container">${pageHeader(q ? `Busca: ${q}` : 'Busca', q ? `${products.length} resultado(s)` : 'Digite o produto na busca acima.', '#/')}${q ? (products.length ? `<div class="product-list">${products.map(p => productCard(p, 'list')).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`) : ''}${bannerSlotHtml('busca.topo', { kind: 'section' })}</div>`;
       setActiveNav('home');
     }
 
@@ -3694,7 +3801,7 @@
         });
       const descHtml = p.descricao ? `<div class="desc">${escapeHtml(p.descricao)}</div>` : '';
       const productBannerTargets = [p.id, p.codigo, p.firebaseKey, p.gtin, p.ean, p.name].filter(Boolean);
-      app.innerHTML = `<div class="container">${pageHeader('Produto', '', productBackHref())}${bannerSlotHtml('produto', { targets: productBannerTargets, label: 'Destaque deste produto' })}
+      app.innerHTML = `<div class="container product-page-container">${pageHeader('Produto', '', productBackHref(), { semanticHeading: false })}${bannerSlotHtml('produto', { targets: productBannerTargets, label: 'Destaque deste produto' })}
         <article class="product-detail">
           <div class="detail-media">
             <div class="detail-imgbox"><img id="product-main-image" src="${escapeHtml(p.img)}" data-fallback-images="${escapeHtml(imageFallbackList(p.images))}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)"></div>
@@ -4247,17 +4354,72 @@
       }
     }
 
+    let drawerPreviousFocus = null;
+
+    function setDrawerPageIsolation(active) {
+      [document.querySelector('.header'), app, document.querySelector('.bottom-bar')].forEach(element => {
+        if (!element) return;
+        if (active) {
+          element.setAttribute('inert', '');
+          element.setAttribute('aria-hidden', 'true');
+        } else {
+          element.removeAttribute('inert');
+          element.removeAttribute('aria-hidden');
+        }
+      });
+    }
+
+    function getOpenDrawer() {
+      return $('checkout-drawer')?.classList.contains('open')
+        ? $('checkout-drawer')
+        : ($('site-menu-drawer')?.classList.contains('open') ? $('site-menu-drawer') : null);
+    }
+
+    function focusDrawerStart(drawer, closeButtonId) {
+      requestAnimationFrame(() => $(closeButtonId)?.focus());
+    }
+
+    function restoreDrawerFocus() {
+      const target = drawerPreviousFocus;
+      drawerPreviousFocus = null;
+      if (target && target.isConnected && typeof target.focus === 'function') target.focus();
+    }
+
+    function trapDrawerFocus(event) {
+      const drawer = getOpenDrawer();
+      if (!drawer || event.key !== 'Tab') return;
+      const focusable = Array.from(drawer.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'))
+        .filter(element => element.getClientRects().length > 0);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
     function openCheckout() {
       closeBasketConfirmation();
-      closeSiteMenu();
+      const menuWasOpen = $('site-menu-drawer')?.classList.contains('open');
+      drawerPreviousFocus = menuWasOpen ? $('header-cart-btn') : document.activeElement;
+      closeSiteMenu({ keepIsolation: true, restoreFocus: false });
       renderCheckout();
       $('drawer-overlay').classList.add('show');
       $('checkout-drawer').classList.add('open');
       $('checkout-drawer').setAttribute('aria-hidden', 'false');
+      setDrawerPageIsolation(true);
       updateCartUI();
+      focusDrawerStart($('checkout-drawer'), 'drawer-close');
+      // Aproveita o tempo de preenchimento do checkout para conferir o catálogo sem bloquear a venda.
+      setTimeout(() => validateLiveCatalogBeforeOrder(), 0);
     }
 
-    function closeCheckout() {
+    function closeCheckout(options) {
+      const settings = options || {};
       const overlay = $('drawer-overlay');
       const drawer = $('checkout-drawer');
       if (overlay) overlay.classList.remove('show');
@@ -4265,10 +4427,13 @@
         drawer.classList.remove('open');
         drawer.setAttribute('aria-hidden', 'true');
       }
+      if (!settings.keepIsolation && !$('site-menu-drawer')?.classList.contains('open')) setDrawerPageIsolation(false);
+      if (settings.restoreFocus !== false) restoreDrawerFocus();
     }
 
     function openSiteMenu() {
-      closeCheckout();
+      drawerPreviousFocus = document.activeElement;
+      closeCheckout({ keepIsolation: true, restoreFocus: false });
       updateCartUI();
       const overlay = $('drawer-overlay');
       const drawer = $('site-menu-drawer');
@@ -4279,9 +4444,12 @@
         drawer.setAttribute('aria-hidden', 'false');
       }
       if (btn) btn.setAttribute('aria-expanded', 'true');
+      setDrawerPageIsolation(true);
+      focusDrawerStart(drawer, 'menu-close');
     }
 
-    function closeSiteMenu() {
+    function closeSiteMenu(options) {
+      const settings = options || {};
       const overlay = $('drawer-overlay');
       const drawer = $('site-menu-drawer');
       const btn = $('header-menu-btn');
@@ -4291,12 +4459,16 @@
         drawer.setAttribute('aria-hidden', 'true');
       }
       if (btn) btn.setAttribute('aria-expanded', 'false');
+      if (!settings.keepIsolation && !$('checkout-drawer')?.classList.contains('open')) setDrawerPageIsolation(false);
+      if (settings.restoreFocus !== false) restoreDrawerFocus();
     }
 
     function closeAllDrawers() {
       closeBasketConfirmation();
-      closeCheckout();
-      closeSiteMenu();
+      closeCheckout({ keepIsolation: true, restoreFocus: false });
+      closeSiteMenu({ keepIsolation: true, restoreFocus: false });
+      setDrawerPageIsolation(false);
+      restoreDrawerFocus();
     }
 
     function limparNumeros(value) { return String(value || '').replace(/\D/g, ''); }
@@ -4521,9 +4693,17 @@
       const cliente = pedido.cliente || {};
       const nowIso = new Date().toISOString();
       const itens = (Array.isArray(pedido.itens) ? pedido.itens : []).map(item => ({
+        produtoId: String(item.produtoId || item.identificadores?.id || ''),
         firebaseKey: String(item.firebaseKey || ''),
         sku: String(item.sku || ''),
         codigo: String(item.sku || ''),
+        identificadores: item.identificadores || {
+          id: String(item.produtoId || ''),
+          firebaseKey: String(item.firebaseKey || ''),
+          sku: String(item.sku || ''),
+          gtin: String(item.gtin || item.ean || ''),
+          ean: String(item.ean || item.gtin || '')
+        },
         nome: String(item.nome || ''),
         quantidade: Number(item.qtd || 0),
         preco_unitario: Number(item.price || 0),
@@ -4550,6 +4730,7 @@
         numero_pedido: String(pedido.numero || pedido.id || ''),
         idempotency_key: String(pedido.idempotencyKey || pedido.id || ''),
         origem: 'site',
+        metadados: pedido.metadados || {},
         status: 'recebido',
         status_separacao: 'pendente',
         criado_em: nowIso,
@@ -4822,19 +5003,7 @@
       const original = btn ? btn.innerHTML : '';
       if (btn) {
         btn.disabled = true;
-        btn.textContent = 'Conferindo produtos...';
-      }
-
-      const liveCheck = await validateLiveCatalogBeforeOrder();
-      if (!liveCheck.ok) {
-        if (liveCheck.removed && liveCheck.removed.length) {
-          renderCheckout();
-          showToast('Produto indisponível removido. Revise a compra.');
-        } else {
-          showToast(liveCheck.reason);
-        }
-        if (btn) { btn.disabled = false; btn.innerHTML = original; }
-        return;
+        btn.textContent = 'Preparando pedido...';
       }
 
       const items = getCartItems().filter(i => i.product.isFee || isAvailable(i.product));
@@ -4915,8 +5084,16 @@
         const line = linePricing.total;
         totalBruto += line;
         pedidoItens.push({
+          produtoId: String(product.id || ''),
           firebaseKey: String(product.firebaseKey || ''),
           sku: String(product.codigo || product.id),
+          identificadores: {
+            id: String(product.id || ''),
+            firebaseKey: String(product.firebaseKey || ''),
+            sku: String(product.codigo || product.id || ''),
+            gtin: String(product.gtin || ''),
+            ean: String(product.ean || product.gtin || '')
+          },
           nome: product.name,
           qtd: qty,
           price: effectivePrice,
@@ -4945,12 +5122,28 @@
       const descontoBling = diferencaBling < 0 ? Math.abs(diferencaBling) : 0;
       const hasBasket = basketMessage.hasBasket;
       const pagamentoBling = normalizarPagamentoParaBling(pag);
+      const orderItemIds = pedidoItens.map(item => String(item.produtoId || '')).filter(Boolean);
+      const verifiedItemIds = new Set((state.catalogVerifiedItemIds || []).map(String));
+      const catalogVerified = Boolean(state.catalogVerifiedAt) && (state.catalogVerifiedAll || orderItemIds.every(id => verifiedItemIds.has(id)));
+      const orderCreatedAtIso = new Date(orderTimestamp).toISOString();
+      const catalogLoadedAtIso = state.catalogLoadedAt ? new Date(state.catalogLoadedAt).toISOString() : null;
+      const catalogValidatedAtIso = catalogVerified && state.catalogVerifiedAt ? new Date(state.catalogVerifiedAt).toISOString() : null;
 
       const makePayload = {
         pedido: {
           id: orderId,
           numero: orderNumber,
           idempotencyKey: orderId,
+          metadados: {
+            appVersion: CONFIG.APP_VERSION,
+            pedidoCriadoEm: orderCreatedAtIso,
+            catalogoCarregadoEm: catalogLoadedAtIso,
+            catalogoValidadoEm: catalogValidatedAtIso,
+            catalogoFonte: String(state.catalogSource || ''),
+            catalogoModo: String(state.catalogMode || ''),
+            catalogoReferencia: `${String(state.catalogSource || 'desconhecido')}:${String(state.catalogLoadedAt || 0)}`,
+            catalogVerified
+          },
           itens: pedidoItens,
           total: totalSite,
           totalProdutos: totalProdutosBling,
@@ -5033,6 +5226,10 @@
       abrirWhatsAppPedido(msg);
       closeCheckout();
       showToast('Pedido pronto no WhatsApp.');
+
+      // A conferência do Firebase acontece somente depois da abertura do WhatsApp.
+      // Ela não altera, bloqueia ou reescreve o pedido enviado ao cliente.
+      setTimeout(() => validateLiveCatalogBeforeOrder(), 0);
 
       // Firebase e Make são processados em segundo plano. Se o navegador suspender a página,
       // a fila local será retomada quando o cliente voltar, ficar online ou abrir o site novamente.
@@ -5148,7 +5345,11 @@
         if (e.target.closest('a')) closeSiteMenu();
       });
       document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') closeAllDrawers();
+        if (e.key === 'Escape') {
+          closeAllDrawers();
+          return;
+        }
+        trapDrawerFocus(e);
       });
       document.addEventListener('click', e => {
         const productLink = e.target.closest('a[href^="#/produto/"]');
@@ -5484,7 +5685,7 @@
     const categories = [...new Set(products.map(product=>product.categoria).filter(Boolean))];
     const contextual = daSiteBannersForCategories(categories).slice(0,16);
     const contextualHtml = q && contextual.length ? daSiteBannerListHtml('busca-categoria-contextual',contextual,'Ofertas relacionadas à sua busca') : '';
-    app.innerHTML = `<div class="container">${pageHeader(q ? `Busca: ${q}` : 'Busca',q ? `${products.length} resultado(s)` : 'Digite o produto na busca acima.','#/')}${contextualHtml}${bannerSlotHtml('busca.topo',{kind:'section'})}${q ? (products.length ? `<div class="product-list">${products.map(product=>productCard(product,'list')).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`) : ''}</div>`;
+    app.innerHTML = `<div class="container">${pageHeader(q ? `Busca: ${q}` : 'Busca',q ? `${products.length} resultado(s)` : 'Digite o produto na busca acima.','#/')}${q ? (products.length ? `<div class="product-list">${products.map(product=>productCard(product,'list')).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`) : ''}${contextualHtml}${bannerSlotHtml('busca.topo',{kind:'section'})}</div>`;
     setActiveNav('home');
   };
 
@@ -5590,12 +5791,12 @@
           <div class="da-home-offer-media">
             <a href="#/produto/${route}" aria-label="Ver ${escapeHtml(product.name)}">${daHomeProductImage(product)}</a>
             ${favoriteButtonHtml(id,false,'product')}
-            ${display.discountPercent > 0 ? `<span class="da-home-offer-discount">-${display.discountPercent}%</span>` : ''}
+            ${display.discountPercent > 0 ? `<span class="da-home-offer-discount">${display.discountPercent}%<span class="da-home-off-word">&nbsp;OFF</span></span>` : ''}
           </div>
           <div class="da-home-offer-body">
             <a class="da-home-card-name" href="#/produto/${route}">${escapeHtml(truncateText(product.name,44))}</a>
             ${product.validade && formatProductExpiry(product.validade) ? `<div class="da-home-card-expiry">Val. ${escapeHtml(formatProductExpiry(product.validade))}</div>` : ''}
-            <div class="da-home-offer-bottom"><div class="da-home-offer-price">${productCardPriceHtml(display)}</div>${daHomeControls(product,'da-home-small-control')}</div>
+            <div class="da-home-offer-bottom"><div class="da-home-offer-price">${daHomeCommercialPriceHtml(display)}</div>${daHomeControls(product,'da-home-small-control')}</div>
           </div>
         </article>`;
       }
@@ -5609,19 +5810,24 @@
         return days >= 0 && days <= 120 ? days : Number.POSITIVE_INFINITY;
       }
 
+      function daHomeCommercialPriceHtml(display){
+        const hasDiscount = Number(display.original || 0) > Number(display.effective || 0) + .001;
+        return `<div class="da-home-commercial-price">${hasDiscount ? `<div class="da-home-commercial-old"><small>De</small><s>${fmt(display.original)}</s></div>` : ''}<div class="da-home-commercial-now">${hasDiscount ? '<small>Por</small>' : ''}<strong>${fmt(display.effective)}</strong></div></div>`;
+      }
+
       function daHomeOfferFeaturedHtml(product){
         const id = String(product.id);
         const display = productDisplayPricing(product);
         const route = productRouteKey(product);
         const expiry = product.validade && formatProductExpiry(product.validade) ? formatProductExpiry(product.validade) : '';
         return `<article class="da-home-offer-feature" data-card-id="${escapeHtml(id)}">
-          <div class="da-home-offer-feature-media"><a href="#/produto/${route}" aria-label="Ver ${escapeHtml(product.name)}">${daHomeProductImage(product)}</a>${favoriteButtonHtml(id,false,'product')}${display.discountPercent > 0 ? `<span class="da-home-offer-feature-discount">-${display.discountPercent}%</span>` : ''}</div>
-          <div class="da-home-offer-feature-copy"><span class="da-home-offer-feature-kicker">Oferta em destaque</span><a class="da-home-offer-feature-name" href="#/produto/${route}">${escapeHtml(product.name)}</a>${expiry ? `<span class="da-home-offer-feature-expiry">Val. ${escapeHtml(expiry)}</span>` : ''}<div class="da-home-offer-feature-price">${productCardPriceHtml(display)}</div>${daHomeControls(product,'da-home-offer-feature-control')}</div>
+          <div class="da-home-offer-feature-media"><a href="#/produto/${route}" aria-label="Ver ${escapeHtml(product.name)}">${daHomeProductImage(product)}</a>${favoriteButtonHtml(id,false,'product')}${display.discountPercent > 0 ? `<span class="da-home-offer-feature-discount">${display.discountPercent}%<span class="da-home-off-word">&nbsp;OFF</span></span>` : ''}</div>
+          <div class="da-home-offer-feature-copy"><span class="da-home-offer-feature-kicker">Oferta em destaque</span><a class="da-home-offer-feature-name" href="#/produto/${route}">${escapeHtml(product.name)}</a>${expiry ? `<span class="da-home-offer-feature-expiry">Val. ${escapeHtml(expiry)}</span>` : ''}<div class="da-home-offer-feature-price">${daHomeCommercialPriceHtml(display)}</div>${daHomeControls(product,'da-home-offer-feature-control')}</div>
         </article>`;
       }
 
       function daHomeOfferShelfHtml(products){
-        const items = (products || []).filter(isAvailable).slice(0,14).sort((a,b)=>{
+        const ranked = (products || []).filter(isAvailable).slice(0,20).sort((a,b)=>{
           const daysA = daHomeOfferPriorityDays(a);
           const daysB = daHomeOfferPriorityDays(b);
           if(daysA !== daysB){
@@ -5633,9 +5839,9 @@
           const displayB = productDisplayPricing(b);
           return Number(displayB.discountPercent || 0) - Number(displayA.discountPercent || 0) || displayA.effective - displayB.effective;
         });
-        if(!items.length) return '';
-        const featured = items[0];
-        const remaining = items.slice(1,11);
+        if(!ranked.length) return '';
+        const featured = ranked[0];
+        const remaining = daHomeDiversifyByCategory(ranked.slice(1),7);
         return `<section class="da-home-section da-home-offers-section da-home-band da-home-band-offers" data-home-section="offers">${daHomeSectionHead('Ofertas de hoje','Oportunidades que merecem ser vistas primeiro. Aproveite enquanto houver estoque.','#/ofertas','Ver todas as ofertas')}${daHomeOfferFeaturedHtml(featured)}${remaining.length ? `<div class="da-home-offer-grid">${remaining.map(daHomeOfferCardHtml).join('')}</div>` : ''}</section>`;
       }
     
@@ -5649,7 +5855,7 @@
       }
     
       function daHomeBasketShelfHtml(baskets){
-        const items = (baskets || []);
+        const items = (baskets || []).slice(0,10);
         if(!items.length) return '';
         return `<section class="da-home-section da-home-baskets-section da-home-band da-home-band-baskets" data-home-section="baskets">${daHomeSectionHead('Cestas básicas','Veja todos os produtos antes de escolher sua cesta.','#/cestas','Ver todas as cestas')}<div class="da-home-basket-grid">${items.map(daHomeBasketCardHtml).join('')}</div></section>`;
       }
@@ -5658,15 +5864,15 @@
         const original = kitOriginalPrice(kit);
         const discount = kitDiscountPercent(kit);
         return `<article class="da-home-kit-card">
-          <div class="da-home-kit-media"><a class="da-home-square-media" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}"><img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)"></a>${favoriteButtonHtml(kit.id,false,'kit')}${discount > 0 ? `<span class="da-home-kit-discount">-${discount}%</span>` : ''}</div>
-          <div class="da-home-kit-body"><a class="da-home-basket-name" href="#/kit/${encodeURIComponent(kit.id)}">${escapeHtml(kit.nome)}</a><div class="da-home-kit-price">${original > Number(kit.preco || 0) ? `<s>${fmt(original)}</s>` : ''}<strong>${kit.preco ? fmt(kit.preco) : 'Ver produtos'}</strong></div><div class="da-home-kit-actions"><a href="#/kit/${encodeURIComponent(kit.id)}">Ver produtos</a><button type="button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar</button></div></div>
+          <div class="da-home-kit-media"><a class="da-home-square-media" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}"><img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)"></a>${favoriteButtonHtml(kit.id,false,'kit')}${discount > 0 ? `<span class="da-home-kit-discount">${discount}%<span class="da-home-off-word">&nbsp;OFF</span></span>` : ''}</div>
+          <div class="da-home-kit-body"><a class="da-home-basket-name" href="#/kit/${encodeURIComponent(kit.id)}">${escapeHtml(kit.nome)}</a><div class="da-home-kit-price">${kit.preco ? daHomeCommercialPriceHtml({original,effective:Number(kit.preco || 0)}) : 'Ver produtos'}</div><div class="da-home-kit-actions"><a href="#/kit/${encodeURIComponent(kit.id)}">Ver produtos</a><button type="button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar</button></div></div>
         </article>`;
       }
     
       function daHomeKitShelfHtml(kits){
-        const items = (kits || []);
+        const items = (kits || []).slice(0,6);
         if(!items.length) return '';
-        return `<section class="da-home-section da-home-kits-section da-home-band da-home-band-kits" data-home-section="kits">${daHomeSectionHead('Kits promocionais','Combos com desconto e produtos selecionados.','#/kits','Ver todos os kits')}<div class="da-home-kit-grid">${items.map(daHomeKitCardHtml).join('')}</div></section>`;
+        return `<section class="da-home-section da-home-kits-section da-home-band da-home-band-kits" data-home-section="kits">${daHomeSectionHead('Kits promocionais','Combos com desconto e produtos selecionados.','#/kits','Ver todos os kits')}<div class="da-home-kit-grid">${items.map(daHomeKitCardHtml).join('')}</div><a class="da-home-mobile-see-all" href="#/kits">Ver todos os kits</a></section>`;
       }
     
       function daHomeRecentCardHtml(product){
@@ -5902,45 +6108,118 @@
       window.daHomeBuyAgainShelfHtml=daHomeBuyAgainShelfHtml;
       window.daHomeRecentShelfHtml=daHomeRecentShelfHtml;
       window.daHomePersonalizedMosaicHtml=daHomePersonalizedMosaicHtml;
-    
-      renderHome=function(){
-        const offers=getTopOffers(40);
+
+      let daHomeSecondaryObserver=null;
+      let daHomeTailObserver=null;
+      let daHomeSecondaryTimer=0;
+      let daHomeTailTimer=0;
+
+      function daProgressiveLoadingHtml(label){
+        return `<div class="da-home-progressive-status" role="status"><span aria-hidden="true"></span>${escapeHtml(label)}</div>`;
+      }
+
+      function daRenderHomeTail(slot){
+        if(!slot || !slot.isConnected || slot.dataset.loaded==='true') return;
+        slot.dataset.loaded='true';
+        slot.removeAttribute('aria-busy');
+        const care=daHomeCareProducts();
+        const bargains=daHomeBargainProducts();
+        const cafe=productsByRoutine('cafe',100);
+        const useful=daHomeUsefulProducts();
+        const treats=daHomeTreatProducts();
+        slot.innerHTML=`
+          ${daHomeCompactShelfHtml('Cuidados pessoais','Produtos de beleza, cabelos e cuidados que podem entrar na compra do mês.',care,'#/categoria/BELEZA','care','Ver cuidados')}
+          ${daHomeCompactShelfHtml('Achadinhos por até R$ 3','Produtos baratos e úteis para completar o carrinho.',bargains,'#/categorias','bargain','Explorar categorias')}
+          ${daHomeCollectionSectionHtml('cafe','Café da manhã','Café, biscoitos e acompanhamentos para começar o dia.',cafe,'#/rotina/cafe','coffee')}
+          ${daHomeCompactShelfHtml('Utilidades para casa','Itens práticos para cozinha, organização e tarefas do dia a dia.',useful,'#/categoria/UTENSÍLIOS%20E%20UTILIDADES','utility','Ver utilidades')}
+          ${daHomeCompactShelfHtml('Doces e lanches','Doces, biscoitos e petiscos para completar a compra.',treats,'#/categorias','treat','Ver categorias')}
+          ${daHomeHereTemHtml()}
+          ${brandStripHtml()}
+          ${categoryButtonsHtml()}`;
+        updateOfferCountdowns();
+        syncVisibleCards();
+        updateFavoritesUI();
+      }
+
+      function daSetupHomeTail(){
+        const slot=app.querySelector('[data-home-tail-slot]');
+        if(!slot) return;
+        if(daHomeTailObserver) daHomeTailObserver.disconnect();
+        if(daHomeTailTimer) window.clearTimeout(daHomeTailTimer);
+        const load=()=>{
+          if(daHomeTailObserver) daHomeTailObserver.disconnect();
+          daRenderHomeTail(slot);
+        };
+        if('IntersectionObserver' in window){
+          daHomeTailObserver=new IntersectionObserver(entries=>{
+            if(entries.some(entry=>entry.isIntersecting)) load();
+          },{root:app,rootMargin:'1200px 0px',threshold:0});
+          daHomeTailObserver.observe(slot);
+        }
+        daHomeTailTimer=window.setTimeout(load,3200);
+      }
+
+      function daRenderHomeSecondary(slot){
+        if(!slot || !slot.isConnected || slot.dataset.loaded==='true') return;
+        slot.dataset.loaded='true';
+        slot.removeAttribute('aria-busy');
         const essentials=daHomeRandomizedDiverseProducts(productsByRoutine('compra-mes',120),4);
         const limpeza=productsByRoutine('limpeza',80);
         const higiene=productsByRoutine('higiene',120);
-        const cafe=productsByRoutine('cafe',100);
-        const kits=getActiveKits();
         const reminders=daHomeReminderProducts();
-        const care=daHomeCareProducts();
-        const bargains=daHomeBargainProducts();
-        const useful=daHomeUsefulProducts();
-        const treats=daHomeTreatProducts();
-        app.innerHTML=`<div class="container home-clean da-home-modular da-home-funnel">
-          ${bannerSlotHtml('home.hero',{carousel:true,kind:'hero',limit:6,hideHead:true,label:'Destaques da Dona Antônia'})}
-          ${homeQuickLinksHtml()}
-          ${daHomeOfferShelfHtml(offers)}
-          <div data-home-personalization-slot="buy-again"></div>
-          ${daHomeBasketShelfHtml(state.cestas)}
-          ${daHomeKitShelfHtml(kits)}
-          ${bannerSlotHtml('home.compra-mes.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques para a compra do mês'})}
-          ${daHomePurchaseJourneyHtml()}
+        slot.innerHTML=`
           ${daHomeStandardShelfHtml('Essenciais da compra do mês','Uma seleção rápida para começar a abastecer a casa.',essentials,'#/rotina/compra-mes','month')}
           ${daHomeCompactShelfHtml('Você já conferiu?','Itens que a gente costuma lembrar somente quando estão acabando.',reminders,'#/rotina/compra-mes','reminder','Continuar comprando')}
           ${daHomeCollectionSectionHtml('limpeza','Limpeza da casa','Encontre rapidamente o tipo de limpeza que precisa.',limpeza,'#/rotina/limpeza','clean')}
-          <div data-home-personalization-slot="chosen"></div>
           ${bannerSlotHtml('home.higiene.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques de cuidados pessoais'})}
           ${daHomeCollectionSectionHtml('higiene','Higiene da família','Cuidados essenciais organizados por necessidade.',higiene,'#/rotina/higiene','care')}
-          ${daHomeCompactShelfHtml('Um cuidado para você','Pequenos cuidados que também podem entrar na compra do mês.',care,'#/categoria/BELEZA','care','Ver beleza')}
-          ${daHomeCompactShelfHtml('Achadinhos por até R$ 3','Produtos baratos, úteis e oportunidades que cabem facilmente no carrinho.',bargains,'#/categorias','bargain','Explorar categorias')}
-          ${daHomeCollectionSectionHtml('cafe','Para acompanhar o café','Café, biscoitos e acompanhamentos para deixar esse momento mais gostoso.',cafe,'#/rotina/cafe','coffee')}
-          ${daHomeCompactShelfHtml('Pode ser útil ter em casa','Pequenas utilidades que resolvem o dia a dia e muitas vezes ficam para depois.',useful,'#/categoria/UTENSÍLIOS%20E%20UTILIDADES','utility','Ver utilidades')}
-          ${daHomeCompactShelfHtml('Uma coisinha gostosa para depois','Doces, biscoitos e petiscos para colocar um pequeno agrado na compra.',treats,'#/categorias','treat','Ver categorias')}
+          <div data-home-tail-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando mais setores…')}</div>`;
+        setupBannerCarousels();
+        updateOfferCountdowns();
+        syncVisibleCards();
+        updateFavoritesUI();
+        daSetupHomeTail();
+      }
+
+      function daSetupHomeSecondary(){
+        const slot=app.querySelector('[data-home-secondary-slot]');
+        if(!slot) return;
+        if(daHomeSecondaryObserver) daHomeSecondaryObserver.disconnect();
+        if(daHomeSecondaryTimer) window.clearTimeout(daHomeSecondaryTimer);
+        const load=()=>{
+          if(daHomeSecondaryObserver) daHomeSecondaryObserver.disconnect();
+          daRenderHomeSecondary(slot);
+        };
+        if('IntersectionObserver' in window){
+          daHomeSecondaryObserver=new IntersectionObserver(entries=>{
+            if(entries.some(entry=>entry.isIntersecting)) load();
+          },{root:app,rootMargin:'1200px 0px',threshold:0});
+          daHomeSecondaryObserver.observe(slot);
+        }else{
+          load();
+        }
+        daHomeSecondaryTimer=window.setTimeout(load,1800);
+      }
+
+      renderHome=function(){
+        const offers=getTopOffers(40);
+        const kits=getActiveKits();
+        app.innerHTML=`<div class="container home-clean da-home-modular da-home-funnel">
+          <h1 class="sr-only">Dona Antônia - Supermercado e Cestas</h1>
+          ${bannerSlotHtml('home.hero',{carousel:true,kind:'hero',limit:6,hideHead:true,label:'Destaques da Dona Antônia'})}
+          ${homeQuickLinksHtml()}
+          <div data-home-personalization-slot="buy-again"></div>
+          ${daHomePurchaseJourneyHtml()}
+          ${daHomeOfferShelfHtml(offers)}
+          ${bannerSlotHtml('home.compra-mes.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques para a compra do mês'})}
+          ${daHomeBasketShelfHtml(state.cestas)}
+          ${daHomeKitShelfHtml(kits)}
+          <div data-home-secondary-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando os setores da compra do mês…')}</div>
+          <div data-home-personalization-slot="chosen"></div>
           <div data-home-personalization-slot="recent"></div>
-          ${daHomeHereTemHtml()}
-          ${brandStripHtml()}
-          ${categoryButtonsHtml()}
         </div>`;
         setupBannerCarousels();
+        daSetupHomeSecondary();
         updateOfferCountdowns();
         updateMeta('Dona Antônia - Supermercado e Cestas','Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.','/');
         setActiveNav('home');
@@ -6055,7 +6334,7 @@
           try{ contextual=daContextBannerHtml(products,[],`Ofertas relacionadas à sua busca`,'busca-produtos-contextuais'); }
           catch(error){ console.warn('Banner contextual da busca ignorado:',error); }
         }
-        app.innerHTML=`<div class="container">${pageHeader(q?`Busca: ${q}`:'Busca',q?`${products.length} resultado(s)`:'Digite o produto na busca acima.','#/')}${contextual}${bannerSlotHtml('busca.topo',{kind:'section'})}${q?(products.length?`<div class="product-list">${products.map(product=>productCard(product,'list')).join('')}</div>`:`<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`):''}</div>`;
+        app.innerHTML=`<div class="container search-results-page">${pageHeader(q?`Busca: ${q}`:'Busca',q?`${products.length} resultado(s)`:'Digite o produto na busca acima.','#/')}${q?(products.length?`<div class="product-list">${products.map(product=>productCard(product,'list')).join('')}</div>`:`<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`):''}${contextual}${bannerSlotHtml('busca.topo',{kind:'section'})}</div>`;
         setActiveNav('home');
       };
     })();
