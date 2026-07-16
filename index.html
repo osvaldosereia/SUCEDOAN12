@@ -5772,15 +5772,16 @@
     const legacy=state.banners.filter(banner=>bannerIsCurrent(banner) && !directIds.has(banner.id) && daSiteBannerProducts(banner).length);
     return [...direct,...legacy];
   }
-  function daSiteBannerListHtml(position,banners,label){
+  function daSiteBannerListHtml(position,banners,label,hideHead=false){
     const capacity = 8;
     const visibleLimit = 8;
     const list = bannersInAccessOrder(position, daSiteUniqueBanners(banners).filter(bannerIsCurrent)).slice(0,capacity);
     if(!list.length) return '';
     const hint = state.bannerConfig.show_hint === false ? '' : (list.length > visibleLimit ? `${visibleLimit} de ${list.length} por vez · alternância automática` : 'Destaques disponíveis');
+    const head=hideHead?'':`<div class="da-banner-zone-head"><div><strong>${escapeHtml(label || 'Destaques selecionados')}</strong><span>${escapeHtml(hint)}</span></div><span class="da-banner-page-counter" data-banner-counter>1 / 1</span></div>`;
     scheduleBannerSetup();
-    return `<section class="da-banner-zone" data-banner-zone data-banner-position="${escapeHtml(position)}" data-banner-queue-total="${list.length}" aria-label="${escapeHtml(label || 'Destaques selecionados')}">
-      <div class="da-banner-zone-head"><div><strong>${escapeHtml(label || 'Destaques selecionados')}</strong><span>${escapeHtml(hint)}</span></div><span class="da-banner-page-counter" data-banner-counter>1 / 1</span></div>
+    return `<section class="da-banner-zone${hideHead?' da-banner-zone-clean':''}" data-banner-zone data-banner-position="${escapeHtml(position)}" data-banner-queue-total="${list.length}" aria-label="${escapeHtml(label || 'Destaques selecionados')}">
+      ${head}
       <div class="da-banner-track" data-banner-track>${list.map((banner,index)=>bannerCardHtml(banner,index,index<2,index>=visibleLimit)).join('')}</div>
       <div class="da-banner-controls"><div class="da-banner-arrows"><button class="da-banner-arrow" type="button" data-banner-prev aria-label="Ver banners anteriores">‹</button><button class="da-banner-arrow" type="button" data-banner-next aria-label="Ver próximos banners">›</button></div><div class="da-banner-dots" data-banner-dots aria-label="Páginas do carrossel"></div></div>
     </section>`;
@@ -6302,7 +6303,7 @@
           ${daHomeStandardShelfHtml('Essenciais da compra do mês','Uma seleção rápida para começar a abastecer a casa.',essentials,'#/rotina/compra-mes','month')}
           ${daHomeCompactShelfHtml('Você já conferiu?','Itens que a gente costuma lembrar somente quando estão acabando.',reminders,'#/rotina/compra-mes','reminder','Continuar comprando')}
           ${daHomeCollectionSectionHtml('limpeza','Limpeza da casa','Encontre rapidamente o tipo de limpeza que precisa.',limpeza,'#/rotina/limpeza','clean')}
-          ${daSiteBannerListHtml('home.higiene.topo',daCategoryBannerPool([...new Set(higiene.map(product=>product.categoria).filter(Boolean))]),'Destaques de cuidados pessoais')}
+          ${daSiteBannerListHtml('home.higiene.topo',daCategoryBannerPool([...new Set(higiene.map(product=>product.categoria).filter(Boolean))]),'Destaques de cuidados pessoais',true)}
           ${daHomeCollectionSectionHtml('higiene','Higiene da família','Cuidados essenciais organizados por necessidade.',higiene,'#/rotina/higiene','care')}
           <div data-home-tail-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando mais setores…')}</div>`;
         setupBannerCarousels();
@@ -6337,12 +6338,12 @@
         const kits=getActiveKits();
         app.innerHTML=`<div class="container home-clean da-home-modular da-home-funnel">
           <h1 class="sr-only">Dona Antônia - Supermercado e Cestas</h1>
-          ${daSiteBannerListHtml('home.hero',daAllProductBannerPool(),'Destaques da Dona Antônia')}
+          ${daSiteBannerListHtml('home.hero',daAllProductBannerPool(),'Destaques da Dona Antônia',true)}
           ${homeQuickLinksHtml()}
           <div data-home-personalization-slot="buy-again"></div>
           ${daHomePurchaseJourneyHtml()}
           ${daHomeOfferShelfHtml(offers)}
-          ${daSiteBannerListHtml('home.compra-mes.topo',daCategoryBannerPool([...new Set(productsByRoutine('compra-mes',240).map(product=>product.categoria).filter(Boolean))]),'Destaques para a compra do mês')}
+          ${daSiteBannerListHtml('home.compra-mes.topo',daCategoryBannerPool([...new Set(productsByRoutine('compra-mes',240).map(product=>product.categoria).filter(Boolean))]),'Destaques para a compra do mês',true)}
           ${daHomeBasketShelfHtml(state.cestas)}
           ${daHomeKitShelfHtml(kits)}
           <div data-home-secondary-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando os setores da compra do mês…')}</div>
