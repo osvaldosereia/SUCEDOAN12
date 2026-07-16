@@ -27,14 +27,16 @@ jobs:
         with:
           node-version: 22
 
-      - name: Criar, encerrar e sincronizar ofertas
+      - name: Criar, encerrar, reativar e sincronizar ofertas
         env:
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
+          OFFERS_HISTORY_PATH: site/ofertas-historico.json
+          BANNERS_PATH: site/banners/banners.json
         run: node scripts/processar-ofertas.mjs
 
-      - name: Publicar catalogos e historico
+      - name: Publicar catalogos, historico e banners
         run: |
           if git diff --quiet; then
             echo "Nenhuma alteracao de catalogo para publicar."
@@ -42,7 +44,11 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/produtos.json site/produtos-home.json site/ofertas-automaticas-estado.json
-          git commit -m "Atualiza ofertas automaticas"
+          git add \
+            site/produtos.json \
+            site/produtos-home.json \
+            site/ofertas-automaticas-estado.json \
+            site/ofertas-historico.json \
+            site/banners/banners.json
+          git commit -m "Atualiza ofertas, historico e banners vinculados"
           git push
-
