@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-15T23:04:50.000Z",
+  "updated_at": "2026-07-16T00:34:48.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -6954,6 +6954,85 @@
         "duracao": "periodo_da_oferta",
         "duracao_efetiva_horas": 364.93,
         "fim_da_oferta": "2026-07-30T23:59:59-04:00",
+        "fim_limitado_pelo_vencimento_produto": false
+      }
+    },
+    {
+      "id": "banner-produto-p573-1784162057000",
+      "ativo": true,
+      "titulo": "Oferta · Apti Mistura para Bolo Floresta Negra 400g",
+      "alt": "Apti Mistura para Bolo Floresta Negra 400g em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338125569",
+        "produtos": [
+          {
+            "firebaseKey": "1776338125569",
+            "id": "1776338125569",
+            "codigo": "P573",
+            "nome": "Apti Mistura para Bolo Floresta Negra 400g",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b63/2026/07/apti-mistura-para-bolo-floresta-negra-400g-apti-400g-confeitaria-bolo-7896327510956-foto-atual-otimizada-20260711050839.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "marca",
+        "alvo": "Apti",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-produto-p573-1784162057000/banner-1784162057000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P573"
+      },
+      "periodo": {
+        "inicio": "2026-07-16T00:34:17.000Z",
+        "fim": "2026-08-01T03:59:59.000Z",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta",
+        "duracao_efetiva_horas": 387.43,
+        "encurtado_pelo_vencimento_produto": false
+      },
+      "criado_em": "2026-07-16T00:34:17.000Z",
+      "atualizado_em": "2026-07-16T00:34:17.000Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-p573-1784162057000",
+      "asset_id": "banner-produto-p573-1784162057000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 4.79,
+        "preco_oferta": 3.11,
+        "percentual_desconto": 35,
+        "inicio": null,
+        "fim": "2026-07-31T23:59:59-04:00"
+      },
+      "automacao": {
+        "automatico": true,
+        "requisicao_id": "",
+        "estrategia": "familia_menos_preenchida_primeiro_oferta_ideal_depois_v13",
+        "ordem_selecao": "espaco_primeiro_produto_depois",
+        "espaco_escolhido": "marca",
+        "alvo_escolhido": "Apti",
+        "relacao_contextual": "marca",
+        "carga_antes": 0,
+        "carga_alvo_antes": 0,
+        "pontuacao_comercial": 204.91,
+        "limite_por_espaco": 12,
+        "dias_sem_repetir": 30,
+        "repeticao_estrita": true,
+        "duracao": "periodo_da_oferta",
+        "duracao_efetiva_horas": 387.43,
+        "fim_da_oferta": "2026-07-31T23:59:59-04:00",
         "fim_limitado_pelo_vencimento_produto": false
       }
     }
