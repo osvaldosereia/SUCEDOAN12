@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-16T02:01:29.000Z",
+  "updated_at": "2026-07-16T02:01:36.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -240,7 +240,7 @@
         "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-11T21:36:03.727Z",
-      "atualizado_em": "2026-07-16T02:01:23.795Z",
+      "atualizado_em": "2026-07-14T23:45:37.459Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -257,10 +257,7 @@
         "limite_4_por_espaco": true
       },
       "oferta": {},
-      "automacao": {
-        "desativado_por": "periodo_encerrado",
-        "desativado_em": "2026-07-16T02:01:29.000Z"
-      },
+      "automacao": {},
       "desativado_em": "2026-07-14T23:45:37.459Z",
       "motivo_desativacao": "oferta_encerrada_ou_produto_vencido"
     },
@@ -2637,7 +2634,7 @@
     },
     {
       "id": "banner-produto-p-bu9h-1783890061736",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Doce de Figo Engenho Velho Colonial 400g",
       "alt": "Doce de Figo Engenho Velho Colonial 400g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -2673,7 +2670,7 @@
         "encurtado_pelo_vencimento_produto": false
       },
       "criado_em": "2026-07-12T21:01:01.736Z",
-      "atualizado_em": "2026-07-12T21:01:01.736Z",
+      "atualizado_em": "2026-07-16T02:01:18.522Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
@@ -3117,7 +3114,7 @@
     },
     {
       "id": "banner-auto-p0061-20260713005117",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Rancheiro Rosquinha Coco 500g",
       "alt": "Rancheiro Rosquinha Coco 500g em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -3210,7 +3207,10 @@
         "candidatos_avaliados": 17,
         "max_banners_por_espaco": 12,
         "capacidade_fila": 12,
-        "visiveis_por_vez": 4
+        "visiveis_por_vez": 4,
+        "desativado_por": "limite_maximo_por_espaco",
+        "desativado_em": "2026-07-16T02:01:36.000Z",
+        "limite_aplicado": 12
       },
       "grupo_id": "banner-auto-p0061-20260713005117",
       "asset_id": "banner-auto-p0061-20260713005117",
@@ -5256,7 +5256,7 @@
     },
     {
       "id": "banner-produto-pccs225-1783913722307",
-      "ativo": false,
+      "ativo": true,
       "titulo": "Oferta · Suco Concentrado Dafruta Uva 500ml",
       "alt": "Suco Concentrado Dafruta Uva 500ml em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -5289,7 +5289,7 @@
         "fim": "2026-08-01T05:59:00.000Z"
       },
       "criado_em": "2026-07-13T03:35:22.307Z",
-      "atualizado_em": "2026-07-14T12:20:00.438Z",
+      "atualizado_em": "2026-07-16T02:01:30.936Z",
       "geracao": {
         "largura": 1024,
         "altura": 1536,
