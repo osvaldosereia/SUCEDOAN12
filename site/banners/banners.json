@@ -1,6 +1,6 @@
 {
   "schema_version": 13,
-  "updated_at": "2026-07-16T02:03:40.000Z",
+  "updated_at": "2026-07-16T02:04:09.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -202,68 +202,6 @@
     }
   },
   "banners": [
-    {
-      "id": "banner-produto-88091616-1783805763726",
-      "ativo": false,
-      "titulo": "Oferta · Giovanna Baby Desodorante Roll-On Classic 50ml",
-      "alt": "Giovanna Baby Desodorante Roll-On Classic 50ml em oferta na Dona Antônia",
-      "tipo_conteudo": "produto",
-      "texto_arte": "",
-      "origem": {
-        "tipo": "produto",
-        "valor": "1776338123007",
-        "produtos": [
-          {
-            "firebaseKey": "1776338123007",
-            "id": "1776338123007",
-            "codigo": "88091616",
-            "nome": "Giovanna Baby Desodorante Roll-On Classic 50ml",
-            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b33/2026/07/giovanna-baby-desodorante-roll-on-classic-50ml-giovanna-baby-50ml-desodorante-roll-on-7896044928515-foto-atual-otimizada-20260711042644.webp"
-          }
-        ]
-      },
-      "exibicao": {
-        "local": "home.higiene.topo",
-        "alvo": "",
-        "ordem": 1
-      },
-      "imagem": "site/banners/ativos/banner-produto-88091616-1783805763726/banner-1783805763726.webp",
-      "link": {
-        "tipo": "produto",
-        "valor": "88091616"
-      },
-      "periodo": {
-        "inicio": "2026-07-11T03:00:00.0000000+00:00",
-        "fim": "2026-07-14T03:59:59.0000000+00:00",
-        "fuso_horario": "America/Cuiaba",
-        "regra_duracao": "periodo_da_oferta_limitado_pelo_vencimento_produto",
-        "encurtado_pelo_vencimento_produto": false
-      },
-      "criado_em": "2026-07-11T21:36:03.727Z",
-      "atualizado_em": "2026-07-16T02:03:24.738Z",
-      "geracao": {
-        "largura": 1024,
-        "altura": 1536,
-        "proporcao": "2:3",
-        "formato": "webp",
-        "compression": 38,
-        "asset_unico": true
-      },
-      "grupo_id": "banner-produto-88091616-1783805763726",
-      "asset_id": "banner-produto-88091616-1783805763726",
-      "exibicoes": [],
-      "controle": {
-        "preservado_no_json": true,
-        "limite_4_por_espaco": true,
-        "retirada_automatica": true,
-        "arquivo_preservado": true,
-        "registro_preservado": true
-      },
-      "oferta": {},
-      "automacao": {},
-      "desativado_em": "2026-07-16T02:03:24.738Z",
-      "motivo_desativacao": "periodo_encerrado"
-    },
     {
       "id": "banner-produto-228944b-1783805821490",
       "ativo": false,
@@ -7058,6 +6996,83 @@
           "local": "marca",
           "alvo": "Café Brasileiro",
           "ordem": 3
+        }
+      ],
+      "automacao": {}
+    },
+    {
+      "id": "banner-produto-88091616-1783805763726",
+      "ativo": true,
+      "titulo": "Oferta · Giovanna Baby Desodorante Roll-On Classic 50ml",
+      "alt": "Giovanna Baby Desodorante Roll-On Classic 50ml em oferta na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338123007",
+        "produtos": [
+          {
+            "firebaseKey": "1776338123007",
+            "id": "1776338123007",
+            "codigo": "88091616",
+            "nome": "Giovanna Baby Desodorante Roll-On Classic 50ml",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b33/2026/07/giovanna-baby-desodorante-roll-on-classic-50ml-giovanna-baby-50ml-desodorante-roll-on-7896044928515-foto-atual-otimizada-20260711042644.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "marca",
+        "alvo": "Giovanna Baby",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-produto-88091616-1783805763726/banner-1783805763726.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "88091616"
+      },
+      "periodo": {
+        "inicio": "2026-07-11T03:00:00.000Z",
+        "fim": "2026-07-29T03:59:00.000Z"
+      },
+      "criado_em": "2026-07-11T21:36:03.727Z",
+      "atualizado_em": "2026-07-16T02:04:04.801Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 38,
+        "asset_unico": true,
+        "reutilizado_em_multiplos_locais": false
+      },
+      "banner_inicio": "2026-07-11T03:00:00.000Z",
+      "banner_fim": "2026-07-29T03:59:00.000Z",
+      "controle": {
+        "retirada_automatica": true,
+        "validade_independente_da_oferta": false,
+        "regra_duracao": "periodo_da_oferta",
+        "exibir_validade_oferta_na_arte": false,
+        "duracao_dias": 19
+      },
+      "oferta": {
+        "preco_antigo": 9.69,
+        "preco_novo": 5.99,
+        "desconto_percentual": 38,
+        "validade_oferta": "2026-07-13T23:59:59-04:00",
+        "usar_validade_apenas_para_elegibilidade": true,
+        "exibir_validade_na_arte": false
+      },
+      "grupo_id": "banner-produto-88091616-1783805763726",
+      "grupo_exibicao_id": "banner-produto-88091616-1783805763726",
+      "asset_id": "banner-produto-88091616-1783805763726",
+      "imagem_compartilhada": true,
+      "exibicao_indice": 1,
+      "exibicao_total": 1,
+      "exibicoes": [
+        {
+          "local": "marca",
+          "alvo": "Giovanna Baby",
+          "ordem": 1
         }
       ]
     }
