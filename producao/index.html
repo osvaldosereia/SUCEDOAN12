@@ -714,7 +714,7 @@
   ];
 
   const state = {
-    produtos: [], cestas: [], kits: [], anotacoes: [], meta: makeEmptyMeta(), settings: loadSettings(),
+    produtos: [], nfeDraftProducts: [], cestas: [], kits: [], anotacoes: [], meta: makeEmptyMeta(), settings: loadSettings(),
     activeTab: "produtos", productPage: 1, selectedBasketId: null, selectedKitId: null, editingProductKey: null,
     basketProductSearch: "", basketReplace: null, kitProductSearch: "", kitReplace: null, membershipProductCode: "",
     dirtyProducts: false, dirtyCestas: false, dirtyKits: false, dirtyMeta: false, dirtyNotes: false,
@@ -821,6 +821,9 @@
 
     delete copy.estoque_real_cesta;
     delete copy.estoque_protegido_cesta;
+    delete copy.__nfe_draft;
+    delete copy.__nfe_note_key;
+    delete copy.__nfe_group_key;
     return copy;
   }
   function validateProductForSite(product){
@@ -1116,11 +1119,14 @@
   }
   function replaceProductState(key, nextProduct){
     const idx=state.produtos.findIndex(p=>getKey(p)===String(key));
-    if(idx<0) return;
-    state.produtos[idx] = {...state.produtos[idx], ...deepClone(nextProduct)};
+    if(idx>=0){state.produtos[idx] = {...state.produtos[idx], ...deepClone(nextProduct)};return}
+    const draftIdx=(state.nfeDraftProducts||[]).findIndex(p=>getKey(p)===String(key));
+    if(draftIdx>=0)state.nfeDraftProducts[draftIdx]={...state.nfeDraftProducts[draftIdx],...deepClone(nextProduct)};
   }
   async function syncProductsToFirebase(keys=null){
     const targetDirty=(keys?.length?keys:[...state.dirtyProductKeys]).map(String);
+    const draftTargets=targetDirty.filter(key=>productByKey(key)?.__nfe_draft);
+    if(draftTargets.length)throw new Error("Produto vindo de NF-e ainda não concluída. Use o botão ‘Cadastrar/atualizar produto + aplicar entrada’ dentro do card da nota.");
     const targetDeleted=keys?.length?[...state.deletedProductKeys].filter(key=>targetDirty.includes(String(key))):[...state.deletedProductKeys];
     const targetSet=new Set(targetDirty);
     const invalidTargets=catalogSiteAudit().errors.filter(row=>targetSet.has(String(row.key)));
@@ -1506,9 +1512,39 @@
   }
 
   function createProduct(){const key=`produto_${Date.now()}`; const p={firebaseKey:key,id:key,codigo:`NOVO${String(Date.now()).slice(-6)}`,nome:"Novo produto",gtin:"",preco:0,preco_custo:0,estoque:0,situacao:"A",ncm:"",validade:"",categoria:"",subcategoria:"",subsubcategoria:"",marca:"",embalagem:"",fornecedor:"",tags:[],url_imagem:"",descricao:"",preco_oferta:"",data_inicio_oferta:"",validade_oferta:"",gondola:"",prateleira:"",last_update:Date.now(),updated_at:nowIso(),stock_updated_at:nowIso()}; state.produtos.unshift(p); markProductDirty(key, ['__all','estoque']); mark('products'); openProduct(getKey(p))}
-  function duplicateProduct(key){const p=productByKey(key); if(!p) return; const nk=`produto_${Date.now()}`; const cp={...deepClone(p),firebaseKey:nk,id:nk,codigo:`${p.codigo||'COPIA'}_COPIA`,nome:`${getName(p)} - Cópia`,last_update:Date.now(),updated_at:nowIso()}; state.produtos.unshift(cp); markProductDirty(nk, ['__all']); mark('products'); openProduct(nk)}
-  function deleteProduct(key){const p=productByKey(key); if(!p) return; if(!confirm(`Excluir o produto ${getName(p)}?`)) return; state.produtos=state.produtos.filter(x=>getKey(x)!==String(key)); state.cestas.forEach(c=>c.produtos=(c.produtos||[]).filter(i=>parseBasketItem(i).codigo!==getCode(p))); state.deletedProductKeys.add(String(key)); state.dirtyProductKeys.delete(String(key)); delete state.dirtyProductFields[String(key)]; mark('products'); mark('cestas'); renderAll()}
-  function productByKey(key){return state.produtos.find(p=>getKey(p)===String(key))||null}
+  function duplicateProduct(key){const p=productByKey(key); if(!p) return; if(p.__nfe_draft){alert('Conclua primeiro o cadastro e a entrada deste produto pela NF-e.');return} const nk=`produto_${Date.now()}`; const cp={...deepClone(p),firebaseKey:nk,id:nk,codigo:`${p.codigo||'COPIA'}_COPIA`,nome:`${getName(p)} - Cópia`,last_update:Date.now(),updated_at:nowIso()}; state.produtos.unshift(cp); markProductDirty(nk, ['__all']); mark('products'); openProduct(nk)}
+  function deleteProduct(key){const p=productByKey(key); if(!p) return; if(p.__nfe_draft){alert('Este é um rascunho da NF-e. Use “Limpar nota” para descartá-lo sem afetar o catálogo.');return} if(!confirm(`Excluir o produto ${getName(p)}?`)) return; state.produtos=state.produtos.filter(x=>getKey(x)!==String(key)); state.cestas.forEach(c=>c.produtos=(c.produtos||[]).filter(i=>parseBasketItem(i).codigo!==getCode(p))); state.deletedProductKeys.add(String(key)); state.dirtyProductKeys.delete(String(key)); delete state.dirtyProductFields[String(key)]; mark('products'); mark('cestas'); renderAll()}
+  function productByKey(key){return state.produtos.find(p=>getKey(p)===String(key))||(state.nfeDraftProducts||[]).find(p=>getKey(p)===String(key))||null}
+  function createNfeDraftProduct(data={}){
+    state.nfeDraftProducts=state.nfeDraftProducts||[];
+    let key=String(data.firebaseKey||data.id||"").trim();
+    if(!key||productByKey(key))key=`produto_nfe_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+    const draft={
+      firebaseKey:key,id:key,codigo:String(data.codigo||data.gtin||key),nome:String(data.nome||"Produto da NF-e"),
+      gtin:String(data.gtin||"").replace(/\D/g,""),ncm:String(data.ncm||"").replace(/\D/g,""),embalagem:String(data.embalagem||"UN"),
+      preco_custo:toNum(data.preco_custo),preco:toNum(data.preco),preco_oferta:"",estoque:0,situacao:"I",
+      validade:String(data.validade||""),data_inicio_oferta:"",validade_oferta:"",categoria:String(data.categoria||"A CLASSIFICAR"),
+      subcategoria:String(data.subcategoria||""),subsubcategoria:String(data.subsubcategoria||""),marca:String(data.marca||""),
+      fornecedor:String(data.fornecedor||""),descricao:String(data.descricao||""),tags:Array.isArray(data.tags)?data.tags:[],
+      gondola:String(data.gondola||""),prateleira:String(data.prateleira||""),url_imagem:String(data.url_imagem||""),
+      imagem:String(data.url_imagem||""),imagens:Array.isArray(data.imagens)?data.imagens:[],video_youtube:String(data.video_youtube||""),
+      __nfe_draft:true,__nfe_note_key:String(data.__nfe_note_key||""),__nfe_group_key:String(data.__nfe_group_key||""),
+      last_update:Date.now(),updated_at:nowIso(),stock_updated_at:nowIso()
+    };
+    state.nfeDraftProducts.unshift(draft);
+    return draft;
+  }
+  function removeNfeDraftProduct(key){
+    key=String(key||"");
+    state.nfeDraftProducts=(state.nfeDraftProducts||[]).filter(p=>getKey(p)!==key);
+    clearProductDirtyState(key);
+    if(state.editingProductKey===key)state.editingProductKey=null;
+  }
+  function nfeCompleteProductPatch(product){
+    const patch=sanitizeProductForFirebase(product);
+    ["estoque","stock_updated_at","entradas_nfe","lotes","__nfe_draft","__nfe_note_key","__nfe_group_key"].forEach(field=>delete patch[field]);
+    return patch;
+  }
   function openProduct(key){const p=productByKey(key); if(!p) return; state.editingProductKey=key; $("#productModal").classList.add('open'); renderProductEditor()}
   function closeProduct(){state.editingProductKey=null; $("#productModal").classList.remove('open'); renderAll()}
   function updateProduct(field, value){const p=productByKey(state.editingProductKey); if(!p) return; if(['preco','preco_custo','estoque','preco_oferta'].includes(field)) p[field]=toNum(value); else if(field==='tags') p.tags=parseTags(value); else p[field]=value; const pricingRuleResult=['preco','preco_oferta','validade'].includes(field)?applyExpiryRules(p):{fields:[]}; p.last_update=Date.now(); p.updated_at=nowIso(); if(field==='estoque') p.stock_updated_at=nowIso(); markProductDirty(getKey(p), [field,...pricingRuleResult.fields]); mark('products'); updateExpiryAlert()}
@@ -1875,6 +1911,7 @@
   async function saveProductFirebase(key){
     const p=productByKey(key);
     if(!p)return;
+    if(p.__nfe_draft){setStatus("Conclua o produto pelo card da NF-e para registrar também estoque, lote e XML.","err");return}
     try{
       if(!state.dirtyProductKeys.has(getKey(p)) && !state.deletedProductKeys.has(getKey(p))){
         setStatus(`${getName(p)} já está sincronizado`, "ok");
@@ -2573,10 +2610,10 @@
   });
 
   /* ===== Ficha profissional de produtos ===== */
-  function workbenchField(p,field,label,value,{type="text",span=3,textarea=false}={}){
+  function workbenchField(p,field,label,value,{type="text",span=3,textarea=false,disabled=false}={}){
     const key=esc(getKey(p)),cls=`workbench-field span-${span}`;
-    if(textarea)return `<div class="${cls}"><label>${esc(label)}</label><textarea class="textarea" data-card-field="${esc(field)}" data-key="${key}">${esc(value??"")}</textarea></div>`;
-    return `<div class="${cls}"><label>${esc(label)}</label><input class="input" type="${type}" data-card-field="${esc(field)}" data-key="${key}" value="${esc(value??"")}"></div>`;
+    if(textarea)return `<div class="${cls}"><label>${esc(label)}</label><textarea class="textarea" data-card-field="${esc(field)}" data-key="${key}" ${disabled?"disabled":""}>${esc(value??"")}</textarea></div>`;
+    return `<div class="${cls}"><label>${esc(label)}</label><input class="input" type="${type}" data-card-field="${esc(field)}" data-key="${key}" value="${esc(value??"")}" ${disabled?"disabled":""}></div>`;
   }
   function uniqClean(values=[]){return uniq((values||[]).map(v=>String(v??"").trim()).filter(Boolean)).sort((a,b)=>a.localeCompare(b,"pt-BR",{numeric:true}))}
   function categoryValues(current=""){
@@ -2619,9 +2656,12 @@
     const s=String(value||"").trim(),br=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/),iso=s.match(/^(\d{4}-\d{2}-\d{2})/);
     return iso?iso[1]:br?`${br[3]}-${br[2]}-${br[1]}`:"";
   }
-  function renderProductWorkbench(p){
+  function renderProductWorkbench(p,options={}){
+    const renderOptions=options&&typeof options==="object"&&!Array.isArray(options)?options:{};
+    const nfeContext=renderOptions.context==="nfe";
+    const nfeDisabled=nfeContext&&!!renderOptions.disabled;
     const key=getKey(p),code=getCode(p),images=uniq([p.url_imagem||p.imagem||"",...(Array.isArray(p.imagens)?p.imagens:[])]).filter(Boolean);
-    const baskets=basketsByProduct(p),kits=kitsByProduct(p),dirty=state.dirtyProductKeys.has(key);
+    const baskets=basketsByProduct(p),kits=kitsByProduct(p),dirty=state.dirtyProductKeys.has(key)||!!p.__nfe_draft;
     const gallery=images.slice(0,9).map((src,index)=>`<div class="workbench-thumb ${src===(p.url_imagem||p.imagem)?"primary":""}" title="Clique para tornar principal"><img src="${esc(src)}" data-action="workbench-make-primary" data-key="${esc(key)}" data-src="${esc(src)}" onerror="this.src='${PLACEHOLDER}'"><button type="button" data-action="workbench-remove-gallery" data-key="${esc(key)}" data-src="${esc(src)}" title="Remover imagem">×</button></div>`).join("");
     const memberships=[...baskets.map(c=>`<span class="chip gold">Cesta: ${esc(c.nome)}</span>`),...kits.map(k=>`<span class="chip blue">Kit: ${esc(k.nome)}</span>`)].join("");
     const ncmSearch=`https://www.google.com/search?q=${encodeURIComponent(`NCM ${[getName(p),p.marca,p.gtin||p.ean].filter(Boolean).join(" ")}`)}`,youtube=safeYoutubeUrl(p.video_youtube||p.video_url||"");
@@ -2649,7 +2689,7 @@
           <div class="workbench-actions">
             <button class="btn small gold" type="button" data-action="ai-product-cadastro" data-key="${esc(key)}">✨ IA cadastro</button>
             <button class="btn small blue" type="button" data-action="open-product-chat" data-key="${esc(key)}">💬 Chat produto</button>
-            <button class="btn small blue" type="button" data-action="save-card-firebase" data-key="${esc(key)}">☁ Salvar produto</button>
+            ${nfeContext?`<button class="btn small blue" type="button" data-nfe-action="save-full" ${nfeDisabled?"disabled":""}>☁ Cadastrar/atualizar + entrada</button>`:`<button class="btn small blue" type="button" data-action="save-card-firebase" data-key="${esc(key)}">☁ Salvar produto</button>`}
             <button class="btn small gold" type="button" data-action="edit-membership" data-code="${esc(code)}">🧺 Cestas</button>
             <button class="btn small green" type="button" data-action="edit-kit-membership" data-code="${esc(code)}">🎁 Kits</button>
             <button class="btn small" type="button" data-action="duplicate-product" data-key="${esc(key)}">Duplicar</button>
@@ -2681,7 +2721,7 @@
               ${workbenchField(p,"preco_custo","Custo",p.preco_custo??0,{span:3,type:"number"})}
               ${workbenchField(p,"preco","Valor antigo",p.preco??0,{span:3,type:"number"})}
               ${workbenchField(p,"preco_oferta","Preço oferta",p.preco_oferta??"",{span:3,type:"number"})}
-              ${workbenchField(p,"estoque","Estoque real",p.estoque??0,{span:3,type:"number"})}
+              ${workbenchField(p,"estoque",nfeContext?"Estoque atual (somado pela NF-e)":"Estoque real",p.estoque??0,{span:3,type:"number",disabled:nfeContext})}
               ${workbenchField(p,"data_inicio_oferta","Início da oferta",workbenchDateValue(p.data_inicio_oferta),{span:3,type:"date"})}
               ${workbenchField(p,"validade_oferta","Fim da oferta",workbenchDateValue(p.validade_oferta),{span:3,type:"date"})}
               ${workbenchField(p,"validade","Validade do produto",workbenchDateValue(p.validade),{span:4,type:"date"})}
@@ -2699,7 +2739,7 @@
               ${workbenchField(p,"ncm","NCM",p.ncm||"",{span:2})}
               ${workbenchSelectField(p,"gondola","Gôndola",locationValues("gondola",p.gondola),{span:2})}
               ${workbenchSelectField(p,"prateleira","Prateleira",locationValues("prateleira",p.prateleira),{span:2})}
-              <div class="workbench-field span-12"><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="btn small blue" href="${esc(ncmSearch)}" target="_blank" rel="noopener">Buscar NCM ↗</a>${youtube?`<a class="btn small red" href="${esc(youtube)}" target="_blank" rel="noopener">Abrir vídeo ↗</a>`:""}<button class="btn small green" type="button" data-action="save-everything">✓ Salvar tudo</button></div></div>
+              <div class="workbench-field span-12"><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="btn small blue" href="${esc(ncmSearch)}" target="_blank" rel="noopener">Buscar NCM ↗</a>${youtube?`<a class="btn small red" href="${esc(youtube)}" target="_blank" rel="noopener">Abrir vídeo ↗</a>`:""}${nfeContext?`<button class="btn small green" type="button" data-nfe-action="save-full" ${nfeDisabled?"disabled":""}>✓ Salvar cadastro completo e aplicar NF-e</button>`:`<button class="btn small green" type="button" data-action="save-everything">✓ Salvar tudo</button>`}</div></div>
             </div>
           </section>
         </div>
@@ -2713,6 +2753,7 @@
     grid.className="products-grid professional-list";
     grid.innerHTML=list.length?list.map(renderProductWorkbench).join(""):`<div class="empty">Nenhum produto encontrado.</div>`;
     $("#pagination").innerHTML=`<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`;
+    window.dispatchEvent(new CustomEvent("da:products-rendered"));
   };
   updateProductFromCard=function(key,field,value){
     const p=productByKey(key);if(!p)return;
@@ -2743,7 +2784,7 @@
     state.produtos.unshift(p);markProductDirty(key,["__all","estoque"]);mark("products");focusProductWorkbench(key);
   };
   duplicateProduct=function(key){
-    const p=productByKey(key);if(!p)return;const nk=`produto_${Date.now()}`,cp={...deepClone(p),firebaseKey:nk,id:nk,codigo:`${p.codigo||"COPIA"}_COPIA`,nome:`${getName(p)} - Cópia`,last_update:Date.now(),updated_at:nowIso()};
+    const p=productByKey(key);if(!p)return;if(p.__nfe_draft){alert("Conclua primeiro o cadastro e a entrada deste produto pela NF-e.");return}const nk=`produto_${Date.now()}`,cp={...deepClone(p),firebaseKey:nk,id:nk,codigo:`${p.codigo||"COPIA"}_COPIA`,nome:`${getName(p)} - Cópia`,last_update:Date.now(),updated_at:nowIso()};
     state.produtos.unshift(cp);markProductDirty(nk,["__all"]);mark("products");focusProductWorkbench(nk);
   };
 
@@ -3238,6 +3279,7 @@
     }else if(renderMode!=="none")renderProducts();
     if(state.editingProductKey===key)renderProductEditor(false);
     refreshJson();
+    window.dispatchEvent(new CustomEvent("da:nfe-product-changed",{detail:{key}}));
   }
   function imageFromAiResult(result){
     const r=unwrapAiResult(result);
@@ -3600,6 +3642,7 @@
   async function persistGeneratedProductImageInFirebase(p){
     const key=getKey(p);
     if(!key)throw new Error("Produto sem chave para salvar a imagem no Firebase.");
+    if(p.__nfe_draft)throw new Error("A imagem foi preparada, mas este produto ainda é um rascunho da NF-e. Finalize pelo botão ‘Cadastrar/atualizar + entrada’ para salvar tudo junto.");
     const main=String(p.url_imagem||p.imagem_url||p.imagem||"").trim();
     const payload={
       url_imagem:main,
@@ -7716,6 +7759,10 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   managedFields.add("updated_at");
   managedFields.add("last_update");
 
+  delete base.__nfe_draft;
+  delete base.__nfe_note_key;
+  delete base.__nfe_group_key;
+
   await putJson(firebaseProductUrl(key), base);
 
   const localAfterSave = deepClone(base);
@@ -7727,11 +7774,22 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
     });
   }
 
-  if (local) replaceProductState(key, localAfterSave);
+  delete base.__nfe_draft;
+  delete base.__nfe_note_key;
+  delete base.__nfe_group_key;
+  delete localAfterSave.__nfe_draft;
+  delete localAfterSave.__nfe_note_key;
+  delete localAfterSave.__nfe_group_key;
+  if (local?.__nfe_draft) {
+    state.nfeDraftProducts=(state.nfeDraftProducts||[]).filter(product=>getKey(product)!==key);
+    state.produtos.unshift(deepClone(base));
+  } else if (local) replaceProductState(key, localAfterSave);
   else state.produtos.unshift(deepClone(base));
   state.productSyncMeta[key] = productSyncSnapshot(base);
 
-  if (state.dirtyProductKeys.has(key)) {
+  if (operation.completeProduct) {
+    clearProductDirtyState(key);
+  } else if (state.dirtyProductKeys.has(key)) {
     if (!dirtyMap.__all) {
       managedFields.forEach(field => delete dirtyMap[field]);
       if (Object.keys(dirtyMap).length) state.dirtyProductFields[key] = dirtyMap;
@@ -7746,11 +7804,11 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   return { key, duplicate: false, product: base, preservedPendingFields: [...pendingFields].filter(field => !managedFields.has(field)) };
 }
 
-  window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,syncNfeProductToFirebase,inspectNfeImport,beginNfeImport,finishNfeImportItem,abortNfeImport,saveLocal,renderProducts,renderSummary};
+  window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,syncNfeProductToFirebase,inspectNfeImport,beginNfeImport,finishNfeImportItem,abortNfeImport,saveLocal,renderProducts,renderSummary,renderProductWorkbench,createNfeDraftProduct,removeNfeDraftProduct,nfeCompleteProductPatch};
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
 </script>
-<script src="nfe-import.js?v=20260716-6"></script>
+<script src="nfe-import.js?v=20260716-7"></script>
 <script>
   // Ponte segura: o admin chama somente o webhook do Make; nenhum token do Bling/GitHub fica no navegador.
   (()=>{
