@@ -1,0 +1,92 @@
+name: Aplicar botão recarregar produtos
+
+on:
+  push:
+    paths:
+      - .github/workflows/aplicar-botao-recarregar-produtos.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: aplicar-botao-recarregar-produtos
+  cancel-in-progress: false
+
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Aplicar, validar e publicar
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="${GITHUB_REF_NAME:-main}"
+          before="8057d575cc9797c9f65219233b65efb9c5703ce0"
+          after="bb8b8134a0f2390f3d3dc7c08d44e08ee989790f"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for tentativa in 1 2 3 4 5; do
+            git fetch origin "$branch"
+            git reset --hard "origin/$branch"
+
+            current="$(git hash-object producao/index.html)"
+            if [[ "$current" != "$before" && "$current" != "$after" ]]; then
+              echo "producao/index.html mudou depois da análise. SHA atual: $current" >&2
+              exit 1
+            fi
+
+            python3 scripts/maintenance/add-reload-products-button.py
+
+            result="$(git hash-object producao/index.html)"
+            if [[ "$result" != "$after" ]]; then
+              echo "Resultado inesperado: $result" >&2
+              exit 1
+            fi
+
+            python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile
+          html = Path('producao/index.html').read_text(encoding='utf-8')
+          if html.count('tab-reload-products') != 1:
+              raise SystemExit('O botão precisa existir exatamente uma vez.')
+          if 'class="btn red tab-reload-products"' not in html:
+              raise SystemExit('O botão não está vermelho.')
+          if html.index('tab-reload-products') > html.index('data-tab="produtos"'):
+              raise SystemExit('O botão não está antes de Produtos.')
+          scripts = re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>', html, re.I)
+          with tempfile.TemporaryDirectory() as directory:
+              for index, content in enumerate(scripts, 1):
+                  file = Path(directory) / f'inline-{index}.js'
+                  file.write_text(content, encoding='utf-8')
+                  subprocess.run(['node', '--check', str(file)], check=True)
+          print('Validação concluída.')
+          PY
+
+            git diff --check
+            git add producao/index.html
+            git rm -f scripts/maintenance/add-reload-products-button.py .github/workflows/aplicar-botao-recarregar-produtos.yml
+            git commit -m "Inclui botão vermelho para recarregar produtos"
+
+            if git push origin "HEAD:$branch"; then
+              echo "Botão publicado e arquivos temporários removidos."
+              exit 0
+            fi
+            sleep $((tentativa * 2))
+          done
+
+          echo "Não foi possível publicar após cinco tentativas." >&2
+          exit 1
