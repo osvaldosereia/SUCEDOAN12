@@ -2,13 +2,17 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="da-build-version" content="2026-07-16-pagespeed-test-v2">
+  <meta name="da-build-version" content="2026-07-16-pagespeed-test-v3">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-16-pagespeed-test-v2';
+    const BUILD = '2026-07-16-pagespeed-test-v3';
     window.__DA_BUILD_VERSION__ = BUILD;
     window.__DA_PAGESPEED_TEST__ = true;
+    document.documentElement.classList.add('da-pagespeed-booting');
+    window.__DA_BOOT_REVEAL_TIMER__ = window.setTimeout(function(){
+      document.documentElement.classList.remove('da-pagespeed-booting');
+    }, 8000);
   })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -28,7 +32,7 @@
   <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-16-pagespeed-test-v2" as="fetch" type="application/json" crossorigin="anonymous">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-16-pagespeed-test-v3" as="fetch" type="application/json" crossorigin="anonymous">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -112,7 +116,7 @@
 @keyframes daBannerQueueIn{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
 .da-banner-card[data-queue-visible="true"]{animation:daBannerQueueIn .38s ease both}
 @media (prefers-reduced-motion:reduce){.da-banner-track{scroll-behavior:auto!important}.da-banner-card{transition:none!important}}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
+.da-pagespeed-booting #app{visibility:hidden!important}.da-pagespeed-booting .bottom-nav{visibility:hidden!important}@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
 </style>
 
 <style id="daRequestedAdjustments20260712">
@@ -923,7 +927,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-16-pagespeed-test-v2',
+      APP_VERSION: '2026-07-16-pagespeed-test-v3',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -5432,6 +5436,10 @@
           removeMissingCartItems();
           handleRoute();
           updateCartUI();
+          if (window.__DA_BOOT_REVEAL_TIMER__) clearTimeout(window.__DA_BOOT_REVEAL_TIMER__);
+          requestAnimationFrame(() => {
+            document.documentElement.classList.remove('da-pagespeed-booting');
+          });
           if (homeCatalogError) console.info('Home carregada pelo catálogo completo após falha do catálogo leve.');
           return;
         }
@@ -6747,6 +6755,6 @@
   })();
 </script>
 
-<!-- DA_PAGESPEED_TEST: versão v2 estável, sem monitor de versão oficial e sem recarga automática. -->
+<!-- DA_PAGESPEED_TEST: versão v3 com revelação única após a primeira renderização completa. -->
 </body>
 </html>

@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 
 const SOURCE = 'index.html';
 const OUTPUT = 'index-pagespeed-test.html';
+const TEST_VERSION = '2026-07-16-pagespeed-test-v3';
 
 let html = await fs.readFile(SOURCE, 'utf8');
 const original = html;
@@ -12,10 +13,9 @@ function replaceRequired(pattern, replacement, label) {
   if (html === before) throw new Error(`Transformação não encontrada: ${label}`);
 }
 
-// Identificação inequívoca da página de testes.
 html = html.replace(
   /<meta name="da-build-version" content="[^"]+">/,
-  '<meta name="da-build-version" content="2026-07-16-pagespeed-test-v2">'
+  `<meta name="da-build-version" content="${TEST_VERSION}">`
 );
 html = html.replace(
   /<meta name="robots" content="[^"]+">/,
@@ -26,22 +26,18 @@ html = html.replace(
   '<title>$1 · Teste PageSpeed</title>'
 );
 
-// A página paralela não força no-store por meta tags.
 html = html.replace(/\s*<meta http-equiv="Cache-Control"[^>]*>/gi, '');
 html = html.replace(/\s*<meta http-equiv="Pragma"[^>]*>/gi, '');
 html = html.replace(/\s*<meta http-equiv="Expires"[^>]*>/gi, '');
 
-// Remove redirecionamento obrigatório, bfcache reload e limpeza destrutiva do primeiro paint.
 replaceRequired(
   /\s*<script>\s*\(function\(\)\{\s*'use strict';\s*const BUILD = '2026-07-16-mobile-sales-v4';[\s\S]*?\}\)\(\);\s*<\/script>/,
-  `\n  <script>\n  (function(){\n    'use strict';\n    const BUILD = '2026-07-16-pagespeed-test-v2';\n    window.__DA_BUILD_VERSION__ = BUILD;\n    window.__DA_PAGESPEED_TEST__ = true;\n  })();\n  </script>`,
+  `\n  <script>\n  (function(){\n    'use strict';\n    const BUILD = '${TEST_VERSION}';\n    window.__DA_BUILD_VERSION__ = BUILD;\n    window.__DA_PAGESPEED_TEST__ = true;\n    document.documentElement.classList.add('da-pagespeed-booting');\n    window.__DA_BOOT_REVEAL_TIMER__ = window.setTimeout(function(){\n      document.documentElement.classList.remove('da-pagespeed-booting');\n    }, 8000);\n  })();\n  </script>`,
   'bootstrap antigo de cache/redirecionamento'
 );
 
-// Versão estável e exclusiva da página paralela.
-html = html.replaceAll('2026-07-16-mobile-sales-v4', '2026-07-16-pagespeed-test-v2');
+html = html.replaceAll('2026-07-16-mobile-sales-v4', TEST_VERSION);
 
-// Política de cache normal para recursos versionados.
 html = html.replace(
   /cache: options && options\.cache \? options\.cache : 'no-store'/g,
   "cache: options && options.cache ? options.cache : 'default'"
@@ -53,31 +49,23 @@ html = html.replace(
   "headers: { Accept: 'application/json' }"
 );
 
-// A página de teste nunca compara sua versão com o app-version.json da produção.
-// Isso elimina o loop pagespeed-test -> versão oficial -> pagespeed-test.
 replaceRequired(
   /\s*const redirectedToLatest = await ensureLatestDeployment\(\);\s*if \(redirectedToLatest\) return;\s*try \{ sessionStorage\.removeItem\('da_version_reload_attempts_v1'\); \} catch\(e\) \{\}/,
   `\n      try { sessionStorage.removeItem('da_version_reload_attempts_v1'); } catch(e) {}`,
   'consulta bloqueante de versão'
 );
 
-// Desativa o observador periódico da versão oficial somente na página paralela.
 replaceRequired(
   /\s*startDeploymentVersionWatch\(\);/,
   `\n      // Monitor da versão oficial desativado na página paralela.`,
   'monitor periódico de versão'
 );
 
-// Mantém uma única renderização completa da home nesta fase de estabilização.
-// A otimização progressiva será refeita depois por atualização de seções, sem substituir app.innerHTML.
-
-// Evita purge destrutivo caso a função de versão seja chamada manualmente.
 html = html.replace(
   /\s*await purgeBrowserRuntimeCaches\(\);\s*if \(!shouldReload\) return true;/,
   `\n        if (!shouldReload) return true;`
 );
 
-// Reserva espaço das imagens e reduz CLS.
 html = html.replace(
   /<img loading="lazy" decoding="async" src="\$\{escapeHtml\(p\.img\)\}"/g,
   '<img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(p.img)}"'
@@ -95,15 +83,20 @@ html = html.replace(
   '<img class="${className || \'\'}" loading="lazy" decoding="async" width="300" height="300"'
 );
 
-// Movimento reduzido e blur mais barato quando solicitado pelo dispositivo.
 html = html.replace(
   '</style>',
-  `@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}\n</style>`
+  `.da-pagespeed-booting #app{visibility:hidden!important}.da-pagespeed-booting .bottom-nav{visibility:hidden!important}@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}\n</style>`
+);
+
+replaceRequired(
+  /(state\.isReady\s*=\s*true;[\s\S]*?handleRoute\(\);\s*updateCartUI\(\);)/,
+  `$1\n          if (window.__DA_BOOT_REVEAL_TIMER__) clearTimeout(window.__DA_BOOT_REVEAL_TIMER__);\n          requestAnimationFrame(() => {\n            document.documentElement.classList.remove('da-pagespeed-booting');\n          });`,
+  'revelação única após primeira renderização completa'
 );
 
 html = html.replace(
   '</body>',
-  `\n<!-- DA_PAGESPEED_TEST: versão v2 estável, sem monitor de versão oficial e sem recarga automática. -->\n</body>`
+  `\n<!-- DA_PAGESPEED_TEST: versão v3 com revelação única após a primeira renderização completa. -->\n</body>`
 );
 
 if (html === original) throw new Error('Nenhuma transformação foi aplicada.');
