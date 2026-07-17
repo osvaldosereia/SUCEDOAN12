@@ -26,7 +26,10 @@ async function assertStaticBannerPlacement() {
   const result = await page.evaluate(() => {
     const banner = document.querySelector('.da-inline-banner-zone');
     if (!banner) return { found: false };
-    const before = banner.previousElementSibling;
+    let before = banner.previousElementSibling;
+    while (before && !before.matches('[data-da-products-before-banner],[data-da-items-before-banner]')) {
+      before = before.previousElementSibling;
+    }
     const cards = banner.querySelectorAll('.banner-card,.da-banner-card');
     return {
       found: true,
