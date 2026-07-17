@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 const SOURCE = 'index.html';
 const OUTPUT = 'index-pagespeed-test.html';
-const TEST_VERSION = '2026-07-16-pagespeed-test-v3';
+const TEST_VERSION = '2026-07-16-pagespeed-test-v4';
 
 let html = await fs.readFile(SOURCE, 'utf8');
 const original = html;
@@ -83,9 +83,83 @@ html = html.replace(
   '<img class="${className || \'\'}" loading="lazy" decoding="async" width="300" height="300"'
 );
 
+// Home de teste mais objetiva e comercial, preservando os banners verticais existentes.
+replaceRequired(
+  /renderHome=function\(\)\{[\s\S]*?setActiveNav\('home'\);\s*\};/,
+  `renderHome=function(){
+        const offers=getTopOffers(12);
+        const kits=getActiveKits();
+        app.innerHTML=\`<div class="container home-clean da-home-modular da-home-funnel da-home-profit">
+          <h1 class="sr-only">Dona Antônia - Supermercado e Cestas</h1>
+          \${homeQuickLinksHtml()}
+          \${bannerSlotHtml('home.hero',{carousel:true,kind:'hero',limit:6,hideHead:true,label:'Destaques da Dona Antônia'})}
+          <div data-home-personalization-slot="buy-again"></div>
+          \${daHomeOfferShelfHtml(offers)}
+          \${daHomePurchaseJourneyHtml()}
+          \${bannerSlotHtml('home.compra-mes.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques para a compra do mês'})}
+          \${daHomeBasketShelfHtml(state.cestas)}
+          \${daHomeKitShelfHtml(kits)}
+          <div data-home-secondary-slot aria-busy="true">\${daProgressiveLoadingHtml('Carregando sugestões para completar sua compra…')}</div>
+          <div data-home-personalization-slot="chosen"></div>
+          <div data-home-personalization-slot="recent"></div>
+        </div>\`;
+        setupBannerCarousels();
+        daSetupHomeSecondary();
+        updateOfferCountdowns();
+        updateMeta('Dona Antônia - Supermercado e Cestas','Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.','/');
+        setActiveNav('home');
+      };`,
+  'nova ordem comercial da home'
+);
+
+replaceRequired(
+  /function daRenderHomeSecondary\(slot\)\{[\s\S]*?daSetupHomeTail\(\);\s*\}/,
+  `function daRenderHomeSecondary(slot){
+        if(!slot || !slot.isConnected || slot.dataset.loaded==='true') return;
+        slot.dataset.loaded='true';
+        slot.removeAttribute('aria-busy');
+        const limpeza=productsByRoutine('limpeza',80);
+        const higiene=productsByRoutine('higiene',120);
+        const reminders=daHomeReminderProducts().slice(0,6);
+        slot.innerHTML=\`
+          \${daHomeCompactShelfHtml('Não esqueça destes itens','Produtos que costumam faltar justamente na hora de fechar a compra.',reminders,'#/rotina/compra-mes','reminder','Continuar comprando')}
+          \${daHomeCollectionSectionHtml('limpeza','Limpeza da casa','Escolha rapidamente o tipo de limpeza que precisa.',limpeza,'#/rotina/limpeza','clean')}
+          \${bannerSlotHtml('home.higiene.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques de cuidados pessoais'})}
+          \${daHomeCollectionSectionHtml('higiene','Higiene da família','Cuidados essenciais organizados por necessidade.',higiene,'#/rotina/higiene','care')}
+          <div data-home-tail-slot aria-busy="true">\${daProgressiveLoadingHtml('Carregando mais formas de comprar…')}</div>\`;
+        setupBannerCarousels();
+        updateOfferCountdowns();
+        syncVisibleCards();
+        updateFavoritesUI();
+        daSetupHomeTail();
+      }`,
+  'seções secundárias compactas'
+);
+
+replaceRequired(
+  /function daRenderHomeTail\(slot\)\{[\s\S]*?updateFavoritesUI\(\);\s*\}/,
+  `function daRenderHomeTail(slot){
+        if(!slot || !slot.isConnected || slot.dataset.loaded==='true') return;
+        slot.dataset.loaded='true';
+        slot.removeAttribute('aria-busy');
+        const bargains=daHomeBargainProducts().slice(0,8);
+        const cafe=productsByRoutine('cafe',100);
+        slot.innerHTML=\`
+          \${daHomeCollectionSectionHtml('cafe','Café da manhã','Café, biscoitos e acompanhamentos para começar o dia.',cafe,'#/rotina/cafe','coffee')}
+          \${daHomeCompactShelfHtml('Complete seu carrinho por até R$ 3','Itens baratos e úteis para aproveitar melhor o pedido.',bargains,'#/categorias','bargain','Explorar categorias')}
+          \${daHomeHereTemHtml()}
+          \${brandStripHtml()}
+          \${categoryButtonsHtml()}\`;
+        updateOfferCountdowns();
+        syncVisibleCards();
+        updateFavoritesUI();
+      }`,
+  'cauda comercial reduzida'
+);
+
 html = html.replace(
   '</style>',
-  `.da-pagespeed-booting #app{visibility:hidden!important}.da-pagespeed-booting .bottom-nav{visibility:hidden!important}@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}\n</style>`
+  `.da-pagespeed-booting #app{visibility:hidden!important}.da-pagespeed-booting .bottom-nav{visibility:hidden!important}.da-home-profit .da-home-section{margin-top:22px}.da-home-profit .da-home-journey-grid{gap:10px}.da-home-profit .da-home-section-head p{max-width:62ch}.da-home-profit [data-banner-position="home.hero"] .banner-card,.da-home-profit .banner-card{aspect-ratio:4/5!important}.da-home-profit .banner-card img{width:100%!important;height:100%!important;object-fit:cover!important}@media(max-width:767px){.da-home-profit .da-home-section{margin-top:18px}.da-home-profit .da-home-journey-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.da-home-profit [data-banner-position="home.hero"]{margin-top:10px}}@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}\n</style>`
 );
 
 replaceRequired(
@@ -96,7 +170,7 @@ replaceRequired(
 
 html = html.replace(
   '</body>',
-  `\n<!-- DA_PAGESPEED_TEST: versão v3 com revelação única após a primeira renderização completa. -->\n</body>`
+  `\n<!-- DA_PAGESPEED_TEST: versão v4 com home comercial compacta e banners verticais preservados. -->\n</body>`
 );
 
 if (html === original) throw new Error('Nenhuma transformação foi aplicada.');
