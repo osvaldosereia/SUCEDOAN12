@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 const SOURCE = 'index.html';
 const OUTPUT = 'index-pagespeed-test.html';
-const TEST_VERSION = '2026-07-16-pagespeed-test-v4';
+const TEST_VERSION = '2026-07-17-pagespeed-test-v5';
 
 let html = await fs.readFile(SOURCE, 'utf8');
 const original = html;
@@ -83,7 +83,6 @@ html = html.replace(
   '<img class="${className || \'\'}" loading="lazy" decoding="async" width="300" height="300"'
 );
 
-// Home de teste mais objetiva e comercial, preservando os banners verticais existentes.
 replaceRequired(
   /renderHome=function\(\)\{[\s\S]*?setActiveNav\('home'\);\s*\};/,
   `renderHome=function(){
@@ -100,8 +99,7 @@ replaceRequired(
           \${daHomeBasketShelfHtml(state.cestas)}
           \${daHomeKitShelfHtml(kits)}
           <div data-home-secondary-slot aria-busy="true">\${daProgressiveLoadingHtml('Carregando sugestões para completar sua compra…')}</div>
-          <div data-home-personalization-slot="chosen"></div>
-          <div data-home-personalization-slot="recent"></div>
+          <div class="da-home-bottom-safe" aria-hidden="true"></div>
         </div>\`;
         setupBannerCarousels();
         daSetupHomeSecondary();
@@ -159,18 +157,39 @@ replaceRequired(
 
 html = html.replace(
   '</style>',
-  `.da-pagespeed-booting #app{visibility:hidden!important}.da-pagespeed-booting .bottom-nav{visibility:hidden!important}.da-home-profit .da-home-section{margin-top:22px}.da-home-profit .da-home-journey-grid{gap:10px}.da-home-profit .da-home-section-head p{max-width:62ch}.da-home-profit [data-banner-position="home.hero"] .banner-card,.da-home-profit .banner-card{aspect-ratio:4/5!important}.da-home-profit .banner-card img{width:100%!important;height:100%!important;object-fit:cover!important}@media(max-width:767px){.da-home-profit .da-home-section{margin-top:18px}.da-home-profit .da-home-journey-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.da-home-profit [data-banner-position="home.hero"]{margin-top:10px}}@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}\n</style>`
+  `.da-pagespeed-booting #app{visibility:hidden!important}.da-pagespeed-booting .bottom-nav{visibility:hidden!important}.da-home-profit .da-home-section{margin-top:22px}.da-home-profit .da-home-journey-grid{gap:10px}.da-home-profit .da-home-section-head p{max-width:62ch}.da-home-profit [data-banner-position="home.hero"] .banner-card,.da-home-profit .banner-card{aspect-ratio:4/5!important}.da-home-profit .banner-card img{width:100%!important;height:100%!important;object-fit:cover!important}.da-home-bottom-safe{display:block;width:100%;height:96px;flex:0 0 96px}.da-home-profit [data-home-section="featured"],.da-home-profit .products-featured,.da-home-profit .featured-products{display:none!important}@media(max-width:767px){#app{padding-bottom:calc(132px + env(safe-area-inset-bottom))!important}.da-home-profit{padding-bottom:calc(40px + env(safe-area-inset-bottom))!important}.da-home-bottom-safe{height:132px;flex-basis:132px}.da-home-profit .da-home-section{margin-top:18px}.da-home-profit .da-home-journey-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.da-home-profit [data-banner-position="home.hero"]{margin-top:10px}}@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}\n</style>`
+);
+
+html = html.replace(
+  '</body>',
+  `<script>
+  (function(){
+    function normalizeTitle(value){
+      return String(value || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').trim().toLowerCase();
+    }
+    function removeFeaturedProductSections(){
+      const root=document.querySelector('.da-home-profit');
+      if(!root) return;
+      root.querySelectorAll('section,.da-home-section').forEach(function(section){
+        const heading=section.querySelector('h2,h3,.section-title,.da-home-section-head strong');
+        if(heading && normalizeTitle(heading.textContent)==='produtos em destaque') section.remove();
+      });
+    }
+    const observer=new MutationObserver(removeFeaturedProductSections);
+    observer.observe(document.body,{childList:true,subtree:true});
+    document.addEventListener('DOMContentLoaded',removeFeaturedProductSections,{once:true});
+    window.setTimeout(removeFeaturedProductSections,0);
+    window.setTimeout(removeFeaturedProductSections,2000);
+  })();
+  </script>
+<!-- DA_PAGESPEED_TEST: versão v5 sem Produtos em destaque e com área segura acima da barra inferior. -->
+</body>`
 );
 
 replaceRequired(
   /(state\.isReady\s*=\s*true;[\s\S]*?handleRoute\(\);\s*updateCartUI\(\);)/,
   `$1\n          if (window.__DA_BOOT_REVEAL_TIMER__) clearTimeout(window.__DA_BOOT_REVEAL_TIMER__);\n          requestAnimationFrame(() => {\n            document.documentElement.classList.remove('da-pagespeed-booting');\n          });`,
   'revelação única após primeira renderização completa'
-);
-
-html = html.replace(
-  '</body>',
-  `\n<!-- DA_PAGESPEED_TEST: versão v4 com home comercial compacta e banners verticais preservados. -->\n</body>`
 );
 
 if (html === original) throw new Error('Nenhuma transformação foi aplicada.');

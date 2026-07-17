@@ -1,26 +1,26 @@
 # Auditoria conservadora do index
 
 Arquivo analisado: `index-pagespeed-test.html`
-Tamanho: 531951 bytes
+Tamanho: 533285 bytes
 
 > Este relatório lista candidatos. Nenhum item deve ser removido apenas por aparecer aqui.
 
 ## Declarações ou atribuições repetidas
 
-- `renderCategory`: function declaration na linha 3381; function assignment na linha 5612; function assignment na linha 6205; function assignment na linha 6634. Ocorrências totais do nome: 6.
-- `renderSearch`: function declaration na linha 3709; function assignment na linha 5630; function assignment na linha 6269; function assignment na linha 6664. Ocorrências totais do nome: 8.
-- `renderBrand`: function declaration na linha 3407; function assignment na linha 6232; function assignment na linha 6654. Ocorrências totais do nome: 5.
-- `renderSubcategory`: function declaration na linha 3397; function assignment na linha 6221; function assignment na linha 6644. Ocorrências totais do nome: 5.
-- `abrirWhatsAppPedido`: function declaration na linha 5205; function assignment na linha 6706. Ocorrências totais do nome: 4.
+- `renderCategory`: function declaration na linha 3381; function assignment na linha 5612; function assignment na linha 6204; function assignment na linha 6633. Ocorrências totais do nome: 6.
+- `renderSearch`: function declaration na linha 3709; function assignment na linha 5630; function assignment na linha 6268; function assignment na linha 6663. Ocorrências totais do nome: 8.
+- `renderBrand`: function declaration na linha 3407; function assignment na linha 6231; function assignment na linha 6653. Ocorrências totais do nome: 5.
+- `renderSubcategory`: function declaration na linha 3397; function assignment na linha 6220; function assignment na linha 6643. Ocorrências totais do nome: 5.
+- `abrirWhatsAppPedido`: function declaration na linha 5205; function assignment na linha 6705. Ocorrências totais do nome: 4.
 - `applyBannersData`: function declaration na linha 1547; function assignment na linha 5503. Ocorrências totais do nome: 4.
 - `renderBasketDetail`: function declaration na linha 3675; function assignment na linha 5644. Ocorrências totais do nome: 4.
-- `renderHome`: function assignment na linha 6148; function assignment na linha 6610. Ocorrências totais do nome: 8.
-- `renderOffers`: function declaration na linha 3416; function assignment na linha 6242. Ocorrências totais do nome: 4.
-- `renderProduct`: function declaration na linha 3740; function assignment na linha 6617. Ocorrências totais do nome: 4.
-- `renderRoutine`: function declaration na linha 3423; function assignment na linha 6250. Ocorrências totais do nome: 5.
-- `renderSiteMenuContent`: function declaration na linha 3860; function assignment na linha 6712. Ocorrências totais do nome: 7.
-- `setQty`: function declaration na linha 2408; function assignment na linha 6681. Ocorrências totais do nome: 5.
-- `toggleFavorite`: function declaration na linha 2030; function assignment na linha 6695. Ocorrências totais do nome: 4.
+- `renderHome`: function assignment na linha 6148; function assignment na linha 6609. Ocorrências totais do nome: 8.
+- `renderOffers`: function declaration na linha 3416; function assignment na linha 6241. Ocorrências totais do nome: 4.
+- `renderProduct`: function declaration na linha 3740; function assignment na linha 6616. Ocorrências totais do nome: 4.
+- `renderRoutine`: function declaration na linha 3423; function assignment na linha 6249. Ocorrências totais do nome: 5.
+- `renderSiteMenuContent`: function declaration na linha 3860; function assignment na linha 6711. Ocorrências totais do nome: 7.
+- `setQty`: function declaration na linha 2408; function assignment na linha 6680. Ocorrências totais do nome: 5.
+- `toggleFavorite`: function declaration na linha 2030; function assignment na linha 6694. Ocorrências totais do nome: 4.
 
 ## Funções com baixa evidência de referência
 
