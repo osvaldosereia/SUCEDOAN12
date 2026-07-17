@@ -1,0 +1,63 @@
+name: Corrigir runtime unico e imagens
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - index.html
+      - scripts/fix-storefront-runtime-v11.mjs
+      - .github/workflows/fix-storefront-runtime-v11.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: runtime-unico-v11-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fix-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Validar sintaxe do patch
+        run: node --check scripts/fix-storefront-runtime-v11.mjs
+
+      - name: Aplicar correção
+        run: node scripts/fix-storefront-runtime-v11.mjs
+
+      - name: Validar index final
+        shell: bash
+        run: |
+          test -s index.html
+          grep -q 'DA_RUNTIME_UNICO_V11' index.html
+          grep -q 'DA_RUNTIME_UNICO_IMAGENS_ESTAVEIS_V11' index.html
+          grep -q 'runtime-unico-imagens-v11' index.html
+          grep -q 'slice(0,4)' index.html
+          grep -q 'daProductsAfterFourV11' index.html
+          grep -q 'state.bannerConfig.autoplay=false' index.html
+          grep -q 'da-home-here-item:nth-child(n+7)' index.html
+          ! grep -q 'da-storefront-banners-cache-v10' index.html
+          ! grep -q 'da-fast-home-runtime' index.html
+          ! grep -q 'cdn.jsdelivr.net/gh/osvaldosereia/SUCEDOAN12@main/' index.html
+          grep -q '<meta name="robots" content="index, follow">' index.html
+          bytes=$(wc -c < index.html)
+          test "$bytes" -lt 720000
+          echo "Index validado: $bytes bytes"
+
+      - name: Salvar index corrigido na branch
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Aplicar runtime unico antes da inicializacao'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
