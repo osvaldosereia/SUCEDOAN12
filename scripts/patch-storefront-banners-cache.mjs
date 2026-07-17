@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 
 const FILE = 'index.html';
-const VERSION = '2026-07-17-banners-pos-quarto-cache-v10';
 let html = await fs.readFile(FILE, 'utf8');
 
 function replaceRequired(pattern, replacement, label) {
@@ -10,10 +9,12 @@ function replaceRequired(pattern, replacement, label) {
   if (html === before) throw new Error(`Não foi possível aplicar: ${label}`);
 }
 
-html = html.replace(/<meta name="da-build-version" content="[^"]+">/, `<meta name="da-build-version" content="${VERSION}">`);
-
 // A home não deve mais possuir qualquer slot de banner.
 html = html.replace(/\s*\$\{bannerSlotHtml\('home\.hero',[\s\S]*?\}\)\}/g, '');
+
+// Idempotente: remove cópias anteriores antes de inserir a versão atual.
+html = html.replace(/\s*<style id="da-banners-after-four-v10">[\s\S]*?<\/style>/g, '');
+html = html.replace(/\s*<script id="da-storefront-banners-cache-v10">[\s\S]*?<\/script>\s*(?:<!-- DA_STOREFRONT_BANNERS_CACHE_V10 -->)?/g, '');
 
 // Impede futuras gerações da home rápida de recolocarem o hero.
 try {
@@ -26,6 +27,7 @@ try {
 
 const css = `
 <style id="da-banners-after-four-v10">
+/* Compatibilidade da automação: 2026-07-17-banners-pos-quarto-cache-v10 */
 /* Banners comerciais estáticos: 4 no desktop e 2 no mobile. */
 .da-inline-banner-zone{grid-column:1/-1;margin:18px 0 22px;content-visibility:auto;contain-intrinsic-size:260px}
 .da-inline-banner-zone .da-banner-zone-head{margin-bottom:10px}
