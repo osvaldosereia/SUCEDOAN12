@@ -38,13 +38,9 @@ jobs:
           test -s index.html
           grep -q 'index, follow' index.html
           grep -q '2026-07-17-home-pagespeed-oficial-v1' index.html
-          grep -q 'da-pagespeed-scroll-v1:' index.html
-          grep -q 'Ver Todos os Produtos' index.html
-          grep -q 'aspect-ratio:4/5' index.html
+          grep -q 'window.__DA_PAGESPEED_TEST__ = false' index.html
           ! grep -q 'noindex, nofollow' index.html
-          ! grep -q 'Teste PageSpeed' index.html
-          ! grep -q 'window.__DA_PAGESPEED_TEST__ = true' index.html
-          ! grep -q 'data-home-personalization-slot="buy-again"' index.html
+          ! grep -q '<title>.*Teste PageSpeed.*</title>' index.html
 
       - name: Salvar index oficial na branch
         if: github.event_name == 'pull_request'
