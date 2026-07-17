@@ -1,0 +1,57 @@
+name: Promover PageSpeed para produção
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - index-pagespeed-test.html
+      - scripts/promote-pagespeed-to-production.mjs
+      - .github/workflows/promote-pagespeed-production.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: promote-pagespeed-production-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  promover-e-validar:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar branch de promoção
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Gerar index oficial a partir da versão teste
+        run: node scripts/promote-pagespeed-to-production.mjs
+
+      - name: Validar index oficial
+        shell: bash
+        run: |
+          test -s index.html
+          grep -q 'index, follow' index.html
+          grep -q '2026-07-17-home-pagespeed-oficial-v1' index.html
+          grep -q 'window.__DA_PAGESPEED_TEST__ = false' index.html
+          ! grep -q 'noindex, nofollow' index.html
+          ! grep -q '<title>.*Teste PageSpeed.*</title>' index.html
+
+      - name: Salvar index oficial na branch
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'Index oficial já está atualizado.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Promover home PageSpeed para produção'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
