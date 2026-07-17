@@ -2,62 +2,23 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <meta name="da-build-version" content="2026-07-16-mobile-sales-v4">
+  <meta name="da-build-version" content="2026-07-17-home-pagespeed-oficial-v1">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-16-mobile-sales-v4';
-    const CLEAN_MARKER = 'da_browser_cache_clean_build_v2';
+    const BUILD = '2026-07-17-home-pagespeed-oficial-v1';
     window.__DA_BUILD_VERSION__ = BUILD;
-
-    function versionedLocation(version, forceNonce) {
-      const url = new URL(window.location.href);
-      url.searchParams.set('__da_v', String(version || BUILD));
-      if (forceNonce) url.searchParams.set('__da_r', String(Date.now()));
-      return url.pathname + url.search + url.hash;
-    }
-
-    try {
-      const current = new URL(window.location.href).searchParams.get('__da_v');
-      if (!current) {
-        window.location.replace(versionedLocation(BUILD, true));
-        return;
-      }
-    } catch (_) {}
-
-    // Evita que a restauração instantânea do navegador (bfcache) reapresente HTML antigo.
-    window.addEventListener('pageshow', function(event) {
-      if (!event.persisted) return;
-      try {
-        const requested = new URL(window.location.href).searchParams.get('__da_v') || BUILD;
-        window.location.replace(versionedLocation(requested, true));
-      } catch (_) { window.location.reload(); }
-    });
-
-    // Remove Service Workers e Cache Storage deixados por versões antigas.
-    Promise.resolve().then(async function() {
-      try {
-        if (localStorage.getItem(CLEAN_MARKER) === BUILD) return;
-        if ('serviceWorker' in navigator) {
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(registrations.map(function(registration) { return registration.unregister(); }));
-        }
-        if ('caches' in window) {
-          const names = await caches.keys();
-          await Promise.all(names.map(function(name) { return caches.delete(name); }));
-        }
-        localStorage.setItem(CLEAN_MARKER, BUILD);
-      } catch (_) {}
-    });
+    window.__DA_PAGESPEED_TEST__ = false;
+    document.documentElement.classList.add('da-pagespeed-booting');
+    window.__DA_BOOT_REVEAL_TIMER__ = window.setTimeout(function(){
+      document.documentElement.classList.remove('da-pagespeed-booting');
+    }, 8000);
   })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Dona Antônia - Supermercado e Cestas</title>
   <meta name="description" id="meta-description" content="Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.">
-  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#ffffff">
   <meta name="format-detection" content="telephone=yes">
   <meta property="og:type" content="website">
@@ -71,7 +32,7 @@
   <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-16-mobile-sales-v4" as="fetch" type="application/json" crossorigin="anonymous">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-17-home-pagespeed-oficial-v1" as="fetch" type="application/json" crossorigin="anonymous">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -155,6 +116,8 @@
 @keyframes daBannerQueueIn{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
 .da-banner-card[data-queue-visible="true"]{animation:daBannerQueueIn .38s ease both}
 @media (prefers-reduced-motion:reduce){.da-banner-track{scroll-behavior:auto!important}.da-banner-card{transition:none!important}}
+.da-pagespeed-booting #app{visibility:hidden!important}.da-pagespeed-booting .bottom-nav{visibility:hidden!important}.da-home-profit .da-home-section{margin-top:22px}.da-home-profit .da-home-journey-grid{gap:10px}.da-home-profit .da-home-section-head p{max-width:62ch}.da-home-profit [data-banner-position="home.hero"] .banner-card,.da-home-profit .banner-card{aspect-ratio:4/5!important}.da-home-profit .banner-card img{width:100%!important;height:100%!important;object-fit:cover!important}.da-home-bottom-safe{display:block;width:100%;height:96px;flex:0 0 96px}.da-home-profit [data-home-section="featured"],.da-home-profit .products-featured,.da-home-profit .featured-products{display:none!important}@media(max-width:767px){#app{padding-bottom:calc(132px + env(safe-area-inset-bottom))!important}.da-home-profit{padding-bottom:calc(40px + env(safe-area-inset-bottom))!important}.da-home-bottom-safe{height:132px;flex-basis:132px}.da-home-profit .da-home-section{margin-top:18px}.da-home-profit .da-home-journey-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.da-home-profit [data-banner-position="home.hero"]{margin-top:10px}}@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
+.da-mobile-see-all{display:none}@media(max-width:767px){.da-mobile-see-all{display:flex!important;width:100%;min-height:46px;margin:14px 0 4px;padding:12px 16px;align-items:center;justify-content:center;border:1px solid currentColor;border-radius:12px;font-weight:800;text-align:center;text-decoration:none;background:#fff;box-sizing:border-box}.da-home-section>.da-mobile-see-all:last-child{margin-bottom:0}}
 </style>
 
 <style id="daRequestedAdjustments20260712">
@@ -965,7 +928,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-16-mobile-sales-v4',
+      APP_VERSION: '2026-07-17-home-pagespeed-oficial-v1',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -1296,19 +1259,13 @@
       try {
         const separator = String(CONFIG.VERSION_URL).includes('?') ? '&' : '?';
         const response = await fetch(`${CONFIG.VERSION_URL}${separator}t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: {
-            Accept: 'application/json',
-            'Cache-Control': 'no-cache, no-store, max-age=0',
-            Pragma: 'no-cache'
-          }
+          cache: 'default',
+          headers: { Accept: 'application/json' }
         });
         if (!response.ok) return false;
         const data = await response.json();
         const latest = String(data && (data.version || data.build || data.appVersion) || '').trim();
         if (!latest || latest === CONFIG.APP_VERSION) return false;
-
-        await purgeBrowserRuntimeCaches();
         if (!shouldReload) return true;
 
         const attemptsKey = 'da_version_reload_attempts_v1';
@@ -1361,13 +1318,9 @@
       const timer = setTimeout(() => controller.abort(), timeoutMs || 6500);
       try {
         const res = await fetch(url, {
-          cache: options && options.cache ? options.cache : 'no-store',
+          cache: options && options.cache ? options.cache : 'default',
           signal: controller.signal,
-          headers: {
-            Accept: 'application/json',
-            'Cache-Control': 'no-cache, no-store, max-age=0',
-            Pragma: 'no-cache'
-          }
+          headers: { Accept: 'application/json' }
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
@@ -1395,7 +1348,7 @@
       let data = null;
       for (const url of CONFIG.COUPON_URLS) {
         try {
-          data = await fetchJson(withCacheBust(url), 5000, { cache: 'no-cache' });
+          data = await fetchJson(withCacheBust(url), 5000, { cache: 'default' });
           break;
         } catch(e) {}
       }
@@ -1433,7 +1386,7 @@
       const urls = Array.isArray(CONFIG.PRODUCT_HOME_URLS) && CONFIG.PRODUCT_HOME_URLS.length ? CONFIG.PRODUCT_HOME_URLS : ['site/produtos-home.json'];
       for (const url of urls) {
         try {
-          const data = await fetchJson(withCacheBust(url), 6500, { cache: 'no-cache' });
+          const data = await fetchJson(withCacheBust(url), 6500, { cache: 'default' });
           normalizeProducts(data, { mode: 'lite' });
           state.catalogLoadedAt = Date.now();
           state.catalogSource = 'produtos-home';
@@ -1508,7 +1461,7 @@
       let lastError = null;
       for (const url of urls) {
         try {
-          const data = await fetchJson(withCacheBust(url), 5000, { cache: 'no-cache' });
+          const data = await fetchJson(withCacheBust(url), 5000, { cache: 'default' });
           applyCestasData(data);
           writeCache(CONFIG.BASKET_CACHE_KEY, { savedAt: Date.now(), data });
           return;
@@ -1557,7 +1510,7 @@
       let lastError = null;
       for (const url of urls) {
         try {
-          const data = await fetchJson(withCacheBust(url), 5000, { cache: 'no-cache' });
+          const data = await fetchJson(withCacheBust(url), 5000, { cache: 'default' });
           applyKitsData(data);
           writeCache(CONFIG.KIT_CACHE_KEY, { savedAt: Date.now(), data });
           return;
@@ -1659,7 +1612,7 @@
       const errors = [];
       for (const url of CONFIG.BANNER_URLS) {
         try {
-          const data = await fetchJson(withCacheBust(url, true), 6500, { cache: 'no-store' });
+          const data = await fetchJson(withCacheBust(url, true), 6500, { cache: 'default' });
           applyBannersData(data || {});
           writeCache(CONFIG.BANNER_CACHE_KEY, { savedAt: Date.now(), data });
           return;
@@ -2566,7 +2519,7 @@
         try {
           // Conferência independente e curta: não altera carrinho, preços ou mensagem.
           // O resultado é apenas diagnóstico e nunca participa do caminho crítico de venda.
-          const liveCatalog = await fetchJson(CONFIG.PRODUCT_URL, 2200, { cache: 'no-store' });
+          const liveCatalog = await fetchJson(CONFIG.PRODUCT_URL, 2200, { cache: 'default' });
           const liveCodes = new Set();
           const entries = Array.isArray(liveCatalog)
             ? liveCatalog.map((value, index) => [String(index), value])
@@ -3166,7 +3119,7 @@
         <article class="${classes.join(' ')}" data-card-id="${escapeHtml(id)}">
           <div class="product-media-wrap">
             <a class="product-imgbox" href="#/produto/${route}" aria-label="Ver ${escapeHtml(p.name)}">
-              <img loading="lazy" decoding="async" src="${escapeHtml(p.img)}" data-fallback-images="${escapeHtml(imageFallbackList(p.images))}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)">
+              <img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(p.img)}" data-fallback-images="${escapeHtml(imageFallbackList(p.images))}" alt="${escapeHtml(p.name)}" onerror="window.__daFallbackImg(this)">
             </a>
             ${favoriteButtonHtml(id, false, 'product')}
             ${display.discountPercent > 0 ? `<span class="media-discount-badge">-${display.discountPercent}%</span>` : ''}
@@ -3191,7 +3144,7 @@
         return `
           <article class="${classes.join(' ')} basket-card-simple">
             <a class="basket-imgbox" href="#/cesta/${encodeURIComponent(cesta.id)}" aria-label="Abrir ${escapeHtml(cesta.nome)}">
-              <img loading="lazy" decoding="async" src="${escapeHtml(cesta.imagem)}" alt="${escapeHtml(cesta.nome)}" onerror="window.__daFallbackImg(this)">
+              <img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(cesta.imagem)}" alt="${escapeHtml(cesta.nome)}" onerror="window.__daFallbackImg(this)">
             </a>
             <div class="basket-body">
               <div class="basket-name">${escapeHtml(cesta.nome)}</div>
@@ -3205,7 +3158,7 @@
       return `
         <article class="${classes.join(' ')}">
           <a class="basket-imgbox" href="#/cesta/${encodeURIComponent(cesta.id)}" aria-label="Abrir ${escapeHtml(cesta.nome)}">
-            <img loading="lazy" decoding="async" src="${escapeHtml(cesta.imagem)}" alt="${escapeHtml(cesta.nome)}" onerror="window.__daFallbackImg(this)">
+            <img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(cesta.imagem)}" alt="${escapeHtml(cesta.nome)}" onerror="window.__daFallbackImg(this)">
           </a>
           <div class="basket-body">
             <div class="basket-name">${escapeHtml(cesta.nome)}</div>
@@ -3230,7 +3183,7 @@
           <article class="${classes.join(' ')} basket-card-simple kit-card">
             <div class="product-media-wrap kit-media-wrap">
               <a class="basket-imgbox" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}">
-                <img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
+                <img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
               </a>
               ${favoriteButtonHtml(kit.id, false, 'kit')}
               ${discount > 0 ? `<span class="media-discount-badge">-${discount}%</span>` : ''}
@@ -3248,7 +3201,7 @@
         <article class="${classes.join(' ')} kit-card">
           <div class="product-media-wrap kit-media-wrap">
             <a class="basket-imgbox" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}">
-              <img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
+              <img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
             </a>
             ${favoriteButtonHtml(kit.id, false, 'kit')}
             ${discount > 0 ? `<span class="media-discount-badge">-${discount}%</span>` : ''}
@@ -4593,7 +4546,7 @@
         const response = await fetch(CONFIG.CLIENT_LOOKUP_WEBHOOK_URL, {
           method: 'POST',
           body,
-          cache: 'no-store',
+          cache: 'default',
           signal: controller.signal
         });
         clearTimeout(timer);
@@ -4868,7 +4821,7 @@
       try {
         const response = await fetchWithTimeout(`${CONFIG.FIREBASE_ORDERS_URL}/${encodeURIComponent(String(orderId))}.json`, {
           method: 'GET',
-          cache: 'no-store'
+          cache: 'default'
         }, 6000);
         if (!response.ok) return null;
         return await response.json();
@@ -4887,7 +4840,7 @@
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry.firebaseOrder),
-        cache: 'no-store',
+        cache: 'default',
         keepalive: true
       }, 8000);
       if (!response.ok) throw new Error(`Firebase respondeu ${response.status}`);
@@ -4922,7 +4875,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(entry.makePayload),
-          cache: 'no-store',
+          cache: 'default',
           keepalive: true
         }, 12000);
         if (!response.ok) throw new Error(`Make respondeu ${response.status}`);
@@ -5450,14 +5403,12 @@
     }
 
     async function init() {
-      const redirectedToLatest = await ensureLatestDeployment();
-      if (redirectedToLatest) return;
       try { sessionStorage.removeItem('da_version_reload_attempts_v1'); } catch(e) {}
       bindEvents();
       bindOrderDeliveryRetryEvents();
       setTimeout(() => processPendingOrderDeliveries(), 900);
       enforceAppVersion();
-      startDeploymentVersionWatch();
+      // Monitor da versão oficial desativado na página paralela.
       loadFavorites();
       loadCart();
       updateCartUI();
@@ -5486,6 +5437,10 @@
           removeMissingCartItems();
           handleRoute();
           updateCartUI();
+          if (window.__DA_BOOT_REVEAL_TIMER__) clearTimeout(window.__DA_BOOT_REVEAL_TIMER__);
+          requestAnimationFrame(() => {
+            document.documentElement.classList.remove('da-pagespeed-booting');
+          });
           if (homeCatalogError) console.info('Home carregada pelo catálogo completo após falha do catálogo leve.');
           return;
         }
@@ -5738,7 +5693,7 @@
       }
     
       function daHomeProductImage(product, className){
-        return `<img class="${className || ''}" loading="lazy" decoding="async" src="${escapeHtml(product.img)}" data-fallback-images="${escapeHtml(imageFallbackList(product.images))}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">`;
+        return `<img class="${className || ''}" loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(product.img)}" data-fallback-images="${escapeHtml(imageFallbackList(product.images))}" alt="${escapeHtml(product.name)}" onerror="window.__daFallbackImg(this)">`;
       }
     
       function daHomeControls(product, extraClass){
@@ -5864,7 +5819,7 @@
         const original = kitOriginalPrice(kit);
         const discount = kitDiscountPercent(kit);
         return `<article class="da-home-kit-card">
-          <div class="da-home-kit-media"><a class="da-home-square-media" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}"><img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)"></a>${favoriteButtonHtml(kit.id,false,'kit')}${discount > 0 ? `<span class="da-home-kit-discount">${discount}%<span class="da-home-off-word">&nbsp;OFF</span></span>` : ''}</div>
+          <div class="da-home-kit-media"><a class="da-home-square-media" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}"><img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)"></a>${favoriteButtonHtml(kit.id,false,'kit')}${discount > 0 ? `<span class="da-home-kit-discount">${discount}%<span class="da-home-off-word">&nbsp;OFF</span></span>` : ''}</div>
           <div class="da-home-kit-body"><a class="da-home-basket-name" href="#/kit/${encodeURIComponent(kit.id)}">${escapeHtml(kit.nome)}</a><div class="da-home-kit-price">${kit.preco ? daHomeCommercialPriceHtml({original,effective:Number(kit.preco || 0)}) : 'Ver produtos'}</div><div class="da-home-kit-actions"><a href="#/kit/${encodeURIComponent(kit.id)}">Ver produtos</a><button type="button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar</button></div></div>
         </article>`;
       }
@@ -6122,17 +6077,11 @@
         if(!slot || !slot.isConnected || slot.dataset.loaded==='true') return;
         slot.dataset.loaded='true';
         slot.removeAttribute('aria-busy');
-        const care=daHomeCareProducts();
-        const bargains=daHomeBargainProducts();
+        const bargains=daHomeBargainProducts().slice(0,8);
         const cafe=productsByRoutine('cafe',100);
-        const useful=daHomeUsefulProducts();
-        const treats=daHomeTreatProducts();
         slot.innerHTML=`
-          ${daHomeCompactShelfHtml('Cuidados pessoais','Produtos de beleza, cabelos e cuidados que podem entrar na compra do mês.',care,'#/categoria/BELEZA','care','Ver cuidados')}
-          ${daHomeCompactShelfHtml('Achadinhos por até R$ 3','Produtos baratos e úteis para completar o carrinho.',bargains,'#/categorias','bargain','Explorar categorias')}
           ${daHomeCollectionSectionHtml('cafe','Café da manhã','Café, biscoitos e acompanhamentos para começar o dia.',cafe,'#/rotina/cafe','coffee')}
-          ${daHomeCompactShelfHtml('Utilidades para casa','Itens práticos para cozinha, organização e tarefas do dia a dia.',useful,'#/categoria/UTENSÍLIOS%20E%20UTILIDADES','utility','Ver utilidades')}
-          ${daHomeCompactShelfHtml('Doces e lanches','Doces, biscoitos e petiscos para completar a compra.',treats,'#/categorias','treat','Ver categorias')}
+          ${daHomeCompactShelfHtml('Complete seu carrinho por até R$ 3','Itens baratos e úteis para aproveitar melhor o pedido.',bargains,'#/categorias','bargain','Explorar categorias')}
           ${daHomeHereTemHtml()}
           ${brandStripHtml()}
           ${categoryButtonsHtml()}`;
@@ -6163,17 +6112,15 @@
         if(!slot || !slot.isConnected || slot.dataset.loaded==='true') return;
         slot.dataset.loaded='true';
         slot.removeAttribute('aria-busy');
-        const essentials=daHomeRandomizedDiverseProducts(productsByRoutine('compra-mes',120),4);
         const limpeza=productsByRoutine('limpeza',80);
         const higiene=productsByRoutine('higiene',120);
-        const reminders=daHomeReminderProducts();
+        const reminders=daHomeReminderProducts().slice(0,6);
         slot.innerHTML=`
-          ${daHomeStandardShelfHtml('Essenciais da compra do mês','Uma seleção rápida para começar a abastecer a casa.',essentials,'#/rotina/compra-mes','month')}
-          ${daHomeCompactShelfHtml('Você já conferiu?','Itens que a gente costuma lembrar somente quando estão acabando.',reminders,'#/rotina/compra-mes','reminder','Continuar comprando')}
-          ${daHomeCollectionSectionHtml('limpeza','Limpeza da casa','Encontre rapidamente o tipo de limpeza que precisa.',limpeza,'#/rotina/limpeza','clean')}
+          ${daHomeCompactShelfHtml('Não esqueça destes itens','Produtos que costumam faltar justamente na hora de fechar a compra.',reminders,'#/rotina/compra-mes','reminder','Continuar comprando')}
+          ${daHomeCollectionSectionHtml('limpeza','Limpeza da casa','Escolha rapidamente o tipo de limpeza que precisa.',limpeza,'#/rotina/limpeza','clean')}
           ${bannerSlotHtml('home.higiene.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques de cuidados pessoais'})}
           ${daHomeCollectionSectionHtml('higiene','Higiene da família','Cuidados essenciais organizados por necessidade.',higiene,'#/rotina/higiene','care')}
-          <div data-home-tail-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando mais setores…')}</div>`;
+          <div data-home-tail-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando mais formas de comprar…')}</div>`;
         setupBannerCarousels();
         updateOfferCountdowns();
         syncVisibleCards();
@@ -6202,21 +6149,19 @@
       }
 
       renderHome=function(){
-        const offers=getTopOffers(40);
+        const offers=getTopOffers(12);
         const kits=getActiveKits();
-        app.innerHTML=`<div class="container home-clean da-home-modular da-home-funnel">
+        app.innerHTML=`<div class="container home-clean da-home-modular da-home-funnel da-home-profit">
           <h1 class="sr-only">Dona Antônia - Supermercado e Cestas</h1>
-          ${bannerSlotHtml('home.hero',{carousel:true,kind:'hero',limit:6,hideHead:true,label:'Destaques da Dona Antônia'})}
           ${homeQuickLinksHtml()}
-          <div data-home-personalization-slot="buy-again"></div>
-          ${daHomePurchaseJourneyHtml()}
+          ${bannerSlotHtml('home.hero',{carousel:true,kind:'hero',limit:6,hideHead:true,label:'Destaques da Dona Antônia'})}
           ${daHomeOfferShelfHtml(offers)}
+          ${daHomePurchaseJourneyHtml()}
           ${bannerSlotHtml('home.compra-mes.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques para a compra do mês'})}
           ${daHomeBasketShelfHtml(state.cestas)}
           ${daHomeKitShelfHtml(kits)}
-          <div data-home-secondary-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando os setores da compra do mês…')}</div>
-          <div data-home-personalization-slot="chosen"></div>
-          <div data-home-personalization-slot="recent"></div>
+          <div data-home-secondary-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando sugestões para completar sua compra…')}</div>
+          <div class="da-home-bottom-safe" aria-hidden="true"></div>
         </div>`;
         setupBannerCarousels();
         daSetupHomeSecondary();
@@ -6799,6 +6744,91 @@
 
     init();
   })();
+</script>
+<script>
+  (function(){
+    function normalizeTitle(value){
+      return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+    }
+    function removeFeaturedProductSections(){
+      const root=document.querySelector('.da-home-profit');
+      if(!root) return;
+      root.querySelectorAll('section,.da-home-section').forEach(function(section){
+        const heading=section.querySelector('h2,h3,.section-title,.da-home-section-head strong');
+        if(heading && normalizeTitle(heading.textContent)==='produtos em destaque') section.remove();
+      });
+    }
+    const observer=new MutationObserver(removeFeaturedProductSections);
+    observer.observe(document.body,{childList:true,subtree:true});
+    document.addEventListener('DOMContentLoaded',removeFeaturedProductSections,{once:true});
+    window.setTimeout(removeFeaturedProductSections,0);
+    window.setTimeout(removeFeaturedProductSections,2000);
+  })();
+  </script>
+<!-- DA_PRODUCTION: home otimizada, banners verticais e navegação com rolagem preservada. -->
+<script>
+(function(){
+  function normalize(value){
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+  }
+  function isKitsSection(section){
+    const heading=section.querySelector('h2,h3,.section-title,.da-home-section-head strong');
+    const title=normalize(heading && heading.textContent);
+    return title.includes('kit promocional') || title==='kits' || section.matches('[data-home-section="kits"],.kits-section,.kit-shelf');
+  }
+  function addMobileSeeAllButtons(){
+    const root=document.querySelector('.da-home-profit');
+    if(!root) return;
+    const selectors=['.da-home-section-head a[href]','.section-head a[href]','.shelf-head a[href]','a.section-link[href]'];
+    root.querySelectorAll(selectors.join(',')).forEach(function(action){
+      const section=action.closest('section,.da-home-section');
+      if(!section || isKitsSection(section) || section.querySelector(':scope > .da-mobile-see-all')) return;
+      const href=action.getAttribute('href');
+      if(!href || href==='#' || /^javascript:/i.test(href)) return;
+      const button=document.createElement('a');
+      button.className='da-mobile-see-all';
+      button.href=href;
+      button.textContent='Ver Todos os Produtos';
+      button.setAttribute('aria-label','Ver todos os produtos desta seção');
+      section.appendChild(button);
+    });
+  }
+  const observer=new MutationObserver(addMobileSeeAllButtons);
+  observer.observe(document.body,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',addMobileSeeAllButtons,{once:true});
+  window.setTimeout(addMobileSeeAllButtons,0);
+  window.setTimeout(addMobileSeeAllButtons,1800);
+  window.setTimeout(addMobileSeeAllButtons,3600);
+})();
+</script>
+<script>
+(function(){
+  const STORAGE_PREFIX='da-pagespeed-scroll-v1:';
+  const app=document.getElementById('app');
+  let restoreOnNextRoute=false;
+  function routeKey(){ return location.pathname + location.search + (location.hash || '#/'); }
+  function readScroll(){ return app ? app.scrollTop : window.scrollY; }
+  function writeScroll(value){ if(app) app.scrollTop=value; else window.scrollTo(0,value); }
+  function saveCurrentPosition(){ try{ sessionStorage.setItem(STORAGE_PREFIX + routeKey(), String(Math.max(0,readScroll()||0))); }catch(e){} }
+  function restoreCurrentPosition(){
+    let target=0;
+    try{ target=Number(sessionStorage.getItem(STORAGE_PREFIX + routeKey())||0); }catch(e){}
+    if(!Number.isFinite(target)||target<1) return;
+    [0,80,180,350,650,1100].forEach(function(delay){ window.setTimeout(function(){ writeScroll(target); },delay); });
+  }
+  document.addEventListener('click',function(event){
+    const link=event.target.closest('a[href]');
+    if(!link) return;
+    const href=link.getAttribute('href')||'';
+    if(href.startsWith('#/')) saveCurrentPosition();
+  },true);
+  window.addEventListener('popstate',function(){
+    restoreOnNextRoute=true;
+    window.setTimeout(function(){ if(restoreOnNextRoute){ restoreOnNextRoute=false; restoreCurrentPosition(); } },0);
+  });
+  window.addEventListener('hashchange',function(){ if(!restoreOnNextRoute) return; restoreOnNextRoute=false; restoreCurrentPosition(); });
+  window.addEventListener('pagehide',saveCurrentPosition);
+})();
 </script>
 </body>
 </html>
