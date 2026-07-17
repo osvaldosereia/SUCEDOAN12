@@ -1,0 +1,50 @@
+name: Remover marcas da home
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - index.html
+      - scripts/remove-home-brands.mjs
+      - scripts/build-fast-home-test.mjs
+      - .github/workflows/remove-home-brands.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Remover marcas da home oficial
+        run: node scripts/remove-home-brands.mjs
+
+      - name: Validar arquivos
+        shell: bash
+        run: |
+          node --check scripts/remove-home-brands.mjs
+          node --check scripts/build-fast-home-test.mjs
+          grep -q '2026-07-17-home-sem-marcas-v10' index.html
+          ! grep -q '\${brandStripHtml()}' index.html
+          ! grep -q '\${brandStripHtml()}' scripts/build-fast-home-test.mjs
+          grep -q 'getTopOffers(20)' index.html
+          grep -q 'limit:4' index.html
+          grep -q 'index, follow' index.html
+
+      - name: Salvar index ajustado na branch
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '4189826+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Remover Marcas mais procuradas da home'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}

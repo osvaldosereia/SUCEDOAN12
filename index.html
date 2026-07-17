@@ -2,11 +2,11 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="da-build-version" content="2026-07-17-home-cards-proporcionais-v9">
+  <meta name="da-build-version" content="2026-07-17-home-sem-marcas-v10">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-17-home-cards-proporcionais-v9';
+    const BUILD = '2026-07-17-home-sem-marcas-v10';
     window.__DA_BUILD_VERSION__ = BUILD;
     window.__DA_PAGESPEED_TEST__ = false;
     document.documentElement.classList.add('da-pagespeed-booting');
@@ -32,7 +32,7 @@
   <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-17-fast-home-oficial-v2" as="fetch" type="application/json" crossorigin="anonymous">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-17-home-sem-marcas-v10" as="fetch" type="application/json" crossorigin="anonymous">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -1001,7 +1001,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-17-fast-home-oficial-v2',
+      APP_VERSION: '2026-07-17-home-sem-marcas-v10',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -6156,7 +6156,7 @@
           ${daHomeCollectionSectionHtml('cafe','Café da manhã','Café, biscoitos e acompanhamentos para começar o dia.',cafe,'#/rotina/cafe','coffee')}
           ${daHomeCompactShelfHtml('Complete seu carrinho por até R$ 3','Itens baratos e úteis para aproveitar melhor o pedido.',bargains,'#/categorias','bargain','Explorar categorias')}
           ${daHomeHereTemHtml()}
-          ${brandStripHtml()}
+          
           ${categoryButtonsHtml()}`;
         updateOfferCountdowns();
         syncVisibleCards();
@@ -6185,7 +6185,7 @@
         if(!slot || !slot.isConnected || slot.dataset.loaded==='true') return;
         slot.dataset.loaded='true';
         slot.removeAttribute('aria-busy');
-        slot.innerHTML=`${daHomeHereTemHtml()}${brandStripHtml()}${categoryButtonsHtml()}`;
+        slot.innerHTML=`${daHomeHereTemHtml()}${categoryButtonsHtml()}`;
         syncVisibleCards();
         updateFavoritesUI();
       }

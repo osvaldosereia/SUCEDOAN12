@@ -30,11 +30,11 @@ required(
         if(!slot || !slot.isConnected || slot.dataset.loaded==='true') return;
         slot.dataset.loaded='true';
         slot.removeAttribute('aria-busy');
-        slot.innerHTML=\`\${daHomeHereTemHtml()}\${brandStripHtml()}\${categoryButtonsHtml()}\`;
+        slot.innerHTML=\`\${daHomeHereTemHtml()}\${categoryButtonsHtml()}\`;
         syncVisibleCards();
         updateFavoritesUI();
       }`,
-  'variedade compacta'
+  'variedade compacta sem marcas'
 );
 
 html=html.replace(/\s*<div data-home-tail-slot[\s\S]*?<\/div>\`;/g,'`');
