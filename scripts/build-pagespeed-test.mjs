@@ -15,7 +15,11 @@ function replaceRequired(pattern, replacement, label) {
 // Identificação inequívoca da página de testes.
 html = html.replace(
   /<meta name="da-build-version" content="[^"]+">/,
-  '<meta name="da-build-version" content="2026-07-16-pagespeed-test-v1">\n  <meta name="robots" content="noindex, nofollow">'
+  '<meta name="da-build-version" content="2026-07-16-pagespeed-test-v1">'
+);
+html = html.replace(
+  /<meta name="robots" content="[^"]+">/,
+  '<meta name="robots" content="noindex, nofollow">'
 );
 html = html.replace(
   /<title>(.*?)<\/title>/,
@@ -101,4 +105,3 @@ html = html.replace(
 if (html === original) throw new Error('Nenhuma transformação foi aplicada.');
 await fs.writeFile(OUTPUT, html, 'utf8');
 console.log(`Gerado ${OUTPUT}: ${Buffer.byteLength(html)} bytes`);
-// Nova execução após corrigir a detecção de arquivo não rastreado no workflow.
