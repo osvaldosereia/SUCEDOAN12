@@ -6768,18 +6768,21 @@
 <!-- DA_PAGESPEED_TEST: versão v5 sem Produtos em destaque e com área segura acima da barra inferior. -->
 <script>
 (function(){
+  function normalize(value){
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+  }
+  function isKitsSection(section){
+    const heading=section.querySelector('h2,h3,.section-title,.da-home-section-head strong');
+    const title=normalize(heading && heading.textContent);
+    return title.includes('kit promocional') || title==='kits' || section.matches('[data-home-section="kits"],.kits-section,.kit-shelf');
+  }
   function addMobileSeeAllButtons(){
     const root=document.querySelector('.da-home-profit');
     if(!root) return;
-    const selectors=[
-      '.da-home-section-head a[href]',
-      '.section-head a[href]',
-      '.shelf-head a[href]',
-      'a.section-link[href]'
-    ];
+    const selectors=['.da-home-section-head a[href]','.section-head a[href]','.shelf-head a[href]','a.section-link[href]'];
     root.querySelectorAll(selectors.join(',')).forEach(function(action){
       const section=action.closest('section,.da-home-section');
-      if(!section || section.querySelector(':scope > .da-mobile-see-all')) return;
+      if(!section || isKitsSection(section) || section.querySelector(':scope > .da-mobile-see-all')) return;
       const href=action.getAttribute('href');
       if(!href || href==='#' || /^javascript:/i.test(href)) return;
       const button=document.createElement('a');
@@ -6796,6 +6799,35 @@
   window.setTimeout(addMobileSeeAllButtons,0);
   window.setTimeout(addMobileSeeAllButtons,1800);
   window.setTimeout(addMobileSeeAllButtons,3600);
+})();
+</script>
+<script>
+(function(){
+  const STORAGE_PREFIX='da-pagespeed-scroll-v1:';
+  const app=document.getElementById('app');
+  let restoreOnNextRoute=false;
+  function routeKey(){ return location.pathname + location.search + (location.hash || '#/'); }
+  function readScroll(){ return app ? app.scrollTop : window.scrollY; }
+  function writeScroll(value){ if(app) app.scrollTop=value; else window.scrollTo(0,value); }
+  function saveCurrentPosition(){ try{ sessionStorage.setItem(STORAGE_PREFIX + routeKey(), String(Math.max(0,readScroll()||0))); }catch(e){} }
+  function restoreCurrentPosition(){
+    let target=0;
+    try{ target=Number(sessionStorage.getItem(STORAGE_PREFIX + routeKey())||0); }catch(e){}
+    if(!Number.isFinite(target)||target<1) return;
+    [0,80,180,350,650,1100].forEach(function(delay){ window.setTimeout(function(){ writeScroll(target); },delay); });
+  }
+  document.addEventListener('click',function(event){
+    const link=event.target.closest('a[href]');
+    if(!link) return;
+    const href=link.getAttribute('href')||'';
+    if(href.startsWith('#/')) saveCurrentPosition();
+  },true);
+  window.addEventListener('popstate',function(){
+    restoreOnNextRoute=true;
+    window.setTimeout(function(){ if(restoreOnNextRoute){ restoreOnNextRoute=false; restoreCurrentPosition(); } },0);
+  });
+  window.addEventListener('hashchange',function(){ if(!restoreOnNextRoute) return; restoreOnNextRoute=false; restoreCurrentPosition(); });
+  window.addEventListener('pagehide',saveCurrentPosition);
 })();
 </script>
 </body>
