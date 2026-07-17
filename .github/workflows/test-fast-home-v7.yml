@@ -1,4 +1,4 @@
-name: Testar home ultra leve v7
+name: Validar e publicar home rápida v8
 
 on:
   pull_request:
@@ -6,6 +6,7 @@ on:
     paths:
       - index.html
       - scripts/build-fast-home-test.mjs
+      - scripts/promote-fast-home-v8.mjs
       - .github/workflows/test-fast-home-v7.yml
   workflow_dispatch:
 
@@ -13,11 +14,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: fast-home-v7-${{ github.event.pull_request.number || github.ref }}
+  group: fast-home-v8-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-test:
+  build-test-and-production:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,38 +30,53 @@ jobs:
       - name: Gerar página de teste
         run: node scripts/build-fast-home-test.mjs
 
-      - name: Validar estrutura e segurança
+      - name: Validar página de teste
+        shell: bash
+        run: |
+          test -s index-pagespeed-test.html
+          grep -q 'DA_FAST_HOME_TEST_V8' index-pagespeed-test.html
+          grep -q 'fast-home-test-v8' index-pagespeed-test.html
+          grep -q 'getTopOffers(20)' index-pagespeed-test.html
+          grep -q 'limit:4' index-pagespeed-test.html
+          grep -q 'grid-template-columns:1fr!important' index-pagespeed-test.html
+          grep -q "img.loading='eager'" index-pagespeed-test.html
+          grep -q "img.fetchPriority='high'" index-pagespeed-test.html
+          grep -q 'carousel:false' index-pagespeed-test.html
+          grep -q 'noindex, nofollow' index-pagespeed-test.html
+
+      - name: Gerar index oficial
+        run: node scripts/promote-fast-home-v8.mjs
+
+      - name: Validar index oficial
         shell: bash
         run: |
           test -s index.html
-          test -s index-pagespeed-test.html
-          grep -q 'DA_FAST_HOME_TEST_V7' index-pagespeed-test.html
-          grep -q 'fast-home-test-v7' index-pagespeed-test.html
-          grep -q 'getTopOffers(20)' index-pagespeed-test.html
-          grep -q 'limit:4' index-pagespeed-test.html
-          grep -q "max-width:767px" index-pagespeed-test.html
-          grep -q "img.loading='eager'" index-pagespeed-test.html
-          grep -q "img.fetchPriority='high'" index-pagespeed-test.html
-          grep -q "carousel:false" index-pagespeed-test.html
-          grep -q 'noindex, nofollow' index-pagespeed-test.html
-          ! grep -q 'DA_FAST_HOME_TEST_V7' index.html
-          git diff --exit-code -- index.html
+          grep -q 'DA_PRODUCTION_FAST_HOME_V2' index.html
+          grep -q '2026-07-17-fast-home-oficial-v2' index.html
+          grep -q 'index, follow' index.html
+          grep -q 'getTopOffers(20)' index.html
+          grep -q 'grid-template-columns:1fr!important' index.html
+          grep -q 'limit:4' index.html
+          grep -q 'carousel:false' index.html
+          ! grep -q 'noindex, nofollow' index.html
+          ! grep -q 'Teste Home Rápida' index.html
+          ! grep -q 'window.__DA_PAGESPEED_TEST__ = true' index.html
 
-      - name: Verificar tamanho e sintaxe básica
+      - name: Verificar sintaxe e tamanho
         shell: bash
         run: |
           node --check scripts/build-fast-home-test.mjs
-          bytes=$(wc -c < index-pagespeed-test.html)
-          test "$bytes" -lt 650000
-          echo "Página de teste: $bytes bytes"
+          node --check scripts/promote-fast-home-v8.mjs
+          test "$(wc -c < index.html)" -lt 650000
+          test "$(wc -c < index-pagespeed-test.html)" -lt 650000
 
-      - name: Publicar página de teste na branch
+      - name: Salvar teste e index oficial na branch
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
-          git add index-pagespeed-test.html
+          git add index-pagespeed-test.html index.html
           if git diff --cached --quiet; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Gerar home ultra leve v7 para testes'
+          git commit -m 'Publicar home rápida v8 com compra do mês em uma coluna'
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
