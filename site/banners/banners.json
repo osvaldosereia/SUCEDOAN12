@@ -1,6 +1,6 @@
 {
   "schema_version": 14,
-  "updated_at": "2026-07-17T10:33:07.000Z",
+  "updated_at": "2026-07-17T12:33:03.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -8087,6 +8087,81 @@
         "estrategia": "categoria_menos_preenchida_ate_8_v14",
         "ordem_selecao": "categoria_primeiro_produto_menos_usado_depois",
         "categoria_escolhida": "CHOCOLATES E DOCES",
+        "carga_categoria_antes": 0,
+        "limite_por_categoria": 8,
+        "dias_sem_repetir": 30,
+        "repeticao_como_fallback": true,
+        "produto_uso_ativo_antes": 0,
+        "duracao": "periodo_da_oferta"
+      }
+    },
+    {
+      "id": "banner-produto-p573-1784291530000",
+      "ativo": true,
+      "titulo": "Oferta · Apti Mistura para Bolo Floresta Negra 400g",
+      "alt": "Apti Mistura para Bolo Floresta Negra 400g na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338125569",
+        "produtos": [
+          {
+            "firebaseKey": "1776338125569",
+            "id": "1776338125569",
+            "codigo": "P573",
+            "nome": "Apti Mistura para Bolo Floresta Negra 400g",
+            "categoria": "CONFEITARIA",
+            "subcategoria": "BOLO",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b63/2026/07/apti-mistura-para-bolo-floresta-negra-400g-apti-400g-confeitaria-bolo-7896327510956-foto-atual-otimizada-20260711050839.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "categoria",
+        "alvo": "CONFEITARIA",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-produto-p573-1784291530000/banner-1784291530000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P573"
+      },
+      "periodo": {
+        "inicio": "2026-07-17T12:32:10.000Z",
+        "fim": "2026-08-01T03:59:59.000Z",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta",
+        "encurtado_pelo_vencimento_produto": false
+      },
+      "criado_em": "2026-07-17T12:32:10.000Z",
+      "atualizado_em": "2026-07-17T12:32:10.000Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-p573-1784291530000",
+      "asset_id": "banner-produto-p573-1784291530000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 4.79,
+        "preco_oferta": 2.87,
+        "preco_regular": 4.79,
+        "percentual_desconto": 40,
+        "inicio": "",
+        "fim": "2026-07-31T23:59:59-04:00"
+      },
+      "automacao": {
+        "automatico": true,
+        "requisicao_id": "",
+        "estrategia": "categoria_menos_preenchida_ate_8_v14",
+        "ordem_selecao": "categoria_primeiro_produto_menos_usado_depois",
+        "categoria_escolhida": "CONFEITARIA",
         "carga_categoria_antes": 0,
         "limite_por_categoria": 8,
         "dias_sem_repetir": 30,
