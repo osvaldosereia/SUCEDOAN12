@@ -77,3 +77,4 @@ lines.push('', '## Protocolo obrigatório antes de remover', '',
 
 await fs.writeFile(output, `${lines.join('\n')}\n`, 'utf8');
 console.log(`Auditoria salva em ${output}`);
+// Auditoria v2: execução vinculada à validação de estabilidade da página paralela.
