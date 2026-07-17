@@ -1,0 +1,57 @@
+name: Validar pagina PageSpeed paralela
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - scripts/build-pagespeed-test.mjs
+      - .github/workflows/build-pagespeed-test.yml
+      - index-pagespeed-test.html
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pagespeed-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gerar-e-validar:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar branch de teste
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Gerar pagina paralela
+        run: node scripts/build-pagespeed-test.mjs
+
+      - name: Validar que o index publico foi preservado
+        shell: bash
+        run: |
+          test -s index.html
+          test -s index-pagespeed-test.html
+          grep -q 'DA_PAGESPEED_TEST' index-pagespeed-test.html
+          grep -q 'pagespeed-test-v1' index-pagespeed-test.html
+          ! grep -q 'DA_PAGESPEED_TEST' index.html
+          ! grep -q 'http-equiv="Cache-Control"' index-pagespeed-test.html
+          ! grep -q 'window.location.replace(versionedLocation(BUILD, true))' index-pagespeed-test.html
+          git diff --exit-code -- index.html
+
+      - name: Salvar pagina gerada na branch de teste
+        shell: bash
+        run: |
+          if git diff --quiet -- index-pagespeed-test.html; then
+            echo 'Pagina de teste ja esta atualizada.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index-pagespeed-test.html
+          git commit -m 'Gerar pagina PageSpeed paralela'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
