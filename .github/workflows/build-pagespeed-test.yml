@@ -8,6 +8,7 @@ on:
       - index.html
       - index-pagespeed-test.html
       - scripts/build-pagespeed-test.mjs
+      - scripts/patch-pagespeed-mobile-buttons.mjs
       - scripts/audit-index-dead-code.mjs
       - .github/workflows/build-pagespeed-test.yml
   workflow_dispatch:
@@ -34,6 +35,9 @@ jobs:
       - name: Gerar pagina paralela
         run: node scripts/build-pagespeed-test.mjs
 
+      - name: Adicionar botoes largos no mobile
+        run: node scripts/patch-pagespeed-mobile-buttons.mjs
+
       - name: Auditar duplicacoes e codigo possivelmente inativo
         run: node scripts/audit-index-dead-code.mjs index-pagespeed-test.html pagespeed-code-audit.md
 
@@ -53,6 +57,9 @@ jobs:
           grep -q 'aspect-ratio:4/5' index-pagespeed-test.html
           grep -q 'da-home-bottom-safe' index-pagespeed-test.html
           grep -q 'removeFeaturedProductSections' index-pagespeed-test.html
+          grep -q 'da-mobile-see-all' index-pagespeed-test.html
+          grep -q 'Ver Todos os Produtos' index-pagespeed-test.html
+          ! grep -q 'data-home-personalization-slot="buy-again"' index-pagespeed-test.html
           ! grep -q 'data-home-personalization-slot="chosen"' index-pagespeed-test.html
           ! grep -q 'data-home-personalization-slot="recent"' index-pagespeed-test.html
           ! grep -q 'DA_PAGESPEED_TEST' index.html
@@ -72,5 +79,5 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Gerar home PageSpeed v5 sem destaques e com rodape seguro'
+          git commit -m 'Gerar home PageSpeed v5 sem destaques e com botoes mobile'
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
