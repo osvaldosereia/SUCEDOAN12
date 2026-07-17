@@ -6,6 +6,7 @@ on:
     paths:
       - index.html
       - scripts/patch-storefront-banners-cache.mjs
+      - scripts/fix-storefront-patch.mjs
       - scripts/build-fast-home-test.mjs
       - .github/workflows/patch-storefront-banners-cache.yml
   workflow_dispatch:
@@ -27,6 +28,9 @@ jobs:
           fetch-depth: 1
           persist-credentials: true
 
+      - name: Preparar patch final
+        run: node scripts/fix-storefront-patch.mjs
+
       - name: Validar sintaxe do patch
         run: node --check scripts/patch-storefront-banners-cache.mjs
 
@@ -40,12 +44,12 @@ jobs:
           grep -q 'DA_STOREFRONT_BANNERS_CACHE_V10' index.html
           grep -q 'banners-pos-quarto-cache-v10' index.html
           grep -q 'cdn.jsdelivr.net/gh/osvaldosereia/SUCEDOAN12@main/' index.html
-          grep -q "slice(0,4)" index.html
-          grep -q "slice(0,4).map" index.html
+          grep -q "items.slice(0,4)" index.html
           grep -q 'da-home-here-item:nth-child(n+7)' index.html
           grep -q 'grid-template-columns:repeat(6' index.html
-          grep -q "renderHome=function" index.html
-          ! grep -A12 'renderHome=function' index.html | grep -q "home.hero"
+          grep -q "renderCategory=function" index.html
+          grep -q "renderSearch=function" index.html
+          ! grep -A14 'renderHome=function' index.html | grep -q "home.hero"
           grep -q '<meta name="robots" content="index, follow">' index.html
           bytes=$(wc -c < index.html)
           test "$bytes" -lt 720000
@@ -55,7 +59,7 @@ jobs:
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
-          git add index.html scripts/build-fast-home-test.mjs
+          git add index.html scripts/build-fast-home-test.mjs scripts/patch-storefront-banners-cache.mjs
           if git diff --cached --quiet; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
