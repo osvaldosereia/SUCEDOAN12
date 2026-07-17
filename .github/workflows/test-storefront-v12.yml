@@ -56,6 +56,7 @@ jobs:
       - name: Testar catálogo em navegador real
         shell: bash
         run: |
+          set -o pipefail
           python3 -m http.server 4173 > /tmp/storefront-v12-server.log 2>&1 &
           server_pid=$!
           trap 'kill $server_pid || true' EXIT
@@ -63,7 +64,17 @@ jobs:
             if curl -fsS http://127.0.0.1:4173/index-pagespeed-test.html >/dev/null; then break; fi
             sleep 1
           done
-          node scripts/test-storefront-v12-browser.mjs
+          node scripts/test-storefront-v12-browser.mjs 2>&1 | tee /tmp/storefront-v12-browser.log
+
+      - name: Guardar diagnóstico do navegador
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storefront-v12-diagnostics
+          path: |
+            /tmp/storefront-v12-browser.log
+            /tmp/storefront-v12-server.log
+          if-no-files-found: warn
 
       - name: Confirmar que o index oficial não mudou
         run: git diff --exit-code -- index.html
