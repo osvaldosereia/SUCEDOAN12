@@ -44,10 +44,13 @@ jobs:
           test -s index-pagespeed-test.html
           test -s pagespeed-code-audit.md
           grep -q 'DA_PAGESPEED_TEST' index-pagespeed-test.html
-          grep -q 'pagespeed-test-v3' index-pagespeed-test.html
+          grep -q 'pagespeed-test-v4' index-pagespeed-test.html
           grep -q 'window.__DA_PAGESPEED_TEST__ = true' index-pagespeed-test.html
           grep -q 'da-pagespeed-booting' index-pagespeed-test.html
           grep -q "classList.remove('da-pagespeed-booting')" index-pagespeed-test.html
+          grep -q 'da-home-profit' index-pagespeed-test.html
+          grep -q "const offers=getTopOffers(12)" index-pagespeed-test.html
+          grep -q 'aspect-ratio:4/5' index-pagespeed-test.html
           ! grep -q 'DA_PAGESPEED_TEST' index.html
           ! grep -q 'http-equiv="Cache-Control"' index-pagespeed-test.html
           ! grep -q 'window.location.replace(versionedLocation(BUILD, true))' index-pagespeed-test.html
@@ -65,5 +68,5 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Gerar pagina PageSpeed v3 sem flash inicial'
+          git commit -m 'Gerar home PageSpeed v4 comercial e compacta'
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
