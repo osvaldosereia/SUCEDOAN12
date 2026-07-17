@@ -172,18 +172,16 @@ function homeProduct(key, product) {
   const image = text(product.url_imagem || product.imagem_url || product.imagem || product.image || product.img || product.foto || product.foto_url || product.imagem_path);
   const name = text(product.nome || product.name || product.titulo);
   const code = productCode(key, product);
-  const tags = Array.isArray(product.tags) ? product.tags.map(text).filter(Boolean).slice(0, 8) : [];
-  return {
-    key, firebaseKey: key, id: key, codigo: code, nome: name,
+  const compact = {
+    codigo: code, nome: name,
     categoria: text(product.categoria), subcategoria: text(product.subcategoria), subsubcategoria: text(product.subsubcategoria),
     marca: text(product.marca), embalagem: text(product.embalagem), preco: money(product.preco ?? product.price ?? product.valor),
     preco_oferta: money(product.preco_oferta ?? product.precoOferta), estoque: Math.max(0, Math.floor(number(product.estoque))),
-    situacao: isActive(product) ? "A" : "I", url_imagem: image, imagem: image, imagem_url: image,
-    imagem_path: text(product.imagem_path), imagem_storage: text(product.imagem_storage),
-    slug: normalizedText(name || code || key).toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
-    tags, descricao_curta: text(product.descricao_curta || product.descricao).slice(0, 180),
+    situacao: isActive(product) ? "A" : "I", url_imagem: image,
+    descricao_curta: text(product.descricao_curta || product.descricao).slice(0, 180),
     validade: text(product.validade), validade_oferta: text(product.validade_oferta), gtin: text(product.gtin || product.ean)
   };
+  return Object.fromEntries(Object.entries(compact).filter(([, value]) => value !== "" && value !== null && value !== undefined && value !== 0));
 }
 
 function normalizeConfig(raw = {}) {
