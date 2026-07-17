@@ -7,6 +7,7 @@ on:
       - index.html
       - index-pagespeed-test.html
       - scripts/build-storefront-v12-test.mjs
+      - scripts/run-storefront-v12-test.mjs
       - scripts/test-storefront-v12-static.mjs
       - scripts/test-storefront-v12-browser.mjs
       - .github/workflows/test-storefront-v12.yml
@@ -32,16 +33,17 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Validar scripts
         run: |
           node --check scripts/build-storefront-v12-test.mjs
+          node --check scripts/run-storefront-v12-test.mjs
           node --check scripts/test-storefront-v12-static.mjs
           node --check scripts/test-storefront-v12-browser.mjs
 
       - name: Gerar página isolada de teste
-        run: node scripts/build-storefront-v12-test.mjs
+        run: node scripts/run-storefront-v12-test.mjs
 
       - name: Executar validações estáticas
         run: node scripts/test-storefront-v12-static.mjs
