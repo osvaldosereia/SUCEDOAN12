@@ -2,11 +2,11 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="da-build-version" content="2026-07-17-home-pagespeed-oficial-v1">
+  <meta name="da-build-version" content="2026-07-17-fast-home-oficial-v2">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-17-home-pagespeed-oficial-v1';
+    const BUILD = '2026-07-17-fast-home-oficial-v2';
     window.__DA_BUILD_VERSION__ = BUILD;
     window.__DA_PAGESPEED_TEST__ = false;
     document.documentElement.classList.add('da-pagespeed-booting');
@@ -32,7 +32,7 @@
   <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-17-home-pagespeed-oficial-v1" as="fetch" type="application/json" crossorigin="anonymous">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-17-fast-home-oficial-v2" as="fetch" type="application/json" crossorigin="anonymous">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -798,6 +798,16 @@
     .product-page-container [data-control-mode="detail"]{position:static!important;width:100%!important;transform:none!important;padding:0!important;background:transparent!important;box-shadow:none!important}
   }
   </style>
+
+<style id="da-fast-home-css">
+.da-home-profit [data-banner-position="home.hero"] .banner-track{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;overflow:visible!important;transform:none!important;scroll-behavior:auto!important}
+.da-home-profit [data-banner-position="home.hero"] .banner-card{min-width:0!important;width:auto!important;animation:none!important;transition:none!important}
+.da-home-profit [data-banner-position="home.hero"] .banner-dots,.da-home-profit [data-banner-position="home.hero"] .banner-arrow{display:none!important}
+.da-home-profit .da-home-section{content-visibility:auto;contain-intrinsic-size:420px}
+.da-home-profit img[loading="lazy"]{content-visibility:auto}
+@media(max-width:767px){.da-home-profit [data-banner-position="home.hero"] .banner-track{grid-template-columns:repeat(2,minmax(0,1fr))!important}.da-home-profit [data-banner-position="home.hero"] .banner-card:nth-child(n+3){display:none!important}.da-home-profit .da-home-section{contain-intrinsic-size:360px}.da-home-profit .da-home-journey-grid{grid-template-columns:1fr!important}.da-home-profit .da-home-journey-card{min-height:116px}}
+@media(max-width:420px){.da-home-profit *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.da-home-profit .banner-card{box-shadow:none!important}}
+</style>
 </head>
 <body>
   <header class="header">
@@ -928,7 +938,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-17-home-pagespeed-oficial-v1',
+      APP_VERSION: '2026-07-17-fast-home-oficial-v2',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -6112,20 +6122,9 @@
         if(!slot || !slot.isConnected || slot.dataset.loaded==='true') return;
         slot.dataset.loaded='true';
         slot.removeAttribute('aria-busy');
-        const limpeza=productsByRoutine('limpeza',80);
-        const higiene=productsByRoutine('higiene',120);
-        const reminders=daHomeReminderProducts().slice(0,6);
-        slot.innerHTML=`
-          ${daHomeCompactShelfHtml('Não esqueça destes itens','Produtos que costumam faltar justamente na hora de fechar a compra.',reminders,'#/rotina/compra-mes','reminder','Continuar comprando')}
-          ${daHomeCollectionSectionHtml('limpeza','Limpeza da casa','Escolha rapidamente o tipo de limpeza que precisa.',limpeza,'#/rotina/limpeza','clean')}
-          ${bannerSlotHtml('home.higiene.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques de cuidados pessoais'})}
-          ${daHomeCollectionSectionHtml('higiene','Higiene da família','Cuidados essenciais organizados por necessidade.',higiene,'#/rotina/higiene','care')}
-          <div data-home-tail-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando mais formas de comprar…')}</div>`;
-        setupBannerCarousels();
-        updateOfferCountdowns();
+        slot.innerHTML=`${daHomeHereTemHtml()}${brandStripHtml()}${categoryButtonsHtml()}`;
         syncVisibleCards();
         updateFavoritesUI();
-        daSetupHomeTail();
       }
 
       function daSetupHomeSecondary(){
@@ -6149,15 +6148,14 @@
       }
 
       renderHome=function(){
-        const offers=getTopOffers(12);
+        const offers=getTopOffers(20);
         const kits=getActiveKits();
         app.innerHTML=`<div class="container home-clean da-home-modular da-home-funnel da-home-profit">
           <h1 class="sr-only">Dona Antônia - Supermercado e Cestas</h1>
           ${homeQuickLinksHtml()}
-          ${bannerSlotHtml('home.hero',{carousel:true,kind:'hero',limit:6,hideHead:true,label:'Destaques da Dona Antônia'})}
+          ${bannerSlotHtml('home.hero',{carousel:false,kind:'hero',limit:4,hideHead:true,label:'Destaques da Dona Antônia'})}
           ${daHomeOfferShelfHtml(offers)}
           ${daHomePurchaseJourneyHtml()}
-          ${bannerSlotHtml('home.compra-mes.topo',{kind:'section',limit:4,hideHead:true,label:'Destaques para a compra do mês'})}
           ${daHomeBasketShelfHtml(state.cestas)}
           ${daHomeKitShelfHtml(kits)}
           <div data-home-secondary-slot aria-busy="true">${daProgressiveLoadingHtml('Carregando sugestões para completar sua compra…')}</div>
@@ -6830,5 +6828,51 @@
   window.addEventListener('pagehide',saveCurrentPosition);
 })();
 </script>
+
+<script id="da-fast-home-runtime">
+(function(){
+  'use strict';
+  function shuffle(items){
+    for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]];}
+    return items;
+  }
+  function optimizeHero(){
+    const slot=document.querySelector('[data-banner-position="home.hero"]');
+    if(!slot||slot.dataset.fastReady==='1') return;
+    const track=slot.querySelector('.banner-track')||slot;
+    const cards=shuffle(Array.from(track.querySelectorAll('.banner-card')));
+    if(!cards.length) return;
+    cards.forEach(card=>track.appendChild(card));
+    const max=matchMedia('(max-width:767px)').matches?2:4;
+    cards.slice(max).forEach(card=>card.remove());
+    cards.slice(0,max).forEach((card,index)=>{
+      const img=card.querySelector('img');
+      if(!img) return;
+      img.width=400; img.height=500; img.decoding='async';
+      if(index===0){img.loading='eager';img.fetchPriority='high';}
+      else{img.loading='lazy';img.fetchPriority='low';}
+    });
+    slot.querySelectorAll('[data-autoplay],.banner-dots,.banner-arrow').forEach(el=>el.remove());
+    slot.dataset.fastReady='1';
+  }
+  function optimizeProductImages(){
+    const root=document.querySelector('.da-home-profit');
+    if(!root) return;
+    const imgs=Array.from(root.querySelectorAll('img'));
+    imgs.forEach((img,index)=>{
+      img.decoding='async';
+      if(!img.width) img.width=300;
+      if(!img.height) img.height=300;
+      if(index>7){img.loading='lazy';img.fetchPriority='low';}
+    });
+  }
+  function run(){optimizeHero();optimizeProductImages();}
+  document.addEventListener('DOMContentLoaded',run,{once:true});
+  requestAnimationFrame(run);
+  setTimeout(run,500);
+  setTimeout(run,1600);
+})();
+</script>
+<!-- DA_PRODUCTION_FAST_HOME_V2 -->
 </body>
 </html>
