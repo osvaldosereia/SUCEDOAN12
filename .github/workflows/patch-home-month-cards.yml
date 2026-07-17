@@ -1,0 +1,58 @@
+name: Ajustar cards compra do mes
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - index.html
+      - scripts/patch-home-month-cards.mjs
+      - .github/workflows/patch-home-month-cards.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: patch-home-month-cards-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Ajustar cards no index oficial
+        run: node scripts/patch-home-month-cards.mjs
+
+      - name: Validar resultado
+        shell: bash
+        run: |
+          test -s index.html
+          grep -q 'da-home-month-cards-v9' index.html
+          grep -q 'grid-template-columns: 1fr !important' index.html
+          grep -q 'min-height: 132px !important' index.html
+          grep -q 'width: 112px !important' index.html
+          grep -q 'font-size: clamp(21px' index.html
+          grep -q '2026-07-17-home-cards-proporcionais-v9' index.html
+          grep -q 'getTopOffers(20)' index.html
+          grep -q 'carousel:false' index.html
+          ! grep -q 'noindex, nofollow' index.html
+
+      - name: Verificar sintaxe
+        run: node --check scripts/patch-home-month-cards.mjs
+
+      - name: Salvar index ajustado na branch
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Ajustar proporcao dos cards da compra do mes'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
