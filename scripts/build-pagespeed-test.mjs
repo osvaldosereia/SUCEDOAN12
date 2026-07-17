@@ -101,3 +101,4 @@ html = html.replace(
 if (html === original) throw new Error('Nenhuma transformação foi aplicada.');
 await fs.writeFile(OUTPUT, html, 'utf8');
 console.log(`Gerado ${OUTPUT}: ${Buffer.byteLength(html)} bytes`);
+// Alteração intencional para disparar o workflow após sua criação na branch.
