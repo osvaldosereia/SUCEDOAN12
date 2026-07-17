@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 const SOURCE='index.html';
 const OUTPUT='index-pagespeed-test.html';
-const VERSION='2026-07-17-fast-home-test-v7';
+const VERSION='2026-07-17-fast-home-test-v8';
 let html=await fs.readFile(SOURCE,'utf8');
 
 function required(pattern,replacement,label){
@@ -15,6 +15,7 @@ html=html.replace(/<meta name="da-build-version" content="[^"]+">/,`<meta name="
 html=html.replace(/<meta name="robots" content="[^"]+">/,'<meta name="robots" content="noindex, nofollow">');
 html=html.replace(/<title>(.*?)<\/title>/,'<title>$1 · Teste Home Rápida</title>');
 html=html.replaceAll('2026-07-17-home-pagespeed-oficial-v1',VERSION);
+html=html.replaceAll('2026-07-17-fast-home-oficial-v2',VERSION);
 html=html.replace(/window\.__DA_PAGESPEED_TEST__\s*=\s*false;/g,'window.__DA_PAGESPEED_TEST__ = true;');
 
 required(/const offers=getTopOffers\(12\);/,'const offers=getTopOffers(20);','20 ofertas');
@@ -45,7 +46,7 @@ const css=`
 .da-home-profit [data-banner-position="home.hero"] .banner-dots,.da-home-profit [data-banner-position="home.hero"] .banner-arrow{display:none!important}
 .da-home-profit .da-home-section{content-visibility:auto;contain-intrinsic-size:420px}
 .da-home-profit img[loading="lazy"]{content-visibility:auto}
-@media(max-width:767px){.da-home-profit [data-banner-position="home.hero"] .banner-track{grid-template-columns:repeat(2,minmax(0,1fr))!important}.da-home-profit [data-banner-position="home.hero"] .banner-card:nth-child(n+3){display:none!important}.da-home-profit .da-home-section{contain-intrinsic-size:360px}}
+@media(max-width:767px){.da-home-profit [data-banner-position="home.hero"] .banner-track{grid-template-columns:repeat(2,minmax(0,1fr))!important}.da-home-profit [data-banner-position="home.hero"] .banner-card:nth-child(n+3){display:none!important}.da-home-profit .da-home-section{contain-intrinsic-size:360px}.da-home-profit .da-home-journey-grid{grid-template-columns:1fr!important}.da-home-profit .da-home-journey-card{min-height:116px}}
 @media(max-width:420px){.da-home-profit *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.da-home-profit .banner-card{box-shadow:none!important}}
 </style>`;
 html=html.replace('</head>',`${css}\n</head>`);
@@ -95,7 +96,7 @@ const runtime=`
   setTimeout(run,1600);
 })();
 </script>`;
-html=html.replace('</body>',`${runtime}\n<!-- DA_FAST_HOME_TEST_V7 -->\n</body>`);
+html=html.replace('</body>',`${runtime}\n<!-- DA_FAST_HOME_TEST_V8 -->\n</body>`);
 
 await fs.writeFile(OUTPUT,html,'utf8');
 console.log(`Gerado ${OUTPUT} (${Buffer.byteLength(html)} bytes)`);
