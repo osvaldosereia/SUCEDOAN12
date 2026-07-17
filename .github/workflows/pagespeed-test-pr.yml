@@ -46,7 +46,7 @@ jobs:
       - name: Salvar pagina gerada na branch de teste
         shell: bash
         run: |
-          if git diff --quiet -- index-pagespeed-test.html; then
+          if git ls-files --error-unmatch index-pagespeed-test.html >/dev/null 2>&1 && git diff --quiet -- index-pagespeed-test.html; then
             echo 'Pagina de teste ja esta atualizada.'
             exit 0
           fi
