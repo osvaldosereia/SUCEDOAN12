@@ -8,10 +8,7 @@ const before = html;
 html = html.replace(/\$\{brandStripHtml\(\)\}/g, '');
 html = html.replace(/\s*<!-- DA_HOME_SEM_MARCAS: [^>]+ -->/g, '');
 const marker = `  <!-- DA_HOME_SEM_MARCAS: ${COMPATIBILITY_VERSION} -->`;
-const bannerStyle = '<style id="da-banners-after-four-v10">';
-html = html.includes(bannerStyle)
-  ? html.replace(bannerStyle, `${marker}\n\n${bannerStyle}`)
-  : html.replace('</head>', `${marker}\n</head>`);
+html = html.replace('</head>', `${marker}\n</head>`);
 
 if (html.includes('${brandStripHtml()}')) throw new Error('A seção de marcas ainda está presente na home.');
 
