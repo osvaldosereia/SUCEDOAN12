@@ -1,6 +1,6 @@
 {
   "schema_version": 14,
-  "updated_at": "2026-07-17T04:31:56.000Z",
+  "updated_at": "2026-07-17T06:32:43.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -7862,6 +7862,81 @@
         "estrategia": "categoria_menos_preenchida_ate_8_v14",
         "ordem_selecao": "categoria_primeiro_produto_menos_usado_depois",
         "categoria_escolhida": "BOLACHAS E BISCOITOS",
+        "carga_categoria_antes": 0,
+        "limite_por_categoria": 8,
+        "dias_sem_repetir": 30,
+        "repeticao_como_fallback": true,
+        "produto_uso_ativo_antes": 0,
+        "duracao": "periodo_da_oferta"
+      }
+    },
+    {
+      "id": "banner-produto-1727390801-1784269919000",
+      "ativo": true,
+      "titulo": "Oferta · Nestlé Cereal Matinal KitKat 210g",
+      "alt": "Nestlé Cereal Matinal KitKat 210g na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "17795691727396851",
+        "produtos": [
+          {
+            "firebaseKey": "17795691727396851",
+            "id": "17795691727396851",
+            "codigo": "1727390801",
+            "nome": "Nestlé Cereal Matinal KitKat 210g",
+            "categoria": "CAFÉ DA MANHÃ",
+            "subcategoria": "CEREAIS",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b04/2026/07/nestle-cereal-matinal-kitkat-210g-nestle-210g-cafe-da-manha-cereais-7891000394939-foto-atual-otimizada-20260711083718.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "categoria",
+        "alvo": "CAFÉ DA MANHÃ",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-produto-1727390801-1784269919000/banner-1784269919000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "1727390801"
+      },
+      "periodo": {
+        "inicio": "2026-07-17T06:31:59.000Z",
+        "fim": "2026-08-07T03:59:59.000Z",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta",
+        "encurtado_pelo_vencimento_produto": true
+      },
+      "criado_em": "2026-07-17T06:31:59.000Z",
+      "atualizado_em": "2026-07-17T06:31:59.000Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-1727390801-1784269919000",
+      "asset_id": "banner-produto-1727390801-1784269919000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 12.9,
+        "preco_oferta": 8.39,
+        "preco_regular": 12.9,
+        "percentual_desconto": 35,
+        "inicio": "",
+        "fim": "2026-08-08T23:59:59-04:00"
+      },
+      "automacao": {
+        "automatico": true,
+        "requisicao_id": "",
+        "estrategia": "categoria_menos_preenchida_ate_8_v14",
+        "ordem_selecao": "categoria_primeiro_produto_menos_usado_depois",
+        "categoria_escolhida": "CAFÉ DA MANHÃ",
         "carga_categoria_antes": 0,
         "limite_por_categoria": 8,
         "dias_sem_repetir": 30,
