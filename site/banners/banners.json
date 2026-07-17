@@ -1,6 +1,6 @@
 {
   "schema_version": 14,
-  "updated_at": "2026-07-17T02:32:30.000Z",
+  "updated_at": "2026-07-17T04:31:56.000Z",
   "settings": {
     "image": {
       "width": 1024,
@@ -1735,7 +1735,7 @@
     },
     {
       "id": "banner-produto-p-0utk-1783818660712",
-      "ativo": true,
+      "ativo": false,
       "titulo": "Oferta · Fralda Cremer Hiper Tamanho G 60 unidades",
       "alt": "Fralda Cremer Hiper Tamanho G 60 unidades em oferta na Dona Antônia",
       "tipo_conteudo": "produto",
@@ -1792,7 +1792,9 @@
         "reativado_para_fila_v12_2": true,
         "reativado_em": "2026-07-15T18:05:40.080Z",
         "capacidade_fila": 12,
-        "visiveis_por_vez": 4
+        "visiveis_por_vez": 4,
+        "desativado_por": "periodo_encerrado",
+        "desativado_em": "2026-07-17T04:31:56.000Z"
       }
     },
     {
@@ -7785,6 +7787,81 @@
         "estrategia": "categoria_menos_preenchida_ate_8_v14",
         "ordem_selecao": "categoria_primeiro_produto_menos_usado_depois",
         "categoria_escolhida": "BEBÊ",
+        "carga_categoria_antes": 0,
+        "limite_por_categoria": 8,
+        "dias_sem_repetir": 30,
+        "repeticao_como_fallback": true,
+        "produto_uso_ativo_antes": 0,
+        "duracao": "periodo_da_oferta"
+      }
+    },
+    {
+      "id": "banner-produto-p0059-1784262678000",
+      "ativo": true,
+      "titulo": "Oferta · TUCS Biscoito Salgado Pizza 100g",
+      "alt": "TUCS Biscoito Salgado Pizza 100g na Dona Antônia",
+      "tipo_conteudo": "produto",
+      "texto_arte": "",
+      "origem": {
+        "tipo": "produto",
+        "valor": "1776338127309",
+        "produtos": [
+          {
+            "firebaseKey": "1776338127309",
+            "id": "1776338127309",
+            "codigo": "P0059",
+            "nome": "TUCS Biscoito Salgado Pizza 100g",
+            "categoria": "BOLACHAS E BISCOITOS",
+            "subcategoria": "SALGADA",
+            "imagem_url": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos_3/b51/2026/07/tucs-biscoito-salgado-pizza-100g-tucs-100g-bolachas-e-biscoitos-salgada-7896061301865-foto-atual-otimizada-20260711053118.webp"
+          }
+        ]
+      },
+      "exibicao": {
+        "local": "categoria",
+        "alvo": "BOLACHAS E BISCOITOS",
+        "ordem": 1
+      },
+      "imagem": "site/banners/ativos/banner-produto-p0059-1784262678000/banner-1784262678000.webp",
+      "link": {
+        "tipo": "produto",
+        "valor": "P0059"
+      },
+      "periodo": {
+        "inicio": "2026-07-17T04:31:18.000Z",
+        "fim": "2026-07-28T03:59:59.000Z",
+        "fuso_horario": "America/Cuiaba",
+        "regra_duracao": "periodo_da_oferta",
+        "encurtado_pelo_vencimento_produto": false
+      },
+      "criado_em": "2026-07-17T04:31:18.000Z",
+      "atualizado_em": "2026-07-17T04:31:18.000Z",
+      "geracao": {
+        "largura": 1024,
+        "altura": 1536,
+        "proporcao": "2:3",
+        "formato": "webp",
+        "compression": 25,
+        "asset_unico": true
+      },
+      "grupo_id": "banner-produto-p0059-1784262678000",
+      "asset_id": "banner-produto-p0059-1784262678000",
+      "exibicoes": [],
+      "controle": {},
+      "oferta": {
+        "preco_anterior": 2.69,
+        "preco_oferta": 1.61,
+        "preco_regular": 2.69,
+        "percentual_desconto": 40,
+        "inicio": "",
+        "fim": "2026-07-27T23:59:59-04:00"
+      },
+      "automacao": {
+        "automatico": true,
+        "requisicao_id": "",
+        "estrategia": "categoria_menos_preenchida_ate_8_v14",
+        "ordem_selecao": "categoria_primeiro_produto_menos_usado_depois",
+        "categoria_escolhida": "BOLACHAS E BISCOITOS",
         "carga_categoria_antes": 0,
         "limite_por_categoria": 8,
         "dias_sem_repetir": 30,
