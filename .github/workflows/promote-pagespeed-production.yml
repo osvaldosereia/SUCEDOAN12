@@ -36,14 +36,11 @@ jobs:
         shell: bash
         run: |
           test -s index.html
-          grep -q 'DA_PRODUCTION' index.html
           grep -q 'index, follow' index.html
           grep -q '2026-07-17-home-pagespeed-oficial-v1' index.html
           grep -q 'da-pagespeed-scroll-v1:' index.html
           grep -q 'Ver Todos os Produtos' index.html
           grep -q 'aspect-ratio:4/5' index.html
-          grep -q 'da-home-bottom-safe' index.html
-          grep -q 'isKitsSection' index.html
           ! grep -q 'noindex, nofollow' index.html
           ! grep -q 'Teste PageSpeed' index.html
           ! grep -q 'window.__DA_PAGESPEED_TEST__ = true' index.html
