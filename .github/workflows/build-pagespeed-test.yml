@@ -1,0 +1,55 @@
+name: Gerar pagina PageSpeed de teste
+
+on:
+  push:
+    branches:
+      - agent/pagespeed-test
+    paths:
+      - index.html
+      - scripts/build-pagespeed-test.mjs
+      - .github/workflows/build-pagespeed-test.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pagespeed-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/pagespeed-test
+          fetch-depth: 1
+
+      - name: Gerar index paralelo otimizado
+        run: node scripts/build-pagespeed-test.mjs
+
+      - name: Validar preservacao do index publico
+        shell: bash
+        run: |
+          test -s index.html
+          test -s index-pagespeed-test.html
+          grep -q 'DA_PAGESPEED_TEST' index-pagespeed-test.html
+          grep -q 'pagespeed-test-v1' index-pagespeed-test.html
+          ! grep -q 'DA_PAGESPEED_TEST' index.html
+          ! grep -q 'http-equiv="Cache-Control"' index-pagespeed-test.html
+          ! grep -q 'window.location.replace(versionedLocation(BUILD, true))' index-pagespeed-test.html
+
+      - name: Publicar somente o arquivo de teste
+        shell: bash
+        run: |
+          if git diff --quiet -- index-pagespeed-test.html; then
+            echo 'Arquivo de teste ja esta atualizado.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index-pagespeed-test.html
+          git commit -m 'Gerar index PageSpeed de teste'
+          git push
