@@ -1,7 +1,7 @@
 # Auditoria conservadora do index
 
 Arquivo analisado: `index-pagespeed-test.html`
-Tamanho: 534927 bytes
+Tamanho: 536904 bytes
 
 > Este relatório lista candidatos. Nenhum item deve ser removido apenas por aparecer aqui.
 
