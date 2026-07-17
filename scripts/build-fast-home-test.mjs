@@ -99,4 +99,4 @@ const runtime=`
 html=html.replace('</body>',`${runtime}\n<!-- DA_FAST_HOME_TEST_V8 -->\n</body>`);
 
 await fs.writeFile(OUTPUT,html,'utf8');
-console.log(`Gerado ${OUTPUT} (${Buffer.byteLength(html)} bytes`);
+console.log(`Gerado ${OUTPUT} (${Buffer.byteLength(html)} bytes)`);
