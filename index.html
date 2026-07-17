@@ -2,11 +2,11 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="da-build-version" content="2026-07-17-banners-pos-quarto-cache-v10">
+  <meta name="da-build-version" content="2026-07-17-catalogo-rapido-v11">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-17-home-sem-marcas-v10';
+    const BUILD = '2026-07-17-catalogo-rapido-v11';
     window.__DA_BUILD_VERSION__ = BUILD;
     window.__DA_PAGESPEED_TEST__ = false;
     document.documentElement.classList.add('da-pagespeed-booting');
@@ -28,11 +28,9 @@
   <meta property="og:url" content="https://www.donaantonia.com.br/">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="canonical" href="https://www.donaantonia.com.br/">
-  <link rel="preconnect" href="https://cedar-chemist-310801-default-rtdb.firebaseio.com" crossorigin>
-  <link rel="dns-prefetch" href="//cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-17-home-sem-marcas-v10" as="fetch" type="application/json" crossorigin="anonymous">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-17-catalogo-rapido-v11" as="fetch" type="application/json" crossorigin="anonymous" fetchpriority="high">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -1016,6 +1014,7 @@
     const CONFIG = {
       SITE_BASE_URL: 'https://www.donaantonia.com.br',
       PRODUCT_URL: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json',
+      PRODUCT_ITEM_BASE_URL: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos',
       PRODUCT_HOME_URLS: ['site/produtos-home.json', 'produtos-home.json'],
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       FIREBASE_ORDERS_URL: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/pedidos',
@@ -1024,7 +1023,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-17-home-sem-marcas-v10',
+      APP_VERSION: '2026-07-17-catalogo-rapido-v11',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -1227,7 +1226,7 @@
         subsubcategoria: String(raw.subsubcategoria || '').trim(),
         marca: String(raw.marca || '').trim(),
         embalagem: String(raw.embalagem || extractVolume(raw.nome || name)).trim(),
-        descricao: String(raw.descricao || raw.description || '').trim(),
+        descricao: String(raw.descricao || raw.descricao_curta || raw.description || '').trim(),
         gtin: String(raw.gtin || raw.ean || '').trim(),
         ean: String(raw.ean || raw.gtin || '').trim(),
         gondola: String(raw.gondola || raw['gôndola'] || '').trim(),
@@ -1483,10 +1482,10 @@
       for (const url of urls) {
         try {
           const data = await fetchJson(withCacheBust(url), 6500, { cache: 'default' });
-          normalizeProducts(data, { mode: 'lite' });
+          normalizeProducts(data, { mode: 'compact-full' });
           state.catalogLoadedAt = Date.now();
-          state.catalogSource = 'produtos-home';
-          state.catalogMode = 'lite';
+          state.catalogSource = 'github-compact';
+          state.catalogMode = 'compact-full';
           writeCache(CONFIG.PRODUCT_HOME_CACHE_KEY || 'da_produtos_home_cache_v1', { savedAt: Date.now(), appVersion: CONFIG.APP_VERSION, data });
           return true;
         } catch (e) {
@@ -1494,10 +1493,10 @@
         }
       }
       if (cache && cache.data) {
-        normalizeProducts(cache.data, { mode: 'lite' });
+        normalizeProducts(cache.data, { mode: 'compact-full' });
         state.catalogLoadedAt = Number(cache.savedAt || 0);
-        state.catalogSource = 'produtos-home-cache';
-        state.catalogMode = 'lite';
+        state.catalogSource = 'github-compact-cache';
+        state.catalogMode = 'compact-full';
         return true;
       }
       if (lastError) console.warn('produtos-home.json indisponivel:', lastError.message || lastError);
@@ -1506,8 +1505,19 @@
 
     async function loadProducts(options) {
       const cache = readCache(CONFIG.PRODUCT_CACHE_KEY);
+      const forceFresh = !!(options && options.forceFresh);
+      if (!forceFresh && state.catalogMode === 'compact-full' && state.products.length) return true;
+
+      if (!forceFresh) {
+        try {
+          await loadHomeProducts();
+          return true;
+        } catch (compactError) {
+          console.warn('Catálogo compacto indisponível; tentando Firebase:', compactError && compactError.message ? compactError.message : compactError);
+        }
+      }
+
       try {
-        const forceFresh = !!(options && options.forceFresh);
         const data = await fetchJson(withCacheBust(CONFIG.PRODUCT_URL, forceFresh), 9000, { cache: forceFresh ? 'no-store' : 'no-cache' });
         normalizeProducts(data, { mode: 'full' });
         state.catalogLoadedAt = Date.now();
@@ -2615,20 +2625,22 @@
         try {
           // Conferência independente e curta: não altera carrinho, preços ou mensagem.
           // O resultado é apenas diagnóstico e nunca participa do caminho crítico de venda.
-          const liveCatalog = await fetchJson(CONFIG.PRODUCT_URL, 2200, { cache: 'default' });
-          const liveCodes = new Set();
-          const entries = Array.isArray(liveCatalog)
-            ? liveCatalog.map((value, index) => [String(index), value])
-            : Object.entries(liveCatalog || {});
-          entries.forEach(([key, raw]) => {
-            [key, raw?.id, raw?.codigo, raw?.sku, raw?.firebaseKey, raw?.gtin, raw?.ean].forEach(value => {
+          const checks = await Promise.allSettled(selectedProducts.map(async product => {
+            const firebaseKey = String(product.firebaseKey || '').trim();
+            if (!firebaseKey) return null;
+            const raw = await fetchJson(`${CONFIG.PRODUCT_ITEM_BASE_URL}/${encodeURIComponent(firebaseKey)}.json`, 2200, { cache: 'default' });
+            if (!raw) return null;
+            const liveCodes = new Set();
+            [firebaseKey, raw.id, raw.codigo, raw.sku, raw.firebaseKey, raw.gtin, raw.ean].forEach(value => {
               codeVariants(value).forEach(code => { if (code) liveCodes.add(code); });
             });
-          });
-          const verifiedIds = selectedProducts
-            .filter(product => [product.id, product.codigo, product.firebaseKey, product.gtin, product.ean]
-              .some(value => codeVariants(value).some(code => liveCodes.has(code))))
-            .map(product => String(product.id));
+            const matched = [product.id, product.codigo, product.firebaseKey, product.gtin, product.ean]
+              .some(value => codeVariants(value).some(code => liveCodes.has(code)));
+            return matched ? String(product.id) : null;
+          }));
+          const verifiedIds = checks
+            .filter(result => result.status === 'fulfilled' && result.value)
+            .map(result => result.value);
           const catalogVerified = verifiedIds.length === selectedProducts.length;
           state.catalogVerifiedAt = catalogVerified ? Date.now() : 0;
           state.catalogVerifiedAll = false;
@@ -3442,7 +3454,7 @@
         { href: '#/kits', title: 'Kits promocionais', copy: 'Combos com desconto ativo', img: kitsThumb() },
         { href: '#/rotina/compra-mes', title: 'Compra do mês', copy: 'Comece pelos itens essenciais', img: routineThumb('compra-mes'), cls: 'primary' }
       ];
-      return `<section class="home-quick-grid" aria-label="Atalhos principais de compra">${cards.map(card => `<a class="home-quick-card ${card.cls || ''}" href="${card.href}"><div><strong>${escapeHtml(card.title)}</strong><span>${escapeHtml(card.copy)}</span></div><img loading="lazy" decoding="async" src="${escapeHtml(card.img)}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}</section>`;
+      return `<section class="home-quick-grid" aria-label="Atalhos principais de compra">${cards.map((card, index) => `<a class="home-quick-card ${card.cls || ''}" href="${card.href}"><div><strong>${escapeHtml(card.title)}</strong><span>${escapeHtml(card.copy)}</span></div><img loading="${index === 0 ? 'eager' : 'lazy'}" decoding="async" width="96" height="96"${index === 0 ? ' fetchpriority="high"' : ''} src="${escapeHtml(card.img)}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}</section>`;
     }
 
     function brandStripHtml() {
@@ -4013,7 +4025,7 @@
 
 
     function ensureFullCatalogInBackground() {
-      if (state.catalogMode === 'full' || state.catalogMode === 'full-cache' || state.fullCatalogLoading) return;
+      if (state.catalogMode === 'full' || state.catalogMode === 'full-cache' || state.catalogMode === 'compact-full' || state.fullCatalogLoading) return;
       state.fullCatalogLoading = true;
       loadProducts().then(() => {
         state.fullCatalogLoading = false;
@@ -5498,6 +5510,17 @@
       }, { passive: true });
     }
 
+    function loadHomeExtrasWhenIdle() {
+      const load = () => loadBanners().catch(error => {
+        console.warn('Banners não críticos indisponíveis:', error && error.message ? error.message : error);
+      });
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(load, { timeout: 3500 });
+      } else {
+        window.setTimeout(load, 1200);
+      }
+    }
+
     async function init() {
       try { sessionStorage.removeItem('da_version_reload_attempts_v1'); } catch(e) {}
       bindEvents();
@@ -5516,7 +5539,7 @@
         if (home) {
           // Home estável: carrega os dados necessários em paralelo e faz uma única renderização completa.
           // Evita o efeito de partes da página aparecendo em momentos diferentes.
-          const auxPromise = Promise.allSettled([loadBanners(), loadCestas(), loadKits(), loadCoupons()]);
+          const auxPromise = Promise.allSettled([loadCestas(), loadKits(), loadCoupons()]);
           let homeCatalogError = null;
           try {
             await loadHomeProducts();
@@ -5537,13 +5560,16 @@
           requestAnimationFrame(() => {
             document.documentElement.classList.remove('da-pagespeed-booting');
           });
+          loadHomeExtrasWhenIdle();
           if (homeCatalogError) console.info('Home carregada pelo catálogo completo após falha do catálogo leve.');
           return;
         }
 
         // Rotas de produto/categoria/busca entram com o catálogo completo para evitar detalhe incompleto.
-        await Promise.allSettled([loadBanners(), loadCestas(), loadKits(), loadCoupons()]);
-        await loadProducts();
+        await Promise.all([
+          loadProducts(),
+          Promise.allSettled([loadBanners(), loadCestas(), loadKits(), loadCoupons()])
+        ]);
         state.isReady = true;
         rebuildVirtualFees();
         renderSiteMenuContent();
