@@ -2,11 +2,11 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="da-build-version" content="2026-07-17-banners-leves-v12">
+  <meta name="da-build-version" content="2026-07-17-imagens-produtos-v13">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-17-banners-leves-v12';
+    const BUILD = '2026-07-17-imagens-produtos-v13';
     window.__DA_BUILD_VERSION__ = BUILD;
     window.__DA_PAGESPEED_TEST__ = false;
     document.documentElement.classList.add('da-pagespeed-booting');
@@ -30,7 +30,7 @@
   <link rel="canonical" href="https://www.donaantonia.com.br/">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-17-banners-leves-v12" as="fetch" type="application/json" crossorigin="anonymous" fetchpriority="high">
+  <link rel="preload" href="site/produtos-home.json?v=2026-07-17-imagens-produtos-v13" as="fetch" type="application/json" crossorigin="anonymous" fetchpriority="high">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -440,25 +440,28 @@
     }
     .da-home-mosaic-mini .qty-control-mini button{width:30px!important;min-width:30px!important}
 
-    /* Ofertas de hoje: mostra aproximadamente 2,3 cards no celular. */
+    /* Ofertas de hoje: 1,5 card por tela e rolagem horizontal livre. */
     .da-home-offer-grid{
       display:flex!important;
       flex-flow:row nowrap!important;
-      gap:10px!important;
+      gap:12px!important;
       width:100%!important;
       overflow-x:auto!important;
       overflow-y:hidden!important;
-      padding:2px 1px 9px!important;
-      scroll-snap-type:x proximity!important;
-      overscroll-behavior-x:contain;
+      padding:2px 1px 11px!important;
+      scroll-snap-type:none!important;
+      overscroll-behavior-x:auto!important;
+      scroll-behavior:auto!important;
+      touch-action:pan-x pan-y;
     }
     .da-home-offer-card{
       display:flex!important;
-      flex:0 0 clamp(132px,41.5%,170px)!important;
-      width:clamp(132px,41.5%,170px)!important;
-      min-width:132px!important;
-      max-width:170px!important;
-      scroll-snap-align:start!important;
+      flex:0 0 64%!important;
+      width:64%!important;
+      min-width:0!important;
+      max-width:none!important;
+      scroll-snap-align:none!important;
+      scroll-snap-stop:normal!important;
     }
 
     /* Maior respiro interno sem cortar as bordas externas das artes. */
@@ -766,19 +769,43 @@
 @media(max-width:420px){.da-home-profit *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.da-home-profit .banner-card{box-shadow:none!important}}
 </style>
 
-<style id="da-home-month-cards-v9">
+<style id="da-home-month-images-v10">
+.da-home-journey-grid > * {
+  min-height: 148px !important;
+  grid-template-columns: minmax(0, 1fr) 120px !important;
+  column-gap: 18px !important;
+}
+.da-home-journey-grid .da-home-journey-media {
+  width: 120px !important;
+  height: 120px !important;
+  aspect-ratio: 1 / 1 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  justify-self: end !important;
+  border-radius: 20px !important;
+}
+.da-home-journey-grid .da-home-journey-media img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  padding: 8px !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  border-radius: inherit !important;
+}
 @media (max-width: 767px) {
   .da-home-journey-grid {
     grid-template-columns: 1fr !important;
-    gap: 12px !important;
+    gap: 14px !important;
   }
   .da-home-journey-grid > * {
-    min-height: 132px !important;
-    padding: 18px 20px !important;
+    min-height: 154px !important;
+    padding: 17px 18px !important;
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 118px !important;
+    grid-template-columns: minmax(0, 1fr) 124px !important;
     align-items: center !important;
-    column-gap: 18px !important;
+    column-gap: 16px !important;
     border-radius: 22px !important;
     box-sizing: border-box !important;
   }
@@ -797,34 +824,41 @@
     margin: 0 0 8px !important;
   }
   .da-home-journey-grid p,
-  .da-home-journey-grid span,
+  .da-home-journey-grid .da-home-journey-copy small,
+  .da-home-journey-grid .da-home-journey-copy em,
   .da-home-journey-grid .da-home-journey-count {
     font-size: clamp(16px, 4.1vw, 18px) !important;
     line-height: 1.25 !important;
     font-weight: 750 !important;
   }
-  .da-home-journey-grid img {
-    width: 112px !important;
-    height: 112px !important;
-    max-width: 112px !important;
-    max-height: 112px !important;
-    object-fit: cover !important;
-    border-radius: 16px !important;
-    justify-self: end !important;
+  .da-home-journey-grid .da-home-journey-media {
+    width: 124px !important;
+    height: 124px !important;
   }
 }
 @media (max-width: 390px) {
   .da-home-journey-grid > * {
-    grid-template-columns: minmax(0, 1fr) 100px !important;
-    min-height: 120px !important;
-    padding: 16px 17px !important;
-    column-gap: 14px !important;
+    grid-template-columns: minmax(0, 1fr) 108px !important;
+    min-height: 140px !important;
+    padding: 15px !important;
+    column-gap: 13px !important;
   }
-  .da-home-journey-grid img {
-    width: 96px !important;
-    height: 96px !important;
-    max-width: 96px !important;
-    max-height: 96px !important;
+  .da-home-journey-grid .da-home-journey-media {
+    width: 108px !important;
+    height: 108px !important;
+  }
+  .da-home-journey-grid .da-home-journey-media img {
+    padding: 6px !important;
+  }
+}
+@media (min-width: 1100px) {
+  .da-home-journey-grid > * {
+    min-height: 164px !important;
+    grid-template-columns: minmax(0, 1fr) 132px !important;
+  }
+  .da-home-journey-grid .da-home-journey-media {
+    width: 132px !important;
+    height: 132px !important;
   }
 }
 </style>
@@ -971,7 +1005,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-17-banners-leves-v12',
+      APP_VERSION: '2026-07-17-imagens-produtos-v13',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -2713,11 +2747,15 @@
       return `<button class="add-btn add-plus" type="button" data-action="add" data-id="${escapeHtml(id)}" aria-label="Adicionar ao pedido">+</button>`;
     }
 
-    function pickProductImage(list) {
+    function pickProductForImage(list) {
       const available = (list || []).filter(item => item && item.img)
         .sort((a,b) => String(a.codigo || a.id || a.name).localeCompare(String(b.codigo || b.id || b.name), 'pt-BR'));
-      if (!available.length) return 'img/logoantonia5.png';
-      return available[0].img;
+      return available[0] || null;
+    }
+
+    function pickProductImage(list) {
+      const product = pickProductForImage(list);
+      return product ? product.img : 'img/logoantonia5.png';
     }
 
     function categoryThumb(categoryName) {
@@ -5525,8 +5563,10 @@
     
       function daHomeCollectionCardHtml(definition){
         const matches = state.products.filter(product=>isAvailable(product) && definition.match(product));
-        const image = pickProductImage(matches.slice(0,18));
-        return `<a class="da-home-collection-card" href="${definition.href}"><span class="da-home-collection-media"><img loading="lazy" decoding="async" src="${escapeHtml(image)}" alt="" onerror="window.__daFallbackImg(this)"></span><span class="da-home-collection-copy"><strong>${escapeHtml(definition.title)}</strong><small>${escapeHtml(definition.copy)}</small><em>${matches.length} ${matches.length === 1 ? 'produto' : 'produtos'}</em></span></a>`;
+        const imageProduct = pickProductForImage(matches.slice(0,18));
+        const image = imageProduct ? imageProduct.img : 'img/logoantonia5.png';
+        const fallbacks = imageProduct ? imageFallbackList(imageProduct.images) : image;
+        return `<a class="da-home-collection-card" href="${definition.href}"><span class="da-home-collection-media"><img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(image)}" data-fallback-images="${escapeHtml(fallbacks)}" alt="" onerror="window.__daFallbackImg(this)"></span><span class="da-home-collection-copy"><strong>${escapeHtml(definition.title)}</strong><small>${escapeHtml(definition.copy)}</small><em>${matches.length} ${matches.length === 1 ? 'produto' : 'produtos'}</em></span></a>`;
       }
     
       function daHomeShuffle(products){
@@ -5634,8 +5674,10 @@
 
       function daHomeJourneyCardHtml(definition){
         const matches = state.products.filter(product=>isAvailable(product) && definition.match(product));
-        const image = pickProductImage(daHomeCommercialSort(matches).slice(0,18));
-        return `<a class="da-home-journey-card" href="${definition.href}"><span class="da-home-journey-copy"><strong>${escapeHtml(definition.title)}</strong><small>${escapeHtml(definition.copy)}</small><em>${matches.length} ${matches.length === 1 ? 'produto' : 'produtos'}</em></span><span class="da-home-journey-media"><img loading="lazy" decoding="async" src="${escapeHtml(image)}" alt="" onerror="window.__daFallbackImg(this)"></span></a>`;
+        const imageProduct = pickProductForImage(daHomeCommercialSort(matches).slice(0,18));
+        const image = imageProduct ? imageProduct.img : 'img/logoantonia5.png';
+        const fallbacks = imageProduct ? imageFallbackList(imageProduct.images) : image;
+        return `<a class="da-home-journey-card" href="${definition.href}"><span class="da-home-journey-copy"><strong>${escapeHtml(definition.title)}</strong><small>${escapeHtml(definition.copy)}</small><em>${matches.length} ${matches.length === 1 ? 'produto' : 'produtos'}</em></span><span class="da-home-journey-media"><img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(image)}" data-fallback-images="${escapeHtml(fallbacks)}" alt="" onerror="window.__daFallbackImg(this)"></span></a>`;
       }
 
       function daHomePurchaseJourneyHtml(){
@@ -6457,20 +6499,37 @@
 <script id="da-fast-home-runtime">
 (function(){
   'use strict';
+  let scheduled=false;
   function optimizeProductImages(){
-    const root=document.querySelector('.da-home-profit');
+    const root=document.getElementById('app');
     if(!root) return;
-    const imgs=Array.from(root.querySelectorAll('img'));
+    const imgs=Array.from(root.querySelectorAll('.da-home-offer-feature-media img, .da-home-offer-grid .da-home-offer-media img, .product-imgbox img, #product-main-image'));
     imgs.forEach((img,index)=>{
       img.decoding='async';
       if(!img.width) img.width=300;
       if(!img.height) img.height=300;
-      if(index>7){img.loading='lazy';img.fetchPriority='low';}
+      if(index<2){
+        img.loading='eager';
+        img.fetchPriority='high';
+      }else{
+        img.loading='lazy';
+        img.fetchPriority='low';
+      }
     });
   }
-  function run(){optimizeProductImages();}
+  function run(){
+    if(scheduled) return;
+    scheduled=true;
+    requestAnimationFrame(()=>{
+      scheduled=false;
+      optimizeProductImages();
+    });
+  }
   document.addEventListener('DOMContentLoaded',run,{once:true});
-  requestAnimationFrame(run);
+  const app=document.getElementById('app');
+  if(app) new MutationObserver(run).observe(app,{childList:true,subtree:true});
+  window.addEventListener('hashchange',run,{passive:true});
+  run();
   setTimeout(run,500);
   setTimeout(run,1600);
 })();
