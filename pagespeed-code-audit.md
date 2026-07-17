@@ -1,32 +1,32 @@
 # Auditoria conservadora do index
 
 Arquivo analisado: `index-pagespeed-test.html`
-Tamanho: 531658 bytes
+Tamanho: 532222 bytes
 
 > Este relatório lista candidatos. Nenhum item deve ser removido apenas por aparecer aqui.
 
 ## Declarações ou atribuições repetidas
 
-- `renderCategory`: function declaration na linha 3377; function assignment na linha 5604; function assignment na linha 6205; function assignment na linha 6634. Ocorrências totais do nome: 6.
-- `renderSearch`: function declaration na linha 3705; function assignment na linha 5622; function assignment na linha 6269; function assignment na linha 6664. Ocorrências totais do nome: 8.
-- `renderBrand`: function declaration na linha 3403; function assignment na linha 6232; function assignment na linha 6654. Ocorrências totais do nome: 5.
-- `renderSubcategory`: function declaration na linha 3393; function assignment na linha 6221; function assignment na linha 6644. Ocorrências totais do nome: 5.
-- `abrirWhatsAppPedido`: function declaration na linha 5201; function assignment na linha 6706. Ocorrências totais do nome: 4.
-- `applyBannersData`: function declaration na linha 1543; function assignment na linha 5495. Ocorrências totais do nome: 4.
-- `renderBasketDetail`: function declaration na linha 3671; function assignment na linha 5636. Ocorrências totais do nome: 4.
-- `renderHome`: function assignment na linha 6148; function assignment na linha 6610. Ocorrências totais do nome: 8.
-- `renderOffers`: function declaration na linha 3412; function assignment na linha 6242. Ocorrências totais do nome: 4.
-- `renderProduct`: function declaration na linha 3736; function assignment na linha 6617. Ocorrências totais do nome: 4.
-- `renderRoutine`: function declaration na linha 3419; function assignment na linha 6250. Ocorrências totais do nome: 5.
-- `renderSiteMenuContent`: function declaration na linha 3856; function assignment na linha 6712. Ocorrências totais do nome: 7.
-- `setQty`: function declaration na linha 2404; function assignment na linha 6681. Ocorrências totais do nome: 5.
-- `toggleFavorite`: function declaration na linha 2026; function assignment na linha 6695. Ocorrências totais do nome: 4.
+- `renderCategory`: function declaration na linha 3381; function assignment na linha 5612; function assignment na linha 6213; function assignment na linha 6642. Ocorrências totais do nome: 6.
+- `renderSearch`: function declaration na linha 3709; function assignment na linha 5630; function assignment na linha 6277; function assignment na linha 6672. Ocorrências totais do nome: 8.
+- `renderBrand`: function declaration na linha 3407; function assignment na linha 6240; function assignment na linha 6662. Ocorrências totais do nome: 5.
+- `renderSubcategory`: function declaration na linha 3397; function assignment na linha 6229; function assignment na linha 6652. Ocorrências totais do nome: 5.
+- `abrirWhatsAppPedido`: function declaration na linha 5205; function assignment na linha 6714. Ocorrências totais do nome: 4.
+- `applyBannersData`: function declaration na linha 1547; function assignment na linha 5503. Ocorrências totais do nome: 4.
+- `renderBasketDetail`: function declaration na linha 3675; function assignment na linha 5644. Ocorrências totais do nome: 4.
+- `renderHome`: function assignment na linha 6156; function assignment na linha 6618. Ocorrências totais do nome: 8.
+- `renderOffers`: function declaration na linha 3416; function assignment na linha 6250. Ocorrências totais do nome: 4.
+- `renderProduct`: function declaration na linha 3740; function assignment na linha 6625. Ocorrências totais do nome: 4.
+- `renderRoutine`: function declaration na linha 3423; function assignment na linha 6258. Ocorrências totais do nome: 5.
+- `renderSiteMenuContent`: function declaration na linha 3860; function assignment na linha 6720. Ocorrências totais do nome: 7.
+- `setQty`: function declaration na linha 2408; function assignment na linha 6689. Ocorrências totais do nome: 5.
+- `toggleFavorite`: function declaration na linha 2030; function assignment na linha 6703. Ocorrências totais do nome: 4.
 
 ## Funções com baixa evidência de referência
 
-- `purgeBrowserRuntimeCaches`: 1 ocorrência(s); declaração(ões) nas linhas 1236.
-- `sleep`: 1 ocorrência(s); declaração(ões) nas linhas 1301.
-- `startDeploymentVersionWatch`: 1 ocorrência(s); declaração(ões) nas linhas 1284.
+- `purgeBrowserRuntimeCaches`: 1 ocorrência(s); declaração(ões) nas linhas 1240.
+- `sleep`: 1 ocorrência(s); declaração(ões) nas linhas 1305.
+- `startDeploymentVersionWatch`: 1 ocorrência(s); declaração(ões) nas linhas 1288.
 
 ## Marcadores críticos
 
