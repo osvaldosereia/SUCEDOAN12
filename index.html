@@ -2,11 +2,11 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="da-build-version" content="2026-07-17-fast-home-oficial-v2">
+  <meta name="da-build-version" content="2026-07-17-home-cards-proporcionais-v9">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-17-fast-home-oficial-v2';
+    const BUILD = '2026-07-17-home-cards-proporcionais-v9';
     window.__DA_BUILD_VERSION__ = BUILD;
     window.__DA_PAGESPEED_TEST__ = false;
     document.documentElement.classList.add('da-pagespeed-booting');
@@ -807,6 +807,69 @@
 .da-home-profit img[loading="lazy"]{content-visibility:auto}
 @media(max-width:767px){.da-home-profit [data-banner-position="home.hero"] .banner-track{grid-template-columns:repeat(2,minmax(0,1fr))!important}.da-home-profit [data-banner-position="home.hero"] .banner-card:nth-child(n+3){display:none!important}.da-home-profit .da-home-section{contain-intrinsic-size:360px}.da-home-profit .da-home-journey-grid{grid-template-columns:1fr!important}.da-home-profit .da-home-journey-card{min-height:116px}}
 @media(max-width:420px){.da-home-profit *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.da-home-profit .banner-card{box-shadow:none!important}}
+</style>
+
+<style id="da-home-month-cards-v9">
+@media (max-width: 767px) {
+  .da-home-journey-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .da-home-journey-grid > * {
+    min-height: 132px !important;
+    padding: 18px 20px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 118px !important;
+    align-items: center !important;
+    column-gap: 18px !important;
+    border-radius: 22px !important;
+    box-sizing: border-box !important;
+  }
+  .da-home-journey-grid > * > div:first-child,
+  .da-home-journey-grid .da-home-journey-copy {
+    min-width: 0 !important;
+    align-self: center !important;
+  }
+  .da-home-journey-grid h3,
+  .da-home-journey-grid strong,
+  .da-home-journey-grid .da-home-journey-title {
+    font-size: clamp(21px, 5.4vw, 25px) !important;
+    line-height: 1.12 !important;
+    font-weight: 850 !important;
+    letter-spacing: -0.02em !important;
+    margin: 0 0 8px !important;
+  }
+  .da-home-journey-grid p,
+  .da-home-journey-grid span,
+  .da-home-journey-grid .da-home-journey-count {
+    font-size: clamp(16px, 4.1vw, 18px) !important;
+    line-height: 1.25 !important;
+    font-weight: 750 !important;
+  }
+  .da-home-journey-grid img {
+    width: 112px !important;
+    height: 112px !important;
+    max-width: 112px !important;
+    max-height: 112px !important;
+    object-fit: cover !important;
+    border-radius: 16px !important;
+    justify-self: end !important;
+  }
+}
+@media (max-width: 390px) {
+  .da-home-journey-grid > * {
+    grid-template-columns: minmax(0, 1fr) 100px !important;
+    min-height: 120px !important;
+    padding: 16px 17px !important;
+    column-gap: 14px !important;
+  }
+  .da-home-journey-grid img {
+    width: 96px !important;
+    height: 96px !important;
+    max-width: 96px !important;
+    max-height: 96px !important;
+  }
+}
 </style>
 </head>
 <body>
