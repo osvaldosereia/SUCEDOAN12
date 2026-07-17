@@ -123,13 +123,6 @@ const runtime = `
     return '<div class="'+cls+'">'+first+'</div>'+banner+(rest?'<div class="'+cls+'">'+rest+'</div>':'');
   }
 
-  // Página inicial: sem banners.
-  renderHome=function(){
-    const offers=getTopOffers(20),kits=getActiveKits();
-    app.innerHTML='<div class="container home-clean da-home-modular da-home-funnel da-home-profit"><h1 class="sr-only">Dona Antônia - Supermercado e Cestas</h1>'+homeQuickLinksHtml()+daHomeOfferShelfHtml(offers)+daHomePurchaseJourneyHtml()+daHomeBasketShelfHtml(state.cestas)+daHomeKitShelfHtml(kits)+'<div data-home-secondary-slot aria-busy="true">'+daProgressiveLoadingHtml('Carregando nossa variedade…')+'</div><div class="da-home-bottom-safe" aria-hidden="true"></div></div>';
-    daSetupHomeSecondary();updateOfferCountdowns();updateMeta('Dona Antônia - Supermercado e Cestas','Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.','/');setActiveNav('home');
-  };
-
   renderCategory=function(cat){
     const decoded=decodeURIComponent(cat||'');
     const products=state.products.filter(product=>isAvailable(product)&&norm(product.categoria)===norm(decoded));

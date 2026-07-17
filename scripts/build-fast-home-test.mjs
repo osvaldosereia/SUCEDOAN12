@@ -19,7 +19,6 @@ html=html.replaceAll('2026-07-17-fast-home-oficial-v2',VERSION);
 html=html.replace(/window\.__DA_PAGESPEED_TEST__\s*=\s*false;/g,'window.__DA_PAGESPEED_TEST__ = true;');
 
 required(/const offers=getTopOffers\(12\);/,'const offers=getTopOffers(20);','20 ofertas');
-required(/bannerSlotHtml\('home\.hero',\{carousel:true,kind:'hero',limit:6,/g,"bannerSlotHtml('home.hero',{carousel:false,kind:'hero',limit:4,",'4 banners no desktop');
 
 html=html.replace(/\s*\$\{bannerSlotHtml\('home\.compra-mes\.topo',[\s\S]*?\}\)\}/g,'');
 html=html.replace(/\s*\$\{bannerSlotHtml\('home\.higiene\.topo',[\s\S]*?\}\)\}/g,'');
