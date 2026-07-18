@@ -70,7 +70,7 @@
   "use strict";
   const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
   const META_URL="https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/produtos_admin_meta.json";
-  const DEFAULTS={firebaseUrl:"https://cedar-chemist-310801-default-rtdb.firebaseio.com",productsNode:"produtos",firebaseAuth:"",makeWebhook:""};
+  const DEFAULTS={firebaseUrl:"https://cedar-chemist-310801-default-rtdb.firebaseio.com",productsNode:"produtos",firebaseAuth:"",makeWebhook:"https://hook.eu1.make.com/nc3k6i1t24d2ivywdrpphrhm3ij5871e"};
   const state={settings:loadSettings(),stream:null,detector:null,scanTimer:null,busy:false,current:null,newCode:"",photos:{frente:"",ean:"",validade:"",informacoes:""},infoSkipped:false,meta:{categorias:[],fornecedores:[],tags:[]},job:null,pollTimer:null};
   const placeholder="data:image/svg+xml;charset=UTF-8,"+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><rect width='100%' height='100%' fill='#f3f3f3'/><text x='50%' y='50%' text-anchor='middle' dominant-baseline='middle' fill='#888' font-family='Arial'>sem foto</text></svg>");
   function cleanText(v=""){return String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim()}
@@ -80,7 +80,7 @@
   function parseMoney(v){let s=String(v??"").trim().replace(/[^\d,.-]/g,"");if(!s)return 0;const c=s.lastIndexOf(","),d=s.lastIndexOf(".");if(c>-1&&d>-1)s=c>d?s.replace(/\./g,"").replace(",","."):s.replace(/,/g,"");else if(c>-1)s=s.replace(/\./g,"").replace(",", ".");const n=Number(s);return Number.isFinite(n)?Math.round(Math.max(0,n)*100)/100:0}
   function formatMoney(v){return Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
   function parseTags(v){if(Array.isArray(v))return [...new Set(v.map(cleanText).filter(Boolean))];return [...new Set(String(v??"").split(/[,;\n|]+/).map(cleanText).filter(Boolean))]}
-  function loadSettings(){try{return{...DEFAULTS,...JSON.parse(localStorage.getItem("da_cadastro_ia_v3_settings")||"{}")}}catch{return{...DEFAULTS}}}
+  function loadSettings(){try{const saved=JSON.parse(localStorage.getItem("da_cadastro_ia_v3_settings")||"{}");return{...DEFAULTS,...saved,makeWebhook:cleanText(saved.makeWebhook)||DEFAULTS.makeWebhook}}catch{return{...DEFAULTS}}}
   function saveSettings(){localStorage.setItem("da_cadastro_ia_v3_settings",JSON.stringify(state.settings))}
   function status(message,type="blue",timeout=0){const box=$("#globalStatus");box.textContent=message;box.className=`notice status show ${type}`;if(timeout)setTimeout(()=>box.classList.remove("show"),timeout)}
   function showScreen(id){$$(`.screen`).forEach(el=>el.classList.toggle("active",el.id===id));scrollTo({top:0,behavior:"smooth"})}
