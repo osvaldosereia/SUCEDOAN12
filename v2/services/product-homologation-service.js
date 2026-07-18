@@ -46,10 +46,24 @@ function writeRecords(records) {
 }
 
 function validDate(value) {
-  const date = text(value);
-  if (!date) return false;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return true;
-  return /^\d{2}[/.\-]\d{2}[/.\-]\d{4}$/.test(date);
+  const raw = text(value);
+  let year;
+  let month;
+  let day;
+  let match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) [, year, month, day] = match;
+  else {
+    match = raw.match(/^(\d{2})[/.-](\d{2})[/.-](\d{4})$/);
+    if (!match) return false;
+    [, day, month, year] = match;
+  }
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+  return date.getFullYear() === Number(year) && date.getMonth() === Number(month) - 1 && date.getDate() === Number(day);
+}
+
+export function resolveSavedDraftProduct(savedDraft = {}) {
+  if (!savedDraft?.draft || !savedDraft?.original) throw new Error('Rascunho local inválido para homologação.');
+  return Object.freeze({ ...clone(savedDraft.original), ...clone(savedDraft.draft) });
 }
 
 function automaticChecks(product = {}) {
@@ -77,14 +91,14 @@ function automaticChecks(product = {}) {
     {
       id: 'commercial',
       label: 'Dados comerciais',
-      ok: number(product.preco) > 0 && number(product.preco_custo) >= 0 && Boolean(text(product.fornecedor)),
-      detail: 'Fornecedor e preço de venda são obrigatórios; custo não pode ser negativo.'
+      ok: number(product.preco) > 0 && number(product.preco_custo) > 0 && Boolean(text(product.fornecedor)),
+      detail: 'Fornecedor, custo e preço de venda devem estar preenchidos com valores maiores que zero.'
     },
     {
       id: 'inventory',
       label: 'Estoque, validade e localização',
       ok: number(product.estoque) >= 0 && validDate(product.validade) && Boolean(text(product.gondola) && text(product.prateleira)),
-      detail: 'Validade, gôndola e prateleira devem estar preenchidas.'
+      detail: 'Validade válida, gôndola e prateleira devem estar preenchidas.'
     },
     {
       id: 'presentation',
@@ -99,7 +113,6 @@ function automaticChecks(product = {}) {
       detail: 'Informe uma imagem ou mantenha a sessão de fotos vinculada.'
     }
   ];
-
   return checks.map(check => Object.freeze(check));
 }
 
@@ -113,14 +126,9 @@ export function evaluateProductHomologation(product = {}, confirmations = {}) {
   const automaticPassed = automatic.filter(check => check.ok).length;
   const humanPassed = HUMAN_CONFIRMATIONS.filter(item => human[item.id]).length;
   const blockingIssues = automatic.filter(check => !check.ok);
-  const allHumanConfirmed = humanPassed === HUMAN_CONFIRMATIONS.length;
-  const ready = blockingIssues.length === 0 && allHumanConfirmed;
-  const status = ready
-    ? HOMOLOGATION_STATUS.READY
-    : HOMOLOGATION_STATUS.PENDING;
-
+  const ready = blockingIssues.length === 0 && humanPassed === HUMAN_CONFIRMATIONS.length;
   return Object.freeze({
-    status,
+    status: ready ? HOMOLOGATION_STATUS.READY : HOMOLOGATION_STATUS.PENDING,
     ready,
     automatic: Object.freeze(automatic),
     confirmations: human,
@@ -133,11 +141,10 @@ export function evaluateProductHomologation(product = {}, confirmations = {}) {
 }
 
 export function createProductHomologation(savedDraft, confirmations = {}) {
-  if (!savedDraft?.draft || !savedDraft?.original) throw new Error('Rascunho local inválido para homologação.');
-  const productId = productIdentity(savedDraft.draft) || productIdentity(savedDraft.original) || text(savedDraft.id);
+  const product = resolveSavedDraftProduct(savedDraft);
+  const productId = productIdentity(product) || text(savedDraft.id);
   if (!productId) throw new Error('Produto sem identificação segura para homologação.');
-
-  const evaluation = evaluateProductHomologation(savedDraft.draft, confirmations);
+  const evaluation = evaluateProductHomologation(product, confirmations);
   const now = new Date().toISOString();
   return Object.freeze({
     id: `homologation_${productId}`,
@@ -149,7 +156,7 @@ export function createProductHomologation(savedDraft, confirmations = {}) {
     confirmations: evaluation.confirmations,
     evaluation,
     original: clone(savedDraft.original),
-    draft: clone(savedDraft.draft),
+    draft: clone(product),
     changes: clone(savedDraft.changes || []),
     rejectionReason: '',
     approvedAt: '',
@@ -170,10 +177,7 @@ export function saveProductHomologation(savedDraft, confirmations = {}) {
         ...candidate,
         createdAt: previous.createdAt || candidate.createdAt,
         updatedAt: now,
-        history: [
-          { at: now, action: 'review_saved', status: candidate.status },
-          ...(Array.isArray(previous.history) ? previous.history : [])
-        ].slice(0, 50)
+        history: [{ at: now, action: 'review_saved', status: candidate.status }, ...(Array.isArray(previous.history) ? previous.history : [])].slice(0, 50)
       }
     : candidate;
   writeRecords([record, ...records.filter(item => item?.id !== record.id)]);
@@ -247,6 +251,7 @@ export function findSavedDraft(productId) {
 }
 
 export const productHomologationService = Object.freeze({
+  resolveSavedDraftProduct,
   evaluateProductHomologation,
   createProductHomologation,
   saveProductHomologation,
