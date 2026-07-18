@@ -37,6 +37,22 @@
 - bloqueio de reenvio para canais já concluídos;
 - limite de tentativas compartilhado entre reprocessamentos.
 
+## Reprocessamento administrativo
+
+- reprocessamento separado para Firebase e Make;
+- WhatsApp nunca é reenviado automaticamente;
+- Make depende de Firebase concluído;
+- venda do Bling confirmada bloqueia novo envio do Make;
+- limite diário do Bling bloqueia repetição manual;
+- motivo obrigatório antes da preparação;
+- confirmação por frase específica do canal e pedido;
+- solicitação com expiração de dez minutos;
+- bloqueio de solicitações concorrentes para o mesmo canal;
+- exceções de rede consomem tentativa e fecham a solicitação como falha;
+- configuração bloqueada não consome tentativa;
+- eventos de preparação, início, bloqueio, cancelamento, falha e conclusão registrados no histórico;
+- execução externa continua desabilitada.
+
 ## Firebase de homologação
 
 - nó exclusivo `homologacao_v2/pedidos`;
@@ -79,8 +95,7 @@
 1. executar os testes HTML em navegador e aparelhos reais;
 2. adaptar o cenário do Make ao contrato V2 sem criar venda real;
 3. criar um modo de ensaio do cenário com resposta simulada de contato e venda;
-4. adicionar botão administrativo de reprocessamento controlado por canal;
-5. finalizar cupom, entrega e agendamento;
-6. implementar separação, conferência e etiqueta;
-7. habilitar escrita somente no nó de homologação após backup e teste manual;
-8. concluir testes automatizados, segurança e plano de migração.
+4. finalizar cupom, entrega e agendamento;
+5. implementar separação, conferência e etiqueta;
+6. habilitar escrita somente no nó de homologação após backup e teste manual;
+7. concluir testes automatizados, segurança e plano de migração.
