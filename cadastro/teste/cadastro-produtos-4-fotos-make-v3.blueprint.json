@@ -1,5 +1,5 @@
 {
-  "name": "Cadastro Produto 4 Fotos - Firebase GitHub OpenAI V3.1 Nativo",
+  "name": "Cadastro Produto 4 Fotos - Firebase GitHub OpenAI V3.2 Revisado",
   "flow": [
     {
       "id": 1,
@@ -51,6 +51,18 @@
       "metadata": {"designer": {"x": -100, "y": 0, "name": "CONFIGURE - somente token GitHub"}, "advanced": true}
     },
     {
+      "id": 5,
+      "module": "gateway:WebhookRespond",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "body": "{\"ok\":true,\"aceito\":true,\"job_id\":\"{{2.job_id}}\",\"mensagem\":\"Cadastro iniciado. Acompanhe pelo Firebase.\"}",
+        "status": "202",
+        "headers": [{"key": "Content-Type", "value": "application/json; charset=utf-8"}, {"key": "Access-Control-Allow-Origin", "value": "*"}]
+      },
+      "metadata": {"designer": {"x": 150, "y": 0, "name": "Responder imediatamente ao celular"}}
+    },
+    {
       "id": 4,
       "module": "http:MakeRequest",
       "version": 4,
@@ -63,19 +75,7 @@
         "jsonStringBodyContent": "{\"status\":\"processando\",\"etapa\":\"identificando\",\"mensagem\":\"Lendo frente, EAN, validade e informações do produto.\",\"iniciado_em\":\"{{now}}\"}",
         "requestCompressedContent": true
       },
-      "metadata": {"designer": {"x": 150, "y": 0, "name": "Firebase job - iniciar leitura"}}
-    },
-    {
-      "id": 5,
-      "module": "gateway:WebhookRespond",
-      "version": 1,
-      "parameters": {},
-      "mapper": {
-        "body": "{\"ok\":true,\"aceito\":true,\"job_id\":\"{{2.job_id}}\",\"mensagem\":\"Cadastro iniciado. Acompanhe pelo Firebase.\"}",
-        "status": "202",
-        "headers": [{"key": "Content-Type", "value": "application/json; charset=utf-8"}, {"key": "Access-Control-Allow-Origin", "value": "*"}]
-      },
-      "metadata": {"designer": {"x": 400, "y": 0, "name": "Responder imediatamente ao celular"}}
+      "metadata": {"designer": {"x": 400, "y": 0, "name": "Firebase job - iniciar leitura"}}
     },
     {
       "id": 6,
@@ -99,7 +99,7 @@
       "module": "json:ParseJSON",
       "version": 1,
       "parameters": {"type": ""},
-      "mapper": {"json": "{{6.result}}"},
+      "mapper": {"json": "{{trim(replace(replace(6.result; \"```json\"; emptystring); \"```\"; emptystring))}}"},
       "metadata": {
         "designer": {"x": 900, "y": 0, "name": "Estruturar leitura visual"},
         "parameters": [{"name": "type", "type": "udt", "label": "Data structure"}],
@@ -206,7 +206,7 @@
       "mapper": {
         "url": "{{2.destinos.firebase_url}}/{{2.destinos.jobs_node}}/{{2.job_id}}.json", "method": "patch",
         "headers": [{"name": "Content-Type", "value": "application/json"}], "contentType": "json", "inputMethod": "jsonString", "shareCookies": false, "parseResponse": true, "allowRedirects": true, "stopOnHttpError": true,
-        "jsonStringBodyContent": "{\"status\":\"concluido\",\"etapa\":\"concluido\",\"mensagem\":\"{{10.result.productName}} cadastrado em /produtos. Confira os dados antes de ativar.\",\"firebase_key\":\"{{2.firebase_key}}\",\"produto_nome\":\"{{10.result.productName}}\",\"imagem_url\":\"{{10.result.imageUrl}}\",\"ncm\":\"{{10.result.ncm}}\",\"ncm_sugerido\":\"{{10.result.ncmCandidate}}\",\"ncm_confianca\":{{10.result.ncmConfidence}},\"concluido_em\":\"{{now}}\"}", "requestCompressedContent": true
+        "jsonStringBodyContent": "{\"status\":\"concluido\",\"etapa\":\"concluido\",\"mensagem\":\"Produto cadastrado em /produtos. Confira os dados antes de ativar.\",\"firebase_key\":\"{{2.firebase_key}}\",\"imagem_url\":\"{{10.result.imageUrl}}\",\"ncm\":\"{{10.result.ncm}}\",\"ncm_sugerido\":\"{{10.result.ncmCandidate}}\",\"ncm_confianca\":{{10.result.ncmConfidence}},\"concluido_em\":\"{{now}}\"}", "requestCompressedContent": true
       },
       "metadata": {"designer": {"x": 3150, "y": 0, "name": "Firebase job - concluir"}}
     }
@@ -216,7 +216,7 @@
     "version": 1,
     "scenario": {"roundtrips": 1, "maxErrors": 3, "autoCommit": true, "autoCommitTriggerLast": true, "sequential": false, "slots": null, "confidential": false, "dataloss": false, "dlq": false, "freshVariables": false},
     "designer": {"orphans": []},
-    "zone": "us1.make.com",
-    "notes": ["Aplicação separada do admin. Não altera arquivos em producao/.", "Produtos são gravados somente no Firebase /produtos.", "GitHub recebe somente a imagem final em site/img/produtos_3.", "Os módulos 6, 9 e 12 usam a conexão OpenAI nativa 7933914 e não exigem chave manual no cenário.", "O módulo 3 precisa somente do token GitHub."]
+    "zone": "eu1.make.com",
+    "notes": ["Aplicação separada do admin. Não altera arquivos em producao/.", "Produtos são gravados somente no Firebase /produtos.", "GitHub recebe somente a imagem final em site/img/produtos_3.", "Os módulos 6, 9 e 12 usam a conexão OpenAI nativa 7933914 e não exigem chave manual no cenário.", "O módulo 3 precisa somente do token GitHub.", "Revisão completa: zona EU1, resposta 202 antecipada, cabeçalhos key/value e limpeza do JSON visual."]
   }
 }
