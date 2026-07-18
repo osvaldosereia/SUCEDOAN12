@@ -1,36 +1,66 @@
 import { loadCatalog, validateCatalog } from '../shared/catalog.js';
+import { auditProduct, auditProducts, filterProducts, requiredFields } from './product-audit.js';
 
-const state={products:[],source:'',activeModule:'dashboard'};
+const state={products:[],source:'',activeModule:'dashboard',productFilters:{query:'',quality:'',category:''},selectedProductId:''};
 const content=document.getElementById('admin-content');
 const status=document.getElementById('admin-status');
 const title=document.getElementById('module-title');
 const subtitle=document.getElementById('module-subtitle');
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
+const money=value=>Number(value||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const image=product=>product.imagem||'../../img/logoantonia5.png';
 
-function quality(product){return {image:Boolean(product.imagem),category:Boolean(product.categoria),price:Number(product.preco)>0,stock:Number(product.estoque)>0};}
 function metric(value,label){return `<article class="metric"><strong>${value}</strong><span>${label}</span></article>`;}
 function setModuleMeta(name,description){title.textContent=name;subtitle.textContent=description;}
+function productKey(product){return String(product.id||product.firebaseKey||product.codigo||'');}
+
 function renderDashboard(){
   setModuleMeta('Visão geral','Indicadores e integridade do catálogo em modo somente leitura.');
-  const audit=validateCatalog(state.products);
-  const missingImages=state.products.filter(p=>!p.imagem).length;
-  const missingCategories=state.products.filter(p=>!p.categoria).length;
-  const zeroStock=state.products.filter(p=>Number(p.estoque)<=0).length;
-  const checks=[
-    ['Catálogo carregado',state.products.length>0,`${state.products.length} produtos`],
-    ['Estrutura principal',audit.valid,audit.valid?'Sem erro crítico':audit.errors.join(' ')],
-    ['Fonte identificada',Boolean(state.source),state.source||'Não identificada'],
-    ['Imagens cadastradas',missingImages===0,missingImages?`${missingImages} pendências`:'Completo'],
-    ['Categorias cadastradas',missingCategories===0,missingCategories?`${missingCategories} pendências`:'Completo']
-  ];
-  content.innerHTML=`<section class="module-hero"><span class="eyebrow">ADMIN V2 · SOMENTE LEITURA</span><h2>Operação organizada por módulos.</h2><p>Esta base separa diagnóstico, produtos, estoque, campanhas, integrações e publicação. Nenhuma gravação está habilitada.</p></section><section class="metrics">${metric(state.products.length,'PRODUTOS')}${metric(zeroStock,'SEM ESTOQUE')}${metric(missingImages,'SEM IMAGEM')}${metric(missingCategories,'SEM CATEGORIA')}</section><section class="panel"><div class="panel-head"><h3>Integridade do catálogo</h3><span class="pill">${state.source}</span></div><div class="audit-list">${checks.map(([label,ok,detail])=>`<div class="audit-row ${ok?'ok':'error'}"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(detail)}</span></div>`).join('')}</div></section>`;
+  const audit=validateCatalog(state.products),quality=auditProducts(state.products);
+  const missingImages=state.products.filter(p=>!p.imagem).length,missingCategories=state.products.filter(p=>!p.categoria).length,zeroStock=state.products.filter(p=>Number(p.estoque)<=0).length;
+  const checks=[['Catálogo carregado',state.products.length>0,`${state.products.length} produtos`],['Estrutura principal',audit.valid,audit.valid?'Sem erro crítico':audit.errors.join(' ')],['Fonte identificada',Boolean(state.source),state.source||'Não identificada'],['Qualidade média',quality.averageScore>=80,`${quality.averageScore}%`],['Imagens cadastradas',missingImages===0,missingImages?`${missingImages} pendências`:'Completo'],['Categorias cadastradas',missingCategories===0,missingCategories?`${missingCategories} pendências`:'Completo']];
+  content.innerHTML=`<section class="module-hero"><span class="eyebrow">ADMIN V2 · SOMENTE LEITURA</span><h2>Operação organizada por módulos.</h2><p>Diagnóstico, produtos, estoque, campanhas, integrações e publicação permanecem separados. Nenhuma gravação está habilitada.</p></section><section class="metrics">${metric(state.products.length,'PRODUTOS')}${metric(zeroStock,'SEM ESTOQUE')}${metric(quality.incompleteCount,'CADASTRO INCOMPLETO')}${metric(quality.averageScore+'%','QUALIDADE MÉDIA')}</section><section class="panel"><div class="panel-head"><h3>Integridade do catálogo</h3><span class="pill">${escapeHtml(state.source)}</span></div><div class="audit-list">${checks.map(([label,ok,detail])=>`<div class="audit-row ${ok?'ok':'error'}"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(detail)}</span></div>`).join('')}</div></section>`;
 }
+
 function renderInventory(){
   setModuleMeta('Estoque e validade','Diagnóstico operacional separado da edição cadastral.');
   const rows=state.products.filter(p=>Number(p.estoque)<=5).sort((a,b)=>Number(a.estoque)-Number(b.estoque)).slice(0,150);
-  content.innerHTML=`<section class="module-hero"><span class="eyebrow">DIAGNÓSTICO OPERACIONAL</span><h2>Estoque baixo</h2><p>Produtos com até 5 unidades, sem permitir alteração nesta fase.</p></section><section class="metrics">${metric(rows.length,'ATÉ 5 UNIDADES')}${metric(rows.filter(p=>Number(p.estoque)<=0).length,'ZERADOS')}${metric(rows.filter(p=>p.validade).length,'COM VALIDADE')}${metric(rows.filter(p=>!p.validade).length,'SEM VALIDADE')}</section><section class="panel"><div class="panel-head"><h3>Produtos que exigem atenção</h3><span class="pill">Somente leitura</span></div>${rows.length?`<table class="inventory-table"><thead><tr><th>Produto</th><th>Código</th><th>Categoria</th><th>Estoque</th><th>Validade</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${escapeHtml(p.nome)}</td><td>${escapeHtml(p.codigo)}</td><td>${escapeHtml(p.categoria||'—')}</td><td><strong>${Number(p.estoque)||0}</strong></td><td>${escapeHtml(p.validade||'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Nenhum produto com estoque baixo.</div>'}</section>`;
+  content.innerHTML=`<section class="module-hero"><span class="eyebrow">DIAGNÓSTICO OPERACIONAL</span><h2>Estoque baixo</h2><p>Produtos com até 5 unidades, sem permitir alteração nesta fase.</p></section><section class="metrics">${metric(rows.length,'ATÉ 5 UNIDADES')}${metric(rows.filter(p=>Number(p.estoque)<=0).length,'ZERADOS')}${metric(rows.filter(p=>p.validade).length,'COM VALIDADE')}${metric(rows.filter(p=>!p.validade).length,'SEM VALIDADE')}</section><section class="panel"><div class="panel-head"><h3>Produtos que exigem atenção</h3><span class="pill">Somente leitura</span></div>${rows.length?`<div class="table-wrap"><table class="inventory-table"><thead><tr><th>Produto</th><th>Código</th><th>Categoria</th><th>Estoque</th><th>Validade</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${escapeHtml(p.nome)}</td><td>${escapeHtml(p.codigo)}</td><td>${escapeHtml(p.categoria||'—')}</td><td><strong>${Number(p.estoque)||0}</strong></td><td>${escapeHtml(p.validade||'—')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nenhum produto com estoque baixo.</div>'}</section>`;
 }
+
+function productRow(product){
+  const audit=auditProduct(product),key=productKey(product);
+  return `<button class="product-audit-row" type="button" data-product-detail="${escapeHtml(key)}"><img src="${escapeHtml(image(product))}" alt="" loading="lazy"><span class="product-main"><strong>${escapeHtml(product.nome)}</strong><small>${escapeHtml(product.codigo||'Sem código')} · ${escapeHtml(product.categoria||'Sem categoria')}</small></span><span class="score ${audit.complete?'ok':'warn'}">${audit.score}%</span><span class="product-price">${money(product.preco)}</span></button>`;
+}
+
+function renderProductDetail(product){
+  const audit=auditProduct(product);
+  return `<section class="product-detail-panel"><button class="back-button" type="button" data-close-product-detail>← Voltar à lista</button><div class="product-detail-grid"><div class="product-detail-image"><img src="${escapeHtml(image(product))}" alt="${escapeHtml(product.nome)}"></div><div><span class="eyebrow">FICHA SOMENTE LEITURA</span><h2>${escapeHtml(product.nome)}</h2><div class="detail-badges"><span class="score ${audit.complete?'ok':'warn'}">Qualidade ${audit.score}%</span><span class="pill">Estoque ${Number(product.estoque)||0}</span><span class="pill">${escapeHtml(product.situacao||'A')}</span></div><dl class="detail-list"><div><dt>Código</dt><dd>${escapeHtml(product.codigo||'—')}</dd></div><div><dt>GTIN / EAN</dt><dd>${escapeHtml(product.gtin||'—')}</dd></div><div><dt>Categoria</dt><dd>${escapeHtml(product.categoria||'—')}</dd></div><div><dt>Subcategoria</dt><dd>${escapeHtml(product.subcategoria||'—')}</dd></div><div><dt>Marca</dt><dd>${escapeHtml(product.marca||'—')}</dd></div><div><dt>Embalagem</dt><dd>${escapeHtml(product.embalagem||'—')}</dd></div><div><dt>Preço</dt><dd>${money(product.preco)}</dd></div><div><dt>Validade</dt><dd>${escapeHtml(product.validade||'—')}</dd></div></dl>${audit.complete?'<div class="notice success">Cadastro essencial completo.</div>':`<div class="notice error"><strong>Pendências:</strong> ${audit.missing.map(item=>escapeHtml(item.label)).join(', ')}</div>`}</div></div></section>`;
+}
+
+function bindProductFilters(){
+  const query=document.getElementById('product-query'),quality=document.getElementById('product-quality'),category=document.getElementById('product-category');
+  query?.addEventListener('input',event=>{state.productFilters.query=event.target.value;renderProducts();document.getElementById('product-query')?.focus();});
+  quality?.addEventListener('change',event=>{state.productFilters.quality=event.target.value;renderProducts();});
+  category?.addEventListener('change',event=>{state.productFilters.category=event.target.value;renderProducts();});
+}
+
+function renderProducts(){
+  setModuleMeta('Produtos','Listagem, filtros, qualidade cadastral e detalhe separados das ações de edição.');
+  if(state.selectedProductId){const product=state.products.find(item=>productKey(item)===state.selectedProductId);if(product){content.innerHTML=renderProductDetail(product);return;}state.selectedProductId='';}
+  const audit=auditProducts(state.products),filtered=filterProducts(state.products,state.productFilters),categories=[...new Set(state.products.map(p=>p.categoria).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const qualityOptions=requiredFields.map(([field,label])=>`<option value="missing:${field}"${state.productFilters.quality===`missing:${field}`?' selected':''}>Sem ${escapeHtml(label)}</option>`).join('');
+  content.innerHTML=`<section class="module-hero"><span class="eyebrow">CATÁLOGO CENTRAL · SOMENTE LEITURA</span><h2>Produtos e qualidade cadastral</h2><p>Busca e diagnóstico sem misturar edição, IA, importação, publicação ou integrações.</p></section><section class="metrics">${metric(state.products.length,'TOTAL')}${metric(audit.completeCount,'COMPLETOS')}${metric(audit.incompleteCount,'INCOMPLETOS')}${metric(audit.averageScore+'%','QUALIDADE MÉDIA')}</section><section class="panel"><div class="product-filters"><label><span>Buscar</span><input id="product-query" value="${escapeHtml(state.productFilters.query)}" placeholder="Nome, código, EAN ou marca"></label><label><span>Qualidade</span><select id="product-quality"><option value="">Todos</option><option value="complete"${state.productFilters.quality==='complete'?' selected':''}>Cadastro completo</option><option value="incomplete"${state.productFilters.quality==='incomplete'?' selected':''}>Cadastro incompleto</option>${qualityOptions}</select></label><label><span>Categoria</span><select id="product-category"><option value="">Todas</option>${categories.map(category=>`<option${state.productFilters.category===category?' selected':''}>${escapeHtml(category)}</option>`).join('')}</select></label></div><div class="panel-head"><h3>${filtered.length} produtos encontrados</h3><span class="pill">Clique para consultar</span></div><div class="product-audit-list">${filtered.slice(0,250).map(productRow).join('')||'<div class="empty">Nenhum produto encontrado.</div>'}</div>${filtered.length>250?'<div class="notice">Exibindo os primeiros 250 resultados. Refine os filtros para localizar um produto.</div>':''}</section>`;
+  bindProductFilters();
+}
+
 function renderPending(module){setModuleMeta(module,'Módulo planejado e ainda bloqueado para evitar mistura prematura de responsabilidades.');content.innerHTML=`<section class="module-hero"><span class="eyebrow">ARQUITETURA EM CONSTRUÇÃO</span><h2>${escapeHtml(module)}</h2><p>Este módulo só será liberado após o mapeamento das funções equivalentes no admin atual e definição do contrato de dados.</p></section>`;}
-function render(){document.querySelectorAll('[data-module]').forEach(button=>button.classList.toggle('active',button.dataset.module===state.activeModule));if(state.activeModule==='dashboard')return renderDashboard();if(state.activeModule==='inventory')return renderInventory();renderPending(document.querySelector(`[data-module="${state.activeModule}"]`)?.textContent.trim()||state.activeModule);}
-document.addEventListener('click',event=>{const button=event.target.closest('[data-module]');if(!button||button.disabled)return;state.activeModule=button.dataset.module;render();});
+function render(){document.querySelectorAll('[data-module]').forEach(button=>button.classList.toggle('active',button.dataset.module===state.activeModule));if(state.activeModule==='dashboard')return renderDashboard();if(state.activeModule==='inventory')return renderInventory();if(state.activeModule==='products')return renderProducts();renderPending(document.querySelector(`[data-module="${state.activeModule}"]`)?.textContent.trim()||state.activeModule);}
+
+document.addEventListener('click',event=>{
+  const detail=event.target.closest('[data-product-detail]');if(detail){state.selectedProductId=detail.dataset.productDetail;renderProducts();return;}
+  if(event.target.closest('[data-close-product-detail]')){state.selectedProductId='';renderProducts();return;}
+  const button=event.target.closest('[data-module]');if(!button||button.disabled)return;state.activeModule=button.dataset.module;state.selectedProductId='';render();
+});
+
 try{const result=await loadCatalog({onStatus:event=>{if(event.phase==='cache')status.textContent='Cache disponível; confirmando fonte segura…';}});state.products=result.products;state.source=result.source;status.textContent=`${result.products.length} produtos via ${result.source}`;status.dataset.type='success';render();}catch(error){console.error(error);status.textContent='Falha ao carregar catálogo';status.dataset.type='error';content.innerHTML=`<div class="panel"><div class="audit-row error"><strong>Falha de integridade</strong><span>${escapeHtml(error.message||error)}</span></div></div>`;}
