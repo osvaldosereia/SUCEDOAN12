@@ -1,0 +1,40 @@
+export const APP_CONFIG = Object.freeze({
+  appName: 'Dona Antônia V2',
+  environment: 'homologation',
+  version: '2026.07.18-foundation.1',
+  firebase: Object.freeze({
+    baseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
+    nodes: Object.freeze({
+      products: 'produtos',
+      orders: 'pedidos',
+      baskets: 'cestas',
+      kits: 'kits',
+      quickPurchase: 'config_compra_rapida'
+    })
+  }),
+  snapshots: Object.freeze({
+    productsHome: '../../site/produtos-home.json',
+    baskets: '../../site/produtos-cesta-basica.json',
+    kits: '../../site/kits.json',
+    coupons: '../../site/cuponsativos.json'
+  }),
+  cache: Object.freeze({
+    namespace: 'da_v2',
+    catalogTtlMs: 15 * 60 * 1000,
+    staleCatalogMaxAgeMs: 24 * 60 * 60 * 1000
+  }),
+  catalogSafety: Object.freeze({
+    minimumProducts: 1,
+    maximumDropRatio: 0.25,
+    requestTimeoutMs: 8000
+  }),
+  commerce: Object.freeze({
+    minimumOrder: 75,
+    whatsappNumber: '5565998150975'
+  })
+});
+
+export function firebaseNodeUrl(node) {
+  const clean = String(node || '').replace(/^\/+|\/+$/g, '');
+  return `${APP_CONFIG.firebase.baseUrl}/${clean}.json`;
+}
