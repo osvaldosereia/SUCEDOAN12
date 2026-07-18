@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#8f6712">
+  <title>Cadastro de Produtos · Dona Antônia</title>
+  <style>
+    :root{--gold:#a87816;--gold2:#fff6dc;--ink:#241f18;--muted:#706a61;--line:#e7e0d5;--green:#15733a;--green2:#eaf8ef;--red:#b52b2b;--red2:#fff0f0;--blue:#205b9d;--blue2:#edf5ff;--shadow:0 14px 36px rgba(42,33,18,.10)}
+    *{box-sizing:border-box}
+    html{background:#f5f2ec}
+    body{margin:0;color:var(--ink);font:15px/1.4 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f2ec;min-height:100vh}
+    button,input,select,textarea{font:inherit}
+    button{touch-action:manipulation}
+    .app{width:min(100%,620px);min-height:100vh;margin:auto;background:#faf9f6;box-shadow:0 0 50px rgba(0,0,0,.06)}
+    .top{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
+    .brand{display:flex;align-items:center;gap:10px;min-width:0}.mark{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:var(--gold);color:#fff;font-size:21px;font-weight:900}
+    .brand strong,.brand small{display:block}.brand strong{font-size:15px}.brand small{font-size:11px;color:var(--muted)}
+    .icon-btn{width:42px;height:42px;border:1px solid var(--line);border-radius:13px;background:#fff;font-size:20px}
+    main{padding:14px 14px calc(28px + env(safe-area-inset-bottom))}
+    .screen{display:none}.screen.active{display:block}
+    h1{font-size:25px;line-height:1.1;margin:8px 0 6px}h2{font-size:20px;margin:0}h3{font-size:16px;margin:0}
+    .lead{color:var(--muted);margin:0 0 16px}
+    .card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:14px;box-shadow:var(--shadow)}
+    .stack{display:grid;gap:12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.span{grid-column:1/-1}
+    .field{display:grid;gap:5px}.field label{font-size:12px;font-weight:850;color:#504a42}
+    .input,.select,.textarea{width:100%;min-height:52px;padding:12px 13px;border:1px solid #d9d1c5;border-radius:13px;background:#fff;color:var(--ink);outline:none;font-size:16px}
+    .textarea{min-height:82px;resize:vertical}.input:focus,.select:focus,.textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(168,120,22,.13)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:11px 14px;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);font-weight:850;text-decoration:none}
+    .btn.primary{background:var(--gold);border-color:var(--gold);color:#fff}.btn.green{background:var(--green);border-color:var(--green);color:#fff}.btn.red{background:var(--red2);border-color:#efc7c7;color:var(--red)}
+    .btn:disabled{opacity:.55}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.actions.one{grid-template-columns:1fr}
+    .notice{padding:11px 12px;border:1px solid #e8d49d;border-radius:13px;background:var(--gold2);color:#6d5012;font-size:13px}.notice.red{background:var(--red2);border-color:#efc6c6;color:var(--red)}.notice.green{background:var(--green2);border-color:#b8dfc5;color:var(--green)}.notice.blue{background:var(--blue2);border-color:#bfd8f6;color:var(--blue)}
+    .status{display:none;margin-bottom:12px}.status.show{display:block}
+    .video-wrap{position:relative;overflow:hidden;border-radius:20px;background:#111;aspect-ratio:3/4;border:1px solid #222}
+    video{width:100%;height:100%;object-fit:cover}.scan-line{position:absolute;left:8%;right:8%;top:50%;height:3px;background:#f6c34f;box-shadow:0 0 14px #f6c34f}.scan-tip{position:absolute;left:10px;right:10px;bottom:10px;padding:8px 10px;border-radius:11px;background:rgba(0,0,0,.68);color:#fff;text-align:center;font-size:12px}
+    .manual{display:grid;grid-template-columns:1fr auto;gap:8px}.manual .btn{padding-inline:18px}
+    .product-head{display:grid;grid-template-columns:88px 1fr;gap:12px;align-items:center}.product-head img{width:88px;height:88px;object-fit:contain;border:1px solid var(--line);border-radius:15px;background:#fafafa}.meta{font-size:12px;color:var(--muted);margin-top:4px}.pill{display:inline-flex;padding:4px 8px;border-radius:999px;background:var(--green2);color:var(--green);font-size:11px;font-weight:850;margin-top:7px}
+    .photo-step{border:1px solid var(--line);border-radius:17px;padding:12px;background:#fff}.photo-step.done{border-color:#9acaaa;background:#f5fff7}.photo-title{display:flex;align-items:center;gap:8px;margin-bottom:4px}.step-number{display:grid;place-items:center;width:27px;height:27px;border-radius:9px;background:var(--gold2);color:#79560e;font-weight:900}.photo-help{font-size:12px;color:var(--muted);margin-bottom:9px}
+    .capture{display:grid;place-items:center;min-height:86px;padding:10px;border:2px dashed #d9bd70;border-radius:13px;background:#fffbef;color:#79560e;font-weight:850;text-align:center;cursor:pointer}.capture input{display:none}.preview{display:block;width:100%;max-height:230px;object-fit:contain;border-radius:12px;margin-top:9px;background:#f3f3f3}
+    .progress{display:grid;gap:9px;text-align:center;padding:20px}.spinner{width:48px;height:48px;margin:auto;border:5px solid #e8dcbf;border-top-color:var(--gold);border-radius:50%;animation:spin .9s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    .progress-list{display:grid;gap:7px;text-align:left}.progress-row{display:flex;gap:8px;align-items:flex-start;padding:9px;border-radius:11px;background:#f7f4ed;font-size:13px}.progress-row.active{background:var(--blue2);color:var(--blue)}.progress-row.done{background:var(--green2);color:var(--green)}
+    dialog{width:min(calc(100% - 24px),560px);max-height:calc(100vh - 24px);padding:0;border:0;border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.3)}dialog::backdrop{background:rgba(0,0,0,.55)}.dialog-head{display:flex;align-items:center;justify-content:space-between;padding:14px;border-bottom:1px solid var(--line)}.dialog-body{display:grid;gap:12px;padding:14px;overflow:auto}.tiny{font-size:11px;color:var(--muted)}
+    .offline{display:none;position:fixed;left:50%;bottom:10px;z-index:50;transform:translateX(-50%);padding:7px 12px;border-radius:999px;background:#27231e;color:#fff;font-size:12px}.offline.show{display:block}
+    @media(max-width:430px){.grid,.actions{grid-template-columns:1fr}.manual{grid-template-columns:1fr}.product-head{grid-template-columns:76px 1fr}.product-head img{width:76px;height:76px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><div class="mark">DA</div><div><strong>Cadastro de Produtos</strong><small>Dona Antônia · Mobile</small></div></div>
+    <button class="icon-btn" id="settingsBtn" type="button" aria-label="Configurações">⚙</button>
+  </header>
+  <main>
+    <div id="globalStatus" class="notice status"></div>
+
+    <section id="scanScreen" class="screen active">
+      <h1>Ler produto</h1>
+      <p class="lead">Aponte a câmera para o código de barras.</p>
+      <div class="stack">
+        <div class="video-wrap">
+          <video id="video" playsinline muted></video>
+          <div class="scan-line"></div>
+          <div class="scan-tip" id="cameraTip">Toque abaixo para abrir a câmera</div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="cameraBtn" type="button">Abrir câmera</button>
+          <button class="btn" id="photoBarcodeBtn" type="button">Foto do código</button>
+        </div>
+        <input id="barcodePhotoInput" type="file" accept="image/*" capture="environment" hidden>
+        <div class="manual">
+          <input class="input" id="codeInput" inputmode="numeric" autocomplete="off" placeholder="Ou digite o EAN">
+          <button class="btn" id="searchBtn" type="button">Buscar</button>
+        </div>
+        <div class="notice">Se o código existir, você atualiza os campos básicos. Se não existir, o aplicativo pede as três fotos.</div>
+      </div>
+    </section>
+
+    <section id="editScreen" class="screen">
+      <div class="stack">
+        <button class="btn" data-action="home" type="button">← Outro produto</button>
+        <div class="card stack">
+          <div class="product-head"><img id="editImage" alt=""><div><h2 id="editTitle">Produto</h2><div class="meta" id="editMeta"></div><span class="pill">Encontrado no Firebase</span></div></div>
+          <form id="editForm" class="grid">
+            <div class="field span"><label>Nome</label><input class="input" name="nome" required></div>
+            <div class="field"><label>Estoque</label><input class="input" name="estoque" type="number" min="0" inputmode="numeric"></div>
+            <div class="field"><label>Validade</label><input class="input date-mask" name="validade" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA"></div>
+            <div class="field"><label>EAN / GTIN</label><input class="input digits" name="gtin" inputmode="numeric" maxlength="14"></div>
+            <div class="field"><label>NCM</label><input class="input digits" name="ncm" inputmode="numeric" maxlength="8"></div>
+            <div class="field"><label>Gôndola</label><input class="input" name="gondola"></div>
+            <div class="field"><label>Prateleira</label><input class="input" name="prateleira"></div>
+            <button class="btn green span" type="submit">Salvar no Firebase</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section id="newScreen" class="screen">
+      <div class="stack">
+        <button class="btn" data-action="home" type="button">← Cancelar</button>
+        <div><h1>Produto novo</h1><p class="lead">Código <strong id="newCode"></strong> não encontrado. Tire as três fotos.</p></div>
+        <article class="photo-step" data-photo-card="frente"><div class="photo-title"><span class="step-number">1</span><h3>Frente do produto</h3></div><div class="photo-help">Embalagem inteira, de frente e com boa luz.</div><label class="capture">Abrir câmera<input type="file" accept="image/*" capture="environment" data-photo="frente"></label><img class="preview" data-preview="frente" hidden alt="Frente do produto"></article>
+        <article class="photo-step" data-photo-card="ean"><div class="photo-title"><span class="step-number">2</span><h3>Código EAN</h3></div><div class="photo-help">Aproxime até as barras e os números ficarem nítidos.</div><label class="capture">Abrir câmera<input type="file" accept="image/*" capture="environment" data-photo="ean"></label><img class="preview" data-preview="ean" hidden alt="Código EAN"></article>
+        <article class="photo-step" data-photo-card="validade"><div class="photo-title"><span class="step-number">3</span><h3>Data de validade</h3></div><div class="photo-help">Mostre a data completa e o lote, sem reflexo.</div><label class="capture">Abrir câmera<input type="file" accept="image/*" capture="environment" data-photo="validade"></label><img class="preview" data-preview="validade" hidden alt="Validade"></article>
+        <div class="card grid">
+          <div class="field"><label>Categoria</label><select class="select" id="category"></select></div>
+          <div class="field"><label>Subcategoria</label><select class="select" id="subcategory"></select></div>
+          <div class="field"><label>Estoque inicial</label><input class="input" id="newStock" type="number" min="0" inputmode="numeric" value="0"></div>
+          <div class="field"><label>Gôndola</label><input class="input" id="newGondola"></div>
+          <div class="field"><label>Prateleira</label><input class="input" id="newShelf"></div>
+          <div class="field span"><label>Observação opcional</label><input class="input" id="newNote" placeholder="Ex.: embalagem de 500 ml"></div>
+        </div>
+        <div class="notice">O produto será salvo <strong>inativo</strong> e com preços zerados. Confira preço, custo e NCM antes de ativá-lo no site.</div>
+        <button class="btn primary" id="registerBtn" type="button">Cadastrar com IA</button>
+      </div>
+    </section>
+
+    <section id="progressScreen" class="screen">
+      <div class="card progress">
+        <div class="spinner" id="progressSpinner"></div>
+        <h2 id="progressTitle">Cadastrando produto</h2>
+        <p class="lead" id="progressMessage">Enviando fotos...</p>
+        <div class="progress-list">
+          <div class="progress-row active" data-stage="recebido">1. Recebendo e conferindo as fotos</div>
+          <div class="progress-row" data-stage="identificando">2. Lendo produto, EAN e validade</div>
+          <div class="progress-row" data-stage="pesquisando">3. Pesquisando nome e NCM na web</div>
+          <div class="progress-row" data-stage="imagem">4. Criando a foto de capa</div>
+          <div class="progress-row" data-stage="salvando">5. Salvando GitHub e Firebase</div>
+        </div>
+        <button class="btn" id="progressHomeBtn" type="button" hidden>Cadastrar outro produto</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<dialog id="settingsDialog">
+  <form method="dialog">
+    <div class="dialog-head"><h2>Configuração</h2><button class="icon-btn" value="cancel" aria-label="Fechar">×</button></div>
+    <div class="dialog-body">
+      <div class="field"><label>Firebase Database URL</label><input class="input" id="firebaseUrl"></div>
+      <div class="field"><label>Nó dos produtos</label><input class="input" id="productsNode"></div>
+      <div class="field"><label>Token Firebase opcional</label><input class="input" id="firebaseAuth" type="password" autocomplete="off"><div class="tiny">Deixe vazio se as regras atuais já permitem acesso administrativo.</div></div>
+      <div class="field"><label>Webhook do cenário no Make</label><input class="input" id="makeWebhook" type="url" placeholder="https://hook.us2.make.com/..."></div>
+      <button class="btn primary" id="saveSettingsBtn" value="cancel" type="button">Salvar configuração</button>
+      <div class="notice red">Use este aplicativo somente em área administrativa. As chaves da OpenAI e do GitHub ficam apenas dentro do Make.</div>
+    </div>
+  </form>
+</dialog>
+<div id="offline" class="offline">Sem internet</div>
+
+<script>
+(()=>{
+  "use strict";
+  const CATEGORY_MAP={"A CLASSIFICAR":[],"BALAS E CHICLETES":["BALAS","CHICLETES"],"BEBÊ":["BANHO","FRALDAS","HIGIENE"],"BELEZA":["BOCA","CABELO","CORPO","MANICURE","ROSTO"],"BOLACHAS E BISCOITOS":["DOCE","LEITE CONDENSADO","SALGADA","WAFER"],"CAFÉ DA MANHÃ":["ACHOCOLATADO","ACOMPANHAMENTOS","CAFÉ","CEREAIS","CHÁS E INFUSÕES"],"CHINELOS":["CHINELOS"],"CHOCOLATES E DOCES":["BOMBOM","CHOCOLATE","CREME DOCE"],"CONFEITARIA":["BOLO","CREME DE LEITE","DOCES E INGREDIENTES","FERMENTO","GELATINA","LEITE CONDENSADO"],"DESODORANTE":["AEROSOL","CREME","ROLL-ON"],"HIGIENE":["ABSORVENTE","BANHO","BARBEARIA","CURATIVOS","HIGIENE BUCAL","PAPEL HIGIÊNICO","TALCO"],"LAVANDERIA":["ACESSÓRIOS","AMACIANTE","LAVA-ROUPAS"],"LIMPEZA":["BANHEIRO","DESINFETANTE","DETERGENTE","INSETICIDA","LIMPADOR","PANOS E PAPÉIS","PURIFICADOR DE AR","SACO DE LIXO","VASSOURA, RODO E PÁ","ÁGUA SANITÁRIA","ÁLCOOL"],"MACARRÃO E MOLHOS":["MACARRÃO"],"MERCEARIA BÁSICA":["ARROZ","AÇÚCAR","CANJICA","ENLATADOS","FARINHAS","FEIJÃO","OVOS","PIPOCA","SAL","SOPAS E PRONTOS","ÓLEO"],"MOLHOS E CONDIMENTOS":["AZEITES","CONSERVAS","KETCHUP","MAIONESE","MOLHOS ESPECIAIS","MOSTARDA","PATÊS","SALGADINHOS","VINAGRES"],"PETS":["CHOCOLATE","CÃES","HIGIENE PET"],"SABONETE":["BARRA","LÍQUIDO"],"SALGADINHOS E PETISCOS":["AMENDOIM","BATATA PALHA","BATATAS","PIPOCA","SALGADINHOS"],"SHAMPOO E CONDICIONADOR":["CONDICIONADOR","KIT SHAMPOO E CONDICIONADOR","SHAMPOO"],"SUCOS, REFRI E ENERGÉTICOS":["ISOTÔNICO","REFRIGERANTE","SUCO EM PÓ","SUCO PRONTO"],"TEMPEROS":["CALDO","EM PÓ","PIMENTA","TEMPERO"],"UTENSÍLIOS E UTILIDADES":["CASA","COSTURA","COZINHA","PAPELARIA"]};
+  const DEFAULTS={firebaseUrl:"https://cedar-chemist-310801-default-rtdb.firebaseio.com",productsNode:"produtos",firebaseAuth:"",makeWebhook:""};
+  const $=(selector,root=document)=>root.querySelector(selector);
+  const $$=(selector,root=document)=>[...root.querySelectorAll(selector)];
+  const state={settings:loadSettings(),stream:null,detector:null,scanTimer:null,busy:false,current:null,newCode:"",photos:{frente:"",ean:"",validade:""},job:null,pollTimer:null};
+  function loadSettings(){try{return {...DEFAULTS,...JSON.parse(localStorage.getItem("da_cadastro_mobile_settings_v1")||"{}")}}catch{return {...DEFAULTS}}}
+  function saveSettings(){localStorage.setItem("da_cadastro_mobile_settings_v1",JSON.stringify(state.settings))}
+  function cleanDigits(value){return String(value||"").replace(/\D/g,"")}
+  function cleanText(value){return String(value??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim()}
+  function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char]))}
+  function nowIso(){return new Date().toISOString()}
+  function authSuffix(){return state.settings.firebaseAuth?`auth=${encodeURIComponent(state.settings.firebaseAuth)}`:""}
+  function dbUrl(path,query=""){const base=state.settings.firebaseUrl.replace(/\/+$/,""),auth=authSuffix(),tail=[query,auth].filter(Boolean).join("&");return `${base}/${path.replace(/^\/+|\/+$/g,"")}.json${tail?"?"+tail:""}`}
+  function productPath(key){return `${state.settings.productsNode}/${encodeURIComponent(key)}`}
+  async function jsonFetch(url,options={},timeout=18000){
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
+    try{const response=await fetch(url,{cache:"no-store",...options,signal:controller.signal});if(!response.ok)throw new Error(`Erro ${response.status}`);const text=await response.text();return text?JSON.parse(text):null}
+    catch(error){if(error.name==="AbortError")throw new Error("A consulta demorou demais.");throw error}finally{clearTimeout(timer)}
+  }
+  function status(message,type="blue",timeout=0){const el=$("#globalStatus");el.className=`notice status show ${type}`;el.textContent=message;if(timeout)setTimeout(()=>el.classList.remove("show"),timeout)}
+  function showScreen(id){$$(".screen").forEach(el=>el.classList.toggle("active",el.id===id));window.scrollTo({top:0,behavior:"instant"})}
+  function toBrDate(value){const match=String(value||"").match(/^(\d{4})-(\d{2})-(\d{2})/);return match?`${match[3]}/${match[2]}/${match[1]}`:String(value||"")}
+  function toIsoDate(value){const digits=cleanDigits(value);if(!digits)return"";if(digits.length!==8)return null;const day=+digits.slice(0,2),month=+digits.slice(2,4),year=+digits.slice(4),date=new Date(Date.UTC(year,month-1,day));return date.getUTCFullYear()===year&&date.getUTCMonth()===month-1&&date.getUTCDate()===day?`${year}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`:null}
+  function maskDate(value){const digits=cleanDigits(value).slice(0,8);return [digits.slice(0,2),digits.slice(2,4),digits.slice(4,8)].filter(Boolean).join("/")}
+  function validGtin(value){const digits=cleanDigits(value);if(![8,12,13,14].includes(digits.length))return false;const body=digits.slice(0,-1).split("").reverse();const total=body.reduce((sum,digit,index)=>sum+(+digit)*(index%2===0?3:1),0);return (10-total%10)%10===+digits.at(-1)}
+  function resetNew(){state.newCode="";state.photos={frente:"",ean:"",validade:""};$$("[data-preview]").forEach(img=>{img.hidden=true;img.removeAttribute("src")});$$("[data-photo-card]").forEach(card=>card.classList.remove("done"));$$("[data-photo]").forEach(input=>input.value="");$("#newStock").value="0";$("#newGondola").value="";$("#newShelf").value="";$("#newNote").value=""}
+  async function stopCamera(){clearTimeout(state.scanTimer);state.scanTimer=null;if(state.stream){state.stream.getTracks().forEach(track=>track.stop());state.stream=null}$("#video").srcObject=null;$("#cameraBtn").textContent="Abrir câmera";$("#cameraTip").textContent="Toque abaixo para abrir a câmera"}
+  async function startCamera(){
+    if(state.stream){await stopCamera();return}
+    if(!navigator.mediaDevices?.getUserMedia){status("Este navegador não permite abrir a câmera.","red");return}
+    if(!("BarcodeDetector" in window)){status("A leitura automática não está disponível. Use “Foto do código” ou digite o EAN.","red");return}
+    try{
+      state.detector=state.detector||new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","code_128","itf"]});
+      state.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false});
+      $("#video").srcObject=state.stream;await $("#video").play();$("#cameraBtn").textContent="Fechar câmera";$("#cameraTip").textContent="Centralize o código entre as bordas";scanFrame();
+    }catch(error){status("Não foi possível abrir a câmera. Confira a permissão do navegador.","red")}
+  }
+  async function scanFrame(){
+    if(!state.stream||state.busy)return;
+    try{const found=await state.detector.detect($("#video"));const value=cleanDigits(found?.[0]?.rawValue);if(value){$("#codeInput").value=value;await stopCamera();await searchCode(value);return}}catch{}
+    state.scanTimer=setTimeout(scanFrame,230);
+  }
+  async function detectBarcodePhoto(file){
+    if(!("BarcodeDetector" in window)){status("Digite os números do código no campo abaixo.","red");return}
+    try{const bitmap=await createImageBitmap(file),detector=state.detector||new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","code_128","itf"]}),found=await detector.detect(bitmap),value=cleanDigits(found?.[0]?.rawValue);bitmap.close?.();if(!value)throw new Error();$("#codeInput").value=value;await searchCode(value)}catch{status("Não consegui ler essa foto. Aproxime mais ou digite os números.","red")}
+  }
+  async function queryField(field,code){
+    const query=`orderBy=${encodeURIComponent(JSON.stringify(field))}&equalTo=${encodeURIComponent(JSON.stringify(code))}`;
+    return jsonFetch(dbUrl(state.settings.productsNode,query),{},22000);
+  }
+  async function findProduct(code){
+    const digits=cleanDigits(code),queries=await Promise.allSettled([queryField("gtin",digits),queryField("codigo",code)]);
+    for(const result of queries){if(result.status==="fulfilled"&&result.value&&Object.keys(result.value).length){const [key,product]=Object.entries(result.value)[0];return{key,product}}}
+    if(queries.every(item=>item.status==="rejected"))throw new Error("O Firebase não respondeu à pesquisa.");
+    return null;
+  }
+  async function searchCode(raw){
+    if(state.busy)return;const code=cleanText(raw);if(!code){status("Leia ou digite um código.","red");return}
+    state.busy=true;$("#searchBtn").disabled=true;status("Consultando o Firebase...","blue");
+    try{const found=await findProduct(code);if(found){openEditor(found.key,found.product);status("Produto encontrado.","green",2200)}else{openNew(code);status("Produto não encontrado. Tire as três fotos.","blue",2600)}}
+    catch(error){status(error.message||"Não foi possível consultar o Firebase.","red")}finally{state.busy=false;$("#searchBtn").disabled=false}
+  }
+  function productImage(product){return cleanText(product.url_imagem||product.imagem||product.imagem_url||"")||"data:image/svg+xml;charset=UTF-8,"+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><rect width='100%' height='100%' fill='#f3f3f3'/><text x='50%' y='50%' text-anchor='middle' dominant-baseline='middle' fill='#888' font-family='Arial'>sem foto</text></svg>")}
+  function openEditor(key,product){
+    state.current={key,product:{...product}};const form=$("#editForm");
+    $("#editImage").src=productImage(product);$("#editTitle").textContent=cleanText(product.nome)||"Produto sem nome";$("#editMeta").textContent=`Código: ${cleanText(product.codigo||key)} · Firebase: ${key}`;
+    ["nome","estoque","gtin","ncm","gondola","prateleira"].forEach(field=>form.elements[field].value=product[field]??"");form.elements.validade.value=toBrDate(product.validade);showScreen("editScreen")
+  }
+  async function saveExisting(event){
+    event.preventDefault();if(!state.current||state.busy)return;const form=new FormData(event.currentTarget),gtin=cleanDigits(form.get("gtin")),ncm=cleanDigits(form.get("ncm")),validade=toIsoDate(form.get("validade"));
+    if(gtin&&!validGtin(gtin)){status("O EAN digitado não passou na validação do dígito verificador.","red");return}
+    if(ncm&&ncm.length!==8){status("O NCM deve ter exatamente 8 números.","red");return}
+    if(validade===null){status("Digite uma validade válida no formato DD/MM/AAAA.","red");return}
+    const patch={nome:cleanText(form.get("nome")),estoque:Math.max(0,Math.floor(Number(form.get("estoque"))||0)),validade,gtin,ncm,gondola:cleanText(form.get("gondola")),prateleira:cleanText(form.get("prateleira")),updated_at:nowIso(),last_update:Date.now(),stock_updated_at:nowIso()};
+    state.busy=true;const button=event.currentTarget.querySelector("button[type=submit]"),old=button.textContent;button.disabled=true;button.textContent="Salvando...";
+    try{await jsonFetch(dbUrl(productPath(state.current.key)),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(patch)});state.current.product={...state.current.product,...patch};status("Produto atualizado no Firebase.","green");setTimeout(home,900)}
+    catch(error){status(`Não foi possível salvar: ${error.message}`,"red")}finally{state.busy=false;button.disabled=false;button.textContent=old}
+  }
+  function fillCategories(){const category=$("#category"),current=category.value;category.innerHTML='<option value="">Selecione...</option>'+Object.keys(CATEGORY_MAP).map(value=>`<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");if(current)category.value=current;fillSubcategories()}
+  function fillSubcategories(){const select=$("#subcategory"),values=CATEGORY_MAP[$("#category").value]||[],current=select.value;select.innerHTML='<option value="">Selecione...</option>'+values.map(value=>`<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");if(values.includes(current))select.value=current}
+  function openNew(code){resetNew();state.newCode=cleanDigits(code)||cleanText(code);$("#newCode").textContent=state.newCode;fillCategories();showScreen("newScreen")}
+  async function compressPhoto(file){
+    if(!file?.type?.startsWith("image/"))throw new Error("Selecione uma imagem.");
+    const url=URL.createObjectURL(file);
+    try{const img=await new Promise((resolve,reject)=>{const element=new Image();element.onload=()=>resolve(element);element.onerror=reject;element.src=url}),max=1280,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)),canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));canvas.getContext("2d",{alpha:false}).drawImage(img,0,0,canvas.width,canvas.height);return canvas.toDataURL("image/jpeg",.76)}
+    finally{URL.revokeObjectURL(url)}
+  }
+  async function photoChanged(input){
+    const key=input.dataset.photo,file=input.files?.[0];if(!file)return;status("Otimizando a foto...","blue");
+    try{state.photos[key]=await compressPhoto(file);const preview=$(`[data-preview="${key}"]`);preview.src=state.photos[key];preview.hidden=false;$(`[data-photo-card="${key}"]`).classList.add("done");status("Foto pronta.","green",1500)}
+    catch{status("Não foi possível usar esta foto.","red")}
+  }
+  function jobPath(id){return `cadastros_ia_jobs/${encodeURIComponent(id)}`}
+  function renderProgress(job={}){
+    const order=["recebido","identificando","pesquisando","imagem","salvando"],aliases={enviando:"recebido",processando:"identificando",analisando:"identificando",pesquisando:"pesquisando",gerando_imagem:"imagem",upload_github:"salvando",salvando_firebase:"salvando",concluido:"concluido",completed:"concluido",erro:"erro",failed:"erro"},stage=aliases[job.etapa||job.status]||job.etapa||"recebido",index=order.indexOf(stage);
+    $$(".progress-row").forEach((row,rowIndex)=>{row.classList.toggle("done",stage==="concluido"||rowIndex<index);row.classList.toggle("active",stage!=="concluido"&&rowIndex===Math.max(0,index))});
+    $("#progressMessage").textContent=job.mensagem||job.message||"A automação está trabalhando.";
+  }
+  async function startRegistration(){
+    if(state.busy)return;const missing=Object.entries(state.photos).filter(([,value])=>!value).map(([key])=>key);if(missing.length){status("Tire as três fotos antes de cadastrar.","red");return}
+    const categoria=$("#category").value,subcategoria=$("#subcategory").value;if(!categoria||!subcategoria){status("Selecione a categoria e a subcategoria.","red");return}
+    if(!state.settings.makeWebhook){status("Configure o webhook do Make na engrenagem.","red");$("#settingsDialog").showModal();return}
+    const timestamp=Date.now(),random=(crypto.randomUUID?.()||Math.random().toString(36).slice(2)).replace(/-/g,"").slice(0,10),jobId=`cad_${timestamp}_${random}`,firebaseKey=String(timestamp);
+    const payload={acao:"cadastrar_produto_fotos",versao:"2026-07-17",job_id:jobId,firebase_key:firebaseKey,codigo_lido:state.newCode,fotos:{...state.photos},contexto:{categoria,subcategoria,estoque:Math.max(0,Math.floor(Number($("#newStock").value)||0)),gondola:cleanText($("#newGondola").value),prateleira:cleanText($("#newShelf").value),observacoes:cleanText($("#newNote").value)},destinos:{firebase_url:state.settings.firebaseUrl.replace(/\/+$/,""),produtos_node:state.settings.productsNode,jobs_node:"cadastros_ia_jobs",github_owner:"osvaldosereia",github_repo:"SUCEDOAN12",github_branch:"main",github_images_path:"site/img/produtos_3"},regras:{situacao_inicial:"I",preco_inicial:0,preco_custo_inicial:0,ncm_confianca_minima:.85}};
+    state.job={jobId,firebaseKey,status:"enviando"};state.busy=true;showScreen("progressScreen");renderProgress({status:"enviando",mensagem:"Enviando as três fotos para o Make..."});
+    try{await jsonFetch(dbUrl(jobPath(jobId)),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({job_id:jobId,firebase_key:firebaseKey,codigo_lido:state.newCode,status:"enviando",etapa:"recebido",mensagem:"Aguardando o Make iniciar.",criado_em:nowIso()})}).catch(()=>null);const response=await fetch(state.settings.makeWebhook,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({payload:JSON.stringify(payload)})});if(!response.ok)throw new Error(`Make retornou ${response.status}`);renderProgress({status:"processando",mensagem:"Fotos recebidas. Iniciando a análise."});pollJob(jobId)}
+    catch(error){renderProgress({status:"processando",mensagem:`O envio não confirmou resposta (${error.message}). Vou consultar o Firebase para conferir se o Make iniciou.`});pollJob(jobId)}
+  }
+  async function pollJob(jobId,attempt=0){
+    if(!state.job||state.job.jobId!==jobId)return;
+    try{const job=await jsonFetch(dbUrl(jobPath(jobId),`_poll=${Date.now()}`),{},12000);if(job){renderProgress(job);const statusValue=job.status;if(["concluido","completed"].includes(statusValue)){state.busy=false;$("#progressSpinner").style.display="none";$("#progressTitle").textContent="Produto cadastrado";$("#progressMessage").textContent=job.mensagem||"Capa salva no GitHub e cadastro salvo no Firebase. Confira preço, custo e NCM antes de ativar.";$("#progressHomeBtn").hidden=false;status("Cadastro concluído.","green");return}if(["erro","failed"].includes(statusValue)){throw new Error(job.mensagem||job.message||"O cenário informou erro.")}}}
+    catch(error){if(attempt>2&&/cenário informou erro|erro/i.test(error.message)){state.busy=false;$("#progressSpinner").style.display="none";$("#progressTitle").textContent="Não foi possível concluir";$("#progressMessage").textContent=error.message;$("#progressHomeBtn").hidden=false;status(error.message,"red");return}}
+    if(attempt>=120){state.busy=false;$("#progressSpinner").style.display="none";$("#progressTitle").textContent="Tempo excedido";$("#progressMessage").textContent="O cenário demorou mais de 6 minutos. Verifique a execução no Make.";$("#progressHomeBtn").hidden=false;return}
+    state.pollTimer=setTimeout(()=>pollJob(jobId,attempt+1),3000)
+  }
+  function home(){stopCamera();clearTimeout(state.pollTimer);state.busy=false;state.current=null;state.job=null;$("#codeInput").value="";$("#progressSpinner").style.display="";$("#progressTitle").textContent="Cadastrando produto";$("#progressHomeBtn").hidden=true;resetNew();showScreen("scanScreen")}
+  function openSettings(){const s=state.settings;$("#firebaseUrl").value=s.firebaseUrl;$("#productsNode").value=s.productsNode;$("#firebaseAuth").value=s.firebaseAuth;$("#makeWebhook").value=s.makeWebhook;$("#settingsDialog").showModal()}
+  function commitSettings(){state.settings={firebaseUrl:$("#firebaseUrl").value.trim().replace(/\/+$/,"")||DEFAULTS.firebaseUrl,productsNode:$("#productsNode").value.trim().replace(/^\/+|\/+$/g,"")||"produtos",firebaseAuth:$("#firebaseAuth").value.trim(),makeWebhook:$("#makeWebhook").value.trim()};saveSettings();$("#settingsDialog").close();status("Configuração salva neste aparelho.","green",2200)}
+  $("#settingsBtn").addEventListener("click",openSettings);$("#saveSettingsBtn").addEventListener("click",commitSettings);$("#cameraBtn").addEventListener("click",startCamera);$("#searchBtn").addEventListener("click",()=>searchCode($("#codeInput").value));$("#codeInput").addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();searchCode(event.target.value)}});$("#photoBarcodeBtn").addEventListener("click",()=>$("#barcodePhotoInput").click());$("#barcodePhotoInput").addEventListener("change",event=>event.target.files?.[0]&&detectBarcodePhoto(event.target.files[0]));$("#editForm").addEventListener("submit",saveExisting);$("#category").addEventListener("change",fillSubcategories);$("#registerBtn").addEventListener("click",startRegistration);$("#progressHomeBtn").addEventListener("click",home);
+  document.addEventListener("click",event=>{if(event.target.closest('[data-action="home"]'))home()});document.addEventListener("change",event=>{if(event.target.matches("[data-photo]"))photoChanged(event.target)});document.addEventListener("input",event=>{if(event.target.matches(".digits"))event.target.value=cleanDigits(event.target.value);if(event.target.matches(".date-mask"))event.target.value=maskDate(event.target.value)});
+  const updateOnline=()=>$("#offline").classList.toggle("show",!navigator.onLine);addEventListener("online",updateOnline);addEventListener("offline",updateOnline);addEventListener("pagehide",stopCamera);updateOnline();fillCategories();
+  if(!state.settings.makeWebhook)setTimeout(()=>status("Configure o webhook do Make na engrenagem antes do primeiro cadastro novo.","blue"),500);
+})();
+</script>
+</body>
+</html>
