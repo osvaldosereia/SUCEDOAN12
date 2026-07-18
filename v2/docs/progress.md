@@ -30,12 +30,38 @@
 - validação de cliente, endereço, pagamento e pedido mínimo;
 - geração de envelope com fingerprint;
 - fila local protegida contra duplicidade;
-- ordem de canais definida: WhatsApp, Firebase e Make;
+- ordem de canais definida: WhatsApp, Firebase de homologação e Make;
 - mensagem e URL do WhatsApp preparadas para abertura manual;
 - sessão de despacho com histórico por canal;
-- Firebase e Make desabilitados por configuração;
 - fila de homologação local visível no admin, separada dos pedidos reais;
-- teste de contrato para ordem, idempotência e bloqueio externo.
+- bloqueio de reenvio para canais já concluídos;
+- limite de tentativas compartilhado entre reprocessamentos.
+
+## Firebase de homologação
+
+- nó exclusivo `homologacao_v2/pedidos`;
+- rejeição por contrato de `/pedidos` e qualquer caminho sobreposto;
+- leitura antes da gravação;
+- idempotência por fingerprint;
+- conflito protegido quando o mesmo ID contém outro fingerprint;
+- timeout configurável;
+- escrita ainda desabilitada.
+
+## Make e Bling
+
+- webhook do Make validado por HTTPS e host permitido;
+- URL completa nunca exibida no admin;
+- contrato versionado e idempotente;
+- timeout, repetição exponencial e máximo de tentativas;
+- repetição somente para falhas transitórias;
+- Bling acessado exclusivamente pelo Make;
+- nenhum token OAuth do Bling no navegador;
+- confirmação obrigatória do mesmo envelope e da mesma chave de idempotência;
+- confirmação obrigatória do contato e da venda no Bling;
+- venda duplicada só é aceita com ID ou número da venda existente;
+- tratamento de limite por segundo e limite diário;
+- referência do contato e da venda preservada no histórico do pedido;
+- Firebase, Make e Bling continuam sem execução real.
 
 ## Regras de segurança mantidas
 
@@ -44,16 +70,17 @@
 - nenhuma alteração na branch `main`;
 - nenhuma escrita no Firebase;
 - nenhum webhook real acionado;
+- nenhuma chamada direta ao Bling;
 - nenhum envio automático pelo WhatsApp;
 - checkout e publicação permanecem bloqueados para uso real.
 
 ## Próximas etapas prioritárias
 
-1. executar o checkout em navegador e aparelho reais;
-2. criar adaptador de gravação do pedido em um nó exclusivo de homologação no Firebase;
-3. criar adaptador de webhook de homologação do Make com timeout e repetição controlada;
-4. validar o cenário do Make até o Bling sem criar venda real;
-5. adicionar confirmação e reprocessamento por canal no admin;
-6. finalizar cupom, entrega e agendamento;
-7. implementar separação, conferência e etiqueta;
-8. concluir testes automatizados e plano de migração.
+1. executar os testes HTML em navegador e aparelhos reais;
+2. adaptar o cenário do Make ao contrato V2 sem criar venda real;
+3. criar um modo de ensaio do cenário com resposta simulada de contato e venda;
+4. adicionar botão administrativo de reprocessamento controlado por canal;
+5. finalizar cupom, entrega e agendamento;
+6. implementar separação, conferência e etiqueta;
+7. habilitar escrita somente no nó de homologação após backup e teste manual;
+8. concluir testes automatizados, segurança e plano de migração.
