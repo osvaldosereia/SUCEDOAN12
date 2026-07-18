@@ -30,7 +30,6 @@ function findHttpStatus(raw = {}) {
 function duplicateMessage(value) {
   const normalized = normalizeStatus(value);
   return normalized.includes('informacoes_identicas_a_ultima_venda') ||
-    normalized.includes('venda_idêntica') ||
     normalized.includes('venda_identica') ||
     normalized.includes('duplicate_sale');
 }
@@ -104,8 +103,8 @@ export function buildExpectedBlingResponseContract(envelope = {}) {
       integrations: Object.freeze({
         bling: Object.freeze({
           status: 'created|duplicate_confirmed|rate_limited|error',
-          contact: 'object',
-          sale: 'object',
+          contact: Object.freeze({ status:'found|created|updated|existing', id:'string' }),
+          sale: Object.freeze({ status:'created|existing|duplicate_confirmed', id:'string', number:'string' }),
           error: 'object|null'
         })
       })
@@ -123,6 +122,8 @@ export function normalizeMakeBlingResult(body, envelope = {}, options = {}) {
   const returnedIdempotency = text(objectBody?.idempotencyKey || objectBody?.data?.idempotencyKey);
 
   if (!objectBody) errors.push('Resposta do Make precisa ser um objeto JSON.');
+  if (requireConfirmation && expectedEnvelopeId && !returnedEnvelopeId) errors.push('Resposta do Make não devolveu o envelopeId.');
+  if (requireConfirmation && expectedIdempotency && !returnedIdempotency) errors.push('Resposta do Make não devolveu a chave de idempotência.');
   if (returnedEnvelopeId && expectedEnvelopeId && returnedEnvelopeId !== expectedEnvelopeId) errors.push('Resposta do Make pertence a outro envelope.');
   if (returnedIdempotency && expectedIdempotency && returnedIdempotency !== expectedIdempotency) errors.push('Resposta do Make possui chave de idempotência divergente.');
 
@@ -144,9 +145,10 @@ export function normalizeMakeBlingResult(body, envelope = {}, options = {}) {
   else if (!rawBling) status = BLING_STATUS.NOT_PROCESSED;
 
   if (sale.duplicate && !sale.referenceConfirmed) errors.push('O Bling indicou venda duplicada, mas não retornou ID nem número da venda existente.');
+  if (rawSuccess && requireConfirmation && !contact.success) errors.push('O Make marcou sucesso sem confirmar o contato no Bling.');
   if (rawSuccess && requireConfirmation && !sale.success) errors.push('O Make marcou sucesso sem confirmar a venda no Bling.');
 
-  const completed = errors.length === 0 && sale.success && !rateLimit.limited && !rawFailure;
+  const completed = errors.length === 0 && contact.success && sale.success && !rateLimit.limited && !rawFailure;
   const retryable = !completed && (rateLimit.retryable || error.httpStatus >= 500);
   const detail = completed
     ? sale.duplicate ? `Venda já existente confirmada no Bling${sale.number ? ` (${sale.number})` : ''}.` : `Venda criada no Bling${sale.number ? ` (${sale.number})` : ''}.`
@@ -165,8 +167,8 @@ export function normalizeMakeBlingResult(body, envelope = {}, options = {}) {
     contract: Object.freeze({
       returnedEnvelopeId,
       returnedIdempotency,
-      envelopeMatches: !returnedEnvelopeId || returnedEnvelopeId === expectedEnvelopeId,
-      idempotencyMatches: !returnedIdempotency || returnedIdempotency === expectedIdempotency
+      envelopeMatches: Boolean(returnedEnvelopeId) && returnedEnvelopeId === expectedEnvelopeId,
+      idempotencyMatches: Boolean(returnedIdempotency) && returnedIdempotency === expectedIdempotency
     }),
     bling: Object.freeze({
       status,
@@ -189,6 +191,7 @@ export function blingResultSummary(result = {}) {
     retryable: result.retryable === true,
     detail: text(result.detail),
     contactId: text(bling.contact?.id),
+    contactStatus: text(bling.contact?.status),
     saleId: text(bling.sale?.id),
     saleNumber: text(bling.sale?.number),
     duplicate: bling.sale?.duplicate === true,
