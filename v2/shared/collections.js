@@ -26,7 +26,23 @@ export function normalizeBasket(raw={}){
 export function normalizeKit(raw={}){
   const id=text(raw.id||raw.codigo);
   const items=normalizeCollectionItems(raw.produtos);
-  return Object.freeze({id,nome:text(raw.nome||'Kit promocional'),descricao:text(raw.descricao),imagem:text(raw.imagem||raw.url_imagem),preco:number(raw.preco||raw.preco_promocional),precoOriginal:number(raw.preco_original||raw.precoOriginal||raw.soma_avulsa),items,productRefs:items.map(item=>item.ref),ativo:raw.ativo!==false,inicio:text(raw.data_inicio||raw.dataInicio),fim:text(raw.data_fim||raw.dataFim)});
+  const carouselPath=text(raw.carrossel_path||raw.carrosselPath||raw.instagram_carrossel_path||raw.dados_carrossel);
+  const carouselQueued=raw.carrossel_gerado===true||raw.carouselGenerated===true||raw.gerado_para_fila===true||Boolean(carouselPath);
+  const carouselStatus=text(raw.carrossel_status||raw.carouselStatus||raw.status_carrossel||(carouselQueued?'gerado':''));
+  return Object.freeze({
+    id,
+    nome:text(raw.nome||'Kit promocional'),
+    descricao:text(raw.descricao),
+    imagem:text(raw.imagem||raw.url_imagem),
+    preco:number(raw.preco||raw.preco_promocional),
+    precoOriginal:number(raw.preco_original||raw.precoOriginal||raw.soma_avulsa),
+    items,
+    productRefs:items.map(item=>item.ref),
+    ativo:raw.ativo!==false,
+    inicio:text(raw.data_inicio||raw.dataInicio||raw.inicio),
+    fim:text(raw.data_fim||raw.dataFim||raw.fim),
+    carousel:Object.freeze({generated:carouselQueued,status:carouselStatus,path:carouselPath})
+  });
 }
 
 export function resolveCollection(collection,productIndex){
@@ -40,15 +56,7 @@ export function resolveCollection(collection,productIndex){
     rows.push(Object.freeze({product,quantidade:item.quantidade}));
   }
   const requested=(collection?.items||[]).length;
-  return Object.freeze({
-    collection,
-    rows,
-    requested,
-    resolved:rows.length,
-    missing,
-    unavailable,
-    valid:requested>0&&rows.length===requested&&missing.length===0&&unavailable.length===0
-  });
+  return Object.freeze({collection,rows,requested,resolved:rows.length,missing,unavailable,valid:requested>0&&rows.length===requested&&missing.length===0&&unavailable.length===0});
 }
 
 export function currentOffers(products=[]){
