@@ -157,6 +157,26 @@ function replaceSession(next) {
   return Object.freeze(next);
 }
 
+export function appendDispatchHistory(envelopeId, event = {}) {
+  const session = findDispatchSession(envelopeId);
+  if (!session) throw new Error('Sessão de despacho não encontrada.');
+  const updatedAt = now();
+  const entry = {
+    at: updatedAt,
+    action: text(event.action || 'dispatch_event'),
+    status: text(event.status || session.status),
+    channel: text(event.channel),
+    detail: text(event.detail),
+    requestId: text(event.requestId),
+    ...clone(event.metadata || {})
+  };
+  return replaceSession({
+    ...clone(session),
+    updatedAt,
+    history: [entry, ...(session.history || [])].slice(0, 100)
+  });
+}
+
 export function markWhatsAppOpened(envelopeId) {
   const session = findDispatchSession(envelopeId);
   if (!session) throw new Error('Sessão de despacho não encontrada.');
@@ -169,7 +189,7 @@ export function markWhatsAppOpened(envelopeId) {
       ...clone(session.channels),
       whatsapp: channelState(DISPATCH_STATUS.WHATSAPP_OPENED, 'Abertura manual registrada localmente.', Number(session.channels?.whatsapp?.attempts || 0) + 1)
     },
-    history: [{ at: updatedAt, action: 'whatsapp_opened', status: DISPATCH_STATUS.WHATSAPP_OPENED }, ...(session.history || [])].slice(0, 50)
+    history: [{ at: updatedAt, action: 'whatsapp_opened', status: DISPATCH_STATUS.WHATSAPP_OPENED }, ...(session.history || [])].slice(0, 100)
   });
 }
 
@@ -179,6 +199,8 @@ export function registerChannelResult(envelopeId, channel, result = {}) {
   if (!session) throw new Error('Sessão de despacho não encontrada.');
   const updatedAt = now();
   const success = result.success === true;
+  const reportedAttempts = Number.isFinite(Number(result.attempts)) ? Math.max(0, Number(result.attempts)) : 1;
+  const attemptIncrement = result.blocked === true ? reportedAttempts : Math.max(1, reportedAttempts);
   const metadata = {
     blocked: result.blocked === true,
     duplicate: result.duplicate === true,
@@ -192,7 +214,7 @@ export function registerChannelResult(envelopeId, channel, result = {}) {
   const nextChannel = channelState(
     success ? DISPATCH_STATUS.SUCCESS : result.blocked === true ? DISPATCH_STATUS.BLOCKED : DISPATCH_STATUS.ERROR,
     result.detail || result.error || (success ? 'Concluído.' : 'Falha sem detalhe.'),
-    Number(session.channels?.[channel]?.attempts || 0) + Math.max(1, Number(result.attempts || 1)),
+    Number(session.channels?.[channel]?.attempts || 0) + attemptIncrement,
     metadata
   );
   const channels = { ...clone(session.channels), [channel]: nextChannel };
@@ -207,13 +229,13 @@ export function registerChannelResult(envelopeId, channel, result = {}) {
       action: `${channel}_${success ? 'success' : result.blocked === true ? 'blocked' : 'error'}`,
       status: nextChannel.status,
       detail: nextChannel.detail,
-      attempts: Number(result.attempts || 1),
+      attempts: reportedAttempts,
       duplicate: result.duplicate === true,
       conflict: result.conflict === true,
       blingStatus: text(result.bling?.status),
       blingSaleId: text(result.bling?.saleId),
       blingSaleNumber: text(result.bling?.saleNumber)
-    }, ...(session.history || [])].slice(0, 50)
+    }, ...(session.history || [])].slice(0, 100)
   });
 }
 
@@ -270,6 +292,7 @@ export const orderDispatchService = Object.freeze({
   prepareDispatchSession,
   readDispatchSessions,
   findDispatchSession,
+  appendDispatchHistory,
   markWhatsAppOpened,
   registerChannelResult,
   simulateDispatch,
