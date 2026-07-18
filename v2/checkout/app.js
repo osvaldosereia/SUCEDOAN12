@@ -2,6 +2,7 @@ import { APP_CONFIG } from '../shared/config.js';
 import { loadCatalog, createProductIndex } from '../shared/catalog.js';
 import { cartSummary } from '../shared/cart.js';
 import { buildOrderDraft, readCheckoutDraft, saveCheckoutDraft } from '../shared/checkout.js';
+import { buildDeliveryPreview, prepareOrderEnvelope, saveToOutbox } from '../shared/order-delivery.js';
 
 const form=document.getElementById('checkout-form');
 const summaryEl=document.getElementById('summary');
@@ -48,6 +49,12 @@ try{
     const current=readForm();saveCheckoutDraft(current);
     const result=buildOrderDraft(current,summary);
     if(!result.valid){errorsEl.hidden=false;errorsEl.innerHTML=result.errors.map(error=>`<div>${escapeHtml(error)}</div>`).join('');resultEl.hidden=true;return;}
-    errorsEl.hidden=true;resultEl.hidden=false;resultEl.querySelector('pre').textContent=JSON.stringify(result.order,null,2);resultEl.scrollIntoView({behavior:'smooth',block:'start'});
+    const envelope=prepareOrderEnvelope(result.order);
+    const outbox=saveToOutbox(envelope);
+    const preview=buildDeliveryPreview(envelope);
+    errorsEl.hidden=true;
+    resultEl.hidden=false;
+    resultEl.querySelector('pre').textContent=JSON.stringify({salvoNaFilaLocal:outbox.saved,duplicado:outbox.duplicate,preview},null,2);
+    resultEl.scrollIntoView({behavior:'smooth',block:'start'});
   });
 }catch(error){summaryEl.innerHTML=`<div class="errors">Não foi possível carregar o catálogo seguro: ${escapeHtml(error.message||error)}</div>`;form.querySelector('button[type="submit"]').disabled=true;}
