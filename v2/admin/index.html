@@ -5,63 +5,36 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>Dona Antônia V2 · Admin Homologação</title>
-  <link rel="stylesheet" href="../site/styles.css">
-  <style>
-    .admin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.metric{padding:18px;background:#fff;border:1px solid var(--line);border-radius:18px}.metric strong,.metric span{display:block}.metric strong{font-size:30px}.metric span{margin-top:5px;color:var(--muted);font-size:11px;font-weight:800}.audit{margin-top:18px;padding:18px;background:#fff;border:1px solid var(--line);border-radius:18px}.audit h2{margin:0}.audit-list{margin-top:12px;display:grid;gap:8px}.audit-row{display:flex;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;font-size:12px}.audit-row.ok{background:var(--green-soft);color:var(--green)}.audit-row.error{background:#fff1ef;color:var(--red)}@media(max-width:800px){.admin-grid{grid-template-columns:repeat(2,1fr)}}
-  </style>
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand"><strong>Admin Dona Antônia V2</strong><span>Diagnóstico de homologação · sem gravação</span></div>
-    <div id="catalog-status" class="status">Verificando fontes…</div>
-  </header>
-  <main class="page">
-    <section class="hero">
-      <div><span class="eyebrow">FUNDAÇÃO SEGURA</span><h1>Painel de integridade antes das funções de edição.</h1><p>Esta primeira etapa somente lê e valida os dados. Nenhuma alteração é enviada ao Firebase ou GitHub.</p></div>
-      <div class="hero-card"><strong id="health-score">—</strong><span>integridade do catálogo</span></div>
-    </section>
-    <section class="admin-grid" style="margin-top:18px">
-      <div class="metric"><strong id="total-products">0</strong><span>PRODUTOS CARREGADOS</span></div>
-      <div class="metric"><strong id="active-products">0</strong><span>PRODUTOS ATIVOS</span></div>
-      <div class="metric"><strong id="missing-images">0</strong><span>SEM IMAGEM</span></div>
-      <div class="metric"><strong id="missing-categories">0</strong><span>SEM CATEGORIA</span></div>
-    </section>
-    <section class="audit">
-      <span class="eyebrow">AUDITORIA</span>
-      <h2>Verificações principais</h2>
-      <div id="audit-list" class="audit-list"></div>
-    </section>
-  </main>
-  <script type="module">
-    import { loadCatalog, validateCatalog } from '../shared/catalog.js';
-    const byId=id=>document.getElementById(id);
-    const status=byId('catalog-status');
-    const addAudit=(label,ok,detail)=>{const row=document.createElement('div');row.className=`audit-row ${ok?'ok':'error'}`;row.innerHTML=`<strong>${label}</strong><span>${detail}</span>`;byId('audit-list').appendChild(row)};
-    try{
-      const result=await loadCatalog({onStatus:event=>{if(event.phase==='cache')status.textContent='Cache disponível; confirmando fonte oficial…'}});
-      const products=result.products;
-      const audit=validateCatalog(products);
-      const missingImages=products.filter(product=>!product.imagem).length;
-      const missingCategories=products.filter(product=>!product.categoria).length;
-      byId('total-products').textContent=products.length;
-      byId('active-products').textContent=products.filter(product=>product.situacao!=='I').length;
-      byId('missing-images').textContent=missingImages;
-      byId('missing-categories').textContent=missingCategories;
-      const checks=[
-        ['Catálogo não está vazio',products.length>0,`${products.length} produtos`],
-        ['Estrutura principal válida',audit.valid,audit.valid?'Sem erro crítico':audit.errors.join(' ')],
-        ['Imagens cadastradas',missingImages===0,missingImages?`${missingImages} pendência(s)`:'Completo'],
-        ['Categorias cadastradas',missingCategories===0,missingCategories?`${missingCategories} pendência(s)`:'Completo'],
-        ['Fonte atual identificada',Boolean(result.source),result.source]
-      ];
-      checks.forEach(check=>addAudit(...check));
-      const passed=checks.filter(check=>check[1]).length;
-      byId('health-score').textContent=`${Math.round(passed/checks.length*100)}%`;
-      status.textContent=`Catálogo confirmado via ${result.source}`;
-      status.dataset.type=audit.valid?'success':'error';
-    }catch(error){
-      console.error(error);status.textContent='Falha de integridade';status.dataset.type='error';byId('health-score').textContent='0%';addAudit('Carregamento do catálogo',false,String(error.message||error));
-    }
-  </script>
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <a class="admin-brand" href="./index.html"><strong>Admin Dona Antônia V2</strong><span>Homologação · sem gravação</span></a>
+      <nav class="admin-nav" aria-label="Módulos administrativos">
+        <button class="active" type="button" data-module="dashboard">Visão geral</button>
+        <button type="button" data-module="inventory">Estoque e validade</button>
+        <button type="button" data-module="products">Produtos</button>
+        <button type="button" data-module="registrations">Cadastros auxiliares</button>
+        <button type="button" data-module="baskets">Cestas básicas</button>
+        <button type="button" data-module="kits">Kits promocionais</button>
+        <button type="button" data-module="banners">Banners e campanhas</button>
+        <button type="button" data-module="quick-purchase">Compra rápida</button>
+        <button type="button" data-module="orders">Pedidos e operação</button>
+        <button type="button" data-module="integrations">Integrações</button>
+        <button type="button" data-module="publishing">Publicação</button>
+        <button type="button" data-module="diagnostics">Diagnóstico</button>
+      </nav>
+      <div class="sidebar-note">Os módulos de escrita permanecem bloqueados até o mapeamento completo do admin atual, definição dos contratos e testes de homologação.</div>
+    </aside>
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div><h1 id="module-title">Visão geral</h1><p id="module-subtitle">Carregando diagnóstico administrativo…</p></div>
+        <div id="admin-status" class="status" aria-live="polite">Verificando catálogo…</div>
+      </header>
+      <div id="admin-content" class="admin-content"></div>
+    </main>
+  </div>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
