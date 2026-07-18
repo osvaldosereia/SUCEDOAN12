@@ -42,8 +42,14 @@ function writeSessions(sessions) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions.slice(0, 100)));
 }
 
-function channelState(status, detail = '', attempts = 0) {
-  return { status, detail: text(detail), attempts, updatedAt: now() };
+function channelState(status, detail = '', attempts = 0, metadata = {}) {
+  return {
+    status,
+    detail: text(detail),
+    attempts,
+    updatedAt: now(),
+    ...clone(metadata || {})
+  };
 }
 
 export function validateDispatchEnvelope(envelope = {}) {
@@ -99,6 +105,8 @@ export function buildDispatchPlan(envelope) {
         enabled: config.makeWriteEnabled === true && Boolean(text(config.makeWebhookUrl)),
         endpointConfigured: Boolean(text(config.makeWebhookUrl)),
         contractVersion: Number(config.makeContractVersion || 1),
+        requiresBlingConfirmation: config.makeRequireBlingConfirmation !== false,
+        blingMode: APP_CONFIG.integrations.bling.mode,
         maximumAttempts: Number(config.maximumAttempts || 1),
         timeoutMs: Number(config.requestTimeoutMs || 12000)
       })
@@ -125,7 +133,9 @@ export function prepareDispatchSession(envelope) {
     channels: {
       whatsapp: channelState(DISPATCH_STATUS.PREPARED, 'Mensagem preparada para abertura manual.'),
       firebase: channelState(DISPATCH_STATUS.BLOCKED, `Escrita bloqueada em ${APP_CONFIG.firebase.nodes.homologationOrders}.`),
-      make: channelState(DISPATCH_STATUS.BLOCKED, 'Webhook do Make bloqueado na homologação.')
+      make: channelState(DISPATCH_STATUS.BLOCKED, 'Webhook do Make bloqueado na homologação.', 0, {
+        bling: { status: 'not_processed', completed: false, detail: 'Aguardando execução segura pelo Make.' }
+      })
     },
     history: [{ at: createdAt, action: 'dispatch_prepared', status: DISPATCH_STATUS.WAITING_WHATSAPP }]
   };
@@ -169,26 +179,40 @@ export function registerChannelResult(envelopeId, channel, result = {}) {
   if (!session) throw new Error('Sessão de despacho não encontrada.');
   const updatedAt = now();
   const success = result.success === true;
+  const metadata = {
+    blocked: result.blocked === true,
+    duplicate: result.duplicate === true,
+    conflict: result.conflict === true,
+    retryable: result.retryable === true,
+    httpStatus: Number(result.status || 0),
+    target: clone(result.target),
+    contract: clone(result.contract),
+    bling: clone(result.bling)
+  };
   const nextChannel = channelState(
-    success ? DISPATCH_STATUS.SUCCESS : DISPATCH_STATUS.ERROR,
+    success ? DISPATCH_STATUS.SUCCESS : result.blocked === true ? DISPATCH_STATUS.BLOCKED : DISPATCH_STATUS.ERROR,
     result.detail || result.error || (success ? 'Concluído.' : 'Falha sem detalhe.'),
-    Number(session.channels?.[channel]?.attempts || 0) + Math.max(1, Number(result.attempts || 1))
+    Number(session.channels?.[channel]?.attempts || 0) + Math.max(1, Number(result.attempts || 1)),
+    metadata
   );
   const channels = { ...clone(session.channels), [channel]: nextChannel };
   const allExternalSuccess = channels.firebase.status === DISPATCH_STATUS.SUCCESS && channels.make.status === DISPATCH_STATUS.SUCCESS;
   return replaceSession({
     ...clone(session),
     updatedAt,
-    status: allExternalSuccess ? DISPATCH_STATUS.SUCCESS : success ? DISPATCH_STATUS.PENDING : DISPATCH_STATUS.ERROR,
+    status: allExternalSuccess ? DISPATCH_STATUS.SUCCESS : success ? DISPATCH_STATUS.PENDING : result.blocked === true ? DISPATCH_STATUS.PENDING : DISPATCH_STATUS.ERROR,
     channels,
     history: [{
       at: updatedAt,
-      action: `${channel}_${success ? 'success' : 'error'}`,
+      action: `${channel}_${success ? 'success' : result.blocked === true ? 'blocked' : 'error'}`,
       status: nextChannel.status,
       detail: nextChannel.detail,
       attempts: Number(result.attempts || 1),
       duplicate: result.duplicate === true,
-      conflict: result.conflict === true
+      conflict: result.conflict === true,
+      blingStatus: text(result.bling?.status),
+      blingSaleId: text(result.bling?.saleId),
+      blingSaleNumber: text(result.bling?.saleNumber)
     }, ...(session.history || [])].slice(0, 50)
   });
 }
