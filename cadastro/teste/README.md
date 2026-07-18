@@ -18,13 +18,12 @@ Esta aplicação é independente do admin. Nenhum arquivo de `producao/` é alte
 ## Instalar o cenário no Make
 
 1. Crie um cenário vazio e importe `cadastro-produtos-4-fotos-make-v3.blueprint.json`.
-2. No módulo 1, crie um **Custom webhook novo**.
-3. No módulo 3, informe:
-   - uma chave válida da OpenAI;
-   - um token **novo** do GitHub com acesso ao repositório `osvaldosereia/SUCEDOAN12`.
+2. O módulo 1 já aponta para o webhook `Cadastro Produto 4 Fotos V3`. Apenas confirme que ele permanece selecionado após a importação.
+3. No módulo 3, informe somente um token **novo** do GitHub com acesso ao repositório `osvaldosereia/SUCEDOAN12`.
 4. Não reutilize o token que estava no blueprint antigo anexado. Revogue-o no GitHub antes de iniciar os testes.
-5. No módulo 12, selecione a conexão OpenAI e mantenha `gpt-image-1.5`.
-6. Salve o cenário, use **Run once** e deixe-o ativo depois do primeiro teste.
+5. Os módulos 6, 9 e 12 já usam a conexão nativa da OpenAI configurada no Make. Não é necessário cadastrar uma chave manual no cenário.
+6. No módulo 12, mantenha `gpt-image-1.5`.
+7. Salve o cenário, use **Run once** e deixe-o ativo depois do primeiro teste.
 
 O módulo 10 utiliza Make Code. Se a conta do Make não possuir esse aplicativo, o cenário não será executado e precisará ser adaptado para módulos nativos.
 
@@ -35,7 +34,7 @@ O módulo 10 utiliza Make Code. Se a conta do Make não possuir esse aplicativo,
 3. Confirme:
    - Firebase: `https://cedar-chemist-310801-default-rtdb.firebaseio.com`
    - nó: `produtos`
-   - webhook: URL nova criada no módulo 1 do Make.
+   - webhook já salvo: `https://hook.eu1.make.com/nc3k6i1t24d2ivywdrpphrhm3ij5871e`
 4. Salve.
 
 ## Funcionamento
