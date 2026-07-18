@@ -97,9 +97,15 @@ export function createOrderReprocessService(options = {}) {
     const reasons = [];
     const session = findSession(envelopeId);
     const environment = environmentFn();
+    const activeRequest = readRequests().find(request =>
+      request.envelopeId === text(envelopeId) &&
+      request.channel === normalizedChannel &&
+      request.status === REPROCESS_STATUS.EXECUTING
+    );
 
     if (!REPROCESSABLE_CHANNELS.includes(normalizedChannel)) reasons.push('Somente Firebase ou Make podem ser reprocessados.');
     if (!session) reasons.push('Sessão de despacho não encontrada.');
+    if (activeRequest) reasons.push('Já existe um reprocessamento em execução para este canal.');
 
     const channelState = session?.channels?.[normalizedChannel] || {};
     const attempts = Number(channelState.attempts || 0);
@@ -115,6 +121,13 @@ export function createOrderReprocessService(options = {}) {
     }
     if (normalizedChannel === 'make' && channelState.bling?.completed === true) {
       reasons.push('A venda no Bling já está confirmada.');
+    }
+    if (
+      normalizedChannel === 'make' &&
+      channelState.bling?.rateLimited === true &&
+      text(channelState.bling?.rateLimitPeriod).toLowerCase() === 'day'
+    ) {
+      reasons.push('O limite diário do Bling foi atingido; aguarde o próximo período antes de repetir.');
     }
 
     const enabledByConfig = normalizedChannel === 'firebase'
@@ -260,6 +273,12 @@ export function createOrderReprocessService(options = {}) {
       }
     } catch (error) {
       const detail = text(error?.message || error) || 'Falha inesperada durante o reprocessamento.';
+      registerResult(request.envelopeId, request.channel, {
+        success: false,
+        attempts: 1,
+        retryable: true,
+        detail
+      });
       updateRequest(request.id, { status: REPROCESS_STATUS.FAILED, detail });
       appendHistory(request.envelopeId, {
         action: 'reprocess_failed',
