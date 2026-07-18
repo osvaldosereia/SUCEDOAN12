@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Dona Antônia V2 · Homologação</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <strong>Dona Antônia</strong>
+      <span>Nova versão em homologação</span>
+    </div>
+    <div id="catalog-status" class="status" aria-live="polite">Inicializando catálogo…</div>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <div>
+        <span class="eyebrow">AMBIENTE SEPARADO</span>
+        <h1>Catálogo rápido, seguro e preparado para crescer.</h1>
+        <p>Esta versão utiliza uma camada central de dados e não altera o site atual.</p>
+      </div>
+      <div class="hero-card">
+        <strong id="product-count">0</strong>
+        <span>produtos disponíveis</span>
+      </div>
+    </section>
+
+    <section class="toolbar" aria-label="Ferramentas do catálogo">
+      <label>
+        <span>Buscar produto</span>
+        <input id="search" type="search" placeholder="Ex.: arroz, café, Omo" autocomplete="off">
+      </label>
+      <label>
+        <span>Categoria</span>
+        <select id="category"><option value="">Todas</option></select>
+      </label>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">CATÁLOGO</span>
+          <h2>Produtos</h2>
+        </div>
+        <span id="result-count" class="result-count">0 resultados</span>
+      </div>
+      <div id="products" class="products-grid" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <template id="product-template">
+    <article class="product-card">
+      <div class="product-image"><img width="320" height="320" loading="lazy" decoding="async" alt=""></div>
+      <div class="product-copy">
+        <span class="product-category"></span>
+        <h3></h3>
+        <p class="product-meta"></p>
+        <div class="product-bottom">
+          <strong class="product-price"></strong>
+          <span class="product-stock"></span>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
