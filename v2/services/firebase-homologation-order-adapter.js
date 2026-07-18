@@ -67,8 +67,8 @@ export function buildHomologationOrderTarget(envelope, node = HOMOLOGATION_ORDER
   });
 }
 
-export function buildHomologationOrderRecord(envelope) {
-  const target = buildHomologationOrderTarget(envelope);
+export function buildHomologationOrderRecord(envelope, node = HOMOLOGATION_ORDERS_NODE) {
+  const target = buildHomologationOrderTarget(envelope, node);
   const timestamp = new Date().toISOString();
 
   return Object.freeze({
@@ -111,7 +111,7 @@ export function createHomologationFirebaseOrderAdapter(options = {}) {
     }
 
     assertWrite(`PUT ${target.path}`);
-    const record = buildHomologationOrderRecord(envelope);
+    const record = buildHomologationOrderRecord(envelope, node);
     const existing = await read(target.node, target.recordId, { timeoutMs });
 
     if (existing?.data) {
