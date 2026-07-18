@@ -48,6 +48,22 @@ export function diffProduct(original={},draft={}){
   }));
 }
 
+export function createProductEditorSession(product={}){
+  const id=productIdentity(product);
+  if(!id)throw new Error('Produto sem identificação segura.');
+  let draft=normalizeDraft(product);
+  return Object.freeze({
+    id,
+    original:Object.freeze(clone(product)),
+    getDraft:()=>Object.freeze(clone(draft)),
+    update(values={}){draft=normalizeDraft(product,{...draft,...values});return this.getDraft();},
+    reset(){draft=normalizeDraft(product);return this.getDraft();},
+    changes(){return diffProduct(product,draft);},
+    isDirty(){return this.changes().length>0;},
+    validate(){return validateProductDraft(draft);}
+  });
+}
+
 function readJson(key,fallback){try{return JSON.parse(localStorage.getItem(key)||'null')??fallback;}catch{return fallback;}}
 function writeJson(key,value){localStorage.setItem(key,JSON.stringify(value));}
 
