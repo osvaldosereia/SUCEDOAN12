@@ -1,7 +1,7 @@
 export const APP_CONFIG = Object.freeze({
   appName: 'Dona Antônia V2',
   environment: 'homologation',
-  version: '2026.07.18-foundation.1',
+  version: '2026.07.18-order-flow.1',
   firebase: Object.freeze({
     baseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
     nodes: Object.freeze({
@@ -31,6 +31,16 @@ export const APP_CONFIG = Object.freeze({
   commerce: Object.freeze({
     minimumOrder: 75,
     whatsappNumber: '5565998150975'
+  }),
+  integrations: Object.freeze({
+    orderDispatch: Object.freeze({
+      whatsappPreviewEnabled: true,
+      firebaseWriteEnabled: false,
+      makeWriteEnabled: false,
+      makeWebhookUrl: '',
+      requestTimeoutMs: 12000,
+      maximumAttempts: 3
+    })
   })
 });
 
