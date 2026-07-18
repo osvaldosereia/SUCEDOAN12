@@ -151,8 +151,9 @@ export function parseProductAiResponse(rawResponse, request) {
   if (!fields.some(item => item.value)) globalErrors.push('A resposta não contém nenhum campo de produto utilizável.');
 
   const blockedFields = fields.filter(item => item.decision === 'blocked').length;
+  const reviewFields = fields.filter(item => item.decision === 'review').length;
   const uncertainFields = fields.filter(item => item.decision === 'ignored').length;
-  const status = globalErrors.length ? 'blocked' : blockedFields || uncertainFields ? 'attention' : 'ready';
+  const status = globalErrors.length ? 'blocked' : blockedFields || reviewFields || uncertainFields ? 'attention' : 'ready';
 
   return Object.freeze({
     id: `ai_result_${expectedEan}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -187,6 +188,7 @@ export function buildProductDraftFromAi({ seed = {}, result, acceptedFields } = 
   draft.gtin = normalizeEan(draft.gtin || result.ean);
   draft.aiResultId = result.id;
   draft.aiRequestId = result.requestId;
+  draft.aiAppliedFields = [...applied];
   draft.aiReviewRequired = true;
   draft.source = 'ai-reviewed-draft';
   draft.draftOnly = true;
