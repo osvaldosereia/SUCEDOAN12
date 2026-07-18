@@ -1,0 +1,836 @@
+{
+  "name": "Cadastro Produto 3 Fotos - Firebase GitHub OpenAI",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "hook": 0,
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": -600,
+          "y": 0,
+          "name": "Webhook - aplicativo mobile"
+        },
+        "restore": {
+          "parameters": {
+            "hook": {
+              "data": {
+                "editable": "true"
+              },
+              "label": "Crie um novo webhook após importar"
+            }
+          }
+        },
+        "advanced": true
+      }
+    },
+    {
+      "id": 2,
+      "module": "json:ParseJSON",
+      "version": 1,
+      "parameters": {
+        "type": ""
+      },
+      "mapper": {
+        "json": "{{1.payload}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": -350,
+          "y": 0,
+          "name": "Ler dados e as 3 fotos"
+        },
+        "parameters": [
+          {
+            "name": "type",
+            "type": "udt",
+            "label": "Data structure"
+          }
+        ],
+        "interface": [
+          {
+            "name": "acao",
+            "type": "text"
+          },
+          {
+            "name": "versao",
+            "type": "text"
+          },
+          {
+            "name": "job_id",
+            "type": "text"
+          },
+          {
+            "name": "firebase_key",
+            "type": "text"
+          },
+          {
+            "name": "codigo_lido",
+            "type": "text"
+          },
+          {
+            "name": "fotos",
+            "type": "collection",
+            "spec": [
+              {
+                "name": "frente",
+                "type": "text"
+              },
+              {
+                "name": "ean",
+                "type": "text"
+              },
+              {
+                "name": "validade",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "contexto",
+            "type": "collection",
+            "spec": [
+              {
+                "name": "categoria",
+                "type": "text"
+              },
+              {
+                "name": "subcategoria",
+                "type": "text"
+              },
+              {
+                "name": "estoque",
+                "type": "number"
+              },
+              {
+                "name": "gondola",
+                "type": "text"
+              },
+              {
+                "name": "prateleira",
+                "type": "text"
+              },
+              {
+                "name": "observacoes",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "destinos",
+            "type": "collection",
+            "spec": [
+              {
+                "name": "firebase_url",
+                "type": "text"
+              },
+              {
+                "name": "produtos_node",
+                "type": "text"
+              },
+              {
+                "name": "jobs_node",
+                "type": "text"
+              },
+              {
+                "name": "github_owner",
+                "type": "text"
+              },
+              {
+                "name": "github_repo",
+                "type": "text"
+              },
+              {
+                "name": "github_branch",
+                "type": "text"
+              },
+              {
+                "name": "github_images_path",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "regras",
+            "type": "collection",
+            "spec": [
+              {
+                "name": "situacao_inicial",
+                "type": "text"
+              },
+              {
+                "name": "preco_inicial",
+                "type": "number"
+              },
+              {
+                "name": "preco_custo_inicial",
+                "type": "number"
+              },
+              {
+                "name": "ncm_confianca_minima",
+                "type": "number"
+              }
+            ]
+          }
+        ],
+        "advanced": true
+      }
+    },
+    {
+      "id": 3,
+      "module": "util:SetVariables",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "scope": "roundtrip",
+        "variables": [
+          {
+            "name": "OPENAI_API_KEY",
+            "value": "COLE_AQUI_A_CHAVE_OPENAI"
+          },
+          {
+            "name": "GITHUB_TOKEN",
+            "value": "COLE_AQUI_O_TOKEN_GITHUB"
+          },
+          {
+            "name": "GITHUB_CONTENTS_URL",
+            "value": "https://api.github.com/repos/osvaldosereia/SUCEDOAN12/contents"
+          },
+          {
+            "name": "GITHUB_RAW_BASE",
+            "value": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main"
+          },
+          {
+            "name": "GITHUB_BRANCH",
+            "value": "main"
+          }
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": -100,
+          "y": 0,
+          "name": "CONFIGURE AQUI - chaves OpenAI e GitHub"
+        },
+        "interface": [
+          {
+            "name": "OPENAI_API_KEY",
+            "type": "any"
+          },
+          {
+            "name": "GITHUB_TOKEN",
+            "type": "any"
+          },
+          {
+            "name": "GITHUB_CONTENTS_URL",
+            "type": "any"
+          },
+          {
+            "name": "GITHUB_RAW_BASE",
+            "type": "any"
+          },
+          {
+            "name": "GITHUB_BRANCH",
+            "type": "any"
+          }
+        ],
+        "advanced": true
+      }
+    },
+    {
+      "id": 4,
+      "module": "http:MakeRequest",
+      "version": 4,
+      "parameters": {
+        "tlsType": "",
+        "authenticationType": "noAuth"
+      },
+      "mapper": {
+        "url": "{{2.destinos.firebase_url}}/{{2.destinos.jobs_node}}/{{2.job_id}}.json",
+        "method": "patch",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "contentType": "json",
+        "inputMethod": "jsonString",
+        "shareCookies": false,
+        "parseResponse": true,
+        "allowRedirects": true,
+        "stopOnHttpError": true,
+        "jsonStringBodyContent": "{\"status\":\"processando\",\"etapa\":\"identificando\",\"mensagem\":\"Lendo produto, EAN e validade nas três fotos.\",\"iniciado_em\":\"{{now}}\"}",
+        "requestCompressedContent": true
+      },
+      "metadata": {
+        "designer": {
+          "x": 150,
+          "y": 0,
+          "name": "Firebase - iniciar acompanhamento"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "module": "gateway:WebhookRespond",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "body": "{\"ok\":true,\"aceito\":true,\"job_id\":\"{{2.job_id}}\",\"mensagem\":\"Cadastro iniciado. Acompanhe pelo Firebase.\"}",
+        "status": "202",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json; charset=utf-8"
+          },
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          }
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": 400,
+          "y": 0,
+          "name": "Responder imediatamente ao celular"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "module": "http:MakeRequest",
+      "version": 4,
+      "parameters": {
+        "tlsType": "",
+        "authenticationType": "noAuth"
+      },
+      "mapper": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "method": "post",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{3.OPENAI_API_KEY}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "contentType": "json",
+        "inputMethod": "jsonString",
+        "shareCookies": false,
+        "parseResponse": true,
+        "allowRedirects": true,
+        "stopOnHttpError": true,
+        "jsonStringBodyContent": "{\"model\":\"gpt-5.6\",\"messages\":[{\"role\":\"system\",\"content\":\"Você é especialista brasileiro em cadastro de produtos de supermercado. Leia rigorosamente as imagens sem inventar. A primeira mostra a frente, a segunda o EAN e a terceira a validade. O código previamente lido foi {{2.codigo_lido}}. A categoria informada foi {{2.contexto.categoria}} e a subcategoria {{2.contexto.subcategoria}}.\"},{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"Identifique nome comercial completo, marca, embalagem/peso/volume, EAN visível e validade. Se o EAN da foto divergir do código lido, informe ambos e reduza a confiança. A validade deve sair em AAAA-MM-DD. Gere também termos curtos para pesquisar o produto e o NCM na web.\"},{\"type\":\"image_url\",\"image_url\":{\"url\":\"{{2.fotos.frente}}\",\"detail\":\"high\"}},{\"type\":\"image_url\",\"image_url\":{\"url\":\"{{2.fotos.ean}}\",\"detail\":\"high\"}},{\"type\":\"image_url\",\"image_url\":{\"url\":\"{{2.fotos.validade}}\",\"detail\":\"high\"}}]}],\"response_format\":{\"type\":\"json_schema\",\"json_schema\":{\"name\":\"produto_lido\",\"strict\":true,\"schema\":{\"type\":\"object\",\"properties\":{\"nome_lido\":{\"type\":\"string\"},\"marca\":{\"type\":\"string\"},\"embalagem\":{\"type\":\"string\"},\"gtin_lido\":{\"type\":\"string\"},\"gtin_confianca\":{\"type\":\"number\"},\"validade_iso\":{\"type\":\"string\"},\"validade_confianca\":{\"type\":\"number\"},\"descricao_curta\":{\"type\":\"string\"},\"termos_pesquisa\":{\"type\":\"string\"}},\"required\":[\"nome_lido\",\"marca\",\"embalagem\",\"gtin_lido\",\"gtin_confianca\",\"validade_iso\",\"validade_confianca\",\"descricao_curta\",\"termos_pesquisa\"],\"additionalProperties\":false}}},\"max_completion_tokens\":1000}",
+        "requestCompressedContent": true
+      },
+      "metadata": {
+        "designer": {
+          "x": 650,
+          "y": 0,
+          "name": "OpenAI Vision - ler as 3 fotos"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "module": "json:ParseJSON",
+      "version": 1,
+      "parameters": {
+        "type": ""
+      },
+      "mapper": {
+        "json": "{{6.data.choices[1].message.content}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 900,
+          "y": 0,
+          "name": "Estruturar leitura das fotos"
+        },
+        "parameters": [
+          {
+            "name": "type",
+            "type": "udt",
+            "label": "Data structure"
+          }
+        ],
+        "interface": [
+          {
+            "name": "nome_lido",
+            "type": "text"
+          },
+          {
+            "name": "marca",
+            "type": "text"
+          },
+          {
+            "name": "embalagem",
+            "type": "text"
+          },
+          {
+            "name": "gtin_lido",
+            "type": "text"
+          },
+          {
+            "name": "gtin_confianca",
+            "type": "number"
+          },
+          {
+            "name": "validade_iso",
+            "type": "text"
+          },
+          {
+            "name": "validade_confianca",
+            "type": "number"
+          },
+          {
+            "name": "descricao_curta",
+            "type": "text"
+          },
+          {
+            "name": "termos_pesquisa",
+            "type": "text"
+          }
+        ],
+        "advanced": true
+      }
+    },
+    {
+      "id": 8,
+      "module": "http:MakeRequest",
+      "version": 4,
+      "parameters": {
+        "tlsType": "",
+        "authenticationType": "noAuth"
+      },
+      "mapper": {
+        "url": "{{2.destinos.firebase_url}}/{{2.destinos.jobs_node}}/{{2.job_id}}.json",
+        "method": "patch",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "contentType": "json",
+        "inputMethod": "jsonString",
+        "shareCookies": false,
+        "parseResponse": true,
+        "allowRedirects": true,
+        "stopOnHttpError": true,
+        "jsonStringBodyContent": "{\"etapa\":\"pesquisando\",\"mensagem\":\"Produto identificado. Pesquisando nome oficial e NCM na web.\"}",
+        "requestCompressedContent": true
+      },
+      "metadata": {
+        "designer": {
+          "x": 1150,
+          "y": 0,
+          "name": "Firebase - pesquisando nome e NCM"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "module": "http:MakeRequest",
+      "version": 4,
+      "parameters": {
+        "tlsType": "",
+        "authenticationType": "noAuth"
+      },
+      "mapper": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "method": "post",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{3.OPENAI_API_KEY}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "contentType": "json",
+        "inputMethod": "jsonString",
+        "shareCookies": false,
+        "parseResponse": true,
+        "allowRedirects": true,
+        "stopOnHttpError": true,
+        "jsonStringBodyContent": "{\"model\":\"gpt-5-search-api\",\"messages\":[{\"role\":\"system\",\"content\":\"Pesquise na web brasileira como analista de cadastro fiscal. Responda somente JSON válido, sem markdown. Para NCM, priorize Receita Federal, Siscomex, documentos fiscais de fabricantes e distribuidores confiáveis. Nunca invente um NCM. Se houver dúvida, reduza a confiança.\"},{\"role\":\"user\",\"content\":\"Produto lido: {{7.nome_lido}}. Marca: {{7.marca}}. Embalagem: {{7.embalagem}}. EAN: {{if(7.gtin_lido; 7.gtin_lido; 2.codigo_lido)}}. Categoria: {{2.contexto.categoria}}. Subcategoria: {{2.contexto.subcategoria}}. Termos: {{7.termos_pesquisa}}. Pesquise o nome comercial mais correto e o NCM brasileiro de 8 dígitos. Retorne somente um objeto JSON com os campos nome_oficial, ncm, confianca, fonte_url e justificativa.\"}],\"max_completion_tokens\":900}",
+        "requestCompressedContent": true
+      },
+      "metadata": {
+        "designer": {
+          "x": 1400,
+          "y": 0,
+          "name": "OpenAI Web Search - nome e NCM"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "module": "code:ExecuteCode",
+      "version": 0,
+      "parameters": {},
+      "mapper": {
+        "input": [
+          {
+            "name": "researchText",
+            "value": "{{9.data.choices[1].message.content}}"
+          },
+          {
+            "name": "firebaseKey",
+            "value": "{{2.firebase_key}}"
+          },
+          {
+            "name": "codigoLido",
+            "value": "{{2.codigo_lido}}"
+          },
+          {
+            "name": "categoria",
+            "value": "{{2.contexto.categoria}}"
+          },
+          {
+            "name": "subcategoria",
+            "value": "{{2.contexto.subcategoria}}"
+          },
+          {
+            "name": "estoque",
+            "value": "{{2.contexto.estoque}}"
+          },
+          {
+            "name": "gondola",
+            "value": "{{2.contexto.gondola}}"
+          },
+          {
+            "name": "prateleira",
+            "value": "{{2.contexto.prateleira}}"
+          },
+          {
+            "name": "nomeLido",
+            "value": "{{7.nome_lido}}"
+          },
+          {
+            "name": "marca",
+            "value": "{{7.marca}}"
+          },
+          {
+            "name": "embalagem",
+            "value": "{{7.embalagem}}"
+          },
+          {
+            "name": "gtinLido",
+            "value": "{{7.gtin_lido}}"
+          },
+          {
+            "name": "gtinConfianca",
+            "value": "{{7.gtin_confianca}}"
+          },
+          {
+            "name": "validadeIso",
+            "value": "{{7.validade_iso}}"
+          },
+          {
+            "name": "validadeConfianca",
+            "value": "{{7.validade_confianca}}"
+          },
+          {
+            "name": "descricaoCurta",
+            "value": "{{7.descricao_curta}}"
+          },
+          {
+            "name": "ncmMinimo",
+            "value": "{{2.regras.ncm_confianca_minima}}"
+          },
+          {
+            "name": "githubRawBase",
+            "value": "{{3.GITHUB_RAW_BASE}}"
+          },
+          {
+            "name": "githubImagesPath",
+            "value": "{{2.destinos.github_images_path}}"
+          },
+          {
+            "name": "timestamp",
+            "value": "{{formatDate(now; \"YYYYMMDD-HHmmssSSS\"; \"America/Cuiaba\")}}"
+          },
+          {
+            "name": "ano",
+            "value": "{{formatDate(now; \"YYYY\"; \"America/Cuiaba\")}}"
+          },
+          {
+            "name": "mes",
+            "value": "{{formatDate(now; \"MM\"; \"America/Cuiaba\")}}"
+          }
+        ],
+        "language": "javascript",
+        "inputFormat": "editor",
+        "dependencies": [],
+        "codeEditorJavascript": "  function text(v){return v===null||v===undefined?\"\":String(v).trim()}\n  function digits(v){return text(v).replace(/\\D/g,\"\")}\n  function slug(v){return text(v).normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g,\"\").toLowerCase().replace(/[^a-z0-9]+/g,\"-\").replace(/(^-|-$)/g,\"\")||\"produto\"}\n  function parseResearch(raw){try{let s=text(raw).replace(/^```(?:json)?/i,\"\").replace(/```$/,\"\").trim();const a=s.indexOf(\"{\"),b=s.lastIndexOf(\"}\");if(a>=0&&b>a)s=s.slice(a,b+1);return JSON.parse(s)}catch{return {}}}\n  function bucketFor(v){let h=0,s=text(v)||\"produto\";for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%100000;return \"b\"+String(Math.abs(h)%100).padStart(2,\"0\")}\n  const research=parseResearch(input.researchText);\n  const key=text(input.firebaseKey)||String(Date.now());\n  const scanned=digits(input.codigoLido),read=digits(input.gtinLido);\n  const gtin=(read.length>=8&&Number(input.gtinConfianca)>=0.75?read:scanned)||read||scanned;\n  const official=text(research.nome_oficial);\n  const nome=(official||text(input.nomeLido)||\"Produto a revisar\").slice(0,120);\n  const candidate=digits(research.ncm).slice(0,8);\n  const confidence=Math.max(0,Math.min(1,Number(research.confianca)||0));\n  const minimum=Number(input.ncmMinimo)||0.85;\n  const ncm=candidate.length===8&&confidence>=minimum?candidate:\"\";\n  const validity=/^\\d{4}-\\d{2}-\\d{2}$/.test(text(input.validadeIso))?text(input.validadeIso):\"\";\n  const seed=gtin||key,bucket=bucketFor(seed),base=text(input.githubImagesPath)||\"site/img/produtos_3\";\n  const file=slug(seed)+\"-\"+slug(nome).slice(0,64)+\"-\"+text(input.timestamp)+\".webp\";\n  const imagePath=base.replace(/\\/+$/,\"\")+\"/\"+bucket+\"/\"+text(input.ano)+\"/\"+text(input.mes)+\"/\"+file;\n  const imageUrl=text(input.githubRawBase).replace(/\\/+$/,\"\")+\"/\"+imagePath,now=new Date().toISOString();\n  const product={firebaseKey:key,id:key,codigo:gtin||key,gtin,nome,nome_original:text(input.nomeLido),marca:text(input.marca),embalagem:text(input.embalagem),categoria:text(input.categoria),subcategoria:text(input.subcategoria),subsubcategoria:\"\",descricao:text(input.descricaoCurta),descricao_curta:text(input.descricaoCurta),estoque:Math.max(0,Math.floor(Number(input.estoque)||0)),preco:0,preco_custo:0,preco_oferta:\"\",validade,validade_oferta:\"\",ncm,ncm_sugerido:candidate,ncm_confianca:confidence,ncm_fonte:text(research.fonte_url),ncm_justificativa:text(research.justificativa),gondola:text(input.gondola),prateleira:text(input.prateleira),situacao:\"I\",url_imagem:imageUrl,imagem:imageUrl,imagem_url:imageUrl,imagem_path:imagePath,imagem_storage:\"github\",imagem_status:\"ok\",imagens:[imageUrl],gtin_confianca:Number(input.gtinConfianca)||0,validade_confianca:Number(input.validadeConfianca)||0,cadastro_ia_revisao:ncm?\"preco_custo_ativacao\":\"ncm_preco_custo_ativacao\",origem_cadastro:\"ia_3_fotos_make\",descricao_status:\"gerada\",imagem_origem:\"ia_make_cadastro\",imagem_gerada_em:now,created_at:now,updated_at:now,last_update:Date.now()};\n  const imagePrompt=\"Crie uma única foto quadrada premium para catálogo de e-commerce usando a foto enviada como referência real e obrigatória do produto \"+nome+\". Preserve com máxima fidelidade embalagem, rótulo, logotipo do fabricante, cores, formato, proporções e volume \"+text(input.embalagem)+\". Produto grande, centralizado, ocupando 85% da imagem, fundo branco ou cinza muito claro, iluminação profissional de estúdio e sombra suave. Sem pessoas, mãos, preço, texto promocional, marca d'água, logo da loja ou elementos extras. Não redesenhe o rótulo e não invente texto. O único texto permitido é o que já existe na embalagem original.\";\n  return {productJson:JSON.stringify(product),productName:nome,gtin,ncm,ncmCandidate:candidate,ncmConfidence:confidence,imagePath,imageUrl,imagePrompt,bucket};"
+      },
+      "metadata": {
+        "designer": {
+          "x": 1650,
+          "y": 0,
+          "name": "Validar pesquisa e montar cadastro final"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "module": "http:MakeRequest",
+      "version": 4,
+      "parameters": {
+        "tlsType": "",
+        "authenticationType": "noAuth"
+      },
+      "mapper": {
+        "url": "{{2.destinos.firebase_url}}/{{2.destinos.jobs_node}}/{{2.job_id}}.json",
+        "method": "patch",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "contentType": "json",
+        "inputMethod": "jsonString",
+        "shareCookies": false,
+        "parseResponse": true,
+        "allowRedirects": true,
+        "stopOnHttpError": true,
+        "jsonStringBodyContent": "{\"etapa\":\"gerando_imagem\",\"mensagem\":\"Nome e NCM pesquisados. Criando a foto de capa do produto.\"}",
+        "requestCompressedContent": true
+      },
+      "metadata": {
+        "designer": {
+          "x": 1900,
+          "y": 0,
+          "name": "Firebase - criando capa"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "module": "openai-gpt-3:editImage",
+      "version": 1,
+      "parameters": {
+        "__IMTCONN__": "CONFIGURE_SUA_CONEXAO_OPENAI"
+      },
+      "mapper": {
+        "n": "1",
+        "mask": {},
+        "size": "1024x1024",
+        "image": [
+          {
+            "fileData": "{{toBinary(replace(2.fotos.frente; \"data:image/jpeg;base64,\"; emptystring); \"base64\")}}",
+            "fileName": "produto-frente.jpg"
+          }
+        ],
+        "model": "gpt-image-2",
+        "prompt": "{{10.result.imagePrompt}}",
+        "quality": "low",
+        "background": "opaque",
+        "output_format": "webp",
+        "input_fidelity": "high",
+        "output_compression": "25"
+      },
+      "metadata": {
+        "designer": {
+          "x": 2150,
+          "y": 0,
+          "name": "OpenAI - gerar capa fiel em WEBP"
+        },
+        "notes": "Selecione sua conexão OpenAI após importar o blueprint."
+      }
+    },
+    {
+      "id": 13,
+      "module": "http:MakeRequest",
+      "version": 4,
+      "parameters": {
+        "tlsType": "",
+        "authenticationType": "noAuth"
+      },
+      "mapper": {
+        "url": "{{2.destinos.firebase_url}}/{{2.destinos.jobs_node}}/{{2.job_id}}.json",
+        "method": "patch",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "contentType": "json",
+        "inputMethod": "jsonString",
+        "shareCookies": false,
+        "parseResponse": true,
+        "allowRedirects": true,
+        "stopOnHttpError": true,
+        "jsonStringBodyContent": "{\"etapa\":\"salvando\",\"mensagem\":\"Capa criada. Salvando imagem no GitHub e produto no Firebase.\"}",
+        "requestCompressedContent": true
+      },
+      "metadata": {
+        "designer": {
+          "x": 2400,
+          "y": 0,
+          "name": "Firebase - salvando arquivos"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "module": "http:MakeRequest",
+      "version": 4,
+      "parameters": {
+        "tlsType": "",
+        "authenticationType": "noAuth"
+      },
+      "mapper": {
+        "url": "{{3.GITHUB_CONTENTS_URL}}/{{10.result.imagePath}}",
+        "method": "put",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{3.GITHUB_TOKEN}}"
+          },
+          {
+            "name": "Accept",
+            "value": "application/vnd.github+json"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-GitHub-Api-Version",
+            "value": "2022-11-28"
+          },
+          {
+            "name": "User-Agent",
+            "value": "Make-Dona-Antonia-Cadastro-Produtos"
+          }
+        ],
+        "contentType": "json",
+        "inputMethod": "jsonString",
+        "shareCookies": false,
+        "parseResponse": true,
+        "allowRedirects": true,
+        "stopOnHttpError": true,
+        "jsonStringBodyContent": "{\"message\":\"Capa IA de novo produto {{2.codigo_lido}}\",\"content\":\"{{base64(12.resImgData)}}\",\"branch\":\"{{3.GITHUB_BRANCH}}\"}",
+        "requestCompressedContent": true
+      },
+      "metadata": {
+        "designer": {
+          "x": 2650,
+          "y": 0,
+          "name": "GitHub - salvar capa do produto"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "module": "http:MakeRequest",
+      "version": 4,
+      "parameters": {
+        "tlsType": "",
+        "authenticationType": "noAuth"
+      },
+      "mapper": {
+        "url": "{{2.destinos.firebase_url}}/{{2.destinos.produtos_node}}/{{2.firebase_key}}.json",
+        "method": "put",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "contentType": "json",
+        "inputMethod": "jsonString",
+        "shareCookies": false,
+        "parseResponse": true,
+        "allowRedirects": true,
+        "stopOnHttpError": true,
+        "jsonStringBodyContent": "{{10.result.productJson}}",
+        "requestCompressedContent": true
+      },
+      "metadata": {
+        "designer": {
+          "x": 2900,
+          "y": 0,
+          "name": "Firebase - cadastrar produto inativo"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "module": "http:MakeRequest",
+      "version": 4,
+      "parameters": {
+        "tlsType": "",
+        "authenticationType": "noAuth"
+      },
+      "mapper": {
+        "url": "{{2.destinos.firebase_url}}/{{2.destinos.jobs_node}}/{{2.job_id}}.json",
+        "method": "patch",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "contentType": "json",
+        "inputMethod": "jsonString",
+        "shareCookies": false,
+        "parseResponse": true,
+        "allowRedirects": true,
+        "stopOnHttpError": true,
+        "jsonStringBodyContent": "{\"status\":\"concluido\",\"etapa\":\"concluido\",\"mensagem\":\"{{10.result.productName}} cadastrado. Confira preço, custo e NCM antes de ativar.\",\"firebase_key\":\"{{2.firebase_key}}\",\"produto_nome\":\"{{10.result.productName}}\",\"imagem_url\":\"{{10.result.imageUrl}}\",\"ncm\":\"{{10.result.ncm}}\",\"ncm_sugerido\":\"{{10.result.ncmCandidate}}\",\"ncm_confianca\":{{10.result.ncmConfidence}},\"concluido_em\":\"{{now}}\"}",
+        "requestCompressedContent": true
+      },
+      "metadata": {
+        "designer": {
+          "x": 3150,
+          "y": 0,
+          "name": "Firebase - concluir e liberar celular"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": false,
+      "slots": null,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {
+      "orphans": []
+    },
+    "zone": "us1.make.com",
+    "notes": [
+      "Depois de importar: crie o webhook no módulo 1.",
+      "No módulo 3, informe OPENAI_API_KEY e GITHUB_TOKEN.",
+      "No módulo 12, selecione sua conexão OpenAI.",
+      "Execute Run once e envie um cadastro pelo aplicativo para registrar a estrutura do webhook."
+    ]
+  }
+}
