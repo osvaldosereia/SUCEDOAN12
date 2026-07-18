@@ -5,16 +5,50 @@ function number(value){const n=Number(value);return Number.isFinite(n)?n:0;}
 function entries(raw){return Array.isArray(raw)?raw:Object.values(raw||{});}
 async function fetchJson(url,timeoutMs=6000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);try{const response=await fetch(url,{cache:'no-cache',headers:{Accept:'application/json'},signal:controller.signal});if(!response.ok)throw new Error(`HTTP ${response.status}`);return await response.json();}finally{clearTimeout(timer);}}
 
+function normalizeCollectionItems(rawItems){
+  return (Array.isArray(rawItems)?rawItems:[]).map(item=>{
+    if(item&&typeof item==='object'){
+      return Object.freeze({
+        ref:text(item.firebaseKey||item.id||item.codigo||item.gtin||item.ean),
+        quantidade:Math.max(1,Math.floor(number(item.quantidade||item.qtd||item.quantity||1)))
+      });
+    }
+    return Object.freeze({ref:text(item),quantidade:1});
+  }).filter(item=>item.ref);
+}
+
 export function normalizeBasket(raw={}){
   const id=text(raw.id||raw.codigo);
-  const productRefs=Array.isArray(raw.produtos)?raw.produtos.map(item=>text(item?.firebaseKey||item?.id||item?.codigo||item)).filter(Boolean):[];
-  return Object.freeze({id,nome:text(raw.nome||'Cesta básica'),descricao:text(raw.descricao),imagem:text(raw.imagem||raw.url_imagem),preco:number(raw.preco),precoOriginal:number(raw.preco_original||raw.precoOriginal),productRefs,ativo:raw.ativo!==false});
+  const items=normalizeCollectionItems(raw.produtos);
+  return Object.freeze({id,nome:text(raw.nome||'Cesta básica'),descricao:text(raw.descricao),imagem:text(raw.imagem||raw.url_imagem),preco:number(raw.preco),precoOriginal:number(raw.preco_original||raw.precoOriginal),items,productRefs:items.map(item=>item.ref),ativo:raw.ativo!==false});
 }
 
 export function normalizeKit(raw={}){
   const id=text(raw.id||raw.codigo);
-  const productRefs=Array.isArray(raw.produtos)?raw.produtos.map(item=>text(item?.firebaseKey||item?.id||item?.codigo||item)).filter(Boolean):[];
-  return Object.freeze({id,nome:text(raw.nome||'Kit promocional'),descricao:text(raw.descricao),imagem:text(raw.imagem||raw.url_imagem),preco:number(raw.preco||raw.preco_promocional),precoOriginal:number(raw.preco_original||raw.precoOriginal||raw.soma_avulsa),productRefs,ativo:raw.ativo!==false,inicio:text(raw.data_inicio||raw.dataInicio),fim:text(raw.data_fim||raw.dataFim)});
+  const items=normalizeCollectionItems(raw.produtos);
+  return Object.freeze({id,nome:text(raw.nome||'Kit promocional'),descricao:text(raw.descricao),imagem:text(raw.imagem||raw.url_imagem),preco:number(raw.preco||raw.preco_promocional),precoOriginal:number(raw.preco_original||raw.precoOriginal||raw.soma_avulsa),items,productRefs:items.map(item=>item.ref),ativo:raw.ativo!==false,inicio:text(raw.data_inicio||raw.dataInicio),fim:text(raw.data_fim||raw.dataFim)});
+}
+
+export function resolveCollection(collection,productIndex){
+  const rows=[];
+  const missing=[];
+  const unavailable=[];
+  for(const item of collection?.items||[]){
+    const product=productIndex instanceof Map?productIndex.get(String(item.ref).toLowerCase()):null;
+    if(!product){missing.push(item.ref);continue;}
+    if(product.situacao==='I'||product.estoque<=0||product.preco<=0){unavailable.push(product.id);continue;}
+    rows.push(Object.freeze({product,quantidade:item.quantidade}));
+  }
+  const requested=(collection?.items||[]).length;
+  return Object.freeze({
+    collection,
+    rows,
+    requested,
+    resolved:rows.length,
+    missing,
+    unavailable,
+    valid:requested>0&&rows.length===requested&&missing.length===0&&unavailable.length===0
+  });
 }
 
 export function currentOffers(products=[]){
