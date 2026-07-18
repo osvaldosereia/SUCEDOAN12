@@ -42,10 +42,6 @@ function writeMutable(requests, storage = localStorage) {
   storage.setItem(STORAGE_KEY, JSON.stringify(requests.slice(0, 100)));
 }
 
-function normalizedConfirmation(value) {
-  return text(value).replace(/\s+/g, ' ').toUpperCase();
-}
-
 function channelLabel(channel) {
   return channel === 'firebase' ? 'Firebase' : channel === 'make' ? 'Make/Bling' : channel;
 }
@@ -216,9 +212,7 @@ export function createOrderReprocessService(options = {}) {
       throw new Error('A confirmação expirou. Prepare uma nova tentativa.');
     }
     if (request.status !== REPROCESS_STATUS.AWAITING_CONFIRMATION) throw new Error('Esta solicitação não está aguardando confirmação.');
-    if (normalizedConfirmation(confirmation) !== normalizedConfirmation(request.confirmationPhrase)) {
-      throw new Error('Frase de confirmação incorreta.');
-    }
+    if (text(confirmation) !== request.confirmationPhrase) throw new Error('Frase de confirmação incorreta.');
 
     const assessment = assess(request.envelopeId, request.channel);
     if (!assessment.eligible) {
@@ -257,11 +251,24 @@ export function createOrderReprocessService(options = {}) {
     });
 
     let result;
-    if (request.channel === 'firebase') {
-      result = await firebaseAdapter(assessment.session.envelope);
-    } else {
-      const makeAdapter = makeAdapterFactory({ maximumAttempts: assessment.remainingAttempts });
-      result = await makeAdapter(assessment.session.envelope);
+    try {
+      if (request.channel === 'firebase') {
+        result = await firebaseAdapter(assessment.session.envelope);
+      } else {
+        const makeAdapter = makeAdapterFactory({ maximumAttempts: assessment.remainingAttempts });
+        result = await makeAdapter(assessment.session.envelope);
+      }
+    } catch (error) {
+      const detail = text(error?.message || error) || 'Falha inesperada durante o reprocessamento.';
+      updateRequest(request.id, { status: REPROCESS_STATUS.FAILED, detail });
+      appendHistory(request.envelopeId, {
+        action: 'reprocess_failed',
+        status: REPROCESS_STATUS.FAILED,
+        channel: request.channel,
+        requestId: request.id,
+        detail
+      });
+      throw error;
     }
 
     const updatedSession = registerResult(request.envelopeId, request.channel, result);
