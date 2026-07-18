@@ -13,7 +13,13 @@
       <strong>Dona Antônia</strong>
       <span>Nova versão em homologação</span>
     </div>
-    <div id="catalog-status" class="status" aria-live="polite">Inicializando catálogo…</div>
+    <div class="top-actions">
+      <div id="catalog-status" class="status" aria-live="polite">Inicializando catálogo…</div>
+      <button id="cart-button" class="cart-button" type="button" aria-expanded="false">
+        <span>Minha compra</span>
+        <strong id="cart-count">0</strong>
+      </button>
+    </div>
   </header>
 
   <main class="page">
@@ -52,6 +58,23 @@
     </section>
   </main>
 
+  <aside id="cart-drawer" class="cart-drawer" aria-hidden="true" aria-labelledby="cart-title">
+    <div class="cart-head">
+      <div>
+        <span class="eyebrow">RASCUNHO LOCAL</span>
+        <h2 id="cart-title">Minha compra</h2>
+      </div>
+      <button id="cart-close" type="button" aria-label="Fechar carrinho">×</button>
+    </div>
+    <div id="cart-items" class="cart-items"></div>
+    <div class="cart-footer">
+      <div><span>Total</span><strong id="cart-total">R$ 0,00</strong></div>
+      <button id="cart-clear" type="button">Limpar compra</button>
+      <small>Checkout ainda não habilitado nesta fase de homologação.</small>
+    </div>
+  </aside>
+  <div id="cart-overlay" class="cart-overlay" hidden></div>
+
   <template id="product-template">
     <article class="product-card">
       <div class="product-image"><img width="320" height="320" loading="lazy" decoding="async" alt=""></div>
@@ -63,6 +86,7 @@
           <strong class="product-price"></strong>
           <span class="product-stock"></span>
         </div>
+        <div class="product-actions"></div>
       </div>
     </article>
   </template>
