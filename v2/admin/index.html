@@ -6,6 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <title>Dona Antônia V2 · Admin Homologação</title>
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./product-editor.css">
   <link rel="stylesheet" href="./kit-module.css">
   <link rel="stylesheet" href="./quick-purchase-module.css">
   <link rel="stylesheet" href="./order-module.css">
@@ -16,7 +17,7 @@
 <body>
   <div class="admin-shell">
     <aside class="sidebar">
-      <a class="admin-brand" href="./index.html"><strong>Admin Dona Antônia V2</strong><span>Homologação · sem gravação</span></a>
+      <a class="admin-brand" href="./index.html"><strong>Admin Dona Antônia V2</strong><span>Homologação · escrita externa bloqueada</span></a>
       <nav class="admin-nav" aria-label="Módulos administrativos">
         <button class="active" type="button" data-module="dashboard">Visão geral</button>
         <button type="button" data-module="inventory">Estoque e validade</button>
@@ -30,7 +31,7 @@
         <button type="button" data-module="publishing">Publicação</button>
         <button type="button" data-module="diagnostics">Diagnóstico</button>
       </nav>
-      <div class="sidebar-note">Os módulos de escrita permanecem bloqueados até o mapeamento completo do admin atual, definição dos contratos e testes de homologação. A administração de banners foi retirada da V2.</div>
+      <div class="sidebar-note">Somente a edição individual de produtos possui rascunho local. Firebase, GitHub, Make, Bling, pedidos, estoque e publicação continuam sem gravação. A administração de banners foi retirada da V2.</div>
     </aside>
     <main class="admin-main">
       <header class="admin-topbar">
@@ -41,6 +42,7 @@
     </main>
   </div>
   <script type="module" src="./app.js"></script>
+  <script type="module" src="./product-editor-module.js"></script>
   <script type="module" src="./kit-module.js"></script>
   <script type="module" src="./quick-purchase-module.js"></script>
   <script type="module" src="./order-module.js"></script>
