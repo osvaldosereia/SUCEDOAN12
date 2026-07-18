@@ -1,247 +1,236 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Produtos e Compra Rápida | Dona Antônia</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    *{box-sizing:border-box}body{margin:0}::-webkit-scrollbar{width:7px;height:7px}::-webkit-scrollbar-track{background:#eef2f6}::-webkit-scrollbar-thumb{background:#b6c2d1;border-radius:10px}.tab-button.active{background:#14532d;color:#fff;border-color:#14532d}.panel-hidden{display:none!important}.cr-card{border:1px solid #e2e8f0;border-radius:16px;background:#fff}.cr-input{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:.65rem .75rem;font-size:.875rem;outline:none}.cr-input:focus{border-color:#15803d;box-shadow:0 0 0 3px rgba(22,163,74,.12)}.cr-label{display:block;margin-bottom:.32rem;color:#64748b;font-size:.68rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase}.cr-btn{display:inline-flex;min-height:40px;align-items:center;justify-content:center;gap:.4rem;border:1px solid #cbd5e1;border-radius:10px;padding:0 .9rem;background:#fff;font-size:.78rem;font-weight:900}.cr-btn.primary{border-color:#14532d;background:#14532d;color:#fff}.cr-btn.danger{border-color:#fecdd3;background:#fff1f2;color:#be123c}.cr-btn:disabled{cursor:not-allowed;opacity:.45}.section-row.active,.item-row.active{border-color:#16a34a;background:#f0fdf4}.product-option.default{border-color:#16a34a;background:#f0fdf4}.toast{position:fixed;right:18px;bottom:18px;z-index:100;max-width:min(420px,calc(100vw - 36px));padding:12px 15px;border-radius:12px;background:#0f172a;color:#fff;font-size:.82rem;font-weight:800;box-shadow:0 18px 55px rgba(15,23,42,.25);opacity:0;transform:translateY(12px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:translateY(0)}.toast.error{background:#9f1239}.toast.success{background:#166534}.modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.55)}.modal.show{display:flex}.modal-card{width:min(820px,100%);max-height:min(780px,92vh);overflow:hidden;border-radius:20px;background:#fff;box-shadow:0 30px 90px rgba(15,23,42,.3)}@media(max-width:900px){body{overflow:auto!important;height:auto!important}.admin-shell{height:auto!important;min-height:100vh}.quick-layout{grid-template-columns:1fr!important}.quick-nav{max-height:none!important}.xml-layout{grid-template-columns:1fr!important}.xml-list{min-height:340px}.header-actions{width:100%;overflow-x:auto;padding-bottom:4px}.header-wrap{align-items:flex-start!important;flex-direction:column!important}}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importador XML Simples</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
 </head>
-<body class="bg-slate-100 text-slate-800 h-screen overflow-hidden font-sans">
-  <div class="admin-shell h-screen flex flex-col">
-    <header class="bg-white border-b shadow-sm z-20">
-      <div class="header-wrap px-4 py-3 flex items-center justify-between gap-4">
-        <div>
-          <h1 class="text-xl font-black text-slate-900">Produtos Dona Antônia</h1>
-          <p class="text-xs font-semibold text-slate-500">Importação XML e gestão da Compra Rápida</p>
+<body class="bg-slate-100 text-slate-800 h-screen flex flex-col font-sans overflow-hidden">
+
+    <header class="bg-white p-4 shadow-md flex justify-between items-center z-10">
+        <h1 class="text-xl font-black text-blue-600">XML > CSV RÁPIDO</h1>
+        <div class="flex gap-3">
+            <label class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold cursor-pointer transition-colors shadow">
+                + IMPORTAR XMLs
+                <input type="file" id="xmlInput" accept=".xml" multiple class="hidden">
+            </label>
+            <button onclick="exportarCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded font-bold transition-colors shadow">
+                ↓ EXPORTAR SELECIONADOS
+            </button>
         </div>
-        <div class="header-actions flex items-center gap-2">
-          <button class="tab-button active cr-btn" data-tab="quick">Compra Rápida</button>
-          <button class="tab-button cr-btn" data-tab="xml">Importador XML</button>
-          <a class="cr-btn" href="../" target="_blank" rel="noopener">Abrir site</a>
-        </div>
-      </div>
     </header>
 
-    <main class="flex-1 min-h-0">
-      <section id="quick-panel" class="h-full flex flex-col">
-        <div class="bg-white border-b px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2 flex-wrap">
-            <button id="reloadQuick" class="cr-btn">↻ Recarregar</button>
-            <button id="saveQuick" class="cr-btn primary">Salvar no Firebase</button>
-            <button id="exportQuick" class="cr-btn">Baixar JSON</button>
-            <label class="cr-btn cursor-pointer">Importar JSON<input id="importQuick" type="file" accept="application/json,.json" class="hidden"></label>
-          </div>
-          <div class="flex items-center gap-2 text-xs font-bold"><span id="quickStatus" class="text-slate-500">Carregando…</span><span id="dirtyBadge" class="hidden rounded-full bg-amber-100 px-2 py-1 text-amber-700">Alterações não salvas</span></div>
+    <main class="flex flex-1 overflow-hidden">
+        
+        <div class="w-1/3 bg-white border-r flex flex-col h-full">
+            <div class="p-3 bg-slate-50 border-b flex justify-between items-center">
+                <label class="flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-slate-500 uppercase">
+                    <input type="checkbox" id="checkTodos" class="w-4 h-4 accent-blue-600" checked onclick="alternarTodos(this)">
+                    <span>Selecionar Todos</span>
+                </label>
+                <span class="text-xs font-bold text-slate-500 uppercase">Total: <span id="contador">0</span></span>
+            </div>
+            <div id="listaProdutos" class="flex-1 overflow-y-auto p-2 space-y-2">
+                <p class="text-center text-slate-400 mt-10 text-sm">Nenhum XML carregado.</p>
+            </div>
         </div>
 
-        <div class="quick-layout flex-1 min-h-0 grid grid-cols-[330px_minmax(0,1fr)]">
-          <aside class="quick-nav bg-white border-r min-h-0 overflow-y-auto p-3">
-            <div class="flex items-center justify-between gap-2 mb-3">
-              <div><h2 class="font-black">Setores e itens</h2><p class="text-xs text-slate-500 font-semibold">Ordem exibida no site</p></div>
-              <button id="addSection" class="cr-btn primary">+ Setor</button>
+        <div class="w-2/3 bg-slate-50 flex flex-col h-full">
+            <div class="p-4 border-b bg-white">
+                <h2 class="text-lg font-bold text-slate-700" id="nomeProdutoAtual">Selecione um produto</h2>
             </div>
-            <div id="quickTree" class="space-y-3"></div>
-          </aside>
-
-          <section class="min-h-0 overflow-y-auto p-4 md:p-5">
-            <div id="sectionEditor" class="hidden space-y-4">
-              <div class="cr-card p-4">
-                <div class="flex items-start justify-between gap-3 mb-4">
-                  <div><h2 id="sectionEditorTitle" class="text-lg font-black">Editar setor</h2><p class="text-xs text-slate-500 font-semibold">Organize o nome, a ordem e a exibição deste setor na Compra Rápida.</p></div>
-                  <button id="deleteSectionCurrent" class="cr-btn danger">Excluir setor</button>
+            <div class="flex-1 overflow-y-auto p-6">
+                <div id="formularioEditor" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <p class="text-slate-400 col-span-3 text-sm">As opções de edição aparecerão aqui.</p>
                 </div>
-                <div class="grid md:grid-cols-2 gap-3">
-                  <label><span class="cr-label">Nome do setor</span><input id="sectionTitle" class="cr-input" type="text"></label>
-                  <label><span class="cr-label">Identificador</span><input id="sectionId" class="cr-input" type="text"></label>
-                  <label class="md:col-span-2"><span class="cr-label">Descrição curta</span><input id="sectionDescription" class="cr-input" type="text"></label>
-                  <label><span class="cr-label">Ordem</span><input id="sectionOrder" class="cr-input" type="number" min="1"></label>
-                  <label class="flex items-center gap-2 min-h-[42px] border rounded-xl px-3 bg-slate-50 self-end"><input id="sectionActive" type="checkbox" class="w-4 h-4 accent-green-700"><span class="text-sm font-bold">Setor ativo no site</span></label>
-                </div>
-                <p class="mt-4 text-xs text-slate-500 font-semibold">Use o botão “+ Item” na coluna lateral para incluir novas necessidades neste setor.</p>
-              </div>
             </div>
-            <div id="emptyEditor" class="cr-card min-h-[300px] flex flex-col items-center justify-center text-center p-8">
-              <strong class="text-lg">Selecione um setor ou item</strong><span class="mt-2 text-sm text-slate-500">Edite setores, produtos, opções e quantidades sugeridas.</span>
-            </div>
-            <div id="itemEditor" class="hidden space-y-4">
-              <div class="cr-card p-4">
-                <div class="flex items-start justify-between gap-3 mb-4">
-                  <div><h2 id="editorTitle" class="text-lg font-black">Editar item</h2><p class="text-xs text-slate-500 font-semibold">As alterações são aplicadas ao JSON da Compra Rápida.</p></div>
-                  <button id="deleteItem" class="cr-btn danger">Excluir item</button>
-                </div>
-                <div class="grid md:grid-cols-2 gap-3">
-                  <label><span class="cr-label">Nome do item</span><input id="itemTitle" class="cr-input" type="text"></label>
-                  <label><span class="cr-label">Identificador</span><input id="itemId" class="cr-input" type="text"></label>
-                  <label class="md:col-span-2"><span class="cr-label">Descrição curta</span><input id="itemDescription" class="cr-input" type="text"></label>
-                  <label><span class="cr-label">Ordem</span><input id="itemOrder" class="cr-input" type="number" min="1"></label>
-                  <div class="grid grid-cols-2 gap-2 items-end">
-                    <label class="flex items-center gap-2 min-h-[42px] border rounded-xl px-3 bg-slate-50"><input id="itemActive" type="checkbox" class="w-4 h-4 accent-green-700"><span class="text-sm font-bold">Ativo</span></label>
-                    <label class="flex items-center gap-2 min-h-[42px] border rounded-xl px-3 bg-slate-50"><input id="itemEssential" type="checkbox" class="w-4 h-4 accent-green-700"><span class="text-sm font-bold">Essencial</span></label>
-                  </div>
-                </div>
-              </div>
-
-              <div class="cr-card p-4">
-                <div class="mb-3"><h3 class="font-black">Quantidades sugeridas</h3><p class="text-xs text-slate-500 font-semibold">Quantidade preenchida ao usar a sugestão automática.</p></div>
-                <div class="grid grid-cols-3 gap-3">
-                  <label><span class="cr-label">1–2 pessoas</span><input id="qtySmall" class="cr-input" type="number" min="0"></label>
-                  <label><span class="cr-label">3–4 pessoas</span><input id="qtyMedium" class="cr-input" type="number" min="0"></label>
-                  <label><span class="cr-label">5 ou mais</span><input id="qtyLarge" class="cr-input" type="number" min="0"></label>
-                </div>
-              </div>
-
-              <div class="cr-card p-4">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <div><h3 class="font-black">Produtos disponíveis</h3><p class="text-xs text-slate-500 font-semibold">A opção padrão aparece primeiro na sugestão.</p></div>
-                  <button id="openProductSearch" class="cr-btn primary">+ Adicionar produto</button>
-                </div>
-                <div id="optionList" class="space-y-2"></div>
-              </div>
-            </div>
-          </section>
         </div>
-      </section>
-
-      <section id="xml-panel" class="panel-hidden h-full flex flex-col">
-        <div class="bg-white border-b px-4 py-3 flex flex-wrap justify-between items-center gap-3">
-          <div><h2 class="font-black">XML → CSV rápido</h2><p class="text-xs text-slate-500 font-semibold">Ferramenta original preservada.</p></div>
-          <div class="flex gap-2"><label class="cr-btn primary cursor-pointer">+ Importar XMLs<input type="file" id="xmlInput" accept=".xml" multiple class="hidden"></label><button id="exportCsv" class="cr-btn">↓ Exportar selecionados</button></div>
-        </div>
-        <div class="xml-layout flex-1 min-h-0 grid grid-cols-[360px_minmax(0,1fr)]">
-          <aside class="xml-list bg-white border-r min-h-0 flex flex-col">
-            <div class="p-3 bg-slate-50 border-b flex justify-between items-center"><label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-500 uppercase"><input type="checkbox" id="checkTodos" class="w-4 h-4 accent-blue-600" checked><span>Selecionar todos</span></label><span class="text-xs font-bold text-slate-500 uppercase">Total: <span id="contador">0</span></span></div>
-            <div id="listaProdutos" class="flex-1 overflow-y-auto p-2 space-y-2"><p class="text-center text-slate-400 mt-10 text-sm">Nenhum XML carregado.</p></div>
-          </aside>
-          <section class="min-h-0 flex flex-col">
-            <div class="p-4 border-b bg-white"><h2 class="text-lg font-bold text-slate-700" id="nomeProdutoAtual">Selecione um produto</h2></div>
-            <div class="flex-1 overflow-y-auto p-5"><div id="formularioEditor" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"><p class="text-slate-400 md:col-span-2 xl:col-span-3 text-sm">As opções de edição aparecerão aqui.</p></div></div>
-          </section>
-        </div>
-      </section>
     </main>
-  </div>
-
-  <div id="productModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
-    <div class="modal-card flex flex-col">
-      <div class="p-4 border-b flex items-center justify-between gap-3"><div><h2 id="productModalTitle" class="font-black text-lg">Adicionar produto</h2><p class="text-xs text-slate-500 font-semibold">Pesquise por nome, marca, categoria ou código.</p></div><button id="closeProductModal" class="cr-btn">Fechar</button></div>
-      <div class="p-4 border-b"><input id="productSearch" class="cr-input" type="search" placeholder="Ex.: arroz, detergente, P440 ou EAN"></div>
-      <div id="productResults" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
-    </div>
-  </div>
-  <div id="toast" class="toast" role="status"></div>
 
 <script>
-(function(){
-  'use strict';
-  const FIREBASE_CONFIG_URL='https://cedar-chemist-310801-default-rtdb.firebaseio.com/config_compra_rapida.json';
-  const CONFIG_FILE_URL='../site/compra-rapida.json';
-  const CATALOG_URLS=['../site/produtos-home.json','https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json'];
-  const SECTION_SENTINEL='__section__';
-  const state={config:null,catalog:[],catalogMap:new Map(),selectedSectionId:'',selectedItemId:'',dirty:false,source:'',searchTimer:0};
-  const $=id=>document.getElementById(id);
+    let produtos = []; 
+    let indiceSelecionado = null; 
+    
+    const colunasModelo = [
+        "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", 
+        "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", 
+        "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", 
+        "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", 
+        "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", 
+        "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", 
+        "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", 
+        "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", 
+        "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", 
+        "Categoria do produto", "Informações Adicionais"
+    ];
 
-  function norm(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()}
-  function slug(value){return norm(value).replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'item'}
-  function esc(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
-  function money(value){return Number(value||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-  function parseMoney(value){if(typeof value==='number')return Number.isFinite(value)?value:0;const text=String(value||'').trim();if(!text)return 0;if(/^-?\d+(?:\.\d+)?$/.test(text))return Number(text)||0;return Number(text.replace(/[^0-9,.-]/g,'').replace(/\./g,'').replace(',','.'))||0}
-  function imageOf(raw){const list=Array.isArray(raw?.imagens)?raw.imagens:Array.isArray(raw?.images)?raw.images:[];return raw?.url_imagem||raw?.imagem_url||raw?.imagem||raw?.img||list[0]||'../img/logoantonia5.png'}
-  function normalizeProduct(raw,key){const id=String(raw?.codigo||raw?.id||raw?.firebaseKey||key||'').trim();return{id,codigo:String(raw?.codigo||id),firebaseKey:String(raw?.firebaseKey||key||raw?.id||id),ean:String(raw?.gtin||raw?.ean||''),nome:String(raw?.nome||raw?.name||raw?.descricao||'Produto'),marca:String(raw?.marca||''),embalagem:String(raw?.embalagem||''),categoria:String(raw?.categoria||raw?.category||''),subcategoria:String(raw?.subcategoria||''),preco:parseMoney(raw?.preco??raw?.price??raw?.valor),estoque:Math.max(0,parseInt(raw?.estoque??raw?.stock,10)||0),imagem:String(imageOf(raw)),situacao:String(raw?.situacao||'')};}
-  function entries(raw){return Array.isArray(raw)?raw.map((v,i)=>[String(i),v]).filter(([,v])=>v):Object.entries(raw||{}).filter(([,v])=>v&&typeof v==='object')}
-  function toast(message,type){const el=$('toast');el.textContent=message;el.className='toast show '+(type||'');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.className='toast',3500)}
-  function setDirty(value=true){state.dirty=!!value;$('dirtyBadge').classList.toggle('hidden',!state.dirty)}
-  function touch(options={}){if(!state.config)return;state.config.updatedAt=new Date().toISOString();setDirty(true);if(options.tree!==false)renderTree();if(options.editor!==false)renderEditor()}
-  async function fetchJson(url,timeout=10000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeout);try{const res=await fetch(`${url}${url.includes('?')?'&':'?'}t=${Date.now()}`,{cache:'no-store',headers:{Accept:'application/json'},signal:controller.signal});if(!res.ok)throw new Error(`HTTP ${res.status}`);return await res.json()}finally{clearTimeout(timer)}}
-  async function loadFirst(urls,validator){let last;for(const url of urls){try{const data=await fetchJson(url);if(!validator||validator(data))return{data,url}}catch(error){last=error}}throw last||new Error('Dados indisponíveis')}
-  function rebuildCatalog(raw){state.catalog=entries(raw).map(([key,value])=>normalizeProduct(value,key)).filter(p=>p.id);state.catalogMap=new Map();state.catalog.forEach(p=>[p.id,p.codigo,p.firebaseKey,p.ean].forEach(ref=>{const key=norm(ref);if(key&&!state.catalogMap.has(key))state.catalogMap.set(key,p)}));}
-  function liveSnapshot(snapshot){for(const ref of[snapshot?.id,snapshot?.codigo,snapshot?.firebaseKey,snapshot?.ean]){const found=state.catalogMap.get(norm(ref));if(found)return{...snapshot,...found,id:found.id||snapshot.id}}return normalizeProduct(snapshot||{},snapshot?.firebaseKey||snapshot?.id)}
-  function snapshot(product){return{id:product.id,firebaseKey:product.firebaseKey,codigo:product.codigo,ean:product.ean,nome:product.nome,marca:product.marca,embalagem:product.embalagem,categoria:product.categoria,subcategoria:product.subcategoria,preco:Number(product.preco||0),estoque:Number(product.estoque||0),imagem:product.imagem,situacao:product.situacao}}
-  function sections(){return(state.config?.secoes||[]).sort((a,b)=>Number(a.ordem||0)-Number(b.ordem||0))}
-  function selectedSection(){return sections().find(s=>String(s.id)===String(state.selectedSectionId))||null}
-  function selectedItem(){const section=selectedSection();return section?.itens?.find(i=>String(i.id)===String(state.selectedItemId))||null}
-  function ensureSelection(){const list=sections();if(!list.length){state.selectedSectionId='';state.selectedItemId='';return}if(!selectedSection())state.selectedSectionId=String(list[0].id);if(state.selectedItemId===SECTION_SENTINEL)return;const section=selectedSection();const items=(section?.itens||[]).sort((a,b)=>Number(a.ordem||0)-Number(b.ordem||0));if(!items.some(i=>String(i.id)===String(state.selectedItemId)))state.selectedItemId=items[0]?String(items[0].id):SECTION_SENTINEL}
+    document.getElementById('xmlInput').addEventListener('change', function(e) {
+        const arquivos = Array.from(e.target.files);
+        arquivos.forEach(arquivo => {
+            const reader = new FileReader();
+            reader.onload = function(evento) {
+                const xmlDoc = new DOMParser().parseFromString(evento.target.result, "text/xml");
+                extrairProdutosDoXML(xmlDoc);
+            };
+            reader.readAsText(arquivo);
+        });
+        e.target.value = ''; 
+    });
 
-  async function loadQuick(){
-    $('quickStatus').textContent='Carregando configuração e produtos…';
-    try{
-      const [configResult,catalogResult]=await Promise.all([
-        loadFirst([FIREBASE_CONFIG_URL,CONFIG_FILE_URL],data=>data&&Array.isArray(data.secoes)),
-        loadFirst(CATALOG_URLS,data=>data&&typeof data==='object')
-      ]);
-      state.config=configResult.data;state.source=configResult.url===FIREBASE_CONFIG_URL?'Firebase':'JSON do GitHub';rebuildCatalog(catalogResult.data);ensureSelection();setDirty(false);renderTree();renderEditor();$('quickStatus').textContent=`${state.source} · ${state.catalog.length} produtos carregados`;toast('Compra Rápida carregada.','success');
-    }catch(error){console.error(error);$('quickStatus').textContent='Erro ao carregar';toast('Não foi possível carregar: '+(error.message||error),'error')}
-  }
+    function extrairProdutosDoXML(xml) {
+        const fornecedor = xml.querySelector('emit > xNome')?.textContent || "";
+        const itens = xml.querySelectorAll('det');
+        
+        itens.forEach(det => {
+            const prod = det.querySelector('prod');
+            let novoProduto = {};
+            
+            colunasModelo.forEach(col => novoProduto[col] = "");
+            
+            const ean = prod.querySelector('cEAN')?.textContent || "";
+            const valorUn = (prod.querySelector('vUnCom')?.textContent || "0.00").replace('.', ',');
+            const qtd = (prod.querySelector('qCom')?.textContent || "0").replace('.', ',');
+            
+            novoProduto["Descrição"] = prod.querySelector('xProd')?.textContent || "Produto Sem Nome";
+            novoProduto["Unidade"] = prod.querySelector('uCom')?.textContent || "";
+            novoProduto["NCM"] = prod.querySelector('NCM')?.textContent || "";
+            novoProduto["CEST"] = prod.querySelector('CEST')?.textContent || "";
+            novoProduto["Preço"] = valorUn;
+            novoProduto["Preço de custo"] = valorUn;
+            novoProduto["Estoque"] = qtd;
+            novoProduto["Fornecedor"] = fornecedor;
+            novoProduto["GTIN/EAN"] = ean ? `\t${ean}` : ""; 
+            
+            const codigoAleatorio = Math.random().toString(36).substring(2, 6).toUpperCase();
+            novoProduto["Código"] = `P-${codigoAleatorio}`;
+            
+            novoProduto["Situação"] = "Ativo";
+            novoProduto["Condição do Produto"] = "Novo";
+            
+            // NOVIDADE: Adicionamos a propriedade para controlar a seleção
+            novoProduto._selecionado = true;
+            
+            produtos.push(novoProduto);
+        });
+        
+        // Garante que o checkbox de "Selecionar Todos" fique marcado ao importar novos
+        document.getElementById('checkTodos').checked = true;
+        renderizarLista();
+    }
 
-  function renderTree(){
-    ensureSelection();const root=$('quickTree');
-    if(!state.config){root.innerHTML='<p class="text-sm text-slate-500">Carregando…</p>';return}
-    root.innerHTML=sections().map(section=>{
-      const items=(section.itens||[]).sort((a,b)=>Number(a.ordem||0)-Number(b.ordem||0));
-      return `<div class="cr-card p-2"><button class="section-row ${String(section.id)===String(state.selectedSectionId)?'active':''} w-full text-left border rounded-xl px-3 py-2" data-section-id="${esc(section.id)}"><span class="flex justify-between gap-2"><strong class="text-sm">${esc(section.titulo)}</strong><small class="text-slate-500">${items.length}</small></span><small class="block mt-1 text-[11px] text-slate-500">${esc(section.descricao||'')}</small></button><div class="mt-2 space-y-1">${items.map(item=>`<button class="item-row ${String(item.id)===String(state.selectedItemId)?'active':''} w-full border rounded-lg px-3 py-2 text-left" data-section-id="${esc(section.id)}" data-item-id="${esc(item.id)}"><span class="flex justify-between gap-2"><strong class="text-xs">${esc(item.titulo)}</strong><span class="text-[10px] ${item.ativo===false?'text-rose-600':'text-green-700'}">${item.ativo===false?'Inativo':(item.produtos||[]).length+' opções'}</span></span></button>`).join('')}</div><div class="grid grid-cols-2 gap-1 mt-2"><button class="cr-btn !min-h-[34px]" data-add-item="${esc(section.id)}">+ Item</button><button class="cr-btn danger !min-h-[34px]" data-delete-section="${esc(section.id)}">Excluir setor</button></div></div>`
-    }).join('')||'<div class="cr-card p-6 text-center text-sm text-slate-500">Nenhum setor cadastrado.</div>';
-  }
+    function renderizarLista() {
+        const divLista = document.getElementById('listaProdutos');
+        document.getElementById('contador').innerText = produtos.length;
+        divLista.innerHTML = ""; 
+        
+        produtos.forEach((p, index) => {
+            const div = document.createElement('div');
+            div.className = `p-3 border rounded cursor-pointer transition-colors flex gap-3 items-start ${indiceSelecionado === index ? 'bg-blue-100 border-blue-300' : 'bg-white hover:bg-slate-50'}`;
+            
+            // NOVIDADE: Adicionado o checkbox. O evento 'stopPropagation' impede que o clique no checkbox abra o editor do produto sem querer.
+            div.innerHTML = `
+                <input type="checkbox" class="mt-1 w-4 h-4 accent-blue-600" 
+                       ${p._selecionado ? 'checked' : ''} 
+                       onclick="event.stopPropagation(); alternarSelecaoProduto(${index}, this.checked)">
+                <div class="flex-1 overflow-hidden" onclick="abrirEditor(${index})">
+                    <div class="font-bold text-sm truncate text-slate-800">${p["Descrição"]}</div>
+                    <div class="flex justify-between mt-1 text-xs text-slate-500">
+                        <span>Cod: ${p["Código"]}</span>
+                        <span class="font-black text-emerald-600">R$ ${p["Preço"]}</span>
+                    </div>
+                </div>
+            `;
+            
+            divLista.appendChild(div);
+        });
+    }
 
-  function renderEditor(){
-    const section=selectedSection(),item=selectedItem(),editingSection=!!section&&state.selectedItemId===SECTION_SENTINEL;
-    $('sectionEditor').classList.toggle('hidden',!editingSection);$('emptyEditor').classList.toggle('hidden',!!section);$('itemEditor').classList.toggle('hidden',!item);
-    if(editingSection){$('sectionEditorTitle').textContent=`Editar setor: ${section.titulo}`;$('sectionTitle').value=section.titulo||'';$('sectionId').value=section.id||'';$('sectionDescription').value=section.descricao||'';$('sectionOrder').value=Number(section.ordem||1);$('sectionActive').checked=section.ativo!==false;return}
-    if(!item)return;
-    $('editorTitle').textContent=`Editar: ${item.titulo}`;$('itemTitle').value=item.titulo||'';$('itemId').value=item.id||'';$('itemDescription').value=item.descricao||'';$('itemOrder').value=Number(item.ordem||1);$('itemActive').checked=item.ativo!==false;$('itemEssential').checked=item.essencial!==false;$('qtySmall').value=Number(item.quantidadesSugeridas?.['1-2']||0);$('qtyMedium').value=Number(item.quantidadesSugeridas?.['3-4']||0);$('qtyLarge').value=Number(item.quantidadesSugeridas?.['5+']||0);
-    const options=(item.produtos||[]).map(liveSnapshot);$('optionList').innerHTML=options.map((product,index)=>`<article class="product-option ${String(item.produtoPadraoId)===String(product.id)?'default':''} border rounded-xl p-3 flex gap-3 items-center"><img src="${esc(product.imagem)}" alt="" class="w-16 h-16 rounded-xl object-contain bg-slate-50 border" onerror="this.onerror=null;this.src='../img/logoantonia5.png'"><div class="min-w-0 flex-1"><strong class="block text-sm truncate">${esc(product.nome)}</strong><span class="block mt-1 text-xs text-slate-500 truncate">${esc([product.marca,product.embalagem,product.codigo].filter(Boolean).join(' · '))}</span><div class="mt-1 flex gap-3 text-xs font-black"><span class="text-emerald-700">${money(product.preco)}</span><span class="${product.estoque>0?'text-slate-600':'text-rose-600'}">Estoque ${product.estoque}</span></div></div><div class="flex flex-col gap-1"><button class="cr-btn !min-h-[32px] !px-2" data-default-product="${esc(product.id)}">${String(item.produtoPadraoId)===String(product.id)?'✓ Padrão':'Definir padrão'}</button><div class="grid grid-cols-3 gap-1"><button class="cr-btn !min-h-[30px] !px-2" data-move-option="up" data-option-index="${index}" ${index===0?'disabled':''}>↑</button><button class="cr-btn !min-h-[30px] !px-2" data-move-option="down" data-option-index="${index}" ${index===options.length-1?'disabled':''}>↓</button><button class="cr-btn danger !min-h-[30px] !px-2" data-remove-option="${index}">×</button></div></div></article>`).join('')||'<div class="border border-dashed rounded-xl p-6 text-center text-sm text-slate-500">Nenhum produto adicionado.</div>';
-  }
+    // NOVIDADE: Função que atualiza o estado de um produto específico
+    function alternarSelecaoProduto(index, estaMarcado) {
+        produtos[index]._selecionado = estaMarcado;
+        atualizarStatusCheckTodos();
+    }
 
-  function mutateSection(field,value,options={editor:false}){const section=selectedSection();if(!section)return;section[field]=value;touch(options);if(field==='titulo')$('sectionEditorTitle').textContent=`Editar setor: ${value||'Setor'}`}
-  function bindSectionEditor(){$('sectionTitle').addEventListener('input',e=>mutateSection('titulo',e.target.value));$('sectionDescription').addEventListener('input',e=>mutateSection('descricao',e.target.value,{tree:false,editor:false}));$('sectionOrder').addEventListener('input',e=>mutateSection('ordem',Math.max(1,Number(e.target.value)||1),{editor:false}));$('sectionActive').addEventListener('change',e=>mutateSection('ativo',e.target.checked,{editor:false}));$('sectionId').addEventListener('change',e=>{const section=selectedSection();if(!section)return;const next=slug(e.target.value||section.titulo);if(sections().some(other=>other!==section&&String(other.id)===next)){toast('Já existe um setor com esse identificador.','error');e.target.value=section.id;return}section.id=next;state.selectedSectionId=next;touch()})}
-  function mutateItem(field,value,options={editor:false}){const item=selectedItem();if(!item)return;item[field]=value;touch(options);if(field==='titulo')$('editorTitle').textContent=`Editar: ${value||'Item'}`}
-  function bindEditor(){
-    $('itemTitle').addEventListener('input',e=>mutateItem('titulo',e.target.value));
-    $('itemDescription').addEventListener('input',e=>mutateItem('descricao',e.target.value,{tree:false,editor:false}));
-    $('itemOrder').addEventListener('input',e=>mutateItem('ordem',Math.max(1,Number(e.target.value)||1),{editor:false}));
-    $('itemActive').addEventListener('change',e=>mutateItem('ativo',e.target.checked,{editor:false}));
-    $('itemEssential').addEventListener('change',e=>mutateItem('essencial',e.target.checked,{tree:false,editor:false}));
-    $('itemId').addEventListener('change',e=>{const item=selectedItem();if(!item)return;const next=slug(e.target.value||item.titulo);const section=selectedSection();if(section.itens.some(other=>other!==item&&String(other.id)===next)){toast('Já existe um item com esse identificador.','error');e.target.value=item.id;return}item.id=next;state.selectedItemId=next;touch()});
-    [['qtySmall','1-2'],['qtyMedium','3-4'],['qtyLarge','5+']].forEach(([id,key])=>$(id).addEventListener('input',e=>{const item=selectedItem();if(!item)return;item.quantidadesSugeridas=item.quantidadesSugeridas||{};item.quantidadesSugeridas[key]=Math.max(0,Number(e.target.value)||0);touch({tree:false,editor:false})}));
-  }
+    // NOVIDADE: Função para marcar/desmarcar todos de uma vez
+    function alternarTodos(checkbox) {
+        const marcar = checkbox.checked;
+        produtos.forEach(p => p._selecionado = marcar);
+        renderizarLista();
+    }
 
-  function addSection(){const id='setor-'+Date.now().toString(36);state.config.secoes=state.config.secoes||[];state.config.secoes.push({id,titulo:'Novo setor',descricao:'',ordem:state.config.secoes.length+1,ativo:true,itens:[]});state.selectedSectionId=id;state.selectedItemId=SECTION_SENTINEL;touch();toast('Setor criado.','success')}
-  function addItem(sectionId){const section=sections().find(s=>String(s.id)===String(sectionId));if(!section)return;const id='item-'+Date.now().toString(36);section.itens=section.itens||[];section.itens.push({id,titulo:'Novo item',descricao:'',ordem:section.itens.length+1,ativo:true,essencial:true,produtoPadraoId:'',quantidadesSugeridas:{'1-2':1,'3-4':1,'5+':2},produtos:[]});state.selectedSectionId=section.id;state.selectedItemId=id;touch();toast('Item criado.','success')}
-  function deleteSection(sectionId){const section=sections().find(s=>String(s.id)===String(sectionId));if(!section||!confirm(`Excluir o setor "${section.titulo}" e todos os itens?`))return;state.config.secoes=state.config.secoes.filter(s=>String(s.id)!==String(sectionId));state.selectedSectionId='';state.selectedItemId='';touch()}
-  function deleteItem(){const section=selectedSection(),item=selectedItem();if(!section||!item||!confirm(`Excluir o item "${item.titulo}"?`))return;section.itens=section.itens.filter(i=>i!==item);state.selectedItemId=SECTION_SENTINEL;touch()}
+    // NOVIDADE: Verifica se todos estão marcados ou não para ajustar o checkbox do topo
+    function atualizarStatusCheckTodos() {
+        const todosMarcados = produtos.every(p => p._selecionado);
+        document.getElementById('checkTodos').checked = todosMarcados && produtos.length > 0;
+    }
 
-  function openProductSearch(){if(!selectedItem())return;$('productModal').classList.add('show');$('productSearch').value='';renderProductResults('');setTimeout(()=>$('productSearch').focus(),30)}
-  function closeProductSearch(){$('productModal').classList.remove('show')}
-  function searchCatalog(query){const terms=norm(query).split(/\s+/).filter(Boolean);return state.catalog.filter(product=>{const text=norm([product.nome,product.marca,product.categoria,product.subcategoria,product.codigo,product.ean].join(' '));return terms.every(term=>text.includes(term))}).sort((a,b)=>Number(b.estoque>0)-Number(a.estoque>0)||Number(a.preco)-Number(b.preco)||a.nome.localeCompare(b.nome,'pt-BR')).slice(0,80)}
-  function renderProductResults(query){const item=selectedItem();if(!item)return;const existing=new Set((item.produtos||[]).map(p=>norm(p.id||p.codigo||p.firebaseKey)));const list=searchCatalog(query);$('productResults').innerHTML=list.map(product=>{const added=[product.id,product.codigo,product.firebaseKey].some(ref=>existing.has(norm(ref)));return `<article class="border rounded-xl p-3 flex gap-3 items-center"><img src="${esc(product.imagem)}" alt="" class="w-14 h-14 rounded-xl object-contain border bg-slate-50" onerror="this.onerror=null;this.src='../img/logoantonia5.png'"><div class="min-w-0 flex-1"><strong class="block text-sm truncate">${esc(product.nome)}</strong><span class="block text-xs text-slate-500 truncate">${esc([product.categoria,product.subcategoria,product.marca,product.codigo].filter(Boolean).join(' · '))}</span><span class="inline-block mt-1 text-xs font-black text-emerald-700">${money(product.preco)} · estoque ${product.estoque}</span></div><button class="cr-btn ${added?'':'primary'}" data-add-product="${esc(product.id)}" ${added?'disabled':''}>${added?'Adicionado':'Adicionar'}</button></article>`}).join('')||'<div class="p-8 text-center text-sm text-slate-500">Nenhum produto encontrado.</div>'}
-  function addProduct(productId){const item=selectedItem(),product=state.catalogMap.get(norm(productId));if(!item||!product)return;item.produtos=item.produtos||[];if(item.produtos.some(p=>[p.id,p.codigo,p.firebaseKey].some(ref=>norm(ref)===norm(productId))))return;item.produtos.push(snapshot(product));if(!item.produtoPadraoId)item.produtoPadraoId=product.id;touch();renderProductResults($('productSearch').value);toast('Produto adicionado.','success')}
+    function abrirEditor(index) {
+        indiceSelecionado = index;
+        renderizarLista(); 
+        
+        const produto = produtos[index];
+        document.getElementById('nomeProdutoAtual').innerText = produto["Descrição"];
+        
+        const form = document.getElementById('formularioEditor');
+        form.innerHTML = ""; 
+        
+        colunasModelo.forEach(coluna => {
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">${coluna}</label>
+                <input type="text" 
+                       value="${produto[coluna] || ''}" 
+                       oninput="atualizarDado(${index}, '${coluna}', this.value)"
+                       class="w-full border border-slate-300 rounded p-2 text-sm focus:border-blue-500 outline-none">
+            `;
+            form.appendChild(div);
+        });
+    }
 
-  async function saveQuick(){if(!state.config)return;const button=$('saveQuick');button.disabled=true;button.textContent='Salvando…';try{state.config.updatedAt=new Date().toISOString();const response=await fetch(FIREBASE_CONFIG_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state.config)});if(!response.ok)throw new Error(`Firebase respondeu ${response.status}`);state.source='Firebase';setDirty(false);$('quickStatus').textContent=`Firebase · ${state.catalog.length} produtos carregados`;toast('Compra Rápida salva no Firebase.','success')}catch(error){console.error(error);toast('Não foi possível salvar no Firebase. Baixe o JSON como segurança.','error')}finally{button.disabled=false;button.textContent='Salvar no Firebase'}}
-  function exportJson(){if(!state.config)return;const blob=new Blob([JSON.stringify(state.config,null,2)],{type:'application/json;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='compra-rapida.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-  async function importJson(file){try{const parsed=JSON.parse(await file.text());if(!parsed||!Array.isArray(parsed.secoes))throw new Error('JSON sem a lista de setores');state.config=parsed;state.selectedSectionId='';state.selectedItemId='';ensureSelection();setDirty(true);renderTree();renderEditor();toast('JSON importado. Revise e salve no Firebase.','success')}catch(error){toast('Arquivo inválido: '+(error.message||error),'error')}}
+    function atualizarDado(indexProduto, chave, novoValor) {
+        produtos[indexProduto][chave] = novoValor;
+        if(chave === "Descrição") {
+            document.getElementById('nomeProdutoAtual').innerText = novoValor;
+            renderizarLista(); // Re-renderiza para atualizar o nome na lista em tempo real
+        }
+    }
 
-  document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(item=>item.classList.toggle('active',item===button));$('quick-panel').classList.toggle('panel-hidden',button.dataset.tab!=='quick');$('xml-panel').classList.toggle('panel-hidden',button.dataset.tab!=='xml')}));
-  $('quickTree').addEventListener('click',event=>{const item=event.target.closest('[data-item-id]');if(item){state.selectedSectionId=item.dataset.sectionId;state.selectedItemId=item.dataset.itemId;renderTree();renderEditor();return}const section=event.target.closest('[data-section-id]:not([data-item-id])');if(section){state.selectedSectionId=section.dataset.sectionId;state.selectedItemId=SECTION_SENTINEL;ensureSelection();renderTree();renderEditor();return}const add=event.target.closest('[data-add-item]');if(add){addItem(add.dataset.addItem);return}const del=event.target.closest('[data-delete-section]');if(del)deleteSection(del.dataset.deleteSection)});
-  $('optionList').addEventListener('click',event=>{const item=selectedItem();if(!item)return;const def=event.target.closest('[data-default-product]');if(def){item.produtoPadraoId=def.dataset.defaultProduct;touch();return}const remove=event.target.closest('[data-remove-option]');if(remove){const index=Number(remove.dataset.removeOption);const removed=item.produtos.splice(index,1)[0];if(removed&&String(item.produtoPadraoId)===String(removed.id))item.produtoPadraoId=item.produtos[0]?.id||'';touch();return}const move=event.target.closest('[data-move-option]');if(move){const index=Number(move.dataset.optionIndex),next=move.dataset.moveOption==='up'?index-1:index+1;if(next<0||next>=item.produtos.length)return;[item.produtos[index],item.produtos[next]]=[item.produtos[next],item.produtos[index]];touch()}});
-  $('productResults').addEventListener('click',event=>{const button=event.target.closest('[data-add-product]');if(button)addProduct(button.dataset.addProduct)});
-  $('productSearch').addEventListener('input',event=>{clearTimeout(state.searchTimer);state.searchTimer=setTimeout(()=>renderProductResults(event.target.value),120)});
-  $('addSection').addEventListener('click',addSection);$('deleteSectionCurrent').addEventListener('click',()=>deleteSection(state.selectedSectionId));$('deleteItem').addEventListener('click',deleteItem);$('openProductSearch').addEventListener('click',openProductSearch);$('closeProductModal').addEventListener('click',closeProductSearch);$('productModal').addEventListener('click',event=>{if(event.target===$('productModal'))closeProductSearch()});$('reloadQuick').addEventListener('click',()=>{if(state.dirty&&!confirm('Descartar alterações não salvas?'))return;loadQuick()});$('saveQuick').addEventListener('click',saveQuick);$('exportQuick').addEventListener('click',exportJson);$('importQuick').addEventListener('change',event=>{const file=event.target.files[0];if(file)importJson(file);event.target.value=''});window.addEventListener('beforeunload',event=>{if(!state.dirty)return;event.preventDefault();event.returnValue=''});bindSectionEditor();bindEditor();
+    function exportarCSV() {
+        // NOVIDADE: Filtra o array para pegar apenas os produtos marcados
+        const produtosSelecionados = produtos.filter(p => p._selecionado);
 
-  // Importador XML original
-  let xmlProducts=[],selectedXmlIndex=null;
-  const columns=["ID","Código","Descrição","Unidade","NCM","Origem","Preço","Valor IPI fixo","Observações","Situação","Estoque","Preço de custo","Cód. no fornecedor","Fornecedor","Localização","Estoque máximo","Estoque mínimo","Peso líquido (Kg)","Peso bruto (Kg)","GTIN/EAN","GTIN/EAN da Embalagem","Largura do produto","Altura do Produto","Profundidade do produto","Data Validade","Descrição do Produto no Fornecedor","Descrição Complementar","Itens p/ caixa","Produto Variação","Tipo Produção","Classe de enquadramento do IPI","Código na Lista de Serviços","Tipo do item","Grupo de Tags/Tags","Tributos","Código Pai","Código Integração","Grupo de produtos","Marca","CEST","Volumes","Descrição Curta","Cross-Docking","URL Imagens Externas","Link Externo","Meses Garantia no Fornecedor","Clonar dados do pai","Condição do Produto","Frete Grátis","Número FCI","Vídeo","Departamento","Unidade de Medida","Preço de Compra","Valor base ICMS ST para retenção","Valor ICMS ST para retenção","Valor ICMS próprio do substituto","Categoria do produto","Informações Adicionais"];
-  $('xmlInput').addEventListener('change',event=>{Array.from(event.target.files).forEach(file=>{const reader=new FileReader();reader.onload=e=>extractXml(new DOMParser().parseFromString(e.target.result,'text/xml'));reader.readAsText(file)});event.target.value=''});
-  function extractXml(xml){const supplier=xml.querySelector('emit > xNome')?.textContent||'';xml.querySelectorAll('det').forEach(det=>{const prod=det.querySelector('prod'),item={};columns.forEach(col=>item[col]='');const ean=prod?.querySelector('cEAN')?.textContent||'',value=(prod?.querySelector('vUnCom')?.textContent||'0.00').replace('.',','),qty=(prod?.querySelector('qCom')?.textContent||'0').replace('.',',');item['Descrição']=prod?.querySelector('xProd')?.textContent||'Produto sem nome';item['Unidade']=prod?.querySelector('uCom')?.textContent||'';item['NCM']=prod?.querySelector('NCM')?.textContent||'';item['CEST']=prod?.querySelector('CEST')?.textContent||'';item['Preço']=value;item['Preço de custo']=value;item['Estoque']=qty;item['Fornecedor']=supplier;item['GTIN/EAN']=ean?`\t${ean}`:'';item['Código']='P-'+Math.random().toString(36).substring(2,6).toUpperCase();item['Situação']='Ativo';item['Condição do Produto']='Novo';item._selected=true;xmlProducts.push(item)});$('checkTodos').checked=true;renderXmlList()}
-  function renderXmlList(){$('contador').textContent=xmlProducts.length;$('listaProdutos').innerHTML=xmlProducts.map((product,index)=>`<div class="p-3 border rounded-xl cursor-pointer flex gap-3 items-start ${selectedXmlIndex===index?'bg-blue-50 border-blue-300':'bg-white'}"><input type="checkbox" class="mt-1 w-4 h-4 accent-blue-600" data-xml-check="${index}" ${product._selected?'checked':''}><button class="flex-1 overflow-hidden text-left" data-xml-open="${index}"><strong class="block text-sm truncate">${esc(product['Descrição'])}</strong><span class="flex justify-between mt-1 text-xs text-slate-500"><em class="not-italic">Cod: ${esc(product['Código'])}</em><b class="text-emerald-600">R$ ${esc(product['Preço'])}</b></span></button></div>`).join('')||'<p class="text-center text-slate-400 mt-10 text-sm">Nenhum XML carregado.</p>'}
-  $('listaProdutos').addEventListener('click',event=>{const check=event.target.closest('[data-xml-check]');if(check){xmlProducts[Number(check.dataset.xmlCheck)]._selected=check.checked;$('checkTodos').checked=xmlProducts.length>0&&xmlProducts.every(p=>p._selected);return}const open=event.target.closest('[data-xml-open]');if(open)openXmlEditor(Number(open.dataset.xmlOpen))});
-  $('checkTodos').addEventListener('change',event=>{xmlProducts.forEach(p=>p._selected=event.target.checked);renderXmlList()});
-  function openXmlEditor(index){selectedXmlIndex=index;renderXmlList();const product=xmlProducts[index];$('nomeProdutoAtual').textContent=product['Descrição'];$('formularioEditor').innerHTML=columns.map((column,colIndex)=>`<label><span class="cr-label">${esc(column)}</span><input class="cr-input" type="text" data-xml-field="${colIndex}" value="${esc(product[column]||'')}"></label>`).join('')}
-  $('formularioEditor').addEventListener('input',event=>{const input=event.target.closest('[data-xml-field]');if(!input||selectedXmlIndex===null)return;const column=columns[Number(input.dataset.xmlField)];xmlProducts[selectedXmlIndex][column]=input.value;if(column==='Descrição'){$('nomeProdutoAtual').textContent=input.value;renderXmlList()}});
-  $('exportCsv').addEventListener('click',()=>{const selected=xmlProducts.filter(p=>p._selected);if(!selected.length){toast('Não há produtos selecionados para exportar.','error');return}let csv='\ufeff'+columns.map(col=>`"${col}"`).join(';')+'\r\n';selected.forEach(product=>{csv+=columns.map(col=>`"${String(product[col]||'').replace(/"/g,'')}"`).join(';')+'\r\n'});const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`produtos_selecionados_${selected.length}_itens.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
+        if (produtosSelecionados.length === 0) {
+            alert("Não há produtos selecionados para exportar.");
+            return;
+        }
 
-  loadQuick();
-})();
+        let conteudoCSV = "\ufeff"; 
+        conteudoCSV += colunasModelo.map(col => `"${col}"`).join(";") + "\r\n";
+
+        // Usamos agora a lista filtrada (produtosSelecionados)
+        produtosSelecionados.forEach(prod => {
+            let linha = colunasModelo.map(col => {
+                let valor = prod[col] || "";
+                valor = String(valor).replace(/"/g, ''); 
+                return `"${valor}"`;
+            }).join(";");
+            
+            conteudoCSV += linha + "\r\n";
+        });
+
+        const blob = new Blob([conteudoCSV], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        // Coloquei o contador no nome do arquivo para você saber quantos itens exportou
+        link.download = `produtos_selecionados_${produtosSelecionados.length}_itens.csv`;
+        link.click();
+    }
 </script>
 </body>
 </html>
