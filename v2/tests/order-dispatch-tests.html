@@ -61,6 +61,8 @@
     test('Ordem dos canais é WhatsApp, Firebase e Make', plan.sequence.join('>') === 'whatsapp>firebase>make', plan.sequence.join(' > '));
     test('Firebase começa bloqueado', plan.channels.firebase.enabled === false);
     test('Make começa bloqueado', plan.channels.make.enabled === false);
+    test('Firebase aponta somente para homologacao_v2/pedidos', plan.channels.firebase.path === `homologacao_v2/pedidos/${envelope.id}`, plan.channels.firebase.path);
+    test('Plano marca o caminho de produção como bloqueado', plan.channels.firebase.productionPathBlocked === true && !plan.channels.firebase.path.startsWith('pedidos/'));
 
     const whatsappUrl = buildWhatsAppUrl(envelope);
     test('URL do WhatsApp usa wa.me e mensagem codificada', whatsappUrl.startsWith('https://wa.me/') && whatsappUrl.includes('text='), whatsappUrl.slice(0, 100));
@@ -68,6 +70,7 @@
     const first = prepareDispatchSession(envelope);
     test('Primeira preparação cria sessão', first.created === true && first.duplicate === false);
     test('Sessão começa aguardando WhatsApp', first.session.status === DISPATCH_STATUS.WAITING_WHATSAPP);
+    test('Sessão preserva destino isolado do Firebase', first.session.plan.channels.firebase.path === `homologacao_v2/pedidos/${envelope.id}`);
 
     const second = prepareDispatchSession(envelope);
     test('Segunda preparação reutiliza sessão', second.created === false && second.duplicate === true && second.session.id === first.session.id);
@@ -78,7 +81,7 @@
 
     let externalBlocked = false;
     try {
-      await dispatchExternalChannels(envelope, { firebase: async()=>({success:true}), make: async()=>({success:true}) });
+      await dispatchExternalChannels(envelope, { firebase: async () => ({ success: true }), make: async () => ({ success: true }) });
     } catch (error) {
       externalBlocked = /bloqueada|desabilitados/i.test(String(error.message));
     }
