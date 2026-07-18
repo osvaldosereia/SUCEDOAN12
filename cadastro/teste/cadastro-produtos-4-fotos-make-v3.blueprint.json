@@ -1,15 +1,15 @@
 {
-  "name": "Cadastro Produto 4 Fotos - Firebase GitHub OpenAI V3",
+  "name": "Cadastro Produto 4 Fotos - Firebase GitHub OpenAI V3.1 Nativo",
   "flow": [
     {
       "id": 1,
       "module": "gateway:CustomWebHook",
       "version": 1,
-      "parameters": {"hook": 1, "maxResults": 1},
+      "parameters": {"hook": 3413707, "maxResults": 1},
       "mapper": {},
       "metadata": {
         "designer": {"x": -600, "y": 0, "name": "Webhook - aplicativo cadastro/teste"},
-        "restore": {"parameters": {"hook": {"data": {"editable": "true"}, "label": "Crie um novo webhook após importar"}}},
+        "restore": {"parameters": {"hook": {"data": {"editable": "true"}, "label": "Cadastro Produto 4 Fotos V3"}}},
         "parameters": [{"name": "hook", "type": "hook:gateway-webhook", "label": "Webhook", "required": true}, {"name": "maxResults", "type": "number", "label": "Maximum number of results"}],
         "interface": [{"name": "payload", "type": "text"}],
         "advanced": true
@@ -42,14 +42,13 @@
       "mapper": {
         "scope": "roundtrip",
         "variables": [
-          {"name": "OPENAI_API_KEY", "value": "COLE_AQUI_A_CHAVE_OPENAI"},
           {"name": "GITHUB_TOKEN", "value": "COLE_AQUI_UM_TOKEN_GITHUB_NOVO"},
           {"name": "GITHUB_CONTENTS_URL", "value": "https://api.github.com/repos/osvaldosereia/SUCEDOAN12/contents"},
           {"name": "GITHUB_RAW_BASE", "value": "https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main"},
           {"name": "GITHUB_BRANCH", "value": "main"}
         ]
       },
-      "metadata": {"designer": {"x": -100, "y": 0, "name": "CONFIGURE - chaves novas OpenAI e GitHub"}, "advanced": true}
+      "metadata": {"designer": {"x": -100, "y": 0, "name": "CONFIGURE - somente token GitHub"}, "advanced": true}
     },
     {
       "id": 4,
@@ -80,25 +79,27 @@
     },
     {
       "id": 6,
-      "module": "http:MakeRequest",
-      "version": 4,
-      "parameters": {"tlsType": "", "authenticationType": "noAuth"},
+      "module": "openai-gpt-3:analyzeImages",
+      "version": 1,
+      "parameters": {"__IMTCONN__": 7933914},
       "mapper": {
-        "url": "https://api.openai.com/v1/chat/completions",
-        "method": "post",
-        "headers": [{"name": "Authorization", "value": "Bearer {{3.OPENAI_API_KEY}}"}, {"name": "Content-Type", "value": "application/json"}],
-        "contentType": "json", "inputMethod": "jsonString", "shareCookies": false, "parseResponse": true, "allowRedirects": true, "stopOnHttpError": true,
-        "jsonStringBodyContent": "{\"model\":\"gpt-4o\",\"messages\":[{\"role\":\"system\",\"content\":\"Você é especialista brasileiro em cadastro de produtos de supermercado. Leia rigorosamente as imagens sem inventar. A primeira imagem mostra a frente, a segunda o EAN, a terceira a validade e a quarta contém informações adicionais; quando ela repetir a frente, significa que não havia informações adicionais.\"},{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"Código lido antes das fotos: {{2.codigo_lido}}. Categoria: {{2.contexto.categoria}}. Subcategoria: {{2.contexto.subcategoria}}. Observação: {{2.contexto.observacoes}}. Identifique nome comercial completo, marca, embalagem/peso/volume, EAN visível, validade, características reais e informações úteis para descrição. Se não houver peso ou volume, embalagem deve ser unidade. A validade deve sair como AAAA-MM-DD. Se EAN da foto divergir do código lido, reduza a confiança e informe a divergência. Gere termos de pesquisa do produto e do NCM.\"},{\"type\":\"image_url\",\"image_url\":{\"url\":\"{{2.fotos.frente}}\",\"detail\":\"high\"}},{\"type\":\"image_url\",\"image_url\":{\"url\":\"{{2.fotos.ean}}\",\"detail\":\"high\"}},{\"type\":\"image_url\",\"image_url\":{\"url\":\"{{2.fotos.validade}}\",\"detail\":\"high\"}},{\"type\":\"image_url\",\"image_url\":{\"url\":\"{{if(2.fotos.informacoes; 2.fotos.informacoes; 2.fotos.frente)}}\",\"detail\":\"high\"}}]}],\"response_format\":{\"type\":\"json_schema\",\"json_schema\":{\"name\":\"produto_lido_v3\",\"strict\":true,\"schema\":{\"type\":\"object\",\"properties\":{\"nome_lido\":{\"type\":\"string\"},\"marca\":{\"type\":\"string\"},\"embalagem\":{\"type\":\"string\"},\"gtin_lido\":{\"type\":\"string\"},\"gtin_confianca\":{\"type\":\"number\"},\"gtin_divergencia\":{\"type\":\"string\"},\"validade_iso\":{\"type\":\"string\"},\"validade_confianca\":{\"type\":\"number\"},\"informacoes_reais\":{\"type\":\"string\"},\"termos_pesquisa\":{\"type\":\"string\"}},\"required\":[\"nome_lido\",\"marca\",\"embalagem\",\"gtin_lido\",\"gtin_confianca\",\"gtin_divergencia\",\"validade_iso\",\"validade_confianca\",\"informacoes_reais\",\"termos_pesquisa\"],\"additionalProperties\":false}}},\"max_completion_tokens\":1300}",
-        "requestCompressedContent": true
+        "prompt": "Você é especialista brasileiro em cadastro de produtos de supermercado. Leia rigorosamente as quatro imagens sem inventar. A primeira mostra a frente, a segunda o EAN, a terceira a validade e a quarta contém informações adicionais; quando repetir a frente, significa que não havia informações adicionais. Código lido antes das fotos: {{2.codigo_lido}}. Categoria: {{2.contexto.categoria}}. Subcategoria: {{2.contexto.subcategoria}}. Observação: {{2.contexto.observacoes}}. Identifique nome comercial completo, marca, embalagem/peso/volume, EAN visível, validade, características reais e informações úteis para descrição. Se não houver peso ou volume, embalagem deve ser unidade. A validade deve sair como AAAA-MM-DD. Se o EAN da foto divergir do código lido, reduza a confiança e informe a divergência. Responda SOMENTE JSON válido, sem markdown, exatamente com as chaves nome_lido, marca, embalagem, gtin_lido, gtin_confianca, gtin_divergencia, validade_iso, validade_confianca, informacoes_reais e termos_pesquisa.",
+        "images": [
+          {"imageUploadType": "imageFile", "imageFileData": "{{toBinary(replace(2.fotos.frente; \"data:image/jpeg;base64,\"; emptystring); \"base64\")}}"},
+          {"imageUploadType": "imageFile", "imageFileData": "{{toBinary(replace(2.fotos.ean; \"data:image/jpeg;base64,\"; emptystring); \"base64\")}}"},
+          {"imageUploadType": "imageFile", "imageFileData": "{{toBinary(replace(2.fotos.validade; \"data:image/jpeg;base64,\"; emptystring); \"base64\")}}"},
+          {"imageUploadType": "imageFile", "imageFileData": "{{toBinary(replace(if(2.fotos.informacoes; 2.fotos.informacoes; 2.fotos.frente); \"data:image/jpeg;base64,\"; emptystring); \"base64\")}}"}
+        ],
+        "model": "gpt-4o", "max_tokens": "1300", "temperature": "0.1", "top_p": "1", "n_completions": "1"
       },
-      "metadata": {"designer": {"x": 650, "y": 0, "name": "OpenAI Vision - ler as 4 fotos"}}
+      "metadata": {"designer": {"x": 650, "y": 0, "name": "OpenAI nativo - analisar 4 imagens"}, "restore": {"parameters": {"__IMTCONN__": {"data": {"scoped": "true", "connection": "openai-gpt-3"}, "label": "My OpenAI connection"}}}, "parameters": [{"name": "__IMTCONN__", "type": "account:openai-gpt-3", "label": "Connection", "required": true}]}
     },
     {
       "id": 7,
       "module": "json:ParseJSON",
       "version": 1,
       "parameters": {"type": ""},
-      "mapper": {"json": "{{6.data.choices[1].message.content}}"},
+      "mapper": {"json": "{{6.result}}"},
       "metadata": {
         "designer": {"x": 900, "y": 0, "name": "Estruturar leitura visual"},
         "parameters": [{"name": "type", "type": "udt", "label": "Data structure"}],
@@ -120,17 +121,16 @@
     },
     {
       "id": 9,
-      "module": "http:MakeRequest",
-      "version": 4,
-      "parameters": {"tlsType": "", "authenticationType": "noAuth"},
+      "module": "openai-gpt-3:createModelResponse",
+      "version": 1,
+      "parameters": {"__IMTCONN__": 7933914},
       "mapper": {
-        "url": "https://api.openai.com/v1/chat/completions", "method": "post",
-        "headers": [{"name": "Authorization", "value": "Bearer {{3.OPENAI_API_KEY}}"}, {"name": "Content-Type", "value": "application/json"}],
-        "contentType": "json", "inputMethod": "jsonString", "shareCookies": false, "parseResponse": true, "allowRedirects": true, "stopOnHttpError": true,
-        "jsonStringBodyContent": "{\"model\":\"gpt-4o-search-preview\",\"messages\":[{\"role\":\"system\",\"content\":\"Pesquise na web brasileira como especialista em SEO de supermercado e classificação fiscal. Responda somente JSON válido. Não invente marca, variante, peso, volume ou benefícios. Para NCM, priorize Receita Federal, Siscomex, fabricante e distribuidores confiáveis. A Dona Antônia é revendedora, não fabricante.\"},{\"role\":\"user\",\"content\":\"Produto lido: {{7.nome_lido}}. Marca: {{7.marca}}. Embalagem: {{7.embalagem}}. EAN: {{if(7.gtin_lido; 7.gtin_lido; 2.codigo_lido)}}. Categoria: {{2.contexto.categoria}}. Subcategoria: {{2.contexto.subcategoria}}. Informações reais: {{7.informacoes_reais}}. Termos: {{7.termos_pesquisa}}. Pesquise e retorne somente JSON com nome_seo, descricao de 2 a 4 frases, descricao_curta até 120 caracteres, tags como array de 5 a 10 termos, ncm com 8 dígitos, ncm_confianca de 0 a 1, ncm_fonte_url e ncm_justificativa.\"}],\"max_tokens\":1300}",
-        "requestCompressedContent": true
+        "input": "Pesquise na web brasileira como especialista em SEO de supermercado e classificação fiscal. Não invente marca, variante, peso, volume ou benefícios. Para NCM, priorize Receita Federal, Siscomex, fabricante e distribuidores confiáveis. A Dona Antônia é revendedora, não fabricante. Produto lido: {{7.nome_lido}}. Marca: {{7.marca}}. Embalagem: {{7.embalagem}}. EAN: {{if(7.gtin_lido; 7.gtin_lido; 2.codigo_lido)}}. Categoria: {{2.contexto.categoria}}. Subcategoria: {{2.contexto.subcategoria}}. Informações reais: {{7.informacoes_reais}}. Termos: {{7.termos_pesquisa}}. Retorne somente JSON com nome_seo, descricao de 2 a 4 frases, descricao_curta até 120 caracteres, tags como array de 5 a 10 termos, ncm com 8 dígitos, ncm_confianca de 0 a 1, ncm_fonte_url e ncm_justificativa.",
+        "model": "gpt-4o-mini", "store": false,
+        "tools": [{"type": "web_search_preview", "search_context_size": "medium", "user_location": {"city": "Cuiaba", "type": "approximate", "region": "Mato Grosso", "country": "BR", "timezone": "America/Cuiaba"}}],
+        "format": {"type": "json_object"}, "reasoning": {}, "background": false, "truncation": "auto", "temperature": "0.1", "tool_choice": "auto", "inputContentType": "text", "max_output_tokens": "1300", "createConversation": false, "parallel_tool_calls": false
       },
-      "metadata": {"designer": {"x": 1400, "y": 0, "name": "OpenAI Web Search - cadastro e NCM"}}
+      "metadata": {"designer": {"x": 1400, "y": 0, "name": "OpenAI nativo - pesquisa web e NCM"}, "restore": {"parameters": {"__IMTCONN__": {"data": {"scoped": "true", "connection": "openai-gpt-3"}, "label": "My OpenAI connection"}}}, "parameters": [{"name": "__IMTCONN__", "type": "account:openai-gpt-3", "label": "Connection", "required": true}]}
     },
     {
       "id": 10,
@@ -139,7 +139,7 @@
       "parameters": {},
       "mapper": {
         "input": [
-          {"name": "researchText", "value": "{{9.data.choices[1].message.content}}"}, {"name": "firebaseKey", "value": "{{2.firebase_key}}"}, {"name": "codigoLido", "value": "{{2.codigo_lido}}"},
+          {"name": "researchText", "value": "{{9.result}}"}, {"name": "firebaseKey", "value": "{{2.firebase_key}}"}, {"name": "codigoLido", "value": "{{2.codigo_lido}}"},
           {"name": "categoria", "value": "{{2.contexto.categoria}}"}, {"name": "subcategoria", "value": "{{2.contexto.subcategoria}}"}, {"name": "preco", "value": "{{2.contexto.preco}}"}, {"name": "precoCusto", "value": "{{2.contexto.preco_custo}}"}, {"name": "fornecedor", "value": "{{2.contexto.fornecedor}}"}, {"name": "estoque", "value": "{{2.contexto.estoque}}"}, {"name": "gondola", "value": "{{2.contexto.gondola}}"}, {"name": "prateleira", "value": "{{2.contexto.prateleira}}"},
           {"name": "nomeLido", "value": "{{7.nome_lido}}"}, {"name": "marca", "value": "{{7.marca}}"}, {"name": "embalagem", "value": "{{7.embalagem}}"}, {"name": "gtinLido", "value": "{{7.gtin_lido}}"}, {"name": "gtinConfianca", "value": "{{7.gtin_confianca}}"}, {"name": "gtinDivergencia", "value": "{{7.gtin_divergencia}}"}, {"name": "validadeIso", "value": "{{7.validade_iso}}"}, {"name": "validadeConfianca", "value": "{{7.validade_confianca}}"}, {"name": "informacoesReais", "value": "{{7.informacoes_reais}}"},
           {"name": "ncmMinimo", "value": "{{2.regras.ncm_confianca_minima}}"}, {"name": "githubRawBase", "value": "{{3.GITHUB_RAW_BASE}}"}, {"name": "githubImagesPath", "value": "{{2.destinos.github_images_path}}"}, {"name": "timestamp", "value": "{{formatDate(now; \"YYYYMMDD-HHmmssSSS\"; \"America/Cuiaba\")}}"}, {"name": "ano", "value": "{{formatDate(now; \"YYYY\"; \"America/Cuiaba\")}}"}, {"name": "mes", "value": "{{formatDate(now; \"MM\"; \"America/Cuiaba\")}}"}
@@ -161,9 +161,9 @@
       "id": 12,
       "module": "openai-gpt-3:editImage",
       "version": 1,
-      "parameters": {"__IMTCONN__": "CONFIGURE_SUA_CONEXAO_OPENAI"},
+      "parameters": {"__IMTCONN__": 7933914},
       "mapper": {"n": "1", "mask": {}, "size": "1024x1024", "image": [{"fileData": "{{toBinary(replace(2.fotos.frente; \"data:image/jpeg;base64,\"; emptystring); \"base64\")}}", "fileName": "produto-frente.jpg"}], "model": "gpt-image-1.5", "prompt": "{{10.result.imagePrompt}}", "quality": "low", "background": "opaque", "output_format": "webp", "input_fidelity": "high", "output_compression": "25"},
-      "metadata": {"designer": {"x": 2150, "y": 0, "name": "OpenAI - imagem padrão admin"}, "restore": {"parameters": {"__IMTCONN__": {"data": {"scoped": "true", "connection": "openai-gpt-3"}, "label": "Selecione sua conexão OpenAI"}}}, "notes": "Selecione a conexão OpenAI após importar."}
+      "metadata": {"designer": {"x": 2150, "y": 0, "name": "OpenAI nativo - imagem padrão admin"}, "restore": {"parameters": {"__IMTCONN__": {"data": {"scoped": "true", "connection": "openai-gpt-3"}, "label": "My OpenAI connection"}}}, "notes": "Usa a conexão OpenAI nativa já configurada no Make."}
     },
     {
       "id": 13,
@@ -217,6 +217,6 @@
     "scenario": {"roundtrips": 1, "maxErrors": 3, "autoCommit": true, "autoCommitTriggerLast": true, "sequential": false, "slots": null, "confidential": false, "dataloss": false, "dlq": false, "freshVariables": false},
     "designer": {"orphans": []},
     "zone": "us1.make.com",
-    "notes": ["Aplicação separada do admin. Não altera arquivos em producao/.", "Produtos são gravados somente no Firebase /produtos.", "GitHub recebe somente a imagem final em site/img/produtos_3.", "Após importar, crie um webhook novo no módulo 1, configure chaves novas no módulo 3 e selecione a conexão OpenAI no módulo 12."]
+    "notes": ["Aplicação separada do admin. Não altera arquivos em producao/.", "Produtos são gravados somente no Firebase /produtos.", "GitHub recebe somente a imagem final em site/img/produtos_3.", "Os módulos 6, 9 e 12 usam a conexão OpenAI nativa 7933914 e não exigem chave manual no cenário.", "O módulo 3 precisa somente do token GitHub."]
   }
 }
