@@ -2,6 +2,7 @@ import { APP_CONFIG, firebaseNodeUrl } from '../shared/config.js';
 import { assertExternalWriteAllowed, environmentSnapshot } from '../shared/environment.js';
 import { formatWhatsAppMessage } from '../shared/order-delivery.js';
 import { saveHomologationOrder } from './firebase-homologation-order-adapter.js';
+import { sendHomologationOrderToMake } from './make-homologation-order-adapter.js';
 
 const STORAGE_KEY = `${APP_CONFIG.cache.namespace}:order-dispatch-sessions`;
 const CHANNEL_ORDER = Object.freeze(['whatsapp', 'firebase', 'make']);
@@ -94,9 +95,12 @@ export function buildDispatchPlan(envelope) {
       }),
       make: Object.freeze({
         order: 3,
-        mode: 'external_write',
+        mode: 'homologation_webhook',
         enabled: config.makeWriteEnabled === true && Boolean(text(config.makeWebhookUrl)),
-        endpointConfigured: Boolean(text(config.makeWebhookUrl))
+        endpointConfigured: Boolean(text(config.makeWebhookUrl)),
+        contractVersion: Number(config.makeContractVersion || 1),
+        maximumAttempts: Number(config.maximumAttempts || 1),
+        timeoutMs: Number(config.requestTimeoutMs || 12000)
       })
     })
   });
@@ -121,7 +125,7 @@ export function prepareDispatchSession(envelope) {
     channels: {
       whatsapp: channelState(DISPATCH_STATUS.PREPARED, 'Mensagem preparada para abertura manual.'),
       firebase: channelState(DISPATCH_STATUS.BLOCKED, `Escrita bloqueada em ${APP_CONFIG.firebase.nodes.homologationOrders}.`),
-      make: channelState(DISPATCH_STATUS.BLOCKED, 'Envio ao Make bloqueado na homologação.')
+      make: channelState(DISPATCH_STATUS.BLOCKED, 'Webhook do Make bloqueado na homologação.')
     },
     history: [{ at: createdAt, action: 'dispatch_prepared', status: DISPATCH_STATUS.WAITING_WHATSAPP }]
   };
@@ -168,7 +172,7 @@ export function registerChannelResult(envelopeId, channel, result = {}) {
   const nextChannel = channelState(
     success ? DISPATCH_STATUS.SUCCESS : DISPATCH_STATUS.ERROR,
     result.detail || result.error || (success ? 'Concluído.' : 'Falha sem detalhe.'),
-    Number(session.channels?.[channel]?.attempts || 0) + 1
+    Number(session.channels?.[channel]?.attempts || 0) + Math.max(1, Number(result.attempts || 1))
   );
   const channels = { ...clone(session.channels), [channel]: nextChannel };
   const allExternalSuccess = channels.firebase.status === DISPATCH_STATUS.SUCCESS && channels.make.status === DISPATCH_STATUS.SUCCESS;
@@ -177,7 +181,15 @@ export function registerChannelResult(envelopeId, channel, result = {}) {
     updatedAt,
     status: allExternalSuccess ? DISPATCH_STATUS.SUCCESS : success ? DISPATCH_STATUS.PENDING : DISPATCH_STATUS.ERROR,
     channels,
-    history: [{ at: updatedAt, action: `${channel}_${success ? 'success' : 'error'}`, status: nextChannel.status, detail: nextChannel.detail }, ...(session.history || [])].slice(0, 50)
+    history: [{
+      at: updatedAt,
+      action: `${channel}_${success ? 'success' : 'error'}`,
+      status: nextChannel.status,
+      detail: nextChannel.detail,
+      attempts: Number(result.attempts || 1),
+      duplicate: result.duplicate === true,
+      conflict: result.conflict === true
+    }, ...(session.history || [])].slice(0, 50)
   });
 }
 
@@ -199,8 +211,7 @@ export async function dispatchExternalChannels(envelope, adapters = {}) {
   if (!session || session.channels?.whatsapp?.status !== DISPATCH_STATUS.WHATSAPP_OPENED) throw new Error('Registre primeiro a abertura do WhatsApp.');
 
   const firebaseAdapter = typeof adapters.firebase === 'function' ? adapters.firebase : saveHomologationOrder;
-  const makeAdapter = adapters.make;
-  if (typeof makeAdapter !== 'function') throw new Error('Adaptador do Make não informado.');
+  const makeAdapter = typeof adapters.make === 'function' ? adapters.make : sendHomologationOrderToMake;
 
   const firebaseResult = await firebaseAdapter(envelope);
   registerChannelResult(envelope.id, 'firebase', firebaseResult);
