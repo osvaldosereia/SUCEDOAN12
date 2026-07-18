@@ -25,6 +25,8 @@ Esta aplicação é independente do admin. Nenhum arquivo de `producao/` é alte
 6. No módulo 12, mantenha `gpt-image-1.5`.
 7. Salve o cenário, use **Run once** e deixe-o ativo depois do primeiro teste.
 
+O blueprint V3.2 está configurado para a zona `eu1.make.com`. O módulo de resposta usa cabeçalhos no formato `key`/`value` exigido pelo Make e responde `202` antes das etapas demoradas.
+
 O módulo 10 utiliza Make Code. Se a conta do Make não possuir esse aplicativo, o cenário não será executado e precisará ser adaptado para módulos nativos.
 
 ## Configurar a aplicação
@@ -36,6 +38,25 @@ O módulo 10 utiliza Make Code. Se a conta do Make não possuir esse aplicativo,
    - nó: `produtos`
    - webhook já salvo: `https://hook.eu1.make.com/nc3k6i1t24d2ivywdrpphrhm3ij5871e`
 4. Salve.
+
+## Regras necessárias no Firebase
+
+Além de `/produtos`, a aplicação usa `/cadastros_ia_jobs` para mostrar o andamento no celular. Nas regras atuais, inclua este nó e acrescente `gtin` aos índices de produtos:
+
+```json
+"produtos": {
+  ".read": true,
+  ".write": true,
+  ".indexOn": ["descricao_status", "seo_status", "codigo", "gtin", "nome", "marca", "categoria", "last_update"]
+},
+"cadastros_ia_jobs": {
+  ".read": true,
+  ".write": true,
+  ".indexOn": ["status", "etapa", "firebase_key", "codigo_lido", "criado_em", "concluido_em"]
+}
+```
+
+Sem `/cadastros_ia_jobs`, o Make recebe `Permission denied` ao tentar atualizar o progresso. Sem o índice `gtin`, a consulta por EAN pode funcionar, mas o Firebase emitirá aviso de índice e poderá ficar lenta.
 
 ## Funcionamento
 
