@@ -48,7 +48,7 @@ function renderView(product) {
   const saved = readProductDrafts()[id];
   title.textContent = 'Produto individual';
   subtitle.textContent = 'Consulta e edição segura em homologação local.';
-  content.innerHTML = `<section class="product-detail-panel"><button class="back-button" type="button" data-editor-back>← Voltar aos produtos</button>${aiOriginNotice(product)}<div class="product-editor-view"><div class="product-detail-image"><img src="${escapeHtml(imageOf(product))}" alt="${escapeHtml(product.nome)}"></div><div><span class="eyebrow">PRODUTO INDIVIDUAL</span><h2>${escapeHtml(product.nome || 'Produto sem nome')}</h2><div class="detail-badges"><span class="pill">${escapeHtml(product.codigo || 'Sem código')}</span><span class="pill">Estoque ${Number(product.estoque) || 0}</span><span class="pill">${money(product.preco)}</span>${product.source === 'ai-reviewed-draft' ? '<span class="score warn">Origem IA revisada</span>' : ''}${saved ? '<span class="score warn">Rascunho local</span>' : ''}</div><div class="editor-summary-grid">${[['EAN',product.gtin],['NCM',product.ncm],['Categoria',product.categoria],['Subcategoria',product.subcategoria],['Marca',product.marca],['Embalagem',product.embalagem],['Validade',product.validade],['Local',`${product.gondola || '—'} / ${product.prateleira || '—'}`]].map(([label,value]) => `<article><span>${label}</span><strong>${escapeHtml(value || '—')}</strong></article>`).join('')}</div><div class="editor-actions"><button class="primary-action" type="button" data-editor-edit>Editar produto</button>${saved ? '<button class="secondary-action" type="button" data-editor-load-draft>Carregar rascunho</button><button class="danger-action" type="button" data-editor-discard>Descartar rascunho</button>' : ''}</div><div class="notice">Esta edição não grava no Firebase, GitHub, Make ou Bling. O resultado fica somente neste navegador até existir uma etapa de publicação aprovada.</div></div></div></section>`;
+  content.innerHTML = `<section class="product-detail-panel"><button class="back-button" type="button" data-editor-back>← Voltar aos produtos</button>${aiOriginNotice(product)}<div class="product-editor-view"><div class="product-detail-image"><img src="${escapeHtml(imageOf(product))}" alt="${escapeHtml(product.nome)}"></div><div><span class="eyebrow">PRODUTO INDIVIDUAL</span><h2>${escapeHtml(product.nome || 'Produto sem nome')}</h2><div class="detail-badges"><span class="pill">${escapeHtml(product.codigo || 'Sem código')}</span><span class="pill">Estoque ${Number(product.estoque) || 0}</span><span class="pill">${money(product.preco)}</span>${product.source === 'ai-reviewed-draft' ? '<span class="score warn">Origem IA revisada</span>' : ''}${saved ? '<span class="score warn">Rascunho local</span>' : ''}</div><div class="editor-summary-grid">${[['EAN',product.gtin],['NCM',product.ncm],['Categoria',product.categoria],['Subcategoria',product.subcategoria],['Marca',product.marca],['Embalagem',product.embalagem],['Validade',product.validade],['Local',`${product.gondola || '—'} / ${product.prateleira || '—'}`]].map(([label,value]) => `<article><span>${label}</span><strong>${escapeHtml(value || '—')}</strong></article>`).join('')}</div><div class="editor-actions"><button class="primary-action" type="button" data-editor-edit>Editar produto</button>${saved ? `<button class="secondary-action" type="button" data-editor-load-draft>Carregar rascunho</button><button class="secondary-action" type="button" data-editor-homologation="${escapeHtml(id)}">Abrir homologação</button><button class="danger-action" type="button" data-editor-discard>Descartar rascunho</button>` : ''}</div><div class="notice">Esta edição não grava no Firebase, GitHub, Make ou Bling. O resultado fica somente neste navegador até existir uma etapa de publicação aprovada.</div></div></div></section>`;
 }
 
 function renderForm(product, draft = product) {
@@ -71,13 +71,8 @@ function openProduct(product, { isNew = false } = {}) {
   isNew ? renderForm(product) : renderView(product);
 }
 
-function backToProducts() {
-  document.querySelector('[data-module="products"]')?.click();
-}
-
-function formDraft(form) {
-  return normalizeDraft(state.selected, Object.fromEntries(new FormData(form).entries()));
-}
+function backToProducts() { document.querySelector('[data-module="products"]')?.click(); }
+function formDraft(form) { return normalizeDraft(state.selected, Object.fromEntries(new FormData(form).entries())); }
 
 async function openByKey(productKey) {
   await ensureCatalog();
@@ -87,9 +82,8 @@ async function openByKey(productKey) {
 }
 
 document.addEventListener('v2:open-product-editor', async event => {
-  try {
-    await openByKey(event.detail?.productKey);
-  } catch (error) {
+  try { await openByKey(event.detail?.productKey); }
+  catch (error) {
     status.textContent = 'Falha ao abrir editor';
     status.dataset.type = 'error';
     content.innerHTML = `<div class="notice error">${escapeHtml(error.message || error)}</div>`;
@@ -98,8 +92,7 @@ document.addEventListener('v2:open-product-editor', async event => {
 
 document.addEventListener('v2:open-new-product-draft', event => {
   const product = event.detail?.product;
-  if (!product) return;
-  openProduct(product, { isNew: true });
+  if (product) openProduct(product, { isNew: true });
 });
 
 document.addEventListener('submit', event => {
@@ -107,8 +100,7 @@ document.addEventListener('submit', event => {
   event.preventDefault();
   const draft = formDraft(event.target);
   const validation = validateProductDraft(draft);
-  const changes = diffProduct(state.selected, draft);
-  renderReview(state.selected, draft, changes, validation.errors);
+  renderReview(state.selected, draft, diffProduct(state.selected, draft), validation.errors);
 });
 
 document.addEventListener('click', async event => {
@@ -116,16 +108,14 @@ document.addEventListener('click', async event => {
   if (productButton) {
     event.preventDefault();
     event.stopImmediatePropagation();
-    try {
-      await openByKey(productButton.dataset.productDetail);
-    } catch (error) {
+    try { await openByKey(productButton.dataset.productDetail); }
+    catch (error) {
       status.textContent = 'Falha ao abrir editor';
       status.dataset.type = 'error';
       content.innerHTML = `<div class="notice error">${escapeHtml(error.message || error)}</div>`;
     }
     return;
   }
-
   if (!state.selected) return;
   if (event.target.closest('[data-editor-back]')) { backToProducts(); return; }
   if (event.target.closest('[data-editor-edit]')) { renderForm(state.selected); return; }
@@ -134,6 +124,11 @@ document.addEventListener('click', async event => {
   if (event.target.closest('[data-editor-load-draft]')) {
     const saved = readProductDrafts()[productIdentity(state.selected)];
     if (saved) renderForm(state.selected, saved.draft);
+    return;
+  }
+  const homologationButton = event.target.closest('[data-editor-homologation]');
+  if (homologationButton) {
+    document.dispatchEvent(new CustomEvent('v2:open-product-homologation', { detail: { productId: homologationButton.dataset.editorHomologation } }));
     return;
   }
   if (event.target.closest('[data-editor-discard]')) { discardProductDraft(state.selected); renderView(state.selected); return; }
