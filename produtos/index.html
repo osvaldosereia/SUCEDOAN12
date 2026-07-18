@@ -47,8 +47,24 @@
           </aside>
 
           <section class="min-h-0 overflow-y-auto p-4 md:p-5">
+            <div id="sectionEditor" class="hidden space-y-4">
+              <div class="cr-card p-4">
+                <div class="flex items-start justify-between gap-3 mb-4">
+                  <div><h2 id="sectionEditorTitle" class="text-lg font-black">Editar setor</h2><p class="text-xs text-slate-500 font-semibold">Organize o nome, a ordem e a exibição deste setor na Compra Rápida.</p></div>
+                  <button id="deleteSectionCurrent" class="cr-btn danger">Excluir setor</button>
+                </div>
+                <div class="grid md:grid-cols-2 gap-3">
+                  <label><span class="cr-label">Nome do setor</span><input id="sectionTitle" class="cr-input" type="text"></label>
+                  <label><span class="cr-label">Identificador</span><input id="sectionId" class="cr-input" type="text"></label>
+                  <label class="md:col-span-2"><span class="cr-label">Descrição curta</span><input id="sectionDescription" class="cr-input" type="text"></label>
+                  <label><span class="cr-label">Ordem</span><input id="sectionOrder" class="cr-input" type="number" min="1"></label>
+                  <label class="flex items-center gap-2 min-h-[42px] border rounded-xl px-3 bg-slate-50 self-end"><input id="sectionActive" type="checkbox" class="w-4 h-4 accent-green-700"><span class="text-sm font-bold">Setor ativo no site</span></label>
+                </div>
+                <p class="mt-4 text-xs text-slate-500 font-semibold">Use o botão “+ Item” na coluna lateral para incluir novas necessidades neste setor.</p>
+              </div>
+            </div>
             <div id="emptyEditor" class="cr-card min-h-[300px] flex flex-col items-center justify-center text-center p-8">
-              <strong class="text-lg">Selecione um item</strong><span class="mt-2 text-sm text-slate-500">Escolha um produto da lista lateral para editar opções e quantidades.</span>
+              <strong class="text-lg">Selecione um setor ou item</strong><span class="mt-2 text-sm text-slate-500">Edite setores, produtos, opções e quantidades sugeridas.</span>
             </div>
             <div id="itemEditor" class="hidden space-y-4">
               <div class="cr-card p-4">
@@ -123,6 +139,7 @@
   const FIREBASE_CONFIG_URL='https://cedar-chemist-310801-default-rtdb.firebaseio.com/config_compra_rapida.json';
   const CONFIG_FILE_URL='../site/compra-rapida.json';
   const CATALOG_URLS=['../site/produtos-home.json','https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json'];
+  const SECTION_SENTINEL='__section__';
   const state={config:null,catalog:[],catalogMap:new Map(),selectedSectionId:'',selectedItemId:'',dirty:false,source:'',searchTimer:0};
   const $=id=>document.getElementById(id);
 
@@ -145,7 +162,7 @@
   function sections(){return(state.config?.secoes||[]).sort((a,b)=>Number(a.ordem||0)-Number(b.ordem||0))}
   function selectedSection(){return sections().find(s=>String(s.id)===String(state.selectedSectionId))||null}
   function selectedItem(){const section=selectedSection();return section?.itens?.find(i=>String(i.id)===String(state.selectedItemId))||null}
-  function ensureSelection(){const list=sections();if(!list.length){state.selectedSectionId='';state.selectedItemId='';return}if(!selectedSection())state.selectedSectionId=String(list[0].id);const section=selectedSection();const items=(section?.itens||[]).sort((a,b)=>Number(a.ordem||0)-Number(b.ordem||0));if(!items.some(i=>String(i.id)===String(state.selectedItemId)))state.selectedItemId=items[0]?String(items[0].id):''}
+  function ensureSelection(){const list=sections();if(!list.length){state.selectedSectionId='';state.selectedItemId='';return}if(!selectedSection())state.selectedSectionId=String(list[0].id);if(state.selectedItemId===SECTION_SENTINEL)return;const section=selectedSection();const items=(section?.itens||[]).sort((a,b)=>Number(a.ordem||0)-Number(b.ordem||0));if(!items.some(i=>String(i.id)===String(state.selectedItemId)))state.selectedItemId=items[0]?String(items[0].id):SECTION_SENTINEL}
 
   async function loadQuick(){
     $('quickStatus').textContent='Carregando configuração e produtos…';
@@ -168,11 +185,16 @@
   }
 
   function renderEditor(){
-    const item=selectedItem();$('emptyEditor').classList.toggle('hidden',!!item);$('itemEditor').classList.toggle('hidden',!item);if(!item)return;
+    const section=selectedSection(),item=selectedItem(),editingSection=!!section&&state.selectedItemId===SECTION_SENTINEL;
+    $('sectionEditor').classList.toggle('hidden',!editingSection);$('emptyEditor').classList.toggle('hidden',!!section);$('itemEditor').classList.toggle('hidden',!item);
+    if(editingSection){$('sectionEditorTitle').textContent=`Editar setor: ${section.titulo}`;$('sectionTitle').value=section.titulo||'';$('sectionId').value=section.id||'';$('sectionDescription').value=section.descricao||'';$('sectionOrder').value=Number(section.ordem||1);$('sectionActive').checked=section.ativo!==false;return}
+    if(!item)return;
     $('editorTitle').textContent=`Editar: ${item.titulo}`;$('itemTitle').value=item.titulo||'';$('itemId').value=item.id||'';$('itemDescription').value=item.descricao||'';$('itemOrder').value=Number(item.ordem||1);$('itemActive').checked=item.ativo!==false;$('itemEssential').checked=item.essencial!==false;$('qtySmall').value=Number(item.quantidadesSugeridas?.['1-2']||0);$('qtyMedium').value=Number(item.quantidadesSugeridas?.['3-4']||0);$('qtyLarge').value=Number(item.quantidadesSugeridas?.['5+']||0);
     const options=(item.produtos||[]).map(liveSnapshot);$('optionList').innerHTML=options.map((product,index)=>`<article class="product-option ${String(item.produtoPadraoId)===String(product.id)?'default':''} border rounded-xl p-3 flex gap-3 items-center"><img src="${esc(product.imagem)}" alt="" class="w-16 h-16 rounded-xl object-contain bg-slate-50 border" onerror="this.onerror=null;this.src='../img/logoantonia5.png'"><div class="min-w-0 flex-1"><strong class="block text-sm truncate">${esc(product.nome)}</strong><span class="block mt-1 text-xs text-slate-500 truncate">${esc([product.marca,product.embalagem,product.codigo].filter(Boolean).join(' · '))}</span><div class="mt-1 flex gap-3 text-xs font-black"><span class="text-emerald-700">${money(product.preco)}</span><span class="${product.estoque>0?'text-slate-600':'text-rose-600'}">Estoque ${product.estoque}</span></div></div><div class="flex flex-col gap-1"><button class="cr-btn !min-h-[32px] !px-2" data-default-product="${esc(product.id)}">${String(item.produtoPadraoId)===String(product.id)?'✓ Padrão':'Definir padrão'}</button><div class="grid grid-cols-3 gap-1"><button class="cr-btn !min-h-[30px] !px-2" data-move-option="up" data-option-index="${index}" ${index===0?'disabled':''}>↑</button><button class="cr-btn !min-h-[30px] !px-2" data-move-option="down" data-option-index="${index}" ${index===options.length-1?'disabled':''}>↓</button><button class="cr-btn danger !min-h-[30px] !px-2" data-remove-option="${index}">×</button></div></div></article>`).join('')||'<div class="border border-dashed rounded-xl p-6 text-center text-sm text-slate-500">Nenhum produto adicionado.</div>';
   }
 
+  function mutateSection(field,value,options={editor:false}){const section=selectedSection();if(!section)return;section[field]=value;touch(options);if(field==='titulo')$('sectionEditorTitle').textContent=`Editar setor: ${value||'Setor'}`}
+  function bindSectionEditor(){$('sectionTitle').addEventListener('input',e=>mutateSection('titulo',e.target.value));$('sectionDescription').addEventListener('input',e=>mutateSection('descricao',e.target.value,{tree:false,editor:false}));$('sectionOrder').addEventListener('input',e=>mutateSection('ordem',Math.max(1,Number(e.target.value)||1),{editor:false}));$('sectionActive').addEventListener('change',e=>mutateSection('ativo',e.target.checked,{editor:false}));$('sectionId').addEventListener('change',e=>{const section=selectedSection();if(!section)return;const next=slug(e.target.value||section.titulo);if(sections().some(other=>other!==section&&String(other.id)===next)){toast('Já existe um setor com esse identificador.','error');e.target.value=section.id;return}section.id=next;state.selectedSectionId=next;touch()})}
   function mutateItem(field,value,options={editor:false}){const item=selectedItem();if(!item)return;item[field]=value;touch(options);if(field==='titulo')$('editorTitle').textContent=`Editar: ${value||'Item'}`}
   function bindEditor(){
     $('itemTitle').addEventListener('input',e=>mutateItem('titulo',e.target.value));
@@ -184,10 +206,10 @@
     [['qtySmall','1-2'],['qtyMedium','3-4'],['qtyLarge','5+']].forEach(([id,key])=>$(id).addEventListener('input',e=>{const item=selectedItem();if(!item)return;item.quantidadesSugeridas=item.quantidadesSugeridas||{};item.quantidadesSugeridas[key]=Math.max(0,Number(e.target.value)||0);touch({tree:false,editor:false})}));
   }
 
-  function addSection(){const id='setor-'+Date.now().toString(36);state.config.secoes=state.config.secoes||[];state.config.secoes.push({id,titulo:'Novo setor',descricao:'',ordem:state.config.secoes.length+1,ativo:true,itens:[]});state.selectedSectionId=id;state.selectedItemId='';touch();toast('Setor criado.','success')}
+  function addSection(){const id='setor-'+Date.now().toString(36);state.config.secoes=state.config.secoes||[];state.config.secoes.push({id,titulo:'Novo setor',descricao:'',ordem:state.config.secoes.length+1,ativo:true,itens:[]});state.selectedSectionId=id;state.selectedItemId=SECTION_SENTINEL;touch();toast('Setor criado.','success')}
   function addItem(sectionId){const section=sections().find(s=>String(s.id)===String(sectionId));if(!section)return;const id='item-'+Date.now().toString(36);section.itens=section.itens||[];section.itens.push({id,titulo:'Novo item',descricao:'',ordem:section.itens.length+1,ativo:true,essencial:true,produtoPadraoId:'',quantidadesSugeridas:{'1-2':1,'3-4':1,'5+':2},produtos:[]});state.selectedSectionId=section.id;state.selectedItemId=id;touch();toast('Item criado.','success')}
   function deleteSection(sectionId){const section=sections().find(s=>String(s.id)===String(sectionId));if(!section||!confirm(`Excluir o setor "${section.titulo}" e todos os itens?`))return;state.config.secoes=state.config.secoes.filter(s=>String(s.id)!==String(sectionId));state.selectedSectionId='';state.selectedItemId='';touch()}
-  function deleteItem(){const section=selectedSection(),item=selectedItem();if(!section||!item||!confirm(`Excluir o item "${item.titulo}"?`))return;section.itens=section.itens.filter(i=>i!==item);state.selectedItemId='';touch()}
+  function deleteItem(){const section=selectedSection(),item=selectedItem();if(!section||!item||!confirm(`Excluir o item "${item.titulo}"?`))return;section.itens=section.itens.filter(i=>i!==item);state.selectedItemId=SECTION_SENTINEL;touch()}
 
   function openProductSearch(){if(!selectedItem())return;$('productModal').classList.add('show');$('productSearch').value='';renderProductResults('');setTimeout(()=>$('productSearch').focus(),30)}
   function closeProductSearch(){$('productModal').classList.remove('show')}
@@ -200,11 +222,11 @@
   async function importJson(file){try{const parsed=JSON.parse(await file.text());if(!parsed||!Array.isArray(parsed.secoes))throw new Error('JSON sem a lista de setores');state.config=parsed;state.selectedSectionId='';state.selectedItemId='';ensureSelection();setDirty(true);renderTree();renderEditor();toast('JSON importado. Revise e salve no Firebase.','success')}catch(error){toast('Arquivo inválido: '+(error.message||error),'error')}}
 
   document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(item=>item.classList.toggle('active',item===button));$('quick-panel').classList.toggle('panel-hidden',button.dataset.tab!=='quick');$('xml-panel').classList.toggle('panel-hidden',button.dataset.tab!=='xml')}));
-  $('quickTree').addEventListener('click',event=>{const item=event.target.closest('[data-item-id]');if(item){state.selectedSectionId=item.dataset.sectionId;state.selectedItemId=item.dataset.itemId;renderTree();renderEditor();return}const section=event.target.closest('[data-section-id]:not([data-item-id])');if(section){state.selectedSectionId=section.dataset.sectionId;state.selectedItemId='';ensureSelection();renderTree();renderEditor();return}const add=event.target.closest('[data-add-item]');if(add){addItem(add.dataset.addItem);return}const del=event.target.closest('[data-delete-section]');if(del)deleteSection(del.dataset.deleteSection)});
+  $('quickTree').addEventListener('click',event=>{const item=event.target.closest('[data-item-id]');if(item){state.selectedSectionId=item.dataset.sectionId;state.selectedItemId=item.dataset.itemId;renderTree();renderEditor();return}const section=event.target.closest('[data-section-id]:not([data-item-id])');if(section){state.selectedSectionId=section.dataset.sectionId;state.selectedItemId=SECTION_SENTINEL;ensureSelection();renderTree();renderEditor();return}const add=event.target.closest('[data-add-item]');if(add){addItem(add.dataset.addItem);return}const del=event.target.closest('[data-delete-section]');if(del)deleteSection(del.dataset.deleteSection)});
   $('optionList').addEventListener('click',event=>{const item=selectedItem();if(!item)return;const def=event.target.closest('[data-default-product]');if(def){item.produtoPadraoId=def.dataset.defaultProduct;touch();return}const remove=event.target.closest('[data-remove-option]');if(remove){const index=Number(remove.dataset.removeOption);const removed=item.produtos.splice(index,1)[0];if(removed&&String(item.produtoPadraoId)===String(removed.id))item.produtoPadraoId=item.produtos[0]?.id||'';touch();return}const move=event.target.closest('[data-move-option]');if(move){const index=Number(move.dataset.optionIndex),next=move.dataset.moveOption==='up'?index-1:index+1;if(next<0||next>=item.produtos.length)return;[item.produtos[index],item.produtos[next]]=[item.produtos[next],item.produtos[index]];touch()}});
   $('productResults').addEventListener('click',event=>{const button=event.target.closest('[data-add-product]');if(button)addProduct(button.dataset.addProduct)});
   $('productSearch').addEventListener('input',event=>{clearTimeout(state.searchTimer);state.searchTimer=setTimeout(()=>renderProductResults(event.target.value),120)});
-  $('addSection').addEventListener('click',addSection);$('deleteItem').addEventListener('click',deleteItem);$('openProductSearch').addEventListener('click',openProductSearch);$('closeProductModal').addEventListener('click',closeProductSearch);$('productModal').addEventListener('click',event=>{if(event.target===$('productModal'))closeProductSearch()});$('reloadQuick').addEventListener('click',()=>{if(state.dirty&&!confirm('Descartar alterações não salvas?'))return;loadQuick()});$('saveQuick').addEventListener('click',saveQuick);$('exportQuick').addEventListener('click',exportJson);$('importQuick').addEventListener('change',event=>{const file=event.target.files[0];if(file)importJson(file);event.target.value=''});window.addEventListener('beforeunload',event=>{if(!state.dirty)return;event.preventDefault();event.returnValue=''});bindEditor();
+  $('addSection').addEventListener('click',addSection);$('deleteSectionCurrent').addEventListener('click',()=>deleteSection(state.selectedSectionId));$('deleteItem').addEventListener('click',deleteItem);$('openProductSearch').addEventListener('click',openProductSearch);$('closeProductModal').addEventListener('click',closeProductSearch);$('productModal').addEventListener('click',event=>{if(event.target===$('productModal'))closeProductSearch()});$('reloadQuick').addEventListener('click',()=>{if(state.dirty&&!confirm('Descartar alterações não salvas?'))return;loadQuick()});$('saveQuick').addEventListener('click',saveQuick);$('exportQuick').addEventListener('click',exportJson);$('importQuick').addEventListener('change',event=>{const file=event.target.files[0];if(file)importJson(file);event.target.value=''});window.addEventListener('beforeunload',event=>{if(!state.dirty)return;event.preventDefault();event.returnValue=''});bindSectionEditor();bindEditor();
 
   // Importador XML original
   let xmlProducts=[],selectedXmlIndex=null;
