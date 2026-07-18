@@ -1,5 +1,10 @@
 import { APP_CONFIG } from '../shared/config.js';
 import { assertExternalWriteAllowed, environmentSnapshot } from '../shared/environment.js';
+import {
+  buildExpectedBlingResponseContract,
+  normalizeMakeBlingResult,
+  blingResultSummary
+} from './bling-make-result-contract.js';
 
 const DEFAULT_CONFIG = APP_CONFIG.integrations.orderDispatch;
 
@@ -83,16 +88,26 @@ export function buildMakeOrderPayload(envelope) {
     occurredAt: envelope.criadoEm || new Date().toISOString(),
     sentAt: new Date().toISOString(),
     order: clone(envelope.order),
+    expectedResponse: buildExpectedBlingResponseContract(envelope),
     safeguards: Object.freeze({
       productionOrderWriteAllowed: false,
       firebaseTarget: APP_CONFIG.firebase.nodes.homologationOrders,
-      requiresHumanValidation: true
+      requiresHumanValidation: true,
+      blingAccessMode: APP_CONFIG.integrations.bling.mode,
+      directBlingBrowserAccessAllowed: false
     })
   });
 }
 
-export function shouldRetryMakeRequest({ status = 0, error = null, attempt = 1, maximumAttempts = DEFAULT_CONFIG.maximumAttempts } = {}) {
+export function shouldRetryMakeRequest({
+  status = 0,
+  error = null,
+  retryable = false,
+  attempt = 1,
+  maximumAttempts = DEFAULT_CONFIG.maximumAttempts
+} = {}) {
   if (attempt >= Number(maximumAttempts || 1)) return false;
+  if (retryable) return true;
   if (error) return true;
   return [408, 425, 429].includes(Number(status)) || Number(status) >= 500;
 }
@@ -107,6 +122,7 @@ export function createMakeHomologationOrderAdapter(options = {}) {
   const maximumAttempts = Math.max(1, Number(options.maximumAttempts || DEFAULT_CONFIG.maximumAttempts || 1));
   const retryBaseDelayMs = Math.max(0, Number(options.retryBaseDelayMs ?? DEFAULT_CONFIG.retryBaseDelayMs ?? 500));
   const allowedSuffixes = options.allowedHostSuffixes || DEFAULT_CONFIG.makeAllowedHostSuffixes;
+  const requireBlingConfirmation = options.requireBlingConfirmation ?? (DEFAULT_CONFIG.makeRequireBlingConfirmation !== false);
 
   return async function sendHomologationOrderToMake(envelope) {
     const envelopeValidation = validateMakeOrderEnvelope(envelope);
@@ -121,7 +137,8 @@ export function createMakeHomologationOrderAdapter(options = {}) {
         attempts: 0,
         detail: 'Envio ao Make continua desabilitado na configuração.',
         endpointConfigured: webhookValidation.configured,
-        endpointValid: webhookValidation.valid
+        endpointValid: webhookValidation.valid,
+        bling: Object.freeze({ status: 'not_processed', completed: false })
       });
     }
     if (!webhookValidation.valid) throw new Error(webhookValidation.errors.join(' '));
@@ -135,16 +152,18 @@ export function createMakeHomologationOrderAdapter(options = {}) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
       const startedAt = Date.now();
+      let nextDelayMs = retryBaseDelayMs * Math.pow(2, attempt - 1);
 
       try {
         const response = await fetchFn(webhookUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json, text/plain;q=0.9',
+            'Accept': 'application/json',
             'X-DA-Environment': 'homologation',
             'X-DA-Envelope-Id': envelope.id,
-            'X-Idempotency-Key': envelope.fingerprint
+            'X-Idempotency-Key': envelope.fingerprint,
+            'X-DA-Contract-Version': String(payload.contractVersion)
           },
           body: JSON.stringify(payload),
           signal: controller.signal,
@@ -153,26 +172,44 @@ export function createMakeHomologationOrderAdapter(options = {}) {
         const elapsedMs = Date.now() - startedAt;
         const responseText = await response.text().catch(() => '');
         const body = parseBody(responseText);
-        const applicationRejected = body && typeof body === 'object' && (body.success === false || body.ok === false || body.accepted === false);
-        const success = response.ok && !applicationRejected;
-        const detail = detailFromBody(body, success ? 'Pedido aceito pelo Make.' : `Make respondeu HTTP ${response.status}.`);
+        const normalized = normalizeMakeBlingResult(body, envelope, { requireConfirmation: requireBlingConfirmation });
+        const success = response.ok && normalized.success;
+        const fallback = response.ok ? 'O Make respondeu sem confirmar a venda no Bling.' : `Make respondeu HTTP ${response.status}.`;
+        const detail = normalized.detail || detailFromBody(body, fallback);
+        const bling = blingResultSummary(normalized);
 
-        attemptHistory.push({ attempt, status: response.status, elapsedMs, success, detail });
+        attemptHistory.push({
+          attempt,
+          status: response.status,
+          elapsedMs,
+          success,
+          retryable: normalized.retryable,
+          detail,
+          bling: clone(bling)
+        });
+
         if (success) {
           return Object.freeze({
             success: true,
             blocked: false,
             retryable: false,
-            duplicate: body?.duplicate === true,
+            duplicate: bling.duplicate === true,
             attempts: attempt,
             status: response.status,
             detail,
             response: clone(body),
+            bling,
+            contract: normalized.contract,
             history: Object.freeze(attemptHistory)
           });
         }
 
-        const retry = shouldRetryMakeRequest({ status: response.status, attempt, maximumAttempts });
+        const retry = shouldRetryMakeRequest({
+          status: response.status,
+          retryable: normalized.retryable,
+          attempt,
+          maximumAttempts
+        });
         if (!retry) {
           return Object.freeze({
             success: false,
@@ -182,15 +219,19 @@ export function createMakeHomologationOrderAdapter(options = {}) {
             status: response.status,
             detail,
             response: clone(body),
+            bling,
+            contract: normalized.contract,
+            validationErrors: normalized.errors,
             history: Object.freeze(attemptHistory)
           });
         }
+        nextDelayMs = Math.max(nextDelayMs, Number(normalized.retryAfterMs || 0));
       } catch (error) {
         const elapsedMs = Date.now() - startedAt;
         const normalizedDetail = error?.name === 'AbortError'
           ? `Tempo limite de ${timeoutMs} ms ao chamar o Make.`
           : text(error?.message || error) || 'Falha de rede ao chamar o Make.';
-        attemptHistory.push({ attempt, status: 0, elapsedMs, success: false, detail: normalizedDetail });
+        attemptHistory.push({ attempt, status: 0, elapsedMs, success: false, retryable: true, detail: normalizedDetail });
         const retry = shouldRetryMakeRequest({ error, attempt, maximumAttempts });
         if (!retry) {
           return Object.freeze({
@@ -200,6 +241,7 @@ export function createMakeHomologationOrderAdapter(options = {}) {
             attempts: attempt,
             status: 0,
             detail: normalizedDetail,
+            bling: Object.freeze({ status: 'unknown', completed: false }),
             history: Object.freeze(attemptHistory)
           });
         }
@@ -207,8 +249,7 @@ export function createMakeHomologationOrderAdapter(options = {}) {
         clearTimeout(timeoutId);
       }
 
-      const delayMs = retryBaseDelayMs * Math.pow(2, attempt - 1);
-      if (delayMs > 0) await sleepFn(delayMs);
+      if (nextDelayMs > 0) await sleepFn(nextDelayMs);
     }
 
     return Object.freeze({
@@ -218,6 +259,7 @@ export function createMakeHomologationOrderAdapter(options = {}) {
       attempts: maximumAttempts,
       status: 0,
       detail: 'O limite de tentativas do Make foi atingido.',
+      bling: Object.freeze({ status: 'unknown', completed: false }),
       history: Object.freeze(attemptHistory)
     });
   };
@@ -234,6 +276,9 @@ export function makeHomologationSnapshot() {
     endpointValid: webhook.valid,
     endpointHost: webhook.host,
     contractVersion: Number(DEFAULT_CONFIG.makeContractVersion || 1),
+    requireBlingConfirmation: DEFAULT_CONFIG.makeRequireBlingConfirmation !== false,
+    blingAccessMode: APP_CONFIG.integrations.bling.mode,
+    directBlingBrowserAccessAllowed: APP_CONFIG.integrations.bling.directBrowserAccessAllowed === true,
     maximumAttempts: Number(DEFAULT_CONFIG.maximumAttempts || 1),
     timeoutMs: Number(DEFAULT_CONFIG.requestTimeoutMs || 12000),
     errors: webhook.errors
