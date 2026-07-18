@@ -1,6 +1,7 @@
 import { APP_CONFIG, firebaseNodeUrl } from '../shared/config.js';
 import { assertExternalWriteAllowed, environmentSnapshot } from '../shared/environment.js';
 import { formatWhatsAppMessage } from '../shared/order-delivery.js';
+import { saveHomologationOrder } from './firebase-homologation-order-adapter.js';
 
 const STORAGE_KEY = `${APP_CONFIG.cache.namespace}:order-dispatch-sessions`;
 const CHANNEL_ORDER = Object.freeze(['whatsapp', 'firebase', 'make']);
@@ -68,6 +69,8 @@ export function buildDispatchPlan(envelope) {
   const validation = validateDispatchEnvelope(envelope);
   if (!validation.valid) throw new Error(validation.errors.join(' '));
   const config = APP_CONFIG.integrations.orderDispatch;
+  const firebasePath = `${APP_CONFIG.firebase.nodes.homologationOrders}/${envelope.id}`;
+
   return Object.freeze({
     envelopeId: envelope.id,
     fingerprint: envelope.fingerprint,
@@ -83,10 +86,11 @@ export function buildDispatchPlan(envelope) {
       }),
       firebase: Object.freeze({
         order: 2,
-        mode: 'external_write',
+        mode: 'homologation_external_write',
         enabled: config.firebaseWriteEnabled === true,
-        path: `${APP_CONFIG.firebase.nodes.orders}/${envelope.id}`,
-        url: firebaseNodeUrl(`${APP_CONFIG.firebase.nodes.orders}/${envelope.id}`)
+        path: firebasePath,
+        url: firebaseNodeUrl(firebasePath),
+        productionPathBlocked: true
       }),
       make: Object.freeze({
         order: 3,
@@ -116,7 +120,7 @@ export function prepareDispatchSession(envelope) {
     envelope: clone(envelope),
     channels: {
       whatsapp: channelState(DISPATCH_STATUS.PREPARED, 'Mensagem preparada para abertura manual.'),
-      firebase: channelState(DISPATCH_STATUS.BLOCKED, 'Escrita no Firebase bloqueada na homologação.'),
+      firebase: channelState(DISPATCH_STATUS.BLOCKED, `Escrita bloqueada em ${APP_CONFIG.firebase.nodes.homologationOrders}.`),
       make: channelState(DISPATCH_STATUS.BLOCKED, 'Envio ao Make bloqueado na homologação.')
     },
     history: [{ at: createdAt, action: 'dispatch_prepared', status: DISPATCH_STATUS.WAITING_WHATSAPP }]
@@ -188,18 +192,21 @@ export function simulateDispatch(envelope) {
 }
 
 export async function dispatchExternalChannels(envelope, adapters = {}) {
-  assertExternalWriteAllowed('dispatch order to Firebase and Make');
+  assertExternalWriteAllowed('dispatch order to Firebase homologation and Make');
   const config = APP_CONFIG.integrations.orderDispatch;
   if (config.firebaseWriteEnabled !== true || config.makeWriteEnabled !== true) throw new Error('Canais externos continuam desabilitados na configuração.');
   const session = findDispatchSession(envelope.id);
   if (!session || session.channels?.whatsapp?.status !== DISPATCH_STATUS.WHATSAPP_OPENED) throw new Error('Registre primeiro a abertura do WhatsApp.');
-  if (typeof adapters.firebase !== 'function' || typeof adapters.make !== 'function') throw new Error('Adaptadores externos não informados.');
 
-  const firebaseResult = await adapters.firebase(envelope);
+  const firebaseAdapter = typeof adapters.firebase === 'function' ? adapters.firebase : saveHomologationOrder;
+  const makeAdapter = adapters.make;
+  if (typeof makeAdapter !== 'function') throw new Error('Adaptador do Make não informado.');
+
+  const firebaseResult = await firebaseAdapter(envelope);
   registerChannelResult(envelope.id, 'firebase', firebaseResult);
   if (firebaseResult?.success !== true) return findDispatchSession(envelope.id);
 
-  const makeResult = await adapters.make(envelope);
+  const makeResult = await makeAdapter(envelope);
   registerChannelResult(envelope.id, 'make', makeResult);
   return findDispatchSession(envelope.id);
 }
