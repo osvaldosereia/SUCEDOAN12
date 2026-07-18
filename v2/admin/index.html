@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./kit-module.css">
   <link rel="stylesheet" href="./quick-purchase-module.css">
+  <link rel="stylesheet" href="./banner-module.css">
 </head>
 <body>
   <div class="admin-shell">
@@ -20,13 +21,14 @@
         <button type="button" data-module="registrations">Cadastros auxiliares</button>
         <button type="button" data-module="baskets">Cestas básicas</button>
         <button type="button" data-module="kits">Kits promocionais</button>
+        <button type="button" data-module="banners">Banners · auditoria</button>
         <button type="button" data-module="quick-purchase">Compra rápida</button>
         <button type="button" data-module="orders">Pedidos e operação</button>
         <button type="button" data-module="integrations">Integrações</button>
         <button type="button" data-module="publishing">Publicação</button>
         <button type="button" data-module="diagnostics">Diagnóstico</button>
       </nav>
-      <div class="sidebar-note">Os módulos de escrita permanecem bloqueados até o mapeamento completo do admin atual, definição dos contratos e testes de homologação. A administração de banners não faz parte da V2.</div>
+      <div class="sidebar-note">Os módulos de escrita permanecem bloqueados até o mapeamento completo do admin atual, definição dos contratos e testes de homologação. A edição e publicação de banners não fazem parte desta etapa; somente a auditoria está disponível.</div>
     </aside>
     <main class="admin-main">
       <header class="admin-topbar">
@@ -39,5 +41,6 @@
   <script type="module" src="./app.js"></script>
   <script type="module" src="./kit-module.js"></script>
   <script type="module" src="./quick-purchase-module.js"></script>
+  <script type="module" src="./banner-module.js"></script>
 </body>
 </html>
