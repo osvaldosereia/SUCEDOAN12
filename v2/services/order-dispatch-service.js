@@ -2,7 +2,7 @@ import { APP_CONFIG, firebaseNodeUrl } from '../shared/config.js';
 import { assertExternalWriteAllowed, environmentSnapshot } from '../shared/environment.js';
 import { formatWhatsAppMessage } from '../shared/order-delivery.js';
 import { saveHomologationOrder } from './firebase-homologation-order-adapter.js';
-import { sendHomologationOrderToMake } from './make-homologation-order-adapter.js';
+import { createMakeHomologationOrderAdapter } from './make-homologation-order-adapter.js';
 
 const STORAGE_KEY = `${APP_CONFIG.cache.namespace}:order-dispatch-sessions`;
 const CHANNEL_ORDER = Object.freeze(['whatsapp', 'firebase', 'make']);
@@ -207,19 +207,31 @@ export async function dispatchExternalChannels(envelope, adapters = {}) {
   assertExternalWriteAllowed('dispatch order to Firebase homologation and Make');
   const config = APP_CONFIG.integrations.orderDispatch;
   if (config.firebaseWriteEnabled !== true || config.makeWriteEnabled !== true) throw new Error('Canais externos continuam desabilitados na configuração.');
-  const session = findDispatchSession(envelope.id);
+  let session = findDispatchSession(envelope.id);
   if (!session || session.channels?.whatsapp?.status !== DISPATCH_STATUS.WHATSAPP_OPENED) throw new Error('Registre primeiro a abertura do WhatsApp.');
 
+  const maximumAttempts = Math.max(1, Number(config.maximumAttempts || 1));
   const firebaseAdapter = typeof adapters.firebase === 'function' ? adapters.firebase : saveHomologationOrder;
-  const makeAdapter = typeof adapters.make === 'function' ? adapters.make : sendHomologationOrderToMake;
 
-  const firebaseResult = await firebaseAdapter(envelope);
-  registerChannelResult(envelope.id, 'firebase', firebaseResult);
-  if (firebaseResult?.success !== true) return findDispatchSession(envelope.id);
+  if (session.channels?.firebase?.status !== DISPATCH_STATUS.SUCCESS) {
+    if (Number(session.channels?.firebase?.attempts || 0) >= maximumAttempts) throw new Error('Limite de tentativas do Firebase atingido para este pedido.');
+    const firebaseResult = await firebaseAdapter(envelope);
+    session = registerChannelResult(envelope.id, 'firebase', firebaseResult);
+    if (firebaseResult?.success !== true) return session;
+  }
 
+  session = findDispatchSession(envelope.id);
+  if (session.channels?.make?.status === DISPATCH_STATUS.SUCCESS) return session;
+
+  const previousMakeAttempts = Number(session.channels?.make?.attempts || 0);
+  const remainingMakeAttempts = maximumAttempts - previousMakeAttempts;
+  if (remainingMakeAttempts <= 0) throw new Error('Limite de tentativas do Make atingido para este pedido.');
+
+  const makeAdapter = typeof adapters.make === 'function'
+    ? adapters.make
+    : createMakeHomologationOrderAdapter({ maximumAttempts: remainingMakeAttempts });
   const makeResult = await makeAdapter(envelope);
-  registerChannelResult(envelope.id, 'make', makeResult);
-  return findDispatchSession(envelope.id);
+  return registerChannelResult(envelope.id, 'make', makeResult);
 }
 
 export function clearDispatchSessions() {
