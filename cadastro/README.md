@@ -1,5 +1,7 @@
 # Cadastro mobile de produtos — instalação
 
+> Use o blueprint **v2 corrigido**. Ele corrige a configuração do webhook, o modelo de pesquisa web e a compatibilidade do módulo de geração de imagem com o conector OpenAI do Make.
+
 Esta pasta contém dois arquivos principais:
 
 - `index.html`: aplicativo independente, leve e priorizado para celular.
@@ -15,6 +17,16 @@ Esta pasta contém dois arquivos principais:
    - `GITHUB_TOKEN`
 5. No módulo **12**, selecione sua conexão OpenAI.
 6. Salve o cenário e deixe-o ativo.
+
+Se você já importou a versão anterior, crie um cenário vazio e importe novamente o arquivo corrigido. Não reutilize o webhook antigo: abra o módulo 1, crie um novo **Custom webhook** e cole a nova URL no aplicativo.
+
+## Se aparecer “Server error”
+
+1. Confira se o módulo 1 tem um webhook novo selecionado.
+2. No módulo 3, substitua os dois textos `COLE_AQUI...` pelas chaves válidas.
+3. No módulo 12, selecione sua conexão OpenAI e mantenha `gpt-image-1.5`.
+4. Use **Run once**, envie um produto pelo celular e abra o módulo vermelho no histórico da execução.
+5. O módulo 10 usa o aplicativo **Make Code**, disponível nos planos pagos do Make. Se a sua conta for gratuita, esse módulo precisará ser substituído por módulos nativos.
 
 O cenário responde ao celular imediatamente e continua trabalhando. O andamento é salvo em `/cadastros_ia_jobs/{job_id}` no Firebase, evitando timeout enquanto pesquisa o produto e gera a imagem.
 
