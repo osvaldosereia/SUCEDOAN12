@@ -8,9 +8,51 @@
   min-width:0!important;
   width:100%!important;
 }
-@media (min-width: 900px){
+
+/* Compra Rápida sem barra flutuante própria */
+.da-quick-simple-page .da-quick-sticky{
+  display:none!important;
+}
+.da-quick-simple-page .da-quick-bottom-space{
+  display:none!important;
+  height:0!important;
+}
+
+/* Cabeçalhos dos setores mais fortes e fáceis de localizar */
+.da-quick-simple-section{
+  margin-top:26px!important;
+}
+.da-quick-simple-section-head{
+  margin-bottom:11px!important;
+  padding:14px 16px!important;
+  border:1px solid #d7e8dc!important;
+  border-left:6px solid #15803d!important;
+  border-radius:16px!important;
+  background:linear-gradient(135deg,#ffffff 0%,#f0fdf4 100%)!important;
+  box-shadow:0 7px 20px rgba(16,24,40,.05)!important;
+}
+.da-quick-simple-section-head h2{
+  margin:0!important;
+  color:#101828!important;
+  font-size:clamp(23px,2.3vw,29px)!important;
+  line-height:1.05!important;
+  font-weight:950!important;
+  letter-spacing:-.035em!important;
+}
+.da-quick-simple-section-head p{
+  margin:6px 0 0!important;
+  color:#475467!important;
+  font-size:13px!important;
+  line-height:1.4!important;
+  font-weight:700!important;
+}
+
+@media (min-width:900px){
   .da-quick-products-grid{
     grid-template-columns:repeat(4,minmax(0,1fr))!important;
     gap:14px!important;
+  }
+  .da-quick-simple-section-head{
+    padding:16px 19px!important;
   }
 }
