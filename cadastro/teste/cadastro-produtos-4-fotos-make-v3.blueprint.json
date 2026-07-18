@@ -73,7 +73,7 @@
       "mapper": {
         "body": "{\"ok\":true,\"aceito\":true,\"job_id\":\"{{2.job_id}}\",\"mensagem\":\"Cadastro iniciado. Acompanhe pelo Firebase.\"}",
         "status": "202",
-        "headers": [{"name": "Content-Type", "value": "application/json; charset=utf-8"}, {"name": "Access-Control-Allow-Origin", "value": "*"}]
+        "headers": [{"key": "Content-Type", "value": "application/json; charset=utf-8"}, {"key": "Access-Control-Allow-Origin", "value": "*"}]
       },
       "metadata": {"designer": {"x": 400, "y": 0, "name": "Responder imediatamente ao celular"}}
     },
