@@ -1,8 +1,8 @@
 (function () {
   "use strict";
   const VERSION = "2026-07-18-producao-v4-teste",
-    FIREBASE_NODE = "config_compra_rapida",
-    GITHUB_PATH = "site/compra-rapida.json";
+    FIREBASE_NODE = "config_compra_rapida_teste",
+    GITHUB_PATH = "site/compra-rapida-teste.json";
   let config = null,
     selectedSection = "",
     selectedItem = "",
@@ -274,7 +274,7 @@
           (s.itens || []).flatMap((i) => (i.produtos || []).map((p) => p.id)),
         ),
       ).size;
-    panel.innerHTML = `<div class="panel-head"><div class="panel-title"><h2>Compra Rápida</h2><p>Gerencie setores, produtos e quantidades usando o catálogo e as imagens já carregados neste admin.</p></div><div class="toolbar"><button class="btn" data-qr="reload">↻ Recarregar</button><button class="btn gold" data-qr="export">↓ Baixar JSON</button><label class="btn">↑ Importar JSON<input id="qrImportFile" hidden type="file" accept=".json,application/json"></label><button class="btn green" data-qr="save-firebase">☁ Salvar Firebase</button><button class="btn primary" data-qr="save-github">✓ Salvar Firebase + GitHub</button></div></div><div class="notice gold" style="margin-bottom:14px"><strong>Vários produtos por seção:</strong> no site, cada opção terá seletor individual de quantidade. O cliente poderá incluir arroz de duas marcas, vários itens de limpeza ou qualquer combinação da mesma seção.</div><div class="qr-admin-layout"><aside class="qr-admin-card qr-admin-pad qr-admin-side"><div class="qr-admin-summary"><div class="qr-admin-metric"><strong>${sectionCount}</strong><span>setores</span></div><div class="qr-admin-metric"><strong>${itemCount}</strong><span>itens</span></div><div class="qr-admin-metric"><strong>${productCount}</strong><span>produtos</span></div></div><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div><strong>Estrutura</strong><div id="qrStatus" class="qr-status">Pronto</div></div><button class="btn green small" data-qr="add-section">＋ Setor</button></div><span id="qrDirty" class="chip gold qr-dirty ${dirty ? "show" : ""}" style="margin-top:8px">Não salvo</span><div class="qr-tree">${treeHtml()}</div></aside><section class="qr-editor">${editorHtml()}</section></div>`;
+    panel.innerHTML = `<div class="panel-head"><div class="panel-title"><h2>Compra Rápida · teste isolado</h2><p>Gerencie setores, produtos e quantidades usando o catálogo e as imagens já carregados neste admin.</p></div><div class="toolbar"><button class="btn" data-qr="reload">↻ Recarregar</button><button class="btn gold" data-qr="export">↓ Baixar JSON</button><label class="btn">↑ Importar JSON<input id="qrImportFile" hidden type="file" accept=".json,application/json"></label><button class="btn green" data-qr="save-firebase">☁ Salvar teste no Firebase</button><button class="btn primary" data-qr="save-github">✓ Salvar teste no Firebase + GitHub</button></div></div><div class="notice red" style="margin-bottom:14px"><strong>Ambiente de teste:</strong> os salvamentos desta seção usam config_compra_rapida_teste e site/compra-rapida-teste.json. A configuração oficial não será alterada.</div><div class="notice gold" style="margin-bottom:14px"><strong>Vários produtos por seção:</strong> no site, cada opção terá seletor individual de quantidade. O cliente poderá incluir arroz de duas marcas, vários itens de limpeza ou qualquer combinação da mesma seção.</div><div class="qr-admin-layout"><aside class="qr-admin-card qr-admin-pad qr-admin-side"><div class="qr-admin-summary"><div class="qr-admin-metric"><strong>${sectionCount}</strong><span>setores</span></div><div class="qr-admin-metric"><strong>${itemCount}</strong><span>itens</span></div><div class="qr-admin-metric"><strong>${productCount}</strong><span>produtos</span></div></div><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div><strong>Estrutura</strong><div id="qrStatus" class="qr-status">Pronto</div></div><button class="btn green small" data-qr="add-section">＋ Setor</button></div><span id="qrDirty" class="chip gold qr-dirty ${dirty ? "show" : ""}" style="margin-top:8px">Não salvo</span><div class="qr-tree">${treeHtml()}</div></aside><section class="qr-editor">${editorHtml()}</section></div>`;
     bindFields();
   }
   function bindFields() {
@@ -487,7 +487,7 @@
     if (!r.ok) throw new Error(`Firebase ${r.status}`);
     dirty = false;
     render();
-    toast("Compra Rápida salva no Firebase.");
+    toast("Teste da Compra Rápida salvo no Firebase isolado.");
   }
   function githubSettings() {
     return {
@@ -534,7 +534,7 @@
       throw new Error(
         `GitHub ${put.status}: ${(await put.text()).slice(0, 200)}`,
       );
-    toast("Compra Rápida salva no Firebase e no GitHub.");
+    toast("Teste salvo no Firebase e no GitHub sem alterar a versão oficial.");
   }
   function exportJson() {
     const blob = new Blob([JSON.stringify(config, null, 2)], {
