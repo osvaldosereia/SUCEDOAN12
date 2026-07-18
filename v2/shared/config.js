@@ -1,7 +1,7 @@
 export const APP_CONFIG = Object.freeze({
   appName: 'Dona Antônia V2',
   environment: 'homologation',
-  version: '2026.07.18-make-homologation.1',
+  version: '2026.07.18-order-bling-contract.1',
   firebase: Object.freeze({
     baseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
     nodes: Object.freeze({
@@ -39,11 +39,19 @@ export const APP_CONFIG = Object.freeze({
       firebaseWriteEnabled: false,
       makeWriteEnabled: false,
       makeWebhookUrl: '',
-      makeContractVersion: 1,
+      makeContractVersion: 2,
+      makeRequireBlingConfirmation: true,
       makeAllowedHostSuffixes: Object.freeze(['.make.com']),
       requestTimeoutMs: 12000,
       maximumAttempts: 3,
       retryBaseDelayMs: 500
+    }),
+    bling: Object.freeze({
+      mode: 'via_make_only',
+      directBrowserAccessAllowed: false,
+      maximumRequestsPerSecond: 3,
+      maximumRequestsPerDay: 120000,
+      duplicateRequiresSaleReference: true
     })
   })
 });
