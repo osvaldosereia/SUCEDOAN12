@@ -1,12 +1,13 @@
 export const APP_CONFIG = Object.freeze({
   appName: 'Dona Antônia V2',
   environment: 'homologation',
-  version: '2026.07.18-order-flow.1',
+  version: '2026.07.18-order-homologation.1',
   firebase: Object.freeze({
     baseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
     nodes: Object.freeze({
       products: 'produtos',
       orders: 'pedidos',
+      homologationOrders: 'homologacao_v2/pedidos',
       baskets: 'cestas',
       kits: 'kits',
       quickPurchase: 'config_compra_rapida'
