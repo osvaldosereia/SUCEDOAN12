@@ -35,7 +35,10 @@ function dispatchStatusLabel(value) {
   if (value === DISPATCH_STATUS.SUCCESS) return 'Concluído';
   if (value === DISPATCH_STATUS.ERROR) return 'Com erro';
   if (value === DISPATCH_STATUS.PENDING) return 'Processando';
-  return 'Aguardando WhatsApp';
+  if (value === DISPATCH_STATUS.BLOCKED) return 'Bloqueado';
+  if (value === DISPATCH_STATUS.PREPARED) return 'Preparado';
+  if (value === DISPATCH_STATUS.WAITING_WHATSAPP) return 'Aguardando WhatsApp';
+  return 'Pendente';
 }
 
 function dispatchStatusClass(value) {
