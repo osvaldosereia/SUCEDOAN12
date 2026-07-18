@@ -1,0 +1,16 @@
+.da-quick-products-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px!important;
+  overflow:visible!important;
+}
+.da-quick-products-grid>.product-card{
+  min-width:0!important;
+  width:100%!important;
+}
+@media (min-width: 900px){
+  .da-quick-products-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:14px!important;
+  }
+}
