@@ -1,12 +1,12 @@
 {
-  "name": "Cadastro Produto 3 Fotos - Firebase GitHub OpenAI",
+  "name": "Cadastro Produto 3 Fotos - Firebase GitHub OpenAI v2 corrigido",
   "flow": [
     {
       "id": 1,
       "module": "gateway:CustomWebHook",
       "version": 1,
       "parameters": {
-        "hook": 0,
+        "hook": 1,
         "maxResults": 1
       },
       "mapper": {},
@@ -26,6 +26,25 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "hook",
+            "type": "hook:gateway-webhook",
+            "label": "Webhook",
+            "required": true
+          },
+          {
+            "name": "maxResults",
+            "type": "number",
+            "label": "Maximum number of results"
+          }
+        ],
+        "interface": [
+          {
+            "name": "payload",
+            "type": "text"
+          }
+        ],
         "advanced": true
       }
     },
@@ -286,11 +305,11 @@
         "status": "202",
         "headers": [
           {
-            "key": "Content-Type",
+            "name": "Content-Type",
             "value": "application/json; charset=utf-8"
           },
           {
-            "key": "Access-Control-Allow-Origin",
+            "name": "Access-Control-Allow-Origin",
             "value": "*"
           }
         ]
@@ -466,7 +485,7 @@
         "parseResponse": true,
         "allowRedirects": true,
         "stopOnHttpError": true,
-        "jsonStringBodyContent": "{\"model\":\"gpt-5-search-api\",\"messages\":[{\"role\":\"system\",\"content\":\"Pesquise na web brasileira como analista de cadastro fiscal. Responda somente JSON válido, sem markdown. Para NCM, priorize Receita Federal, Siscomex, documentos fiscais de fabricantes e distribuidores confiáveis. Nunca invente um NCM. Se houver dúvida, reduza a confiança.\"},{\"role\":\"user\",\"content\":\"Produto lido: {{7.nome_lido}}. Marca: {{7.marca}}. Embalagem: {{7.embalagem}}. EAN: {{if(7.gtin_lido; 7.gtin_lido; 2.codigo_lido)}}. Categoria: {{2.contexto.categoria}}. Subcategoria: {{2.contexto.subcategoria}}. Termos: {{7.termos_pesquisa}}. Pesquise o nome comercial mais correto e o NCM brasileiro de 8 dígitos. Retorne somente um objeto JSON com os campos nome_oficial, ncm, confianca, fonte_url e justificativa.\"}],\"max_completion_tokens\":900}",
+        "jsonStringBodyContent": "{\"model\":\"gpt-4o-search-preview\",\"messages\":[{\"role\":\"system\",\"content\":\"Pesquise na web brasileira como analista de cadastro fiscal. Responda somente JSON válido, sem markdown. Para NCM, priorize Receita Federal, Siscomex, documentos fiscais de fabricantes e distribuidores confiáveis. Nunca invente um NCM. Se houver dúvida, reduza a confiança.\"},{\"role\":\"user\",\"content\":\"Produto lido: {{7.nome_lido}}. Marca: {{7.marca}}. Embalagem: {{7.embalagem}}. EAN: {{if(7.gtin_lido; 7.gtin_lido; 2.codigo_lido)}}. Categoria: {{2.contexto.categoria}}. Subcategoria: {{2.contexto.subcategoria}}. Termos: {{7.termos_pesquisa}}. Pesquise o nome comercial mais correto e o NCM brasileiro de 8 dígitos. Retorne somente um objeto JSON com os campos nome_oficial, ncm, confianca, fonte_url e justificativa.\"}],\"max_tokens\":900}",
         "requestCompressedContent": true
       },
       "metadata": {
@@ -637,7 +656,7 @@
             "fileName": "produto-frente.jpg"
           }
         ],
-        "model": "gpt-image-2",
+        "model": "gpt-image-1.5",
         "prompt": "{{10.result.imagePrompt}}",
         "quality": "low",
         "background": "opaque",
@@ -651,6 +670,57 @@
           "y": 0,
           "name": "OpenAI - gerar capa fiel em WEBP"
         },
+        "restore": {
+          "expect": {
+            "size": {
+              "mode": "chose",
+              "label": "1024x1024"
+            },
+            "image": {
+              "mode": "chose",
+              "items": [
+                null
+              ]
+            },
+            "model": {
+              "mode": "chose",
+              "label": "gpt-image-1.5"
+            },
+            "quality": {
+              "mode": "chose",
+              "label": "Low"
+            },
+            "background": {
+              "mode": "chose",
+              "label": "Opaque"
+            },
+            "output_format": {
+              "mode": "chose",
+              "label": "WEBP"
+            },
+            "input_fidelity": {
+              "mode": "chose",
+              "label": "High"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "openai-gpt-3"
+              },
+              "label": "Selecione sua conexão OpenAI"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "__IMTCONN__",
+            "type": "account:openai-gpt-3",
+            "label": "Connection",
+            "required": true
+          }
+        ],
         "notes": "Selecione sua conexão OpenAI após importar o blueprint."
       }
     },
@@ -827,9 +897,10 @@
     },
     "zone": "us1.make.com",
     "notes": [
-      "Depois de importar: crie o webhook no módulo 1.",
+      "VERSÃO 2 CORRIGIDA: corrige webhook, pesquisa web e compatibilidade do gerador de imagem no Make.",
+      "Depois de importar: abra o módulo 1 e crie um novo webhook.",
       "No módulo 3, informe OPENAI_API_KEY e GITHUB_TOKEN.",
-      "No módulo 12, selecione sua conexão OpenAI.",
+      "No módulo 12, selecione sua conexão OpenAI e mantenha o modelo gpt-image-1.5.",
       "Execute Run once e envie um cadastro pelo aplicativo para registrar a estrutura do webhook."
     ]
   }
