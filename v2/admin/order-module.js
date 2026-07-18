@@ -2,6 +2,13 @@ import { loadOrders } from '../shared/orders.js';
 import { auditOrders, filterOrderAudits } from './order-audit.js';
 import { readDispatchSessions, DISPATCH_STATUS } from '../services/order-dispatch-service.js';
 import { BLING_STATUS } from '../services/bling-make-result-contract.js';
+import {
+  assessChannelReprocess,
+  prepareChannelReprocess,
+  executePreparedReprocess,
+  cancelPreparedReprocess,
+  findPendingChannelReprocess
+} from '../services/order-reprocess-service.js';
 
 const content = document.getElementById('admin-content');
 const status = document.getElementById('admin-status');
@@ -20,7 +27,10 @@ const state = {
   filter:'',
   selectedId:'',
   selectedLocalId:'',
-  view:'firebase'
+  view:'firebase',
+  reprocessBusy:false,
+  reprocessMessage:'',
+  reprocessType:'notice'
 };
 
 const stageLabel = value => ({
@@ -111,17 +121,41 @@ function blingCard(session) {
   return `<article class="local-channel-card ${blingStatusClass(bling)}"><span>Bling via Make</span><strong>${esc(blingStatusLabel(bling.status))}</strong><small>${esc(bling.detail || details.join(' · ') || 'Aguardando confirmação estruturada do cenário.')}</small><em>${esc(details.join(' · ') || 'Sem referência de venda')}</em></article>`;
 }
 
+function reprocessControls(session, channel) {
+  const assessment = assessChannelReprocess(session.envelopeId, channel);
+  const pending = findPendingChannelReprocess(session.envelopeId, channel);
+
+  if (!assessment.eligible) {
+    return `<div class="reprocess-disabled"><strong>Nova tentativa indisponível</strong><span>${esc(assessment.reasons.join(' '))}</span></div>`;
+  }
+
+  if (pending) {
+    const expires = new Date(pending.expiresAt).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+    return `<div class="reprocess-confirm"><strong>Confirmação obrigatória</strong><span>Digite exatamente até ${esc(expires)}:</span><code>${esc(pending.confirmationPhrase)}</code><input data-reprocess-confirmation="${esc(pending.id)}" autocomplete="off" placeholder="Digite a frase acima"><div class="reprocess-actions"><button type="button" data-execute-reprocess="${esc(pending.id)}" ${state.reprocessBusy ? 'disabled' : ''}>${state.reprocessBusy ? 'Verificando…' : 'Confirmar nova tentativa'}</button><button type="button" class="secondary" data-cancel-reprocess="${esc(pending.id)}" ${state.reprocessBusy ? 'disabled' : ''}>Cancelar</button></div>${assessment.configurationReady ? '' : '<small>A confirmação pode ser preparada, mas a execução externa continua bloqueada pela configuração atual.</small>'}</div>`;
+  }
+
+  return `<form class="reprocess-form" data-reprocess-form data-envelope-id="${esc(session.envelopeId)}" data-channel="${esc(channel)}"><label><span>Motivo da nova tentativa</span><input name="reason" minlength="8" required placeholder="Ex.: falha temporária HTTP 500"></label><div class="reprocess-policy"><span>${assessment.remainingAttempts} tentativa(s) restante(s)</span><span>${assessment.configurationReady ? 'Canal pronto' : 'Execução bloqueada'}</span></div><button type="submit" ${state.reprocessBusy ? 'disabled' : ''}>Preparar reprocessamento</button></form>`;
+}
+
+function channelCard(session, name) {
+  const channel = session.channels?.[name] || {};
+  const controls = ['firebase','make'].includes(name) ? reprocessControls(session, name) : '';
+  return `<article class="local-channel-card ${dispatchStatusClass(channel.status)}"><span>${name === 'whatsapp' ? 'WhatsApp' : name === 'firebase' ? 'Firebase' : 'Make'}</span><strong>${esc(dispatchStatusLabel(channel.status))}</strong><small>${esc(channel.detail || 'Sem detalhe')}</small><em>${Number(channel.attempts || 0)} tentativa(s)</em>${controls}</article>`;
+}
+
+function reprocessNotice() {
+  if (!state.reprocessMessage) return '';
+  return `<div class="notice ${state.reprocessType === 'error' ? 'error' : state.reprocessType === 'success' ? 'success' : ''}">${esc(state.reprocessMessage)}</div>`;
+}
+
 function localSessionDetail(session) {
   const order = session.envelope?.order || {};
-  const history = (session.history || []).slice(0,20).map(item => {
-    const blingMeta = [item.blingStatus, item.blingSaleNumber ? `Venda ${item.blingSaleNumber}` : '', item.blingSaleId ? `ID ${item.blingSaleId}` : ''].filter(Boolean).join(' · ');
+  const history = (session.history || []).slice(0,30).map(item => {
+    const blingMeta = [item.blingStatus, item.blingSaleNumber ? `Venda ${item.blingSaleNumber}` : '', item.blingSaleId ? `ID ${item.blingSaleId}` : '', item.channel ? `Canal ${item.channel}` : ''].filter(Boolean).join(' · ');
     return `<article><strong>${esc(item.action || 'evento')}</strong><span>${esc(item.at ? new Date(item.at).toLocaleString('pt-BR') : '')}</span>${item.detail ? `<small>${esc(item.detail)}</small>` : ''}${blingMeta ? `<small>${esc(blingMeta)}</small>` : ''}</article>`;
   }).join('');
-  const channels = ['whatsapp','firebase','make'].map(name => {
-    const channel = session.channels?.[name] || {};
-    return `<article class="local-channel-card ${dispatchStatusClass(channel.status)}"><span>${name === 'whatsapp' ? 'WhatsApp' : name === 'firebase' ? 'Firebase' : 'Make'}</span><strong>${esc(dispatchStatusLabel(channel.status))}</strong><small>${esc(channel.detail || 'Sem detalhe')}</small><em>${Number(channel.attempts || 0)} tentativa(s)</em></article>`;
-  }).join('') + blingCard(session);
-  content.innerHTML = `<section class="product-detail-panel"><button class="back-button" type="button" data-close-local-order-detail>← Voltar à homologação local</button><div class="panel-head"><div><span class="eyebrow">CHECKOUT V2 · FILA LOCAL</span><h2>${esc(session.envelopeId)}</h2></div><span class="score ${dispatchStatusClass(session.status)}">${esc(dispatchStatusLabel(session.status))}</span></div><div class="order-info-grid"><article><span>Cliente</span><strong>${esc(order.cliente?.nome || '—')}</strong></article><article><span>Telefone</span><strong>${esc(order.cliente?.telefone || '—')}</strong></article><article><span>Endereço</span><strong>${esc([order.entrega?.logradouro,order.entrega?.numero,order.entrega?.bairro,order.entrega?.cidade].filter(Boolean).join(', ') || '—')}</strong></article><article><span>Total</span><strong>${money(order.total)}</strong></article><article><span>Criado</span><strong>${esc(session.createdAt ? new Date(session.createdAt).toLocaleString('pt-BR') : '—')}</strong></article><article><span>Fingerprint</span><strong>${esc(session.fingerprint || '—')}</strong></article></div><div class="local-channel-grid">${channels}</div><section class="panel"><div class="panel-head"><h3>Histórico local</h3><span class="pill">${(session.history || []).length} eventos</span></div><div class="local-dispatch-history">${history || '<div class="empty">Sem eventos registrados.</div>'}</div></section><div class="notice">Bling é executado somente dentro do cenário do Make. Nenhum token ou chamada direta ao ERP é exposto no navegador.</div></section>`;
+  const channels = ['whatsapp','firebase','make'].map(name => channelCard(session, name)).join('') + blingCard(session);
+  content.innerHTML = `<section class="product-detail-panel"><button class="back-button" type="button" data-close-local-order-detail>← Voltar à homologação local</button><div class="panel-head"><div><span class="eyebrow">CHECKOUT V2 · FILA LOCAL</span><h2>${esc(session.envelopeId)}</h2></div><span class="score ${dispatchStatusClass(session.status)}">${esc(dispatchStatusLabel(session.status))}</span></div>${reprocessNotice()}<div class="order-info-grid"><article><span>Cliente</span><strong>${esc(order.cliente?.nome || '—')}</strong></article><article><span>Telefone</span><strong>${esc(order.cliente?.telefone || '—')}</strong></article><article><span>Endereço</span><strong>${esc([order.entrega?.logradouro,order.entrega?.numero,order.entrega?.bairro,order.entrega?.cidade].filter(Boolean).join(', ') || '—')}</strong></article><article><span>Total</span><strong>${money(order.total)}</strong></article><article><span>Criado</span><strong>${esc(session.createdAt ? new Date(session.createdAt).toLocaleString('pt-BR') : '—')}</strong></article><article><span>Fingerprint</span><strong>${esc(session.fingerprint || '—')}</strong></article></div><div class="local-channel-grid">${channels}</div><section class="panel"><div class="panel-head"><h3>Histórico local</h3><span class="pill">${(session.history || []).length} eventos</span></div><div class="local-dispatch-history">${history || '<div class="empty">Sem eventos registrados.</div>'}</div></section><div class="notice">O reprocessamento é exclusivo por canal. WhatsApp e canais já concluídos nunca são reenviados. Bling continua acessível somente pelo Make.</div></section>`;
 }
 
 function renderLocalSessions() {
@@ -172,15 +206,65 @@ async function open() {
   }
 }
 
-document.addEventListener('click', event => {
+document.addEventListener('submit', event => {
+  const form = event.target.closest('[data-reprocess-form]');
+  if (!form) return;
+  event.preventDefault();
+  try {
+    const data = new FormData(form);
+    const prepared = prepareChannelReprocess(form.dataset.envelopeId, form.dataset.channel, data.get('reason'));
+    state.reprocessMessage = prepared.duplicate ? 'Já existe uma confirmação pendente para este canal.' : 'Reprocessamento preparado. Digite a frase de confirmação para continuar.';
+    state.reprocessType = 'success';
+  } catch (error) {
+    state.reprocessMessage = error.message || String(error);
+    state.reprocessType = 'error';
+  }
+  render();
+}, true);
+
+document.addEventListener('click', async event => {
   const module = event.target.closest('[data-module="orders"]');
   if (module) { event.preventDefault(); event.stopImmediatePropagation(); open(); return; }
   const viewButton = event.target.closest('[data-order-view]');
-  if (viewButton) { state.view = viewButton.dataset.orderView; state.selectedId = ''; state.selectedLocalId = ''; render(); return; }
+  if (viewButton) { state.view = viewButton.dataset.orderView; state.selectedId = ''; state.selectedLocalId = ''; state.reprocessMessage = ''; render(); return; }
   const firebaseItem = event.target.closest('[data-order-detail]');
-  if (firebaseItem) { state.selectedId = firebaseItem.dataset.orderDetail; render(); return; }
+  if (firebaseItem) { state.selectedId = firebaseItem.dataset.orderDetail; state.reprocessMessage = ''; render(); return; }
   if (event.target.closest('[data-close-order-detail]')) { state.selectedId = ''; render(); return; }
   const localItem = event.target.closest('[data-local-order-detail]');
-  if (localItem) { state.selectedLocalId = localItem.dataset.localOrderDetail; render(); return; }
-  if (event.target.closest('[data-close-local-order-detail]')) { state.selectedLocalId = ''; render(); }
+  if (localItem) { state.selectedLocalId = localItem.dataset.localOrderDetail; state.reprocessMessage = ''; render(); return; }
+  if (event.target.closest('[data-close-local-order-detail]')) { state.selectedLocalId = ''; state.reprocessMessage = ''; render(); return; }
+
+  const cancelButton = event.target.closest('[data-cancel-reprocess]');
+  if (cancelButton) {
+    try {
+      cancelPreparedReprocess(cancelButton.dataset.cancelReprocess);
+      state.reprocessMessage = 'Solicitação de reprocessamento cancelada.';
+      state.reprocessType = 'success';
+    } catch (error) {
+      state.reprocessMessage = error.message || String(error);
+      state.reprocessType = 'error';
+    }
+    render();
+    return;
+  }
+
+  const executeButton = event.target.closest('[data-execute-reprocess]');
+  if (executeButton) {
+    const requestId = executeButton.dataset.executeReprocess;
+    const confirmation = document.querySelector(`[data-reprocess-confirmation="${CSS.escape(requestId)}"]`)?.value || '';
+    state.reprocessBusy = true;
+    state.reprocessMessage = '';
+    render();
+    try {
+      const result = await executePreparedReprocess(requestId, confirmation);
+      state.reprocessMessage = result.blocked ? result.detail : result.success ? 'Canal reprocessado com sucesso.' : result.result?.detail || 'A nova tentativa falhou.';
+      state.reprocessType = result.blocked ? 'notice' : result.success ? 'success' : 'error';
+    } catch (error) {
+      state.reprocessMessage = error.message || String(error);
+      state.reprocessType = 'error';
+    } finally {
+      state.reprocessBusy = false;
+      render();
+    }
+  }
 }, true);
