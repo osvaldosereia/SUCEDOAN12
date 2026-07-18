@@ -176,16 +176,36 @@
   (() => {
     "use strict";
 
-    const FIREBASE_URL = "https://cedar-chemist-310801-default-rtdb.firebaseio.com";
-    const PRODUTOS_NODE = "produtos";
-    const BASIC_FIELDS = ["validade", "estoque", "embalagem", "gondola", "prateleira"];
+    const FIREBASE_SETTINGS = loadFirebaseSettings();
+        const FIREBASE_URL = FIREBASE_SETTINGS.firebaseUrl;
+        const PRODUTOS_NODE = FIREBASE_SETTINGS.productsNode;
+        const FIREBASE_AUTH = FIREBASE_SETTINGS.firebaseAuth;
+        function loadFirebaseSettings() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("da_cadastro_mobile_settings_v1") || "{}");
+        return {
+          firebaseUrl: String(saved.firebaseUrl || "https://cedar-chemist-310801-default-rtdb.firebaseio.com").replace(/\/+$/, ""),
+          productsNode: String(saved.productsNode || "produtos").replace(/^\/+|\/+$/g, ""),
+          firebaseAuth: String(saved.firebaseAuth || "").trim()
+        };
+      } catch {
+        return {
+          firebaseUrl: "https://cedar-chemist-310801-default-rtdb.firebaseio.com",
+          productsNode: "produtos",
+          firebaseAuth: ""
+        };
+      }
+    }
+        const BASIC_FIELDS = ["validade", "estoque", "embalagem", "gondola", "prateleira"];
     const GONDOLA_OPTIONS = ["01", "09", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25"];
     const PRATELEIRA_OPTIONS = ["A1", "A2", "B1", "B2", "C1", "C2", "D1", "D2", "E1", "E2", "F1", "F2", "01", "16"];
     const PLACEHOLDER = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><rect width='100%' height='100%' fill='#f4f4f4'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#999' font-family='Arial' font-size='18'>sem foto</text></svg>");
     const LS_HISTORY = "da_mobile_basic_product_history_v2";
-    const REQUEST_TIMEOUT_MS = 9000;
-    const REQUEST_RETRIES = 2;
-    const PRODUCT_CACHE_TTL_MS = 120000;
+    const REQUEST_TIMEOUT_MS = 12000;
+    const PRODUCT_CACHE_TIMEOUT_MS = 30000;
+    const REQUEST_RETRIES = 1;
+    const PRODUCT_CACHE_TTL_MS = 300000;
+    const CATALOG_CACHE_TTL_MS = 300000;
     const SCAN_RETRY_MS = 1400;
 
     const state = {
@@ -199,6 +219,9 @@
       productCache: null,
       productCacheLoadedAt: 0,
       productCachePromise: null,
+      catalogCache: null,
+      catalogCacheLoadedAt: 0,
+      catalogCachePromise: null,
       searchSequence: 0,
       searchInProgress: false,
       lastScanCode: "",
@@ -333,7 +356,18 @@
     const clone = (obj) => JSON.parse(JSON.stringify(obj || {}));
     const getImg = (p) => String(p?.url_imagem || p?.imagem || p?.image || p?.img || "").trim() || PLACEHOLDER;
     const getName = (p) => String(p?.nome || p?.titulo || p?.descricao || p?.codigo || "Produto sem nome");
-    const firebaseProductUrl = (key) => `${FIREBASE_URL.replace(/\/$/, "")}/${PRODUTOS_NODE}/${encodeURIComponent(key)}.json`;
+    function firebaseNodeUrl(path, params={}) {
+      const base = FIREBASE_URL.replace(/\/+$/, "");
+      const cleanPath = String(path || "").replace(/^\/+|\/+$/g, "");
+      const url = new URL(`${base}/${cleanPath}.json`);
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
+      });
+      if (FIREBASE_AUTH) url.searchParams.set("auth", FIREBASE_AUTH);
+      return url.toString();
+    }
+    
+        const firebaseProductUrl = (key) => firebaseNodeUrl(`${PRODUTOS_NODE}/${encodeURIComponent(key)}`);
 
     const normalizeFieldValue = (field, value) => {
       if (field === "estoque") return toNum(value);
@@ -418,55 +452,87 @@
 
     const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    async function fetchJson(url, { retries=REQUEST_RETRIES }={}) {
+    async function fetchJson(url, { retries=REQUEST_RETRIES, timeoutMs=REQUEST_TIMEOUT_MS }={}) {
       let lastError;
-
+    
       for (let attempt = 0; attempt <= retries; attempt++) {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    
         try {
-          const r = await fetch(url, {
+          const response = await fetch(url, {
             cache: "no-store",
             signal: controller.signal,
             headers: { "Accept": "application/json" }
           });
-
-          if (!r.ok) {
-            const error = new Error(`Firebase respondeu com erro ${r.status}`);
-            error.status = r.status;
+          const responseText = await response.text();
+          let data = null;
+    
+          if (responseText) {
+            try { data = JSON.parse(responseText); }
+            catch { data = responseText; }
+          }
+    
+          if (!response.ok) {
+            const firebaseMessage = typeof data === "object" && data
+              ? String(data.error || data.message || "")
+              : String(data || "");
+            const error = new Error(firebaseMessage || `Firebase respondeu com erro ${response.status}`);
+            error.status = response.status;
+            error.firebaseMessage = firebaseMessage;
+            error.isFirebaseError = true;
             throw error;
           }
-
-          return await r.json();
+    
+          return data;
         } catch (error) {
           lastError = error;
           const status = Number(error?.status || 0);
           const retryable = error?.name === "AbortError" || !status || status === 408 || status === 429 || status >= 500;
           if (!retryable || attempt >= retries) break;
-          await wait(250 * (attempt + 1));
+          await wait(300 * (attempt + 1));
         } finally {
           clearTimeout(timeout);
         }
       }
-
+    
+      if (lastError?.isFirebaseError) throw lastError;
       const finalError = new Error(lastError?.name === "AbortError"
         ? "O Firebase demorou demais para responder."
         : "Não foi possível comunicar com o Firebase.");
       finalError.cause = lastError;
       finalError.isConnectionError = true;
+      finalError.isTimeout = lastError?.name === "AbortError";
       throw finalError;
     }
 
+    function firebaseErrorMessage(error, action="consultar") {
+      const status = Number(error?.status || error?.cause?.status || 0);
+      const detail = String(error?.firebaseMessage || error?.message || error?.cause?.message || "");
+    
+      if (status === 401 || status === 403 || /permission denied|unauthorized/i.test(detail)) {
+        return `O Firebase bloqueou o acesso ao ${action}. Configure a autenticação administrativa ou revise as regras de /${PRODUTOS_NODE}.`;
+      }
+      if (status === 400 && /index|indexOn/i.test(detail)) {
+        return `O Firebase respondeu, mas falta um índice para pesquisar o código. Adicione índices para gtin, codigo e ean nas regras de /${PRODUTOS_NODE}.`;
+      }
+      if (status === 400) {
+        return `O Firebase recusou a consulta: ${detail || "requisição inválida"}.`;
+      }
+      if (error?.isTimeout || /demorou demais|timeout|aborted/i.test(detail)) {
+        return `O Firebase está respondendo lentamente. Tente novamente; a busca alternativa também excedeu o tempo.`;
+      }
+      return `Não foi possível ${action} no Firebase${detail ? `: ${detail}` : "."}`;
+    }
     async function patchJson(url, data) {
       let lastError;
-
+    
       for (let attempt = 0; attempt <= REQUEST_RETRIES; attempt++) {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
+    
         try {
-          const r = await fetch(url, {
+          const response = await fetch(url, {
             method: "PATCH",
             cache: "no-store",
             signal: controller.signal,
@@ -476,56 +542,116 @@
             },
             body: JSON.stringify(data)
           });
-
-          if (!r.ok) {
-            const error = new Error(`Firebase respondeu com erro ${r.status} ao salvar`);
-            error.status = r.status;
+          const responseText = await response.text();
+          let responseData = null;
+    
+          if (responseText) {
+            try { responseData = JSON.parse(responseText); }
+            catch { responseData = responseText; }
+          }
+    
+          if (!response.ok) {
+            const firebaseMessage = typeof responseData === "object" && responseData
+              ? String(responseData.error || responseData.message || "")
+              : String(responseData || "");
+            const error = new Error(firebaseMessage || `Firebase respondeu com erro ${response.status} ao salvar`);
+            error.status = response.status;
+            error.firebaseMessage = firebaseMessage;
+            error.isFirebaseError = true;
             throw error;
           }
-
-          return await r.json().catch(() => null);
+    
+          return responseData;
         } catch (error) {
           lastError = error;
           const status = Number(error?.status || 0);
           const retryable = error?.name === "AbortError" || !status || status === 408 || status === 429 || status >= 500;
           if (!retryable || attempt >= REQUEST_RETRIES) break;
-          await wait(300 * (attempt + 1));
+          await wait(350 * (attempt + 1));
         } finally {
           clearTimeout(timeout);
         }
       }
-
+    
       throw lastError || new Error("Não foi possível salvar no Firebase.");
     }
-
     async function loadProductCache(forceRefresh=false) {
       const cacheIsFresh = state.productCache && (Date.now() - state.productCacheLoadedAt < PRODUCT_CACHE_TTL_MS);
       if (!forceRefresh && cacheIsFresh) return state.productCache;
       if (state.productCachePromise) return state.productCachePromise;
-
+    
       state.productCachePromise = (async () => {
-        const data = await fetchJson(`${FIREBASE_URL.replace(/\/$/, "")}/${PRODUTOS_NODE}.json`, { retries: 1 });
+        const data = await fetchJson(firebaseNodeUrl(PRODUTOS_NODE), {
+          retries: 0,
+          timeoutMs: PRODUCT_CACHE_TIMEOUT_MS
+        });
+        if (data !== null && (typeof data !== "object" || Array.isArray(data))) {
+          throw new Error("O nó de produtos retornou um formato inesperado.");
+        }
         state.productCache = Object.entries(data || {}).map(([key, product]) => ({ key, product }));
         state.productCacheLoadedAt = Date.now();
         return state.productCache;
       })();
-
+    
       try {
         return await state.productCachePromise;
       } finally {
         state.productCachePromise = null;
       }
     }
-
+    
+        async function loadCatalogCache(forceRefresh=false) {
+      const cacheIsFresh = state.catalogCache && (Date.now() - state.catalogCacheLoadedAt < CATALOG_CACHE_TTL_MS);
+      if (!forceRefresh && cacheIsFresh) return state.catalogCache;
+      if (state.catalogCachePromise) return state.catalogCachePromise;
+    
+      state.catalogCachePromise = (async () => {
+        const catalogUrl = new URL("./site/produtos.json", window.location.href).toString();
+        const data = await fetchJson(catalogUrl, { retries: 1, timeoutMs: 22000 });
+        const entries = Array.isArray(data)
+          ? data.map((product, index) => ({
+              key: String(product?.firebaseKey || product?.key || product?.id || product?.codigo || index),
+              product
+            }))
+          : Object.entries(data || {}).map(([key, product]) => ({ key, product }));
+        state.catalogCache = entries.filter(item => item.product && typeof item.product === "object");
+        state.catalogCacheLoadedAt = Date.now();
+        return state.catalogCache;
+      })();
+    
+      try {
+        return await state.catalogCachePromise;
+      } finally {
+        state.catalogCachePromise = null;
+      }
+    }
+    
+        async function findFromCatalog(code) {
+      const variants = getCodeVariants(code);
+      const catalog = await loadCatalogCache();
+      return catalog.find(({ key, product }) =>
+        [
+          key,
+          product?.firebaseKey,
+          product?.id,
+          product?.codigo,
+          product?.sku,
+          product?.gtin,
+          product?.ean
+        ].some(value => isSameCode(value, variants))
+      ) || null;
+    }
     async function findByQuery(field, value) {
-      const query = `${FIREBASE_URL.replace(/\/$/, "")}/${PRODUTOS_NODE}.json?orderBy=${encodeURIComponent(JSON.stringify(field))}&equalTo=${encodeURIComponent(JSON.stringify(value))}&limitToFirst=1`;
-      const data = await fetchJson(query);
+      const data = await fetchJson(firebaseNodeUrl(PRODUTOS_NODE, {
+        orderBy: JSON.stringify(field),
+        equalTo: JSON.stringify(value),
+        limitToFirst: 1
+      }));
       if (!data || typeof data !== "object") return null;
       const entry = Object.entries(data)[0];
       if (!entry) return null;
       return { key: entry[0], product: entry[1] };
     }
-
     async function findFromCache(code, forceRefresh=false) {
       const variants = getCodeVariants(code);
       const cache = await loadProductCache(forceRefresh);
@@ -548,55 +674,84 @@
       if (!normalized) return null;
       const variants = getCodeVariants(normalized);
       const queryValues = getQueryValues(normalized);
-      let connectionError = null;
-      let completedRequests = 0;
-
+    
       if (state.productCache) {
-        const cached = await findFromCache(normalized).catch(error => {
-          connectionError = error;
-          return null;
-        });
+        const cached = await findFromCache(normalized).catch(() => null);
         if (cached) return cached;
       }
-
-      for (const variant of variants) {
-        try {
-          const direct = await fetchJson(firebaseProductUrl(variant));
-          completedRequests++;
-          if (direct && typeof direct === "object") return { key: variant, product: direct };
-        } catch (error) {
-          connectionError = error;
-        }
+    
+      const directResults = await Promise.allSettled(
+        variants.map(async variant => {
+          const product = await fetchJson(firebaseProductUrl(variant));
+          return product && typeof product === "object" ? { key: variant, product } : null;
+        })
+      );
+      for (const result of directResults) {
+        if (result.status === "fulfilled" && result.value) return result.value;
       }
-
-      const fields = ["gtin", "ean", "codigo", "sku", "firebaseKey", "id"];
-      for (const field of fields) {
-        for (const value of queryValues) {
-          try {
-            const found = await findByQuery(field, value);
-            completedRequests++;
-            if (found) return found;
-          } catch (error) {
-            if (Number(error?.cause?.status || error?.status || 0) === 400) break;
-            connectionError = error;
+    
+      const permissionError = directResults
+        .filter(result => result.status === "rejected")
+        .map(result => result.reason)
+        .find(error => [401, 403].includes(Number(error?.status || error?.cause?.status || 0)));
+      if (permissionError && directResults.every(result => result.status === "rejected")) throw permissionError;
+    
+      const queryFields = ["gtin", "codigo", "ean", "sku"];
+      const queryTasks = [];
+      for (const field of queryFields) {
+        for (const value of queryValues) queryTasks.push(() => findByQuery(field, value));
+      }
+    
+      const queryResults = await Promise.allSettled(queryTasks.map(task => task()));
+      for (const result of queryResults) {
+        if (result.status === "fulfilled" && result.value) return result.value;
+      }
+    
+      const queryErrors = queryResults
+        .filter(result => result.status === "rejected")
+        .map(result => result.reason);
+      const queryPermissionError = queryErrors.find(error =>
+        [401, 403].includes(Number(error?.status || error?.cause?.status || 0))
+      );
+      if (queryPermissionError && queryResults.every(result => result.status === "rejected")) {
+        throw queryPermissionError;
+      }
+    
+      try {
+        const catalogMatch = await findFromCatalog(normalized);
+        if (catalogMatch) {
+          const keyCandidates = [
+            catalogMatch.product?.firebaseKey,
+            catalogMatch.product?.key,
+            catalogMatch.key,
+            catalogMatch.product?.id,
+            catalogMatch.product?.codigo
+          ].map(value => String(value ?? "").trim()).filter(Boolean);
+    
+          for (const key of [...new Set(keyCandidates)]) {
+            try {
+              const product = await fetchJson(firebaseProductUrl(key), { retries: 0 });
+              if (product && typeof product === "object") return { key, product };
+            } catch (error) {
+              if ([401, 403].includes(Number(error?.status || error?.cause?.status || 0))) throw error;
+            }
           }
         }
-      }
-
-      try {
-        const cached = await findFromCache(normalized, true);
-        if (cached) return cached;
-        completedRequests++;
       } catch (error) {
-        connectionError = error;
+        if ([401, 403].includes(Number(error?.status || error?.cause?.status || 0))) throw error;
       }
-
-      if (!completedRequests && connectionError) throw connectionError;
-      if (connectionError && !state.productCache) throw connectionError;
-
-      return null;
+    
+      try {
+        return await findFromCache(normalized, true);
+      } catch (cacheError) {
+        const indexError = queryErrors.find(error =>
+          Number(error?.status || error?.cause?.status || 0) === 400 &&
+          /index|indexOn/i.test(String(error?.firebaseMessage || error?.message || ""))
+        );
+        if (indexError) throw indexError;
+        throw cacheError;
+      }
     }
-
     function makeOptions(options, currentValue, emptyLabel) {
       const current = String(currentValue ?? "").trim();
       const list = ["", ...options];
@@ -786,7 +941,7 @@
         console.error("Falha ao consultar produto no Firebase:", error);
         if (searchId !== state.searchSequence) return;
         if (fromCamera) state.lastScanSucceeded = false;
-        setStatus("Falha de comunicação com o Firebase. Vou tentar novamente; você também pode tocar em Buscar produto.", "err");
+        setStatus(firebaseErrorMessage(error, "consultar produtos"), "err");
         return;
       } finally {
         if (searchId === state.searchSequence) state.searchInProgress = false;
@@ -859,7 +1014,7 @@
         setStatus(`OK. Salvo: ${changed.join(", ")}.`, "ok", true);
       } catch (e) {
         console.error(e);
-        setStatus("Erro ao salvar no Firebase. Confira as regras de escrita.", "err");
+        setStatus(firebaseErrorMessage(e, "salvar o produto"), "err");
       }
     }
 
