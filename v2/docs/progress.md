@@ -7,16 +7,35 @@
 - bloqueio de catálogo vazio;
 - detecção de queda anormal e IDs duplicados;
 - cache controlado;
-- carrinho compartilhado;
-- favoritos compartilhados;
+- carrinho e favoritos compartilhados;
 - roteamento por hash;
-- página inicial de catálogo;
-- busca e filtro por categoria;
-- detalhe do produto;
-- painel de favoritos;
-- carrinho lateral;
-- painel administrativo inicial somente leitura;
-- testes básicos de catálogo, favoritos e rotas.
+- página inicial de catálogo, busca, categorias e detalhe do produto;
+- cestas, kits e Compra rápida resolvidos por referências do catálogo;
+- painel administrativo modular em modo seguro.
+
+## Cadastro de produtos em homologação
+
+- consulta por EAN;
+- captura separada de fotos;
+- compressão e armazenamento local em IndexedDB;
+- preparação de pacote para Make/OpenAI;
+- validação e revisão humana da resposta da IA;
+- editor com comparação de alterações;
+- rascunhos locais;
+- checklist e ficha de homologação;
+- publicação externa ainda bloqueada.
+
+## Checkout e pedidos em homologação
+
+- validação de cliente, endereço, pagamento e pedido mínimo;
+- geração de envelope com fingerprint;
+- fila local protegida contra duplicidade;
+- ordem de canais definida: WhatsApp, Firebase e Make;
+- mensagem e URL do WhatsApp preparadas para abertura manual;
+- sessão de despacho com histórico por canal;
+- Firebase e Make desabilitados por configuração;
+- fila de homologação local visível no admin, separada dos pedidos reais;
+- teste de contrato para ordem, idempotência e bloqueio externo.
 
 ## Regras de segurança mantidas
 
@@ -25,15 +44,16 @@
 - nenhuma alteração na branch `main`;
 - nenhuma escrita no Firebase;
 - nenhum webhook real acionado;
-- checkout permanece bloqueado em homologação.
+- nenhum envio automático pelo WhatsApp;
+- checkout e publicação permanecem bloqueados para uso real.
 
-## Próximas etapas
+## Próximas etapas prioritárias
 
-1. sessões da página inicial e categorias;
-2. paginação ou carregamento progressivo;
-3. ofertas, cestas e kits com contratos de dados próprios;
-4. Compra rápida baseada apenas em referências de produtos;
-5. checkout de homologação sem envio externo;
-6. fila local de pedidos e validação do payload;
-7. integração controlada com ambiente de teste;
-8. admin modular com edição e auditoria.
+1. executar o checkout em navegador e aparelho reais;
+2. criar adaptador de gravação do pedido em um nó exclusivo de homologação no Firebase;
+3. criar adaptador de webhook de homologação do Make com timeout e repetição controlada;
+4. validar o cenário do Make até o Bling sem criar venda real;
+5. adicionar confirmação e reprocessamento por canal no admin;
+6. finalizar cupom, entrega e agendamento;
+7. implementar separação, conferência e etiqueta;
+8. concluir testes automatizados e plano de migração.
