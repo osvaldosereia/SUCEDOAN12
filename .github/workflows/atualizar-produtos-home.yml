@@ -1,0 +1,50 @@
+name: Atualizar produtos da home
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - site/produtos.json
+      - scripts/atualizar-produtos-home.mjs
+      - .github/workflows/atualizar-produtos-home.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atualizar-produtos-home
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Baixar catálogo atual
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Gerar catálogo compacto da home
+        run: node scripts/atualizar-produtos-home.mjs
+
+      - name: Publicar produtos-home.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- site/produtos-home.json; then
+            echo "produtos-home.json já está sincronizado."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/produtos-home.json
+          git commit -m "Sincroniza produtos-home com o catálogo completo"
+          git push
