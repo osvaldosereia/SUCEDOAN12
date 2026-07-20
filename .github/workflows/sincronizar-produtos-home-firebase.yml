@@ -1,0 +1,52 @@
+name: Sincronizar produtos da home com Firebase
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [sincronizar_produtos_home]
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sincronizar-produtos-home-firebase
+  cancel-in-progress: true
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Ler Firebase e gerar catálogo compacto
+        env:
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
+        run: node scripts/sincronizar-produtos-home-firebase.mjs
+
+      - name: Publicar produtos-home.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- site/produtos-home.json; then
+            echo "produtos-home.json já está sincronizado com o Firebase."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/produtos-home.json
+          git commit -m "Sincroniza produtos-home diretamente do Firebase"
+          git push
