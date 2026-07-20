@@ -68,3 +68,4 @@ if (html.includes("saveGithubFiles({produtos:productsObject()")) {
 
 await writeFile(ADMIN_PATH, html, "utf8");
 console.log("Admin atualizado: Firebase continua como fonte completa e site/produtos-home.json passa a ser publicado como catálogo compacto.");
+// Alteração intencional para disparar o workflow após sua instalação.
