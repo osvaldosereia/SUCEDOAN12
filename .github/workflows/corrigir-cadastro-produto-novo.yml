@@ -1,0 +1,47 @@
+name: Corrigir cadastro de produto novo
+
+on:
+  push:
+    paths:
+      - '.github/workflows/corrigir-cadastro-produto-novo.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  corrigir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ajustar valores iniciais do produto novo
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('producao/index.html')
+          text = path.read_text(encoding='utf-8')
+
+          old = 'situacao:"A",ncm:"",validade:"",categoria:"",subcategoria:"",subsubcategoria:"",marca:"",embalagem:"",fornecedor:""'
+          new = 'situacao:"A",ncm:"",validade:"",categoria:"A CLASSIFICAR",subcategoria:"",subsubcategoria:"",marca:"",embalagem:"UN",fornecedor:""'
+
+          if old not in text:
+              raise SystemExit('Trecho esperado não encontrado; nenhuma alteração foi aplicada.')
+
+          text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Confirmar alteração
+        run: |
+          git diff --check
+          git diff -- producao/index.html
+      - name: Publicar correção
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add producao/index.html
+          git commit -m "Corrige cadastro de produto novo no Firebase"
+          git push
