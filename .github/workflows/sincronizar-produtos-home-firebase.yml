@@ -6,6 +6,13 @@ on:
     types: [sincronizar_produtos_home]
   schedule:
     - cron: "*/5 * * * *"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/sincronizar-produtos-home-firebase.yml"
+      - "scripts/sincronizar-produtos-home-firebase.mjs"
+      - "producao/catalog-sync-admin.js"
+      - "producao/nfe-import.js"
 
 permissions:
   contents: write
