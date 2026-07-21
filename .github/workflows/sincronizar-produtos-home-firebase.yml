@@ -27,10 +27,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Baixar repositório
+      - name: Baixar somente os arquivos necessários
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            index.html
+            producao/index.html
+            site/app-version.json
+            site/produtos-home.json
+            site/produtos.json
+            scripts/corrigir-sincronizacao-catalogos.mjs
+            scripts/sincronizar-produtos-home-firebase.mjs
 
       - name: Configurar Node.js
         uses: actions/setup-node@v5
@@ -51,7 +60,7 @@ jobs:
 
           for attempt in 1 2 3 4; do
             echo "Tentativa ${attempt}: atualizando a base e lendo o Firebase..."
-            git fetch origin "${GITHUB_REF_NAME}"
+            git fetch --depth=1 origin "${GITHUB_REF_NAME}"
             git reset --hard "origin/${GITHUB_REF_NAME}"
 
             node scripts/corrigir-sincronizacao-catalogos.mjs
