@@ -2,6 +2,7 @@ import { createSign } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 
 const PRODUCTS_HOME_PATH = process.env.PRODUCTS_HOME_PATH || "site/produtos-home.json";
+const PRODUCTS_FULL_PATH = process.env.PRODUCTS_FULL_PATH || "site/produtos.json";
 let firebaseAccessToken;
 
 const text = value => String(value ?? "").trim();
@@ -79,6 +80,8 @@ function isActive(product) {
 
 function compactProduct(key, product = {}) {
   const compact = {
+    firebaseKey: key,
+    id: text(product.id || key),
     codigo: text(product.codigo || product.sku || product.id || key),
     nome: text(product.nome || product.name || product.titulo),
     categoria: text(product.categoria),
@@ -104,16 +107,19 @@ function compactProduct(key, product = {}) {
 
 async function run() {
   const products = await loadFirebaseProducts();
-  const compact = Object.fromEntries(
-    Object.entries(products).map(([key, product]) => [key, compactProduct(key, product)])
-  );
+  const entries = Object.entries(products);
+  const compact = Object.fromEntries(entries.map(([key, product]) => [key, compactProduct(key, product)]));
 
-  if (Object.keys(compact).length !== Object.keys(products).length) {
+  if (Object.keys(compact).length !== entries.length) {
     throw new Error("A quantidade de produtos compactados diverge do Firebase.");
   }
 
-  await writeFile(PRODUCTS_HOME_PATH, `${JSON.stringify(compact, null, 2)}\n`, "utf8");
-  console.log(`${PRODUCTS_HOME_PATH} sincronizado diretamente do Firebase com ${Object.keys(compact).length} produtos.`);
+  await Promise.all([
+    writeFile(PRODUCTS_FULL_PATH, `${JSON.stringify(products, null, 2)}\n`, "utf8"),
+    writeFile(PRODUCTS_HOME_PATH, `${JSON.stringify(compact, null, 2)}\n`, "utf8")
+  ]);
+
+  console.log(`${PRODUCTS_FULL_PATH} e ${PRODUCTS_HOME_PATH} sincronizados diretamente do Firebase com ${entries.length} produtos.`);
 }
 
 run().catch(error => {
