@@ -1,42 +1,31 @@
-name: Sincronizar produtos-home com Firebase
-run-name: Validar Firebase único · ${{ github.event_name }}
+name: Aplicar Firebase como fonte única
+run-name: Aplicar Firebase único · ${{ github.event_name }}
 
 on:
-  workflow_dispatch:
-  repository_dispatch:
-    types: [sincronizar_produtos_home]
-  schedule:
-    - cron: "*/5 * * * *"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/sincronizar-produtos-home-firebase.yml"
-      - "scripts/sincronizar-produtos-home-firebase.mjs"
-      - "scripts/corrigir-sincronizacao-catalogos.mjs"
-      - "producao/catalog-sync-admin.js"
-      - "producao/nfe-import.js"
   pull_request:
     branches: [main]
     paths:
       - ".github/workflows/sincronizar-produtos-home-firebase.yml"
       - "scripts/sincronizar-produtos-home-firebase.mjs"
       - "scripts/corrigir-sincronizacao-catalogos.mjs"
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: sincronizar-produtos-home-firebase-${{ github.event.pull_request.number || github.ref }}
+  group: aplicar-firebase-unico-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  sincronizar:
+  aplicar:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - name: Baixar somente os arquivos necessários
+      - name: Baixar a branch da alteração
         uses: actions/checkout@v5
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
           show-progress: false
           sparse-checkout-cone-mode: false
@@ -69,37 +58,17 @@ jobs:
         with:
           node-version: 22
 
-      - name: Executar migração com diagnóstico
-        id: migrate
+      - name: Aplicar migração
         shell: bash
         env:
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
         run: |
-          set +e
-          touch migration.log
-          node -e "const fs=require('fs');const p='.github/workflows/processar-ofertas.yml';const legacy=['site','produtos.json'].join('/');const s=fs.readFileSync(p,'utf8');fs.writeFileSync(p,s.split(/\\r?\\n/).filter(line=>!line.includes(legacy)).join('\\n'));" >> migration.log 2>&1
-          code=$?
-          if [ "$code" -eq 0 ]; then node scripts/corrigir-sincronizacao-catalogos.mjs >> migration.log 2>&1; code=$?; fi
-          if [ "$code" -eq 0 ]; then node scripts/sincronizar-produtos-home-firebase.mjs >> migration.log 2>&1; code=$?; fi
-          cat migration.log
-          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Guardar diagnóstico
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: diagnostico-remocao-produtos-json
-          path: migration.log
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Interromper se a migração falhou
-        if: steps.migrate.outputs.exit_code != '0'
-        shell: bash
-        run: exit 1
+          set -euo pipefail
+          node -e "const fs=require('fs');const p='.github/workflows/processar-ofertas.yml';const legacy=['site','produtos.json'].join('/');const s=fs.readFileSync(p,'utf8');fs.writeFileSync(p,s.split(/\\r?\\n/).filter(line=>!line.includes(legacy)).join('\\n'));"
+          node scripts/corrigir-sincronizacao-catalogos.mjs
+          node scripts/sincronizar-produtos-home-firebase.mjs
 
       - name: Validar fonte única
         shell: bash
@@ -118,8 +87,7 @@ jobs:
           node --check scripts/processar-ofertas.mjs
           node --check scripts/reconciliar-publicacao-ofertas.mjs
 
-      - name: Publicar correção e catálogo leve
-        if: github.event_name != 'pull_request'
+      - name: Gravar arquivos transformados na branch
         shell: bash
         run: |
           set -euo pipefail
@@ -127,8 +95,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
-            echo "O repositório já está no modelo Firebase único."
+            echo "A branch já contém a migração completa."
             exit 0
           fi
-          git commit -m "Elimina site/produtos.json e mantém Firebase como fonte única"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git commit -m "Elimina referências ao catálogo completo e usa Firebase"
+          target="${{ github.head_ref || github.ref_name }}"
+          git push origin "HEAD:${target}"
