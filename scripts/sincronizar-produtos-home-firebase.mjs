@@ -1,6 +1,7 @@
 import { createSign } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 
+// Catálogo público v18: somente produtos disponíveis e caminhos de imagem portáveis.
 const DEFAULT_FIREBASE_DATABASE_URL = "https://cedar-chemist-310801-default-rtdb.firebaseio.com";
 const PRODUCTS_HOME_PATH = process.env.PRODUCTS_HOME_PATH || "site/produtos-home.json";
 let firebaseAccessToken;
