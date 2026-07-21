@@ -1,5 +1,5 @@
-name: Sincronizar catálogos de produtos com Firebase
-run-name: Catálogos oficiais · ${{ github.event_name }}
+name: Sincronizar produtos-home com Firebase
+run-name: Catálogo leve oficial · ${{ github.event_name }}
 
 on:
   workflow_dispatch:
@@ -20,13 +20,13 @@ permissions:
   contents: write
 
 concurrency:
-  group: sincronizar-catalogos-produtos-firebase
+  group: sincronizar-produtos-home-firebase
   cancel-in-progress: true
 
 jobs:
   sincronizar:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - name: Baixar somente os arquivos necessários
         uses: actions/checkout@v5
@@ -35,19 +35,34 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             index.html
+            site/index.html
             producao/index.html
+            producao/pedido.html
+            producao/catalog-sync-admin.js
+            producao/nfe-import.js
+            estoque.html
             site/app-version.json
             site/produtos-home.json
             site/produtos.json
+            site/ofertas-automaticas-estado.json
+            site/ofertas-historico.json
+            site/banners/banners.json
+            cadastro/teste/README.md
             scripts/corrigir-sincronizacao-catalogos.mjs
             scripts/sincronizar-produtos-home-firebase.mjs
+            scripts/processar-ofertas.mjs
+            scripts/reconciliar-publicacao-ofertas.mjs
+            scripts/atualizar-admin-produtos-home.mjs
+            .github/workflows/processar-ofertas.yml
+            .github/workflows/atualizar-admin-produtos-home.yml
+            .github/workflows/sincronizar-produtos-home-firebase.yml
 
       - name: Configurar Node.js
         uses: actions/setup-node@v5
         with:
           node-version: 22
 
-      - name: Corrigir leitura e publicar catálogos oficiais
+      - name: Eliminar catálogo antigo e gerar produtos-home
         shell: bash
         env:
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
@@ -55,34 +70,54 @@ jobs:
           FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
         run: |
           set -euo pipefail
+          node scripts/corrigir-sincronizacao-catalogos.mjs
+          node scripts/sincronizar-produtos-home-firebase.mjs
+
+      - name: Validar fonte única
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e site/produtos.json
+          test -s site/produtos-home.json
+          if git grep -n -F 'site/produtos.json' -- \
+            index.html site/index.html producao/index.html producao/pedido.html estoque.html \
+            scripts/processar-ofertas.mjs scripts/reconciliar-publicacao-ofertas.mjs \
+            .github/workflows/processar-ofertas.yml cadastro/teste/README.md; then
+            echo 'Ainda há referência operacional a site/produtos.json.' >&2
+            exit 1
+          fi
+          node --check scripts/sincronizar-produtos-home-firebase.mjs
+          node --check scripts/processar-ofertas.mjs
+          node --check scripts/reconciliar-publicacao-ofertas.mjs
+
+      - name: Publicar correção e catálogo leve
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          tracked_files=(index.html producao/index.html site/app-version.json site/produtos-home.json site/produtos.json)
 
           for attempt in 1 2 3 4; do
-            echo "Tentativa ${attempt}: atualizando a base e lendo o Firebase..."
-            git fetch --depth=1 origin "${GITHUB_REF_NAME}"
-            git reset --hard "origin/${GITHUB_REF_NAME}"
-
-            node scripts/corrigir-sincronizacao-catalogos.mjs
-            node scripts/sincronizar-produtos-home-firebase.mjs
-
-            if git diff --quiet -- "${tracked_files[@]}"; then
-              echo "A leitura e os catálogos já estão sincronizados com o Firebase."
+            if git diff --quiet && git diff --cached --quiet; then
+              echo "O repositório já está no modelo Firebase único."
               exit 0
             fi
 
-            git add -- "${tracked_files[@]}"
-            git commit -m "Unifica leitura e catálogos de produtos com o Firebase"
+            git add -A
+            git commit -m "Elimina site/produtos.json e mantém Firebase como fonte única"
 
             if git push origin "HEAD:${GITHUB_REF_NAME}"; then
-              echo "Correções e catálogos publicados com sucesso."
+              echo "Correção publicada com sucesso."
               exit 0
             fi
 
-            echo "O repositório mudou durante a publicação; repetindo com a versão mais recente."
+            echo "A branch mudou durante a publicação; reaplicando sobre a versão mais recente."
+            git fetch --depth=1 origin "${GITHUB_REF_NAME}"
+            git reset --hard "origin/${GITHUB_REF_NAME}"
+            node scripts/corrigir-sincronizacao-catalogos.mjs
+            node scripts/sincronizar-produtos-home-firebase.mjs
             sleep $((attempt * 3))
           done
 
-          echo "Não foi possível publicar as correções após quatro tentativas."
+          echo "Não foi possível publicar a correção após quatro tentativas." >&2
           exit 1
