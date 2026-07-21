@@ -87,15 +87,16 @@ jobs:
           node --check scripts/processar-ofertas.mjs
           node --check scripts/reconciliar-publicacao-ofertas.mjs
 
-      - name: Gravar arquivos transformados na branch
+      - name: Gravar código transformado na branch
         shell: bash
         run: |
           set -euo pipefail
+          git checkout HEAD -- .github/workflows/processar-ofertas.yml .github/workflows/atualizar-admin-produtos-home.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
-            echo "A branch já contém a migração completa."
+            echo "A branch já contém a migração de código completa."
             exit 0
           fi
           git commit -m "Elimina referências ao catálogo completo e usa Firebase"
