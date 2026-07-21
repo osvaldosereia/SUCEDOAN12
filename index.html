@@ -2,11 +2,11 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="da-build-version" content="2026-07-21-carregamento-imediato-v19">
+  <meta name="da-build-version" content="2026-07-21-imagens-unicas-v19">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-21-carregamento-imediato-v19';
+    const BUILD = '2026-07-21-imagens-unicas-v19';
     window.__DA_BUILD_VERSION__ = BUILD;
     window.__DA_PAGESPEED_TEST__ = false;
     document.documentElement.classList.add('da-pagespeed-booting');
@@ -1002,7 +1002,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-21-carregamento-imediato-v19',
+      APP_VERSION: '2026-07-21-imagens-unicas-v19',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -1164,12 +1164,16 @@
 
     function productImagesFor(raw, product) {
       const list = [];
+      const seen = new Set();
       const push = value => {
         const source = String(value || '').trim();
         if (!source || /site\/tmp\/ia-referencias\//i.test(source)) return;
-        assetCandidates(source).forEach(url => {
-          if (url && !/ia-referencias/i.test(url) && !list.includes(url)) list.push(url);
-        });
+        const normalized = normalizePublicAsset(source);
+        const logicalKey = String(normalized.external || normalized.path || '').toLowerCase();
+        if (!logicalKey || seen.has(logicalKey)) return;
+        seen.add(logicalKey);
+        const primary = assetCandidates(source)[0];
+        if (primary && !/ia-referencias/i.test(primary)) list.push(primary);
       };
 
       push(raw.url_imagem || '');
@@ -1179,11 +1183,6 @@
       if (Array.isArray(raw.images)) raw.images.forEach(push);
       if (raw.imagem_path) push(raw.imagem_path);
 
-      const code = String(product.codigo || product.id || product.firebaseKey || '').trim();
-      if (code) {
-        push(`site/img/produtos_2/${encodeURIComponent(code)}.webp`);
-        push(`site/img/produtos/${encodeURIComponent(code)}.webp`);
-      }
       if (!list.length) list.push(PUBLIC_ASSET_LOGO);
       return list;
     }
@@ -1668,10 +1667,8 @@
 
     function normalizeRelativeImage(value) {
       const img = String(value || '').trim();
-      if (!img) return PUBLIC_ASSET_LOGO;
-      if (/site\/tmp\/ia-referencias\//i.test(img)) return PUBLIC_ASSET_LOGO;
-      if (/^data:/i.test(img)) return img;
-      return siteAssetUrl(img);
+      if (!img || /site\/tmp\/ia-referencias\//i.test(img)) return PUBLIC_ASSET_LOGO;
+      return assetCandidates(img)[0] || PUBLIC_ASSET_LOGO;
     }
 
     function normalizeBannerImage() { return ''; }
@@ -2699,22 +2696,31 @@
     function fallbackImg(el) {
       if (!el) return;
       const current = String(el.currentSrc || el.src || '').trim();
-      const declared = String(el.getAttribute('data-fallback-images') || '')
+      const candidates = [];
+      const add = value => {
+        const url = String(value || '').trim();
+        if (url && !/ia-referencias/i.test(url) && !candidates.includes(url)) candidates.push(url);
+      };
+
+      String(el.getAttribute('data-fallback-images') || '')
         .split('|')
         .map(value => value.trim())
-        .filter(Boolean);
-      // Mesmo imagens de kit/cesta sem lista declarada ganham uma segunda origem.
-      if (current) {
-        const normalizedCurrent = normalizePublicAsset(current);
-        if (normalizedCurrent.path) assetCandidates(normalizedCurrent.path).forEach(url => {
-          if (url && !declared.includes(url)) declared.push(url);
-        });
+        .filter(Boolean)
+        .forEach(source => assetCandidates(source).forEach(add));
+
+      assetCandidates(current).forEach(add);
+
+      if (/\/produtos_2\//i.test(current)) {
+        assetCandidates(current.replace('/produtos_2/', '/produtos/')).forEach(add);
+      } else if (/\/produtos\//i.test(current) && !/\/produtos_3\//i.test(current)) {
+        assetCandidates(current.replace('/produtos/', '/produtos_2/')).forEach(add);
       }
-      if (!declared.includes(PUBLIC_ASSET_LOGO)) declared.push(PUBLIC_ASSET_LOGO);
+
+      add(PUBLIC_ASSET_LOGO);
 
       const used = new Set(String(el.getAttribute('data-fallback-used') || '').split('|').filter(Boolean));
       if (current) used.add(current);
-      const next = declared.find(url => url && url !== current && !used.has(url));
+      const next = candidates.find(url => url && url !== current && !used.has(url));
 
       if (next) {
         el.setAttribute('data-fallback-used', Array.from(used).join('|'));
