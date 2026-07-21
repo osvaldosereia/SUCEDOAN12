@@ -1680,7 +1680,7 @@
             setTimeout(() => { let splash = $('splash-screen'); if(splash) { splash.style.opacity = '0'; setTimeout(() => splash.style.display = 'none', 400); } }, 2500);
 
             try {
-                const r2 = await fetchWithCache('/site/produtos.json', 'cache_prods');
+                const r2 = await fetchWithCache('/site/produtos-home.json', 'cache_prods');
                 if (r2 && r2.length > 0) {
                     STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
                         return { 

@@ -606,7 +606,7 @@
       if (state.catalogCachePromise) return state.catalogCachePromise;
     
       state.catalogCachePromise = (async () => {
-        const catalogUrl = new URL("./site/produtos.json", window.location.href).toString();
+        const catalogUrl = new URL("./site/produtos-home.json", window.location.href).toString();
         const data = await fetchJson(catalogUrl, { retries: 1, timeoutMs: 22000 });
         const entries = Array.isArray(data)
           ? data.map((product, index) => ({

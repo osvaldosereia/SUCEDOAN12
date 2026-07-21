@@ -5,7 +5,6 @@ import path from "node:path";
 const STATE_PATH = process.env.OFFERS_STATE_PATH || "site/ofertas-automaticas-estado.json";
 const HISTORY_PATH = process.env.OFFERS_HISTORY_PATH || "site/ofertas-historico.json";
 const BANNERS_PATH = process.env.BANNERS_PATH || "site/banners/banners.json";
-const PRODUCTS_PATH = process.env.PRODUCTS_PATH || "site/produtos.json";
 const PRODUCTS_HOME_PATH = process.env.PRODUCTS_HOME_PATH || "site/produtos-home.json";
 const PUBLICATION_DIR = String(process.env.OFFERS_PUBLICATION_DIR || "").trim();
 const MAX_HISTORY = Math.max(1000, Number(process.env.OFFERS_HISTORY_LIMIT || 10000));
@@ -166,7 +165,6 @@ async function run() {
     baseBanners,
     latestBanners,
     generatedBanners,
-    generatedProducts,
     generatedHome
   ] = await Promise.all([
     readJson(temp("base-estado.json")),
@@ -177,12 +175,10 @@ async function run() {
     readJson(temp("base-banners.json")),
     readJson(BANNERS_PATH),
     readJson(temp("gerado-banners.json")),
-    readJson(temp("gerado-produtos.json")),
     readJson(temp("gerado-produtos-home.json"))
   ]);
 
   await Promise.all([
-    writeJson(PRODUCTS_PATH, generatedProducts),
     writeJson(PRODUCTS_HOME_PATH, generatedHome),
     writeJson(STATE_PATH, mergeState(baseState, latestState, generatedState)),
     writeJson(HISTORY_PATH, mergeHistory(latestHistory, generatedHistory)),

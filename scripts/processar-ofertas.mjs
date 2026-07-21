@@ -8,7 +8,6 @@ const CONFIG_PATH = process.env.OFFERS_CONFIG_PATH || "site/ofertas-automaticas.
 const STATE_PATH = process.env.OFFERS_STATE_PATH || "site/ofertas-automaticas-estado.json";
 const HISTORY_PATH = process.env.OFFERS_HISTORY_PATH || "site/ofertas-historico.json";
 const BANNERS_PATH = process.env.BANNERS_PATH || "site/banners/banners.json";
-const PRODUCTS_PATH = process.env.PRODUCTS_PATH || "site/produtos.json";
 const PRODUCTS_HOME_PATH = process.env.PRODUCTS_HOME_PATH || "site/produtos-home.json";
 const TIME_ZONE = process.env.OFFERS_TIME_ZONE || "America/Cuiaba";
 const MAX_HISTORY = Math.max(1000, Number(process.env.OFFERS_HISTORY_LIMIT || 10000));
@@ -718,9 +717,7 @@ async function run() {
     mode
   });
   await syncFirebase(result.changed);
-  await Promise.all([
-    writeJson(PRODUCTS_PATH, result.products),
-    writeJson(PRODUCTS_HOME_PATH, Object.fromEntries(Object.entries(result.products).map(([key, product]) => [key, homeProduct(key, product)]))),
+  await Promise.all([    writeJson(PRODUCTS_HOME_PATH, Object.fromEntries(Object.entries(result.products).map(([key, product]) => [key, homeProduct(key, product)]))),
     writeJson(STATE_PATH, result.state),
     writeJson(HISTORY_PATH, result.history),
     writeJson(BANNERS_PATH, result.banners)

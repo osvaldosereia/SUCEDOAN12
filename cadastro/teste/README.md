@@ -13,7 +13,7 @@ Esta aplicação é independente do admin. Nenhum arquivo de `producao/` é alte
 - Acompanhamento temporário: Firebase `/cadastros_ia_jobs/{jobId}`.
 - Imagem final: GitHub `site/img/produtos_3/{bucket}/{ano}/{mes}/arquivo.webp`.
 - As quatro fotos originais não são salvas no GitHub.
-- A aplicação não altera `site/produtos.json`.
+- A aplicação grava produtos somente no Firebase e não mantém catálogo completo no GitHub.
 
 ## Instalar o cenário no Make
 

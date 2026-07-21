@@ -668,7 +668,7 @@
     githubRepo: "SUCEDOAN12",
     githubBranch: "main",
     siteBaseUrl: "https://www.donaantonia.com.br",
-    githubProdutosPath: "site/produtos.json",
+    githubProdutosPath: "",
     githubMetaPath: "site/produtos_meta.csv",
     githubAdminMetaPath: "site/produtos_admin_meta.json",
     githubCestasPath: "site/produtos-cesta-basica.json",
@@ -1297,9 +1297,9 @@
   }
 
 
-  async function saveGithubFiles({produtos,metaCatalogCsv,adminMeta,cestas,kits}={}){readSettingsFromUi(); const ops=[]; if(produtos) ops.push(githubUpsert(state.settings.githubProdutosPath, produtos, "Atualiza produtos.json pelo admin Dona Antônia")); if(metaCatalogCsv) ops.push(githubUpsertText(state.settings.githubMetaPath, metaCatalogCsv, "Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")); if(adminMeta) ops.push(githubUpsert(state.settings.githubAdminMetaPath, adminMeta, "Atualiza produtos_admin_meta.json pelo admin Dona Antônia")); if(cestas) ops.push(githubUpsert(state.settings.githubCestasPath, cestas, "Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")); if(kits) ops.push(githubUpsert(state.settings.githubKitsPath, kits, "Atualiza site/kits.json pelo admin Dona Antônia")); await Promise.all(ops)}
+  async function saveGithubFiles({metaCatalogCsv,adminMeta,cestas,kits}={}){readSettingsFromUi(); const ops=[]; if(produtos) ops.push(githubUpsert(state.settings.githubProdutosPath, produtos, "Atualiza produtos.json pelo admin Dona Antônia")); if(metaCatalogCsv) ops.push(githubUpsertText(state.settings.githubMetaPath, metaCatalogCsv, "Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")); if(adminMeta) ops.push(githubUpsert(state.settings.githubAdminMetaPath, adminMeta, "Atualiza produtos_admin_meta.json pelo admin Dona Antônia")); if(cestas) ops.push(githubUpsert(state.settings.githubCestasPath, cestas, "Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")); if(kits) ops.push(githubUpsert(state.settings.githubKitsPath, kits, "Atualiza site/kits.json pelo admin Dona Antônia")); await Promise.all(ops)}
   async function testGithub(){try{readSettingsFromUi(); await githubContent(state.settings.githubProdutosPath); setStatus("GitHub conectado", "ok"); alert("Conexão com GitHub OK.")}catch(e){console.error(e); setStatus("Erro no GitHub","err"); alert("Erro no GitHub: "+e.message)}}
-  async function saveGithubNow(){try{setStatus("Enviando arquivos ao GitHub...","warn"); await saveGithubFiles({produtos:productsObject(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits}); setStatus("GitHub atualizado","ok"); alert("produtos.json, produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e site/kits.json enviados ao GitHub.")}catch(e){console.error(e); setStatus("Erro ao enviar GitHub","err"); alert("Erro ao enviar GitHub: "+e.message)}}
+  async function saveGithubNow(){try{setStatus("Enviando arquivos ao GitHub...","warn"); await saveGithubFiles({metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits}); setStatus("GitHub atualizado","ok"); alert("produtos.json, produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e site/kits.json enviados ao GitHub.")}catch(e){console.error(e); setStatus("Erro ao enviar GitHub","err"); alert("Erro ao enviar GitHub: "+e.message)}}
 
   function renderAll(){restoreLegacyBasketStock(); renderTabs(); renderSettingsUi(); renderFilterOptions(); renderSummary(); renderProducts(); renderBasketsList(); renderBasketEditor(); renderKitsList(); renderKitEditor(); renderCatalogs(); renderNotes(); updateNotesIndicator(); renderScannerEditor(); renderScannerHistory(); refreshJson();}
   function renderLoading(){ $("#productsGrid").innerHTML=`<div class="empty">Carregando produtos...</div>`; $("#basketsList").innerHTML=""; $("#basketEditor").innerHTML=`<div class="empty">Carregando cestas...</div>`; if($("#kitsList")) $("#kitsList").innerHTML=""; if($("#kitEditor")) $("#kitEditor").innerHTML=`<div class="empty">Carregando kits...</div>` }
@@ -1952,7 +1952,7 @@
       setStatus("Salvando tudo com atualização granular no Firebase...","warn");
       const syncResult=await syncProductsToFirebase();
       const produtos=productsObject(),adminMeta=buildAdminMetaPayload(),metaCatalogCsv=buildMetaCatalogCsv();
-      await saveGithubFiles({produtos,metaCatalogCsv,adminMeta,cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});
+      await saveGithubFiles({metaCatalogCsv,adminMeta,cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});
       state.meta=adminMeta;
       state.dirtyMeta=state.dirtyCestas=state.dirtyKits=state.dirtyNotes=false;
       localStorage.removeItem(LS_NOTES_DIRTY);
@@ -2020,50 +2020,6 @@
     if(bannerFilter)bannerFilter.value="";
   }
 
-  async function loadProductsFromGithub(){
-    const s=state.settings;
-    const owner=String(s.githubOwner||defaultSettings.githubOwner).trim();
-    const repo=String(s.githubRepo||defaultSettings.githubRepo).trim();
-    const branch=String(s.githubBranch||defaultSettings.githubBranch).trim();
-    const path=String(s.githubProdutosPath||defaultSettings.githubProdutosPath).replace(/^\/+/,"").trim();
-    const errors=[];
-
-    const rawUrl=`https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${path.split("/").map(encodeURIComponent).join("/")}?v=${Date.now()}`;
-    try{
-      const data=await fetchJson(rawUrl);
-      const products=normalizeProducts(data);
-      if(products.length)return {products,source:"GitHub raw"};
-      errors.push("GitHub raw retornou catálogo vazio");
-    }catch(error){errors.push(`GitHub raw: ${error.message||error}`)}
-
-    try{
-      const apiUrl=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(branch)}`;
-      const headers={Accept:"application/vnd.github+json"};
-      if(s.githubToken)headers.Authorization=`Bearer ${s.githubToken}`;
-      const response=await fetch(apiUrl,{headers,cache:"no-store"});
-      if(!response.ok)throw new Error(`Erro ${response.status}`);
-      const file=await response.json();
-      const encoded=String(file.content||"").replace(/\s/g,"");
-      if(!encoded)throw new Error("arquivo sem conteúdo");
-      const binary=atob(encoded);
-      const bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));
-      const data=JSON.parse(new TextDecoder("utf-8").decode(bytes));
-      const products=normalizeProducts(data);
-      if(products.length)return {products,source:"GitHub API"};
-      errors.push("GitHub API retornou catálogo vazio");
-    }catch(error){errors.push(`GitHub API: ${error.message||error}`)}
-
-    for(const localPath of ["produtos-home.json","produtos.json","site/produtos.json"]){
-      try{
-        const data=await fetchJson(`${localPath}?v=${Date.now()}`);
-        const products=normalizeProducts(data);
-        if(products.length)return {products,source:`arquivo local ${localPath}`};
-        errors.push(`${localPath} retornou catálogo vazio`);
-      }catch(error){errors.push(`${localPath}: ${error.message||error}`)}
-    }
-    throw new Error(errors.join(" | "));
-  }
-
   function firebaseProductsSources(){
     const configuredBase=String(state.settings.firebaseUrl||'').trim().replace(/\/+$/,'');
     const configuredNode=String(state.settings.produtosNode||'produtos').trim().replace(/^\/+|\/+$/g,'');
@@ -2100,24 +2056,15 @@
     let cached=null;
     try{cached=await readProductsCache()}catch(error){errors.push(`Cache local: ${error.message||error}`)}
 
-    // O cache já é exibido provisoriamente por loadData. Não finalize o carregamento
-    // com ele após a primeira demora: continue consultando o Firebase até esgotar
-    // as tentativas. Isso elimina a necessidade de clicar em "Recarregar dados".
     try{
       const firebase=await loadProductsFromFirebase({attempts:3});
       writeProductsCache(firebase.products,'Firebase').catch(error=>console.warn('Cache de produtos não atualizado:',error));
       return firebase;
     }catch(error){errors.push(`Firebase: ${error.message||error}`)}
 
-    try{
-      const github=await loadProductsFromGithub();
-      writeProductsCache(github.products,github.source).catch(error=>console.warn('Cache de produtos não atualizado:',error));
-      return {...github,warning:errors.join(' | ')};
-    }catch(error){errors.push(error.message||String(error))}
-
     if(cached?.products?.length)return {products:cached.products,source:'cache local seguro',warning:errors.join(' | ')};
     if(Array.isArray(state.produtos)&&state.produtos.length){
-      console.warn('Não foi possível atualizar o catálogo; mantendo os produtos já carregados.',errors);
+      console.warn('Não foi possível atualizar o Firebase; mantendo os produtos já carregados.',errors);
       return {products:[...state.produtos],source:'memória da sessão',warning:errors.join(' | ')};
     }
     throw new Error(errors.join(' | '));
@@ -2131,13 +2078,12 @@
       let fresh=null;
       try{fresh=await loadProductsFromFirebase({attempts:2})}
       catch(error){console.warn('Atualização silenciosa pelo Firebase falhou:',error)}
-      if(!fresh){try{fresh=await loadProductsFromGithub()}catch(error){console.warn('Atualização silenciosa pelo GitHub falhou:',error)}}
       if(!fresh?.products?.length)return false;
       state.produtos=fresh.products;
       markProductsReloaded();
       await writeProductsCache(state.produtos,fresh.source).catch(()=>false);
       renderAll();
-      setStatus(`Produtos atualizados automaticamente: ${state.produtos.length} via ${fresh.source}`,'ok');
+      setStatus(`Produtos atualizados automaticamente: ${state.produtos.length} via Firebase`,'ok');
       return true;
     }finally{productsSilentRefreshRunning=false}
   }
@@ -2553,7 +2499,7 @@
   saveGithubFiles=async function({produtos,metaCatalogCsv,adminMeta,cestas,kits,anotacoes}={}){
     readSettingsFromUi();
     const ops=[];
-    if(produtos) ops.push(()=>githubUpsert(state.settings.githubProdutosPath,produtos,"Atualiza produtos.json pelo admin Dona Antônia"));
+    
     if(metaCatalogCsv) ops.push(()=>githubUpsertText(state.settings.githubMetaPath,metaCatalogCsv,"Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia"));
     if(adminMeta) ops.push(()=>githubUpsert(state.settings.githubAdminMetaPath,adminMeta,"Atualiza produtos_admin_meta.json pelo admin Dona Antônia"));
     if(cestas) ops.push(()=>githubUpsert(state.settings.githubCestasPath,cestas,"Atualiza produtos-cesta-basica.json pelo admin Dona Antônia"));
@@ -3843,7 +3789,7 @@
     e.preventDefault();try{setStatus("Processando imagem colada...","warn");const prepared=await addWorkbenchPhoto(p,file);setStatus(`Imagem colada (${formatBytes(prepared.bytes)})`,"ok")}catch(err){alert("Erro ao colar imagem: "+err.message)}
   });
 
-  saveGithubNow=async function(){try{if(!ensureCatalogReadyForFullExport())return;setStatus("Enviando arquivos ao GitHub...","warn");await saveGithubFiles({produtos:productsObject(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});state.dirtyNotes=false;localStorage.removeItem(LS_NOTES_DIRTY);setStatus("GitHub atualizado","ok");alert("Todos os arquivos, incluindo anotacoes.json, foram enviados ao GitHub.")}catch(e){console.error(e);setStatus("Erro ao enviar GitHub","err");alert("Erro ao enviar GitHub: "+e.message)}};
+  saveGithubNow=async function(){try{if(!ensureCatalogReadyForFullExport())return;setStatus("Enviando arquivos ao GitHub...","warn");await saveGithubFiles({metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});state.dirtyNotes=false;localStorage.removeItem(LS_NOTES_DIRTY);setStatus("GitHub atualizado","ok");alert("Todos os arquivos, incluindo anotacoes.json, foram enviados ao GitHub.")}catch(e){console.error(e);setStatus("Erro ao enviar GitHub","err");alert("Erro ao enviar GitHub: "+e.message)}};
 
   const originalLoadData=loadData;
   loadData=async function(){
@@ -4404,7 +4350,7 @@
         aiBatchLog("warn",`Publicando produtos.json e produtos-home.json com ${final.success} imagem(ns) nova(s)...`);
         // A imagem ja foi salva produto a produto; aqui publicamos uma unica
         // vez o catalogo que o site le, usando as URLs raw validas do GitHub.
-        await saveGithubFiles({produtos:productsObject(),produtosHome:productsHomePayload()});
+        await saveGithubFiles({produtosHome:productsHomePayload()});
         final.catalogPublished=true;
         aiBatchLog("ok","produtos.json e produtos-home.json publicados no GitHub.");
       }catch(err){
@@ -4714,7 +4660,7 @@ async function startOptimizeImageBatch(){
   }
   const final=state.optimizeImageBatch; final.running=false; final.currentKey=null; final.index=final.total;
   if(final.success>0){
-    try{setStatus("Publicando produtos.json e produtos-home.json no GitHub uma única vez...","warn");optimizeImageBatchLog("warn",`Publicando produtos.json e produtos-home.json com ${final.success} imagem(ns) otimizada(s)...`);await saveGithubFiles({produtos:productsObject(),produtosHome:productsHomePayload()});final.catalogPublished=true;optimizeImageBatchLog("ok","produtos.json e produtos-home.json publicados no GitHub.")}
+    try{setStatus("Publicando produtos.json e produtos-home.json no GitHub uma única vez...","warn");optimizeImageBatchLog("warn",`Publicando produtos.json e produtos-home.json com ${final.success} imagem(ns) otimizada(s)...`);await saveGithubFiles({produtosHome:productsHomePayload()});final.catalogPublished=true;optimizeImageBatchLog("ok","produtos.json e produtos-home.json publicados no GitHub.")}
     catch(err){final.catalogError=err?.message||String(err);optimizeImageBatchLog("err",`Imagens salvas no Firebase, mas produtos.json não foi publicado: ${final.catalogError}`)}
   }
   const publishMsg=final.catalogPublished?" Catálogo publicado no GitHub.":(final.catalogError?" Imagens ficaram no Firebase, mas produtos.json não foi publicado.":"");
@@ -4890,10 +4836,10 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
   githubUpsertText=function(path,text,message){return githubPutWithFreshSha(path,b64(String(text??"")),message)};
   githubUpsertRaw=function(path,arrayBuffer,message){return githubPutWithFreshSha(path,arrayBufferToBase64(arrayBuffer),message)};
 
-  saveGithubFiles = async function({produtos,produtosHome,metaCatalogCsv,adminMeta,cestas,kits,anotacoes}={}){
+  saveGithubFiles = async function({produtosHome,metaCatalogCsv,adminMeta,cestas,kits,anotacoes}={}){
     readSettingsFromUi();
     const ops=[];
-    if(produtos) ops.push({label:"produtos.json",run:()=>githubUpsert(state.settings.githubProdutosPath,produtos,"Atualiza produtos.json pelo admin Dona Antônia")});
+    
     if(produtosHome) ops.push({label:"produtos-home.json",run:()=>githubUpsertText(state.settings.githubProdutosHomePath||"site/produtos-home.json",JSON.stringify(produtosHome),"Atualiza produtos-home.json leve pelo admin Dona Antônia")});
     if(metaCatalogCsv) ops.push({label:"produtos_meta.csv",run:()=>githubUpsertText(state.settings.githubMetaPath,metaCatalogCsv,"Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")});
     if(adminMeta) ops.push({label:"produtos_admin_meta.json",run:()=>githubUpsert(state.settings.githubAdminMetaPath,adminMeta,"Atualiza produtos_admin_meta.json pelo admin Dona Antônia")});
@@ -4922,7 +4868,7 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
       const adminMeta=buildAdminMetaPayload();
       const metaCatalogCsv=buildMetaCatalogCsv();
       const payload={metaCatalogCsv,adminMeta};
-      if(state.settings.autoGithub){payload.produtos=productsObject();payload.produtosHome=productsHomePayload()}
+      if(state.settings.autoGithub){payload.produtosHome=productsHomePayload()}
       const gh=await saveGithubFiles(payload);
       state.meta=adminMeta;
       state.dirtyMeta=false;
@@ -4936,7 +4882,7 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
   saveMeta = async function(){try{setStatus("Salvando metadados no GitHub somente se houver mudança...","warn"); const adminMeta=buildAdminMetaPayload(); const metaCatalogCsv=buildMetaCatalogCsv(); const gh=await saveGithubFiles({metaCatalogCsv,adminMeta}); state.meta=adminMeta; state.dirtyMeta=false; saveLocal(); setStatus(`Cadastros verificados · ${daGithubSummaryText(gh)}`,"ok"); alert(`Metadados verificados no GitHub. ${daGithubSummaryText(gh)}.`); renderAll();}catch(e){console.error(e); saveLocal(); alert("Erro ao salvar catálogos no GitHub: "+e.message); setStatus("Erro em produtos_meta","err")}};
   saveCestas = async function(){try{setStatus("Salvando cestas no GitHub somente se houver mudança...","warn"); const gh=await saveGithubFiles({cestas:state.cestas}); state.dirtyCestas=false; saveLocal(); setStatus(`Cestas verificadas · ${daGithubSummaryText(gh)}`, "ok"); alert(`Cestas verificadas no GitHub. ${daGithubSummaryText(gh)}.`); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar cestas. Backup local feito.","err"); alert("Erro ao salvar cestas no GitHub: "+e.message)}};
   saveKits = async function(){try{setStatus("Salvando kits no GitHub somente se houver mudança...","warn"); const gh=await saveGithubFiles({kits:state.kits}); state.dirtyKits=false; saveLocal(); setStatus(`Kits verificados · ${daGithubSummaryText(gh)}`,"ok"); alert(`Kits verificados no GitHub. ${daGithubSummaryText(gh)}.`); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar kits. Backup local feito.","err"); alert("Erro ao salvar kits no GitHub: "+e.message)}};
-  saveGithubNow = async function(){try{if(!ensureCatalogReadyForFullExport())return;setStatus("Comparando arquivos e enviando ao GitHub somente o que mudou...","warn");const gh=await saveGithubFiles({produtos:productsObject(),produtosHome:productsHomePayload(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});state.dirtyNotes=false;localStorage.removeItem(LS_NOTES_DIRTY);setStatus(`GitHub verificado · ${daGithubSummaryText(gh)}`,"ok");alert(`GitHub verificado. ${daGithubSummaryText(gh)}.`)}catch(e){console.error(e);setStatus("Erro ao enviar GitHub","err");alert("Erro ao enviar GitHub: "+e.message)}};
+  saveGithubNow = async function(){try{if(!ensureCatalogReadyForFullExport())return;setStatus("Comparando arquivos e enviando ao GitHub somente o que mudou...","warn");const gh=await saveGithubFiles({produtosHome:productsHomePayload(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});state.dirtyNotes=false;localStorage.removeItem(LS_NOTES_DIRTY);setStatus(`GitHub verificado · ${daGithubSummaryText(gh)}`,"ok");alert(`GitHub verificado. ${daGithubSummaryText(gh)}.`)}catch(e){console.error(e);setStatus("Erro ao enviar GitHub","err");alert("Erro ao enviar GitHub: "+e.message)}};
 
   saveEverything = async function(){
     try{
@@ -4945,7 +4891,7 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
       setStatus("Salvando geral com Firebase granular e GitHub inteligente...","warn");
       const syncResult=await syncProductsToFirebase();
       const adminMeta=buildAdminMetaPayload(),metaCatalogCsv=buildMetaCatalogCsv();
-      const gh=await saveGithubFiles({produtos:productsObject(),produtosHome:productsHomePayload(),metaCatalogCsv,adminMeta,cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});
+      const gh=await saveGithubFiles({produtosHome:productsHomePayload(),metaCatalogCsv,adminMeta,cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});
       state.meta=adminMeta;
       state.dirtyMeta=state.dirtyCestas=state.dirtyKits=state.dirtyNotes=false;
       localStorage.removeItem(LS_NOTES_DIRTY);
@@ -7805,7 +7751,8 @@ Resultado esperado: banner de e-commerce elegante, organizado, com leitura rápi
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
 </script>
-<script src="nfe-import.js?v=20260718-9"></script>
+<script src="catalog-sync-admin.js?v=2026-07-21-catalog-v4"></script>
+<script src="nfe-import.js?v=2026-07-21-catalog-v4"></script>
 <script>
   // Ponte segura: o admin chama somente o webhook do Make; nenhum token do Bling/GitHub fica no navegador.
   (()=>{

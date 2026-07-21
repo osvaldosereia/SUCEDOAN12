@@ -1005,7 +1005,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-17-compra-rapida-v15',
+      APP_VERSION: '2026-07-21-firebase-unico-v17',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -1369,9 +1369,11 @@
     }
 
     function withCacheBust(url, forceFresh) {
-      const separator = String(url).includes('?') ? '&' : '?';
-      const version = forceFresh ? Date.now() : CONFIG.APP_VERSION;
-      return `${url}${separator}v=${encodeURIComponent(version)}`;
+      const source = String(url || '');
+      const separator = source.includes('?') ? '&' : '?';
+      const liveCatalog = /(?:^|\/)produtos-home\.json(?:\?|$)/i.test(source);
+      const version = forceFresh || liveCatalog ? Date.now() : CONFIG.APP_VERSION;
+      return `${source}${separator}v=${encodeURIComponent(version)}`;
     }
 
     function sleep(ms) {
@@ -1457,7 +1459,7 @@
       const urls = Array.isArray(CONFIG.PRODUCT_HOME_URLS) && CONFIG.PRODUCT_HOME_URLS.length ? CONFIG.PRODUCT_HOME_URLS : ['site/produtos-home.json'];
       for (const url of urls) {
         try {
-          const data = await fetchJson(withCacheBust(url), 6500, { cache: 'default' });
+          const data = await fetchJson(withCacheBust(url), 6500, { cache: 'no-store' });
           normalizeProducts(data, { mode: 'compact-full' });
           state.catalogLoadedAt = Date.now();
           state.catalogSource = 'github-compact';
@@ -1482,12 +1484,12 @@
     async function loadProducts(options) {
       const cache = readCache(CONFIG.PRODUCT_CACHE_KEY);
       const forceFresh = !!(options && options.forceFresh);
-      if (!forceFresh && state.catalogMode === 'compact-full' && state.products.length) return true;
+      if (!forceFresh && isHomeRoute() && state.catalogMode === 'compact-full' && state.products.length) return true;
 
       if (!forceFresh) {
         try {
           await loadHomeProducts();
-          return true;
+          if (isHomeRoute()) return true;
         } catch (compactError) {
           console.warn('Catálogo compacto indisponível; tentando Firebase:', compactError && compactError.message ? compactError.message : compactError);
         }
