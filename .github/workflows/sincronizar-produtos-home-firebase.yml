@@ -1,5 +1,5 @@
 name: Sincronizar produtos-home com Firebase
-run-name: Catálogo leve oficial · ${{ github.event_name }}
+run-name: Validar Firebase único · ${{ github.event_name }}
 
 on:
   workflow_dispatch:
@@ -38,6 +38,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 1
+          show-progress: false
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             index.html
@@ -68,24 +69,37 @@ jobs:
         with:
           node-version: 22
 
-      - name: Eliminar catálogo antigo e gerar produtos-home
+      - name: Executar migração com diagnóstico
+        id: migrate
         shell: bash
         env:
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
         run: |
-          set -euo pipefail
-          node --input-type=module <<'NODE'
-          import { readFile, writeFile } from 'node:fs/promises';
-          const path = '.github/workflows/processar-ofertas.yml';
-          const legacy = ['site', 'produtos.json'].join('/');
-          const source = await readFile(path, 'utf8');
-          const lines = source.split(/\r?\n/).filter(line => !line.includes(legacy));
-          await writeFile(path, lines.join('\n'), 'utf8');
-          NODE
-          node scripts/corrigir-sincronizacao-catalogos.mjs
-          node scripts/sincronizar-produtos-home-firebase.mjs
+          set +e
+          touch migration.log
+          node -e "const fs=require('fs');const p='.github/workflows/processar-ofertas.yml';const legacy=['site','produtos.json'].join('/');const s=fs.readFileSync(p,'utf8');fs.writeFileSync(p,s.split(/\\r?\\n/).filter(line=>!line.includes(legacy)).join('\\n'));" >> migration.log 2>&1
+          code=$?
+          if [ "$code" -eq 0 ]; then node scripts/corrigir-sincronizacao-catalogos.mjs >> migration.log 2>&1; code=$?; fi
+          if [ "$code" -eq 0 ]; then node scripts/sincronizar-produtos-home-firebase.mjs >> migration.log 2>&1; code=$?; fi
+          cat migration.log
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Guardar diagnóstico
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostico-remocao-produtos-json
+          path: migration.log
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Interromper se a migração falhou
+        if: steps.migrate.outputs.exit_code != '0'
+        shell: bash
+        run: exit 1
 
       - name: Validar fonte única
         shell: bash
@@ -111,35 +125,10 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          for attempt in 1 2 3 4; do
-            if git diff --quiet && git diff --cached --quiet; then
-              echo "O repositório já está no modelo Firebase único."
-              exit 0
-            fi
-
-            git add -A
-            git commit -m "Elimina site/produtos.json e mantém Firebase como fonte única"
-
-            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
-              echo "Correção publicada com sucesso."
-              exit 0
-            fi
-
-            echo "A branch mudou durante a publicação; reaplicando sobre a versão mais recente."
-            git fetch --depth=1 origin "${GITHUB_REF_NAME}"
-            git reset --hard "origin/${GITHUB_REF_NAME}"
-            node --input-type=module <<'NODE'
-            import { readFile, writeFile } from 'node:fs/promises';
-            const path = '.github/workflows/processar-ofertas.yml';
-            const legacy = ['site', 'produtos.json'].join('/');
-            const source = await readFile(path, 'utf8');
-            await writeFile(path, source.split(/\r?\n/).filter(line => !line.includes(legacy)).join('\n'), 'utf8');
-            NODE
-            node scripts/corrigir-sincronizacao-catalogos.mjs
-            node scripts/sincronizar-produtos-home-firebase.mjs
-            sleep $((attempt * 3))
-          done
-
-          echo "Não foi possível publicar a correção após quatro tentativas." >&2
-          exit 1
+          git add -A
+          if git diff --cached --quiet; then
+            echo "O repositório já está no modelo Firebase único."
+            exit 0
+          fi
+          git commit -m "Elimina site/produtos.json e mantém Firebase como fonte única"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
