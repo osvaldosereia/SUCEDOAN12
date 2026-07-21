@@ -3,7 +3,6 @@ import { writeFile } from "node:fs/promises";
 
 const DEFAULT_FIREBASE_DATABASE_URL = "https://cedar-chemist-310801-default-rtdb.firebaseio.com";
 const PRODUCTS_HOME_PATH = process.env.PRODUCTS_HOME_PATH || "site/produtos-home.json";
-const PRODUCTS_FULL_PATH = process.env.PRODUCTS_FULL_PATH || "site/produtos.json";
 let firebaseAccessToken;
 
 const text = value => String(value ?? "").trim();
@@ -115,12 +114,8 @@ async function run() {
     throw new Error("A quantidade de produtos compactados diverge do Firebase.");
   }
 
-  await Promise.all([
-    writeFile(PRODUCTS_FULL_PATH, `${JSON.stringify(products, null, 2)}\n`, "utf8"),
-    writeFile(PRODUCTS_HOME_PATH, `${JSON.stringify(compact, null, 2)}\n`, "utf8")
-  ]);
-
-  console.log(`${PRODUCTS_FULL_PATH} e ${PRODUCTS_HOME_PATH} sincronizados diretamente do Firebase com ${entries.length} produtos.`);
+  await writeFile(PRODUCTS_HOME_PATH, `${JSON.stringify(compact, null, 2)}\n`, "utf8");
+  console.log(`${PRODUCTS_HOME_PATH} sincronizado diretamente do Firebase com ${entries.length} produtos.`);
 }
 
 run().catch(error => {
