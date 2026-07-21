@@ -1,6 +1,7 @@
 import { createSign } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 
+const DEFAULT_FIREBASE_DATABASE_URL = "https://cedar-chemist-310801-default-rtdb.firebaseio.com";
 const PRODUCTS_HOME_PATH = process.env.PRODUCTS_HOME_PATH || "site/produtos-home.json";
 const PRODUCTS_FULL_PATH = process.env.PRODUCTS_FULL_PATH || "site/produtos.json";
 let firebaseAccessToken;
@@ -13,8 +14,8 @@ const number = value => {
 const money = value => Math.round(Math.max(0, number(value)) * 100) / 100;
 
 function firebaseUrl(pathname) {
-  const base = text(process.env.FIREBASE_DATABASE_URL).replace(/\/+$/, "");
-  if (!base) throw new Error("Defina o secret FIREBASE_DATABASE_URL.");
+  const configured = text(process.env.FIREBASE_DATABASE_URL);
+  const base = (configured || DEFAULT_FIREBASE_DATABASE_URL).replace(/\/+$/, "");
   const auth = text(process.env.FIREBASE_AUTH_TOKEN);
   return `${base}/${pathname.replace(/^\/+/, "")}.json${auth ? `?auth=${encodeURIComponent(auth)}` : ""}`;
 }
