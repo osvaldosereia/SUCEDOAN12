@@ -1,104 +1,62 @@
-name: Aplicar Firebase como fonte única
-run-name: Aplicar Firebase único · ${{ github.event_name }}
+name: Sincronizar produtos-home com Firebase
+run-name: Produtos-home oficial · ${{ github.event_name }}
 
 on:
-  pull_request:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [sincronizar_produtos_home]
+  schedule:
+    - cron: "*/5 * * * *"
+  push:
     branches: [main]
     paths:
       - ".github/workflows/sincronizar-produtos-home-firebase.yml"
       - "scripts/sincronizar-produtos-home-firebase.mjs"
-      - "scripts/corrigir-sincronizacao-catalogos.mjs"
-  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: aplicar-firebase-unico-${{ github.event.pull_request.number || github.ref }}
+  group: sincronizar-produtos-home-firebase
   cancel-in-progress: true
 
 jobs:
-  aplicar:
+  sincronizar:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 10
     steps:
-      - name: Baixar a branch da alteração
+      - name: Baixar catálogo leve e sincronizador
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
           show-progress: false
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            index.html
-            site/index.html
-            producao/index.html
-            producao/pedido.html
-            producao/catalog-sync-admin.js
-            producao/nfe-import.js
-            estoque.html
-            site/app-version.json
             site/produtos-home.json
-            site/produtos.json
-            site/ofertas-automaticas-estado.json
-            site/ofertas-historico.json
-            site/banners/banners.json
-            cadastro/teste/README.md
-            scripts/corrigir-sincronizacao-catalogos.mjs
             scripts/sincronizar-produtos-home-firebase.mjs
-            scripts/processar-ofertas.mjs
-            scripts/reconciliar-publicacao-ofertas.mjs
-            scripts/atualizar-admin-produtos-home.mjs
-            .github/workflows/processar-ofertas.yml
-            .github/workflows/atualizar-admin-produtos-home.yml
-            .github/workflows/sincronizar-produtos-home-firebase.yml
 
       - name: Configurar Node.js
         uses: actions/setup-node@v5
         with:
           node-version: 22
 
-      - name: Aplicar migração
-        shell: bash
+      - name: Gerar catálogo leve diretamente do Firebase
         env:
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
-        run: |
-          set -euo pipefail
-          node -e "const fs=require('fs');const p='.github/workflows/processar-ofertas.yml';const legacy=['site','produtos.json'].join('/');const s=fs.readFileSync(p,'utf8');fs.writeFileSync(p,s.split(/\\r?\\n/).filter(line=>!line.includes(legacy)).join('\\n'));"
-          node scripts/corrigir-sincronizacao-catalogos.mjs
-          node scripts/sincronizar-produtos-home-firebase.mjs
+        run: node scripts/sincronizar-produtos-home-firebase.mjs
 
-      - name: Validar fonte única
+      - name: Publicar somente produtos-home
         shell: bash
         run: |
           set -euo pipefail
-          test ! -e site/produtos.json
-          test -s site/produtos-home.json
-          if git grep -n -F 'site/produtos.json' -- \
-            index.html site/index.html producao/index.html producao/pedido.html estoque.html \
-            scripts/processar-ofertas.mjs scripts/reconciliar-publicacao-ofertas.mjs \
-            .github/workflows/processar-ofertas.yml cadastro/teste/README.md; then
-            echo 'Ainda há referência operacional a site/produtos.json.' >&2
-            exit 1
-          fi
-          node --check scripts/sincronizar-produtos-home-firebase.mjs
-          node --check scripts/processar-ofertas.mjs
-          node --check scripts/reconciliar-publicacao-ofertas.mjs
-
-      - name: Gravar código transformado na branch
-        shell: bash
-        run: |
-          set -euo pipefail
-          git checkout HEAD -- .github/workflows/processar-ofertas.yml .github/workflows/atualizar-admin-produtos-home.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add site/produtos-home.json
           if git diff --cached --quiet; then
-            echo "A branch já contém a migração de código completa."
+            echo "produtos-home já está sincronizado com o Firebase."
             exit 0
           fi
-          git commit -m "Elimina referências ao catálogo completo e usa Firebase"
-          target="${{ github.head_ref || github.ref_name }}"
-          git push origin "HEAD:${target}"
+          git commit -m "Sincroniza produtos-home diretamente do Firebase"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
