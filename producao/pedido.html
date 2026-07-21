@@ -94,7 +94,8 @@
         const CATEGORIAS_KEY = 'sucedoan_categorias'; 
         const MARCAS_KEY = 'sucedoan_marcas';
         const TAGS_KEY = 'sucedoan_tags_globais'; 
-        const QUEUE_KEY = 'sucedoan_fila_sincronizacao'; 
+        const QUEUE_KEY = 'sucedoan_fila_sincronizacao';
+        const FIREBASE_DATABASE_URL = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com'; 
         
         let products = [];
         let tagsDoSistema = [];
@@ -315,9 +316,6 @@
                     pedidosSeparacao.push(task.payload.novoPedido);
                     await GitHubAPI.saveFile('site/pedidoseparar.json', pedidosSeparacao, task.payload.message);
                 }
-                else if (task.type === 'PRODUTOS_JSON') {
-                    await GitHubAPI.saveFile(`site/produtos.json`, task.payload.vitrine, task.payload.message);
-                }
 
                 mostrarAlerta(`✅ ${task.name} processado!`, 'sucesso');
                 syncQueue.shift(); 
@@ -392,13 +390,40 @@
                 return cleanP;
             });
         }
+        async function localizarFirebaseKey(produto) {
+            const savedKey = String(produto.firebaseKey || produto.key || '').trim();
+            if (savedKey) return savedKey;
+            const codigo = String(produto.codigo || produto.id || '').trim();
+            if (!codigo) throw new Error('Produto sem firebaseKey ou código para atualizar o estoque.');
+            const query = new URL(FIREBASE_DATABASE_URL + '/produtos.json');
+            query.searchParams.set('orderBy', JSON.stringify('codigo'));
+            query.searchParams.set('equalTo', JSON.stringify(codigo));
+            query.searchParams.set('limitToFirst', '1');
+            const response = await fetch(query, { cache: 'no-store', headers: { Accept: 'application/json' } });
+            if (!response.ok) throw new Error('Firebase recusou a busca do produto ' + codigo + ': HTTP ' + response.status);
+            const data = await response.json();
+            const key = Object.keys(data || {})[0];
+            if (!key) throw new Error('Produto não localizado no Firebase: ' + codigo);
+            produto.firebaseKey = key;
+            return key;
+        }
 
-        function salvarProdutosJSON() {
-            const vitrine = sanitizeProductsForExport(products);
-            enqueueDataTask("Base de Produtos", "PRODUTOS_JSON", {
-                vitrine: vitrine,
-                message: "PIM: Estoque abatido via Gestor de Pedidos"
-            });
+        async function salvarProdutosFirebase(produtosAlterados) {
+            for (const produto of produtosAlterados) {
+                const key = await localizarFirebaseKey(produto);
+                const payload = {
+                    estoque: Math.max(0, Number(produto.estoque || 0)),
+                    last_update: Number(produto.last_update || Date.now()),
+                    updated_at: new Date().toISOString()
+                };
+                const response = await fetch(FIREBASE_DATABASE_URL + '/produtos/' + encodeURIComponent(key) + '.json', {
+                    method: 'PATCH',
+                    cache: 'no-store',
+                    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error('Firebase recusou o estoque de ' + (produto.nome || key) + ': HTTP ' + response.status);
+            }
         }
 
         async function processarBaixaPedidoTexto() {
@@ -424,6 +449,7 @@
             let itensPedidoBling = [];
             let totalPedidoCalc = 0;
             let itensParaSeparacao = [];
+            const produtosAlterados = [];
 
             linhas.forEach(linha => {
                 const linhaLimpa = linha.trim();
@@ -437,7 +463,8 @@
 
                     if(p) {
                         p.estoque = Math.max(0, (p.estoque || 0) - qtd); 
-                        p.last_update = Date.now(); 
+                        p.last_update = Date.now();
+                        if (!produtosAlterados.includes(p)) produtosAlterados.push(p); 
                         encontrados++; 
                         
                         const valorUn = parseFloat(p.preco) || 0;
@@ -516,10 +543,10 @@
                     message: `Adicionado Pedido #${numeroPedido} para separação`
                 });
 
-                // 4. Salvar produtos
-                salvarProdutosJSON(); 
+                // 4. Salvar estoque diretamente na fonte oficial
+                await salvarProdutosFirebase(produtosAlterados); 
 
-                let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nEnviando para o GitHub em segundo plano.`;
+                let msg = `✅ Sucesso! ${encontrados} produtos abatidos.\nEstoque salvo no Firebase; enviando somente os arquivos auxiliares em segundo plano.`;
                 if(falhas.length > 0) msg += `\n\n⚠️ ${falhas.length} iten(s) não encontrado(s).`;
                 mostrarAlerta(msg, falhas.length > 0 ? "aviso" : "sucesso");
 

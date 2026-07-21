@@ -54,7 +54,6 @@ jobs:
         run: |
           set -euo pipefail
           dir="$RUNNER_TEMP/ofertas-publicacao"
-          cp site/produtos.json "$dir/gerado-produtos.json"
           cp site/produtos-home.json "$dir/gerado-produtos-home.json"
           cp site/ofertas-automaticas-estado.json "$dir/gerado-estado.json"
           cp site/ofertas-historico.json "$dir/gerado-historico.json"
@@ -78,7 +77,6 @@ jobs:
             node scripts/reconciliar-publicacao-ofertas.mjs
 
             git add \
-              site/produtos.json \
               site/produtos-home.json \
               site/ofertas-automaticas-estado.json \
               site/ofertas-historico.json \

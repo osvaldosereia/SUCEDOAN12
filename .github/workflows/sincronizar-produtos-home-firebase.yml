@@ -1,5 +1,5 @@
 name: Sincronizar produtos-home com Firebase
-run-name: Validar Firebase único · ${{ github.event_name }}
+run-name: Produtos-home oficial · ${{ github.event_name }}
 
 on:
   workflow_dispatch:
@@ -12,123 +12,51 @@ on:
     paths:
       - ".github/workflows/sincronizar-produtos-home-firebase.yml"
       - "scripts/sincronizar-produtos-home-firebase.mjs"
-      - "scripts/corrigir-sincronizacao-catalogos.mjs"
-      - "producao/catalog-sync-admin.js"
-      - "producao/nfe-import.js"
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/sincronizar-produtos-home-firebase.yml"
-      - "scripts/sincronizar-produtos-home-firebase.mjs"
-      - "scripts/corrigir-sincronizacao-catalogos.mjs"
 
 permissions:
   contents: write
 
 concurrency:
-  group: sincronizar-produtos-home-firebase-${{ github.event.pull_request.number || github.ref }}
+  group: sincronizar-produtos-home-firebase
   cancel-in-progress: true
 
 jobs:
   sincronizar:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 10
     steps:
-      - name: Baixar somente os arquivos necessários
+      - name: Baixar catálogo leve e sincronizador
         uses: actions/checkout@v5
         with:
           fetch-depth: 1
           show-progress: false
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            index.html
-            site/index.html
-            producao/index.html
-            producao/pedido.html
-            producao/catalog-sync-admin.js
-            producao/nfe-import.js
-            estoque.html
-            site/app-version.json
             site/produtos-home.json
-            site/produtos.json
-            site/ofertas-automaticas-estado.json
-            site/ofertas-historico.json
-            site/banners/banners.json
-            cadastro/teste/README.md
-            scripts/corrigir-sincronizacao-catalogos.mjs
             scripts/sincronizar-produtos-home-firebase.mjs
-            scripts/processar-ofertas.mjs
-            scripts/reconciliar-publicacao-ofertas.mjs
-            scripts/atualizar-admin-produtos-home.mjs
-            .github/workflows/processar-ofertas.yml
-            .github/workflows/atualizar-admin-produtos-home.yml
-            .github/workflows/sincronizar-produtos-home-firebase.yml
 
       - name: Configurar Node.js
         uses: actions/setup-node@v5
         with:
           node-version: 22
 
-      - name: Executar migração com diagnóstico
-        id: migrate
-        shell: bash
+      - name: Gerar catálogo leve diretamente do Firebase
         env:
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
-        run: |
-          set +e
-          touch migration.log
-          node -e "const fs=require('fs');const p='.github/workflows/processar-ofertas.yml';const legacy=['site','produtos.json'].join('/');const s=fs.readFileSync(p,'utf8');fs.writeFileSync(p,s.split(/\\r?\\n/).filter(line=>!line.includes(legacy)).join('\\n'));" >> migration.log 2>&1
-          code=$?
-          if [ "$code" -eq 0 ]; then node scripts/corrigir-sincronizacao-catalogos.mjs >> migration.log 2>&1; code=$?; fi
-          if [ "$code" -eq 0 ]; then node scripts/sincronizar-produtos-home-firebase.mjs >> migration.log 2>&1; code=$?; fi
-          cat migration.log
-          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          exit 0
+        run: node scripts/sincronizar-produtos-home-firebase.mjs
 
-      - name: Guardar diagnóstico
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: diagnostico-remocao-produtos-json
-          path: migration.log
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Interromper se a migração falhou
-        if: steps.migrate.outputs.exit_code != '0'
-        shell: bash
-        run: exit 1
-
-      - name: Validar fonte única
-        shell: bash
-        run: |
-          set -euo pipefail
-          test ! -e site/produtos.json
-          test -s site/produtos-home.json
-          if git grep -n -F 'site/produtos.json' -- \
-            index.html site/index.html producao/index.html producao/pedido.html estoque.html \
-            scripts/processar-ofertas.mjs scripts/reconciliar-publicacao-ofertas.mjs \
-            .github/workflows/processar-ofertas.yml cadastro/teste/README.md; then
-            echo 'Ainda há referência operacional a site/produtos.json.' >&2
-            exit 1
-          fi
-          node --check scripts/sincronizar-produtos-home-firebase.mjs
-          node --check scripts/processar-ofertas.mjs
-          node --check scripts/reconciliar-publicacao-ofertas.mjs
-
-      - name: Publicar correção e catálogo leve
-        if: github.event_name != 'pull_request'
+      - name: Publicar somente produtos-home
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add site/produtos-home.json
           if git diff --cached --quiet; then
-            echo "O repositório já está no modelo Firebase único."
+            echo "produtos-home já está sincronizado com o Firebase."
             exit 0
           fi
-          git commit -m "Elimina site/produtos.json e mantém Firebase como fonte única"
+          git commit -m "Sincroniza produtos-home diretamente do Firebase"
           git push origin "HEAD:${GITHUB_REF_NAME}"
