@@ -50,7 +50,7 @@ async function firebaseHeaders() {
   const response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth2:grant-type:jwt-bearer", assertion })
+    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion })
   });
   if (!response.ok) throw new Error(`Google OAuth para Firebase: ${response.status} ${await response.text()}`);
 
