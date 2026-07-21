@@ -2,11 +2,11 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="da-build-version" content="2026-07-21-carregamento-simples-v18">
+  <meta name="da-build-version" content="2026-07-21-carregamento-imediato-v19">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-21-carregamento-simples-v18';
+    const BUILD = '2026-07-21-carregamento-imediato-v19';
     window.__DA_BUILD_VERSION__ = BUILD;
     window.__DA_PAGESPEED_TEST__ = false;
     document.documentElement.classList.add('da-pagespeed-booting');
@@ -1002,7 +1002,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-21-carregamento-simples-v18',
+      APP_VERSION: '2026-07-21-carregamento-imediato-v19',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -1324,7 +1324,8 @@
       try {
         const current = localStorage.getItem(CONFIG.VERSION_STORAGE_KEY);
         if (current !== CONFIG.APP_VERSION) {
-          clearSavedCatalogAndCart();
+          // Atualização do código não deve apagar catálogos já baixados.
+          // O cache existente permite que celulares lentos abram a loja imediatamente.
           localStorage.setItem(CONFIG.VERSION_STORAGE_KEY, CONFIG.APP_VERSION);
         }
       } catch(e) {}
@@ -1486,6 +1487,17 @@
       const urls = Array.isArray(CONFIG.PRODUCT_HOME_URLS) && CONFIG.PRODUCT_HOME_URLS.length
         ? CONFIG.PRODUCT_HOME_URLS
         : ['/site/produtos-home.json'];
+      const cacheAge = cache ? Date.now() - Number(cache.savedAt || 0) : Infinity;
+
+      // Abre imediatamente com o catálogo recente já salvo no aparelho.
+      // A cada dez minutos o arquivo público volta a ser consultado.
+      if (!forceFresh && cache && cache.data && cacheAge <= 10 * 60 * 1000) {
+        normalizeProducts(cache.data, { mode: 'compact-cache-fast' });
+        state.catalogLoadedAt = Number(cache.savedAt || 0);
+        state.catalogSource = 'site-compact-cache-fast';
+        state.catalogMode = 'compact-cache-fast';
+        return true;
+      }
 
       for (const url of urls) {
         try {
@@ -1553,6 +1565,7 @@
         nome: String(c.nome || 'Cesta Básica'),
         descricao: String(c.descricao || c.description || 'Kit de produtos selecionados.'),
         imagem: normalizeRelativeImage(c.imagem || c.img || c.url_imagem || 'img/logoantonia5.png'),
+        imagens: assetCandidates(c.imagem || c.img || c.url_imagem || 'img/logoantonia5.png'),
         preco: parseMoney(c.preco || c.price || 0),
         precoOriginal: parseMoney(c.precoOriginal || c.preco_original || 0),
         produtos: c.produtos || [],
@@ -1560,8 +1573,16 @@
       }));
     }
 
-    async function loadCestas() {
+    async function loadCestas(options) {
+      const forceFresh = !!(options && options.forceFresh);
       const cache = readCache(CONFIG.BASKET_CACHE_KEY);
+      if (!forceFresh && cache && cache.data) {
+        applyCestasData(cache.data);
+        setTimeout(() => loadCestas({ forceFresh: true }).then(() => {
+          if (state.isReady && /^(#\/(?:$|cestas|cesta\/))/.test(location.hash || '#/')) handleRoute();
+        }).catch(() => {}), 80);
+        return;
+      }
       const urls = [
         'site/produtos-cesta-basica.json',
         'site/cestas.json',
@@ -1570,7 +1591,7 @@
       let lastError = null;
       for (const url of urls) {
         try {
-          const data = await fetchJson(withCacheBust(url), 5000, { cache: 'default' });
+          const data = await fetchJson(withCacheBust(url, forceFresh), 8000, { cache: forceFresh ? 'no-store' : 'default' });
           applyCestasData(data);
           writeCache(CONFIG.BASKET_CACHE_KEY, { savedAt: Date.now(), data });
           return;
@@ -1597,6 +1618,7 @@
           nome: String(k.nome || 'Kit promocional'),
           descricao: String(k.descricao || k.description || k.descricao_oferta || k.detalhes || k.observacoes || k.obs || 'Kit promocional por tempo limitado.'),
           imagem: normalizeRelativeImage(k.imagem || k.img || k.url_imagem || 'img/logoantonia5.png'),
+          imagens: assetCandidates(k.imagem || k.img || k.url_imagem || 'img/logoantonia5.png'),
           preco,
           precoOriginal: parseMoney(k.precoOriginal || k.preco_original || k.soma_avulsa || k.valor_original || 0),
           produtos: k.produtos || [],
@@ -1610,8 +1632,16 @@
       });
     }
 
-    async function loadKits() {
+    async function loadKits(options) {
+      const forceFresh = !!(options && options.forceFresh);
       const cache = readCache(CONFIG.KIT_CACHE_KEY);
+      if (!forceFresh && cache && cache.data) {
+        applyKitsData(cache.data);
+        setTimeout(() => loadKits({ forceFresh: true }).then(() => {
+          if (state.isReady && /^(#\/(?:$|kits|kit\/))/.test(location.hash || '#/')) handleRoute();
+        }).catch(() => {}), 100);
+        return;
+      }
       const urls = [
         'site/kits.json',
         'kits.json'
@@ -1619,7 +1649,7 @@
       let lastError = null;
       for (const url of urls) {
         try {
-          const data = await fetchJson(withCacheBust(url), 5000, { cache: 'default' });
+          const data = await fetchJson(withCacheBust(url, forceFresh), 8000, { cache: forceFresh ? 'no-store' : 'default' });
           applyKitsData(data);
           writeCache(CONFIG.KIT_CACHE_KEY, { savedAt: Date.now(), data });
           return;
@@ -1638,11 +1668,10 @@
 
     function normalizeRelativeImage(value) {
       const img = String(value || '').trim();
-      if (!img) return 'https://donaantonia.com.br/img/logoantonia5.png';
-      if (/site\/tmp\/ia-referencias\//i.test(img)) return 'https://donaantonia.com.br/img/logoantonia5.png';
-      if (/^(https?:|data:)/i.test(img)) return img;
-      const clean = img.replace(/^(\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
-      return siteAssetUrl(clean);
+      if (!img) return PUBLIC_ASSET_LOGO;
+      if (/site\/tmp\/ia-referencias\//i.test(img)) return PUBLIC_ASSET_LOGO;
+      if (/^data:/i.test(img)) return img;
+      return siteAssetUrl(img);
     }
 
     function normalizeBannerImage() { return ''; }
@@ -2674,6 +2703,13 @@
         .split('|')
         .map(value => value.trim())
         .filter(Boolean);
+      // Mesmo imagens de kit/cesta sem lista declarada ganham uma segunda origem.
+      if (current) {
+        const normalizedCurrent = normalizePublicAsset(current);
+        if (normalizedCurrent.path) assetCandidates(normalizedCurrent.path).forEach(url => {
+          if (url && !declared.includes(url)) declared.push(url);
+        });
+      }
       if (!declared.includes(PUBLIC_ASSET_LOGO)) declared.push(PUBLIC_ASSET_LOGO);
 
       const used = new Set(String(el.getAttribute('data-fallback-used') || '').split('|').filter(Boolean));
@@ -2845,7 +2881,7 @@
         return `
           <article class="${classes.join(' ')} basket-card-simple">
             <a class="basket-imgbox" href="#/cesta/${encodeURIComponent(cesta.id)}" aria-label="Abrir ${escapeHtml(cesta.nome)}">
-              <img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(cesta.imagem)}" alt="${escapeHtml(cesta.nome)}" onerror="window.__daFallbackImg(this)">
+              <img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(cesta.imagem)}" data-fallback-images="${escapeHtml(imageFallbackList(cesta.imagens))}" alt="${escapeHtml(cesta.nome)}" onerror="window.__daFallbackImg(this)">
             </a>
             <div class="basket-body">
               <div class="basket-name">${escapeHtml(cesta.nome)}</div>
@@ -2859,7 +2895,7 @@
       return `
         <article class="${classes.join(' ')}">
           <a class="basket-imgbox" href="#/cesta/${encodeURIComponent(cesta.id)}" aria-label="Abrir ${escapeHtml(cesta.nome)}">
-            <img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(cesta.imagem)}" alt="${escapeHtml(cesta.nome)}" onerror="window.__daFallbackImg(this)">
+            <img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(cesta.imagem)}" data-fallback-images="${escapeHtml(imageFallbackList(cesta.imagens))}" alt="${escapeHtml(cesta.nome)}" onerror="window.__daFallbackImg(this)">
           </a>
           <div class="basket-body">
             <div class="basket-name">${escapeHtml(cesta.nome)}</div>
@@ -2884,7 +2920,7 @@
           <article class="${classes.join(' ')} basket-card-simple kit-card">
             <div class="product-media-wrap kit-media-wrap">
               <a class="basket-imgbox" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}">
-                <img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
+                <img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(kit.imagem)}" data-fallback-images="${escapeHtml(imageFallbackList(kit.imagens))}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
               </a>
               ${favoriteButtonHtml(kit.id, false, 'kit')}
               ${discount > 0 ? `<span class="media-discount-badge">-${discount}%</span>` : ''}
@@ -2902,7 +2938,7 @@
         <article class="${classes.join(' ')} kit-card">
           <div class="product-media-wrap kit-media-wrap">
             <a class="basket-imgbox" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}">
-              <img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
+              <img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(kit.imagem)}" data-fallback-images="${escapeHtml(imageFallbackList(kit.imagens))}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
             </a>
             ${favoriteButtonHtml(kit.id, false, 'kit')}
             ${discount > 0 ? `<span class="media-discount-badge">-${discount}%</span>` : ''}
@@ -3174,7 +3210,7 @@
         <article class="kit-deal-card">
           <div class="kit-deal-top kit-deal-top-stacked">
             <div class="kit-deal-media product-media-wrap">
-              <img class="kit-deal-img" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
+              <img class="kit-deal-img" src="${escapeHtml(kit.imagem)}" data-fallback-images="${escapeHtml(imageFallbackList(kit.imagens))}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)">
               ${favoriteButtonHtml(kit.id, false, 'kit')}
               ${discount > 0 ? `<span class="media-discount-badge">-${discount}%</span>` : ''}
             </div>
@@ -5106,8 +5142,8 @@
             console.warn('Catálogo leve indisponível; tentando Firebase completo:', err && err.message ? err.message : err);
             await loadProducts();
           }
-          await auxPromise;
-
+          // Produtos aparecem assim que o catálogo estiver pronto.
+          // Kits, cestas e cupons continuam carregando sem bloquear a vitrine.
           state.isReady = true;
           rebuildVirtualFees();
           renderSiteMenuContent();
@@ -5118,21 +5154,32 @@
           requestAnimationFrame(() => {
             document.documentElement.classList.remove('da-pagespeed-booting');
           });
+          auxPromise.then(() => {
+            if (!state.isReady || !isHomeRoute()) return;
+            renderSiteMenuContent();
+            handleRoute();
+            updateCartUI();
+          });
           if (homeCatalogError) console.info('Home carregada pelo catálogo completo após falha do catálogo leve.');
           return;
         }
 
-        // Rotas de produto/categoria/busca entram com o catálogo completo para evitar detalhe incompleto.
-        await Promise.all([
-          loadProducts(),
-          Promise.allSettled([loadCestas(), loadKits(), loadCoupons()])
-        ]);
+        // Nenhuma rota deve esperar kits, cestas ou cupons para mostrar produtos.
+        const auxPromise = Promise.allSettled([loadCestas(), loadKits(), loadCoupons()]);
+        await loadProducts();
         state.isReady = true;
         rebuildVirtualFees();
         renderSiteMenuContent();
         removeMissingCartItems();
         handleRoute();
         updateCartUI();
+        auxPromise.then(() => {
+          if (!state.isReady) return;
+          const hash = location.hash || '#/';
+          if (/^#\/(?:kits|kit\/|cestas|cesta\/)/.test(hash)) handleRoute();
+          renderSiteMenuContent();
+          updateCartUI();
+        });
       } catch(err) {
         console.error(err);
         app.innerHTML = `<div class="container"><div class="empty"><strong>Não conseguimos carregar o catálogo.</strong>Tente novamente em alguns instantes.</div></div>`;
@@ -5498,7 +5545,7 @@
         const original = kitOriginalPrice(kit);
         const discount = kitDiscountPercent(kit);
         return `<article class="da-home-kit-card">
-          <div class="da-home-kit-media"><a class="da-home-square-media" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}"><img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)"></a>${favoriteButtonHtml(kit.id,false,'kit')}${discount > 0 ? `<span class="da-home-kit-discount">${discount}%<span class="da-home-off-word">&nbsp;OFF</span></span>` : ''}</div>
+          <div class="da-home-kit-media"><a class="da-home-square-media" href="#/kit/${encodeURIComponent(kit.id)}" aria-label="Abrir ${escapeHtml(kit.nome)}"><img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(kit.imagem)}" data-fallback-images="${escapeHtml(imageFallbackList(kit.imagens))}" alt="${escapeHtml(kit.nome)}" onerror="window.__daFallbackImg(this)"></a>${favoriteButtonHtml(kit.id,false,'kit')}${discount > 0 ? `<span class="da-home-kit-discount">${discount}%<span class="da-home-off-word">&nbsp;OFF</span></span>` : ''}</div>
           <div class="da-home-kit-body"><a class="da-home-basket-name" href="#/kit/${encodeURIComponent(kit.id)}">${escapeHtml(kit.nome)}</a><div class="da-home-kit-price">${kit.preco ? daHomeCommercialPriceHtml({original,effective:Number(kit.preco || 0)}) : 'Ver produtos'}</div><div class="da-home-kit-actions"><a href="#/kit/${encodeURIComponent(kit.id)}">Ver produtos</a><button type="button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar</button></div></div>
         </article>`;
       }
