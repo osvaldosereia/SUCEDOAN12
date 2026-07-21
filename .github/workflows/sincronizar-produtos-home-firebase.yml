@@ -1,4 +1,4 @@
-name: Sincronizar produtos da home com Firebase
+name: Sincronizar catálogos de produtos com Firebase
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: sincronizar-produtos-home-firebase
+  group: sincronizar-catalogos-produtos-firebase
   cancel-in-progress: true
 
 jobs:
@@ -29,24 +29,40 @@ jobs:
         with:
           node-version: 22
 
-      - name: Ler Firebase e gerar catálogo compacto
+      - name: Gerar e publicar catálogos oficiais
+        shell: bash
         env:
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
-        run: node scripts/sincronizar-produtos-home-firebase.mjs
-
-      - name: Publicar produtos-home.json
-        shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- site/produtos-home.json; then
-            echo "produtos-home.json já está sincronizado com o Firebase."
-            exit 0
-          fi
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/produtos-home.json
-          git commit -m "Sincroniza produtos-home diretamente do Firebase"
-          git push
+
+          for attempt in 1 2 3 4; do
+            echo "Tentativa ${attempt}: atualizando a base e lendo o Firebase..."
+            git fetch origin "${GITHUB_REF_NAME}"
+            git reset --hard "origin/${GITHUB_REF_NAME}"
+
+            node scripts/sincronizar-produtos-home-firebase.mjs
+
+            if git diff --quiet -- site/produtos-home.json site/produtos.json; then
+              echo "Os catálogos já estão sincronizados com o Firebase."
+              exit 0
+            fi
+
+            git add site/produtos-home.json site/produtos.json
+            git commit -m "Sincroniza catálogos de produtos diretamente do Firebase"
+
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "Catálogos publicados com sucesso."
+              exit 0
+            fi
+
+            echo "O repositório mudou durante a publicação; repetindo com a versão mais recente."
+            sleep $((attempt * 3))
+          done
+
+          echo "Não foi possível publicar os catálogos após quatro tentativas."
+          exit 1
