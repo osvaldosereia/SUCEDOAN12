@@ -15,12 +15,18 @@ on:
       - "scripts/corrigir-sincronizacao-catalogos.mjs"
       - "producao/catalog-sync-admin.js"
       - "producao/nfe-import.js"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/sincronizar-produtos-home-firebase.yml"
+      - "scripts/sincronizar-produtos-home-firebase.mjs"
+      - "scripts/corrigir-sincronizacao-catalogos.mjs"
 
 permissions:
   contents: write
 
 concurrency:
-  group: sincronizar-produtos-home-firebase
+  group: sincronizar-produtos-home-firebase-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -99,6 +105,7 @@ jobs:
           node --check scripts/reconciliar-publicacao-ofertas.mjs
 
       - name: Publicar correção e catálogo leve
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
