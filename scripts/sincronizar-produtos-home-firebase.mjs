@@ -78,6 +78,40 @@ function isActive(product) {
   return !["I", "INATIVO", "INACTIVE", "0", "FALSE", "EXCLUIDO"].includes(situation);
 }
 
+function publicImageValue(value) {
+  const source = text(value);
+  if (!source) return '';
+
+  const rawMatch = source.match(/^https:\/\/raw\.githubusercontent\.com\/osvaldosereia\/SUCEDOAN12\/(?:main|master)\/(.+)$/i);
+  if (rawMatch) return rawMatch[1];
+
+  if (/^https?:\/\//i.test(source)) {
+    try {
+      const parsed = new URL(source);
+      if (/^(?:www\.)?donaantonia\.com\.br$/i.test(parsed.hostname)) return parsed.pathname.replace(/^\/+/, '');
+      return source;
+    } catch (_) {
+      return source;
+    }
+  }
+
+  let clean = source.replace(/^(?:\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
+  if (/^img\/(produtos_3|produtos_2|produtos|kits)\//i.test(clean)) clean = `site/${clean}`;
+  return clean;
+}
+
+function publicPrice(product) {
+  return money(product?.preco ?? product?.price ?? product?.valor);
+}
+
+function publicStock(product) {
+  return Math.max(0, Math.floor(number(product?.estoque)));
+}
+
+function isPubliclyAvailable(product) {
+  return isActive(product) && publicStock(product) > 0 && publicPrice(product) > 0;
+}
+
 function compactProduct(key, product = {}) {
   const compact = {
     firebaseKey: key,
@@ -89,33 +123,37 @@ function compactProduct(key, product = {}) {
     subsubcategoria: text(product.subsubcategoria),
     marca: text(product.marca),
     embalagem: text(product.embalagem),
-    preco: money(product.preco ?? product.price ?? product.valor),
+    preco: publicPrice(product),
     preco_oferta: money(product.preco_oferta ?? product.precoOferta),
-    estoque: Math.max(0, Math.floor(number(product.estoque))),
-    situacao: isActive(product) ? "A" : "I",
-    url_imagem: text(product.url_imagem || product.imagem_url || product.imagem || product.image || product.img || product.foto || product.foto_url || product.imagem_path),
+    estoque: publicStock(product),
+    situacao: 'A',
+    url_imagem: publicImageValue(product.url_imagem || product.imagem_url || product.imagem || product.image || product.img || product.foto || product.foto_url || product.imagem_path),
     descricao_curta: text(product.descricao_curta || product.descricao).slice(0, 180),
     validade: text(product.validade || product.data_validade),
     validade_oferta: text(product.validade_oferta || product.validadeOferta),
-    gtin: text(product.gtin || product.ean)
+    gtin: text(product.gtin || product.ean),
+    gondola: text(product.gondola || product['gôndola']),
+    prateleira: text(product.prateleira),
+    localizacao: text(product.localizacao)
   };
 
   return Object.fromEntries(
-    Object.entries(compact).filter(([, value]) => value !== "" && value !== null && value !== undefined)
+    Object.entries(compact).filter(([, value]) => value !== '' && value !== null && value !== undefined)
   );
 }
 
 async function run() {
   const products = await loadFirebaseProducts();
   const entries = Object.entries(products);
-  const compact = Object.fromEntries(entries.map(([key, product]) => [key, compactProduct(key, product)]));
+  const visibleEntries = entries.filter(([, product]) => isPubliclyAvailable(product));
+  const compact = Object.fromEntries(visibleEntries.map(([key, product]) => [key, compactProduct(key, product)]));
 
-  if (Object.keys(compact).length !== entries.length) {
-    throw new Error("A quantidade de produtos compactados diverge do Firebase.");
+  if (Object.keys(compact).length !== visibleEntries.length) {
+    throw new Error('A quantidade de produtos públicos compactados diverge da seleção do Firebase.');
   }
 
-  await writeFile(PRODUCTS_HOME_PATH, `${JSON.stringify(compact, null, 2)}\n`, "utf8");
-  console.log(`${PRODUCTS_HOME_PATH} sincronizado diretamente do Firebase com ${entries.length} produtos.`);
+  await writeFile(PRODUCTS_HOME_PATH, `${JSON.stringify(compact)}\n`, 'utf8');
+  console.log(`${PRODUCTS_HOME_PATH} sincronizado com ${visibleEntries.length} produtos disponíveis de ${entries.length} produtos do Firebase.`);
 }
 
 run().catch(error => {

@@ -2,11 +2,11 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="da-build-version" content="2026-07-17-compra-rapida-v15">
+  <meta name="da-build-version" content="2026-07-21-carregamento-simples-v18">
   <script>
   (function(){
     'use strict';
-    const BUILD = '2026-07-17-compra-rapida-v15';
+    const BUILD = '2026-07-21-carregamento-simples-v18';
     window.__DA_BUILD_VERSION__ = BUILD;
     window.__DA_PAGESPEED_TEST__ = false;
     document.documentElement.classList.add('da-pagespeed-booting');
@@ -28,9 +28,6 @@
   <meta property="og:url" content="https://www.donaantonia.com.br/">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="canonical" href="https://www.donaantonia.com.br/">
-  <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
-  <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-17-compra-rapida-v15" as="fetch" type="application/json" crossorigin="anonymous" fetchpriority="high">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -997,7 +994,7 @@
       SITE_BASE_URL: 'https://www.donaantonia.com.br',
       PRODUCT_URL: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json',
       PRODUCT_ITEM_BASE_URL: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos',
-      PRODUCT_HOME_URLS: ['site/produtos-home.json', 'produtos-home.json'],
+      PRODUCT_HOME_URLS: ['/site/produtos-home.json'],
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       FIREBASE_ORDERS_URL: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/pedidos',
       ORDER_DELIVERY_QUEUE_KEY: 'da_pedidos_pendentes_v2',
@@ -1005,7 +1002,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-21-firebase-unico-v17',
+      APP_VERSION: '2026-07-21-carregamento-simples-v18',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -1118,52 +1115,76 @@
       return raw.toLowerCase().replace(/(^|\s|[-/])([a-záéíóúâêôãõç])/g, (m, sep, chr) => sep + chr.toUpperCase()).replace(/\b(kg|g|ml|l|un|und|pct|cx)\b/gi, m => m.toLowerCase());
     }
 
+    const PUBLIC_ASSET_LOGO = `${location.origin}/img/logoantonia5.png`;
+    const REPOSITORY_RAW_BASE = 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main';
+
+    function normalizePublicAsset(value) {
+      const source = String(value || '').trim();
+      if (!source) return { path: 'img/logoantonia5.png', external: '' };
+      if (/^data:/i.test(source)) return { path: '', external: source };
+
+      let clean = source;
+      if (/^https?:\/\//i.test(source)) {
+        const rawMatch = source.match(/^https:\/\/raw\.githubusercontent\.com\/osvaldosereia\/SUCEDOAN12\/(?:main|master)\/(.+)$/i);
+        if (rawMatch) {
+          clean = rawMatch[1];
+        } else {
+          try {
+            const parsed = new URL(source, location.href);
+            if (parsed.hostname === location.hostname || /^(?:www\.)?donaantonia\.com\.br$/i.test(parsed.hostname)) {
+              clean = parsed.pathname.replace(/^\/+/, '');
+            } else {
+              return { path: '', external: source };
+            }
+          } catch (_) {
+            return { path: '', external: source };
+          }
+        }
+      }
+
+      clean = clean.replace(/^(?:\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
+      if (/^img\/(produtos_3|produtos_2|produtos|kits)\//i.test(clean)) clean = `site/${clean}`;
+      return { path: clean || 'img/logoantonia5.png', external: '' };
+    }
+
+    function assetCandidates(value) {
+      const normalized = normalizePublicAsset(value);
+      if (normalized.external) return [normalized.external];
+      const path = normalized.path || 'img/logoantonia5.png';
+      const candidates = [`${location.origin}/${path}`];
+      if (/^(?:site\/img\/(?:produtos_3|produtos_2|produtos|kits)\/|site\/banners\/)/i.test(path)) {
+        candidates.push(`${REPOSITORY_RAW_BASE}/${path}`);
+      }
+      return Array.from(new Set(candidates));
+    }
+
     function siteAssetUrl(value) {
-      const img = String(value || '').trim();
-      const siteBase = 'https://donaantonia.com.br';
-      const githubRawBase = 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main';
-      if (!img) return `${siteBase}/img/logoantonia5.png`;
-      if (/^data:/i.test(img)) return img;
-      if (/^https?:\/\//i.test(img)) return img;
-      const clean = img.replace(/^(\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
-      if (!clean) return `${siteBase}/img/logoantonia5.png`;
-      // Imagens novas e arquivos publicados pelo admin/Make ficam no GitHub.
-      // Usar raw evita depender de deploy do domínio para cada imagem nova.
-      if (/^(site\/img\/(produtos_3|produtos_2|produtos|kits)\/|site\/banners\/)/i.test(clean)) {
-        return `${githubRawBase}/${clean}`;
-      }
-      // Caminhos antigos sem o prefixo site/ continuam aceitos como legado.
-      if (/^img\/(produtos_3|produtos_2|produtos|kits)\//i.test(clean)) {
-        return `${githubRawBase}/site/${clean}`;
-      }
-      if (clean.startsWith('site/')) return `${siteBase}/${clean}`;
-      return `${siteBase}/${clean}`;
+      return assetCandidates(value)[0] || PUBLIC_ASSET_LOGO;
     }
 
     function productImagesFor(raw, product) {
       const list = [];
       const push = value => {
-        const src = String(value || '').trim();
-        if (!src) return;
-        // Nunca usar referência temporária como imagem pública do produto.
-        if (/site\/tmp\/ia-referencias\//i.test(src) || /\/site\/tmp\/ia-referencias\//i.test(src)) return;
-        const url = siteAssetUrl(src);
-        if (url && !/ia-referencias/i.test(url) && !list.includes(url)) list.push(url);
+        const source = String(value || '').trim();
+        if (!source || /site\/tmp\/ia-referencias\//i.test(source)) return;
+        assetCandidates(source).forEach(url => {
+          if (url && !/ia-referencias/i.test(url) && !list.includes(url)) list.push(url);
+        });
       };
-      // Ordem oficial da estratégia nova: URL final salva no Firebase primeiro.
+
       push(raw.url_imagem || '');
       push(raw.imagem_url || raw.urlImagem || '');
       push(raw.imagem || raw.image || raw.img || raw.foto || raw.foto_url || '');
       if (Array.isArray(raw.imagens)) raw.imagens.forEach(push);
       if (Array.isArray(raw.images)) raw.images.forEach(push);
-      // Se o admin salvou apenas o path novo, montar a URL raw do GitHub.
-      if (!list.length && raw.imagem_path) push(raw.imagem_path);
+      if (raw.imagem_path) push(raw.imagem_path);
+
       const code = String(product.codigo || product.id || product.firebaseKey || '').trim();
-      if (!list.length && code) {
-        push(`img/produtos_2/${encodeURIComponent(code)}.webp`);
-        push(`img/produtos/${encodeURIComponent(code)}.webp`);
+      if (code) {
+        push(`site/img/produtos_2/${encodeURIComponent(code)}.webp`);
+        push(`site/img/produtos/${encodeURIComponent(code)}.webp`);
       }
-      if (!list.length) push('img/logoantonia5.png');
+      if (!list.length) list.push(PUBLIC_ASSET_LOGO);
       return list;
     }
 
@@ -1372,7 +1393,8 @@
       const source = String(url || '');
       const separator = source.includes('?') ? '&' : '?';
       const liveCatalog = /(?:^|\/)produtos-home\.json(?:\?|$)/i.test(source);
-      const version = forceFresh || liveCatalog ? Date.now() : CONFIG.APP_VERSION;
+      const fiveMinuteVersion = Math.floor(Date.now() / (5 * 60 * 1000));
+      const version = forceFresh ? Date.now() : (liveCatalog ? fiveMinuteVersion : CONFIG.APP_VERSION);
       return `${source}${separator}v=${encodeURIComponent(version)}`;
     }
 
@@ -1387,17 +1409,20 @@
     }
 
     async function fetchJson(url, timeoutMs, options) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs || 6500);
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timer = controller ? setTimeout(() => controller.abort(), timeoutMs || 10000) : null;
       try {
-        const res = await fetch(url, {
+        const requestOptions = {
           cache: options && options.cache ? options.cache : 'default',
-          signal: controller.signal,
           headers: { Accept: 'application/json' }
-        });
+        };
+        if (controller) requestOptions.signal = controller.signal;
+        const res = await fetch(url, requestOptions);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
-      } finally { clearTimeout(timer); }
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
     }
 
     function couponIsValid(coupon) {
@@ -1453,71 +1478,71 @@
       rebuildVirtualFees();
     }
 
-    async function loadHomeProducts() {
-      const cache = readCache(CONFIG.PRODUCT_HOME_CACHE_KEY || 'da_produtos_home_cache_v1');
+    async function loadHomeProducts(options) {
+      const forceFresh = !!(options && options.forceFresh);
+      const cacheKey = CONFIG.PRODUCT_HOME_CACHE_KEY || 'da_produtos_home_cache_v2';
+      const cache = readCache(cacheKey);
       let lastError = null;
-      const urls = Array.isArray(CONFIG.PRODUCT_HOME_URLS) && CONFIG.PRODUCT_HOME_URLS.length ? CONFIG.PRODUCT_HOME_URLS : ['site/produtos-home.json'];
+      const urls = Array.isArray(CONFIG.PRODUCT_HOME_URLS) && CONFIG.PRODUCT_HOME_URLS.length
+        ? CONFIG.PRODUCT_HOME_URLS
+        : ['/site/produtos-home.json'];
+
       for (const url of urls) {
         try {
-          const data = await fetchJson(withCacheBust(url), 6500, { cache: 'no-store' });
+          const data = await fetchJson(withCacheBust(url, forceFresh), 12000, { cache: forceFresh ? 'no-store' : 'default' });
           normalizeProducts(data, { mode: 'compact-full' });
           state.catalogLoadedAt = Date.now();
-          state.catalogSource = 'github-compact';
+          state.catalogSource = 'site-compact';
           state.catalogMode = 'compact-full';
-          writeCache(CONFIG.PRODUCT_HOME_CACHE_KEY || 'da_produtos_home_cache_v1', { savedAt: Date.now(), appVersion: CONFIG.APP_VERSION, data });
+          writeCache(cacheKey, { savedAt: Date.now(), appVersion: CONFIG.APP_VERSION, data });
           return true;
-        } catch (e) {
-          lastError = e;
+        } catch (error) {
+          lastError = error;
         }
       }
+
       if (cache && cache.data) {
-        normalizeProducts(cache.data, { mode: 'compact-full' });
+        normalizeProducts(cache.data, { mode: 'compact-cache' });
         state.catalogLoadedAt = Number(cache.savedAt || 0);
-        state.catalogSource = 'github-compact-cache';
-        state.catalogMode = 'compact-full';
+        state.catalogSource = 'site-compact-cache';
+        state.catalogMode = 'compact-cache';
         return true;
       }
-      if (lastError) console.warn('produtos-home.json indisponivel:', lastError.message || lastError);
-      throw lastError || new Error('produtos-home indisponivel');
+
+      if (lastError) console.warn('Catálogo público indisponível:', lastError.message || lastError);
+      throw lastError || new Error('Catálogo público indisponível');
     }
 
     async function loadProducts(options) {
-      const cache = readCache(CONFIG.PRODUCT_CACHE_KEY);
       const forceFresh = !!(options && options.forceFresh);
-      if (!forceFresh && isHomeRoute() && state.catalogMode === 'compact-full' && state.products.length) return true;
-
-      if (!forceFresh) {
-        try {
-          await loadHomeProducts();
-          if (isHomeRoute()) return true;
-        } catch (compactError) {
-          console.warn('Catálogo compacto indisponível; tentando Firebase:', compactError && compactError.message ? compactError.message : compactError);
-        }
+      try {
+        await loadHomeProducts({ forceFresh });
+        return true;
+      } catch (compactError) {
+        console.warn('Catálogo público indisponível; usando Firebase como emergência:', compactError && compactError.message ? compactError.message : compactError);
       }
 
+      const cache = readCache(CONFIG.PRODUCT_CACHE_KEY);
       try {
-        const data = await fetchJson(withCacheBust(CONFIG.PRODUCT_URL, forceFresh), 9000, { cache: forceFresh ? 'no-store' : 'no-cache' });
-        normalizeProducts(data, { mode: 'full' });
+        const data = await fetchJson(withCacheBust(CONFIG.PRODUCT_URL, forceFresh), 12000, { cache: forceFresh ? 'no-store' : 'default' });
+        normalizeProducts(data, { mode: 'firebase-emergency' });
         state.catalogLoadedAt = Date.now();
-        state.catalogSource = 'firebase-live';
-        state.catalogMode = 'full';
+        state.catalogSource = 'firebase-emergency';
+        state.catalogMode = 'firebase-emergency';
         state.catalogVerifiedAt = state.catalogLoadedAt;
         state.catalogVerifiedAll = true;
         state.catalogVerifiedItemIds = state.products.map(product => String(product.id));
         writeCache(CONFIG.PRODUCT_CACHE_KEY, { savedAt: Date.now(), appVersion: CONFIG.APP_VERSION, data });
-      } catch (err) {
+        return true;
+      } catch (error) {
         if (cache && cache.data) {
-          normalizeProducts(cache.data, { mode: 'full-cache' });
+          normalizeProducts(cache.data, { mode: 'firebase-cache' });
           state.catalogLoadedAt = Number(cache.savedAt || 0);
-          state.catalogSource = 'cache-fallback';
-          state.catalogMode = 'full-cache';
-          console.warn('Firebase indisponivel. Usando cache de produtos:', err.message || err);
-          return;
+          state.catalogSource = 'firebase-cache';
+          state.catalogMode = 'firebase-cache';
+          return true;
         }
-        state.catalogLoadedAt = 0;
-        state.catalogSource = '';
-        console.error('Erro ao carregar Firebase:', err);
-        throw err;
+        throw error;
       }
     }
 
@@ -2644,35 +2669,25 @@
 
     function fallbackImg(el) {
       if (!el) return;
-      const logo = 'https://donaantonia.com.br/img/logoantonia5.png';
       const current = String(el.currentSrc || el.src || '').trim();
-      const declared = String(el.getAttribute('data-fallback-images') || '').split('|').map(v => v.trim()).filter(Boolean);
-      const variants = [];
-      const add = src => {
-        const clean = String(src || '').trim();
-        if (clean && !/ia-referencias/i.test(clean) && !variants.includes(clean)) variants.push(clean);
-      };
-      declared.forEach(add);
-      if (current) {
-        if (/raw\.githubusercontent\.com/i.test(current) && !/\.(webp|png|jpe?g)(?:\?|$)/i.test(current)) add(current + '.webp');
-        // Fallback legado entre pastas antigas. Produtos_3 é destino final novo e não deve cair para pasta antiga automaticamente.
-        if (/\/produtos\//i.test(current) && !/\/produtos_2\//i.test(current) && !/\/produtos_3\//i.test(current)) add(current.replace('/produtos/', '/produtos_2/'));
-        if (/\/produtos_2\//i.test(current)) add(current.replace('/produtos_2/', '/produtos/'));
-        if (/\/site\/img\/(produtos_3|produtos_2|produtos|kits)\//i.test(current) && !/raw\.githubusercontent\.com/i.test(current)) {
-          add(current.replace(/^https?:\/\/(?:www\.)?donaantonia\.com\.br\//i, 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/'));
-        }
-      }
-      add(logo);
-      const used = String(el.getAttribute('data-fallback-used') || '').split('|').filter(Boolean);
-      if (current) used.push(current);
-      const next = variants.find(src => !used.includes(src) && src !== current);
+      const declared = String(el.getAttribute('data-fallback-images') || '')
+        .split('|')
+        .map(value => value.trim())
+        .filter(Boolean);
+      if (!declared.includes(PUBLIC_ASSET_LOGO)) declared.push(PUBLIC_ASSET_LOGO);
+
+      const used = new Set(String(el.getAttribute('data-fallback-used') || '').split('|').filter(Boolean));
+      if (current) used.add(current);
+      const next = declared.find(url => url && url !== current && !used.has(url));
+
       if (next) {
-        el.setAttribute('data-fallback-used', Array.from(new Set(used)).join('|'));
+        el.setAttribute('data-fallback-used', Array.from(used).join('|'));
         el.src = next;
-      } else {
-        el.onerror = null;
-        el.src = logo;
+        return;
       }
+
+      el.onerror = null;
+      el.src = PUBLIC_ASSET_LOGO;
     }
     window.__daFallbackImg = fallbackImg;
 
@@ -6498,78 +6513,7 @@
 })();
 </script>
 
-<script id="da-fast-home-runtime">
-(function(){
-  'use strict';
-  let scheduled=false;
-  let preloadObserver=null;
-  function productImagePreloader(root){
-    if(preloadObserver || !('IntersectionObserver' in window)) return preloadObserver;
-    preloadObserver=new IntersectionObserver((entries,observer)=>{
-      entries.forEach(entry=>{
-        if(!entry.isIntersecting) return;
-        const img=entry.target;
-        img.loading='eager';
-        img.fetchPriority='auto';
-        img.dataset.daImageReady='1';
-        observer.unobserve(img);
-      });
-    },{root,rootMargin:'1000px 0px',threshold:.01});
-    return preloadObserver;
-  }
-  function optimizeProductImages(){
-    const root=document.getElementById('app');
-    if(!root) return;
-    const observer=productImagePreloader(root);
-    const imgs=Array.from(root.querySelectorAll('.da-home-offer-feature-media img, .da-home-offer-grid .da-home-offer-media img, .product-imgbox img, #product-main-image'));
-    imgs.forEach((img,index)=>{
-      img.decoding='async';
-      if(!img.width) img.width=300;
-      if(!img.height) img.height=300;
-      if(index<2){
-        img.loading='eager';
-        img.fetchPriority='high';
-        if(observer) observer.unobserve(img);
-      }else if(index<4){
-        img.loading='eager';
-        img.fetchPriority='auto';
-        if(observer) observer.unobserve(img);
-      }else if(img.dataset.daImageReady==='1'){
-        img.loading='eager';
-        img.fetchPriority='auto';
-        if(observer) observer.unobserve(img);
-      }else{
-        img.loading='lazy';
-        img.fetchPriority='auto';
-        if(img.complete && img.naturalWidth){
-          img.dataset.daImageReady='1';
-          if(observer) observer.unobserve(img);
-        }else if(observer && img.dataset.daImageReady!=='1'){
-          observer.observe(img);
-        }
-      }
-    });
-  }
-  function run(){
-    if(scheduled) return;
-    scheduled=true;
-    queueMicrotask(()=>{
-      scheduled=false;
-      optimizeProductImages();
-    });
-  }
-  document.addEventListener('DOMContentLoaded',run,{once:true});
-  const app=document.getElementById('app');
-  if(app) new MutationObserver(run).observe(app,{childList:true,subtree:true});
-  window.addEventListener('hashchange',run,{passive:true});
-  window.addEventListener('pageshow',run,{passive:true});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden) run();},{passive:true});
-  run();
-  setTimeout(run,500);
-  setTimeout(run,1600);
-})();
-</script>
-<!-- DA_PRODUCTION_FAST_HOME_V2 -->
+<!-- DA_CARREGAMENTO_NATIVO_SIMPLES_V18: imagens abaixo da tela usam loading="lazy" do navegador -->
 
 
 <!-- DA_COMPRA_RAPIDA_RUNTIME -->
