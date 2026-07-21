@@ -72,28 +72,20 @@ jobs:
       - name: Executar migração com diagnóstico
         id: migrate
         shell: bash
-        run: |
-          set +e
-          {
-            node --input-type=module <<'NODE'
-            import { readFile, writeFile } from 'node:fs/promises';
-            const path = '.github/workflows/processar-ofertas.yml';
-            const legacy = ['site', 'produtos.json'].join('/');
-            const source = await readFile(path, 'utf8');
-            const lines = source.split(/\r?\n/).filter(line => !line.includes(legacy));
-            await writeFile(path, lines.join('\n'), 'utf8');
-            NODE
-            node scripts/corrigir-sincronizacao-catalogos.mjs
-            node scripts/sincronizar-produtos-home-firebase.mjs
-          } > migration.log 2>&1
-          code=$?
-          cat migration.log
-          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          exit 0
         env:
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
+        run: |
+          set +e
+          touch migration.log
+          node -e "const fs=require('fs');const p='.github/workflows/processar-ofertas.yml';const legacy=['site','produtos.json'].join('/');const s=fs.readFileSync(p,'utf8');fs.writeFileSync(p,s.split(/\\r?\\n/).filter(line=>!line.includes(legacy)).join('\\n'));" >> migration.log 2>&1
+          code=$?
+          if [ "$code" -eq 0 ]; then node scripts/corrigir-sincronizacao-catalogos.mjs >> migration.log 2>&1; code=$?; fi
+          if [ "$code" -eq 0 ]; then node scripts/sincronizar-produtos-home-firebase.mjs >> migration.log 2>&1; code=$?; fi
+          cat migration.log
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
 
       - name: Guardar diagnóstico
         if: always()
