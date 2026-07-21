@@ -2,7 +2,6 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 const INDEX_PATH = 'index.html';
 const VERSION_PATH = 'site/app-version.json';
-const OLD_VERSION = '2026-07-21-carregamento-simples-v18';
 const NEW_VERSION = '2026-07-21-imagens-unicas-v19';
 
 function replaceRequired(source, pattern, replacement, label) {
@@ -12,7 +11,12 @@ function replaceRequired(source, pattern, replacement, label) {
 }
 
 let html = await readFile(INDEX_PATH, 'utf8');
-html = html.split(OLD_VERSION).join(NEW_VERSION);
+html = replaceRequired(
+  html,
+  /2026-07-21-(?:carregamento-simples-v18|carregamento-imediato-v19)/g,
+  NEW_VERSION,
+  'versão pública da correção'
+);
 
 html = replaceRequired(
   html,
