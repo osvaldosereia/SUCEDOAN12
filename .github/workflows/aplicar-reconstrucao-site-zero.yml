@@ -1,0 +1,52 @@
+name: Aplicar reconstrução do site zero
+
+on:
+  push:
+    branches:
+      - agent/reconstrucao-site-zero
+    paths:
+      - scripts/site-zero.html.gz.b64
+
+permissions:
+  contents: write
+
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/reconstrucao-site-zero
+          fetch-depth: 0
+
+      - name: Gerar novo index e versão
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 --decode scripts/site-zero.html.gz.b64 | gzip --decompress > index.html
+          cat > site/app-version.json <<'JSON'
+          {
+            "version": "2026-07-21-site-zero-v1",
+            "updatedAt": "2026-07-21T23:42:58.727Z",
+            "purpose": "Reconstrucao completa do site publico com catalogo e imagens unificados"
+          }
+          JSON
+
+      - name: Validar e publicar na branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('index.html').read_text(encoding='utf-8')
+          assert '<!DOCTYPE html>' in text
+          assert '2026-07-21-site-zero-v1' in text
+          assert '/site/produtos-home.json' in text
+          assert text.count('id="app"') == 1
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html site/app-version.json
+          git commit -m "Reconstrói o site público do zero"
+          git push origin HEAD:agent/reconstrucao-site-zero
