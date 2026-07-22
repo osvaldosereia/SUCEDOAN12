@@ -1176,7 +1176,6 @@
   }
   async function saveProducts(){
     try{
-      if(state.settings.autoGithub&&!ensureCatalogReadyForFullExport())return;
       setStatus("Salvando produtos alterados no Firebase e catálogos no GitHub...","warn");
       const syncResult=await syncProductsToFirebase();
       const payload=productsObject();
@@ -1478,6 +1477,28 @@
     return list.sort(f.vencimento&&f.vencimento!=="sem_validade"?expirySort:(sorters[f.sort]||sorters.nome));
   }
   function renderProducts(){const all=filteredProducts(); const f=getFilters(); const pages=Math.max(1,Math.ceil(all.length/f.pageSize)); state.productPage=Math.min(state.productPage,pages); const start=(state.productPage-1)*f.pageSize; const list=all.slice(start,start+f.pageSize); const grid=$("#productsGrid"); grid.classList.toggle("list-view",state.productView==="list"); grid.innerHTML = list.length ? list.map(renderProductCardV3).join("") : `<div class="empty">Nenhum produto encontrado.</div>`; $$('[data-action="view-products-grid"],[data-action="view-products-list"]').forEach(b=>b.classList.toggle("active",(state.productView==="list")===b.dataset.action.endsWith("list"))); $("#pagination").innerHTML = `<button class="btn small" data-action="prev-page">Anterior</button><span>Página ${state.productPage} de ${pages} · ${all.length} produtos filtrados</span><button class="btn small" data-action="next-page">Próxima</button>`; }
+
+  async function applySearchFromFirebaseIfNeeded(){
+    state.productPage=1;
+    renderProducts();
+    const query=String($("#f-q")?.value||"").trim();
+    if(!query||filteredProducts().length||productsSilentRefreshRunning)return;
+    try{
+      setStatus(`Buscando "${query}" direto no Firebase...`,"warn");
+      const fresh=await loadProductsFromFirebase({attempts:2});
+      state.produtos=fresh.products;
+      markProductsReloaded();
+      await writeProductsCache(state.produtos,"Firebase").catch(()=>false);
+      renderFilterOptions();
+      state.productPage=1;
+      renderProducts();
+      const total=filteredProducts().length;
+      setStatus(total?`Busca atualizada pelo Firebase: ${total} produto(s) encontrado(s).`:`Firebase atualizado, mas nenhum produto corresponde a "${query}".`,total?"ok":"warn");
+    }catch(error){
+      console.error(error);
+      setStatus(`Não foi possível atualizar a busca pelo Firebase: ${error.message||error}`,"err");
+    }
+  }
 
   function quickField(p,field,label,value,type="text",wide=false){return `<div class="quick-field ${wide?'wide':''}"><label>${esc(label)}</label><input class="quick-input" type="${type}" data-card-field="${esc(field)}" data-key="${esc(getKey(p))}" value="${esc(value??'')}"></div>`}
   function renderProductCardV2(p){
@@ -1906,7 +1927,7 @@
   document.addEventListener('change', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.id==='productsFile'&&el.files[0]) importFile(el.files[0],'products'); if(el.id==='cestasFile'&&el.files[0]) importFile(el.files[0],'cestas'); if(el.id==='kitsFile'&&el.files[0]) importFile(el.files[0],'kits'); if(el.matches('[data-action="toggle-membership"]')) toggleMembership(el.dataset.id, el.checked); if(el.matches('[data-ptag]')) toggleProductTag(el.dataset.ptag, el.checked); if(el.id==='setAutoGithub') readSettingsFromUi()});
   document.addEventListener('change', e=>{const el=e.target;if(el.matches('[data-card-field]')) updateProductFromCard(el.dataset.key,el.dataset.cardField,el.value);if(el.matches('[data-action="toggle-kit-membership"]'))toggleKitMembership(el.dataset.id,el.checked)});
   document.addEventListener('keydown', e=>{const el=e.target; if(el?.id==='scannerCodeInput' && e.key==='Enter'){e.preventDefault(); openScannerProduct(el.value||state.scannerCode)}});
-  document.addEventListener('click', e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='open-low-stock'){renderLowStockModal();$("#lowStockModal").classList.add('open');toggleAdminDrawer(false)}if(a==='close-low-stock')$("#lowStockModal").classList.remove('open');if(a==='open-product-from-stock'){$("#lowStockModal").classList.remove('open');focusProductWorkbench(b.dataset.key)}if(a==='edit-kit-membership')openKitMembership(b.dataset.code);if(a==='close-kit-membership-modal'){$("#kitMembershipModal").classList.remove('open');renderAll()}if(a==='open-filter-panel')toggleAdminDrawer(true);if(a==='apply-filters'){state.productPage=1;renderProducts();toggleAdminDrawer(false)}if(a==='apply-search'){state.productPage=1;renderProducts()}if(a==='save-card-firebase')saveProductFirebase(b.dataset.key);if(a==='save-products-firebase')saveProductsFirebaseOnly();if(a==='save-everything')saveEverything()});
+  document.addEventListener('click', e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='open-low-stock'){renderLowStockModal();$("#lowStockModal").classList.add('open');toggleAdminDrawer(false)}if(a==='close-low-stock')$("#lowStockModal").classList.remove('open');if(a==='open-product-from-stock'){$("#lowStockModal").classList.remove('open');focusProductWorkbench(b.dataset.key)}if(a==='edit-kit-membership')openKitMembership(b.dataset.code);if(a==='close-kit-membership-modal'){$("#kitMembershipModal").classList.remove('open');renderAll()}if(a==='open-filter-panel')toggleAdminDrawer(true);if(a==='apply-filters'){state.productPage=1;renderProducts();toggleAdminDrawer(false)}if(a==='apply-search')applySearchFromFirebaseIfNeeded();if(a==='save-card-firebase')saveProductFirebase(b.dataset.key);if(a==='save-products-firebase')saveProductsFirebaseOnly();if(a==='save-everything')saveEverything()});
   function firebaseProductUrl(key){return `${String(state.settings.firebaseUrl).replace(/\/$/,"")}/${state.settings.produtosNode}/${encodeURIComponent(key)}.json`}
   async function saveProductFirebase(key){
     const p=productByKey(key);
@@ -2019,50 +2040,6 @@
 
   }
 
-  async function loadProductsFromGithub(){
-    const s=state.settings;
-    const owner=String(s.githubOwner||defaultSettings.githubOwner).trim();
-    const repo=String(s.githubRepo||defaultSettings.githubRepo).trim();
-    const branch=String(s.githubBranch||defaultSettings.githubBranch).trim();
-    const path=String(s.githubProdutosPath||defaultSettings.githubProdutosPath).replace(/^\/+/,"").trim();
-    const errors=[];
-
-    const rawUrl=`https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${path.split("/").map(encodeURIComponent).join("/")}?v=${Date.now()}`;
-    try{
-      const data=await fetchJson(rawUrl);
-      const products=normalizeProducts(data);
-      if(products.length)return {products,source:"GitHub raw"};
-      errors.push("GitHub raw retornou catálogo vazio");
-    }catch(error){errors.push(`GitHub raw: ${error.message||error}`)}
-
-    try{
-      const apiUrl=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(branch)}`;
-      const headers={Accept:"application/vnd.github+json"};
-      if(s.githubToken)headers.Authorization=`Bearer ${s.githubToken}`;
-      const response=await fetch(apiUrl,{headers,cache:"no-store"});
-      if(!response.ok)throw new Error(`Erro ${response.status}`);
-      const file=await response.json();
-      const encoded=String(file.content||"").replace(/\s/g,"");
-      if(!encoded)throw new Error("arquivo sem conteúdo");
-      const binary=atob(encoded);
-      const bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));
-      const data=JSON.parse(new TextDecoder("utf-8").decode(bytes));
-      const products=normalizeProducts(data);
-      if(products.length)return {products,source:"GitHub API"};
-      errors.push("GitHub API retornou catálogo vazio");
-    }catch(error){errors.push(`GitHub API: ${error.message||error}`)}
-
-    for(const localPath of ["produtos-home.json","produtos.json","site/produtos.json"]){
-      try{
-        const data=await fetchJson(`${localPath}?v=${Date.now()}`);
-        const products=normalizeProducts(data);
-        if(products.length)return {products,source:`arquivo local ${localPath}`};
-        errors.push(`${localPath} retornou catálogo vazio`);
-      }catch(error){errors.push(`${localPath}: ${error.message||error}`)}
-    }
-    throw new Error(errors.join(" | "));
-  }
-
   function firebaseProductsSources(){
     const configuredBase=String(state.settings.firebaseUrl||'').trim().replace(/\/+$/,'');
     const configuredNode=String(state.settings.produtosNode||'produtos').trim().replace(/^\/+|\/+$/g,'');
@@ -2108,12 +2085,6 @@
       return firebase;
     }catch(error){errors.push(`Firebase: ${error.message||error}`)}
 
-    try{
-      const github=await loadProductsFromGithub();
-      writeProductsCache(github.products,github.source).catch(error=>console.warn('Cache de produtos não atualizado:',error));
-      return {...github,warning:errors.join(' | ')};
-    }catch(error){errors.push(error.message||String(error))}
-
     if(cached?.products?.length)return {products:cached.products,source:'cache local seguro',warning:errors.join(' | ')};
     if(Array.isArray(state.produtos)&&state.produtos.length){
       console.warn('Não foi possível atualizar o catálogo; mantendo os produtos já carregados.',errors);
@@ -2130,7 +2101,6 @@
       let fresh=null;
       try{fresh=await loadProductsFromFirebase({attempts:2})}
       catch(error){console.warn('Atualização silenciosa pelo Firebase falhou:',error)}
-      if(!fresh){try{fresh=await loadProductsFromGithub()}catch(error){console.warn('Atualização silenciosa pelo GitHub falhou:',error)}}
       if(!fresh?.products?.length)return false;
       state.produtos=fresh.products;
       markProductsReloaded();
@@ -4302,22 +4272,7 @@
     final.running=false;
     final.currentKey=null;
     final.index=final.total;
-    if(final.success>0){
-      try{
-        setStatus("Publicando catálogo de imagens no GitHub...","warn");
-        aiBatchLog("warn",`Publicando produtos.json e produtos-home.json com ${final.success} imagem(ns) nova(s)...`);
-        // A imagem ja foi salva produto a produto; aqui publicamos uma unica
-        // vez o catalogo que o site le, usando as URLs raw validas do GitHub.
-        await saveGithubFiles({produtos:productsObject(),produtosHome:productsHomePayload()});
-        final.catalogPublished=true;
-        aiBatchLog("ok","produtos.json e produtos-home.json publicados no GitHub.");
-      }catch(err){
-        final.catalogError=err?.message||String(err);
-        console.error("Erro ao publicar o catálogo após imagens em massa:",err);
-        aiBatchLog("err",`Imagens geradas, mas produtos.json não foi publicado: ${final.catalogError}`);
-      }
-    }
-    const publishMsg=final.catalogPublished?" Catálogo publicado no GitHub.":(final.catalogError?" As imagens ficaram no Firebase, mas o produtos.json não foi publicado; configure o GitHub e salve novamente.":"");
+    const publishMsg=final.success>0?" Imagens salvas direto no Firebase.":"";
     if(final.stopRequested){
       setStatus(`IA imagens em massa parada. ${final.success} salva(s), ${final.failed} erro(s).${publishMsg}`,final.failed||final.catalogError?"err":"ok");
       aiBatchLog("warn",`Processo parado. ${final.success} salva(s), ${final.failed} erro(s).${publishMsg}`);
@@ -4530,11 +4485,7 @@ async function startOptimizeImageBatch(){
     if(i<queue.length-1&&!b.stopRequested){setStatus(`Aguardando ${Math.round(delay/1000)} segundos para o próximo produto...`,"warn");await optimizeImageBatchDelay(delay)}
   }
   const final=state.optimizeImageBatch; final.running=false; final.currentKey=null; final.index=final.total;
-  if(final.success>0){
-    try{setStatus("Publicando produtos.json e produtos-home.json no GitHub uma única vez...","warn");optimizeImageBatchLog("warn",`Publicando produtos.json e produtos-home.json com ${final.success} imagem(ns) otimizada(s)...`);await saveGithubFiles({produtos:productsObject(),produtosHome:productsHomePayload()});final.catalogPublished=true;optimizeImageBatchLog("ok","produtos.json e produtos-home.json publicados no GitHub.")}
-    catch(err){final.catalogError=err?.message||String(err);optimizeImageBatchLog("err",`Imagens salvas no Firebase, mas produtos.json não foi publicado: ${final.catalogError}`)}
-  }
-  const publishMsg=final.catalogPublished?" Catálogo publicado no GitHub.":(final.catalogError?" Imagens ficaram no Firebase, mas produtos.json não foi publicado.":"");
+  const publishMsg=final.success>0?" Imagens salvas direto no Firebase.":"";
   setStatus(`Otimização concluída. ${final.success} salva(s), ${final.failed} erro(s).${publishMsg}`,final.failed||final.catalogError?"err":"ok");
   optimizeImageBatchLog(final.failed||final.catalogError?"err":"ok",`Processo concluído. ${final.success} salva(s), ${final.failed} erro(s).${publishMsg}`);
   renderOptimizeImageBatchSelectors(true);renderOptimizeImageBatchModal();
@@ -4555,79 +4506,6 @@ document.addEventListener("change",e=>{const el=e.target;if(el&&/^optimizeImage/
 window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running){e.preventDefault();e.returnValue="Otimização de imagens em massa em andamento.";return e.returnValue}});
 
 
-
-  /* ===== AJUSTE 2026-07-11: Salvar geral inteligente + produtos-home.json ===== */
-  defaultSettings.githubProdutosHomePath = defaultSettings.githubProdutosHomePath || "site/produtos-home.json";
-  state.settings.githubProdutosHomePath = state.settings.githubProdutosHomePath || "site/produtos-home.json";
-
-  function ensureProdutosHomeSettingField(){
-    if($("#setGithubProdutosHomePath")) return;
-    const produtosPathInput=$("#setGithubProdutosPath");
-    const host=produtosPathInput?.closest?.(".field");
-    if(!host) return;
-    host.insertAdjacentHTML("afterend", `<div class="field"><label>Caminho produtos-home.json leve</label><input class="input" id="setGithubProdutosHomePath" placeholder="site/produtos-home.json"></div>`);
-  }
-
-  const daOriginalRenderSettingsUiSmartGithub = renderSettingsUi;
-  renderSettingsUi = function(){
-    ensureProdutosHomeSettingField();
-    daOriginalRenderSettingsUiSmartGithub();
-    ensureProdutosHomeSettingField();
-    const el=$("#setGithubProdutosHomePath");
-    if(el && el.value!==String(state.settings.githubProdutosHomePath||"site/produtos-home.json")) el.value=state.settings.githubProdutosHomePath||"site/produtos-home.json";
-  };
-
-  const daOriginalReadSettingsFromUiSmartGithub = readSettingsFromUi;
-  readSettingsFromUi = function(){
-    ensureProdutosHomeSettingField();
-    daOriginalReadSettingsFromUiSmartGithub();
-    const el=$("#setGithubProdutosHomePath");
-    state.settings.githubProdutosHomePath=(el?.value||state.settings.githubProdutosHomePath||"site/produtos-home.json").trim()||"site/produtos-home.json";
-  };
-
-  function firstNonEmptyValue(...values){return values.find(v=>String(v??"").trim())||""}
-  function compactHomeText(v="",max=180){return cleanCatalogText(v).slice(0,max)}
-  function productHomeImageValue(p){
-    const img=firstNonEmptyValue(p.url_imagem,p.imagem_url,p.imagem,Array.isArray(p.imagens)?p.imagens[0]:"",p.image,p.img,p.foto,p.foto_url,p.urlImagem,p.imagem_path);
-    const repositoryPath=cleanCatalogText(p.imagem_path||"")||productImagePathFromUrl(img);
-    return repositoryPath||String(img||"").trim();
-  }
-  function productsHomePayload(){
-    restoreLegacyBasketStock();
-    const out={};
-    state.produtos.forEach((product,index)=>{
-      const key=getKey(product)||`produto_${index}`;
-      const p=normalizeProductForSite(product,key);
-      const nome=cleanCatalogText(getName(p)||p.nome||"");
-      const codigo=cleanCatalogText(getCode(p)||p.codigo||key);
-      const img=productHomeImageValue(p);
-      out[key]={
-        key,
-        firebaseKey:key,
-        id:key,
-        codigo,
-        nome,
-        categoria:cleanCatalogText(p.categoria||""),
-        subcategoria:cleanCatalogText(p.subcategoria||""),
-        subsubcategoria:cleanCatalogText(p.subsubcategoria||""),
-        marca:cleanCatalogText(p.marca||""),
-        embalagem:cleanCatalogText(p.embalagem||""),
-        preco:toNum(p.preco),
-        preco_oferta:toNum(p.preco_oferta),
-        estoque:toNum(p.estoque),
-        situacao:cleanCatalogText(p.situacao||""),
-        url_imagem:img,
-        imagem:img,
-        slug:slug(nome||codigo||key),
-        tags:Array.isArray(p.tags)?p.tags.map(x=>cleanCatalogText(x)).filter(Boolean).slice(0,8):[],
-        descricao_curta:compactHomeText(firstNonEmptyValue(p.descricao_curta,p.descricao),180),
-        validade:cleanCatalogText(p.validade||""),
-        validade_oferta:cleanCatalogText(p.validade_oferta||""),
-        gtin:cleanCatalogText(firstNonEmptyValue(p.gtin,p.ean))
-      };
-    });
-    return out;
-  }
 
   function daB64Clean(value){return String(value||"").replace(/\s/g,"")}
   function daDecodeUtf8FromBase64(value){
@@ -4707,11 +4585,9 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
   githubUpsertText=function(path,text,message){return githubPutWithFreshSha(path,b64(String(text??"")),message)};
   githubUpsertRaw=function(path,arrayBuffer,message){return githubPutWithFreshSha(path,arrayBufferToBase64(arrayBuffer),message)};
 
-  saveGithubFiles = async function({produtos,produtosHome,metaCatalogCsv,adminMeta,cestas,kits,anotacoes}={}){
+  saveGithubFiles = async function({metaCatalogCsv,adminMeta,cestas,kits,anotacoes}={}){
     readSettingsFromUi();
     const ops=[];
-    if(produtos) ops.push({label:"produtos.json",run:()=>githubUpsert(state.settings.githubProdutosPath,produtos,"Atualiza produtos.json pelo admin Dona Antônia")});
-    if(produtosHome) ops.push({label:"produtos-home.json",run:()=>githubUpsertText(state.settings.githubProdutosHomePath||"site/produtos-home.json",JSON.stringify(produtosHome),"Atualiza produtos-home.json leve pelo admin Dona Antônia")});
     if(metaCatalogCsv) ops.push({label:"produtos_meta.csv",run:()=>githubUpsertText(state.settings.githubMetaPath,metaCatalogCsv,"Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")});
     if(adminMeta) ops.push({label:"produtos_admin_meta.json",run:()=>githubUpsert(state.settings.githubAdminMetaPath,adminMeta,"Atualiza produtos_admin_meta.json pelo admin Dona Antônia")});
     if(cestas) ops.push({label:"produtos-cesta-basica.json",run:()=>githubUpsert(state.settings.githubCestasPath,cestas,"Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")});
@@ -4733,14 +4609,11 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
 
   saveProducts = async function(){
     try{
-      if(state.settings.autoGithub&&!ensureCatalogReadyForFullExport())return;
       setStatus("Salvando produtos alterados no Firebase e publicando catálogos inteligentes no GitHub...","warn");
       const syncResult=await syncProductsToFirebase();
       const adminMeta=buildAdminMetaPayload();
       const metaCatalogCsv=buildMetaCatalogCsv();
-      const payload={metaCatalogCsv,adminMeta};
-      if(state.settings.autoGithub){payload.produtos=productsObject();payload.produtosHome=productsHomePayload()}
-      const gh=await saveGithubFiles(payload);
+      const gh=await saveGithubFiles({metaCatalogCsv,adminMeta});
       state.meta=adminMeta;
       state.dirtyMeta=false;
       saveLocal();
@@ -4753,7 +4626,7 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
   saveMeta = async function(){try{setStatus("Salvando metadados no GitHub somente se houver mudança...","warn"); const adminMeta=buildAdminMetaPayload(); const metaCatalogCsv=buildMetaCatalogCsv(); const gh=await saveGithubFiles({metaCatalogCsv,adminMeta}); state.meta=adminMeta; state.dirtyMeta=false; saveLocal(); setStatus(`Cadastros verificados · ${daGithubSummaryText(gh)}`,"ok"); alert(`Metadados verificados no GitHub. ${daGithubSummaryText(gh)}.`); renderAll();}catch(e){console.error(e); saveLocal(); alert("Erro ao salvar catálogos no GitHub: "+e.message); setStatus("Erro em produtos_meta","err")}};
   saveCestas = async function(){try{setStatus("Salvando cestas no GitHub somente se houver mudança...","warn"); const gh=await saveGithubFiles({cestas:state.cestas}); state.dirtyCestas=false; saveLocal(); setStatus(`Cestas verificadas · ${daGithubSummaryText(gh)}`, "ok"); alert(`Cestas verificadas no GitHub. ${daGithubSummaryText(gh)}.`); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar cestas. Backup local feito.","err"); alert("Erro ao salvar cestas no GitHub: "+e.message)}};
   saveKits = async function(){try{setStatus("Salvando kits no GitHub somente se houver mudança...","warn"); const gh=await saveGithubFiles({kits:state.kits}); state.dirtyKits=false; saveLocal(); setStatus(`Kits verificados · ${daGithubSummaryText(gh)}`,"ok"); alert(`Kits verificados no GitHub. ${daGithubSummaryText(gh)}.`); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar kits. Backup local feito.","err"); alert("Erro ao salvar kits no GitHub: "+e.message)}};
-  saveGithubNow = async function(){try{if(!ensureCatalogReadyForFullExport())return;setStatus("Comparando arquivos e enviando ao GitHub somente o que mudou...","warn");const gh=await saveGithubFiles({produtos:productsObject(),produtosHome:productsHomePayload(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});state.dirtyNotes=false;localStorage.removeItem(LS_NOTES_DIRTY);setStatus(`GitHub verificado · ${daGithubSummaryText(gh)}`,"ok");alert(`GitHub verificado. ${daGithubSummaryText(gh)}.`)}catch(e){console.error(e);setStatus("Erro ao enviar GitHub","err");alert("Erro ao enviar GitHub: "+e.message)}};
+  saveGithubNow = async function(){try{setStatus("Comparando arquivos auxiliares e enviando ao GitHub somente o que mudou...","warn");const gh=await saveGithubFiles({metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});state.dirtyNotes=false;localStorage.removeItem(LS_NOTES_DIRTY);setStatus(`GitHub verificado · ${daGithubSummaryText(gh)}`,"ok");alert(`GitHub verificado. ${daGithubSummaryText(gh)}. produtos.json não foi usado nem recriado.`)}catch(e){console.error(e);setStatus("Erro ao enviar GitHub","err");alert("Erro ao enviar GitHub: "+e.message)}};
 
   saveEverything = async function(){
     try{
@@ -4762,7 +4635,7 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
       setStatus("Salvando geral com Firebase granular e GitHub inteligente...","warn");
       const syncResult=await syncProductsToFirebase();
       const adminMeta=buildAdminMetaPayload(),metaCatalogCsv=buildMetaCatalogCsv();
-      const gh=await saveGithubFiles({produtos:productsObject(),produtosHome:productsHomePayload(),metaCatalogCsv,adminMeta,cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});
+      const gh=await saveGithubFiles({metaCatalogCsv,adminMeta,cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});
       state.meta=adminMeta;
       state.dirtyMeta=state.dirtyCestas=state.dirtyKits=state.dirtyNotes=false;
       localStorage.removeItem(LS_NOTES_DIRTY);
