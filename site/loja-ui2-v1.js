@@ -37,7 +37,7 @@
       saveCart();updateCartUi();syncControls();toast(type==='kit'?'Kit adicionado.':'Cesta adicionada.');
     }
 
-    function favoriteKey(id,kind='product'){return `${kind}:${id}`}
+    function favoriteKey(id,kind='product'){return kind==='kit'?`kit:${id}`:String(id)}
     function isFavorite(id,kind='product'){return state.favorites.has(favoriteKey(id,kind))}
     function toggleFavorite(id,kind='product'){
       const key=favoriteKey(id,kind);state.favorites.has(key)?state.favorites.delete(key):state.favorites.add(key);
