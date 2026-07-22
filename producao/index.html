@@ -5913,11 +5913,32 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
     });
   }
 
+  async function registerNfeImport({note,rawXml,xmlHash,totalItems,ignoredGroupKeys=[]}={}){
+    const key=daNfeImportKey(note?.key);
+    await beginNfeImport({note,rawXml,xmlHash,totalItems});
+    return daNfeMutateImport(key,record=>{
+      if(record.status==="concluida")return record;
+      const ignored=[...new Set([...(Array.isArray(record.itens_ignorados)?record.itens_ignorados:[]),...ignoredGroupKeys.map(String)].filter(Boolean))];
+      return {
+        ...record,
+        total_itens:Math.max(0,Math.floor(toNum(totalItems||record.total_itens))),
+        itens_ignorados:ignored,
+        status:"registrada",
+        sessao:null,
+        bloqueada_em:null,
+        registrada_em:record.registrada_em||nowIso(),
+        atualizada_em:nowIso()
+      };
+    });
+  }
+
   async function abortNfeImport({noteKey,error}={}){
     const key=daNfeImportKey(noteKey);
     return daNfeMutateImport(key,record=>{
       if(record.status==="concluida"||record.sessao&&record.sessao!==DA_NFE_IMPORT_SESSION)return record;
-      return {...record,status:(record.itens_aplicados||[]).length?"parcial":"arquivada",sessao:null,bloqueada_em:null,ultimo_erro:String(error||""),atualizada_em:nowIso()};
+      const hasApplied=(record.itens_aplicados||[]).length>0;
+      const keepRegistered=!!(record.registrada_em||record.xml_path);
+      return {...record,status:hasApplied?"parcial":keepRegistered?"registrada":"arquivada",sessao:null,bloqueada_em:null,ultimo_erro:String(error||""),atualizada_em:nowIso()};
     });
   }
 
@@ -6041,11 +6062,11 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
   return { key, duplicate: false, product: base, preservedPendingFields: [...pendingFields].filter(field => !managedFields.has(field)) };
 }
 
-  window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,syncNfeProductToFirebase,inspectNfeImport,beginNfeImport,finishNfeImportItem,abortNfeImport,saveLocal,renderProducts,renderSummary,renderProductWorkbench,createNfeDraftProduct,removeNfeDraftProduct,nfeCompleteProductPatch};
+  window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,syncNfeProductToFirebase,inspectNfeImport,beginNfeImport,registerNfeImport,finishNfeImportItem,abortNfeImport,saveLocal,renderProducts,renderSummary,renderProductWorkbench,createNfeDraftProduct,removeNfeDraftProduct,nfeCompleteProductPatch};
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
 </script>
-<script src="nfe-import.js?v=20260716-8"></script>
+<script src="nfe-import.js?v=20260722-1"></script>
 <script>
   // Ponte segura: o admin chama somente o webhook do Make; nenhum token do Bling/GitHub fica no navegador.
   (()=>{
