@@ -3542,7 +3542,7 @@
     if(!key)throw new Error("Produto sem chave para salvar a imagem no Firebase.");
     if(p.__nfe_draft)throw new Error("A imagem foi preparada, mas este produto ainda é um rascunho da NF-e. Finalize pelo botão ‘Cadastrar/atualizar + entrada’ para salvar tudo junto.");
     const main=String(p.url_imagem||p.imagem_url||p.imagem||"").trim();
-    const payload={
+    const imagePayload={
       url_imagem:main,
       imagem:main,
       imagem_url:main,
@@ -3556,10 +3556,18 @@
       last_update:Date.now(),
       updated_at:nowIso()
     };
-    await patchJson(firebaseProductUrl(key),payload);
-    Object.assign(p,payload);
-    clearProductDirtyFields(key,["url_imagem","imagem","imagem_url","imagens","imagem_path","imagem_storage","imagem_origem","imagem_status","imagem_gerada_em","imagem_anterior"]);
-    state.productSyncMeta[key]=productSyncSnapshot(p);
+    Object.assign(p,imagePayload);
+    markProductDirty(key,["url_imagem","imagem","imagem_url","imagens","imagem_path","imagem_storage","imagem_origem","imagem_status","imagem_gerada_em","imagem_anterior"]);
+    const remote=await fetchJson(firebaseProductUrl(key));
+    const dirtyFields=state.dirtyProductFields[key]||{};
+    const fullProduct=mergeLocalProductWithRemote(p,remote,dirtyFields);
+    const payload=sanitizeProductForFirebase(fullProduct);
+    payload.updated_at=nowIso();
+    payload.last_update=Date.now();
+    await putJson(firebaseProductUrl(key),payload);
+    replaceProductState(key,payload);
+    clearProductDirtyState(key);
+    state.productSyncMeta[key]=productSyncSnapshot(payload);
     saveLocal();
     return payload;
   }
