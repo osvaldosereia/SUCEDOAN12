@@ -3646,16 +3646,18 @@
     function ensureFullCatalogInBackground() {
       if (state.catalogMode === 'full' || state.catalogMode === 'full-cache' || state.catalogMode === 'compact-full' || state.fullCatalogLoading) return;
       state.fullCatalogLoading = true;
-      loadProducts().then(() => {
+      const refreshCatalog = () => loadHomeProducts({ forceFresh: true }).then(() => {
         state.fullCatalogLoading = false;
         rebuildVirtualFees();
         renderSiteMenuContent();
-        handleRoute();
+        if (!(location.hash || '').startsWith('#/produto/')) handleRoute();
         updateCartUI();
       }).catch(err => {
         state.fullCatalogLoading = false;
         console.warn('Catálogo completo não carregou em segundo plano:', err && err.message ? err.message : err);
       });
+      if ('requestIdleCallback' in window) requestIdleCallback(refreshCatalog, { timeout: 4500 });
+      else setTimeout(refreshCatalog, 1800);
     }
 
     function handleRoute() {
