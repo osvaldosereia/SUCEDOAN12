@@ -23,7 +23,7 @@
   const {
     state, norm, getKey, getName, productByKey, esc, textNorm, toNum, nowIso,
     setStatus, toast, runUiAction, saveLocal, renderProducts, renderSummary,
-    syncNfeProductToFirebase, inspectNfeImport, beginNfeImport,
+    syncNfeProductToFirebase, inspectNfeImport, beginNfeImport, registerNfeImport,
     finishNfeImportItem, abortNfeImport,
     renderProductWorkbench, createNfeDraftProduct, removeNfeDraftProduct,
     nfeCompleteProductPatch
@@ -714,6 +714,7 @@
 
           <div class="toolbar nfe-actions">
             <button class="btn green" type="button" data-nfe-action="save-stock" ${model.globalDuplicate || duplicate || item.done ? 'disabled' : ''}>Atualizar estoque e validade</button>
+            <button class="btn blue" type="button" data-nfe-action="save-full" ${model.globalDuplicate || duplicate || item.done ? 'disabled' : ''}>Cadastrar/atualizar este produto</button>
           </div>
         ` : isDraft ? `
           <div class="nfe-new-product">
@@ -766,7 +767,8 @@
         </div>
         <div class="notice gold"><strong>Rateio:</strong> o desconto total da nota é dividido igualmente entre os produtos agrupados, sem permitir custo negativo.</div>
         <div class="toolbar">
-          <button class="btn primary" type="button" data-nfe-action="apply-all" ${model.globalDuplicate ? 'disabled' : ''}>Aplicar entrada completa da nota</button>
+          <button class="btn blue" type="button" data-nfe-action="register-note" ${model.globalDuplicate ? 'disabled' : ''}>Registrar XML/chave</button>
+          <button class="btn primary" type="button" data-nfe-action="apply-all" ${model.globalDuplicate ? 'disabled' : ''}>Cadastrar/atualizar todos</button>
           <button class="btn red" type="button" data-nfe-action="clear-note">Limpar nota</button>
         </div>
       </div>
@@ -781,7 +783,7 @@
         <div><span>Valor da nota</span><b>${money(model.note.total)}</b><small>Desconto ${money(model.note.discount)}</small></div>
         <div><span>Produtos</span><b>${model.items.length}</b><small>${matchedCount} encontrados · ${duplicateCount} já aplicados</small></div>
       </div>
-      ${model.globalDuplicate ? `<div class="notice red"><strong>Importação bloqueada:</strong> esta chave já está concluída no registro global.${model.importRecord?.xml_path ? ` XML arquivado em <code>${safe(model.importRecord.xml_path)}</code>.` : ''}</div>` : model.importRecord ? `<div class="notice gold"><strong>Importação retomada:</strong> o sistema encontrou um registro ${safe(model.importRecord.status || 'parcial')} desta NF-e e manterá os itens já aplicados bloqueados.</div>` : `<div class="notice green"><strong>NF-e ainda não importada.</strong> Ao aplicar o primeiro produto, o XML e o registro da chave serão arquivados no GitHub.</div>`}
+      ${model.globalDuplicate ? `<div class="notice red"><strong>Importacao bloqueada:</strong> esta chave ja esta concluida no registro global.${model.importRecord?.xml_path ? ` XML arquivado em <code>${safe(model.importRecord.xml_path)}</code>.` : ''}</div>` : model.importRecord ? `<div class="notice gold"><strong>NF-e registrada:</strong> o sistema encontrou um registro ${safe(model.importRecord.status || 'parcial')} desta NF-e e mantera os itens ja aplicados bloqueados.${model.importRecord?.xml_path ? ` XML em <code>${safe(model.importRecord.xml_path)}</code>.` : ''}</div>` : `<div class="notice green"><strong>NF-e ainda nao registrada.</strong> Use "Registrar XML/chave" para arquivar a nota sem mexer nos produtos, ou cadastre produtos individualmente pelos cards.</div>`}
     `;
     list.innerHTML = model.items.map(itemCard).join('');
   }
@@ -1054,6 +1056,25 @@
     render();
   }
 
+  async function registerCurrentNoteOnly() {
+    if (!model.note?.key || !model.rawXml) throw new Error('Carregue o XML completo da NF-e antes de registrar a nota.');
+    if (typeof registerNfeImport !== 'function') throw new Error('A rotina de registro da NF-e nao foi carregada. Recarregue o admin.');
+    if (model.globalDuplicate) throw new Error(`A NF-e ${model.note.key} ja esta concluida no registro global.`);
+    const ignoredGroupKeys = model.items.filter(row => row.skipped).map(row => row.groupKey);
+    model.importRecord = await registerNfeImport({
+      note: model.note,
+      rawXml: model.rawXml,
+      xmlHash: model.xmlHash,
+      totalItems: model.items.length,
+      ignoredGroupKeys
+    });
+    model.message = `NF-e ${model.note.key} registrada. Nenhum produto ou estoque foi alterado.`;
+    model.messageType = 'green';
+    saveLocal();
+    render();
+    return model.importRecord;
+  }
+
   function clearNote() {
     discardDrafts();
     model.items = [];
@@ -1301,6 +1322,17 @@
       return;
     }
 
+    if (action === 'register-note') {
+      runUiAction(button, 'Registrando XML...', () => registerCurrentNoteOnly())
+        .catch(error => {
+          model.message = error.message;
+          model.messageType = 'red';
+          toast(error.message, 'err');
+          render();
+        });
+      return;
+    }
+
     if (action === 'select-match' && item) {
       if (item.isDraft && item.key) removeNfeDraftProduct?.(item.key);
       item.key = button.dataset.key;
@@ -1353,7 +1385,7 @@
     }
 
     if (action === 'save-full' && item) {
-      runUiAction(button, 'Atualizando cadastro e estoque...', () => applyItem(item, { onlyStock: false }))
+      runUiAction(button, 'Atualizando cadastro e estoque...', () => applyItem(item, { onlyStock: false, create: item.isDraft || !selectedProduct(item) }))
         .catch(error => {
           model.message = error.message;
           model.messageType = 'red';
