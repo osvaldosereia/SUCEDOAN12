@@ -5954,6 +5954,277 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
   return { key, duplicate: false, product: base, preservedPendingFields: [...pendingFields].filter(field => !managedFields.has(field)) };
 }
 
+
+
+  /* ===== Compatibilidade final com o site público rápido (2026-07-22) ===== */
+  defaultSettings.githubCatalogVersionPath = "catalog-version.json";
+  state.settings.githubCatalogVersionPath = String(state.settings.githubCatalogVersionPath || defaultSettings.githubCatalogVersionPath).trim() || "catalog-version.json";
+
+  let daCatalogLoadedFromFirebase = false;
+  let daCatalogLoadedFromFirebaseAt = "";
+  let daCatalogLoadedFromFirebaseCount = 0;
+  const daCompatLoadProductsFromFirebaseBase = loadProductsFromFirebase;
+  loadProductsFromFirebase = async function(options={}){
+    const result = await daCompatLoadProductsFromFirebaseBase(options);
+    if(Array.isArray(result?.products) && result.products.length){
+      daCatalogLoadedFromFirebase = true;
+      daCatalogLoadedFromFirebaseAt = nowIso();
+      daCatalogLoadedFromFirebaseCount = result.products.length;
+    }
+    return result;
+  };
+
+  function daIsDataImage(value){
+    return /^data:image\//i.test(String(value||"").trim());
+  }
+  function daPublicImageValue(value){
+    const raw = cleanCatalogText(value);
+    if(!raw || daIsDataImage(raw)) return "";
+    return githubRawProductImageUrl(raw) || raw;
+  }
+  function daProductImageValues(product){
+    return uniq([
+      product?.url_imagem, product?.imagem_url, product?.urlImagem, product?.imagem,
+      product?.image, product?.img, product?.foto, product?.foto_url,
+      ...(Array.isArray(product?.imagens)?product.imagens:[]),
+      ...(Array.isArray(product?.images)?product.images:[])
+    ]).filter(Boolean);
+  }
+  function daEntityHasLocalImage(entity){
+    const values=[entity?.imagem,entity?.imagem_url,entity?.url_imagem,entity?.image,entity?.img];
+    return values.some(daIsDataImage);
+  }
+  function daRequireRemoteImagesBeforeSave(){
+    const productWithLocalImage = state.produtos.find(product=>daProductImageValues(product).some(daIsDataImage));
+    if(productWithLocalImage){
+      throw new Error(`${getName(productWithLocalImage)} possui imagem somente local/base64. Envie a imagem ao GitHub antes de salvar.`);
+    }
+    const cestaWithLocalImage = state.cestas.find(daEntityHasLocalImage);
+    if(cestaWithLocalImage){
+      throw new Error(`A cesta ${cestaWithLocalImage.nome||cestaWithLocalImage.id} possui imagem local/base64. Use uma URL pública antes de salvar.`);
+    }
+    const kitWithLocalImage = state.kits.find(daEntityHasLocalImage);
+    if(kitWithLocalImage){
+      throw new Error(`O kit ${kitWithLocalImage.nome||kitWithLocalImage.id} possui imagem local/base64. Envie a capa ao GitHub antes de salvar.`);
+    }
+    return true;
+  }
+
+  const daCompatValidateProductBase = validateProductForSite;
+  validateProductForSite = function(product){
+    const result = daCompatValidateProductBase(product);
+    result.errors = Array.isArray(result.errors)?result.errors:[];
+    result.warnings = Array.isArray(result.warnings)?result.warnings:[];
+    if(daProductImageValues(product).some(daIsDataImage)){
+      result.errors.push("imagem local/base64; envie ao GitHub");
+    }
+    const regular = roundCatalogMoney(product?.preco ?? product?.price);
+    const offer = roundCatalogMoney(product?.preco_oferta ?? product?.precoOferta);
+    if(offer>0 && offer<regular && !String(product?.validade_oferta||product?.validadeOferta||"").trim()){
+      result.errors.push("oferta sem data final");
+      result.warnings = result.warnings.filter(item=>item!=="oferta sem data final");
+    }
+    result.errors=[...new Set(result.errors)];
+    result.warnings=[...new Set(result.warnings)];
+    return result;
+  };
+
+  buildProductsHomePayload = function(){
+    restoreLegacyBasketStock();
+    daRequireRemoteImagesBeforeSave();
+    const out={};
+    state.produtos.forEach((product,index)=>{
+      const key=cleanCatalogText(getKey(product)||`produto_${index}`);
+      const p=normalizeProductForSite(product,key);
+      const commercialCode=cleanCatalogText(realProductCode(product)||p.codigo||product?.sku||"");
+      const primaryImage=daPublicImageValue(p.url_imagem||productCurrentImageSource(p));
+      const gallery=uniq([
+        primaryImage,
+        ...(Array.isArray(p.imagens)?p.imagens:[]),
+        ...(Array.isArray(product?.images)?product.images:[])
+      ].map(daPublicImageValue)).filter(Boolean);
+      const tags=parseTags(p.tags||product?.tags||product?.tag_global);
+      const item={
+        firebaseKey:key,
+        id:key,
+        codigo:commercialCode,
+        sku:cleanCatalogText(product?.sku||""),
+        nome:p.nome,
+        preco:p.preco,
+        preco_custo:p.preco_custo,
+        estoque:p.estoque,
+        situacao:p.situacao,
+        categoria:p.categoria,
+        subcategoria:p.subcategoria,
+        subsubcategoria:p.subsubcategoria,
+        marca:p.marca,
+        fornecedor:cleanCatalogText(product?.fornecedor||""),
+        embalagem:p.embalagem,
+        unidade:cleanCatalogText(product?.unidade||state.settings.blingUnidade||""),
+        descricao:p.descricao,
+        gtin:p.gtin,
+        ean:cleanCatalogText(product?.ean||p.gtin||""),
+        ncm:p.ncm,
+        gondola:cleanCatalogText(product?.gondola||product?.["gôndola"]||""),
+        prateleira:cleanCatalogText(product?.prateleira||""),
+        localizacao:cleanCatalogText(product?.localizacao||product?.localização||""),
+        validade:p.validade,
+        url_imagem:primaryImage,
+        imagens:gallery,
+        tags,
+        tag_global:cleanCatalogText(product?.tag_global||""),
+        destaque:product?.destaque===true,
+        ordem:Number.isFinite(Number(product?.ordem))?Number(product.ordem):undefined,
+        last_update:product?.last_update||undefined,
+        updated_at:product?.updated_at||undefined
+      };
+      if(p.preco_oferta>0)item.preco_oferta=p.preco_oferta;
+      if(p.data_inicio_oferta)item.data_inicio_oferta=p.data_inicio_oferta;
+      if(p.validade_oferta)item.validade_oferta=p.validade_oferta;
+      if(p.oferta_origem)item.oferta_origem=p.oferta_origem;
+      if(Number(p.desconto_validade)>0)item.desconto_validade=Number(p.desconto_validade);
+      out[key]=Object.fromEntries(Object.entries(item).filter(([,value])=>{
+        if(Array.isArray(value))return value.length>0;
+        if(typeof value==="boolean")return value;
+        return value!==""&&value!==null&&value!==undefined;
+      }));
+    });
+    return out;
+  };
+
+  function daCatalogVersionPayload(kinds=[]){
+    const stamp=nowIso();
+    return {
+      version:`catalog-${Date.now()}`,
+      updatedAt:stamp,
+      products:state.settings.githubProdutosHomePath||"site/produtos-home.json",
+      cestas:state.settings.githubCestasPath||"site/produtos-cesta-basica.json",
+      kits:state.settings.githubKitsPath||"site/kits.json",
+      changed:[...new Set(kinds)],
+      source:"admin-producao",
+      instructions:"Arquivo atualizado automaticamente pelo Admin Dona Antônia."
+    };
+  }
+
+  function daCatalogReferenceProblems(){
+    const problems=[];
+    state.cestas.forEach(cesta=>{
+      (cesta.produtos||[]).forEach(item=>{
+        const parsed=parseBasketItem(item);
+        const candidates=[parsed.codigo,...parsed.substitutos].filter(Boolean);
+        if(candidates.length && !candidates.some(code=>productByCode(code))){
+          problems.push(`Cesta ${cesta.nome}: produto ${parsed.codigo} não encontrado`);
+        }
+      });
+    });
+    state.kits.forEach(kit=>{
+      if(kit.ativo===false)return;
+      (kit.produtos||[]).forEach(item=>{
+        const parsed=parseBasketItem(item);
+        if(parsed.codigo && !productByCode(parsed.codigo)){
+          problems.push(`Kit ${kit.nome}: produto ${parsed.codigo} não encontrado`);
+        }
+      });
+    });
+    return problems;
+  }
+
+  const daCompatEnsureCatalogBase = ensureCatalogReadyForFullExport;
+  ensureCatalogReadyForFullExport = function(){
+    if(!daCatalogLoadedFromFirebase){
+      alert("O catálogo completo ainda não foi confirmado pelo Firebase nesta sessão. Clique em Recarregar dados e aguarde a mensagem de produtos carregados via Firebase antes de publicar.");
+      return false;
+    }
+    if(!daCompatEnsureCatalogBase())return false;
+    try{daRequireRemoteImagesBeforeSave()}catch(error){alert(error.message);return false}
+    const referenceProblems=daCatalogReferenceProblems();
+    if(referenceProblems.length){
+      alert(`Existem referências inválidas que impedem a publicação:\n\n${referenceProblems.slice(0,12).map(item=>`• ${item}`).join("\n")}${referenceProblems.length>12?`\n• e mais ${referenceProblems.length-12}`:""}`);
+      return false;
+    }
+    return true;
+  };
+
+  const daCompatSaveGithubFilesBase = saveGithubFiles;
+  saveGithubFiles = async function(payload={}){
+    const kinds=[];
+    if(payload.produtosHome)kinds.push("products");
+    if(payload.cestas)kinds.push("cestas");
+    if(payload.kits)kinds.push("kits");
+    if(kinds.length)daRequireRemoteImagesBeforeSave();
+    const summary=await daCompatSaveGithubFilesBase(payload);
+    if(kinds.length){
+      const versionPath=String(state.settings.githubCatalogVersionPath||defaultSettings.githubCatalogVersionPath||"catalog-version.json").replace(/^\/+/,"");
+      const versionResult=await githubUpsert(versionPath,daCatalogVersionPayload(kinds),`Atualiza catalog-version.json: ${kinds.join(", ")}`);
+      summary.total=(summary.total||0)+1;
+      summary[versionResult?.skipped?"skipped":"written"]=(summary[versionResult?.skipped?"skipped":"written"]||0)+1;
+      summary.files=Array.isArray(summary.files)?summary.files:[];
+      summary.files.push({label:"catalog-version.json",skipped:!!versionResult?.skipped});
+    }
+    return summary;
+  };
+
+  // Garante que salvamentos individuais e gerais nunca publiquem um catálogo parcial.
+  const daCompatSaveProductFirebaseBase = saveProductFirebase;
+  saveProductFirebase = async function(key){
+    if(!daCatalogLoadedFromFirebase){
+      alert("Antes de salvar, recarregue os dados e aguarde o catálogo completo do Firebase.");
+      return false;
+    }
+    const product=productByKey(key);
+    if(product){
+      const validation=validateProductForSite(product);
+      if(validation.errors.length){
+        alert(`${getName(product)}: corrija ${validation.errors.join(", ")}.`);
+        return false;
+      }
+    }
+    return daCompatSaveProductFirebaseBase(key);
+  };
+
+  const daCompatSaveProductsBase = saveProducts;
+  saveProducts = async function(){
+    if(!ensureCatalogReadyForFullExport())return false;
+    return daCompatSaveProductsBase();
+  };
+  const daCompatSaveCestasBase = saveCestas;
+  saveCestas = async function(){
+    if(!daCatalogLoadedFromFirebase){alert("Recarregue os produtos do Firebase antes de publicar cestas.");return false}
+    try{daRequireRemoteImagesBeforeSave()}catch(error){alert(error.message);return false}
+    const problems=daCatalogReferenceProblems().filter(item=>item.startsWith("Cesta "));
+    if(problems.length){alert(`Revise as cestas:\n${problems.slice(0,12).map(item=>`• ${item}`).join("\n")}`);return false}
+    return daCompatSaveCestasBase();
+  };
+  const daCompatSaveKitsBase = saveKits;
+  saveKits = async function(){
+    if(!daCatalogLoadedFromFirebase){alert("Recarregue os produtos do Firebase antes de publicar kits.");return false}
+    try{daRequireRemoteImagesBeforeSave()}catch(error){alert(error.message);return false}
+    state.kits.forEach(kit=>recalcKit(kit));
+    const problems=daCatalogReferenceProblems().filter(item=>item.startsWith("Kit "));
+    if(problems.length){alert(`Revise os kits ativos:\n${problems.slice(0,12).map(item=>`• ${item}`).join("\n")}`);return false}
+    return daCompatSaveKitsBase();
+  };
+  const daCompatSaveEverythingBase = saveEverything;
+  saveEverything = async function(){
+    if(!ensureCatalogReadyForFullExport())return false;
+    return daCompatSaveEverythingBase();
+  };
+  const daCompatSaveGithubNowBase = saveGithubNow;
+  saveGithubNow = async function(){
+    if(!ensureCatalogReadyForFullExport())return false;
+    return daCompatSaveGithubNowBase();
+  };
+
+  console.info("Admin compatível com site rápido",{
+    produtosHome:state.settings.githubProdutosHomePath,
+    cestas:state.settings.githubCestasPath,
+    kits:state.settings.githubKitsPath,
+    catalogVersion:state.settings.githubCatalogVersionPath,
+    firebaseVerified:daCatalogLoadedFromFirebase,
+    firebaseCount:daCatalogLoadedFromFirebaseCount,
+    firebaseLoadedAt:daCatalogLoadedFromFirebaseAt
+  });
+
   window.__DA_NFE_BRIDGE__={state,norm,getKey,getName,productByKey,esc,textNorm,toNum,nowIso,markProductDirty,mark,setStatus,toast,runUiAction,syncProductsToFirebase,syncNfeProductToFirebase,inspectNfeImport,beginNfeImport,registerNfeImport,finishNfeImportItem,abortNfeImport,saveLocal,renderProducts,renderSummary,renderProductWorkbench,createNfeDraftProduct,removeNfeDraftProduct,nfeCompleteProductPatch};
   loadData().catch(error=>{console.error("Falha não tratada ao iniciar o admin:",error);setStatus(`Falha ao iniciar: ${error.message||error}`,"err")});
 })(); 
