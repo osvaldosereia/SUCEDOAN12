@@ -1432,12 +1432,18 @@
       pageSize:Number($("#f-page-size")?.value||24)
     };
   }
+  function resetProductFiltersForFocus(searchValue=""){
+    const selectors=["#f-q","#f-categoria","#f-subcategoria","#f-subsubcategoria","#f-marca","#f-fornecedor","#f-tag","#f-situacao","#f-qualidade","#f-vencimento","#f-cesta"];
+    selectors.forEach(selector=>{const element=$(selector);if(element)element.value=selector==="#f-q"?String(searchValue||""):""});
+    const bannerFilter=document.getElementById("f-banner-ativo");
+    if(bannerFilter)bannerFilter.value="";
+  }
   function filteredProducts(){
     const f=getFilters();
     let list=[...state.produtos];
     const q=textNorm(f.q);
     if(q)list=list.filter(product=>textNorm([
-      product.nome,product.codigo,product.gtin,product.ean,product.ncm,product.marca,product.categoria,product.subcategoria,
+      getKey(product),product.firebaseKey,product.id,product.nome,product.codigo,product.sku,product.gtin,product.ean,product.ncm,product.marca,product.categoria,product.subcategoria,
       product.subsubcategoria,product.fornecedor,product.embalagem,product.descricao,product.gondola,product.prateleira,
       parseTags(product.tags).join(" ")
     ].join(" ")).includes(q));
@@ -2776,7 +2782,7 @@
     return prepared;
   }
   function focusProductWorkbench(key){
-    const p=productByKey(key),search=$("#f-q");if(p&&search)search.value=p.codigo||getName(p);
+    const p=productByKey(key);if(p)resetProductFiltersForFocus(getKey(p));
     state.productPage=1;state.activeTab="produtos";renderAll();
     setTimeout(()=>{const card=$(`[data-product-key="${CSS.escape(String(key))}"]`);card?.scrollIntoView({behavior:"smooth",block:"center"});card?.classList.add("dirty")},50);
   }
