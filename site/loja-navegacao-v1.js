@@ -28,6 +28,12 @@
       setNav('');
     }
 
+    function renderCatalog(title='Todos os produtos'){
+      const products=state.products.filter(isAvailable);
+      app.innerHTML=`<div class="container">${pageHead(title,`${products.length} produtos disponíveis`)}${products.length?`<div class="grid">${products.map(product=>productCard(product)).join('')}</div>`:empty('Nenhum produto disponível','O catálogo está temporariamente sem itens.')}</div>`;
+      setNav('categories');
+    }
+
     function renderNotFound(title,back){
       app.innerHTML=`<div class="container">${pageHead(title,'',back)}${empty(title,'Volte e escolha outra opção.')}</div>`;
     }
@@ -45,7 +51,11 @@
       switch(current.name){
         case'home':renderHome();break;
         case'categorias':renderCategories();break;
-        case'categoria':renderCategory(current.value);break;
+        case'catalogo':
+        case'mercado':
+        case'produtos':renderCatalog();break;
+        case'categoria':
+        case'departamento':renderCategory(current.value);break;
         case'subcategoria':renderSubcategory(current.value);break;
         case'subsubcategoria':renderSubsubcategory(current.value);break;
         case'marca':renderBrand(current.value);break;
@@ -53,13 +63,16 @@
         case'rotina':renderRoutine(current.value);break;
         case'cestas':renderBaskets();break;
         case'cesta':renderBasketDetail(current.value);break;
-        case'kits':renderKits();break;
+        case'kits':
+        case'combos':renderKits();break;
         case'kit':renderKitDetail(current.value);break;
         case'produto':renderProduct(current.value);break;
-        case'busca':renderSearch(current.value);break;
+        case'busca':
+        case'buscar':renderSearch(current.value);break;
         case'favoritos':renderFavorites();break;
         case'campanha-cupom':renderCouponCampaign(current.value);break;
         case'informacoes':renderInfo();break;
+        case'carrinho':renderHome();setTimeout(openCart,0);break;
         default:renderNotFound('Página não encontrada','#/');
       }
       syncControls();updateCartUi();window.scrollTo(0,0);
@@ -181,4 +194,3 @@
     function orderNumber(){
       const now=new Date();return `${String(now.getFullYear()).slice(-2)}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
     }
-
