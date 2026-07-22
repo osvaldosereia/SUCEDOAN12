@@ -1,0 +1,45 @@
+name: Validar index modular paralelo
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - index-modular-test.html
+      - assets/modular/**
+      - scripts/build-modular-index-test.mjs
+      - scripts/verify-modular-index-test.mjs
+      - .github/workflows/modular-index-test.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar branch de homologação
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Confirmar que o index de produção não mudou
+        if: github.event_name == 'pull_request'
+        run: git diff --exit-code "origin/${{ github.base_ref }}...HEAD" -- index.html
+
+      - name: Regenerar página modular
+        run: node scripts/build-modular-index-test.mjs
+
+      - name: Validar equivalência dos arquivos extraídos
+        run: node scripts/verify-modular-index-test.mjs
+
+      - name: Validar sintaxe JavaScript
+        shell: bash
+        run: |
+          for file in assets/modular/*.js; do
+            node --check "$file"
+          done
+
+      - name: Confirmar que os arquivos gerados estão atualizados
+        run: git diff --exit-code -- index-modular-test.html assets/modular
