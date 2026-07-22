@@ -377,7 +377,7 @@
       </div>
       <button class="btn gold top-filter-btn" type="button" data-action="open-filter-panel">☷ Filtros</button>
       <button class="btn expiry-alert-btn" id="expiryAlertBtn" type="button" data-action="open-expiry-alert" hidden title="Ver produtos vencidos ou com até 2 dias de validade"><span class="expiry-alert-label">Validade crítica</span><span class="expiry-alert-count" id="expiryAlertCount">0</span></button>
-      <button class="btn blue top-save top-firebase-btn" type="button" data-action="save-products-firebase" title="Salvar todos os produtos no Firebase">☁ <span class="top-save-label">Salvar Firebase</span></button>
+      <button class="btn blue top-save top-firebase-btn" type="button" data-action="save-products" title="Salvar produtos no Firebase e atualizar produtos-home">☁ <span class="top-save-label">Salvar produtos</span></button>
       <button class="btn green top-save" type="button" data-action="save-everything" title="Salvar produtos, metadados, cestas e kits">✓ <span class="top-save-label">Salvar geral</span></button>
     </div>
   </header>
@@ -495,7 +495,7 @@
 
     <section class="panel hidden" id="tab-leitura">
       <div class="mobile-quick">
-        <div class="compact-section-title"><h2>Leitura rápida</h2><p>Fluxo mobile para ler, ajustar e salvar um produto por vez direto no Firebase.</p></div>
+        <div class="compact-section-title"><h2>Leitura rápida</h2><p>Fluxo mobile para ler, ajustar e salvar um produto por vez.</p></div>
         <div class="notice gold mobile-only-note">Esta tela foi pensada para celular. No desktop ela fica oculta para manter o uso simples.</div>
         <div class="mobile-quick-shell">
           <div class="scanner-card">
@@ -589,17 +589,17 @@
       <div class="notice red" style="margin-bottom:14px"><strong>Atenção:</strong> tokens no navegador só devem ser usados em arquivo administrativo privado. Não publique esse HTML com token em site público.</div>
       <div class="settings-grid">
         <div class="card pad"><h3>Firebase</h3><div class="field"><label>Database URL</label><input class="input" id="setFirebaseUrl"></div><div class="field"><label>Nó produtos</label><input class="input" id="setProdutosNode"></div><div class="field"><label>Nó admin meta (legado)</label><input class="input" id="setMetaNode"></div><div class="field"><label>Nó cestas</label><input class="input" id="setCestasNode"></div><div class="field"><label>Nó kits promocionais</label><input class="input" id="setKitsNode"></div></div>
-        <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos.json</label><input class="input" id="setGithubProdutosPath"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho site/kits.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos_3"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="site/img/produtos_3"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><label class="checkline"><input type="checkbox" id="setAutoGithub"> Salvar produtos e kits também no GitHub</label><div class="notice gold" style="margin-top:10px">produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e anotacoes.json são salvos exclusivamente no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
+        <div class="card pad"><h3>GitHub</h3><div class="field"><label>Token GitHub</label><input class="input" id="setGithubToken" type="password" autocomplete="off"></div><div class="field"><label>Owner</label><input class="input" id="setGithubOwner"></div><div class="field"><label>Repositório</label><input class="input" id="setGithubRepo"></div><div class="field"><label>Branch</label><input class="input" id="setGithubBranch"></div><div class="field"><label>URL base do site público</label><input class="input" id="setSiteBaseUrl" placeholder="https://www.donaantonia.com.br"></div><div class="field"><label>Caminho produtos-home.json</label><input class="input" id="setGithubProdutosHomePath" placeholder="site/produtos-home.json"></div><div class="field"><label>Caminho produtos_meta.csv (Meta)</label><input class="input" id="setGithubMetaPath"></div><div class="field"><label>Caminho produtos_admin_meta.json</label><input class="input" id="setGithubAdminMetaPath"></div><div class="field"><label>Caminho produtos-cesta-basica.json</label><input class="input" id="setGithubCestasPath"></div><div class="field"><label>Caminho site/kits.json</label><input class="input" id="setGithubKitsPath"></div><div class="field"><label>Caminho anotações.json</label><input class="input" id="setGithubAnotacoesPath" placeholder="site/anotacoes.json"></div><div class="field"><label>Pasta das fotos de produtos no GitHub</label><input class="input" id="setGithubImagesPath" placeholder="site/img/produtos_3"></div><div class="field"><label>URL/caminho público das fotos de produtos</label><input class="input" id="setImagePublicBase" placeholder="site/img/produtos_3"></div><div class="field"><label>Pasta das fotos dos kits no GitHub</label><input class="input" id="setGithubKitImagesPath" placeholder="site/img/kits"></div><div class="field"><label>URL/caminho público das fotos dos kits</label><input class="input" id="setKitImagePublicBase" placeholder="img/kits"></div><div class="notice gold" style="margin-top:10px">Produtos salvam no Firebase e atualizam produtos-home.json. Os demais arquivos auxiliares continuam no GitHub.</div><div class="toolbar" style="margin-top:10px;justify-content:flex-start"><button class="btn blue" data-action="test-github">Testar GitHub</button><button class="btn gold" data-action="save-github-now">Enviar arquivos ao GitHub agora</button></div></div>
         <div class="card pad"><h3>Make + OpenAI</h3><div class="field"><label>Webhook IA textos</label><input class="input" id="setMakeTextWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook IA imagens</label><input class="input" id="setMakeImageWebhookUrl" placeholder="https://hook.us2.make.com/..."></div><div class="field"><label>Webhook Instagram Kits</label><input class="input" id="setMakeInstagramKitWebhookUrl" placeholder="https://hook.us2.make.com/..."></div></div>
         <div class="card pad"><h3>Bling</h3><div class="field"><label>Access token / API Key</label><input class="input" id="setBlingToken" type="password" autocomplete="off"></div><div class="field"><label>ID depósito padrão</label><input class="input" id="setBlingDeposito"></div><div class="field"><label>Unidade padrão</label><input class="input" id="setBlingUnidade"></div><div class="toolbar" style="justify-content:flex-start;margin-top:10px"><button class="btn blue" data-action="export-bling-csv">Exportar CSV Bling (modelo oficial)</button><button class="btn blue" data-action="export-bling-json">Exportar JSON Bling</button></div></div>
       </div>
-      <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar site/kits.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
+      <div class="card pad" style="margin-top:16px"><h3>Arquivos rápidos</h3><div class="toolbar" style="justify-content:flex-start"><button class="btn gold" data-action="export-products-json">Baixar produtos-home.json</button><button class="btn gold" data-action="export-meta-json">Baixar produtos_meta.csv</button><button class="btn gold" data-action="export-admin-meta-json">Baixar produtos_admin_meta.json</button><button class="btn gold" data-action="export-cestas-json">Baixar produtos-cesta-basica.json</button><button class="btn gold" data-action="export-kits-json">Baixar site/kits.json</button><button class="btn blue" data-action="export-bling-csv">Baixar Bling CSV oficial</button><button class="btn" data-action="copy-report">Copiar relatório</button></div></div>
     </section>
 
     <section class="panel hidden" id="tab-json">
       <div class="panel-head"><div class="panel-title"><h2>Arquivos completos</h2><p>Visualização do produtos_meta.csv no padrão Meta e edição manual dos demais arquivos internos.</p></div><div class="toolbar"><button class="btn gold" data-action="refresh-json">Atualizar arquivos</button><button class="btn primary" data-action="apply-json">Aplicar JSON editado</button></div></div>
       <div class="json-grid">
-        <div class="card pad json-panel"><h3>produtos.json</h3><textarea class="textarea" id="jsonProdutos"></textarea></div>
+        <div class="card pad json-panel"><h3>Produtos carregados do Firebase</h3><textarea class="textarea" id="jsonProdutos"></textarea></div>
         <div class="card pad json-panel"><h3>produtos_meta.csv (Meta catálogo gerado automaticamente)</h3><textarea class="textarea" id="jsonMeta" readonly></textarea></div>
         <div class="card pad json-panel"><h3>produtos_admin_meta.json</h3><textarea class="textarea" id="jsonAdminMeta"></textarea></div>
         <div class="card pad json-panel"><h3>produtos-cesta-basica.json</h3><textarea class="textarea" id="jsonCestas"></textarea></div>
@@ -649,7 +649,7 @@
     githubRepo: "SUCEDOAN12",
     githubBranch: "main",
     siteBaseUrl: "https://www.donaantonia.com.br",
-    githubProdutosPath: "site/produtos.json",
+    githubProdutosHomePath: "site/produtos-home.json",
     githubMetaPath: "site/produtos_meta.csv",
     githubAdminMetaPath: "site/produtos_admin_meta.json",
     githubCestasPath: "site/produtos-cesta-basica.json",
@@ -660,7 +660,6 @@
     githubKitImagesPath: "site/img/kits",
     kitImagePublicBase: "img/kits",
     githubAiTempPath: "site/tmp/ia-referencias",
-    autoGithub: false,
     makeTextWebhookUrl: "",
     makeImageWebhookUrl: "",
     makeInstagramKitWebhookUrl: "",
@@ -1021,7 +1020,7 @@
       // Configurações antigas podem ter persistido campos vazios no navegador.
       // Não deixe que elas substituam a fonte padrão e impeçam o carregamento automático.
       const settings={...defaultSettings, ...saved};
-      ["firebaseUrl","produtosNode","githubOwner","githubRepo","githubBranch","githubProdutosPath"].forEach(key=>{
+      ["firebaseUrl","produtosNode","githubOwner","githubRepo","githubBranch","githubProdutosHomePath"].forEach(key=>{
         if(!String(settings[key]||"").trim())settings[key]=defaultSettings[key];
       });
       return settings
@@ -1104,6 +1103,39 @@
     });
     return out;
   }
+  function buildProductsHomePayload(){
+    restoreLegacyBasketStock();
+    const out={};
+    state.produtos.forEach((product,index)=>{
+      const key=getKey(product)||`produto_${index}`;
+      const p=normalizeProductForSite(product,key);
+      const id=cleanCatalogText(realProductCode(product)||p.id||key);
+      const item={
+        firebaseKey:key,
+        id,
+        nome:p.nome,
+        preco:p.preco,
+        estoque:p.estoque,
+        situacao:p.situacao,
+        categoria:p.categoria,
+        subcategoria:p.subcategoria,
+        subsubcategoria:p.subsubcategoria,
+        marca:p.marca,
+        embalagem:p.embalagem,
+        descricao:p.descricao,
+        url_imagem:p.url_imagem,
+        validade:p.validade
+      };
+      if(Array.isArray(p.imagens)&&p.imagens.length)item.imagens=p.imagens;
+      if(p.preco_oferta>0)item.preco_oferta=p.preco_oferta;
+      if(p.validade_oferta)item.validade_oferta=p.validade_oferta;
+      out[key]=Object.fromEntries(Object.entries(item).filter(([,value])=>{
+        if(Array.isArray(value))return value.length>0;
+        return value!==""&&value!==null&&value!==undefined;
+      }));
+    });
+    return out;
+  }
   function buildAdminMetaPayload(){const meta=deepClone(state.meta); meta.atualizado_em=nowIso(); meta.estatisticas = makeStats(); meta.categorias = sortCategories(meta.categorias); meta.tags = uniq(meta.tags); meta.marcas = uniq(meta.marcas); meta.fornecedores = (meta.fornecedores||[]).filter(f=>f && f.nome).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),"pt-BR")); return meta}
   function makeStats(){const ativos=state.produtos.filter(isActive).length, semEstoque=state.produtos.filter(p=>toNum(p.estoque)<=0).length, semGtin=state.produtos.filter(p=>!String(p.gtin||p.ean||"").trim()).length, semNcm=state.produtos.filter(p=>!String(p.ncm||"").trim()).length, semFoto=state.produtos.filter(p=>!String(p.url_imagem||p.imagem||p.imagem_url||"").trim()).length, incompletos=state.produtos.filter(p=>typeof productMissingRegistrationField==="function"&&productMissingRegistrationField(p,"cadastro_incompleto")).length; return {total_produtos:state.produtos.length, ativos, inativos:state.produtos.length-ativos, sem_estoque:semEstoque, sem_gtin:semGtin, sem_ncm:semNcm, sem_foto:semFoto, cadastro_incompleto:incompletos, cestas:state.cestas.length, kits:state.kits.length, produtos_em_cestas:totalBasketProductsSet().size, produtos_em_kits:totalKitProductsSet().size} }
   function sortCategories(cats){return (cats||[]).filter(c=>c && c.categoria).sort((a,b)=>[a.categoria,a.subcategoria,a.subsubcategoria].join("|").localeCompare([b.categoria,b.subcategoria,b.subsubcategoria].join("|"),"pt-BR"))}
@@ -1176,19 +1208,18 @@
   }
   async function saveProducts(){
     try{
-      setStatus("Salvando produtos alterados no Firebase e catálogos no GitHub...","warn");
+      setStatus("Salvando produtos no Firebase e atualizando produtos-home...","warn");
       const syncResult=await syncProductsToFirebase();
-      const payload=productsObject();
+      const produtosHome=buildProductsHomePayload();
       const adminMeta=buildAdminMetaPayload();
       const metaCatalogCsv=buildMetaCatalogCsv();
-      await saveGithubFiles({metaCatalogCsv,adminMeta});
+      await saveGithubFiles({produtosHome,metaCatalogCsv,adminMeta});
       state.meta=adminMeta;
       state.dirtyMeta=false;
       saveLocal();
-      if(state.settings.autoGithub) await saveGithubFiles({produtos:payload});
       const conflictMsg=syncResult.conflicts.length?`\nConflitos de estoque: ${syncResult.conflicts.join(", ")}. Recarregue esses produtos antes de ajustar estoque manualmente.`:"";
       setStatus(`Produtos salvos: ${syncResult.saved} atualizados, ${syncResult.deleted} excluídos`, "ok");
-      alert(`Produtos alterados salvos no Firebase sem regravar o banco inteiro. produtos_meta.csv (Meta) e produtos_admin_meta.json foram salvos no GitHub.${state.settings.autoGithub ? " produtos.json também foi enviado ao GitHub." : ""}${conflictMsg}`);
+      alert(`Produtos alterados salvos no Firebase e produtos-home.json atualizado.${conflictMsg}`);
       renderAll();
     }catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar produtos. Backup local feito.","err"); alert("Erro ao salvar produtos: "+e.message)}
   }
@@ -1292,9 +1323,9 @@
   }
 
 
-  async function saveGithubFiles({produtos,metaCatalogCsv,adminMeta,cestas,kits}={}){readSettingsFromUi(); const ops=[]; if(produtos) ops.push(githubUpsert(state.settings.githubProdutosPath, produtos, "Atualiza produtos.json pelo admin Dona Antônia")); if(metaCatalogCsv) ops.push(githubUpsertText(state.settings.githubMetaPath, metaCatalogCsv, "Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")); if(adminMeta) ops.push(githubUpsert(state.settings.githubAdminMetaPath, adminMeta, "Atualiza produtos_admin_meta.json pelo admin Dona Antônia")); if(cestas) ops.push(githubUpsert(state.settings.githubCestasPath, cestas, "Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")); if(kits) ops.push(githubUpsert(state.settings.githubKitsPath, kits, "Atualiza site/kits.json pelo admin Dona Antônia")); await Promise.all(ops)}
-  async function testGithub(){try{readSettingsFromUi(); await githubContent(state.settings.githubProdutosPath); setStatus("GitHub conectado", "ok"); alert("Conexão com GitHub OK.")}catch(e){console.error(e); setStatus("Erro no GitHub","err"); alert("Erro no GitHub: "+e.message)}}
-  async function saveGithubNow(){try{setStatus("Enviando arquivos ao GitHub...","warn"); await saveGithubFiles({produtos:productsObject(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits}); setStatus("GitHub atualizado","ok"); alert("produtos.json, produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e site/kits.json enviados ao GitHub.")}catch(e){console.error(e); setStatus("Erro ao enviar GitHub","err"); alert("Erro ao enviar GitHub: "+e.message)}}
+  async function saveGithubFiles({produtosHome,metaCatalogCsv,adminMeta,cestas,kits}={}){readSettingsFromUi(); const ops=[]; if(produtosHome) ops.push(githubUpsert(state.settings.githubProdutosHomePath||"site/produtos-home.json", produtosHome, "Atualiza produtos-home.json pelo admin Dona Antônia")); if(metaCatalogCsv) ops.push(githubUpsertText(state.settings.githubMetaPath, metaCatalogCsv, "Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")); if(adminMeta) ops.push(githubUpsert(state.settings.githubAdminMetaPath, adminMeta, "Atualiza produtos_admin_meta.json pelo admin Dona Antônia")); if(cestas) ops.push(githubUpsert(state.settings.githubCestasPath, cestas, "Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")); if(kits) ops.push(githubUpsert(state.settings.githubKitsPath, kits, "Atualiza site/kits.json pelo admin Dona Antônia")); await Promise.all(ops)}
+  async function testGithub(){try{readSettingsFromUi(); await githubContent(state.settings.githubProdutosHomePath||"site/produtos-home.json"); setStatus("GitHub conectado", "ok"); alert("Conexão com GitHub OK.")}catch(e){console.error(e); setStatus("Erro no GitHub","err"); alert("Erro no GitHub: "+e.message)}}
+  async function saveGithubNow(){try{setStatus("Enviando arquivos ao GitHub...","warn"); await saveGithubFiles({produtosHome:buildProductsHomePayload(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits}); setStatus("GitHub atualizado","ok"); alert("produtos-home.json, produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e site/kits.json enviados ao GitHub.")}catch(e){console.error(e); setStatus("Erro ao enviar GitHub","err"); alert("Erro ao enviar GitHub: "+e.message)}}
 
   function renderAll(){restoreLegacyBasketStock(); renderTabs(); renderSettingsUi(); renderFilterOptions(); renderSummary(); renderProducts(); renderBasketsList(); renderBasketEditor(); renderKitsList(); renderKitEditor(); renderCatalogs(); renderNotes(); updateNotesIndicator(); renderScannerEditor(); renderScannerHistory(); refreshJson();}
   function renderLoading(){ $("#productsGrid").innerHTML=`<div class="empty">Carregando produtos...</div>`; $("#basketsList").innerHTML=""; $("#basketEditor").innerHTML=`<div class="empty">Carregando cestas...</div>`; if($("#kitsList")) $("#kitsList").innerHTML=""; if($("#kitEditor")) $("#kitEditor").innerHTML=`<div class="empty">Carregando kits...</div>` }
@@ -1307,7 +1338,7 @@
     if(!host) return;
     const p=state.scannerCurrentKey?productByKey(state.scannerCurrentKey):null;
     if(!p){host.innerHTML=`<div class="notice">Leia ou digite um código para abrir o produto.</div>`; return}
-    host.innerHTML=`<div class="quick-product-card"><div class="quick-product-head"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong style="font-size:18px">${esc(getName(p))}</strong><div class="tiny" style="margin-top:6px">Código: ${esc(p.codigo||getCode(p))}${p.gtin?` · GTIN: ${esc(p.gtin)}`:''}</div><div class="meta-line" style="margin-top:8px"><span class="chip ${toNum(p.estoque)>0?'green':'red'}">Estoque: ${esc(toNum(p.estoque))}</span>${p.gondola?`<span class="chip">Gôndola: ${esc(p.gondola)}</span>`:''}${p.prateleira?`<span class="chip">Prateleira: ${esc(p.prateleira)}</span>`:''}</div></div></div><div class="quick-mobile-grid"><div class="field span-all"><label>Nome</label><input class="input quick-mobile-input" data-quick-field="nome" value="${esc(p.nome||'')}"></div><div class="field"><label>Estoque</label><input class="input quick-mobile-input" type="number" data-quick-field="estoque" value="${esc(toNum(p.estoque))}"></div><div class="field"><label>Validade</label><input class="input quick-mobile-input" data-quick-field="validade" value="${esc(p.validade||'')}"></div>${quickMobileSelectField("gondola","Gôndola",p.gondola||"",locationValues("gondola",p.gondola))}${quickMobileSelectField("prateleira","Prateleira",p.prateleira||"",locationValues("prateleira",p.prateleira))}</div><div class="quick-save-bar"><button class="btn gold" type="button" data-action="clear-scanner-product">Próximo produto</button><button class="btn primary" type="button" data-action="save-scanner-product" data-key="${esc(getKey(p))}">Salvar no Firebase</button></div></div>`;
+    host.innerHTML=`<div class="quick-product-card"><div class="quick-product-head"><img src="${esc(getImg(p))}" onerror="this.src='${PLACEHOLDER}'"><div><strong style="font-size:18px">${esc(getName(p))}</strong><div class="tiny" style="margin-top:6px">Código: ${esc(p.codigo||getCode(p))}${p.gtin?` · GTIN: ${esc(p.gtin)}`:''}</div><div class="meta-line" style="margin-top:8px"><span class="chip ${toNum(p.estoque)>0?'green':'red'}">Estoque: ${esc(toNum(p.estoque))}</span>${p.gondola?`<span class="chip">Gôndola: ${esc(p.gondola)}</span>`:''}${p.prateleira?`<span class="chip">Prateleira: ${esc(p.prateleira)}</span>`:''}</div></div></div><div class="quick-mobile-grid"><div class="field span-all"><label>Nome</label><input class="input quick-mobile-input" data-quick-field="nome" value="${esc(p.nome||'')}"></div><div class="field"><label>Estoque</label><input class="input quick-mobile-input" type="number" data-quick-field="estoque" value="${esc(toNum(p.estoque))}"></div><div class="field"><label>Validade</label><input class="input quick-mobile-input" data-quick-field="validade" value="${esc(p.validade||'')}"></div>${quickMobileSelectField("gondola","Gôndola",p.gondola||"",locationValues("gondola",p.gondola))}${quickMobileSelectField("prateleira","Prateleira",p.prateleira||"",locationValues("prateleira",p.prateleira))}</div><div class="quick-save-bar"><button class="btn gold" type="button" data-action="clear-scanner-product">Próximo produto</button><button class="btn primary" type="button" data-action="save-scanner-product" data-key="${esc(getKey(p))}">Salvar produto</button></div></div>`;
   }
   function renderScannerHistory(){const host=$("#scannerHistory"); if(!host) return; host.innerHTML=state.scannerRecentCodes.length?state.scannerRecentCodes.map(code=>`<button class="chip" type="button" data-action="use-scanner-history" data-code="${esc(code)}">${esc(code)}</button>`).join(""):""}
   async function stopScanner(){if(state.scannerLoopActive) state.scannerLoopActive=false; if(state.scannerStream){state.scannerStream.getTracks().forEach(track=>track.stop()); state.scannerStream=null} const video=$("#scannerVideo"); if(video) video.srcObject=null}
@@ -1716,8 +1747,8 @@
   function renderFornecedores(){const el=$("#fornecedoresList"); if(!el) return; el.innerHTML=(state.meta.fornecedores||[]).map((f,i)=>`<div class="catalog-row multi"><input class="input" aria-label="Nome do fornecedor" placeholder="Nome" data-forn-index="${i}" data-forn-field="nome" value="${esc(f.nome)}"><input class="input" aria-label="Telefone do fornecedor" placeholder="Telefone" data-forn-index="${i}" data-forn-field="telefone" value="${esc(f.telefone||'')}"><input class="input" aria-label="Observações do fornecedor" placeholder="Observações" data-forn-index="${i}" data-forn-field="observacoes" value="${esc(f.observacoes||'')}"><button class="btn small red" data-action="delete-fornecedor" data-index="${i}">Excluir</button></div>`).join('') || `<div class="empty">Nenhum fornecedor.</div>`}
   function renderMarcas(){renderFlatRegistry($("#marcasList"),state.meta.marcas,"marca")}
 
-  function renderSettingsUi(){const s=state.settings; const ids={setFirebaseUrl:'firebaseUrl',setProdutosNode:'produtosNode',setMetaNode:'metaNode',setGithubToken:'githubToken',setGithubOwner:'githubOwner',setGithubRepo:'githubRepo',setGithubBranch:'githubBranch',setSiteBaseUrl:'siteBaseUrl',setGithubProdutosPath:'githubProdutosPath',setGithubMetaPath:'githubMetaPath',setGithubAdminMetaPath:'githubAdminMetaPath',setCestasNode:'cestasNode',setKitsNode:'kitsNode',setGithubCestasPath:'githubCestasPath',setGithubKitsPath:'githubKitsPath',setGithubImagesPath:'githubImagesPath',setImagePublicBase:'imagePublicBase',setGithubKitImagesPath:'githubKitImagesPath',setKitImagePublicBase:'kitImagePublicBase',setBlingToken:'blingToken',setBlingDeposito:'blingDeposito',setBlingUnidade:'blingUnidade'}; Object.entries(ids).forEach(([id,k])=>{const el=$("#"+id); if(el && el.value!==String(s[k]||'')) el.value=s[k]||''}); const auto=$("#setAutoGithub"); if(auto) auto.checked=!!s.autoGithub}
-  function readSettingsFromUi(){const ids={setFirebaseUrl:'firebaseUrl',setProdutosNode:'produtosNode',setMetaNode:'metaNode',setGithubToken:'githubToken',setGithubOwner:'githubOwner',setGithubRepo:'githubRepo',setGithubBranch:'githubBranch',setSiteBaseUrl:'siteBaseUrl',setGithubProdutosPath:'githubProdutosPath',setGithubMetaPath:'githubMetaPath',setGithubAdminMetaPath:'githubAdminMetaPath',setCestasNode:'cestasNode',setKitsNode:'kitsNode',setGithubCestasPath:'githubCestasPath',setGithubKitsPath:'githubKitsPath',setGithubImagesPath:'githubImagesPath',setImagePublicBase:'imagePublicBase',setGithubKitImagesPath:'githubKitImagesPath',setKitImagePublicBase:'kitImagePublicBase',setBlingToken:'blingToken',setBlingDeposito:'blingDeposito',setBlingUnidade:'blingUnidade'}; Object.entries(ids).forEach(([id,k])=>{const el=$("#"+id); if(el) state.settings[k]=el.value.trim()}); state.settings.autoGithub=!!$("#setAutoGithub")?.checked}
+  function renderSettingsUi(){const s=state.settings; const ids={setFirebaseUrl:'firebaseUrl',setProdutosNode:'produtosNode',setMetaNode:'metaNode',setGithubToken:'githubToken',setGithubOwner:'githubOwner',setGithubRepo:'githubRepo',setGithubBranch:'githubBranch',setSiteBaseUrl:'siteBaseUrl',setGithubProdutosHomePath:'githubProdutosHomePath',setGithubMetaPath:'githubMetaPath',setGithubAdminMetaPath:'githubAdminMetaPath',setCestasNode:'cestasNode',setKitsNode:'kitsNode',setGithubCestasPath:'githubCestasPath',setGithubKitsPath:'githubKitsPath',setGithubImagesPath:'githubImagesPath',setImagePublicBase:'imagePublicBase',setGithubKitImagesPath:'githubKitImagesPath',setKitImagePublicBase:'kitImagePublicBase',setBlingToken:'blingToken',setBlingDeposito:'blingDeposito',setBlingUnidade:'blingUnidade'}; Object.entries(ids).forEach(([id,k])=>{const el=$("#"+id); if(el && el.value!==String(s[k]||'')) el.value=s[k]||''})}
+  function readSettingsFromUi(){const ids={setFirebaseUrl:'firebaseUrl',setProdutosNode:'produtosNode',setMetaNode:'metaNode',setGithubToken:'githubToken',setGithubOwner:'githubOwner',setGithubRepo:'githubRepo',setGithubBranch:'githubBranch',setSiteBaseUrl:'siteBaseUrl',setGithubProdutosHomePath:'githubProdutosHomePath',setGithubMetaPath:'githubMetaPath',setGithubAdminMetaPath:'githubAdminMetaPath',setCestasNode:'cestasNode',setKitsNode:'kitsNode',setGithubCestasPath:'githubCestasPath',setGithubKitsPath:'githubKitsPath',setGithubImagesPath:'githubImagesPath',setImagePublicBase:'imagePublicBase',setGithubKitImagesPath:'githubKitImagesPath',setKitImagePublicBase:'kitImagePublicBase',setBlingToken:'blingToken',setBlingDeposito:'blingDeposito',setBlingUnidade:'blingUnidade'}; Object.entries(ids).forEach(([id,k])=>{const el=$("#"+id); if(el) state.settings[k]=el.value.trim()}); state.settings.githubProdutosHomePath=state.settings.githubProdutosHomePath||"site/produtos-home.json"}
 
   function refreshJson(){const jp=$("#jsonProdutos"), jm=$("#jsonMeta"), jam=$("#jsonAdminMeta"), jc=$("#jsonCestas"), jk=$("#jsonKits"); if(jp) jp.value=JSON.stringify(productsObject(),null,2); if(jm) jm.value=buildMetaCatalogCsv(); if(jam) jam.value=JSON.stringify(buildAdminMetaPayload(),null,2); if(jc) jc.value=JSON.stringify(state.cestas,null,2); if(jk) jk.value=JSON.stringify(state.kits,null,2)}
   function applyJson(){try{const previousKeys=Object.keys(state.productSyncMeta); state.produtos=normalizeProducts(JSON.parse($("#jsonProdutos").value)); if($("#jsonAdminMeta")) state.meta=normalizeMeta(JSON.parse($("#jsonAdminMeta").value)); state.cestas=normalizeCestas(JSON.parse($("#jsonCestas").value)); state.kits=normalizeKits(JSON.parse($("#jsonKits").value||"[]")); markAllProductsDirty(previousKeys); mark('products'); mark('meta'); mark('cestas'); mark('kits'); renderAll(); alert('JSON aplicado.')}catch(e){alert('JSON inválido: '+e.message)}}
@@ -1750,7 +1781,7 @@
     const preview=audit.errors.slice(0,8).map(row=>`• ${row.name}: ${row.errors.join(", ")}`).join("\n");
     alert(`${changed} produto(s) foram padronizados para o formato do site.\n${audit.errors.length} produto(s) ainda precisam de correção obrigatória.\n${audit.warnings.length} produto(s) possuem avisos opcionais.${preview?`\n\nPendências principais:\n${preview}`:""}`);
   }
-  function exportProductsJson(){if(!ensureCatalogReadyForFullExport())return;download('produtos.json', productsObject())}
+  function exportProductsJson(){if(!ensureCatalogReadyForFullExport())return;download('produtos-home.json', buildProductsHomePayload())}
   function exportMetaJson(){download('produtos_meta.csv', buildMetaCatalogCsv(), 'text/csv;charset=utf-8')}
   function exportAdminMetaJson(){download('produtos_admin_meta.json', buildAdminMetaPayload())}
   function exportCestasJson(){download('produtos-cesta-basica.json', state.cestas)}
@@ -1927,7 +1958,7 @@
   document.addEventListener('change', e=>{const el=e.target; if(el.matches('#f-q,#productFilters input,#productFilters select')){state.productPage=1; renderProducts()} if(el.id==='productsFile'&&el.files[0]) importFile(el.files[0],'products'); if(el.id==='cestasFile'&&el.files[0]) importFile(el.files[0],'cestas'); if(el.id==='kitsFile'&&el.files[0]) importFile(el.files[0],'kits'); if(el.matches('[data-action="toggle-membership"]')) toggleMembership(el.dataset.id, el.checked); if(el.matches('[data-ptag]')) toggleProductTag(el.dataset.ptag, el.checked); if(el.id==='setAutoGithub') readSettingsFromUi()});
   document.addEventListener('change', e=>{const el=e.target;if(el.matches('[data-card-field]')) updateProductFromCard(el.dataset.key,el.dataset.cardField,el.value);if(el.matches('[data-action="toggle-kit-membership"]'))toggleKitMembership(el.dataset.id,el.checked)});
   document.addEventListener('keydown', e=>{const el=e.target; if(el?.id==='scannerCodeInput' && e.key==='Enter'){e.preventDefault(); openScannerProduct(el.value||state.scannerCode)}});
-  document.addEventListener('click', e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='open-low-stock'){renderLowStockModal();$("#lowStockModal").classList.add('open');toggleAdminDrawer(false)}if(a==='close-low-stock')$("#lowStockModal").classList.remove('open');if(a==='open-product-from-stock'){$("#lowStockModal").classList.remove('open');focusProductWorkbench(b.dataset.key)}if(a==='edit-kit-membership')openKitMembership(b.dataset.code);if(a==='close-kit-membership-modal'){$("#kitMembershipModal").classList.remove('open');renderAll()}if(a==='open-filter-panel')toggleAdminDrawer(true);if(a==='apply-filters'){state.productPage=1;renderProducts();toggleAdminDrawer(false)}if(a==='apply-search')applySearchFromFirebaseIfNeeded();if(a==='save-card-firebase')saveProductFirebase(b.dataset.key);if(a==='save-products-firebase')saveProductsFirebaseOnly();if(a==='save-everything')saveEverything()});
+  document.addEventListener('click', e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='open-low-stock'){renderLowStockModal();$("#lowStockModal").classList.add('open');toggleAdminDrawer(false)}if(a==='close-low-stock')$("#lowStockModal").classList.remove('open');if(a==='open-product-from-stock'){$("#lowStockModal").classList.remove('open');focusProductWorkbench(b.dataset.key)}if(a==='edit-kit-membership')openKitMembership(b.dataset.code);if(a==='close-kit-membership-modal'){$("#kitMembershipModal").classList.remove('open');renderAll()}if(a==='open-filter-panel')toggleAdminDrawer(true);if(a==='apply-filters'){state.productPage=1;renderProducts();toggleAdminDrawer(false)}if(a==='apply-search')applySearchFromFirebaseIfNeeded();if(a==='save-card-firebase')saveProductFirebase(b.dataset.key);if(a==='save-everything')saveEverything()});
   function firebaseProductUrl(key){return `${String(state.settings.firebaseUrl).replace(/\/$/,"")}/${state.settings.produtosNode}/${encodeURIComponent(key)}.json`}
   async function saveProductFirebase(key){
     const p=productByKey(key);
@@ -1935,53 +1966,41 @@
     if(p.__nfe_draft){setStatus("Conclua o produto pelo card da NF-e para registrar também estoque, lote e XML.","err");return}
     try{
       if(!state.dirtyProductKeys.has(getKey(p)) && !state.deletedProductKeys.has(getKey(p))){
-        setStatus(`${getName(p)} já está sincronizado`, "ok");
-        if(state.scannerCurrentKey===getKey(p)) setScannerStatus(`${getName(p)} já está salvo no Firebase.`, "ok");
+        setStatus(`${getName(p)} ja esta no Firebase. Atualizando produtos-home...`, "warn");
+        const gh=await saveGithubFiles({produtosHome:buildProductsHomePayload()});
+        setStatus(`${getName(p)} verificado e produtos-home atualizado: ${daGithubSummaryText(gh)}`, "ok");
+        if(state.scannerCurrentKey===getKey(p)) setScannerStatus(`${getName(p)} verificado e publicado.`, "ok");
         return;
       }
-      setStatus(`Salvando ${getName(p)} no Firebase...`,"warn");
+      setStatus(`Salvando ${getName(p)} no Firebase e produtos-home...`,"warn");
       const result=await syncProductsToFirebase([getKey(p)]);
+      const gh=await saveGithubFiles({produtosHome:buildProductsHomePayload()});
       const conflictMsg=result.conflicts.length?` Conflito de estoque detectado para ${result.conflicts.join(", ")}.`:"";
-      setStatus(`${getName(p)} salvo no Firebase`,"ok");
-      if(state.scannerCurrentKey===getKey(p)) setScannerStatus(`${getName(p)} salvo direto no Firebase.`, "ok");
+      setStatus(`${getName(p)} salvo e produtos-home atualizado: ${daGithubSummaryText(gh)}`,"ok");
+      if(state.scannerCurrentKey===getKey(p)) setScannerStatus(`${getName(p)} salvo e publicado.`, "ok");
       renderBasketEditor();
       renderScannerEditor();
       renderProducts();
       refreshJson();
       if(conflictMsg) alert(conflictMsg);
-    }catch(e){console.error(e);setStatus("Erro ao salvar produto no Firebase","err");alert("Erro ao salvar produto: "+e.message)}
-  }
-  async function saveProductsFirebaseOnly(){
-    try{
-      if(!state.dirtyProductKeys.size && !state.deletedProductKeys.size){
-        setStatus("Nenhum produto pendente para enviar ao Firebase","ok");
-        return;
-      }
-      setStatus("Salvando apenas os produtos alterados no Firebase...","warn");
-      const result=await syncProductsToFirebase();
-      const conflictMsg=result.conflicts.length?` Conflitos de estoque: ${result.conflicts.join(", ")}.`:"";
-      setStatus(`Firebase atualizado: ${result.saved} produtos e ${result.deleted} exclusões`,"ok");
-      renderSummary();
-      renderProducts();
-      if(conflictMsg) alert(`Nem todos os produtos foram salvos.${conflictMsg}`);
-    }catch(e){console.error(e);setStatus("Erro ao salvar produtos no Firebase","err");alert("Erro no Firebase: "+e.message)}
+    }catch(e){console.error(e);setStatus("Erro ao salvar produto","err");alert("Erro ao salvar produto: "+e.message)}
   }
   async function saveEverything(){
     try{
       readSettingsFromUi();
       if(!ensureCatalogReadyForFullExport())return false;
-      setStatus("Salvando tudo com atualização granular no Firebase...","warn");
+      setStatus("Salvando tudo no Firebase e atualizando produtos-home...","warn");
       const syncResult=await syncProductsToFirebase();
-      const produtos=productsObject(),adminMeta=buildAdminMetaPayload(),metaCatalogCsv=buildMetaCatalogCsv();
-      await saveGithubFiles({produtos,metaCatalogCsv,adminMeta,cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});
+      const produtosHome=buildProductsHomePayload(),adminMeta=buildAdminMetaPayload(),metaCatalogCsv=buildMetaCatalogCsv();
+      await saveGithubFiles({produtosHome,metaCatalogCsv,adminMeta,cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});
       state.meta=adminMeta;
       state.dirtyMeta=state.dirtyCestas=state.dirtyKits=state.dirtyNotes=false;
       localStorage.removeItem(LS_NOTES_DIRTY);
       localStorage.setItem(LS_SETTINGS,JSON.stringify(state.settings));
       saveLocal();
       const conflictMsg=syncResult.conflicts.length?`\nConflitos de estoque: ${syncResult.conflicts.join(", ")}.`:"";
-      setStatus("Salvamento geral concluído: Firebase granular e GitHub atualizados","ok");
-      alert(`Salvamento geral concluído. O Firebase recebeu apenas os produtos alterados, e o GitHub recebeu os arquivos completos.${conflictMsg}`);
+      setStatus("Salvamento geral concluido: Firebase e produtos-home atualizados","ok");
+      alert(`Salvamento geral concluido. O Firebase recebeu apenas os produtos alterados, e o GitHub recebeu produtos-home e arquivos auxiliares.${conflictMsg}`);
       renderAll();
       return true;
     }catch(e){console.error(e);saveLocal();setStatus("Salvamento geral incompleto","err");alert("Não foi possível concluir o salvamento geral: "+e.message);return false}
@@ -2519,10 +2538,10 @@
   githubUpsert=function(path,data,message){return githubPutWithFreshSha(path,b64(JSON.stringify(data,null,2)),message)};
   githubUpsertText=function(path,text,message){return githubPutWithFreshSha(path,b64(String(text??"")),message)};
   githubUpsertRaw=function(path,arrayBuffer,message){return githubPutWithFreshSha(path,arrayBufferToBase64(arrayBuffer),message)};
-  saveGithubFiles=async function({produtos,metaCatalogCsv,adminMeta,cestas,kits,anotacoes}={}){
+  saveGithubFiles=async function({produtosHome,metaCatalogCsv,adminMeta,cestas,kits,anotacoes}={}){
     readSettingsFromUi();
     const ops=[];
-    if(produtos) ops.push(()=>githubUpsert(state.settings.githubProdutosPath,produtos,"Atualiza produtos.json pelo admin Dona Antônia"));
+    if(produtosHome) ops.push(()=>githubUpsert(state.settings.githubProdutosHomePath||"site/produtos-home.json",produtosHome,"Atualiza produtos-home.json pelo admin Dona Antônia"));
     if(metaCatalogCsv) ops.push(()=>githubUpsertText(state.settings.githubMetaPath,metaCatalogCsv,"Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia"));
     if(adminMeta) ops.push(()=>githubUpsert(state.settings.githubAdminMetaPath,adminMeta,"Atualiza produtos_admin_meta.json pelo admin Dona Antônia"));
     if(cestas) ops.push(()=>githubUpsert(state.settings.githubCestasPath,cestas,"Atualiza produtos-cesta-basica.json pelo admin Dona Antônia"));
@@ -3719,7 +3738,7 @@
     e.preventDefault();try{setStatus("Processando imagem colada...","warn");const prepared=await addWorkbenchPhoto(p,file);setStatus(`Imagem colada (${formatBytes(prepared.bytes)})`,"ok")}catch(err){alert("Erro ao colar imagem: "+err.message)}
   });
 
-  saveGithubNow=async function(){try{if(!ensureCatalogReadyForFullExport())return;setStatus("Enviando arquivos ao GitHub...","warn");await saveGithubFiles({produtos:productsObject(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});state.dirtyNotes=false;localStorage.removeItem(LS_NOTES_DIRTY);setStatus("GitHub atualizado","ok");alert("Todos os arquivos, incluindo anotacoes.json, foram enviados ao GitHub.")}catch(e){console.error(e);setStatus("Erro ao enviar GitHub","err");alert("Erro ao enviar GitHub: "+e.message)}};
+  saveGithubNow=async function(){try{if(!ensureCatalogReadyForFullExport())return;setStatus("Enviando arquivos ao GitHub...","warn");await saveGithubFiles({produtosHome:buildProductsHomePayload(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});state.dirtyNotes=false;localStorage.removeItem(LS_NOTES_DIRTY);setStatus("GitHub atualizado","ok");alert("produtos-home.json e arquivos auxiliares foram enviados ao GitHub.")}catch(e){console.error(e);setStatus("Erro ao enviar GitHub","err");alert("Erro ao enviar GitHub: "+e.message)}};
 
   const originalLoadData=loadData;
   loadData=async function(){
@@ -3743,7 +3762,6 @@
     const action=b.dataset.action,key=b.dataset.key,p=key?productByKey(key):null;
     const handlers={
       "save-card-firebase":()=>saveProductFirebase(b.dataset.key),
-      "save-products-firebase":()=>saveProductsFirebaseOnly(),
       "save-everything":()=>saveEverything(),
       "save-products":()=>saveProducts(),
       "save-meta":()=>saveMeta(),
@@ -3764,7 +3782,6 @@
     e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
     const labels={
       "save-card-firebase":"Salvando...",
-      "save-products-firebase":"Salvando Firebase...",
       "save-everything":"Salvando geral...",
       "save-products":"Salvando produtos...",
       "save-meta":"Salvando cadastros...",
@@ -4585,9 +4602,10 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
   githubUpsertText=function(path,text,message){return githubPutWithFreshSha(path,b64(String(text??"")),message)};
   githubUpsertRaw=function(path,arrayBuffer,message){return githubPutWithFreshSha(path,arrayBufferToBase64(arrayBuffer),message)};
 
-  saveGithubFiles = async function({metaCatalogCsv,adminMeta,cestas,kits,anotacoes}={}){
+  saveGithubFiles = async function({produtosHome,metaCatalogCsv,adminMeta,cestas,kits,anotacoes}={}){
     readSettingsFromUi();
     const ops=[];
+    if(produtosHome) ops.push({label:"produtos-home.json",run:()=>githubUpsert(state.settings.githubProdutosHomePath||"site/produtos-home.json",produtosHome,"Atualiza produtos-home.json pelo admin Dona Antônia")});
     if(metaCatalogCsv) ops.push({label:"produtos_meta.csv",run:()=>githubUpsertText(state.settings.githubMetaPath,metaCatalogCsv,"Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")});
     if(adminMeta) ops.push({label:"produtos_admin_meta.json",run:()=>githubUpsert(state.settings.githubAdminMetaPath,adminMeta,"Atualiza produtos_admin_meta.json pelo admin Dona Antônia")});
     if(cestas) ops.push({label:"produtos-cesta-basica.json",run:()=>githubUpsert(state.settings.githubCestasPath,cestas,"Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")});
@@ -4609,33 +4627,33 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
 
   saveProducts = async function(){
     try{
-      setStatus("Salvando produtos alterados no Firebase e publicando catálogos inteligentes no GitHub...","warn");
+      setStatus("Salvando produtos no Firebase e atualizando produtos-home...","warn");
       const syncResult=await syncProductsToFirebase();
       const adminMeta=buildAdminMetaPayload();
       const metaCatalogCsv=buildMetaCatalogCsv();
-      const gh=await saveGithubFiles({metaCatalogCsv,adminMeta});
+      const gh=await saveGithubFiles({produtosHome:buildProductsHomePayload(),metaCatalogCsv,adminMeta});
       state.meta=adminMeta;
       state.dirtyMeta=false;
       saveLocal();
       const conflictMsg=syncResult.conflicts.length?`\nConflitos de estoque: ${syncResult.conflicts.join(", ")}. Recarregue esses produtos antes de ajustar estoque manualmente.`:"";
       setStatus(`Produtos salvos: ${syncResult.saved} atualizados, ${syncResult.deleted} excluídos · GitHub: ${daGithubSummaryText(gh)}`, "ok");
-      alert(`Produtos alterados salvos no Firebase sem regravar o banco inteiro. GitHub inteligente: ${daGithubSummaryText(gh)}.${conflictMsg}`);
+      alert(`Produtos salvos no Firebase e produtos-home.json atualizado. ${daGithubSummaryText(gh)}.${conflictMsg}`);
       renderAll();
     }catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar produtos. Backup local feito.","err"); alert("Erro ao salvar produtos: "+e.message)}
   };
   saveMeta = async function(){try{setStatus("Salvando metadados no GitHub somente se houver mudança...","warn"); const adminMeta=buildAdminMetaPayload(); const metaCatalogCsv=buildMetaCatalogCsv(); const gh=await saveGithubFiles({metaCatalogCsv,adminMeta}); state.meta=adminMeta; state.dirtyMeta=false; saveLocal(); setStatus(`Cadastros verificados · ${daGithubSummaryText(gh)}`,"ok"); alert(`Metadados verificados no GitHub. ${daGithubSummaryText(gh)}.`); renderAll();}catch(e){console.error(e); saveLocal(); alert("Erro ao salvar catálogos no GitHub: "+e.message); setStatus("Erro em produtos_meta","err")}};
   saveCestas = async function(){try{setStatus("Salvando cestas no GitHub somente se houver mudança...","warn"); const gh=await saveGithubFiles({cestas:state.cestas}); state.dirtyCestas=false; saveLocal(); setStatus(`Cestas verificadas · ${daGithubSummaryText(gh)}`, "ok"); alert(`Cestas verificadas no GitHub. ${daGithubSummaryText(gh)}.`); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar cestas. Backup local feito.","err"); alert("Erro ao salvar cestas no GitHub: "+e.message)}};
   saveKits = async function(){try{setStatus("Salvando kits no GitHub somente se houver mudança...","warn"); const gh=await saveGithubFiles({kits:state.kits}); state.dirtyKits=false; saveLocal(); setStatus(`Kits verificados · ${daGithubSummaryText(gh)}`,"ok"); alert(`Kits verificados no GitHub. ${daGithubSummaryText(gh)}.`); renderAll();}catch(e){console.error(e); saveLocal(); setStatus("Erro ao salvar kits. Backup local feito.","err"); alert("Erro ao salvar kits no GitHub: "+e.message)}};
-  saveGithubNow = async function(){try{setStatus("Comparando arquivos auxiliares e enviando ao GitHub somente o que mudou...","warn");const gh=await saveGithubFiles({metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});state.dirtyNotes=false;localStorage.removeItem(LS_NOTES_DIRTY);setStatus(`GitHub verificado · ${daGithubSummaryText(gh)}`,"ok");alert(`GitHub verificado. ${daGithubSummaryText(gh)}. produtos.json não foi usado nem recriado.`)}catch(e){console.error(e);setStatus("Erro ao enviar GitHub","err");alert("Erro ao enviar GitHub: "+e.message)}};
+  saveGithubNow = async function(){try{setStatus("Comparando arquivos e enviando ao GitHub somente o que mudou...","warn");const gh=await saveGithubFiles({produtosHome:buildProductsHomePayload(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});state.dirtyNotes=false;localStorage.removeItem(LS_NOTES_DIRTY);setStatus(`GitHub verificado · ${daGithubSummaryText(gh)}`,"ok");alert(`GitHub verificado. ${daGithubSummaryText(gh)}. produtos-home.json foi usado como arquivo publico de produtos.`)}catch(e){console.error(e);setStatus("Erro ao enviar GitHub","err");alert("Erro ao enviar GitHub: "+e.message)}};
 
   saveEverything = async function(){
     try{
       readSettingsFromUi();
       if(!ensureCatalogReadyForFullExport())return false;
-      setStatus("Salvando geral com Firebase granular e GitHub inteligente...","warn");
+      setStatus("Salvando geral no Firebase e atualizando produtos-home...","warn");
       const syncResult=await syncProductsToFirebase();
       const adminMeta=buildAdminMetaPayload(),metaCatalogCsv=buildMetaCatalogCsv();
-      const gh=await saveGithubFiles({metaCatalogCsv,adminMeta,cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});
+      const gh=await saveGithubFiles({produtosHome:buildProductsHomePayload(),metaCatalogCsv,adminMeta,cestas:state.cestas,kits:state.kits,anotacoes:state.anotacoes});
       state.meta=adminMeta;
       state.dirtyMeta=state.dirtyCestas=state.dirtyKits=state.dirtyNotes=false;
       localStorage.removeItem(LS_NOTES_DIRTY);
@@ -4648,7 +4666,7 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
       }catch(err){console.error(err);cleanupMsg=" Limpeza de imagens não concluída."}
       const conflictMsg=syncResult.conflicts.length?`\nConflitos de estoque: ${syncResult.conflicts.join(", ")}.`:"";
       setStatus(`Salvamento geral concluído · GitHub: ${daGithubSummaryText(gh)}`,"ok");
-      alert(`Salvamento geral concluído. Firebase recebeu apenas produtos alterados. GitHub inteligente: ${daGithubSummaryText(gh)}.${cleanupMsg}${conflictMsg}`);
+      alert(`Salvamento geral concluido. Firebase recebeu apenas produtos alterados e produtos-home.json foi atualizado. GitHub: ${daGithubSummaryText(gh)}.${cleanupMsg}${conflictMsg}`);
       renderAll();
       return true;
     }catch(e){console.error(e);saveLocal();setStatus("Salvamento geral incompleto","err");alert("Não foi possível concluir o salvamento geral: "+e.message);return false}
