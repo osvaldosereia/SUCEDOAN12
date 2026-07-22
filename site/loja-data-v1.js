@@ -111,18 +111,6 @@
       return Math.round((date - today) / 86400000);
     }
 
-    function expiryRate(days) {
-      if (days == null || days <= 2 || days > 105) return 0;
-      if (days <= 7) return .50;
-      if (days <= 15) return .40;
-      if (days <= 31) return .35;
-      if (days <= 46) return .30;
-      if (days <= 65) return .25;
-      if (days <= 76) return .20;
-      if (days <= 91) return .10;
-      return .05;
-    }
-
     function productExpiry(raw) {
       return raw.validade || raw.vencimento || raw.data_validade || raw.validade_produto || raw.dataValidade || raw.expiry || raw.expiry_date || '';
     }
@@ -135,15 +123,8 @@
       const expiryDays = daysUntil(expiry);
       const offerEnd = parseDate(raw.validade_oferta || raw.validadeOferta || '');
       const explicitOffer = num(raw.preco_oferta || raw.precoOferta);
-      const explicitActive = explicitOffer > 0 && (!offerEnd || offerEnd >= new Date());
-      const automaticRate = expiryRate(expiryDays);
-      const automaticPrice = automaticRate ? round(regularPrice * (1 - automaticRate)) : regularPrice;
-      const price = round(Math.max(0, Math.min(
-        regularPrice || Infinity,
-        explicitActive ? explicitOffer : Infinity,
-        automaticRate ? automaticPrice : Infinity
-      )));
-      const finalPrice = Number.isFinite(price) ? price : regularPrice;
+      const explicitActive = explicitOffer > 0 && offerEnd && offerEnd >= new Date() && explicitOffer < regularPrice;
+      const finalPrice = round(explicitActive ? explicitOffer : regularPrice);
       const image = canonicalImage(raw.url_imagem || raw.imagem_url || raw.urlImagem || raw.imagem || raw.image || raw.img || raw.foto || raw.foto_url || raw.imagem_path);
       const product = {
         id, firebaseKey:text(key || raw.firebaseKey || raw.id || raw.codigo || id),
