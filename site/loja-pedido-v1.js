@@ -12,8 +12,11 @@
       const number=orderNumber(),id=`site-${number}-${Math.random().toString(36).slice(2,7)}`,payment=paymentName(data.payment);
       const items=pricing.lines.map(line=>({
         firebaseKey:line.product.firebaseKey,produtoId:line.product.id,sku:line.product.codigo,codigo:line.product.codigo,
+        identificadores:{id:line.product.id,firebaseKey:line.product.firebaseKey,sku:line.product.codigo,gtin:line.product.gtin||line.product.ean||'',ean:line.product.ean||line.product.gtin||''},
         nome:line.product.name,qtd:line.qty,quantidade:line.qty,price:line.effectiveUnit,preco:line.effectiveUnit,
-        precoTabela:line.product.price,total:line.total,gtin:line.product.gtin||line.product.ean||''
+        precoTabela:line.product.price,total:line.total,gtin:line.product.gtin||line.product.ean||'',ean:line.product.ean||line.product.gtin||'',
+        url_imagem:line.product.image,gondola:line.product.gondola||'Z-Sem Gôndola',prateleira:line.product.shelf||'-',localizacao:line.product.location||'',
+        categoria:line.product.category||'',subcategoria:line.product.subcategory||'',subsubcategoria:line.product.subsubcategory||'',marca:line.product.brand||'',embalagem:line.product.package||''
       }));
       const totalProducts=round(items.reduce((sum,item)=>sum+item.precoTabela*item.qtd,0));
       const difference=round(pricing.total-totalProducts);
@@ -54,30 +57,122 @@
       const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';document.body.appendChild(link);link.click();link.remove();
     }
 
-    function enqueueOrder(payload){
-      const queue=readLocal(CONFIG.ORDER_QUEUE_KEY,[]);queue.push({id:payload.pedido.id,payload,createdAt:Date.now(),firebaseDone:false,makeDone:false});
-      writeLocal(CONFIG.ORDER_QUEUE_KEY,queue.slice(-20));
+    function buildFirebaseOrder(makePayload){
+      const pedido=makePayload&&makePayload.pedido?makePayload.pedido:{},cliente=pedido.cliente||{},nowIso=new Date().toISOString();
+      const itens=(Array.isArray(pedido.itens)?pedido.itens:[]).map(item=>({
+        produtoId:String(item.produtoId||item.identificadores&&item.identificadores.id||''),
+        firebaseKey:String(item.firebaseKey||item.identificadores&&item.identificadores.firebaseKey||''),
+        sku:String(item.sku||item.codigo||''),codigo:String(item.codigo||item.sku||''),
+        identificadores:item.identificadores||{id:String(item.produtoId||''),firebaseKey:String(item.firebaseKey||''),sku:String(item.sku||''),gtin:String(item.gtin||item.ean||''),ean:String(item.ean||item.gtin||'')},
+        nome:String(item.nome||''),quantidade:Number(item.qtd||item.quantidade||0),preco_unitario:Number(item.price||item.preco||0),
+        subtotal:round(Number(item.qtd||item.quantidade||0)*Number(item.price||item.preco||0)),gtin:String(item.gtin||item.ean||''),ean:String(item.ean||item.gtin||''),
+        url_imagem:String(item.url_imagem||CONFIG.LOGO),gondola:String(item.gondola||'Z-Sem Gôndola'),prateleira:String(item.prateleira||'-'),localizacao:String(item.localizacao||''),
+        categoria:String(item.categoria||''),subcategoria:String(item.subcategoria||''),subsubcategoria:String(item.subsubcategoria||''),marca:String(item.marca||''),embalagem:String(item.embalagem||''),
+        status_separacao:'pendente',quantidade_separada:0,separado_em:'',separador:''
+      }));
+      const address=[cliente.rua,cliente.numero||cliente.casa,cliente.quadra?`Quadra ${cliente.quadra}`:'',cliente.bairro,[cliente.cidade,cliente.uf||'MT'].filter(Boolean).join('/'),cliente.cepFormatado?`CEP ${cliente.cepFormatado}`:''].filter(Boolean).join(', ');
+      return {
+        id:String(pedido.id||''),numero_pedido:String(pedido.numero||pedido.id||''),idempotency_key:String(pedido.idempotencyKey||pedido.id||''),origem:'site',metadados:pedido.metadados||{},
+        status:'recebido',status_separacao:'pendente',criado_em:nowIso,atualizado_em:nowIso,
+        link_pedido:`${CONFIG.SITE_URL}/pedido.html?id=${encodeURIComponent(String(pedido.id||''))}`,firebase_path:`/pedidos/${String(pedido.id||'')}`,
+        mini_site_interno:`${CONFIG.SITE_URL}/pedidos.html?id=${encodeURIComponent(String(pedido.id||''))}`,
+        separacao:{status:'pendente',iniciado_em:'',finalizado_em:'',separador:'',total_itens:itens.length,itens_separados:0,itens_pendentes:itens.length,observacoes_internas:''},
+        bling:{status:'aguardando_make',id_contato:'',id_pedido_venda:'',numero_pedido_bling:''},
+        integracao:{whatsapp:'aberto',firebase:'salvo_pelo_site',make:'pendente',criado_pelo_site_em:nowIso},
+        cliente:{nome:String(cliente.nome||'Cliente Site'),cpf:String(cliente.cpf||''),telefone:String(cliente.telefone||''),telefoneFormatado:String(cliente.telefoneFormatado||''),celular:String(cliente.celular||cliente.telefone||''),email:String(cliente.email||'')},
+        entrega:{agendamento:String(cliente.agendamento||''),cep:String(cliente.cep||''),cepFormatado:String(cliente.cepFormatado||''),cidade:String(cliente.cidade||''),uf:String(cliente.uf||'MT'),bairro:String(cliente.bairro||''),rua:String(cliente.rua||''),numero:String(cliente.numero||cliente.casa||''),casa:String(cliente.casa||''),quadra:String(cliente.quadra||''),complemento:String(cliente.complemento||''),frente:String(cliente.frente||''),endereco_completo:address},
+        pagamento:{forma:String(cliente.pagamento||''),codigo:String(cliente.pagamentoCodigo||''),total:Number(pedido.total||0),totalProdutos:Number(pedido.totalProdutos||0),desconto:Number(pedido.desconto||0),outrasDespesasBling:Number(pedido.outrasDespesasBling||0),descontoBling:Number(pedido.descontoBling||0),total_texto:money(Number(pedido.total||0))},
+        cupom:pedido.cupom||null,kitPromocional:pedido.kitPromocional||null,atacado:pedido.atacado||null,validadeQuantidade:pedido.validadeQuantidade||null,observacoes:String(pedido.observacoes||''),itens,
+        envio:{status:'aguardando_separacao',entregador:'',saiu_em:'',entregue_em:'',tentativas:[],observacoes:''},
+        historico:[{data:nowIso,acao:'pedido_recebido_site',usuario:'site',observacao:'Pedido salvo diretamente pelo site antes do processamento do Make/Bling.'}],
+        controle:{pedido_original_site:true,bloquear_alteracao_por_whatsapp:true,aguardando_processamento_make:true,observacao_interna:'WhatsApp é o canal prioritário. O pedido foi preservado no Firebase e aguarda integração secundária com Make/Bling.'}
+      };
     }
 
+    function normalizeQueueEntry(item){
+      const makePayload=item&&item.makePayload||item&&item.payload||null;
+      const id=String(item&&item.id||makePayload&&makePayload.pedido&&makePayload.pedido.id||'');
+      if(!id||!makePayload)return null;
+      return {
+        id,makePayload,firebaseOrder:item.firebaseOrder||buildFirebaseOrder(makePayload),
+        createdAt:Number(item.createdAt||Date.now()),updatedAt:Number(item.updatedAt||Date.now()),
+        firebaseStatus:item.firebaseStatus||(item.firebaseDone?'sent':'pending'),makeStatus:item.makeStatus||(item.makeDone?'sent':'pending'),
+        makeAttempts:Number(item.makeAttempts||0),lastMakeAttemptAt:Number(item.lastMakeAttemptAt||0),lastError:String(item.lastError||'')
+      };
+    }
+
+    function readOrderQueue(){
+      const raw=readLocal(CONFIG.ORDER_QUEUE_KEY,[]);
+      return (Array.isArray(raw)?raw:[]).map(normalizeQueueEntry).filter(Boolean);
+    }
+
+    function writeOrderQueue(queue){
+      writeLocal(CONFIG.ORDER_QUEUE_KEY,(Array.isArray(queue)?queue:[]).map(normalizeQueueEntry).filter(Boolean).slice(-20));
+    }
+
+    function updateQueueEntry(id,changes){
+      const queue=readOrderQueue(),index=queue.findIndex(item=>item.id===String(id));
+      if(index<0)return null;
+      queue[index]=Object.assign({},queue[index],changes||{},{updatedAt:Date.now()});writeOrderQueue(queue);return queue[index];
+    }
+
+    function removeQueueEntry(id){writeOrderQueue(readOrderQueue().filter(item=>item.id!==String(id)))}
+
+    function enqueueOrder(payload){
+      const queue=readOrderQueue(),id=String(payload&&payload.pedido&&payload.pedido.id||'');if(!id)return null;
+      const index=queue.findIndex(item=>item.id===id),current=index>=0?queue[index]:null;
+      const entry={id,makePayload:payload,firebaseOrder:buildFirebaseOrder(payload),createdAt:current?current.createdAt:Date.now(),updatedAt:Date.now(),firebaseStatus:current?current.firebaseStatus:'pending',makeStatus:current?current.makeStatus:'pending',makeAttempts:current?current.makeAttempts:0,lastMakeAttemptAt:current?current.lastMakeAttemptAt:0,lastError:''};
+      if(index>=0)queue[index]=entry;else queue.push(entry);writeOrderQueue(queue);return entry;
+    }
+
+    async function fetchWithTimeout(url,options,timeoutMs){
+      const controller='AbortController'in window?new AbortController():null,timer=controller?setTimeout(()=>controller.abort(),timeoutMs||8000):null;
+      try{return await fetch(url,Object.assign({},options||{},controller?{signal:controller.signal}:{}))}finally{if(timer)clearTimeout(timer)}
+    }
+
+    async function readFirebaseOrder(id){
+      try{const response=await fetchWithTimeout(`${CONFIG.FIREBASE_ORDERS_BASE}/${encodeURIComponent(String(id))}.json`,{method:'GET',cache:'no-store'},6000);return response.ok?await response.json():null}catch(_){return null}
+    }
+
+    function firebaseOrderHasBling(order){return Boolean(order&&order.bling&&(order.bling.id_pedido_venda||order.bling.numero_pedido_bling))}
+
     async function processOrderQueue(targetId=''){
-      if(!navigator.onLine)return;
-      const queue=readLocal(CONFIG.ORDER_QUEUE_KEY,[]);let changed=false;
-      for(const item of queue){
-        if(targetId&&item.id!==targetId)continue;
-        if(!item.firebaseDone){
-          try{
-            const response=await fetch(`${CONFIG.FIREBASE_ORDERS_BASE}/${encodeURIComponent(item.id)}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(item.payload.pedido)});
-            if(response.ok){item.firebaseDone=true;changed=true}
-          }catch(_){}
+      if(!navigator.onLine||processOrderQueue.running)return;processOrderQueue.running=true;
+      try{
+        let queue=readOrderQueue().sort((a,b)=>targetId?(a.id===targetId?-1:b.id===targetId?1:a.createdAt-b.createdAt):a.createdAt-b.createdAt);
+        for(const snapshot of queue.slice(0,4)){
+          let item=readOrderQueue().find(entry=>entry.id===snapshot.id);if(!item)continue;
+          if(item.makeStatus==='sent'&&item.firebaseStatus!=='sent'){
+            const existing=await readFirebaseOrder(item.id);if(existing)updateQueueEntry(item.id,{firebaseStatus:'sent',lastError:''});
+          }
+          item=readOrderQueue().find(entry=>entry.id===snapshot.id);if(!item)continue;
+          if(item.firebaseStatus!=='sent'){
+            try{
+              const response=await fetchWithTimeout(`${CONFIG.FIREBASE_ORDERS_BASE}/${encodeURIComponent(item.id)}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(item.firebaseOrder),keepalive:true},8000);
+              if(!response.ok)throw new Error(`Firebase respondeu ${response.status}`);
+              updateQueueEntry(item.id,{firebaseStatus:'sent',lastError:''});
+            }catch(error){updateQueueEntry(item.id,{firebaseStatus:'pending',lastError:error&&error.message||'Falha ao salvar no Firebase'})}
+          }
+          item=readOrderQueue().find(entry=>entry.id===snapshot.id);if(!item)continue;
+          if(item.makeStatus!=='sent'){
+            const now=Date.now();
+            if(item.makeAttempts>0){
+              const existing=await readFirebaseOrder(item.id);
+              if(firebaseOrderHasBling(existing)){updateQueueEntry(item.id,{firebaseStatus:'sent',makeStatus:'sent',lastError:''});item=readOrderQueue().find(entry=>entry.id===snapshot.id)}
+              else if(item.lastMakeAttemptAt&&now-item.lastMakeAttemptAt<10*60*1000)continue;
+            }
+            if(item&&item.makeStatus!=='sent'){
+              updateQueueEntry(item.id,{makeStatus:'sending',makeAttempts:item.makeAttempts+1,lastMakeAttemptAt:now,lastError:''});
+              try{
+                const response=await fetchWithTimeout(CONFIG.MAKE_ORDER_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(item.makePayload),keepalive:true},12000);
+                if(!response.ok)throw new Error(`Make respondeu ${response.status}`);
+                updateQueueEntry(item.id,{makeStatus:'sent',lastError:''});
+              }catch(error){updateQueueEntry(item.id,{makeStatus:'pending',lastError:error&&error.message||'Falha ao enviar ao Make'})}
+            }
+          }
+          item=readOrderQueue().find(entry=>entry.id===snapshot.id);if(item&&item.firebaseStatus==='sent'&&item.makeStatus==='sent')removeQueueEntry(item.id);
         }
-        if(!item.makeDone){
-          try{
-            const response=await fetch(CONFIG.MAKE_ORDER_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(item.payload)});
-            if(response.ok){item.makeDone=true;changed=true}
-          }catch(_){}
-        }
-      }
-      if(changed)writeLocal(CONFIG.ORDER_QUEUE_KEY,queue.filter(item=>!(item.firebaseDone&&item.makeDone)));
+      }finally{processOrderQueue.running=false}
     }
 
     async function verifySelectedProducts(payload){
