@@ -30,7 +30,6 @@
   <link rel="canonical" href="https://www.donaantonia.com.br/">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="preload" href="site/produtos-home.json?v=2026-07-17-imagens-mobile-v14" as="fetch" type="application/json" crossorigin="anonymous" fetchpriority="high">
   <link rel="icon" href="data:,">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
@@ -995,7 +994,11 @@
 
     const CONFIG = {
       SITE_BASE_URL: 'https://www.donaantonia.com.br',
-      PRODUCT_HOME_URLS: ['site/produtos-home.json', 'produtos-home.json'],
+      PRODUCT_HOME_URL: 'site/produtos-home.json',
+      BASKET_URL: 'site/produtos-cesta-basica.json',
+      KIT_URL: 'site/kits.json',
+      COUPON_URL: 'site/cuponsativos.json',
+      CATALOG_VERSION_URL: 'catalog-version.json',
       MAKE_WEBHOOK_URL: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
       FIREBASE_ORDERS_URL: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/pedidos',
       ORDER_DELIVERY_QUEUE_KEY: 'da_pedidos_pendentes_v2',
@@ -1003,7 +1006,7 @@
       ORDER_DELIVERY_RETRY_MS: 10 * 60 * 1000,
       CLIENT_LOOKUP_WEBHOOK_URL: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
       WHATSAPP_NUMBER: '5565998150975',
-      APP_VERSION: '2026-07-17-imagens-mobile-v14',
+      APP_VERSION: '2026-07-22-catalogo-rapido-v1',
       VERSION_STORAGE_KEY: 'da_app_version_v1',
       VERSION_URL: 'site/app-version.json',
       PRODUCT_CACHE_KEY: 'da_produtos_cache_v5',
@@ -1014,7 +1017,7 @@
       CHECKOUT_CLIENT_KEY: 'da_checkout_cliente_v1',
       COUPON_STORAGE_KEY: 'da_cupom_ativo_v1',
       FAVORITES_STORAGE_KEY: 'da_favoritos_v1',
-      COUPON_URLS: ['site/cuponsativos.json', 'cuponsativos.json'],
+      COUPON_CACHE_KEY: 'da_cupons_cache_v1',
       CART_MAX_AGE_MS: 6 * 60 * 60 * 1000,
       MIN_ORDER: 75,
       DEFAULT_DDD: '65'
@@ -1030,6 +1033,7 @@
     const state = {
       products: [],
       productMap: new Map(),
+      productExactMap: new Map(),
       productCodeMap: new Map(),
       cestas: [],
       kits: [],
@@ -1053,6 +1057,7 @@
       catalogLoadedAt: 0,
       catalogSource: '',
       catalogMode: '',
+      catalogVersion: '',
       catalogVerifiedAt: 0,
       catalogVerifiedAll: false,
       catalogVerifiedItemIds: [],
@@ -1184,12 +1189,13 @@
 
     function normalizeProduct(raw, key, index) {
       const name = formatName(raw.nome || raw.name || raw.descricao || 'Produto');
-      const id = String(raw.codigo || raw.id || key || index || slug(name)).trim();
+      const firebaseKey = String(raw.firebaseKey || raw.id || key || raw.codigo || index || slug(name)).trim();
+      const id = firebaseKey;
       const oldPrice = parseMoney(raw.preco || raw.price || raw.valor || 0);
       const product = {
         id,
-        firebaseKey: String(key || raw.firebaseKey || raw.id || raw.codigo || ''),
-        codigo: String(raw.codigo || raw.sku || id),
+        firebaseKey,
+        codigo: String(raw.codigo || raw.sku || firebaseKey),
         name,
         slug: slug(name),
         price: oldPrice,
@@ -1301,7 +1307,8 @@
       try {
         const current = localStorage.getItem(CONFIG.VERSION_STORAGE_KEY);
         if (current !== CONFIG.APP_VERSION) {
-          clearSavedCatalogAndCart();
+          // O catálogo possui versionamento próprio. Não apagar produtos, cestas e kits
+          // a cada atualização do HTML evita um novo download pesado em todo F5.
           localStorage.setItem(CONFIG.VERSION_STORAGE_KEY, CONFIG.APP_VERSION);
         }
       } catch(e) {}
@@ -1418,14 +1425,44 @@
       return couponIsValid(coupon) ? coupon : null;
     }
 
-    async function loadCoupons() {
-      let data = null;
-      for (const url of CONFIG.COUPON_URLS) {
+    let catalogVersionPromise = null;
+    let productRefreshPromise = null;
+    let cestasRefreshPromise = null;
+    let kitsRefreshPromise = null;
+    let couponsRefreshPromise = null;
+
+    function catalogVersionFrom(data) {
+      return String(data && (data.version || data.catalogVersion || data.build || data.updatedAt) || '').trim();
+    }
+
+    async function getLatestCatalogVersion() {
+      if (catalogVersionPromise) return catalogVersionPromise;
+      catalogVersionPromise = (async () => {
         try {
-          data = await fetchJson(withCacheBust(url), 5000, { cache: 'default' });
-          break;
-        } catch(e) {}
+          const separator = String(CONFIG.CATALOG_VERSION_URL).includes('?') ? '&' : '?';
+          const data = await fetchJson(`${CONFIG.CATALOG_VERSION_URL}${separator}t=${Date.now()}`, 2500, { cache: 'no-store' });
+          return catalogVersionFrom(data) || CONFIG.APP_VERSION;
+        } catch(e) {
+          return state.catalogVersion || CONFIG.APP_VERSION;
+        }
+      })();
+      try {
+        return await catalogVersionPromise;
+      } finally {
+        window.setTimeout(() => { catalogVersionPromise = null; }, 1000);
       }
+    }
+
+    function versionedCatalogUrl(url, version) {
+      const separator = String(url).includes('?') ? '&' : '?';
+      return `${url}${separator}v=${encodeURIComponent(version || CONFIG.APP_VERSION)}`;
+    }
+
+    function cachedCatalogVersion(cache) {
+      return String(cache && (cache.catalogVersion || cache.version || cache.appVersion) || '').trim();
+    }
+
+    function applyCouponsData(data) {
       state.coupons = (Array.isArray(data) ? data : Object.values(data || {}))
         .filter(c => c && c.codigo)
         .sort((a,b) => Number(a.posicao || 99) - Number(b.posicao || 99));
@@ -1434,61 +1471,204 @@
       if (couponIsValid(getCouponByCode(savedCode))) state.activeCouponCode = savedCode.toUpperCase();
     }
 
+    function hydrateCouponsFromCache() {
+      const cache = readCache(CONFIG.COUPON_CACHE_KEY);
+      if (!cache || !cache.data) return false;
+      applyCouponsData(cache.data);
+      return true;
+    }
+
+    async function refreshCoupons() {
+      if (couponsRefreshPromise) return couponsRefreshPromise;
+      couponsRefreshPromise = (async () => {
+        const cache = readCache(CONFIG.COUPON_CACHE_KEY);
+        const version = await getLatestCatalogVersion();
+        if (cache && cache.data && cachedCatalogVersion(cache) === version) {
+          if (!state.coupons.length) applyCouponsData(cache.data);
+          return false;
+        }
+        try {
+          const data = await fetchJson(versionedCatalogUrl(CONFIG.COUPON_URL, version), 4000, { cache: 'default' });
+          applyCouponsData(data);
+          writeCache(CONFIG.COUPON_CACHE_KEY, { savedAt: Date.now(), catalogVersion: version, data });
+          return true;
+        } catch(e) {
+          if (!state.coupons.length && cache && cache.data) applyCouponsData(cache.data);
+          return false;
+        }
+      })();
+      try { return await couponsRefreshPromise; }
+      finally { couponsRefreshPromise = null; }
+    }
+
+    async function loadCoupons() {
+      if (hydrateCouponsFromCache()) return true;
+      await refreshCoupons();
+      return true;
+    }
+
+    function migrateProductQuantityMap(map) {
+      const source = map && typeof map === 'object' ? map : {};
+      const result = {};
+      Object.entries(source).forEach(([oldId, qty]) => {
+        const amount = Math.max(0, Number(qty) || 0);
+        if (amount <= 0) return;
+        if (String(oldId).startsWith('fee_')) {
+          result[String(oldId)] = Number(result[String(oldId)] || 0) + amount;
+          return;
+        }
+        const product = exactProductByIdentity(oldId);
+        const newId = product ? String(product.id) : String(oldId);
+        result[newId] = Number(result[newId] || 0) + amount;
+      });
+      return result;
+    }
+
+    function migrateLegacyProductReferences() {
+      if (!state.products.length || !state.productExactMap.size) return false;
+      let changed = false;
+
+      const migratedCart = migrateProductQuantityMap(state.cart);
+      if (JSON.stringify(migratedCart) !== JSON.stringify(state.cart)) {
+        state.cart = migratedCart;
+        changed = true;
+      }
+
+      const migratedOrder = [];
+      state.cartOrder.forEach(oldId => {
+        const raw = String(oldId);
+        const product = raw.startsWith('fee_') ? null : exactProductByIdentity(raw);
+        const newId = product ? String(product.id) : raw;
+        if (state.cart[newId] && !migratedOrder.includes(newId)) migratedOrder.push(newId);
+      });
+      Object.keys(state.cart).forEach(id => {
+        if (state.cart[id] && !migratedOrder.includes(id)) migratedOrder.push(id);
+      });
+      if (JSON.stringify(migratedOrder) !== JSON.stringify(state.cartOrder)) {
+        state.cartOrder = migratedOrder;
+        changed = true;
+      }
+
+      const migratedFavorites = new Set();
+      state.favorites.forEach(value => {
+        const raw = String(value || '');
+        if (raw.startsWith('kit:')) {
+          migratedFavorites.add(raw);
+          return;
+        }
+        const product = exactProductByIdentity(raw);
+        migratedFavorites.add(product ? String(product.id) : raw);
+      });
+      if (JSON.stringify(Array.from(migratedFavorites)) !== JSON.stringify(Array.from(state.favorites))) {
+        state.favorites = migratedFavorites;
+        changed = true;
+      }
+
+      Object.keys(state.basketDrafts || {}).forEach(key => {
+        state.basketDrafts[key] = migrateProductQuantityMap(state.basketDrafts[key]);
+      });
+      Object.values(state.basketCustomizations || {}).forEach(info => {
+        if (!info || typeof info !== 'object') return;
+        if (info.originalItems) info.originalItems = migrateProductQuantityMap(info.originalItems);
+        if (info.selectedItems) info.selectedItems = migrateProductQuantityMap(info.selectedItems);
+      });
+
+      if (changed) {
+        saveCart();
+        saveFavorites();
+      }
+      return changed;
+    }
+
     function normalizeProducts(raw, options) {
       const entries = Array.isArray(raw)
         ? raw.map((value, index) => [String(index), value]).filter(([, value]) => value)
         : Object.entries(raw || {});
       const products = entries.map(([key, value], index) => normalizeProduct(value || {}, key, index)).filter(p => String(p.situacao || '').toUpperCase() !== 'I');
       products.sort((a,b) => a.name.localeCompare(b.name, 'pt-BR'));
-      state.productMap = new Map(products.map(p => [String(p.id), p]));
+
+      state.productMap = new Map();
+      state.productExactMap = new Map();
       state.productCodeMap = new Map();
+
       products.forEach(p => {
-        [p.id, p.codigo, p.firebaseKey, p.gtin, p.ean].forEach(value => {
+        state.productMap.set(String(p.id), p);
+        [p.id, p.firebaseKey, p.codigo, p.gtin, p.ean].forEach(value => {
+          const exactKey = String(value == null ? '' : value).trim().toLowerCase();
+          if (exactKey && !state.productExactMap.has(exactKey)) state.productExactMap.set(exactKey, p);
           codeVariants(value).forEach(key => {
             if (key && !state.productCodeMap.has(key)) state.productCodeMap.set(key, p);
           });
         });
       });
+
       state.products = products;
+      migrateLegacyProductReferences();
       state.catalogMode = options && options.mode ? options.mode : state.catalogMode;
       rebuildVirtualFees();
     }
 
+    function applyHomeProductsData(data, source, version) {
+      normalizeProducts(data, { mode: 'compact-full' });
+      state.catalogLoadedAt = Date.now();
+      state.catalogSource = source || 'site-produtos-home';
+      state.catalogMode = 'compact-full';
+      state.catalogVersion = String(version || state.catalogVersion || CONFIG.APP_VERSION);
+      state.catalogVerifiedAt = state.catalogLoadedAt;
+      state.catalogVerifiedAll = true;
+      state.catalogVerifiedItemIds = state.products.map(product => String(product.id));
+    }
+
+    async function fetchAndApplyHomeProducts(version, source) {
+      const data = await fetchJson(versionedCatalogUrl(CONFIG.PRODUCT_HOME_URL, version), 8000, { cache: 'default' });
+      applyHomeProductsData(data, source || 'site-produtos-home', version);
+      writeCache(CONFIG.PRODUCT_HOME_CACHE_KEY, {
+        savedAt: Date.now(),
+        catalogVersion: version,
+        appVersion: CONFIG.APP_VERSION,
+        data
+      });
+      return true;
+    }
+
     async function loadHomeProducts() {
-      const cache = readCache(CONFIG.PRODUCT_HOME_CACHE_KEY || 'da_produtos_home_cache_v1');
-      let lastError = null;
-      const urls = Array.isArray(CONFIG.PRODUCT_HOME_URLS) && CONFIG.PRODUCT_HOME_URLS.length ? CONFIG.PRODUCT_HOME_URLS : ['site/produtos-home.json'];
-      for (const url of urls) {
-        try {
-          const data = await fetchJson(withCacheBust(url), 6500, { cache: 'default' });
-          normalizeProducts(data, { mode: 'compact-full' });
-          state.catalogLoadedAt = Date.now();
-          state.catalogSource = 'github-compact';
-          state.catalogMode = 'compact-full';
-          writeCache(CONFIG.PRODUCT_HOME_CACHE_KEY || 'da_produtos_home_cache_v1', { savedAt: Date.now(), appVersion: CONFIG.APP_VERSION, data });
-          return true;
-        } catch (e) {
-          lastError = e;
-        }
-      }
+      const cache = readCache(CONFIG.PRODUCT_HOME_CACHE_KEY);
       if (cache && cache.data) {
-        normalizeProducts(cache.data, { mode: 'compact-full' });
-        state.catalogLoadedAt = Number(cache.savedAt || 0);
-        state.catalogSource = 'github-compact-cache';
-        state.catalogMode = 'compact-full';
+        const version = cachedCatalogVersion(cache);
+        applyHomeProductsData(cache.data, 'site-produtos-home-cache', version);
         return true;
       }
-      if (lastError) console.warn('produtos-home.json indisponivel:', lastError.message || lastError);
-      throw lastError || new Error('produtos-home indisponivel');
+
+      const version = await getLatestCatalogVersion();
+      try {
+        return await fetchAndApplyHomeProducts(version, 'site-produtos-home');
+      } catch(e) {
+        console.warn('site/produtos-home.json indisponivel:', e && (e.message || e));
+        throw e;
+      }
+    }
+
+    async function refreshHomeProducts() {
+      if (productRefreshPromise) return productRefreshPromise;
+      productRefreshPromise = (async () => {
+        const cache = readCache(CONFIG.PRODUCT_HOME_CACHE_KEY);
+        const latestVersion = await getLatestCatalogVersion();
+        const currentVersion = cachedCatalogVersion(cache) || state.catalogVersion;
+        if (cache && cache.data && currentVersion === latestVersion) return false;
+        try {
+          await fetchAndApplyHomeProducts(latestVersion, 'site-produtos-home-atualizado');
+          return true;
+        } catch(e) {
+          return false;
+        }
+      })();
+      try { return await productRefreshPromise; }
+      finally { productRefreshPromise = null; }
     }
 
     async function loadProducts() {
       if (state.catalogMode === 'compact-full' && state.products.length) return true;
-      await loadHomeProducts();
-      state.catalogVerifiedAt = state.catalogLoadedAt;
-      state.catalogVerifiedAll = true;
-      state.catalogVerifiedItemIds = state.products.map(product => String(product.id));
-      return true;
+      return loadHomeProducts();
     }
 
     function applyCestasData(data) {
@@ -1505,31 +1685,41 @@
       }));
     }
 
-    async function loadCestas() {
+    function hydrateCestasFromCache() {
       const cache = readCache(CONFIG.BASKET_CACHE_KEY);
-      const urls = [
-        'site/produtos-cesta-basica.json',
-        'site/cestas.json',
-        'cestas.json'
-      ];
-      let lastError = null;
-      for (const url of urls) {
-        try {
-          const data = await fetchJson(withCacheBust(url), 5000, { cache: 'default' });
-          applyCestasData(data);
-          writeCache(CONFIG.BASKET_CACHE_KEY, { savedAt: Date.now(), data });
-          return;
-        } catch(e) {
-          lastError = e;
-        }
-      }
+      if (!cache || !cache.data) return false;
+      applyCestasData(cache.data);
+      return true;
+    }
 
-      if (cache && cache.data) {
-        applyCestasData(cache.data);
-        return;
-      }
-      state.cestas = [];
-      if (lastError) console.warn('Cestas não disponíveis:', lastError.message || lastError);
+    async function refreshCestas() {
+      if (cestasRefreshPromise) return cestasRefreshPromise;
+      cestasRefreshPromise = (async () => {
+        const cache = readCache(CONFIG.BASKET_CACHE_KEY);
+        const version = await getLatestCatalogVersion();
+        if (cache && cache.data && cachedCatalogVersion(cache) === version) {
+          if (!state.cestas.length) applyCestasData(cache.data);
+          return false;
+        }
+        try {
+          const data = await fetchJson(versionedCatalogUrl(CONFIG.BASKET_URL, version), 5000, { cache: 'default' });
+          applyCestasData(data);
+          writeCache(CONFIG.BASKET_CACHE_KEY, { savedAt: Date.now(), catalogVersion: version, data });
+          return true;
+        } catch(e) {
+          if (!state.cestas.length && cache && cache.data) applyCestasData(cache.data);
+          if (!state.cestas.length) console.warn('Cestas não disponíveis:', e && (e.message || e));
+          return false;
+        }
+      })();
+      try { return await cestasRefreshPromise; }
+      finally { cestasRefreshPromise = null; }
+    }
+
+    async function loadCestas() {
+      if (hydrateCestasFromCache()) return true;
+      await refreshCestas();
+      return state.cestas.length > 0;
     }
 
     function applyKitsData(data) {
@@ -1555,30 +1745,41 @@
       });
     }
 
-    async function loadKits() {
+    function hydrateKitsFromCache() {
       const cache = readCache(CONFIG.KIT_CACHE_KEY);
-      const urls = [
-        'site/kits.json',
-        'kits.json'
-      ];
-      let lastError = null;
-      for (const url of urls) {
-        try {
-          const data = await fetchJson(withCacheBust(url), 5000, { cache: 'default' });
-          applyKitsData(data);
-          writeCache(CONFIG.KIT_CACHE_KEY, { savedAt: Date.now(), data });
-          return;
-        } catch(e) {
-          lastError = e;
-        }
-      }
+      if (!cache || !cache.data) return false;
+      applyKitsData(cache.data);
+      return true;
+    }
 
-      if (cache && cache.data) {
-        applyKitsData(cache.data);
-        return;
-      }
-      state.kits = [];
-      if (lastError) console.warn('Kits nao disponiveis:', lastError.message || lastError);
+    async function refreshKits() {
+      if (kitsRefreshPromise) return kitsRefreshPromise;
+      kitsRefreshPromise = (async () => {
+        const cache = readCache(CONFIG.KIT_CACHE_KEY);
+        const version = await getLatestCatalogVersion();
+        if (cache && cache.data && cachedCatalogVersion(cache) === version) {
+          if (!state.kits.length) applyKitsData(cache.data);
+          return false;
+        }
+        try {
+          const data = await fetchJson(versionedCatalogUrl(CONFIG.KIT_URL, version), 5000, { cache: 'default' });
+          applyKitsData(data);
+          writeCache(CONFIG.KIT_CACHE_KEY, { savedAt: Date.now(), catalogVersion: version, data });
+          return true;
+        } catch(e) {
+          if (!state.kits.length && cache && cache.data) applyKitsData(cache.data);
+          if (!state.kits.length) console.warn('Kits nao disponiveis:', e && (e.message || e));
+          return false;
+        }
+      })();
+      try { return await kitsRefreshPromise; }
+      finally { kitsRefreshPromise = null; }
+    }
+
+    async function loadKits() {
+      if (hydrateKitsFromCache()) return true;
+      await refreshKits();
+      return state.kits.length > 0;
     }
 
     function normalizeRelativeImage(value) {
@@ -1737,7 +1938,7 @@
 
     function getProductById(id) {
       const key = String(id);
-      return state.productMap.get(key) || state.virtualFees[key] || null;
+      return state.productMap.get(key) || exactProductByIdentity(key) || state.virtualFees[key] || null;
     }
 
     function getCartItems() {
@@ -2220,6 +2421,8 @@
     }
 
     function findProductByCode(code) {
+      const exact = exactProductByIdentity(code);
+      if (exact) return exact;
       const variants = codeVariants(code);
       for (const key of variants) {
         if (state.productCodeMap && state.productCodeMap.has(key)) return state.productCodeMap.get(key);
@@ -2576,29 +2779,53 @@
     }
 
     function productRouteKey(p) {
-      return `${encodeURIComponent(p.codigo || p.id)}-${p.slug || slug(p.name)}`;
+      const identity = String(p && (p.firebaseKey || p.id || p.codigo) || '').trim();
+      return `${encodeURIComponent(identity)}~${p.slug || slug(p.name)}`;
+    }
+
+    function exactProductByIdentity(value) {
+      const key = String(value == null ? '' : value).trim().toLowerCase();
+      return key && state.productExactMap ? (state.productExactMap.get(key) || null) : null;
     }
 
     function findProductByRoute(value) {
-      const raw = decodeURIComponent(String(value || '')).split('?')[0].split('#')[0];
-      const possibleCode = raw.split('-')[0];
+      const raw = decodeURIComponent(String(value || '')).split('?')[0].split('#')[0].trim();
+      if (!raw) return null;
+
+      // Rotas novas usam firebaseKey~slug. A identidade é sempre exata.
+      const separatorIndex = raw.indexOf('~');
+      if (separatorIndex >= 0) {
+        return exactProductByIdentity(raw.slice(0, separatorIndex));
+      }
+
+      // Compatibilidade com links antigos diretos.
+      const direct = exactProductByIdentity(raw);
+      if (direct) return direct;
+
       const normalized = norm(raw);
-      const slugFromRoute = raw.includes('-') ? raw.slice(raw.indexOf('-') + 1) : raw;
-      const compact = text => norm(text).replace(/[^a-z0-9]/g, '');
-      return state.products.find(p => {
+      const exactLegacyRoute = state.products.find(p => {
         const productSlug = p.slug || slug(p.name);
-        const routeKey = productRouteKey(p);
-        const idMatch = [p.codigo, p.id, p.firebaseKey].some(value => {
-          const variants = codeVariants(value);
-          return codeVariants(possibleCode).some(candidate => variants.includes(candidate));
-        });
-        return idMatch
-          || norm(routeKey) === normalized
-          || norm(productSlug) === normalized
-          || norm(slugFromRoute) === norm(productSlug)
-          || normalized.endsWith(`-${norm(productSlug)}`)
-          || compact(raw).endsWith(compact(productSlug));
-      }) || null;
+        const legacyIdentity = String(p.codigo || p.id || p.firebaseKey || '').trim();
+        return norm(`${legacyIdentity}-${productSlug}`) === normalized
+          || norm(productRouteKey(p)) === normalized;
+      });
+      if (exactLegacyRoute) return exactLegacyRoute;
+
+      // Em links antigos "codigo-slug", remove o slug conhecido e compara o
+      // identificador sem criar variações numéricas que misturam produtos.
+      for (const p of state.products) {
+        const productSlug = p.slug || slug(p.name);
+        const suffix = `-${productSlug}`;
+        if (raw.toLowerCase().endsWith(suffix.toLowerCase())) {
+          const identity = raw.slice(0, raw.length - suffix.length);
+          const product = exactProductByIdentity(identity);
+          if (product) return product;
+        }
+      }
+
+      // Slug puro só é aceito quando identifica exatamente um produto.
+      const slugMatches = state.products.filter(p => norm(p.slug || slug(p.name)) === normalized);
+      return slugMatches.length === 1 ? slugMatches[0] : null;
     }
 
     function imageFallbackList(images) {
@@ -3347,7 +3574,11 @@
       if (searchInput && document.activeElement !== searchInput && searchInput.value !== q) searchInput.value = q;
       updateSearchButtons();
       const products = searchProducts(q);
-      app.innerHTML = `<div class="container">${pageHeader(q ? `Busca: ${q}` : 'Busca', q ? `${products.length} resultado(s)` : 'Digite o produto na busca acima.', '#/')}${q ? (products.length ? `<div class="product-list">${products.map(p => productCard(p, 'list')).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`) : ''}${bannerSlotHtml('busca.topo', { kind: 'section' })}</div>`;
+      const visibleProducts = products.slice(0, 80);
+      const searchCaption = q
+        ? (products.length > visibleProducts.length ? `${products.length} resultado(s) · mostrando os 80 mais relevantes` : `${products.length} resultado(s)`)
+        : 'Digite o produto na busca acima.';
+      app.innerHTML = `<div class="container">${pageHeader(q ? `Busca: ${q}` : 'Busca', searchCaption, '#/')}${q ? (visibleProducts.length ? `<div class="product-list">${visibleProducts.map(p => productCard(p, 'list')).join('')}</div>` : `<div class="empty"><strong>Nenhum produto encontrado</strong>Não achamos nada para "${escapeHtml(q)}". Tente buscar pelo nome exato, marca ou embalagem.</div>`) : ''}${bannerSlotHtml('busca.topo', { kind: 'section' })}</div>`;
       setActiveNav('home');
     }
 
@@ -3548,10 +3779,10 @@
       app.scrollTop = 0;
     }
 
-    function handleRoute() {
+    function handleRoute(options) {
       updateProductStructuredData(null);
       if (!state.isReady) return;
-      scrollPageTop();
+      if (!(options && options.preserveScroll)) scrollPageTop();
       const hash = location.hash || '#/';
       const clean = hash.replace(/^#\/?/, '').split('?')[0];
       const parts = clean.split('/').filter(Boolean);
@@ -4876,7 +5107,7 @@
           priceCurrency: 'BRL',
           price: String(productDisplayPricing(p).effective || p.price || 0),
           availability: isAvailable(p) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          url: CONFIG.SITE_BASE_URL + `/#/produto/${encodeURIComponent(productRouteKey(p))}`
+          url: CONFIG.SITE_BASE_URL + `/#/produto/${productRouteKey(p)}`
         }
       });
     }
@@ -5010,71 +5241,83 @@
     }
 
 
+    function revealInitialPage() {
+      if (window.__DA_BOOT_REVEAL_TIMER__) clearTimeout(window.__DA_BOOT_REVEAL_TIMER__);
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove('da-pagespeed-booting');
+      });
+    }
+
+    function refreshCurrentRouteWithoutJump() {
+      if (!state.isReady) return;
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
+      handleRoute({ preserveScroll: true });
+      requestAnimationFrame(() => window.scrollTo(scrollX, scrollY));
+    }
+
+    function startRouteDataRefresh(routeName) {
+      const tasks = [
+        refreshHomeProducts(),
+        refreshCoupons()
+      ];
+
+      if (!routeName || routeName === 'cesta' || routeName === 'cestas') tasks.push(refreshCestas());
+      if (!routeName || routeName === 'kit' || routeName === 'kits') tasks.push(refreshKits());
+
+      Promise.allSettled(tasks).then(results => {
+        const changed = results.some(result => result.status === 'fulfilled' && result.value === true);
+        if (changed) {
+          rebuildVirtualFees();
+          renderSiteMenuContent();
+          removeMissingCartItems();
+          refreshCurrentRouteWithoutJump();
+          updateCartUI();
+        }
+      });
+    }
+
     async function init() {
       try { sessionStorage.removeItem('da_version_reload_attempts_v1'); } catch(e) {}
       bindEvents();
       bindOrderDeliveryRetryEvents();
       setTimeout(() => processPendingOrderDeliveries(), 900);
       enforceAppVersion();
-      // Monitor da versão oficial desativado na página paralela.
       loadFavorites();
       loadCart();
+
+      // Dados auxiliares armazenados entram de forma síncrona. Assim, no F5,
+      // cestas, kits e cupons já conhecidos não bloqueiam a primeira tela.
+      hydrateCestasFromCache();
+      hydrateKitsFromCache();
+      hydrateCouponsFromCache();
+
       updateCartUI();
       app.innerHTML = `<div class="container da-stable-loading-shell" aria-busy="true" aria-label="Carregando catálogo"><div class="da-stable-loading-hero"></div><div class="da-stable-loading-row"></div><div class="da-stable-loading-row"></div></div>`;
 
-      const home = isHomeRoute();
-
       try {
-        if (home) {
-          // Home estável: carrega os dados necessários em paralelo e faz uma única renderização completa.
-          // Evita o efeito de partes da página aparecendo em momentos diferentes.
-          const auxPromise = Promise.allSettled([loadCestas(), loadKits(), loadCoupons()]);
-          await loadProducts();
-          await auxPromise;
-
-          state.isReady = true;
-          rebuildVirtualFees();
-          renderSiteMenuContent();
-          removeMissingCartItems();
-          handleRoute();
-          updateCartUI();
-          if (window.__DA_BOOT_REVEAL_TIMER__) clearTimeout(window.__DA_BOOT_REVEAL_TIMER__);
-          requestAnimationFrame(() => {
-            document.documentElement.classList.remove('da-pagespeed-booting');
-          });
-          return;
-        }
-
-        // Produto, cestas e kits abrem somente pelo catalogo leve para aparecer rapido.
         const routeName = currentRouteParts()[0] || '';
-        if (routeName === 'produto') {
-          await Promise.all([loadProducts(), Promise.allSettled([loadCestas(), loadKits(), loadCoupons()])]);
-        } else if (routeName === 'cesta' || routeName === 'cestas') {
-          await Promise.all([loadProducts(), loadCestas()]);
-          Promise.allSettled([loadKits(), loadCoupons()]).then(() => {
-            renderSiteMenuContent();
-            updateCartUI();
-          });
-        } else if (routeName === 'kit' || routeName === 'kits') {
-          await Promise.all([loadProducts(), loadKits()]);
-          Promise.allSettled([loadCestas(), loadCoupons()]).then(() => {
-            renderSiteMenuContent();
-            updateCartUI();
-          });
-        } else {
-          await Promise.all([
-            loadProducts(),
-            Promise.allSettled([loadCestas(), loadKits(), loadCoupons()])
-          ]);
-        }
+
+        // Produtos são obrigatórios em todas as vitrines. Nas páginas de
+        // cestas ou kits, o arquivo específico é carregado em paralelo.
+        const requiredData = [];
+        if ((routeName === 'cesta' || routeName === 'cestas') && !state.cestas.length) requiredData.push(loadCestas());
+        if ((routeName === 'kit' || routeName === 'kits') && !state.kits.length) requiredData.push(loadKits());
+        await Promise.all([loadProducts(), ...requiredData]);
+
         state.isReady = true;
         rebuildVirtualFees();
         renderSiteMenuContent();
         removeMissingCartItems();
         handleRoute();
         updateCartUI();
+        revealInitialPage();
+
+        // Atualiza catálogo e dados auxiliares depois que a página já apareceu.
+        startRouteDataRefresh(routeName);
       } catch(err) {
         console.error(err);
+        revealInitialPage();
         app.innerHTML = `<div class="container"><div class="empty"><strong>Não conseguimos carregar o catálogo.</strong>Tente novamente em alguns instantes.</div></div>`;
       }
     }
