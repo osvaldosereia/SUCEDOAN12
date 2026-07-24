@@ -4,14 +4,12 @@ on:
   repository_dispatch:
     types: [processar_ofertas]
   workflow_dispatch:
-  schedule:
-    - cron: '17 * * * *'
 
 permissions:
   contents: write
 
 concurrency:
-  group: ofertas-automaticas-${{ github.ref_name }}
+  group: ofertas-automaticas
   cancel-in-progress: false
 
 jobs:
@@ -41,13 +39,6 @@ jobs:
           else
             printf '{}\n' > "$dir/base-estado.json"
           fi
-
-      - name: Encerrar ofertas de validade vencidas
-        env:
-          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
-          FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
-        run: node scripts/limpar-ofertas-validade-expiradas.mjs
 
       - name: Criar, encerrar, reativar e sincronizar ofertas
         env:
@@ -81,7 +72,7 @@ jobs:
           for tentativa in 1 2 3 4 5; do
             echo "Publicacao: tentativa ${tentativa} de 5 na branch ${branch}."
             git fetch origin "$branch"
-            git reset --hard "origin/${branch}"
+            git reset --hard "origin/$branch"
 
             node scripts/reconciliar-publicacao-ofertas.mjs
 
