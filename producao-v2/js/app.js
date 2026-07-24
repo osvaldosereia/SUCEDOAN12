@@ -1,9 +1,11 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { auditCatalog, validateProduct } from './core/catalog.js';
 import { Store } from './core/store.js';
-import { isActive, number, productImage, text } from './core/utils.js';
+import { isActive, number, productCode, productImage, productName, text } from './core/utils.js';
 import { loadProducts, saveProduct } from './services/firebase.js';
 import { testGithubConnection } from './services/github.js';
+import { upsertBase64File } from './services/github-binary.js';
+import { MakeModule } from './modules/make.js';
 import { ProductsModule } from './modules/products.js';
 import { PublishModule } from './modules/publish.js';
 
@@ -21,6 +23,11 @@ function loadLastPublication() {
   } catch {
     return null;
   }
+}
+
+function slug(value = '') {
+  return text(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 70) || 'produto';
 }
 
 const store = new Store(loadConfig());
@@ -43,7 +50,10 @@ const elements = {
   saveProductButton: element('saveProductButton'), toastRegion: element('toastRegion'), firebaseUrlSetting: element('firebaseUrlSetting'),
   productsNodeSetting: element('productsNodeSetting'), writeModeSetting: element('writeModeSetting'), githubTokenSetting: element('githubTokenSetting'),
   githubOwnerSetting: element('githubOwnerSetting'), githubRepoSetting: element('githubRepoSetting'), githubBranchSetting: element('githubBranchSetting'),
-  productsHomePathSetting: element('productsHomePathSetting'), catalogVersionPathSetting: element('catalogVersionPathSetting'), testGithubButton: element('testGithubButton'),
+  productsHomePathSetting: element('productsHomePathSetting'), catalogVersionPathSetting: element('catalogVersionPathSetting'),
+  githubImagesPathSetting: element('githubImagesPathSetting'), githubKitImagesPathSetting: element('githubKitImagesPathSetting'),
+  makeTextWebhookSetting: element('makeTextWebhookSetting'), makeImageWebhookSetting: element('makeImageWebhookSetting'),
+  makeInstagramKitWebhookSetting: element('makeInstagramKitWebhookSetting'), testGithubButton: element('testGithubButton'),
   publishBackdrop: element('publishBackdrop'), publishDialog: element('publishDialog'), closePublishReviewButton: element('closePublishReviewButton'),
   closePublishReviewFooterButton: element('closePublishReviewFooterButton'), publishReviewMetrics: element('publishReviewMetrics'), publishBlockers: element('publishBlockers'),
   publishIssues: element('publishIssues'), confirmPublishCheckbox: element('confirmPublishCheckbox'), publishProgress: element('publishProgress'),
@@ -128,20 +138,21 @@ function formatDateTime(value) {
 
 function renderDashboard() {
   const data = dashboardData();
-  elements.dashboardMetrics.innerHTML = [
-    ['info', data.products.length, 'Produtos', `${data.active.length} ativos`],
-    ['danger', data.noStock.length, 'Sem estoque', 'Podem sair do site'],
-    ['danger', data.audit.errors.length, 'Erros de publicação', 'Impedem publicar o catálogo'],
-    ['warning', data.audit.warnings.length, 'Produtos com avisos', `${data.noImage.length} sem imagem`],
-  ].map(([kind, value, label, help]) => `<article class="metric-card ${kind}"><strong>${value}</strong><span>${label}</span><small>${help}</small></article>`).join('');
+  const metrics = [
+    ['info', data.products.length, 'Produtos', `${data.active.length} ativos`, 'all'],
+    ['danger', data.noStock.length, 'Sem estoque', 'Clique para corrigir', 'no-stock'],
+    ['danger', data.audit.errors.length, 'Erros de publicação', 'Clique para abrir os produtos', 'errors'],
+    ['warning', data.audit.warnings.length, 'Produtos com avisos', `${data.noImage.length} sem imagem`, 'warnings'],
+  ];
+  elements.dashboardMetrics.innerHTML = metrics.map(([kind, value, label, help, action]) => `<button type="button" class="metric-card metric-action ${kind}" data-priority="${action}"><strong>${value}</strong><span>${label}</span><small>${help}</small></button>`).join('');
 
   const priorities = [
-    ['Produtos com erros obrigatórios', data.audit.errors.length, 'danger', 'Precisam ser corrigidos antes da publicação'],
-    ['Produtos sem estoque', data.noStock.length, 'danger', 'Afetam disponibilidade no catálogo'],
-    ['Produtos com estoque baixo', data.lowStock.length, 'warning', 'Estoque entre 1 e 5 unidades'],
-    ['Produtos com avisos', data.audit.warnings.length, 'warning', 'Cadastro pode ser melhorado sem bloquear'],
+    ['Produtos com erros obrigatórios', data.audit.errors.length, 'danger', 'Precisam ser corrigidos antes da publicação', 'errors'],
+    ['Produtos sem estoque', data.noStock.length, 'danger', 'Afetam disponibilidade no catálogo', 'no-stock'],
+    ['Produtos com estoque baixo', data.lowStock.length, 'warning', 'Estoque entre 1 e 5 unidades', 'low-stock'],
+    ['Produtos com avisos', data.audit.warnings.length, 'warning', 'Cadastro pode ser melhorado sem bloquear', 'warnings'],
   ];
-  elements.priorityList.innerHTML = priorities.map(([label, count, kind, help]) => `<div class="priority-row"><div><strong>${label}</strong><small>${help}</small></div><span class="badge ${kind}">${count}</span></div>`).join('');
+  elements.priorityList.innerHTML = priorities.map(([label, count, kind, help, action]) => `<button type="button" class="priority-row priority-action" data-priority="${action}"><div><strong>${label}</strong><small>${help}</small></div><span class="badge ${kind}">${count}</span></button>`).join('');
 
   const lastPublication = store.state.lastPublication;
   elements.systemList.innerHTML = [
@@ -159,11 +170,13 @@ function renderDiagnostics() {
   const audit = currentAudit();
   const config = store.state.config;
   const githubReady = Boolean(config.githubToken && config.githubOwner && config.githubRepo && config.githubBranch && config.productsHomePath && config.catalogVersionPath);
+  const makeChannels = [config.makeTextWebhookUrl || config.makeAiWebhookUrl, config.makeImageWebhookUrl || config.makeAiWebhookUrl, config.makeInstagramKitWebhookUrl].filter(Boolean).length;
   elements.diagnosticList.innerHTML = [
     ['Fonte oficial', store.state.firebaseVerified ? `${store.state.products.length} produtos confirmados pelo Firebase` : 'Firebase ainda não confirmado', store.state.firebaseVerified ? 'success' : 'warning'],
     ['Auditoria obrigatória', audit.errors.length ? `${audit.errors.length} produto(s) com erro` : 'Nenhum erro obrigatório', audit.errors.length ? 'danger' : 'success'],
     ['Qualidade do cadastro', audit.warnings.length ? `${audit.warnings.length} produto(s) com avisos` : 'Nenhum aviso', audit.warnings.length ? 'warning' : 'success'],
     ['GitHub', githubReady ? `${config.githubOwner}/${config.githubRepo} · ${config.githubBranch}` : 'Configuração incompleta', githubReady ? 'success' : 'warning'],
+    ['Automações Make', makeChannels ? `${makeChannels} de 3 canais configurados` : 'Nenhum webhook configurado', makeChannels === 3 ? 'success' : 'warning'],
     ['Modo de gravação', config.writeMode ? 'Ativado neste navegador' : 'Bloqueado', config.writeMode ? 'warning' : 'success'],
   ].map(([label, help, kind]) => `<div class="system-row"><div><strong>${label}</strong><small>${help}</small></div><span class="badge ${kind}">${kind === 'success' ? 'OK' : kind === 'danger' ? 'Erro' : 'Atenção'}</span></div>`).join('');
 }
@@ -227,19 +240,48 @@ async function saveOne(product, { silent = false } = {}) {
   }
 }
 
+async function uploadProductImage(product, dataUrl) {
+  const config = store.state.config;
+  const folder = text(config.githubImagesPath || DEFAULT_CONFIG.githubImagesPath).replace(/^\/+|\/+$/g, '');
+  const name = `${slug(productCode(product) || productName(product))}-editada-${Date.now()}.webp`;
+  return upsertBase64File(config, `${folder}/${name}`, dataUrl, `Atualiza imagem editada de ${productName(product)} pelo Admin V2`);
+}
+
 function persistPublication(publication) {
   localStorage.setItem(STORAGE_KEYS.lastPublication, JSON.stringify(publication));
   renderDashboard();
   productsModule.render();
 }
 
-const productsModule = new ProductsModule({ store, elements, onSave: saveOne, onToast: toast });
+let makeModule;
+const productsModule = new ProductsModule({
+  store,
+  elements,
+  onSave: saveOne,
+  onToast: toast,
+  onMakeAction: (action, key) => makeModule?.runProductAction(action, key),
+  onUploadImage: uploadProductImage,
+});
+makeModule = new MakeModule({ store, productsModule, onToast: toast });
 const publishModule = new PublishModule({ store, elements, onSaveProduct: saveOne, onToast: toast, onPublished: persistPublication });
 publishModule.bindIssueNavigation(key => {
   setRoute('products');
   productsModule.openEditor(key);
 });
 elements.closePublishReviewFooterButton.addEventListener('click', () => publishModule.close());
+
+function openPriority(action) {
+  setRoute('products');
+  const presets = {
+    all: {},
+    errors: { quality: 'errors' },
+    warnings: { quality: 'warnings' },
+    'no-stock': { status: 'no-stock', sort: 'stock-asc' },
+    'low-stock': { status: 'low-stock', sort: 'stock-asc' },
+  };
+  productsModule.applyPreset(presets[action] || {});
+  document.querySelector('[data-view="products"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 function syncSettingsUi() {
   const config = store.state.config;
@@ -252,6 +294,11 @@ function syncSettingsUi() {
   elements.githubBranchSetting.value = config.githubBranch || '';
   elements.productsHomePathSetting.value = config.productsHomePath || '';
   elements.catalogVersionPathSetting.value = config.catalogVersionPath || '';
+  elements.githubImagesPathSetting.value = config.githubImagesPath || DEFAULT_CONFIG.githubImagesPath;
+  elements.githubKitImagesPathSetting.value = config.githubKitImagesPath || DEFAULT_CONFIG.githubKitImagesPath;
+  elements.makeTextWebhookSetting.value = config.makeTextWebhookUrl || config.makeAiWebhookUrl || '';
+  elements.makeImageWebhookSetting.value = config.makeImageWebhookUrl || config.makeAiWebhookUrl || '';
+  elements.makeInstagramKitWebhookSetting.value = config.makeInstagramKitWebhookUrl || '';
 }
 
 function saveConfigFromUi() {
@@ -265,6 +312,11 @@ function saveConfigFromUi() {
   config.githubBranch = text(elements.githubBranchSetting.value) || DEFAULT_CONFIG.githubBranch;
   config.productsHomePath = text(elements.productsHomePathSetting.value) || DEFAULT_CONFIG.productsHomePath;
   config.catalogVersionPath = text(elements.catalogVersionPathSetting.value) || DEFAULT_CONFIG.catalogVersionPath;
+  config.githubImagesPath = text(elements.githubImagesPathSetting.value) || DEFAULT_CONFIG.githubImagesPath;
+  config.githubKitImagesPath = text(elements.githubKitImagesPathSetting.value) || DEFAULT_CONFIG.githubKitImagesPath;
+  config.makeTextWebhookUrl = text(elements.makeTextWebhookSetting.value);
+  config.makeImageWebhookUrl = text(elements.makeImageWebhookSetting.value);
+  config.makeInstagramKitWebhookUrl = text(elements.makeInstagramKitWebhookSetting.value);
   localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(config));
   renderStatus();
   renderDashboard();
@@ -293,6 +345,14 @@ elements.mainNav.addEventListener('click', event => {
   const button = event.target.closest('[data-route]');
   if (button) setRoute(button.dataset.route);
 });
+elements.dashboardMetrics.addEventListener('click', event => {
+  const button = event.target.closest('[data-priority]');
+  if (button) openPriority(button.dataset.priority);
+});
+elements.priorityList.addEventListener('click', event => {
+  const button = event.target.closest('[data-priority]');
+  if (button) openPriority(button.dataset.priority);
+});
 elements.reloadButton.addEventListener('click', refreshData);
 elements.mobileMenuButton.addEventListener('click', () => {
   elements.sidebar.classList.add('open');
@@ -307,7 +367,8 @@ elements.mobileOverlay.addEventListener('click', () => {
 [
   elements.firebaseUrlSetting, elements.productsNodeSetting, elements.writeModeSetting, elements.githubTokenSetting,
   elements.githubOwnerSetting, elements.githubRepoSetting, elements.githubBranchSetting, elements.productsHomePathSetting,
-  elements.catalogVersionPathSetting,
+  elements.catalogVersionPathSetting, elements.githubImagesPathSetting, elements.githubKitImagesPathSetting,
+  elements.makeTextWebhookSetting, elements.makeImageWebhookSetting, elements.makeInstagramKitWebhookSetting,
 ].forEach(input => input.addEventListener('change', saveConfigFromUi));
 elements.testGithubButton.addEventListener('click', testGithub);
 
@@ -318,6 +379,12 @@ store.addEventListener('dirty', () => {
   renderDashboard();
 });
 store.addEventListener('publication', renderDashboard);
+window.addEventListener('admin-v2-open-product', event => {
+  const key = text(event.detail?.key);
+  if (!key) return;
+  setRoute('products');
+  productsModule.openEditor(key);
+});
 window.addEventListener('beforeunload', event => {
   if (!store.state.dirtyProducts.size) return;
   event.preventDefault();
