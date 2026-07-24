@@ -34,11 +34,11 @@
         <div class="topbar-title"><h1 id="pageTitle">Visão geral</h1><p id="pageSubtitle">O que precisa da sua atenção agora.</p></div>
         <div class="topbar-actions">
           <button class="button secondary" id="reloadButton" type="button">Atualizar dados</button>
-          <button class="button primary" id="publishButton" type="button" disabled>Publicar alterações</button>
+          <button class="button primary" id="publishButton" type="button" disabled>Revisar publicação</button>
         </div>
       </header>
 
-      <div class="environment-banner" role="status"><strong>Versão paralela em desenvolvimento.</strong> O admin atual permanece intacto. Gravações estão bloqueadas por padrão nesta etapa.</div>
+      <div class="environment-banner" role="status"><strong>Versão paralela em desenvolvimento.</strong> O admin atual permanece intacto. A V2 consulta os dados normalmente, mas gravações continuam bloqueadas por padrão.</div>
 
       <main class="main-content" id="mainContent" tabindex="-1">
         <section class="view active" data-view="dashboard" aria-labelledby="pageTitle">
@@ -49,7 +49,7 @@
               <div class="priority-list" id="priorityList"></div>
             </section>
             <section class="panel">
-              <div class="panel-header"><div><h2>Estado do sistema</h2><p>Fontes carregadas e alterações locais.</p></div></div>
+              <div class="panel-header"><div><h2>Estado do sistema</h2><p>Fontes carregadas e alterações locais.</p></div><button class="button secondary compact" id="openPublishReviewButton" type="button">Revisar catálogo</button></div>
               <div class="system-list" id="systemList"></div>
             </section>
           </div>
@@ -64,7 +64,7 @@
           <div class="filter-bar" id="filterBar" hidden>
             <label>Categoria<select id="categoryFilter"><option value="">Todas</option></select></label>
             <label>Status<select id="statusFilter"><option value="">Todos</option><option value="active">Ativos</option><option value="inactive">Inativos</option><option value="no-stock">Sem estoque</option></select></label>
-            <label>Pendência<select id="qualityFilter"><option value="">Todas</option><option value="missing-image">Sem imagem</option><option value="missing-ncm">Sem NCM</option><option value="missing-ean">Sem EAN</option><option value="incomplete">Cadastro incompleto</option></select></label>
+            <label>Pendência<select id="qualityFilter"><option value="">Todas</option><option value="errors">Com erros</option><option value="warnings">Com avisos</option><option value="missing-image">Sem imagem</option><option value="missing-ncm">Sem NCM</option><option value="missing-ean">Sem EAN</option><option value="incomplete">Cadastro incompleto</option></select></label>
             <label>Ordenar<select id="sortFilter"><option value="name">Nome</option><option value="stock-asc">Menor estoque</option><option value="updated-desc">Atualizados recentemente</option></select></label>
             <button class="button ghost" id="clearFiltersButton" type="button">Limpar</button>
           </div>
@@ -72,7 +72,7 @@
             <div class="table-summary"><div><strong id="productResultCount">0</strong><span> produtos encontrados</span></div><div class="summary-actions"><span class="dirty-indicator" id="dirtyIndicator">Nenhuma alteração</span></div></div>
             <div class="table-wrap">
               <table class="data-table">
-                <thead><tr><th>Produto</th><th>Código / EAN</th><th>Preço</th><th>Estoque</th><th>Validade</th><th>Status</th><th>Pendências</th><th></th></tr></thead>
+                <thead><tr><th>Produto</th><th>Código / EAN</th><th>Preço</th><th>Estoque</th><th>Validade</th><th>Status</th><th>Qualidade</th><th></th></tr></thead>
                 <tbody id="productsTableBody"></tbody>
               </table>
             </div>
@@ -105,18 +105,29 @@
         </section>
 
         <section class="view" data-view="settings">
-          <div class="content-grid two-columns">
+          <div class="content-grid two-columns settings-grid">
             <section class="panel">
-              <div class="panel-header"><div><h2>Ambiente</h2><p>Configurações da versão paralela.</p></div></div>
+              <div class="panel-header"><div><h2>Fontes de dados</h2><p>Configurações da versão paralela.</p></div></div>
               <div class="form-stack">
                 <label>Firebase URL<input id="firebaseUrlSetting" type="url"></label>
                 <label>Nó de produtos<input id="productsNodeSetting" type="text"></label>
                 <label class="switch-row"><span><strong>Permitir gravações</strong><small>Mantenha desligado durante a validação da V2.</small></span><input id="writeModeSetting" type="checkbox"></label>
               </div>
             </section>
-            <section class="panel danger-panel">
+            <section class="panel">
+              <div class="panel-header"><div><h2>Publicação no GitHub</h2><p>Credenciais ficam somente neste navegador.</p></div><button class="button secondary compact" id="testGithubButton" type="button">Testar</button></div>
+              <div class="form-stack">
+                <label>Token GitHub<input id="githubTokenSetting" type="password" autocomplete="off"></label>
+                <div class="form-grid compact-grid"><label>Owner<input id="githubOwnerSetting" type="text"></label><label>Repositório<input id="githubRepoSetting" type="text"></label><label>Branch<input id="githubBranchSetting" type="text"></label><label>Produtos públicos<input id="productsHomePathSetting" type="text"></label><label class="span-2">Versão do catálogo<input id="catalogVersionPathSetting" type="text"></label></div>
+              </div>
+            </section>
+            <section class="panel span-all-settings">
+              <div class="panel-header"><div><h2>Diagnóstico de publicação</h2><p>Auditoria do catálogo antes de qualquer gravação.</p></div><button class="button primary compact" id="openPublishReviewSettingsButton" type="button">Abrir revisão</button></div>
+              <div class="system-list" id="diagnosticList"></div>
+            </section>
+            <section class="panel danger-panel span-all-settings">
               <div class="panel-header"><div><h2>Ferramentas avançadas</h2><p>Recursos técnicos ficarão isolados da operação diária.</p></div></div>
-              <p class="muted">GitHub, Make, Bling, importações, exportações, diagnóstico e JSON serão migrados para esta área, com confirmações específicas.</p>
+              <p class="muted">Make, Bling, importações, exportações, manutenção e JSON serão migrados para esta área, com confirmações específicas e sem misturar ações destrutivas com o salvamento normal.</p>
             </section>
           </div>
         </section>
@@ -134,6 +145,7 @@
       <button data-editor-tab="content" type="button">Imagem e conteúdo</button>
       <button data-editor-tab="logistics" type="button">Fiscal e logística</button>
     </div>
+    <div class="editor-validation" id="editorValidation"></div>
     <form class="editor-body" id="productForm">
       <section class="editor-section active" data-editor-section="essential"></section>
       <section class="editor-section" data-editor-section="commercial"></section>
@@ -143,6 +155,20 @@
     </form>
     <div class="editor-footer"><button class="button secondary" id="discardProductButton" type="button">Descartar alterações</button><button class="button primary" id="saveProductButton" type="button">Salvar produto</button></div>
   </aside>
+
+  <div class="publish-backdrop" id="publishBackdrop" hidden></div>
+  <section class="publish-dialog" id="publishDialog" hidden aria-hidden="true" aria-labelledby="publishDialogTitle">
+    <div class="publish-header"><div><span class="eyebrow">Publicação segura</span><h2 id="publishDialogTitle">Revisar catálogo antes de publicar</h2><p>O sistema salva alterações no Firebase, valida novamente e só depois atualiza os arquivos públicos.</p></div><button class="icon-button" id="closePublishReviewButton" type="button" aria-label="Fechar revisão">×</button></div>
+    <div class="publish-body">
+      <div class="review-metrics" id="publishReviewMetrics"></div>
+      <div id="publishBlockers"></div>
+      <section class="review-section"><div class="review-section-head"><h3>Erros e avisos</h3><span>Mostrando até 40 itens</span></div><div class="review-issues" id="publishIssues"></div></section>
+      <label class="publish-confirm"><input id="confirmPublishCheckbox" type="checkbox"><span><strong>Confirmo a publicação pela V2</strong><small>Esta confirmação só fica disponível quando o catálogo não possui erros e as integrações estão configuradas.</small></span></label>
+      <p class="publish-progress" id="publishProgress"></p>
+    </div>
+    <div class="publish-footer"><button class="button secondary" id="closePublishReviewFooterButton" type="button">Voltar</button><button class="button primary" id="executePublishButton" type="button" disabled>Salvar no Firebase e publicar catálogo</button></div>
+  </section>
+
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
   <script type="module" src="./js/app.js"></script>
 </body>
