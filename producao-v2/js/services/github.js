@@ -1,4 +1,5 @@
 import { catalogVersionPayload } from '../core/catalog.js';
+import { NFE_RECORDS_PATH, digits } from '../core/nfe.js';
 import { text } from '../core/utils.js';
 
 function requiredConfig(config) {
@@ -37,11 +38,12 @@ function base64ToUtf8(value) {
 }
 
 async function request(config, path, options = {}) {
+  const token = text(config.githubToken);
   const response = await fetch(`${apiBase(config)}${path}`, {
     ...options,
     headers: {
       Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${config.githubToken}`,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       'X-GitHub-Api-Version': '2022-11-28',
       ...(options.headers || {}),
     },
@@ -61,6 +63,33 @@ async function readFile(config, path) {
     `/contents/${cleanPath.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(config.githubBranch)}`,
     { allowNotFound: true },
   );
+}
+
+export async function readTextFile(config, path) {
+  if (!text(config.githubOwner) || !text(config.githubRepo) || !text(config.githubBranch)) {
+    throw new Error('Owner, repositório e branch do GitHub são necessários para consultar arquivos.');
+  }
+  const file = await readFile(config, path);
+  if (!file) return null;
+  if (!file.content) throw new Error(`O GitHub não retornou o conteúdo de ${path}.`);
+  return { path: text(path).replace(/^\/+/, ''), sha: file.sha || '', content: base64ToUtf8(file.content) };
+}
+
+export async function readJsonFile(config, path) {
+  const file = await readTextFile(config, path);
+  if (!file) return null;
+  try {
+    return { ...file, data: JSON.parse(file.content) };
+  } catch {
+    throw new Error(`O arquivo ${path} não contém um JSON válido.`);
+  }
+}
+
+export async function inspectNfeImport(config, accessKey) {
+  const key = digits(accessKey);
+  if (key.length !== 44) throw new Error('A chave da NF-e precisa ter 44 números para consultar o registro fiscal.');
+  const result = await readJsonFile(config, `${NFE_RECORDS_PATH}/${key}.json`);
+  return result?.data || null;
 }
 
 async function upsertText(config, path, content, message) {
