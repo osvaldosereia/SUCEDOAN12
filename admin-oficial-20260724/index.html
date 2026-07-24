@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <title>Dona Antônia — Limpando cache do Admin</title>
+</head>
+<body>
+  <p>Preparando o Admin oficial…</p>
+  <script>
+  (async function () {
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(registration => registration.unregister()));
+      }
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(key => caches.delete(key)));
+      }
+      const key = 'da_admin_v2_config';
+      const current = JSON.parse(localStorage.getItem(key) || '{}');
+      localStorage.setItem(key, JSON.stringify({
+        ...current,
+        writeMode: true,
+        stockWriteMode: true,
+        collectionsWriteMode: true,
+        offerWriteMode: true,
+        githubBranch: 'main'
+      }));
+      localStorage.setItem('da_admin_v2_producao_oficial_20260724_v2', '1');
+    } catch (error) {
+      console.warn('Falha ao limpar cache do Admin:', error);
+    }
+    const target = new URL('../producao-v2/', window.location.href);
+    target.searchParams.set('adminOficial', '20260724-4');
+    target.searchParams.set('_', String(Date.now()));
+    window.location.replace(target.href);
+  })();
+  </script>
+</body>
+</html>
