@@ -1,33 +1,35 @@
 /* Ajustes finais de legibilidade, imagens e navegação para o público da loja */
 
-/* Os quatro cards promocionais permanecem sempre em duas colunas no celular. */
+/* Os quatro atalhos promocionais permanecem sempre em duas colunas no celular. */
 @media(max-width:767px){
   .quick-links.home-deal-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   .quick-links.home-deal-grid>a:first-child{grid-column:auto!important}
 }
 
-/* Cestas e kits da home: até 30 itens em carrossel no celular e no desktop. */
+/* Cestas e kits: carregamento progressivo e indicação visual de carrossel. */
 .home-page .home-bundle-carousel{
   display:flex!important;
   grid-template-columns:none!important;
   gap:14px!important;
   overflow-x:auto!important;
   overflow-y:hidden;
-  padding:2px 2px 12px;
+  padding:2px 18px 12px 2px;
   scroll-snap-type:x proximity;
   scrollbar-width:none;
   overscroll-behavior-inline:contain;
+  -webkit-overflow-scrolling:touch;
 }
 .home-page .home-bundle-carousel::-webkit-scrollbar{display:none}
 .home-page .home-bundle-carousel>.bundle-card{
-  flex:0 0 calc((100% - 12px)/2);
-  width:calc((100% - 12px)/2);
+  flex:0 0 58.8%;
+  width:58.8%;
+  min-width:0;
   scroll-snap-align:start;
   content-visibility:auto;
-  contain-intrinsic-size:330px;
+  contain-intrinsic-size:360px;
 }
 @media(min-width:768px){
-  .home-page .home-bundle-carousel{gap:20px!important}
+  .home-page .home-bundle-carousel{gap:20px!important;padding-right:4px}
   .home-page .home-bundle-carousel>.bundle-card{
     flex-basis:calc((100% - 60px)/4);
     width:calc((100% - 60px)/4);
@@ -124,3 +126,10 @@ body{font-size:16px}
 
 /* Informações redundantes retiradas dos cards de produtos das cestas e kits. */
 .bundle-product-badge,.bundle-product-context{display:none!important}
+
+/* Em aparelhos econômicos, evita efeitos caros sem comprometer o visual. */
+html[data-performance-profile="economy"] *{scroll-behavior:auto!important}
+html[data-performance-profile="economy"] .home-deal-icon-shell,
+html[data-performance-profile="economy"] .product-card,
+html[data-performance-profile="economy"] .bundle-card{transition:none!important}
+html[data-performance-profile="economy"] .home-deal-icon-shell{filter:none!important}
