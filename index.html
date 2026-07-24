@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="da-build-version" content="2026-07-24-modular-production-v2">
+  <meta name="da-build-version" content="2026-07-24-modular-production-v3">
   <meta name="description" content="Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#ffffff">
@@ -17,41 +17,32 @@
   <meta name="twitter:card" content="summary_large_image">
   <title>Dona Antônia - Supermercado e Cestas</title>
   <link rel="canonical" href="https://www.donaantonia.com.br/">
-  <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
-  <link rel="dns-prefetch" href="//raw.githubusercontent.com">
   <link rel="icon" href="img/logoantonia5.png">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
-  <link rel="stylesheet" href="app-next/styles/app.css">
-  <link rel="stylesheet" href="app-next/styles/visual-parity.css">
-  <link rel="stylesheet" href="app-next/styles/home-parity.css">
-  <link rel="stylesheet" href="app-next/styles/detail-review.css">
-  <link rel="stylesheet" href="app-next/styles/checkout-flow.css">
-  <link rel="stylesheet" href="app-next/styles/bundle-confirmation.css">
-  <link rel="stylesheet" href="app-next/styles/live-polish.css?v=20260724-1">
-  <style>html.booting body{background:#fff}html.booting #app{opacity:0}.site-header{min-height:118px}</style>
-  <link rel="modulepreload" href="app-next/src/config.js">
-  <link rel="modulepreload" href="app-next/src/core.js">
-  <link rel="modulepreload" href="app-next/src/catalog.js">
-  <link rel="modulepreload" href="app-next/src/commerce.js">
-  <link rel="modulepreload" href="app-next/src/basket-pricing.js">
-  <link rel="modulepreload" href="app-next/src/visual-parity.js">
-  <link rel="modulepreload" href="app-next/src/detail-review.js">
-  <link rel="modulepreload" href="app-next/src/live-polish.js">
+  <link rel="stylesheet" href="app-next/styles/app.css?v=20260724-3">
+  <link rel="stylesheet" href="app-next/styles/visual-parity.css?v=20260724-3">
+  <link rel="stylesheet" href="app-next/styles/home-parity.css?v=20260724-3">
+  <link rel="stylesheet" href="app-next/styles/live-polish.css?v=20260724-3">
+  <link rel="preload" as="style" href="app-next/styles/detail-review.css?v=20260724-3" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" as="style" href="app-next/styles/checkout-flow.css?v=20260724-3" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" as="style" href="app-next/styles/bundle-confirmation.css?v=20260724-3" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="app-next/styles/detail-review.css?v=20260724-3">
+    <link rel="stylesheet" href="app-next/styles/checkout-flow.css?v=20260724-3">
+    <link rel="stylesheet" href="app-next/styles/bundle-confirmation.css?v=20260724-3">
+  </noscript>
+  <style>html.booting body{background:#fff}html.booting #app{opacity:0}.site-header{min-height:118px}.home-page .content-section{content-visibility:auto;contain-intrinsic-size:680px}</style>
+  <link rel="modulepreload" href="app-next/src/main.js?v=20260724-3">
+  <link rel="modulepreload" href="app-next/src/config.js?v=20260724-3">
+  <link rel="modulepreload" href="app-next/src/core.js?v=20260724-3">
+  <link rel="modulepreload" href="app-next/src/catalog.js?v=20260724-3">
+  <link rel="modulepreload" href="app-next/src/commerce.js?v=20260724-3">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"OnlineStore","name":"Dona Antônia","url":"https://www.donaantonia.com.br/","telephone":"+55 65 99815-0975","areaServed":["Cuiabá - MT","Várzea Grande - MT"]}</script>
   <script>
   (function(){
     'use strict';
     window.__DA_PRODUCTION__ = true;
-
-    var migrationKey = 'da_v2_cache_migrated_20260724';
-    try {
-      if (!localStorage.getItem(migrationKey)) {
-        if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(function(registrations){ registrations.forEach(function(registration){ registration.unregister(); }); });
-        if ('caches' in window) caches.keys().then(function(keys){ return Promise.all(keys.map(function(key){ return caches.delete(key); })); });
-        localStorage.setItem(migrationKey, '1');
-      }
-    } catch (_) {}
 
     var originalFetch = window.fetch.bind(window);
     window.fetch = function(input, init){
@@ -97,7 +88,7 @@
     <div class="header-inner">
       <div class="header-top">
         <a class="brand" href="#/" aria-label="Ir para a página inicial">
-          <img class="brand-logo" src="img/logoantonia5.png" alt="Dona Antônia" width="160" height="44">
+          <img class="brand-logo" src="img/logoantonia5.png" alt="Dona Antônia" width="160" height="44" decoding="async" fetchpriority="high">
           <span class="brand-text"><strong>Dona Antônia</strong><span>Supermercado e cestas</span></span>
         </a>
         <div class="header-actions" aria-label="Ações rápidas">
@@ -127,7 +118,7 @@
 
   <nav class="bottom-bar" aria-label="Navegação principal">
     <a class="sidebar-brand" href="#/" aria-label="Ir para a página inicial">
-      <img class="sidebar-brand-logo" src="img/logoantonia5.png" alt="Dona Antônia" width="152" height="42">
+      <img class="sidebar-brand-logo" src="img/logoantonia5.png" alt="Dona Antônia" width="152" height="42" decoding="async">
       <span class="sidebar-brand-copy"><strong>Dona Antônia</strong><span>Supermercado e cestas</span></span>
     </a>
     <div class="bottom-nav">
@@ -152,9 +143,22 @@
     <div id="checkout-content" class="drawer-content"></div>
   </aside>
 
-  <script type="module" src="app-next/src/visual-parity.js"></script>
-  <script type="module" src="app-next/src/main.js"></script>
-  <script type="module" src="app-next/src/detail-review.js"></script>
-  <script type="module" src="app-next/src/live-polish.js?v=20260724-1"></script>
+  <script type="module" src="app-next/src/image-performance.js?v=20260724-3"></script>
+  <script type="module" src="app-next/src/visual-parity.js?v=20260724-3"></script>
+  <script type="module" src="app-next/src/main.js?v=20260724-3"></script>
+  <script type="module">
+    let detailsPromise;
+    let polishPromise;
+    const loadDetails = () => detailsPromise || (detailsPromise = import('./app-next/src/detail-review.js?v=20260724-3'));
+    const loadPolish = () => polishPromise || (polishPromise = import('./app-next/src/live-polish.js?v=20260724-3'));
+    const routeNeedsDetails = () => /^#\/(cesta|kit)(\/|$)/.test(location.hash || '');
+    if (routeNeedsDetails()) loadDetails();
+    window.addEventListener('hashchange', () => { if (routeNeedsDetails()) loadDetails(); });
+    document.addEventListener('click', event => {
+      if (event.target.closest('#open-cart,#bottom-cart,[data-action="add-basket"],[data-action="add-basket-custom"],[data-action="add-kit"]')) loadDetails();
+    }, { passive: true });
+    if ('requestIdleCallback' in window) requestIdleCallback(loadPolish, { timeout: 1400 });
+    else setTimeout(loadPolish, 700);
+  </script>
 </body>
 </html>
