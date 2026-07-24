@@ -1,0 +1,36 @@
+name: Test app-next modular preview
+
+on:
+  push:
+    branches:
+      - agent/refatoracao-index-modular
+    paths:
+      - 'app-next/**'
+      - '.github/workflows/app-next-tests.yml'
+  pull_request:
+    paths:
+      - 'app-next/**'
+      - '.github/workflows/app-next-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app-next
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: app-next/package.json
+      - name: Test modules
+        run: npm test
+      - name: Smoke check
+        run: npm run check
