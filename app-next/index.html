@@ -3,99 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="da-build-version" content="2026-07-24-modular-production-v1">
   <meta name="description" content="Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.">
-  <meta name="robots" content="index, follow">
+  <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#ffffff">
-  <meta name="format-detection" content="telephone=yes">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Dona Antônia">
-  <meta property="og:title" content="Dona Antônia - Supermercado e Cestas">
-  <meta property="og:description" content="Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.">
-  <meta property="og:url" content="https://www.donaantonia.com.br/">
-  <meta property="og:image" content="https://www.donaantonia.com.br/img/logoantonia5.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <title>Dona Antônia - Supermercado e Cestas</title>
+  <title>Dona Antônia - Prévia modular</title>
   <link rel="canonical" href="https://www.donaantonia.com.br/">
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
-  <link rel="dns-prefetch" href="//raw.githubusercontent.com">
-  <link rel="icon" href="img/logoantonia5.png">
-  <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
-  <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
-  <link rel="stylesheet" href="app-next/styles/app.css">
-  <link rel="stylesheet" href="app-next/styles/visual-parity.css">
-  <link rel="stylesheet" href="app-next/styles/home-parity.css">
-  <link rel="stylesheet" href="app-next/styles/detail-review.css">
-  <link rel="stylesheet" href="app-next/styles/checkout-flow.css">
-  <link rel="stylesheet" href="app-next/styles/bundle-confirmation.css">
+  <link rel="stylesheet" href="styles/app.css">
+  <link rel="stylesheet" href="styles/visual-parity.css">
+  <link rel="stylesheet" href="styles/home-parity.css">
+  <link rel="stylesheet" href="styles/detail-review.css">
+  <link rel="stylesheet" href="styles/checkout-flow.css">
+  <link rel="stylesheet" href="styles/bundle-confirmation.css">
   <style>html.booting body{background:#fff}html.booting #app{opacity:0}.site-header{min-height:118px}</style>
-  <link rel="modulepreload" href="app-next/src/config.js">
-  <link rel="modulepreload" href="app-next/src/core.js">
-  <link rel="modulepreload" href="app-next/src/catalog.js">
-  <link rel="modulepreload" href="app-next/src/commerce.js">
-  <link rel="modulepreload" href="app-next/src/basket-pricing.js">
-  <link rel="modulepreload" href="app-next/src/visual-parity.js">
-  <link rel="modulepreload" href="app-next/src/detail-review.js">
+  <link rel="modulepreload" href="src/config.js">
+  <link rel="modulepreload" href="src/core.js">
+  <link rel="modulepreload" href="src/catalog.js">
+  <link rel="modulepreload" href="src/commerce.js">
+  <link rel="modulepreload" href="src/basket-pricing.js">
+  <link rel="modulepreload" href="src/visual-parity.js">
+  <link rel="modulepreload" href="src/detail-review.js">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"OnlineStore","name":"Dona Antônia","url":"https://www.donaantonia.com.br/","telephone":"+55 65 99815-0975","areaServed":["Cuiabá - MT","Várzea Grande - MT"]}</script>
-  <script>
-  (function(){
-    'use strict';
-    window.__DA_PRODUCTION__ = true;
-
-    var migrationKey = 'da_v2_cache_migrated_20260724';
-    try {
-      if (!localStorage.getItem(migrationKey)) {
-        if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(function(registrations){ registrations.forEach(function(registration){ registration.unregister(); }); });
-        if ('caches' in window) caches.keys().then(function(keys){ return Promise.all(keys.map(function(key){ return caches.delete(key); })); });
-        localStorage.setItem(migrationKey, '1');
-      }
-    } catch (_) {}
-
-    var originalFetch = window.fetch.bind(window);
-    window.fetch = function(input, init){
-      var nextInit = init;
-      try {
-        var url = typeof input === 'string' ? input : String(input && input.url || '');
-        var isOrderRequest = url.indexOf('hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc') >= 0 || url.indexOf('firebaseio.com/pedidos/') >= 0;
-        if (isOrderRequest && init && typeof init.body === 'string' && init.body.trim().charAt(0) === '{') {
-          var payload = JSON.parse(init.body);
-          if (payload.pedido) {
-            payload.pedido.metadados = payload.pedido.metadados || {};
-            payload.pedido.metadados.previewModular = false;
-            payload.pedido.metadados.ambiente = 'producao';
-          }
-          if (payload.metadados) {
-            payload.metadados.previewModular = false;
-            payload.metadados.ambiente = 'producao';
-          }
-          if (payload.controle) {
-            payload.controle.preview_modular = false;
-            payload.controle.ambiente = 'producao';
-          }
-          if (Array.isArray(payload.historico)) {
-            payload.historico = payload.historico.map(function(item){
-              var copy = Object.assign({}, item);
-              if (copy.usuario === 'site-next') copy.usuario = 'site';
-              if (String(copy.observacao || '').indexOf('testes') >= 0) copy.observacao = 'Pedido salvo pela nova versão modular do site.';
-              return copy;
-            });
-          }
-          nextInit = Object.assign({}, init, { body: JSON.stringify(payload) });
-        }
-      } catch (error) {
-        console.warn('Não foi possível normalizar o ambiente do pedido:', error);
-      }
-      return originalFetch(input, nextInit);
-    };
-  })();
-  </script>
 </head>
 <body>
   <header class="header site-header">
     <div class="header-inner">
       <div class="header-top">
         <a class="brand" href="#/" aria-label="Ir para a página inicial">
-          <img class="brand-logo" src="img/logoantonia5.png" alt="Dona Antônia" width="160" height="44">
+          <img class="brand-logo" src="../img/logoantonia5.png" alt="Dona Antônia" width="160" height="44">
           <span class="brand-text"><strong>Dona Antônia</strong><span>Supermercado e cestas</span></span>
         </a>
         <div class="header-actions" aria-label="Ações rápidas">
@@ -125,7 +60,7 @@
 
   <nav class="bottom-bar" aria-label="Navegação principal">
     <a class="sidebar-brand" href="#/" aria-label="Ir para a página inicial">
-      <img class="sidebar-brand-logo" src="img/logoantonia5.png" alt="Dona Antônia" width="152" height="42">
+      <img class="sidebar-brand-logo" src="../img/logoantonia5.png" alt="Dona Antônia" width="152" height="42">
       <span class="sidebar-brand-copy"><strong>Dona Antônia</strong><span>Supermercado e cestas</span></span>
     </a>
     <div class="bottom-nav">
@@ -150,8 +85,8 @@
     <div id="checkout-content" class="drawer-content"></div>
   </aside>
 
-  <script type="module" src="app-next/src/visual-parity.js"></script>
-  <script type="module" src="app-next/src/main.js"></script>
-  <script type="module" src="app-next/src/detail-review.js"></script>
+  <script type="module" src="src/visual-parity.js"></script>
+  <script type="module" src="src/main.js"></script>
+  <script type="module" src="src/detail-review.js"></script>
 </body>
 </html>

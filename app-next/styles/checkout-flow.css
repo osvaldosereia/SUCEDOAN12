@@ -1,0 +1,67 @@
+/* Fluxo do checkout: resumo antes do CPF e cupom discreto */
+.checkout-reviewed{display:grid;gap:0;padding-bottom:28px}
+.checkout-reviewed>.checkout-section{margin:0!important;padding:20px 18px!important;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:#fff!important;box-shadow:none!important}
+.checkout-reviewed>.checkout-section:last-child{border-bottom:0!important}
+.checkout-reviewed h2,.checkout-reviewed .checkout-title{margin:0 0 12px;font-size:17px;line-height:1.2;font-weight:750;letter-spacing:-.02em}
+.checkout-reviewed>.checkout-section>p{margin:-4px 0 14px;color:var(--muted);font-size:12.5px;line-height:1.5}
+
+/* Removido do fluxo por decisão comercial */
+.checkout-offers-review{display:none!important}
+
+/* Resumo exibido antes da identificação por CPF */
+.checkout-summary-before-cpf{background:#fbfdfb!important}
+.checkout-total-highlight{min-height:82px;padding:14px 15px;border:1px solid #cfe8d6;border-radius:18px;background:#eef8f1;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.checkout-total-highlight span{color:#326044;font-size:12px;font-weight:700}
+.checkout-total-highlight strong{color:var(--brand);font-size:28px;line-height:1;font-weight:850;letter-spacing:-.045em;white-space:nowrap}
+.checkout-summary-before-cpf .minimum-order{margin-top:11px;padding:10px 12px;border-radius:13px;background:#fff7e6;color:#81510d;font-size:11.5px;line-height:1.4}
+.checkout-summary-before-cpf .minimum-order.reached{background:#ecfdf3;color:var(--brand);font-weight:700}
+
+/* Campo do cupom permanece recolhido até o cliente solicitar */
+.checkout-coupon-details{margin-top:11px;border:1px solid var(--line);border-radius:15px;background:#fff;overflow:hidden}
+.checkout-coupon-details summary{min-height:54px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none}
+.checkout-coupon-details summary::-webkit-details-marker{display:none}
+.checkout-coupon-details summary>span{display:grid;gap:2px}
+.checkout-coupon-details summary strong{color:var(--ink);font-size:12.5px;font-weight:750}
+.checkout-coupon-details summary small{color:var(--muted);font-size:10.5px}
+.checkout-coupon-details summary>b{width:28px;height:28px;border-radius:999px;background:#f2f4f2;color:var(--brand);font-size:18px;font-weight:500;display:grid;place-items:center;transition:transform .16s ease}
+.checkout-coupon-details[open] summary>b{transform:rotate(45deg)}
+.checkout-coupon-fields{padding:0 12px 12px;border-top:1px solid var(--line)}
+.checkout-coupon-fields>label{display:block;margin:10px 0 6px;color:var(--muted);font-size:10.5px;font-weight:700}
+.checkout-coupon-fields .lookup-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.checkout-coupon-fields .secondary-button{min-width:112px;background:#121212;color:#fff;border-color:#121212}
+.checkout-active-coupon{margin-top:11px;padding:11px 12px;border:1px solid #b9dfc4;border-radius:15px;background:#ecfdf3;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.checkout-active-coupon>span{display:grid;gap:2px}
+.checkout-active-coupon strong{color:var(--brand);font-size:13px}
+.checkout-active-coupon small{color:#477a58;font-size:10.5px}
+.checkout-active-coupon button{color:#b42318;font-size:11px;font-weight:700}
+
+.checkout-cpf-review{background:#fff!important}
+.checkout-cpf-review .lookup-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px}
+.checkout-cpf-review .secondary-button{min-width:105px;background:#121212;color:#fff;border-color:#121212}
+.checkout-flow-hint{background:#fbfcfb!important}
+.checkout-flow-hint p{margin:0!important;padding:11px;border-radius:13px;background:#f5f7f5;color:var(--muted);text-align:center}
+
+.checkout-delivery-review .delivery-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.checkout-delivery-review .delivery-options label{min-width:0}
+.checkout-delivery-review .delivery-options span{min-height:58px;padding:10px;border:1px solid var(--line);border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11.5px;font-weight:650;line-height:1.3}
+.checkout-delivery-review .delivery-options input{position:absolute;opacity:0;pointer-events:none}
+.checkout-delivery-review .delivery-options input:checked+span{border-color:var(--brand);background:#eef8f1;color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand)}
+.checkout-details-review .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 9px}
+.checkout-details-review .form-grid label{min-width:0;display:grid;gap:6px;color:var(--muted);font-size:11px;font-weight:650}
+.checkout-details-review .form-grid label.wide{grid-column:1/-1}
+.checkout-details-review fieldset{margin-top:17px;padding:0;border:0}
+.checkout-details-review legend{margin-bottom:9px;font-size:13px;font-weight:750}
+.checkout-total-review{background:#fbfdfb!important}
+.checkout-total-review .send-order{width:100%;min-height:54px;margin-top:13px;border-radius:16px;background:var(--whatsapp);color:#fff;font-size:15px;font-weight:750}
+
+@media(max-width:767px){
+  .checkout-reviewed>.checkout-section{padding:18px 14px!important}
+  .checkout-total-highlight{min-height:72px;padding:12px}
+  .checkout-total-highlight strong{font-size:24px}
+  .checkout-coupon-fields .lookup-row{grid-template-columns:1fr}
+  .checkout-coupon-fields .secondary-button{width:100%}
+  .checkout-cpf-review .lookup-row{grid-template-columns:1fr}
+  .checkout-cpf-review .secondary-button{width:100%;min-height:48px}
+  .checkout-details-review .form-grid{grid-template-columns:1fr}
+  .checkout-details-review .form-grid label.wide{grid-column:auto}
+}
