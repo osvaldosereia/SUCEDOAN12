@@ -17,8 +17,13 @@ export const DEFAULT_CONFIG = Object.freeze({
   basketsPath: 'site/produtos-cesta-basica.json',
   kitsPath: 'site/kits.json',
   kitQueuePath: 'carrosseis-kits/fila.json',
-  makeOrderWebhookUrl: '',
+  githubImagesPath: 'site/img/produtos_3',
+  githubKitImagesPath: 'site/img/kits',
+  makeTextWebhookUrl: '',
+  makeImageWebhookUrl: '',
+  makeInstagramKitWebhookUrl: '',
   makeAiWebhookUrl: '',
+  makeOrderWebhookUrl: '',
   blingConnectionMode: 'via-make',
 });
 
