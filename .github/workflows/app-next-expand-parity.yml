@@ -5,7 +5,7 @@ on:
     branches:
       - agent/refatoracao-index-modular
     paths:
-      - 'app-next/.package/parity-files.tar.gz'
+      - 'app-next/.package/parity/**'
       - '.github/workflows/app-next-expand-parity.yml'
 
 permissions:
@@ -21,12 +21,15 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Verify and expand parity package
+      - name: Rebuild and verify package
         shell: bash
         run: |
           set -euo pipefail
-          echo "6ae8f1fec9a0553f80dff42cd9ea0bc44c8dd02d94096316051f6e8e59ebe142  app-next/.package/parity-files.tar.gz" | sha256sum -c -
-          tar -xzf app-next/.package/parity-files.tar.gz -C app-next
+          cat app-next/.package/parity/part-*.b64 > /tmp/parity.b64
+          echo "907d1896c7b54cbbca8b98a9a602e7e723ce2c5891c26615f3234aa07012c690  /tmp/parity.b64" | sha256sum -c -
+          base64 --decode /tmp/parity.b64 > /tmp/parity.tar.gz
+          echo "6ae8f1fec9a0553f80dff42cd9ea0bc44c8dd02d94096316051f6e8e59ebe142  /tmp/parity.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/parity.tar.gz -C app-next
 
       - name: Run complete modular tests
         shell: bash
