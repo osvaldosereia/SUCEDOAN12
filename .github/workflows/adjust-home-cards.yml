@@ -1,0 +1,82 @@
+name: Ajustar categorias e embalagem dos produtos
+
+on:
+  push:
+    paths:
+      - '.github/workflows/adjust-home-cards.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ajustar index raiz
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('index.html')
+          content = path.read_text(encoding='utf-8')
+
+          old = '''          <div class="product-body">
+            <a class="product-name" href="#/produto/${route}" title="${escapeHtml(p.name)}">${escapeHtml(cardName)}</a>'''
+          new = '''          <div class="product-body">
+            ${p.embalagem ? `<div class="product-packaging" aria-label="Embalagem do produto" title="${escapeHtml(p.embalagem)}">${escapeHtml(p.embalagem)}</div>` : ''}
+            <a class="product-name" href="#/produto/${route}" title="${escapeHtml(p.name)}">${escapeHtml(cardName)}</a>'''
+
+          if old in content:
+              content = content.replace(old, new, 1)
+          elif new not in content:
+              raise SystemExit('Bloco do card de produto não encontrado.')
+
+          style = '''
+  <style id="daCategoriesPackaging20260724">
+    .home-clean.da-home-funnel [data-home-secondary-slot] .category-section {
+      margin-top: clamp(56px, 6.5vw, 84px) !important;
+    }
+    .product-packaging {
+      display: block;
+      min-width: 0;
+      margin: 0;
+      color: #173b63;
+      font-size: 11px;
+      line-height: 1.2;
+      font-weight: 400;
+      letter-spacing: .01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    @media (max-width: 767px) {
+      .home-clean.da-home-funnel [data-home-secondary-slot] .category-section {
+        margin-top: 44px !important;
+      }
+      .product-packaging { font-size: 10.5px; }
+    }
+  </style>
+'''
+          if 'id="daCategoriesPackaging20260724"' not in content:
+              content = content.replace('</head>', style + '</head>', 1)
+
+          path.write_text(content, encoding='utf-8')
+          PY
+
+      - name: Publicar alteração
+        shell: bash
+        run: |
+          if git diff --quiet -- index.html; then
+            echo 'Nenhuma alteração necessária.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Ajusta respiro de categorias e mostra embalagem nos cards'
+          git pull --rebase origin main
+          git push
