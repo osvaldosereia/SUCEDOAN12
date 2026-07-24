@@ -1,3 +1,4 @@
+import './offers-bootstrap.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { CollectionsModule } from './modules/collections.js';
 import { loadProducts } from './services/firebase.js';
