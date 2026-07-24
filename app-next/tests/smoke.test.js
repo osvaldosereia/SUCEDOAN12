@@ -121,7 +121,7 @@ for (const fragment of [
   'navigator.connection',
   'navigator.deviceMemory',
   'localRepositoryAsset',
-  'raw.githubusercontent.com',
+  'raw\\.githubusercontent\\.com',
   'managedLazyLoading',
   'IntersectionObserver',
   "image.loading = 'eager'",
