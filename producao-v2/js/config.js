@@ -3,6 +3,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   productsNode: 'produtos',
   writeMode: false,
   nfeImportMode: false,
+  stockWriteMode: false,
   pageSize: 50,
   githubToken: '',
   githubOwner: 'osvaldosereia',
