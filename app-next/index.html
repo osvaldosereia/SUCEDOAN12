@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="booting">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#ffffff">
+  <title>Dona Antônia - Prévia modular</title>
+  <link rel="canonical" href="https://www.donaantonia.com.br/">
+  <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
+  <link rel="stylesheet" href="styles/app.css">
+  <style>html.booting body{background:#f5f7f4}html.booting #app{opacity:0}.site-header{min-height:118px}</style>
+  <link rel="modulepreload" href="src/config.js">
+  <link rel="modulepreload" href="src/core.js">
+  <link rel="modulepreload" href="src/catalog.js">
+  <link rel="modulepreload" href="src/commerce.js">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"OnlineStore","name":"Dona Antônia","url":"https://www.donaantonia.com.br/","telephone":"+55 65 99815-0975","areaServed":["Cuiabá - MT","Várzea Grande - MT"]}</script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-top">
+      <a class="brand" href="#/" aria-label="Ir para o início"><img src="../img/logoantonia5.png" alt="Dona Antônia" width="160" height="44"><span><strong>Dona Antônia</strong><small>Supermercado e cestas</small></span></a>
+      <div class="header-actions">
+        <a class="icon-button" href="#/favoritos" aria-label="Favoritos">♡<b data-favorite-count hidden>0</b></a>
+        <button class="cart-button" id="open-cart"><span>Minha compra</span><strong data-cart-total>R$ 0,00</strong><b data-cart-count hidden>0</b></button>
+        <button class="icon-button" id="open-menu" aria-label="Abrir menu">☰</button>
+      </div>
+    </div>
+    <form class="search-form" id="search-form"><span>⌕</span><input id="search-input" type="search" placeholder="Buscar produto. Ex: café, arroz, Omo" autocomplete="off"><button id="search-clear" type="button" hidden aria-label="Limpar busca">×</button></form>
+  </header>
+
+  <main id="app" class="app" aria-live="polite"></main>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <a href="#/">⌂<span>Início</span></a>
+    <a href="#/categorias">▦<span>Categorias</span></a>
+    <a href="#/ofertas">◇<span>Ofertas</span></a>
+    <a href="#/favoritos">♡<span>Favoritos</span></a>
+    <button id="bottom-cart">▣<span>Compra</span><b data-cart-count hidden>0</b></button>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="drawer-overlay" class="drawer-overlay"></div>
+
+  <aside id="menu-drawer" class="drawer" aria-hidden="true" aria-label="Menu">
+    <header class="drawer-header"><div><strong>Menu Dona Antônia</strong><small>Navegação e informações</small></div><button data-close-drawer aria-label="Fechar">×</button></header>
+    <div id="menu-content" class="drawer-content"></div>
+  </aside>
+
+  <aside id="checkout-drawer" class="drawer checkout-drawer" aria-hidden="true" aria-label="Minha compra">
+    <header class="drawer-header"><div><strong>Minha compra</strong><small>Revise e envie pelo WhatsApp</small></div><button data-close-drawer aria-label="Fechar">×</button></header>
+    <div id="checkout-content" class="drawer-content"></div>
+  </aside>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
