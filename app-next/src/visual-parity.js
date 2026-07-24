@@ -106,18 +106,6 @@ function paymentNoticesHtml() {
   </section>`;
 }
 
-function journeyHtml(categorySection) {
-  const cards = [...(categorySection?.querySelectorAll('.category-card') || [])].slice(0, 6);
-  if (!cards.length) return '';
-  return `<section class="content-section purchase-journey"><div class="section-heading"><div><h2>Faça sua compra do mês</h2><p>Um caminho rápido pelos setores que normalmente entram na compra básica.</p></div></div><div class="purchase-journey-grid">${cards.map(card => {
-    const href = card.getAttribute('href') || '#/categorias';
-    const name = card.querySelector('strong')?.textContent?.trim() || 'Ver produtos';
-    const count = card.querySelector('small')?.textContent?.trim() || '';
-    const image = card.querySelector('img');
-    return `<a class="purchase-journey-card" href="${href}"><span><strong>${name}</strong><small>Veja produtos para completar sua compra.</small><em>${count}</em></span>${image ? `<span class="purchase-journey-media"><img loading="lazy" src="${image.getAttribute('src') || ''}" alt=""></span>` : ''}</a>`;
-  }).join('')}</div></section>`;
-}
-
 async function applyHomeParity() {
   const page = document.querySelector('.home-page');
   if (!page || page.dataset.visualParityApplied === 'true' || page.dataset.visualParityPending === 'true') return;
@@ -128,6 +116,7 @@ async function applyHomeParity() {
     if (!page.isConnected || !document.querySelector('.home-page')) return;
     page.classList.add('home-clean', 'home-funnel');
     page.querySelector('.home-hero')?.remove();
+    page.querySelector('.purchase-journey')?.remove();
 
     const sections = [...page.querySelectorAll(':scope > .content-section')];
     const findSection = fragment => sections.find(section => sectionTitle(section).includes(fragment));
@@ -149,10 +138,8 @@ async function applyHomeParity() {
 
     if (quickLinks && !page.querySelector('.payment-notices')) quickLinks.insertAdjacentHTML('afterend', paymentNoticesHtml());
     const payment = page.querySelector('.payment-notices');
-    if (payment && categories && !page.querySelector('.purchase-journey')) payment.insertAdjacentHTML('afterend', journeyHtml(categories));
-    const journey = page.querySelector('.purchase-journey');
 
-    [quickLinks, payment, journey, baskets, kits, categories, personalized, recent, buyAgain]
+    [quickLinks, payment, baskets, kits, categories, personalized, recent, buyAgain]
       .filter(Boolean)
       .forEach(element => page.appendChild(element));
     page.dataset.visualParityApplied = 'true';
