@@ -95,7 +95,9 @@ function bind() {
     setTimeout(correctPanel, 0);
   }, true);
   document.addEventListener('click', event => {
-    if (event.target.closest('[data-campaign-use-test-branch]')) sessionStorage.removeItem(MAIN_CONFIRM_KEY);
+    if (!event.target.closest('[data-campaign-use-test-branch]')) return;
+    sessionStorage.removeItem(MAIN_CONFIRM_KEY);
+    setTimeout(() => document.querySelector('[data-campaign-reload]')?.click(), 80);
   }, true);
   new MutationObserver(correctPanel).observe(document.documentElement, { childList: true, subtree: true });
   correctPanel();
