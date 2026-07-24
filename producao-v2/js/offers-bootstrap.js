@@ -1,6 +1,5 @@
 import './registries-bootstrap.js';
-import './campaign-offers.js';
-import './campaign-offers-fixes.js';
+import './campaign-offers-recovery.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { OffersModule } from './modules/offers.js';
 import { loadProducts } from './services/firebase.js';
