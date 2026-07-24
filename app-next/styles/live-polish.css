@@ -1,11 +1,5 @@
 /* Ajustes finais de legibilidade, imagens e navegação para o público da loja */
 
-/* Os quatro atalhos promocionais permanecem sempre em duas colunas no celular. */
-@media(max-width:767px){
-  .quick-links.home-deal-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  .quick-links.home-deal-grid>a:first-child{grid-column:auto!important}
-}
-
 /* Cestas e kits: carregamento progressivo e indicação visual de carrossel. */
 .home-page .home-bundle-carousel{
   display:flex!important;
@@ -103,7 +97,6 @@
 .bundle-media,
 .category-card img,
 .bundle-detail-hero>img,
-.purchase-journey-media,
 .banner-card,
 .bundle-confirm-media{
   background:#fff!important;
@@ -111,7 +104,6 @@
 .bundle-media img,
 .category-card img,
 .bundle-detail-hero>img,
-.purchase-journey-media img,
 .bundle-confirm-media img{
   padding:2px!important;
   background:#fff!important;
@@ -139,18 +131,12 @@ body{font-size:16px}
   .bottom-nav .nav-item span:not(.cart-badge):not(.favorites-badge){font-size:15px!important}
 }
 @media(max-width:767px){
-  .home-deal-copy strong{font-size:16px!important}
-  .home-deal-copy small{font-size:10.5px!important;line-height:1.4!important}
-  .home-deal-cta{font-size:10.5px!important}
   .bundle-name{font-size:15px!important}
 }
 
 /* Favoritos: não exibe zero. */
 [data-favorite-count][hidden],
 [data-favorite-count]:empty{display:none!important}
-
-/* O aviso inicial de personalização não é mais exibido. */
-#personalization-consent{display:none!important}
 
 /* Sacola com destaque visual vermelho. */
 .header-cart-icon{
@@ -174,7 +160,5 @@ body{font-size:16px}
 
 /* Em aparelhos econômicos, evita efeitos caros sem comprometer o visual. */
 html[data-performance-profile="economy"] *{scroll-behavior:auto!important}
-html[data-performance-profile="economy"] .home-deal-badge,
 html[data-performance-profile="economy"] .product-card,
 html[data-performance-profile="economy"] .bundle-card{transition:none!important}
-html[data-performance-profile="economy"] .home-deal-badge{box-shadow:none!important}
