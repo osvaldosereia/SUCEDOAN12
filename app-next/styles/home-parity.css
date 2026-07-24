@@ -1,97 +1,87 @@
 .sidebar-cart-total{display:none}
 
-/* Quatro atalhos comerciais leves: o chip é o principal elemento visual. */
-.home-deal-grid{margin-top:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
-.home-deal-shortcut{
-  --deal:#14532d;
-  --deal-soft:#eef8f1;
-  --deal-border:#c9ddd0;
-  --deal-shadow:rgba(20,83,45,.13);
-  --deal-shadow-strong:rgba(20,83,45,.19);
-  min-width:0;
-  min-height:154px;
-  color:var(--ink);
+.payment-notices{
+  margin-top:0;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+.payment-notice{
+  min-height:96px;
+  padding:15px;
+  border:1px solid var(--line);
+  border-radius:20px;
+  background:#fff;
+  display:grid;
+  grid-template-columns:48px minmax(0,1fr);
+  align-items:center;
+  gap:12px;
+  box-shadow:0 3px 12px rgba(20,50,28,.045);
+}
+.payment-notice-mark{
+  width:48px;
+  height:48px;
+  border-radius:15px;
+  background:#ecfdf3;
+  color:var(--brand);
   display:grid;
   place-items:center;
-  padding:16px 4px 12px;
-  text-align:center;
-  background:transparent;
-  border:0;
-  border-radius:0;
-  box-shadow:none;
-}
-.home-deal-shortcut.deal-50{--deal:#c12646;--deal-soft:#fff0f3;--deal-border:#f1b9c4;--deal-shadow:rgba(193,38,70,.13);--deal-shadow-strong:rgba(193,38,70,.2)}
-.home-deal-shortcut.deal-40{--deal:#245f9b;--deal-soft:#eef5fc;--deal-border:#bad1e8;--deal-shadow:rgba(36,95,155,.13);--deal-shadow-strong:rgba(36,95,155,.2)}
-.home-deal-shortcut.deal-all{--deal:#7c3fa0;--deal-soft:#f6effa;--deal-border:#d9c0e7;--deal-shadow:rgba(124,63,160,.13);--deal-shadow-strong:rgba(124,63,160,.2)}
-.home-deal-shortcut.deal-5{--deal:#178553;--deal-soft:#edf9f2;--deal-border:#b9dfca;--deal-shadow:rgba(23,133,83,.13);--deal-shadow-strong:rgba(23,133,83,.2)}
-.home-deal-copy{min-width:0;display:grid;justify-items:center;align-content:center;gap:8px}
-.home-deal-badge{
-  width:max-content;
-  max-width:100%;
-  min-height:52px;
-  padding:0 21px;
-  border:2px solid var(--deal-border);
-  border-radius:999px;
-  background:var(--deal-soft);
-  color:var(--deal);
-  font-size:17px;
-  line-height:1;
+  font-size:14px;
   font-weight:900;
-  letter-spacing:.035em;
+}
+.payment-notice>div{display:grid;gap:2px;min-width:0}
+.payment-notice small{color:var(--muted);font-size:10px;text-transform:uppercase;font-weight:700;letter-spacing:.04em}
+.payment-notice strong{font-size:14px;line-height:1.25;font-weight:800}
+.payment-notice>div>span{color:var(--muted);font-size:12px;line-height:1.35}
+
+.home-offers-banner{
+  width:100%;
+  min-height:170px;
+  margin-top:30px;
+  padding:28px 30px;
+  border-radius:24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  color:#fff;
+  background:linear-gradient(135deg,#8f1834 0%,#d92d20 52%,#f97066 100%);
+  box-shadow:0 14px 34px rgba(180,35,24,.2);
+  overflow:hidden;
+}
+.home-offers-banner>div{display:grid;gap:7px;min-width:0}
+.home-offers-banner small{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.82)}
+.home-offers-banner strong{font-size:clamp(28px,4vw,48px);line-height:.98;font-weight:950;letter-spacing:-.04em}
+.home-offers-banner-button{
+  min-width:150px;
+  min-height:50px;
+  padding:0 22px;
+  border-radius:14px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  white-space:nowrap;
-  box-shadow:0 7px 18px var(--deal-shadow);
-  transition:transform .16s ease,box-shadow .16s ease;
+  background:#fff;
+  color:#b42318;
+  font-size:15px;
+  font-weight:900;
+  box-shadow:0 8px 20px rgba(81,14,20,.2);
 }
-.home-deal-copy strong{font-size:18px;line-height:1.08;font-weight:800;letter-spacing:-.03em;color:var(--ink)}
-.home-deal-copy small{min-height:34px;color:var(--muted);font-size:11.5px;line-height:1.42;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.home-deal-cta{width:max-content;margin-top:1px;display:inline-flex;align-items:center;gap:7px;color:var(--deal);font-size:11px;font-weight:800}
-.home-deal-cta b{width:25px;height:25px;border-radius:999px;background:var(--deal-soft);display:grid;place-items:center;font-size:13px;transition:transform .16s ease}
-@media(hover:hover){
-  .home-deal-shortcut:hover .home-deal-badge{transform:translateY(-3px);box-shadow:0 11px 24px var(--deal-shadow-strong)}
-  .home-deal-shortcut:hover .home-deal-cta b{transform:translateX(3px)}
-}
-
-.payment-notices{margin-top:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.payment-notice{min-height:94px;padding:15px;border:1px solid var(--line);border-radius:20px;background:#fff;display:grid;grid-template-columns:48px minmax(0,1fr);align-items:center;gap:12px}
-.payment-notice-mark{width:48px;height:48px;border-radius:15px;background:#ecfdf3;color:var(--brand);display:grid;place-items:center;font-size:15px;font-weight:800}
-.payment-notice>div{display:grid;gap:2px}
-.payment-notice small{color:var(--muted);font-size:10px;text-transform:uppercase;font-weight:700;letter-spacing:.04em}
-.payment-notice strong{font-size:14px;line-height:1.25;font-weight:700}
-.payment-notice>div>span{color:var(--muted);font-size:12px}
-.purchase-journey{margin-top:38px}
-.purchase-journey-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.purchase-journey-card{min-height:142px;padding:18px;border:1px solid var(--line);border-radius:22px;background:#fff;display:grid;grid-template-columns:minmax(0,1fr) 104px;align-items:center;gap:14px;overflow:hidden}
-.purchase-journey-card>span:first-child{min-width:0;display:grid;gap:6px}
-.purchase-journey-card strong{font-size:15px;line-height:1.2;font-weight:700}
-.purchase-journey-card small{color:var(--muted);font-size:12px;line-height:1.4}
-.purchase-journey-card em{color:var(--brand);font-size:10px;font-style:normal;font-weight:700}
-.purchase-journey-media{width:104px;aspect-ratio:1/1;border-radius:20px;background:#fff;overflow:hidden}
-.purchase-journey-media img{width:100%;height:100%;object-fit:contain;padding:6px}
 
 @media(max-width:767px){
-  .home-deal-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 10px}
-  .home-deal-shortcut{min-height:136px;padding:12px 1px 10px}
-  .home-deal-copy{gap:6px}
-  .home-deal-badge{min-height:44px;padding:0 14px;font-size:14.5px;border-width:1.5px}
-  .home-deal-copy strong{font-size:15.5px;line-height:1.1}
-  .home-deal-copy small{min-height:31px;font-size:10px;line-height:1.36}
-  .home-deal-cta{font-size:10px;gap:5px}
-  .home-deal-cta b{width:22px;height:22px;font-size:11px}
   .payment-notices{grid-template-columns:1fr;gap:9px}
   .payment-notice{min-height:82px;padding:12px}
-  .purchase-journey-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-  .purchase-journey-card{min-height:104px;padding:10px;border-radius:16px;grid-template-columns:minmax(0,1fr) 58px;gap:8px}
-  .purchase-journey-card strong{font-size:13px}
-  .purchase-journey-card small{display:none}
-  .purchase-journey-card em{font-size:9.5px}
-  .purchase-journey-media{width:58px;border-radius:14px}
-}
-
-@media(min-width:768px) and (max-width:1050px){
-  .home-deal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .home-offers-banner{
+    min-height:180px;
+    margin-top:24px;
+    padding:24px 20px;
+    border-radius:20px;
+    display:grid;
+    align-content:center;
+    justify-items:start;
+    gap:18px;
+  }
+  .home-offers-banner strong{font-size:31px;line-height:1}
+  .home-offers-banner-button{min-width:138px;min-height:46px}
 }
 
 @media(min-width:768px){
