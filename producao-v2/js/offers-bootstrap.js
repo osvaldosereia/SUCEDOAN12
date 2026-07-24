@@ -1,4 +1,5 @@
 import './registries-bootstrap.js';
+import './campaign-offers.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { OffersModule } from './modules/offers.js';
 import { loadProducts } from './services/firebase.js';
@@ -81,6 +82,8 @@ function start() {
   ];
   const elements = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
   module = new OffersModule({ store, elements, onToast: toast, onReload: reload, reloadConfig: loadConfig });
+  window.__adminV2OffersStore = store;
+  window.__adminV2OffersModule = module;
   reload().catch(error => toast(error?.message || String(error), 'error'));
   document.getElementById('reloadButton')?.addEventListener('click', () => reload().catch(() => {}));
   const card = [...view.querySelectorAll('.module-card')].find(row => row.textContent.includes('Ofertas automáticas'));
