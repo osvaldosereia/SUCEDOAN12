@@ -1,18 +1,18 @@
-name: Apply app-next parity fixes
+name: Expand app-next parity files
 
 on:
   push:
     branches:
       - agent/refatoracao-index-modular
     paths:
-      - 'app-next/.patch/parity.patch.gz'
-      - '.github/workflows/app-next-apply-parity.yml'
+      - 'app-next/.package/parity-files.tar.gz'
+      - '.github/workflows/app-next-expand-parity.yml'
 
 permissions:
   contents: write
 
 jobs:
-  apply-test-and-commit:
+  expand-test-and-commit:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout branch
@@ -21,15 +21,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Verify and apply parity patch
+      - name: Verify and expand parity package
         shell: bash
         run: |
           set -euo pipefail
-          echo "673c28f3bf86242691d380767c27529b7938b53f1c4bb25723fce6abd779c48c  app-next/.patch/parity.patch.gz" | sha256sum -c -
-          gunzip -c app-next/.patch/parity.patch.gz > /tmp/parity.patch
-          echo "3fbb5d18535d1ca9b03a06e7b2ac4899620f92ede434bb0fd509eed2e1f8b777  /tmp/parity.patch" | sha256sum -c -
-          git apply --check --directory=app-next /tmp/parity.patch
-          git apply --directory=app-next /tmp/parity.patch
+          echo "6ae8f1fec9a0553f80dff42cd9ea0bc44c8dd02d94096316051f6e8e59ebe142  app-next/.package/parity-files.tar.gz" | sha256sum -c -
+          tar -xzf app-next/.package/parity-files.tar.gz -C app-next
 
       - name: Run complete modular tests
         shell: bash
@@ -39,14 +36,16 @@ jobs:
           npm test
           npm run check
 
-      - name: Commit validated parity fixes
+      - name: Commit validated parity files
         shell: bash
         run: |
           set -euo pipefail
-          rm -f app-next/.patch/parity.patch.gz
-          rmdir app-next/.patch 2>/dev/null || true
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add app-next/src app-next/tests
+          if git diff --cached --quiet; then
+            echo "Parity files already current."
+            exit 0
+          fi
           git commit -m "Corrige paridade funcional da homologação modular"
           git push origin HEAD:agent/refatoracao-index-modular
