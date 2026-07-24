@@ -111,6 +111,14 @@ async function handleAction(button) {
   if (action === 'personalization-clear') { personalization.clearHistory(); closePersonalizationPanel(); rerender(); ui.showToast('Histórico apagado.'); }
 }
 
+function updateActiveNavigation(route) {
+  const routeName = route?.name || 'home';
+  let active = routeName;
+  if (['product', 'basket', 'baskets', 'kit', 'kits', 'routine', 'info'].includes(routeName)) active = 'home';
+  if (['category', 'subcategory', 'brand', 'categories'].includes(routeName)) active = 'categories';
+  document.querySelectorAll('[data-nav]').forEach(link => link.classList.toggle('active', link.dataset.nav === active));
+}
+
 function bindEvents() {
   document.addEventListener('click', async event => {
     const actionButton = event.target.closest('[data-action]');
@@ -158,6 +166,7 @@ function bindEvents() {
 
   events.on('route:rendered', ({ route }) => {
     if (route.name === 'search') search.value = route.params.segments.join(' ');
+    updateActiveNavigation(route);
   });
 }
 
