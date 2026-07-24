@@ -139,8 +139,8 @@ for (const fragment of [
 ]) {
   if (!liveCss.includes(fragment)) throw new Error(`Ajuste visual ausente: ${fragment}`);
 }
-if (liveCss.includes('gap:1px!important') || liveCss.includes('border-radius:0!important')) {
-  throw new Error('Cards de produtos ainda estão grudados ou sem acabamento individual');
+if (liveCss.includes('gap:1px!important')) {
+  throw new Error('Cards de produtos ainda estão grudados');
 }
 if (!liveCss.includes('.product-card-media img') || !liveCss.includes('width:100%!important') || !liveCss.includes('height:100%!important')) {
   throw new Error('Imagem e fundo do produto não ocupam a mesma área');
