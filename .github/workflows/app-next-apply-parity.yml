@@ -28,9 +28,8 @@ jobs:
           echo "673c28f3bf86242691d380767c27529b7938b53f1c4bb25723fce6abd779c48c  app-next/.patch/parity.patch.gz" | sha256sum -c -
           gunzip -c app-next/.patch/parity.patch.gz > /tmp/parity.patch
           echo "3fbb5d18535d1ca9b03a06e7b2ac4899620f92ede434bb0fd509eed2e1f8b777  /tmp/parity.patch" | sha256sum -c -
-          cd app-next
-          git apply --check /tmp/parity.patch
-          git apply /tmp/parity.patch
+          git apply --check --directory=app-next /tmp/parity.patch
+          git apply --directory=app-next /tmp/parity.patch
 
       - name: Run complete modular tests
         shell: bash
