@@ -973,6 +973,59 @@
       }
     }
   </style>
+
+  <style id="daHomeKitsProgressive20260724">
+    .da-home-kit-sentinel {
+      flex: 0 0 88px;
+      min-width: 88px;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+      font-weight: 700;
+      text-align: center;
+      scroll-snap-align: start;
+    }
+    .da-home-kit-sentinel span::before {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 24px;
+      margin: 0 auto 8px;
+      border: 3px solid rgba(21,96,59,.16);
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: daHomeKitLoadingSpin .8s linear infinite;
+    }
+    @keyframes daHomeKitLoadingSpin { to { transform: rotate(360deg); } }
+    @media (min-width: 768px) {
+      .da-home-kit-sentinel {
+        grid-column: 1 / -1;
+        width: 100%;
+        min-width: 0;
+        min-height: 52px;
+        padding: 8px;
+      }
+      .da-home-kit-sentinel span {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .da-home-kit-sentinel span::before {
+        width: 20px;
+        height: 20px;
+        margin: 0;
+        flex: 0 0 auto;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .da-home-kit-sentinel span::before { animation: none; }
+    }
+  </style>
 </head>
 <body>
   <header class="header">
@@ -5859,10 +5912,99 @@
         </article>`;
       }
     
+      let daHomeKitProgressiveItems=[];
+      let daHomeKitProgressiveCursor=0;
+      let daHomeKitProgressiveScrollTarget=null;
+      let daHomeKitProgressiveScrollHandler=null;
+      let daHomeKitProgressiveRaf=0;
+      const DA_HOME_KIT_PROGRESSIVE_LIMIT=100;
+      const DA_HOME_KIT_PROGRESSIVE_INITIAL=6;
+      const DA_HOME_KIT_PROGRESSIVE_BATCH=8;
+
       function daHomeKitShelfHtml(kits){
-        const items = (kits || []).slice(0,6);
+        daDisconnectHomeKitProgressive();
+        const items = (kits || []).slice(0,DA_HOME_KIT_PROGRESSIVE_LIMIT);
+        daHomeKitProgressiveItems=items;
+        daHomeKitProgressiveCursor=Math.min(DA_HOME_KIT_PROGRESSIVE_INITIAL,items.length);
         if(!items.length) return '';
-        return `<section class="da-home-section da-home-kits-section da-home-band da-home-band-kits" data-home-section="kits">${daHomeSectionHead('Kits promocionais','Combos com desconto e produtos selecionados.','#/kits','Ver todos os kits')}<div class="da-home-kit-grid">${items.map(daHomeKitCardHtml).join('')}</div><a class="da-home-mobile-see-all" href="#/kits">Ver todos os kits</a></section>`;
+        const initialItems=items.slice(0,daHomeKitProgressiveCursor);
+        const hasMore=daHomeKitProgressiveCursor<items.length;
+        return `<section class="da-home-section da-home-kits-section da-home-band da-home-band-kits" data-home-section="kits" data-home-kit-total="${items.length}" data-home-kit-loaded="${daHomeKitProgressiveCursor}">${daHomeSectionHead('Kits promocionais','Combos com desconto e produtos selecionados.','#/kits','Ver todos os kits')}<div class="da-home-kit-grid" data-home-kit-grid>${initialItems.map(daHomeKitCardHtml).join('')}${hasMore ? '<div class="da-home-kit-sentinel" data-home-kit-sentinel role="status" aria-live="polite"><span>Carregando mais kits…</span></div>' : ''}</div><a class="da-home-mobile-see-all" href="#/kits">Ver todos os kits</a></section>`;
+      }
+
+      function daDisconnectHomeKitProgressive(){
+        if(daHomeKitProgressiveScrollTarget && daHomeKitProgressiveScrollHandler){
+          daHomeKitProgressiveScrollTarget.removeEventListener('scroll',daHomeKitProgressiveScrollHandler);
+        }
+        if(daHomeKitProgressiveRaf){
+          cancelAnimationFrame(daHomeKitProgressiveRaf);
+          daHomeKitProgressiveRaf=0;
+        }
+        daHomeKitProgressiveScrollTarget=null;
+        daHomeKitProgressiveScrollHandler=null;
+      }
+
+      function daFinishHomeKitProgressive(){
+        const sentinel=app.querySelector('[data-home-kit-sentinel]');
+        if(sentinel) sentinel.remove();
+        daDisconnectHomeKitProgressive();
+      }
+
+      function daLoadNextHomeKitBatch(){
+        const grid=app.querySelector('[data-home-kit-grid]');
+        const sentinel=app.querySelector('[data-home-kit-sentinel]');
+        if(!grid || !sentinel) return;
+        if(daHomeKitProgressiveCursor>=daHomeKitProgressiveItems.length){
+          daFinishHomeKitProgressive();
+          return;
+        }
+        const next=daHomeKitProgressiveItems.slice(
+          daHomeKitProgressiveCursor,
+          daHomeKitProgressiveCursor+DA_HOME_KIT_PROGRESSIVE_BATCH
+        );
+        if(!next.length){
+          daFinishHomeKitProgressive();
+          return;
+        }
+        sentinel.insertAdjacentHTML('beforebegin',next.map(daHomeKitCardHtml).join(''));
+        daHomeKitProgressiveCursor+=next.length;
+        const section=grid.closest('[data-home-section="kits"]');
+        if(section) section.dataset.homeKitLoaded=String(daHomeKitProgressiveCursor);
+        updateOfferCountdowns();
+        syncVisibleCards();
+        updateFavoritesUI();
+        if(daHomeKitProgressiveCursor>=daHomeKitProgressiveItems.length) daFinishHomeKitProgressive();
+      }
+
+      function daHomeKitProgressiveNearEnd(grid,sentinel,horizontal){
+        if(horizontal){
+          const remaining=grid.scrollWidth-grid.clientWidth-grid.scrollLeft;
+          return remaining<=Math.max(260,grid.clientWidth*.7);
+        }
+        const appRect=app.getBoundingClientRect();
+        const sentinelRect=sentinel.getBoundingClientRect();
+        return sentinelRect.top<=appRect.bottom+Math.max(280,app.clientHeight*.35);
+      }
+
+      function daSetupHomeKitProgressive(){
+        daDisconnectHomeKitProgressive();
+        const grid=app.querySelector('[data-home-kit-grid]');
+        const sentinel=app.querySelector('[data-home-kit-sentinel]');
+        if(!grid || !sentinel) return;
+        const horizontal=grid.scrollWidth>grid.clientWidth+8 && getComputedStyle(grid).overflowX!=='visible';
+        daHomeKitProgressiveScrollTarget=horizontal ? grid : app;
+        daHomeKitProgressiveScrollHandler=()=>{
+          if(daHomeKitProgressiveRaf) return;
+          daHomeKitProgressiveRaf=requestAnimationFrame(()=>{
+            daHomeKitProgressiveRaf=0;
+            const currentGrid=app.querySelector('[data-home-kit-grid]');
+            const currentSentinel=app.querySelector('[data-home-kit-sentinel]');
+            if(!currentGrid || !currentSentinel) return;
+            if(daHomeKitProgressiveNearEnd(currentGrid,currentSentinel,horizontal)) daLoadNextHomeKitBatch();
+          });
+        };
+        daHomeKitProgressiveScrollTarget.addEventListener('scroll',daHomeKitProgressiveScrollHandler,{passive:true});
+        window.setTimeout(daHomeKitProgressiveScrollHandler,120);
       }
     
       function daHomeRecentCardHtml(product){
@@ -6202,6 +6344,7 @@
           <div class="da-home-bottom-safe" aria-hidden="true"></div>
         </div>`;
         setupBannerCarousels();
+        daSetupHomeKitProgressive();
         daSetupHomeSecondary();
         updateOfferCountdowns();
         updateMeta('Dona Antônia - Supermercado e Cestas','Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.','/');
@@ -6942,4 +7085,3 @@
 
 </body>
 </html>
- 
