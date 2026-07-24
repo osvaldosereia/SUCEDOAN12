@@ -78,6 +78,21 @@ function start() {
       exact?.click();
     }, 320);
   });
+  window.addEventListener('admin-v2-open-stock', event => {
+    const key = String(event.detail?.key || '');
+    const product = store.state.products.find(row => String(row.firebaseKey || row.id || row.codigo) === key);
+    const query = product?.codigo || product?.gtin || product?.ean || key;
+    document.querySelector('[data-route="operations"]')?.click();
+    const statusFilter = document.getElementById('stockStatusFilter');
+    const windowFilter = document.getElementById('stockWindowFilter');
+    if (statusFilter) { statusFilter.value = ''; statusFilter.dispatchEvent(new Event('change', { bubbles: true })); }
+    if (windowFilter) { windowFilter.value = ''; windowFilter.dispatchEvent(new Event('change', { bubbles: true })); }
+    const input = document.getElementById('stockSearch');
+    if (!input) return;
+    input.value = query;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    setTimeout(() => document.querySelector(`[data-stock-edit="${CSS.escape(key)}"]`)?.click(), 340);
+  });
   const card = [...view.querySelectorAll('.module-card')].find(row => row.textContent.includes('Leitura rápida'));
   if (card) {
     card.querySelector('p').textContent = 'A consulta abaixo está ativa para leitor de código, sem alterar dados.';
