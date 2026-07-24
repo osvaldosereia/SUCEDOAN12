@@ -36,45 +36,86 @@
   }
 }
 
-/* Nenhuma área de fotografia usa fundo cinza. */
+/* Linhas discretas verticais e horizontais entre os cards de produtos. */
+.product-grid{
+  gap:1px!important;
+  padding:1px;
+  background:#e3e7e4;
+  border-radius:16px;
+  overflow:hidden;
+}
+.product-grid>.product-card{
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.horizontal-rail{
+  gap:0!important;
+  border:1px solid #e3e7e4;
+  border-radius:16px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  background:#fff;
+}
+.horizontal-rail>.product-card{
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  flex:0 0 auto;
+}
+.horizontal-rail>.product-card+.product-card{border-left:1px solid #e3e7e4!important}
+
+/* Fundo cinza claro somente atrás das fotos dos produtos. */
 .product-card-media,
-.bundle-media,
-.category-card img,
 .basket-detail-media,
-.bundle-detail-hero>img,
 .product-detail-media,
 .product-detail-image,
-.home-deal-media,
-.purchase-journey-media,
-.banner-card,
 .checkout-item img,
 .checkout-offer-media,
-.bundle-confirm-media,
 .image-thumbs button,
 .bundle-line img{
-  background:#fff!important;
+  background:#f1f3f2!important;
 }
+.product-card-media>a,
+.product-detail-media,
+.product-detail-image,
+.image-thumbs button{overflow:hidden}
 .product-card-media img,
-.bundle-media img,
-.category-card img,
 .basket-detail-media img,
-.bundle-detail-hero>img,
 .product-detail-media>img,
 .product-detail-image img,
-.home-deal-product-img,
-.purchase-journey-media img,
 .checkout-item img,
 .checkout-offer-media img,
-.bundle-confirm-media img,
 .image-thumbs img,
 .bundle-line img{
-  padding:2px!important;
-  background:#fff!important;
+  width:100%!important;
+  height:100%!important;
+  padding:0!important;
+  background:transparent!important;
   object-fit:contain!important;
   mix-blend-mode:normal!important;
   filter:none!important;
 }
-.bundle-media img,.basket-detail-media img,.product-card-media img{transform:scale(1.015)}
+.product-card-media img,.basket-detail-media img{transform:scale(1.015)}
+
+/* Cestas, kits, categorias e banners continuam com fundo branco. */
+.bundle-media,
+.category-card img,
+.bundle-detail-hero>img,
+.purchase-journey-media,
+.banner-card,
+.bundle-confirm-media{
+  background:#fff!important;
+}
+.bundle-media img,
+.category-card img,
+.bundle-detail-hero>img,
+.purchase-journey-media img,
+.bundle-confirm-media img{
+  padding:2px!important;
+  background:#fff!important;
+  object-fit:contain!important;
+}
 
 /* Tipografia um pouco maior e mais confortável para leitura. */
 body{font-size:16px}
@@ -129,7 +170,7 @@ body{font-size:16px}
 
 /* Em aparelhos econômicos, evita efeitos caros sem comprometer o visual. */
 html[data-performance-profile="economy"] *{scroll-behavior:auto!important}
-html[data-performance-profile="economy"] .home-deal-icon-shell,
+html[data-performance-profile="economy"] .home-deal-badge,
 html[data-performance-profile="economy"] .product-card,
 html[data-performance-profile="economy"] .bundle-card{transition:none!important}
-html[data-performance-profile="economy"] .home-deal-icon-shell{filter:none!important}
+html[data-performance-profile="economy"] .home-deal-badge{box-shadow:none!important}
