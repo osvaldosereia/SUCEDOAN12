@@ -3,7 +3,7 @@ import {
   cleanCpf, escapeHtml, fmt, formatCep, formatCpf, formatPhone,
   readStorage, writeStorage
 } from './core.js';
-import { calculateCartPricing } from './commerce.js';
+import { calculateCartPricing, isAvailable } from './commerce.js';
 import {
   buildOrderPayload, buildWhatsAppMessage, enqueueOrder, lookupClientByCpf,
   openWhatsApp, processOrderQueue, validateCheckoutData
@@ -79,6 +79,54 @@ function totalsHtml(pricing) {
   return `<div class="checkout-totals"><div><span>Valor normal</span><strong>${fmt(pricing.subtotalBefore)}</strong></div>${pricing.couponDiscount > 0 ? `<div class="discount"><span>Desconto do cupom</span><strong>− ${fmt(pricing.couponDiscount)}</strong></div>` : ''}${pricing.kitDiscount > 0 ? `<div class="discount"><span>Desconto do kit</span><strong>− ${fmt(pricing.kitDiscount)}</strong></div>` : ''}${pricing.expiryBulkDiscount > 0 ? `<div class="discount"><span>Desconto por validade</span><strong>− ${fmt(pricing.expiryBulkDiscount)}</strong></div>` : ''}${pricing.wholesaleDiscount > 0 ? `<div class="discount"><span>Desconto de atacado</span><strong>− ${fmt(pricing.wholesaleDiscount)}</strong></div>` : ''}<div class="total"><span>Total final</span><strong>${fmt(pricing.total)}</strong></div></div>`;
 }
 
+function productRoute(product) {
+  return encodeURIComponent(product?.firebaseKey || product?.id || product?.codigo || '');
+}
+
+function checkoutOfferCard(product) {
+  const oldPrice = Number(product.oldPrice || product.price || 0);
+  const currentPrice = Number(product.price || 0);
+  return `<article class="checkout-offer-card">
+    <a class="checkout-offer-media" href="#/produto/${productRoute(product)}"><img loading="lazy" decoding="async" src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}"></a>
+    <div class="checkout-offer-copy">
+      <a href="#/produto/${productRoute(product)}">${escapeHtml(product.name)}</a>
+      <div class="checkout-offer-bottom"><span>${oldPrice > currentPrice ? `<s>${fmt(oldPrice)}</s>` : ''}<strong>${fmt(currentPrice)}</strong></span><button data-action="inc" data-id="${escapeHtml(product.id)}" aria-label="Adicionar ${escapeHtml(product.name)}">+</button></div>
+    </div>
+  </article>`;
+}
+
+function checkoutOffersHtml(state, items) {
+  const cartIds = new Set(items.map(item => String(item.id)));
+  const offers = (state.products || [])
+    .filter(product => isAvailable(product) && !cartIds.has(String(product.id)))
+    .sort((a, b) => {
+      const aDiscount = Number(a.discountPercent || 0) + (Number(a.oldPrice || 0) > Number(a.price || 0) ? 1000 : 0);
+      const bDiscount = Number(b.discountPercent || 0) + (Number(b.oldPrice || 0) > Number(b.price || 0) ? 1000 : 0);
+      return bDiscount - aDiscount || Number(a.price || 0) - Number(b.price || 0) || a.name.localeCompare(b.name, 'pt-BR');
+    })
+    .slice(0, 12);
+  if (!offers.length) return '';
+  return `<section class="checkout-section checkout-offers-review">
+    <div class="checkout-title">Ofertas para completar</div>
+    <p>Adicione produtos sem sair da revisão da compra.</p>
+    <div class="checkout-offers-rail">${offers.map(checkoutOfferCard).join('')}</div>
+    <div class="checkout-offers-hint">Deslize para ver mais ofertas</div>
+  </section>`;
+}
+
+function couponHtml(activeCoupon) {
+  if (activeCoupon) {
+    return `<div class="active-coupon checkout-active-coupon"><span><strong>${escapeHtml(activeCoupon.codigo)}</strong><small>Cupom de desconto aplicado</small></span><button class="text-button" data-action="remove-coupon">Remover</button></div>`;
+  }
+  return `<details class="checkout-coupon-details">
+    <summary><span><strong>Tem cupom de desconto?</strong><small>Toque aqui para digitar o código</small></span><b aria-hidden="true">+</b></summary>
+    <div class="checkout-coupon-fields">
+      <label for="coupon-code">Cupom de desconto</label>
+      <div class="lookup-row"><input id="coupon-code" class="field" placeholder="Digite o código do cupom"><button class="secondary-button" data-action="apply-coupon">Aplicar cupom</button></div>
+    </div>
+  </details>`;
+}
+
 export function createCheckout({ store, cart, events, ui, personalization }) {
   const drawer = document.getElementById('checkout-drawer');
   const content = document.getElementById('checkout-content');
@@ -89,7 +137,7 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
 
   function saveClientFromForm() {
     const form = readForm();
-    writeStorage(CONFIG.STORAGE.CHECKOUT_CLIENT, { ...form, savedAt: Date.now() });
+    writeStorage(CONFIG.STORAGE.CHECKOUT_CLIENT, { ...savedClient(), ...form, savedAt: Date.now() });
   }
 
   function readForm() {
@@ -98,8 +146,8 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
       name: value('checkout-name'), cpf: value('checkout-cpf'), phone: value('checkout-phone'), email: value('checkout-email'),
       cep: value('checkout-cep'), city: value('checkout-city'), district: value('checkout-district'), street: value('checkout-street'),
       block: value('checkout-block'), number: value('checkout-number'), reference: value('checkout-reference'),
-      payment: document.querySelector('input[name="payment"]:checked')?.value || 'DINHEIRO',
-      deliveryDate: document.querySelector('input[name="deliveryDate"]:checked')?.value || ''
+      payment: document.querySelector('input[name="payment"]:checked')?.value || store.getState().checkoutPayment || 'DINHEIRO',
+      deliveryDate: document.querySelector('input[name="deliveryDate"]:checked')?.value || savedClient().deliveryDate || ''
     };
   }
 
@@ -110,12 +158,18 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
     const client = savedClient();
     const lookupReady = ['new', 'existing'].includes(state.customerLookupStatus);
     const activeCoupon = state.coupons.find(coupon => String(coupon.codigo).toUpperCase() === state.activeCouponCode);
+    const availableDates = deliveryDates();
+    const selectedDelivery = client.deliveryDate || dateValue(availableDates[0]);
+
     content.innerHTML = `<div id="checkout-errors" class="checkout-errors" hidden></div>
-      <section class="checkout-section"><h2>1. Revise sua compra</h2>${items.length ? `<div class="checkout-items">${items.map(item => `<div class="checkout-item"><img src="${escapeHtml(item.product.img)}" alt="${escapeHtml(item.product.name)}"><div><strong>${escapeHtml(item.product.name)}</strong><small>${fmt(item.product.price)} cada</small></div><div class="qty-control"><button data-action="dec" data-id="${escapeHtml(item.id)}">−</button><span>${item.qty}</span><button data-action="inc" data-id="${escapeHtml(item.id)}">+</button></div></div>`).join('')}</div>` : '<p>Sua compra está vazia.</p>'}<button class="text-button danger" data-action="clear-cart">Limpar compra</button></section>
-      <section class="checkout-section"><h2>2. Identifique seu cadastro</h2><p>Digite seu CPF para buscar os dados salvos no atendimento.</p><div class="lookup-row"><input id="checkout-cpf" class="field" inputmode="numeric" maxlength="14" placeholder="CPF" value="${escapeHtml(formatCpf(state.customerLookupCpf || client.cpf || ''))}"><button class="secondary-button" data-action="lookup-client">Continuar</button></div><div id="lookup-status" class="lookup-status"></div></section>
-      ${lookupReady ? `<section class="checkout-section"><h2>3. Entrega e dados</h2><div class="delivery-options">${deliveryDates().map((date, index) => `<label><input type="radio" name="deliveryDate" value="${dateValue(date)}" ${index === 0 ? 'checked' : ''}><span>${escapeHtml(dateLabel(date, index))}</span></label>`).join('')}</div><div class="form-grid"><label>Nome completo<input id="checkout-name" class="field" value="${escapeHtml(client.name || '')}"></label><label>WhatsApp<input id="checkout-phone" class="field" inputmode="tel" value="${escapeHtml(formatPhone(client.phone || ''))}"></label><label>E-mail<input id="checkout-email" class="field" type="email" value="${escapeHtml(client.email || '')}"></label><label>CEP<input id="checkout-cep" class="field" inputmode="numeric" value="${escapeHtml(formatCep(client.cep || ''))}"></label><label>Cidade<select id="checkout-city" class="field"><option value="">Selecione</option><option ${client.city === 'Cuiabá' ? 'selected' : ''}>Cuiabá</option><option ${client.city === 'Várzea Grande' ? 'selected' : ''}>Várzea Grande</option></select></label><label>Bairro<input id="checkout-district" class="field" value="${escapeHtml(client.district || '')}"></label><label class="wide">Rua ou avenida<input id="checkout-street" class="field" value="${escapeHtml(client.street || '')}"></label><label>Quadra<input id="checkout-block" class="field" value="${escapeHtml(client.block || '')}"></label><label>Número<input id="checkout-number" class="field" value="${escapeHtml(client.number || '')}"></label><label class="wide">Referência<input id="checkout-reference" class="field" value=""></label></div><fieldset><legend>Forma de pagamento</legend><div class="payment-options">${paymentOptions(state.checkoutPayment || 'DINHEIRO')}</div></fieldset></section>
-      <section class="checkout-section"><h2>4. Cupom</h2>${activeCoupon ? `<div class="active-coupon"><span><strong>${escapeHtml(activeCoupon.codigo)}</strong><small>Cupom aplicado</small></span><button class="text-button" data-action="remove-coupon">Remover</button></div>` : `<div class="lookup-row"><input id="coupon-code" class="field" placeholder="Digite o código"><button class="secondary-button" data-action="apply-coupon">Aplicar</button></div>`}</section>
-      <section class="checkout-section"><h2>5. Total</h2>${totalsHtml(pricing)}${pricing.subtotalBefore < CONFIG.MIN_ORDER ? `<div class="minimum-order">Faltam <strong>${fmt(CONFIG.MIN_ORDER - pricing.subtotalBefore)}</strong> para atingir o pedido mínimo.</div>` : ''}<button id="send-order" class="send-order" data-action="send-order" ${items.length && pricing.subtotalBefore >= CONFIG.MIN_ORDER ? '' : 'disabled'}>Pedir no WhatsApp</button></section>` : '<section class="checkout-section"><p>Depois da consulta do CPF, os campos de entrega serão exibidos.</p></section>'}`;
+      <section class="checkout-section checkout-review-section"><h2>1. Revise sua compra</h2>${items.length ? `<div class="checkout-items">${items.map(item => `<div class="checkout-item"><img src="${escapeHtml(item.product.img)}" alt="${escapeHtml(item.product.name)}"><div><strong>${escapeHtml(item.product.name)}</strong><small>${fmt(item.product.price)} cada</small></div><div class="qty-control"><button data-action="dec" data-id="${escapeHtml(item.id)}">−</button><span>${item.qty}</span><button data-action="inc" data-id="${escapeHtml(item.id)}">+</button></div></div>`).join('')}</div>` : '<p>Sua compra está vazia.</p>'}<button class="text-button danger" data-action="clear-cart">Limpar compra</button></section>
+      ${checkoutOffersHtml(state, items)}
+      <section class="checkout-section checkout-summary-before-cpf"><h2>2. Resumo da compra</h2><p>Confira o valor antes de informar o CPF.</p><div class="checkout-total-highlight"><span>Total da compra</span><strong>${fmt(pricing.total)}</strong></div>${couponHtml(activeCoupon)}${pricing.subtotalBefore < CONFIG.MIN_ORDER ? `<div class="minimum-order">Faltam <strong>${fmt(CONFIG.MIN_ORDER - pricing.subtotalBefore)}</strong> para atingir o pedido mínimo.</div>` : '<div class="minimum-order reached">Pedido mínimo atingido.</div>'}</section>
+      <section class="checkout-section checkout-cpf-review"><h2>3. Identifique seu cadastro</h2><p>Digite seu CPF para localizar seus dados ou iniciar um novo cadastro.</p><div class="lookup-row"><input id="checkout-cpf" class="field" inputmode="numeric" maxlength="14" placeholder="CPF" value="${escapeHtml(formatCpf(state.customerLookupCpf || client.cpf || ''))}"><button class="secondary-button" data-action="lookup-client">Continuar</button></div><div id="lookup-status" class="lookup-status"></div></section>
+      ${lookupReady ? `<section class="checkout-section checkout-delivery-review"><h2>4. Entrega</h2><p>Escolha uma das próximas datas disponíveis.</p><div class="delivery-options">${availableDates.map((date, index) => `<label><input type="radio" name="deliveryDate" value="${dateValue(date)}" ${dateValue(date) === selectedDelivery ? 'checked' : ''}><span>${escapeHtml(dateLabel(date, index))}</span></label>`).join('')}</div></section>
+      <section class="checkout-section checkout-details-review"><h2>5. Dados para entrega</h2><div class="form-grid"><label>Nome completo<input id="checkout-name" class="field" value="${escapeHtml(client.name || '')}"></label><label>WhatsApp<input id="checkout-phone" class="field" inputmode="tel" value="${escapeHtml(formatPhone(client.phone || ''))}"></label><label>E-mail<input id="checkout-email" class="field" type="email" value="${escapeHtml(client.email || '')}"></label><label>CEP<input id="checkout-cep" class="field" inputmode="numeric" value="${escapeHtml(formatCep(client.cep || ''))}"></label><label>Cidade<select id="checkout-city" class="field"><option value="">Selecione</option><option ${client.city === 'Cuiabá' ? 'selected' : ''}>Cuiabá</option><option ${client.city === 'Várzea Grande' ? 'selected' : ''}>Várzea Grande</option></select></label><label>Bairro<input id="checkout-district" class="field" value="${escapeHtml(client.district || '')}"></label><label class="wide">Rua ou avenida<input id="checkout-street" class="field" value="${escapeHtml(client.street || '')}"></label><label>Quadra<input id="checkout-block" class="field" value="${escapeHtml(client.block || '')}"></label><label>Número<input id="checkout-number" class="field" value="${escapeHtml(client.number || '')}"></label><label class="wide">Referência<input id="checkout-reference" class="field" value="${escapeHtml(client.reference || '')}"></label></div><fieldset><legend>Forma de pagamento</legend><div class="payment-options">${paymentOptions(state.checkoutPayment || client.payment || 'DINHEIRO')}</div></fieldset></section>
+      <section class="checkout-section checkout-total-review"><h2>6. Finalizar pedido</h2>${totalsHtml(pricing)}${pricing.subtotalBefore < CONFIG.MIN_ORDER ? `<div class="minimum-order">Faltam <strong>${fmt(CONFIG.MIN_ORDER - pricing.subtotalBefore)}</strong> para atingir o pedido mínimo.</div>` : ''}<button id="send-order" class="send-order" data-action="send-order" ${items.length && pricing.subtotalBefore >= CONFIG.MIN_ORDER ? '' : 'disabled'}>Pedir no WhatsApp</button></section>` : '<section class="checkout-section checkout-flow-hint"><p>Após consultar o CPF, serão exibidos entrega, endereço e forma de pagamento.</p></section>'}`;
+    content.classList.add('checkout-reviewed');
     ui.bindImageFallbacks(content);
   }
 
@@ -208,11 +262,20 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
 
   function handleInput(event) {
     const target = event.target;
-    if (!target?.id?.startsWith('checkout-')) return;
+    if (!target) return;
+    if (target.name === 'payment') {
+      store.mutate(state => { state.checkoutPayment = target.value; }, 'checkout:payment');
+      saveClientFromForm();
+      return;
+    }
+    if (target.name === 'deliveryDate') {
+      saveClientFromForm();
+      return;
+    }
+    if (!target.id?.startsWith('checkout-')) return;
     if (target.id === 'checkout-cpf') target.value = formatCpf(target.value);
     if (target.id === 'checkout-phone') target.value = formatPhone(target.value);
     if (target.id === 'checkout-cep') target.value = formatCep(target.value);
-    if (target.name === 'payment') store.mutate(state => { state.checkoutPayment = target.value; }, 'checkout:payment');
     saveClientFromForm();
   }
 
