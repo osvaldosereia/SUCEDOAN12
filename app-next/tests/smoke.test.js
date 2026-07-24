@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const productionRoot = path.resolve(root, '..');
 const required = [
   'index.html', 'styles/app.css', 'styles/home-parity.css', 'styles/checkout-flow.css', 'styles/bundle-confirmation.css',
   'src/config.js', 'src/core.js', 'src/catalog.js', 'src/commerce.js', 'src/integrations.js',
@@ -12,11 +13,32 @@ const required = [
 for (const file of required) {
   if (!fs.existsSync(path.join(root, file))) throw new Error(`Arquivo ausente: ${file}`);
 }
-const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-if (!index.includes('type="module" src="src/main.js"')) throw new Error('index.html não carrega o módulo principal');
-if (!index.includes('styles/bundle-confirmation.css')) throw new Error('index.html não carrega os estilos da confirmação');
-if (!index.includes('styles/checkout-flow.css')) throw new Error('index.html não carrega os estilos do checkout');
-if (!index.includes('noindex, nofollow')) throw new Error('prévia precisa permanecer fora da indexação');
+
+const previewIndex = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+if (!previewIndex.includes('type="module" src="src/main.js"')) throw new Error('prévia não carrega o módulo principal');
+if (!previewIndex.includes('styles/bundle-confirmation.css')) throw new Error('prévia não carrega os estilos da confirmação');
+if (!previewIndex.includes('styles/checkout-flow.css')) throw new Error('prévia não carrega os estilos do checkout');
+if (!previewIndex.includes('noindex, nofollow')) throw new Error('prévia precisa permanecer fora da indexação');
+
+const productionIndex = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
+for (const fragment of [
+  '2026-07-24-modular-production-v1',
+  'content="index, follow"',
+  'app-next/styles/app.css',
+  'type="module" src="app-next/src/main.js"',
+  'window.__DA_PRODUCTION__ = true',
+  'previewModular = false',
+  'preview_modular = false'
+]) {
+  if (!productionIndex.includes(fragment)) throw new Error(`Ativação de produção incompleta: ${fragment}`);
+}
+if (productionIndex.includes('noindex, nofollow')) throw new Error('index da raiz não pode bloquear indexação');
+
+const config = fs.readFileSync(path.join(root, 'src/config.js'), 'utf8');
+for (const fragment of ['IS_PRODUCTION', "PREFIX: IS_PRODUCTION ? 'da_v2_' : 'da_next_'", 'modular-production-v1']) {
+  if (!config.includes(fragment)) throw new Error(`Separação de ambientes incompleta: ${fragment}`);
+}
+
 const main = fs.readFileSync(path.join(root, 'src/main.js'), 'utf8');
 for (const action of ['bundle-confirm-checkout', 'bundle-confirm-continue', 'bundle-confirm-undo']) {
   if (!main.includes(action)) throw new Error(`Ação ausente na confirmação: ${action}`);
@@ -43,4 +65,4 @@ for (const file of jsFiles) {
 }
 await import('../src/ui.js');
 await import('../src/checkout.js');
-console.log(`Smoke test concluído: ${required.length} arquivos e ${jsFiles.length} módulos validados.`);
+console.log(`Smoke test concluído: produção, prévia, ${required.length} arquivos e ${jsFiles.length} módulos validados.`);
