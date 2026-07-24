@@ -6,6 +6,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   stockWriteMode: false,
   collectionsWriteMode: false,
   offerWriteMode: false,
+  registryWriteMode: false,
   pageSize: 50,
   githubToken: '',
   githubOwner: 'osvaldosereia',
