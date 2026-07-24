@@ -1,39 +1,40 @@
 .sidebar-cart-total{display:none}
 
-/* Três atalhos comerciais da home: visual limpo e sem excesso de informação */
-.home-deal-grid{margin-top:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+/* Três atalhos comerciais da home: imagem grande à esquerda e conteúdo à direita */
+.home-deal-grid{margin-top:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
 .home-deal-card{
   --deal:#14532d;
   --deal-soft:#eef8f1;
   position:relative;
-  min-height:158px;
-  padding:18px;
+  min-height:174px;
+  padding:14px;
   border:1px solid var(--line);
   border-radius:24px;
-  background:#fff;
+  background:linear-gradient(135deg,#fff 0%,#fff 66%,var(--deal-soft) 100%);
   color:var(--ink);
   display:grid;
-  grid-template-columns:minmax(0,1fr) 104px;
+  grid-template-columns:132px minmax(0,1fr);
   align-items:center;
-  gap:15px;
+  gap:16px;
   overflow:hidden;
-  box-shadow:0 8px 24px rgba(16,24,40,.06);
+  box-shadow:0 10px 28px rgba(16,24,40,.07);
 }
-.home-deal-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--deal)}
+.home-deal-card::after{content:'';position:absolute;right:-42px;bottom:-54px;width:126px;height:126px;border-radius:999px;background:var(--deal-soft);opacity:.72;z-index:0}
 .home-deal-card.deal-50{--deal:#c12646;--deal-soft:#fff0f3}
 .home-deal-card.deal-40{--deal:#245f9b;--deal-soft:#eef5fc}
 .home-deal-card.deal-5{--deal:#178553;--deal-soft:#edf9f2}
-.home-deal-copy{min-width:0;display:grid;align-content:center;gap:7px;padding-left:3px}
-.home-deal-badge{width:max-content;min-height:27px;padding:0 9px;border-radius:999px;background:var(--deal-soft);color:var(--deal);font-size:10px;font-weight:800;letter-spacing:.04em;display:inline-flex;align-items:center}
-.home-deal-copy strong{font-size:22px;line-height:1.02;font-weight:750;letter-spacing:-.035em;color:var(--ink)}
-.home-deal-copy small{max-width:220px;color:var(--muted);font-size:12px;line-height:1.4}
-.home-deal-cta{width:max-content;margin-top:3px;display:inline-flex;align-items:center;gap:7px;color:var(--deal);font-size:11.5px;font-weight:750}
-.home-deal-cta b{width:25px;height:25px;border-radius:999px;background:var(--deal-soft);display:grid;place-items:center;font-size:13px}
-.home-deal-media{width:104px;height:104px;padding:8px;border-radius:22px;background:var(--deal-soft);display:grid;place-items:center}
-.home-deal-product-img{width:100%;height:100%;padding:2px;border-radius:17px;object-fit:contain;background:transparent;mix-blend-mode:multiply!important;filter:none!important}
+.home-deal-media{position:relative;z-index:1;width:132px;aspect-ratio:1/1;padding:8px;border:1px solid rgba(15,23,42,.05);border-radius:22px;background:#fff;display:grid;place-items:center;box-shadow:0 8px 22px rgba(16,24,40,.08)}
+.home-deal-product-img{width:100%;height:100%;padding:2px;border-radius:16px;object-fit:contain;background:#fff;mix-blend-mode:multiply!important;filter:none!important}
+.home-deal-copy{position:relative;z-index:1;min-width:0;display:grid;align-content:center;gap:7px}
+.home-deal-badge{width:max-content;min-height:28px;padding:0 10px;border-radius:999px;background:var(--deal-soft);color:var(--deal);font-size:10px;font-weight:850;letter-spacing:.045em;display:inline-flex;align-items:center}
+.home-deal-copy strong{font-size:22px;line-height:1.02;font-weight:780;letter-spacing:-.04em;color:var(--ink)}
+.home-deal-copy small{max-width:220px;color:var(--muted);font-size:12px;line-height:1.42}
+.home-deal-cta{width:max-content;margin-top:3px;display:inline-flex;align-items:center;gap:7px;color:var(--deal);font-size:11.5px;font-weight:780}
+.home-deal-cta b{width:26px;height:26px;border-radius:999px;background:var(--deal-soft);display:grid;place-items:center;font-size:13px;transition:transform .16s ease}
 @media(hover:hover){
-  .home-deal-card:hover{transform:translateY(-2px);border-color:var(--line-strong);box-shadow:0 14px 30px rgba(16,24,40,.10)}
-  .home-deal-card:hover .home-deal-cta b{transform:translateX(2px)}
+  .home-deal-card:hover{transform:translateY(-3px);border-color:rgba(15,23,42,.14);box-shadow:0 17px 38px rgba(16,24,40,.11)}
+  .home-deal-card:hover .home-deal-media{transform:scale(1.025)}
+  .home-deal-card:hover .home-deal-cta b{transform:translateX(3px)}
 }
 
 .payment-notices{margin-top:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -54,17 +55,15 @@
 .purchase-journey-media img{width:100%;height:100%;object-fit:contain;padding:6px;mix-blend-mode:multiply}
 
 @media(max-width:767px){
-  .home-deal-grid{grid-template-columns:1fr;gap:10px}
-  .home-deal-card{min-height:118px;padding:13px 14px;grid-template-columns:minmax(0,1fr) 84px;gap:11px;border-radius:19px}
-  .home-deal-card::before{width:4px}
+  .home-deal-grid{grid-template-columns:1fr;gap:11px}
+  .home-deal-card{min-height:142px;padding:11px;grid-template-columns:112px minmax(0,1fr);gap:13px;border-radius:20px}
+  .home-deal-media{width:112px;border-radius:18px;padding:6px}
   .home-deal-copy{gap:5px}
-  .home-deal-badge{min-height:23px;padding:0 7px;font-size:8.5px}
-  .home-deal-copy strong{font-size:18px}
-  .home-deal-copy small{font-size:10.5px;line-height:1.32}
+  .home-deal-badge{min-height:24px;padding:0 8px;font-size:8.5px}
+  .home-deal-copy strong{font-size:19px}
+  .home-deal-copy small{font-size:10.5px;line-height:1.34}
   .home-deal-cta{font-size:10.5px}
-  .home-deal-cta b{width:22px;height:22px}
-  .home-deal-media{width:84px;height:84px;padding:6px;border-radius:18px}
-  .home-deal-product-img{border-radius:14px}
+  .home-deal-cta b{width:23px;height:23px}
   .payment-notices{grid-template-columns:1fr;gap:9px}
   .payment-notice{min-height:82px;padding:12px}
   .purchase-journey-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
@@ -73,6 +72,12 @@
   .purchase-journey-card small{display:none}
   .purchase-journey-card em{font-size:9.5px}
   .purchase-journey-media{width:58px;border-radius:14px}
+}
+
+@media(min-width:768px) and (max-width:1050px){
+  .home-deal-grid{grid-template-columns:1fr}
+  .home-deal-card{grid-template-columns:150px minmax(0,1fr)}
+  .home-deal-media{width:150px}
 }
 
 @media(min-width:768px){
