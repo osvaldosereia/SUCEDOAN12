@@ -128,6 +128,7 @@ export class PublishModule {
       this.onToast(error?.message || String(error), 'error');
     } finally {
       this.busy = false;
+      this.store.emit('dirty');
       this.render();
     }
   }
