@@ -45,7 +45,6 @@ jobs:
           set -euo pipefail
           rm -f app-next/.patch/parity.patch.gz
           rmdir app-next/.patch 2>/dev/null || true
-          rm -f .github/workflows/app-next-apply-parity.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
