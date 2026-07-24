@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#161616">
+  <title>Dona Antônia — Admin V2</title>
+  <link rel="stylesheet" href="./assets/admin.css">
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <aside class="sidebar" id="sidebar" aria-label="Menu principal">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">DA</div>
+        <div><strong>Dona Antônia</strong><span>Admin V2 · ambiente paralelo</span></div>
+      </div>
+      <nav class="main-nav" id="mainNav">
+        <button class="nav-item active" data-route="dashboard" type="button"><span class="nav-icon">⌂</span><span>Visão geral</span></button>
+        <button class="nav-item" data-route="products" type="button"><span class="nav-icon">□</span><span>Produtos</span></button>
+        <button class="nav-item" data-route="operations" type="button"><span class="nav-icon">⇄</span><span>Operações</span></button>
+        <button class="nav-item" data-route="promotions" type="button"><span class="nav-icon">%</span><span>Vendas e promoções</span></button>
+        <button class="nav-item" data-route="registries" type="button"><span class="nav-icon">≡</span><span>Cadastros</span></button>
+        <button class="nav-item" data-route="settings" type="button"><span class="nav-icon">⚙</span><span>Configurações</span></button>
+      </nav>
+      <div class="sidebar-status">
+        <span class="status-dot" id="sidebarStatusDot"></span>
+        <div><strong id="sidebarStatusTitle">Inicializando</strong><span id="sidebarStatusText">Conectando às fontes de dados…</span></div>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <button class="icon-button mobile-menu" id="mobileMenuButton" type="button" aria-label="Abrir menu">☰</button>
+        <div class="topbar-title"><h1 id="pageTitle">Visão geral</h1><p id="pageSubtitle">O que precisa da sua atenção agora.</p></div>
+        <div class="topbar-actions">
+          <button class="button secondary" id="reloadButton" type="button">Atualizar dados</button>
+          <button class="button primary" id="publishButton" type="button" disabled>Publicar alterações</button>
+        </div>
+      </header>
+
+      <div class="environment-banner" role="status"><strong>Versão paralela em desenvolvimento.</strong> O admin atual permanece intacto. Gravações estão bloqueadas por padrão nesta etapa.</div>
+
+      <main class="main-content" id="mainContent" tabindex="-1">
+        <section class="view active" data-view="dashboard" aria-labelledby="pageTitle">
+          <div class="attention-grid" id="dashboardMetrics"></div>
+          <div class="content-grid two-columns">
+            <section class="panel">
+              <div class="panel-header"><div><h2>Prioridades</h2><p>Itens que podem impedir vendas ou publicação.</p></div></div>
+              <div class="priority-list" id="priorityList"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><div><h2>Estado do sistema</h2><p>Fontes carregadas e alterações locais.</p></div></div>
+              <div class="system-list" id="systemList"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" data-view="products" aria-labelledby="pageTitle">
+          <div class="section-toolbar">
+            <div class="search-field"><span aria-hidden="true">⌕</span><input id="productSearch" type="search" placeholder="Buscar por nome, código, EAN, marca…" autocomplete="off"></div>
+            <button class="button secondary" id="openFiltersButton" type="button">Filtros</button>
+            <button class="button primary" id="newProductButton" type="button">Novo produto</button>
+          </div>
+          <div class="filter-bar" id="filterBar" hidden>
+            <label>Categoria<select id="categoryFilter"><option value="">Todas</option></select></label>
+            <label>Status<select id="statusFilter"><option value="">Todos</option><option value="active">Ativos</option><option value="inactive">Inativos</option><option value="no-stock">Sem estoque</option></select></label>
+            <label>Pendência<select id="qualityFilter"><option value="">Todas</option><option value="missing-image">Sem imagem</option><option value="missing-ncm">Sem NCM</option><option value="missing-ean">Sem EAN</option><option value="incomplete">Cadastro incompleto</option></select></label>
+            <label>Ordenar<select id="sortFilter"><option value="name">Nome</option><option value="stock-asc">Menor estoque</option><option value="updated-desc">Atualizados recentemente</option></select></label>
+            <button class="button ghost" id="clearFiltersButton" type="button">Limpar</button>
+          </div>
+          <section class="panel product-panel">
+            <div class="table-summary"><div><strong id="productResultCount">0</strong><span> produtos encontrados</span></div><div class="summary-actions"><span class="dirty-indicator" id="dirtyIndicator">Nenhuma alteração</span></div></div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Produto</th><th>Código / EAN</th><th>Preço</th><th>Estoque</th><th>Validade</th><th>Status</th><th>Pendências</th><th></th></tr></thead>
+                <tbody id="productsTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="productsPagination"></div>
+          </section>
+        </section>
+
+        <section class="view" data-view="operations">
+          <div class="module-cards">
+            <article class="module-card"><span class="module-icon">NF</span><div><h2>Entrada de NF-e</h2><p>Importação fiscal será migrada preservando duplicidade, lotes, validade e estoque.</p></div><span class="badge warning">Próxima fase</span></article>
+            <article class="module-card"><span class="module-icon">▦</span><div><h2>Leitura rápida</h2><p>A funcionalidade escondida será reavaliada antes de ser ativada ou removida.</p></div><span class="badge neutral">Em avaliação</span></article>
+            <article class="module-card"><span class="module-icon">!</span><div><h2>Estoque e validade</h2><p>Fila operacional única para estoque baixo, vencidos e próximos do vencimento.</p></div><span class="badge warning">Próxima fase</span></article>
+          </div>
+        </section>
+
+        <section class="view" data-view="promotions">
+          <div class="module-cards">
+            <article class="module-card"><span class="module-icon">CB</span><div><h2>Cestas básicas</h2><p>Editor com busca lateral e validação de produtos.</p></div><span class="badge warning">Próxima fase</span></article>
+            <article class="module-card"><span class="module-icon">KT</span><div><h2>Kits promocionais</h2><p>Preço, desconto, estoque disponível e fila do Instagram em um fluxo único.</p></div><span class="badge warning">Próxima fase</span></article>
+            <article class="module-card"><span class="module-icon">%</span><div><h2>Ofertas automáticas</h2><p>Regras e histórico serão incorporados sem injeção dinâmica de telas.</p></div><span class="badge warning">Próxima fase</span></article>
+          </div>
+        </section>
+
+        <section class="view" data-view="registries">
+          <div class="module-cards">
+            <article class="module-card"><span class="module-icon">CT</span><div><h2>Categorias</h2><p>Hierarquia de categoria, subcategoria e subsubcategoria.</p></div><span class="badge warning">Próxima fase</span></article>
+            <article class="module-card"><span class="module-icon">MC</span><div><h2>Marcas e fornecedores</h2><p>Cadastros auxiliares com busca, padronização e uso nos produtos.</p></div><span class="badge warning">Próxima fase</span></article>
+            <article class="module-card"><span class="module-icon">TG</span><div><h2>Tags</h2><p>Marcadores universais sem duplicações.</p></div><span class="badge warning">Próxima fase</span></article>
+          </div>
+        </section>
+
+        <section class="view" data-view="settings">
+          <div class="content-grid two-columns">
+            <section class="panel">
+              <div class="panel-header"><div><h2>Ambiente</h2><p>Configurações da versão paralela.</p></div></div>
+              <div class="form-stack">
+                <label>Firebase URL<input id="firebaseUrlSetting" type="url"></label>
+                <label>Nó de produtos<input id="productsNodeSetting" type="text"></label>
+                <label class="switch-row"><span><strong>Permitir gravações</strong><small>Mantenha desligado durante a validação da V2.</small></span><input id="writeModeSetting" type="checkbox"></label>
+              </div>
+            </section>
+            <section class="panel danger-panel">
+              <div class="panel-header"><div><h2>Ferramentas avançadas</h2><p>Recursos técnicos ficarão isolados da operação diária.</p></div></div>
+              <p class="muted">GitHub, Make, Bling, importações, exportações, diagnóstico e JSON serão migrados para esta área, com confirmações específicas.</p>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="mobile-overlay" id="mobileOverlay" hidden></div>
+  <aside class="editor-drawer" id="productEditor" aria-hidden="true" aria-labelledby="editorTitle">
+    <div class="editor-header"><div><span class="eyebrow">Cadastro do produto</span><h2 id="editorTitle">Produto</h2><p id="editorSubtitle"></p></div><button class="icon-button" id="closeEditorButton" type="button" aria-label="Fechar editor">×</button></div>
+    <div class="editor-tabs" id="editorTabs">
+      <button class="active" data-editor-tab="essential" type="button">Essencial</button>
+      <button data-editor-tab="commercial" type="button">Preço e estoque</button>
+      <button data-editor-tab="classification" type="button">Classificação</button>
+      <button data-editor-tab="content" type="button">Imagem e conteúdo</button>
+      <button data-editor-tab="logistics" type="button">Fiscal e logística</button>
+    </div>
+    <form class="editor-body" id="productForm">
+      <section class="editor-section active" data-editor-section="essential"></section>
+      <section class="editor-section" data-editor-section="commercial"></section>
+      <section class="editor-section" data-editor-section="classification"></section>
+      <section class="editor-section" data-editor-section="content"></section>
+      <section class="editor-section" data-editor-section="logistics"></section>
+    </form>
+    <div class="editor-footer"><button class="button secondary" id="discardProductButton" type="button">Descartar alterações</button><button class="button primary" id="saveProductButton" type="button">Salvar produto</button></div>
+  </aside>
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
