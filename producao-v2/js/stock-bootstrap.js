@@ -1,3 +1,4 @@
+import './collections-bootstrap.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
