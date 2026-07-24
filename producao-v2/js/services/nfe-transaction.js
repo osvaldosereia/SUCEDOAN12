@@ -1,5 +1,6 @@
 import { validateProduct } from '../core/catalog.js';
-import { buildNfeImportRecord, digits, round } from '../core/nfe.js';
+import { digits, round } from '../core/nfe.js';
+import { buildNfeImportRecord } from '../core/nfe-simulation.js';
 import { clone, number, productKey, text } from '../core/utils.js';
 import { loadProduct, saveProduct } from './firebase.js';
 import { archiveNfeXml, inspectNfeImport, nfeXmlPath, writeNfeImportRecord } from './github.js';
