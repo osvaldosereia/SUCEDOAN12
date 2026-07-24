@@ -1,6 +1,7 @@
+import { validateProduct } from '../core/catalog.js';
 import {
   debounce, escapeHtml, formatDate, isActive, money, normalizeSearch, number,
-  productCode, productImage, productKey, productMissing, productName, text,
+  productCode, productImage, productKey, productName, text,
 } from '../core/utils.js';
 
 const PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="#f1f2ef"/><text x="50%" y="53%" text-anchor="middle" fill="#899087" font-family="Arial" font-size="12">sem foto</text></svg>')}`;
@@ -80,6 +81,10 @@ export class ProductsModule {
     this.elements.categoryFilter.value = categories.includes(current) ? current : '';
   }
 
+  productValidation(product) {
+    return validateProduct(product, this.store.state.config);
+  }
+
   filteredProducts() {
     const filters = this.store.state.filters;
     const query = normalizeSearch(filters.query);
@@ -94,10 +99,18 @@ export class ProductsModule {
     if (filters.status === 'active') products = products.filter(isActive);
     if (filters.status === 'inactive') products = products.filter(product => !isActive(product));
     if (filters.status === 'no-stock') products = products.filter(product => number(product.estoque) <= 0);
-    if (filters.quality === 'missing-image') products = products.filter(product => !productImage(product));
-    if (filters.quality === 'missing-ncm') products = products.filter(product => !text(product.ncm));
-    if (filters.quality === 'missing-ean') products = products.filter(product => !text(product.gtin || product.ean));
-    if (filters.quality === 'incomplete') products = products.filter(product => productMissing(product).length > 0);
+    if (filters.quality) {
+      products = products.filter(product => {
+        const validation = this.productValidation(product);
+        if (filters.quality === 'errors') return validation.errors.length > 0;
+        if (filters.quality === 'warnings') return validation.warnings.length > 0;
+        if (filters.quality === 'missing-image') return validation.warnings.includes('Imagem pública ausente') || validation.errors.includes('Imagem local/base64 não pode ser publicada');
+        if (filters.quality === 'missing-ncm') return validation.warnings.includes('NCM ausente');
+        if (filters.quality === 'missing-ean') return validation.warnings.includes('EAN ausente');
+        if (filters.quality === 'incomplete') return validation.errors.length + validation.warnings.length > 0;
+        return true;
+      });
+    }
 
     const sorters = {
       name: (a, b) => productName(a).localeCompare(productName(b), 'pt-BR'),
@@ -116,9 +129,14 @@ export class ProductsModule {
     this.elements.productResultCount.textContent = String(products.length);
 
     this.elements.productsTableBody.innerHTML = visible.length ? visible.map(product => {
-      const missing = productMissing(product);
+      const validation = this.productValidation(product);
       const dirty = this.store.state.dirtyProducts.has(productKey(product));
       const image = productImage(product) || PLACEHOLDER;
+      const qualityBadge = validation.errors.length
+        ? `<span class="badge danger">${validation.errors.length} erro${validation.errors.length > 1 ? 's' : ''}</span>`
+        : validation.warnings.length
+          ? `<span class="badge warning">${validation.warnings.length} aviso${validation.warnings.length > 1 ? 's' : ''}</span>`
+          : '<span class="badge success">Completo</span>';
       return `<tr${dirty ? ' class="dirty-row"' : ''}>
         <td><div class="product-cell"><img class="product-thumb" src="${escapeHtml(image)}" onerror="this.src='${PLACEHOLDER}'" alt=""><div><strong>${escapeHtml(productName(product))}</strong><small>${escapeHtml(product.marca || product.categoria || 'Sem classificação')}${dirty ? ' · alteração pendente' : ''}</small></div></div></td>
         <td><div class="cell-stack"><strong>${escapeHtml(productCode(product) || '—')}</strong><span>${escapeHtml(product.gtin || product.ean || 'Sem EAN')}</span></div></td>
@@ -126,7 +144,7 @@ export class ProductsModule {
         <td><span class="badge ${number(product.estoque) > 5 ? 'success' : number(product.estoque) > 0 ? 'warning' : 'danger'}">${number(product.estoque)}</span></td>
         <td>${escapeHtml(formatDate(product.validade))}</td>
         <td><span class="badge ${isActive(product) ? 'success' : 'neutral'}">${isActive(product) ? 'Ativo' : 'Inativo'}</span></td>
-        <td>${missing.length ? `<span class="badge warning">${missing.length} pendência${missing.length > 1 ? 's' : ''}</span>` : '<span class="badge success">Completo</span>'}</td>
+        <td>${qualityBadge}</td>
         <td><button class="row-action" type="button" data-product-key="${escapeHtml(productKey(product))}">Editar</button></td>
       </tr>`;
     }).join('') : '<tr><td class="empty-state" colspan="8">Nenhum produto corresponde aos filtros.</td></tr>';
@@ -155,6 +173,19 @@ export class ProductsModule {
   renderEditorTabs() {
     this.elements.editorTabs.querySelectorAll('[data-editor-tab]').forEach(button => button.classList.toggle('active', button.dataset.editorTab === this.editorTab));
     this.elements.productForm.querySelectorAll('[data-editor-section]').forEach(section => section.classList.toggle('active', section.dataset.editorSection === this.editorTab));
+  }
+
+  renderValidation(product) {
+    const validation = this.productValidation(product);
+    this.elements.editorValidation.innerHTML = validation.errors.length || validation.warnings.length
+      ? `<div class="validation-box ${validation.errors.length ? 'danger' : 'warning'}"><div><strong>${validation.errors.length ? `${validation.errors.length} erro(s) impedem o salvamento` : 'Cadastro pode ser salvo, mas possui avisos'}</strong><small>${escapeHtml([...validation.errors, ...validation.warnings].join(' · '))}</small></div></div>`
+      : '<div class="validation-box success"><div><strong>Produto pronto</strong><small>Nenhum erro ou aviso encontrado.</small></div></div>';
+    this.elements.saveProductButton.disabled = validation.errors.length > 0 || !this.store.state.config.writeMode;
+    this.elements.saveProductButton.title = validation.errors.length
+      ? 'Corrija os erros antes de salvar.'
+      : !this.store.state.config.writeMode
+        ? 'Ative gravações somente durante testes controlados.'
+        : '';
   }
 
   renderEditor(product) {
@@ -197,6 +228,7 @@ export class ProductsModule {
       ${this.field('prateleira', 'Prateleira', product.prateleira)}
       ${this.field('localizacao', 'Localização', product.localizacao)}
     </div>`;
+    this.renderValidation(product);
     this.renderEditorTabs();
   }
 
@@ -216,6 +248,7 @@ export class ProductsModule {
     const product = this.store.getProduct(key);
     this.elements.editorTitle.textContent = productName(product);
     this.elements.editorSubtitle.textContent = `${productCode(product) || key} · alteração pendente`;
+    this.renderValidation(product);
     this.renderDirty();
   }
 
@@ -234,6 +267,11 @@ export class ProductsModule {
     const key = this.store.state.selectedProductKey;
     if (!key) return;
     const product = this.store.getProduct(key);
+    const validation = this.productValidation(product);
+    if (validation.errors.length) {
+      this.onToast(`Corrija: ${validation.errors.join(', ')}.`, 'error');
+      return;
+    }
     if (!this.store.state.dirtyProducts.has(key)) {
       this.onToast('Este produto não possui alterações pendentes.', 'success');
       return;
@@ -245,7 +283,7 @@ export class ProductsModule {
   }
 
   createDraft() {
-    this.onToast('A criação de novos produtos será ativada após a validação do salvamento seguro.', 'error');
+    this.onToast('A criação de novos produtos será ativada após os testes de publicação completa.', 'error');
   }
 
   renderDirty() {
