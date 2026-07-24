@@ -223,10 +223,10 @@ export function assetUrl(value) {
   if (/^(https?:|data:)/i.test(raw)) return raw;
   const clean = raw.replace(/^(\.\.\/|\.\/)+/g, '').replace(/^\/+/, '');
   if (/^(site\/img\/(produtos_3|produtos_2|produtos|kits)\/|site\/banners\/)/i.test(clean)) {
-    return `${CONFIG.GITHUB_RAW_BASE}/${clean}`;
+    return `../${clean}`;
   }
   if (/^img\/(produtos_3|produtos_2|produtos|kits)\//i.test(clean)) {
-    return `${CONFIG.GITHUB_RAW_BASE}/site/${clean}`;
+    return `../site/${clean}`;
   }
   return `../${clean}`;
 }
@@ -238,20 +238,18 @@ export function createRouter(onRoute) {
     const parts = pathPart.split('/').filter(Boolean).map(decodeURIComponent);
     const first = parts[0] || 'home';
     const aliases = { categorias: 'categories', categoria: 'category', subcategoria: 'subcategory', marca: 'brand', ofertas: 'offers', favoritos: 'favorites', produto: 'product', cestas: 'baskets', cesta: 'basket', kits: 'kits', kit: 'kit', busca: 'search', rotina: 'routine', informacoes: 'info', 'campanha-cupom': 'campaignCoupon' };
-    return { name: aliases[first] || first, params: { segments: parts.slice(1) }, query: new URLSearchParams(queryPart), hash };
+    return { name: aliases[first] || first || 'home', hash: `#/${pathPart}`, params: { segments: parts.slice(1) }, query: new URLSearchParams(queryPart) };
   };
-  const handle = () => onRoute(parse());
   return {
+    current: parse,
     start() {
       if (!hasDOM) return;
-      window.addEventListener('hashchange', handle);
-      handle();
+      const run = () => onRoute(parse());
+      window.addEventListener('hashchange', run);
+      run();
     },
-    current: parse,
     navigate(hash) {
-      if (!hasDOM) return;
-      if (window.location.hash === hash) handle();
-      else window.location.hash = hash;
+      if (hasDOM) window.location.hash = hash;
     }
   };
 }

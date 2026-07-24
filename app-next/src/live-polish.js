@@ -5,19 +5,17 @@ import {
 } from './commerce.js';
 import { escapeHtml, fmt, readStorage } from './core.js';
 
-const POLISH_VERSION = '2026-07-24-live-polish-v1';
+const POLISH_VERSION = '2026-07-24-live-polish-v2';
+const carouselState = new WeakMap();
 let catalogStatePromise;
 let scheduled = false;
-let homeExpansionPending = false;
+let homePreparing = false;
 let pendingBasketPosition = null;
+let homeObserver = null;
 
 function truncate(value, max = 88) {
   const text = String(value || '').replace(/\s+/g, ' ').trim();
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
-}
-
-function productRoute(product) {
-  return encodeURIComponent(product?.firebaseKey || product?.id || product?.codigo || '');
 }
 
 function getCatalogState() {
@@ -35,9 +33,13 @@ function favoriteKeys() {
   return new Set(Array.isArray(saved) ? saved.map(String) : []);
 }
 
+function optimizedImage(src, alt) {
+  return `<img loading="lazy" decoding="async" fetchpriority="low" width="320" height="320" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}">`;
+}
+
 function basketCardHtml(basket) {
   return `<article class="bundle-card">
-    <a class="bundle-media" href="#/cesta/${encodeURIComponent(basket.id)}"><img loading="lazy" decoding="async" src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}"></a>
+    <a class="bundle-media" href="#/cesta/${encodeURIComponent(basket.id)}">${optimizedImage(basket.imagem, basket.nome)}</a>
     <div>
       <a class="bundle-name" href="#/cesta/${encodeURIComponent(basket.id)}">${escapeHtml(basket.nome)}</a>
       <p>${escapeHtml(truncate(basket.descricao))}</p>
@@ -54,7 +56,7 @@ function kitCardHtml(state, kit, favorites) {
   const active = favorites.has(favoriteKey);
   return `<article class="bundle-card">
     <div class="bundle-media-wrap">
-      <a class="bundle-media" href="#/kit/${encodeURIComponent(kit.id)}"><img loading="lazy" decoding="async" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}"></a>
+      <a class="bundle-media" href="#/kit/${encodeURIComponent(kit.id)}">${optimizedImage(kit.imagem, kit.nome)}</a>
       <button class="favorite-button ${active ? 'active' : ''}" data-action="favorite" data-id="${escapeHtml(kit.id)}" data-kind="kit" aria-label="${active ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" aria-pressed="${active}">♡</button>
       ${discount ? `<span class="discount-badge">-${discount}%</span>` : ''}
     </div>
@@ -75,49 +77,99 @@ function sectionByTitle(page, fragment) {
 }
 
 function bindBundleImageFallbacks(root) {
-  root?.querySelectorAll?.('.home-bundle-carousel img:not([data-live-fallback-bound])').forEach(image => {
+  root?.querySelectorAll?.('img:not([data-live-fallback-bound])').forEach(image => {
     image.dataset.liveFallbackBound = 'true';
     image.addEventListener('error', () => { image.src = '../img/logoantonia5.png'; }, { once: true });
   });
 }
 
-async function expandHomeBundles() {
-  const page = document.querySelector('.home-page');
-  if (!page || homeExpansionPending) return;
-  homeExpansionPending = true;
-  try {
-    const state = await getCatalogState();
-    if (!page.isConnected || !document.querySelector('.home-page')) return;
-    const favorites = favoriteKeys();
-    const baskets = (state.baskets || []).slice(0, 30);
-    const kits = (state.kits || []).filter(kit => kitIsVisible(state, kit)).slice(0, 30);
-    const targets = [
-      { section: sectionByTitle(page, 'cestas básicas'), items: baskets, kind: 'baskets' },
-      { section: sectionByTitle(page, 'kits promocionais'), items: kits, kind: 'kits' }
-    ];
+function cardsPerBatch() {
+  return matchMedia('(max-width:767px)').matches ? 6 : 8;
+}
 
-    targets.forEach(({ section, items, kind }) => {
-      const grid = section?.querySelector('.bundle-grid');
-      if (!grid || !items.length) return;
-      const signature = `${POLISH_VERSION}:${kind}:${items.map(item => item.id).join('|')}`;
-      if (grid.dataset.livePolishSignature === signature) return;
-      grid.classList.add('home-bundle-carousel');
-      grid.setAttribute('aria-label', kind === 'kits' ? 'Carrossel de kits promocionais' : 'Carrossel de cestas básicas');
-      grid.innerHTML = kind === 'kits'
-        ? items.map(kit => kitCardHtml(state, kit, favorites)).join('')
-        : items.map(basketCardHtml).join('');
-      grid.dataset.livePolishSignature = signature;
-      bindBundleImageFallbacks(grid);
-    });
-  } catch (error) {
-    console.warn('Não foi possível ampliar os carrosséis de cestas e kits:', error);
-  } finally {
-    homeExpansionPending = false;
+function appendCarouselBatch(grid) {
+  const info = carouselState.get(grid);
+  if (!info || info.rendered >= info.items.length || info.appending) return;
+  info.appending = true;
+  const amount = cardsPerBatch();
+  const next = info.items.slice(info.rendered, info.rendered + amount);
+  const html = info.kind === 'kits'
+    ? next.map(item => kitCardHtml(info.catalog, item, info.favorites)).join('')
+    : next.map(basketCardHtml).join('');
+  grid.insertAdjacentHTML('beforeend', html);
+  info.rendered += next.length;
+  grid.dataset.renderedItems = String(info.rendered);
+  grid.dataset.totalItems = String(info.items.length);
+  bindBundleImageFallbacks(grid);
+  info.appending = false;
+}
+
+function onCarouselScroll(event) {
+  const grid = event.currentTarget;
+  if (grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - Math.max(220, grid.clientWidth * .65)) {
+    appendCarouselBatch(grid);
   }
 }
 
-function removeBundleCardNoise(root = document) {
-  root.querySelectorAll('.bundle-product-badge,.bundle-product-context').forEach(element => element.remove());
+function initializeCarousel(section, items, kind, catalog, favorites) {
+  const grid = section?.querySelector('.bundle-grid');
+  if (!grid || !items.length || grid.dataset.progressiveCarousel === POLISH_VERSION) return;
+  grid.classList.add('home-bundle-carousel');
+  grid.setAttribute('aria-label', kind === 'kits' ? 'Carrossel de kits promocionais' : 'Carrossel de cestas básicas');
+  grid.dataset.progressiveCarousel = POLISH_VERSION;
+  grid.innerHTML = '';
+  carouselState.set(grid, { items, kind, catalog, favorites, rendered: 0, appending: false });
+  appendCarouselBatch(grid);
+  grid.addEventListener('scroll', onCarouselScroll, { passive: true });
+}
+
+async function initializeHomeSection(section, kind) {
+  if (!section || section.dataset.progressiveReady === 'true') return;
+  section.dataset.progressiveReady = 'true';
+  try {
+    const catalog = await getCatalogState();
+    if (!section.isConnected || !document.querySelector('.home-page')) return;
+    const favorites = favoriteKeys();
+    const items = kind === 'kits'
+      ? (catalog.kits || []).filter(kit => kitIsVisible(catalog, kit)).slice(0, 30)
+      : (catalog.baskets || []).slice(0, 30);
+    initializeCarousel(section, items, kind, catalog, favorites);
+  } catch (error) {
+    console.warn(`Não foi possível preparar o carrossel de ${kind}:`, error);
+    section.removeAttribute('data-progressive-ready');
+  }
+}
+
+function observeHomeSection(section, kind) {
+  if (!section || section.dataset.progressiveObserved === 'true') return;
+  section.dataset.progressiveObserved = 'true';
+  section.dataset.progressiveKind = kind;
+  if ('IntersectionObserver' in window) {
+    if (!homeObserver) {
+      homeObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          homeObserver.unobserve(entry.target);
+          initializeHomeSection(entry.target, entry.target.dataset.progressiveKind);
+        });
+      }, { root: document.getElementById('app'), rootMargin: '700px 0px', threshold: .01 });
+    }
+    homeObserver.observe(section);
+  } else {
+    setTimeout(() => initializeHomeSection(section, kind), kind === 'baskets' ? 500 : 1200);
+  }
+}
+
+function prepareHomeBundles() {
+  const page = document.querySelector('.home-page');
+  if (!page || homePreparing) return;
+  homePreparing = true;
+  try {
+    observeHomeSection(sectionByTitle(page, 'cestas básicas'), 'baskets');
+    observeHomeSection(sectionByTitle(page, 'kits promocionais'), 'kits');
+  } finally {
+    homePreparing = false;
+  }
 }
 
 function hideEmptyFavoriteCounts(root = document) {
@@ -149,9 +201,9 @@ function rememberBasketPosition(button) {
     productId,
     top: card?.getBoundingClientRect().top ?? null,
     scrollTop: app.scrollTop,
-    expiresAt: Date.now() + 1400
+    expiresAt: Date.now() + 1500
   };
-  [0, 40, 100, 180, 320, 520, 850].forEach(delay => setTimeout(restoreBasketPosition, delay));
+  [0, 50, 120, 240, 420, 700, 1050].forEach(delay => setTimeout(restoreBasketPosition, delay));
 }
 
 function restoreBasketPosition() {
@@ -179,10 +231,9 @@ function handleCaptureClick(event) {
 }
 
 function applyPolish() {
-  removeBundleCardNoise();
   hideEmptyFavoriteCounts();
   restoreBasketPosition();
-  expandHomeBundles();
+  prepareHomeBundles();
 }
 
 function schedulePolish() {
@@ -196,8 +247,8 @@ function schedulePolish() {
 
 if (typeof document !== 'undefined') {
   document.addEventListener('click', handleCaptureClick, true);
-  const observer = new MutationObserver(schedulePolish);
-  observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+  const app = document.getElementById('app');
+  if (app) new MutationObserver(schedulePolish).observe(app, { childList: true });
   window.addEventListener('hashchange', schedulePolish);
   window.addEventListener('DOMContentLoaded', schedulePolish);
   schedulePolish();
