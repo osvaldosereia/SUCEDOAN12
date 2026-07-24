@@ -64,6 +64,20 @@ function start() {
   document.getElementById('mainNav')?.addEventListener('click', event => {
     if (event.target.closest('[data-route="operations"]')) setTimeout(() => module.focus(), 80);
   });
+  window.addEventListener('admin-v2-open-product', event => {
+    const key = String(event.detail?.key || '');
+    const product = store.state.products.find(row => String(row.firebaseKey || row.id || row.codigo) === key);
+    const query = product?.codigo || product?.gtin || product?.ean || key;
+    document.querySelector('[data-route="products"]')?.click();
+    const input = document.getElementById('productSearch');
+    if (!input) return;
+    input.value = query;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    setTimeout(() => {
+      const exact = document.querySelector(`[data-product-key="${CSS.escape(key)}"]`);
+      exact?.click();
+    }, 320);
+  });
   const card = [...view.querySelectorAll('.module-card')].find(row => row.textContent.includes('Leitura rápida'));
   if (card) {
     card.querySelector('p').textContent = 'A consulta abaixo está ativa para leitor de código, sem alterar dados.';
