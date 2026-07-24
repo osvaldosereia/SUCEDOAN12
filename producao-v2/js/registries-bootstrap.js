@@ -1,3 +1,4 @@
+import './offer-store-bridge.js';
 import './quick-read-bootstrap.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { RegistriesModule } from './modules/registries.js';
