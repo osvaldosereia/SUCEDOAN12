@@ -17,6 +17,9 @@ export const DEFAULT_CONFIG = Object.freeze({
   basketsPath: 'site/produtos-cesta-basica.json',
   kitsPath: 'site/kits.json',
   kitQueuePath: 'carrosseis-kits/fila.json',
+  makeOrderWebhookUrl: '',
+  makeAiWebhookUrl: '',
+  blingConnectionMode: 'via-make',
 });
 
 export const STORAGE_KEYS = Object.freeze({
