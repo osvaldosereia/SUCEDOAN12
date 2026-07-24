@@ -6,9 +6,9 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const productionRoot = path.resolve(root, '..');
 const required = [
-  'index.html', 'styles/app.css', 'styles/home-parity.css', 'styles/checkout-flow.css', 'styles/bundle-confirmation.css',
+  'index.html', 'styles/app.css', 'styles/home-parity.css', 'styles/checkout-flow.css', 'styles/bundle-confirmation.css', 'styles/live-polish.css',
   'src/config.js', 'src/core.js', 'src/catalog.js', 'src/commerce.js', 'src/integrations.js',
-  'src/personalization.js', 'src/ui.js', 'src/checkout.js', 'src/main.js', 'src/visual-parity.js'
+  'src/personalization.js', 'src/ui.js', 'src/checkout.js', 'src/main.js', 'src/visual-parity.js', 'src/live-polish.js'
 ];
 for (const file of required) {
   if (!fs.existsSync(path.join(root, file))) throw new Error(`Arquivo ausente: ${file}`);
@@ -18,14 +18,18 @@ const previewIndex = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 if (!previewIndex.includes('type="module" src="src/main.js"')) throw new Error('prévia não carrega o módulo principal');
 if (!previewIndex.includes('styles/bundle-confirmation.css')) throw new Error('prévia não carrega os estilos da confirmação');
 if (!previewIndex.includes('styles/checkout-flow.css')) throw new Error('prévia não carrega os estilos do checkout');
+if (!previewIndex.includes('styles/live-polish.css')) throw new Error('prévia não carrega os ajustes de acessibilidade');
+if (!previewIndex.includes('src/live-polish.js')) throw new Error('prévia não carrega os ajustes funcionais');
 if (!previewIndex.includes('noindex, nofollow')) throw new Error('prévia precisa permanecer fora da indexação');
 
 const productionIndex = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const fragment of [
-  '2026-07-24-modular-production-v1',
+  '2026-07-24-modular-production-v2',
   'content="index, follow"',
   'app-next/styles/app.css',
+  'app-next/styles/live-polish.css',
   'type="module" src="app-next/src/main.js"',
+  'app-next/src/live-polish.js',
   'window.__DA_PRODUCTION__ = true',
   'previewModular = false',
   'preview_modular = false'
@@ -35,7 +39,7 @@ for (const fragment of [
 if (productionIndex.includes('noindex, nofollow')) throw new Error('index da raiz não pode bloquear indexação');
 
 const config = fs.readFileSync(path.join(root, 'src/config.js'), 'utf8');
-for (const fragment of ['IS_PRODUCTION', "PREFIX: IS_PRODUCTION ? 'da_v2_' : 'da_next_'", 'modular-production-v1']) {
+for (const fragment of ['IS_PRODUCTION', "PREFIX: IS_PRODUCTION ? 'da_v2_' : 'da_next_'", 'modular-production-v2']) {
   if (!config.includes(fragment)) throw new Error(`Separação de ambientes incompleta: ${fragment}`);
 }
 
@@ -58,6 +62,32 @@ if (visualParity.includes('Faça sua compra do mês') || visualParity.includes('
 const homeCss = fs.readFileSync(path.join(root, 'styles/home-parity.css'), 'utf8');
 if (!homeCss.includes('grid-template-columns:repeat(4')) throw new Error('Desktop precisa exibir quatro cards promocionais');
 if (!homeCss.includes('grid-template-columns:repeat(2')) throw new Error('Mobile precisa exibir dois cards promocionais por linha');
+
+const livePolish = fs.readFileSync(path.join(root, 'src/live-polish.js'), 'utf8');
+for (const fragment of [
+  '.slice(0, 30)',
+  'home-bundle-carousel',
+  "location.hash = '#/ofertas'",
+  'basket-inc',
+  'basket-dec',
+  'restoreBasketPosition',
+  '.bundle-product-badge,.bundle-product-context'
+]) {
+  if (!livePolish.includes(fragment)) throw new Error(`Ajuste funcional ausente: ${fragment}`);
+}
+const liveCss = fs.readFileSync(path.join(root, 'styles/live-polish.css'), 'utf8');
+for (const fragment of [
+  '.quick-links.home-deal-grid>a:first-child',
+  'grid-column:auto!important',
+  '.home-page .home-bundle-carousel',
+  '[data-favorite-count][hidden]',
+  '.header-cart-icon',
+  'background:#fff!important',
+  '.bundle-product-badge,.bundle-product-context'
+]) {
+  if (!liveCss.includes(fragment)) throw new Error(`Ajuste visual ausente: ${fragment}`);
+}
+
 const jsFiles = fs.readdirSync(path.join(root, 'src')).filter(file => file.endsWith('.js'));
 for (const file of jsFiles) {
   const result = spawnSync(process.execPath, ['--check', path.join(root, 'src', file)], { encoding: 'utf8' });
