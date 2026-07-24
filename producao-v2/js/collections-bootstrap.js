@@ -32,7 +32,7 @@ function panelMarkup() {
 }
 
 function editorMarkup() {
-  return `<div class="collection-backdrop" id="collectionBackdrop" hidden></div><aside class="editor-drawer collection-editor" id="collectionEditor" aria-hidden="true"><div class="editor-header"><div><span class="eyebrow" id="collectionEditorType">Coleção</span><h2 id="collectionEditorTitle">Cadastro</h2><p>Alterações são publicadas somente após auditoria sem erros.</p></div><button class="icon-button" id="collectionClose" type="button" aria-label="Fechar">×</button></div><div class="editor-body collection-editor-body"><section id="collectionForm"></section><section class="collection-composition"><div class="collection-section-head"><div><h3>Composição</h3><p>Itens precisam existir, estar ativos, com preço e estoque suficiente.</p></div></div><div id="collectionItems"></div><div class="collection-product-search"><label>Adicionar produto<input id="collectionProductSearch" type="search" placeholder="Nome, código ou EAN"></label><div id="collectionSearchResults"></div></div></section><section class="collection-audit" id="collectionAudit"></section><p class="muted" id="collectionSafety"></p></div><div class="editor-footer"><button class="button secondary" id="collectionCancel" type="button">Cancelar</button><button class="button primary" id="collectionSave" type="button" disabled>Salvar e publicar</button></div></aside>`;
+  return `<div class="collection-backdrop" id="collectionBackdrop" hidden></div><aside class="editor-drawer collection-editor" id="collectionEditor" aria-hidden="true"><div class="editor-header"><div><span class="eyebrow" id="collectionEditorType">Coleção</span><h2 id="collectionEditorTitle">Cadastro</h2><p>Alterações são publicadas somente após auditoria sem erros.</p></div><button class="icon-button" id="collectionClose" type="button" aria-label="Fechar">×</button></div><div class="editor-body collection-editor-body"><section id="collectionForm"></section><section class="collection-composition"><div class="collection-section-head"><div><h3>Composição</h3><p>Veja o estoque, abra o cadastro ou pesquise um produto para substituir sem sair do fluxo.</p></div></div><div id="collectionItems"></div><div class="collection-product-search"><label>Adicionar ou pesquisar substituto<input id="collectionProductSearch" type="search" placeholder="Nome, código ou EAN"></label><div id="collectionSearchResults"></div></div></section><section class="collection-audit" id="collectionAudit"></section><p class="muted" id="collectionSafety"></p></div><div class="editor-footer"><button class="button secondary" id="collectionCancel" type="button">Cancelar</button><button class="button primary" id="collectionSave" type="button" disabled>Salvar e publicar</button></div></aside>`;
 }
 
 function installSettings() {
@@ -60,11 +60,29 @@ function installSettings() {
 function toast(message, type = '') {
   const region = document.getElementById('toastRegion');
   if (!region) return;
+  const normalized = String(message || '').trim();
+  if (!normalized) return;
+  const duplicate = [...region.querySelectorAll('.toast')].some(node => node.textContent === normalized);
+  if (duplicate) return;
   const node = document.createElement('div');
   node.className = `toast ${type}`.trim();
-  node.textContent = message;
+  node.textContent = normalized;
   region.appendChild(node);
   setTimeout(() => node.remove(), type === 'error' ? 6500 : 3500);
+}
+
+function installErrorGuard() {
+  if (window.__adminV2ErrorGuardInstalled) return;
+  window.__adminV2ErrorGuardInstalled = true;
+  window.addEventListener('unhandledrejection', event => {
+    const message = event.reason?.message || String(event.reason || 'Falha inesperada na operação.');
+    toast(message, 'error');
+    event.preventDefault();
+  });
+  window.addEventListener('error', event => {
+    if (!event.error) return;
+    toast(event.error?.message || event.message, 'error');
+  });
 }
 
 function start() {
@@ -72,6 +90,7 @@ function start() {
   if (!view || document.getElementById('collectionsWorkspace')) return;
   installCss();
   installSettings();
+  installErrorGuard();
   view.insertAdjacentHTML('afterbegin', panelMarkup());
   document.body.insertAdjacentHTML('beforeend', editorMarkup());
 
@@ -107,6 +126,15 @@ function start() {
   ];
   const elements = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
   module = new CollectionsModule({ store, elements, onToast: toast, onReload: reload, reloadConfig: loadConfig });
+  window.__adminV2CollectionsModule = module;
+  elements.collectionProductSearch.closest('.collection-product-search')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-collection-cancel-replace]');
+    if (!button) return;
+    module.replaceTarget = null;
+    elements.collectionProductSearch.value = '';
+    elements.collectionSearchResults.innerHTML = '';
+    module.renderSearchMode();
+  });
   reload().catch(error => toast(error?.message || String(error), 'error'));
   elements.collectionBackdrop.addEventListener('click', () => module.closeEditor());
   document.getElementById('reloadButton')?.addEventListener('click', () => reload().catch(() => {}));
