@@ -1,11 +1,11 @@
 export const DEFAULT_CONFIG = Object.freeze({
   firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
   productsNode: 'produtos',
-  writeMode: false,
+  writeMode: true,
   nfeImportMode: false,
-  stockWriteMode: false,
-  collectionsWriteMode: false,
-  offerWriteMode: false,
+  stockWriteMode: true,
+  collectionsWriteMode: true,
+  offerWriteMode: true,
   campaignOfferWriteMode: false,
   registryWriteMode: false,
   pageSize: 50,
@@ -38,6 +38,7 @@ export const STORAGE_KEYS = Object.freeze({
 });
 
 const LEGACY_SETTINGS_KEY = 'da_admin_settings_v4';
+const PRODUCTION_ACTIVATION_KEY = 'da_admin_v2_producao_oficial_20260724_v1';
 
 function migrateLegacySettings() {
   try {
@@ -68,10 +69,47 @@ function migrateLegacySettings() {
         changed = true;
       }
     });
-    if (changed) localStorage.setItem(STORAGE_KEYS.config, JSON.stringify({ ...DEFAULT_CONFIG, ...current, writeMode: Boolean(current.writeMode) }));
+    if (changed) localStorage.setItem(STORAGE_KEYS.config, JSON.stringify({ ...DEFAULT_CONFIG, ...current }));
   } catch (error) {
     console.warn('Não foi possível migrar as configurações do admin antigo para a V2:', error);
   }
 }
 
+function activateOfficialProductionMode() {
+  try {
+    if (localStorage.getItem(PRODUCTION_ACTIVATION_KEY) === '1') return;
+    const current = JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}');
+    const activated = {
+      ...DEFAULT_CONFIG,
+      ...current,
+      writeMode: true,
+      stockWriteMode: true,
+      collectionsWriteMode: true,
+      offerWriteMode: true,
+      githubBranch: 'main',
+    };
+    localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(activated));
+    localStorage.setItem(PRODUCTION_ACTIVATION_KEY, '1');
+  } catch (error) {
+    console.warn('Não foi possível ativar o modo oficial da V2:', error);
+  }
+}
+
+function updateOfficialProductionLabels() {
+  const apply = () => {
+    const brand = document.querySelector('.brand span');
+    if (brand) brand.textContent = 'Admin oficial';
+    const banner = document.querySelector('.environment-banner');
+    if (banner) banner.innerHTML = '<strong>Sistema oficial em uso.</strong> Alterações de produtos são salvas diretamente no Firebase. Operações em lote continuam com confirmação própria.';
+    const sourceHelp = document.querySelector('[data-view="settings"] .settings-grid .panel .panel-header p');
+    if (sourceHelp) sourceHelp.textContent = 'Configurações do sistema oficial.';
+    const writeHelp = document.querySelector('#writeModeSetting')?.closest('.switch-row')?.querySelector('small');
+    if (writeHelp) writeHelp.textContent = 'Mantenha ativado para cadastrar e editar produtos.';
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply, { once: true });
+  else apply();
+}
+
 migrateLegacySettings();
+activateOfficialProductionMode();
+updateOfficialProductionLabels();
