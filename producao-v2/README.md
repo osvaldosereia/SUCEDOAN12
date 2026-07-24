@@ -58,9 +58,23 @@ A V2 já consegue:
 
 Nenhum botão de aplicar/importar foi criado nesta fase.
 
+## Teste comparativo executado
+
+Foi reproduzido o caso fiscal `35260715436940002734550010431539491114617900`, que possui duas linhas do mesmo EAN. O teste confirmou:
+
+- agrupamento das duas linhas em um produto;
+- quantidade comercial total de 10 unidades;
+- valor bruto de R$ 99,90;
+- desconto total de R$ 24,99;
+- valor líquido de R$ 74,91;
+- custo unitário calculado de R$ 7,49;
+- preço sugerido de R$ 12,48 com margem simulada de 40%;
+- detecção do registro fiscal concluído;
+- manutenção do bloqueio de duplicidade mesmo após vínculo manual do produto.
+
 ## Próximas migrações
 
-1. Comparar XMLs reais entre o admin atual e a bancada V2 e corrigir divergências de cálculo ou vínculo.
+1. Comparar outros XMLs reais entre o admin atual e a bancada V2 e corrigir divergências de cálculo ou vínculo.
 2. Adicionar validade, lotes e regras de atualização em modo de simulação.
 3. Implementar sessão transacional e salvamento controlado da NF-e, ainda sem substituir o admin atual.
 4. Migrar a fila operacional de estoque e validade.
