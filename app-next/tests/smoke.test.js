@@ -20,7 +20,7 @@ for (const fragment of [
   'styles/bundle-confirmation.css?v=20260724-3',
   'styles/checkout-flow.css?v=20260724-3',
   'styles/home-parity.css?v=20260724-5',
-  'styles/live-polish.css?v=20260724-5',
+  'styles/live-polish.css?v=20260724-6',
   'src/visual-parity.js?v=20260724-5',
   'src/image-performance.js?v=20260724-4',
   'requestIdleCallback',
@@ -31,15 +31,15 @@ for (const fragment of [
 
 const productionIndex = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const fragment of [
-  '2026-07-24-modular-production-v5',
+  '2026-07-24-modular-production-v6',
   'content="index, follow"',
   'app-next/styles/app.css?v=20260724-3',
   'app-next/styles/home-parity.css?v=20260724-5',
-  'app-next/styles/live-polish.css?v=20260724-5',
+  'app-next/styles/live-polish.css?v=20260724-6',
   'app-next/src/visual-parity.js?v=20260724-5',
   'app-next/src/main.js?v=20260724-3',
   'app-next/src/image-performance.js?v=20260724-4',
-  'da_v5_cache_migrated_20260724',
+  'da_v6_cache_migrated_20260724',
   'requestIdleCallback',
   'window.__DA_PRODUCTION__ = true',
   'previewModular = false',
@@ -124,19 +124,23 @@ for (const fragment of [
   '.home-page .home-bundle-carousel',
   'flex:0 0 58.8%',
   '.product-grid{',
-  'gap:1px!important',
-  '.horizontal-rail>.product-card+.product-card',
-  'background:#f1f3f2!important',
+  'gap:12px!important',
+  'gap:16px!important',
+  'border:1px solid #e1e6e2!important',
+  'border-radius:16px!important',
+  'background:#fff!important',
+  'background:#f5f6f5!important',
   'padding:0!important',
   '.bundle-media,',
+  '#personalization-consent{display:none!important}',
   '[data-favorite-count][hidden]',
   '.header-cart-icon',
   'data-performance-profile="economy"'
 ]) {
   if (!liveCss.includes(fragment)) throw new Error(`Ajuste visual ausente: ${fragment}`);
 }
-if (!liveCss.includes('.product-grid>.product-card') || !liveCss.includes('border-radius:0!important')) {
-  throw new Error('Cards de produtos ainda impedem as linhas separadoras contínuas');
+if (liveCss.includes('gap:1px!important') || liveCss.includes('border-radius:0!important')) {
+  throw new Error('Cards de produtos ainda estão grudados ou sem acabamento individual');
 }
 if (!liveCss.includes('.product-card-media img') || !liveCss.includes('width:100%!important') || !liveCss.includes('height:100%!important')) {
   throw new Error('Imagem e fundo do produto não ocupam a mesma área');
