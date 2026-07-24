@@ -30,13 +30,14 @@ for (const fragment of [
 
 const productionIndex = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const fragment of [
-  '2026-07-24-modular-production-v3',
+  '2026-07-24-modular-production-v4',
   'content="index, follow"',
   'app-next/styles/app.css?v=20260724-3',
   'app-next/styles/live-polish.css?v=20260724-3',
   'app-next/src/main.js?v=20260724-3',
   'app-next/src/live-polish.js?v=20260724-3',
-  'app-next/src/image-performance.js?v=20260724-3',
+  'app-next/src/image-performance.js?v=20260724-4',
+  'da_v4_cache_migrated_20260724',
   'requestIdleCallback',
   'window.__DA_PRODUCTION__ = true',
   'previewModular = false',
@@ -116,8 +117,25 @@ for (const fragment of [
 }
 
 const imagePerformance = fs.readFileSync(path.join(root, 'src/image-performance.js'), 'utf8');
-for (const fragment of ['navigator.connection', 'navigator.deviceMemory', 'IntersectionObserver', 'loading = \'lazy\'', 'fetchPriority = \'low\'', 'performanceProfile']) {
+for (const fragment of [
+  'navigator.connection',
+  'navigator.deviceMemory',
+  'localRepositoryAsset',
+  'raw.githubusercontent.com',
+  'managedLazyLoading',
+  'IntersectionObserver',
+  "image.loading = 'eager'",
+  "image.loading = 'lazy'",
+  "image.fetchPriority = 'low'",
+  'imageSourceMode'
+]) {
   if (!imagePerformance.includes(fragment)) throw new Error(`Controle de imagens incompleto: ${fragment}`);
+}
+if (!imagePerformance.includes("const managedLazyLoading = lowEndDevice || !supportsNativeLazy")) {
+  throw new Error('Tablets econômicos ainda confiam apenas no lazy loading nativo');
+}
+if (!imagePerformance.includes("return path ? `/${path}` : raw")) {
+  throw new Error('URLs absolutas do repositório não estão sendo convertidas para a origem da loja');
 }
 
 const jsFiles = fs.readdirSync(path.join(root, 'src')).filter(file => file.endsWith('.js'));
