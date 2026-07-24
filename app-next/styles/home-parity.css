@@ -5,6 +5,9 @@
 .home-deal-shortcut{
   --deal:#14532d;
   --deal-soft:#eef8f1;
+  --deal-border:#c9ddd0;
+  --deal-shadow:rgba(20,83,45,.13);
+  --deal-shadow-strong:rgba(20,83,45,.19);
   min-width:0;
   min-height:154px;
   color:var(--ink);
@@ -17,17 +20,17 @@
   border-radius:0;
   box-shadow:none;
 }
-.home-deal-shortcut.deal-50{--deal:#c12646;--deal-soft:#fff0f3}
-.home-deal-shortcut.deal-40{--deal:#245f9b;--deal-soft:#eef5fc}
-.home-deal-shortcut.deal-all{--deal:#7c3fa0;--deal-soft:#f6effa}
-.home-deal-shortcut.deal-5{--deal:#178553;--deal-soft:#edf9f2}
+.home-deal-shortcut.deal-50{--deal:#c12646;--deal-soft:#fff0f3;--deal-border:#f1b9c4;--deal-shadow:rgba(193,38,70,.13);--deal-shadow-strong:rgba(193,38,70,.2)}
+.home-deal-shortcut.deal-40{--deal:#245f9b;--deal-soft:#eef5fc;--deal-border:#bad1e8;--deal-shadow:rgba(36,95,155,.13);--deal-shadow-strong:rgba(36,95,155,.2)}
+.home-deal-shortcut.deal-all{--deal:#7c3fa0;--deal-soft:#f6effa;--deal-border:#d9c0e7;--deal-shadow:rgba(124,63,160,.13);--deal-shadow-strong:rgba(124,63,160,.2)}
+.home-deal-shortcut.deal-5{--deal:#178553;--deal-soft:#edf9f2;--deal-border:#b9dfca;--deal-shadow:rgba(23,133,83,.13);--deal-shadow-strong:rgba(23,133,83,.2)}
 .home-deal-copy{min-width:0;display:grid;justify-items:center;align-content:center;gap:8px}
 .home-deal-badge{
   width:max-content;
   max-width:100%;
   min-height:52px;
   padding:0 21px;
-  border:2px solid color-mix(in srgb,var(--deal) 24%,transparent);
+  border:2px solid var(--deal-border);
   border-radius:999px;
   background:var(--deal-soft);
   color:var(--deal);
@@ -39,7 +42,7 @@
   align-items:center;
   justify-content:center;
   white-space:nowrap;
-  box-shadow:0 7px 18px color-mix(in srgb,var(--deal) 12%,transparent);
+  box-shadow:0 7px 18px var(--deal-shadow);
   transition:transform .16s ease,box-shadow .16s ease;
 }
 .home-deal-copy strong{font-size:18px;line-height:1.08;font-weight:800;letter-spacing:-.03em;color:var(--ink)}
@@ -47,7 +50,7 @@
 .home-deal-cta{width:max-content;margin-top:1px;display:inline-flex;align-items:center;gap:7px;color:var(--deal);font-size:11px;font-weight:800}
 .home-deal-cta b{width:25px;height:25px;border-radius:999px;background:var(--deal-soft);display:grid;place-items:center;font-size:13px;transition:transform .16s ease}
 @media(hover:hover){
-  .home-deal-shortcut:hover .home-deal-badge{transform:translateY(-3px);box-shadow:0 11px 24px color-mix(in srgb,var(--deal) 18%,transparent)}
+  .home-deal-shortcut:hover .home-deal-badge{transform:translateY(-3px);box-shadow:0 11px 24px var(--deal-shadow-strong)}
   .home-deal-shortcut:hover .home-deal-cta b{transform:translateX(3px)}
 }
 
