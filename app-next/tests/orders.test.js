@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildFirebaseOrder, buildOrderPayload, buildWhatsAppMessage, validateCheckoutData } from '../src/integrations.js';
+import { buildBundleMessageContext, buildFirebaseOrder, buildOrderPayload, buildWhatsAppMessage, validateCheckoutData } from '../src/integrations.js';
 
 function sampleState() {
   const product = {
@@ -46,4 +46,27 @@ test('mensagem do WhatsApp contém número, itens e total', () => {
   assert.match(message, /PEDIDO #/);
   assert.match(message, /2x Arroz Teste/);
   assert.match(message, /R\$\s*100,00/);
+});
+
+
+test('mensagem separa cesta alterada, extras e retirados', () => {
+  const state = sampleState();
+  const second = { ...state.products[0], id: 'fb2', firebaseKey: 'fb2', codigo: 'SKU2', name: 'Feijão Teste' };
+  state.products.push(second);
+  state.productMap.set('fb2', second);
+  state.cart = { fb1: 1, fb2: 1 };
+  state.cartOrder = ['fb1', 'fb2'];
+  state.basketCustomizations = {
+    'basket:c1': { label: 'CESTA', name: 'Cesta Teste', originalItems: { fb1: 2 }, selectedItems: { fb1: 1 }, changed: true, fee: 0 }
+  };
+  const payload = buildOrderPayload(state, form, { timestamp: 1760000000000, random: 8 });
+  const validation = validateCheckoutData(form, state);
+  const context = buildBundleMessageContext(state, payload.pedido.itens);
+  assert.equal(context.changed.length, 1);
+  assert.equal(context.extras.length, 1);
+  assert.deepEqual(context.removed, ['1x Arroz Teste']);
+  const message = buildWhatsAppMessage(payload, validation.pricing, state);
+  assert.match(message, /CESTA TESTE - ALTERADA/);
+  assert.match(message, /PRODUTOS ADICIONADOS FORA DA CESTA/);
+  assert.match(message, /1x Arroz Teste/);
 });

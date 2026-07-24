@@ -9,16 +9,50 @@ import {
   openWhatsApp, processOrderQueue, validateCheckoutData
 } from './integrations.js';
 
-function deliveryDates() {
-  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Cuiaba' }));
+function addDays(date, days) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function easterSunday(year) {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day, 12);
+}
+
+function holidayKeys(year) {
+  const fixed = ['01-01', '04-21', '05-01', '09-07', '10-12', '11-02', '11-15', '11-20', '12-25']
+    .map(monthDay => `${year}-${monthDay}`);
+  return new Set([...fixed, dateValue(addDays(easterSunday(year), -2))]);
+}
+
+export function isNationalHoliday(date) {
+  return holidayKeys(date.getFullYear()).has(dateValue(date));
+}
+
+export function deliveryDates(nowOverride = null) {
+  const now = nowOverride || new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Cuiaba' }));
   const dates = [];
   let cursor = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
   while (dates.length < 7) {
     const sameDay = cursor.toDateString() === now.toDateString();
     const allowedToday = !sameDay || now.getHours() < 10;
     const sunday = cursor.getDay() === 0;
-    if (allowedToday && !sunday) dates.push(new Date(cursor));
-    cursor.setDate(cursor.getDate() + 1);
+    if (allowedToday && !sunday && !isNationalHoliday(cursor)) dates.push(new Date(cursor));
+    cursor = addDays(cursor, 1);
   }
   return dates;
 }
@@ -153,7 +187,7 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
     button.textContent = 'Preparando pedido...';
     try {
       const makePayload = buildOrderPayload(state, form);
-      const message = buildWhatsAppMessage(makePayload, validation.pricing);
+      const message = buildWhatsAppMessage(makePayload, validation.pricing, state);
       enqueueOrder(makePayload);
       openWhatsApp(message);
       events.emit('order:opened-whatsapp', { order: makePayload, items: validation.pricing.items.filter(item => !item.product.isFee) });

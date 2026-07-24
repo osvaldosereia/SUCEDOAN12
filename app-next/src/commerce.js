@@ -123,6 +123,21 @@ export function normalizeQuantityMap(value) {
   }, {});
 }
 
+export function quantityMapsDiffer(first, second) {
+  const left = normalizeQuantityMap(first);
+  const right = normalizeQuantityMap(second);
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+  return [...keys].some(key => Number(left[key] || 0) !== Number(right[key] || 0));
+}
+
+function quantityMapFromRows(rows) {
+  return (rows || []).reduce((map, row) => {
+    const id = String(row?.product?.id || '');
+    if (id) map[id] = Number(map[id] || 0) + Number(row.qty || 0);
+    return map;
+  }, {});
+}
+
 export function parseBasketItem(line) {
   if (line && typeof line === 'object') {
     const code = line.codigo || line.sku || line.id || line.gtin || line.ean || '';
@@ -422,8 +437,9 @@ export class CartService {
         return { ok: false, message: `Estoque insuficiente para ${product?.name || id}.` };
       }
     }
+    const originalItems = quantityMapFromRows(rows);
+    const selectedItems = normalizeQuantityMap(selected);
     const defaultTotal = rows.reduce((sum, row) => sum + Number(row.product.price || 0) * Number(row.qty), 0);
-    const selectedTotal = Object.entries(selected).reduce((sum, [id, qty]) => sum + Number(state.productMap.get(String(id))?.price || 0) * Number(qty), 0);
     const fixedAdjustment = basket.preco ? roundMoney(Number(basket.preco) - defaultTotal) : 0;
     const bundleKey = `basket:${basket.id}`;
     this.store.mutate(current => {
@@ -435,10 +451,10 @@ export class CartService {
       current.basketCustomizations[bundleKey] = {
         label: 'CESTA',
         name: basket.nome,
-        originalItems: Object.fromEntries(rows.map(row => [String(row.product.id), Number(row.qty)])),
-        selectedItems: normalizeQuantityMap(selected),
+        originalItems,
+        selectedItems,
         fee: fixedAdjustment,
-        changed: roundMoney(selectedTotal - defaultTotal) !== 0
+        changed: quantityMapsDiffer(originalItems, selectedItems)
       };
       const feeId = `fee_${bundleKey}`;
       if (fixedAdjustment !== 0) {
@@ -459,6 +475,7 @@ export class CartService {
     const retail = kitRetailTotal(state, kit);
     const fee = roundMoney(Number(kit.preco || 0) - retail);
     const bundleKey = `kit:${kit.id}`;
+    const originalItems = quantityMapFromRows(rows);
     for (const row of rows) {
       if (Number(state.cart[row.product.id] || 0) + row.qty > Number(row.product.stock || 0)) {
         return { ok: false, message: `Estoque insuficiente para ${row.product.name}.` };
@@ -472,8 +489,8 @@ export class CartService {
       current.basketCustomizations[bundleKey] = {
         label: 'KIT PROMOCIONAL',
         name: kit.nome,
-        originalItems: Object.fromEntries(rows.map(row => [String(row.product.id), Number(row.qty)])),
-        selectedItems: Object.fromEntries(rows.map(row => [String(row.product.id), Number(row.qty)])),
+        originalItems,
+        selectedItems: { ...originalItems },
         fee,
         changed: false
       };

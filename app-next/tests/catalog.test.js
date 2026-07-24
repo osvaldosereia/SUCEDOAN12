@@ -30,3 +30,9 @@ test('busca por nome, marca e código', () => {
   assert.equal(searchProducts(products, 'Marca A', isAvailable)[0].codigo, 'ARR20');
   assert.equal(searchProducts(products, 'ARR20', isAvailable)[0].codigo, 'ARR20');
 });
+
+test('normaliza link estruturado de banner para rota de produto', async () => {
+  const { normalizeBanners } = await import('../src/catalog.js');
+  const banners = normalizeBanners([{ id: 'b1', imagem: 'site/banners/teste.webp', link: { tipo: 'produto', valor: 'ABC 123' } }]);
+  assert.equal(banners[0].link, '#/produto/ABC%20123');
+});

@@ -45,3 +45,21 @@ test('kit sem produtos resolvidos não fica visível', () => {
   const kit = { id: 'k1', ativo: true, preco: 10, produtos: ['1x X'], dataInicio: '', dataFim: '' };
   assert.equal(kitIsVisible(state, kit), false);
 });
+
+test('detecta cesta alterada mesmo quando o valor total não muda', async () => {
+  const { CartService } = await import('../src/commerce.js');
+  const products = [
+    { id: 'a', codigo: 'A', name: 'A', price: 10, oldPrice: 10, stock: 10, situacao: '' },
+    { id: 'b', codigo: 'B', name: 'B', price: 10, oldPrice: 10, stock: 10, situacao: '' }
+  ];
+  const state = {
+    products, productMap: new Map(products.map(p => [p.id, p])), productCodeMap: new Map(products.map(p => [p.id.toLowerCase(), p])),
+    productExactMap: new Map(products.map(p => [p.id.toLowerCase(), p])), virtualFees: {}, cart: {}, cartOrder: [],
+    basketCustomizations: {}, basketDrafts: {}, favorites: new Set(), coupons: [], activeCouponCode: ''
+  };
+  const store = { getState: () => state, mutate(fn) { fn(state); } };
+  const cart = new CartService(store, { emit() {} });
+  const result = cart.addBasket({ id: 'c1', nome: 'Cesta', preco: 20, produtos: ['1x A', '1x B'] }, { a: 2, b: 0 });
+  assert.equal(result.ok, true);
+  assert.equal(state.basketCustomizations['basket:c1'].changed, true);
+});

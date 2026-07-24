@@ -242,10 +242,74 @@ function formatOrderDate(value) {
   return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
 }
 
-export function buildWhatsAppMessage(makePayload, pricing) {
+function normalizeQuantityMap(value) {
+  return Object.entries(value || {}).reduce((map, [id, qty]) => {
+    const amount = Math.max(0, Number(qty) || 0);
+    if (amount > 0) map[String(id)] = amount;
+    return map;
+  }, {});
+}
+
+function quantityMapsDiffer(first, second) {
+  const left = normalizeQuantityMap(first);
+  const right = normalizeQuantityMap(second);
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+  return [...keys].some(key => Number(left[key] || 0) !== Number(right[key] || 0));
+}
+
+export function buildBundleMessageContext(state, orderItems = []) {
+  const entries = Object.entries(state?.basketCustomizations || {});
+  if (!entries.length) return { hasBundle: false, headers: [], standard: [], changed: [], extras: orderItems, removed: [] };
+  const originalAggregate = {};
+  const headers = entries.map(([key, info]) => {
+    const original = normalizeQuantityMap(info?.originalItems);
+    const selected = normalizeQuantityMap(info?.selectedItems);
+    Object.entries(original).forEach(([id, qty]) => { originalAggregate[id] = Number(originalAggregate[id] || 0) + Number(qty || 0); });
+    const label = String(info?.label || (String(key).startsWith('kit:') ? 'KIT' : 'CESTA')).toUpperCase();
+    const isKit = label.includes('KIT') || String(key).startsWith('kit:');
+    const changed = Boolean(info?.changed) || quantityMapsDiffer(original, selected);
+    return `*${label}: ${String(info?.name || label).toUpperCase()} - ${isKit ? 'PROMOCIONAL' : (changed ? 'ALTERADA' : 'PADRAO')}*`;
+  });
+  const actual = Object.fromEntries(orderItems.map(item => [String(item.produtoId || item.firebaseKey || item.sku || ''), Number(item.qtd || 0)]));
+  const standard = [];
+  const changed = [];
+  const extras = [];
+  orderItems.forEach(item => {
+    const id = String(item.produtoId || item.firebaseKey || item.sku || '');
+    const originalQty = Number(originalAggregate[id] || 0);
+    if (!originalQty) extras.push(item);
+    else if (Number(item.qtd || 0) === originalQty) standard.push(item);
+    else changed.push(item);
+  });
+  const removed = Object.entries(originalAggregate).reduce((list, [id, originalQty]) => {
+    const removedQty = Math.max(0, Number(originalQty || 0) - Number(actual[id] || 0));
+    if (removedQty <= 0) return list;
+    const product = state?.productMap?.get(String(id));
+    list.push(`${removedQty}x ${product?.name || id}`);
+    return list;
+  }, []);
+  return { hasBundle: true, headers, standard, changed, extras, removed, originalAggregate };
+}
+
+function itemSection(title, items) {
+  const lines = items.length ? items.map(item => `${item.qtd}x ${item.nome}`).join('\n') : 'Nenhum item.';
+  const quantity = items.reduce((sum, item) => sum + Number(item.qtd || 0), 0);
+  return `*${title}*\n${lines}\nTotal de itens: ${quantity}`;
+}
+
+export function buildWhatsAppMessage(makePayload, pricing, state = null) {
   const order = makePayload.pedido;
   const customer = order.cliente;
-  const itemLines = order.itens.map(item => `${item.qtd}x ${item.nome}`).join('\n');
+  const bundle = buildBundleMessageContext(state, order.itens);
+  const itemLines = bundle.hasBundle
+    ? [
+        itemSection('PRODUTOS DA CESTA SEM ALTERACAO', bundle.standard),
+        '------------------------------',
+        itemSection('PRODUTOS DA CESTA COM QUANTIDADE ALTERADA', bundle.changed),
+        '------------------------------',
+        itemSection('PRODUTOS ADICIONADOS FORA DA CESTA', bundle.extras)
+      ].join('\n')
+    : `${order.itens.map(item => `${item.qtd}x ${item.nome}`).join('\n')}\nTotal de itens: ${order.itens.reduce((sum, item) => sum + Number(item.qtd || 0), 0)}`;
   const discountLines = [
     pricing.couponDiscount > 0 ? `🏷️ *CUPOM:* − ${fmt(pricing.couponDiscount)}` : '',
     pricing.kitDiscount > 0 ? `🎁 *DESCONTO DO KIT:* − ${fmt(pricing.kitDiscount)}` : '',
@@ -253,7 +317,11 @@ export function buildWhatsAppMessage(makePayload, pricing) {
     pricing.wholesaleDiscount > 0 ? `📦 *DESCONTO ATACADO:* − ${fmt(pricing.wholesaleDiscount)}` : '',
     pricing.discount > 0 ? `✅ *ECONOMIA TOTAL:* − ${fmt(pricing.discount)}` : ''
   ].filter(Boolean).join('\n');
-  return `*PEDIDO #${order.numero}*\n*ENTREGA:* ${formatOrderDate(customer.agendamento)}\n------------------------------\n*ITENS SELECIONADOS*\n${itemLines}\nTotal de itens: ${order.itens.reduce((sum, item) => sum + Number(item.qtd || 0), 0)}\n\n*RESUMO DE VALORES*\nValor normal sem descontos: ${fmt(pricing.subtotalBefore)}${discountLines ? `\n${discountLines}` : ''}\n💰 *TOTAL FINAL:* ${fmt(order.total)}\n------------------------------\n*👤 DADOS PARA ATENDIMENTO*\nNome: ${customer.nome}\nTelefone/WhatsApp: ${customer.telefoneFormatado}\nCidade: ${customer.cidade}/MT\nBairro: ${customer.bairro}\nRua: ${customer.rua}\nNº: ${customer.numero}${customer.quadra ? `\nQuadra: ${customer.quadra}` : ''}${customer.frente ? `\nReferência: ${customer.frente}` : ''}\n📅 *Agendamento:* ${formatOrderDate(customer.agendamento)}\n💳 *Pagamento:* ${customer.pagamento}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.`;
+  const bundleHeaders = bundle.headers.length ? `\n${bundle.headers.join('\n')}` : '';
+  const removedSection = bundle.hasBundle
+    ? `\n\n*PRODUTOS RETIRADOS DA CESTA ORIGINAL*\n${bundle.removed.length ? bundle.removed.join(', ') : 'Nenhum produto retirado.'}`
+    : '';
+  return `*PEDIDO #${order.numero}*${bundleHeaders}\n*ENTREGA:* ${formatOrderDate(customer.agendamento)}\n------------------------------\n*ITENS SELECIONADOS*\n${itemLines}\n\n*RESUMO DE VALORES*\nValor normal sem descontos: ${fmt(pricing.subtotalBefore)}${discountLines ? `\n${discountLines}` : ''}\n💰 *TOTAL FINAL:* ${fmt(order.total)}\n------------------------------\n*👤 DADOS PARA ATENDIMENTO*\nNome: ${customer.nome}\nTelefone/WhatsApp: ${customer.telefoneFormatado}\nCidade: ${customer.cidade}/MT\nBairro: ${customer.bairro}\nRua: ${customer.rua}\nNº: ${customer.numero}${customer.quadra ? `\nQuadra: ${customer.quadra}` : ''}${customer.frente ? `\nReferência: ${customer.frente}` : ''}\n📅 *Agendamento:* ${formatOrderDate(customer.agendamento)}\n💳 *Pagamento:* ${customer.pagamento}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.${removedSection}`;
 }
 
 export async function lookupClientByCpf(cpf) {
@@ -281,6 +349,8 @@ async function fetchWithTimeout(url, options, timeoutMs = 8000) {
   try { return await fetch(url, { ...options, signal: controller.signal }); }
   finally { clearTimeout(timer); }
 }
+
+let orderQueueProcessing = false;
 
 function readQueue() {
   const queue = readStorage(CONFIG.STORAGE.ORDER_QUEUE, []);
@@ -324,39 +394,81 @@ function updateQueueEntry(id, changes) {
   return queue[index];
 }
 
+async function readFirebaseOrder(orderId) {
+  try {
+    const response = await fetchWithTimeout(`${CONFIG.ENDPOINTS.FIREBASE_ORDERS}/${encodeURIComponent(String(orderId))}.json`, {
+      method: 'GET', cache: 'no-store'
+    }, 6000);
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+function firebaseOrderHasBling(order) {
+  return Boolean(order?.bling?.id_pedido_venda || order?.bling?.numero_pedido_bling);
+}
+
 export async function processOrderQueue() {
-  if (typeof navigator !== 'undefined' && !navigator.onLine) return;
-  const queue = readQueue().sort((a, b) => Number(a.createdAt) - Number(b.createdAt));
-  for (const snapshot of queue.slice(0, 4)) {
-    let entry = readQueue().find(item => item.id === snapshot.id);
-    if (!entry) continue;
-    if (entry.firebaseStatus !== 'sent') {
-      try {
-        const response = await fetchWithTimeout(`${CONFIG.ENDPOINTS.FIREBASE_ORDERS}/${encodeURIComponent(entry.id)}.json`, {
-          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry.firebaseOrder), keepalive: true
-        }, 8000);
-        if (!response.ok) throw new Error(`Firebase respondeu ${response.status}`);
-        entry = updateQueueEntry(entry.id, { firebaseStatus: 'sent', lastError: '' });
-      } catch (error) {
-        updateQueueEntry(entry.id, { firebaseStatus: 'pending', lastError: error.message || 'Falha no Firebase' });
+  if (orderQueueProcessing || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
+  orderQueueProcessing = true;
+  try {
+    const queue = readQueue().sort((a, b) => Number(a.createdAt) - Number(b.createdAt));
+    for (const snapshot of queue.slice(0, 4)) {
+      let entry = readQueue().find(item => item.id === snapshot.id);
+      if (!entry) continue;
+
+      if (entry.makeStatus === 'sent' && entry.firebaseStatus !== 'sent') {
+        const existingOrder = await readFirebaseOrder(entry.id);
+        if (existingOrder) entry = updateQueueEntry(entry.id, { firebaseStatus: 'sent', lastError: '' });
       }
+
+      entry = readQueue().find(item => item.id === snapshot.id);
+      if (!entry) continue;
+      if (entry.firebaseStatus !== 'sent' && entry.makeStatus !== 'sent') {
+        try {
+          const response = await fetchWithTimeout(`${CONFIG.ENDPOINTS.FIREBASE_ORDERS}/${encodeURIComponent(entry.id)}.json`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry.firebaseOrder), keepalive: true
+          }, 8000);
+          if (!response.ok) throw new Error(`Firebase respondeu ${response.status}`);
+          entry = updateQueueEntry(entry.id, { firebaseStatus: 'sent', lastError: '' });
+        } catch (error) {
+          updateQueueEntry(entry.id, { firebaseStatus: 'pending', lastError: error.message || 'Falha no Firebase' });
+        }
+      }
+
+      entry = readQueue().find(item => item.id === snapshot.id);
+      if (!entry || entry.makeStatus === 'sent') {
+        if (entry?.firebaseStatus === 'sent' && entry?.makeStatus === 'sent') writeQueue(readQueue().filter(item => item.id !== entry.id));
+        continue;
+      }
+
+      const now = Date.now();
+      if (Number(entry.makeAttempts || 0) > 0) {
+        const existingOrder = await readFirebaseOrder(entry.id);
+        if (firebaseOrderHasBling(existingOrder)) {
+          updateQueueEntry(entry.id, { firebaseStatus: 'sent', makeStatus: 'sent', lastError: '' });
+          writeQueue(readQueue().filter(item => item.id !== entry.id));
+          continue;
+        }
+        if (now - Number(entry.lastMakeAttemptAt || 0) < CONFIG.ORDER_RETRY_MS) continue;
+      }
+
+      updateQueueEntry(entry.id, { makeStatus: 'sending', makeAttempts: Number(entry.makeAttempts || 0) + 1, lastMakeAttemptAt: now, lastError: '' });
+      try {
+        const response = await fetchWithTimeout(CONFIG.ENDPOINTS.MAKE_ORDER, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry.makePayload), keepalive: true
+        }, 12000);
+        if (!response.ok) throw new Error(`Make respondeu ${response.status}`);
+        updateQueueEntry(entry.id, { makeStatus: 'sent', lastError: '' });
+      } catch (error) {
+        updateQueueEntry(entry.id, { makeStatus: 'pending', lastError: error.message || 'Falha no Make' });
+      }
+      entry = readQueue().find(item => item.id === snapshot.id);
+      if (entry?.firebaseStatus === 'sent' && entry?.makeStatus === 'sent') writeQueue(readQueue().filter(item => item.id !== entry.id));
     }
-    entry = readQueue().find(item => item.id === snapshot.id);
-    if (!entry || entry.makeStatus === 'sent') continue;
-    const now = Date.now();
-    if (entry.makeAttempts > 0 && now - Number(entry.lastMakeAttemptAt || 0) < CONFIG.ORDER_RETRY_MS) continue;
-    updateQueueEntry(entry.id, { makeStatus: 'sending', makeAttempts: Number(entry.makeAttempts || 0) + 1, lastMakeAttemptAt: now });
-    try {
-      const response = await fetchWithTimeout(CONFIG.ENDPOINTS.MAKE_ORDER, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry.makePayload), keepalive: true
-      }, 12000);
-      if (!response.ok) throw new Error(`Make respondeu ${response.status}`);
-      updateQueueEntry(entry.id, { makeStatus: 'sent', lastError: '' });
-    } catch (error) {
-      updateQueueEntry(entry.id, { makeStatus: 'pending', lastError: error.message || 'Falha no Make' });
-    }
-    entry = readQueue().find(item => item.id === snapshot.id);
-    if (entry?.firebaseStatus === 'sent' && entry?.makeStatus === 'sent') writeQueue(readQueue().filter(item => item.id !== entry.id));
+  } finally {
+    orderQueueProcessing = false;
   }
 }
 
