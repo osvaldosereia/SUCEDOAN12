@@ -1,17 +1,16 @@
 .sidebar-cart-total{display:none}
 
-/* Quatro atalhos comerciais leves: ícones 3D inline, sem fotos e sem aparência de card. */
+/* Quatro atalhos comerciais leves: o chip é o principal elemento visual. */
 .home-deal-grid{margin-top:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
 .home-deal-shortcut{
   --deal:#14532d;
   --deal-soft:#eef8f1;
   min-width:0;
+  min-height:154px;
   color:var(--ink);
   display:grid;
-  justify-items:center;
-  align-content:start;
-  gap:9px;
-  padding:5px 3px 8px;
+  place-items:center;
+  padding:16px 4px 12px;
   text-align:center;
   background:transparent;
   border:0;
@@ -22,25 +21,33 @@
 .home-deal-shortcut.deal-40{--deal:#245f9b;--deal-soft:#eef5fc}
 .home-deal-shortcut.deal-all{--deal:#7c3fa0;--deal-soft:#f6effa}
 .home-deal-shortcut.deal-5{--deal:#178553;--deal-soft:#edf9f2}
-.home-deal-icon-shell{
-  width:min(100%,150px);
-  aspect-ratio:1/1;
-  display:grid;
-  place-items:center;
-  border-radius:34%;
-  background:radial-gradient(circle at 35% 25%,#fff 0 34%,var(--deal-soft) 72%,#fff 100%);
-  filter:drop-shadow(0 12px 13px rgba(16,24,40,.12));
-  transition:transform .18s ease,filter .18s ease;
+.home-deal-copy{min-width:0;display:grid;justify-items:center;align-content:center;gap:8px}
+.home-deal-badge{
+  width:max-content;
+  max-width:100%;
+  min-height:52px;
+  padding:0 21px;
+  border:2px solid color-mix(in srgb,var(--deal) 24%,transparent);
+  border-radius:999px;
+  background:var(--deal-soft);
+  color:var(--deal);
+  font-size:17px;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:.035em;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  white-space:nowrap;
+  box-shadow:0 7px 18px color-mix(in srgb,var(--deal) 12%,transparent);
+  transition:transform .16s ease,box-shadow .16s ease;
 }
-.home-deal-icon{width:92%;height:92%;overflow:visible;filter:drop-shadow(0 5px 5px rgba(16,24,40,.16))}
-.home-deal-copy{min-width:0;display:grid;justify-items:center;align-content:start;gap:5px}
-.home-deal-badge{width:max-content;max-width:100%;min-height:27px;padding:0 9px;border-radius:999px;background:var(--deal-soft);color:var(--deal);font-size:9.5px;font-weight:850;letter-spacing:.045em;display:inline-flex;align-items:center;white-space:nowrap}
 .home-deal-copy strong{font-size:18px;line-height:1.08;font-weight:800;letter-spacing:-.03em;color:var(--ink)}
 .home-deal-copy small{min-height:34px;color:var(--muted);font-size:11.5px;line-height:1.42;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .home-deal-cta{width:max-content;margin-top:1px;display:inline-flex;align-items:center;gap:7px;color:var(--deal);font-size:11px;font-weight:800}
 .home-deal-cta b{width:25px;height:25px;border-radius:999px;background:var(--deal-soft);display:grid;place-items:center;font-size:13px;transition:transform .16s ease}
 @media(hover:hover){
-  .home-deal-shortcut:hover .home-deal-icon-shell{transform:translateY(-4px) scale(1.025);filter:drop-shadow(0 17px 17px rgba(16,24,40,.16))}
+  .home-deal-shortcut:hover .home-deal-badge{transform:translateY(-3px);box-shadow:0 11px 24px color-mix(in srgb,var(--deal) 18%,transparent)}
   .home-deal-shortcut:hover .home-deal-cta b{transform:translateX(3px)}
 }
 
@@ -63,10 +70,9 @@
 
 @media(max-width:767px){
   .home-deal-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 10px}
-  .home-deal-shortcut{padding:2px 1px 7px;gap:7px}
-  .home-deal-icon-shell{width:min(100%,128px);border-radius:32%}
-  .home-deal-copy{gap:4px}
-  .home-deal-badge{min-height:23px;padding:0 7px;font-size:8px}
+  .home-deal-shortcut{min-height:136px;padding:12px 1px 10px}
+  .home-deal-copy{gap:6px}
+  .home-deal-badge{min-height:44px;padding:0 14px;font-size:14.5px;border-width:1.5px}
   .home-deal-copy strong{font-size:15.5px;line-height:1.1}
   .home-deal-copy small{min-height:31px;font-size:10px;line-height:1.36}
   .home-deal-cta{font-size:10px;gap:5px}
