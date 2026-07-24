@@ -45,7 +45,7 @@
           <div class="attention-grid" id="dashboardMetrics"></div>
           <div class="content-grid two-columns">
             <section class="panel">
-              <div class="panel-header"><div><h2>Prioridades</h2><p>Itens que podem impedir vendas ou publicação.</p></div></div>
+              <div class="panel-header"><div><h2>Prioridades</h2><p>Clique para carregar exatamente os produtos que precisam de correção.</p></div></div>
               <div class="priority-list" id="priorityList"></div>
             </section>
             <section class="panel">
@@ -63,7 +63,7 @@
           </div>
           <div class="filter-bar" id="filterBar" hidden>
             <label>Categoria<select id="categoryFilter"><option value="">Todas</option></select></label>
-            <label>Status<select id="statusFilter"><option value="">Todos</option><option value="active">Ativos</option><option value="inactive">Inativos</option><option value="no-stock">Sem estoque</option></select></label>
+            <label>Status<select id="statusFilter"><option value="">Todos</option><option value="active">Ativos</option><option value="inactive">Inativos</option><option value="no-stock">Sem estoque</option><option value="low-stock">Estoque baixo</option></select></label>
             <label>Pendência<select id="qualityFilter"><option value="">Todas</option><option value="errors">Com erros</option><option value="warnings">Com avisos</option><option value="missing-image">Sem imagem</option><option value="missing-ncm">Sem NCM</option><option value="missing-ean">Sem EAN</option><option value="incomplete">Cadastro incompleto</option></select></label>
             <label>Ordenar<select id="sortFilter"><option value="name">Nome</option><option value="stock-asc">Menor estoque</option><option value="updated-desc">Atualizados recentemente</option></select></label>
             <button class="button ghost" id="clearFiltersButton" type="button">Limpar</button>
@@ -82,25 +82,25 @@
 
         <section class="view" data-view="operations">
           <div class="module-cards">
-            <article class="module-card"><span class="module-icon">NF</span><div><h2>Entrada de NF-e</h2><p>Importação fiscal será migrada preservando duplicidade, lotes, validade e estoque.</p></div><span class="badge warning">Próxima fase</span></article>
-            <article class="module-card"><span class="module-icon">▦</span><div><h2>Leitura rápida</h2><p>A funcionalidade escondida será reavaliada antes de ser ativada ou removida.</p></div><span class="badge neutral">Em avaliação</span></article>
-            <article class="module-card"><span class="module-icon">!</span><div><h2>Estoque e validade</h2><p>Fila operacional única para estoque baixo, vencidos e próximos do vencimento.</p></div><span class="badge warning">Próxima fase</span></article>
+            <article class="module-card"><span class="module-icon">NF</span><div><h2>Entrada de NF-e</h2><p>Importação fiscal preserva duplicidade, lotes, validade e estoque.</p></div><span class="badge success">Módulo V2</span></article>
+            <article class="module-card"><span class="module-icon">▦</span><div><h2>Leitura rápida</h2><p>Leitura e correção de um produto por vez no celular.</p></div><span class="badge success">Módulo V2</span></article>
+            <article class="module-card"><span class="module-icon">!</span><div><h2>Estoque e validade</h2><p>Fila operacional para estoque baixo, vencidos e próximos do vencimento.</p></div><span class="badge success">Módulo V2</span></article>
           </div>
         </section>
 
         <section class="view" data-view="promotions">
           <div class="module-cards">
-            <article class="module-card"><span class="module-icon">CB</span><div><h2>Cestas básicas</h2><p>Editor com busca lateral e validação de produtos.</p></div><span class="badge warning">Próxima fase</span></article>
-            <article class="module-card"><span class="module-icon">KT</span><div><h2>Kits promocionais</h2><p>Preço, desconto, estoque disponível e fila do Instagram em um fluxo único.</p></div><span class="badge warning">Próxima fase</span></article>
-            <article class="module-card"><span class="module-icon">%</span><div><h2>Ofertas automáticas</h2><p>Regras e histórico serão incorporados sem injeção dinâmica de telas.</p></div><span class="badge warning">Próxima fase</span></article>
+            <article class="module-card"><span class="module-icon">CB</span><div><h2>Cestas básicas</h2><p>Editor com estoque visível, substituição pesquisável e alertas abaixo de 30 unidades.</p></div><span class="badge success">Editor ativo</span></article>
+            <article class="module-card"><span class="module-icon">KT</span><div><h2>Kits promocionais</h2><p>Preço, desconto, estoque, IA de descrição/capa e fila do Instagram.</p></div><span class="badge success">Editor ativo</span></article>
+            <article class="module-card"><span class="module-icon">%</span><div><h2>Ofertas automáticas</h2><p>Regras, execução e histórico em módulo próprio.</p></div><span class="badge success">Módulo V2</span></article>
           </div>
         </section>
 
         <section class="view" data-view="registries">
           <div class="module-cards">
-            <article class="module-card"><span class="module-icon">CT</span><div><h2>Categorias</h2><p>Hierarquia de categoria, subcategoria e subsubcategoria.</p></div><span class="badge warning">Próxima fase</span></article>
-            <article class="module-card"><span class="module-icon">MC</span><div><h2>Marcas e fornecedores</h2><p>Cadastros auxiliares com busca, padronização e uso nos produtos.</p></div><span class="badge warning">Próxima fase</span></article>
-            <article class="module-card"><span class="module-icon">TG</span><div><h2>Tags</h2><p>Marcadores universais sem duplicações.</p></div><span class="badge warning">Próxima fase</span></article>
+            <article class="module-card"><span class="module-icon">CT</span><div><h2>Categorias</h2><p>Hierarquia de categoria, subcategoria e subsubcategoria.</p></div><span class="badge success">Módulo V2</span></article>
+            <article class="module-card"><span class="module-icon">MC</span><div><h2>Marcas e fornecedores</h2><p>Cadastros auxiliares usados pelos seletores dos produtos.</p></div><span class="badge success">Módulo V2</span></article>
+            <article class="module-card"><span class="module-icon">TG</span><div><h2>Tags</h2><p>Marcadores universais sem duplicações.</p></div><span class="badge success">Módulo V2</span></article>
           </div>
         </section>
 
@@ -118,7 +118,15 @@
               <div class="panel-header"><div><h2>Publicação no GitHub</h2><p>Credenciais ficam somente neste navegador.</p></div><button class="button secondary compact" id="testGithubButton" type="button">Testar</button></div>
               <div class="form-stack">
                 <label>Token GitHub<input id="githubTokenSetting" type="password" autocomplete="off"></label>
-                <div class="form-grid compact-grid"><label>Owner<input id="githubOwnerSetting" type="text"></label><label>Repositório<input id="githubRepoSetting" type="text"></label><label>Branch<input id="githubBranchSetting" type="text"></label><label>Produtos públicos<input id="productsHomePathSetting" type="text"></label><label class="span-2">Versão do catálogo<input id="catalogVersionPathSetting" type="text"></label></div>
+                <div class="form-grid compact-grid"><label>Owner<input id="githubOwnerSetting" type="text"></label><label>Repositório<input id="githubRepoSetting" type="text"></label><label>Branch<input id="githubBranchSetting" type="text"></label><label>Produtos públicos<input id="productsHomePathSetting" type="text"></label><label class="span-2">Versão do catálogo<input id="catalogVersionPathSetting" type="text"></label><label class="span-2">Pasta de imagens dos produtos<input id="githubImagesPathSetting" type="text" placeholder="site/img/produtos_3"></label><label class="span-2">Pasta de imagens dos kits<input id="githubKitImagesPathSetting" type="text" placeholder="site/img/kits"></label></div>
+              </div>
+            </section>
+            <section class="panel span-all-settings">
+              <div class="panel-header"><div><h2>Automações do Make restauradas</h2><p>Os mesmos canais do admin antigo, agora separados e com retorno visível.</p></div><span class="badge info">3 canais</span></div>
+              <div class="form-stack make-settings-grid">
+                <label>Webhook IA de textos<input id="makeTextWebhookSetting" type="url" placeholder="https://hook.us2.make.com/..."><small>Cadastro completo, nome, descrição, embalagem, tags, chat e descrição de kit.</small></label>
+                <label>Webhook IA de imagens<input id="makeImageWebhookSetting" type="url" placeholder="https://hook.us2.make.com/..."><small>Imagem de produto e capa de kit.</small></label>
+                <label>Webhook Instagram Kits<input id="makeInstagramKitWebhookSetting" type="url" placeholder="https://hook.us2.make.com/..."><small>Geração do carrossel e envio para a fila do GitHub.</small></label>
               </div>
             </section>
             <section class="panel span-all-settings">
@@ -126,8 +134,8 @@
               <div class="system-list" id="diagnosticList"></div>
             </section>
             <section class="panel danger-panel span-all-settings">
-              <div class="panel-header"><div><h2>Ferramentas avançadas</h2><p>Recursos técnicos ficarão isolados da operação diária.</p></div></div>
-              <p class="muted">Make, Bling, importações, exportações, manutenção e JSON serão migrados para esta área, com confirmações específicas e sem misturar ações destrutivas com o salvamento normal.</p>
+              <div class="panel-header"><div><h2>Ferramentas avançadas</h2><p>Recursos técnicos isolados da operação diária.</p></div></div>
+              <p class="muted">Bling, exportações, manutenção e JSON permanecem separados das ações comuns. As automações do Make voltaram ao cadastro de produtos e ao editor de kits.</p>
             </section>
           </div>
         </section>
