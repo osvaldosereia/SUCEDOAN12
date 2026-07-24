@@ -19,9 +19,10 @@ for (const fragment of [
   'src/main.js?v=20260724-3',
   'styles/bundle-confirmation.css?v=20260724-3',
   'styles/checkout-flow.css?v=20260724-3',
-  'styles/live-polish.css?v=20260724-3',
-  'src/live-polish.js?v=20260724-3',
-  'src/image-performance.js?v=20260724-3',
+  'styles/home-parity.css?v=20260724-5',
+  'styles/live-polish.css?v=20260724-5',
+  'src/visual-parity.js?v=20260724-5',
+  'src/image-performance.js?v=20260724-4',
   'requestIdleCallback',
   'noindex, nofollow'
 ]) {
@@ -30,14 +31,15 @@ for (const fragment of [
 
 const productionIndex = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const fragment of [
-  '2026-07-24-modular-production-v4',
+  '2026-07-24-modular-production-v5',
   'content="index, follow"',
   'app-next/styles/app.css?v=20260724-3',
-  'app-next/styles/live-polish.css?v=20260724-3',
+  'app-next/styles/home-parity.css?v=20260724-5',
+  'app-next/styles/live-polish.css?v=20260724-5',
+  'app-next/src/visual-parity.js?v=20260724-5',
   'app-next/src/main.js?v=20260724-3',
-  'app-next/src/live-polish.js?v=20260724-3',
   'app-next/src/image-performance.js?v=20260724-4',
-  'da_v4_cache_migrated_20260724',
+  'da_v5_cache_migrated_20260724',
   'requestIdleCallback',
   'window.__DA_PRODUCTION__ = true',
   'previewModular = false',
@@ -73,8 +75,11 @@ if (detailReview.includes('fillCheckoutOffers') || detailReview.includes('Oferta
 if (detailReview.includes('observe(document.documentElement')) throw new Error('detail-review ainda observa o documento inteiro');
 
 const visualParity = fs.readFileSync(path.join(root, 'src/visual-parity.js'), 'utf8');
-for (const fragment of ['50% OFF', '40% OFF', 'Todas as ofertas', 'ATÉ R$ 5', '<svg class="home-deal-icon"']) {
+for (const fragment of ['50% OFF', '40% OFF', 'Todas as ofertas', 'ATÉ R$ 5', 'home-deal-badge']) {
   if (!visualParity.includes(fragment)) throw new Error(`Atalho promocional incompleto: ${fragment}`);
+}
+if (visualParity.includes('home-deal-icon') || visualParity.includes('dealIcon(') || visualParity.includes('<svg')) {
+  throw new Error('Os quatro atalhos iniciais ainda possuem ícones');
 }
 if (visualParity.includes('loadCatalog') || visualParity.includes('home-deal-product-img') || visualParity.includes('Math.random()')) {
   throw new Error('Atalhos iniciais ainda dependem do catálogo ou de fotos de produtos');
@@ -82,9 +87,19 @@ if (visualParity.includes('loadCatalog') || visualParity.includes('home-deal-pro
 if (visualParity.includes('Faça sua compra do mês') || visualParity.includes('journeyHtml(')) throw new Error('A seção Faça sua compra do mês ainda está sendo criada');
 
 const homeCss = fs.readFileSync(path.join(root, 'styles/home-parity.css'), 'utf8');
-if (!homeCss.includes('grid-template-columns:repeat(4')) throw new Error('Desktop precisa exibir quatro atalhos promocionais');
-if (!homeCss.includes('grid-template-columns:repeat(2')) throw new Error('Mobile precisa exibir dois atalhos promocionais por linha');
-if (!homeCss.includes('.home-deal-shortcut')) throw new Error('Atalhos sem cards não foram estilizados');
+for (const fragment of [
+  'grid-template-columns:repeat(4',
+  'grid-template-columns:repeat(2',
+  '.home-deal-shortcut',
+  'min-height:52px',
+  'font-size:17px',
+  'min-height:44px',
+  'font-size:14.5px'
+]) {
+  if (!homeCss.includes(fragment)) throw new Error(`Destaque dos chips incompleto: ${fragment}`);
+}
+if (homeCss.includes('.home-deal-icon-shell') || homeCss.includes('.home-deal-icon{')) throw new Error('CSS dos ícones ainda está presente');
+if (homeCss.includes('color-mix(')) throw new Error('Chips usam recurso CSS incompatível com navegadores antigos');
 
 const livePolish = fs.readFileSync(path.join(root, 'src/live-polish.js'), 'utf8');
 for (const fragment of [
@@ -108,12 +123,23 @@ for (const fragment of [
   'grid-column:auto!important',
   '.home-page .home-bundle-carousel',
   'flex:0 0 58.8%',
+  '.product-grid{',
+  'gap:1px!important',
+  '.horizontal-rail>.product-card+.product-card',
+  'background:#f1f3f2!important',
+  'padding:0!important',
+  '.bundle-media,',
   '[data-favorite-count][hidden]',
   '.header-cart-icon',
-  'background:#fff!important',
   'data-performance-profile="economy"'
 ]) {
   if (!liveCss.includes(fragment)) throw new Error(`Ajuste visual ausente: ${fragment}`);
+}
+if (!liveCss.includes('.product-grid>.product-card') || !liveCss.includes('border-radius:0!important')) {
+  throw new Error('Cards de produtos ainda impedem as linhas separadoras contínuas');
+}
+if (!liveCss.includes('.product-card-media img') || !liveCss.includes('width:100%!important') || !liveCss.includes('height:100%!important')) {
+  throw new Error('Imagem e fundo do produto não ocupam a mesma área');
 }
 
 const imagePerformance = fs.readFileSync(path.join(root, 'src/image-performance.js'), 'utf8');
