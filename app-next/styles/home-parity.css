@@ -1,13 +1,20 @@
 .sidebar-cart-total{display:none}
-.home-deal-grid{margin-top:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.home-deal-card{min-height:122px;padding:17px;border-radius:22px;color:#fff;display:grid;grid-template-columns:minmax(0,1fr) 88px;align-items:center;gap:12px;overflow:hidden;box-shadow:0 14px 30px rgba(20,35,27,.12)}
-.home-deal-card.deal-50{background:linear-gradient(135deg,#a61b35,#e5484d)}
-.home-deal-card.deal-40{background:linear-gradient(135deg,#173b63,#2f6fb0)}
-.home-deal-card.deal-5{background:linear-gradient(135deg,#146c43,#26a269)}
-.home-deal-copy{min-width:0;display:grid;gap:7px}
-.home-deal-copy strong{font-size:17px;line-height:1.08;font-weight:800}
-.home-deal-copy small{color:rgba(255,255,255,.88);font-size:12px;line-height:1.4}
-.home-deal-product-img{width:88px;height:88px;padding:7px;border-radius:20px;object-fit:contain;background:#fff;mix-blend-mode:normal!important;filter:none!important}
+.home-deal-grid{margin-top:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.home-deal-card{position:relative;isolation:isolate;min-height:154px;padding:19px;border-radius:25px;color:#fff;display:grid;grid-template-columns:minmax(0,1fr) 96px;align-items:center;gap:14px;overflow:hidden;border:1px solid rgba(255,255,255,.16);box-shadow:0 16px 34px rgba(20,35,27,.15)}
+.home-deal-card::before{content:'';position:absolute;z-index:-2;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.12),transparent 48%)}
+.home-deal-card::after{content:'';position:absolute;z-index:-1;width:150px;height:150px;right:-56px;top:-66px;border-radius:50%;background:rgba(255,255,255,.12)}
+.home-deal-card.deal-50{background:linear-gradient(135deg,#901a35 0%,#d82d4d 58%,#ee5b5f 100%)}
+.home-deal-card.deal-40{background:linear-gradient(135deg,#142f52 0%,#235d98 58%,#4382bd 100%)}
+.home-deal-card.deal-5{background:linear-gradient(135deg,#0f5a39 0%,#178553 58%,#31ad74 100%)}
+.home-deal-copy{min-width:0;display:grid;align-content:center;gap:6px}
+.home-deal-copy em{width:max-content;padding:5px 8px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(255,255,255,.11);color:rgba(255,255,255,.92);font-size:9px;line-height:1;font-style:normal;font-weight:700;text-transform:uppercase;letter-spacing:.055em}
+.home-deal-copy strong{max-width:190px;font-size:20px;line-height:1.02;font-weight:800;letter-spacing:-.035em}
+.home-deal-copy small{max-width:210px;color:rgba(255,255,255,.86);font-size:11.5px;line-height:1.38}
+.home-deal-cta{width:max-content;margin-top:3px;display:inline-flex;align-items:center;gap:7px;color:#fff;font-size:11px;font-weight:700}
+.home-deal-cta b{width:23px;height:23px;border-radius:999px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:13px}
+.home-deal-media{width:96px;height:96px;padding:6px;border-radius:23px;background:rgba(255,255,255,.96);display:grid;place-items:center;box-shadow:0 10px 25px rgba(25,30,27,.16);transform:rotate(2deg)}
+.home-deal-product-img{width:100%;height:100%;padding:3px;border-radius:18px;object-fit:contain;background:#fff;mix-blend-mode:normal!important;filter:none!important}
+@media(hover:hover){.home-deal-card:hover{transform:translateY(-3px);box-shadow:0 20px 38px rgba(20,35,27,.2)}.home-deal-card:hover .home-deal-media{transform:rotate(0deg) scale(1.03)}}
 .payment-notices{margin-top:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .payment-notice{min-height:94px;padding:15px;border:1px solid var(--line);border-radius:20px;background:#fff;display:grid;grid-template-columns:48px minmax(0,1fr);align-items:center;gap:12px}
 .payment-notice-mark{width:48px;height:48px;border-radius:15px;background:#ecfdf3;color:var(--brand);display:grid;place-items:center;font-size:15px;font-weight:800}
@@ -26,8 +33,11 @@
 .purchase-journey-media img{width:100%;height:100%;object-fit:contain;padding:6px;mix-blend-mode:multiply}
 @media(max-width:767px){
   .home-deal-grid{grid-template-columns:1fr;gap:11px}
-  .home-deal-card{min-height:108px;padding:14px 15px;grid-template-columns:minmax(0,1fr) 82px;border-radius:20px}
-  .home-deal-product-img{width:82px;height:82px;border-radius:18px}
+  .home-deal-card{min-height:126px;padding:14px 15px;grid-template-columns:minmax(0,1fr) 88px;border-radius:21px}
+  .home-deal-copy{gap:5px}
+  .home-deal-copy strong{font-size:18px}
+  .home-deal-copy small{font-size:11px}
+  .home-deal-media{width:88px;height:88px;border-radius:20px}
   .payment-notices{grid-template-columns:1fr;gap:9px}
   .payment-notice{min-height:82px;padding:12px}
   .purchase-journey-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
