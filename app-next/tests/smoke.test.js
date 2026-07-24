@@ -16,12 +16,9 @@ for (const file of required) {
 
 const previewIndex = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 for (const fragment of [
-  'src/main.js?v=20260724-3',
-  'styles/bundle-confirmation.css?v=20260724-3',
-  'styles/checkout-flow.css?v=20260724-3',
-  'styles/home-parity.css?v=20260724-5',
+  'styles/home-parity.css?v=20260724-6',
   'styles/live-polish.css?v=20260724-6',
-  'src/visual-parity.js?v=20260724-5',
+  'src/visual-parity.js?v=20260724-6',
   'src/image-performance.js?v=20260724-4',
   'requestIdleCallback',
   'noindex, nofollow'
@@ -33,14 +30,11 @@ const productionIndex = fs.readFileSync(path.join(productionRoot, 'index.html'),
 for (const fragment of [
   '2026-07-24-modular-production-v6',
   'content="index, follow"',
-  'app-next/styles/app.css?v=20260724-3',
-  'app-next/styles/home-parity.css?v=20260724-5',
+  'app-next/styles/home-parity.css?v=20260724-6',
   'app-next/styles/live-polish.css?v=20260724-6',
-  'app-next/src/visual-parity.js?v=20260724-5',
-  'app-next/src/main.js?v=20260724-3',
+  'app-next/src/visual-parity.js?v=20260724-6',
   'app-next/src/image-performance.js?v=20260724-4',
   'da_v6_cache_migrated_20260724',
-  'requestIdleCallback',
   'window.__DA_PRODUCTION__ = true',
   'previewModular = false',
   'preview_modular = false'
@@ -75,31 +69,40 @@ if (detailReview.includes('fillCheckoutOffers') || detailReview.includes('Oferta
 if (detailReview.includes('observe(document.documentElement')) throw new Error('detail-review ainda observa o documento inteiro');
 
 const visualParity = fs.readFileSync(path.join(root, 'src/visual-parity.js'), 'utf8');
-for (const fragment of ['50% OFF', '40% OFF', 'Todas as ofertas', 'ATÉ R$ 5', 'home-deal-badge']) {
-  if (!visualParity.includes(fragment)) throw new Error(`Atalho promocional incompleto: ${fragment}`);
+for (const fragment of [
+  "page.querySelector('.quick-links')?.remove()",
+  'Pagamento facilitado',
+  'Compra com segurança',
+  'Entrega grátis',
+  'Em Cuiabá e Várzea Grande',
+  'a partir de R$ 75',
+  'home-offers-banner',
+  'DESCONTOS DE ATÉ 50%',
+  'Ver Ofertas',
+  '#/ofertas/50',
+  "document.getElementById('personalization-consent')?.remove()"
+]) {
+  if (!visualParity.includes(fragment)) throw new Error(`Estrutura da home incompleta: ${fragment}`);
 }
-if (visualParity.includes('home-deal-icon') || visualParity.includes('dealIcon(') || visualParity.includes('<svg')) {
-  throw new Error('Os quatro atalhos iniciais ainda possuem ícones');
-}
-if (visualParity.includes('loadCatalog') || visualParity.includes('home-deal-product-img') || visualParity.includes('Math.random()')) {
-  throw new Error('Atalhos iniciais ainda dependem do catálogo ou de fotos de produtos');
+for (const removed of ['discountShortcutsHtml', 'home-deal-shortcut', 'home-deal-badge', '40% OFF', 'ATÉ R$ 5', 'faixa=outras']) {
+  if (visualParity.includes(removed)) throw new Error(`Código morto dos atalhos ainda presente: ${removed}`);
 }
 if (visualParity.includes('Faça sua compra do mês') || visualParity.includes('journeyHtml(')) throw new Error('A seção Faça sua compra do mês ainda está sendo criada');
 
 const homeCss = fs.readFileSync(path.join(root, 'styles/home-parity.css'), 'utf8');
 for (const fragment of [
-  'grid-template-columns:repeat(4',
-  'grid-template-columns:repeat(2',
-  '.home-deal-shortcut',
-  'min-height:52px',
-  'font-size:17px',
-  'min-height:44px',
-  'font-size:14.5px'
+  'grid-template-columns:repeat(3',
+  '.payment-notice',
+  '.home-offers-banner',
+  '.home-offers-banner-button',
+  'grid-template-columns:1fr',
+  'font-size:31px'
 ]) {
-  if (!homeCss.includes(fragment)) throw new Error(`Destaque dos chips incompleto: ${fragment}`);
+  if (!homeCss.includes(fragment)) throw new Error(`Visual dos avisos ou banner incompleto: ${fragment}`);
 }
-if (homeCss.includes('.home-deal-icon-shell') || homeCss.includes('.home-deal-icon{')) throw new Error('CSS dos ícones ainda está presente');
-if (homeCss.includes('color-mix(')) throw new Error('Chips usam recurso CSS incompatível com navegadores antigos');
+for (const removed of ['home-deal-grid', 'home-deal-shortcut', 'home-deal-badge', 'purchase-journey']) {
+  if (homeCss.includes(removed)) throw new Error(`CSS morto dos atalhos ainda presente: ${removed}`);
+}
 
 const livePolish = fs.readFileSync(path.join(root, 'src/live-polish.js'), 'utf8');
 for (const fragment of [
@@ -119,8 +122,6 @@ if (livePolish.includes('observe(document.documentElement')) throw new Error('li
 
 const liveCss = fs.readFileSync(path.join(root, 'styles/live-polish.css'), 'utf8');
 for (const fragment of [
-  '.quick-links.home-deal-grid>a:first-child',
-  'grid-column:auto!important',
   '.home-page .home-bundle-carousel',
   'flex:0 0 58.8%',
   '.product-grid{',
@@ -131,16 +132,14 @@ for (const fragment of [
   'background:#fff!important',
   'background:#f5f6f5!important',
   'padding:0!important',
-  '.bundle-media,',
-  '#personalization-consent{display:none!important}',
   '[data-favorite-count][hidden]',
   '.header-cart-icon',
   'data-performance-profile="economy"'
 ]) {
   if (!liveCss.includes(fragment)) throw new Error(`Ajuste visual ausente: ${fragment}`);
 }
-if (liveCss.includes('gap:1px!important')) {
-  throw new Error('Cards de produtos ainda estão grudados');
+for (const removed of ['quick-links.home-deal-grid', 'home-deal-copy', 'home-deal-badge', 'gap:1px!important']) {
+  if (liveCss.includes(removed)) throw new Error(`CSS antigo ainda presente: ${removed}`);
 }
 if (!liveCss.includes('.product-card-media img') || !liveCss.includes('width:100%!important') || !liveCss.includes('height:100%!important')) {
   throw new Error('Imagem e fundo do produto não ocupam a mesma área');
