@@ -205,10 +205,12 @@ async function saveOne(product, { silent = false } = {}) {
   }
   try {
     const saved = await saveProduct(store.state.config, validation.product, snapshot);
-    store.markProductSaved(key, saved);
-    productsModule.renderDirty();
-    renderDashboard();
-    renderStatus();
+    store.markProductSaved(key, saved, { emit: !silent });
+    if (!silent) {
+      productsModule.renderDirty();
+      renderDashboard();
+      renderStatus();
+    }
     if (!silent) toast(`${saved.nome || saved.codigo} salvo com segurança.`, 'success');
     return saved;
   } catch (error) {
