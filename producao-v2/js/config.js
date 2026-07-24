@@ -5,6 +5,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   nfeImportMode: false,
   stockWriteMode: false,
   collectionsWriteMode: false,
+  offerWriteMode: false,
   pageSize: 50,
   githubToken: '',
   githubOwner: 'osvaldosereia',
