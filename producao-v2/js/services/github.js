@@ -2,19 +2,25 @@ import { catalogVersionPayload } from '../core/catalog.js';
 import { NFE_RECORDS_PATH, digits } from '../core/nfe.js';
 import { text } from '../core/utils.js';
 
-function requiredConfig(config) {
+const NFE_XML_PATH = 'fiscal/nfe-importadas';
+
+function requiredConfig(config, { write = true, catalog = true } = {}) {
   const missing = [];
-  if (!text(config.githubToken)) missing.push('token GitHub');
+  if (write && !text(config.githubToken)) missing.push('token GitHub');
   if (!text(config.githubOwner)) missing.push('owner GitHub');
   if (!text(config.githubRepo)) missing.push('repositório GitHub');
   if (!text(config.githubBranch)) missing.push('branch GitHub');
-  if (!text(config.productsHomePath)) missing.push('caminho de produtos-home');
-  if (!text(config.catalogVersionPath)) missing.push('caminho de catalog-version');
+  if (catalog && !text(config.productsHomePath)) missing.push('caminho de produtos-home');
+  if (catalog && !text(config.catalogVersionPath)) missing.push('caminho de catalog-version');
   return missing;
 }
 
 export function githubConfigProblems(config) {
-  return requiredConfig(config);
+  return requiredConfig(config, { write: true, catalog: true });
+}
+
+export function githubNfeConfigProblems(config, { write = false } = {}) {
+  return requiredConfig(config, { write, catalog: false });
 }
 
 function apiBase(config) {
@@ -41,6 +47,7 @@ async function request(config, path, options = {}) {
   const token = text(config.githubToken);
   const response = await fetch(`${apiBase(config)}${path}`, {
     ...options,
+    cache: 'no-store',
     headers: {
       Accept: 'application/vnd.github+json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -66,9 +73,8 @@ async function readFile(config, path) {
 }
 
 export async function readTextFile(config, path) {
-  if (!text(config.githubOwner) || !text(config.githubRepo) || !text(config.githubBranch)) {
-    throw new Error('Owner, repositório e branch do GitHub são necessários para consultar arquivos.');
-  }
+  const missing = requiredConfig(config, { write: false, catalog: false });
+  if (missing.length) throw new Error(`Configuração incompleta: ${missing.join(', ')}.`);
   const file = await readFile(config, path);
   if (!file) return null;
   if (!file.content) throw new Error(`O GitHub não retornou o conteúdo de ${path}.`);
@@ -92,7 +98,9 @@ export async function inspectNfeImport(config, accessKey) {
   return result?.data || null;
 }
 
-async function upsertText(config, path, content, message) {
+export async function upsertText(config, path, content, message) {
+  const missing = requiredConfig(config, { write: true, catalog: false });
+  if (missing.length) throw new Error(`Configuração incompleta: ${missing.join(', ')}.`);
   const cleanPath = text(path).replace(/^\/+/, '');
   const normalizedContent = String(content ?? '').replace(/\r\n/g, '\n').trimEnd() + '\n';
 
@@ -126,43 +134,53 @@ async function upsertText(config, path, content, message) {
   throw new Error(`Não foi possível atualizar ${cleanPath}.`);
 }
 
+function noteYearMonth(note) {
+  const issued = new Date(note?.issuedAt || '');
+  const valid = !Number.isNaN(issued.getTime());
+  const date = valid ? issued : new Date();
+  return { year: String(date.getFullYear()), month: String(date.getMonth() + 1).padStart(2, '0') };
+}
+
+export function nfeXmlPath(note) {
+  const { year, month } = noteYearMonth(note);
+  return `${NFE_XML_PATH}/${year}/${month}/${digits(note?.key)}.xml`;
+}
+
+export async function archiveNfeXml(config, note, rawXml) {
+  if (!config.writeMode || !config.nfeImportMode) throw new Error('A importação de NF-e está bloqueada nas configurações da V2.');
+  const key = digits(note?.key);
+  if (key.length !== 44) throw new Error('Chave inválida para arquivar o XML.');
+  if (!String(rawXml || '').trim()) throw new Error('XML vazio; o arquivo fiscal não pode ser arquivado.');
+  const path = nfeXmlPath(note);
+  const result = await upsertText(config, path, rawXml, `Arquiva XML da NF-e ${key} pelo Admin V2`);
+  return { ...result, path, archivedAt: new Date().toISOString() };
+}
+
+export async function writeNfeImportRecord(config, record) {
+  if (!config.writeMode || !config.nfeImportMode) throw new Error('A importação de NF-e está bloqueada nas configurações da V2.');
+  const key = digits(record?.chave_nfe || record?.codigo_xml);
+  if (key.length !== 44) throw new Error('Registro fiscal sem chave válida de 44 números.');
+  const payload = { ...record, chave_nfe: key, codigo_xml: key, registro_path: `${NFE_RECORDS_PATH}/${key}.json` };
+  const result = await upsertText(config, payload.registro_path, JSON.stringify(payload, null, 2), `Atualiza controle da NF-e ${key} pelo Admin V2`);
+  return { ...result, record: payload };
+}
+
 export async function testGithubConnection(config) {
-  const missing = requiredConfig(config);
+  const missing = requiredConfig(config, { write: true, catalog: false });
   if (missing.length) throw new Error(`Configuração incompleta: ${missing.join(', ')}.`);
   const repository = await request(config, '');
-  return {
-    repository: repository?.full_name || `${config.githubOwner}/${config.githubRepo}`,
-    defaultBranch: repository?.default_branch || '',
-  };
+  return { repository: repository?.full_name || `${config.githubOwner}/${config.githubRepo}`, defaultBranch: repository?.default_branch || '' };
 }
 
 export async function publishCatalog(config, productsPayload) {
-  const missing = requiredConfig(config);
+  const missing = requiredConfig(config, { write: true, catalog: true });
   if (missing.length) throw new Error(`Configuração incompleta: ${missing.join(', ')}.`);
   if (!config.writeMode) throw new Error('As gravações da V2 estão bloqueadas.');
 
-  const productsResult = await upsertText(
-    config,
-    config.productsHomePath,
-    JSON.stringify(productsPayload, null, 2),
-    'Atualiza produtos-home.json pelo Admin V2 Dona Antônia',
-  );
-
+  const productsResult = await upsertText(config, config.productsHomePath, JSON.stringify(productsPayload, null, 2), 'Atualiza produtos-home.json pelo Admin V2 Dona Antônia');
   let versionResult = { path: config.catalogVersionPath, skipped: true };
   if (!productsResult.skipped) {
-    versionResult = await upsertText(
-      config,
-      config.catalogVersionPath,
-      JSON.stringify(catalogVersionPayload(config, ['products']), null, 2),
-      'Atualiza catalog-version.json pelo Admin V2 Dona Antônia',
-    );
+    versionResult = await upsertText(config, config.catalogVersionPath, JSON.stringify(catalogVersionPayload(config, ['products']), null, 2), 'Atualiza catalog-version.json pelo Admin V2 Dona Antônia');
   }
-
-  return {
-    products: productsResult,
-    version: versionResult,
-    written: [productsResult, versionResult].filter(item => !item.skipped).length,
-    skipped: [productsResult, versionResult].filter(item => item.skipped).length,
-    publishedAt: new Date().toISOString(),
-  };
+  return { products: productsResult, version: versionResult, written: [productsResult, versionResult].filter(item => !item.skipped).length, skipped: [productsResult, versionResult].filter(item => item.skipped).length, publishedAt: new Date().toISOString() };
 }
