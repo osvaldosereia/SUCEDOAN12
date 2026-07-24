@@ -1,25 +1,12 @@
-/* Fluxo do checkout: ofertas, resumo antes do CPF e cupom discreto */
+/* Fluxo do checkout: resumo antes do CPF e cupom discreto */
 .checkout-reviewed{display:grid;gap:0;padding-bottom:28px}
 .checkout-reviewed>.checkout-section{margin:0!important;padding:20px 18px!important;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:#fff!important;box-shadow:none!important}
 .checkout-reviewed>.checkout-section:last-child{border-bottom:0!important}
 .checkout-reviewed h2,.checkout-reviewed .checkout-title{margin:0 0 12px;font-size:17px;line-height:1.2;font-weight:750;letter-spacing:-.02em}
 .checkout-reviewed>.checkout-section>p{margin:-4px 0 14px;color:var(--muted);font-size:12.5px;line-height:1.5}
 
-/* Ofertas ficam dentro da renderização principal, sem depender de adaptação posterior */
-.checkout-offers-review{overflow:hidden;background:#fbfcfb!important}
-.checkout-offers-rail{display:flex;gap:11px;overflow-x:auto;padding:2px 1px 9px;scroll-snap-type:x proximity;scrollbar-width:none}
-.checkout-offers-rail::-webkit-scrollbar{display:none}
-.checkout-offer-card{flex:0 0 148px;width:148px;min-width:148px;display:flex;flex-direction:column;scroll-snap-align:start}
-.checkout-offer-media{width:100%;aspect-ratio:1/1;border:1px solid var(--line);border-radius:17px;background:#fff;overflow:hidden;display:grid;place-items:center}
-.checkout-offer-media img{width:100%;height:100%;padding:7px;object-fit:contain;mix-blend-mode:multiply}
-.checkout-offer-copy{padding-top:8px;display:flex;flex:1;flex-direction:column;gap:7px}
-.checkout-offer-copy>a{min-height:34px;color:var(--ink);font-size:11.5px;line-height:1.32;font-weight:600;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.checkout-offer-bottom{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:7px}
-.checkout-offer-bottom>span{min-width:0;display:grid;gap:2px}
-.checkout-offer-bottom s{color:var(--muted-2);font-size:9.5px}
-.checkout-offer-bottom strong{font-size:15px;line-height:1;font-weight:800;letter-spacing:-.025em}
-.checkout-offer-bottom button{width:40px;height:40px;border-radius:13px;background:#121212;color:#fff;font-size:22px;display:grid;place-items:center}
-.checkout-offers-hint{margin-top:2px;color:var(--muted);font-size:10.5px;text-align:center}
+/* Removido do fluxo por decisão comercial */
+.checkout-offers-review{display:none!important}
 
 /* Resumo exibido antes da identificação por CPF */
 .checkout-summary-before-cpf{background:#fbfdfb!important}
@@ -71,7 +58,6 @@
   .checkout-reviewed>.checkout-section{padding:18px 14px!important}
   .checkout-total-highlight{min-height:72px;padding:12px}
   .checkout-total-highlight strong{font-size:24px}
-  .checkout-offer-card{flex-basis:136px;width:136px;min-width:136px}
   .checkout-coupon-fields .lookup-row{grid-template-columns:1fr}
   .checkout-coupon-fields .secondary-button{width:100%}
   .checkout-cpf-review .lookup-row{grid-template-columns:1fr}
