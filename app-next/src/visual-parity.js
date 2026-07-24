@@ -6,30 +6,44 @@ function productImageFromCard(card) {
   const image = card?.querySelector('.product-card-media img');
   return image ? {
     src: image.getAttribute('src') || '',
-    alt: image.getAttribute('alt') || '',
     fallback: image.getAttribute('data-fallback') || ''
-  } : { src: '../img/logoantonia5.png', alt: '', fallback: '' };
+  } : { src: '../img/logoantonia5.png', fallback: '' };
+}
+
+function bindDealImageFallbacks(root) {
+  root?.querySelectorAll?.('.home-deal-product-img:not([data-deal-fallback-bound])').forEach(image => {
+    image.dataset.dealFallbackBound = 'true';
+    image.addEventListener('error', () => {
+      const candidates = String(image.dataset.fallback || '')
+        .split('|')
+        .map(value => value.trim())
+        .filter(Boolean);
+      const next = candidates.shift();
+      image.dataset.fallback = candidates.join('|');
+      image.src = next || '../img/logoantonia5.png';
+    });
+  });
 }
 
 function discountCardsHtml(offerSection) {
   const cards = [...(offerSection?.querySelectorAll('.product-card') || [])];
   const definitions = [
-    { eyebrow: 'Oferta especial', title: '50% DE DESCONTO', copy: 'Produtos selecionados pela metade do preço', href: '#/ofertas/50', cls: 'deal-50' },
-    { eyebrow: 'Economize agora', title: '40% DE DESCONTO', copy: 'Descontos fortes em produtos selecionados', href: '#/ofertas/40', cls: 'deal-40' },
-    { eyebrow: 'Achadinhos', title: 'ATÉ 5 REAIS', copy: 'Itens baratos para completar a sua compra', href: '#/ofertas/ate-5', cls: 'deal-5' }
+    { badge: '50% OFF', title: 'Metade do preço', copy: 'Produtos selecionados com desconto máximo.', href: '#/ofertas/50', cls: 'deal-50' },
+    { badge: '40% OFF', title: 'Economize mais', copy: 'Ofertas fortes para reduzir o valor da compra.', href: '#/ofertas/40', cls: 'deal-40' },
+    { badge: 'ATÉ R$ 5', title: 'Achadinhos', copy: 'Itens baratos para completar o seu pedido.', href: '#/ofertas/ate-5', cls: 'deal-5' }
   ];
   return definitions.map((definition, index) => {
     const card = cards[index] || cards[0];
     const image = productImageFromCard(card);
     const fallback = image.fallback ? ` data-fallback="${image.fallback.replace(/"/g, '&quot;')}"` : '';
-    return `<a class="home-deal-card ${definition.cls}" href="${definition.href}">
+    return `<a class="home-deal-card ${definition.cls}" href="${definition.href}" aria-label="${definition.badge}: ${definition.title}">
       <span class="home-deal-copy">
-        <em>${definition.eyebrow}</em>
+        <span class="home-deal-badge">${definition.badge}</span>
         <strong>${definition.title}</strong>
         <small>${definition.copy}</small>
-        <span class="home-deal-cta">Ver produtos <b aria-hidden="true">→</b></span>
+        <span class="home-deal-cta">Ver ofertas <b aria-hidden="true">→</b></span>
       </span>
-      <span class="home-deal-media"><img class="home-deal-product-img" loading="${index === 0 ? 'eager' : 'lazy'}" decoding="async" src="${image.src}"${fallback} alt="${image.alt.replace(/"/g, '&quot;')}"></span>
+      <span class="home-deal-media"><img class="home-deal-product-img" loading="${index === 0 ? 'eager' : 'lazy'}" decoding="async" src="${image.src}"${fallback} alt=""></span>
     </a>`;
   }).join('');
 }
@@ -75,6 +89,7 @@ function applyHomeParity() {
   if (quickLinks) {
     quickLinks.classList.add('home-deal-grid');
     quickLinks.innerHTML = discountCardsHtml(offers);
+    bindDealImageFallbacks(quickLinks);
   }
   offers?.remove();
 
