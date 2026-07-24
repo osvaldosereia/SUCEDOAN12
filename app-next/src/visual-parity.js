@@ -37,13 +37,13 @@ function discountCardsHtml(offerSection) {
     const image = productImageFromCard(card);
     const fallback = image.fallback ? ` data-fallback="${image.fallback.replace(/"/g, '&quot;')}"` : '';
     return `<a class="home-deal-card ${definition.cls}" href="${definition.href}" aria-label="${definition.badge}: ${definition.title}">
+      <span class="home-deal-media"><img class="home-deal-product-img" loading="${index === 0 ? 'eager' : 'lazy'}" decoding="async" src="${image.src}"${fallback} alt=""></span>
       <span class="home-deal-copy">
         <span class="home-deal-badge">${definition.badge}</span>
         <strong>${definition.title}</strong>
         <small>${definition.copy}</small>
         <span class="home-deal-cta">Ver ofertas <b aria-hidden="true">→</b></span>
       </span>
-      <span class="home-deal-media"><img class="home-deal-product-img" loading="${index === 0 ? 'eager' : 'lazy'}" decoding="async" src="${image.src}"${fallback} alt=""></span>
     </a>`;
   }).join('');
 }
