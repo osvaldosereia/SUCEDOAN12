@@ -4,6 +4,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   writeMode: false,
   nfeImportMode: false,
   stockWriteMode: false,
+  collectionsWriteMode: false,
   pageSize: 50,
   githubToken: '',
   githubOwner: 'osvaldosereia',
@@ -11,6 +12,9 @@ export const DEFAULT_CONFIG = Object.freeze({
   githubBranch: 'main',
   productsHomePath: 'site/produtos-home.json',
   catalogVersionPath: 'catalog-version.json',
+  basketsPath: 'site/produtos-cesta-basica.json',
+  kitsPath: 'site/kits.json',
+  kitQueuePath: 'carrosseis-kits/fila.json',
 });
 
 export const STORAGE_KEYS = Object.freeze({
