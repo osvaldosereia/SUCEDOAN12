@@ -72,7 +72,7 @@ jobs:
           for tentativa in 1 2 3 4 5; do
             echo "Publicacao: tentativa ${tentativa} de 5 na branch ${branch}."
             git fetch origin "$branch"
-            git reset --hard "origin/${branch}"
+            git reset --hard "origin/$branch"
 
             node scripts/reconciliar-publicacao-ofertas.mjs
 
