@@ -13,6 +13,9 @@ export class Store extends EventTarget {
       dirtyProducts: new Map(),
       selectedProductKey: '',
       filters: { query: '', category: '', status: '', quality: '', sort: 'name', page: 1 },
+      firebaseVerified: false,
+      loadedAt: '',
+      lastPublication: null,
     };
   }
 
@@ -34,6 +37,8 @@ export class Store extends EventTarget {
     this.state.products = products;
     this.state.remoteSnapshots = new Map(products.map(product => [productKey(product), clone(product)]));
     this.state.dirtyProducts.clear();
+    this.state.firebaseVerified = true;
+    this.state.loadedAt = new Date().toISOString();
     this.emit('products');
     this.emit('dirty');
   }
@@ -69,5 +74,10 @@ export class Store extends EventTarget {
     this.state.dirtyProducts.delete(normalizedKey);
     this.emit('product-updated', { key: normalizedKey });
     this.emit('dirty');
+  }
+
+  setLastPublication(publication) {
+    this.state.lastPublication = publication;
+    this.emit('publication', { publication });
   }
 }
