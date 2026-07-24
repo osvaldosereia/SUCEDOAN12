@@ -5978,7 +5978,7 @@
         if(!slot || !slot.isConnected || slot.dataset.loaded==='true') return;
         slot.dataset.loaded='true';
         slot.removeAttribute('aria-busy');
-        slot.innerHTML=`${daHomeHereTemHtml()}${categoryButtonsHtml()}`;
+        slot.innerHTML=`${categoryButtonsHtml()}`;
         syncVisibleCards();
         updateFavoritesUI();
       }
