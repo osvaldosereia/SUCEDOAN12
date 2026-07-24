@@ -66,14 +66,16 @@ export class Store extends EventTarget {
     this.emit('dirty');
   }
 
-  markProductSaved(key, savedProduct) {
+  markProductSaved(key, savedProduct, { emit = true } = {}) {
     const normalizedKey = String(key);
     const index = this.state.products.findIndex(product => productKey(product) === normalizedKey);
     if (index >= 0) this.state.products[index] = clone(savedProduct);
     this.state.remoteSnapshots.set(normalizedKey, clone(savedProduct));
     this.state.dirtyProducts.delete(normalizedKey);
-    this.emit('product-updated', { key: normalizedKey });
-    this.emit('dirty');
+    if (emit) {
+      this.emit('product-updated', { key: normalizedKey });
+      this.emit('dirty');
+    }
   }
 
   setLastPublication(publication) {
