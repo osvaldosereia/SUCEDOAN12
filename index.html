@@ -873,6 +873,106 @@
 @media(min-width:768px){.da-payment-notices{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}.da-payment-notice{min-height:94px;padding:17px 19px}}
 </style>
   <!-- DA_HOME_SEM_MARCAS: 2026-07-17-home-sem-marcas-v10 -->
+
+  <style id="daHomeDealsPackaging20260724">
+    .home-clean.da-home-funnel [data-home-secondary-slot] .category-section {
+      margin-top: clamp(56px, 6.5vw, 84px) !important;
+    }
+
+    .product-packaging {
+      display: block;
+      min-width: 0;
+      margin: 0;
+      color: #173b63;
+      font-size: 11px;
+      line-height: 1.2;
+      font-weight: 400;
+      letter-spacing: .01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .home-deal-grid {
+      display: grid !important;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      gap: 14px !important;
+      margin-top: 18px;
+    }
+
+    .home-deal-grid .home-deal-card {
+      min-height: 122px !important;
+      grid-template-columns: minmax(0, 1fr) 88px !important;
+      padding: 17px !important;
+      border: 0 !important;
+      color: #fff !important;
+      box-shadow: 0 14px 30px rgba(20, 35, 27, .12) !important;
+    }
+
+    .home-deal-grid .home-deal-card strong {
+      color: #fff !important;
+      font-size: 17px !important;
+      line-height: 1.08 !important;
+      font-weight: 900 !important;
+    }
+
+    .home-deal-grid .home-deal-card span {
+      color: rgba(255, 255, 255, .88) !important;
+      font-size: 12px !important;
+    }
+
+    .home-deal-grid .deal-50 {
+      background: linear-gradient(135deg, #a61b35, #e5484d) !important;
+    }
+
+    .home-deal-grid .deal-40 {
+      background: linear-gradient(135deg, #173b63, #2f6fb0) !important;
+    }
+
+    .home-deal-grid .deal-5 {
+      background: linear-gradient(135deg, #146c43, #26a269) !important;
+    }
+
+    .home-deal-grid .home-deal-product-img {
+      display: block !important;
+      width: 88px !important;
+      height: 88px !important;
+      padding: 7px !important;
+      border-radius: 20px !important;
+      object-fit: contain !important;
+      background: #fff !important;
+      mix-blend-mode: normal !important;
+      filter: none !important;
+    }
+
+    @media (max-width: 767px) {
+      .home-clean.da-home-funnel [data-home-secondary-slot] .category-section {
+        margin-top: 44px !important;
+      }
+
+      .product-packaging {
+        font-size: 10.5px;
+      }
+
+      .home-deal-grid {
+        grid-template-columns: 1fr !important;
+        gap: 11px !important;
+      }
+
+      .home-deal-grid .home-deal-card {
+        min-height: 108px !important;
+        grid-template-columns: minmax(0, 1fr) 82px !important;
+        padding: 14px 15px !important;
+      }
+
+      .home-deal-grid .home-deal-product-img {
+        display: block !important;
+        width: 82px !important;
+        height: 82px !important;
+        border-radius: 18px !important;
+      }
+    }
+  </style>
 </head>
 <body>
   <header class="header">
@@ -3001,6 +3101,7 @@
             ${display.discountPercent > 0 ? `<span class="media-discount-badge">-${display.discountPercent}%</span>` : ''}
           </div>
           <div class="product-body">
+            ${p.embalagem ? `<div class="product-packaging" aria-label="Embalagem do produto" title="${escapeHtml(p.embalagem)}">${escapeHtml(p.embalagem)}</div>` : ''}
             <a class="product-name" href="#/produto/${route}" title="${escapeHtml(p.name)}">${escapeHtml(cardName)}</a>
             ${p.validade && formatProductExpiry(p.validade) ? `<div class="product-expiry product-expiry-card" aria-label="Validade do produto">Val. ${escapeHtml(formatProductExpiry(p.validade))}</div>` : ''}
             <div class="product-card-bottom">
@@ -3200,13 +3301,49 @@
     }
 
     function homeQuickLinksHtml() {
+      const available = state.products.filter(isAvailable);
+      const offers = getTopOffers(240);
+      const discountOf = product => Number(productDisplayPricing(product).discountPercent || 0);
+      const exact50 = offers.find(product => Math.round(discountOf(product)) === 50);
+      const exact40 = offers.find(product => Math.round(discountOf(product)) === 40);
+      const product50 = exact50 || offers.find(product => discountOf(product) >= 50) || offers[0] || available[0];
+      const product40 = exact40 || offers.find(product => discountOf(product) >= 40 && discountOf(product) < 50) || offers[1] || available[1] || available[0];
+      const product5 = available
+        .filter(product => {
+          const price = Number(productDisplayPricing(product).effective || 0);
+          return price > 0 && price <= 5;
+        })
+        .sort((a, b) => Number(productDisplayPricing(a).effective || 0) - Number(productDisplayPricing(b).effective || 0))[0] || available[2] || available[0];
+
       const cards = [
-        { href: '#/ofertas', title: 'Ofertas de hoje', copy: 'Aproveite os melhores preços', img: offersThumb(), cls: 'offer' },
-        { href: '#/cestas', title: 'Cestas básicas', copy: 'Opções prontas e editáveis', img: cestasThumb() },
-        { href: '#/kits', title: 'Kits promocionais', copy: 'Combos com desconto ativo', img: kitsThumb() },
-        { href: '#/rotina/compra-mes', title: 'Compra do mês', copy: 'Comece pelos itens essenciais', img: routineThumb('compra-mes'), cls: 'primary' }
+        {
+          href: '#/ofertas/50',
+          title: '50% DE DESCONTO',
+          copy: 'Produtos selecionados pela metade do preço',
+          product: product50,
+          cls: 'deal-50'
+        },
+        {
+          href: '#/ofertas/40',
+          title: '40% DE DESCONTO',
+          copy: 'Economize em produtos com desconto especial',
+          product: product40,
+          cls: 'deal-40'
+        },
+        {
+          href: '#/ofertas/ate-5',
+          title: 'ATÉ 5 REAIS',
+          copy: 'Achadinhos baratos para completar a compra',
+          product: product5,
+          cls: 'deal-5'
+        }
       ];
-      return `<section class="home-quick-grid" aria-label="Atalhos principais de compra">${cards.map((card, index) => `<a class="home-quick-card ${card.cls || ''}" href="${card.href}"><div><strong>${escapeHtml(card.title)}</strong><span>${escapeHtml(card.copy)}</span></div><img loading="${index === 0 ? 'eager' : 'lazy'}" decoding="async" width="96" height="96"${index === 0 ? ' fetchpriority="high"' : ''} src="${escapeHtml(card.img)}" alt="" onerror="window.__daFallbackImg(this)"></a>`).join('')}</section>`;
+
+      return `<section class="home-quick-grid home-deal-grid" aria-label="Atalhos de descontos">${cards.map((card, index) => {
+        const image = card.product ? card.product.img : 'img/logoantonia5.png';
+        const fallbacks = card.product ? imageFallbackList(card.product.images) : '';
+        return `<a class="home-quick-card home-deal-card ${card.cls}" href="${card.href}"><div><strong>${escapeHtml(card.title)}</strong><span>${escapeHtml(card.copy)}</span></div><img class="home-deal-product-img" loading="${index === 0 ? 'eager' : 'lazy'}" decoding="async" width="112" height="112"${index === 0 ? ' fetchpriority="high"' : ''} src="${escapeHtml(image)}" data-fallback-images="${escapeHtml(fallbacks)}" alt="" onerror="window.__daFallbackImg(this)"></a>`;
+      }).join('')}</section>`;
     }
 
     function brandStripHtml() {
@@ -3274,11 +3411,47 @@
       updateMeta(`${canonical} - Dona Antônia`, `Compre produtos ${canonical} com entrega em Cuiabá e Várzea Grande.`, `/?marca=${encodeURIComponent(canonical)}`);
     }
 
-    function renderOffers() {
-      const products = getTopOffers(200);
-      app.innerHTML = `<div class="container">${pageHeader('Ofertas', 'Produtos com desconto disponíveis agora.', '#/')}${bannerSlotHtml('ofertas.topo', { kind: 'section' })}${products.length ? `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>` : `<div class="empty"><strong>Sem ofertas no momento</strong>Volte mais tarde ou navegue pelas categorias.</div>`}</div>`;
+    function renderOffers(mode) {
+      const requestedMode = String(mode || '').toLowerCase();
+      const allOffers = getTopOffers(240);
+      const discountOf = product => Number(productDisplayPricing(product).discountPercent || 0);
+      let products = allOffers;
+      let title = 'Ofertas';
+      let subtitle = 'Produtos com desconto disponíveis agora.';
+      let emptyTitle = 'Sem ofertas no momento';
+      let metaDescription = 'Ofertas de supermercado com entrega em Cuiabá e Várzea Grande.';
+
+      if (requestedMode === '50') {
+        const exact = allOffers.filter(product => Math.round(discountOf(product)) === 50);
+        products = exact.length ? exact : allOffers.filter(product => discountOf(product) >= 50);
+        title = '50% de desconto';
+        subtitle = 'Produtos selecionados com metade do preço.';
+        emptyTitle = 'Nenhum produto com 50% agora';
+        metaDescription = 'Produtos com 50% de desconto e entrega em Cuiabá e Várzea Grande.';
+      } else if (requestedMode === '40') {
+        const exact = allOffers.filter(product => Math.round(discountOf(product)) === 40);
+        products = exact.length ? exact : allOffers.filter(product => discountOf(product) >= 40 && discountOf(product) < 50);
+        title = '40% de desconto';
+        subtitle = 'Produtos selecionados com desconto especial.';
+        emptyTitle = 'Nenhum produto com 40% agora';
+        metaDescription = 'Produtos com 40% de desconto e entrega em Cuiabá e Várzea Grande.';
+      } else if (requestedMode === 'ate-5') {
+        products = state.products
+          .filter(isAvailable)
+          .filter(product => {
+            const price = Number(productDisplayPricing(product).effective || 0);
+            return price > 0 && price <= 5;
+          })
+          .sort((a, b) => Number(productDisplayPricing(a).effective || 0) - Number(productDisplayPricing(b).effective || 0) || a.name.localeCompare(b.name, 'pt-BR'));
+        title = 'Até 5 reais';
+        subtitle = 'Produtos econômicos por até R$ 5,00.';
+        emptyTitle = 'Nenhum produto de até R$ 5 agora';
+        metaDescription = 'Produtos por até cinco reais com entrega em Cuiabá e Várzea Grande.';
+      }
+
+      app.innerHTML = `<div class="container">${pageHeader(title, subtitle, '#/')}${bannerSlotHtml('ofertas.topo', { kind: 'section' })}${products.length ? `<div class="product-grid">${products.map(product => productCard(product)).join('')}</div>` : `<div class="empty"><strong>${escapeHtml(emptyTitle)}</strong>Volte mais tarde ou navegue pelas categorias.</div>`}</div>`;
       setActiveNav('ofertas');
-      updateMeta('Ofertas - Dona Antônia', 'Ofertas de supermercado com entrega em Cuiabá e Várzea Grande.', '/?secao=ofertas');
+      updateMeta(`${title} - Dona Antônia`, metaDescription, `/?secao=${encodeURIComponent(requestedMode || 'ofertas')}`);
     }
 
     function renderRoutine(key) {
@@ -3792,7 +3965,7 @@
       if (parts[0] === 'categoria') return renderCategory(parts.slice(1).join('/'));
       if (parts[0] === 'subcategoria') return renderSubcategory(parts.slice(1).join('/'));
       if (parts[0] === 'marca') return renderBrand(parts.slice(1).join('/'));
-      if (parts[0] === 'ofertas') return renderOffers();
+      if (parts[0] === 'ofertas') return renderOffers(parts[1] || '');
       if (parts[0] === 'favoritos') return renderFavorites();
       if (parts[0] === 'rotina') return renderRoutine(parts[1]);
       if (parts[0] === 'produto') {
@@ -6017,12 +6190,10 @@
       }
 
       renderHome=function(){
-        const offers=getTopOffers(20);
         const kits=getActiveKits();
         app.innerHTML=`<div class="container home-clean da-home-modular da-home-funnel da-home-profit">
           <h1 class="sr-only">Dona Antônia - Supermercado e Cestas</h1>
           ${homeQuickLinksHtml()}
-          ${daHomeOfferShelfHtml(offers)}
           ${daPaymentNoticesHtml()}
           ${daHomePurchaseJourneyHtml()}
           ${daHomeBasketShelfHtml(state.cestas)}
