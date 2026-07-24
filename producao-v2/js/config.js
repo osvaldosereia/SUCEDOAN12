@@ -2,6 +2,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
   productsNode: 'produtos',
   writeMode: false,
+  nfeImportMode: false,
   pageSize: 50,
   githubToken: '',
   githubOwner: 'osvaldosereia',
