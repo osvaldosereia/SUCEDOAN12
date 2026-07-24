@@ -1324,7 +1324,31 @@
   }
 
 
-  async function saveGithubFiles({produtosHome,metaCatalogCsv,adminMeta,cestas,kits}={}){readSettingsFromUi(); const ops=[]; if(produtosHome) ops.push(githubUpsert(state.settings.githubProdutosHomePath||"site/produtos-home.json", produtosHome, "Atualiza produtos-home.json pelo admin Dona Antônia")); if(metaCatalogCsv) ops.push(githubUpsertText(state.settings.githubMetaPath, metaCatalogCsv, "Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")); if(adminMeta) ops.push(githubUpsert(state.settings.githubAdminMetaPath, adminMeta, "Atualiza produtos_admin_meta.json pelo admin Dona Antônia")); if(cestas) ops.push(githubUpsert(state.settings.githubCestasPath, cestas, "Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")); if(kits) ops.push(githubUpsert(state.settings.githubKitsPath, kits, "Atualiza site/kits.json pelo admin Dona Antônia")); await Promise.all(ops)}
+  async function saveGithubFiles({produtosHome,metaCatalogCsv,adminMeta,cestas,kits}={}){
+  readSettingsFromUi();
+  const ops=[];
+  if(produtosHome) ops.push({label:"produtos-home.json",run:()=>githubUpsert(state.settings.githubProdutosHomePath||"site/produtos-home.json",produtosHome,"Atualiza produtos-home.json pelo admin Dona Antônia")});
+  if(metaCatalogCsv) ops.push({label:"produtos_meta.csv",run:()=>githubUpsertText(state.settings.githubMetaPath,metaCatalogCsv,"Atualiza produtos_meta.csv (Meta) pelo admin Dona Antônia")});
+  if(adminMeta) ops.push({label:"produtos_admin_meta.json",run:()=>githubUpsert(state.settings.githubAdminMetaPath,adminMeta,"Atualiza produtos_admin_meta.json pelo admin Dona Antônia")});
+  if(cestas) ops.push({label:"produtos-cesta-basica.json",run:()=>githubUpsert(state.settings.githubCestasPath,cestas,"Atualiza produtos-cesta-basica.json pelo admin Dona Antônia")});
+  if(kits) ops.push({label:"site/kits.json",run:()=>githubUpsert(state.settings.githubKitsPath,kits,"Atualiza site/kits.json pelo admin Dona Antônia")});
+  const summary={total:ops.length,written:0,skipped:0,files:[]};
+  for(const op of ops){
+    let result=null;
+    for(let attempt=1;attempt<=4;attempt+=1){
+      try{result=await op.run();break}
+      catch(error){
+        const retryable=/GitHub PUT .*: (409|422)/.test(String(error?.message||error));
+        if(!retryable||attempt===4)throw error;
+        await new Promise(resolve=>setTimeout(resolve,attempt*450));
+      }
+    }
+    const skipped=!!result?.skipped;
+    summary[skipped?"skipped":"written"]+=1;
+    summary.files.push({label:op.label,skipped});
+  }
+  return summary;
+}
   async function testGithub(){try{readSettingsFromUi(); await githubContent(state.settings.githubProdutosHomePath||"site/produtos-home.json"); setStatus("GitHub conectado", "ok"); alert("Conexão com GitHub OK.")}catch(e){console.error(e); setStatus("Erro no GitHub","err"); alert("Erro no GitHub: "+e.message)}}
   async function saveGithubNow(){try{setStatus("Enviando arquivos ao GitHub...","warn"); await saveGithubFiles({produtosHome:buildProductsHomePayload(),metaCatalogCsv:buildMetaCatalogCsv(),adminMeta:buildAdminMetaPayload(),cestas:state.cestas,kits:state.kits}); setStatus("GitHub atualizado","ok"); alert("produtos-home.json, produtos_meta.csv, produtos_admin_meta.json, produtos-cesta-basica.json e site/kits.json enviados ao GitHub.")}catch(e){console.error(e); setStatus("Erro ao enviar GitHub","err"); alert("Erro ao enviar GitHub: "+e.message)}}
 
@@ -6152,7 +6176,7 @@ window.addEventListener("beforeunload",e=>{if(state.optimizeImageBatch?.running)
     if(payload.cestas)kinds.push("cestas");
     if(payload.kits)kinds.push("kits");
     if(kinds.length)daRequireRemoteImagesBeforeSave();
-    const summary=await daCompatSaveGithubFilesBase(payload);
+    const summary=(await daCompatSaveGithubFilesBase(payload))||{total:0,written:0,skipped:0,files:[]};
     if(kinds.length){
       const versionPath=String(state.settings.githubCatalogVersionPath||defaultSettings.githubCatalogVersionPath||"catalog-version.json").replace(/^\/+/,"");
       const versionResult=await githubUpsert(versionPath,daCatalogVersionPayload(kinds),`Atualiza catalog-version.json: ${kinds.join(", ")}`);
