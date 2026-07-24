@@ -1,11 +1,5 @@
 /* Ajustes finais de legibilidade, imagens e navegação para o público da loja */
 
-/* Os quatro atalhos promocionais permanecem sempre em duas colunas no celular. */
-@media(max-width:767px){
-  .quick-links.home-deal-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  .quick-links.home-deal-grid>a:first-child{grid-column:auto!important}
-}
-
 /* Cestas e kits: carregamento progressivo e indicação visual de carrossel. */
 .home-page .home-bundle-carousel{
   display:flex!important;
@@ -36,45 +30,46 @@
   }
 }
 
-/* Linhas discretas verticais e horizontais entre os cards de produtos. */
+/* Cards de produtos com respiro real e linha separadora discreta. */
 .product-grid{
-  gap:1px!important;
-  padding:1px;
-  background:#e3e7e4;
-  border-radius:16px;
-  overflow:hidden;
-}
-.product-grid>.product-card{
-  border:0!important;
+  gap:12px!important;
+  padding:0!important;
+  background:transparent!important;
   border-radius:0!important;
-  box-shadow:none!important;
+  overflow:visible!important;
+}
+.product-grid>.product-card,
+.horizontal-rail>.product-card{
+  border:1px solid #e1e6e2!important;
+  border-radius:16px!important;
+  box-shadow:0 3px 12px rgba(20,50,28,.055)!important;
+  overflow:hidden!important;
+  background:#fff!important;
 }
 .horizontal-rail{
-  gap:0!important;
-  border:1px solid #e3e7e4;
-  border-radius:16px;
-  overflow-x:auto;
-  overflow-y:hidden;
-  background:#fff;
-}
-.horizontal-rail>.product-card{
+  gap:12px!important;
+  padding:2px 2px 9px!important;
   border:0!important;
   border-radius:0!important;
-  box-shadow:none!important;
-  flex:0 0 auto;
+  overflow-x:auto;
+  overflow-y:hidden;
+  background:transparent!important;
 }
-.horizontal-rail>.product-card+.product-card{border-left:1px solid #e3e7e4!important}
+.horizontal-rail>.product-card{flex:0 0 auto}
+.horizontal-rail>.product-card+.product-card{border-left:1px solid #e1e6e2!important}
+@media(min-width:768px){
+  .product-grid{gap:16px!important}
+  .horizontal-rail{gap:16px!important}
+}
 
-/* Fundo cinza claro somente atrás das fotos dos produtos. */
+/* O card continua branco; o cinza clarinho existe somente no próprio elemento da foto. */
 .product-card-media,
 .basket-detail-media,
 .product-detail-media,
 .product-detail-image,
-.checkout-item img,
 .checkout-offer-media,
-.image-thumbs button,
-.bundle-line img{
-  background:#f1f3f2!important;
+.image-thumbs button{
+  background:#fff!important;
 }
 .product-card-media>a,
 .product-detail-media,
@@ -91,7 +86,7 @@
   width:100%!important;
   height:100%!important;
   padding:0!important;
-  background:transparent!important;
+  background:#f5f6f5!important;
   object-fit:contain!important;
   mix-blend-mode:normal!important;
   filter:none!important;
@@ -102,7 +97,6 @@
 .bundle-media,
 .category-card img,
 .bundle-detail-hero>img,
-.purchase-journey-media,
 .banner-card,
 .bundle-confirm-media{
   background:#fff!important;
@@ -110,7 +104,6 @@
 .bundle-media img,
 .category-card img,
 .bundle-detail-hero>img,
-.purchase-journey-media img,
 .bundle-confirm-media img{
   padding:2px!important;
   background:#fff!important;
@@ -138,9 +131,6 @@ body{font-size:16px}
   .bottom-nav .nav-item span:not(.cart-badge):not(.favorites-badge){font-size:15px!important}
 }
 @media(max-width:767px){
-  .home-deal-copy strong{font-size:16px!important}
-  .home-deal-copy small{font-size:10.5px!important;line-height:1.4!important}
-  .home-deal-cta{font-size:10.5px!important}
   .bundle-name{font-size:15px!important}
 }
 
@@ -170,7 +160,5 @@ body{font-size:16px}
 
 /* Em aparelhos econômicos, evita efeitos caros sem comprometer o visual. */
 html[data-performance-profile="economy"] *{scroll-behavior:auto!important}
-html[data-performance-profile="economy"] .home-deal-badge,
 html[data-performance-profile="economy"] .product-card,
 html[data-performance-profile="economy"] .bundle-card{transition:none!important}
-html[data-performance-profile="economy"] .home-deal-badge{box-shadow:none!important}
