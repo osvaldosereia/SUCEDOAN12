@@ -44,6 +44,23 @@
     'use strict';
     window.__DA_PRODUCTION__ = true;
 
+    var migrationKey = 'da_v3_cache_migrated_20260724';
+    try {
+      if (!localStorage.getItem(migrationKey)) {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations){
+            registrations.forEach(function(registration){ registration.unregister(); });
+          });
+        }
+        if ('caches' in window) {
+          caches.keys().then(function(keys){
+            return Promise.all(keys.map(function(key){ return caches.delete(key); }));
+          });
+        }
+        localStorage.setItem(migrationKey, '1');
+      }
+    } catch (_) {}
+
     var originalFetch = window.fetch.bind(window);
     window.fetch = function(input, init){
       var nextInit = init;
