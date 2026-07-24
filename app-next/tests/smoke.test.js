@@ -22,15 +22,17 @@ for (const action of ['bundle-confirm-checkout', 'bundle-confirm-continue', 'bun
   if (!main.includes(action)) throw new Error(`Ação ausente na confirmação: ${action}`);
 }
 const checkout = fs.readFileSync(path.join(root, 'src/checkout.js'), 'utf8');
-for (const fragment of ['Total da compra', 'Tem cupom de desconto?', 'Identifique seu cadastro']) {
-  if (!checkout.includes(fragment)) throw new Error(`Etapa ausente no checkout: ${fragment}`);
+for (const fragment of ['Valor normal', 'Desconto do kit', 'Desconto por validade', 'Desconto de atacado', 'Total final', 'Tem cupom de desconto?', 'Identifique seu cadastro']) {
+  if (!checkout.includes(fragment)) throw new Error(`Resumo ou etapa ausente no checkout: ${fragment}`);
 }
+if (checkout.includes('checkoutOffersHtml') || checkout.includes('Ofertas para completar')) throw new Error('Ofertas para completar ainda fazem parte do checkout');
 const checkoutCss = fs.readFileSync(path.join(root, 'styles/checkout-flow.css'), 'utf8');
-if (!checkoutCss.includes('.checkout-offers-review{display:none!important}')) throw new Error('Ofertas para completar ainda estão visíveis no checkout');
+if (!checkoutCss.includes('.checkout-offers-review{display:none!important}')) throw new Error('Proteção visual para ofertas do checkout foi removida');
 const visualParity = fs.readFileSync(path.join(root, 'src/visual-parity.js'), 'utf8');
 for (const fragment of ['50% OFF', '40% OFF', 'Todas as ofertas', 'ATÉ R$ 5', 'Math.random()']) {
   if (!visualParity.includes(fragment)) throw new Error(`Atalho promocional incompleto: ${fragment}`);
 }
+if (visualParity.includes('Faça sua compra do mês') || visualParity.includes('journeyHtml(')) throw new Error('A seção Faça sua compra do mês ainda está sendo criada');
 const homeCss = fs.readFileSync(path.join(root, 'styles/home-parity.css'), 'utf8');
 if (!homeCss.includes('grid-template-columns:repeat(4')) throw new Error('Desktop precisa exibir quatro cards promocionais');
 if (!homeCss.includes('grid-template-columns:repeat(2')) throw new Error('Mobile precisa exibir dois cards promocionais por linha');
