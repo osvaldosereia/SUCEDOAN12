@@ -12,6 +12,7 @@ Esta pasta contém a reconstrução gradual do admin. Ela foi criada para permit
 - O salvamento implementado na V2 consulta novamente o produto remoto e bloqueia conflito de estoque.
 - A publicação exige catálogo confirmado pelo Firebase, ausência de erros obrigatórios, GitHub configurado e confirmação explícita.
 - O fluxo publica primeiro os produtos alterados no Firebase e somente depois atualiza `site/produtos-home.json` e `catalog-version.json`.
+- Salvamentos em lote atualizam a interface apenas ao final, evitando renderização completa a cada produto.
 
 ## Estrutura
 
