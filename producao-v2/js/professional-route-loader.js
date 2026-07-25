@@ -1,3 +1,5 @@
+import { activate } from './professional-shell.js?admin_build=20260725-admin-v9';
+
 const imports = new Map();
 const BUILD = '20260725-admin-v9';
 
@@ -43,7 +45,9 @@ function start() {
   document.getElementById('mainNav')?.addEventListener('click', event => {
     const button = event.target.closest('[data-admin-route],[data-route]');
     if (!button) return;
-    loadSection(button.dataset.adminRoute || '', button.dataset.route || '')
+    const section = button.dataset.adminRoute || '';
+    if (section) queueMicrotask(() => activate(section));
+    loadSection(section, button.dataset.route || '')
       .catch(error => toast(`Não foi possível abrir esta função: ${error?.message || error}`));
   });
 }
