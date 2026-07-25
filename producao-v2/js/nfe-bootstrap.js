@@ -3,6 +3,8 @@ import { productKey } from './core/utils.js';
 import { NfeAdvancedModule } from './modules/nfe-advanced.js';
 import { loadProducts } from './services/firebase.js';
 
+const BUILD = '20260725-admin-v12';
+
 function loadConfig() {
   try {
     return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}') };
@@ -21,7 +23,7 @@ function installStylesheet() {
   if (document.querySelector('link[data-admin-v2-nfe]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './assets/nfe.css';
+  link.href = `./assets/nfe.css?admin_build=${BUILD}`;
   link.dataset.adminV2Nfe = '1';
   document.head.appendChild(link);
 }
@@ -29,7 +31,7 @@ function installStylesheet() {
 function panelMarkup() {
   return `<section class="panel nfe-workspace" id="nfeWorkspace">
     <div class="panel-header nfe-panel-header">
-      <div><span class="eyebrow">Migração segura · simulação e transação protegida</span><h2>Entrada de NF-e</h2><p>Leia, compare e simule a nota. A importação permanece bloqueada por padrão e exige confirmação explícita.</p></div>
+      <div><span class="eyebrow">Migração segura · simulação e transação protegida</span><h2>Entrada de NF-e</h2><p>Leia, compare e simule a nota. A importação exige confirmação explícita.</p></div>
       <div class="nfe-header-actions"><span class="badge info" id="nfeDataStatus">Catálogo ainda não carregado</span><label class="button primary nfe-file-button" id="nfeFileLabel">Selecionar XML<input id="nfeFile" type="file" accept=".xml,text/xml,application/xml" hidden></label></div>
     </div>
     <div class="nfe-input-area">
@@ -61,7 +63,7 @@ function panelMarkup() {
 }
 
 function settingsMarkup() {
-  return `<section class="panel span-all-settings" id="nfeSafetySettings">
+  return `<section class="panel" id="nfeSafetySettings">
     <div class="panel-header"><div><h2>Segurança da Entrada de NF-e</h2><p>Uma segunda trava, independente do modo geral de gravação.</p></div><span class="badge success" id="nfeSettingsStatus">Bloqueada</span></div>
     <div class="form-stack">
       <label class="switch-row"><span><strong>Permitir importação de NF-e</strong><small>Ative somente durante um teste controlado. O modo geral “Permitir gravações” também precisa estar ativo.</small></span><input id="nfeImportModeSetting" type="checkbox"></label>
@@ -98,7 +100,7 @@ function installSettings() {
     persistConfig({ nfeImportMode: input.checked });
     sync();
     document.getElementById('nfeConfirmImport')?.dispatchEvent(new Event('change'));
-    toast(input.checked ? 'Importação de NF-e habilitada para teste neste navegador.' : 'Importação de NF-e bloqueada.', input.checked ? 'error' : 'success');
+    toast(input.checked ? 'Importação de NF-e habilitada neste navegador.' : 'Importação de NF-e bloqueada.', input.checked ? 'error' : 'success');
   });
   sync();
 }
@@ -109,16 +111,6 @@ function start() {
   installStylesheet();
   installSettings();
   operations.insertAdjacentHTML('afterbegin', panelMarkup());
-
-  const oldCard = operations.querySelector('.module-card');
-  if (oldCard) {
-    oldCard.querySelector('p').textContent = 'A bancada acima já simula validade, lotes, produtos e estoque; a importação possui duas travas independentes.';
-    const badge = oldCard.querySelector('.badge');
-    if (badge) {
-      badge.className = 'badge success';
-      badge.textContent = 'Simulação completa';
-    }
-  }
 
   const simpleStore = {
     state: { config: loadConfig(), products: [] },
@@ -136,8 +128,8 @@ function start() {
     if (!force && simpleStore.state.products.length && Date.now() - loadedAt < 300000) return simpleStore.state.products;
     if (loadingPromise) return loadingPromise;
     dataStatus.className = 'badge warning';
-    dataStatus.textContent = 'Carregando Firebase…';
-    loadingPromise = loadProducts(simpleStore.state.config)
+    dataStatus.textContent = 'Carregando catálogo…';
+    loadingPromise = loadProducts(simpleStore.state.config, { force })
       .then(products => {
         simpleStore.state.products = products;
         loadedAt = Date.now();
@@ -148,7 +140,7 @@ function start() {
       })
       .catch(error => {
         dataStatus.className = 'badge danger';
-        dataStatus.textContent = 'Falha no Firebase';
+        dataStatus.textContent = 'Falha no catálogo';
         throw error;
       })
       .finally(() => { loadingPromise = null; });
@@ -174,13 +166,15 @@ function start() {
     reloadConfig: loadConfig,
   });
 
-  document.getElementById('mainNav')?.addEventListener('click', event => {
-    if (event.target.closest('[data-route="operations"]')) ensureProducts(false).catch(error => toast(error?.message || String(error), 'error'));
+  window.addEventListener('admin-v2-route', event => {
+    if (event.detail?.route === 'nfe') ensureProducts(false).catch(error => toast(error?.message || String(error), 'error'));
   });
   document.getElementById('reloadButton')?.addEventListener('click', () => {
+    if (window.adminV2CurrentRoute?.() !== 'nfe') return;
     loadedAt = 0;
-    if (document.querySelector('[data-view="operations"].active')) ensureProducts(true).catch(error => toast(error?.message || String(error), 'error'));
+    ensureProducts(true).catch(error => toast(error?.message || String(error), 'error'));
   });
+  if (window.adminV2CurrentRoute?.() === 'nfe') ensureProducts(false).catch(error => toast(error?.message || String(error), 'error'));
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
