@@ -38,6 +38,35 @@ jobs:
         with:
           node-version: 22
 
+      - name: Corrigir grant OAuth legado
+        shell: bash
+        run: |
+          set -euo pipefail
+          arquivo="scripts/processar-ofertas.mjs"
+          errado="urn:ietf:params:oauth2:grant-type:jwt-bearer"
+          correto="urn:ietf:params:oauth:grant-type:jwt-bearer"
+          if ! grep -Fq "$errado" "$arquivo"; then
+            echo "Grant OAuth já está correto."
+            exit 0
+          fi
+          sed -i "s|$errado|$correto|g" "$arquivo"
+          node --check "$arquivo"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$arquivo"
+          git commit -m "Corrige grant OAuth das ofertas [skip ci]"
+          for tentativa in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              echo "Correção OAuth publicada."
+              exit 0
+            fi
+            git fetch origin main
+            git rebase origin/main
+            sleep $((tentativa * 2))
+          done
+          echo "Não foi possível publicar a correção OAuth." >&2
+          exit 1
+
       - name: Preservar base para reconciliação
         shell: bash
         run: |
