@@ -1,66 +1,16 @@
 {
-  "checkedAt": "2026-07-25T02:33:36.901Z",
-  "baseUrl": "https://donaantonia.com.br",
-  "ok": true,
-  "checks": [
+  "ok": false,
+  "errors": [
     {
-      "name": "Entrada /producao aponta para o Admin oficial",
-      "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784946816901"
-    },
-    {
-      "name": "Atalho /admin aponta para o Admin oficial",
-      "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784946817329"
-    },
-    {
-      "name": "Admin oficial carregado",
-      "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784946817393"
-    },
-    {
-      "name": "Catálogo público possui produtos",
-      "ok": true,
-      "detail": "1411 produto(s)"
-    },
-    {
-      "name": "Versão do catálogo válida",
-      "ok": true,
-      "detail": "catalog-1784946483996 · site/produtos-home.json"
-    },
-    {
-      "name": "Banners permanecem removidos",
-      "ok": true,
-      "detail": "disabled=true · 0 banner(s)"
-    },
-    {
-      "name": "Arquivo de cupons válido",
-      "ok": true,
-      "detail": "3 cupom(ns)"
-    },
-    {
-      "name": "Compra Rápida válida",
-      "ok": true,
-      "detail": "6 seção(ões)"
-    },
-    {
-      "name": "Histórico de ofertas válido",
-      "ok": true,
-      "detail": "176 oferta(s) no histórico"
-    },
-    {
-      "name": "Rotina horária de ofertas atualizada",
-      "ok": true,
-      "detail": "0.4h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "name": "healthcheck",
+      "detail": "Relatório não foi gerado"
     }
   ],
-  "errors": [],
-  "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "30140615702",
+    "runId": "30140683310",
     "attempt": "1",
-    "sourceSha": "8ef55606fcd60e23ca0c53a0593b32ff3e7bba97",
-    "publishedAt": "2026-07-25T02:33:38.507Z"
+    "sourceSha": "24213fe4700ff68e9d8534a31cdc629ea7b646d4",
+    "publishedAt": "2026-07-25T02:35:43.351Z"
   }
 }
