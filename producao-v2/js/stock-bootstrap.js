@@ -3,8 +3,8 @@ import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
 import { loadProducts } from './services/firebase.js';
 
-const BUILD = '20260725-admin-v11';
-let productEnhancementsPromise = null;
+const BUILD = '20260725-admin-v12';
+const imports = new Map();
 
 function loadConfig() {
   try {
@@ -33,7 +33,7 @@ function workspaceMarkup() {
   const windows = [5, 10, 15, 20, 25, 30]
     .map(value => `<option value="${value}">Próximos ${value} dias</option>`).join('');
   return `<section class="panel stock-workspace" id="stockWorkspace">
-    <div class="panel-header"><div><span class="eyebrow">Fila operacional</span><h2>Estoque e validade</h2><p>Vencidos, próximos do vencimento, sem validade e estoque baixo em uma única lista.</p></div><span class="badge info" id="stockDataStatus">Abra Operações para carregar</span></div>
+    <div class="panel-header"><div><span class="eyebrow">Fila operacional</span><h2>Estoque e validade</h2><p>Vencidos, próximos do vencimento, sem validade e estoque baixo em uma única lista.</p></div><span class="badge info" id="stockDataStatus">Abra esta aba para carregar</span></div>
     <div class="attention-grid stock-metrics" id="stockMetrics"></div>
     <div class="stock-toolbar"><div class="search-field"><span>⌕</span><input id="stockSearch" type="search" placeholder="Produto, código, EAN ou localização"></div><select id="stockStatusFilter"><option value="">Todos os status</option><option value="expired">Vencidos</option><option value="critical">Até 5 dias</option><option value="upcoming">Até 30 dias</option><option value="no-stock">Sem estoque</option><option value="low-stock">Estoque baixo</option><option value="no-validity">Sem validade</option></select><select id="stockWindowFilter"><option value="">Qualquer validade</option>${windows}</select><select id="stockSort"><option value="expiry">Vencimento mais próximo</option><option value="stock">Menor estoque</option><option value="name">Nome</option></select></div>
     <div class="table-summary"><div><strong id="stockResultCount">0</strong><span> produtos</span></div></div>
@@ -49,13 +49,10 @@ function editorMarkup() {
   </aside>`;
 }
 
-function installSettings() {
-  const grid = document.querySelector('[data-view="settings"] .settings-grid');
-  if (!grid || document.getElementById('stockSafetySettings')) return;
-  const html = `<section class="panel span-all-settings" id="stockSafetySettings"><div class="panel-header"><div><h2>Estoque e validade</h2><p>Ajustes manuais com motivo obrigatório e reconsulta do estoque remoto.</p></div><span class="badge success" id="stockSettingsStatus">Ativo</span></div><div class="form-stack"><label class="switch-row"><span><strong>Permitir ajustes manuais</strong><small>Use esta chave para bloquear temporariamente os ajustes de estoque neste navegador.</small></span><input id="stockWriteModeSetting" type="checkbox"></label></div></section>`;
-  const danger = grid.querySelector('.danger-panel');
-  if (danger) danger.insertAdjacentHTML('beforebegin', html);
-  else grid.insertAdjacentHTML('beforeend', html);
+function installSettings(host) {
+  if (!host || document.getElementById('stockSafetySettings')) return;
+  const html = `<section class="panel" id="stockSafetySettings"><div class="panel-header"><div><h2>Segurança dos ajustes</h2><p>Controle independente para estoque e validade.</p></div><span class="badge success" id="stockSettingsStatus">Ativo</span></div><div class="form-stack"><label class="switch-row"><span><strong>Permitir ajustes manuais</strong><small>Desative para bloquear temporariamente alterações nesta função.</small></span><input id="stockWriteModeSetting" type="checkbox"></label></div></section>`;
+  host.insertAdjacentHTML('beforeend', html);
   const input = document.getElementById('stockWriteModeSetting');
   const status = document.getElementById('stockSettingsStatus');
   const sync = () => {
@@ -81,61 +78,115 @@ function toast(message, type = '') {
   setTimeout(() => node.remove(), type === 'error' ? 6500 : 3500);
 }
 
-function ensureProductEnhancements() {
-  if (!productEnhancementsPromise) {
-    productEnhancementsPromise = Promise.all([
-      import(`./catalog-auto-sync.js?admin_build=${BUILD}`),
-      import(`./product-lifecycle-bootstrap.js?admin_build=${BUILD}`),
-    ]).catch(error => {
-      productEnhancementsPromise = null;
-      throw error;
-    });
-  }
-  return productEnhancementsPromise;
-}
-
-const routeImports = new Map();
-
-function loadRouteModules(route) {
-  if (routeImports.has(route)) return routeImports.get(route);
-  let task = Promise.resolve();
-  if (route === 'products') {
-    task = ensureProductEnhancements();
-  } else if (route === 'operations') {
-    task = Promise.all([
-      import(`./nfe-bootstrap.js?admin_build=${BUILD}`),
-      import(`./quick-read-bootstrap.js?admin_build=${BUILD}`),
-      import(`./order-tools-bootstrap.js?admin_build=${BUILD}`),
-    ]);
-  } else if (route === 'promotions') {
-    task = Promise.all([
-      import(`./collections-bootstrap.js?admin_build=${BUILD}`),
-      import(`./offers-bootstrap.js?admin_build=${BUILD}`),
-      import(`./admin-suite-bootstrap.js?admin_build=${BUILD}`),
-    ]);
-  } else if (route === 'registries') {
-    task = import(`./registries-bootstrap.js?admin_build=${BUILD}`);
-  } else if (route === 'settings') {
-    task = import(`./diagnostics-bootstrap.js?admin_build=${BUILD}`);
-  }
-  const guarded = Promise.resolve(task).catch(error => {
-    routeImports.delete(route);
-    toast(`Não foi possível abrir o módulo: ${error?.message || error}`, 'error');
+function importOnce(key, paths) {
+  if (imports.has(key)) return imports.get(key);
+  const task = Promise.all(paths.map(path => import(`${path}?admin_build=${BUILD}`))).catch(error => {
+    imports.delete(key);
     throw error;
   });
-  routeImports.set(route, guarded);
-  return guarded;
+  imports.set(key, task);
+  return task;
+}
+
+function moveToRoute(id, route) {
+  const node = document.getElementById(id);
+  const target = document.querySelector(`.view[data-view="${CSS.escape(route)}"]`);
+  if (!node || !target || node.parentElement === target) return false;
+  target.appendChild(node);
+  return true;
+}
+
+function selectCollectionRoute(route) {
+  const type = route === 'kits' ? 'kit' : 'basket';
+  const button = document.querySelector(`#collectionTabs [data-collection-type="${type}"]`);
+  if (button && !button.classList.contains('active')) button.click();
+}
+
+function selectRegistryRoute(route) {
+  const names = { categories: 'categories', brands: 'brands', suppliers: 'suppliers', tags: 'tags' };
+  const button = document.querySelector(`#registryTabs [data-registry-tab="${names[route]}"]`);
+  if (button && !button.classList.contains('active')) button.click();
+}
+
+function placeRouteContent(route) {
+  if (route === 'stock') {
+    moveToRoute('stockWorkspace', route);
+    moveToRoute('stockSafetySettings', route);
+  }
+  if (route === 'quick-read') moveToRoute('quickReadWorkspace', route);
+  if (route === 'nfe') {
+    moveToRoute('nfeWorkspace', route);
+    moveToRoute('nfeSafetySettings', route);
+  }
+  if (route === 'orders') {
+    moveToRoute('ordersAdminRoot', route);
+    moveToRoute('orderToolsPanel', route);
+  }
+  if (route === 'baskets' || route === 'kits') {
+    moveToRoute('collectionsWorkspace', route);
+    moveToRoute('collectionsSafetySettings', route);
+    selectCollectionRoute(route);
+  }
+  if (route === 'offers') {
+    moveToRoute('offersWorkspace', route);
+    moveToRoute('offerSafetySettings', route);
+  }
+  if (route === 'coupons') moveToRoute('couponsAdminRoot', route);
+  if (route === 'quick-purchase') moveToRoute('quickPurchaseAdminRoot', route);
+  if (['categories', 'brands', 'suppliers', 'tags'].includes(route)) {
+    moveToRoute('registriesWorkspace', route);
+    moveToRoute('registrySafetySettings', route);
+    selectRegistryRoute(route);
+  }
+  if (route === 'integrations') moveToRoute('externalIntegrationSettings', route);
+  if (route === 'maintenance') {
+    moveToRoute('diagnosticsWorkspace', route);
+    moveToRoute('adminBackupPanel', route);
+  }
+  window.dispatchEvent(new CustomEvent('admin-v2-route-ready', { detail: { route } }));
+}
+
+async function loadRouteModules(route) {
+  let task = Promise.resolve();
+  if (route === 'products') task = importOnce('product-enhancements', ['./catalog-auto-sync.js', './product-lifecycle-bootstrap.js']);
+  if (route === 'quick-read') task = importOnce('quick-read', ['./quick-read-bootstrap.js']);
+  if (route === 'nfe') task = importOnce('nfe', ['./nfe-bootstrap.js']);
+  if (route === 'orders') task = importOnce('orders', ['./admin-suite-bootstrap.js', './order-tools-bootstrap.js']);
+  if (route === 'baskets' || route === 'kits') task = importOnce('collections', ['./collections-bootstrap.js']);
+  if (route === 'offers') task = importOnce('offers', ['./offers-bootstrap.js']);
+  if (route === 'coupons' || route === 'quick-purchase') task = importOnce('admin-suite', ['./admin-suite-bootstrap.js']);
+  if (['categories', 'brands', 'suppliers', 'tags'].includes(route)) task = importOnce('registries', ['./registries-bootstrap.js']);
+  if (route === 'integrations') task = importOnce('diagnostics', ['./diagnostics-bootstrap.js']);
+  if (route === 'maintenance') task = Promise.all([
+    importOnce('diagnostics', ['./diagnostics-bootstrap.js']),
+    importOnce('admin-suite', ['./admin-suite-bootstrap.js']),
+  ]);
+  try {
+    await task;
+    placeRouteContent(route);
+  } catch (error) {
+    toast(`Não foi possível abrir esta função: ${error?.message || error}`, 'error');
+  }
+}
+
+function activeRoute() {
+  return window.adminV2CurrentRoute?.() || document.querySelector('.view.active')?.dataset.view || 'dashboard';
 }
 
 function start() {
-  const operations = document.querySelector('[data-view="operations"]');
-  if (!operations || document.getElementById('stockWorkspace')) return;
+  const stockView = document.querySelector('.view[data-view="stock"]');
+  if (!stockView || document.getElementById('stockWorkspace')) return;
   installCss();
-  installSettings();
-  operations.insertAdjacentHTML('beforeend', workspaceMarkup());
+  stockView.insertAdjacentHTML('beforeend', workspaceMarkup());
+  installSettings(stockView);
   document.body.insertAdjacentHTML('beforeend', editorMarkup());
 
-  const store = { state: { config: loadConfig(), products: [] }, getProduct(key) { return this.state.products.find(product => productKey(product) === String(key)) || null; } };
+  const store = {
+    state: { config: loadConfig(), products: [] },
+    getProduct(key) {
+      return this.state.products.find(product => productKey(product) === String(key)) || null;
+    },
+  };
   let module;
   let loaded = false;
   let loadingPromise = null;
@@ -171,19 +222,17 @@ function start() {
   module = new StockModule({ store, elements, onToast: toast, onReload: () => reload({ force: true }), reloadConfig: loadConfig });
 
   const activateRoute = route => {
-    loadRouteModules(route).catch(() => {});
-    if (route === 'operations' && !loaded) reload().catch(error => toast(error?.message || String(error), 'error'));
+    loadRouteModules(route);
+    if (route === 'stock' && !loaded) reload().catch(error => toast(error?.message || String(error), 'error'));
   };
 
   window.addEventListener('admin-v2-route', event => activateRoute(event.detail?.route || ''));
-  document.getElementById('mainNav')?.addEventListener('click', event => {
-    const button = event.target.closest('[data-route]');
-    if (button) activateRoute(button.dataset.route);
-  });
   document.getElementById('reloadButton')?.addEventListener('click', () => {
-    const route = document.querySelector('[data-view].active')?.dataset.view;
-    if (route === 'operations') reload({ force: true }).catch(() => {});
+    if (activeRoute() === 'stock') reload({ force: true }).catch(() => {});
   });
+
+  placeRouteContent('stock');
+  setTimeout(() => activateRoute(activeRoute()), 0);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
