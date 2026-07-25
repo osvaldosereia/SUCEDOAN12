@@ -29,6 +29,7 @@
     const finished = /Dados carregados|Sem produtos|Falha na atualização/i.test(title);
     if (!finished || (!metricsReady && !/Falha na atualização/i.test(title))) return;
     coreReady = true;
+    root.dataset.adminCoreReady = '1';
     if (bootMessage) bootMessage.textContent = 'Finalizando os módulos do sistema…';
     window.dispatchEvent(new CustomEvent('admin-v2-core-ready'));
     maybeReveal();
@@ -40,12 +41,15 @@
 
   window.addEventListener('admin-v2-modules-ready', () => {
     modulesReady = true;
+    root.dataset.adminModulesReady = '1';
     maybeReveal();
   }, { once: true });
 
   window.addEventListener('admin-v2-ready', () => {
     coreReady = true;
     modulesReady = true;
+    root.dataset.adminCoreReady = '1';
+    root.dataset.adminModulesReady = '1';
     reveal();
   }, { once: true });
 
