@@ -1,4 +1,3 @@
-import './offers-bootstrap.js';
 import './offer-manager.js';
 import './commerce-enhancements.js';
 import './instagram-queue-review.js';
