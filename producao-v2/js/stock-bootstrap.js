@@ -118,10 +118,7 @@ function placeRouteContent(route) {
     moveToRoute('nfeWorkspace', route);
     moveToRoute('nfeSafetySettings', route);
   }
-  if (route === 'orders') {
-    moveToRoute('ordersAdminRoot', route);
-    moveToRoute('orderToolsPanel', route);
-  }
+  if (route === 'orders') moveToRoute('orderToolsPanel', route);
   if (route === 'baskets' || route === 'kits') {
     moveToRoute('collectionsWorkspace', route);
     moveToRoute('collectionsSafetySettings', route);
@@ -131,18 +128,13 @@ function placeRouteContent(route) {
     moveToRoute('offersWorkspace', route);
     moveToRoute('offerSafetySettings', route);
   }
-  if (route === 'coupons') moveToRoute('couponsAdminRoot', route);
-  if (route === 'quick-purchase') moveToRoute('quickPurchaseAdminRoot', route);
   if (['categories', 'brands', 'suppliers', 'tags'].includes(route)) {
     moveToRoute('registriesWorkspace', route);
     moveToRoute('registrySafetySettings', route);
     selectRegistryRoute(route);
   }
   if (route === 'integrations') moveToRoute('externalIntegrationSettings', route);
-  if (route === 'maintenance') {
-    moveToRoute('diagnosticsWorkspace', route);
-    moveToRoute('adminBackupPanel', route);
-  }
+  if (route === 'maintenance') moveToRoute('diagnosticsWorkspace', route);
   window.dispatchEvent(new CustomEvent('admin-v2-route-ready', { detail: { route } }));
 }
 
@@ -151,15 +143,16 @@ async function loadRouteModules(route) {
   if (route === 'products') task = importOnce('product-enhancements', ['./catalog-auto-sync.js', './product-lifecycle-bootstrap.js']);
   if (route === 'quick-read') task = importOnce('quick-read', ['./quick-read-bootstrap.js']);
   if (route === 'nfe') task = importOnce('nfe', ['./nfe-bootstrap.js']);
-  if (route === 'orders') task = importOnce('orders', ['./admin-suite-bootstrap.js', './order-tools-bootstrap.js']);
+  if (route === 'orders') task = importOnce('orders', ['./orders-bootstrap.js', './order-tools-bootstrap.js']);
   if (route === 'baskets' || route === 'kits') task = importOnce('collections', ['./collections-bootstrap.js']);
   if (route === 'offers') task = importOnce('offers', ['./offers-bootstrap.js']);
-  if (route === 'coupons' || route === 'quick-purchase') task = importOnce('admin-suite', ['./admin-suite-bootstrap.js']);
+  if (route === 'coupons') task = importOnce('coupons', ['./coupons-bootstrap.js']);
+  if (route === 'quick-purchase') task = importOnce('quick-purchase', ['./quick-purchase-bootstrap.js']);
   if (['categories', 'brands', 'suppliers', 'tags'].includes(route)) task = importOnce('registries', ['./registries-bootstrap.js']);
   if (route === 'integrations') task = importOnce('diagnostics', ['./diagnostics-bootstrap.js']);
   if (route === 'maintenance') task = Promise.all([
     importOnce('diagnostics', ['./diagnostics-bootstrap.js']),
-    importOnce('admin-suite', ['./admin-suite-bootstrap.js']),
+    importOnce('backup', ['./backup-bootstrap.js']),
   ]);
   try {
     await task;
