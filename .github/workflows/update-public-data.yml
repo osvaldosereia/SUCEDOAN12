@@ -1,0 +1,58 @@
+name: Atualizar Merchant e sitemap
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 9 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/gerar-merchant.js'
+      - 'scripts/gerar-sitemap.js'
+      - 'scripts/check-public-site.mjs'
+      - '.github/workflows/update-public-data.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: public-data-main
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Gerar feed Merchant
+        run: node scripts/gerar-merchant.js
+      - name: Gerar sitemap e robots
+        run: node scripts/gerar-sitemap.js
+      - name: Validar arquivos públicos
+        run: |
+          node scripts/check-public-site.mjs
+          test -s merchant.xml
+          grep -q '<item>' merchant.xml
+          grep -q '<g:minimum_order_value>' merchant.xml
+          test -s sitemap.xml
+          grep -q 'contato.html' sitemap.xml
+          grep -q '?p=' sitemap.xml
+      - name: Publicar somente dados gerados
+        run: |
+          git add merchant.xml sitemap.xml robots.txt
+          if git diff --cached --quiet; then
+            echo 'Merchant e sitemap já estão atualizados.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Atualizar Merchant, sitemap e robots'
+          git push origin main
