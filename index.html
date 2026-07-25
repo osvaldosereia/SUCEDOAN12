@@ -57,6 +57,16 @@
       if (route) history.replaceState(null, '', location.pathname + route);
     }
 
+    if (location.hash === '#/ofertas/50') {
+      history.replaceState(null, '', location.pathname + location.search + '#/ofertas');
+    }
+    document.addEventListener('click', function(event){
+      var offersButton = event.target.closest && event.target.closest('.home-offers-banner-button');
+      if (offersButton && offersButton.getAttribute('href') === '#/ofertas/50') {
+        offersButton.setAttribute('href', '#/ofertas');
+      }
+    }, true);
+
     var migrationKey = 'da_v8_cache_migrated_20260724';
     try {
       if (!localStorage.getItem(migrationKey)) {
