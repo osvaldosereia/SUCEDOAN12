@@ -12,6 +12,7 @@ on:
       - "producao-v2/**"
       - "admin/index.html"
       - "site/produtos-home.json"
+      - "site/produtos-admin.json"
       - "site/banners/banners.json"
       - "site/cuponsativos.json"
       - "site/compra-rapida.json"
@@ -101,7 +102,7 @@ jobs:
         run: cp admin-production-report-inicial.json admin-production-report.json
 
       - name: Preparar status versionado
-        if: always()
+        if: always() && steps.first_check.outcome != 'skipped'
         env:
           HEALTH_EVENT: ${{ github.event_name }}
           HEALTH_RUN_ID: ${{ github.run_id }}
@@ -131,7 +132,7 @@ jobs:
           NODE
 
       - name: Publicar status da produção
-        if: always()
+        if: always() && steps.first_check.outcome != 'skipped'
         shell: bash
         run: |
           set -euo pipefail
@@ -156,7 +157,7 @@ jobs:
           exit 1
 
       - name: Anexar relatórios
-        if: always()
+        if: always() && steps.first_check.outcome != 'skipped'
         uses: actions/upload-artifact@v4
         with:
           name: admin-production-health
