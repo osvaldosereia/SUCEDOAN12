@@ -1,7 +1,9 @@
 const CACHE_MS = 15000;
 let recentCache = null;
 let recentCacheAt = 0;
+let recentCacheLimit = 0;
 let recentLoading = null;
+let recentLoadingLimit = 0;
 
 function clean(value = '') {
   return String(value ?? '').trim();
@@ -9,6 +11,10 @@ function clean(value = '') {
 
 function baseUrl(config) {
   return clean(config?.firebaseUrl).replace(/\/+$/, '');
+}
+
+function safePageLimit(value, fallback = 120) {
+  return Math.max(10, Math.min(250, Math.floor(Number(value) || fallback)));
 }
 
 function orderTimestamp(order) {
@@ -23,6 +29,15 @@ function normalizeCollection(data) {
     .filter(([, value]) => value && typeof value === 'object' && !Array.isArray(value))
     .map(([firebaseKey, value]) => ({ firebaseKey, ...value }))
     .sort((a, b) => orderTimestamp(b) - orderTimestamp(a));
+}
+
+function cloneForLimit(result, limit) {
+  const orders = Array.isArray(result?.orders) ? result.orders.slice(0, limit) : [];
+  return structuredClone({
+    ...result,
+    orders,
+    hasMore: Boolean(result?.hasMore || (result?.orders?.length || 0) > limit),
+  });
 }
 
 async function fetchJson(url, timeout = 15000) {
@@ -44,7 +59,7 @@ async function fetchJson(url, timeout = 15000) {
 }
 
 async function fetchOrderPage(config, { limit = 120, beforeKey = '' } = {}) {
-  const safeLimit = Math.max(20, Math.min(250, Math.floor(Number(limit) || 120)));
+  const safeLimit = safePageLimit(limit);
   const requested = safeLimit + (beforeKey ? 1 : 0);
   const params = new URLSearchParams();
   params.set('orderBy', '"$key"');
@@ -67,27 +82,37 @@ async function fetchOrderPage(config, { limit = 120, beforeKey = '' } = {}) {
 }
 
 export async function loadRecentOrders(config, { limit = 120, force = false } = {}) {
-  if (!force && recentCache && Date.now() - recentCacheAt < CACHE_MS) {
-    return structuredClone(recentCache);
+  const requestedLimit = safePageLimit(limit);
+  const cacheFresh = recentCache && Date.now() - recentCacheAt < CACHE_MS;
+  if (!force && cacheFresh && recentCacheLimit >= requestedLimit) {
+    return cloneForLimit(recentCache, requestedLimit);
   }
-  if (!force && recentLoading) return structuredClone(await recentLoading);
-  recentLoading = fetchOrderPage(config, { limit });
+  if (!force && recentLoading && recentLoadingLimit >= requestedLimit) {
+    return cloneForLimit(await recentLoading, requestedLimit);
+  }
+
+  recentLoadingLimit = requestedLimit;
+  recentLoading = fetchOrderPage(config, { limit: requestedLimit });
   try {
     recentCache = await recentLoading;
     recentCacheAt = Date.now();
-    return structuredClone(recentCache);
+    recentCacheLimit = requestedLimit;
+    return cloneForLimit(recentCache, requestedLimit);
   } finally {
     recentLoading = null;
+    recentLoadingLimit = 0;
   }
 }
 
 export async function loadOlderOrders(config, beforeKey, { limit = 100 } = {}) {
   if (!beforeKey) return { orders: [], hasMore: false, oldestKey: '' };
-  return fetchOrderPage(config, { limit, beforeKey });
+  return fetchOrderPage(config, { limit: safePageLimit(limit, 100), beforeKey });
 }
 
 export function invalidateOrdersCache() {
   recentCache = null;
   recentCacheAt = 0;
+  recentCacheLimit = 0;
   recentLoading = null;
+  recentLoadingLimit = 0;
 }
