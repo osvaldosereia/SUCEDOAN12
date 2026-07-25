@@ -1,7 +1,5 @@
 import { CONFIG, ROUTINES } from './config.js';
-import {
-  escapeHtml, fmt, formatDateBR, norm, parseDate, slug
-} from './core.js';
+import { escapeHtml, fmt, formatDateBR, norm, parseDate, slug } from './core.js';
 import { findProductByReference, searchProducts } from './catalog.js';
 import {
   applyProductOffer, calculateCartPricing, hasExpiryBulkDiscount, isAvailable,
@@ -74,9 +72,9 @@ function productCard(state, product, mode = '') {
       ${display.discountPercent > 0 ? `<span class="discount-badge">-${display.discountPercent}%</span>` : ''}
     </div>
     <div class="product-card-body">
-      ${product.embalagem ? `<div class="product-packaging">${escapeHtml(product.embalagem)}</div>` : ''}
+      <div class="product-packaging">${escapeHtml(product.embalagem || 'Unidade')}</div>
       <a class="product-name" href="#/produto/${productRoute(product)}" title="${escapeHtml(product.name)}">${escapeHtml(truncate(product.name, mode === 'compact' ? 36 : 48))}</a>
-      ${product.validade && formatDateBR(product.validade) ? `<div class="product-expiry">Val. ${formatDateBR(product.validade)}</div>` : ''}
+      <div class="product-expiry">${product.validade && formatDateBR(product.validade) ? `Val. ${formatDateBR(product.validade)}` : '&nbsp;'}</div>
       <div class="product-card-footer">
         <div class="product-price">${display.original > display.effective ? `<s>${fmt(display.original)}</s>` : ''}<strong>${fmt(display.effective)}</strong></div>
         <div data-control-slot="${escapeHtml(id)}">${quantityControl(state, product)}</div>
@@ -146,10 +144,28 @@ function kitCard(state, kit) {
   return `<article class="bundle-card"><div class="bundle-media-wrap"><a class="bundle-media" href="#/kit/${encodeURIComponent(kit.id)}"><img loading="lazy" src="${escapeHtml(kit.imagem)}" alt="${escapeHtml(kit.nome)}"></a>${favoriteButton(state, kit.id, 'kit')}${discount ? `<span class="discount-badge">-${discount}%</span>` : ''}</div><div><a class="bundle-name" href="#/kit/${encodeURIComponent(kit.id)}">${escapeHtml(kit.nome)}</a><p>${escapeHtml(truncate(kit.descricao, 90))}</p><div class="bundle-price">${original > kit.preco ? `<s>${fmt(original)}</s>` : ''}<strong>${fmt(kit.preco)}</strong></div><div class="bundle-actions"><a class="secondary-button" href="#/kit/${encodeURIComponent(kit.id)}">Ver produtos</a><button class="primary-button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar</button></div></div></article>`;
 }
 
+function paymentNoticesHtml() {
+  return `<section class="payment-notices" aria-label="Condições da compra">
+    <article class="payment-notice"><span class="payment-notice-mark">4x</span><div><small>Pagamento facilitado</small><strong>Parcele em até 4x sem juros</strong><span>no Cartão de Crédito</span></div></article>
+    <article class="payment-notice"><span class="payment-notice-mark">OK</span><div><small>Compra com segurança</small><strong>Pague somente na entrega</strong><span>após receber o seu pedido</span></div></article>
+    <article class="payment-notice"><span class="payment-notice-mark">R$0</span><div><small>Entrega grátis</small><strong>Em Cuiabá e Várzea Grande</strong><span>em pedidos a partir de R$ 75</span></div></article>
+  </section>`;
+}
+
+function offersBannerHtml() {
+  return `<section class="home-offers-banner" aria-label="Descontos de até 50%"><div><small>Ofertas especiais</small><strong>DESCONTOS DE ATÉ 50%</strong></div><a class="home-offers-banner-button" href="#/ofertas/50">Ver Ofertas</a></section>`;
+}
+
+function companySummaryHtml() {
+  return `<section class="home-company-info" aria-labelledby="home-company-title"><div class="home-company-copy"><small>Supermercado local</small><h2 id="home-company-title">Dona Antônia em Cuiabá e Várzea Grande</h2><p>Produtos, cestas básicas e kits com atendimento humano, conferência do pedido e entrega local. Pedido mínimo de R$ 75.</p></div><dl class="home-company-facts"><div><dt>Atendimento</dt><dd>Segunda a sábado, das 08h às 18h</dd></div><div><dt>WhatsApp</dt><dd>(65) 99815-0975</dd></div><div><dt>Endereço</dt><dd>R. Trinta, 105 — Jardim Nossa Sra. Aparecida, Cuiabá - MT</dd></div></dl><nav class="home-company-links" aria-label="Empresa e políticas"><a href="../sobre-nos.html">Conheça a empresa</a><a href="../politica-de-entrega.html">Política de entrega</a><a href="../politica-de-troca.html">Trocas e devoluções</a><a href="../contato.html">Fale conosco</a></nav></section>`;
+}
+
+function publicFooterHtml() {
+  return `<footer class="public-site-footer"><div class="public-site-footer-brand"><strong>Super Cestas Básicas Dona Antônia</strong><span>CNPJ 51.385.335/0001-06</span></div><div class="public-site-footer-contact"><span>Cuiabá e Várzea Grande - MT</span><a href="https://wa.me/5565998150975" target="_blank" rel="noopener">WhatsApp (65) 99815-0975</a></div><nav aria-label="Links institucionais"><a href="../sobre-nos.html">Sobre nós</a><a href="../contato.html">Contato</a><a href="../politica-de-entrega.html">Entrega</a><a href="../politica-de-troca.html">Trocas e devoluções</a><a href="../politica-de-privacidade.html">Privacidade</a><a href="../termos-de-uso.html">Termos</a></nav></footer>`;
+}
+
 function homePage(context) {
   const { state, personalization } = context;
-  const products = state.products.filter(isAvailable);
-  const offered = products.map(effectiveProduct).filter(product => Number(product.oldPrice) > Number(product.price)).sort((a, b) => Number(b.discountPercent) - Number(a.discountPercent)).slice(0, 12);
   const activeKits = state.kits.filter(kit => kitIsVisible(state, kit)).slice(0, 8);
   const selected = personalization.recommendations(8);
   const recent = personalization.recentProducts(8);
@@ -157,15 +173,15 @@ function homePage(context) {
   return `<div class="page-container home-page">
     <h1 class="sr-only">Dona Antônia - Supermercado e Cestas</h1>
     ${bannerZone(state, 'home.hero')}
-    <section class="home-hero"><div><span>Supermercado online local</span><h2>Compra simples, rápida e enviada pelo WhatsApp.</h2><p>Produtos, cestas e kits para Cuiabá e Várzea Grande.</p><div class="hero-actions"><a class="primary-button" href="#/categorias">Ver categorias</a><a class="secondary-button" href="#/ofertas">Ver ofertas</a></div></div><img src="../img/logoantonia5.png" alt="Dona Antônia"></section>
-    <div class="quick-links"><a href="#/rotina/compra-mes"><strong>Compra do mês</strong><span>Encontre os básicos</span></a><a href="#/cestas"><strong>Cestas básicas</strong><span>Prontas e editáveis</span></a><a href="#/kits"><strong>Kits promocionais</strong><span>Combos com desconto</span></a></div>
-    ${section('Ofertas de hoje', 'Produtos com desconto disponível agora.', offered.length ? `<div class="product-grid">${offered.map(product => productCard(state, product)).join('')}</div>` : '', '#/ofertas')}
+    ${paymentNoticesHtml()}
     ${section('Cestas básicas', 'Veja todos os produtos antes de escolher.', state.baskets.length ? `<div class="bundle-grid">${state.baskets.slice(0, 6).map(basketCard).join('')}</div>` : '', '#/cestas')}
     ${section('Kits promocionais', 'Combos ativos e limitados.', activeKits.length ? `<div class="bundle-grid">${activeKits.map(kit => kitCard(state, kit)).join('')}</div>` : '', '#/kits')}
+    ${offersBannerHtml()}
+    ${section('Categorias', 'Escolha um setor.', categoryCards(state), '#/categorias')}
+    ${companySummaryHtml()}
     ${section('Escolhidos para você', 'Sugestões baseadas neste aparelho.', selected.length ? `<div class="product-grid">${selected.map(product => productCard(state, product)).join('')}</div>` : '')}
     ${section('Vistos recentemente', 'Continue de onde parou.', recent.length ? `<div class="horizontal-rail">${recent.map(product => productCard(state, product, 'compact')).join('')}</div>` : '')}
     ${section('Compre novamente', 'Itens disponíveis da última compra.', buyAgain.length ? `<div class="product-grid">${buyAgain.map(product => productCard(state, product)).join('')}</div>` : '')}
-    ${section('Categorias', 'Escolha um setor.', categoryCards(state), '#/categorias')}
   </div>`;
 }
 
@@ -236,7 +252,7 @@ function basketPage(context, id) {
   const total = Object.entries(draft).reduce((sum, [productId, qty]) => sum + Number(context.state.productMap.get(productId)?.price || 0) * Number(qty), 0);
   return `<div class="page-container">${pageHeader(basket.nome, '', '#/cestas')}${bannerZone(context.state, 'cesta', [basket.id, basket.nome])}<article class="bundle-detail-hero"><img src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}"><div><span>Cesta básica</span><h1>${escapeHtml(basket.nome)}</h1><p>${escapeHtml(basket.descricao)}</p><strong>${basket.preco ? fmt(basket.preco) : fmt(total)}</strong><button class="primary-button" data-action="add-basket" data-id="${escapeHtml(basket.id)}">Adicionar cesta padrão</button></div></article><section class="content-section"><div class="section-heading"><div><h2>Produtos da cesta</h2><p>Ajuste as quantidades antes de adicionar.</p></div></div><div class="bundle-lines">${rows.map(row => {
     const qty = Number(draft[row.product.id] ?? row.qty);
-    return `<div class="bundle-line"><a href="#/produto/${productRoute(row.product)}"><img src="${escapeHtml(row.product.img)}" alt="${escapeHtml(row.product.name)}"></a><div><a href="#/produto/${productRoute(row.product)}">${escapeHtml(row.product.name)}</a><small>${fmt(row.product.price)} cada</small></div><div class="qty-control"><button data-action="basket-dec" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(row.product.id)}">−</button><span>${qty}</span><button data-action="basket-inc" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(row.product.id)}">+</button></div></div>`;
+    return `<div class="bundle-line" data-bundle-product="${escapeHtml(row.product.id)}"><a href="#/produto/${productRoute(row.product)}"><img src="${escapeHtml(row.product.img)}" alt="${escapeHtml(row.product.name)}"></a><div><a href="#/produto/${productRoute(row.product)}">${escapeHtml(row.product.name)}</a><small>${fmt(row.product.price)} cada</small></div><div class="qty-control"><button data-action="basket-dec" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(row.product.id)}">−</button><span>${qty}</span><button data-action="basket-inc" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(row.product.id)}">+</button></div></div>`;
   }).join('')}</div></section><section class="bundle-total"><span>Total estimado da seleção</span><strong>${fmt(total)}</strong><button class="primary-button" data-action="add-basket-custom" data-id="${escapeHtml(basket.id)}">Adicionar cesta editada</button></section></div>`;
 }
 
@@ -266,6 +282,23 @@ function routinePage(context, key) {
 
 function infoPage() {
   return `<div class="page-container">${pageHeader('Informações da loja')}<article class="info-card"><h2>Super Cestas Básicas Dona Antônia</h2><p>Supermercado online, cestas básicas, combos e produtos alimentícios com atendimento em Cuiabá e Várzea Grande.</p><dl><div><dt>Endereço</dt><dd>R. Trinta, 105 - Jardim Nossa Sra. Aparecida, Cuiabá - MT</dd></div><div><dt>WhatsApp</dt><dd>(65) 99815-0975</dd></div><div><dt>Atendimento</dt><dd>Segunda a sábado, das 08h às 18h</dd></div><div><dt>Pedido mínimo</dt><dd>${fmt(CONFIG.MIN_ORDER)}</dd></div></dl><div class="policy-links"><a href="../sobre-nos.html">Sobre nós</a><a href="../contato.html">Contato</a><a href="../politica-de-entrega.html">Política de entrega</a><a href="../politica-de-troca.html">Trocas e devoluções</a><a href="../politica-de-privacidade.html">Privacidade</a><a href="../termos-de-uso.html">Termos de uso</a></div></article></div>`;
+}
+
+function canonicalUrl(route, context) {
+  const base = CONFIG.SITE_BASE_URL.replace(/\/$/, '');
+  const segment = route.params.segments[0] || '';
+  const value = decodeURIComponent(segment);
+  if (route.name === 'home') return `${base}/`;
+  if (route.name === 'product') {
+    const product = findProductByReference(context.state, segment);
+    return `${base}/?p=${encodeURIComponent(product?.firebaseKey || product?.id || product?.codigo || value)}`;
+  }
+  if (route.name === 'category') return `${base}/?categoria=${encodeURIComponent(value)}`;
+  if (route.name === 'subcategory') return `${base}/?subcategoria=${encodeURIComponent(value)}`;
+  if (route.name === 'brand') return `${base}/?marca=${encodeURIComponent(value)}`;
+  if (route.name === 'search') return `${base}/?busca=${encodeURIComponent(route.params.segments.join(' '))}`;
+  const sections = { offers: 'ofertas', baskets: 'cestas', kits: 'kits', categories: 'categorias', info: 'informacoes' };
+  return sections[route.name] ? `${base}/?secao=${sections[route.name]}` : `${base}/`;
 }
 
 export function createUI({ store, cart, events, personalization }) {
@@ -310,6 +343,7 @@ export function createUI({ store, cart, events, personalization }) {
       info: () => infoPage(ctx)
     };
     app.innerHTML = (pages[route.name] || pages.home)();
+    app.querySelector(':scope > .page-container')?.insertAdjacentHTML('beforeend', publicFooterHtml());
     app.scrollTop = 0;
     updateShell();
     bindImageFallbacks(app);
@@ -319,11 +353,11 @@ export function createUI({ store, cart, events, personalization }) {
 
   function updateMeta(route, ctx) {
     const names = { home: 'Supermercado e Cestas', categories: 'Categorias', offers: 'Ofertas', favorites: 'Favoritos', baskets: 'Cestas básicas', kits: 'Kits promocionais', info: 'Informações da loja' };
-    document.title = `${names[route.name] || route.params.segments[0] || 'Dona Antônia'} - Dona Antônia`;
+    document.title = `${names[route.name] || decodeURIComponent(route.params.segments[0] || '') || 'Dona Antônia'} - Dona Antônia`;
     const canonical = document.querySelector('link[rel="canonical"]');
-    if (canonical) canonical.href = `${CONFIG.SITE_BASE_URL}/${route.hash === '#/' ? '' : route.hash}`;
+    if (canonical) canonical.href = canonicalUrl(route, ctx);
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.content = route.name === 'product' ? `Compre ${ctx.state.productMap.get(route.params.segments[0])?.name || 'produtos'} com entrega em Cuiabá e Várzea Grande.` : 'Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.';
+    if (meta) meta.content = route.name === 'product' ? `Compre ${findProductByReference(ctx.state, route.params.segments[0])?.name || 'produtos'} com entrega em Cuiabá e Várzea Grande.` : 'Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.';
   }
 
   function bindImageFallbacks(root = document) {
@@ -379,7 +413,7 @@ export function createUI({ store, cart, events, personalization }) {
 
   function renderMenu() {
     const state = store.getState();
-    document.getElementById('menu-content').innerHTML = `<section class="menu-card"><strong>Compra fácil para Cuiabá e Várzea Grande.</strong><p>Escolha produtos, cestas e kits e envie o pedido pelo WhatsApp.</p></section><nav class="menu-links"><a href="#/">Início</a><a href="#/categorias">Categorias</a><a href="#/ofertas">Ofertas</a><a href="#/cestas">Cestas básicas</a><a href="#/kits">Kits promocionais</a><a href="#/favoritos">Favoritos (${state.favorites.size})</a><a href="#/informacoes">Empresa e políticas</a></nav><section class="menu-card"><strong>Privacidade e personalização</strong><p>${personalization.enabled() ? 'Ativada neste navegador.' : 'Desativada ou ainda não escolhida.'}</p><button class="secondary-button" data-action="personalization-settings">Configurar</button></section>`;
+    document.getElementById('menu-content').innerHTML = `<section class="menu-card"><strong>Compra fácil para Cuiabá e Várzea Grande.</strong><p>Escolha produtos, cestas e kits e envie o pedido pelo WhatsApp.</p></section><nav class="menu-links"><a href="#/">Início</a><a href="#/categorias">Categorias</a><a href="#/ofertas">Ofertas</a><a href="#/cestas">Cestas básicas</a><a href="#/kits">Kits promocionais</a><a href="#/favoritos">Favoritos (${state.favorites.size})</a><a href="#/informacoes">Empresa e políticas</a></nav><section class="menu-card"><strong>Privacidade e personalização</strong><p>${personalization.enabled() ? 'Ativada neste navegador.' : 'Desativada.'}</p><button class="secondary-button" data-action="personalization-settings">Configurar</button></section>`;
     openDrawer(menuDrawer);
   }
 
