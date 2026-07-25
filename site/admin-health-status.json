@@ -1,32 +1,32 @@
 {
-  "checkedAt": "2026-07-25T02:04:10.470Z",
+  "checkedAt": "2026-07-25T02:10:38.282Z",
   "baseUrl": "https://donaantonia.com.br",
-  "ok": false,
+  "ok": true,
   "checks": [
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784945050470"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784945438283"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
-      "ok": false,
-      "detail": "Conteúdo ausente: producao-v2"
+      "ok": true,
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784945438757"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784945050774"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784945438792"
     },
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1411 produto(s)"
+      "detail": "1524 produto(s)"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1784944307673 · site/produtos-home.json"
+      "detail": "catalog-1784945269336 · site/produtos-home.json"
     },
     {
       "name": "Banners permanecem removidos",
@@ -46,32 +46,21 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "0 oferta(s) no histórico"
+      "detail": "176 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
-      "ok": false,
-      "detail": "237.1h desde a execução · status sucesso · 36 expirada(s) ainda ativa(s)"
+      "ok": true,
+      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
-  "errors": [
-    {
-      "name": "Atalho /admin aponta para o Admin oficial",
-      "ok": false,
-      "detail": "Conteúdo ausente: producao-v2"
-    },
-    {
-      "name": "Rotina horária de ofertas atualizada",
-      "ok": false,
-      "detail": "237.1h desde a execução · status sucesso · 36 expirada(s) ainda ativa(s)"
-    }
-  ],
+  "errors": [],
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "30139619226",
+    "runId": "30139895120",
     "attempt": "1",
-    "sourceSha": "5d9b55b7de90fb3a66b52dd02616728056baa8aa",
-    "publishedAt": "2026-07-25T02:04:12.204Z"
+    "sourceSha": "7fbcd80be595d0ba27c9830e33370b7bd3f986bd",
+    "publishedAt": "2026-07-25T02:10:39.630Z"
   }
 }
