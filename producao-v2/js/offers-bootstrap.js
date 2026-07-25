@@ -1,4 +1,3 @@
-import './registries-bootstrap.js';
 import './campaign-offers-recovery.js';
 import './campaign-offers-production-guard.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
