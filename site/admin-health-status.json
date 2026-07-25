@@ -1,22 +1,22 @@
 {
-  "checkedAt": "2026-07-25T13:51:51.669Z",
+  "checkedAt": "2026-07-25T14:06:47.289Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": true,
   "checks": [
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784987511670"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784988407290"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784987512171"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784988408063"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784987512188"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784988408239"
     },
     {
       "name": "Catálogo público possui produtos",
@@ -31,12 +31,12 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 203 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 261 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1784984671673 · público 1524 · admin 1524"
+      "detail": "catalog-1784988185404 · público 1524 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -56,21 +56,21 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "734 oferta(s) no histórico"
+      "detail": "771 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.8h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [],
   "warnings": [],
   "workflow": {
-    "event": "push",
-    "runId": "30160497108",
+    "event": "schedule",
+    "runId": "30160984949",
     "attempt": "1",
-    "sourceSha": "002cf02f6dc2c1255e2d036e68de7cf46333a63a",
-    "publishedAt": "2026-07-25T13:51:52.982Z"
+    "sourceSha": "3ba4b7349d5dcc0f4befe8a5b6e317d4262954b2",
+    "publishedAt": "2026-07-25T14:06:50.457Z"
   }
 }
