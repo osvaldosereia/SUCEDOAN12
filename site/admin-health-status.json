@@ -1,22 +1,22 @@
 {
-  "checkedAt": "2026-07-25T13:02:13.698Z",
+  "checkedAt": "2026-07-25T13:05:55.576Z",
   "baseUrl": "https://donaantonia.com.br",
-  "ok": false,
+  "ok": true,
   "checks": [
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784984533698"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784984755576"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784984534021"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784984756148"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784984534041"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784984756286"
     },
     {
       "name": "Catálogo público possui produtos",
@@ -31,12 +31,12 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 153 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 270 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Versão do catálogo válida",
-      "ok": false,
-      "detail": "catalog-1784984459372 · público 1524 · admin 0"
+      "ok": true,
+      "detail": "catalog-1784984671673 · público 1524 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -56,7 +56,7 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "697 oferta(s) no histórico"
+      "detail": "734 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
@@ -64,19 +64,13 @@
       "detail": "0.0h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
-  "errors": [
-    {
-      "name": "Versão do catálogo válida",
-      "ok": false,
-      "detail": "catalog-1784984459372 · público 1524 · admin 0"
-    }
-  ],
+  "errors": [],
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "30158877703",
+    "runId": "30159056216",
     "attempt": "1",
-    "sourceSha": "fa971f90125b5ab5226fe2bd46ac964346d5b9db",
-    "publishedAt": "2026-07-25T13:02:14.832Z"
+    "sourceSha": "25648a0b967c092bb39dd11d332a0fcfd18c825f",
+    "publishedAt": "2026-07-25T13:05:58.162Z"
   }
 }
