@@ -15,6 +15,9 @@ const report = {
   warnings: [],
 };
 
+let publicProductCount = 0;
+let adminProductCount = 0;
+
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -89,13 +92,25 @@ await checkHtml('/admin/', ['producao-v2'], 'Atalho /admin aponta para o Admin o
 await checkHtml('/producao-v2/', ['Admin oficial', './js/app.js', './js/stock-bootstrap.js'], 'Admin oficial carregado');
 
 await checkJson('/site/produtos-home.json', 'Catálogo público possui produtos', value => {
-  const count = objectCount(value);
-  return { ok: count > 0, detail: `${count} produto(s)` };
+  publicProductCount = objectCount(value);
+  return { ok: publicProductCount > 0, detail: `${publicProductCount} produto(s)` };
+});
+
+await checkJson('/site/produtos-admin.json', 'Índice administrativo possui todos os produtos', value => {
+  adminProductCount = objectCount(value);
+  const first = value && typeof value === 'object' ? Object.values(value)[0] : null;
+  const fieldsOk = Boolean(first?.firebaseKey && first?.nome && first?.codigo && Object.prototype.hasOwnProperty.call(first, 'estoque'));
+  return {
+    ok: adminProductCount > 0 && adminProductCount >= publicProductCount && fieldsOk,
+    detail: `${adminProductCount} produto(s) administrativos · ${publicProductCount} público(s) · campos ${fieldsOk ? 'OK' : 'incompletos'}`,
+  };
 });
 
 await checkJson('/catalog-version.json', 'Versão do catálogo válida', value => ({
-  ok: Boolean(value?.version && value?.products),
-  detail: value?.version ? `${value.version} · ${value.products}` : 'version/products ausentes',
+  ok: Boolean(value?.version && value?.products && value?.adminProducts && Number(value?.adminProductCount) === adminProductCount),
+  detail: value?.version
+    ? `${value.version} · público ${value.productCount || 0} · admin ${value.adminProductCount || 0}`
+    : 'version/products/adminProducts ausentes',
 }));
 
 await checkJson('/site/banners/banners.json', 'Banners permanecem removidos', value => {
