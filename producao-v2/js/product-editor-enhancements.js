@@ -1,11 +1,35 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { escapeHtml, money, number, text } from './core/utils.js';
+import { ProductsModule } from './modules/products.js';
 import { loadProduct, loadProducts } from './services/firebase.js';
 
 function loadConfig() {
   try { return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}') }; }
   catch { return { ...DEFAULT_CONFIG }; }
 }
+
+function installHydratedProductOpening() {
+  const prototype = ProductsModule.prototype;
+  if (prototype.__adminOfficialHydrationInstalled) return;
+  prototype.__adminOfficialHydrationInstalled = true;
+  const originalOpenEditor = prototype.openEditor;
+  prototype.openEditor = async function openHydratedEditor(key) {
+    const normalizedKey = text(key);
+    if (!normalizedKey) return;
+    if (!this.store.state.dirtyProducts.has(normalizedKey)) {
+      try {
+        const fullProduct = await loadProduct(this.store.state.config, normalizedKey);
+        if (fullProduct) this.store.markProductSaved(normalizedKey, fullProduct, { emit: false });
+      } catch (error) {
+        console.error('Não foi possível hidratar o produto completo:', error);
+        this.onToast?.(`A lista carregou, mas o cadastro completo não pôde ser consultado: ${error?.message || error}`, 'error');
+      }
+    }
+    return originalOpenEditor.call(this, normalizedKey);
+  };
+}
+
+installHydratedProductOpening();
 
 let currentKey = '';
 let renderToken = 0;
