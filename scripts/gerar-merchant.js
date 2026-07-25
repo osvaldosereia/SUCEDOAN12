@@ -1,457 +1,255 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
 
-const FIREBASE_PRODUTOS_URL = "https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json";
+const FIREBASE_PRODUTOS_URL = process.env.FIREBASE_PRODUTOS_URL || 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json';
+const SITE_URL = (process.env.SITE_URL || 'https://www.donaantonia.com.br').replace(/\/$/, '');
+const OUTPUT_FILE = process.env.MERCHANT_OUTPUT || path.join(__dirname, '..', 'merchant.xml');
+const MIN_ORDER_VALUE = 75;
+const STORE_NAME = 'Super Cestas Básicas Dona Antônia';
 
-const SITE_URL = "https://donaantonia.com.br";
-const NOME_LOJA = "Super Cestas Básicas Dona Antônia";
-const DESCRICAO_LOJA = "Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.";
-
-const ARQUIVO_SAIDA = path.join(__dirname, "..", "merchant.xml");
-
-function limparTexto(valor) {
-    return String(valor || "")
-        .replace(/<[^>]*>/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+function cleanText(value) {
+  return String(value ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-function normalizarTituloProduto(valor) {
-    const texto = limparTexto(valor);
-
-    if (!texto) return "";
-
-    const siglasPermitidas = new Set([
-        "kg", "g", "mg", "ml", "l", "un", "und", "pct", "pc", "cx", "fd", "pet",
-        "vip", "zero", "plus", "mm", "cm", "mt", "m", "br", "rj", "sp", "mt"
-    ]);
-
-    const palavrasMinusculas = new Set([
-        "de", "da", "do", "das", "dos", "e", "com", "sem", "para", "por", "em", "no", "na", "nos", "nas"
-    ]);
-
-    const marcasSiglas = new Set([
-        "omo", "ype", "ypê", "uht", "pet", "vip", "toddy", "nescau", "sadia", "seara", "tio", "tia"
-    ]);
-
-    return texto
-        .toLowerCase()
-        .split(" ")
-        .map((palavra, index) => {
-            if (!palavra) return palavra;
-
-            const prefixo = palavra.match(/^[^\wÀ-ÿ]+/)?.[0] || "";
-            const sufixo = palavra.match(/[^\wÀ-ÿ]+$/)?.[0] || "";
-            const miolo = palavra.replace(/^[^\wÀ-ÿ]+/, "").replace(/[^\wÀ-ÿ]+$/, "");
-
-            if (!miolo) return palavra;
-
-            const mioloLimpo = miolo.toLowerCase();
-
-            if (/^\d/.test(mioloLimpo)) {
-                return prefixo + mioloLimpo + sufixo;
-            }
-
-            if (siglasPermitidas.has(mioloLimpo)) {
-                return prefixo + mioloLimpo + sufixo;
-            }
-
-            if (index > 0 && palavrasMinusculas.has(mioloLimpo)) {
-                return prefixo + mioloLimpo + sufixo;
-            }
-
-            if (marcasSiglas.has(mioloLimpo)) {
-                return prefixo + mioloLimpo.charAt(0).toUpperCase() + mioloLimpo.slice(1) + sufixo;
-            }
-
-            return prefixo + mioloLimpo.charAt(0).toUpperCase() + mioloLimpo.slice(1) + sufixo;
-        })
-        .join(" ")
-        .replace(/\bKg\b/g, "kg")
-        .replace(/\bMl\b/g, "ml")
-        .replace(/\bUn\b/g, "un")
-        .replace(/\bUnd\b/g, "und")
-        .replace(/\bPct\b/g, "pct")
-        .replace(/\bCx\b/g, "cx")
-        .replace(/\bFd\b/g, "fd")
-        .replace(/\s+/g, " ")
-        .trim();
+function xmlEscape(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
-function xmlEscape(valor) {
-    return String(valor || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&apos;");
+function numeric(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const raw = String(value ?? '').replace(/R\$/gi, '').trim();
+  if (!raw) return 0;
+  const normalized = raw.includes(',')
+    ? raw.replace(/\./g, '').replace(',', '.')
+    : raw.replace(/[^\d.-]/g, '');
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function apenasNumeros(valor) {
-    return String(valor || "").replace(/\D/g, "");
+function digits(value) {
+  return String(value ?? '').replace(/\D/g, '');
 }
 
-function normalizarPreco(valor) {
-    if (valor === null || valor === undefined || valor === "") return 0;
-
-    if (typeof valor === "number") return valor;
-
-    const texto = String(valor)
-        .replace("R$", "")
-        .replace(/\./g, "")
-        .replace(",", ".")
-        .trim();
-
-    const numero = Number(texto);
-    return Number.isFinite(numero) ? numero : 0;
+function slug(value) {
+  return cleanText(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'produto';
 }
 
-function dataOfertaValida(valor) {
-    if (!valor) return false;
+function normalizeDate(value, endOfDay = false) {
+  if (!value) return null;
+  const raw = String(value).trim();
+  let date = new Date(raw);
+  if (Number.isNaN(date.getTime())) {
+    const match = raw.match(/^(\d{1,2})[\/|-](\d{1,2})[\/|-](\d{4})$/);
+    if (!match) return null;
+    date = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]), endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0);
+  }
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
-    const data = new Date(valor);
+function first(product, fields, fallback = '') {
+  for (const field of fields) {
+    const value = product?.[field];
+    if (value !== undefined && value !== null && String(value).trim() !== '') return value;
+  }
+  return fallback;
+}
 
-    if (Number.isNaN(data.getTime())) {
-        const partes = String(valor).split("/");
-        if (partes.length === 3) {
-            const [dia, mes, ano] = partes.map(Number);
-            const dataBr = new Date(ano, mes - 1, dia, 23, 59, 59);
-            return dataBr.getTime() >= Date.now();
-        }
+function productName(product) {
+  return cleanText(first(product, ['nome', 'name', 'titulo', 'title'], 'Produto')).slice(0, 150);
+}
 
-        return false;
+function regularPrice(product) {
+  return numeric(first(product, ['preco', 'price', 'valor', 'preco_venda']));
+}
+
+function offerPrice(product) {
+  return numeric(first(product, ['preco_oferta', 'sale_price', 'precoPromocional']));
+}
+
+function priceData(product) {
+  const regular = regularPrice(product);
+  const offer = offerPrice(product);
+  const offerEnd = normalizeDate(first(product, ['validade_oferta', 'fim_oferta', 'validadeOferta']), true);
+  const offerStart = normalizeDate(first(product, ['inicio_oferta', 'inicioOferta']), false);
+  const now = new Date();
+  const withinWindow = (!offerStart || now >= offerStart) && (!offerEnd || now <= offerEnd);
+  const hasSale = offer > 0 && offer < regular && withinWindow;
+  return { regular, sale: hasSale ? offer : 0, offerStart, offerEnd };
+}
+
+function activeProduct(product) {
+  if (!product || typeof product !== 'object') return false;
+  const status = cleanText(first(product, ['situacao', 'status'], 'A')).toUpperCase();
+  if (['I', 'INATIVO', 'INACTIVE', 'D', 'DESATIVADO'].includes(status)) return false;
+  const name = productName(product);
+  if (!name || name.toLowerCase() === 'produto') return false;
+  const { regular } = priceData(product);
+  if (regular <= 0) return false;
+  const category = cleanText(product.categoria).toLowerCase();
+  const code = cleanText(first(product, ['codigo', 'sku', 'id']));
+  return !product.isComboDiscount && !code.startsWith('fee_') && !category.includes('taxa') && !category.includes('frete');
+}
+
+function productId(firebaseKey, product) {
+  return cleanText(first(product, ['codigo', 'sku', 'id', 'firebaseKey'], firebaseKey));
+}
+
+function normalizeRepositoryUrl(raw) {
+  const value = String(raw || '').trim().replace(/\\/g, '/');
+  if (!value) return '';
+  try {
+    const url = new URL(value, `${SITE_URL}/`);
+    if (url.hostname === 'raw.githubusercontent.com') {
+      const parts = url.pathname.split('/').filter(Boolean);
+      if (parts[0] === 'osvaldosereia' && parts[1] === 'SUCEDOAN12' && parts.length > 3) {
+        return `${SITE_URL}/${parts.slice(3).map(encodeURIComponent).join('/')}`;
+      }
     }
-
-    return data.getTime() >= Date.now();
+    if (url.hostname === 'github.com') {
+      const parts = url.pathname.split('/').filter(Boolean);
+      const blobIndex = parts.indexOf('blob');
+      if (parts[0] === 'osvaldosereia' && parts[1] === 'SUCEDOAN12' && blobIndex >= 0 && parts.length > blobIndex + 2) {
+        return `${SITE_URL}/${parts.slice(blobIndex + 2).map(encodeURIComponent).join('/')}`;
+      }
+    }
+    if (url.origin === new URL(SITE_URL).origin) return url.toString();
+    return url.protocol === 'https:' ? url.toString() : '';
+  } catch {
+    const clean = value.replace(/^(\.\.\/|\.\/|\/)+/g, '');
+    return clean ? `${SITE_URL}/${clean.split('/').map(encodeURIComponent).join('/')}` : '';
+  }
 }
 
-function obterPrecoFinal(produto) {
-    const precoNormal = normalizarPreco(
-        produto.preco ??
-        produto.price ??
-        produto.valor ??
-        produto.preco_venda
-    );
-
-    const precoOferta = normalizarPreco(
-        produto.preco_oferta ??
-        produto.sale_price ??
-        produto.precoPromocional
-    );
-
-    const validadeOferta =
-        produto.validade_oferta ||
-        produto.fim_oferta ||
-        produto.validadeOferta;
-
-    if (precoOferta > 0 && precoOferta < precoNormal && dataOfertaValida(validadeOferta)) {
-        return {
-            preco: precoOferta,
-            precoOriginal: precoNormal,
-            temOferta: true,
-            validadeOferta
-        };
-    }
-
-    return {
-        preco: precoNormal,
-        precoOriginal: precoNormal,
-        temOferta: false,
-        validadeOferta: ""
-    };
+function imageUrl(product, id) {
+  const raw = first(product, ['url_imagem', 'imagem', 'image', 'img', 'foto', 'foto_url', 'urlImagem', 'imagem_url'], `site/img/produtos/${id}.webp`);
+  return normalizeRepositoryUrl(raw) || `${SITE_URL}/img/logoantonia5.png`;
 }
 
-function gerarSlug(texto) {
-    return String(texto || "")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, "-")
-        .replace(/[^\w-]+/g, "")
-        .replace(/--+/g, "-")
-        .replace(/^-+|-+$/g, "");
+function additionalImages(product) {
+  const values = [product.imagens, product.images, product.fotos, product.additional_images]
+    .flatMap(value => Array.isArray(value) ? value : (value ? [value] : []))
+    .map(normalizeRepositoryUrl)
+    .filter(Boolean);
+  return [...new Set(values)].slice(0, 10);
 }
 
-function obterIdProduto(chaveFirebase, produto) {
-    return String(
-        produto.codigo ||
-        produto.sku ||
-        produto.id ||
-        produto.firebaseKey ||
-        chaveFirebase
-    ).trim();
+function productDescription(product, name) {
+  const description = cleanText(first(product, ['descricao', 'description', 'detalhes', 'observacao']));
+  if (description.length >= 20) return description.slice(0, 5000);
+  const brand = cleanText(first(product, ['marca', 'brand']));
+  const packaging = cleanText(first(product, ['embalagem', 'volume']));
+  return `${name}${packaging ? ` ${packaging}` : ''}${brand ? `, marca ${brand}` : ''}. Produto disponível na Dona Antônia, com atendimento em Cuiabá e Várzea Grande.`.slice(0, 5000);
 }
 
-function obterNomeProduto(produto) {
-    return normalizarTituloProduto(
-        produto.nome ||
-        produto.name ||
-        produto.titulo ||
-        produto.title ||
-        "Produto"
-    );
+function productLink(firebaseKey, product, id) {
+  const reference = cleanText(first(product, ['firebaseKey', 'id', 'codigo'], firebaseKey || id));
+  return `${SITE_URL}/?p=${encodeURIComponent(reference)}&produto=${encodeURIComponent(slug(productName(product)))}`;
 }
 
-function obterDescricaoProduto(produto, nome) {
-    const descricao = limparTexto(
-        produto.descricao ||
-        produto.description ||
-        produto.detalhes ||
-        produto.observacao ||
-        ""
-    );
-
-    if (descricao && descricao.length >= 20) {
-        return descricao.slice(0, 5000);
-    }
-
-    const marca = limparTexto(produto.marca || produto.brand || "");
-    const embalagem = limparTexto(produto.embalagem || produto.volume || "");
-    const categoria = limparTexto(produto.categoria || "");
-
-    return limparTexto(
-        `${nome}${embalagem ? " " + embalagem : ""}${marca ? " da marca " + marca : ""}. Produto disponível na ${NOME_LOJA} com atendimento em Cuiabá e Várzea Grande. ${categoria ? "Categoria: " + categoria + "." : ""}`
-    ).slice(0, 5000);
+function availability(product) {
+  const stock = numeric(first(product, ['estoque', 'stock', 'quantidade', 'qtd']));
+  return stock > 0 ? 'in_stock' : 'out_of_stock';
 }
 
-function obterMarca(produto) {
-    return limparTexto(
-        produto.marca ||
-        produto.brand ||
-        "Dona Antônia"
-    ).slice(0, 70);
+function itemXml(firebaseKey, product) {
+  const id = productId(firebaseKey, product);
+  const name = productName(product);
+  const { regular, sale, offerStart, offerEnd } = priceData(product);
+  const gtin = digits(first(product, ['gtin', 'ean', 'codigo_barras', 'barcode']));
+  const brand = cleanText(first(product, ['marca', 'brand'], 'Dona Antônia')).slice(0, 70);
+  const mpn = cleanText(first(product, ['mpn', 'codigo', 'sku'], id)).slice(0, 70);
+  const category = cleanText(product.categoria);
+  const subcategory = cleanText(product.subcategoria);
+  const image = imageUrl(product, id);
+  const extraImages = additionalImages(product).filter(url => url !== image);
+  const lines = [
+    '    <item>',
+    `      <g:id>${xmlEscape(id)}</g:id>`,
+    `      <g:title>${xmlEscape(name)}</g:title>`,
+    `      <g:description>${xmlEscape(productDescription(product, name))}</g:description>`,
+    `      <g:link>${xmlEscape(productLink(firebaseKey, product, id))}</g:link>`,
+    `      <g:image_link>${xmlEscape(image)}</g:image_link>`,
+    ...extraImages.map(url => `      <g:additional_image_link>${xmlEscape(url)}</g:additional_image_link>`),
+    `      <g:availability>${availability(product)}</g:availability>`,
+    `      <g:price>${regular.toFixed(2)} BRL</g:price>`
+  ];
+
+  if (sale > 0) {
+    lines.push(`      <g:sale_price>${sale.toFixed(2)} BRL</g:sale_price>`);
+    if (offerEnd) {
+      const start = (offerStart || new Date()).toISOString();
+      lines.push(`      <g:sale_price_effective_date>${start}/${offerEnd.toISOString()}</g:sale_price_effective_date>`);
+    }
+  }
+
+  lines.push('      <g:condition>new</g:condition>');
+  lines.push(`      <g:brand>${xmlEscape(brand)}</g:brand>`);
+  if (gtin.length >= 8 && gtin.length <= 14) {
+    lines.push(`      <g:gtin>${gtin}</g:gtin>`);
+  } else if (mpn) {
+    lines.push(`      <g:mpn>${xmlEscape(mpn)}</g:mpn>`);
+  } else {
+    lines.push('      <g:identifier_exists>no</g:identifier_exists>');
+  }
+  if (category || subcategory) lines.push(`      <g:product_type>${xmlEscape([category, subcategory].filter(Boolean).join(' > '))}</g:product_type>`);
+
+  const effectivePrice = sale || regular;
+  if (effectivePrice <= MIN_ORDER_VALUE) {
+    lines.push('      <g:minimum_order_value>');
+    lines.push('        <g:country>BR</g:country>');
+    lines.push('        <g:service>Entrega local</g:service>');
+    lines.push('        <g:surface>online</g:surface>');
+    lines.push(`        <g:price>${MIN_ORDER_VALUE.toFixed(2)} BRL</g:price>`);
+    lines.push('      </g:minimum_order_value>');
+  }
+
+  lines.push('    </item>');
+  return lines.join('\n');
 }
 
-function obterImagem(produto, idProduto) {
-    let imagem = String(
-        produto.url_imagem ||
-        produto.imagem ||
-        produto.image ||
-        produto.img ||
-        produto.foto ||
-        produto.foto_url ||
-        produto.urlImagem ||
-        produto.imagem_url ||
-        ""
-    )
-        .trim()
-        .replace(/\u0009/g, "")
-        .replace(/\u00A0/g, "")
-        .replace(/\s+/g, "");
-
-    if (!imagem) {
-        imagem = `site/img/produtos/${idProduto}.webp`;
-    }
-
-    imagem = imagem
-        .replace(/^(\.\.\/)+/g, "")
-        .replace(/^\.\/+/g, "")
-        .replace(/^\/+/g, "");
-
-    let urlFinal;
-
-    if (imagem.startsWith("http://") || imagem.startsWith("https://")) {
-        urlFinal = imagem;
-    } else {
-        urlFinal = `${SITE_URL}/${imagem}`;
-    }
-
-    try {
-        const url = new URL(urlFinal);
-
-        url.protocol = "https:";
-
-        url.pathname = url.pathname
-            .split("/")
-            .map(parte => {
-                try {
-                    return encodeURIComponent(decodeURIComponent(parte));
-                } catch (e) {
-                    return encodeURIComponent(parte);
-                }
-            })
-            .join("/");
-
-        url.searchParams.set("v", "merchant-2026-06-01");
-
-        return url.toString();
-    } catch (e) {
-        return `${SITE_URL}/site/img/logoantonia5.png?v=merchant-2026-06-01`;
-    }
+function normalizeProducts(raw) {
+  const entries = Array.isArray(raw) ? raw.map((product, index) => [String(index), product]) : Object.entries(raw || {});
+  return entries.filter(([, product]) => activeProduct(product));
 }
 
-function obterLinkProduto(produto, idProduto, nome) {
-    const slug = gerarSlug(produto.slug || nome || idProduto);
-    const rota = `${encodeURIComponent(idProduto)}-${slug}`;
-
-    return `${SITE_URL}/#/produto/${rota}`;
+function buildFeed(entries) {
+  if (!entries.length) throw new Error('Nenhum produto válido foi encontrado; o merchant.xml anterior foi preservado.');
+  const items = entries.map(([firebaseKey, product]) => itemXml(firebaseKey, product)).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">\n  <channel>\n    <title>${xmlEscape(STORE_NAME)}</title>\n    <link>${xmlEscape(SITE_URL)}</link>\n    <description>Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.</description>\n${items}\n  </channel>\n</rss>\n`;
 }
 
-function produtoAtivo(produto) {
-    const situacao = String(produto.situacao || produto.status || "A").toUpperCase().trim();
-
-    if (["I", "INATIVO", "INACTIVE", "D", "DESATIVADO"].includes(situacao)) {
-        return false;
-    }
-
-    const nome = obterNomeProduto(produto);
-    if (!nome || nome.toLowerCase() === "produto") return false;
-
-    const { preco } = obterPrecoFinal(produto);
-    if (!preco || preco <= 0) return false;
-
-    const categoria = String(produto.categoria || "").toLowerCase();
-
-    if (
-        produto.isComboDiscount ||
-        String(produto.id || "").startsWith("fee_") ||
-        String(produto.codigo || "").startsWith("fee_") ||
-        categoria.includes("taxa") ||
-        categoria.includes("frete")
-    ) {
-        return false;
-    }
-
-    return true;
-}
-
-function obterDisponibilidade(produto) {
-    const estoque = Number(
-        produto.estoque ??
-        produto.stock ??
-        produto.quantidade ??
-        produto.qtd ??
-        0
-    );
-
-    return estoque > 0 ? "in_stock" : "out_of_stock";
-}
-
-function gerarItem(chaveFirebase, produto) {
-    const idProduto = obterIdProduto(chaveFirebase, produto);
-    const nome = obterNomeProduto(produto);
-    const descricao = obterDescricaoProduto(produto, nome);
-    const marca = obterMarca(produto);
-    const imagem = obterImagem(produto, idProduto);
-    const link = obterLinkProduto(produto, idProduto, nome);
-    const gtin = apenasNumeros(produto.gtin || produto.ean || produto.codigo_barras || produto.barcode || "");
-    const disponibilidade = obterDisponibilidade(produto);
-    const categoria = limparTexto(produto.categoria || "");
-    const subcategoria = limparTexto(produto.subcategoria || "");
-    const embalagem = limparTexto(produto.embalagem || produto.volume || "");
-
-    const { preco, precoOriginal, temOferta, validadeOferta } = obterPrecoFinal(produto);
-
-    let xml = "";
-
-    xml += "    <item>\n";
-    xml += `      <g:id>${xmlEscape(idProduto)}</g:id>\n`;
-    xml += `      <g:title>${xmlEscape(nome.slice(0, 150))}</g:title>\n`;
-    xml += `      <g:description>${xmlEscape(descricao)}</g:description>\n`;
-    xml += `      <g:link>${xmlEscape(link)}</g:link>\n`;
-    xml += `      <g:image_link>${xmlEscape(imagem)}</g:image_link>\n`;
-    xml += `      <g:availability>${disponibilidade}</g:availability>\n`;
-    xml += `      <g:price>${preco.toFixed(2)} BRL</g:price>\n`;
-
-    if (temOferta && precoOriginal > preco) {
-        xml += `      <g:sale_price>${preco.toFixed(2)} BRL</g:sale_price>\n`;
-
-        if (validadeOferta) {
-            const dataFim = new Date(validadeOferta);
-            if (!Number.isNaN(dataFim.getTime())) {
-                const inicio = new Date();
-                const fim = dataFim.toISOString();
-                xml += `      <g:sale_price_effective_date>${inicio.toISOString()}/${fim}</g:sale_price_effective_date>\n`;
-            }
-        }
-    }
-
-    xml += `      <g:condition>new</g:condition>\n`;
-    xml += `      <g:brand>${xmlEscape(marca)}</g:brand>\n`;
-
-    if (gtin.length >= 8 && gtin.length <= 14) {
-        xml += `      <g:gtin>${gtin}</g:gtin>\n`;
-    } else {
-        xml += `      <g:identifier_exists>no</g:identifier_exists>\n`;
-    }
-
-    if (categoria || subcategoria) {
-        xml += `      <g:product_type>${xmlEscape([categoria, subcategoria].filter(Boolean).join(" > "))}</g:product_type>\n`;
-    }
-
-    if (embalagem) {
-        xml += `      <g:unit_pricing_measure>${xmlEscape(embalagem)}</g:unit_pricing_measure>\n`;
-    }
-
-    xml += "      <g:shipping>\n";
-    xml += "        <g:country>BR</g:country>\n";
-    xml += "        <g:service>Entrega local</g:service>\n";
-    xml += "        <g:price>0.00 BRL</g:price>\n";
-    xml += "      </g:shipping>\n";
-
-    xml += "    </item>\n";
-
-    return xml;
-}
-
-function normalizarListaProdutos(dados) {
-    if (!dados) return [];
-
-    if (Array.isArray(dados)) {
-        return dados
-            .map((produto, index) => [String(index), produto])
-            .filter(([, produto]) => produto && typeof produto === "object");
-    }
-
-    return Object.entries(dados)
-        .filter(([, produto]) => produto && typeof produto === "object");
+function atomicWrite(filePath, content) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  const temporary = `${filePath}.tmp`;
+  fs.writeFileSync(temporary, content, 'utf8');
+  fs.renameSync(temporary, filePath);
 }
 
 async function main() {
-    console.log("Buscando produtos no Firebase...");
-
-    const resposta = await fetch(FIREBASE_PRODUTOS_URL, {
-        headers: {
-            "Accept": "application/json"
-        }
-    });
-
-    if (!resposta.ok) {
-        throw new Error(`Erro ao buscar produtos no Firebase: HTTP ${resposta.status}`);
-    }
-
-    const dados = await resposta.json();
-    const produtos = normalizarListaProdutos(dados);
-
-    console.log(`Produtos encontrados no Firebase: ${produtos.length}`);
-
-    const itens = produtos
-        .filter(([, produto]) => produtoAtivo(produto))
-        .map(([chaveFirebase, produto]) => gerarItem(chaveFirebase, produto))
-        .join("");
-
-    const totalProdutos = (itens.match(/<item>/g) || []).length;
-
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">
-  <channel>
-    <title>${xmlEscape(NOME_LOJA)}</title>
-    <link>${xmlEscape(SITE_URL)}</link>
-    <description>${xmlEscape(DESCRICAO_LOJA)}</description>
-${itens}  </channel>
-</rss>
-`;
-
-    fs.writeFileSync(ARQUIVO_SAIDA, xml, "utf8");
-
-    console.log(`merchant.xml gerado com sucesso.`);
-    console.log(`Produtos enviados ao feed: ${totalProdutos}`);
-    console.log(`Arquivo: ${ARQUIVO_SAIDA}`);
+  console.log('Buscando produtos no Firebase...');
+  const response = await fetch(FIREBASE_PRODUTOS_URL, { headers: { Accept: 'application/json' } });
+  if (!response.ok) throw new Error(`Erro ao buscar produtos: HTTP ${response.status}`);
+  const entries = normalizeProducts(await response.json());
+  const feed = buildFeed(entries);
+  atomicWrite(OUTPUT_FILE, feed);
+  console.log(`merchant.xml gerado com ${entries.length} produtos em ${OUTPUT_FILE}`);
 }
 
-main().catch((erro) => {
-    console.error("Erro ao gerar merchant.xml:");
-    console.error(erro);
+if (require.main === module) {
+  main().catch(error => {
+    console.error('Erro ao gerar merchant.xml:', error);
     process.exit(1);
-});
+  });
+}
+
+module.exports = { activeProduct, buildFeed, itemXml, normalizeRepositoryUrl, numeric, priceData };
