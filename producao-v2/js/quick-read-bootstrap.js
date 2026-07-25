@@ -2,6 +2,8 @@ import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { QuickReadModule } from './modules/quick-read.js';
 import { loadProducts } from './services/firebase.js';
 
+const BUILD = '20260725-admin-v12';
+
 function loadConfig() {
   try {
     return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}') };
@@ -14,7 +16,7 @@ function installCss() {
   if (document.querySelector('link[data-admin-v2-quick-read]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './assets/quick-read.css';
+  link.href = `./assets/quick-read.css?admin_build=${BUILD}`;
   link.dataset.adminV2QuickRead = '1';
   document.head.appendChild(link);
 }
@@ -40,6 +42,7 @@ function start() {
   view.querySelector('.module-cards')?.insertAdjacentHTML('afterend', panelMarkup());
   const store = { state: { products: [] } };
   let module;
+
   async function reload() {
     const status = document.getElementById('quickReadDataStatus');
     status.className = 'badge warning';
@@ -55,33 +58,33 @@ function start() {
       throw error;
     }
   }
+
   const ids = ['quickReadDataStatus', 'quickReadInput', 'quickReadClear', 'quickReadButton', 'quickReadResult'];
   const elements = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
   module = new QuickReadModule({ store, elements, onToast: toast });
   reload().then(() => module.focus()).catch(error => toast(error?.message || String(error), 'error'));
-  document.getElementById('reloadButton')?.addEventListener('click', () => reload().catch(() => {}));
-  document.getElementById('mainNav')?.addEventListener('click', event => {
-    if (event.target.closest('[data-route="operations"]')) setTimeout(() => module.focus(), 80);
+  document.getElementById('reloadButton')?.addEventListener('click', () => {
+    if (window.adminV2CurrentRoute?.() === 'quick-read') reload().catch(() => {});
+  });
+  window.addEventListener('admin-v2-route', event => {
+    if (event.detail?.route === 'quick-read') setTimeout(() => module.focus(), 80);
   });
   window.addEventListener('admin-v2-open-product', event => {
     const key = String(event.detail?.key || '');
     const product = store.state.products.find(row => String(row.firebaseKey || row.id || row.codigo) === key);
     const query = product?.codigo || product?.gtin || product?.ean || key;
-    document.querySelector('[data-route="products"]')?.click();
+    window.adminV2Navigate?.('products');
     const input = document.getElementById('productSearch');
     if (!input) return;
     input.value = query;
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    setTimeout(() => {
-      const exact = document.querySelector(`[data-product-key="${CSS.escape(key)}"]`);
-      exact?.click();
-    }, 320);
+    setTimeout(() => document.querySelector(`[data-product-key="${CSS.escape(key)}"]`)?.click(), 320);
   });
   window.addEventListener('admin-v2-open-stock', event => {
     const key = String(event.detail?.key || '');
     const product = store.state.products.find(row => String(row.firebaseKey || row.id || row.codigo) === key);
     const query = product?.codigo || product?.gtin || product?.ean || key;
-    document.querySelector('[data-route="operations"]')?.click();
+    window.adminV2Navigate?.('stock');
     const statusFilter = document.getElementById('stockStatusFilter');
     const windowFilter = document.getElementById('stockWindowFilter');
     if (statusFilter) { statusFilter.value = ''; statusFilter.dispatchEvent(new Event('change', { bubbles: true })); }
@@ -92,15 +95,6 @@ function start() {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     setTimeout(() => document.querySelector(`[data-stock-edit="${CSS.escape(key)}"]`)?.click(), 340);
   });
-  const card = [...view.querySelectorAll('.module-card')].find(row => row.textContent.includes('Leitura rápida'));
-  if (card) {
-    card.querySelector('p').textContent = 'A consulta abaixo está ativa para leitor de código, sem alterar dados.';
-    const badge = card.querySelector('.badge');
-    if (badge) {
-      badge.className = 'badge success';
-      badge.textContent = 'Consulta ativa';
-    }
-  }
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
