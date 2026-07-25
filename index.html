@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="da-build-version" content="2026-07-24-modular-production-v7">
+  <meta name="da-build-version" content="2026-07-24-modular-production-v8">
   <meta name="description" content="Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#ffffff">
@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="app-next/styles/app.css?v=20260724-3">
   <link rel="stylesheet" href="app-next/styles/visual-parity.css?v=20260724-7">
   <link rel="stylesheet" href="app-next/styles/home-parity.css?v=20260724-7">
-  <link rel="stylesheet" href="app-next/styles/live-polish.css?v=20260724-7">
+  <link rel="stylesheet" href="app-next/styles/live-polish.css?v=20260724-8">
   <link rel="preload" as="style" href="app-next/styles/detail-review.css?v=20260724-3" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="preload" as="style" href="app-next/styles/checkout-flow.css?v=20260724-3" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="preload" as="style" href="app-next/styles/bundle-confirmation.css?v=20260724-3" onload="this.onload=null;this.rel='stylesheet'">
@@ -33,8 +33,8 @@
     <link rel="stylesheet" href="app-next/styles/bundle-confirmation.css?v=20260724-3">
   </noscript>
   <style>html.booting body{background:#fff}html.booting #app{opacity:0}.site-header{min-height:118px}.home-page .content-section{content-visibility:auto;contain-intrinsic-size:680px}</style>
-  <link rel="modulepreload" href="app-next/src/main.js?v=20260724-7">
-  <link rel="modulepreload" href="app-next/src/config.js?v=20260724-3">
+  <link rel="modulepreload" href="app-next/src/main.js?v=20260724-8">
+  <link rel="modulepreload" href="app-next/src/config.js?v=20260724-8">
   <link rel="modulepreload" href="app-next/src/core.js?v=20260724-3">
   <link rel="modulepreload" href="app-next/src/catalog.js?v=20260724-3">
   <link rel="modulepreload" href="app-next/src/commerce.js?v=20260724-3">
@@ -57,7 +57,7 @@
       if (route) history.replaceState(null, '', location.pathname + route);
     }
 
-    var migrationKey = 'da_v7_cache_migrated_20260724';
+    var migrationKey = 'da_v8_cache_migrated_20260724';
     try {
       if (!localStorage.getItem(migrationKey)) {
         if ('serviceWorker' in navigator) {
@@ -145,7 +145,7 @@
   <aside id="checkout-drawer" class="drawer checkout-drawer" aria-hidden="true" aria-label="Minha compra"><header class="drawer-header"><div><strong>Minha compra</strong><small>Revise e envie pelo WhatsApp</small></div><button data-close-drawer aria-label="Fechar">×</button></header><div id="checkout-content" class="drawer-content"></div></aside>
 
   <script type="module" src="app-next/src/image-performance.js?v=20260724-4"></script>
-  <script type="module" src="app-next/src/main.js?v=20260724-7"></script>
+  <script type="module" src="app-next/src/main.js?v=20260724-8"></script>
   <script type="module">
     let detailsPromise;
     let polishPromise;
