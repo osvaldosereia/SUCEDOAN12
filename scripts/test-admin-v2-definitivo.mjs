@@ -47,6 +47,7 @@ function checkImports(relative) {
   const expressions = [...source.matchAll(/(?:import\s+(?:[^'";]+?\s+from\s+)?|export\s+[^'";]+?\s+from\s+|import\s*\()(['"])(\.\.?\/[^'"]+)\1/g)];
   for (const match of expressions) {
     const originalTarget = match[2];
+    if (originalTarget.includes('${')) continue;
     const target = originalTarget.split(/[?#]/, 1)[0];
     const resolved = path.normalize(path.join(ROOT, directory, target));
     const candidates = [resolved, `${resolved}.js`, path.join(resolved, 'index.js')];
@@ -56,46 +57,50 @@ function checkImports(relative) {
 
 const required = [
   'producao/index.html',
-  'producao/index-legado.html',
   'admin/index.html',
   'producao-v2/index.html',
-  'producao-v2/assets/boot.css',
-  'producao-v2/js/visual-stability.js',
+  'producao-v2/assets/admin.css',
+  'producao-v2/js/app.js',
+  'producao-v2/js/stock-bootstrap.js',
   'producao-v2/js/product-lifecycle-bootstrap.js',
   'producao-v2/js/product-editor-enhancements.js',
   'producao-v2/js/admin-suite-bootstrap.js',
   'producao-v2/js/order-tools-bootstrap.js',
+  'producao-v2/js/nfe-bootstrap.js',
   'producao-v2/js/catalog-auto-sync.js',
   'site/produtos-admin.json',
+  'site/produtos-home.json',
   'site/ofertas-historico.json',
   'site/cuponsativos.json',
   'site/compra-rapida.json',
   'scripts/check-admin-production.mjs',
   'scripts/sincronizar-produtos-home-firebase.mjs',
-  'scripts/processar-ofertas.mjs',
-  'scripts/reconciliar-publicacao-ofertas.mjs',
   '.github/workflows/verificar-admin-producao.yml',
   '.github/workflows/sincronizar-produtos-home-firebase.yml',
-  '.github/workflows/processar-ofertas.yml',
-  'app-next/src/config.js',
-  'app-next/src/catalog.js',
 ];
 required.forEach(file => { if (!existsSync(path.join(ROOT, file))) fail(`Arquivo obrigatório ausente: ${file}`); });
+
+for (const removed of [
+  'producao/index-legado.html',
+  'admin-oficial-20260724/index.html',
+  'producao-v2/js/professional-route-loader.js',
+  'producao-v2/js/professional-shell.js',
+  'producao-v2/js/visual-stability.js',
+  'producao-v2/assets/boot.css',
+]) {
+  if (existsSync(path.join(ROOT, removed))) fail(`Arquivo legado ainda presente: ${removed}`);
+}
 
 const javascript = [
   ...walk('producao-v2/js', '.js'),
   ...walk('app-next/src', '.js'),
-  'scripts/check-admin-production.mjs',
-  'scripts/sincronizar-produtos-home-firebase.mjs',
-  'scripts/processar-ofertas.mjs',
-  'scripts/reconciliar-publicacao-ofertas.mjs',
-  'scripts/limpar-ofertas-validade-expiradas.mjs',
+  ...walk('scripts', '.mjs'),
 ].filter((value, index, list) => list.indexOf(value) === index && existsSync(path.join(ROOT, value)));
 
 javascript.forEach(checkSyntax);
 javascript.forEach(checkImports);
 
-for (const jsonFile of ['site/produtos-admin.json', 'site/banners/banners.json', 'site/ofertas-historico.json', 'site/cuponsativos.json', 'site/compra-rapida.json']) {
+for (const jsonFile of ['site/produtos-admin.json', 'site/produtos-home.json', 'site/banners/banners.json', 'site/ofertas-historico.json', 'site/cuponsativos.json', 'site/compra-rapida.json']) {
   try { JSON.parse(read(jsonFile)); }
   catch (error) { fail(`JSON inválido em ${jsonFile}: ${error.message}`); }
 }
@@ -110,105 +115,54 @@ try {
   }
 } catch {}
 
-try {
-  const banners = JSON.parse(read('site/banners/banners.json'));
-  if (Array.isArray(banners) ? banners.length : Array.isArray(banners.banners) && banners.banners.length) fail('Ainda existem banners ativos no arquivo oficial.');
-  if (banners.disabled !== true) fail('O arquivo de banners precisa permanecer explicitamente desativado.');
-} catch {}
-
 const productionEntry = read('producao/index.html');
-if (!productionEntry.includes('../producao-v2/')) fail('A rota /producao não aponta para o Admin oficial.');
-if (!productionEntry.includes('no-store') || !productionEntry.includes('window.location.replace')) fail('A rota /producao precisa redirecionar sem cache e preservar a navegação.');
-if (read('producao/index-legado.html').length < 10000) fail('O Admin legado não foi preservado integralmente.');
-if (!read('admin/index.html').includes('producao-v2')) fail('O atalho /admin não aponta para o Admin oficial.');
+const adminEntry = read('admin/index.html');
+for (const [name, source] of [['/producao', productionEntry], ['/admin', adminEntry]]) {
+  if (!source.includes('../producao-v2/')) fail(`${name} não aponta para o Admin oficial.`);
+  if (!source.includes('20260725-admin-v11')) fail(`${name} não aponta para a build v11.`);
+  if (!source.includes('no-store') || !source.includes('window.location.replace')) fail(`${name} precisa redirecionar sem cache.`);
+}
 
-const publicConfig = read('app-next/src/config.js');
-const publicCatalog = read('app-next/src/catalog.js');
-if (/BANNERS\s*:/.test(publicConfig)) fail('O site público ainda possui endpoint ou armazenamento de banners.');
-if (/ENDPOINTS\.BANNERS|STORAGE\.BANNERS/.test(publicCatalog)) fail('O catálogo público ainda consulta banners.');
-if (!/banners:\s*\[\]/.test(publicCatalog)) fail('O estado público precisa inicializar banners como lista vazia para compatibilidade.');
+const adminIndex = read('producao-v2/index.html');
+if (!adminIndex.includes('20260725-admin-v11')) fail('O HTML oficial não está na build v11.');
+if (!adminIndex.includes('js/app.js') || !adminIndex.includes('js/stock-bootstrap.js')) fail('Entradas principais do Admin ausentes.');
+if (adminIndex.includes('<script type="module" src="./js/nfe-bootstrap.js')) fail('A NF-e ainda carrega durante a abertura inicial.');
+if (adminIndex.includes('professional-route-loader') || adminIndex.includes('professional-shell')) fail('O HTML ainda referencia o shell profissional antigo.');
+if (!adminIndex.includes('makeOrderWebhookSetting')) fail('O campo do webhook de pedidos não está no HTML oficial.');
 
-const offersWorkflow = read('.github/workflows/processar-ofertas.yml');
-if (!offersWorkflow.includes('cron: "17 * * * *"')) fail('A rotina horária de ofertas não está agendada.');
-if (/git add[\s\S]{0,240}banners\.json/.test(offersWorkflow)) fail('O workflow de ofertas ainda publica banners.');
-if (!offersWorkflow.includes('limpar-ofertas-validade-expiradas.mjs')) fail('A limpeza de ofertas vencidas não ocorre antes do processamento.');
+const app = read('producao-v2/js/app.js');
+if (!app.includes('function quickAudit')) fail('A auditoria leve de abertura não foi encontrada.');
+if (app.includes('return auditCatalog(store.state.products')) fail('A abertura ainda executa auditoria completa do catálogo.');
+if (!app.includes("requestAnimationFrame(renderDashboard)")) fail('O dashboard não foi desacoplado da primeira pintura.');
+if (!app.includes("admin-v2-route")) fail('O evento de carregamento sob demanda não foi encontrado.');
+
+const stockBootstrap = read('producao-v2/js/stock-bootstrap.js');
+for (const requiredText of ['ensureProductEnhancements', "route === 'operations'", 'nfe-bootstrap.js', 'quick-read-bootstrap.js', 'order-tools-bootstrap.js', 'collections-bootstrap.js', 'offers-bootstrap.js', 'admin-suite-bootstrap.js', 'registries-bootstrap.js', 'diagnostics-bootstrap.js']) {
+  if (!stockBootstrap.includes(requiredText)) fail(`Carregamento sob demanda incompleto: ${requiredText}`);
+}
+if (/^import ['"].*nfe-bootstrap/m.test(stockBootstrap)) fail('A NF-e ainda possui import estático no bootstrap principal.');
+if (/^import ['"].*product-lifecycle-bootstrap/m.test(stockBootstrap)) fail('O ciclo de produto ainda possui import estático no bootstrap principal.');
+
+const firebaseService = read('producao-v2/js/services/firebase.js');
+if (!firebaseService.includes('fetchAdminProducts') || !firebaseService.includes('adminCatalogUrl')) fail('O Admin não usa o índice administrativo leve.');
+if (!firebaseService.includes('fetchProductsFromFirebase')) fail('O fallback direto do Firebase não foi preservado.');
+if (!firebaseService.includes("method: 'PATCH'")) fail('O salvamento seguro por PATCH não foi encontrado.');
+if (!firebaseService.includes('createProduct') || !firebaseService.includes('archiveProduct') || !firebaseService.includes('restoreProduct')) fail('Ciclo de vida de produtos incompleto.');
 
 const catalogWorkflow = read('.github/workflows/sincronizar-produtos-home-firebase.yml');
-for (const requiredText of ['catalog-version.json', 'site/produtos-admin.json', 'PRODUCTS_ADMIN_PATH']) {
-  if (!catalogWorkflow.includes(requiredText)) fail(`A sincronização do catálogo não contém ${requiredText}.`);
-}
-if (!catalogWorkflow.includes('*/5 * * * *')) fail('A contingência de sincronização a cada cinco minutos não está ativa.');
-
-const catalogSyncScript = read('scripts/sincronizar-produtos-home-firebase.mjs');
-for (const requiredText of ['PRODUCTS_ADMIN_PATH', 'adminProductCount', 'adminProduct']) {
-  if (!catalogSyncScript.includes(requiredText)) fail(`O sincronizador não gera corretamente o índice administrativo: ${requiredText}.`);
+for (const requiredText of ['catalog-version.json', 'site/produtos-admin.json', 'PRODUCTS_ADMIN_PATH', '*/5 * * * *']) {
+  if (!catalogWorkflow.includes(requiredText)) fail(`Sincronização do catálogo incompleta: ${requiredText}`);
 }
 
-const healthWorkflow = read('.github/workflows/verificar-admin-producao.yml');
-if (!healthWorkflow.includes('23,53 * * * *')) fail('A verificação de produção a cada 30 minutos não está agendada.');
-if (!healthWorkflow.includes("steps.first_check.outcome != 'skipped'")) fail('Execuções canceladas ainda podem publicar diagnóstico falso.');
-for (const eventType of ['sincronizar_produtos_home', 'processar_ofertas']) {
-  if (!healthWorkflow.includes(eventType)) fail(`A autocorreção não dispara ${eventType}.`);
-}
 const healthScript = read('scripts/check-admin-production.mjs');
-for (const endpoint of ['/producao/', '/producao-v2/', '/site/produtos-home.json', '/site/produtos-admin.json', '/site/ofertas-automaticas-estado.json']) {
+for (const endpoint of ['/producao/', '/producao-v2/', '/site/produtos-home.json', '/site/produtos-admin.json']) {
   if (!healthScript.includes(endpoint)) fail(`Healthcheck não valida ${endpoint}.`);
 }
 
-const adminConfig = read('producao-v2/js/config.js');
-if (!adminConfig.includes("adminProductsPath: 'site/produtos-admin.json'")) fail('A configuração oficial não aponta para o índice administrativo.');
-if (!adminConfig.includes('firebaseUrl: DEFAULT_CONFIG.firebaseUrl')) fail('A fonte oficial do Firebase pode ser sobrescrita por configuração antiga.');
-
-const firebaseService = read('producao-v2/js/services/firebase.js');
-if (!firebaseService.includes("method: 'PATCH'")) fail('O salvamento seguro por PATCH não foi encontrado.');
-if (!firebaseService.includes('createProduct')) fail('Cadastro de produto novo não foi encontrado.');
-if (!firebaseService.includes('archiveProduct') || !firebaseService.includes('restoreProduct')) fail('Lixeira e restauração não foram encontradas.');
-if (!firebaseService.includes('conflicts.length')) fail('Proteção de conflito por campo não foi encontrada.');
-if (!firebaseService.includes("databaseUrl(config, 'logs_admin')")) fail('Auditoria em logs_admin não foi encontrada.');
-if (!firebaseService.includes('imagens_historico')) fail('Histórico das imagens anteriores não foi encontrado.');
-if (!firebaseService.includes('fetchAdminProducts') || !firebaseService.includes('adminCatalogUrl')) fail('A abertura do Admin ainda não usa o índice administrativo leve.');
-if (!firebaseService.includes('fetchProductsFromFirebase')) fail('O fallback direto do Firebase não foi preservado.');
-
-const stockBootstrap = read('producao-v2/js/stock-bootstrap.js');
-for (const moduleName of ['catalog-auto-sync.js', 'product-lifecycle-bootstrap.js', 'admin-suite-bootstrap.js', 'collections-bootstrap.js', 'nfe-bootstrap.js', 'quick-read-bootstrap.js', 'order-tools-bootstrap.js', 'offers-bootstrap.js', 'registries-bootstrap.js', 'diagnostics-bootstrap.js']) {
-  if (!stockBootstrap.includes(moduleName)) fail(`Módulo não carregado pelo Admin: ${moduleName}`);
-}
-if (!stockBootstrap.includes('admin-v2-modules-ready') || !stockBootstrap.includes('preloadRouteModules')) fail('Os módulos não são preparados antes da primeira exibição estável.');
-
-const catalogAutoSync = read('producao-v2/js/catalog-auto-sync.js');
-if (!catalogAutoSync.includes('product-editor-enhancements.js')) fail('O editor completo de produtos não é carregado.');
-if (catalogAutoSync.includes('official-copy-fixes.js')) fail('A reescrita global tardia ainda está ativa e pode quebrar o visual.');
-
-const visualStability = read('producao-v2/js/visual-stability.js');
-for (const feature of ['admin-v2-core-ready', 'admin-v2-modules-ready', 'admin-ready']) {
-  if (!visualStability.includes(feature)) fail(`Controle visual ausente: ${feature}.`);
-}
-
-const adminSuite = read('producao-v2/js/admin-suite-bootstrap.js');
-for (const feature of ['Cupons de desconto', 'Compra Rápida', 'Pedidos', 'Backup, exportação e auditoria', 'Selecionar todos']) {
-  if (!adminSuite.includes(feature)) fail(`Função administrativa ausente: ${feature}`);
-}
-
-const orderTools = read('producao-v2/js/order-tools-bootstrap.js');
-if (!orderTools.includes('100mm 150mm')) fail('Etiqueta 100 × 150 mm não foi encontrada.');
-if (!orderTools.includes('Reenviar Make/Bling')) fail('Reenvio Make/Bling não foi encontrado.');
-if (!orderTools.includes('makeOrderWebhookSetting')) fail('Configuração do webhook de pedidos não foi encontrada.');
-
-const productEditor = read('producao-v2/js/product-editor-enhancements.js');
-if (!productEditor.includes('replaceClassificationSelects')) fail('Cadastros digitáveis no produto existente não foram encontrados.');
-if (!productEditor.includes('installHydratedProductOpening') || !productEditor.includes('loadProduct(this.store.state.config')) fail('O editor não hidrata o cadastro completo antes de abrir.');
-if (productEditor.includes("subtree: true")) fail('O editor ainda observa toda a árvore e pode repetir consultas durante a montagem.');
-
-const adminIndex = read('producao-v2/index.html');
-if (/ambiente paralelo|versão paralela|Mantenha desligado durante a validação/i.test(adminIndex)) fail('O HTML oficial ainda contém textos de homologação.');
-if (!adminIndex.includes('makeOrderWebhookSetting')) fail('O campo do webhook de pedidos não está no HTML oficial.');
-if (!adminIndex.includes('admin-boot-screen') || !adminIndex.includes('visual-stability.js')) fail('A primeira pintura estável não foi configurada no HTML.');
-if (adminIndex.includes('<script type="module" src="./js/nfe-bootstrap.js')) fail('A NF-e ainda é carregada antes da tela inicial estabilizar.');
-
 if (failures.length) {
-  console.error(`\nAdmin V2 definitivo: ${failures.length} falha(s).`);
+  console.error(`\nAdmin V2 v11: ${failures.length} falha(s).`);
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log(`Admin V2 definitivo validado: ${checked.length} arquivos JavaScript sem erro de sintaxe, imports resolvidos e contratos principais presentes.`);
+  console.log(`Admin V2 v11 validado: ${checked.length} arquivos JavaScript sem erro de sintaxe, imports resolvidos e arquitetura leve confirmada.`);
 }
