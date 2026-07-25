@@ -1,42 +1,42 @@
 {
-  "checkedAt": "2026-07-25T11:54:34.540Z",
+  "checkedAt": "2026-07-25T12:57:54.660Z",
   "baseUrl": "https://donaantonia.com.br",
-  "ok": true,
+  "ok": false,
   "checks": [
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784980474540"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784984274661"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784980475163"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784984275070"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784980475239"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784984275136"
     },
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1411 produto(s)"
+      "detail": "1524 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1524 produto(s) administrativos · 1411 público(s) · campos OK"
+      "detail": "1524 produto(s) administrativos · 1524 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 274 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 157 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Versão do catálogo válida",
-      "ok": true,
-      "detail": "catalog-1784979036011 · público 1411 · admin 1524"
+      "ok": false,
+      "detail": "catalog-1784981423481 · público 1524 · admin 0"
     },
     {
       "name": "Banners permanecem removidos",
@@ -56,21 +56,27 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "583 oferta(s) no histórico"
+      "detail": "623 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "1.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.8h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
-  "errors": [],
+  "errors": [
+    {
+      "name": "Versão do catálogo válida",
+      "ok": false,
+      "detail": "catalog-1784981423481 · público 1524 · admin 0"
+    }
+  ],
   "warnings": [],
   "workflow": {
-    "event": "schedule",
-    "runId": "30157026433",
+    "event": "push",
+    "runId": "30158745010",
     "attempt": "1",
-    "sourceSha": "3ab951fb3c45aa34d588ac09a8a4af726786711d",
-    "publishedAt": "2026-07-25T11:54:36.882Z"
+    "sourceSha": "2080def8e8ef209a45136305229aa2da851c51dc",
+    "publishedAt": "2026-07-25T12:57:56.410Z"
   }
 }
