@@ -111,9 +111,29 @@ async function checkAdminRuntime() {
   }
 }
 
-await checkHtml('/producao/', ['producao-v2'], 'Entrada /producao aponta para o Admin oficial');
-await checkHtml('/admin/', ['producao-v2'], 'Atalho /admin aponta para o Admin oficial');
-await checkHtml('/producao-v2/', ['Admin oficial', './js/app.js', './js/stock-bootstrap.js'], 'Admin oficial carregado');
+async function checkOrdersRuntime() {
+  try {
+    const moduleUrl = new URL(`../producao-v2/js/services/orders.js?_health=${Date.now()}`, import.meta.url);
+    const { loadRecentOrders } = await import(moduleUrl.href);
+    const config = { firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com' };
+    const startedAt = Date.now();
+    const result = await loadRecentOrders(config, { limit: 12, force: true });
+    const elapsed = Date.now() - startedAt;
+    const count = Array.isArray(result?.orders) ? result.orders.length : 0;
+    const keysOk = result?.orders?.every(order => Boolean(order?.firebaseKey)) === true;
+    record(
+      'Pedidos usam consulta limitada no Firebase',
+      count > 0 && count <= 12 && keysOk,
+      `${count} pedido(s) retornado(s) em ${elapsed} ms · limite solicitado 12 · chaves ${keysOk ? 'OK' : 'ausentes'}`,
+    );
+  } catch (error) {
+    record('Pedidos usam consulta limitada no Firebase', false, error?.stack || error?.message || String(error));
+  }
+}
+
+await checkHtml('/producao/', ['producao-v2', '20260725-admin-v12-pedidos1'], 'Entrada /producao aponta para o Admin oficial');
+await checkHtml('/admin/', ['producao-v2', '20260725-admin-v12-pedidos1'], 'Atalho /admin aponta para o Admin oficial');
+await checkHtml('/producao-v2/', ['Admin oficial', './js/app.js', './js/stock-bootstrap.js', 'data-route="order-tools"'], 'Admin oficial carregado');
 
 await checkJson('/site/produtos-home.json', 'Catálogo público possui produtos', value => {
   publicProductCount = objectCount(value);
@@ -131,6 +151,7 @@ await checkJson('/site/produtos-admin.json', 'Índice administrativo possui todo
 });
 
 await checkAdminRuntime();
+await checkOrdersRuntime();
 
 await checkJson('/catalog-version.json', 'Versão do catálogo válida', value => ({
   ok: Boolean(value?.version && value?.products && value?.adminProducts && Number(value?.adminProductCount) === adminProductCount),
