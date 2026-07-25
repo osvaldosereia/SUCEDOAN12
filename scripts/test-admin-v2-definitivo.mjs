@@ -65,6 +65,7 @@ const required = [
   'producao-v2/js/order-tools-bootstrap.js',
   'producao-v2/js/catalog-auto-sync.js',
   'producao-v2/js/official-copy-fixes.js',
+  'site/produtos-admin.json',
   'site/ofertas-historico.json',
   'site/cuponsativos.json',
   'site/compra-rapida.json',
@@ -93,10 +94,20 @@ const javascript = [
 javascript.forEach(checkSyntax);
 javascript.forEach(checkImports);
 
-for (const jsonFile of ['site/banners/banners.json', 'site/ofertas-historico.json', 'site/cuponsativos.json', 'site/compra-rapida.json']) {
+for (const jsonFile of ['site/produtos-admin.json', 'site/banners/banners.json', 'site/ofertas-historico.json', 'site/cuponsativos.json', 'site/compra-rapida.json']) {
   try { JSON.parse(read(jsonFile)); }
   catch (error) { fail(`JSON inválido em ${jsonFile}: ${error.message}`); }
 }
+
+try {
+  const adminProducts = JSON.parse(read('site/produtos-admin.json'));
+  const entries = Object.entries(adminProducts || {});
+  if (entries.length < 1) fail('O índice administrativo de produtos está vazio.');
+  const first = entries[0]?.[1] || {};
+  for (const field of ['firebaseKey', 'codigo', 'nome', 'estoque', 'situacao']) {
+    if (!Object.prototype.hasOwnProperty.call(first, field)) fail(`O índice administrativo não contém o campo ${field}.`);
+  }
+} catch {}
 
 try {
   const banners = JSON.parse(read('site/banners/banners.json'));
@@ -122,18 +133,30 @@ if (/git add[\s\S]{0,240}banners\.json/.test(offersWorkflow)) fail('O workflow d
 if (!offersWorkflow.includes('limpar-ofertas-validade-expiradas.mjs')) fail('A limpeza de ofertas vencidas não ocorre antes do processamento.');
 
 const catalogWorkflow = read('.github/workflows/sincronizar-produtos-home-firebase.yml');
-if (!catalogWorkflow.includes('catalog-version.json')) fail('A sincronização do catálogo não atualiza catalog-version.json.');
+for (const requiredText of ['catalog-version.json', 'site/produtos-admin.json', 'PRODUCTS_ADMIN_PATH']) {
+  if (!catalogWorkflow.includes(requiredText)) fail(`A sincronização do catálogo não contém ${requiredText}.`);
+}
 if (!catalogWorkflow.includes('*/5 * * * *')) fail('A contingência de sincronização a cada cinco minutos não está ativa.');
+
+const catalogSyncScript = read('scripts/sincronizar-produtos-home-firebase.mjs');
+for (const requiredText of ['PRODUCTS_ADMIN_PATH', 'adminProductCount', 'adminProduct']) {
+  if (!catalogSyncScript.includes(requiredText)) fail(`O sincronizador não gera corretamente o índice administrativo: ${requiredText}.`);
+}
 
 const healthWorkflow = read('.github/workflows/verificar-admin-producao.yml');
 if (!healthWorkflow.includes('23,53 * * * *')) fail('A verificação de produção a cada 30 minutos não está agendada.');
+if (!healthWorkflow.includes("steps.first_check.outcome != 'skipped'")) fail('Execuções canceladas ainda podem publicar diagnóstico falso.');
 for (const eventType of ['sincronizar_produtos_home', 'processar_ofertas']) {
   if (!healthWorkflow.includes(eventType)) fail(`A autocorreção não dispara ${eventType}.`);
 }
 const healthScript = read('scripts/check-admin-production.mjs');
-for (const endpoint of ['/producao/', '/producao-v2/', '/site/produtos-home.json', '/site/ofertas-automaticas-estado.json']) {
+for (const endpoint of ['/producao/', '/producao-v2/', '/site/produtos-home.json', '/site/produtos-admin.json', '/site/ofertas-automaticas-estado.json']) {
   if (!healthScript.includes(endpoint)) fail(`Healthcheck não valida ${endpoint}.`);
 }
+
+const adminConfig = read('producao-v2/js/config.js');
+if (!adminConfig.includes("adminProductsPath: 'site/produtos-admin.json'")) fail('A configuração oficial não aponta para o índice administrativo.');
+if (!adminConfig.includes('firebaseUrl: DEFAULT_CONFIG.firebaseUrl')) fail('A fonte oficial do Firebase pode ser sobrescrita por configuração antiga.');
 
 const firebaseService = read('producao-v2/js/services/firebase.js');
 if (!firebaseService.includes("method: 'PATCH'")) fail('O salvamento seguro por PATCH não foi encontrado.');
@@ -142,6 +165,8 @@ if (!firebaseService.includes('archiveProduct') || !firebaseService.includes('re
 if (!firebaseService.includes('conflicts.length')) fail('Proteção de conflito por campo não foi encontrada.');
 if (!firebaseService.includes("databaseUrl(config, 'logs_admin')")) fail('Auditoria em logs_admin não foi encontrada.');
 if (!firebaseService.includes('imagens_historico')) fail('Histórico das imagens anteriores não foi encontrado.');
+if (!firebaseService.includes('fetchAdminProducts') || !firebaseService.includes('adminCatalogUrl')) fail('A abertura do Admin ainda não usa o índice administrativo leve.');
+if (!firebaseService.includes('fetchProductsFromFirebase')) fail('O fallback direto do Firebase não foi preservado.');
 
 const stockBootstrap = read('producao-v2/js/stock-bootstrap.js');
 for (const moduleName of ['catalog-auto-sync.js', 'product-lifecycle-bootstrap.js', 'admin-suite-bootstrap.js', 'collections-bootstrap.js']) {
@@ -165,6 +190,7 @@ if (!orderTools.includes('makeOrderWebhookSetting')) fail('Configuração do web
 
 const productEditor = read('producao-v2/js/product-editor-enhancements.js');
 if (!productEditor.includes('replaceClassificationSelects')) fail('Cadastros digitáveis no produto existente não foram encontrados.');
+if (!productEditor.includes('installHydratedProductOpening') || !productEditor.includes('loadProduct(this.store.state.config')) fail('O editor não hidrata o cadastro completo antes de abrir.');
 
 const adminIndex = read('producao-v2/index.html');
 if (/ambiente paralelo|versão paralela|Mantenha desligado durante a validação/i.test(adminIndex)) fail('O HTML oficial ainda contém textos de homologação.');
