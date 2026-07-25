@@ -1,5 +1,5 @@
-import './catalog-auto-sync.js?admin_build=20260725-admin-v6';
-import './product-lifecycle-bootstrap.js';
+import './catalog-auto-sync.js?admin_build=20260725-admin-v8';
+import './product-lifecycle-bootstrap.js?admin_build=20260725-admin-v8';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
@@ -23,7 +23,7 @@ function installCss() {
   if (document.querySelector('link[data-admin-v2-stock]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './assets/stock.css?admin_build=20260725-admin-v6';
+  link.href = './assets/stock.css?admin_build=20260725-admin-v8';
   link.dataset.adminV2Stock = '1';
   document.head.appendChild(link);
 }
@@ -81,27 +81,25 @@ function toast(message, type = '') {
 }
 
 const routeImports = new Map();
-let preloadStarted = false;
 
 function loadRouteModules(route) {
   if (routeImports.has(route)) return routeImports.get(route);
   let task = Promise.resolve();
   if (route === 'operations') {
     task = Promise.all([
-      import('./nfe-bootstrap.js?admin_build=20260725-admin-v6'),
-      import('./quick-read-bootstrap.js?admin_build=20260725-admin-v6'),
-      import('./order-tools-bootstrap.js?admin_build=20260725-admin-v6'),
+      import('./quick-read-bootstrap.js?admin_build=20260725-admin-v8'),
+      import('./order-tools-bootstrap.js?admin_build=20260725-admin-v8'),
     ]);
   } else if (route === 'promotions') {
     task = Promise.all([
-      import('./collections-bootstrap.js?admin_build=20260725-admin-v6'),
-      import('./offers-bootstrap.js?admin_build=20260725-admin-v6'),
-      import('./admin-suite-bootstrap.js?admin_build=20260725-admin-v6'),
+      import('./collections-bootstrap.js?admin_build=20260725-admin-v8'),
+      import('./offers-bootstrap.js?admin_build=20260725-admin-v8'),
+      import('./admin-suite-bootstrap.js?admin_build=20260725-admin-v8'),
     ]);
   } else if (route === 'registries') {
-    task = import('./registries-bootstrap.js?admin_build=20260725-admin-v6');
+    task = import('./registries-bootstrap.js?admin_build=20260725-admin-v8');
   } else if (route === 'settings') {
-    task = import('./diagnostics-bootstrap.js?admin_build=20260725-admin-v6');
+    task = import('./diagnostics-bootstrap.js?admin_build=20260725-admin-v8');
   }
   const guarded = Promise.resolve(task).catch(error => {
     routeImports.delete(route);
@@ -110,22 +108,6 @@ function loadRouteModules(route) {
   });
   routeImports.set(route, guarded);
   return guarded;
-}
-
-async function preloadRouteModules() {
-  if (preloadStarted) return;
-  preloadStarted = true;
-  await Promise.allSettled(['operations', 'promotions', 'registries', 'settings'].map(loadRouteModules));
-  window.dispatchEvent(new CustomEvent('admin-v2-modules-ready'));
-}
-
-function schedulePreload() {
-  if (preloadStarted) return;
-  if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(() => preloadRouteModules(), { timeout: 900 });
-  } else {
-    setTimeout(preloadRouteModules, 30);
-  }
 }
 
 function start() {
@@ -184,9 +166,6 @@ function start() {
     const route = document.querySelector('[data-view].active')?.dataset.view;
     if (route === 'operations') reload({ force: true }).catch(() => {});
   });
-
-  window.addEventListener('admin-v2-core-ready', schedulePreload, { once: true });
-  if (document.documentElement.dataset.adminCoreReady === '1') schedulePreload();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
