@@ -87,6 +87,30 @@ async function checkJson(pathname, name, validator) {
   }
 }
 
+async function checkAdminRuntime() {
+  try {
+    globalThis.location = new URL(`${BASE_URL}/producao-v2/`);
+    const moduleUrl = new URL(`../producao-v2/js/services/firebase.js?_health=${Date.now()}`, import.meta.url);
+    const { loadProduct, loadProducts } = await import(moduleUrl.href);
+    const config = {
+      firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
+      productsNode: 'produtos',
+      adminProductsPath: 'site/produtos-admin.json',
+      writeMode: false,
+    };
+    const startedAt = Date.now();
+    const products = await loadProducts(config, { force: true });
+    const first = products[0];
+    if (!first?.firebaseKey) throw new Error('A lista retornou sem chave de produto.');
+    const full = await loadProduct(config, first.firebaseKey);
+    const elapsed = Date.now() - startedAt;
+    const ok = products.length === adminProductCount && Boolean(full?.firebaseKey && full?.nome && full?.codigo);
+    record('Runtime do Admin carrega lista e cadastro completo', ok, `${products.length} produto(s) em ${elapsed} ms · cadastro ${full?.nome || 'não carregado'}`);
+  } catch (error) {
+    record('Runtime do Admin carrega lista e cadastro completo', false, error?.stack || error?.message || String(error));
+  }
+}
+
 await checkHtml('/producao/', ['producao-v2'], 'Entrada /producao aponta para o Admin oficial');
 await checkHtml('/admin/', ['producao-v2'], 'Atalho /admin aponta para o Admin oficial');
 await checkHtml('/producao-v2/', ['Admin oficial', './js/app.js', './js/stock-bootstrap.js'], 'Admin oficial carregado');
@@ -105,6 +129,8 @@ await checkJson('/site/produtos-admin.json', 'Índice administrativo possui todo
     detail: `${adminProductCount} produto(s) administrativos · ${publicProductCount} público(s) · campos ${fieldsOk ? 'OK' : 'incompletos'}`,
   };
 });
+
+await checkAdminRuntime();
 
 await checkJson('/catalog-version.json', 'Versão do catálogo válida', value => ({
   ok: Boolean(value?.version && value?.products && value?.adminProducts && Number(value?.adminProductCount) === adminProductCount),
