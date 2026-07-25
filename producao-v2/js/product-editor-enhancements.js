@@ -8,6 +8,9 @@ function loadConfig() {
   catch { return { ...DEFAULT_CONFIG }; }
 }
 
+let editorProducts = [];
+const hydratedProducts = new Map();
+
 function installHydratedProductOpening() {
   const prototype = ProductsModule.prototype;
   if (prototype.__adminOfficialHydrationInstalled) return;
@@ -16,14 +19,21 @@ function installHydratedProductOpening() {
   prototype.openEditor = async function openHydratedEditor(key) {
     const normalizedKey = text(key);
     if (!normalizedKey) return;
+    editorProducts = Array.isArray(this.store?.state?.products) ? this.store.state.products : [];
     if (!this.store.state.dirtyProducts.has(normalizedKey)) {
       try {
         const fullProduct = await loadProduct(this.store.state.config, normalizedKey);
-        if (fullProduct) this.store.markProductSaved(normalizedKey, fullProduct, { emit: false });
+        if (fullProduct) {
+          hydratedProducts.set(normalizedKey, fullProduct);
+          this.store.markProductSaved(normalizedKey, fullProduct, { emit: false });
+        }
       } catch (error) {
         console.error('Não foi possível hidratar o produto completo:', error);
         this.onToast?.(`A lista carregou, mas o cadastro completo não pôde ser consultado: ${error?.message || error}`, 'error');
       }
+    } else {
+      const localProduct = this.store.getProduct(normalizedKey);
+      if (localProduct) hydratedProducts.set(normalizedKey, localProduct);
     }
     return originalOpenEditor.call(this, normalizedKey);
   };
@@ -104,9 +114,11 @@ async function enhance() {
   if (!drawer?.classList.contains('open') || !currentKey) return;
   const token = ++renderToken;
   const config = loadConfig();
+  const cachedProduct = hydratedProducts.get(currentKey);
+  const cachedList = editorProducts.length ? editorProducts : null;
   const [product, products] = await Promise.all([
-    loadProduct(config, currentKey).catch(() => null),
-    loadProducts(config).catch(() => []),
+    cachedProduct ? Promise.resolve(cachedProduct) : loadProduct(config, currentKey).catch(() => null),
+    cachedList ? Promise.resolve(cachedList) : loadProducts(config).catch(() => []),
   ]);
   if (!product || token !== renderToken || !drawer.classList.contains('open')) return;
 
@@ -159,7 +171,7 @@ function start() {
     const button = event.target.closest('[data-product-key]');
     if (button) currentKey = button.dataset.productKey;
   }, true);
-  window.addEventListener('admin-v2-open-product', event => { currentKey = text(event.detail?.key); setTimeout(enhance, 60); });
+  window.addEventListener('admin-v2-open-product', event => { currentKey = text(event.detail?.key); });
   document.getElementById('productForm')?.addEventListener('input', event => {
     const fieldName = event.target.dataset.field;
     if (!currentKey || !fieldName || event.target.dataset.adminExtra !== '1') return;
@@ -181,13 +193,17 @@ function start() {
     restoreImage(button.dataset.restoreImage);
   });
   document.getElementById('closeEditorButton')?.addEventListener('click', () => { currentKey = ''; renderToken += 1; });
-  document.getElementById('reloadButton')?.addEventListener('click', () => pending.clear());
+  document.getElementById('reloadButton')?.addEventListener('click', () => {
+    pending.clear();
+    hydratedProducts.clear();
+    editorProducts = [];
+  });
   const drawer = document.getElementById('productEditor');
   if (!drawer) return;
   const observer = new MutationObserver(() => {
-    if (drawer.classList.contains('open')) setTimeout(enhance, 40);
+    if (drawer.classList.contains('open')) queueMicrotask(enhance);
   });
-  observer.observe(drawer, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
+  observer.observe(drawer, { attributes: true, attributeFilter: ['class'] });
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
