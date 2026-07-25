@@ -1,47 +1,47 @@
 {
-  "checkedAt": "2026-07-25T18:56:49.924Z",
+  "checkedAt": "2026-07-25T19:20:31.433Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1785005809925"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1785007231434"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1785005810321"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1785007231798"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1785005810385"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1785007231833"
     },
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1413 produto(s)"
+      "detail": "1524 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1524 produto(s) administrativos · 1413 público(s) · campos OK"
+      "detail": "1524 produto(s) administrativos · 1524 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 133 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 116 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": false,
-      "detail": "20 pedido(s) retornado(s) em 176 ms · limite solicitado 12 · chaves OK"
+      "detail": "20 pedido(s) retornado(s) em 122 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1785004423848 · público 1413 · admin 1524"
+      "detail": "catalog-1785005739200 · público 1524 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -61,27 +61,27 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "876 oferta(s) no histórico"
+      "detail": "908 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.7h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.4h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": false,
-      "detail": "20 pedido(s) retornado(s) em 176 ms · limite solicitado 12 · chaves OK"
+      "detail": "20 pedido(s) retornado(s) em 122 ms · limite solicitado 12 · chaves OK"
     }
   ],
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "30170523412",
+    "runId": "30171298323",
     "attempt": "1",
-    "sourceSha": "47d3e6412cc8278da232e09d50578a8c0c3d463c",
-    "publishedAt": "2026-07-25T18:56:51.767Z"
+    "sourceSha": "788c3d381a437ab6c8b50791f51f147cad64cf98",
+    "publishedAt": "2026-07-25T19:20:32.771Z"
   }
 }
