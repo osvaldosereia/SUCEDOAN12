@@ -1,4 +1,4 @@
-import './catalog-auto-sync.js';
+import './catalog-auto-sync.js?admin_build=20260725-admin-v5';
 import './product-lifecycle-bootstrap.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { productKey } from './core/utils.js';
@@ -23,7 +23,7 @@ function installCss() {
   if (document.querySelector('link[data-admin-v2-stock]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './assets/stock.css?admin_build=20260725-admin-v4';
+  link.href = './assets/stock.css?admin_build=20260725-admin-v5';
   link.dataset.adminV2Stock = '1';
   document.head.appendChild(link);
 }
@@ -87,19 +87,19 @@ function loadRouteModules(route) {
   let task = Promise.resolve();
   if (route === 'operations') {
     task = Promise.all([
-      import('./quick-read-bootstrap.js?admin_build=20260725-admin-v4'),
-      import('./order-tools-bootstrap.js?admin_build=20260725-admin-v4'),
+      import('./quick-read-bootstrap.js?admin_build=20260725-admin-v5'),
+      import('./order-tools-bootstrap.js?admin_build=20260725-admin-v5'),
     ]);
   } else if (route === 'promotions') {
     task = Promise.all([
-      import('./collections-bootstrap.js?admin_build=20260725-admin-v4'),
-      import('./offers-bootstrap.js?admin_build=20260725-admin-v4'),
-      import('./admin-suite-bootstrap.js?admin_build=20260725-admin-v4'),
+      import('./collections-bootstrap.js?admin_build=20260725-admin-v5'),
+      import('./offers-bootstrap.js?admin_build=20260725-admin-v5'),
+      import('./admin-suite-bootstrap.js?admin_build=20260725-admin-v5'),
     ]);
   } else if (route === 'registries') {
-    task = import('./registries-bootstrap.js?admin_build=20260725-admin-v4');
+    task = import('./registries-bootstrap.js?admin_build=20260725-admin-v5');
   } else if (route === 'settings') {
-    task = import('./diagnostics-bootstrap.js?admin_build=20260725-admin-v4');
+    task = import('./diagnostics-bootstrap.js?admin_build=20260725-admin-v5');
   }
   const guarded = Promise.resolve(task).catch(error => {
     routeImports.delete(route);
