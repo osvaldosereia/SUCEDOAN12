@@ -4,25 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#161616">
+  <meta name="robots" content="noindex,nofollow">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Dona Antônia — Admin oficial</title>
-  <link rel="stylesheet" href="./assets/admin.css?admin_build=20260725-admin-v10">
+  <link rel="stylesheet" href="./assets/admin.css?admin_build=20260725-admin-v11">
   <script type="importmap">
   {
     "imports": {
-      "/producao-v2/js/config.js": "/producao-v2/js/config.js?admin_build=20260725-admin-v10",
-      "/producao-v2/js/core/catalog.js": "/producao-v2/js/core/catalog.js?admin_build=20260725-admin-v10",
-      "/producao-v2/js/core/store.js": "/producao-v2/js/core/store.js?admin_build=20260725-admin-v10",
-      "/producao-v2/js/core/utils.js": "/producao-v2/js/core/utils.js?admin_build=20260725-admin-v10",
-      "/producao-v2/js/services/firebase.js": "/producao-v2/js/services/firebase.js?admin_build=20260725-admin-v10",
-      "/producao-v2/js/services/github.js": "/producao-v2/js/services/github.js?admin_build=20260725-admin-v10",
-      "/producao-v2/js/services/github-binary.js": "/producao-v2/js/services/github-binary.js?admin_build=20260725-admin-v10",
-      "/producao-v2/js/modules/make.js": "/producao-v2/js/modules/make.js?admin_build=20260725-admin-v10",
-      "/producao-v2/js/modules/products.js": "/producao-v2/js/modules/products.js?admin_build=20260725-admin-v10",
-      "/producao-v2/js/modules/publish.js": "/producao-v2/js/modules/publish.js?admin_build=20260725-admin-v10",
-      "/producao-v2/js/modules/stock.js": "/producao-v2/js/modules/stock.js?admin_build=20260725-admin-v10"
+      "/producao-v2/js/config.js": "/producao-v2/js/config.js?admin_build=20260725-admin-v11",
+      "/producao-v2/js/core/catalog.js": "/producao-v2/js/core/catalog.js?admin_build=20260725-admin-v11",
+      "/producao-v2/js/core/store.js": "/producao-v2/js/core/store.js?admin_build=20260725-admin-v11",
+      "/producao-v2/js/core/utils.js": "/producao-v2/js/core/utils.js?admin_build=20260725-admin-v11",
+      "/producao-v2/js/services/firebase.js": "/producao-v2/js/services/firebase.js?admin_build=20260725-admin-v11",
+      "/producao-v2/js/services/github.js": "/producao-v2/js/services/github.js?admin_build=20260725-admin-v11",
+      "/producao-v2/js/services/github-binary.js": "/producao-v2/js/services/github-binary.js?admin_build=20260725-admin-v11",
+      "/producao-v2/js/modules/make.js": "/producao-v2/js/modules/make.js?admin_build=20260725-admin-v11",
+      "/producao-v2/js/modules/products.js": "/producao-v2/js/modules/products.js?admin_build=20260725-admin-v11",
+      "/producao-v2/js/modules/publish.js": "/producao-v2/js/modules/publish.js?admin_build=20260725-admin-v11",
+      "/producao-v2/js/modules/stock.js": "/producao-v2/js/modules/stock.js?admin_build=20260725-admin-v11"
     }
   }
   </script>
@@ -44,7 +45,7 @@
       </nav>
       <div class="sidebar-status">
         <span class="status-dot" id="sidebarStatusDot"></span>
-        <div><strong id="sidebarStatusTitle">Inicializando</strong><span id="sidebarStatusText">Conectando às fontes de dados…</span></div>
+        <div><strong id="sidebarStatusTitle">Inicializando</strong><span id="sidebarStatusText">Carregando o índice rápido…</span></div>
       </div>
     </aside>
 
@@ -58,7 +59,7 @@
         </div>
       </header>
 
-      <div class="environment-banner" role="status"><strong>Sistema oficial em uso.</strong> Os módulos utilizam as fontes oficiais do Firebase, GitHub e Make.</div>
+      <div class="environment-banner" role="status"><strong>Sistema oficial v11.</strong> Catálogo leve na abertura e módulos operacionais carregados somente quando necessários.</div>
 
       <main class="main-content" id="mainContent" tabindex="-1">
         <section class="view active" data-view="dashboard" aria-labelledby="pageTitle">
@@ -90,39 +91,39 @@
           </div>
           <section class="panel product-panel">
             <div class="table-summary"><div><strong id="productResultCount">0</strong><span> produtos encontrados</span></div><div class="summary-actions"><span class="dirty-indicator" id="dirtyIndicator">Nenhuma alteração</span></div></div>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th>Produto</th><th>Código / EAN</th><th>Preço</th><th>Estoque</th><th>Validade</th><th>Status</th><th>Qualidade</th><th></th></tr></thead><tbody id="productsTableBody"></tbody></table></div>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>Produto</th><th>Código / EAN</th><th>Preço</th><th>Estoque</th><th>Validade</th><th>Status</th><th>Qualidade</th><th></th></tr></thead><tbody id="productsTableBody"><tr><td class="empty-state" colspan="8">Carregando produtos…</td></tr></tbody></table></div>
             <div class="pagination" id="productsPagination"></div>
           </section>
         </section>
 
         <section class="view" data-view="operations">
           <div class="module-cards">
-            <article class="module-card"><span class="module-icon">NF</span><div><h2>Entrada de NF-e</h2><p>Importação fiscal e simulação protegida.</p></div><span class="badge success">Ativo</span></article>
-            <article class="module-card"><span class="module-icon">▦</span><div><h2>Leitura rápida</h2><p>Consulta por leitor de código.</p></div><span class="badge success">Ativo</span></article>
+            <article class="module-card"><span class="module-icon">NF</span><div><h2>Entrada de NF-e</h2><p>Carregada ao abrir Operações.</p></div><span class="badge info">Sob demanda</span></article>
+            <article class="module-card"><span class="module-icon">▦</span><div><h2>Leitura rápida</h2><p>Consulta por leitor de código.</p></div><span class="badge info">Sob demanda</span></article>
             <article class="module-card"><span class="module-icon">!</span><div><h2>Estoque e validade</h2><p>Estoque, vencimentos e lotes.</p></div><span class="badge success">Ativo</span></article>
           </div>
         </section>
 
         <section class="view" data-view="promotions">
           <div class="module-cards">
-            <article class="module-card"><span class="module-icon">CB</span><div><h2>Cestas básicas</h2><p>Composição e publicação.</p></div><span class="badge success">Ativo</span></article>
-            <article class="module-card"><span class="module-icon">KT</span><div><h2>Kits promocionais</h2><p>Preço, estoque, IA e Instagram.</p></div><span class="badge success">Ativo</span></article>
-            <article class="module-card"><span class="module-icon">%</span><div><h2>Ofertas automáticas</h2><p>Regras, simulação e histórico.</p></div><span class="badge success">Ativo</span></article>
+            <article class="module-card"><span class="module-icon">CB</span><div><h2>Cestas básicas</h2><p>Composição e publicação.</p></div><span class="badge info">Sob demanda</span></article>
+            <article class="module-card"><span class="module-icon">KT</span><div><h2>Kits promocionais</h2><p>Preço, estoque, IA e Instagram.</p></div><span class="badge info">Sob demanda</span></article>
+            <article class="module-card"><span class="module-icon">%</span><div><h2>Ofertas automáticas</h2><p>Regras, simulação e histórico.</p></div><span class="badge info">Sob demanda</span></article>
           </div>
         </section>
 
         <section class="view" data-view="registries">
           <div class="module-cards">
-            <article class="module-card"><span class="module-icon">CT</span><div><h2>Categorias</h2><p>Categoria e subcategorias.</p></div><span class="badge success">Ativo</span></article>
-            <article class="module-card"><span class="module-icon">MC</span><div><h2>Marcas e fornecedores</h2><p>Padronização dos cadastros.</p></div><span class="badge success">Ativo</span></article>
-            <article class="module-card"><span class="module-icon">TG</span><div><h2>Tags</h2><p>Marcadores sem duplicações.</p></div><span class="badge success">Ativo</span></article>
+            <article class="module-card"><span class="module-icon">CT</span><div><h2>Categorias</h2><p>Categoria e subcategorias.</p></div><span class="badge info">Sob demanda</span></article>
+            <article class="module-card"><span class="module-icon">MC</span><div><h2>Marcas e fornecedores</h2><p>Padronização dos cadastros.</p></div><span class="badge info">Sob demanda</span></article>
+            <article class="module-card"><span class="module-icon">TG</span><div><h2>Tags</h2><p>Marcadores sem duplicações.</p></div><span class="badge info">Sob demanda</span></article>
           </div>
         </section>
 
         <section class="view" data-view="settings">
           <div class="content-grid two-columns settings-grid">
             <section class="panel">
-              <div class="panel-header"><div><h2>Fontes de dados</h2><p>Configuração oficial do Firebase.</p></div></div>
+              <div class="panel-header"><div><h2>Fontes de dados</h2><p>Fonte oficial fixa do Firebase.</p></div></div>
               <div class="form-stack">
                 <label>Firebase URL<input id="firebaseUrlSetting" type="url"></label>
                 <label>Nó de produtos<input id="productsNodeSetting" type="text"></label>
@@ -139,22 +140,22 @@
                   <label>Branch<input id="githubBranchSetting" type="text"></label>
                   <label>Produtos públicos<input id="productsHomePathSetting" type="text"></label>
                   <label class="span-2">Versão do catálogo<input id="catalogVersionPathSetting" type="text"></label>
-                  <label class="span-2">Pasta de imagens dos produtos<input id="githubImagesPathSetting" type="text" placeholder="site/img/produtos_3"></label>
-                  <label class="span-2">Pasta de imagens dos kits<input id="githubKitImagesPathSetting" type="text" placeholder="site/img/kits"></label>
+                  <label class="span-2">Pasta de imagens dos produtos<input id="githubImagesPathSetting" type="text"></label>
+                  <label class="span-2">Pasta de imagens dos kits<input id="githubKitImagesPathSetting" type="text"></label>
                 </div>
               </div>
             </section>
             <section class="panel span-all-settings">
               <div class="panel-header"><div><h2>Automações do Make</h2><p>Canais separados por responsabilidade.</p></div><span class="badge info">4 canais</span></div>
               <div class="form-stack make-settings-grid">
-                <label>Webhook IA de textos<input id="makeTextWebhookSetting" type="url" placeholder="https://hook.us2.make.com/..."></label>
-                <label>Webhook IA de imagens<input id="makeImageWebhookSetting" type="url" placeholder="https://hook.us2.make.com/..."></label>
-                <label>Webhook Instagram Kits<input id="makeInstagramKitWebhookSetting" type="url" placeholder="https://hook.us2.make.com/..."></label>
-                <label>Webhook Pedidos → Make/Bling<input id="makeOrderWebhookSetting" type="url" placeholder="https://hook.us2.make.com/..."></label>
+                <label>Webhook IA de textos<input id="makeTextWebhookSetting" type="url"></label>
+                <label>Webhook IA de imagens<input id="makeImageWebhookSetting" type="url"></label>
+                <label>Webhook Instagram Kits<input id="makeInstagramKitWebhookSetting" type="url"></label>
+                <label>Webhook Pedidos → Make/Bling<input id="makeOrderWebhookSetting" type="url"></label>
               </div>
             </section>
             <section class="panel span-all-settings">
-              <div class="panel-header"><div><h2>Diagnóstico de publicação</h2><p>Auditoria antes de gravar o catálogo.</p></div><button class="button primary compact" id="openPublishReviewSettingsButton" type="button">Abrir revisão</button></div>
+              <div class="panel-header"><div><h2>Diagnóstico de publicação</h2><p>Auditoria rápida na tela; auditoria completa apenas ao publicar.</p></div><button class="button primary compact" id="openPublishReviewSettingsButton" type="button">Abrir revisão</button></div>
               <div class="system-list" id="diagnosticList"></div>
             </section>
             <section class="panel danger-panel span-all-settings">
@@ -191,7 +192,7 @@
 
   <div class="publish-backdrop" id="publishBackdrop" hidden></div>
   <section class="publish-dialog" id="publishDialog" hidden aria-hidden="true" aria-labelledby="publishDialogTitle">
-    <div class="publish-header"><div><span class="eyebrow">Publicação segura</span><h2 id="publishDialogTitle">Revisar catálogo antes de publicar</h2><p>O sistema salva no Firebase, valida e publica os arquivos.</p></div><button class="icon-button" id="closePublishReviewButton" type="button" aria-label="Fechar revisão">×</button></div>
+    <div class="publish-header"><div><span class="eyebrow">Publicação segura</span><h2 id="publishDialogTitle">Revisar catálogo antes de publicar</h2><p>A auditoria completa roda somente nesta etapa.</p></div><button class="icon-button" id="closePublishReviewButton" type="button" aria-label="Fechar revisão">×</button></div>
     <div class="publish-body">
       <div class="review-metrics" id="publishReviewMetrics"></div>
       <div id="publishBlockers"></div>
@@ -203,8 +204,7 @@
   </section>
 
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="./js/app.js?admin_build=20260725-admin-v10"></script>
-  <script type="module" src="./js/nfe-bootstrap.js?admin_build=20260725-admin-v10"></script>
-  <script type="module" src="./js/stock-bootstrap.js?admin_build=20260725-admin-v10"></script>
+  <script type="module" src="./js/app.js?admin_build=20260725-admin-v11"></script>
+  <script type="module" src="./js/stock-bootstrap.js?admin_build=20260725-admin-v11"></script>
 </body>
 </html>
