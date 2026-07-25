@@ -4,7 +4,7 @@ import { indexProducts, loadCatalog } from './catalog.js';
 import { applyProductOffer, calculateCartPricing, CartService, resolveBundleRows } from './commerce.js';
 import { basketDraftTotal } from './basket-pricing.js';
 import { createPersonalization } from './personalization.js';
-import { createUI } from './ui.js';
+import { createUI } from './ui.js?v=20260724-7';
 import { createCheckout } from './checkout.js';
 import { processOrderQueue } from './integrations.js';
 
