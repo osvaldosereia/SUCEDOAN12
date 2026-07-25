@@ -1,4 +1,4 @@
-import './product-editor-enhancements.js?admin_build=20260725-admin-v6';
+import './product-editor-enhancements.js?admin_build=20260725-admin-v8';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 
 const ORIGINAL_FETCH_KEY = '__daAdminV2OriginalFetch';
