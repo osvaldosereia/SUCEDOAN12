@@ -49,6 +49,7 @@ function start() {
     if (section) queueMicrotask(() => activate(section));
     loadSection(section, button.dataset.route || '')
       .catch(error => toast(`Não foi possível abrir esta função: ${error?.message || error}`));
+    if (section && section !== 'stock') event.stopImmediatePropagation();
   });
 }
 
