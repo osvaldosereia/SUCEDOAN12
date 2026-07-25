@@ -77,11 +77,29 @@ function activeProduct(product) {
     && product?.visivel !== false;
 }
 
+function booleanValue(value) {
+  if (value === true || value === 1) return true;
+  return ['1', 'true', 'sim', 'yes'].includes(text(value).toLowerCase());
+}
+
+function moneyValue(value) {
+  return Math.round(Math.max(0, number(value)) * 100) / 100;
+}
+
+function integerValue(value, minimum = 0) {
+  return Math.max(minimum, Math.floor(number(value) || minimum));
+}
+
+function slugValue(value = '') {
+  return cleanText(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90);
+}
+
 export function normalizeProductForSite(product, config = {}) {
   const source = product && typeof product === 'object' ? clone(product) : {};
   const key = cleanText(productKey(source));
-  const regularPrice = Math.round(Math.max(0, number(source.preco)) * 100) / 100;
-  const requestedOffer = Math.round(Math.max(0, number(source.preco_oferta ?? source.precoOferta)) * 100) / 100;
+  const regularPrice = moneyValue(source.preco);
+  const requestedOffer = moneyValue(source.preco_oferta ?? source.precoOferta);
   const normalized = {
     ...source,
     firebaseKey: key,
@@ -89,21 +107,36 @@ export function normalizeProductForSite(product, config = {}) {
     codigo: cleanText(productCode(source)),
     sku: cleanText(source.sku),
     nome: cleanText(source.nome || source.titulo || ''),
+    slug: cleanText(source.slug) || slugValue(source.nome || source.titulo),
     preco: regularPrice,
-    preco_custo: Math.round(Math.max(0, number(source.preco_custo)) * 100) / 100,
-    estoque: Math.max(0, Math.floor(number(source.estoque))),
+    preco_custo: moneyValue(source.preco_custo),
+    preco_atacado: moneyValue(source.preco_atacado),
+    estoque: integerValue(source.estoque),
+    estoque_minimo: integerValue(source.estoque_minimo),
+    multiplo_venda: integerValue(source.multiplo_venda, 1),
+    quantidade_caixa: integerValue(source.quantidade_caixa),
     situacao: activeProduct(source) ? 'A' : 'I',
     categoria: normalizeLabel(source.categoria),
     subcategoria: normalizeLabel(source.subcategoria),
     subsubcategoria: normalizeLabel(source.subsubcategoria),
     marca: cleanText(source.marca),
     fornecedor: cleanText(source.fornecedor),
+    codigo_fornecedor: cleanText(source.codigo_fornecedor),
     embalagem: cleanText(source.embalagem),
     unidade: cleanText(source.unidade),
     descricao: cleanDescription(source.descricao || source.description),
+    descricao_status: cleanText(source.descricao_status),
+    seo_titulo: cleanText(source.seo_titulo),
+    seo_descricao: cleanDescription(source.seo_descricao),
+    seo_status: cleanText(source.seo_status),
     gtin: String(source.gtin || source.ean || '').replace(/\D/g, ''),
     ean: String(source.ean || source.gtin || '').replace(/\D/g, ''),
+    gtin_tributavel: String(source.gtin_tributavel || '').replace(/\D/g, ''),
+    unidade_tributavel: cleanText(source.unidade_tributavel),
     ncm: String(source.ncm || '').replace(/\D/g, ''),
+    cest: String(source.cest || '').replace(/\D/g, ''),
+    origem_tributaria: cleanText(source.origem_tributaria),
+    cfop: cleanText(source.cfop),
     gondola: cleanText(source.gondola || source['gôndola']),
     prateleira: cleanText(source.prateleira),
     localizacao: cleanText(source.localizacao || source.localização),
@@ -111,6 +144,13 @@ export function normalizeProductForSite(product, config = {}) {
     url_imagem: publicImage(productImage(source), config),
     tags: parseTags(source.tags || source.tag_global),
     tag_global: cleanText(source.tag_global),
+    destaque: booleanValue(source.destaque),
+    ordem: Number.isFinite(Number(source.ordem)) ? Number(source.ordem) : undefined,
+    peso: Math.max(0, number(source.peso)),
+    largura: Math.max(0, number(source.largura)),
+    altura: Math.max(0, number(source.altura)),
+    comprimento: Math.max(0, number(source.comprimento)),
+    bling_id: cleanText(source.bling_id),
   };
 
   const gallerySource = [
@@ -124,13 +164,15 @@ export function normalizeProductForSite(product, config = {}) {
     normalized.preco_oferta = requestedOffer;
     normalized.data_inicio_oferta = normalizeDate(source.data_inicio_oferta || source.inicio_oferta);
     normalized.validade_oferta = normalizeDate(source.validade_oferta || source.validadeOferta, { endOfDay: true });
-    normalized.oferta_origem = source.oferta_origem === 'validade' ? 'validade' : 'manual';
+    normalized.oferta_origem = cleanText(source.oferta_origem || 'manual');
+    normalized.oferta_regra_id = cleanText(source.oferta_regra_id);
     normalized.desconto_validade = Math.max(0, number(source.desconto_validade));
   } else {
     delete normalized.preco_oferta;
     delete normalized.data_inicio_oferta;
     delete normalized.validade_oferta;
     delete normalized.oferta_origem;
+    delete normalized.oferta_regra_id;
     delete normalized.desconto_validade;
   }
 
@@ -207,21 +249,36 @@ export function buildProductsHomePayload(products, config = {}) {
       codigo: product.codigo,
       sku: product.sku,
       nome: product.nome,
+      slug: product.slug,
       preco: product.preco,
       preco_custo: product.preco_custo,
+      preco_atacado: product.preco_atacado,
       estoque: product.estoque,
+      estoque_minimo: product.estoque_minimo,
+      multiplo_venda: product.multiplo_venda,
+      quantidade_caixa: product.quantidade_caixa,
       situacao: product.situacao,
       categoria: product.categoria,
       subcategoria: product.subcategoria,
       subsubcategoria: product.subsubcategoria,
       marca: product.marca,
       fornecedor: product.fornecedor,
+      codigo_fornecedor: product.codigo_fornecedor,
       embalagem: product.embalagem,
       unidade: product.unidade,
       descricao: product.descricao,
+      descricao_status: product.descricao_status,
+      seo_titulo: product.seo_titulo,
+      seo_descricao: product.seo_descricao,
+      seo_status: product.seo_status,
       gtin: product.gtin,
       ean: product.ean,
+      gtin_tributavel: product.gtin_tributavel,
+      unidade_tributavel: product.unidade_tributavel,
       ncm: product.ncm,
+      cest: product.cest,
+      origem_tributaria: product.origem_tributaria,
+      cfop: product.cfop,
       gondola: product.gondola,
       prateleira: product.prateleira,
       localizacao: product.localizacao,
@@ -231,7 +288,12 @@ export function buildProductsHomePayload(products, config = {}) {
       tags: product.tags,
       tag_global: product.tag_global,
       destaque: product.destaque === true,
-      ordem: Number.isFinite(Number(product.ordem)) ? Number(product.ordem) : undefined,
+      ordem: product.ordem,
+      peso: product.peso,
+      largura: product.largura,
+      altura: product.altura,
+      comprimento: product.comprimento,
+      bling_id: product.bling_id,
       last_update: product.last_update || undefined,
       updated_at: product.updated_at || undefined,
     };
@@ -239,6 +301,7 @@ export function buildProductsHomePayload(products, config = {}) {
     if (product.data_inicio_oferta) item.data_inicio_oferta = product.data_inicio_oferta;
     if (product.validade_oferta) item.validade_oferta = product.validade_oferta;
     if (product.oferta_origem) item.oferta_origem = product.oferta_origem;
+    if (product.oferta_regra_id) item.oferta_regra_id = product.oferta_regra_id;
     if (number(product.desconto_validade) > 0) item.desconto_validade = number(product.desconto_validade);
 
     output[key] = Object.fromEntries(Object.entries(item).filter(([, value]) => {
@@ -257,6 +320,6 @@ export function catalogVersionPayload(config, changed = ['products']) {
     products: config.productsHomePath || 'site/produtos-home.json',
     changed: [...new Set(changed)],
     source: 'admin-producao-v2',
-    instructions: 'Arquivo atualizado automaticamente pelo Admin V2 Dona Antônia.',
+    instructions: 'Arquivo atualizado automaticamente pelo Admin oficial Dona Antônia.',
   };
 }

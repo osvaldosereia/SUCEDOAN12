@@ -1,3 +1,6 @@
+import './catalog-auto-sync.js';
+import './product-lifecycle-bootstrap.js';
+import './admin-suite-bootstrap.js';
 import './collections-bootstrap.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { productKey } from './core/utils.js';
@@ -50,7 +53,7 @@ function editorMarkup() {
 function installSettings() {
   const grid = document.querySelector('[data-view="settings"] .settings-grid');
   if (!grid || document.getElementById('stockSafetySettings')) return;
-  const html = `<section class="panel span-all-settings" id="stockSafetySettings"><div class="panel-header"><div><h2>Segurança de estoque e validade</h2><p>Trava independente para ajustes manuais.</p></div><span class="badge success" id="stockSettingsStatus">Bloqueada</span></div><div class="form-stack"><label class="switch-row"><span><strong>Permitir ajustes manuais</strong><small>Também exige o modo geral de gravação. Cada ajuste exige motivo e reconsulta o estoque remoto.</small></span><input id="stockWriteModeSetting" type="checkbox"></label></div></section>`;
+  const html = `<section class="panel span-all-settings" id="stockSafetySettings"><div class="panel-header"><div><h2>Estoque e validade</h2><p>Ajustes manuais com motivo obrigatório e reconsulta do estoque remoto.</p></div><span class="badge success" id="stockSettingsStatus">Ativo</span></div><div class="form-stack"><label class="switch-row"><span><strong>Permitir ajustes manuais</strong><small>Use esta chave para bloquear temporariamente os ajustes de estoque neste navegador.</small></span><input id="stockWriteModeSetting" type="checkbox"></label></div></section>`;
   const danger = grid.querySelector('.danger-panel');
   if (danger) danger.insertAdjacentHTML('beforebegin', html);
   else grid.insertAdjacentHTML('beforeend', html);
@@ -58,9 +61,9 @@ function installSettings() {
   const status = document.getElementById('stockSettingsStatus');
   const sync = () => {
     const config = loadConfig();
-    input.checked = Boolean(config.stockWriteMode);
-    status.className = `badge ${config.stockWriteMode ? 'warning' : 'success'}`;
-    status.textContent = config.stockWriteMode ? 'Habilitada para teste' : 'Bloqueada';
+    input.checked = config.stockWriteMode !== false;
+    status.className = `badge ${input.checked ? 'success' : 'warning'}`;
+    status.textContent = input.checked ? 'Ativo' : 'Bloqueado';
   };
   input.addEventListener('change', () => {
     saveConfig({ stockWriteMode: input.checked });
@@ -87,52 +90,29 @@ function start() {
   operations.insertAdjacentHTML('beforeend', workspaceMarkup());
   document.body.insertAdjacentHTML('beforeend', editorMarkup());
 
-  const cards = operations.querySelectorAll('.module-card');
-  const stockCard = [...cards].find(card => card.textContent.includes('Estoque e validade'));
-  if (stockCard) {
-    stockCard.querySelector('p').textContent = 'A fila abaixo já reúne vencidos, janelas de 5 a 30 dias, sem validade e estoque baixo.';
-    const badge = stockCard.querySelector('.badge');
-    if (badge) {
-      badge.className = 'badge success';
-      badge.textContent = 'Fila ativa';
-    }
-  }
-
-  const store = {
-    state: { products: [] },
-    getProduct(key) {
-      return this.state.products.find(product => productKey(product) === String(key)) || null;
-    },
-  };
+  const store = { state: { config: loadConfig(), products: [] }, getProduct(key) { return this.state.products.find(product => productKey(product) === String(key)) || null; } };
   let module;
   async function reload() {
     const status = document.getElementById('stockDataStatus');
     status.className = 'badge warning';
     status.textContent = 'Atualizando…';
-    try {
-      store.state.products = await loadProducts(loadConfig());
-      status.className = 'badge success';
-      status.textContent = `${store.state.products.length} produtos`;
-      module?.render();
-      return store.state.products;
-    } catch (error) {
-      status.className = 'badge danger';
-      status.textContent = 'Falha no Firebase';
-      throw error;
-    }
+    store.state.config = loadConfig();
+    store.state.products = await loadProducts(store.state.config);
+    module?.refresh();
+    status.className = 'badge success';
+    status.textContent = `${store.state.products.length} produtos`;
   }
 
   const ids = [
     'stockMetrics', 'stockSearch', 'stockStatusFilter', 'stockWindowFilter', 'stockSort', 'stockResultCount',
     'stockTableBody', 'stockBackdrop', 'stockEditor', 'stockEditorTitle', 'stockEditorSubtitle', 'stockCloseEditor',
-    'stockCancelEditor', 'stockSaveEditor', 'stockValue', 'stockValidity', 'stockNoExpiry', 'stockReason',
-    'stockEditorPlan', 'stockEditorSafety',
+    'stockValue', 'stockValidity', 'stockNoExpiry', 'stockReason', 'stockEditorPlan', 'stockEditorSafety',
+    'stockCancelEditor', 'stockSaveEditor',
   ];
   const elements = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
   module = new StockModule({ store, elements, onToast: toast, onReload: reload, reloadConfig: loadConfig });
   reload().catch(error => toast(error?.message || String(error), 'error'));
   document.getElementById('reloadButton')?.addEventListener('click', () => reload().catch(() => {}));
-  elements.stockBackdrop.addEventListener('click', () => module.closeEditor());
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });

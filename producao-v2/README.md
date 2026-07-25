@@ -1,142 +1,138 @@
-# Admin Dona Antônia V2 — ambiente paralelo
+# Admin oficial Dona Antônia
 
-Esta pasta contém a reconstrução modular do painel administrativo. Ela permite homologação completa sem alterar o admin em uso em `producao/index.html`.
+O painel em `producao-v2/` é o sistema administrativo oficial da Dona Antônia. O acesso habitual por `producao/` direciona para esta versão.
 
-## Proteção do sistema atual
+## Decisões de operação
 
-Permanecem inalterados:
+- não existe login ou gestão de usuários dentro do painel;
+- token GitHub, webhooks Make e demais configurações ficam no `localStorage` do navegador autorizado;
+- a fonte oficial dos produtos é o Firebase Realtime Database em `/produtos`;
+- o catálogo público é sincronizado para `site/produtos-home.json` e `catalog-version.json`;
+- banners foram removidos do site e não fazem mais parte do fluxo administrativo;
+- operações destrutivas, como arquivar produto e cancelar pedido, exigem confirmação na própria ação.
 
-- `producao/index.html`;
-- `producao/nfe-import.js`;
-- `producao/nfe-import-core.js`.
+## Produtos
 
-Todos os arquivos desta reconstrução ficam dentro de `producao-v2/`. A V2 inicia com todas as gravações bloqueadas.
+- busca, filtros, ordenação e paginação;
+- edição por assunto;
+- salvamento por `PATCH`, apenas dos campos alterados;
+- comparação completa entre versão original, versão remota e alteração local;
+- aviso de conflito por campo quando outra sessão alterou o mesmo dado;
+- criação manual de produto novo;
+- verificação de código e EAN duplicados;
+- campos comerciais, fiscais, logísticos, SEO e Bling;
+- categoria, subcategoria, marca e fornecedor digitáveis;
+- imagem editada em WebP e enviada ao GitHub;
+- histórico das URLs de imagem anteriores;
+- lixeira em `produtos_excluidos`, com restauração pela mesma chave;
+- auditoria das gravações em `logs_admin`.
 
-## Travas de gravação
+## Catálogo público
 
-A configuração possui uma trava geral e travas independentes:
+Qualquer gravação em `/produtos` solicita uma sincronização imediata pelo GitHub. Como contingência, um workflow também sincroniza a cada cinco minutos.
 
-- `writeMode`: gravação geral;
-- `nfeImportMode`: importação de NF-e;
-- `stockWriteMode`: ajustes manuais de estoque e validade;
-- `collectionsWriteMode`: publicação de cestas e kits;
-- `offerWriteMode`: aplicação das ofertas automáticas;
-- `registryWriteMode`: padronização em lote de cadastros.
+A sincronização atualiza em conjunto:
 
-Ativar uma trava específica sem ativar `writeMode` não libera a operação. Ações críticas também exigem confirmação dentro da própria tela.
+- `site/produtos-home.json`;
+- `catalog-version.json`.
 
-## Módulos implementados
+O botão de publicação manual continua disponível como contingência e utiliza os mesmos campos do sincronizador automático.
 
-### Visão geral e produtos
+## Entrada de NF-e
 
-- dashboard de prioridades;
-- lista rápida com busca, filtros, ordenação e paginação;
-- editor lateral dividido por assunto;
-- estado local por produto, sem reconstrução global da tela;
-- auditoria de campos obrigatórios e avisos de qualidade;
-- bloqueio de imagens base64;
-- reconsulta remota e proteção de conflito de estoque;
-- publicação segura de `site/produtos-home.json` e `catalog-version.json`.
-
-### Entrada de NF-e
-
-- leitura de arquivo XML ou conteúdo colado;
-- validação de chave com 44 números e SHA-256;
-- agrupamento por EAN/código do fornecedor;
-- multiplicador caixa → unidade;
-- rateio de desconto, custo unitário e preço sugerido;
-- correspondência automática e manual com produtos;
-- validade por lote, produto sem validade e regras manter/mais próxima/substituir;
-- comparação campo a campo;
-- simulação completa de produto existente ou novo;
-- prévia exata de estoque, validade, lotes, histórico de custo e `entradas_nfe`;
-- arquivamento do XML fiscal;
+- leitura de XML ou conteúdo colado;
+- chave de 44 números e controle de duplicidade;
+- agrupamento de itens;
+- multiplicador caixa para unidade;
+- desconto, custo e margem;
+- correspondência automática ou manual;
+- validade, lotes e produto sem validade;
+- produto existente ou novo;
+- arquivamento do XML;
 - registro fiscal atualizado após cada item;
-- bloqueio global e por grupo contra duplicidade;
-- estado `falhou` para retomada segura após execução parcial.
+- retomada após execução parcial.
 
-### Estoque e validade
+A importação exige a simulação e a confirmação da nota dentro da própria tela.
 
-- fila única de vencidos, sem estoque, estoque baixo e sem validade;
-- filtros de vencimento em 5, 10, 15, 20, 25 e 30 dias;
-- ordenação pela validade mais próxima entre os lotes;
-- consulta de localização, lotes e estoque;
-- ajuste manual com motivo obrigatório;
-- reconsulta do estoque remoto antes de salvar;
+## Estoque e validade
+
+- vencidos, estoque zerado, estoque baixo e sem validade;
+- filtros de 5, 10, 15, 20, 25 e 30 dias;
+- ordenação pelo vencimento mais próximo;
+- ajuste com motivo obrigatório;
+- reconsulta remota antes da gravação;
 - histórico em `ajustes_estoque`.
 
-### Leitura rápida
+## Cestas, kits e Compra Rápida
 
-- campo com foco contínuo para pistola/leitor;
-- busca exata por EAN, código, SKU ou chave;
-- busca por nome quando necessário;
-- foto, preço, estoque, validade, lotes e localização;
-- atalhos para o editor oficial de produto e para a fila oficial de estoque;
-- nenhuma rotina de gravação duplicada.
+- criação, edição, exclusão e publicação de cestas e kits;
+- validação dos itens contra o Firebase;
+- estoque, substitutos, economia e limite disponível;
+- fila de carrossel do Instagram por `kit_codigo`;
+- editor da Compra Rápida dentro da V2;
+- seções e itens personalizáveis;
+- pesquisa de produtos;
+- seleção de todos os resultados da busca em um clique;
+- produto padrão por item.
 
-### Cestas básicas e kits promocionais
+## Ofertas e cupons
 
-- leitura de `site/produtos-cesta-basica.json` e `site/kits.json`;
-- preservação do preço predefinido da cesta;
-- validação da composição contra o Firebase;
-- quantidade e estoque suficiente por item;
-- produtos substitutos;
-- cálculo de compra avulsa, economia e desconto do kit;
-- limite disponível conforme estoque;
-- preservação dos campos comerciais e do Instagram;
-- diagnóstico de `carrosseis-kits/fila.json` por `kit_codigo`;
-- criação, edição, exclusão e publicação sequencial protegida.
+- ofertas automáticas por validade;
+- ofertas manuais preservadas;
+- bloqueio reversível de venda insegura;
+- histórico em `site/ofertas-historico.json`;
+- limpeza de ofertas vencidas;
+- execução automática a cada hora;
+- criação, edição, ativação, desativação e exclusão de cupons;
+- publicação de `site/cuponsativos.json`.
 
-### Ofertas automáticas
+## Pedidos
 
-Faixas implementadas:
+- lista, busca e filtros;
+- detalhes do cliente, entrega, pagamento e itens;
+- atualização de separação, conferência, entrega e cancelamento;
+- reenvio controlado ao Make/Bling;
+- registro da resposta ou erro no pedido;
+- etiqueta de separação 100 × 150 mm, sem valores e com produtos faltantes separados.
 
-- 3–7 dias: 50%;
-- 8–15 dias: 40%;
-- 16–31 dias: 35%;
-- 32–46 dias: 30%;
-- 47–65 dias: 25%;
-- 66–76 dias: 20%;
-- 77–91 dias: 10%;
-- 92–105 dias: 5%.
+## Cadastros
 
-A V2 nunca sobrescreve oferta manual. Com até dois dias ou produto vencido, a venda é bloqueada de forma reversível, preservando a situação anterior. Um novo lote seguro pode restaurar o produto pela mesma simulação.
-
-### Cadastros
-
-- categorias, subcategorias e subsubcategorias derivadas dos produtos;
-- marcas, fornecedores e tags derivados do Firebase;
+- categorias, subcategorias, subsubcategorias, marcas, fornecedores e tags derivados do Firebase;
 - detecção de variações por maiúsculas, acentos e espaços;
-- mesclagem e renomeação em lote;
-- escopo contextual para subcategorias;
-- deduplicação de tags;
-- reconsulta do campo remoto antes de cada alteração.
+- renomeação e mesclagem em lote;
+- digitação direta de novos valores no editor de produto.
 
-### Diagnóstico, integrações e backup
+## Backup e diagnóstico
 
-- consulta não destrutiva do Firebase e dos arquivos públicos;
-- comparação Firebase × `produtos-home`;
-- auditoria conjunta de catálogo, estoque, validade, cestas, kits, ofertas e cadastros;
-- referência local dos webhooks Make sem dispará-los;
-- registro de que o Bling continua mediado pelo Make;
-- backup JSON sem o token GitHub;
-- exportação CSV dos produtos;
-- nenhuma chamada automática que crie pedido, contato, produto ou execução de cenário.
+- backup de produtos em JSON;
+- exportação de produtos em CSV;
+- backup das configurações locais;
+- backup de cupons e Compra Rápida;
+- auditoria local e auditoria no Firebase;
+- comparação entre Firebase e arquivos públicos;
+- diagnóstico de catálogo, estoque, cestas, kits, ofertas e integrações.
 
-## Testes executados
+## Testes automatizados
 
-- sintaxe de todos os módulos JavaScript locais com `node --check`;
-- testes unitários de NF-e, transação, estoque, validade, cestas, kits, ofertas, cadastros, leitura rápida e diagnóstico;
-- teste de falha parcial da NF-e e retomada sem duplicidade;
-- testes de conflito remoto em estoque, ofertas e cadastros;
-- testes de navegador separados para cada módulo;
-- smoke test integrado com Produtos, Operações, Leitura rápida, Estoque, Cestas, Kits, Ofertas, Cadastros e Diagnóstico carregados juntos;
-- verificação de IDs duplicados no DOM: nenhum;
-- verificação dos destinos de todos os imports relativos: aprovada;
-- comparação com `main`: alterações restritas a `producao-v2/`.
+O workflow `Testar Admin V2 definitivo` valida:
 
-## Limites da homologação
+- sintaxe dos módulos JavaScript;
+- resolução dos imports relativos;
+- JSONs obrigatórios;
+- banners vazios e desativados;
+- workflows de catálogo e ofertas;
+- cadastro, lixeira, conflito por campo, pedidos, cupons e Compra Rápida;
+- etiqueta 100 × 150 mm e reenvio Make/Bling.
 
-Nenhuma gravação real foi executada no Firebase, GitHub, Make ou Bling durante os testes automatizados. Os testes de escrita usaram serviços simulados para validar ordem, conflitos, falhas parciais e recuperação. Antes de substituir o admin atual, ainda é necessário executar uma homologação controlada em navegador real com credenciais de teste e uma NF-e não utilizada.
+## Testes manuais obrigatórios
 
-O PR deve permanecer em rascunho e não deve ser mesclado até essa homologação controlada ser concluída.
+Antes de considerar o trabalho operacionalmente encerrado, devem ser executados em navegador autorizado:
+
+1. editar e salvar um produto existente de teste;
+2. cadastrar, arquivar e restaurar um produto de teste;
+3. publicar um cupom e uma pequena alteração na Compra Rápida;
+4. testar uma NF-e ainda não utilizada;
+5. confirmar no site público a sincronização do catálogo;
+6. testar um pedido controlado no Make/Bling.
+
+Nenhum desses testes deve utilizar uma NF-e ou pedido real já processado anteriormente.

@@ -1,5 +1,5 @@
-name: Sincronizar produtos-home com Firebase
-run-name: Produtos-home oficial · ${{ github.event_name }}
+name: Sincronizar catálogo com Firebase
+run-name: Catálogo oficial · ${{ github.event_name }}
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: sincronizar-produtos-home-firebase
+  group: sincronizar-catalogo-firebase
   cancel-in-progress: true
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Baixar catálogo leve e sincronizador
+      - name: Baixar catálogo e sincronizador
         uses: actions/checkout@v5
         with:
           fetch-depth: 1
@@ -33,6 +33,7 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             site/produtos-home.json
+            catalog-version.json
             scripts/sincronizar-produtos-home-firebase.mjs
 
       - name: Configurar Node.js
@@ -40,23 +41,34 @@ jobs:
         with:
           node-version: 22
 
-      - name: Gerar catálogo leve diretamente do Firebase
+      - name: Gerar catálogo diretamente do Firebase
         env:
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
+          PRODUCTS_HOME_PATH: site/produtos-home.json
+          CATALOG_VERSION_PATH: catalog-version.json
         run: node scripts/sincronizar-produtos-home-firebase.mjs
 
-      - name: Publicar somente produtos-home
+      - name: Publicar catálogo e versão
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/produtos-home.json
+          git add site/produtos-home.json catalog-version.json
           if git diff --cached --quiet; then
-            echo "produtos-home já está sincronizado com o Firebase."
+            echo "Catálogo já está sincronizado com o Firebase."
             exit 0
           fi
-          git commit -m "Sincroniza produtos-home diretamente do Firebase"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git commit -m "Sincroniza catálogo diretamente do Firebase"
+          for tentativa in 1 2 3 4 5; do
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}"
+            sleep $((tentativa * 2))
+          done
+          echo "Não foi possível publicar o catálogo após cinco tentativas." >&2
+          exit 1

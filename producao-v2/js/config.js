@@ -2,12 +2,12 @@ export const DEFAULT_CONFIG = Object.freeze({
   firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
   productsNode: 'produtos',
   writeMode: true,
-  nfeImportMode: false,
+  nfeImportMode: true,
   stockWriteMode: true,
   collectionsWriteMode: true,
   offerWriteMode: true,
-  campaignOfferWriteMode: false,
-  registryWriteMode: false,
+  campaignOfferWriteMode: true,
+  registryWriteMode: true,
   pageSize: 50,
   githubToken: '',
   githubOwner: 'osvaldosereia',
@@ -17,6 +17,8 @@ export const DEFAULT_CONFIG = Object.freeze({
   catalogVersionPath: 'catalog-version.json',
   basketsPath: 'site/produtos-cesta-basica.json',
   kitsPath: 'site/kits.json',
+  couponsPath: 'site/cuponsativos.json',
+  quickPurchasePath: 'site/compra-rapida.json',
   kitQueuePath: 'carrosseis-kits/fila.json',
   offersRulesPath: 'site/ofertas-automaticas.json',
   offersStatePath: 'site/ofertas-automaticas-estado.json',
@@ -38,7 +40,7 @@ export const STORAGE_KEYS = Object.freeze({
 });
 
 const LEGACY_SETTINGS_KEY = 'da_admin_settings_v4';
-const PRODUCTION_ACTIVATION_KEY = 'da_admin_v2_producao_oficial_20260724_v1';
+const PRODUCTION_ACTIVATION_KEY = 'da_admin_v2_producao_oficial_20260724_v2';
 
 function migrateLegacySettings() {
   try {
@@ -83,9 +85,12 @@ function activateOfficialProductionMode() {
       ...DEFAULT_CONFIG,
       ...current,
       writeMode: true,
+      nfeImportMode: true,
       stockWriteMode: true,
       collectionsWriteMode: true,
       offerWriteMode: true,
+      campaignOfferWriteMode: true,
+      registryWriteMode: true,
       githubBranch: 'main',
     };
     localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(activated));
@@ -97,14 +102,15 @@ function activateOfficialProductionMode() {
 
 function updateOfficialProductionLabels() {
   const apply = () => {
+    document.title = 'Dona Antônia — Admin oficial';
     const brand = document.querySelector('.brand span');
     if (brand) brand.textContent = 'Admin oficial';
     const banner = document.querySelector('.environment-banner');
-    if (banner) banner.innerHTML = '<strong>Sistema oficial em uso.</strong> Alterações de produtos são salvas diretamente no Firebase. Operações em lote continuam com confirmação própria.';
+    if (banner) banner.innerHTML = '<strong>Sistema oficial em uso.</strong> Produtos, estoque, NF-e, cestas, kits, ofertas, cupons, Compra Rápida e pedidos usam as fontes oficiais.';
     const sourceHelp = document.querySelector('[data-view="settings"] .settings-grid .panel .panel-header p');
     if (sourceHelp) sourceHelp.textContent = 'Configurações do sistema oficial.';
     const writeHelp = document.querySelector('#writeModeSetting')?.closest('.switch-row')?.querySelector('small');
-    if (writeHelp) writeHelp.textContent = 'Mantenha ativado para cadastrar e editar produtos.';
+    if (writeHelp) writeHelp.textContent = 'Mantenha ativado para cadastrar, editar e operar o sistema.';
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply, { once: true });
   else apply();

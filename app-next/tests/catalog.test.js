@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { indexProducts, normalizeProduct, normalizeProducts, searchProducts } from '../src/catalog.js';
+import { CONFIG } from '../src/config.js';
+import { indexProducts, loadCatalog, normalizeProduct, normalizeProducts, searchProducts } from '../src/catalog.js';
 import { isAvailable } from '../src/commerce.js';
 
 test('normaliza produto mantendo identificadores e preço', () => {
@@ -31,8 +32,37 @@ test('busca por nome, marca e código', () => {
   assert.equal(searchProducts(products, 'ARR20', isAvailable)[0].codigo, 'ARR20');
 });
 
-test('normaliza link estruturado de banner para rota de produto', async () => {
-  const { normalizeBanners } = await import('../src/catalog.js');
-  const banners = normalizeBanners([{ id: 'b1', imagem: 'site/banners/teste.webp', link: { tipo: 'produto', valor: 'ABC 123' } }]);
-  assert.equal(banners[0].link, '#/produto/ABC%20123');
+test('catálogo público não possui endpoint nem armazenamento de banners', () => {
+  assert.equal(Object.prototype.hasOwnProperty.call(CONFIG.ENDPOINTS, 'BANNERS'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(CONFIG.STORAGE, 'BANNERS'), false);
+});
+
+test('loadCatalog mantém lista de banners vazia para compatibilidade', async () => {
+  const originalFetch = globalThis.fetch;
+  const resources = {
+    '../catalog-version.json': { version: 'teste-sem-banners' },
+    '../site/produtos-home.json': {},
+    '../site/produtos-cesta-basica.json': [],
+    '../site/kits.json': [],
+    '../site/cuponsativos.json': []
+  };
+  globalThis.localStorage = {
+    values: new Map(),
+    getItem(key) { return this.values.has(key) ? this.values.get(key) : null; },
+    setItem(key, value) { this.values.set(key, String(value)); },
+    removeItem(key) { this.values.delete(key); }
+  };
+  globalThis.fetch = async input => {
+    const raw = String(input);
+    const key = Object.keys(resources).find(candidate => raw.startsWith(candidate));
+    if (!key) return { ok: false, status: 404, json: async () => ({}) };
+    return { ok: true, status: 200, json: async () => structuredClone(resources[key]) };
+  };
+  try {
+    const catalog = await loadCatalog();
+    assert.deepEqual(catalog.banners, []);
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete globalThis.localStorage;
+  }
 });

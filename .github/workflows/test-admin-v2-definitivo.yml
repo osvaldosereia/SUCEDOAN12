@@ -1,0 +1,71 @@
+name: Testar Admin V2 definitivo
+
+on:
+  pull_request:
+    paths:
+      - "producao-v2/**"
+      - "app-next/**"
+      - "scripts/test-admin-v2-definitivo.mjs"
+      - "scripts/sincronizar-produtos-home-firebase.mjs"
+      - "scripts/processar-ofertas.mjs"
+      - "scripts/reconciliar-publicacao-ofertas.mjs"
+      - "scripts/limpar-ofertas-validade-expiradas.mjs"
+      - "site/banners/banners.json"
+      - "site/ofertas-historico.json"
+      - ".github/workflows/test-admin-v2-definitivo.yml"
+      - ".github/workflows/processar-ofertas.yml"
+      - ".github/workflows/sincronizar-produtos-home-firebase.yml"
+  push:
+    branches:
+      - "agent/admin-v2-definitivo*"
+      - main
+    paths:
+      - "producao-v2/**"
+      - "app-next/**"
+      - "scripts/test-admin-v2-definitivo.mjs"
+      - "scripts/sincronizar-produtos-home-firebase.mjs"
+      - "scripts/processar-ofertas.mjs"
+      - "scripts/reconciliar-publicacao-ofertas.mjs"
+      - "scripts/limpar-ofertas-validade-expiradas.mjs"
+      - "site/banners/banners.json"
+      - "site/ofertas-historico.json"
+      - ".github/workflows/test-admin-v2-definitivo.yml"
+      - ".github/workflows/processar-ofertas.yml"
+      - ".github/workflows/sincronizar-produtos-home-firebase.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: admin-v2-definitivo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Validar sintaxe, imports e contratos
+        id: validation
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/test-admin-v2-definitivo.mjs 2>&1 | tee admin-v2-test-report.txt
+      - name: Anexar relatório de validação
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-v2-test-report
+          path: admin-v2-test-report.txt
+          if-no-files-found: error
+          retention-days: 7
+      - name: Confirmar resultado
+        if: steps.validation.outcome == 'failure'
+        run: |
+          cat admin-v2-test-report.txt
+          exit 1
