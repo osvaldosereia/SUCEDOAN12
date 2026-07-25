@@ -1,16 +1,16 @@
 {
-  "status": "erro_processamento",
-  "executado_em": "2026-07-25T02:03:35.723Z",
+  "status": "sucesso",
+  "executado_em": "2026-07-25T02:07:49.063Z",
   "limpeza_codigo": 0,
-  "processamento_codigo": 1,
+  "processamento_codigo": 0,
   "limpeza_log": "{\"status\":\"sucesso\",\"ofertas_validade_encerradas\":0,\"produtos\":[]}\n",
-  "processamento_log": "Error: Google OAuth para Firebase: 400 {\n  \"error\": \"unsupported_grant_type\",\n  \"error_description\": \"Invalid grant_type: urn:ietf:params:oauth2:grant-type:jwt-bearer\"\n}\n    at firebaseHeaders (file:///home/runner/work/SUCEDOAN12/SUCEDOAN12/scripts/processar-ofertas.mjs:654:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async loadFirebaseProducts (file:///home/runner/work/SUCEDOAN12/SUCEDOAN12/scripts/processar-ofertas.mjs:662:101)\n    at async run (file:///home/runner/work/SUCEDOAN12/SUCEDOAN12/scripts/processar-ofertas.mjs:709:20)\n",
-  "motor_resultado": "failure",
-  "publicacao_resultado": "skipped",
+  "processamento_log": "{\"status\":\"sucesso\",\"executionId\":\"github-1784945258176\",\"ofertas_solicitadas\":54,\"ofertas_criadas\":54,\"ofertas_nao_criadas\":0,\"ofertas_encerradas\":61,\"vencidos\":61,\"ofertas_reativadas\":0,\"reativacoes_com_falha\":0,\"banners_reativados\":0,\"banners_desativados\":0}\n",
+  "motor_resultado": "success",
+  "publicacao_resultado": "success",
   "evento": "push",
-  "run_id": "30139692625",
+  "run_id": "30139823018",
   "tentativa": "1",
-  "sha_origem": "85703787c4d8b9808fe82ab39e92ad159b72b206",
-  "sucesso": false,
-  "publicado_em": "2026-07-25T02:03:35.768Z"
+  "sha_origem": "6122b3d90436a1e4ba0139cb18bb20ce9707c911",
+  "sucesso": true,
+  "publicado_em": "2026-07-25T02:07:50.480Z"
 }
