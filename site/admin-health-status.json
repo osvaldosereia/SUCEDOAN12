@@ -1,22 +1,22 @@
 {
-  "checkedAt": "2026-07-25T16:23:04.213Z",
+  "checkedAt": "2026-07-25T16:39:33.803Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": true,
   "checks": [
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784996584213"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784997573804"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784996584714"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784997574274"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784996584765"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784997574292"
     },
     {
       "name": "Catálogo público possui produtos",
@@ -31,12 +31,12 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 242 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 153 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1784993492349 · público 1413 · admin 1524"
+      "detail": "catalog-1784996908953 · público 1413 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -61,16 +61,16 @@
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "1.0h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "1.3h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [],
   "warnings": [],
   "workflow": {
-    "event": "push",
-    "runId": "30165469758",
+    "event": "schedule",
+    "runId": "30166045177",
     "attempt": "1",
-    "sourceSha": "124297243ae42fca2d58400378e809d4d0fe3062",
-    "publishedAt": "2026-07-25T16:23:06.059Z"
+    "sourceSha": "5db4cd76f123caca783eb60dc025edfc3fafb6d1",
+    "publishedAt": "2026-07-25T16:39:35.105Z"
   }
 }
