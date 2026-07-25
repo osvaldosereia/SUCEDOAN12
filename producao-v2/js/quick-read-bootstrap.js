@@ -1,4 +1,3 @@
-import './diagnostics-bootstrap.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { QuickReadModule } from './modules/quick-read.js';
 import { loadProducts } from './services/firebase.js';
