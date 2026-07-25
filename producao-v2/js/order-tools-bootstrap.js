@@ -1,6 +1,9 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { escapeHtml, normalizeSearch, number, text } from './core/utils.js';
-import { loadOrders, patchOrder } from './services/firebase.js';
+import { patchOrder } from './services/firebase.js';
+import { invalidateOrdersCache, loadRecentOrders } from './services/orders.js';
+
+const CONTINGENCY_LIMIT = 150;
 
 function loadConfig() {
   try { return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}') }; }
@@ -115,7 +118,7 @@ function printLabel(order) {
 async function resendOrder(order, button) {
   const config = loadConfig();
   const url = text(config.makeOrderWebhookUrl);
-  if (!url) throw new Error('Informe o webhook de pedidos do Make nas configurações.');
+  if (!url) throw new Error('Informe o webhook de pedidos do Make em Integrações.');
   if (!confirm(`Reenviar o pedido #${orderNumber(order)} ao Make/Bling?`)) return;
   button.disabled = true;
   button.textContent = 'Enviando…';
@@ -142,6 +145,7 @@ async function resendOrder(order, button) {
       make_ultima_resposta: responseText.slice(0, 1000),
       make_reenvio_id: payload.reenvio_id,
     });
+    invalidateOrdersCache();
     order.make_status = 'reenviado';
     order.make_ultimo_reenvio = startedAt;
     toast(`Pedido #${orderNumber(order)} reenviado ao Make.`, 'success');
@@ -151,6 +155,7 @@ async function resendOrder(order, button) {
       make_ultimo_reenvio: startedAt,
       make_ultimo_erro: text(error?.message || error).slice(0, 1000),
     }).catch(() => {});
+    invalidateOrdersCache();
     throw error;
   } finally {
     button.disabled = false;
@@ -161,19 +166,21 @@ async function resendOrder(order, button) {
 function start() {
   installOrderWebhookSetting();
   installLabelObserver();
-  const operations = document.querySelector('[data-view="operations"]');
-  if (!operations || document.getElementById('orderToolsPanel')) return;
+  const view = document.querySelector('[data-view="order-tools"]');
+  if (!view || document.getElementById('orderToolsPanel')) return;
   const panel = document.createElement('section');
   panel.className = 'panel suite-panel';
   panel.id = 'orderToolsPanel';
-  panel.innerHTML = `<div class="panel-header"><div><span class="eyebrow">Contingência</span><h2>Make, Bling e etiquetas</h2><p>Reenvie pedidos com erro e imprima etiquetas de separação 100 × 150 mm.</p></div><button class="button secondary" type="button" data-order-tools-reload>Atualizar</button></div><div class="suite-toolbar"><div class="search-field"><span>⌕</span><input type="search" placeholder="Pedido, cliente, telefone ou erro" data-order-tools-search></div><select data-order-tools-filter><option value="problem">Com erro ou pendentes</option><option value="all">Todos</option><option value="sent">Enviados</option></select></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Pedido</th><th>Cliente</th><th>Make/Bling</th><th>Atualização</th><th></th></tr></thead><tbody data-order-tools-rows></tbody></table></div>`;
-  operations.appendChild(panel);
+  panel.innerHTML = `<div class="panel-header"><div><span class="eyebrow">Contingência isolada</span><h2>Make, Bling e etiquetas</h2><p>Reenvie pedidos com erro e imprima etiquetas 100 × 150 mm sem carregar a tela principal de pedidos.</p></div><div class="suite-actions"><span class="badge info" data-order-tools-status>Preparando…</span><button class="button secondary" type="button" data-order-tools-reload>Atualizar</button></div></div><div class="suite-toolbar"><div class="search-field"><span>⌕</span><input type="search" placeholder="Pedido, cliente, telefone ou erro" autocomplete="off" data-order-tools-search></div><select data-order-tools-filter><option value="problem">Com erro ou pendentes</option><option value="all">Todos os recentes</option><option value="sent">Enviados</option></select></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Pedido</th><th>Cliente</th><th>Make/Bling</th><th>Atualização</th><th></th></tr></thead><tbody data-order-tools-rows><tr><td colspan="5">Preparando lista…</td></tr></tbody></table></div>`;
+  view.appendChild(panel);
   let orders = [];
+  let searchTimer = null;
+  let loading = false;
 
   const render = () => {
     const query = normalizeSearch(panel.querySelector('[data-order-tools-search]').value);
     const filter = panel.querySelector('[data-order-tools-filter]').value;
-    const visible = orders.map((order, index) => ({ order, index })).filter(({ order }) => {
+    const visible = orders.filter(order => {
       const status = normalizeSearch(order.make_status || order.bling_status || order.status_make || 'pendente');
       const problem = !status || status.includes('erro') || status.includes('pendent') || status.includes('fila') || status === 'nao_enviado';
       const sent = status.includes('enviado') || status.includes('sucesso') || status.includes('criado');
@@ -181,34 +188,61 @@ function start() {
       const client = customer(order);
       const matchesQuery = !query || normalizeSearch([orderNumber(order), client.nome, client.telefone, order.make_ultimo_erro, order.bling_erro].join(' ')).includes(query);
       return matchesFilter && matchesQuery;
-    }).slice(0, 200);
-    panel.querySelector('[data-order-tools-rows]').innerHTML = visible.length ? visible.map(({ order, index }) => {
+    }).slice(0, 80);
+    panel.querySelector('[data-order-tools-rows]').innerHTML = visible.length ? visible.map(order => {
       const client = customer(order);
       const status = text(order.make_status || order.bling_status || order.status_make || 'Pendente');
       const failed = normalizeSearch(status).includes('erro') || normalizeSearch(status).includes('pendent');
-      return `<tr><td><strong>#${escapeHtml(orderNumber(order))}</strong><small>${items(order).length} item(ns)</small></td><td><strong>${escapeHtml(client.nome || order.nome_cliente || 'Cliente')}</strong><small>${escapeHtml(client.telefone || order.telefone || '')}</small></td><td><span class="badge ${failed ? 'warning' : 'success'}">${escapeHtml(status)}</span><small>${escapeHtml(order.make_ultimo_erro || order.bling_erro || '')}</small></td><td>${escapeHtml(order.make_ultimo_reenvio || order.atualizado_em || order.criado_em || '')}</td><td><div class="suite-actions"><button class="row-action" type="button" data-order-resend="${index}">Reenviar Make/Bling</button><button class="row-action" type="button" data-order-label="${index}">Etiqueta</button></div></td></tr>`;
+      return `<tr><td><strong>#${escapeHtml(orderNumber(order))}</strong><small>${items(order).length} item(ns)</small></td><td><strong>${escapeHtml(client.nome || order.nome_cliente || 'Cliente')}</strong><small>${escapeHtml(client.telefone || order.telefone || '')}</small></td><td><span class="badge ${failed ? 'warning' : 'success'}">${escapeHtml(status)}</span><small>${escapeHtml(order.make_ultimo_erro || order.bling_erro || '')}</small></td><td>${escapeHtml(order.make_ultimo_reenvio || order.atualizado_em || order.criado_em || '')}</td><td><div class="suite-actions"><button class="row-action" type="button" data-order-resend="${escapeHtml(order.firebaseKey)}">Reenviar Make/Bling</button><button class="row-action" type="button" data-order-label="${escapeHtml(order.firebaseKey)}">Etiqueta</button></div></td></tr>`;
     }).join('') : '<tr><td colspan="5" class="empty-state">Nenhum pedido corresponde ao filtro.</td></tr>';
   };
 
-  const reload = async () => {
+  const reload = async ({ force = false } = {}) => {
+    if (loading) return;
+    loading = true;
     const rows = panel.querySelector('[data-order-tools-rows]');
-    rows.innerHTML = '<tr><td colspan="5">Carregando…</td></tr>';
-    try { orders = await loadOrders(loadConfig(), 500); render(); }
-    catch (error) { rows.innerHTML = `<tr><td colspan="5">${escapeHtml(error?.message || String(error))}</td></tr>`; }
+    const status = panel.querySelector('[data-order-tools-status]');
+    rows.innerHTML = '<tr><td colspan="5">Carregando somente pedidos recentes…</td></tr>';
+    status.className = 'badge warning';
+    status.textContent = 'Carregando…';
+    try {
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      if (force) invalidateOrdersCache();
+      const result = await loadRecentOrders(loadConfig(), { limit: CONTINGENCY_LIMIT, force });
+      orders = result.orders;
+      status.className = 'badge success';
+      status.textContent = `${orders.length} recentes`;
+      render();
+    } catch (error) {
+      status.className = 'badge danger';
+      status.textContent = 'Falha';
+      rows.innerHTML = `<tr><td colspan="5">${escapeHtml(error?.message || String(error))}</td></tr>`;
+    } finally {
+      loading = false;
+    }
   };
 
-  panel.querySelector('[data-order-tools-reload]').addEventListener('click', reload);
-  panel.querySelector('[data-order-tools-search]').addEventListener('input', render);
+  panel.querySelector('[data-order-tools-reload]').addEventListener('click', () => reload({ force: true }));
+  panel.querySelector('[data-order-tools-search]').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(render, 140);
+  });
   panel.querySelector('[data-order-tools-filter]').addEventListener('change', render);
   panel.querySelector('[data-order-tools-rows]').addEventListener('click', async event => {
     const resend = event.target.closest('[data-order-resend]');
     const label = event.target.closest('[data-order-label]');
+    const key = resend?.dataset.orderResend || label?.dataset.orderLabel;
+    const order = orders.find(row => String(row.firebaseKey) === String(key));
+    if (!order) return;
     try {
-      if (resend) { await resendOrder(orders[Number(resend.dataset.orderResend)], resend); render(); }
-      if (label) printLabel(orders[Number(label.dataset.orderLabel)]);
-    } catch (error) { toast(error?.message || String(error), 'error'); }
+      if (resend) { await resendOrder(order, resend); render(); }
+      if (label) printLabel(order);
+    } catch (error) {
+      toast(error?.message || String(error), 'error');
+    }
   });
   reload();
+  window.dispatchEvent(new CustomEvent('admin-v2-route-ready', { detail: { route: 'order-tools' } }));
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
