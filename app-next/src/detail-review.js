@@ -10,7 +10,7 @@ import {
   basketFixedAdjustment
 } from './basket-pricing.js';
 
-const REVIEW_VERSION = '2026-07-24-detail-v3';
+const REVIEW_VERSION = '2026-07-25-detail-v4';
 let catalogStatePromise;
 let scheduled = false;
 
@@ -19,6 +19,9 @@ function productRoute(product) {
 }
 
 function getCatalogState() {
+  if (window.__DA_CATALOG_STATE__?.isReady) {
+    return Promise.resolve(window.__DA_CATALOG_STATE__);
+  }
   if (!catalogStatePromise) {
     catalogStatePromise = loadCatalog().then(catalog => {
       const products = catalog.products.map(product => applyProductOffer(product));
@@ -260,4 +263,5 @@ if (app) new MutationObserver(scheduleReview).observe(app, { childList: true });
 if (checkoutContent) new MutationObserver(scheduleReview).observe(checkoutContent, { childList: true });
 window.addEventListener('hashchange', scheduleReview);
 window.addEventListener('DOMContentLoaded', scheduleReview);
+window.addEventListener('da:catalog-ready', scheduleReview);
 scheduleReview();
