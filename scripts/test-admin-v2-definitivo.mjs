@@ -66,7 +66,10 @@ const required = [
   'producao-v2/js/stock-bootstrap.js',
   'producao-v2/js/product-lifecycle-bootstrap.js',
   'producao-v2/js/product-editor-enhancements.js',
-  'producao-v2/js/admin-suite-bootstrap.js',
+  'producao-v2/js/orders-bootstrap.js',
+  'producao-v2/js/coupons-bootstrap.js',
+  'producao-v2/js/quick-purchase-bootstrap.js',
+  'producao-v2/js/backup-bootstrap.js',
   'producao-v2/js/order-tools-bootstrap.js',
   'producao-v2/js/nfe-bootstrap.js',
   'producao-v2/js/quick-read-bootstrap.js',
@@ -90,6 +93,7 @@ for (const removed of [
   'producao-v2/js/professional-shell.js',
   'producao-v2/js/visual-stability.js',
   'producao-v2/assets/boot.css',
+  'producao-v2/js/admin-suite-bootstrap.js',
 ]) {
   if (existsSync(path.join(ROOT, removed))) fail(`Arquivo legado ainda presente: ${removed}`);
 }
@@ -152,8 +156,8 @@ if (!app.includes('requestAnimationFrame(renderDashboard)')) fail('O dashboard n
 const stockBootstrap = read('producao-v2/js/stock-bootstrap.js');
 for (const requiredText of [
   "route === 'quick-read'", "route === 'nfe'", "route === 'orders'", "route === 'baskets' || route === 'kits'",
-  "route === 'offers'", "route === 'coupons' || route === 'quick-purchase'", "['categories', 'brands', 'suppliers', 'tags']",
-  "route === 'integrations'", "route === 'maintenance'", 'placeRouteContent', 'importOnce', 'admin-v2-route-ready',
+  "route === 'offers'", "route === 'coupons'", "route === 'quick-purchase'", "['categories', 'brands', 'suppliers', 'tags']",
+  "route === 'integrations'", "route === 'maintenance'", 'orders-bootstrap.js', 'coupons-bootstrap.js', 'quick-purchase-bootstrap.js', 'backup-bootstrap.js', 'placeRouteContent', 'importOnce', 'admin-v2-route-ready',
 ]) {
   if (!stockBootstrap.includes(requiredText)) fail(`Carregamento sob demanda incompleto: ${requiredText}`);
 }
