@@ -6,7 +6,8 @@ const ROUTES = Object.freeze({
   stock: ['Estoque e validade', 'Estoque baixo, vencimentos, lotes e localização.'],
   'quick-read': ['Leitura rápida', 'Consulta por leitor, EAN, código ou nome.'],
   nfe: ['Entrada de NF-e', 'Leitura, simulação e importação protegida de XML.'],
-  orders: ['Pedidos', 'Separação, conferência, entrega, etiquetas e reenvios.'],
+  orders: ['Pedidos', 'Lista paginada, separação, conferência e entrega.'],
+  'order-tools': ['Contingência de pedidos', 'Make, Bling, reenvios e etiquetas sem pesar a lista principal.'],
   baskets: ['Cestas básicas', 'Composição, estoque, substituições e publicação.'],
   kits: ['Kits promocionais', 'Preço, desconto, composição, IA e Instagram.'],
   offers: ['Ofertas automáticas', 'Regras por validade, simulação e aplicação segura.'],
@@ -67,6 +68,8 @@ function activate(route, { persist = true, emit = true } = {}) {
 
   const publishButton = document.getElementById('publishButton');
   if (publishButton) publishButton.hidden = !['dashboard', 'products'].includes(route);
+  const reloadButton = document.getElementById('reloadButton');
+  if (reloadButton) reloadButton.hidden = !['dashboard', 'products', 'stock'].includes(route);
   const banner = document.querySelector('.environment-banner');
   if (banner) banner.hidden = route !== 'dashboard';
 
