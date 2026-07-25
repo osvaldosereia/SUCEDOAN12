@@ -64,6 +64,7 @@ const required = [
   'producao-v2/js/app.js',
   'producao-v2/js/navigation-v12.js',
   'producao-v2/js/stock-bootstrap.js',
+  'producao-v2/js/services/orders.js',
   'producao-v2/js/product-lifecycle-bootstrap.js',
   'producao-v2/js/product-editor-enhancements.js',
   'producao-v2/js/orders-bootstrap.js',
@@ -126,25 +127,25 @@ const productionEntry = read('producao/index.html');
 const adminEntry = read('admin/index.html');
 for (const [name, source] of [['/producao', productionEntry], ['/admin', adminEntry]]) {
   if (!source.includes('../producao-v2/')) fail(`${name} não aponta para o Admin oficial.`);
-  if (!source.includes('20260725-admin-v12')) fail(`${name} não aponta para a build v12.`);
+  if (!source.includes('20260725-admin-v12-pedidos1')) fail(`${name} não aponta para a correção de Pedidos.`);
   if (!source.includes('no-store') || !source.includes('window.location.replace')) fail(`${name} precisa redirecionar sem cache.`);
 }
 
 const adminIndex = read('producao-v2/index.html');
-if (!adminIndex.includes('20260725-admin-v12')) fail('O HTML oficial não está na build v12.');
+if (!adminIndex.includes('20260725-admin-v12-pedidos1')) fail('O HTML oficial não está na build corrigida de Pedidos.');
 for (const entry of ['js/app.js', 'js/navigation-v12.js', 'js/stock-bootstrap.js', 'assets/navigation.css']) {
   if (!adminIndex.includes(entry)) fail(`Entrada do Admin ausente: ${entry}`);
 }
 if (adminIndex.includes('<script type="module" src="./js/nfe-bootstrap.js')) fail('A NF-e ainda carrega durante a abertura inicial.');
 if (adminIndex.includes('professional-route-loader') || adminIndex.includes('professional-shell')) fail('O HTML ainda referencia o shell profissional antigo.');
 if (!adminIndex.includes('makeOrderWebhookSetting')) fail('O campo do webhook de pedidos não está no HTML oficial.');
-for (const route of ['dashboard','products','stock','quick-read','nfe','orders','baskets','kits','offers','coupons','quick-purchase','categories','brands','suppliers','tags','integrations','maintenance']) {
+for (const route of ['dashboard','products','stock','quick-read','nfe','orders','order-tools','baskets','kits','offers','coupons','quick-purchase','categories','brands','suppliers','tags','integrations','maintenance']) {
   if (!adminIndex.includes(`data-route="${route}"`)) fail(`A barra lateral não contém a função ${route}.`);
   if (!adminIndex.includes(`data-view="${route}"`)) fail(`A tela dedicada não existe para ${route}.`);
 }
 
 const navigation = read('producao-v2/js/navigation-v12.js');
-for (const feature of ['ROUTE_STORAGE_KEY', 'aria-current', 'admin-v2-route', 'adminV2Navigate', 'hashchange']) {
+for (const feature of ['ROUTE_STORAGE_KEY', 'aria-current', 'admin-v2-route', 'adminV2Navigate', 'hashchange', "'order-tools'"]) {
   if (!navigation.includes(feature)) fail(`Navegação v12 incompleta: ${feature}`);
 }
 
@@ -155,14 +156,31 @@ if (!app.includes('requestAnimationFrame(renderDashboard)')) fail('O dashboard n
 
 const stockBootstrap = read('producao-v2/js/stock-bootstrap.js');
 for (const requiredText of [
-  "route === 'quick-read'", "route === 'nfe'", "route === 'orders'", "route === 'baskets' || route === 'kits'",
+  "route === 'quick-read'", "route === 'nfe'", "route === 'orders'", "route === 'order-tools'", "route === 'baskets' || route === 'kits'",
   "route === 'offers'", "route === 'coupons'", "route === 'quick-purchase'", "['categories', 'brands', 'suppliers', 'tags']",
-  "route === 'integrations'", "route === 'maintenance'", 'orders-bootstrap.js', 'coupons-bootstrap.js', 'quick-purchase-bootstrap.js', 'backup-bootstrap.js', 'placeRouteContent', 'importOnce', 'admin-v2-route-ready',
+  "route === 'integrations'", "route === 'maintenance'", 'orders-bootstrap.js', 'order-tools-bootstrap.js', 'coupons-bootstrap.js', 'quick-purchase-bootstrap.js', 'backup-bootstrap.js', 'placeRouteContent', 'importOnce', 'admin-v2-route-ready',
 ]) {
   if (!stockBootstrap.includes(requiredText)) fail(`Carregamento sob demanda incompleto: ${requiredText}`);
 }
+if (!stockBootstrap.includes("if (route === 'orders') task = importOnce('orders', ['./orders-bootstrap.js']);")) fail('Pedidos ainda carrega a contingência junto.');
 if (/^import ['"].*nfe-bootstrap/m.test(stockBootstrap)) fail('A NF-e ainda possui import estático no bootstrap principal.');
 if (/^import ['"].*product-lifecycle-bootstrap/m.test(stockBootstrap)) fail('O ciclo de produto ainda possui import estático no bootstrap principal.');
+
+const ordersService = read('producao-v2/js/services/orders.js');
+for (const requiredText of ['limitToLast', 'orderBy', 'loadRecentOrders', 'loadOlderOrders', 'CACHE_MS']) {
+  if (!ordersService.includes(requiredText)) fail(`Consulta leve de pedidos incompleta: ${requiredText}`);
+}
+if (ordersService.includes("/pedidos.json?_=")) fail('O serviço de pedidos ainda consulta o nó inteiro sem limite.');
+
+const ordersBootstrap = read('producao-v2/js/orders-bootstrap.js');
+for (const requiredText of ['const PAGE_SIZE = 30', 'loadRecentOrders', 'loadOlderOrders', 'Carregar mais antigos', 'slice(start, start + PAGE_SIZE)']) {
+  if (!ordersBootstrap.includes(requiredText)) fail(`Paginação de Pedidos incompleta: ${requiredText}`);
+}
+if (ordersBootstrap.includes('loadOrders(loadConfig(), 300)')) fail('A aba Pedidos ainda usa a leitura completa antiga.');
+
+const orderTools = read('producao-v2/js/order-tools-bootstrap.js');
+if (!orderTools.includes('[data-view="order-tools"]')) fail('A contingência não possui tela independente.');
+if (orderTools.includes('loadOrders(loadConfig(), 500)')) fail('A contingência ainda usa a leitura completa antiga.');
 
 const firebaseService = read('producao-v2/js/services/firebase.js');
 if (!firebaseService.includes('fetchAdminProducts') || !firebaseService.includes('adminCatalogUrl')) fail('O Admin não usa o índice administrativo leve.');
@@ -181,9 +199,9 @@ for (const endpoint of ['/producao/', '/producao-v2/', '/site/produtos-home.json
 }
 
 if (failures.length) {
-  console.error(`\nAdmin V2 v12: ${failures.length} falha(s).`);
+  console.error(`\nAdmin V2 Pedidos: ${failures.length} falha(s).`);
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log(`Admin V2 v12 validado: ${checked.length} arquivos JavaScript sem erro de sintaxe, imports resolvidos e navegação por função confirmada.`);
+  console.log(`Admin V2 Pedidos validado: ${checked.length} arquivos JavaScript sem erro de sintaxe, consulta limitada e paginação confirmadas.`);
 }
