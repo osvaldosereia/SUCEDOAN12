@@ -1,12 +1,14 @@
 {
-  "version": "catalog-1784984203808",
-  "updatedAt": "2026-07-25T12:56:43.808Z",
+  "version": "catalog-1784984424017",
+  "updatedAt": "2026-07-25T13:00:24.017Z",
   "products": "site/produtos-home.json",
+  "adminProducts": "site/produtos-admin.json",
   "changed": [
     "products",
-    "offers"
+    "admin-products"
   ],
-  "productCount": 1524,
-  "source": "automatic-offers",
-  "instructions": "Catálogo atualizado após o processamento automático de ofertas."
+  "productCount": 1411,
+  "adminProductCount": 1524,
+  "source": "firebase-official-sync",
+  "instructions": "Catálogos público e administrativo atualizados automaticamente a partir do Firebase."
 }
