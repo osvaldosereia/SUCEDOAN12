@@ -1,42 +1,42 @@
 {
-  "checkedAt": "2026-07-25T15:28:56.918Z",
+  "checkedAt": "2026-07-25T15:33:21.317Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": true,
   "checks": [
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784993336918"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784993601317"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784993337783"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784993601964"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784993337859"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784993602072"
     },
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1524 produto(s)"
+      "detail": "1413 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1524 produto(s) administrativos · 1524 público(s) · campos OK"
+      "detail": "1524 produto(s) administrativos · 1413 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 303 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 238 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1784992845753 · público 1524 · admin 1524"
+      "detail": "catalog-1784993492349 · público 1413 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -61,16 +61,16 @@
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.2h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [],
   "warnings": [],
   "workflow": {
-    "event": "push",
-    "runId": "30163648723",
+    "event": "schedule",
+    "runId": "30163822586",
     "attempt": "1",
-    "sourceSha": "723142849cb4cacd92c5b5bf4691ec950901e617",
-    "publishedAt": "2026-07-25T15:28:59.223Z"
+    "sourceSha": "df222daebf3e5c87f527146bc42d60881f8a62d6",
+    "publishedAt": "2026-07-25T15:33:23.937Z"
   }
 }
