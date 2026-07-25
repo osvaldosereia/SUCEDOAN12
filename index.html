@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="da-build-version" content="2026-07-24-modular-production-v6">
+  <meta name="da-build-version" content="2026-07-24-modular-production-v7">
   <meta name="description" content="Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#ffffff">
@@ -22,8 +22,8 @@
   <link rel="terms-of-service" href="https://www.donaantonia.com.br/termos-de-uso.html">
   <link rel="stylesheet" href="app-next/styles/app.css?v=20260724-3">
   <link rel="stylesheet" href="app-next/styles/visual-parity.css?v=20260724-3">
-  <link rel="stylesheet" href="app-next/styles/home-parity.css?v=20260724-6">
-  <link rel="stylesheet" href="app-next/styles/live-polish.css?v=20260724-6">
+  <link rel="stylesheet" href="app-next/styles/home-parity.css?v=20260724-7">
+  <link rel="stylesheet" href="app-next/styles/live-polish.css?v=20260724-7">
   <link rel="preload" as="style" href="app-next/styles/detail-review.css?v=20260724-3" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="preload" as="style" href="app-next/styles/checkout-flow.css?v=20260724-3" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="preload" as="style" href="app-next/styles/bundle-confirmation.css?v=20260724-3" onload="this.onload=null;this.rel='stylesheet'">
@@ -38,13 +38,26 @@
   <link rel="modulepreload" href="app-next/src/core.js?v=20260724-3">
   <link rel="modulepreload" href="app-next/src/catalog.js?v=20260724-3">
   <link rel="modulepreload" href="app-next/src/commerce.js?v=20260724-3">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"OnlineStore","name":"Dona Antônia","url":"https://www.donaantonia.com.br/","telephone":"+55 65 99815-0975","areaServed":["Cuiabá - MT","Várzea Grande - MT"]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"GroceryStore","name":"Super Cestas Básicas Dona Antônia","url":"https://www.donaantonia.com.br/","logo":"https://www.donaantonia.com.br/img/logoantonia5.png","telephone":"+5565998150975","email":"atendimento@donaantonia.com.br","taxID":"51.385.335/0001-06","address":{"@type":"PostalAddress","streetAddress":"R. Trinta, 105 - Jardim Nossa Sra. Aparecida","addressLocality":"Cuiabá","addressRegion":"MT","postalCode":"78090-660","addressCountry":"BR"},"areaServed":["Cuiabá","Várzea Grande"]}</script>
   <script>
   (function(){
     'use strict';
     window.__DA_PRODUCTION__ = true;
 
-    var migrationKey = 'da_v6_cache_migrated_20260724';
+    var params = new URLSearchParams(location.search);
+    if (!location.hash && params.toString()) {
+      var route = '';
+      var sectionRoutes = { ofertas: '#/ofertas', cestas: '#/cestas', kits: '#/kits', categorias: '#/categorias', informacoes: '#/informacoes' };
+      if (params.get('p')) route = '#/produto/' + encodeURIComponent(params.get('p'));
+      else if (params.get('categoria')) route = '#/categoria/' + encodeURIComponent(params.get('categoria'));
+      else if (params.get('subcategoria')) route = '#/subcategoria/' + encodeURIComponent(params.get('subcategoria'));
+      else if (params.get('marca')) route = '#/marca/' + encodeURIComponent(params.get('marca'));
+      else if (params.get('busca')) route = '#/busca/' + encodeURIComponent(params.get('busca'));
+      else if (params.get('secao')) route = sectionRoutes[params.get('secao')] || '';
+      if (route) history.replaceState(null, '', location.pathname + route);
+    }
+
+    var migrationKey = 'da_v7_cache_migrated_20260724';
     try {
       if (!localStorage.getItem(migrationKey)) {
         if ('serviceWorker' in navigator) {
@@ -161,7 +174,7 @@
   </aside>
 
   <script type="module" src="app-next/src/image-performance.js?v=20260724-4"></script>
-  <script type="module" src="app-next/src/visual-parity.js?v=20260724-6"></script>
+  <script type="module" src="app-next/src/visual-parity.js?v=20260724-7"></script>
   <script type="module" src="app-next/src/main.js?v=20260724-3"></script>
   <script type="module">
     let detailsPromise;
