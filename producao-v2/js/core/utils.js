@@ -48,7 +48,11 @@ export function productName(product) {
 }
 
 export function productImage(product) {
-  return text(product?.url_imagem || product?.imagem_url || product?.imagem || product?.image || product?.foto || '');
+  const source = text(product?.url_imagem || product?.imagem_url || product?.imagem || product?.image || product?.foto || '');
+  if (!source) return '';
+  if (/^site\//i.test(source)) return `/${source.replace(/^\/+/, '')}`;
+  if (/^img\//i.test(source)) return `/site/${source.replace(/^\/+/, '')}`;
+  return source;
 }
 
 export function isActive(product) {
