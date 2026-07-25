@@ -1,6 +1,8 @@
+import { execFileSync } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';
 
 const BASE_URL = String(process.env.ADMIN_BASE_URL || 'https://donaantonia.com.br').replace(/\/+$/, '');
+const BUILD = '20260725-admin-v12-fix-abas2';
 const OFFER_MAX_AGE_HOURS = Math.max(2, Number(process.env.OFFER_MAX_AGE_HOURS || 3));
 const ATTEMPTS = Math.max(1, Number(process.env.CHECK_ATTEMPTS || 4));
 const RETRY_DELAY_MS = Math.max(1000, Number(process.env.CHECK_RETRY_DELAY_MS || 5000));
@@ -42,7 +44,7 @@ async function fetchResource(pathname, { json = false } = {}) {
       const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}_health=${Date.now()}`, {
         cache: 'no-store',
         redirect: 'follow',
-        headers: { Accept: json ? 'application/json' : 'text/html,application/xhtml+xml' },
+        headers: { Accept: json ? 'application/json' : 'text/html,application/xhtml+xml,text/plain,*/*' },
         signal: controller.signal,
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -67,11 +69,42 @@ function parseDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function checkStructuralAdmin() {
+  try {
+    const output = execFileSync(process.execPath, ['scripts/test-admin-v2-definitivo.mjs'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    const detail = String(output || '').trim().split('\n').filter(Boolean).at(-1) || 'Teste estrutural concluído.';
+    record('Todas as 18 abas passam no teste estrutural', true, detail);
+  } catch (error) {
+    const stdout = String(error?.stdout || '').trim();
+    const stderr = String(error?.stderr || '').trim();
+    record('Todas as 18 abas passam no teste estrutural', false, [stdout, stderr, error?.message].filter(Boolean).join('\n').slice(0, 4000));
+  }
+}
+
 async function checkHtml(pathname, patterns, name) {
   try {
     const { body, finalUrl } = await fetchResource(pathname);
     const missing = patterns.filter(pattern => !body.includes(pattern));
     record(name, missing.length === 0, missing.length ? `Conteúdo ausente: ${missing.join(', ')}` : `OK · ${finalUrl}`);
+  } catch (error) {
+    record(name, false, error.message);
+  }
+}
+
+async function checkSource(pathname, { required = [], forbidden = [] }, name) {
+  try {
+    const { body } = await fetchResource(pathname);
+    const missing = required.filter(pattern => !body.includes(pattern));
+    const foundForbidden = forbidden.filter(pattern => body.includes(pattern));
+    const ok = missing.length === 0 && foundForbidden.length === 0;
+    const detail = ok
+      ? `OK · ${pathname}`
+      : `${missing.length ? `ausente: ${missing.join(', ')}` : ''}${missing.length && foundForbidden.length ? ' · ' : ''}${foundForbidden.length ? `proibido: ${foundForbidden.join(', ')}` : ''}`;
+    record(name, ok, detail);
   } catch (error) {
     record(name, false, error.message);
   }
@@ -85,6 +118,30 @@ async function checkJson(pathname, name, validator) {
   } catch (error) {
     record(name, false, error.message);
   }
+}
+
+async function checkRouteModulesPublished() {
+  const modules = [
+    'catalog-auto-sync.js', 'product-lifecycle-bootstrap.js', 'quick-read-bootstrap.js',
+    'nfe-bootstrap.js', 'orders-bootstrap.js', 'order-tools-bootstrap.js',
+    'collections-bootstrap.js', 'offers-bootstrap.js', 'coupons-bootstrap.js',
+    'quick-purchase-bootstrap.js', 'registries-bootstrap.js', 'diagnostics-bootstrap.js',
+    'backup-bootstrap.js',
+  ];
+  const results = await Promise.all(modules.map(async moduleFile => {
+    try {
+      const { body } = await fetchResource(`/producao-v2/js/${moduleFile}`);
+      return { moduleFile, ok: body.length > 20, detail: body.length > 20 ? 'OK' : 'vazio' };
+    } catch (error) {
+      return { moduleFile, ok: false, detail: error.message };
+    }
+  }));
+  const failed = results.filter(result => !result.ok);
+  record(
+    'Módulos sob demanda das 18 abas estão publicados',
+    failed.length === 0,
+    failed.length ? failed.map(result => `${result.moduleFile}: ${result.detail}`).join(' · ') : `${results.length} módulos acessíveis`,
+  );
 }
 
 async function checkAdminRuntime() {
@@ -131,9 +188,22 @@ async function checkOrdersRuntime() {
   }
 }
 
-await checkHtml('/producao/', ['producao-v2', '20260725-admin-v12-pedidos1'], 'Entrada /producao aponta para o Admin oficial');
-await checkHtml('/admin/', ['producao-v2', '20260725-admin-v12-pedidos1'], 'Atalho /admin aponta para o Admin oficial');
-await checkHtml('/producao-v2/', ['Admin oficial', './js/app.js', './js/stock-bootstrap.js', 'data-route="order-tools"'], 'Admin oficial carregado');
+checkStructuralAdmin();
+
+await checkHtml('/producao/', ['producao-v2', BUILD], 'Entrada /producao aponta para o Admin oficial');
+await checkHtml('/admin/', ['producao-v2', BUILD], 'Atalho /admin aponta para o Admin oficial');
+await checkHtml('/producao-v2/', ['Admin oficial', BUILD, './js/app.js', './js/stock-bootstrap.js', 'data-route="order-tools"'], 'Admin oficial carregado');
+await checkRouteModulesPublished();
+await checkSource('/producao-v2/js/modules/stock.js', {
+  required: ['refresh()', 'this.render();', 'loading="lazy"'],
+}, 'Módulo de Estoque publicado com atualização correta');
+await checkSource('/producao-v2/js/stock-bootstrap.js', {
+  required: [BUILD, 'module?.refresh()'],
+}, 'Bootstrap de Estoque publicado na build correta');
+await checkSource('/producao-v2/js/order-tools-bootstrap.js', {
+  required: ['const CONTINGENCY_LIMIT = 60', 'const VISIBLE_LIMIT = 30', 'loadRecentOrders'],
+  forbidden: ['MutationObserver', 'loadOrders('],
+}, 'Contingência publicada sem ciclo de renderização');
 
 await checkJson('/site/produtos-home.json', 'Catálogo público possui produtos', value => {
   publicProductCount = objectCount(value);
