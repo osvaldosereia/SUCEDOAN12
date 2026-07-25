@@ -1,9 +1,10 @@
-import './catalog-auto-sync.js?admin_build=20260725-admin-v10';
-import './product-lifecycle-bootstrap.js?admin_build=20260725-admin-v10';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
 import { loadProducts } from './services/firebase.js';
+
+const BUILD = '20260725-admin-v11';
+let productEnhancementsPromise = null;
 
 function loadConfig() {
   try {
@@ -23,7 +24,7 @@ function installCss() {
   if (document.querySelector('link[data-admin-v2-stock]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './assets/stock.css?admin_build=20260725-admin-v10';
+  link.href = `./assets/stock.css?admin_build=${BUILD}`;
   link.dataset.adminV2Stock = '1';
   document.head.appendChild(link);
 }
@@ -80,26 +81,42 @@ function toast(message, type = '') {
   setTimeout(() => node.remove(), type === 'error' ? 6500 : 3500);
 }
 
+function ensureProductEnhancements() {
+  if (!productEnhancementsPromise) {
+    productEnhancementsPromise = Promise.all([
+      import(`./catalog-auto-sync.js?admin_build=${BUILD}`),
+      import(`./product-lifecycle-bootstrap.js?admin_build=${BUILD}`),
+    ]).catch(error => {
+      productEnhancementsPromise = null;
+      throw error;
+    });
+  }
+  return productEnhancementsPromise;
+}
+
 const routeImports = new Map();
 
 function loadRouteModules(route) {
   if (routeImports.has(route)) return routeImports.get(route);
   let task = Promise.resolve();
-  if (route === 'operations') {
+  if (route === 'products') {
+    task = ensureProductEnhancements();
+  } else if (route === 'operations') {
     task = Promise.all([
-      import('./quick-read-bootstrap.js?admin_build=20260725-admin-v10'),
-      import('./order-tools-bootstrap.js?admin_build=20260725-admin-v10'),
+      import(`./nfe-bootstrap.js?admin_build=${BUILD}`),
+      import(`./quick-read-bootstrap.js?admin_build=${BUILD}`),
+      import(`./order-tools-bootstrap.js?admin_build=${BUILD}`),
     ]);
   } else if (route === 'promotions') {
     task = Promise.all([
-      import('./collections-bootstrap.js?admin_build=20260725-admin-v10'),
-      import('./offers-bootstrap.js?admin_build=20260725-admin-v10'),
-      import('./admin-suite-bootstrap.js?admin_build=20260725-admin-v10'),
+      import(`./collections-bootstrap.js?admin_build=${BUILD}`),
+      import(`./offers-bootstrap.js?admin_build=${BUILD}`),
+      import(`./admin-suite-bootstrap.js?admin_build=${BUILD}`),
     ]);
   } else if (route === 'registries') {
-    task = import('./registries-bootstrap.js?admin_build=20260725-admin-v10');
+    task = import(`./registries-bootstrap.js?admin_build=${BUILD}`);
   } else if (route === 'settings') {
-    task = import('./diagnostics-bootstrap.js?admin_build=20260725-admin-v10');
+    task = import(`./diagnostics-bootstrap.js?admin_build=${BUILD}`);
   }
   const guarded = Promise.resolve(task).catch(error => {
     routeImports.delete(route);
@@ -158,6 +175,7 @@ function start() {
     if (route === 'operations' && !loaded) reload().catch(error => toast(error?.message || String(error), 'error'));
   };
 
+  window.addEventListener('admin-v2-route', event => activateRoute(event.detail?.route || ''));
   document.getElementById('mainNav')?.addEventListener('click', event => {
     const button = event.target.closest('[data-route]');
     if (button) activateRoute(button.dataset.route);
