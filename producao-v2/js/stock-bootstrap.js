@@ -3,7 +3,7 @@ import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
 import { loadProducts } from './services/firebase.js';
 
-const BUILD = '20260725-admin-v12-pedidos1';
+const BUILD = '20260725-admin-v12-fix-abas2';
 const imports = new Map();
 
 function loadConfig() {
