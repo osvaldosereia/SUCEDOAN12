@@ -14,6 +14,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   githubRepo: 'SUCEDOAN12',
   githubBranch: 'main',
   productsHomePath: 'site/produtos-home.json',
+  adminProductsPath: 'site/produtos-admin.json',
   catalogVersionPath: 'catalog-version.json',
   basketsPath: 'site/produtos-cesta-basica.json',
   kitsPath: 'site/kits.json',
@@ -40,7 +41,7 @@ export const STORAGE_KEYS = Object.freeze({
 });
 
 const LEGACY_SETTINGS_KEY = 'da_admin_settings_v4';
-const PRODUCTION_ACTIVATION_KEY = 'da_admin_v2_producao_oficial_20260724_v2';
+const PRODUCTION_ACTIVATION_KEY = 'da_admin_v2_producao_oficial_20260725_v3';
 
 function migrateLegacySettings() {
   try {
@@ -48,8 +49,6 @@ function migrateLegacySettings() {
     const legacy = JSON.parse(localStorage.getItem(LEGACY_SETTINGS_KEY) || '{}');
     if (!legacy || typeof legacy !== 'object' || !Object.keys(legacy).length) return;
     const mapping = {
-      firebaseUrl: legacy.firebaseUrl,
-      productsNode: legacy.produtosNode,
       githubToken: legacy.githubToken,
       githubOwner: legacy.githubOwner,
       githubRepo: legacy.githubRepo,
@@ -79,11 +78,15 @@ function migrateLegacySettings() {
 
 function activateOfficialProductionMode() {
   try {
-    if (localStorage.getItem(PRODUCTION_ACTIVATION_KEY) === '1') return;
     const current = JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}');
     const activated = {
       ...DEFAULT_CONFIG,
       ...current,
+      firebaseUrl: DEFAULT_CONFIG.firebaseUrl,
+      productsNode: DEFAULT_CONFIG.productsNode,
+      productsHomePath: DEFAULT_CONFIG.productsHomePath,
+      adminProductsPath: DEFAULT_CONFIG.adminProductsPath,
+      catalogVersionPath: DEFAULT_CONFIG.catalogVersionPath,
       writeMode: true,
       nfeImportMode: true,
       stockWriteMode: true,
@@ -91,6 +94,8 @@ function activateOfficialProductionMode() {
       offerWriteMode: true,
       campaignOfferWriteMode: true,
       registryWriteMode: true,
+      githubOwner: DEFAULT_CONFIG.githubOwner,
+      githubRepo: DEFAULT_CONFIG.githubRepo,
       githubBranch: 'main',
     };
     localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(activated));
@@ -106,9 +111,9 @@ function updateOfficialProductionLabels() {
     const brand = document.querySelector('.brand span');
     if (brand) brand.textContent = 'Admin oficial';
     const banner = document.querySelector('.environment-banner');
-    if (banner) banner.innerHTML = '<strong>Sistema oficial em uso.</strong> Produtos, estoque, NF-e, cestas, kits, ofertas, cupons, Compra Rápida e pedidos usam as fontes oficiais.';
+    if (banner) banner.innerHTML = '<strong>Sistema oficial em uso.</strong> A lista abre pelo índice administrativo leve e cada cadastro completo é consultado diretamente no Firebase ao ser aberto.';
     const sourceHelp = document.querySelector('[data-view="settings"] .settings-grid .panel .panel-header p');
-    if (sourceHelp) sourceHelp.textContent = 'Configurações do sistema oficial.';
+    if (sourceHelp) sourceHelp.textContent = 'Fonte oficial fixa do Firebase e arquivos operacionais.';
     const writeHelp = document.querySelector('#writeModeSetting')?.closest('.switch-row')?.querySelector('small');
     if (writeHelp) writeHelp.textContent = 'Mantenha ativado para cadastrar, editar e operar o sistema.';
   };
