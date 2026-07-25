@@ -1,8 +1,12 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { escapeHtml, money, normalizeSearch, number, text } from './core/utils.js';
-import { loadOrders, patchOrder } from './services/firebase.js';
+import { patchOrder } from './services/firebase.js';
+import { invalidateOrdersCache, loadOlderOrders, loadRecentOrders } from './services/orders.js';
 
 const AUDIT_KEY = 'da_admin_v2_audit_log';
+const INITIAL_LIMIT = 120;
+const HISTORY_LIMIT = 100;
+const PAGE_SIZE = 30;
 
 function loadConfig() {
   try { return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}') }; }
@@ -32,8 +36,8 @@ function installStyle() {
   const style = document.createElement('style');
   style.id = 'ordersAdminStyle';
   style.textContent = `
-    .suite-panel{margin-bottom:16px}.suite-actions{display:flex;gap:6px;flex-wrap:wrap}.suite-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px}.suite-toolbar .search-field{min-width:240px;flex:1}.suite-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:1300}.suite-modal{position:fixed;z-index:1301;inset:5vh max(18px,calc((100vw - 900px)/2));background:#fff;border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 28px 90px rgba(0,0,0,.3)}.suite-modal header,.suite-modal footer{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 22px;border-bottom:1px solid #e4e5e1}.suite-modal footer{border-top:1px solid #e4e5e1;border-bottom:0;justify-content:flex-end}.suite-modal-body{padding:20px 22px;overflow:auto}.order-items{display:grid;gap:8px}.order-item{display:grid;grid-template-columns:1fr auto;gap:10px;border-bottom:1px solid #eee;padding:8px 0}.order-status-actions{display:flex;gap:8px;flex-wrap:wrap}.suite-summary{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}.suite-summary span{padding:8px 10px;background:#f1f2ef;border-radius:10px}.suite-danger{color:#9b1c1c}
-    @media(max-width:800px){.suite-modal{inset:0;border-radius:0}}
+    .orders-panel{margin-bottom:16px}.orders-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}.orders-toolbar .search-field{min-width:240px;flex:1}.orders-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:13px 16px;border-top:1px solid var(--line)}.orders-footer-info{color:var(--muted);font-size:11px}.orders-page-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.orders-page-actions strong{font-size:11px}.orders-loading{opacity:.68;pointer-events:none}.suite-actions{display:flex;gap:6px;flex-wrap:wrap}.suite-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:1300}.suite-modal{position:fixed;z-index:1301;inset:5vh max(18px,calc((100vw - 900px)/2));background:#fff;border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 28px 90px rgba(0,0,0,.3)}.suite-modal header,.suite-modal footer{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 22px;border-bottom:1px solid #e4e5e1}.suite-modal footer{border-top:1px solid #e4e5e1;border-bottom:0;justify-content:flex-end}.suite-modal-body{padding:20px 22px;overflow:auto}.order-items{display:grid;gap:8px}.order-item{display:grid;grid-template-columns:1fr auto;gap:10px;border-bottom:1px solid #eee;padding:8px 0}.order-status-actions{display:flex;gap:8px;flex-wrap:wrap}.suite-summary{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}.suite-summary span{padding:8px 10px;background:#f1f2ef;border-radius:10px}.suite-danger{color:#9b1c1c}
+    @media(max-width:800px){.suite-modal{inset:0;border-radius:0}.orders-toolbar{padding:11px}.orders-toolbar .search-field{min-width:100%}.orders-footer{align-items:stretch}.orders-page-actions{width:100%;justify-content:space-between}}
   `;
   document.head.appendChild(style);
 }
@@ -67,42 +71,115 @@ class OrdersPanel {
   constructor(container) {
     this.container = container;
     this.orders = [];
+    this.page = 1;
+    this.hasMore = false;
+    this.oldestKey = '';
+    this.loading = false;
+    this.searchTimer = null;
     this.renderShell();
     this.reload();
   }
 
   renderShell() {
-    this.container.innerHTML = `<section class="panel suite-panel"><div class="panel-header"><div><span class="eyebrow">Operação</span><h2>Pedidos</h2><p>Acompanhe separação, conferência, entrega e cancelamento.</p></div><button class="button secondary" type="button" data-orders-reload>Atualizar</button></div><div class="suite-toolbar"><div class="search-field"><span>⌕</span><input type="search" placeholder="Pedido, cliente ou telefone" data-orders-search></div><select data-orders-status><option value="">Todos os status</option><option value="novo">Novos</option><option value="separacao">Em separação</option><option value="conferido">Conferidos</option><option value="entregue">Entregues</option><option value="cancelado">Cancelados</option></select></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Pedido</th><th>Cliente</th><th>Data</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody data-orders-rows></tbody></table></div></section>`;
-    this.container.querySelector('[data-orders-reload]').addEventListener('click', () => this.reload());
-    this.container.querySelector('[data-orders-search]').addEventListener('input', () => this.renderRows());
-    this.container.querySelector('[data-orders-status]').addEventListener('change', () => this.renderRows());
+    this.container.innerHTML = `<section class="panel orders-panel"><div class="panel-header"><div><span class="eyebrow">Operação leve</span><h2>Pedidos</h2><p>Lista paginada dos pedidos recentes. Histórico antigo é carregado somente quando solicitado.</p></div><div class="suite-actions"><span class="badge info" data-orders-load-status>Preparando…</span><button class="button secondary" type="button" data-orders-reload>Atualizar</button></div></div><div class="orders-toolbar"><div class="search-field"><span>⌕</span><input type="search" placeholder="Pedido, cliente ou telefone" autocomplete="off" data-orders-search></div><select data-orders-status><option value="">Todos os status</option><option value="novo">Novos</option><option value="separacao">Em separação</option><option value="conferido">Conferidos</option><option value="entregue">Entregues</option><option value="cancelado">Cancelados</option></select></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Pedido</th><th>Cliente</th><th>Data</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody data-orders-rows><tr><td colspan="6">Preparando lista…</td></tr></tbody></table></div><div class="orders-footer"><div class="orders-footer-info" data-orders-summary></div><div class="orders-page-actions"><button class="button secondary compact" type="button" data-orders-previous>Anterior</button><strong data-orders-page>Página 1</strong><button class="button secondary compact" type="button" data-orders-next>Próxima</button><button class="button secondary compact" type="button" data-orders-more>Carregar mais antigos</button></div></div></section>`;
+    this.container.querySelector('[data-orders-reload]').addEventListener('click', () => this.reload({ force: true }));
+    this.container.querySelector('[data-orders-search]').addEventListener('input', () => {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = setTimeout(() => { this.page = 1; this.renderRows(); }, 140);
+    });
+    this.container.querySelector('[data-orders-status]').addEventListener('change', () => { this.page = 1; this.renderRows(); });
+    this.container.querySelector('[data-orders-previous]').addEventListener('click', () => { this.page = Math.max(1, this.page - 1); this.renderRows(); });
+    this.container.querySelector('[data-orders-next]').addEventListener('click', () => { this.page += 1; this.renderRows(); });
+    this.container.querySelector('[data-orders-more]').addEventListener('click', event => this.loadMore(event.currentTarget));
     this.container.querySelector('[data-orders-rows]').addEventListener('click', event => {
       const button = event.target.closest('[data-order-open]');
-      if (button) this.open(this.orders[Number(button.dataset.orderOpen)]);
+      if (!button) return;
+      const order = this.orders.find(row => String(row.firebaseKey) === String(button.dataset.orderOpen));
+      if (order) this.open(order);
     });
   }
 
-  async reload() {
+  setLoading(active, label = '') {
+    this.loading = active;
+    this.container.querySelector('.orders-panel')?.classList.toggle('orders-loading', active);
+    const status = this.container.querySelector('[data-orders-load-status]');
+    if (status) {
+      status.className = `badge ${active ? 'warning' : 'success'}`;
+      status.textContent = label || (active ? 'Carregando…' : `${this.orders.length} carregados`);
+    }
+  }
+
+  async reload({ force = false } = {}) {
+    if (this.loading) return;
     const rows = this.container.querySelector('[data-orders-rows]');
-    rows.innerHTML = '<tr><td colspan="6">Carregando…</td></tr>';
+    rows.innerHTML = '<tr><td colspan="6">Carregando somente os pedidos mais recentes…</td></tr>';
+    this.setLoading(true, 'Últimos pedidos…');
     try {
-      this.orders = (await loadOrders(loadConfig(), 300)).sort((a, b) => orderDate(b) - orderDate(a));
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      if (force) invalidateOrdersCache();
+      const result = await loadRecentOrders(loadConfig(), { limit: INITIAL_LIMIT, force });
+      this.orders = result.orders;
+      this.hasMore = result.hasMore;
+      this.oldestKey = result.oldestKey;
+      this.page = 1;
+      this.setLoading(false, `${this.orders.length} pedidos recentes`);
       this.renderRows();
     } catch (error) {
+      this.setLoading(false, 'Falha ao carregar');
       rows.innerHTML = `<tr><td colspan="6">${escapeHtml(error?.message || String(error))}</td></tr>`;
     }
   }
 
-  renderRows() {
+  filteredOrders() {
     const query = normalizeSearch(this.container.querySelector('[data-orders-search]').value);
     const status = normalizeSearch(this.container.querySelector('[data-orders-status]').value);
-    const visible = this.orders.map((order, index) => ({ order, index })).filter(({ order }) => {
+    return this.orders.filter(order => {
       const matchesQuery = !query || normalizeSearch([orderNumber(order), orderCustomer(order), orderPhone(order), orderStatus(order)].join(' ')).includes(query);
       const currentStatus = normalizeSearch(orderStatus(order));
       const matchesStatus = !status || currentStatus.includes(status) || (status === 'separacao' && currentStatus.includes('separ'));
       return matchesQuery && matchesStatus;
     });
-    this.container.querySelector('[data-orders-rows]').innerHTML = visible.length ? visible.map(({ order, index }) => `<tr><td><strong>#${escapeHtml(orderNumber(order))}</strong><small>${orderItems(order).length} item(ns)</small></td><td><strong>${escapeHtml(orderCustomer(order))}</strong><small>${escapeHtml(orderPhone(order))}</small></td><td>${escapeHtml(orderDate(order).toLocaleString('pt-BR'))}</td><td>${money(order.total || order.valor_total || 0)}</td><td><span class="badge info">${escapeHtml(orderStatus(order))}</span></td><td><button class="row-action" type="button" data-order-open="${index}">Abrir</button></td></tr>`).join('') : '<tr><td colspan="6" class="empty-state">Nenhum pedido encontrado.</td></tr>';
+  }
+
+  renderRows() {
+    const visible = this.filteredOrders();
+    const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+    this.page = Math.min(Math.max(1, this.page), pageCount);
+    const start = (this.page - 1) * PAGE_SIZE;
+    const pageRows = visible.slice(start, start + PAGE_SIZE);
+    this.container.querySelector('[data-orders-rows]').innerHTML = pageRows.length ? pageRows.map(order => `<tr><td><strong>#${escapeHtml(orderNumber(order))}</strong><small>${orderItems(order).length} item(ns)</small></td><td><strong>${escapeHtml(orderCustomer(order))}</strong><small>${escapeHtml(orderPhone(order))}</small></td><td>${escapeHtml(orderDate(order).toLocaleString('pt-BR'))}</td><td>${money(order.total || order.valor_total || 0)}</td><td><span class="badge info">${escapeHtml(orderStatus(order))}</span></td><td><button class="row-action" type="button" data-order-open="${escapeHtml(order.firebaseKey)}">Abrir</button></td></tr>`).join('') : '<tr><td colspan="6" class="empty-state">Nenhum pedido encontrado.</td></tr>';
+
+    this.container.querySelector('[data-orders-summary]').textContent = visible.length
+      ? `Mostrando ${start + 1}–${Math.min(start + PAGE_SIZE, visible.length)} de ${visible.length} resultado(s) · ${this.orders.length} pedido(s) em memória`
+      : `${this.orders.length} pedido(s) carregado(s)`;
+    this.container.querySelector('[data-orders-page]').textContent = `Página ${this.page} de ${pageCount}`;
+    this.container.querySelector('[data-orders-previous]').disabled = this.page <= 1;
+    this.container.querySelector('[data-orders-next]').disabled = this.page >= pageCount;
+    const more = this.container.querySelector('[data-orders-more]');
+    more.hidden = !this.hasMore;
+    more.disabled = this.loading;
+  }
+
+  async loadMore(button) {
+    if (this.loading || !this.hasMore || !this.oldestKey) return;
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Carregando…';
+    try {
+      const result = await loadOlderOrders(loadConfig(), this.oldestKey, { limit: HISTORY_LIMIT });
+      const merged = new Map(this.orders.map(order => [String(order.firebaseKey), order]));
+      result.orders.forEach(order => merged.set(String(order.firebaseKey), order));
+      this.orders = [...merged.values()].sort((a, b) => orderDate(b) - orderDate(a));
+      this.hasMore = result.hasMore;
+      this.oldestKey = result.oldestKey || this.oldestKey;
+      this.renderRows();
+      toast(`${result.orders.length} pedido(s) antigo(s) adicionados.`, 'success');
+    } catch (error) {
+      toast(error?.message || String(error), 'error');
+    } finally {
+      button.disabled = false;
+      button.textContent = original;
+    }
   }
 
   open(order) {
@@ -125,6 +202,7 @@ class OrdersPanel {
           status_separacao: status === 'separacao' ? 'em_separacao' : status === 'conferido' ? 'conferido' : order.status_separacao,
           status_entrega: status === 'entregue' ? 'entregue' : order.status_entrega,
         });
+        invalidateOrdersCache();
         order.status = status;
         if (status === 'conferido') order.status_separacao = 'conferido';
         if (status === 'entregue') order.status_entrega = 'entregue';
