@@ -3,6 +3,7 @@ import { writeFile } from "node:fs/promises";
 
 const DEFAULT_FIREBASE_DATABASE_URL = "https://cedar-chemist-310801-default-rtdb.firebaseio.com";
 const PRODUCTS_HOME_PATH = process.env.PRODUCTS_HOME_PATH || "site/produtos-home.json";
+const PRODUCTS_ADMIN_PATH = process.env.PRODUCTS_ADMIN_PATH || "site/produtos-admin.json";
 const CATALOG_VERSION_PATH = process.env.CATALOG_VERSION_PATH || "catalog-version.json";
 let firebaseAccessToken;
 
@@ -140,7 +141,7 @@ function compactProduct(key, product = {}) {
     estoque_minimo: integer(product.estoque_minimo),
     multiplo_venda: integer(product.multiplo_venda, 1),
     quantidade_caixa: integer(product.quantidade_caixa),
-    situacao: "A",
+    situacao: isActive(product) ? "A" : "I",
     url_imagem: publicImageValue(product.url_imagem || product.imagem_url || product.imagem || product.image || product.img || product.foto || product.foto_url || product.imagem_path),
     imagens: Array.isArray(product.imagens) ? product.imagens.map(publicImageValue).filter(Boolean) : [],
     descricao: text(product.descricao),
@@ -193,14 +194,26 @@ function compactProduct(key, product = {}) {
   }));
 }
 
+function adminProduct(key, product = {}) {
+  const compact = compactProduct(key, product);
+  delete compact.descricao;
+  delete compact.seo_descricao;
+  delete compact.imagens;
+  return compact;
+}
+
 async function run() {
   const products = await loadFirebaseProducts();
   const entries = Object.entries(products).filter(([, product]) => product && typeof product === "object" && !Array.isArray(product));
   const visibleEntries = entries.filter(([, product]) => isPubliclyAvailable(product));
-  const compact = Object.fromEntries(visibleEntries.map(([key, product]) => [key, compactProduct(key, product)]));
+  const publicCatalog = Object.fromEntries(visibleEntries.map(([key, product]) => [key, compactProduct(key, product)]));
+  const adminCatalog = Object.fromEntries(entries.map(([key, product]) => [key, adminProduct(key, product)]));
 
-  if (Object.keys(compact).length !== visibleEntries.length) {
+  if (Object.keys(publicCatalog).length !== visibleEntries.length) {
     throw new Error("A quantidade de produtos públicos compactados diverge da seleção do Firebase.");
+  }
+  if (Object.keys(adminCatalog).length !== entries.length) {
+    throw new Error("A quantidade de produtos administrativos diverge do Firebase.");
   }
 
   const timestamp = new Date().toISOString();
@@ -208,17 +221,20 @@ async function run() {
     version: `catalog-${Date.now()}`,
     updatedAt: timestamp,
     products: PRODUCTS_HOME_PATH,
-    changed: ["products"],
-    productCount: Object.keys(compact).length,
+    adminProducts: PRODUCTS_ADMIN_PATH,
+    changed: ["products", "admin-products"],
+    productCount: Object.keys(publicCatalog).length,
+    adminProductCount: Object.keys(adminCatalog).length,
     source: "firebase-official-sync",
-    instructions: "Catálogo atualizado automaticamente a partir do Firebase."
+    instructions: "Catálogos público e administrativo atualizados automaticamente a partir do Firebase."
   };
 
   await Promise.all([
-    writeFile(PRODUCTS_HOME_PATH, `${JSON.stringify(compact)}\n`, "utf8"),
+    writeFile(PRODUCTS_HOME_PATH, `${JSON.stringify(publicCatalog)}\n`, "utf8"),
+    writeFile(PRODUCTS_ADMIN_PATH, `${JSON.stringify(adminCatalog)}\n`, "utf8"),
     writeFile(CATALOG_VERSION_PATH, `${JSON.stringify(catalogVersion, null, 2)}\n`, "utf8")
   ]);
-  console.log(`${PRODUCTS_HOME_PATH} e ${CATALOG_VERSION_PATH} sincronizados com ${visibleEntries.length} produtos disponíveis de ${entries.length} produtos do Firebase.`);
+  console.log(`${PRODUCTS_HOME_PATH}, ${PRODUCTS_ADMIN_PATH} e ${CATALOG_VERSION_PATH} sincronizados com ${visibleEntries.length} produtos públicos e ${entries.length} produtos administrativos.`);
 }
 
 run().catch(error => {
