@@ -1,22 +1,47 @@
 {
-  "checkedAt": "2026-07-25T19:20:31.433Z",
+  "checkedAt": "2026-07-25T19:27:14.874Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
     {
+      "name": "Todas as 18 abas passam no teste estrutural",
+      "ok": false,
+      "detail": "Admin V2 v12.2: 1 falha(s).\n1. Import não encontrado em scripts/check-public-site.mjs: ./offer-engine.js\nCommand failed: /opt/hostedtoolcache/node/22.23.1/x64/bin/node scripts/test-admin-v2-definitivo.mjs\n\nAdmin V2 v12.2: 1 falha(s).\n1. Import não encontrado em scripts/check-public-site.mjs: ./offer-engine.js\n"
+    },
+    {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1785007231434"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1785007636916"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1785007231798"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1785007637246"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1785007231833"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1785007637282"
+    },
+    {
+      "name": "Módulos sob demanda das 18 abas estão publicados",
+      "ok": true,
+      "detail": "13 módulos acessíveis"
+    },
+    {
+      "name": "Módulo de Estoque publicado com atualização correta",
+      "ok": true,
+      "detail": "OK · /producao-v2/js/modules/stock.js"
+    },
+    {
+      "name": "Bootstrap de Estoque publicado na build correta",
+      "ok": true,
+      "detail": "OK · /producao-v2/js/stock-bootstrap.js"
+    },
+    {
+      "name": "Contingência publicada sem ciclo de renderização",
+      "ok": true,
+      "detail": "OK · /producao-v2/js/order-tools-bootstrap.js"
     },
     {
       "name": "Catálogo público possui produtos",
@@ -31,17 +56,17 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 116 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 113 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
-      "ok": false,
-      "detail": "20 pedido(s) retornado(s) em 122 ms · limite solicitado 12 · chaves OK"
+      "ok": true,
+      "detail": "12 pedido(s) retornado(s) em 110 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1785005739200 · público 1524 · admin 1524"
+      "detail": "catalog-1785007161378 · público 1524 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -61,27 +86,27 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "908 oferta(s) no histórico"
+      "detail": "934 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.4h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
     {
-      "name": "Pedidos usam consulta limitada no Firebase",
+      "name": "Todas as 18 abas passam no teste estrutural",
       "ok": false,
-      "detail": "20 pedido(s) retornado(s) em 122 ms · limite solicitado 12 · chaves OK"
+      "detail": "Admin V2 v12.2: 1 falha(s).\n1. Import não encontrado em scripts/check-public-site.mjs: ./offer-engine.js\nCommand failed: /opt/hostedtoolcache/node/22.23.1/x64/bin/node scripts/test-admin-v2-definitivo.mjs\n\nAdmin V2 v12.2: 1 falha(s).\n1. Import não encontrado em scripts/check-public-site.mjs: ./offer-engine.js\n"
     }
   ],
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "30171298323",
+    "runId": "30171506773",
     "attempt": "1",
-    "sourceSha": "788c3d381a437ab6c8b50791f51f147cad64cf98",
-    "publishedAt": "2026-07-25T19:20:32.771Z"
+    "sourceSha": "bf98f57983671444de3258be9f5c2b339525850f",
+    "publishedAt": "2026-07-25T19:27:19.284Z"
   }
 }
