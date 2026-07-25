@@ -1,5 +1,5 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
-import { auditCatalog, validateProduct } from './core/catalog.js';
+import { validateProduct } from './core/catalog.js';
 import { Store } from './core/store.js';
 import { isActive, number, productCode, productImage, productName, text } from './core/utils.js';
 import { loadProducts, saveProduct } from './services/firebase.js';
@@ -88,11 +88,56 @@ function setRoute(route) {
   elements.sidebar.classList.remove('open');
   if (!elements.productEditor.classList.contains('open')) elements.mobileOverlay.hidden = true;
   elements.mainContent.focus({ preventScroll: true });
+  window.dispatchEvent(new CustomEvent('admin-v2-route', { detail: { route } }));
   if (route === 'settings') renderDiagnostics();
 }
 
+function quickAudit(products) {
+  const rows = (products || []).map(product => {
+    const errors = [];
+    const warnings = [];
+    const key = text(product.firebaseKey || product.id || product.codigo);
+    const code = text(product.codigo || product.sku || product.id || product.firebaseKey);
+    const name = text(product.nome || product.titulo);
+    const active = isActive(product);
+    if (!key) errors.push('Chave do Firebase ausente');
+    if (!code) errors.push('Código comercial ausente');
+    if (!name || name === 'Produto sem nome') errors.push('Nome ausente');
+    if (!text(product.categoria)) errors.push('Categoria ausente');
+    if (!text(product.embalagem)) errors.push('Embalagem ausente');
+    if (active && number(product.preco) <= 0) errors.push('Preço de venda deve ser maior que zero');
+    if (number(product.estoque) < 0) errors.push('Estoque não pode ser negativo');
+    if (!text(product.gtin || product.ean)) warnings.push('EAN ausente');
+    if (!text(product.ncm)) warnings.push('NCM ausente');
+    if (!productImage(product)) warnings.push('Imagem pública ausente');
+    if (!text(product.subcategoria)) warnings.push('Subcategoria ausente');
+    if (!text(product.marca)) warnings.push('Marca ausente');
+    if (!text(product.fornecedor)) warnings.push('Fornecedor ausente');
+    if (!text(product.descricao || product.description)) warnings.push('Descrição ausente');
+    if (number(product.preco_custo) <= 0) warnings.push('Preço de custo ausente');
+    return { key, name, errors, warnings, product };
+  });
+  return {
+    rows,
+    errors: rows.filter(row => row.errors.length),
+    warnings: rows.filter(row => row.warnings.length),
+    valid: rows.filter(row => !row.errors.length),
+  };
+}
+
+let lastAuditProducts = null;
+let lastAudit = quickAudit([]);
+
 function currentAudit() {
-  return auditCatalog(store.state.products, store.state.config);
+  if (lastAuditProducts !== store.state.products) {
+    lastAuditProducts = store.state.products;
+    lastAudit = quickAudit(store.state.products);
+  }
+  return lastAudit;
+}
+
+function invalidateAudit() {
+  lastAuditProducts = null;
 }
 
 function renderStatus() {
@@ -103,7 +148,7 @@ function renderStatus() {
     elements.sidebarStatusText.textContent = error;
   } else if (loading) {
     elements.sidebarStatusTitle.textContent = 'Atualizando';
-    elements.sidebarStatusText.textContent = 'Carregando dados do Firebase…';
+    elements.sidebarStatusText.textContent = 'Carregando o índice rápido de produtos…';
   } else {
     elements.sidebarStatusTitle.textContent = products.length ? 'Dados carregados' : 'Sem produtos';
     elements.sidebarStatusText.textContent = `${products.length} produtos · gravação ${config.writeMode ? 'ativada' : 'bloqueada'}`;
@@ -156,28 +201,27 @@ function renderDashboard() {
 
   const lastPublication = store.state.lastPublication;
   elements.systemList.innerHTML = [
-    ['Firebase produtos', `${data.products.length} registros confirmados`, store.state.firebaseVerified ? 'success' : 'warning'],
-    ['Gravações da V2', store.state.config.writeMode ? 'Ativadas para teste controlado' : 'Bloqueadas por segurança', store.state.config.writeMode ? 'warning' : 'success'],
+    ['Índice administrativo', `${data.products.length} registros carregados`, store.state.firebaseVerified ? 'success' : 'warning'],
+    ['Gravações da V2', store.state.config.writeMode ? 'Ativadas' : 'Bloqueadas', store.state.config.writeMode ? 'success' : 'warning'],
     ['Alterações locais', `${store.state.dirtyProducts.size} produto(s) pendente(s)`, store.state.dirtyProducts.size ? 'warning' : 'success'],
     ['Última publicação V2', lastPublication ? formatDateTime(lastPublication.publishedAt) : 'Nenhuma publicação feita', lastPublication ? 'success' : 'neutral'],
-    ['Admin atual', 'producao/index.html preservado', 'success'],
+    ['Admin atual', 'producao-v2 · carregamento otimizado', 'success'],
   ].map(([label, help, kind]) => `<div class="system-row"><div><strong>${label}</strong><small>${help}</small></div><span class="badge ${kind}">${kind === 'success' ? 'OK' : kind === 'neutral' ? '—' : 'Atenção'}</span></div>`).join('');
-  renderDiagnostics();
+  renderDiagnostics(data.audit);
 }
 
-function renderDiagnostics() {
+function renderDiagnostics(audit = currentAudit()) {
   if (!elements.diagnosticList) return;
-  const audit = currentAudit();
   const config = store.state.config;
   const githubReady = Boolean(config.githubToken && config.githubOwner && config.githubRepo && config.githubBranch && config.productsHomePath && config.catalogVersionPath);
   const makeChannels = [config.makeTextWebhookUrl || config.makeAiWebhookUrl, config.makeImageWebhookUrl || config.makeAiWebhookUrl, config.makeInstagramKitWebhookUrl].filter(Boolean).length;
   elements.diagnosticList.innerHTML = [
-    ['Fonte oficial', store.state.firebaseVerified ? `${store.state.products.length} produtos confirmados pelo Firebase` : 'Firebase ainda não confirmado', store.state.firebaseVerified ? 'success' : 'warning'],
-    ['Auditoria obrigatória', audit.errors.length ? `${audit.errors.length} produto(s) com erro` : 'Nenhum erro obrigatório', audit.errors.length ? 'danger' : 'success'],
+    ['Fonte oficial', store.state.firebaseVerified ? `${store.state.products.length} produtos carregados` : 'Fonte ainda não confirmada', store.state.firebaseVerified ? 'success' : 'warning'],
+    ['Auditoria rápida', audit.errors.length ? `${audit.errors.length} produto(s) com erro` : 'Nenhum erro obrigatório', audit.errors.length ? 'danger' : 'success'],
     ['Qualidade do cadastro', audit.warnings.length ? `${audit.warnings.length} produto(s) com avisos` : 'Nenhum aviso', audit.warnings.length ? 'warning' : 'success'],
     ['GitHub', githubReady ? `${config.githubOwner}/${config.githubRepo} · ${config.githubBranch}` : 'Configuração incompleta', githubReady ? 'success' : 'warning'],
     ['Automações Make', makeChannels ? `${makeChannels} de 3 canais configurados` : 'Nenhum webhook configurado', makeChannels === 3 ? 'success' : 'warning'],
-    ['Modo de gravação', config.writeMode ? 'Ativado neste navegador' : 'Bloqueado', config.writeMode ? 'warning' : 'success'],
+    ['Modo de gravação', config.writeMode ? 'Ativado neste navegador' : 'Bloqueado', config.writeMode ? 'success' : 'warning'],
   ].map(([label, help, kind]) => `<div class="system-row"><div><strong>${label}</strong><small>${help}</small></div><span class="badge ${kind}">${kind === 'success' ? 'OK' : kind === 'danger' ? 'Erro' : 'Atenção'}</span></div>`).join('');
 }
 
@@ -190,11 +234,17 @@ async function refreshData() {
   elements.reloadButton.disabled = true;
   elements.reloadButton.textContent = 'Atualizando…';
   try {
-    const products = await loadProducts(store.state.config);
+    const startedAt = performance.now();
+    const products = await loadProducts(store.state.config, { force: true });
     store.setProducts(products);
+    invalidateAudit();
     productsModule.render();
-    renderDashboard();
-    toast(`${products.length} produtos carregados do Firebase.`, 'success');
+    store.state.firebaseVerified = true;
+    store.setLoading(false);
+    renderStatus();
+    requestAnimationFrame(renderDashboard);
+    const elapsed = Math.max(1, Math.round(performance.now() - startedAt));
+    toast(`${products.length} produtos carregados em ${elapsed} ms.`, 'success');
   } catch (error) {
     console.error(error);
     store.setError(error?.message || String(error));
@@ -219,6 +269,7 @@ async function saveOne(product, { silent = false } = {}) {
   try {
     const saved = await saveProduct(store.state.config, validation.product, snapshot);
     store.markProductSaved(key, saved, { emit: !silent });
+    invalidateAudit();
     if (!silent) {
       productsModule.renderDirty();
       renderDashboard();
@@ -249,6 +300,7 @@ async function uploadProductImage(product, dataUrl) {
 
 function persistPublication(publication) {
   localStorage.setItem(STORAGE_KEYS.lastPublication, JSON.stringify(publication));
+  invalidateAudit();
   renderDashboard();
   productsModule.render();
 }
@@ -318,6 +370,7 @@ function saveConfigFromUi() {
   config.makeImageWebhookUrl = text(elements.makeImageWebhookSetting.value);
   config.makeInstagramKitWebhookUrl = text(elements.makeInstagramKitWebhookSetting.value);
   localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(config));
+  invalidateAudit();
   renderStatus();
   renderDashboard();
   const selected = store.getProduct(store.state.selectedProductKey);
@@ -374,11 +427,15 @@ elements.testGithubButton.addEventListener('click', testGithub);
 
 store.addEventListener('status', renderStatus);
 store.addEventListener('dirty', () => {
+  invalidateAudit();
   productsModule.renderDirty();
   renderStatus();
   renderDashboard();
 });
-store.addEventListener('publication', renderDashboard);
+store.addEventListener('publication', () => {
+  invalidateAudit();
+  renderDashboard();
+});
 window.addEventListener('admin-v2-open-product', event => {
   const key = text(event.detail?.key);
   if (!key) return;
