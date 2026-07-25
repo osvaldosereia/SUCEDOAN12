@@ -59,12 +59,13 @@ const required = [
   'producao/index-legado.html',
   'admin/index.html',
   'producao-v2/index.html',
+  'producao-v2/assets/boot.css',
+  'producao-v2/js/visual-stability.js',
   'producao-v2/js/product-lifecycle-bootstrap.js',
   'producao-v2/js/product-editor-enhancements.js',
   'producao-v2/js/admin-suite-bootstrap.js',
   'producao-v2/js/order-tools-bootstrap.js',
   'producao-v2/js/catalog-auto-sync.js',
-  'producao-v2/js/official-copy-fixes.js',
   'site/produtos-admin.json',
   'site/ofertas-historico.json',
   'site/cuponsativos.json',
@@ -169,13 +170,18 @@ if (!firebaseService.includes('fetchAdminProducts') || !firebaseService.includes
 if (!firebaseService.includes('fetchProductsFromFirebase')) fail('O fallback direto do Firebase não foi preservado.');
 
 const stockBootstrap = read('producao-v2/js/stock-bootstrap.js');
-for (const moduleName of ['catalog-auto-sync.js', 'product-lifecycle-bootstrap.js', 'admin-suite-bootstrap.js', 'collections-bootstrap.js']) {
+for (const moduleName of ['catalog-auto-sync.js', 'product-lifecycle-bootstrap.js', 'admin-suite-bootstrap.js', 'collections-bootstrap.js', 'nfe-bootstrap.js', 'quick-read-bootstrap.js', 'order-tools-bootstrap.js', 'offers-bootstrap.js', 'registries-bootstrap.js', 'diagnostics-bootstrap.js']) {
   if (!stockBootstrap.includes(moduleName)) fail(`Módulo não carregado pelo Admin: ${moduleName}`);
 }
+if (!stockBootstrap.includes('admin-v2-modules-ready') || !stockBootstrap.includes('preloadRouteModules')) fail('Os módulos não são preparados antes da primeira exibição estável.');
 
 const catalogAutoSync = read('producao-v2/js/catalog-auto-sync.js');
-for (const moduleName of ['official-copy-fixes.js', 'product-editor-enhancements.js', 'order-tools-bootstrap.js']) {
-  if (!catalogAutoSync.includes(moduleName)) fail(`Módulo complementar não carregado: ${moduleName}`);
+if (!catalogAutoSync.includes('product-editor-enhancements.js')) fail('O editor completo de produtos não é carregado.');
+if (catalogAutoSync.includes('official-copy-fixes.js')) fail('A reescrita global tardia ainda está ativa e pode quebrar o visual.');
+
+const visualStability = read('producao-v2/js/visual-stability.js');
+for (const feature of ['admin-v2-core-ready', 'admin-v2-modules-ready', 'admin-ready']) {
+  if (!visualStability.includes(feature)) fail(`Controle visual ausente: ${feature}.`);
 }
 
 const adminSuite = read('producao-v2/js/admin-suite-bootstrap.js');
@@ -191,10 +197,13 @@ if (!orderTools.includes('makeOrderWebhookSetting')) fail('Configuração do web
 const productEditor = read('producao-v2/js/product-editor-enhancements.js');
 if (!productEditor.includes('replaceClassificationSelects')) fail('Cadastros digitáveis no produto existente não foram encontrados.');
 if (!productEditor.includes('installHydratedProductOpening') || !productEditor.includes('loadProduct(this.store.state.config')) fail('O editor não hidrata o cadastro completo antes de abrir.');
+if (productEditor.includes("subtree: true")) fail('O editor ainda observa toda a árvore e pode repetir consultas durante a montagem.');
 
 const adminIndex = read('producao-v2/index.html');
 if (/ambiente paralelo|versão paralela|Mantenha desligado durante a validação/i.test(adminIndex)) fail('O HTML oficial ainda contém textos de homologação.');
 if (!adminIndex.includes('makeOrderWebhookSetting')) fail('O campo do webhook de pedidos não está no HTML oficial.');
+if (!adminIndex.includes('admin-boot-screen') || !adminIndex.includes('visual-stability.js')) fail('A primeira pintura estável não foi configurada no HTML.');
+if (adminIndex.includes('<script type="module" src="./js/nfe-bootstrap.js')) fail('A NF-e ainda é carregada antes da tela inicial estabilizar.');
 
 if (failures.length) {
   console.error(`\nAdmin V2 definitivo: ${failures.length} falha(s).`);
