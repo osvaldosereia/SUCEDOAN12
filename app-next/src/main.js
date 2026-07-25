@@ -2,6 +2,7 @@ import { CONFIG } from './config.js';
 import { createEventBus, createInitialState, createRouter, createStore, escapeHtml, fmt } from './core.js';
 import { indexProducts, loadCatalog } from './catalog.js';
 import { applyProductOffer, calculateCartPricing, CartService, resolveBundleRows } from './commerce.js';
+import { prepareProductOffer } from './offer-engine.js';
 import { basketDraftTotal } from './basket-pricing.js';
 import { createPersonalization } from './personalization.js';
 import { createUI } from './ui.js?v=20260724-7';
@@ -309,7 +310,7 @@ async function init() {
   app.innerHTML = '<div class="loading-shell"><div></div><div></div><div></div></div>';
   try {
     const catalog = await loadCatalog();
-    const products = catalog.products.map(product => applyProductOffer(product));
+    const products = catalog.products.map(product => applyProductOffer(prepareProductOffer(product)));
     const indexes = indexProducts(products);
     store.mutate(state => {
       Object.assign(state, catalog, indexes, { products, isReady: true });
