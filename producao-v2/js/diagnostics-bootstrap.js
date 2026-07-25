@@ -1,6 +1,8 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { DiagnosticsModule } from './modules/diagnostics.js';
 
+const BUILD = '20260725-admin-v12-fix-abas2';
+
 function loadConfig() {
   try {
     return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}') };
@@ -19,13 +21,21 @@ function installCss() {
   if (document.querySelector('link[data-admin-v2-diagnostics]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './assets/diagnostics.css?admin_build=20260725-admin-v9';
+  link.href = `./assets/diagnostics.css?admin_build=${BUILD}`;
   link.dataset.adminV2Diagnostics = '1';
   document.head.appendChild(link);
 }
 
 function panelMarkup() {
   return `<section class="panel diagnostics-workspace" id="diagnosticsWorkspace"><div class="panel-header"><div><span class="eyebrow">Integridade e contingência</span><h2>Diagnóstico e backup</h2><p>Consulta Firebase, catálogo público, cestas, kits e fila sem disparar cenários externos.</p></div><button class="button primary" id="diagnosticRun" type="button">Executar diagnóstico</button></div><div class="attention-grid diagnostic-metrics" id="diagnosticMetrics"></div><div class="diagnostic-grid"><section><h3>Fontes e integrações</h3><div id="diagnosticSources"></div></section><section><h3>Inconsistências</h3><div id="diagnosticIssues"></div></section></div><div class="diagnostic-footer"><span id="diagnosticStatus">Nenhuma consulta executada nesta sessão.</span><div><button class="button secondary" id="diagnosticCsv" type="button" disabled>Exportar CSV</button><button class="button secondary" id="diagnosticExport" type="button" disabled>Gerar backup JSON</button></div></div></section>`;
+}
+
+function installPrimaryOrderWebhookSetting() {
+  const input = document.getElementById('makeOrderWebhookSetting');
+  if (!input || input.dataset.adminOrderSetting === '1') return;
+  input.dataset.adminOrderSetting = '1';
+  input.value = loadConfig().makeOrderWebhookUrl || '';
+  input.addEventListener('change', () => saveConfig({ makeOrderWebhookUrl: input.value.trim() }));
 }
 
 function installIntegrationSettings() {
@@ -66,6 +76,7 @@ function start() {
   const settings = document.querySelector('[data-view="settings"] .settings-grid');
   if (!settings || document.getElementById('diagnosticsWorkspace')) return;
   installCss();
+  installPrimaryOrderWebhookSetting();
   installIntegrationSettings();
   const danger = settings.querySelector('.danger-panel');
   if (danger) danger.insertAdjacentHTML('beforebegin', panelMarkup());
