@@ -1,6 +1,5 @@
 import './official-copy-fixes.js';
 import './product-editor-enhancements.js';
-import './order-tools-bootstrap.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 
 const ORIGINAL_FETCH_KEY = '__daAdminV2OriginalFetch';
