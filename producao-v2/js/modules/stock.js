@@ -87,11 +87,15 @@ export class StockModule {
     this.renderTable();
   }
 
+  refresh() {
+    this.render();
+  }
+
   renderTable() {
     const rows = this.rows();
     this.elements.stockResultCount.textContent = String(rows.length);
     this.elements.stockTableBody.innerHTML = rows.length ? rows.slice(0, 300).map(({ product, status }) => `<tr>
-      <td><div class="product-cell"><img class="product-thumb" src="${escapeHtml(productImage(product) || PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'" alt=""><div><strong>${escapeHtml(productName(product))}</strong><small>${escapeHtml(productCode(product) || productKey(product))} · ${escapeHtml(product.categoria || 'Sem categoria')}</small></div></div></td>
+      <td><div class="product-cell"><img class="product-thumb" src="${escapeHtml(productImage(product) || PLACEHOLDER)}" loading="lazy" decoding="async" onerror="this.src='${PLACEHOLDER}'" alt=""><div><strong>${escapeHtml(productName(product))}</strong><small>${escapeHtml(productCode(product) || productKey(product))} · ${escapeHtml(product.categoria || 'Sem categoria')}</small></div></div></td>
       <td><strong>${number(status.stock)}</strong></td>
       <td><div class="cell-stack"><strong>${escapeHtml(status.validity || '—')}</strong><span>${escapeHtml(daysLabel(status.days))}</span></div></td>
       <td>${statusBadge(status)}</td>
