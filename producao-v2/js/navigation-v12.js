@@ -1,4 +1,5 @@
 const ROUTE_STORAGE_KEY = 'da_admin_v2_route_v12';
+const CONFIG_STORAGE_KEY = 'da_admin_v2_config';
 
 const ROUTES = Object.freeze({
   dashboard: ['Visão geral', 'Indicadores, prioridades e estado do sistema.'],
@@ -32,6 +33,25 @@ function routeFromLocation() {
     if (ROUTES[saved]) return saved;
   } catch {}
   return 'dashboard';
+}
+
+function bindOrderWebhookSetting() {
+  const input = document.getElementById('makeOrderWebhookSetting');
+  if (!input || input.dataset.adminOrderSetting === '1') return;
+  input.dataset.adminOrderSetting = '1';
+  try {
+    const config = JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY) || '{}');
+    input.value = String(config.makeOrderWebhookUrl || '');
+  } catch {
+    input.value = '';
+  }
+  input.addEventListener('change', () => {
+    try {
+      const config = JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY) || '{}');
+      config.makeOrderWebhookUrl = input.value.trim();
+      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config));
+    } catch {}
+  });
 }
 
 function syncPlaceholder(view) {
@@ -92,6 +112,7 @@ function activate(route, { persist = true, emit = true } = {}) {
 }
 
 function start() {
+  bindOrderWebhookSetting();
   const nav = document.getElementById('mainNav');
   nav?.addEventListener('click', event => {
     const button = event.target.closest('[data-route]');
