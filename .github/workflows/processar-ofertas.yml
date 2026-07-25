@@ -50,14 +50,9 @@ jobs:
             printf '{}\n' > "$dir/base-estado.json"
           fi
 
-      - name: Limpar ofertas por validade encerradas
-        env:
-          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL || 'https://cedar-chemist-310801-default-rtdb.firebaseio.com' }}
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
-          FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
-        run: node scripts/limpar-ofertas-validade-expiradas.mjs
-
-      - name: Criar, encerrar e reativar ofertas
+      - name: Executar limpeza e processamento
+        id: engine
+        continue-on-error: true
         env:
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL || 'https://cedar-chemist-310801-default-rtdb.firebaseio.com' }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
@@ -65,9 +60,48 @@ jobs:
           OFFERS_HISTORY_PATH: site/ofertas-historico.json
           BANNERS_PATH: ${{ runner.temp }}/banners-removidos.json
           PRODUCTS_HOME_PATH: site/produtos-home.json
-        run: node scripts/processar-ofertas.mjs
+        shell: bash
+        run: |
+          set +e
+          node scripts/limpar-ofertas-validade-expiradas.mjs > "$RUNNER_TEMP/ofertas-limpeza.log" 2>&1
+          cleanup_code=$?
+          process_code=99
+          if [ "$cleanup_code" -eq 0 ]; then
+            node scripts/processar-ofertas.mjs > "$RUNNER_TEMP/ofertas-processamento.log" 2>&1
+            process_code=$?
+          else
+            printf 'Processamento não executado porque a limpeza falhou.\n' > "$RUNNER_TEMP/ofertas-processamento.log"
+          fi
+          CLEANUP_CODE="$cleanup_code" PROCESS_CODE="$process_code" node --input-type=module <<'NODE'
+          import { readFile, writeFile } from 'node:fs/promises';
+          const tail = async file => {
+            try {
+              const value = await readFile(file, 'utf8');
+              return value.slice(-6000);
+            } catch {
+              return '';
+            }
+          };
+          const cleanupCode = Number(process.env.CLEANUP_CODE);
+          const processCode = Number(process.env.PROCESS_CODE);
+          const status = {
+            status: cleanupCode === 0 && processCode === 0 ? 'processado' : 'erro_processamento',
+            executado_em: new Date().toISOString(),
+            limpeza_codigo: cleanupCode,
+            processamento_codigo: processCode,
+            limpeza_log: await tail(process.env.RUNNER_TEMP + '/ofertas-limpeza.log'),
+            processamento_log: await tail(process.env.RUNNER_TEMP + '/ofertas-processamento.log')
+          };
+          await writeFile(process.env.RUNNER_TEMP + '/ofertas-engine-status.json', JSON.stringify(status, null, 2) + '\n');
+          NODE
+          if [ "$cleanup_code" -ne 0 ] || [ "$process_code" -ne 0 ]; then
+            cat "$RUNNER_TEMP/ofertas-limpeza.log"
+            cat "$RUNNER_TEMP/ofertas-processamento.log"
+            exit 1
+          fi
 
       - name: Preservar resultados processados
+        if: steps.engine.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
@@ -77,6 +111,9 @@ jobs:
           cp site/ofertas-historico.json "$dir/gerado-historico.json"
 
       - name: Publicar com reconciliação e novas tentativas
+        id: publish
+        if: steps.engine.outcome == 'success'
+        continue-on-error: true
         shell: bash
         env:
           OFFERS_PUBLICATION_DIR: ${{ runner.temp }}/ofertas-publicacao
@@ -117,3 +154,63 @@ jobs:
 
           echo "Falha ao publicar depois de 5 tentativas." >&2
           exit 1
+
+      - name: Preparar diagnóstico final
+        if: always()
+        env:
+          ENGINE_OUTCOME: ${{ steps.engine.outcome }}
+          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
+          WORKFLOW_EVENT: ${{ github.event_name }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+          WORKFLOW_RUN_ATTEMPT: ${{ github.run_attempt }}
+          WORKFLOW_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile } from 'node:fs/promises';
+          let status = {};
+          try {
+            status = JSON.parse(await readFile(process.env.RUNNER_TEMP + '/ofertas-engine-status.json', 'utf8'));
+          } catch {
+            status = { status: 'erro_sem_relatorio', executado_em: new Date().toISOString() };
+          }
+          status.motor_resultado = process.env.ENGINE_OUTCOME || 'desconhecido';
+          status.publicacao_resultado = process.env.PUBLISH_OUTCOME || 'não_executada';
+          status.evento = process.env.WORKFLOW_EVENT;
+          status.run_id = process.env.WORKFLOW_RUN_ID;
+          status.tentativa = process.env.WORKFLOW_RUN_ATTEMPT;
+          status.sha_origem = process.env.WORKFLOW_SHA;
+          status.sucesso = status.motor_resultado === 'success' && ['success', 'skipped'].includes(status.publicacao_resultado);
+          status.status = status.sucesso ? 'sucesso' : status.status;
+          status.publicado_em = new Date().toISOString();
+          await writeFile(process.env.RUNNER_TEMP + '/ofertas-execucao-status.json', JSON.stringify(status, null, 2) + '\n');
+          NODE
+
+      - name: Publicar diagnóstico da execução
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="${GITHUB_REF_NAME:-main}"
+          for tentativa in 1 2 3 4 5; do
+            git fetch origin "$branch"
+            git reset --hard "origin/$branch"
+            cp "$RUNNER_TEMP/ofertas-execucao-status.json" site/ofertas-execucao-status.json
+            git add site/ofertas-execucao-status.json
+            if git diff --cached --quiet; then
+              exit 0
+            fi
+            git commit -m "Atualiza diagnóstico da rotina de ofertas"
+            if git push origin "HEAD:${branch}"; then
+              exit 0
+            fi
+            sleep $((tentativa * 2))
+          done
+          exit 1
+
+      - name: Confirmar falha do processamento
+        if: always() && (steps.engine.outcome == 'failure' || steps.publish.outcome == 'failure')
+        run: exit 1
