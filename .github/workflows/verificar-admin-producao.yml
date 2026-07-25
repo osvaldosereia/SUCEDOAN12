@@ -36,6 +36,8 @@ jobs:
     steps:
       - name: Baixar o repositório
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Configurar Node.js
         uses: actions/setup-node@v5
@@ -79,11 +81,13 @@ jobs:
           echo "Sincronização do catálogo e processamento de ofertas solicitados."
 
       - name: Aguardar autocorreção
-        if: steps.first_check.outcome == 'failure'
+        if: always() && steps.first_check.outcome == 'failure'
         run: sleep 120
 
       - name: Verificação final
-        if: steps.first_check.outcome == 'failure'
+        id: final_check
+        if: always() && steps.first_check.outcome == 'failure'
+        continue-on-error: true
         env:
           ADMIN_BASE_URL: https://donaantonia.com.br
           OFFER_MAX_AGE_HOURS: 3
@@ -92,9 +96,66 @@ jobs:
           set -o pipefail
           node scripts/check-admin-production.mjs 2>&1 | tee admin-production-final.log
 
-      - name: Preservar relatório aprovado
+      - name: Preservar relatório aprovado na primeira tentativa
         if: steps.first_check.outcome == 'success'
         run: cp admin-production-report-inicial.json admin-production-report.json
+
+      - name: Preparar status versionado
+        if: always()
+        env:
+          HEALTH_EVENT: ${{ github.event_name }}
+          HEALTH_RUN_ID: ${{ github.run_id }}
+          HEALTH_RUN_ATTEMPT: ${{ github.run_attempt }}
+          HEALTH_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_file="admin-production-report.json"
+          if [ ! -f "$source_file" ] && [ -f admin-production-report-inicial.json ]; then
+            source_file="admin-production-report-inicial.json"
+          fi
+          if [ ! -f "$source_file" ]; then
+            printf '{"ok":false,"errors":[{"name":"healthcheck","detail":"Relatório não foi gerado"}]}' > "$source_file"
+          fi
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile } from 'node:fs/promises';
+          const report = JSON.parse(await readFile(process.env.SOURCE_FILE || 'admin-production-report.json', 'utf8'));
+          report.workflow = {
+            event: process.env.HEALTH_EVENT,
+            runId: process.env.HEALTH_RUN_ID,
+            attempt: process.env.HEALTH_RUN_ATTEMPT,
+            sourceSha: process.env.HEALTH_SHA,
+            publishedAt: new Date().toISOString()
+          };
+          await writeFile(process.env.RUNNER_TEMP + '/admin-health-status.json', JSON.stringify(report, null, 2) + '\n');
+          NODE
+        env:
+          SOURCE_FILE: admin-production-report.json
+
+      - name: Publicar status da produção
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="${GITHUB_REF_NAME:-main}"
+          for tentativa in 1 2 3 4 5; do
+            git fetch origin "$branch"
+            git reset --hard "origin/$branch"
+            mkdir -p site
+            cp "$RUNNER_TEMP/admin-health-status.json" site/admin-health-status.json
+            git add site/admin-health-status.json
+            if git diff --cached --quiet; then
+              exit 0
+            fi
+            git commit -m "Atualiza diagnóstico automático do Admin"
+            if git push origin "HEAD:${branch}"; then
+              exit 0
+            fi
+            sleep $((tentativa * 2))
+          done
+          exit 1
 
       - name: Anexar relatórios
         if: always()
@@ -106,3 +167,7 @@ jobs:
             admin-production-*.log
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Confirmar falha persistente
+        if: always() && steps.first_check.outcome == 'failure' && steps.final_check.outcome == 'failure'
+        run: exit 1
