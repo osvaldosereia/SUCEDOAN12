@@ -3,9 +3,12 @@ name: Testar Admin V2 definitivo
 on:
   pull_request:
     paths:
+      - "producao/**"
+      - "admin/**"
       - "producao-v2/**"
       - "app-next/**"
       - "scripts/test-admin-v2-definitivo.mjs"
+      - "scripts/check-admin-production.mjs"
       - "scripts/sincronizar-produtos-home-firebase.mjs"
       - "scripts/processar-ofertas.mjs"
       - "scripts/reconciliar-publicacao-ofertas.mjs"
@@ -13,6 +16,7 @@ on:
       - "site/banners/banners.json"
       - "site/ofertas-historico.json"
       - ".github/workflows/test-admin-v2-definitivo.yml"
+      - ".github/workflows/verificar-admin-producao.yml"
       - ".github/workflows/processar-ofertas.yml"
       - ".github/workflows/sincronizar-produtos-home-firebase.yml"
   push:
@@ -20,9 +24,12 @@ on:
       - "agent/admin-v2-definitivo*"
       - main
     paths:
+      - "producao/**"
+      - "admin/**"
       - "producao-v2/**"
       - "app-next/**"
       - "scripts/test-admin-v2-definitivo.mjs"
+      - "scripts/check-admin-production.mjs"
       - "scripts/sincronizar-produtos-home-firebase.mjs"
       - "scripts/processar-ofertas.mjs"
       - "scripts/reconciliar-publicacao-ofertas.mjs"
@@ -30,6 +37,7 @@ on:
       - "site/banners/banners.json"
       - "site/ofertas-historico.json"
       - ".github/workflows/test-admin-v2-definitivo.yml"
+      - ".github/workflows/verificar-admin-producao.yml"
       - ".github/workflows/processar-ofertas.yml"
       - ".github/workflows/sincronizar-produtos-home-firebase.yml"
 
