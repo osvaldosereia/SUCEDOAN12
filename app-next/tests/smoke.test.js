@@ -9,7 +9,7 @@ const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const required = [
   'index.html', 'styles/app.css', 'styles/home-parity.css', 'styles/checkout-flow.css',
   'styles/bundle-confirmation.css', 'styles/live-polish.css',
-  'src/config.js', 'src/core.js', 'src/catalog.js', 'src/commerce.js', 'src/integrations.js',
+  'src/config.js', 'src/core.js', 'src/catalog.js', 'src/commerce.js', 'src/offer-engine.js', 'src/integrations.js',
   'src/personalization.js', 'src/ui.js', 'src/checkout.js', 'src/main.js',
   'src/live-polish.js', 'src/image-performance.js'
 ];
@@ -21,7 +21,8 @@ if (fs.existsSync(path.join(root, 'src/visual-parity.js'))) throw new Error('Mó
 const preview = read('index.html');
 for (const marker of [
   'styles/home-parity.css?v=20260724-7',
-  'styles/live-polish.css?v=20260724-7',
+  'styles/live-polish.css?v=20260724-8',
+  'src/main.js?v=20260724-8',
   'src/image-performance.js?v=20260724-4',
   'requestIdleCallback',
   'noindex, nofollow'
@@ -30,11 +31,12 @@ if (preview.includes('visual-parity.js')) throw new Error('Prévia ainda carrega
 
 const production = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const marker of [
-  '2026-07-24-modular-production-v7', 'content="index, follow"',
+  '2026-07-24-modular-production-v8', 'content="index, follow"',
   'app-next/styles/home-parity.css?v=20260724-7',
-  'app-next/styles/live-polish.css?v=20260724-7',
+  'app-next/styles/live-polish.css?v=20260724-8',
+  'app-next/src/main.js?v=20260724-8',
   'app-next/src/image-performance.js?v=20260724-4',
-  'da_v7_cache_migrated_20260724', "params.get('p')", "params.get('categoria')",
+  'da_v8_cache_migrated_20260724', "params.get('p')", "params.get('categoria')",
   "params.get('secao')", 'window.__DA_PRODUCTION__ = true',
   'previewModular = false', 'preview_modular = false'
 ]) if (!production.includes(marker)) throw new Error(`Produção incompleta: ${marker}`);
@@ -43,7 +45,7 @@ if (production.includes('visual-parity.js')) throw new Error('Produção ainda c
 if (production.includes('raw.githubusercontent.com')) throw new Error('Index abre conexão externa para imagens');
 
 const config = read('src/config.js');
-for (const marker of ['IS_PRODUCTION', "PREFIX: IS_PRODUCTION ? 'da_v2_' : 'da_next_'", 'modular-production-v3']) {
+for (const marker of ['IS_PRODUCTION', "PREFIX: IS_PRODUCTION ? 'da_v2_' : 'da_next_'", 'modular-production-v8']) {
   if (!config.includes(marker)) throw new Error(`Separação de ambientes incompleta: ${marker}`);
 }
 
@@ -54,11 +56,19 @@ if (core.includes('return `${CONFIG.GITHUB_RAW_BASE}/${clean}`')) throw new Erro
 const main = read('src/main.js');
 for (const marker of [
   'bundle-confirm-checkout', 'bundle-confirm-continue', 'bundle-confirm-undo',
-  'window.__DA_CATALOG_STATE__', "new CustomEvent('da:catalog-ready')", 'personalization-settings'
+  'window.__DA_CATALOG_STATE__', "new CustomEvent('da:catalog-ready')", 'personalization-settings',
+  "import { prepareProductOffer } from './offer-engine.js'", 'applyProductOffer(prepareProductOffer(product))'
 ]) if (!main.includes(marker)) throw new Error(`Inicialização incompleta: ${marker}`);
 for (const removed of ['showConsentIfNeeded', 'personalization-consent', 'personalization-accept', 'personalization-decline']) {
   if (main.includes(removed)) throw new Error(`Código morto do consentimento: ${removed}`);
 }
+
+const offerEngine = read('src/offer-engine.js');
+for (const marker of [
+  'VALIDITY_DISCOUNT_BANDS', '{ min: 3, max: 7, discount: 50 }',
+  '{ min: 92, max: 105, discount: 5 }', 'explicitOfferIsActive',
+  "copy.offerSource = 'manual'", "copy.offerSource = 'validade'"
+]) if (!offerEngine.includes(marker)) throw new Error(`Motor de ofertas incompleto: ${marker}`);
 
 const ui = read('src/ui.js');
 for (const marker of [
@@ -102,15 +112,21 @@ if (livePolish.includes('observe(document.documentElement')) throw new Error('li
 const liveCss = read('styles/live-polish.css');
 for (const marker of [
   '.home-page .home-bundle-carousel', 'flex:0 0 58.8%',
-  '--product-card-row:304px', '--product-card-gap:22px',
-  'grid-auto-rows:var(--product-card-row)', 'grid-template-rows:138px minmax(0,1fr)',
-  'background:#f3f5f3!important', 'repeating-linear-gradient(to bottom',
-  '--product-card-gap:24px', '[data-favorite-count][hidden]',
-  '.header-cart-icon', 'data-performance-profile="economy"'
+  '--product-card-gap:22px', '--product-card-body-height:158px',
+  'grid-template-columns:repeat(2,minmax(0,1fr))!important',
+  'grid-template-rows:auto var(--product-card-body-height)',
+  'aspect-ratio:1/1!important', 'object-fit:contain!important', 'object-position:center!important',
+  '.product-card::before', '.product-card::after',
+  'grid-template-columns:repeat(3,minmax(0,1fr))!important',
+  'grid-template-columns:repeat(4,minmax(0,1fr))!important',
+  'grid-template-columns:repeat(5,minmax(0,1fr))!important',
+  '[data-favorite-count][hidden]', '.header-cart-icon', 'data-performance-profile="economy"'
 ]) if (!liveCss.includes(marker)) throw new Error(`Ajuste visual ausente: ${marker}`);
-for (const removed of ['quick-links.home-deal-grid', 'home-deal-copy', 'home-deal-badge', 'gap:1px!important', 'box-shadow:0 3px 12px']) {
-  if (liveCss.includes(removed)) throw new Error(`CSS antigo ainda presente: ${removed}`);
-}
+for (const removed of [
+  'quick-links.home-deal-grid', 'home-deal-copy', 'home-deal-badge', 'gap:1px!important',
+  'box-shadow:0 3px 12px', '--product-card-row', 'grid-auto-rows:var(--product-card-row)',
+  'height:154px!important'
+]) if (liveCss.includes(removed)) throw new Error(`CSS antigo ainda presente: ${removed}`);
 
 const imagePerformance = read('src/image-performance.js');
 for (const marker of [
@@ -128,4 +144,5 @@ for (const file of jsFiles) {
 }
 await import('../src/ui.js');
 await import('../src/checkout.js');
+await import('../src/offer-engine.js');
 console.log(`Smoke test concluído: ${required.length} arquivos e ${jsFiles.length} módulos validados.`);
