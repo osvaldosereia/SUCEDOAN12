@@ -6,15 +6,19 @@
   <meta name="robots" content="noindex,nofollow">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
-  <title>Dona Antônia — Admin Oficial</title>
+  <meta http-equiv="Expires" content="0">
+  <meta http-equiv="refresh" content="0;url=../producao-v2/">
+  <title>Dona Antônia — Admin oficial</title>
   <script>
-    const target = new URL('../admin-oficial-20260724/', window.location.href);
-    target.searchParams.set('_', String(Date.now()));
-    window.location.replace(target.href);
+    (function () {
+      var destination = new URL('../producao-v2/', window.location.href);
+      destination.search = window.location.search;
+      destination.hash = window.location.hash;
+      window.location.replace(destination.href);
+    }());
   </script>
 </head>
 <body>
-  <p>Abrindo o Admin oficial…</p>
-  <p><a href="../admin-oficial-20260724/">Continuar</a></p>
+  <p>Abrindo o <a href="../producao-v2/">Admin oficial Dona Antônia</a>…</p>
 </body>
 </html>
