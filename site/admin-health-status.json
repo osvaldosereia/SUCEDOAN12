@@ -1,22 +1,22 @@
 {
-  "checkedAt": "2026-07-25T02:38:45.604Z",
+  "checkedAt": "2026-07-25T02:46:56.825Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": true,
   "checks": [
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784947125605"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784947616825"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784947126121"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784947617160"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784947126210"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784947617175"
     },
     {
       "name": "Catálogo público possui produtos",
@@ -27,6 +27,11 @@
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
       "detail": "1524 produto(s) administrativos · 1411 público(s) · campos OK"
+    },
+    {
+      "name": "Runtime do Admin carrega lista e cadastro completo",
+      "ok": true,
+      "detail": "1524 produto(s) em 192 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Versão do catálogo válida",
@@ -56,16 +61,16 @@
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.5h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.7h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [],
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "30140759536",
+    "runId": "30141009211",
     "attempt": "1",
-    "sourceSha": "d148f00590033a9cf2809c8535a06046c3a0fe0d",
-    "publishedAt": "2026-07-25T02:38:47.569Z"
+    "sourceSha": "424697a9eff10c30105ac30065fab64932cc9149",
+    "publishedAt": "2026-07-25T02:46:57.957Z"
   }
 }
