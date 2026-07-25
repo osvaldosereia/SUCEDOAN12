@@ -11,11 +11,11 @@ function baseUrl(config) {
 }
 
 function nodePath(config, fallback = 'produtos') {
-  return text(config.productsNode || fallback).replace(/^\/+|\/+$/g, '');
+  return text(config.productsNode || fallback).replace(/^\/+|\/+$/g, '').replace(/\.json$/i, '');
 }
 
 function databaseUrl(config, path = '') {
-  const clean = text(path).replace(/^\/+|\/+$/g, '');
+  const clean = text(path).replace(/^\/+|\/+$/g, '').replace(/\.json$/i, '');
   return `${baseUrl(config)}/${clean}.json`;
 }
 
@@ -25,6 +25,13 @@ function productUrl(config, key = '') {
   return `${baseUrl(config)}/${node}${suffix}.json`;
 }
 
+function adminCatalogUrl(config) {
+  const path = text(config.adminProductsPath || 'site/produtos-admin.json').replace(/^\/+/, '');
+  if (/^https?:\/\//i.test(path)) return path;
+  const base = globalThis.location?.href || 'https://donaantonia.com.br/producao-v2/';
+  return new URL(`../${path}`, base).href;
+}
+
 async function request(url, options = {}, timeout = 25000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
@@ -32,12 +39,12 @@ async function request(url, options = {}, timeout = 25000) {
     const response = await fetch(url, { cache: 'no-store', ...options, signal: controller.signal });
     if (!response.ok) {
       const detail = await response.text().catch(() => '');
-      throw new Error(`Firebase retornou ${response.status}${detail ? `: ${detail.slice(0, 220)}` : ''}`);
+      throw new Error(`Fonte de dados retornou ${response.status}${detail ? `: ${detail.slice(0, 220)}` : ''}`);
     }
     if (response.status === 204) return null;
     return await response.json().catch(() => null);
   } catch (error) {
-    if (error?.name === 'AbortError') throw new Error('Tempo esgotado ao consultar o Firebase.');
+    if (error?.name === 'AbortError') throw new Error('Tempo esgotado ao consultar a fonte de dados.');
     throw error;
   } finally {
     clearTimeout(timer);
@@ -88,6 +95,13 @@ function normalizeProduct(key, value) {
   product.estoque = Math.max(0, Math.floor(number(product.estoque)));
   product.situacao = text(product.situacao || product.status || 'A').toUpperCase();
   return product;
+}
+
+function normalizeProductsCollection(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return [];
+  return Object.entries(data)
+    .filter(([, value]) => value && typeof value === 'object' && !Array.isArray(value))
+    .map(([key, value]) => normalizeProduct(key, value));
 }
 
 function normalizeForCompare(value) {
@@ -179,18 +193,29 @@ function invalidateProductsCache() {
   globalThis.window?.dispatchEvent?.(new CustomEvent('admin-v2-products-invalidated'));
 }
 
-async function fetchProducts(config) {
-  const data = await request(`${productUrl(config)}?_admin_v2=${Date.now()}`);
-  if (!data || typeof data !== 'object') return [];
-  return Object.entries(data)
-    .filter(([, value]) => value && typeof value === 'object' && !Array.isArray(value))
-    .map(([key, value]) => normalizeProduct(key, value));
+async function fetchAdminProducts(config) {
+  const data = await request(`${adminCatalogUrl(config)}${adminCatalogUrl(config).includes('?') ? '&' : '?'}_admin=${Date.now()}`, {}, 15000);
+  const products = normalizeProductsCollection(data);
+  if (!products.length) throw new Error('O índice administrativo está vazio.');
+  return products;
+}
+
+async function fetchProductsFromFirebase(config) {
+  const data = await request(`${productUrl(config)}?_admin_v2=${Date.now()}`, {}, 30000);
+  return normalizeProductsCollection(data);
 }
 
 export async function loadProducts(config, { force = false } = {}) {
   if (!force && productsCache && Date.now() - productsCacheAt < PRODUCTS_CACHE_MS) return clone(productsCache);
   if (!force && productsLoading) return clone(await productsLoading);
-  productsLoading = fetchProducts(config);
+  productsLoading = (async () => {
+    try {
+      return await fetchAdminProducts(config);
+    } catch (indexError) {
+      console.warn('Índice administrativo indisponível; usando leitura completa do Firebase.', indexError);
+      return fetchProductsFromFirebase(config);
+    }
+  })();
   try {
     productsCache = await productsLoading;
     productsCacheAt = Date.now();
@@ -201,7 +226,7 @@ export async function loadProducts(config, { force = false } = {}) {
 }
 
 export async function loadProduct(config, key) {
-  const value = await request(`${productUrl(config, key)}?_=${Date.now()}`);
+  const value = await request(`${productUrl(config, key)}?_=${Date.now()}`, {}, 15000);
   return value && typeof value === 'object' ? normalizeProduct(key, value) : null;
 }
 
