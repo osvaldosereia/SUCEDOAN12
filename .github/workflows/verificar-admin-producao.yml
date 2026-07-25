@@ -117,9 +117,9 @@ jobs:
           if [ ! -f "$source_file" ]; then
             printf '{"ok":false,"errors":[{"name":"healthcheck","detail":"Relatório não foi gerado"}]}' > "$source_file"
           fi
-          node --input-type=module <<'NODE'
+          SOURCE_FILE="$source_file" node --input-type=module <<'NODE'
           import { readFile, writeFile } from 'node:fs/promises';
-          const report = JSON.parse(await readFile(process.env.SOURCE_FILE || 'admin-production-report.json', 'utf8'));
+          const report = JSON.parse(await readFile(process.env.SOURCE_FILE, 'utf8'));
           report.workflow = {
             event: process.env.HEALTH_EVENT,
             runId: process.env.HEALTH_RUN_ID,
@@ -129,8 +129,6 @@ jobs:
           };
           await writeFile(process.env.RUNNER_TEMP + '/admin-health-status.json', JSON.stringify(report, null, 2) + '\n');
           NODE
-        env:
-          SOURCE_FILE: admin-production-report.json
 
       - name: Publicar status da produção
         if: always()
