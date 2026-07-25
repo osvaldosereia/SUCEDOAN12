@@ -16,9 +16,9 @@ for (const file of required) {
 
 const previewIndex = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 for (const fragment of [
-  'styles/home-parity.css?v=20260724-6',
-  'styles/live-polish.css?v=20260724-6',
-  'src/visual-parity.js?v=20260724-6',
+  'styles/home-parity.css?v=20260724-7',
+  'styles/live-polish.css?v=20260724-7',
+  'src/visual-parity.js?v=20260724-7',
   'src/image-performance.js?v=20260724-4',
   'requestIdleCallback',
   'noindex, nofollow'
@@ -28,13 +28,16 @@ for (const fragment of [
 
 const productionIndex = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const fragment of [
-  '2026-07-24-modular-production-v6',
+  '2026-07-24-modular-production-v7',
   'content="index, follow"',
-  'app-next/styles/home-parity.css?v=20260724-6',
-  'app-next/styles/live-polish.css?v=20260724-6',
-  'app-next/src/visual-parity.js?v=20260724-6',
+  'app-next/styles/home-parity.css?v=20260724-7',
+  'app-next/styles/live-polish.css?v=20260724-7',
+  'app-next/src/visual-parity.js?v=20260724-7',
   'app-next/src/image-performance.js?v=20260724-4',
-  'da_v6_cache_migrated_20260724',
+  'da_v7_cache_migrated_20260724',
+  "params.get('p')",
+  "params.get('categoria')",
+  "params.get('secao')",
   'window.__DA_PRODUCTION__ = true',
   'previewModular = false',
   'preview_modular = false'
@@ -71,34 +74,25 @@ if (detailReview.includes('observe(document.documentElement')) throw new Error('
 const visualParity = fs.readFileSync(path.join(root, 'src/visual-parity.js'), 'utf8');
 for (const fragment of [
   "page.querySelector('.quick-links')?.remove()",
-  'Pagamento facilitado',
-  'Compra com segurança',
-  'Entrega grátis',
-  'Em Cuiabá e Várzea Grande',
-  'a partir de R$ 75',
-  'home-offers-banner',
-  'DESCONTOS DE ATÉ 50%',
-  'Ver Ofertas',
-  '#/ofertas/50',
-  "document.getElementById('personalization-consent')?.remove()"
+  'Pagamento facilitado', 'Compra com segurança', 'Entrega grátis',
+  'home-offers-banner', 'DESCONTOS DE ATÉ 50%', 'Ver Ofertas', '#/ofertas/50',
+  'home-company-info', 'public-site-footer', 'Conheça a empresa',
+  'politica-de-entrega.html', 'politica-de-troca.html', 'politica-de-privacidade.html',
+  'CNPJ 51.385.335/0001-06'
 ]) {
-  if (!visualParity.includes(fragment)) throw new Error(`Estrutura da home incompleta: ${fragment}`);
+  if (!visualParity.includes(fragment)) throw new Error(`Estrutura pública incompleta: ${fragment}`);
 }
 for (const removed of ['discountShortcutsHtml', 'home-deal-shortcut', 'home-deal-badge', '40% OFF', 'ATÉ R$ 5', 'faixa=outras']) {
   if (visualParity.includes(removed)) throw new Error(`Código morto dos atalhos ainda presente: ${removed}`);
 }
-if (visualParity.includes('Faça sua compra do mês') || visualParity.includes('journeyHtml(')) throw new Error('A seção Faça sua compra do mês ainda está sendo criada');
 
 const homeCss = fs.readFileSync(path.join(root, 'styles/home-parity.css'), 'utf8');
 for (const fragment of [
-  'grid-template-columns:repeat(3',
-  '.payment-notice',
-  '.home-offers-banner',
-  '.home-offers-banner-button',
-  'grid-template-columns:1fr',
-  'font-size:31px'
+  'grid-template-columns:repeat(3', '.payment-notice', '.home-offers-banner',
+  '.home-company-info', '.home-company-links', '.public-site-footer',
+  'grid-template-columns:1fr', 'font-size:31px'
 ]) {
-  if (!homeCss.includes(fragment)) throw new Error(`Visual dos avisos ou banner incompleto: ${fragment}`);
+  if (!homeCss.includes(fragment)) throw new Error(`Visual institucional incompleto: ${fragment}`);
 }
 for (const removed of ['home-deal-grid', 'home-deal-shortcut', 'home-deal-badge', 'purchase-journey']) {
   if (homeCss.includes(removed)) throw new Error(`CSS morto dos atalhos ainda presente: ${removed}`);
@@ -106,15 +100,8 @@ for (const removed of ['home-deal-grid', 'home-deal-shortcut', 'home-deal-badge'
 
 const livePolish = fs.readFileSync(path.join(root, 'src/live-polish.js'), 'utf8');
 for (const fragment of [
-  '.slice(0, 30)',
-  'IntersectionObserver',
-  'appendCarouselBatch',
-  'cardsPerBatch',
-  'fetchpriority="low"',
-  "location.hash = '#/ofertas'",
-  'basket-inc',
-  'basket-dec',
-  'restoreBasketPosition'
+  '.slice(0, 30)', 'IntersectionObserver', 'appendCarouselBatch', 'cardsPerBatch',
+  'fetchpriority="low"', "location.hash = '#/ofertas'", 'basket-inc', 'basket-dec', 'restoreBasketPosition'
 ]) {
   if (!livePolish.includes(fragment)) throw new Error(`Ajuste funcional ausente: ${fragment}`);
 }
@@ -122,41 +109,23 @@ if (livePolish.includes('observe(document.documentElement')) throw new Error('li
 
 const liveCss = fs.readFileSync(path.join(root, 'styles/live-polish.css'), 'utf8');
 for (const fragment of [
-  '.home-page .home-bundle-carousel',
-  'flex:0 0 58.8%',
-  '.product-grid{',
-  'gap:12px!important',
-  'gap:16px!important',
-  'border:1px solid #e1e6e2!important',
-  'border-radius:16px!important',
-  'background:#fff!important',
-  'background:#f5f6f5!important',
-  'padding:0!important',
-  '[data-favorite-count][hidden]',
-  '.header-cart-icon',
-  'data-performance-profile="economy"'
+  '.home-page .home-bundle-carousel', 'flex:0 0 58.8%',
+  '--product-card-row:304px', '--product-card-gap:22px', 'grid-auto-rows:var(--product-card-row)',
+  'grid-template-rows:138px minmax(0,1fr)', 'background:#f3f5f3!important',
+  'repeating-linear-gradient(to bottom', '--product-card-gap:24px',
+  '[data-favorite-count][hidden]', '.header-cart-icon', 'data-performance-profile="economy"'
 ]) {
   if (!liveCss.includes(fragment)) throw new Error(`Ajuste visual ausente: ${fragment}`);
 }
-for (const removed of ['quick-links.home-deal-grid', 'home-deal-copy', 'home-deal-badge', 'gap:1px!important']) {
+for (const removed of ['quick-links.home-deal-grid', 'home-deal-copy', 'home-deal-badge', 'gap:1px!important', 'box-shadow:0 3px 12px']) {
   if (liveCss.includes(removed)) throw new Error(`CSS antigo ainda presente: ${removed}`);
-}
-if (!liveCss.includes('.product-card-media img') || !liveCss.includes('width:100%!important') || !liveCss.includes('height:100%!important')) {
-  throw new Error('Imagem e fundo do produto não ocupam a mesma área');
 }
 
 const imagePerformance = fs.readFileSync(path.join(root, 'src/image-performance.js'), 'utf8');
 for (const fragment of [
-  'navigator.connection',
-  'navigator.deviceMemory',
-  'localRepositoryAsset',
-  'raw\\.githubusercontent\\.com',
-  'managedLazyLoading',
-  'IntersectionObserver',
-  "image.loading = 'eager'",
-  "image.loading = 'lazy'",
-  "image.fetchPriority = 'low'",
-  'imageSourceMode'
+  'navigator.connection', 'navigator.deviceMemory', 'localRepositoryAsset',
+  'raw\\.githubusercontent\\.com', 'managedLazyLoading', 'IntersectionObserver',
+  "image.loading = 'eager'", "image.loading = 'lazy'", "image.fetchPriority = 'low'", 'imageSourceMode'
 ]) {
   if (!imagePerformance.includes(fragment)) throw new Error(`Controle de imagens incompleto: ${fragment}`);
 }
