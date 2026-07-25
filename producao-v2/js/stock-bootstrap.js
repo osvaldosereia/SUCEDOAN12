@@ -1,7 +1,5 @@
 import './catalog-auto-sync.js';
 import './product-lifecycle-bootstrap.js';
-import './admin-suite-bootstrap.js';
-import './collections-bootstrap.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
@@ -25,7 +23,7 @@ function installCss() {
   if (document.querySelector('link[data-admin-v2-stock]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './assets/stock.css';
+  link.href = './assets/stock.css?admin_build=20260725-admin-v4';
   link.dataset.adminV2Stock = '1';
   document.head.appendChild(link);
 }
@@ -34,7 +32,7 @@ function workspaceMarkup() {
   const windows = [5, 10, 15, 20, 25, 30]
     .map(value => `<option value="${value}">Próximos ${value} dias</option>`).join('');
   return `<section class="panel stock-workspace" id="stockWorkspace">
-    <div class="panel-header"><div><span class="eyebrow">Fila operacional</span><h2>Estoque e validade</h2><p>Vencidos, próximos do vencimento, sem validade e estoque baixo em uma única lista.</p></div><span class="badge info" id="stockDataStatus">Carregando…</span></div>
+    <div class="panel-header"><div><span class="eyebrow">Fila operacional</span><h2>Estoque e validade</h2><p>Vencidos, próximos do vencimento, sem validade e estoque baixo em uma única lista.</p></div><span class="badge info" id="stockDataStatus">Abra Operações para carregar</span></div>
     <div class="attention-grid stock-metrics" id="stockMetrics"></div>
     <div class="stock-toolbar"><div class="search-field"><span>⌕</span><input id="stockSearch" type="search" placeholder="Produto, código, EAN ou localização"></div><select id="stockStatusFilter"><option value="">Todos os status</option><option value="expired">Vencidos</option><option value="critical">Até 5 dias</option><option value="upcoming">Até 30 dias</option><option value="no-stock">Sem estoque</option><option value="low-stock">Estoque baixo</option><option value="no-validity">Sem validade</option></select><select id="stockWindowFilter"><option value="">Qualquer validade</option>${windows}</select><select id="stockSort"><option value="expiry">Vencimento mais próximo</option><option value="stock">Menor estoque</option><option value="name">Nome</option></select></div>
     <div class="table-summary"><div><strong id="stockResultCount">0</strong><span> produtos</span></div></div>
@@ -82,6 +80,36 @@ function toast(message, type = '') {
   setTimeout(() => node.remove(), type === 'error' ? 6500 : 3500);
 }
 
+const routeImports = new Map();
+
+function loadRouteModules(route) {
+  if (routeImports.has(route)) return routeImports.get(route);
+  let task = Promise.resolve();
+  if (route === 'operations') {
+    task = Promise.all([
+      import('./quick-read-bootstrap.js?admin_build=20260725-admin-v4'),
+      import('./order-tools-bootstrap.js?admin_build=20260725-admin-v4'),
+    ]);
+  } else if (route === 'promotions') {
+    task = Promise.all([
+      import('./collections-bootstrap.js?admin_build=20260725-admin-v4'),
+      import('./offers-bootstrap.js?admin_build=20260725-admin-v4'),
+      import('./admin-suite-bootstrap.js?admin_build=20260725-admin-v4'),
+    ]);
+  } else if (route === 'registries') {
+    task = import('./registries-bootstrap.js?admin_build=20260725-admin-v4');
+  } else if (route === 'settings') {
+    task = import('./diagnostics-bootstrap.js?admin_build=20260725-admin-v4');
+  }
+  const guarded = Promise.resolve(task).catch(error => {
+    routeImports.delete(route);
+    toast(`Não foi possível abrir o módulo: ${error?.message || error}`, 'error');
+    throw error;
+  });
+  routeImports.set(route, guarded);
+  return guarded;
+}
+
 function start() {
   const operations = document.querySelector('[data-view="operations"]');
   if (!operations || document.getElementById('stockWorkspace')) return;
@@ -92,15 +120,28 @@ function start() {
 
   const store = { state: { config: loadConfig(), products: [] }, getProduct(key) { return this.state.products.find(product => productKey(product) === String(key)) || null; } };
   let module;
-  async function reload() {
+  let loaded = false;
+  let loadingPromise = null;
+
+  async function reload({ force = false } = {}) {
+    if (loadingPromise) return loadingPromise;
     const status = document.getElementById('stockDataStatus');
     status.className = 'badge warning';
     status.textContent = 'Atualizando…';
-    store.state.config = loadConfig();
-    store.state.products = await loadProducts(store.state.config);
-    module?.refresh();
-    status.className = 'badge success';
-    status.textContent = `${store.state.products.length} produtos`;
+    loadingPromise = (async () => {
+      store.state.config = loadConfig();
+      store.state.products = await loadProducts(store.state.config, { force });
+      loaded = true;
+      module?.refresh();
+      status.className = 'badge success';
+      status.textContent = `${store.state.products.length} produtos`;
+      return store.state.products;
+    })().catch(error => {
+      status.className = 'badge danger';
+      status.textContent = 'Falha ao carregar';
+      throw error;
+    }).finally(() => { loadingPromise = null; });
+    return loadingPromise;
   }
 
   const ids = [
@@ -110,9 +151,21 @@ function start() {
     'stockCancelEditor', 'stockSaveEditor',
   ];
   const elements = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
-  module = new StockModule({ store, elements, onToast: toast, onReload: reload, reloadConfig: loadConfig });
-  reload().catch(error => toast(error?.message || String(error), 'error'));
-  document.getElementById('reloadButton')?.addEventListener('click', () => reload().catch(() => {}));
+  module = new StockModule({ store, elements, onToast: toast, onReload: () => reload({ force: true }), reloadConfig: loadConfig });
+
+  const activateRoute = route => {
+    loadRouteModules(route).catch(() => {});
+    if (route === 'operations' && !loaded) reload().catch(error => toast(error?.message || String(error), 'error'));
+  };
+
+  document.getElementById('mainNav')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-route]');
+    if (button) activateRoute(button.dataset.route);
+  });
+  document.getElementById('reloadButton')?.addEventListener('click', () => {
+    const route = document.querySelector('[data-view].active')?.dataset.view;
+    if (route === 'operations') reload({ force: true }).catch(() => {});
+  });
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
