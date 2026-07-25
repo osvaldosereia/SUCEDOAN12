@@ -1,4 +1,5 @@
-import './product-editor-enhancements.js?admin_build=20260725-admin-v8';
+import './professional-route-loader.js?admin_build=20260725-admin-v9';
+import './product-editor-enhancements.js?admin_build=20260725-admin-v9';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 
 const ORIGINAL_FETCH_KEY = '__daAdminV2OriginalFetch';
