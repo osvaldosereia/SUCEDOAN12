@@ -20,8 +20,8 @@ export async function fetchJson(url, { timeoutMs = CONFIG.REQUEST_TIMEOUT_MS, ca
   }
 }
 
-function extractVolume(text) {
-  const match = String(text ?? '').match(/(\d+[\.,]?\d*)\s?(kg|g|ml|l|lt|un|und|pct|cx)\b/i);
+function extractVolume(textValue) {
+  const match = String(textValue ?? '').match(/(\d+[\.,]?\d*)\s?(kg|g|ml|l|lt|un|und|pct|cx)\b/i);
   return match ? match[0].replace(',', '.') : '';
 }
 
@@ -85,7 +85,7 @@ export function normalizeProduct(raw = {}, key = '', index = 0) {
     firebaseKey,
     codigo: String(raw.codigo || raw.sku || firebaseKey),
     name,
-    slug: slug(name),
+    slug: String(raw.slug || slug(name)),
     price: oldPrice,
     oldPrice,
     stock: Math.max(0, parseInt(raw.estoque, 10) || 0),
@@ -180,57 +180,6 @@ export function normalizeCoupons(data) {
     .sort((a, b) => Number(a.posicao || 99) - Number(b.posicao || 99));
 }
 
-function looksLikeBanner(value) {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    && (value.id || value.banner_id || value.imagem || value.image || value.img || value.arquivo || value.titulo || value.title || value.link);
-}
-
-function normalizeBannerLink(raw) {
-  const source = raw?.link ?? raw?.destino ?? raw?.href ?? raw?.link_url ?? raw?.url_destino ?? '';
-  if (source && typeof source === 'object') {
-    const type = norm(source.tipo || source.type || 'rota');
-    const value = String(source.valor || source.value || source.href || source.url || '').trim();
-    if (!value) return '';
-    if (type === 'produto') return `#/produto/${encodeURIComponent(value)}`;
-    return value;
-  }
-  const value = String(source || '').trim();
-  if (value) return value;
-  const product = raw?.produto_codigo || raw?.produto_id || raw?.firebaseKey || raw?.produto?.codigo || raw?.produto?.firebaseKey || '';
-  return product ? `#/produto/${encodeURIComponent(String(product))}` : '';
-}
-
-export function normalizeBanners(data) {
-  const source = data && typeof data === 'object' ? data : {};
-  const candidates = [source.banners, source.items, source.lista, source.ativos, source.data?.banners, source.catalogo?.banners];
-  let selected = candidates.find(item => Array.isArray(item) || (item && typeof item === 'object' && Object.values(item).some(looksLikeBanner)));
-  if (!selected && Array.isArray(data)) selected = data;
-  if (!selected) selected = source;
-  const entries = Array.isArray(selected) ? selected.map((raw, index) => [String(index), raw]) : Object.entries(selected || {}).filter(([, raw]) => looksLikeBanner(raw));
-  const seen = new Set();
-  return entries.map(([key, raw], index) => {
-    const image = raw.imagem || raw.imagem_url || raw.image || raw.img || raw.arquivo || raw.arquivo_imagem || raw.mobile || raw.desktop || raw.arquivos?.principal || raw.imagens?.principal;
-    const exhibition = raw.exibicao && typeof raw.exibicao === 'object' ? raw.exibicao : {};
-    const period = raw.periodo && typeof raw.periodo === 'object' ? raw.periodo : {};
-    const id = String(raw.id || raw.banner_id || raw.slug || key || `banner-${index + 1}`);
-    return {
-      id,
-      active: raw.ativo !== false && raw.active !== false && norm(raw.status) !== 'inativo',
-      position: String(exhibition.local || raw.posicao || raw.position || raw.local || raw.slot || 'home.hero').trim(),
-      target: String(exhibition.alvo || raw.alvo || raw.target || '').trim(),
-      order: Number(exhibition.ordem ?? raw.ordem ?? raw.order ?? index + 1),
-      image: assetUrl(image),
-      title: String(raw.titulo || raw.title || raw.nome || ''),
-      alt: String(raw.alt || raw.titulo || raw.title || raw.nome || 'Destaque Dona Antônia'),
-      link: normalizeBannerLink(raw),
-      start: period.inicio || raw.inicio || raw.data_inicio || null,
-      end: period.fim || raw.fim || raw.data_fim || raw.validade_oferta || null,
-      raw
-    };
-  }).filter(banner => banner.id && banner.image && !seen.has(banner.id) && seen.add(banner.id))
-    .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id, 'pt-BR'));
-}
-
 async function latestCatalogVersion() {
   try {
     const data = await fetchJson(`${CONFIG.ENDPOINTS.CATALOG_VERSION}?t=${Date.now()}`, { timeoutMs: 3000, cache: 'no-store' });
@@ -265,8 +214,7 @@ export async function loadCatalog() {
   const auxiliary = await Promise.all([
     loadResource({ endpoint: CONFIG.ENDPOINTS.BASKETS, storageName: CONFIG.STORAGE.BASKETS, normalize: normalizeBaskets, version, optional: true }),
     loadResource({ endpoint: CONFIG.ENDPOINTS.KITS, storageName: CONFIG.STORAGE.KITS, normalize: normalizeKits, version, optional: true }),
-    loadResource({ endpoint: CONFIG.ENDPOINTS.COUPONS, storageName: CONFIG.STORAGE.COUPONS, normalize: normalizeCoupons, version, optional: true, timeoutMs: 5000 }),
-    loadResource({ endpoint: CONFIG.ENDPOINTS.BANNERS, storageName: CONFIG.STORAGE.BANNERS, normalize: normalizeBanners, version, optional: true, timeoutMs: 5000 })
+    loadResource({ endpoint: CONFIG.ENDPOINTS.COUPONS, storageName: CONFIG.STORAGE.COUPONS, normalize: normalizeCoupons, version, optional: true, timeoutMs: 5000 })
   ]);
   const productsResult = await productsPromise;
   const indexes = indexProducts(productsResult.data);
@@ -276,7 +224,7 @@ export async function loadCatalog() {
     baskets: auxiliary[0].data,
     kits: auxiliary[1].data,
     coupons: auxiliary[2].data,
-    banners: auxiliary[3].data,
+    banners: [],
     catalogVersion: productsResult.version,
     catalogSource: productsResult.source,
     catalogLoadedAt: Date.now()
@@ -301,10 +249,10 @@ export function searchProducts(products, query, isAvailable = () => true) {
   if (!normalized) return [];
   const queryWords = words(normalized);
   return products.filter(isAvailable).map(product => {
-    const text = product.searchTokens?.text || '';
+    const productText = product.searchTokens?.text || '';
     const exactCode = [product.id, product.codigo, product.gtin, product.ean].some(value => norm(value) === normalized);
     const prefixCode = product.searchTokens?.code?.includes(normalized);
-    const allWords = queryWords.every(word => text.includes(word));
+    const allWords = queryWords.every(word => productText.includes(word));
     const nameStarts = norm(product.name).startsWith(normalized);
     const score = exactCode ? 1000 : nameStarts ? 500 : prefixCode ? 300 : allWords ? 100 : 0;
     return { product, score };

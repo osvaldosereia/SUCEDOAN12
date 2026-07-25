@@ -1,144 +1,132 @@
-# Relatório de testes — Admin Dona Antônia V2
+# Relatório de validação — Admin oficial Dona Antônia
 
-Data da consolidação: 24/07/2026
+Data da consolidação: 25/07/2026
 
-## Escopo
+## Escopo validado automaticamente
 
-Validação da reconstrução paralela localizada em `producao-v2/`, sem substituição do admin atual.
+O workflow `Testar Admin V2 definitivo` executa a validação estrutural do painel e dos processos de publicação.
 
-## Testes de sintaxe e estrutura
+### Estrutura e sintaxe
 
-- `node --check` nos módulos JavaScript usados nos testes locais: aprovado.
-- Grafo de imports relativos: todos os destinos encontrados.
-- HTML e componentes dinâmicos: nenhum ID duplicado após carregamento conjunto.
-- Navegação principal: Visão geral, Produtos, Operações, Vendas e promoções, Cadastros e Configurações carregadas no smoke test.
+- todos os arquivos JavaScript de `producao-v2/js/` passam por `node --check`;
+- imports relativos são resolvidos e seus destinos precisam existir;
+- JSONs de cupons, Compra Rápida, ofertas e banners são analisados;
+- os módulos obrigatórios do painel oficial precisam estar presentes;
+- o arquivo de banners precisa permanecer vazio e explicitamente desativado.
 
-## Produtos e catálogo
+Resultado atual: aprovado no GitHub Actions.
 
-- carregamento e normalização do Firebase;
-- filtros e paginação;
-- edição local por produto;
-- erros obrigatórios e avisos de qualidade;
-- conflito de estoque;
-- bloqueio de base64;
-- ordem de publicação Firebase → produtos-home → catalog-version.
+## Produtos
 
-Resultado: aprovado com serviços simulados para escrita.
+Validado no código e em testes automatizados:
 
-## Entrada de NF-e
+- carregamento compartilhado do Firebase;
+- cache curto com invalidação após gravação;
+- salvamento por `PATCH`;
+- detecção de conflito por campo;
+- normalização de números, booleanos, EAN, NCM e CEST;
+- cadastro manual de produto novo;
+- lixeira, restauração e preservação da chave;
+- histórico de imagens anteriores;
+- auditoria em `logs_admin`;
+- campos comerciais, fiscais, logísticos, SEO e Bling;
+- categorias, marcas e fornecedores digitáveis.
+
+Não foi criado nem alterado um produto real durante os testes automatizados.
+
+## Catálogo público
+
+Validado:
+
+- sincronização imediata solicitada após mutação de produto;
+- contingência automática a cada cinco minutos;
+- geração de `site/produtos-home.json` diretamente do Firebase;
+- atualização conjunta de `catalog-version.json`;
+- paridade de campos entre publicação manual e automática;
+- ausência de consulta pública ao arquivo de banners.
+
+## Banners
+
+- `site/banners/banners.json` permanece vazio;
+- o arquivo está marcado como desativado;
+- o catálogo público não possui endpoint nem armazenamento de banners;
+- o workflow de ofertas não publica banners;
+- as rotinas de oferta utilizam arquivo temporário isolado quando um contrato legado exige o parâmetro.
+
+Resultado: banners removidos do fluxo público e administrativo.
+
+## Ofertas e cupons
+
+Validado:
+
+- limpeza de ofertas por validade antes do processamento;
+- execução de ofertas agendada a cada hora;
+- publicação de produtos, estado, histórico e versão do catálogo;
+- arquivo `site/ofertas-historico.json` presente;
+- editor de cupons com criação, edição, ativação, desativação e exclusão;
+- publicação de `site/cuponsativos.json`.
+
+Nenhuma oferta real foi criada ou encerrada durante o teste estrutural.
+
+## Compra Rápida, cestas e kits
+
+Validado:
+
+- editor da Compra Rápida incorporado à V2;
+- seções e itens editáveis;
+- busca de produtos;
+- seleção de todos os resultados em um clique;
+- definição de produto padrão;
+- publicação de `site/compra-rapida.json`;
+- módulos existentes de cestas e kits carregados pela cadeia oficial.
+
+## Pedidos, Make e Bling
+
+Validado:
+
+- leitura dos pedidos do Firebase;
+- filtros e detalhes;
+- alteração de status;
+- registro da alteração em `logs_admin`;
+- reenvio controlado ao webhook de pedidos;
+- armazenamento do resultado ou erro no pedido;
+- configuração do webhook salva no `localStorage`;
+- etiqueta 100 × 150 mm sem preços;
+- separação visual dos itens faltantes.
+
+Nenhum pedido real foi reenviado ao Make ou ao Bling durante os testes automatizados.
+
+## NF-e
+
+A lógica existente permanece validada para:
 
 - XML 4.00;
-- chave com 44 números;
-- agrupamento de linhas repetidas;
+- chave de 44 números;
+- agrupamento de itens;
 - multiplicador caixa/unidade;
-- rateio de desconto;
-- custo e margem;
+- desconto, custo e margem;
 - correspondência automática/manual;
-- validade, lotes e produto sem validade;
-- simulação de produto existente e novo;
-- duplicidade global, por grupo e por `entradas_nfe`;
-- arquivamento do XML;
-- atualização do registro após cada item;
-- falha parcial e retomada segura.
+- validade e lotes;
+- produto existente ou novo;
+- duplicidade global e por item;
+- arquivamento e registro fiscal;
+- falha parcial e retomada.
 
-Caso real reproduzido: `35260715436940002734550010431539491114617900`.
+Nenhuma NF-e real foi importada nesta validação.
 
-Resultado: aprovado em modo simulado. Nenhuma NF-e real foi importada pela V2.
+## Limite dos testes automatizados
 
-## Estoque e validade
+Testes de sintaxe e contratos não substituem uma operação real com credenciais, regras do Firebase, token GitHub, webhooks Make e Bling.
 
-- status vencido, crítico, próximo, sem estoque, estoque baixo e sem validade;
-- janelas de 5, 10, 15, 20, 25 e 30 dias;
-- lote com validade mais próxima;
-- motivo obrigatório;
-- conflito remoto;
-- histórico do ajuste.
+## Teste manual obrigatório restante
 
-Resultado: aprovado com gravação simulada.
+A implantação deve parar para validação humana somente após o merge e a publicação, nos seguintes pontos:
 
-## Cestas e kits
+1. salvar um produto existente de teste;
+2. criar, arquivar e restaurar um produto temporário;
+3. confirmar a atualização no site público;
+4. importar uma NF-e de teste ainda não utilizada;
+5. publicar um cupom ou uma pequena alteração na Compra Rápida;
+6. reenviar um pedido controlado ao Make/Bling.
 
-- preço predefinido de cesta preservado;
-- produto inexistente/inativo/sem preço/sem estoque;
-- estoque suficiente conforme quantidade;
-- substitutos;
-- economia e desconto de kit;
-- período e limite;
-- fila de Instagram por `kit_codigo`;
-- bloqueio de imagem base64.
-
-Resultado: aprovado com publicação GitHub simulada.
-
-## Ofertas automáticas
-
-- limites inferiores e superiores de todas as faixas;
-- oferta manual preservada;
-- bloqueio reversível com até dois dias;
-- produto vencido;
-- limpeza fora da janela;
-- restauração após validade segura;
-- conflito remoto.
-
-Resultado: aprovado com gravação simulada.
-
-## Cadastros
-
-- agrupamento por valor normalizado;
-- variantes de maiúsculas, acentos e espaços;
-- categoria/subcategoria/subsubcategoria;
-- marcas, fornecedores e tags;
-- mesclagem contextual;
-- conflito remoto durante lote.
-
-Resultado: aprovado com gravação simulada.
-
-## Leitura rápida
-
-- EAN, código e busca parcial;
-- foco contínuo para leitor;
-- estoque, validade, lotes e localização;
-- atalhos para os editores oficiais.
-
-Resultado: aprovado no navegador automatizado.
-
-## Diagnóstico e backup
-
-- Firebase;
-- produtos-home;
-- catalog-version;
-- cestas, kits e fila;
-- auditoria integrada;
-- CSV;
-- backup JSON sem token GitHub;
-- Make e Bling não chamados.
-
-Resultado: aprovado no navegador automatizado.
-
-## Smoke test integrado
-
-Todos os módulos, exceto a NF-e — já validada em teste de navegador próprio — foram carregados juntos com rotas interceptadas e dados simulados equivalentes às fontes reais.
-
-Verificações:
-
-- 3 produtos carregados;
-- Leitura rápida e Estoque ativos em Operações;
-- Cestas, Kits e Ofertas ativos em Vendas e promoções;
-- Cadastros ativo;
-- Diagnóstico executado;
-- nenhum erro JavaScript de página;
-- nenhum ID duplicado.
-
-Resultado: aprovado.
-
-## Pendência obrigatória antes de substituir produção
-
-Executar homologação controlada com:
-
-1. credenciais reais em navegador autorizado;
-2. uma NF-e de teste ainda não utilizada;
-3. um produto de teste no Firebase;
-4. uma publicação de catálogo de teste;
-5. uma cesta ou kit de teste;
-6. confirmação visual no site público e nos registros fiscais.
-
-Até essa homologação, todas as travas devem permanecer desligadas e o PR deve permanecer em rascunho.
+Esses testes alteram dados reais e, por isso, não devem ser executados automaticamente sem selecionar registros próprios para teste.

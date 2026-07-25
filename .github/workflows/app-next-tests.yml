@@ -31,23 +31,60 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: app-next/package.json
       - name: Testar módulos
+        id: modules
+        continue-on-error: true
         working-directory: app-next
-        run: npm test
-      - name: Smoke test modular
-        working-directory: app-next
-        run: npm run check
-      - name: Validar estrutura pública, políticas e feeds
-        run: node scripts/check-public-site.mjs
-      - name: Verificar sintaxe dos geradores
+        shell: bash
         run: |
-          node --check scripts/gerar-merchant.js
-          node --check scripts/gerar-sitemap.js
-          node --check scripts/check-public-site.mjs
+          set -o pipefail
+          npm test 2>&1 | tee ../public-site-test-report.txt
+      - name: Smoke test modular
+        id: smoke
+        if: always()
+        continue-on-error: true
+        working-directory: app-next
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run check 2>&1 | tee -a ../public-site-test-report.txt
+      - name: Validar estrutura pública, políticas e feeds
+        id: public
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/check-public-site.mjs 2>&1 | tee -a public-site-test-report.txt
+      - name: Verificar sintaxe dos geradores
+        id: generators
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            node --check scripts/gerar-merchant.js
+            node --check scripts/gerar-sitemap.js
+            node --check scripts/check-public-site.mjs
+          } 2>&1 | tee -a public-site-test-report.txt
+      - name: Anexar relatório do site
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-site-test-report
+          path: public-site-test-report.txt
+          if-no-files-found: error
+          retention-days: 7
+      - name: Confirmar resultado
+        if: steps.modules.outcome == 'failure' || steps.smoke.outcome == 'failure' || steps.public.outcome == 'failure' || steps.generators.outcome == 'failure'
+        run: |
+          cat public-site-test-report.txt
+          exit 1

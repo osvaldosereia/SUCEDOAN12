@@ -1,9 +1,12 @@
-name: Processar ofertas automaticas
+name: Processar ofertas automáticas
+run-name: Ofertas oficiais · ${{ github.event_name }}
 
 on:
   repository_dispatch:
     types: [processar_ofertas]
   workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
 
 permissions:
   contents: write
@@ -15,9 +18,9 @@ concurrency:
 jobs:
   processar:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
-      - name: Baixar configuracao atual
+      - name: Baixar configuração atual
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
@@ -27,26 +30,33 @@ jobs:
         with:
           node-version: 22
 
-      - name: Preservar base para reconciliacao
+      - name: Preservar base para reconciliação
         shell: bash
         run: |
           set -euo pipefail
           dir="$RUNNER_TEMP/ofertas-publicacao"
           mkdir -p "$dir"
-          cp site/banners/banners.json "$dir/base-banners.json"
           if [ -f site/ofertas-automaticas-estado.json ]; then
             cp site/ofertas-automaticas-estado.json "$dir/base-estado.json"
           else
             printf '{}\n' > "$dir/base-estado.json"
           fi
 
-      - name: Criar, encerrar, reativar e sincronizar ofertas
+      - name: Limpar ofertas por validade encerradas
+        env:
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
+        run: node scripts/limpar-ofertas-validade-expiradas.mjs
+
+      - name: Criar, encerrar e reativar ofertas
         env:
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
           OFFERS_HISTORY_PATH: site/ofertas-historico.json
-          BANNERS_PATH: site/banners/banners.json
+          BANNERS_PATH: ${{ runner.temp }}/banners-removidos.json
+          PRODUCTS_HOME_PATH: site/produtos-home.json
         run: node scripts/processar-ofertas.mjs
 
       - name: Preservar resultados processados
@@ -57,12 +67,12 @@ jobs:
           cp site/produtos-home.json "$dir/gerado-produtos-home.json"
           cp site/ofertas-automaticas-estado.json "$dir/gerado-estado.json"
           cp site/ofertas-historico.json "$dir/gerado-historico.json"
-          cp site/banners/banners.json "$dir/gerado-banners.json"
 
-      - name: Publicar com reconciliacao e novas tentativas
+      - name: Publicar com reconciliação e novas tentativas
         shell: bash
         env:
           OFFERS_PUBLICATION_DIR: ${{ runner.temp }}/ofertas-publicacao
+          CATALOG_VERSION_PATH: catalog-version.json
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -70,7 +80,7 @@ jobs:
           branch="${GITHUB_REF_NAME:-main}"
 
           for tentativa in 1 2 3 4 5; do
-            echo "Publicacao: tentativa ${tentativa} de 5 na branch ${branch}."
+            echo "Publicação: tentativa ${tentativa} de 5 na branch ${branch}."
             git fetch origin "$branch"
             git reset --hard "origin/$branch"
 
@@ -80,22 +90,22 @@ jobs:
               site/produtos-home.json \
               site/ofertas-automaticas-estado.json \
               site/ofertas-historico.json \
-              site/banners/banners.json
+              catalog-version.json
 
             if git diff --cached --quiet; then
-              echo "Nenhuma alteracao de catalogo para publicar."
+              echo "Nenhuma alteração de catálogo para publicar."
               exit 0
             fi
 
-            git commit -m "Atualiza ofertas, historico e banners vinculados"
+            git commit -m "Atualiza ofertas automáticas e histórico"
             if git push origin "HEAD:${branch}"; then
-              echo "Publicacao concluida na tentativa ${tentativa}."
+              echo "Publicação concluída na tentativa ${tentativa}."
               exit 0
             fi
 
-            echo "A branch recebeu outro commit durante a publicacao. Reconciliando novamente sem apagar banners novos."
+            echo "A branch recebeu outro commit durante a publicação. Reconciliando novamente."
             sleep $((tentativa * 3))
           done
 
-          echo "Falha ao publicar depois de 5 tentativas por atualizacoes concorrentes na branch ${branch}." >&2
+          echo "Falha ao publicar depois de 5 tentativas." >&2
           exit 1

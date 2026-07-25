@@ -3,7 +3,7 @@ const IS_PRODUCTION = !RUNTIME_PATH.includes('/app-next/');
 
 export const CONFIG = Object.freeze({
   APP_NAME: 'Dona Antônia',
-  APP_VERSION: IS_PRODUCTION ? '2026-07-24-modular-production-v8' : '2026-07-24-modular-preview-v8',
+  APP_VERSION: IS_PRODUCTION ? '2026-07-25-modular-production-v4' : '2026-07-25-modular-preview-v4',
   ENVIRONMENT: IS_PRODUCTION ? 'production' : 'preview',
   IS_PRODUCTION,
   SITE_BASE_URL: 'https://www.donaantonia.com.br',
@@ -15,7 +15,6 @@ export const CONFIG = Object.freeze({
     COUPONS: '../site/cuponsativos.json',
     CATALOG_VERSION: '../catalog-version.json',
     APP_VERSION: '../site/app-version.json',
-    BANNERS: '../site/banners/banners.json',
     MAKE_ORDER: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
     CLIENT_LOOKUP: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
     FIREBASE_ORDERS: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/pedidos'
@@ -26,7 +25,6 @@ export const CONFIG = Object.freeze({
     BASKETS: 'baskets_v1',
     KITS: 'kits_v1',
     COUPONS: 'coupons_v1',
-    BANNERS: 'banners_v1',
     CART: 'cart_v1',
     FAVORITES: 'favorites_v1',
     CHECKOUT_CLIENT: 'checkout_client_v1',
