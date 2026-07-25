@@ -46,10 +46,11 @@ function checkImports(relative) {
   const directory = path.dirname(relative);
   const expressions = [...source.matchAll(/(?:import\s+(?:[^'";]+?\s+from\s+)?|export\s+[^'";]+?\s+from\s+|import\s*\()(['"])(\.\.?\/[^'"]+)\1/g)];
   for (const match of expressions) {
-    const target = match[2];
+    const originalTarget = match[2];
+    const target = originalTarget.split(/[?#]/, 1)[0];
     const resolved = path.normalize(path.join(ROOT, directory, target));
     const candidates = [resolved, `${resolved}.js`, path.join(resolved, 'index.js')];
-    if (!candidates.some(existsSync)) fail(`Import não encontrado em ${relative}: ${target}`);
+    if (!candidates.some(existsSync)) fail(`Import não encontrado em ${relative}: ${originalTarget}`);
   }
 }
 
