@@ -1,0 +1,77 @@
+{
+  "checkedAt": "2026-07-25T02:04:10.470Z",
+  "baseUrl": "https://donaantonia.com.br",
+  "ok": false,
+  "checks": [
+    {
+      "name": "Entrada /producao aponta para o Admin oficial",
+      "ok": true,
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784945050470"
+    },
+    {
+      "name": "Atalho /admin aponta para o Admin oficial",
+      "ok": false,
+      "detail": "Conteúdo ausente: producao-v2"
+    },
+    {
+      "name": "Admin oficial carregado",
+      "ok": true,
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784945050774"
+    },
+    {
+      "name": "Catálogo público possui produtos",
+      "ok": true,
+      "detail": "1411 produto(s)"
+    },
+    {
+      "name": "Versão do catálogo válida",
+      "ok": true,
+      "detail": "catalog-1784944307673 · site/produtos-home.json"
+    },
+    {
+      "name": "Banners permanecem removidos",
+      "ok": true,
+      "detail": "disabled=true · 0 banner(s)"
+    },
+    {
+      "name": "Arquivo de cupons válido",
+      "ok": true,
+      "detail": "3 cupom(ns)"
+    },
+    {
+      "name": "Compra Rápida válida",
+      "ok": true,
+      "detail": "6 seção(ões)"
+    },
+    {
+      "name": "Histórico de ofertas válido",
+      "ok": true,
+      "detail": "0 oferta(s) no histórico"
+    },
+    {
+      "name": "Rotina horária de ofertas atualizada",
+      "ok": false,
+      "detail": "237.1h desde a execução · status sucesso · 36 expirada(s) ainda ativa(s)"
+    }
+  ],
+  "errors": [
+    {
+      "name": "Atalho /admin aponta para o Admin oficial",
+      "ok": false,
+      "detail": "Conteúdo ausente: producao-v2"
+    },
+    {
+      "name": "Rotina horária de ofertas atualizada",
+      "ok": false,
+      "detail": "237.1h desde a execução · status sucesso · 36 expirada(s) ainda ativa(s)"
+    }
+  ],
+  "warnings": [],
+  "workflow": {
+    "event": "push",
+    "runId": "30139619226",
+    "attempt": "1",
+    "sourceSha": "5d9b55b7de90fb3a66b52dd02616728056baa8aa",
+    "publishedAt": "2026-07-25T02:04:12.204Z"
+  }
+}
