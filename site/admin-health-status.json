@@ -1,22 +1,22 @@
 {
-  "checkedAt": "2026-07-25T14:06:47.289Z",
+  "checkedAt": "2026-07-25T14:12:52.500Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": true,
   "checks": [
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784988407290"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784988772500"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784988408063"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784988772855"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784988408239"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784988772873"
     },
     {
       "name": "Catálogo público possui produtos",
@@ -31,7 +31,7 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 261 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 181 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Versão do catálogo válida",
@@ -61,16 +61,16 @@
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.2h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [],
   "warnings": [],
   "workflow": {
-    "event": "schedule",
-    "runId": "30160984949",
+    "event": "push",
+    "runId": "30161154755",
     "attempt": "1",
-    "sourceSha": "3ba4b7349d5dcc0f4befe8a5b6e317d4262954b2",
-    "publishedAt": "2026-07-25T14:06:50.457Z"
+    "sourceSha": "014070b0ad564a0c0ccbb8436e77f414af9f65b0",
+    "publishedAt": "2026-07-25T14:12:53.641Z"
   }
 }
