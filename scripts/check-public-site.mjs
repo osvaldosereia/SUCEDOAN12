@@ -93,7 +93,7 @@ const item = merchant.itemXml('firebase-teste', sample);
 for (const marker of [
   '<g:price>20.00 BRL</g:price>', '<g:sale_price>16.00 BRL</g:sale_price>',
   '<g:minimum_order_value>', '<g:price>75.00 BRL</g:price>',
-  'https://www.donaantonia.com.br/site/img/produtos/teste.webp', '?p=firebase-teste'
+  'https://www.donaantonia.com.br/site/img/produtos/teste.webp', '?p=TESTE-1'
 ]) assert(item.includes(marker), `Feed Merchant de teste incompleto: ${marker}`);
 assert(!item.includes('<g:shipping>'), 'Feed informa frete gratuito para todo o Brasil');
 assert(!item.includes('<g:unit_pricing_measure>'), 'Feed ainda envia embalagem livre como medida unitária');
