@@ -3,7 +3,8 @@ import { escapeHtml, normalizeSearch, number, text } from './core/utils.js';
 import { patchOrder } from './services/firebase.js';
 import { invalidateOrdersCache, loadRecentOrders } from './services/orders.js';
 
-const CONTINGENCY_LIMIT = 150;
+const CONTINGENCY_LIMIT = 60;
+const VISIBLE_LIMIT = 30;
 
 function loadConfig() {
   try { return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}') }; }
@@ -34,68 +35,46 @@ function installOrderWebhookSetting() {
   input.addEventListener('change', () => {
     persistConfig({ makeOrderWebhookUrl: text(input.value) });
     toast('Webhook de pedidos salvo neste navegador.', 'success');
-    updateOfficialLabels();
   });
 }
 
-function updateOfficialLabels() {
-  const config = loadConfig();
-  document.querySelectorAll('#systemList .system-row').forEach(row => {
-    const label = row.querySelector('strong');
-    const help = row.querySelector('small');
-    if (!label || !help) return;
-    if (label.textContent === 'Gravações da V2') {
-      label.textContent = 'Gravações do Admin';
-      help.textContent = config.writeMode ? 'Ativadas para operação oficial' : 'Bloqueadas neste navegador';
-    }
-    if (label.textContent === 'Última publicação V2') label.textContent = 'Última publicação';
-    if (label.textContent === 'Admin atual') help.textContent = 'producao/ abre o Admin oficial';
-  });
-  document.querySelectorAll('#diagnosticList .system-row').forEach(row => {
-    const label = row.querySelector('strong');
-    const help = row.querySelector('small');
-    const badge = row.querySelector('.badge');
-    if (!label || !help) return;
-    if (label.textContent === 'Automações Make') {
-      const channels = [
-        config.makeTextWebhookUrl || config.makeAiWebhookUrl,
-        config.makeImageWebhookUrl || config.makeAiWebhookUrl,
-        config.makeInstagramKitWebhookUrl,
-        config.makeOrderWebhookUrl,
-      ].filter(Boolean).length;
-      help.textContent = channels ? `${channels} de 4 canais configurados` : 'Nenhum webhook configurado';
-      if (badge) {
-        badge.className = `badge ${channels === 4 ? 'success' : 'warning'}`;
-        badge.textContent = channels === 4 ? 'OK' : 'Atenção';
-      }
-    }
-    if (label.textContent === 'Modo de gravação') {
-      help.textContent = config.writeMode ? 'Ativado para operação oficial' : 'Bloqueado';
-      if (badge) {
-        badge.className = `badge ${config.writeMode ? 'success' : 'warning'}`;
-        badge.textContent = config.writeMode ? 'OK' : 'Atenção';
-      }
-    }
-  });
+function orderNumber(order) {
+  return text(order.numero_pedido || order.numero || order.id || order.firebaseKey);
 }
 
-function installLabelObserver() {
-  if (window.__adminOfficialLabelObserver) return;
-  window.__adminOfficialLabelObserver = true;
-  const observer = new MutationObserver(() => updateOfficialLabels());
-  ['systemList', 'diagnosticList'].forEach(id => {
-    const node = document.getElementById(id);
-    if (node) observer.observe(node, { childList: true, subtree: true });
-  });
-  updateOfficialLabels();
+function customer(order) {
+  return order.cliente && typeof order.cliente === 'object' ? order.cliente : {};
 }
 
-function orderNumber(order) { return text(order.numero_pedido || order.numero || order.id || order.firebaseKey); }
-function customer(order) { return order.cliente || {}; }
-function delivery(order) { return order.entrega || order.endereco || customer(order).endereco || {}; }
-function items(order) { return Array.isArray(order.itens) ? order.itens : Array.isArray(order.produtos) ? order.produtos : []; }
-function itemName(item) { return text(item.nome || item.produto || item.descricao || item.codigo || 'Produto'); }
-function itemQty(item) { return Math.max(1, number(item.qtd || item.quantidade || 1)); }
+function delivery(order) {
+  return order.entrega || order.endereco || customer(order).endereco || {};
+}
+
+function items(order) {
+  return Array.isArray(order.itens) ? order.itens : Array.isArray(order.produtos) ? order.produtos : [];
+}
+
+function itemName(item) {
+  return text(item.nome || item.produto || item.descricao || item.codigo || 'Produto');
+}
+
+function itemQty(item) {
+  return Math.max(1, number(item.qtd || item.quantidade || 1));
+}
+
+function orderIntegrationStatus(order) {
+  return text(order.make_status || order.bling_status || order.status_make || 'pendente');
+}
+
+function isProblem(order) {
+  const status = normalizeSearch(orderIntegrationStatus(order));
+  return !status || status.includes('erro') || status.includes('pendent') || status.includes('fila') || status === 'nao_enviado';
+}
+
+function isSent(order) {
+  const status = normalizeSearch(orderIntegrationStatus(order));
+  return status.includes('enviado') || status.includes('sucesso') || status.includes('criado');
+}
 
 function labelHtml(order) {
   const client = customer(order);
@@ -120,6 +99,7 @@ async function resendOrder(order, button) {
   const url = text(config.makeOrderWebhookUrl);
   if (!url) throw new Error('Informe o webhook de pedidos do Make em Integrações.');
   if (!confirm(`Reenviar o pedido #${orderNumber(order)} ao Make/Bling?`)) return;
+
   button.disabled = true;
   button.textContent = 'Enviando…';
   const startedAt = new Date().toISOString();
@@ -165,14 +145,15 @@ async function resendOrder(order, button) {
 
 function start() {
   installOrderWebhookSetting();
-  installLabelObserver();
   const view = document.querySelector('[data-view="order-tools"]');
   if (!view || document.getElementById('orderToolsPanel')) return;
+
   const panel = document.createElement('section');
   panel.className = 'panel suite-panel';
   panel.id = 'orderToolsPanel';
-  panel.innerHTML = `<div class="panel-header"><div><span class="eyebrow">Contingência isolada</span><h2>Make, Bling e etiquetas</h2><p>Reenvie pedidos com erro e imprima etiquetas 100 × 150 mm sem carregar a tela principal de pedidos.</p></div><div class="suite-actions"><span class="badge info" data-order-tools-status>Preparando…</span><button class="button secondary" type="button" data-order-tools-reload>Atualizar</button></div></div><div class="suite-toolbar"><div class="search-field"><span>⌕</span><input type="search" placeholder="Pedido, cliente, telefone ou erro" autocomplete="off" data-order-tools-search></div><select data-order-tools-filter><option value="problem">Com erro ou pendentes</option><option value="all">Todos os recentes</option><option value="sent">Enviados</option></select></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Pedido</th><th>Cliente</th><th>Make/Bling</th><th>Atualização</th><th></th></tr></thead><tbody data-order-tools-rows><tr><td colspan="5">Preparando lista…</td></tr></tbody></table></div>`;
+  panel.innerHTML = `<div class="panel-header"><div><span class="eyebrow">Contingência leve</span><h2>Make, Bling e etiquetas</h2><p>Consulta limitada aos pedidos mais recentes. Reenvio e impressão são processados apenas quando solicitados.</p></div><div class="suite-actions"><span class="badge info" data-order-tools-status>Preparando…</span><button class="button secondary" type="button" data-order-tools-reload>Atualizar</button></div></div><div class="suite-toolbar"><div class="search-field"><span>⌕</span><input type="search" placeholder="Pedido, cliente, telefone ou erro" autocomplete="off" data-order-tools-search></div><select data-order-tools-filter><option value="problem">Com erro ou pendentes</option><option value="all">Todos os recentes</option><option value="sent">Enviados</option></select></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Pedido</th><th>Cliente</th><th>Make/Bling</th><th>Atualização</th><th></th></tr></thead><tbody data-order-tools-rows><tr><td colspan="5">Preparando lista…</td></tr></tbody></table></div><div class="table-summary"><span data-order-tools-summary>Carregamento limitado a ${CONTINGENCY_LIMIT} pedidos.</span></div>`;
   view.appendChild(panel);
+
   let orders = [];
   let searchTimer = null;
   let loading = false;
@@ -180,19 +161,20 @@ function start() {
   const render = () => {
     const query = normalizeSearch(panel.querySelector('[data-order-tools-search]').value);
     const filter = panel.querySelector('[data-order-tools-filter]').value;
-    const visible = orders.filter(order => {
-      const status = normalizeSearch(order.make_status || order.bling_status || order.status_make || 'pendente');
-      const problem = !status || status.includes('erro') || status.includes('pendent') || status.includes('fila') || status === 'nao_enviado';
-      const sent = status.includes('enviado') || status.includes('sucesso') || status.includes('criado');
-      const matchesFilter = filter === 'all' || (filter === 'problem' && problem) || (filter === 'sent' && sent);
+    const filtered = orders.filter(order => {
+      const matchesFilter = filter === 'all' || (filter === 'problem' && isProblem(order)) || (filter === 'sent' && isSent(order));
       const client = customer(order);
-      const matchesQuery = !query || normalizeSearch([orderNumber(order), client.nome, client.telefone, order.make_ultimo_erro, order.bling_erro].join(' ')).includes(query);
+      const matchesQuery = !query || normalizeSearch([
+        orderNumber(order), client.nome, client.telefone, order.make_ultimo_erro, order.bling_erro,
+      ].join(' ')).includes(query);
       return matchesFilter && matchesQuery;
-    }).slice(0, 80);
+    });
+    const visible = filtered.slice(0, VISIBLE_LIMIT);
+    panel.querySelector('[data-order-tools-summary]').textContent = `${filtered.length} resultado(s) · mostrando até ${VISIBLE_LIMIT} · ${orders.length} pedido(s) carregado(s)`;
     panel.querySelector('[data-order-tools-rows]').innerHTML = visible.length ? visible.map(order => {
       const client = customer(order);
-      const status = text(order.make_status || order.bling_status || order.status_make || 'Pendente');
-      const failed = normalizeSearch(status).includes('erro') || normalizeSearch(status).includes('pendent');
+      const status = orderIntegrationStatus(order);
+      const failed = isProblem(order);
       return `<tr><td><strong>#${escapeHtml(orderNumber(order))}</strong><small>${items(order).length} item(ns)</small></td><td><strong>${escapeHtml(client.nome || order.nome_cliente || 'Cliente')}</strong><small>${escapeHtml(client.telefone || order.telefone || '')}</small></td><td><span class="badge ${failed ? 'warning' : 'success'}">${escapeHtml(status)}</span><small>${escapeHtml(order.make_ultimo_erro || order.bling_erro || '')}</small></td><td>${escapeHtml(order.make_ultimo_reenvio || order.atualizado_em || order.criado_em || '')}</td><td><div class="suite-actions"><button class="row-action" type="button" data-order-resend="${escapeHtml(order.firebaseKey)}">Reenviar Make/Bling</button><button class="row-action" type="button" data-order-label="${escapeHtml(order.firebaseKey)}">Etiqueta</button></div></td></tr>`;
     }).join('') : '<tr><td colspan="5" class="empty-state">Nenhum pedido corresponde ao filtro.</td></tr>';
   };
@@ -200,16 +182,17 @@ function start() {
   const reload = async ({ force = false } = {}) => {
     if (loading) return;
     loading = true;
+    panel.setAttribute('aria-busy', 'true');
     const rows = panel.querySelector('[data-order-tools-rows]');
     const status = panel.querySelector('[data-order-tools-status]');
-    rows.innerHTML = '<tr><td colspan="5">Carregando somente pedidos recentes…</td></tr>';
+    rows.innerHTML = '<tr><td colspan="5">Carregando uma lista reduzida de pedidos…</td></tr>';
     status.className = 'badge warning';
     status.textContent = 'Carregando…';
     try {
       await new Promise(resolve => requestAnimationFrame(resolve));
       if (force) invalidateOrdersCache();
       const result = await loadRecentOrders(loadConfig(), { limit: CONTINGENCY_LIMIT, force });
-      orders = result.orders;
+      orders = result.orders.slice(0, CONTINGENCY_LIMIT);
       status.className = 'badge success';
       status.textContent = `${orders.length} recentes`;
       render();
@@ -219,13 +202,14 @@ function start() {
       rows.innerHTML = `<tr><td colspan="5">${escapeHtml(error?.message || String(error))}</td></tr>`;
     } finally {
       loading = false;
+      panel.removeAttribute('aria-busy');
     }
   };
 
   panel.querySelector('[data-order-tools-reload]').addEventListener('click', () => reload({ force: true }));
   panel.querySelector('[data-order-tools-search]').addEventListener('input', () => {
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(render, 140);
+    searchTimer = setTimeout(render, 180);
   });
   panel.querySelector('[data-order-tools-filter]').addEventListener('change', render);
   panel.querySelector('[data-order-tools-rows]').addEventListener('click', async event => {
@@ -235,14 +219,18 @@ function start() {
     const order = orders.find(row => String(row.firebaseKey) === String(key));
     if (!order) return;
     try {
-      if (resend) { await resendOrder(order, resend); render(); }
+      if (resend) {
+        await resendOrder(order, resend);
+        render();
+      }
       if (label) printLabel(order);
     } catch (error) {
       toast(error?.message || String(error), 'error');
     }
   });
-  reload();
+
   window.dispatchEvent(new CustomEvent('admin-v2-route-ready', { detail: { route: 'order-tools' } }));
+  setTimeout(() => reload(), 40);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
