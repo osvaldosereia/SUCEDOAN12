@@ -1,5 +1,5 @@
 import './official-copy-fixes.js';
-import './product-editor-enhancements.js';
+import './product-editor-enhancements.js?admin_build=20260725-admin-v5';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 
 const ORIGINAL_FETCH_KEY = '__daAdminV2OriginalFetch';
