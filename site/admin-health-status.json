@@ -1,22 +1,22 @@
 {
-  "checkedAt": "2026-07-25T18:53:17.548Z",
+  "checkedAt": "2026-07-25T18:56:49.924Z",
   "baseUrl": "https://donaantonia.com.br",
-  "ok": true,
+  "ok": false,
   "checks": [
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1785005597548"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1785005809925"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1785005598067"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1785005810321"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1785005598183"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1785005810385"
     },
     {
       "name": "Catálogo público possui produtos",
@@ -31,7 +31,12 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 243 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 133 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+    },
+    {
+      "name": "Pedidos usam consulta limitada no Firebase",
+      "ok": false,
+      "detail": "20 pedido(s) retornado(s) em 176 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
@@ -64,13 +69,19 @@
       "detail": "0.7h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
-  "errors": [],
+  "errors": [
+    {
+      "name": "Pedidos usam consulta limitada no Firebase",
+      "ok": false,
+      "detail": "20 pedido(s) retornado(s) em 176 ms · limite solicitado 12 · chaves OK"
+    }
+  ],
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "30170470254",
+    "runId": "30170523412",
     "attempt": "1",
-    "sourceSha": "b36012cc977a23322b1918048f69206917ecc7bb",
-    "publishedAt": "2026-07-25T18:53:20.102Z"
+    "sourceSha": "47d3e6412cc8278da232e09d50578a8c0c3d463c",
+    "publishedAt": "2026-07-25T18:56:51.767Z"
   }
 }
