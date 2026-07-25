@@ -1,6 +1,5 @@
-import './professional-shell.js?admin_build=20260725-admin-v9';
-import './catalog-auto-sync.js?admin_build=20260725-admin-v9';
-import './product-lifecycle-bootstrap.js?admin_build=20260725-admin-v9';
+import './catalog-auto-sync.js?admin_build=20260725-admin-v10';
+import './product-lifecycle-bootstrap.js?admin_build=20260725-admin-v10';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
@@ -24,7 +23,7 @@ function installCss() {
   if (document.querySelector('link[data-admin-v2-stock]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './assets/stock.css?admin_build=20260725-admin-v9';
+  link.href = './assets/stock.css?admin_build=20260725-admin-v10';
   link.dataset.adminV2Stock = '1';
   document.head.appendChild(link);
 }
@@ -33,7 +32,7 @@ function workspaceMarkup() {
   const windows = [5, 10, 15, 20, 25, 30]
     .map(value => `<option value="${value}">Próximos ${value} dias</option>`).join('');
   return `<section class="panel stock-workspace" id="stockWorkspace">
-    <div class="panel-header"><div><span class="eyebrow">Fila operacional</span><h2>Estoque e validade</h2><p>Vencidos, próximos do vencimento, sem validade e estoque baixo em uma única lista.</p></div><span class="badge info" id="stockDataStatus">Abra Estoque e validade para carregar</span></div>
+    <div class="panel-header"><div><span class="eyebrow">Fila operacional</span><h2>Estoque e validade</h2><p>Vencidos, próximos do vencimento, sem validade e estoque baixo em uma única lista.</p></div><span class="badge info" id="stockDataStatus">Abra Operações para carregar</span></div>
     <div class="attention-grid stock-metrics" id="stockMetrics"></div>
     <div class="stock-toolbar"><div class="search-field"><span>⌕</span><input id="stockSearch" type="search" placeholder="Produto, código, EAN ou localização"></div><select id="stockStatusFilter"><option value="">Todos os status</option><option value="expired">Vencidos</option><option value="critical">Até 5 dias</option><option value="upcoming">Até 30 dias</option><option value="no-stock">Sem estoque</option><option value="low-stock">Estoque baixo</option><option value="no-validity">Sem validade</option></select><select id="stockWindowFilter"><option value="">Qualquer validade</option>${windows}</select><select id="stockSort"><option value="expiry">Vencimento mais próximo</option><option value="stock">Menor estoque</option><option value="name">Nome</option></select></div>
     <div class="table-summary"><div><strong id="stockResultCount">0</strong><span> produtos</span></div></div>
@@ -52,7 +51,7 @@ function editorMarkup() {
 function installSettings() {
   const grid = document.querySelector('[data-view="settings"] .settings-grid');
   if (!grid || document.getElementById('stockSafetySettings')) return;
-  const html = `<section class="panel span-all-settings" id="stockSafetySettings"><div class="panel-header"><div><h2>Segurança de estoque e validade</h2><p>Ajustes manuais com motivo obrigatório e reconsulta do estoque remoto.</p></div><span class="badge success" id="stockSettingsStatus">Ativo</span></div><div class="form-stack"><label class="switch-row"><span><strong>Permitir ajustes manuais</strong><small>Use esta chave para bloquear temporariamente os ajustes de estoque neste navegador.</small></span><input id="stockWriteModeSetting" type="checkbox"></label></div></section>`;
+  const html = `<section class="panel span-all-settings" id="stockSafetySettings"><div class="panel-header"><div><h2>Estoque e validade</h2><p>Ajustes manuais com motivo obrigatório e reconsulta do estoque remoto.</p></div><span class="badge success" id="stockSettingsStatus">Ativo</span></div><div class="form-stack"><label class="switch-row"><span><strong>Permitir ajustes manuais</strong><small>Use esta chave para bloquear temporariamente os ajustes de estoque neste navegador.</small></span><input id="stockWriteModeSetting" type="checkbox"></label></div></section>`;
   const danger = grid.querySelector('.danger-panel');
   if (danger) danger.insertAdjacentHTML('beforebegin', html);
   else grid.insertAdjacentHTML('beforeend', html);
@@ -88,19 +87,19 @@ function loadRouteModules(route) {
   let task = Promise.resolve();
   if (route === 'operations') {
     task = Promise.all([
-      import('./quick-read-bootstrap.js?admin_build=20260725-admin-v9'),
-      import('./order-tools-bootstrap.js?admin_build=20260725-admin-v9'),
+      import('./quick-read-bootstrap.js?admin_build=20260725-admin-v10'),
+      import('./order-tools-bootstrap.js?admin_build=20260725-admin-v10'),
     ]);
   } else if (route === 'promotions') {
     task = Promise.all([
-      import('./collections-bootstrap.js?admin_build=20260725-admin-v9'),
-      import('./offers-bootstrap.js?admin_build=20260725-admin-v9'),
-      import('./admin-suite-bootstrap.js?admin_build=20260725-admin-v9'),
+      import('./collections-bootstrap.js?admin_build=20260725-admin-v10'),
+      import('./offers-bootstrap.js?admin_build=20260725-admin-v10'),
+      import('./admin-suite-bootstrap.js?admin_build=20260725-admin-v10'),
     ]);
   } else if (route === 'registries') {
-    task = import('./registries-bootstrap.js?admin_build=20260725-admin-v9');
+    task = import('./registries-bootstrap.js?admin_build=20260725-admin-v10');
   } else if (route === 'settings') {
-    task = import('./diagnostics-bootstrap.js?admin_build=20260725-admin-v9');
+    task = import('./diagnostics-bootstrap.js?admin_build=20260725-admin-v10');
   }
   const guarded = Promise.resolve(task).catch(error => {
     routeImports.delete(route);
