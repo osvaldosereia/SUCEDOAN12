@@ -1,0 +1,108 @@
+name: Verificar Admin em produção
+run-name: Saúde do Admin · ${{ github.event_name }}
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23,53 * * * *"
+  push:
+    branches: [main]
+    paths:
+      - "producao/index.html"
+      - "producao-v2/**"
+      - "admin/index.html"
+      - "site/produtos-home.json"
+      - "site/banners/banners.json"
+      - "site/cuponsativos.json"
+      - "site/compra-rapida.json"
+      - "site/ofertas-automaticas-estado.json"
+      - "site/ofertas-historico.json"
+      - "catalog-version.json"
+      - "scripts/check-admin-production.mjs"
+      - ".github/workflows/verificar-admin-producao.yml"
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: verificar-admin-producao
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Baixar o repositório
+        uses: actions/checkout@v5
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Aguardar publicação estática
+        if: github.event_name == 'push'
+        run: sleep 45
+
+      - name: Primeira verificação
+        id: first_check
+        continue-on-error: true
+        env:
+          ADMIN_BASE_URL: https://donaantonia.com.br
+          OFFER_MAX_AGE_HOURS: 3
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/check-admin-production.mjs 2>&1 | tee admin-production-first.log
+          cp admin-production-report.json admin-production-report-inicial.json
+
+      - name: Solicitar autocorreção
+        if: steps.first_check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/dispatches"
+          headers=(
+            -H "Accept: application/vnd.github+json"
+            -H "Authorization: Bearer ${GH_TOKEN}"
+            -H "X-GitHub-Api-Version: 2022-11-28"
+            -H "Content-Type: application/json"
+          )
+          curl --fail-with-body --silent --show-error -X POST "${headers[@]}" "$api" \
+            -d "{\"event_type\":\"sincronizar_produtos_home\",\"client_payload\":{\"origem\":\"healthcheck-admin\",\"solicitado_em\":\"$(date -u +%FT%TZ)\"}}"
+          curl --fail-with-body --silent --show-error -X POST "${headers[@]}" "$api" \
+            -d "{\"event_type\":\"processar_ofertas\",\"client_payload\":{\"origem\":\"healthcheck-admin\",\"solicitado_em\":\"$(date -u +%FT%TZ)\"}}"
+          echo "Sincronização do catálogo e processamento de ofertas solicitados."
+
+      - name: Aguardar autocorreção
+        if: steps.first_check.outcome == 'failure'
+        run: sleep 120
+
+      - name: Verificação final
+        if: steps.first_check.outcome == 'failure'
+        env:
+          ADMIN_BASE_URL: https://donaantonia.com.br
+          OFFER_MAX_AGE_HOURS: 3
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/check-admin-production.mjs 2>&1 | tee admin-production-final.log
+
+      - name: Preservar relatório aprovado
+        if: steps.first_check.outcome == 'success'
+        run: cp admin-production-report-inicial.json admin-production-report.json
+
+      - name: Anexar relatórios
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-production-health
+          path: |
+            admin-production-report*.json
+            admin-production-*.log
+          if-no-files-found: warn
+          retention-days: 14
