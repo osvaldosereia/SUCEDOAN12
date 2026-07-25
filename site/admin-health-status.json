@@ -1,16 +1,71 @@
 {
-  "ok": false,
-  "errors": [
+  "checkedAt": "2026-07-25T02:38:45.604Z",
+  "baseUrl": "https://donaantonia.com.br",
+  "ok": true,
+  "checks": [
     {
-      "name": "healthcheck",
-      "detail": "Relatório não foi gerado"
+      "name": "Entrada /producao aponta para o Admin oficial",
+      "ok": true,
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1784947125605"
+    },
+    {
+      "name": "Atalho /admin aponta para o Admin oficial",
+      "ok": true,
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1784947126121"
+    },
+    {
+      "name": "Admin oficial carregado",
+      "ok": true,
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1784947126210"
+    },
+    {
+      "name": "Catálogo público possui produtos",
+      "ok": true,
+      "detail": "1411 produto(s)"
+    },
+    {
+      "name": "Índice administrativo possui todos os produtos",
+      "ok": true,
+      "detail": "1524 produto(s) administrativos · 1411 público(s) · campos OK"
+    },
+    {
+      "name": "Versão do catálogo válida",
+      "ok": true,
+      "detail": "catalog-1784946483996 · público 1411 · admin 1524"
+    },
+    {
+      "name": "Banners permanecem removidos",
+      "ok": true,
+      "detail": "disabled=true · 0 banner(s)"
+    },
+    {
+      "name": "Arquivo de cupons válido",
+      "ok": true,
+      "detail": "3 cupom(ns)"
+    },
+    {
+      "name": "Compra Rápida válida",
+      "ok": true,
+      "detail": "6 seção(ões)"
+    },
+    {
+      "name": "Histórico de ofertas válido",
+      "ok": true,
+      "detail": "176 oferta(s) no histórico"
+    },
+    {
+      "name": "Rotina horária de ofertas atualizada",
+      "ok": true,
+      "detail": "0.5h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
+  "errors": [],
+  "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "30140713514",
+    "runId": "30140759536",
     "attempt": "1",
-    "sourceSha": "6fcf06db064d26d62f58115d37e7b47cb961ca1c",
-    "publishedAt": "2026-07-25T02:37:16.895Z"
+    "sourceSha": "d148f00590033a9cf2809c8535a06046c3a0fe0d",
+    "publishedAt": "2026-07-25T02:38:47.569Z"
   }
 }
