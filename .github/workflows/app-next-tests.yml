@@ -1,16 +1,27 @@
-name: Test app-next modular preview
+name: Validar site público modular
 
 on:
-  push:
-    branches:
-      - agent/refatoracao-index-modular
-    paths:
-      - 'app-next/**'
-      - '.github/workflows/app-next-tests.yml'
   pull_request:
+    branches: [main]
     paths:
+      - 'index.html'
       - 'app-next/**'
+      - 'site-public/**'
+      - 'scripts/gerar-merchant.js'
+      - 'scripts/gerar-sitemap.js'
+      - 'scripts/check-public-site.mjs'
+      - 'sobre-nos.html'
+      - 'contato.html'
+      - 'politica-de-entrega.html'
+      - 'politica-de-troca.html'
+      - 'politica-de-privacidade.html'
+      - 'termos-de-uso.html'
+      - 'robots.txt'
+      - 'sitemap.xml'
+      - 'merchant.xml'
       - '.github/workflows/app-next-tests.yml'
+      - '.github/workflows/update-public-data.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,9 +29,6 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: app-next
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,7 +38,16 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: app-next/package.json
-      - name: Test modules
+      - name: Testar módulos
+        working-directory: app-next
         run: npm test
-      - name: Smoke check
+      - name: Smoke test modular
+        working-directory: app-next
         run: npm run check
+      - name: Validar estrutura pública, políticas e feeds
+        run: node scripts/check-public-site.mjs
+      - name: Verificar sintaxe dos geradores
+        run: |
+          node --check scripts/gerar-merchant.js
+          node --check scripts/gerar-sitemap.js
+          node --check scripts/check-public-site.mjs

@@ -67,6 +67,45 @@
   box-shadow:0 8px 20px rgba(81,14,20,.2);
 }
 
+.home-company-info{
+  margin-top:30px;
+  padding:24px;
+  display:grid;
+  grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+  gap:20px 28px;
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:#fff;
+}
+.home-company-copy{align-self:center}
+.home-company-copy>small{color:var(--brand);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.home-company-copy h2{margin:7px 0 9px;font-size:clamp(22px,3vw,32px);line-height:1.08;letter-spacing:-.03em}
+.home-company-copy p{margin:0;color:var(--muted);font-size:14px;line-height:1.6}
+.home-company-facts{margin:0;display:grid;gap:8px}
+.home-company-facts>div{padding:11px 12px;border-radius:14px;background:var(--surface-soft)}
+.home-company-facts dt{font-size:11px;font-weight:900;text-transform:uppercase;color:var(--brand)}
+.home-company-facts dd{margin:3px 0 0;color:var(--ink);font-size:13px;line-height:1.35;font-weight:650}
+.home-company-links{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;padding-top:2px}
+.home-company-links a{min-height:42px;padding:0 13px;border:1px solid var(--line);border-radius:12px;display:inline-flex;align-items:center;background:#fff;color:var(--brand);font-size:13px;font-weight:850}
+
+.public-site-footer{
+  margin-top:38px;
+  padding:22px 0 4px;
+  border-top:1px solid var(--line);
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:12px 24px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+}
+.public-site-footer-brand,.public-site-footer-contact{display:grid;gap:2px}
+.public-site-footer strong{color:var(--ink);font-size:13px}
+.public-site-footer-contact{text-align:right}
+.public-site-footer-contact a{color:var(--brand);font-weight:850}
+.public-site-footer nav{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 14px;padding-top:4px}
+.public-site-footer nav a{color:var(--ink);font-weight:750}
+
 @media(max-width:767px){
   .payment-notices{grid-template-columns:1fr;gap:9px}
   .payment-notice{min-height:82px;padding:12px}
@@ -82,6 +121,12 @@
   }
   .home-offers-banner strong{font-size:31px;line-height:1}
   .home-offers-banner-button{min-width:138px;min-height:46px}
+  .home-company-info{margin-top:24px;padding:18px;grid-template-columns:1fr;gap:16px;border-radius:20px}
+  .home-company-links{grid-column:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .home-company-links a{justify-content:center;text-align:center;padding:8px 10px}
+  .public-site-footer{grid-template-columns:1fr;gap:10px}
+  .public-site-footer-contact{text-align:left}
+  .public-site-footer nav{grid-column:auto;gap:8px 12px}
 }
 
 @media(min-width:768px){

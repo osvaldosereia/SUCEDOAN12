@@ -4,7 +4,7 @@ import { indexProducts, loadCatalog } from './catalog.js';
 import { applyProductOffer, calculateCartPricing, CartService, resolveBundleRows } from './commerce.js';
 import { basketDraftTotal } from './basket-pricing.js';
 import { createPersonalization } from './personalization.js';
-import { createUI } from './ui.js';
+import { createUI } from './ui.js?v=20260724-7';
 import { createCheckout } from './checkout.js';
 import { processOrderQueue } from './integrations.js';
 
@@ -107,24 +107,10 @@ function openBundleConfirmation({ type, bundle, quantities = null, snapshot, cus
   overlay.innerHTML = `<section class="bundle-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="bundle-confirm-title">
     <button class="bundle-confirm-close" type="button" data-action="bundle-confirm-close" aria-label="Fechar">×</button>
     <div class="bundle-confirm-success" aria-hidden="true">✓</div>
-    <div class="bundle-confirm-heading">
-      <span>${escapeHtml(kindLabel)}</span>
-      <h2 id="bundle-confirm-title">${escapeHtml(title)}</h2>
-      <p>O item foi incluído corretamente. Escolha o próximo passo.</p>
-    </div>
-    <div class="bundle-confirm-summary">
-      <div class="bundle-confirm-media"><img src="${escapeHtml(bundle.imagem || '../img/logoantonia5.png')}" alt=""></div>
-      <div class="bundle-confirm-copy">
-        <strong>${escapeHtml(bundle.nome || kindLabel)}</strong>
-        <span>${escapeHtml(unitText)}</span>
-        <div><small>Valor adicionado</small><b>${fmt(value)}</b></div>
-      </div>
-    </div>
+    <div class="bundle-confirm-heading"><span>${escapeHtml(kindLabel)}</span><h2 id="bundle-confirm-title">${escapeHtml(title)}</h2><p>Escolha o próximo passo.</p></div>
+    <div class="bundle-confirm-summary"><div class="bundle-confirm-media"><img src="${escapeHtml(bundle.imagem || '../img/logoantonia5.png')}" alt=""></div><div class="bundle-confirm-copy"><strong>${escapeHtml(bundle.nome || kindLabel)}</strong><span>${escapeHtml(unitText)}</span><div><small>Valor adicionado</small><b>${fmt(value)}</b></div></div></div>
     <div class="bundle-confirm-progress">${progressText}</div>
-    <div class="bundle-confirm-actions">
-      <button class="primary-button bundle-confirm-checkout" type="button" data-action="bundle-confirm-checkout">Ver minha compra</button>
-      <button class="secondary-button" type="button" data-action="bundle-confirm-continue">Continuar comprando</button>
-    </div>
+    <div class="bundle-confirm-actions"><button class="primary-button bundle-confirm-checkout" type="button" data-action="bundle-confirm-checkout">Ver minha compra</button><button class="secondary-button" type="button" data-action="bundle-confirm-continue">Continuar comprando</button></div>
     <button class="bundle-confirm-undo" type="button" data-action="bundle-confirm-undo">Desfazer adição</button>
   </section>`;
 
@@ -152,15 +138,6 @@ function showPersonalizationPanel() {
 
 function closePersonalizationPanel() {
   document.getElementById('personalization-overlay')?.classList.remove('show');
-}
-
-function showConsentIfNeeded() {
-  if (personalization.consent() !== null || document.getElementById('personalization-consent')) return;
-  const element = document.createElement('section');
-  element.id = 'personalization-consent';
-  element.className = 'personalization-consent';
-  element.innerHTML = `<div><strong>Podemos te indicar produtos e ofertas?</strong><span>Usamos somente a navegação deste aparelho.</span></div><div><button class="secondary-button" data-action="personalization-decline">Agora não</button><button class="primary-button" data-action="personalization-accept">Sim, quero</button></div>`;
-  document.body.appendChild(element);
 }
 
 function findBasket(id) {
@@ -197,15 +174,8 @@ async function handleAction(button) {
     await checkout.handleAction(action, button);
     return;
   }
-  if (action === 'bundle-confirm-close' || action === 'bundle-confirm-continue') {
-    closeBundleConfirmation();
-    return;
-  }
-  if (action === 'bundle-confirm-checkout') {
-    closeBundleConfirmation();
-    checkout.open();
-    return;
-  }
+  if (action === 'bundle-confirm-close' || action === 'bundle-confirm-continue') { closeBundleConfirmation(); return; }
+  if (action === 'bundle-confirm-checkout') { closeBundleConfirmation(); checkout.open(); return; }
   if (action === 'bundle-confirm-undo') {
     restoreCartSnapshot(lastBundleAddition?.snapshot);
     const name = lastBundleAddition?.name || 'Item';
@@ -255,8 +225,8 @@ async function handleAction(button) {
   if (action === 'image') { const main = document.getElementById('product-main-image'); if (main) main.src = button.dataset.src; return; }
   if (action === 'personalization-settings') { showPersonalizationPanel(); return; }
   if (action === 'personalization-close') { closePersonalizationPanel(); return; }
-  if (action === 'personalization-enable' || action === 'personalization-accept') { personalization.setConsent(true); closePersonalizationPanel(); document.getElementById('personalization-consent')?.remove(); rerender(); ui.showToast('Personalização ativada.'); return; }
-  if (action === 'personalization-disable' || action === 'personalization-decline') { personalization.setConsent(false); closePersonalizationPanel(); document.getElementById('personalization-consent')?.remove(); rerender(); ui.showToast('Personalização desativada.'); return; }
+  if (action === 'personalization-enable') { personalization.setConsent(true); closePersonalizationPanel(); rerender(); ui.showToast('Personalização ativada.'); return; }
+  if (action === 'personalization-disable') { personalization.setConsent(false); closePersonalizationPanel(); rerender(); ui.showToast('Personalização desativada.'); return; }
   if (action === 'personalization-clear') { personalization.clearHistory(); closePersonalizationPanel(); rerender(); ui.showToast('Histórico apagado.'); }
 }
 
@@ -344,10 +314,11 @@ async function init() {
     store.mutate(state => {
       Object.assign(state, catalog, indexes, { products, isReady: true });
     }, 'catalog:ready');
+    window.__DA_CATALOG_STATE__ = store.getState();
+    window.dispatchEvent(new CustomEvent('da:catalog-ready'));
     cart.rebuildVirtualFees();
     ui.updateShell();
     router.start();
-    setTimeout(showConsentIfNeeded, 900);
     setTimeout(processOrderQueue, 900);
     checkPreviewVersion();
   } catch (error) {
