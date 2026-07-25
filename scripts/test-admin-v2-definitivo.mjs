@@ -55,6 +55,9 @@ function checkImports(relative) {
 }
 
 const required = [
+  'producao/index.html',
+  'producao/index-legado.html',
+  'admin/index.html',
   'producao-v2/index.html',
   'producao-v2/js/product-lifecycle-bootstrap.js',
   'producao-v2/js/product-editor-enhancements.js',
@@ -65,9 +68,11 @@ const required = [
   'site/ofertas-historico.json',
   'site/cuponsativos.json',
   'site/compra-rapida.json',
+  'scripts/check-admin-production.mjs',
   'scripts/sincronizar-produtos-home-firebase.mjs',
   'scripts/processar-ofertas.mjs',
   'scripts/reconciliar-publicacao-ofertas.mjs',
+  '.github/workflows/verificar-admin-producao.yml',
   '.github/workflows/sincronizar-produtos-home-firebase.yml',
   '.github/workflows/processar-ofertas.yml',
   'app-next/src/config.js',
@@ -78,6 +83,7 @@ required.forEach(file => { if (!existsSync(path.join(ROOT, file))) fail(`Arquivo
 const javascript = [
   ...walk('producao-v2/js', '.js'),
   ...walk('app-next/src', '.js'),
+  'scripts/check-admin-production.mjs',
   'scripts/sincronizar-produtos-home-firebase.mjs',
   'scripts/processar-ofertas.mjs',
   'scripts/reconciliar-publicacao-ofertas.mjs',
@@ -98,6 +104,12 @@ try {
   if (banners.disabled !== true) fail('O arquivo de banners precisa permanecer explicitamente desativado.');
 } catch {}
 
+const productionEntry = read('producao/index.html');
+if (!productionEntry.includes('../producao-v2/')) fail('A rota /producao não aponta para o Admin oficial.');
+if (!productionEntry.includes('no-store') || !productionEntry.includes('window.location.replace')) fail('A rota /producao precisa redirecionar sem cache e preservar a navegação.');
+if (read('producao/index-legado.html').length < 10000) fail('O Admin legado não foi preservado integralmente.');
+if (!read('admin/index.html').includes('producao-v2')) fail('O atalho /admin não aponta para o Admin oficial.');
+
 const publicConfig = read('app-next/src/config.js');
 const publicCatalog = read('app-next/src/catalog.js');
 if (/BANNERS\s*:/.test(publicConfig)) fail('O site público ainda possui endpoint ou armazenamento de banners.');
@@ -112,6 +124,16 @@ if (!offersWorkflow.includes('limpar-ofertas-validade-expiradas.mjs')) fail('A l
 const catalogWorkflow = read('.github/workflows/sincronizar-produtos-home-firebase.yml');
 if (!catalogWorkflow.includes('catalog-version.json')) fail('A sincronização do catálogo não atualiza catalog-version.json.');
 if (!catalogWorkflow.includes('*/5 * * * *')) fail('A contingência de sincronização a cada cinco minutos não está ativa.');
+
+const healthWorkflow = read('.github/workflows/verificar-admin-producao.yml');
+if (!healthWorkflow.includes('23,53 * * * *')) fail('A verificação de produção a cada 30 minutos não está agendada.');
+for (const eventType of ['sincronizar_produtos_home', 'processar_ofertas']) {
+  if (!healthWorkflow.includes(eventType)) fail(`A autocorreção não dispara ${eventType}.`);
+}
+const healthScript = read('scripts/check-admin-production.mjs');
+for (const endpoint of ['/producao/', '/producao-v2/', '/site/produtos-home.json', '/site/ofertas-automaticas-estado.json']) {
+  if (!healthScript.includes(endpoint)) fail(`Healthcheck não valida ${endpoint}.`);
+}
 
 const firebaseService = read('producao-v2/js/services/firebase.js');
 if (!firebaseService.includes("method: 'PATCH'")) fail('O salvamento seguro por PATCH não foi encontrado.');
