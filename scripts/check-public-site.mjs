@@ -14,7 +14,7 @@ const required = [
   'sobre-nos.html', 'contato.html', 'politica-de-entrega.html',
   'politica-de-troca.html', 'politica-de-privacidade.html', 'termos-de-uso.html',
   'app-next/index.html', 'app-next/styles/home-parity.css', 'app-next/styles/live-polish.css',
-  'app-next/src/ui.js', 'app-next/src/main.js', 'app-next/src/live-polish.js',
+  'app-next/src/ui.js', 'app-next/src/main.js', 'app-next/src/offer-engine.js', 'app-next/src/live-polish.js',
   'site-public/assets/institutional.css', 'site-public/README.md',
   'scripts/gerar-merchant.js', 'scripts/gerar-sitemap.js'
 ];
@@ -22,10 +22,11 @@ required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}
 
 const production = read('index.html');
 for (const marker of [
-  '2026-07-24-modular-production-v7',
+  '2026-07-24-modular-production-v8',
   'app-next/styles/home-parity.css?v=20260724-7',
-  'app-next/styles/live-polish.css?v=20260724-7',
-  'da_v7_cache_migrated_20260724',
+  'app-next/styles/live-polish.css?v=20260724-8',
+  'app-next/src/main.js?v=20260724-8',
+  'da_v8_cache_migrated_20260724',
   "params.get('p')",
   "params.get('categoria')",
   "params.get('secao')",
@@ -36,7 +37,8 @@ assert(!production.includes('visual-parity.js'), 'Index ainda carrega o módulo 
 
 const preview = read('app-next/index.html');
 assert(preview.includes('noindex, nofollow'), 'Prévia modular precisa permanecer noindex');
-assert(preview.includes('styles/live-polish.css?v=20260724-7'), 'Prévia sem CSS v7');
+assert(preview.includes('styles/live-polish.css?v=20260724-8'), 'Prévia sem CSS v8');
+assert(preview.includes('src/main.js?v=20260724-8'), 'Prévia sem main v8');
 assert(!preview.includes('visual-parity.js'), 'Prévia ainda carrega o módulo visual redundante');
 
 const institutionalFiles = [
@@ -72,12 +74,20 @@ for (const removed of ['class="home-hero"', 'class="quick-links"', "section('Ofe
 }
 
 const main = read('app-next/src/main.js');
-for (const marker of ['window.__DA_CATALOG_STATE__', "new CustomEvent('da:catalog-ready')", 'personalization-settings']) {
-  assert(main.includes(marker), `Inicialização limpa incompleta: ${marker}`);
-}
+for (const marker of [
+  'window.__DA_CATALOG_STATE__', "new CustomEvent('da:catalog-ready')", 'personalization-settings',
+  "import { prepareProductOffer } from './offer-engine.js'", 'applyProductOffer(prepareProductOffer(product))'
+]) assert(main.includes(marker), `Inicialização limpa incompleta: ${marker}`);
 for (const removed of ['showConsentIfNeeded', 'personalization-consent', 'personalization-accept', 'personalization-decline']) {
   assert(!main.includes(removed), `Código morto do alerta de personalização ainda presente: ${removed}`);
 }
+
+const offerEngine = read('app-next/src/offer-engine.js');
+for (const marker of [
+  'VALIDITY_DISCOUNT_BANDS', '{ min: 3, max: 7, discount: 50 }',
+  '{ min: 92, max: 105, discount: 5 }', 'explicitOfferIsActive',
+  "copy.offerSource = 'manual'", "copy.offerSource = 'validade'"
+]) assert(offerEngine.includes(marker), `Motor de ofertas incompleto: ${marker}`);
 
 const livePolish = read('app-next/src/live-polish.js');
 for (const marker of ['window.__DA_CATALOG_STATE__', 'da:catalog-ready', '.slice(0, 30)', 'appendCarouselBatch', 'restoreBasketPosition']) {
@@ -88,11 +98,18 @@ assert(!livePolish.includes('observe(document.documentElement'), 'live-polish ob
 
 const liveCss = read('app-next/styles/live-polish.css');
 for (const marker of [
-  '--product-card-row:304px', '--product-card-gap:22px', 'grid-auto-rows:var(--product-card-row)',
-  'grid-template-rows:138px minmax(0,1fr)', 'background:#f3f5f3!important',
-  'repeating-linear-gradient(to bottom', '@media(min-width:720px)', '--product-card-gap:24px'
+  '--product-card-gap:22px', '--product-card-body-height:158px',
+  'grid-template-columns:repeat(2,minmax(0,1fr))!important',
+  'grid-template-rows:auto var(--product-card-body-height)',
+  'aspect-ratio:1/1!important', 'object-fit:contain!important', 'object-position:center!important',
+  '.product-card::before', '.product-card::after',
+  'grid-template-columns:repeat(3,minmax(0,1fr))!important',
+  'grid-template-columns:repeat(4,minmax(0,1fr))!important',
+  'grid-template-columns:repeat(5,minmax(0,1fr))!important'
 ]) assert(liveCss.includes(marker), `Padronização dos cards incompleta: ${marker}`);
-assert(!liveCss.includes('box-shadow:0 3px 12px'), 'Sombra antiga dos cards ainda existe');
+for (const removed of ['--product-card-row', 'grid-auto-rows:var(--product-card-row)', 'height:154px!important', 'box-shadow:0 3px 12px']) {
+  assert(!liveCss.includes(removed), `CSS antigo ainda presente: ${removed}`);
+}
 
 const legacyFiles = [
   '.github/workflows/test-fast-home-v7.yml', '.github/workflows/remove-home-brands.yml',
