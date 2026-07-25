@@ -5,6 +5,7 @@ import path from "node:path";
 const STATE_PATH = process.env.OFFERS_STATE_PATH || "site/ofertas-automaticas-estado.json";
 const HISTORY_PATH = process.env.OFFERS_HISTORY_PATH || "site/ofertas-historico.json";
 const PRODUCTS_HOME_PATH = process.env.PRODUCTS_HOME_PATH || "site/produtos-home.json";
+const ADMIN_PRODUCTS_PATH = process.env.ADMIN_PRODUCTS_PATH || "site/produtos-admin.json";
 const CATALOG_VERSION_PATH = process.env.CATALOG_VERSION_PATH || "catalog-version.json";
 const PUBLICATION_DIR = String(process.env.OFFERS_PUBLICATION_DIR || "").trim();
 const MAX_HISTORY = Math.max(1000, Number(process.env.OFFERS_HISTORY_LIMIT || 10000));
@@ -96,22 +97,27 @@ function mergeHistory(latestRaw, generatedRaw) {
 async function run() {
   if (!PUBLICATION_DIR) throw new Error("Defina OFFERS_PUBLICATION_DIR.");
   const temp = name => path.join(PUBLICATION_DIR, name);
-  const [baseState, latestState, generatedState, latestHistory, generatedHistory, generatedHome] = await Promise.all([
+  const [baseState, latestState, generatedState, latestHistory, generatedHistory, generatedHome, adminProducts, currentVersion] = await Promise.all([
     readJson(temp("base-estado.json")),
     readJson(STATE_PATH),
     readJson(temp("gerado-estado.json")),
     readJson(HISTORY_PATH),
     readJson(temp("gerado-historico.json")),
-    readJson(temp("gerado-produtos-home.json"))
+    readJson(temp("gerado-produtos-home.json")),
+    readJson(ADMIN_PRODUCTS_PATH),
+    readJson(CATALOG_VERSION_PATH)
   ]);
 
   const timestamp = new Date().toISOString();
   const version = {
+    ...currentVersion,
     version: `catalog-${Date.now()}`,
     updatedAt: timestamp,
     products: PRODUCTS_HOME_PATH,
+    adminProducts: ADMIN_PRODUCTS_PATH,
     changed: ["products", "offers"],
     productCount: Object.keys(generatedHome || {}).length,
+    adminProductCount: Object.keys(adminProducts || {}).length,
     source: "automatic-offers",
     instructions: "Catálogo atualizado após o processamento automático de ofertas."
   };
