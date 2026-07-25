@@ -9,21 +9,22 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Dona Antônia — Admin oficial</title>
-  <link rel="stylesheet" href="./assets/admin.css?admin_build=20260725-admin-v11">
+  <link rel="stylesheet" href="./assets/admin.css?admin_build=20260725-admin-v12">
+  <link rel="stylesheet" href="./assets/navigation.css?admin_build=20260725-admin-v12">
   <script type="importmap">
   {
     "imports": {
-      "/producao-v2/js/config.js": "/producao-v2/js/config.js?admin_build=20260725-admin-v11",
-      "/producao-v2/js/core/catalog.js": "/producao-v2/js/core/catalog.js?admin_build=20260725-admin-v11",
-      "/producao-v2/js/core/store.js": "/producao-v2/js/core/store.js?admin_build=20260725-admin-v11",
-      "/producao-v2/js/core/utils.js": "/producao-v2/js/core/utils.js?admin_build=20260725-admin-v11",
-      "/producao-v2/js/services/firebase.js": "/producao-v2/js/services/firebase.js?admin_build=20260725-admin-v11",
-      "/producao-v2/js/services/github.js": "/producao-v2/js/services/github.js?admin_build=20260725-admin-v11",
-      "/producao-v2/js/services/github-binary.js": "/producao-v2/js/services/github-binary.js?admin_build=20260725-admin-v11",
-      "/producao-v2/js/modules/make.js": "/producao-v2/js/modules/make.js?admin_build=20260725-admin-v11",
-      "/producao-v2/js/modules/products.js": "/producao-v2/js/modules/products.js?admin_build=20260725-admin-v11",
-      "/producao-v2/js/modules/publish.js": "/producao-v2/js/modules/publish.js?admin_build=20260725-admin-v11",
-      "/producao-v2/js/modules/stock.js": "/producao-v2/js/modules/stock.js?admin_build=20260725-admin-v11"
+      "/producao-v2/js/config.js": "/producao-v2/js/config.js?admin_build=20260725-admin-v12",
+      "/producao-v2/js/core/catalog.js": "/producao-v2/js/core/catalog.js?admin_build=20260725-admin-v12",
+      "/producao-v2/js/core/store.js": "/producao-v2/js/core/store.js?admin_build=20260725-admin-v12",
+      "/producao-v2/js/core/utils.js": "/producao-v2/js/core/utils.js?admin_build=20260725-admin-v12",
+      "/producao-v2/js/services/firebase.js": "/producao-v2/js/services/firebase.js?admin_build=20260725-admin-v12",
+      "/producao-v2/js/services/github.js": "/producao-v2/js/services/github.js?admin_build=20260725-admin-v12",
+      "/producao-v2/js/services/github-binary.js": "/producao-v2/js/services/github-binary.js?admin_build=20260725-admin-v12",
+      "/producao-v2/js/modules/make.js": "/producao-v2/js/modules/make.js?admin_build=20260725-admin-v12",
+      "/producao-v2/js/modules/products.js": "/producao-v2/js/modules/products.js?admin_build=20260725-admin-v12",
+      "/producao-v2/js/modules/publish.js": "/producao-v2/js/modules/publish.js?admin_build=20260725-admin-v12",
+      "/producao-v2/js/modules/stock.js": "/producao-v2/js/modules/stock.js?admin_build=20260725-admin-v12"
     }
   }
   </script>
@@ -36,12 +37,38 @@
         <div><strong>Dona Antônia</strong><span>Admin oficial</span></div>
       </div>
       <nav class="main-nav" id="mainNav">
-        <button class="nav-item active" data-route="dashboard" type="button"><span class="nav-icon">⌂</span><span>Visão geral</span></button>
-        <button class="nav-item" data-route="products" type="button"><span class="nav-icon">▦</span><span>Produtos</span></button>
-        <button class="nav-item" data-route="operations" type="button"><span class="nav-icon">⇄</span><span>Operações</span></button>
-        <button class="nav-item" data-route="promotions" type="button"><span class="nav-icon">%</span><span>Vendas e promoções</span></button>
-        <button class="nav-item" data-route="registries" type="button"><span class="nav-icon">≡</span><span>Cadastros</span></button>
-        <button class="nav-item" data-route="settings" type="button"><span class="nav-icon">⚙</span><span>Configurações</span></button>
+        <section class="nav-group">
+          <div class="nav-group-label">Início</div>
+          <button class="nav-item active" data-route="dashboard" type="button"><span class="nav-icon">IN</span><span>Visão geral</span></button>
+        </section>
+        <section class="nav-group">
+          <div class="nav-group-label">Catálogo e estoque</div>
+          <button class="nav-item" data-route="products" type="button"><span class="nav-icon">PR</span><span>Produtos</span></button>
+          <button class="nav-item" data-route="stock" type="button"><span class="nav-icon">ES</span><span>Estoque e validade</span></button>
+          <button class="nav-item" data-route="quick-read" type="button"><span class="nav-icon">LR</span><span>Leitura rápida</span></button>
+          <button class="nav-item" data-route="nfe" type="button"><span class="nav-icon">NF</span><span>Entrada de NF-e</span></button>
+        </section>
+        <section class="nav-group">
+          <div class="nav-group-label">Vendas</div>
+          <button class="nav-item" data-route="orders" type="button"><span class="nav-icon">PD</span><span>Pedidos</span></button>
+          <button class="nav-item" data-route="baskets" type="button"><span class="nav-icon">CB</span><span>Cestas básicas</span></button>
+          <button class="nav-item" data-route="kits" type="button"><span class="nav-icon">KT</span><span>Kits promocionais</span></button>
+          <button class="nav-item" data-route="offers" type="button"><span class="nav-icon">OF</span><span>Ofertas automáticas</span></button>
+          <button class="nav-item" data-route="coupons" type="button"><span class="nav-icon">CP</span><span>Cupons</span></button>
+          <button class="nav-item" data-route="quick-purchase" type="button"><span class="nav-icon">CR</span><span>Compra Rápida</span></button>
+        </section>
+        <section class="nav-group">
+          <div class="nav-group-label">Cadastros</div>
+          <button class="nav-item" data-route="categories" type="button"><span class="nav-icon">CT</span><span>Categorias</span></button>
+          <button class="nav-item" data-route="brands" type="button"><span class="nav-icon">MC</span><span>Marcas</span></button>
+          <button class="nav-item" data-route="suppliers" type="button"><span class="nav-icon">FR</span><span>Fornecedores</span></button>
+          <button class="nav-item" data-route="tags" type="button"><span class="nav-icon">TG</span><span>Tags</span></button>
+        </section>
+        <section class="nav-group">
+          <div class="nav-group-label">Sistema</div>
+          <button class="nav-item" data-route="integrations" type="button"><span class="nav-icon">IN</span><span>Integrações</span></button>
+          <button class="nav-item" data-route="maintenance" type="button"><span class="nav-icon">DG</span><span>Diagnóstico e backup</span></button>
+        </section>
       </nav>
       <div class="sidebar-status">
         <span class="status-dot" id="sidebarStatusDot"></span>
@@ -52,14 +79,14 @@
     <div class="workspace">
       <header class="topbar">
         <button class="icon-button mobile-menu" id="mobileMenuButton" type="button" aria-label="Abrir menu">☰</button>
-        <div class="topbar-title"><h1 id="pageTitle">Visão geral</h1><p id="pageSubtitle">O que precisa da sua atenção agora.</p></div>
+        <div class="topbar-title"><h1 id="pageTitle">Visão geral</h1><p id="pageSubtitle">Indicadores, prioridades e estado do sistema.</p></div>
         <div class="topbar-actions">
           <button class="button secondary" id="reloadButton" type="button">Atualizar dados</button>
           <button class="button primary" id="publishButton" type="button" disabled>Revisar publicação</button>
         </div>
       </header>
 
-      <div class="environment-banner" role="status"><strong>Sistema oficial v11.</strong> Catálogo leve na abertura e módulos operacionais carregados somente quando necessários.</div>
+      <div class="environment-banner" role="status"><strong>Sistema oficial v12.</strong> Cada função possui uma tela própria e os módulos pesados continuam carregando somente quando necessários.</div>
 
       <main class="main-content" id="mainContent" tabindex="-1">
         <section class="view active" data-view="dashboard" aria-labelledby="pageTitle">
@@ -96,42 +123,32 @@
           </section>
         </section>
 
-        <section class="view" data-view="operations">
-          <div class="module-cards">
-            <article class="module-card"><span class="module-icon">NF</span><div><h2>Entrada de NF-e</h2><p>Carregada ao abrir Operações.</p></div><span class="badge info">Sob demanda</span></article>
-            <article class="module-card"><span class="module-icon">▦</span><div><h2>Leitura rápida</h2><p>Consulta por leitor de código.</p></div><span class="badge info">Sob demanda</span></article>
-            <article class="module-card"><span class="module-icon">!</span><div><h2>Estoque e validade</h2><p>Estoque, vencimentos e lotes.</p></div><span class="badge success">Ativo</span></article>
-          </div>
-        </section>
+        <section class="view route-view" data-view="stock"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">ES</span><strong>Preparando estoque e validade</strong><small>A lista será carregada somente ao abrir esta função.</small></div></div></section>
+        <section class="view route-view" data-view="quick-read"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">LR</span><strong>Preparando leitura rápida</strong><small>Use leitor de código, EAN, código interno ou nome.</small></div></div></section>
+        <section class="view route-view" data-view="nfe"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">NF</span><strong>Preparando entrada de NF-e</strong><small>O módulo fiscal será carregado sem bloquear o restante do Admin.</small></div></div></section>
+        <section class="view route-view" data-view="orders"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">PD</span><strong>Preparando pedidos</strong><small>Separação, conferência, entrega, etiquetas e reenvio em uma única área.</small></div></div></section>
+        <section class="view route-view" data-view="baskets"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CB</span><strong>Preparando cestas básicas</strong><small>Composição, substituições, estoque e publicação.</small></div></div></section>
+        <section class="view route-view" data-view="kits"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">KT</span><strong>Preparando kits promocionais</strong><small>Preço, composição, IA e fila do Instagram.</small></div></div></section>
+        <section class="view route-view" data-view="offers"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">OF</span><strong>Preparando ofertas automáticas</strong><small>Simulação e aplicação segura das regras de validade.</small></div></div></section>
+        <section class="view route-view" data-view="coupons"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CP</span><strong>Preparando cupons</strong><small>Criação, validade, regras e publicação no checkout.</small></div></div></section>
+        <section class="view route-view" data-view="quick-purchase"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CR</span><strong>Preparando Compra Rápida</strong><small>Seções, itens, opções e produto padrão.</small></div></div></section>
+        <section class="view route-view" data-view="categories"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CT</span><strong>Preparando categorias</strong><small>Padronização de categorias e subcategorias em lote.</small></div></div></section>
+        <section class="view route-view" data-view="brands"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">MC</span><strong>Preparando marcas</strong><small>Identificação de variações e padronização.</small></div></div></section>
+        <section class="view route-view" data-view="suppliers"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">FR</span><strong>Preparando fornecedores</strong><small>Revisão e padronização dos fornecedores cadastrados.</small></div></div></section>
+        <section class="view route-view" data-view="tags"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">TG</span><strong>Preparando tags</strong><small>Marcadores usados no catálogo sem duplicações.</small></div></div></section>
 
-        <section class="view" data-view="promotions">
-          <div class="module-cards">
-            <article class="module-card"><span class="module-icon">CB</span><div><h2>Cestas básicas</h2><p>Composição e publicação.</p></div><span class="badge info">Sob demanda</span></article>
-            <article class="module-card"><span class="module-icon">KT</span><div><h2>Kits promocionais</h2><p>Preço, estoque, IA e Instagram.</p></div><span class="badge info">Sob demanda</span></article>
-            <article class="module-card"><span class="module-icon">%</span><div><h2>Ofertas automáticas</h2><p>Regras, simulação e histórico.</p></div><span class="badge info">Sob demanda</span></article>
-          </div>
-        </section>
-
-        <section class="view" data-view="registries">
-          <div class="module-cards">
-            <article class="module-card"><span class="module-icon">CT</span><div><h2>Categorias</h2><p>Categoria e subcategorias.</p></div><span class="badge info">Sob demanda</span></article>
-            <article class="module-card"><span class="module-icon">MC</span><div><h2>Marcas e fornecedores</h2><p>Padronização dos cadastros.</p></div><span class="badge info">Sob demanda</span></article>
-            <article class="module-card"><span class="module-icon">TG</span><div><h2>Tags</h2><p>Marcadores sem duplicações.</p></div><span class="badge info">Sob demanda</span></article>
-          </div>
-        </section>
-
-        <section class="view" data-view="settings">
-          <div class="content-grid two-columns settings-grid">
+        <section class="view route-view" data-view="integrations">
+          <div class="integration-grid">
             <section class="panel">
-              <div class="panel-header"><div><h2>Fontes de dados</h2><p>Fonte oficial fixa do Firebase.</p></div></div>
+              <div class="panel-header"><div><h2>Firebase</h2><p>Fonte oficial dos produtos e operações.</p></div></div>
               <div class="form-stack">
                 <label>Firebase URL<input id="firebaseUrlSetting" type="url"></label>
                 <label>Nó de produtos<input id="productsNodeSetting" type="text"></label>
-                <label class="switch-row"><span><strong>Permitir gravações</strong><small>Controle geral das operações.</small></span><input id="writeModeSetting" type="checkbox"></label>
+                <label class="switch-row"><span><strong>Permitir gravações</strong><small>Controle geral das operações do Admin.</small></span><input id="writeModeSetting" type="checkbox"></label>
               </div>
             </section>
             <section class="panel">
-              <div class="panel-header"><div><h2>Publicação no GitHub</h2><p>Credenciais armazenadas somente neste navegador.</p></div><button class="button secondary compact" id="testGithubButton" type="button">Testar</button></div>
+              <div class="panel-header"><div><h2>GitHub</h2><p>Publicação dos catálogos e imagens.</p></div><button class="button secondary compact" id="testGithubButton" type="button">Testar</button></div>
               <div class="form-stack">
                 <label>Token GitHub<input id="githubTokenSetting" type="password" autocomplete="off"></label>
                 <div class="form-grid compact-grid">
@@ -146,7 +163,7 @@
               </div>
             </section>
             <section class="panel span-all-settings">
-              <div class="panel-header"><div><h2>Automações do Make</h2><p>Canais separados por responsabilidade.</p></div><span class="badge info">4 canais</span></div>
+              <div class="panel-header"><div><h2>Make e Bling</h2><p>Canais separados por responsabilidade.</p></div><span class="badge info">4 canais</span></div>
               <div class="form-stack make-settings-grid">
                 <label>Webhook IA de textos<input id="makeTextWebhookSetting" type="url"></label>
                 <label>Webhook IA de imagens<input id="makeImageWebhookSetting" type="url"></label>
@@ -154,8 +171,13 @@
                 <label>Webhook Pedidos → Make/Bling<input id="makeOrderWebhookSetting" type="url"></label>
               </div>
             </section>
+          </div>
+        </section>
+
+        <section class="view route-view" data-view="maintenance">
+          <div class="maintenance-grid">
             <section class="panel span-all-settings">
-              <div class="panel-header"><div><h2>Diagnóstico de publicação</h2><p>Auditoria rápida na tela; auditoria completa apenas ao publicar.</p></div><button class="button primary compact" id="openPublishReviewSettingsButton" type="button">Abrir revisão</button></div>
+              <div class="panel-header"><div><h2>Diagnóstico de publicação</h2><p>Auditoria rápida na tela; auditoria completa somente ao publicar.</p></div><button class="button primary compact" id="openPublishReviewSettingsButton" type="button">Abrir revisão</button></div>
               <div class="system-list" id="diagnosticList"></div>
             </section>
             <section class="panel danger-panel span-all-settings">
@@ -164,6 +186,11 @@
             </section>
           </div>
         </section>
+
+        <section class="internal-host" data-view="operations"><div class="module-cards"></div></section>
+        <section class="internal-host" data-view="promotions"><div class="module-cards"></div></section>
+        <section class="internal-host" data-view="registries"><div class="module-cards"></div></section>
+        <section class="internal-host" data-view="settings"><div class="settings-grid"><section class="panel danger-panel"></section></div></section>
       </main>
     </div>
   </div>
@@ -204,7 +231,8 @@
   </section>
 
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="./js/app.js?admin_build=20260725-admin-v11"></script>
-  <script type="module" src="./js/stock-bootstrap.js?admin_build=20260725-admin-v11"></script>
+  <script type="module" src="./js/app.js?admin_build=20260725-admin-v12"></script>
+  <script type="module" src="./js/navigation-v12.js?admin_build=20260725-admin-v12"></script>
+  <script type="module" src="./js/stock-bootstrap.js?admin_build=20260725-admin-v12"></script>
 </body>
 </html>
