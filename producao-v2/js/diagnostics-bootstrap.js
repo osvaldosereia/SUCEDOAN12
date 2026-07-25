@@ -19,7 +19,7 @@ function installCss() {
   if (document.querySelector('link[data-admin-v2-diagnostics]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './assets/diagnostics.css';
+  link.href = './assets/diagnostics.css?admin_build=20260725-admin-v9';
   link.dataset.adminV2Diagnostics = '1';
   document.head.appendChild(link);
 }
@@ -31,12 +31,12 @@ function panelMarkup() {
 function installIntegrationSettings() {
   const grid = document.querySelector('[data-view="settings"] .settings-grid');
   if (!grid || document.getElementById('externalIntegrationSettings')) return;
-  const html = `<section class="panel span-all-settings" id="externalIntegrationSettings"><div class="panel-header"><div><h2>Referências de Make e Bling</h2><p>As URLs ficam neste navegador e não são chamadas pelo diagnóstico.</p></div><span class="badge info">Sem disparos automáticos</span></div><div class="form-stack"><label>Webhook Make · pedidos<input id="makeOrderWebhookSetting" type="url" placeholder="https://hook...make.com/..."></label><label>Webhook Make · IA/cadastro<input id="makeAiWebhookSetting" type="url" placeholder="https://hook...make.com/..."></label><label>Conexão Bling<select id="blingConnectionModeSetting"><option value="via-make">Via Make</option><option value="disabled">Não configurada na V2</option></select></label><p class="muted">Nenhum pedido, contato, produto ou execução de cenário é criado por esta tela. Ela apenas documenta as conexões utilizadas.</p></div></section>`;
+  const html = `<section class="panel span-all-settings" id="externalIntegrationSettings"><div class="panel-header"><div><h2>Referências de Make e Bling</h2><p>Referências complementares para diagnóstico e contingência.</p></div><span class="badge info">Sem disparos automáticos</span></div><div class="form-stack"><label>Webhook de pedidos usado no diagnóstico<input id="diagnosticMakeOrderWebhookSetting" type="url" placeholder="https://hook...make.com/..."></label><label>Webhook legado de IA/cadastro<input id="diagnosticMakeAiWebhookSetting" type="url" placeholder="https://hook...make.com/..."></label><label>Conexão Bling<select id="blingConnectionModeSetting"><option value="via-make">Via Make</option><option value="disabled">Não configurada no Admin</option></select></label><p class="muted">Esta área apenas documenta as conexões. Os webhooks operacionais continuam nos campos principais de Integrações.</p></div></section>`;
   const danger = grid.querySelector('.danger-panel');
   if (danger) danger.insertAdjacentHTML('beforebegin', html);
   else grid.insertAdjacentHTML('beforeend', html);
-  const order = document.getElementById('makeOrderWebhookSetting');
-  const ai = document.getElementById('makeAiWebhookSetting');
+  const order = document.getElementById('diagnosticMakeOrderWebhookSetting');
+  const ai = document.getElementById('diagnosticMakeAiWebhookSetting');
   const bling = document.getElementById('blingConnectionModeSetting');
   const sync = () => {
     const config = loadConfig();
