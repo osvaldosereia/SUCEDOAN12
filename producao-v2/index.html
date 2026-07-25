@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="admin-booting">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -8,9 +8,19 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Dona Antônia — Admin oficial</title>
-  <link rel="stylesheet" href="./assets/admin.css?admin_build=20260725-admin-v4">
+  <link rel="stylesheet" href="./assets/boot.css?admin_build=20260725-admin-v6">
+  <link rel="stylesheet" href="./assets/admin.css?admin_build=20260725-admin-v6">
 </head>
 <body>
+  <div class="admin-boot-screen" id="adminBootScreen" role="status" aria-live="polite">
+    <div class="admin-boot-card">
+      <div class="admin-boot-mark" aria-hidden="true">DA</div>
+      <strong>Carregando Admin Dona Antônia</strong>
+      <span id="adminBootMessage">Preparando produtos e ferramentas do sistema…</span>
+      <div class="admin-boot-progress" aria-hidden="true"></div>
+    </div>
+  </div>
+
   <div class="app-shell" id="appShell">
     <aside class="sidebar" id="sidebar" aria-label="Menu principal">
       <div class="brand">
@@ -41,7 +51,7 @@
         </div>
       </header>
 
-      <div class="environment-banner" role="status"><strong>Sistema oficial em uso.</strong> Produtos, estoque, NF-e, cestas, kits, ofertas, cupons, Compra Rápida e pedidos utilizam as fontes oficiais.</div>
+      <div class="environment-banner" role="status"><strong>Sistema oficial em uso.</strong> A lista abre pelo índice administrativo leve e cada cadastro completo é consultado diretamente no Firebase ao ser aberto.</div>
 
       <main class="main-content" id="mainContent" tabindex="-1">
         <section class="view active" data-view="dashboard" aria-labelledby="pageTitle">
@@ -110,7 +120,7 @@
         <section class="view" data-view="settings">
           <div class="content-grid two-columns settings-grid">
             <section class="panel">
-              <div class="panel-header"><div><h2>Fontes de dados</h2><p>Configurações do sistema oficial.</p></div></div>
+              <div class="panel-header"><div><h2>Fontes de dados</h2><p>Fonte oficial fixa do Firebase e arquivos operacionais.</p></div></div>
               <div class="form-stack">
                 <label>Firebase URL<input id="firebaseUrlSetting" type="url"></label>
                 <label>Nó de produtos<input id="productsNodeSetting" type="text"></label>
@@ -182,8 +192,8 @@
   </section>
 
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="./js/app.js?admin_build=20260725-admin-v4"></script>
-  <script type="module" src="./js/nfe-bootstrap.js?admin_build=20260725-admin-v4"></script>
-  <script type="module" src="./js/stock-bootstrap.js?admin_build=20260725-admin-v4"></script>
+  <script src="./js/visual-stability.js?admin_build=20260725-admin-v6"></script>
+  <script type="module" src="./js/app.js?admin_build=20260725-admin-v6"></script>
+  <script type="module" src="./js/stock-bootstrap.js?admin_build=20260725-admin-v6"></script>
 </body>
 </html>
