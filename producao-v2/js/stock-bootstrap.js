@@ -3,7 +3,7 @@ import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
 import { loadProducts } from './services/firebase.js';
 
-const BUILD = '20260725-admin-v12';
+const BUILD = '20260725-admin-v12-pedidos1';
 const imports = new Map();
 
 function loadConfig() {
@@ -118,7 +118,6 @@ function placeRouteContent(route) {
     moveToRoute('nfeWorkspace', route);
     moveToRoute('nfeSafetySettings', route);
   }
-  if (route === 'orders') moveToRoute('orderToolsPanel', route);
   if (route === 'baskets' || route === 'kits') {
     moveToRoute('collectionsWorkspace', route);
     moveToRoute('collectionsSafetySettings', route);
@@ -143,7 +142,8 @@ async function loadRouteModules(route) {
   if (route === 'products') task = importOnce('product-enhancements', ['./catalog-auto-sync.js', './product-lifecycle-bootstrap.js']);
   if (route === 'quick-read') task = importOnce('quick-read', ['./quick-read-bootstrap.js']);
   if (route === 'nfe') task = importOnce('nfe', ['./nfe-bootstrap.js']);
-  if (route === 'orders') task = importOnce('orders', ['./orders-bootstrap.js', './order-tools-bootstrap.js']);
+  if (route === 'orders') task = importOnce('orders', ['./orders-bootstrap.js']);
+  if (route === 'order-tools') task = importOnce('order-tools', ['./order-tools-bootstrap.js']);
   if (route === 'baskets' || route === 'kits') task = importOnce('collections', ['./collections-bootstrap.js']);
   if (route === 'offers') task = importOnce('offers', ['./offers-bootstrap.js']);
   if (route === 'coupons') task = importOnce('coupons', ['./coupons-bootstrap.js']);
