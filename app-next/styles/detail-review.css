@@ -33,6 +33,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
 .bundle-product-card .product-price small{color:var(--muted);font-size:10px}
 .bundle-product-qty{width:94px;height:40px;grid-template-columns:31px 1fr 31px}
 .bundle-product-add{width:40px;height:40px}
+.kit-product-price-comparison .kit-product-price-row:first-child,.kit-product-price-comparison .kit-product-price-total{display:none}
+.kit-product-price-comparison .kit-product-price-row small{font-size:0}
+.kit-product-price-comparison .kit-product-price-row small::after{content:"Preço no kit";font-size:9.5px}
 .basket-total-card{margin-top:22px;padding:20px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:22px;border:1px solid var(--line);border-radius:23px;background:#f8faf8}
 .basket-total-copy{display:grid;gap:5px}
 .basket-total-status{width:max-content;padding:5px 8px;border-radius:999px;background:#eaf7ed;color:var(--brand);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
