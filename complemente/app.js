@@ -4,17 +4,20 @@ import { prepareProductOffer } from '../app-next/src/offer-engine.js';
 import { escapeHtml, fmt, formatDateBR, norm } from '../app-next/src/core.js';
 
 const WHATSAPP_NUMBER = '5565998150975';
-const CART_KEY = 'da_complemente_cart_v1';
+const CART_KEY = 'da_complemente_cart_v2';
 const CART_MAX_AGE = 24 * 60 * 60 * 1000;
-const MAX_LINK_DISCOUNT = 30;
+const CAMPAIGNS_ENDPOINT = '../site/mini-catalogo-links.json';
 
 const state = {
   products: [],
   productMap: new Map(),
   cart: {},
   cartOrder: [],
-  coupon: null,
-  route: { name: 'home', values: [] }
+  campaigns: [],
+  campaign: null,
+  campaignStatus: 'none',
+  campaignRef: '',
+  route: { name: 'home', values: [], query: new URLSearchParams() }
 };
 
 const app = document.getElementById('app');
@@ -27,41 +30,95 @@ function roundMoney(value) {
   return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
 }
 
-function parseLinkCoupon(value) {
-  const code = String(value || '').trim().toUpperCase();
-  const match = code.match(/^(?=.*[A-ZÀ-Ý])([A-ZÀ-Ý0-9_-]{2,28}?)(\d{1,2})$/i);
+function safeDate(value, endOfDay = false) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return null;
-  const percent = Number(match[2]);
-  if (!Number.isInteger(percent) || percent < 1 || percent > MAX_LINK_DISCOUNT) return null;
-  return { code, percent };
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0, endOfDay ? 999 : 0);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function normalizeCampaign(raw = {}) {
+  return {
+    id: String(raw.id || '').trim(),
+    token: String(raw.token || '').trim(),
+    name: String(raw.name || raw.nome || 'Campanha').trim(),
+    code: String(raw.code || raw.codigo || raw.id || '').trim().toUpperCase(),
+    active: raw.active !== false && raw.ativo !== false,
+    discountPercent: Math.max(0, Math.min(30, Number(raw.discountPercent ?? raw.desconto ?? 0) || 0)),
+    scope: raw.scope === 'all' ? 'all' : 'destination',
+    destination: {
+      type: String(raw.destination?.type || raw.tipo || 'home').trim().toLowerCase(),
+      value: String(raw.destination?.value || raw.destino || '').trim()
+    },
+    startsAt: String(raw.startsAt || raw.inicio || '').trim(),
+    expiresAt: String(raw.expiresAt || raw.fim || '').trim(),
+    note: String(raw.note || raw.observacao || '').trim()
+  };
+}
+
+async function loadCampaigns() {
+  try {
+    const response = await fetch(`${CAMPAIGNS_ENDPOINT}?t=${Date.now()}`, { cache: 'no-store', headers: { Accept: 'application/json' } });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    const list = Array.isArray(data) ? data : Array.isArray(data.campaigns) ? data.campaigns : [];
+    state.campaigns = list.map(normalizeCampaign).filter(item => item.id && item.token);
+  } catch (error) {
+    console.warn('Não foi possível carregar as campanhas do mini catálogo:', error);
+    state.campaigns = [];
+  }
 }
 
 function parseRoute() {
   const raw = (location.hash || '#/').replace(/^#\/?/, '');
-  const [pathPart] = raw.split('?');
+  const [pathPart, queryPart = ''] = raw.split('?');
   const parts = pathPart.split('/').filter(Boolean).map(part => decodeURIComponent(part));
   const first = norm(parts[0] || 'home');
   const aliases = { categorias: 'categories', categoria: 'category', ofertas: 'offers', busca: 'search', produto: 'product' };
-  if (parts.length === 1) {
-    const directCoupon = parseLinkCoupon(parts[0]);
-    if (directCoupon) return { name: 'home', values: [], coupon: directCoupon };
-  }
   const name = aliases[first] || (first === 'home' ? 'home' : first) || 'home';
-  const minimumParts = name === 'home' ? 1 : name === 'offers' || name === 'categories' ? 1 : 2;
-  let coupon = null;
-  if (parts.length > minimumParts) coupon = parseLinkCoupon(parts.at(-1));
-  if (name === 'home' && parts.length === 1) coupon = parseLinkCoupon(parts[0]);
-  if (coupon) parts.pop();
-  return { name, values: parts.slice(1), coupon };
+  return { name, values: parts.slice(1), query: new URLSearchParams(queryPart) };
 }
 
-function couponSuffix() {
-  return state.coupon ? `/${encodeURIComponent(state.coupon.code)}` : '';
+function campaignIsActive(campaign, now = new Date()) {
+  if (!campaign?.active) return { ok: false, status: 'inactive' };
+  const start = safeDate(campaign.startsAt, false);
+  const end = safeDate(campaign.expiresAt, true);
+  if (start && now < start) return { ok: false, status: 'scheduled' };
+  if (end && now > end) return { ok: false, status: 'expired' };
+  return { ok: true, status: 'active' };
+}
+
+function resolveCampaign(route) {
+  const reference = String(route.query.get('c') || '').trim();
+  state.campaignRef = reference;
+  state.campaign = null;
+  state.campaignStatus = reference ? 'invalid' : 'none';
+  if (!reference) return;
+
+  const separator = reference.indexOf('.');
+  if (separator <= 0) return;
+  const id = reference.slice(0, separator);
+  const token = reference.slice(separator + 1);
+  const campaign = state.campaigns.find(item => item.id === id && item.token === token);
+  if (!campaign) return;
+
+  const validity = campaignIsActive(campaign);
+  state.campaignStatus = validity.status;
+  if (!validity.ok) return;
+  state.campaign = campaign;
+}
+
+function campaignQuery() {
+  return state.campaignRef ? `c=${encodeURIComponent(state.campaignRef)}` : '';
 }
 
 function routeHref(base) {
-  const clean = String(base || '#/').replace(/\/$/, '');
-  return `${clean}${couponSuffix()}`;
+  const clean = String(base || '#/');
+  const query = campaignQuery();
+  if (!query) return clean;
+  return `${clean}${clean.includes('?') ? '&' : '?'}${query}`;
 }
 
 function navigate(base) {
@@ -99,9 +156,34 @@ function cleanCart() {
   persistCart();
 }
 
+function productMatchesSearch(product, query) {
+  const wanted = norm(query);
+  if (!wanted) return false;
+  const words = wanted.split(/\s+/).filter(Boolean);
+  const haystack = norm([product.name, product.marca, product.categoria, product.subcategoria, product.subsubcategoria, product.codigo, product.gtin, product.ean].join(' '));
+  return words.every(word => haystack.includes(word));
+}
+
+function campaignMatchesProduct(product) {
+  const campaign = state.campaign;
+  if (!campaign || !product) return false;
+  if (campaign.scope === 'all') return true;
+
+  const type = campaign.destination.type;
+  const value = campaign.destination.value;
+  if (type === 'offers') return Number(product.oldPrice || 0) > Number(product.price || 0);
+  if (type === 'category') return norm(product.categoria) === norm(value);
+  if (type === 'search') return productMatchesSearch(product, value);
+  if (type === 'product') {
+    const wanted = norm(value);
+    return [product.id, product.firebaseKey, product.codigo, product.slug, product.name, product.gtin, product.ean].some(item => norm(item) === wanted);
+  }
+  return true;
+}
+
 function productPricing(product) {
   const current = Number(product.price || 0);
-  const discount = state.coupon?.percent || 0;
+  const discount = campaignMatchesProduct(product) ? Number(state.campaign?.discountPercent || 0) : 0;
   const final = discount ? roundMoney(current * (1 - discount / 100)) : current;
   return { current, final, discount };
 }
@@ -112,7 +194,7 @@ function cartPricing() {
     const qty = Number(state.cart[id] || 0);
     if (!product || qty <= 0) return null;
     const pricing = productPricing(product);
-    return { id: String(id), product, qty, unit: pricing.final, baseUnit: pricing.current, total: roundMoney(pricing.final * qty) };
+    return { id: String(id), product, qty, unit: pricing.final, baseUnit: pricing.current, discountPercent: pricing.discount, total: roundMoney(pricing.final * qty) };
   }).filter(Boolean);
   const subtotal = roundMoney(items.reduce((sum, item) => sum + item.baseUnit * item.qty, 0));
   const total = roundMoney(items.reduce((sum, item) => sum + item.total, 0));
@@ -168,16 +250,26 @@ function productCard(product) {
       <a class="product-name" href="${routeHref(`#/produto/${productRoute(product)}`)}" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</a>
       <div class="product-expiry">${product.validade && formatDateBR(product.validade) ? `Val. ${formatDateBR(product.validade)}` : '&nbsp;'}</div>
       <div class="product-card-footer">
-        <div class="product-price">${showOld ? `<s>${fmt(original)}</s>` : ''}<strong>${fmt(pricing.final)}</strong>${pricing.discount ? `<span class="link-discount-note">com ${escapeHtml(state.coupon.code)}</span>` : ''}</div>
+        <div class="product-price">${showOld ? `<s>${fmt(original)}</s>` : ''}<strong>${fmt(pricing.final)}</strong>${pricing.discount ? `<span class="link-discount-note">Campanha ${escapeHtml(state.campaign.code || state.campaign.name)}</span>` : ''}</div>
         <div data-control-slot="${escapeHtml(id)}">${quantityControl(product)}</div>
       </div>
     </div>
   </article>`;
 }
 
-function couponBanner() {
-  if (!state.coupon) return '';
-  return `<div class="campaign-coupon"><div><strong>Desconto do link ativado</strong><span>O código ${escapeHtml(state.coupon.code)} aplica ${state.coupon.percent}% no complemento.</span></div><b>${state.coupon.percent}% OFF</b></div>`;
+function campaignBanner() {
+  if (state.campaign) {
+    const scopeText = state.campaign.scope === 'all' ? 'em todos os produtos' : 'somente nos produtos selecionados pela campanha';
+    return `<div class="campaign-coupon"><div><strong>${escapeHtml(state.campaign.name)}</strong><span>${state.campaign.discountPercent}% de desconto ${scopeText}.${state.campaign.note ? ` ${escapeHtml(state.campaign.note)}` : ''}</span></div><b>${state.campaign.discountPercent}% OFF</b></div>`;
+  }
+  if (state.campaignStatus === 'none') return '';
+  const messages = {
+    invalid: 'Este link não é válido. Nenhum desconto foi aplicado.',
+    inactive: 'Esta campanha foi desativada. Nenhum desconto foi aplicado.',
+    scheduled: 'Esta campanha ainda não começou. Nenhum desconto foi aplicado.',
+    expired: 'Esta campanha terminou. Nenhum desconto foi aplicado.'
+  };
+  return `<div class="campaign-coupon campaign-coupon-invalid"><div><strong>Campanha indisponível</strong><span>${escapeHtml(messages[state.campaignStatus] || messages.invalid)}</span></div><b>SEM DESCONTO</b></div>`;
 }
 
 function pageHeader(title, subtitle = '', back = '#/') {
@@ -210,7 +302,7 @@ function homePage() {
   const products = state.products.filter(isAvailable).slice(0, 48);
   return `<div class="page-container home-page">
     <section class="campaign-hero"><div><small>Pedido já realizado?</small><h1>Acrescente mais produtos em poucos cliques</h1><p>Escolha os itens, revise o complemento e envie direto no WhatsApp. Sem cadastro e sem refazer o pedido.</p></div><div class="campaign-hero-mark"><div><strong>+ itens</strong><span>no seu pedido</span></div></div></section>
-    ${couponBanner()}
+    ${campaignBanner()}
     <section class="content-section"><div class="section-heading"><div><h2>Categorias</h2><p>Encontre rapidamente o que faltou.</p></div><a href="${routeHref('#/categorias')}">Ver todas</a></div>${categoryStrip()}</section>
     ${offers.length ? `<section class="content-section"><div class="section-heading"><div><h2>Ofertas para aproveitar</h2><p>Produtos disponíveis agora.</p></div><a href="${routeHref('#/ofertas')}">Ver todas</a></div>${productGrid(offers)}</section>` : ''}
     <section class="content-section"><div class="section-heading"><div><h2>Mais produtos</h2><p>Adicione ao pedido que você já fez.</p></div></div>${productGrid(products)}</section>
@@ -219,24 +311,24 @@ function homePage() {
 
 function categoriesPage() {
   const cards = availableCategories().map(([name, product]) => `<a class="category-card" href="${routeHref(`#/categoria/${encodeURIComponent(name)}`)}"><img loading="lazy" src="${escapeHtml(product.img)}" alt=""><span><strong>${escapeHtml(name)}</strong><small>Ver produtos</small></span></a>`).join('');
-  return `<div class="page-container">${pageHeader('Categorias', 'Escolha um setor para complementar o pedido.', '#/')}${couponBanner()}<div class="category-grid">${cards}</div></div>`;
+  return `<div class="page-container">${pageHeader('Categorias', 'Escolha um setor para complementar o pedido.', '#/')}${campaignBanner()}<div class="category-grid">${cards}</div></div>`;
 }
 
 function categoryPage(name) {
   const wanted = norm(name);
   const products = state.products.filter(product => isAvailable(product) && norm(product.categoria) === wanted);
   const canonical = products[0]?.categoria || name;
-  return `<div class="page-container">${pageHeader(canonical, `${products.length} produto(s) disponível(is)`, '#/categorias')}${couponBanner()}${productGrid(products)}</div>`;
+  return `<div class="page-container">${pageHeader(canonical, `${products.length} produto(s) disponível(is)`, '#/categorias')}${campaignBanner()}${productGrid(products)}</div>`;
 }
 
 function offersPage() {
   const products = state.products.filter(isAvailable).filter(product => Number(product.oldPrice || 0) > Number(product.price || 0)).sort((a, b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || a.name.localeCompare(b.name, 'pt-BR'));
-  return `<div class="page-container">${pageHeader('Ofertas', 'Aproveite para acrescentar ao seu pedido.', '#/')}${couponBanner()}${productGrid(products)}</div>`;
+  return `<div class="page-container">${pageHeader('Ofertas', 'Aproveite para acrescentar ao seu pedido.', '#/')}${campaignBanner()}${productGrid(products)}</div>`;
 }
 
 function searchPage(query) {
   const products = searchProducts(state.products, query, isAvailable);
-  return `<div class="page-container">${pageHeader(query ? `Busca: ${query}` : 'Busca', `${products.length} resultado(s)`, '#/')}${couponBanner()}${productGrid(products)}</div>`;
+  return `<div class="page-container">${pageHeader(query ? `Busca: ${query}` : 'Busca', `${products.length} resultado(s)`, '#/')}${campaignBanner()}${productGrid(products)}</div>`;
 }
 
 function productPage(reference) {
@@ -244,13 +336,13 @@ function productPage(reference) {
   if (!product || !isAvailable(product)) return `<div class="page-container">${pageHeader('Produto não encontrado', '', '#/')}${emptyState('Produto indisponível', 'Escolha outro produto disponível.')}</div>`;
   const pricing = productPricing(product);
   const related = state.products.filter(item => isAvailable(item) && item.id !== product.id && norm(item.categoria) === norm(product.categoria)).slice(0, 12);
-  return `<div class="page-container">${pageHeader('Produto', '', '#/')}${couponBanner()}<article class="product-detail"><div class="product-detail-media"><img id="product-main-image" src="${escapeHtml(product.img)}" data-fallback="${escapeHtml(product.images?.slice(1).join('|') || '')}" alt="${escapeHtml(product.name)}"></div><div class="product-detail-copy">${product.validade && formatDateBR(product.validade) ? `<div class="product-expiry">Validade: ${formatDateBR(product.validade)}</div>` : ''}<h1>${escapeHtml(product.name)}</h1><div class="detail-price">${pricing.current > pricing.final ? `<s>${fmt(pricing.current)}</s>` : ''}<strong>${fmt(pricing.final)}</strong></div>${pricing.discount ? `<div class="offer-note">Código ${escapeHtml(state.coupon.code)}: ${pricing.discount}% de desconto aplicado.</div>` : ''}<div data-control-slot="${escapeHtml(product.id)}">${quantityControl(product, true)}</div>${product.descricao ? `<p class="product-description">${escapeHtml(product.descricao)}</p>` : ''}<div class="detail-tags">${[product.categoria, product.subcategoria, product.marca].filter(Boolean).map(value => `<span>${escapeHtml(value)}</span>`).join('')}</div></div></article>${related.length ? `<section class="content-section"><div class="section-heading"><div><h2>Produtos relacionados</h2><p>Outras opções da mesma categoria.</p></div></div>${productGrid(related)}</section>` : ''}</div>`;
+  return `<div class="page-container">${pageHeader('Produto', '', '#/')}${campaignBanner()}<article class="product-detail"><div class="product-detail-media"><img id="product-main-image" src="${escapeHtml(product.img)}" data-fallback="${escapeHtml(product.images?.slice(1).join('|') || '')}" alt="${escapeHtml(product.name)}"></div><div class="product-detail-copy">${product.validade && formatDateBR(product.validade) ? `<div class="product-expiry">Validade: ${formatDateBR(product.validade)}</div>` : ''}<h1>${escapeHtml(product.name)}</h1><div class="detail-price">${pricing.current > pricing.final ? `<s>${fmt(pricing.current)}</s>` : ''}<strong>${fmt(pricing.final)}</strong></div>${pricing.discount ? `<div class="offer-note">Campanha ${escapeHtml(state.campaign.code || state.campaign.name)}: ${pricing.discount}% de desconto aplicado.</div>` : ''}<div data-control-slot="${escapeHtml(product.id)}">${quantityControl(product, true)}</div>${product.descricao ? `<p class="product-description">${escapeHtml(product.descricao)}</p>` : ''}<div class="detail-tags">${[product.categoria, product.subcategoria, product.marca].filter(Boolean).map(value => `<span>${escapeHtml(value)}</span>`).join('')}</div></div></article>${related.length ? `<section class="content-section"><div class="section-heading"><div><h2>Produtos relacionados</h2><p>Outras opções da mesma categoria.</p></div></div>${productGrid(related)}</section>` : ''}</div>`;
 }
 
 function renderRoute() {
   const route = parseRoute();
   state.route = route;
-  state.coupon = route.coupon;
+  resolveCampaign(route);
   let html = '';
   if (route.name === 'categories') html = categoriesPage();
   else if (route.name === 'category') html = categoryPage(route.values.join(' '));
@@ -313,22 +405,24 @@ function renderCheckout() {
     checkoutContent.innerHTML = `<div class="empty-state"><strong>Nenhum produto escolhido</strong><span>Adicione os itens que deseja incluir no pedido já realizado.</span></div>`;
     return;
   }
-  checkoutContent.innerHTML = `<div class="complement-cart-list">${pricing.items.map(item => `<div class="complement-cart-row"><img src="${escapeHtml(item.product.img)}" alt=""><div class="complement-cart-copy"><strong>${escapeHtml(item.product.name)}</strong><small>${fmt(item.unit)} cada · ${fmt(item.total)}</small></div>${quantityControl(item.product)}</div>`).join('')}</div>
-    <div class="checkout-summary-card"><div class="checkout-summary-row"><span>Subtotal</span><strong>${fmt(pricing.subtotal)}</strong></div>${state.coupon ? `<div class="checkout-summary-row discount"><span>Desconto ${escapeHtml(state.coupon.code)} (${state.coupon.percent}%)</span><strong>− ${fmt(pricing.discount)}</strong></div>` : ''}<div class="checkout-summary-row total"><span>Total do complemento</span><strong>${fmt(pricing.total)}</strong></div></div>
-    <div class="complement-checkout-actions"><button class="whatsapp-button" data-action="send-whatsapp">Enviar complemento no WhatsApp</button><button class="clear-complement" data-action="clear-cart">Limpar seleção</button></div><p class="checkout-help">O complemento será confirmado pela equipe no WhatsApp, conforme estoque e identificação do seu pedido.</p>`;
+  const discountedItems = pricing.items.filter(item => item.discountPercent > 0).length;
+  checkoutContent.innerHTML = `<div class="complement-cart-list">${pricing.items.map(item => `<div class="complement-cart-row"><img src="${escapeHtml(item.product.img)}" alt=""><div class="complement-cart-copy"><strong>${escapeHtml(item.product.name)}</strong><small>${fmt(item.unit)} cada · ${fmt(item.total)}${item.discountPercent ? ` · ${item.discountPercent}% OFF` : ''}</small></div>${quantityControl(item.product)}</div>`).join('')}</div>
+    <div class="checkout-summary-card"><div class="checkout-summary-row"><span>Subtotal</span><strong>${fmt(pricing.subtotal)}</strong></div>${pricing.discount > 0 ? `<div class="checkout-summary-row discount"><span>Desconto da campanha em ${discountedItems} item(ns)</span><strong>− ${fmt(pricing.discount)}</strong></div>` : ''}<div class="checkout-summary-row total"><span>Total do complemento</span><strong>${fmt(pricing.total)}</strong></div></div>
+    <div class="complement-checkout-actions"><button class="whatsapp-button" data-action="send-whatsapp">Enviar complemento no WhatsApp</button><button class="clear-complement" data-action="clear-cart">Limpar seleção</button></div><p class="checkout-help">A campanha e os valores serão conferidos pela equipe antes da inclusão no pedido.</p>`;
 }
 
 function whatsappMessage() {
   const pricing = cartPricing();
-  const lines = pricing.items.map(item => `• ${item.qty}x ${item.product.name} — ${fmt(item.total)}`);
+  const lines = pricing.items.map(item => `• ${item.qty}x ${item.product.name} — ${fmt(item.total)}${item.discountPercent ? ` (${item.discountPercent}% OFF)` : ''}`);
   const message = [
     'Olá! Quero acrescentar estes produtos ao pedido que já fiz:',
     '',
     ...lines,
     '',
     `Subtotal: ${fmt(pricing.subtotal)}`,
-    ...(state.coupon ? [`Desconto ${state.coupon.code} (${state.coupon.percent}%): -${fmt(pricing.discount)}`] : []),
+    ...(pricing.discount > 0 ? [`Desconto da campanha: -${fmt(pricing.discount)}`] : []),
     `Total do complemento: ${fmt(pricing.total)}`,
+    ...(state.campaign ? [`Campanha: ${state.campaign.name} [${state.campaign.id}]`] : []),
     '',
     'Por favor, confirme a inclusão no meu pedido.',
     `Link usado: ${location.href}`
@@ -404,7 +498,7 @@ async function init() {
   readCart();
   app.innerHTML = '<div class="loading-shell"><div></div><div></div><div></div></div>';
   try {
-    const catalog = await loadCatalog();
+    const [catalog] = await Promise.all([loadCatalog(), loadCampaigns()]);
     state.products = catalog.products.map(product => applyProductOffer(prepareProductOffer(product)));
     state.productMap = new Map(state.products.map(product => [String(product.id), product]));
     cleanCart();
