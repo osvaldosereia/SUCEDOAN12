@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-26T07:07:54.456Z",
+  "checkedAt": "2026-07-26T09:28:14.203Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": true,
   "checks": [
@@ -11,17 +11,17 @@
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1785049675996"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1785058095754"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1785049676644"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1785058096352"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1785049676680"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1785058096388"
     },
     {
       "name": "Módulos sob demanda das 18 abas estão publicados",
@@ -56,17 +56,17 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 164 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 134 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 141 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 130 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1785048587131 · público 1524 · admin 1524"
+      "detail": "catalog-1785057875632 · público 1524 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,21 +86,21 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "1042 oferta(s) no histórico"
+      "detail": "1056 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.3h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [],
   "warnings": [],
   "workflow": {
     "event": "schedule",
-    "runId": "30192235070",
+    "runId": "30196493885",
     "attempt": "1",
-    "sourceSha": "1110dd83e6cd8ca626772b0dcb40e9748adbca4b",
-    "publishedAt": "2026-07-26T07:07:58.526Z"
+    "sourceSha": "a9855373ac061d7e00c532dca8cb824aaac819d3",
+    "publishedAt": "2026-07-26T09:28:18.614Z"
   }
 }
