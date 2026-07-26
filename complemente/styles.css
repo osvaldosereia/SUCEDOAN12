@@ -36,6 +36,14 @@
 .complement-catalog .direct-whatsapp-cta{display:flex;align-items:center;gap:7px;padding:10px 12px;border-radius:13px;background:rgba(255,255,255,.16);font-weight:900;white-space:nowrap}.complement-catalog .direct-whatsapp-cta .svg-icon{width:22px;height:22px;fill:currentColor;stroke:none}
 .complement-catalog .direct-count{position:absolute;top:-7px;right:-6px}
 .complement-catalog .compact-nav{flex:0 0 auto;min-width:74px}
+.complement-catalog .offers-first-home .offers-main-section{margin-top:8px}
+.complement-catalog .offers-first-home .offers-main-section>.section-heading{position:sticky;top:116px;z-index:4;padding:12px 0;background:rgba(255,255,255,.94);backdrop-filter:blur(12px)}
+.complement-catalog .offer-load-sentinel{min-height:92px;display:flex;align-items:center;justify-content:center;gap:12px;color:#667085;font-size:13px;text-align:center}
+.complement-catalog .offer-load-sentinel[hidden]{display:none}
+.complement-catalog .offer-load-spinner{width:24px;height:24px;border:3px solid #e4e7ec;border-top-color:var(--wa);border-radius:50%;animation:daOfferSpin .8s linear infinite}
+.complement-catalog .offers-hero{background:linear-gradient(135deg,#f0fdf4 0%,#fff 68%);border-color:#ccebd8}
+.complement-catalog .offers-hero .campaign-hero-mark>div{background:var(--wa)}
+@keyframes daOfferSpin{to{transform:rotate(360deg)}}
 @media (max-width:760px){
   .complement-catalog .campaign-hero{grid-template-columns:1fr;padding:20px;border-radius:20px}.complement-catalog .campaign-hero-mark{display:none}
   .complement-catalog .campaign-coupon{align-items:flex-start;padding:14px}.complement-catalog .campaign-coupon b{font-size:14px}
@@ -46,6 +54,7 @@
   .complement-catalog .direct-whatsapp-summary strong{font-size:16px}.complement-catalog .direct-whatsapp-summary small{font-size:10px}
   .complement-catalog .direct-whatsapp-cta{padding:10px 9px;font-size:12px}.complement-catalog .direct-whatsapp-cta .svg-icon{width:20px;height:20px}
   .complement-catalog .complement-cart-row{grid-template-columns:54px minmax(0,1fr);}.complement-catalog .complement-cart-row img{width:54px;height:54px}.complement-catalog .complement-cart-row .qty-control{grid-column:1/-1;justify-self:end}
+  .complement-catalog .offers-first-home .offers-main-section>.section-heading{top:112px}
 }
 @media (min-width:761px){
   .complement-catalog .app{padding-bottom:42px}
