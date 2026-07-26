@@ -4,7 +4,7 @@ import { prepareProductOffer } from '../app-next/src/offer-engine.js';
 import { escapeHtml, fmt, formatDateBR, norm } from '../app-next/src/core.js';
 
 const WHATSAPP_NUMBER = '5565998150975';
-const CART_KEY = 'da_complemente_cart_v1';
+const CART_KEY = 'da_complemente_cart_v2';
 const CART_MAX_AGE = 24 * 60 * 60 * 1000;
 const MAX_LINK_DISCOUNT = 30;
 
@@ -13,8 +13,10 @@ const state = {
   productMap: new Map(),
   cart: {},
   cartOrder: [],
+  cartPromotions: {},
   coupon: null,
-  route: { name: 'home', values: [] }
+  scope: null,
+  route: { name: 'home', values: [], query: new URLSearchParams() }
 };
 
 const app = document.getElementById('app');
@@ -38,34 +40,52 @@ function parseLinkCoupon(value) {
 
 function parseRoute() {
   const raw = (location.hash || '#/').replace(/^#\/?/, '');
-  const [pathPart] = raw.split('?');
+  const [pathPart, queryPart = ''] = raw.split('?');
   const parts = pathPart.split('/').filter(Boolean).map(part => decodeURIComponent(part));
   const first = norm(parts[0] || 'home');
-  const aliases = { categorias: 'categories', categoria: 'category', ofertas: 'offers', busca: 'search', produto: 'product' };
-  if (parts.length === 1) {
-    const directCoupon = parseLinkCoupon(parts[0]);
-    if (directCoupon) return { name: 'home', values: [], coupon: directCoupon };
-  }
+  const aliases = {
+    categorias: 'categories',
+    categoria: 'category',
+    ofertas: 'offers',
+    busca: 'search',
+    produto: 'product'
+  };
   const name = aliases[first] || (first === 'home' ? 'home' : first) || 'home';
-  const minimumParts = name === 'home' ? 1 : name === 'offers' || name === 'categories' ? 1 : 2;
+  const minimumParts = ['offers', 'categories'].includes(name) ? 1 : ['category', 'search', 'product'].includes(name) ? 2 : 1;
   let coupon = null;
   if (parts.length > minimumParts) coupon = parseLinkCoupon(parts.at(-1));
-  if (name === 'home' && parts.length === 1) coupon = parseLinkCoupon(parts[0]);
   if (coupon) parts.pop();
-  return { name, values: parts.slice(1), coupon };
+  return {
+    name,
+    values: parts.slice(1),
+    coupon,
+    query: new URLSearchParams(queryPart)
+  };
 }
 
-function couponSuffix() {
-  return state.coupon ? `/${encodeURIComponent(state.coupon.code)}` : '';
+function baseHref(routeName, value = '') {
+  if (routeName === 'category') return `#/categoria/${encodeURIComponent(value)}`;
+  if (routeName === 'search') return `#/busca/${encodeURIComponent(value)}`;
+  if (routeName === 'offers') return '#/ofertas';
+  if (routeName === 'categories') return '#/categorias';
+  return '#/';
 }
 
-function routeHref(base) {
-  const clean = String(base || '#/').replace(/\/$/, '');
-  return `${clean}${couponSuffix()}`;
+function scopedRouteHref(routeName, value, coupon = state.coupon) {
+  const base = baseHref(routeName, value);
+  return coupon ? `${base}/${encodeURIComponent(coupon.code)}` : base;
 }
 
-function navigate(base) {
-  location.hash = routeHref(base);
+function productHref(product) {
+  const base = `#/produto/${encodeURIComponent(product.firebaseKey || product.id || product.codigo || product.slug)}`;
+  if (!state.coupon || !state.scope || !productEligibleForPromotion(product, { coupon: state.coupon, scope: state.scope })) return base;
+  const params = new URLSearchParams({ segment: state.scope.type });
+  if (state.scope.value) params.set('value', state.scope.value);
+  return `${base}/${encodeURIComponent(state.coupon.code)}?${params.toString()}`;
+}
+
+function navigate(hash) {
+  location.hash = hash;
 }
 
 function readCart() {
@@ -74,36 +94,88 @@ function readCart() {
     if (!saved || Date.now() - Number(saved.savedAt || 0) > CART_MAX_AGE) return;
     state.cart = saved.cart && typeof saved.cart === 'object' ? saved.cart : {};
     state.cartOrder = Array.isArray(saved.cartOrder) ? saved.cartOrder.map(String) : [];
+    state.cartPromotions = saved.cartPromotions && typeof saved.cartPromotions === 'object' ? saved.cartPromotions : {};
   } catch {}
 }
 
 function persistCart() {
   try {
-    localStorage.setItem(CART_KEY, JSON.stringify({ cart: state.cart, cartOrder: state.cartOrder, savedAt: Date.now() }));
+    localStorage.setItem(CART_KEY, JSON.stringify({
+      cart: state.cart,
+      cartOrder: state.cartOrder,
+      cartPromotions: state.cartPromotions,
+      savedAt: Date.now()
+    }));
   } catch {}
 }
 
 function cleanCart() {
   const nextOrder = [];
   const nextCart = {};
+  const nextPromotions = {};
   state.cartOrder.forEach(id => {
-    const product = state.productMap.get(String(id));
-    const qty = Math.min(Number(product?.stock || 0), Math.max(0, Number(state.cart[id] || 0)));
+    const key = String(id);
+    const product = state.productMap.get(key);
+    const qty = Math.min(Number(product?.stock || 0), Math.max(0, Number(state.cart[key] || 0)));
     if (product && isAvailable(product) && qty > 0) {
-      nextOrder.push(String(id));
-      nextCart[String(id)] = qty;
+      nextOrder.push(key);
+      nextCart[key] = qty;
+      if (state.cartPromotions[key]) nextPromotions[key] = state.cartPromotions[key];
     }
   });
   state.cartOrder = nextOrder;
   state.cart = nextCart;
+  state.cartPromotions = nextPromotions;
   persistCart();
 }
 
-function productPricing(product) {
+function scopeFromRoute(route) {
+  if (!route.coupon) return null;
+  if (route.name === 'category') return { type: 'category', value: route.values.join(' ') };
+  if (route.name === 'search') return { type: 'search', value: route.values.join(' ') };
+  if (route.name === 'offers') return { type: 'offers', value: '' };
+  if (route.name === 'product') {
+    const type = route.query.get('segment') || '';
+    const value = route.query.get('value') || '';
+    return ['category', 'search', 'offers'].includes(type) ? { type, value } : null;
+  }
+  return null;
+}
+
+function isOfferProduct(product) {
+  return Number(product?.oldPrice || 0) > Number(product?.price || 0);
+}
+
+function productEligibleForPromotion(product, promotion) {
+  const scope = promotion?.scope;
+  if (!product || !promotion?.coupon || !scope) return false;
+  if (scope.type === 'category') return norm(product.categoria) === norm(scope.value);
+  if (scope.type === 'search') return searchProducts([product], scope.value, isAvailable).length > 0;
+  if (scope.type === 'offers') return isOfferProduct(product);
+  return false;
+}
+
+function activePromotionForProduct(product) {
+  if (!state.coupon || !state.scope) return null;
+  const promotion = { coupon: state.coupon, scope: state.scope };
+  return productEligibleForPromotion(product, promotion) ? promotion : null;
+}
+
+function itemPromotion(id, product) {
+  const stored = state.cartPromotions[String(id)];
+  if (!stored) return null;
+  const promotion = {
+    coupon: { code: stored.code, percent: Number(stored.percent || 0) },
+    scope: { type: stored.scopeType, value: stored.scopeValue || '' }
+  };
+  return productEligibleForPromotion(product, promotion) ? promotion : null;
+}
+
+function productPricing(product, promotion = activePromotionForProduct(product)) {
   const current = Number(product.price || 0);
-  const discount = state.coupon?.percent || 0;
+  const discount = promotion?.coupon?.percent || 0;
   const final = discount ? roundMoney(current * (1 - discount / 100)) : current;
-  return { current, final, discount };
+  return { current, final, discount, code: promotion?.coupon?.code || '' };
 }
 
 function cartPricing() {
@@ -111,12 +183,31 @@ function cartPricing() {
     const product = state.productMap.get(String(id));
     const qty = Number(state.cart[id] || 0);
     if (!product || qty <= 0) return null;
-    const pricing = productPricing(product);
-    return { id: String(id), product, qty, unit: pricing.final, baseUnit: pricing.current, total: roundMoney(pricing.final * qty) };
+    const promotion = itemPromotion(id, product);
+    const pricing = productPricing(product, promotion);
+    return {
+      id: String(id), product, qty,
+      unit: pricing.final,
+      baseUnit: pricing.current,
+      discountPercent: pricing.discount,
+      discountCode: pricing.code,
+      total: roundMoney(pricing.final * qty)
+    };
   }).filter(Boolean);
   const subtotal = roundMoney(items.reduce((sum, item) => sum + item.baseUnit * item.qty, 0));
   const total = roundMoney(items.reduce((sum, item) => sum + item.total, 0));
   return { items, subtotal, discount: roundMoney(subtotal - total), total };
+}
+
+function savePromotionForItem(id, product) {
+  const promotion = activePromotionForProduct(product);
+  if (!promotion) return;
+  state.cartPromotions[String(id)] = {
+    code: promotion.coupon.code,
+    percent: promotion.coupon.percent,
+    scopeType: promotion.scope.type,
+    scopeValue: promotion.scope.value || ''
+  };
 }
 
 function setQty(id, qty) {
@@ -126,10 +217,12 @@ function setQty(id, qty) {
   const next = Math.max(0, Math.min(Number(product.stock || 0), Number(qty || 0)));
   if (next <= 0) {
     delete state.cart[key];
+    delete state.cartPromotions[key];
     state.cartOrder = state.cartOrder.filter(item => item !== key);
   } else {
     state.cart[key] = next;
     if (!state.cartOrder.includes(key)) state.cartOrder.push(key);
+    savePromotionForItem(key, product);
   }
   persistCart();
   updateShell();
@@ -149,10 +242,6 @@ function quantityControl(product, detail = false) {
   return `<div class="qty-control ${detail ? 'qty-control-detail' : ''}"><button data-action="dec" data-id="${escapeHtml(id)}" aria-label="Diminuir">−</button><span>${qty}</span><button data-action="inc" data-id="${escapeHtml(id)}" aria-label="Aumentar">+</button></div>`;
 }
 
-function productRoute(product) {
-  return encodeURIComponent(product.firebaseKey || product.id || product.codigo || product.slug);
-}
-
 function productCard(product) {
   const pricing = productPricing(product);
   const id = String(product.id);
@@ -160,15 +249,15 @@ function productCard(product) {
   const showOld = original > pricing.final;
   return `<article class="product-card" data-product-card="${escapeHtml(id)}">
     <div class="product-card-media">
-      <a href="${routeHref(`#/produto/${productRoute(product)}`)}" aria-label="Ver ${escapeHtml(product.name)}"><img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(product.img)}" data-fallback="${escapeHtml(product.images?.slice(1).join('|') || '')}" alt="${escapeHtml(product.name)}"></a>
+      <a href="${productHref(product)}" aria-label="Ver ${escapeHtml(product.name)}"><img loading="lazy" decoding="async" width="300" height="300" src="${escapeHtml(product.img)}" data-fallback="${escapeHtml(product.images?.slice(1).join('|') || '')}" alt="${escapeHtml(product.name)}"></a>
       ${pricing.discount ? `<span class="discount-badge">-${pricing.discount}%</span>` : product.discountPercent > 0 ? `<span class="discount-badge">-${product.discountPercent}%</span>` : ''}
     </div>
     <div class="product-card-body">
       <div class="product-packaging">${escapeHtml(product.embalagem || 'Unidade')}</div>
-      <a class="product-name" href="${routeHref(`#/produto/${productRoute(product)}`)}" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</a>
+      <a class="product-name" href="${productHref(product)}" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</a>
       <div class="product-expiry">${product.validade && formatDateBR(product.validade) ? `Val. ${formatDateBR(product.validade)}` : '&nbsp;'}</div>
       <div class="product-card-footer">
-        <div class="product-price">${showOld ? `<s>${fmt(original)}</s>` : ''}<strong>${fmt(pricing.final)}</strong>${pricing.discount ? `<span class="link-discount-note">com ${escapeHtml(state.coupon.code)}</span>` : ''}</div>
+        <div class="product-price">${showOld ? `<s>${fmt(original)}</s>` : ''}<strong>${fmt(pricing.final)}</strong>${pricing.discount ? `<span class="link-discount-note">com ${escapeHtml(pricing.code)}</span>` : ''}</div>
         <div data-control-slot="${escapeHtml(id)}">${quantityControl(product)}</div>
       </div>
     </div>
@@ -176,16 +265,17 @@ function productCard(product) {
 }
 
 function couponBanner() {
-  if (!state.coupon) return '';
-  return `<div class="campaign-coupon"><div><strong>Desconto do link ativado</strong><span>O código ${escapeHtml(state.coupon.code)} aplica ${state.coupon.percent}% no complemento.</span></div><b>${state.coupon.percent}% OFF</b></div>`;
+  if (!state.coupon || !state.scope) return '';
+  const segment = state.scope.type === 'category' ? `na categoria ${state.scope.value}` : state.scope.type === 'search' ? `na busca “${state.scope.value}”` : 'somente nas ofertas';
+  return `<div class="campaign-coupon"><div><strong>Desconto restrito a esta seleção</strong><span>${escapeHtml(state.coupon.code)} aplica ${state.coupon.percent}% ${escapeHtml(segment)}.</span></div><b>${state.coupon.percent}% OFF</b></div>`;
 }
 
 function pageHeader(title, subtitle = '', back = '#/') {
-  return `<header class="page-header">${back ? `<a class="back-button" href="${routeHref(back)}" aria-label="Voltar">←</a>` : ''}<div><h1>${escapeHtml(title)}</h1>${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ''}</div></header>`;
+  return `<header class="page-header">${back ? `<a class="back-button" href="${back}" aria-label="Voltar">←</a>` : ''}<div><h1>${escapeHtml(title)}</h1>${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ''}</div></header>`;
 }
 
 function emptyState(title, text) {
-  return `<div class="empty-state"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(text)}</span><a class="primary-button" href="${routeHref('#/categorias')}">Ver categorias</a></div>`;
+  return `<div class="empty-state"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(text)}</span><a class="primary-button" href="#/categorias">Ver categorias</a></div>`;
 }
 
 function productGrid(products) {
@@ -202,55 +292,65 @@ function availableCategories() {
 }
 
 function categoryStrip(limit = 12) {
-  return `<div class="quick-category-strip">${availableCategories().slice(0, limit).map(([name]) => `<a class="chip" href="${routeHref(`#/categoria/${encodeURIComponent(name)}`)}">${escapeHtml(name)}</a>`).join('')}</div>`;
+  return `<div class="quick-category-strip">${availableCategories().slice(0, limit).map(([name]) => `<a class="chip" href="#/categoria/${encodeURIComponent(name)}">${escapeHtml(name)}</a>`).join('')}</div>`;
 }
 
 function homePage() {
-  const offers = state.products.filter(isAvailable).filter(product => Number(product.oldPrice || 0) > Number(product.price || 0)).sort((a, b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0)).slice(0, 24);
+  const offers = state.products.filter(isAvailable).filter(isOfferProduct).sort((a, b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0)).slice(0, 24);
   const products = state.products.filter(isAvailable).slice(0, 48);
   return `<div class="page-container home-page">
-    <section class="campaign-hero"><div><small>Pedido já realizado?</small><h1>Acrescente mais produtos em poucos cliques</h1><p>Escolha os itens, revise o complemento e envie direto no WhatsApp. Sem cadastro e sem refazer o pedido.</p></div><div class="campaign-hero-mark"><div><strong>+ itens</strong><span>no seu pedido</span></div></div></section>
-    ${couponBanner()}
-    <section class="content-section"><div class="section-heading"><div><h2>Categorias</h2><p>Encontre rapidamente o que faltou.</p></div><a href="${routeHref('#/categorias')}">Ver todas</a></div>${categoryStrip()}</section>
-    ${offers.length ? `<section class="content-section"><div class="section-heading"><div><h2>Ofertas para aproveitar</h2><p>Produtos disponíveis agora.</p></div><a href="${routeHref('#/ofertas')}">Ver todas</a></div>${productGrid(offers)}</section>` : ''}
+    <section class="campaign-hero"><div><small>Pedido já realizado?</small><h1>Acrescente mais produtos em poucos cliques</h1><p>Escolha os itens e envie direto no WhatsApp. Não precisa preencher cadastro novamente.</p></div><div class="campaign-hero-mark"><div><strong>+ itens</strong><span>no seu pedido</span></div></div></section>
+    <section class="content-section"><div class="section-heading"><div><h2>Categorias</h2><p>Encontre rapidamente o que faltou.</p></div><a href="#/categorias">Ver todas</a></div>${categoryStrip()}</section>
+    ${offers.length ? `<section class="content-section"><div class="section-heading"><div><h2>Ofertas para aproveitar</h2><p>Produtos disponíveis agora.</p></div><a href="#/ofertas">Ver todas</a></div>${productGrid(offers)}</section>` : ''}
     <section class="content-section"><div class="section-heading"><div><h2>Mais produtos</h2><p>Adicione ao pedido que você já fez.</p></div></div>${productGrid(products)}</section>
   </div>`;
 }
 
 function categoriesPage() {
-  const cards = availableCategories().map(([name, product]) => `<a class="category-card" href="${routeHref(`#/categoria/${encodeURIComponent(name)}`)}"><img loading="lazy" src="${escapeHtml(product.img)}" alt=""><span><strong>${escapeHtml(name)}</strong><small>Ver produtos</small></span></a>`).join('');
-  return `<div class="page-container">${pageHeader('Categorias', 'Escolha um setor para complementar o pedido.', '#/')}${couponBanner()}<div class="category-grid">${cards}</div></div>`;
+  return `<div class="page-container">${pageHeader('Categorias', 'Escolha somente o setor que deseja enviar.', '#/')}
+    <div class="category-grid">${availableCategories().map(([name, product]) => `<a class="category-card" href="#/categoria/${encodeURIComponent(name)}"><img loading="lazy" src="${escapeHtml(product.img)}" alt=""><span><strong>${escapeHtml(name)}</strong></span></a>`).join('')}</div>
+  </div>`;
 }
 
 function categoryPage(name) {
   const wanted = norm(name);
   const products = state.products.filter(product => isAvailable(product) && norm(product.categoria) === wanted);
   const canonical = products[0]?.categoria || name;
-  return `<div class="page-container">${pageHeader(canonical, `${products.length} produto(s) disponível(is)`, '#/categorias')}${couponBanner()}${productGrid(products)}</div>`;
+  return `<div class="page-container">${pageHeader(canonical, `${products.length} produto(s) desta categoria`, '#/categorias')}${couponBanner()}${productGrid(products)}</div>`;
 }
 
 function offersPage() {
-  const products = state.products.filter(isAvailable).filter(product => Number(product.oldPrice || 0) > Number(product.price || 0)).sort((a, b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || a.name.localeCompare(b.name, 'pt-BR'));
-  return `<div class="page-container">${pageHeader('Ofertas', 'Aproveite para acrescentar ao seu pedido.', '#/')}${couponBanner()}${productGrid(products)}</div>`;
+  const products = state.products.filter(isAvailable).filter(isOfferProduct).sort((a, b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || a.name.localeCompare(b.name, 'pt-BR'));
+  return `<div class="page-container">${pageHeader('Ofertas', 'Somente produtos que já estão em oferta.', '#/')}${couponBanner()}${productGrid(products)}</div>`;
 }
 
 function searchPage(query) {
   const products = searchProducts(state.products, query, isAvailable);
-  return `<div class="page-container">${pageHeader(query ? `Busca: ${query}` : 'Busca', `${products.length} resultado(s)`, '#/')}${couponBanner()}${productGrid(products)}</div>`;
+  return `<div class="page-container">${pageHeader(query ? `Busca: ${query}` : 'Busca', `${products.length} resultado(s) somente para este termo`, '#/')}${couponBanner()}${productGrid(products)}</div>`;
+}
+
+function scopedBackHref() {
+  if (!state.scope) return '#/';
+  return scopedRouteHref(state.scope.type, state.scope.value, state.coupon);
 }
 
 function productPage(reference) {
   const product = findProductByReference(state, reference);
-  if (!product || !isAvailable(product)) return `<div class="page-container">${pageHeader('Produto não encontrado', '', '#/')}${emptyState('Produto indisponível', 'Escolha outro produto disponível.')}</div>`;
+  if (!product || !isAvailable(product)) return `<div class="page-container">${pageHeader('Produto não encontrado', '', scopedBackHref())}${emptyState('Produto indisponível', 'Escolha outro produto disponível.')}</div>`;
   const pricing = productPricing(product);
-  const related = state.products.filter(item => isAvailable(item) && item.id !== product.id && norm(item.categoria) === norm(product.categoria)).slice(0, 12);
-  return `<div class="page-container">${pageHeader('Produto', '', '#/')}${couponBanner()}<article class="product-detail"><div class="product-detail-media"><img id="product-main-image" src="${escapeHtml(product.img)}" data-fallback="${escapeHtml(product.images?.slice(1).join('|') || '')}" alt="${escapeHtml(product.name)}"></div><div class="product-detail-copy">${product.validade && formatDateBR(product.validade) ? `<div class="product-expiry">Validade: ${formatDateBR(product.validade)}</div>` : ''}<h1>${escapeHtml(product.name)}</h1><div class="detail-price">${pricing.current > pricing.final ? `<s>${fmt(pricing.current)}</s>` : ''}<strong>${fmt(pricing.final)}</strong></div>${pricing.discount ? `<div class="offer-note">Código ${escapeHtml(state.coupon.code)}: ${pricing.discount}% de desconto aplicado.</div>` : ''}<div data-control-slot="${escapeHtml(product.id)}">${quantityControl(product, true)}</div>${product.descricao ? `<p class="product-description">${escapeHtml(product.descricao)}</p>` : ''}<div class="detail-tags">${[product.categoria, product.subcategoria, product.marca].filter(Boolean).map(value => `<span>${escapeHtml(value)}</span>`).join('')}</div></div></article>${related.length ? `<section class="content-section"><div class="section-heading"><div><h2>Produtos relacionados</h2><p>Outras opções da mesma categoria.</p></div></div>${productGrid(related)}</section>` : ''}</div>`;
+  const related = state.products.filter(item => isAvailable(item) && item.id !== product.id && (!state.scope || productEligibleForPromotion(item, { coupon: state.coupon, scope: state.scope }))).slice(0, 12);
+  return `<div class="page-container">${pageHeader('Produto', '', scopedBackHref())}${couponBanner()}<article class="product-detail"><div class="product-detail-media"><img id="product-main-image" src="${escapeHtml(product.img)}" data-fallback="${escapeHtml(product.images?.slice(1).join('|') || '')}" alt="${escapeHtml(product.name)}"></div><div class="product-detail-copy">${product.validade && formatDateBR(product.validade) ? `<div class="product-expiry">Validade: ${formatDateBR(product.validade)}</div>` : ''}<h1>${escapeHtml(product.name)}</h1><div class="detail-price">${pricing.current > pricing.final ? `<s>${fmt(pricing.current)}</s>` : ''}<strong>${fmt(pricing.final)}</strong></div>${pricing.discount ? `<div class="offer-note">${escapeHtml(pricing.code)}: ${pricing.discount}% aplicado somente a este segmento.</div>` : ''}<div data-control-slot="${escapeHtml(product.id)}">${quantityControl(product, true)}</div>${product.descricao ? `<p class="product-description">${escapeHtml(product.descricao)}</p>` : ''}<div class="detail-tags">${[product.categoria, product.subcategoria, product.marca].filter(Boolean).map(value => `<span>${escapeHtml(value)}</span>`).join('')}</div></div></article>${related.length ? `<section class="content-section"><div class="section-heading"><div><h2>Mais desta seleção</h2><p>Continuam dentro do mesmo segmento do link.</p></div></div>${productGrid(related)}</section>` : ''}</div>`;
 }
 
 function renderRoute() {
   const route = parseRoute();
   state.route = route;
   state.coupon = route.coupon;
+  state.scope = scopeFromRoute(route);
+  if (route.coupon && !state.scope) {
+    state.coupon = null;
+    showToast('O desconto precisa estar ligado a uma categoria, oferta ou busca.');
+  }
   let html = '';
   if (route.name === 'categories') html = categoriesPage();
   else if (route.name === 'category') html = categoryPage(route.values.join(' '));
@@ -270,16 +370,18 @@ function updateNavigation(name) {
   const active = name === 'category' || name === 'categories' ? 'categories' : name === 'offers' ? 'offers' : 'home';
   document.querySelectorAll('[data-nav]').forEach(link => link.classList.toggle('active', link.dataset.nav === active));
   document.querySelectorAll('a[data-nav]').forEach(link => {
-    const base = link.dataset.nav === 'categories' ? '#/categorias' : link.dataset.nav === 'offers' ? '#/ofertas' : '#/';
-    link.setAttribute('href', routeHref(base));
+    const href = link.dataset.nav === 'categories' ? '#/categorias' : link.dataset.nav === 'offers' ? '#/ofertas' : '#/';
+    link.setAttribute('href', href);
   });
-  document.querySelectorAll('.brand, .sidebar-brand').forEach(link => link.setAttribute('href', routeHref('#/')));
+  document.querySelectorAll('.brand, .sidebar-brand').forEach(link => link.setAttribute('href', '#/'));
 }
 
 function renderCurrentControls(id) {
   const product = state.productMap.get(String(id));
   if (!product) return;
-  document.querySelectorAll(`[data-control-slot="${CSS.escape(String(id))}"]`).forEach(slot => { slot.innerHTML = quantityControl(product, slot.closest('.product-detail') != null); });
+  document.querySelectorAll(`[data-control-slot="${CSS.escape(String(id))}"]`).forEach(slot => {
+    slot.innerHTML = quantityControl(product, slot.closest('.product-detail') != null);
+  });
 }
 
 function updateShell() {
@@ -290,6 +392,12 @@ function updateShell() {
     element.hidden = count <= 0;
   });
   document.querySelectorAll('[data-cart-total]').forEach(element => { element.textContent = fmt(pricing.total); });
+  document.querySelectorAll('[data-direct-whatsapp]').forEach(button => {
+    button.disabled = count <= 0;
+    button.setAttribute('aria-label', count > 0 ? `Enviar ${count} item(ns), total ${fmt(pricing.total)}, no WhatsApp` : 'Adicione produtos para enviar no WhatsApp');
+  });
+  const label = document.querySelector('[data-direct-label]');
+  if (label) label.textContent = count > 0 ? 'Enviar no WhatsApp' : 'Adicione produtos';
 }
 
 function openCheckout() {
@@ -313,32 +421,38 @@ function renderCheckout() {
     checkoutContent.innerHTML = `<div class="empty-state"><strong>Nenhum produto escolhido</strong><span>Adicione os itens que deseja incluir no pedido já realizado.</span></div>`;
     return;
   }
-  checkoutContent.innerHTML = `<div class="complement-cart-list">${pricing.items.map(item => `<div class="complement-cart-row"><img src="${escapeHtml(item.product.img)}" alt=""><div class="complement-cart-copy"><strong>${escapeHtml(item.product.name)}</strong><small>${fmt(item.unit)} cada · ${fmt(item.total)}</small></div>${quantityControl(item.product)}</div>`).join('')}</div>
-    <div class="checkout-summary-card"><div class="checkout-summary-row"><span>Subtotal</span><strong>${fmt(pricing.subtotal)}</strong></div>${state.coupon ? `<div class="checkout-summary-row discount"><span>Desconto ${escapeHtml(state.coupon.code)} (${state.coupon.percent}%)</span><strong>− ${fmt(pricing.discount)}</strong></div>` : ''}<div class="checkout-summary-row total"><span>Total do complemento</span><strong>${fmt(pricing.total)}</strong></div></div>
-    <div class="complement-checkout-actions"><button class="whatsapp-button" data-action="send-whatsapp">Enviar complemento no WhatsApp</button><button class="clear-complement" data-action="clear-cart">Limpar seleção</button></div><p class="checkout-help">O complemento será confirmado pela equipe no WhatsApp, conforme estoque e identificação do seu pedido.</p>`;
+  const codes = [...new Set(pricing.items.map(item => item.discountCode).filter(Boolean))];
+  checkoutContent.innerHTML = `<div class="complement-cart-list">${pricing.items.map(item => `<div class="complement-cart-row"><img src="${escapeHtml(item.product.img)}" alt=""><div class="complement-cart-copy"><strong>${escapeHtml(item.product.name)}</strong><small>${fmt(item.unit)} cada · ${fmt(item.total)}${item.discountCode ? ` · ${escapeHtml(item.discountCode)}` : ''}</small></div>${quantityControl(item.product)}</div>`).join('')}</div>
+    <div class="checkout-summary-card"><div class="checkout-summary-row"><span>Subtotal</span><strong>${fmt(pricing.subtotal)}</strong></div>${pricing.discount > 0 ? `<div class="checkout-summary-row discount"><span>Descontos ${escapeHtml(codes.join(', '))}</span><strong>− ${fmt(pricing.discount)}</strong></div>` : ''}<div class="checkout-summary-row total"><span>Total do complemento</span><strong>${fmt(pricing.total)}</strong></div></div>
+    <div class="complement-checkout-actions"><button class="whatsapp-button" data-action="send-whatsapp">Enviar complemento no WhatsApp</button><button class="clear-complement" data-action="clear-cart">Limpar seleção</button></div><p class="checkout-help">Não é necessário preencher cadastro. A equipe identifica e confirma o complemento pelo WhatsApp.</p>`;
 }
 
 function whatsappMessage() {
   const pricing = cartPricing();
-  const lines = pricing.items.map(item => `• ${item.qty}x ${item.product.name} — ${fmt(item.total)}`);
+  const lines = pricing.items.map(item => {
+    const promo = item.discountCode ? ` (${item.discountCode}: ${item.discountPercent}% OFF)` : '';
+    return `• ${item.qty}x ${item.product.name}${promo} — ${fmt(item.total)}`;
+  });
   const message = [
     'Olá! Quero acrescentar estes produtos ao pedido que já fiz:',
     '',
     ...lines,
     '',
     `Subtotal: ${fmt(pricing.subtotal)}`,
-    ...(state.coupon ? [`Desconto ${state.coupon.code} (${state.coupon.percent}%): -${fmt(pricing.discount)}`] : []),
+    ...(pricing.discount > 0 ? [`Descontos: -${fmt(pricing.discount)}`] : []),
     `Total do complemento: ${fmt(pricing.total)}`,
     '',
-    'Por favor, confirme a inclusão no meu pedido.',
-    `Link usado: ${location.href}`
+    'Por favor, confirme a inclusão no meu pedido.'
   ].join('\n');
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 }
 
 function sendWhatsapp() {
   const pricing = cartPricing();
-  if (!pricing.items.length) return;
+  if (!pricing.items.length) {
+    showToast('Adicione pelo menos um produto para enviar.');
+    return;
+  }
   window.open(whatsappMessage(), '_blank', 'noopener');
 }
 
@@ -350,20 +464,29 @@ function showToast(message) {
   showToast.timer = setTimeout(() => toast.classList.remove('show'), 2200);
 }
 
+function clearCart() {
+  state.cart = {};
+  state.cartOrder = [];
+  state.cartPromotions = {};
+  persistCart();
+  updateShell();
+  renderCheckout();
+  renderRoute();
+}
+
 function bindEvents() {
   window.addEventListener('hashchange', renderRoute);
   document.addEventListener('click', event => {
     const button = event.target.closest('[data-action]');
-    if (button) {
-      event.preventDefault();
-      const id = button.dataset.id;
-      if (button.dataset.action === 'add') addProduct(id);
-      else if (button.dataset.action === 'inc') setQty(id, Number(state.cart[String(id)] || 0) + 1);
-      else if (button.dataset.action === 'dec') setQty(id, Number(state.cart[String(id)] || 0) - 1);
-      else if (button.dataset.action === 'clear-cart') { state.cart = {}; state.cartOrder = []; persistCart(); updateShell(); renderCheckout(); renderRoute(); }
-      else if (button.dataset.action === 'send-whatsapp') sendWhatsapp();
-      return;
-    }
+    if (!button) return;
+    event.preventDefault();
+    const id = button.dataset.id;
+    if (button.dataset.action === 'add') addProduct(id);
+    else if (button.dataset.action === 'inc') setQty(id, Number(state.cart[String(id)] || 0) + 1);
+    else if (button.dataset.action === 'dec') setQty(id, Number(state.cart[String(id)] || 0) - 1);
+    else if (button.dataset.action === 'clear-cart') clearCart();
+    else if (button.dataset.action === 'send-whatsapp') sendWhatsapp();
+    else if (button.dataset.action === 'open-checkout') openCheckout();
   });
   document.addEventListener('error', event => {
     const image = event.target;
@@ -374,7 +497,6 @@ function bindEvents() {
     image.src = next || '../img/logoantonia5.png';
   }, true);
   document.getElementById('open-cart').addEventListener('click', openCheckout);
-  document.getElementById('bottom-cart').addEventListener('click', openCheckout);
   document.getElementById('open-menu').addEventListener('click', () => navigate('#/categorias'));
   document.querySelector('[data-close-drawer]').addEventListener('click', closeCheckout);
   overlay.addEventListener('click', closeCheckout);
