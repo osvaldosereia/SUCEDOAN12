@@ -3,7 +3,7 @@ import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
 import { loadProducts } from './services/firebase.js';
 
-const BUILD = '20260725-admin-v12-fix-abas2';
+const BUILD = '20260726-admin-v13-nfe-real';
 const imports = new Map();
 
 function loadConfig() {
@@ -113,7 +113,6 @@ function placeRouteContent(route) {
     moveToRoute('stockWorkspace', route);
     moveToRoute('stockSafetySettings', route);
   }
-  if (route === 'quick-read') moveToRoute('quickReadWorkspace', route);
   if (route === 'nfe') {
     moveToRoute('nfeWorkspace', route);
     moveToRoute('nfeSafetySettings', route);
@@ -140,7 +139,6 @@ function placeRouteContent(route) {
 async function loadRouteModules(route) {
   let task = Promise.resolve();
   if (route === 'products') task = importOnce('product-enhancements', ['./catalog-auto-sync.js', './product-lifecycle-bootstrap.js']);
-  if (route === 'quick-read') task = importOnce('quick-read', ['./quick-read-bootstrap.js']);
   if (route === 'nfe') task = importOnce('nfe', ['./nfe-bootstrap.js']);
   if (route === 'orders') task = importOnce('orders', ['./orders-bootstrap.js']);
   if (route === 'order-tools') task = importOnce('order-tools', ['./order-tools-bootstrap.js']);
