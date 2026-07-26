@@ -71,6 +71,8 @@ jobs:
             node scripts/gerar-merchant.js
             node scripts/gerar-meta-combos.js
             node scripts/gerar-sitemap.js
+            test "$(grep -o 'app-next/src/seo-combos.js?v=20260726-2' index.html | wc -l)" -eq 1
+            test "$(grep -o 'app-next/src/delivery-only.js?v=20260726-1' index.html | wc -l)" -eq 1
           } 2>&1 | tee public-site-test-report.txt
 
       - name: Testar módulos
