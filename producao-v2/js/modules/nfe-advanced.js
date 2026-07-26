@@ -1,10 +1,15 @@
 import { chooseNfeProduct, digits, matchNfeAnalysis, nfeAnalysisSummary, parseNfeXml, recalculateNfeItems } from '../core/nfe.js';
-import { buildNfeSimulation, normalizeNfeDate, prepareNfeAnalysis, updateNfeItem } from '../core/nfe-simulation.js';
+import { buildNfeSimulation, normalizeNfeDate, prepareNfeAnalysis, updateNfeItem } from '../core/nfe-simulation.js?admin_build=20260726-admin-v13-nfe-real';
 import {
-  debounce, escapeHtml, money, normalizeSearch, number, productCode, productKey, productName, text,
+  clone, debounce, escapeHtml, money, normalizeSearch, number, productCode, productImage,
+  productKey, productName, text,
 } from '../core/utils.js';
 import { inspectNfeImport } from '../services/github.js';
-import { executeNfeImport } from '../services/nfe-transaction.js';
+import { executeNfeImport } from '../services/nfe-transaction.js?admin_build=20260726-admin-v13-nfe-real';
+import {
+  assertMakeProductIdentity, callMake, compactProductForMake, extractMakeImage, extractMakeTags, unwrapMakeResult,
+} from '../services/make.js';
+import { rawGithubUrl, upsertBase64File } from '../services/github-binary.js';
 
 function dateTime(value) {
   if (!value) return '—';
@@ -29,13 +34,91 @@ function dateMask(value) {
 }
 
 function displayValue(value, field = '') {
-  if (['preco', 'preco_custo', 'price', 'cost'].includes(field)) return money(value);
-  if (field === 'validade') return normalizeNfeDate(value) || '—';
+  if (['preco', 'preco_custo', 'preco_oferta', 'price', 'cost'].includes(field)) return money(value);
+  if (['validade', 'validade_oferta'].includes(field)) return normalizeNfeDate(value) || '—';
+  if (Array.isArray(value)) return value.join(', ') || '—';
+  if (value && typeof value === 'object') return JSON.stringify(value);
   return String(value ?? '') || '—';
 }
 
-function option(value, label, selected) {
-  return `<option value="${escapeHtml(value)}" ${value === selected ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+function slug(value = '') {
+  return text(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 70) || 'produto';
+}
+
+function imageExtension(dataUrl) {
+  const mime = text(dataUrl).match(/^data:image\/([^;]+);base64,/i)?.[1]?.toLowerCase() || 'png';
+  return mime.includes('webp') ? 'webp' : mime.includes('jpeg') || mime.includes('jpg') ? 'jpg' : 'png';
+}
+
+function mergeTags(current, incoming) {
+  const base = Array.isArray(current) ? current : text(current).split(/[,;|]/);
+  return [...new Set([...base, ...(incoming || [])].map(item => text(item)).filter(Boolean))];
+}
+
+function draftFromProduct(product, item, note) {
+  if (product) {
+    return {
+      nome: text(product.nome),
+      codigo: text(product.codigo || product.sku || productKey(product)),
+      gtin: text(product.gtin || product.ean),
+      ean: text(product.ean || product.gtin),
+      ncm: text(product.ncm),
+      cest: text(product.cest),
+      embalagem: text(product.embalagem || item.packaging || 'UN'),
+      categoria: text(product.categoria),
+      subcategoria: text(product.subcategoria),
+      subsubcategoria: text(product.subsubcategoria),
+      marca: text(product.marca),
+      fornecedor: text(product.fornecedor || note?.supplier),
+      preco_custo: number(item.unitCost || product.preco_custo),
+      preco: number(product.preco),
+      preco_oferta: number(product.preco_oferta),
+      validade_oferta: text(product.validade_oferta),
+      situacao: text(product.situacao || 'A').toUpperCase(),
+      url_imagem: text(product.url_imagem || product.imagem_url || product.imagem),
+      imagem: text(product.imagem || product.url_imagem),
+      imagem_url: text(product.imagem_url || product.url_imagem),
+      imagens: Array.isArray(product.imagens) ? clone(product.imagens) : [],
+      descricao: text(product.descricao),
+      descricao_curta: text(product.descricao_curta),
+      tags: Array.isArray(product.tags) ? clone(product.tags) : text(product.tags),
+      gondola: text(product.gondola || product['gôndola']),
+      prateleira: text(product.prateleira),
+      localizacao: text(product.localizacao || product.localização),
+      manualPrice: true,
+    };
+  }
+  return {
+    nome: text(item.name),
+    codigo: text(item.ean || item.supplierCodes?.[0]),
+    gtin: text(item.ean),
+    ean: text(item.ean),
+    ncm: text(item.ncm),
+    cest: text(item.cest),
+    embalagem: text(item.packaging || 'UN'),
+    categoria: 'A CLASSIFICAR',
+    subcategoria: '',
+    subsubcategoria: '',
+    marca: '',
+    fornecedor: text(note?.supplier),
+    preco_custo: number(item.unitCost),
+    preco: number(item.suggestedPrice),
+    preco_oferta: 0,
+    validade_oferta: '',
+    situacao: 'A',
+    url_imagem: '',
+    imagem: '',
+    imagem_url: '',
+    imagens: [],
+    descricao: '',
+    descricao_curta: '',
+    tags: [],
+    gondola: '',
+    prateleira: '',
+    localizacao: '',
+    manualPrice: false,
+  };
 }
 
 export class NfeAdvancedModule {
@@ -52,6 +135,7 @@ export class NfeAdvancedModule {
     this.margin = 40;
     this.busy = false;
     this.registryChecked = false;
+    this.aiBusy = new Set();
     this.bind();
     this.render();
   }
@@ -64,7 +148,7 @@ export class NfeAdvancedModule {
     this.elements.nfeRefreshSimulationButton?.addEventListener('click', () => {
       this.refreshSimulation();
       this.renderAnalysis();
-      this.onToast('Simulação recalculada. Nenhum dado foi salvo.', 'success');
+      this.onToast('Conferência recalculada. Revise antes de importar.', 'success');
     });
     this.elements.nfeApplyGlobalValidityButton?.addEventListener('click', () => this.applyGlobalValidity());
     this.elements.nfeExecuteImportButton?.addEventListener('click', () => this.executeImport());
@@ -146,10 +230,10 @@ export class NfeAdvancedModule {
       const summary = nfeAnalysisSummary(this.analysis);
       const message = this.analysis.globalDuplicate
         ? `NF-e ${this.analysis.note.key} já foi concluída. Toda a nota está bloqueada.`
-        : `${summary.lines} linha(s) agrupadas em ${summary.groups} produto(s). Simulação pronta; nenhum dado foi salvo.`;
+        : `${summary.lines} linha(s) agrupadas em ${summary.groups} produto(s). Edite os cadastros e importe quando a conferência estiver válida.`;
       this.setMessage(message, this.analysis.globalDuplicate || summary.duplicates ? 'danger' : 'success');
       this.renderAnalysis();
-      this.onToast('NF-e analisada e simulada sem gravação.', 'success');
+      this.onToast('XML lido. A importação real fica disponível após a conferência.', 'success');
     } finally {
       this.busy = false;
       this.setControlsDisabled(false);
@@ -185,6 +269,7 @@ export class NfeAdvancedModule {
     this.simulation = null;
     this.rawXml = '';
     this.registryChecked = false;
+    this.aiBusy.clear();
     this.elements.nfePaste.value = '';
     this.elements.nfeAccessKey.value = '';
     this.elements.nfeMargin.value = '40';
@@ -192,7 +277,7 @@ export class NfeAdvancedModule {
     if (this.elements.nfeConfirmImport) this.elements.nfeConfirmImport.checked = false;
     this.margin = 40;
     this.renderKeyStatus();
-    this.setMessage('Selecione um XML para iniciar a conferência. Nenhuma gravação será realizada.', 'neutral');
+    this.setMessage('Selecione um XML para iniciar a conferência. Nenhuma gravação acontece antes do botão de importação.', 'neutral');
     this.render();
   }
 
@@ -253,7 +338,7 @@ export class NfeAdvancedModule {
 
     this.elements.nfeSummary.innerHTML = [
       ['info', summary.lines, 'Linhas no XML', `${summary.groups} grupos`],
-      ['success', summary.exact + summary.manual, 'Produtos vinculados', `${summary.unmatched} sem vínculo`],
+      ['success', summary.exact + summary.manual, 'Produtos vinculados', `${summary.unmatched} novos`],
       [summary.duplicates ? 'danger' : 'success', summary.duplicates, 'Entradas duplicadas', summary.duplicates ? 'Bloqueadas' : 'Nenhuma detectada'],
       ['info', summary.incomingUnits, 'Unidades calculadas', money(summary.calculatedNet)],
     ].map(([kind, value, label, help]) => `<article class="metric-card ${kind}"><strong>${escapeHtml(value)}</strong><span>${escapeHtml(label)}</span><small>${escapeHtml(help)}</small></article>`).join('');
@@ -275,8 +360,6 @@ export class NfeAdvancedModule {
     const suggestions = item.suggestions?.length
       ? `<div class="nfe-suggestions"><span>Sugestões iniciais</span>${item.suggestions.map(suggestion => `<button type="button" data-nfe-select-product="${escapeHtml(suggestion.key)}" data-nfe-item="${escapeHtml(item.id)}"><strong>${escapeHtml(suggestion.name)}</strong><small>${escapeHtml(suggestion.code || 'sem código')} · ${suggestion.score}%</small></button>`).join('')}</div>`
       : '';
-    const choices = product ? this.compareFields(item, product) : this.newProductFields(item);
-    const preview = this.planPreview(plan);
     return `<article class="nfe-item${item.duplicate ? ' duplicate' : ''}" data-nfe-item-card="${escapeHtml(item.id)}">
       <div class="nfe-item-head"><div><span class="eyebrow">Item ${index + 1} · linha(s) ${escapeHtml(item.lines.join(', '))}</span><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(item.ean || 'Sem EAN')} · NCM ${escapeHtml(item.ncm || 'não informado')} · ${escapeHtml(item.packaging || 'sem unidade')}</p></div><span class="badge ${matchKind}">${escapeHtml(matchLabel)}</span></div>
       ${item.duplicate ? `<div class="nfe-duplicate-warning">${escapeHtml(item.duplicateReason)}</div>` : ''}
@@ -284,54 +367,77 @@ export class NfeAdvancedModule {
         <label>Quantidade comercial<strong>${escapeHtml(item.commercialQuantity)} ${escapeHtml(item.commercialUnit || '')}</strong></label>
         <label>Multiplicador<input type="number" min="1" max="1000" step="1" value="${escapeHtml(item.multiplier)}" data-nfe-field="multiplier" data-nfe-item="${escapeHtml(item.id)}"><small>${escapeHtml(item.multiplierSource)}</small></label>
         <label>Entrada calculada<strong>${escapeHtml(item.incomingUnits)} unidade(s)</strong></label>
-        <label>Custo unitário<strong>${escapeHtml(money(item.unitCost))}</strong><small>Líquido ${escapeHtml(money(item.net))}</small></label>
+        <label>Custo do XML<strong>${escapeHtml(money(item.unitCost))}</strong><small>Líquido ${escapeHtml(money(item.net))}</small></label>
         <label>Venda sugerida<strong>${escapeHtml(money(item.suggestedPrice))}</strong><small>Margem ${escapeHtml(this.margin)}%</small></label>
         <label>Estoque projetado<strong>${product ? `${escapeHtml(number(product.estoque))} → ${escapeHtml(item.projectedStock)}` : `0 → ${escapeHtml(item.projectedStock)}`}</strong></label>
       </div>
       <div class="nfe-entry-options">
         <label>Validade do lote<input type="text" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" value="${escapeHtml(item.validity || '')}" data-nfe-field="validity" data-nfe-item="${escapeHtml(item.id)}" ${item.noExpiry ? 'disabled' : ''}></label>
-        <label>Regra da validade<select data-nfe-field="validityMode" data-nfe-item="${escapeHtml(item.id)}" ${item.noExpiry ? 'disabled' : ''}>${product ? option('keep', 'Manter atual', item.validityMode) : ''}${option('earliest', 'Usar a mais próxima', item.validityMode)}${option('replace', 'Substituir pelo lote', item.validityMode)}</select></label>
+        <label>Regra da validade<select data-nfe-field="validityMode" data-nfe-item="${escapeHtml(item.id)}" ${item.noExpiry ? 'disabled' : ''}>${product ? `<option value="keep" ${item.validityMode === 'keep' ? 'selected' : ''}>Manter atual</option>` : ''}<option value="earliest" ${item.validityMode === 'earliest' ? 'selected' : ''}>Usar a mais próxima</option><option value="replace" ${item.validityMode === 'replace' ? 'selected' : ''}>Substituir pelo lote</option></select></label>
         <label class="nfe-check"><input type="checkbox" data-nfe-field="noExpiry" data-nfe-item="${escapeHtml(item.id)}" ${item.noExpiry ? 'checked' : ''}> Produto sem validade</label>
         <label class="nfe-check"><input type="checkbox" data-nfe-field="addStock" data-nfe-item="${escapeHtml(item.id)}" ${item.addStock !== false ? 'checked' : ''}> Somar ao estoque</label>
         <label class="nfe-check"><input type="checkbox" data-nfe-field="skipped" data-nfe-item="${escapeHtml(item.id)}" ${item.skipped ? 'checked' : ''}> Ignorar este item</label>
       </div>
       <div class="nfe-match-panel">
-        <div class="nfe-current-match">${product ? `<span>Produto vinculado</span><strong>${escapeHtml(productName(product))}</strong><small>${escapeHtml(productCode(product) || productKey(product))} · estoque ${escapeHtml(number(product.estoque))}</small><button class="button ghost compact" type="button" data-nfe-unlink="${escapeHtml(item.id)}">Remover vínculo</button>` : '<span>Nenhum produto vinculado</span><strong>Simulação de produto novo</strong><small>Complete os campos obrigatórios abaixo.</small>'}</div>
-        <div class="nfe-search-product"><label>Pesquisar produto existente<input type="search" data-nfe-search="${escapeHtml(item.id)}" placeholder="Nome, código ou EAN" autocomplete="off"></label><div class="nfe-live-results" data-nfe-results="${escapeHtml(item.id)}"></div></div>
+        <div class="nfe-current-match">${product ? `<span>Produto vinculado</span><strong>${escapeHtml(productName(product))}</strong><small>${escapeHtml(productCode(product) || productKey(product))} · estoque ${escapeHtml(number(product.estoque))}</small><button class="button ghost compact" type="button" data-nfe-unlink="${escapeHtml(item.id)}">Tratar como produto novo</button>` : '<span>Nenhum produto vinculado</span><strong>Novo produto</strong><small>O cadastro abaixo será criado junto com a entrada.</small>'}</div>
+        <div class="nfe-search-product"><label>Pesquisar produto existente<input type="search" data-nfe-search="${escapeHtml(item.id)}" data-nfe-item="${escapeHtml(item.id)}" placeholder="Nome, código ou EAN" autocomplete="off"></label><div class="nfe-live-results" data-nfe-results="${escapeHtml(item.id)}"></div></div>
       </div>
       ${suggestions}
-      ${choices}
-      ${preview}
+      ${this.productEditor(item)}
+      ${this.planPreview(plan)}
     </article>`;
   }
 
-  compareFields(item, product) {
-    const rows = [
-      ['name', 'Nome', product.nome, item.name],
-      ['gtin', 'EAN / GTIN', product.gtin || product.ean, item.ean],
-      ['ncm', 'NCM', product.ncm, item.ncm],
-      ['packaging', 'Embalagem', product.embalagem, item.packaging],
-      ['cost', 'Preço de custo', product.preco_custo, item.unitCost],
-      ['price', 'Preço de venda', product.preco, item.suggestedPrice],
-    ];
-    return `<div class="nfe-comparison"><h4>Comparação campo a campo</h4><div class="table-wrap"><table class="nfe-compare-table"><thead><tr><th>Campo</th><th>Atual</th><th>NF-e</th><th>Escolha</th></tr></thead><tbody>${rows.map(([field, label, oldValue, nfeValue]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(displayValue(oldValue, field))}</td><td>${escapeHtml(displayValue(nfeValue, field))}</td><td><select data-nfe-choice="${escapeHtml(field)}" data-nfe-item="${escapeHtml(item.id)}">${option('old', 'Manter atual', item.choices?.[field])}${option('nfe', 'Usar NF-e', item.choices?.[field])}</select></td></tr>`).join('')}</tbody></table></div></div>`;
-  }
-
-  newProductFields(item) {
-    const draft = item.newProductDraft || {};
-    const fields = [
-      ['nome', 'Nome', 'text'], ['codigo', 'Código', 'text'], ['gtin', 'EAN / GTIN', 'text'], ['ncm', 'NCM', 'text'],
-      ['embalagem', 'Embalagem', 'text'], ['categoria', 'Categoria', 'text'], ['subcategoria', 'Subcategoria', 'text'], ['marca', 'Marca', 'text'],
-      ['fornecedor', 'Fornecedor', 'text'], ['preco_custo', 'Preço de custo', 'number'], ['preco', 'Preço de venda', 'number'], ['url_imagem', 'URL da imagem', 'url'],
-    ];
-    return `<div class="nfe-new-product"><h4>Cadastro simulado do produto novo</h4><p>Categoria, embalagem, nome, código e preço são obrigatórios para permitir a importação.</p><div class="nfe-new-grid">${fields.map(([field, label, type]) => `<label>${escapeHtml(label)}<input type="${type}" ${type === 'number' ? 'step="0.01" min="0"' : ''} value="${escapeHtml(draft[field] ?? '')}" data-nfe-draft-field="${escapeHtml(field)}" data-nfe-item="${escapeHtml(item.id)}"></label>`).join('')}<label class="span-2">Descrição<textarea data-nfe-draft-field="descricao" data-nfe-item="${escapeHtml(item.id)}">${escapeHtml(draft.descricao || '')}</textarea></label></div></div>`;
+  productEditor(item) {
+    const draft = item.productDraft || {};
+    const image = text(draft.url_imagem || draft.imagem_url || draft.imagem);
+    const fullBusy = this.aiBusy.has(`${item.id}:full`);
+    const imageBusy = this.aiBusy.has(`${item.id}:image`);
+    const field = (name, label, type = 'text', extra = '') => {
+      const value = name === 'tags' && Array.isArray(draft[name]) ? draft[name].join(', ') : draft[name] ?? '';
+      return `<label>${escapeHtml(label)}<input type="${type}" ${type === 'number' ? 'step="0.01" min="0"' : ''} ${extra} value="${escapeHtml(value)}" data-nfe-draft-field="${escapeHtml(name)}" data-nfe-item="${escapeHtml(item.id)}"></label>`;
+    };
+    return `<section class="nfe-product-editor">
+      <div class="nfe-product-editor-head"><div><h4>Cadastro completo que será salvo</h4><p>Edite aqui sem sair da NF-e. A prévia abaixo mostra exatamente o que será gravado.</p></div><div class="nfe-ai-actions"><button class="button secondary compact" type="button" data-nfe-ai="full" data-nfe-item="${escapeHtml(item.id)}" ${fullBusy || imageBusy ? 'disabled' : ''}>${fullBusy ? 'IA gerando cadastro…' : 'IA gerar cadastro'}</button><button class="button secondary compact" type="button" data-nfe-ai="image" data-nfe-item="${escapeHtml(item.id)}" ${fullBusy || imageBusy ? 'disabled' : ''}>${imageBusy ? 'IA gerando imagem…' : 'IA gerar imagem'}</button></div></div>
+      <div class="nfe-product-editor-layout">
+        <div class="nfe-product-image"><img src="${escapeHtml(image || '')}" ${image ? '' : 'hidden'} alt=""><div ${image ? 'hidden' : ''}>Sem imagem</div><small>${escapeHtml(image || 'A imagem gerada aparecerá aqui.')}</small></div>
+        <div class="nfe-new-grid">
+          ${field('nome', 'Nome')}
+          ${field('codigo', 'Código')}
+          ${field('gtin', 'EAN / GTIN', 'text', 'inputmode="numeric"')}
+          ${field('ncm', 'NCM', 'text', 'inputmode="numeric"')}
+          ${field('cest', 'CEST', 'text', 'inputmode="numeric"')}
+          ${field('embalagem', 'Embalagem')}
+          ${field('categoria', 'Categoria')}
+          ${field('subcategoria', 'Subcategoria')}
+          ${field('subsubcategoria', 'Subsubcategoria')}
+          ${field('marca', 'Marca')}
+          ${field('fornecedor', 'Fornecedor')}
+          ${field('preco_custo', 'Preço de custo', 'number')}
+          ${field('preco', 'Preço de venda', 'number')}
+          ${field('preco_oferta', 'Preço de oferta', 'number')}
+          ${field('validade_oferta', 'Validade da oferta', 'text', 'inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA"')}
+          <label>Situação<select data-nfe-draft-field="situacao" data-nfe-item="${escapeHtml(item.id)}"><option value="A" ${text(draft.situacao).toUpperCase() !== 'I' ? 'selected' : ''}>Ativo</option><option value="I" ${text(draft.situacao).toUpperCase() === 'I' ? 'selected' : ''}>Inativo</option></select></label>
+          ${field('gondola', 'Gôndola')}
+          ${field('prateleira', 'Prateleira')}
+          ${field('localizacao', 'Localização')}
+          ${field('tags', 'Tags')}
+          <label class="span-2">URL da imagem<input type="url" value="${escapeHtml(image)}" data-nfe-draft-field="url_imagem" data-nfe-item="${escapeHtml(item.id)}"></label>
+          <label class="span-2">Descrição curta<textarea data-nfe-draft-field="descricao_curta" data-nfe-item="${escapeHtml(item.id)}">${escapeHtml(draft.descricao_curta || '')}</textarea></label>
+          <label class="span-2">Descrição completa<textarea data-nfe-draft-field="descricao" data-nfe-item="${escapeHtml(item.id)}">${escapeHtml(draft.descricao || '')}</textarea></label>
+        </div>
+      </div>
+    </section>`;
   }
 
   planPreview(plan) {
     if (!plan) return '';
-    const issues = [...(plan.errors || []).map(message => ['danger', message]), ...(plan.warnings || []).map(message => ['warning', message])];
+    const issues = [
+      ...(plan.errors || []).map(message => ['danger', message]),
+      ...(plan.warnings || []).map(message => ['warning', message]),
+    ];
     const changes = plan.changes || [];
-    return `<div class="nfe-plan ${plan.errors?.length ? 'blocked' : ''}"><div class="nfe-plan-head"><div><h4>Prévia exata da operação</h4><p>${plan.status === 'skipped' ? 'Este item será ignorado.' : plan.isNew ? `Criará o produto ${escapeHtml(plan.productKey)}` : `Atualizará o produto ${escapeHtml(plan.productKey)}`}</p></div><span class="badge ${plan.errors?.length ? 'danger' : plan.status === 'skipped' ? 'neutral' : 'info'}">${plan.errors?.length ? 'Bloqueado' : plan.status === 'skipped' ? 'Ignorado' : 'Simulado'}</span></div>${issues.length ? `<div class="nfe-plan-issues">${issues.map(([kind, message]) => `<div class="${kind}">${escapeHtml(message)}</div>`).join('')}</div>` : ''}${changes.length ? `<div class="table-wrap"><table class="nfe-changes"><thead><tr><th>Alteração</th><th>Antes</th><th>Depois</th></tr></thead><tbody>${changes.map(change => `<tr><th>${escapeHtml(change.label)}</th><td>${escapeHtml(displayValue(change.before, change.field))}</td><td>${escapeHtml(displayValue(change.after, change.field))}</td></tr>`).join('')}</tbody></table></div>` : ''}${plan.lotRecord ? `<div class="nfe-lot-preview"><strong>Lote que seria criado</strong><span>${escapeHtml(plan.lotRecord.quantidade)} un. · custo ${escapeHtml(money(plan.lotRecord.custo_unitario))} · validade ${escapeHtml(plan.lotRecord.sem_validade ? 'sem validade' : plan.lotRecord.validade)}</span></div>` : ''}</div>`;
+    return `<div class="nfe-plan ${plan.errors?.length ? 'blocked' : ''}"><div class="nfe-plan-head"><div><h4>Prévia exata da importação</h4><p>${plan.status === 'skipped' ? 'Este item será ignorado.' : plan.isNew ? `Criará o produto ${escapeHtml(plan.productKey)}` : `Atualizará o produto ${escapeHtml(plan.productKey)}`}</p></div><span class="badge ${plan.errors?.length ? 'danger' : plan.status === 'skipped' ? 'neutral' : 'info'}">${plan.errors?.length ? 'Bloqueado' : plan.status === 'skipped' ? 'Ignorado' : 'Pronto'}</span></div>${issues.length ? `<div class="nfe-plan-issues">${issues.map(([kind, message]) => `<div class="${kind}">${escapeHtml(message)}</div>`).join('')}</div>` : ''}${changes.length ? `<div class="table-wrap"><table class="nfe-changes"><thead><tr><th>Alteração</th><th>Antes</th><th>Depois</th></tr></thead><tbody>${changes.map(change => `<tr><th>${escapeHtml(change.label)}</th><td>${escapeHtml(displayValue(change.before, change.field))}</td><td>${escapeHtml(displayValue(change.after, change.field))}</td></tr>`).join('')}</tbody></table></div>` : ''}${plan.lotRecord ? `<div class="nfe-lot-preview"><strong>Lote que será criado</strong><span>${escapeHtml(plan.lotRecord.quantidade)} un. · custo ${escapeHtml(money(plan.lotRecord.custo_unitario))} · validade ${escapeHtml(plan.lotRecord.sem_validade ? 'sem validade' : plan.lotRecord.validade)}</span></div>` : ''}</div>`;
   }
 
   renderSimulation() {
@@ -342,7 +448,7 @@ export class NfeAdvancedModule {
     }
     const summary = this.simulation.summary;
     const blockers = this.simulation.errors;
-    this.elements.nfeSimulation.innerHTML = `<section class="panel nfe-simulation-panel"><div class="panel-header"><div><span class="eyebrow">Plano transacional</span><h2>Resultado da simulação</h2><p>Nenhum dado foi alterado. A importação somente será liberada sem bloqueadores.</p></div><span class="badge ${this.simulation.canImport ? 'success' : 'danger'}">${this.simulation.canImport ? 'Pronto para teste' : `${blockers.length} bloqueador(es)`}</span></div><div class="nfe-simulation-metrics"><div><strong>${summary.updates}</strong><span>Atualizações</span></div><div><strong>${summary.newProducts}</strong><span>Produtos novos</span></div><div><strong>${summary.stockUnits}</strong><span>Unidades no estoque</span></div><div><strong>${summary.skipped}</strong><span>Ignorados</span></div></div>${blockers.length ? `<div class="nfe-global-blockers"><strong>Corrija antes de importar</strong>${blockers.map(error => `<p>${escapeHtml(error.groupKey)}: ${escapeHtml(error.message)}</p>`).join('')}</div>` : '<div class="nfe-ready-notice">A simulação não encontrou bloqueadores. Ainda é necessário ativar as gravações e confirmar a operação.</div>'}</section>`;
+    this.elements.nfeSimulation.innerHTML = `<section class="panel nfe-simulation-panel"><div class="panel-header"><div><span class="eyebrow">Conferência antes da gravação</span><h2>Resumo da importação</h2><p>Esta prévia não grava dados. O botão final abaixo executa a importação real no Firebase.</p></div><span class="badge ${this.simulation.canImport ? 'success' : 'danger'}">${this.simulation.canImport ? 'Pronta para importar' : `${blockers.length} bloqueador(es)`}</span></div><div class="nfe-simulation-metrics"><div><strong>${summary.updates}</strong><span>Atualizações</span></div><div><strong>${summary.newProducts}</strong><span>Produtos novos</span></div><div><strong>${summary.stockUnits}</strong><span>Unidades no estoque</span></div><div><strong>${summary.skipped}</strong><span>Ignorados</span></div></div>${blockers.length ? `<div class="nfe-global-blockers"><strong>Corrija antes de importar</strong>${blockers.map(error => `<p>${escapeHtml(error.groupKey)}: ${escapeHtml(error.message)}</p>`).join('')}</div>` : '<div class="nfe-ready-notice">Conferência válida. Ative a importação, confirme e clique em “Importar NF-e no estoque”.</div>'}</section>`;
   }
 
   renderImportControls() {
@@ -355,18 +461,18 @@ export class NfeAdvancedModule {
     this.elements.nfeExecuteImportButton.disabled = !ready;
     if (this.elements.nfeImportModeStatus) {
       this.elements.nfeImportModeStatus.className = `badge ${enabled ? 'warning' : 'success'}`;
-      this.elements.nfeImportModeStatus.textContent = enabled ? 'Importação habilitada para teste' : 'Importação bloqueada';
+      this.elements.nfeImportModeStatus.textContent = enabled ? 'Importação real habilitada' : 'Importação bloqueada';
     }
     if (this.elements.nfeImportHelp) {
       this.elements.nfeImportHelp.textContent = !this.analysis
-        ? 'Leia uma NF-e para gerar a simulação.'
+        ? 'Leia uma NF-e para gerar a conferência.'
         : !this.simulation?.canImport
-          ? 'A simulação possui bloqueadores.'
+          ? 'A conferência possui bloqueadores.'
           : !enabled
-            ? 'Ative gravações gerais e importação de NF-e nas configurações desta bancada.'
+            ? 'Ative “Permitir gravações” e “Permitir importação de NF-e”.'
             : !confirmed
-              ? 'Confirme que revisou a simulação.'
-              : 'Operação liberada para teste controlado.';
+              ? 'Confirme que revisou todos os produtos.'
+              : 'A importação real está liberada.';
     }
   }
 
@@ -377,14 +483,18 @@ export class NfeAdvancedModule {
       this.handleItemSearch(event);
       return;
     }
-    if (event.target.dataset.nfeField === 'validity') event.target.value = dateMask(event.target.value);
+    if (event.target.dataset.nfeField === 'validity' || event.target.dataset.nfeDraftField === 'validade_oferta') {
+      event.target.value = dateMask(event.target.value);
+    }
+    if (['gtin', 'ncm', 'cest'].includes(event.target.dataset.nfeDraftField)) {
+      event.target.value = digits(event.target.value);
+    }
   }
 
   handleItemChange(event) {
     const itemId = event.target.dataset.nfeItem;
     if (!itemId || !this.analysis) return;
     const field = event.target.dataset.nfeField;
-    const choice = event.target.dataset.nfeChoice;
     const draftField = event.target.dataset.nfeDraftField;
     let patch = null;
     if (field) {
@@ -392,13 +502,19 @@ export class NfeAdvancedModule {
       if (field === 'multiplier') value = Math.min(1000, Math.max(1, Math.floor(number(value) || 1)));
       if (field === 'validity') value = normalizeNfeDate(value);
       patch = { [field]: value };
-      if (field === 'multiplier') patch.multiplierSource = 'Ajustado manualmente na simulação V2';
-    } else if (choice) {
-      patch = { choices: { [choice]: event.target.value } };
+      if (field === 'multiplier') patch.multiplierSource = 'Ajustado manualmente na entrada da NF-e';
     } else if (draftField) {
       let value = event.target.value;
-      if (['preco', 'preco_custo'].includes(draftField)) value = number(value);
-      patch = { newProductDraft: { [draftField]: value, ...(draftField === 'preco' ? { manualPrice: true } : {}) } };
+      if (['preco', 'preco_custo', 'preco_oferta'].includes(draftField)) value = number(value);
+      if (['gtin', 'ean', 'ncm', 'cest'].includes(draftField)) value = digits(value);
+      if (draftField === 'validade_oferta') value = normalizeNfeDate(value);
+      if (draftField === 'tags') value = text(value).split(/[,;|]/).map(text).filter(Boolean);
+      const extra = draftField === 'preco' ? { manualPrice: true } : {};
+      if (draftField === 'url_imagem') {
+        patch = { productDraft: { url_imagem: value, imagem: value, imagem_url: value, imagens: value ? [value] : [], ...extra } };
+      } else {
+        patch = { productDraft: { [draftField]: value, ...extra } };
+      }
     }
     if (!patch) return;
     this.analysis = updateNfeItem(this.analysis, itemId, patch, this.margin);
@@ -425,25 +541,154 @@ export class NfeAdvancedModule {
   handleItemsClick(event) {
     const select = event.target.closest('[data-nfe-select-product]');
     const unlink = event.target.closest('[data-nfe-unlink]');
+    const ai = event.target.closest('[data-nfe-ai]');
     if (!this.analysis) return;
+    if (ai) {
+      this.runAi(ai.dataset.nfeAi, ai.dataset.nfeItem).catch(error => {
+        console.error(error);
+        this.onToast(error?.message || String(error), 'error');
+      });
+      return;
+    }
     if (select) {
       const product = this.store.getProduct(select.dataset.nfeSelectProduct);
       if (!product) return;
-      this.analysis = prepareNfeAnalysis(chooseNfeProduct(this.analysis, select.dataset.nfeItem, product, this.margin), this.margin);
+      const next = chooseNfeProduct(this.analysis, select.dataset.nfeItem, product, this.margin);
+      const item = next.items.find(row => row.id === select.dataset.nfeItem);
+      if (item) {
+        item.productDraft = draftFromProduct(product, item, next.note);
+        item.newProductDraft = clone(item.productDraft);
+      }
+      this.analysis = prepareNfeAnalysis(next, this.margin);
       this.refreshSimulation();
       this.renderAnalysis();
-      this.onToast(`Vínculo definido para ${productName(product)}. Nada foi salvo.`, 'success');
+      this.onToast(`Vínculo definido para ${productName(product)}. Revise o cadastro antes de importar.`, 'success');
     } else if (unlink) {
-      this.analysis = prepareNfeAnalysis(chooseNfeProduct(this.analysis, unlink.dataset.nfeUnlink, null, this.margin), this.margin);
+      const next = chooseNfeProduct(this.analysis, unlink.dataset.nfeUnlink, null, this.margin);
+      const item = next.items.find(row => row.id === unlink.dataset.nfeUnlink);
+      if (item) {
+        item.productDraft = draftFromProduct(null, item, next.note);
+        item.newProductDraft = clone(item.productDraft);
+      }
+      this.analysis = prepareNfeAnalysis(next, this.margin);
       this.refreshSimulation();
       this.renderAnalysis();
-      this.onToast('Vínculo removido. O item voltou para produto novo simulado.', 'success');
+      this.onToast('O item será tratado como produto novo. Complete o cadastro.', 'success');
+    }
+  }
+
+  async runAi(action, itemId) {
+    if (!this.analysis || this.busy) return;
+    const item = this.analysis.items.find(row => row.id === itemId);
+    if (!item) throw new Error('Item da NF-e não encontrado.');
+    const busyKey = `${itemId}:${action}`;
+    if (this.aiBusy.has(busyKey)) return;
+    if (typeof this.reloadConfig === 'function') this.store.state.config = this.reloadConfig();
+    const config = this.store.state.config || {};
+    const draft = clone(item.productDraft || {});
+    const identity = item.matchedProduct || {
+      firebaseKey: draft.codigo || item.ean || itemId,
+      id: draft.codigo || item.ean || itemId,
+      codigo: draft.codigo || item.ean || itemId,
+      ...draft,
+    };
+    this.aiBusy.add(busyKey);
+    this.renderAnalysis();
+    try {
+      if (action === 'full') {
+        this.onToast(`IA: gerando cadastro de ${draft.nome || item.name}…`);
+        const raw = await callMake(config, 'text', {
+          acao: 'gerar_cadastro_produto',
+          origem: 'entrada_nfe_admin_v2',
+          dados_nfe: {
+            nome_xml: item.name,
+            ean: item.ean,
+            ncm: item.ncm,
+            cest: item.cest,
+            embalagem: item.packaging,
+            fornecedor: this.analysis.note?.supplier,
+            custo_unitario: item.unitCost,
+          },
+          produto: compactProductForMake({ ...identity, ...draft }),
+        });
+        const result = assertMakeProductIdentity(identity, raw);
+        const data = unwrapMakeResult(result);
+        const patch = {};
+        const fields = {
+          nome: data.nome_sugerido || data.nome || data.name,
+          codigo: data.codigo || data.sku,
+          gtin: data.gtin || data.ean || data.codigo_barras,
+          ncm: data.ncm,
+          cest: data.cest,
+          embalagem: data.embalagem_sugerida || data.embalagem,
+          categoria: data.categoria,
+          subcategoria: data.subcategoria,
+          subsubcategoria: data.subsubcategoria,
+          marca: data.marca,
+          fornecedor: data.fornecedor,
+          descricao: data.descricao || data.description || data.texto,
+          descricao_curta: data.descricao_curta || data.short_description,
+          gondola: data.gondola,
+          prateleira: data.prateleira,
+          localizacao: data.localizacao,
+        };
+        Object.entries(fields).forEach(([field, value]) => {
+          if (text(value)) patch[field] = text(value);
+        });
+        const tags = extractMakeTags(data);
+        if (tags.length) patch.tags = mergeTags(draft.tags, tags);
+        if (!Object.keys(patch).length) throw new Error('A IA concluiu, mas não retornou campos utilizáveis.');
+        this.analysis = updateNfeItem(this.analysis, itemId, { productDraft: patch }, this.margin);
+        this.onToast('Cadastro da IA aplicado. Revise os campos antes de importar.', 'success');
+      } else if (action === 'image') {
+        this.onToast(`IA: gerando imagem de ${draft.nome || item.name}…`);
+        const path = `${text(config.githubImagesPath || 'site/img/produtos_3').replace(/^\/+|\/+$/g, '')}/${slug(draft.codigo || draft.nome || item.name)}-ia.webp`;
+        const raw = await callMake(config, 'image', {
+          acao: 'melhorar_imagem_produto',
+          quantidade_imagens: 1,
+          produto: compactProductForMake({ ...identity, ...draft }),
+          storage_destino: 'github',
+          substituir_imagens_existentes: true,
+          imagem_path: path,
+          instrucoes: 'Gerar exatamente 1 imagem quadrada fiel ao produto, fundo branco puro, sem cenário e sem inventar informações da embalagem.',
+        });
+        let source = extractMakeImage(raw);
+        if (!source) throw new Error('A IA não retornou imagem, URL ou base64.');
+        let publishedPath = path;
+        if (/^data:image\//i.test(source)) {
+          const ext = imageExtension(source);
+          publishedPath = `${text(config.githubImagesPath || 'site/img/produtos_3').replace(/^\/+|\/+$/g, '')}/${slug(draft.codigo || draft.nome || item.name)}-ia-${Date.now()}.${ext}`;
+          const uploaded = await upsertBase64File(config, publishedPath, source, `Atualiza imagem IA de ${draft.nome || item.name} pela entrada de NF-e`);
+          source = uploaded.url || rawGithubUrl(config, publishedPath);
+        }
+        this.analysis = updateNfeItem(this.analysis, itemId, {
+          productDraft: {
+            url_imagem: source,
+            imagem: source,
+            imagem_url: source,
+            imagens: [source],
+            imagem_path: publishedPath,
+            imagem_storage: 'github',
+            imagem_origem: 'ia_make',
+            imagem_status: 'ok',
+            imagem_gerada_em: new Date().toISOString(),
+          },
+        }, this.margin);
+        this.onToast('Imagem da IA aplicada. Revise antes de importar.', 'success');
+      } else {
+        throw new Error('Ação de IA não reconhecida.');
+      }
+      this.refreshSimulation();
+    } finally {
+      this.aiBusy.delete(busyKey);
+      this.renderAnalysis();
     }
   }
 
   async executeImport() {
     if (this.busy || !this.analysis || !this.simulation?.canImport) return;
     if (typeof this.reloadConfig === 'function') this.store.state.config = this.reloadConfig();
+    if (!confirm(`Importar a NF-e ${this.analysis.note.key} no Firebase e somar o estoque dos itens confirmados?`)) return;
     this.busy = true;
     this.setControlsDisabled(true);
     this.renderImportControls();
@@ -458,12 +703,16 @@ export class NfeAdvancedModule {
           this.setMessage(progress.message, progress.step === 'done' ? 'success' : 'info');
         },
       });
-      this.setMessage(`NF-e ${result.record.chave_nfe} importada e conciliada.`, 'success');
-      this.onToast(`${result.savedProducts.length} produto(s) processado(s) com segurança.`, 'success');
+      this.setMessage(`NF-e ${result.record.chave_nfe} importada no Firebase e conciliada.`, 'success');
+      this.onToast(`${result.savedProducts.length} produto(s) salvo(s) e estoque atualizado.`, 'success');
       if (this.elements.nfeConfirmImport) this.elements.nfeConfirmImport.checked = false;
       if (typeof this.onAfterImport === 'function') await this.onAfterImport(result);
       const record = await inspectNfeImport(this.store.state.config, this.analysis.note.key);
-      this.analysis = prepareNfeAnalysis(matchNfeAnalysis({ note: this.analysis.note, items: this.analysis.items, rawXml: this.rawXml }, this.store.state.products, record, this.margin), this.margin);
+      this.analysis = prepareNfeAnalysis(matchNfeAnalysis({
+        note: this.analysis.note,
+        items: this.analysis.items,
+        rawXml: this.rawXml,
+      }, this.store.state.products, record, this.margin), this.margin);
       this.refreshSimulation();
       this.renderAnalysis();
     } catch (error) {
@@ -479,7 +728,7 @@ export class NfeAdvancedModule {
     if (!this.analysis) return;
     const safe = {
       exportedAt: new Date().toISOString(),
-      mode: 'simulation',
+      mode: 'preview-before-import',
       margin: this.margin,
       note: this.analysis.note,
       globalDuplicate: this.analysis.globalDuplicate,
@@ -494,6 +743,7 @@ export class NfeAdvancedModule {
         ean: item.ean,
         name: item.name,
         ncm: item.ncm,
+        cest: item.cest,
         packaging: item.packaging,
         commercialQuantity: item.commercialQuantity,
         multiplier: item.multiplier,
@@ -508,8 +758,7 @@ export class NfeAdvancedModule {
         noExpiry: item.noExpiry,
         addStock: item.addStock,
         skipped: item.skipped,
-        choices: item.choices,
-        newProductDraft: item.newProductDraft,
+        productDraft: item.productDraft,
         matchStatus: item.matchStatus,
         duplicate: item.duplicate,
         duplicateReason: item.duplicateReason,
@@ -517,6 +766,7 @@ export class NfeAdvancedModule {
           key: productKey(item.matchedProduct),
           code: productCode(item.matchedProduct),
           name: productName(item.matchedProduct),
+          image: productImage(item.matchedProduct),
           stock: number(item.matchedProduct.estoque),
           projectedStock: item.projectedStock,
         } : null,
@@ -526,7 +776,7 @@ export class NfeAdvancedModule {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `simulacao-nfe-${this.analysis.note.key}.json`;
+    anchor.download = `conferencia-nfe-${this.analysis.note.key}.json`;
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
