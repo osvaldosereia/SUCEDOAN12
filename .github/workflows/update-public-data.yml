@@ -1,4 +1,4 @@
-name: Atualizar catálogos públicos de cestas e kits
+name: Atualizar SEO e catálogos de cestas e kits
 
 on:
   workflow_dispatch:
@@ -10,12 +10,19 @@ on:
       - 'site/produtos-home.json'
       - 'site/produtos-cesta-basica.json'
       - 'site/kits.json'
+      - 'scripts/aplicar-seo-delivery-v2.js'
+      - 'scripts/seo-delivery-payload/**'
       - 'scripts/catalogos-combos-lib.js'
       - 'scripts/gerar-merchant.js'
       - 'scripts/gerar-meta-combos.js'
+      - 'scripts/gerar-paginas-seo-combos.js'
       - 'scripts/gerar-sitemap.js'
       - 'scripts/injetar-seo-combos.js'
+      - 'scripts/normalizar-seo-delivery.js'
       - 'app-next/src/seo-combos.js'
+      - 'app-next/src/delivery-only.js'
+      - 'app-next/src/config.js'
+      - 'site-public/assets/seo-combos.css'
       - 'scripts/check-public-site.mjs'
       - '.github/workflows/update-public-data.yml'
 
@@ -29,7 +36,7 @@ concurrency:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - name: Checkout do main
         uses: actions/checkout@v4
@@ -42,6 +49,18 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Aplicar migração SEO delivery v2
+        run: node scripts/aplicar-seo-delivery-v2.js
+
+      - name: Normalizar domínio e empresa somente delivery
+        run: node scripts/normalizar-seo-delivery.js
+
+      - name: Aplicar metadados principais
+        run: node scripts/injetar-seo-combos.js
+
+      - name: Gerar páginas HTML indexáveis
+        run: node scripts/gerar-paginas-seo-combos.js
+
       - name: Gerar Merchant de cestas e kits
         run: node scripts/gerar-merchant.js
 
@@ -51,43 +70,67 @@ jobs:
       - name: Gerar sitemap focado em cestas e kits
         run: node scripts/gerar-sitemap.js
 
-      - name: Aplicar metadados de cestas e kits sem alterar o layout
-        run: node scripts/injetar-seo-combos.js
-
       - name: Validar arquivos públicos
         shell: bash
         run: |
           set -euo pipefail
+          node --check scripts/aplicar-seo-delivery-v2.js
+          node --check scripts/catalogos-combos-lib.js
+          node --check scripts/gerar-paginas-seo-combos.js
+          node --check scripts/normalizar-seo-delivery.js
+          node --check app-next/src/delivery-only.js
           node scripts/check-public-site.mjs
           test -s merchant.xml
           grep -q '<item>' merchant.xml
           grep -Eq '<g:id>(cesta|kit)-' merchant.xml
+          grep -q '<g:canonical_link>https://donaantonia.com.br/' merchant.xml
+          grep -q '<g:shipping_label>delivery-local-minimo-75</g:shipping_label>' merchant.xml
           ! grep -q '<g:id>clight\.' merchant.xml
           test -s site/produtos_meta.csv
           head -n 1 site/produtos_meta.csv | grep -q 'availability'
           grep -Eq '^((cesta|kit)-)' <(tail -n +2 site/produtos_meta.csv)
           test -s site/produtos_admin_meta.json
           grep -q 'cestas-e-kits-oficiais' site/produtos_admin_meta.json
+          grep -q '"deliveryOnly": true' site/produtos_admin_meta.json
+          test -s cestas/index.html
+          test -s kits/index.html
+          grep -q '"@type":"Product"' cestas/*/index.html
+          grep -q 'Somente delivery' cestas/index.html
           test -s sitemap.xml
-          grep -q '?cesta=' sitemap.xml
-          grep -q '?secao=cestas' sitemap.xml
-          test -s robots.txt
+          grep -q 'https://donaantonia.com.br/cestas/' sitemap.xml
+          grep -q 'https://donaantonia.com.br/kits/' sitemap.xml
+          ! grep -q '?cesta=' sitemap.xml
+          ! grep -q 'https://www.donaantonia.com.br' sitemap.xml merchant.xml robots.txt index.html
           grep -q 'app-next/src/seo-combos.js' index.html
+          grep -q 'app-next/src/delivery-only.js' index.html
           grep -q "params.get('cesta')" index.html
-          grep -q 'Cestas Básicas e Kits em Cuiabá e Várzea Grande' index.html
+          grep -q 'OnlineStore' index.html
+          ! grep -q '"@type":"GroceryStore"' index.html
+          ! grep -q 'R. Trinta, 105' sobre-nos.html contato.html
 
-      - name: Publicar dados gerados
+      - name: Publicar dados e páginas geradas
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add merchant.xml sitemap.xml robots.txt site/produtos_meta.csv site/produtos_admin_meta.json index.html
+          git add -A -- \
+            .seo-delivery-v2-aplicado SEO-GOOGLE-DELIVERY-CHECKLIST.md \
+            scripts/catalogos-combos-lib.js scripts/gerar-merchant.js scripts/gerar-meta-combos.js \
+            scripts/gerar-paginas-seo-combos.js scripts/gerar-sitemap.js scripts/injetar-seo-combos.js \
+            scripts/normalizar-seo-delivery.js scripts/check-public-site.mjs \
+            app-next/src/config.js app-next/src/seo-combos.js app-next/src/delivery-only.js \
+            app-next/tests/smoke.test.js site-public/assets/seo-combos.css site/app-version.json \
+            merchant.xml sitemap.xml robots.txt \
+            site/produtos_meta.csv site/produtos_admin_meta.json site/seo-combos-manifest.json \
+            cestas kits \
+            index.html sobre-nos.html contato.html politica-de-entrega.html \
+            politica-de-troca.html politica-de-privacidade.html termos-de-uso.html reels.html
           if git diff --cached --quiet; then
-            echo 'Catálogos de cestas e kits já estão atualizados.'
+            echo 'SEO e catálogos de cestas e kits já estão atualizados.'
             exit 0
           fi
-          git commit -m 'Atualiza catálogos de cestas e kits'
+          git commit -m 'Atualiza SEO delivery de cestas e kits'
           for tentativa in 1 2 3 4 5; do
             if git push origin 'HEAD:main'; then
               exit 0
@@ -96,5 +139,5 @@ jobs:
             git rebase origin/main
             sleep $((tentativa * 2))
           done
-          echo 'Não foi possível publicar os catálogos após cinco tentativas.' >&2
+          echo 'Não foi possível publicar o SEO e os catálogos após cinco tentativas.' >&2
           exit 1
