@@ -108,6 +108,8 @@ jobs:
           ! grep -q 'https://www.donaantonia.com.br' sitemap.xml merchant.xml robots.txt index.html
           grep -q 'app-next/src/seo-combos.js' index.html
           grep -q 'app-next/src/delivery-only.js' index.html
+          test "$(grep -o 'app-next/src/seo-combos.js?v=20260726-2' index.html | wc -l)" -eq 1
+          test "$(grep -o 'app-next/src/delivery-only.js?v=20260726-1' index.html | wc -l)" -eq 1
           grep -q "params.get('cesta')" index.html
           grep -q 'OnlineStore' index.html
           grep -q 'Somente delivery' index.html
