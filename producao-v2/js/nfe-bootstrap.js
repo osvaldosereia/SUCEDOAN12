@@ -1,9 +1,10 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { productKey } from './core/utils.js';
-import { NfeAdvancedModule } from './modules/nfe-advanced.js?admin_build=20260726-admin-v13-nfe-real';
+import { NfeAdvancedModule } from './modules/nfe-advanced.js?admin_build=20260726-admin-v13-xml-editor-parity';
+import './nfe-editor-parity.js?admin_build=20260726-admin-v13-xml-editor-parity';
 import { loadProducts } from './services/firebase.js';
 
-const BUILD = '20260726-admin-v13-nfe-real';
+const BUILD = '20260726-admin-v13-xml-editor-parity';
 
 function loadConfig() {
   try {
@@ -19,19 +20,24 @@ function persistConfig(patch) {
   return next;
 }
 
-function installStylesheet() {
-  if (document.querySelector('link[data-admin-v2-nfe]')) return;
+function ensureStylesheet(selector, href, datasetName) {
+  if (document.querySelector(selector)) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = `./assets/nfe.css?admin_build=${BUILD}`;
-  link.dataset.adminV2Nfe = '1';
+  link.href = href;
+  link.dataset[datasetName] = '1';
   document.head.appendChild(link);
+}
+
+function installStylesheet() {
+  ensureStylesheet('link[data-admin-v2-nfe]', `./assets/nfe.css?admin_build=${BUILD}`, 'adminV2Nfe');
+  ensureStylesheet('link[data-admin-v2-nfe-editor-parity]', `./assets/nfe-editor-parity.css?admin_build=${BUILD}`, 'adminV2NfeEditorParity');
 }
 
 function panelMarkup() {
   return `<section class="panel nfe-workspace" id="nfeWorkspace">
     <div class="panel-header nfe-panel-header">
-      <div><span class="eyebrow">Entrada real com conferência protegida</span><h2>Entrada de NF-e</h2><p>Leia o XML, edite o cadastro completo de cada produto e importe diretamente no Firebase.</p></div>
+      <div><span class="eyebrow">Entrada real com cadastro completo</span><h2>Entrada de NF-e</h2><p>Leia o XML, edite o produto com os mesmos recursos do cadastro manual e importe diretamente no Firebase.</p></div>
       <div class="nfe-header-actions"><span class="badge info" id="nfeDataStatus">Catálogo ainda não carregado</span><label class="button primary nfe-file-button" id="nfeFileLabel">Selecionar XML<input id="nfeFile" type="file" accept=".xml,text/xml,application/xml" hidden></label></div>
     </div>
     <div class="nfe-input-area">
