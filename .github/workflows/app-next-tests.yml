@@ -7,8 +7,12 @@ on:
       - 'index.html'
       - 'app-next/**'
       - 'site-public/**'
+      - 'producao-v2/js/services/collections.js'
+      - 'scripts/catalogos-combos-lib.js'
       - 'scripts/gerar-merchant.js'
+      - 'scripts/gerar-meta-combos.js'
       - 'scripts/gerar-sitemap.js'
+      - 'scripts/injetar-seo-combos.js'
       - 'scripts/check-public-site.mjs'
       - 'sobre-nos.html'
       - 'contato.html'
@@ -19,6 +23,8 @@ on:
       - 'robots.txt'
       - 'sitemap.xml'
       - 'merchant.xml'
+      - 'site/produtos_meta.csv'
+      - 'site/produtos_admin_meta.json'
       - '.github/workflows/app-next-tests.yml'
       - '.github/workflows/update-public-data.yml'
   workflow_dispatch:
@@ -55,6 +61,14 @@ jobs:
         run: |
           set -o pipefail
           npm run check 2>&1 | tee -a ../public-site-test-report.txt
+      - name: Aplicar SEO de cestas e kits para validação
+        id: seo
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/injetar-seo-combos.js 2>&1 | tee -a public-site-test-report.txt
       - name: Validar estrutura pública, políticas e feeds
         id: public
         if: always()
@@ -71,9 +85,13 @@ jobs:
         run: |
           set -o pipefail
           {
+            node --check scripts/catalogos-combos-lib.js
             node --check scripts/gerar-merchant.js
+            node --check scripts/gerar-meta-combos.js
             node --check scripts/gerar-sitemap.js
+            node --check scripts/injetar-seo-combos.js
             node --check scripts/check-public-site.mjs
+            node --check app-next/src/seo-combos.js
           } 2>&1 | tee -a public-site-test-report.txt
       - name: Anexar relatório do site
         if: always()
@@ -84,7 +102,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - name: Confirmar resultado
-        if: steps.modules.outcome == 'failure' || steps.smoke.outcome == 'failure' || steps.public.outcome == 'failure' || steps.generators.outcome == 'failure'
+        if: steps.modules.outcome == 'failure' || steps.smoke.outcome == 'failure' || steps.seo.outcome == 'failure' || steps.public.outcome == 'failure' || steps.generators.outcome == 'failure'
         run: |
           cat public-site-test-report.txt
           exit 1
