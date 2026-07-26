@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="da-build-version" content="2026-07-24-modular-production-v8">
-  <meta name="description" content="Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.">
+  <meta name="da-build-version" content="2026-07-26-combos-seo-v1">
+  <meta name="description" content="Cestas básicas e kits promocionais com entrega em Cuiabá e Várzea Grande. Confira todos os produtos e escolha sua opção.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#ffffff">
   <meta name="format-detection" content="telephone=yes">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Dona Antônia">
-  <meta property="og:title" content="Dona Antônia - Supermercado e Cestas">
-  <meta property="og:description" content="Supermercado online, cestas básicas, ofertas e entrega em Cuiabá e Várzea Grande.">
+  <meta property="og:title" content="Cestas Básicas e Kits em Cuiabá e Várzea Grande | Dona Antônia">
+  <meta property="og:description" content="Cestas básicas e kits promocionais com entrega em Cuiabá e Várzea Grande.">
   <meta property="og:url" content="https://www.donaantonia.com.br/">
   <meta property="og:image" content="https://www.donaantonia.com.br/img/logoantonia5.png">
   <meta name="twitter:card" content="summary_large_image">
-  <title>Dona Antônia - Supermercado e Cestas</title>
+  <title>Cestas Básicas e Kits em Cuiabá e Várzea Grande | Dona Antônia</title>
   <link rel="canonical" href="https://www.donaantonia.com.br/">
   <link rel="icon" href="img/logoantonia5.png">
   <link rel="privacy-policy" href="https://www.donaantonia.com.br/politica-de-privacidade.html">
@@ -48,13 +48,15 @@
     if (!location.hash && params.toString()) {
       var route = '';
       var sectionRoutes = { ofertas: '#/ofertas', cestas: '#/cestas', kits: '#/kits', categorias: '#/categorias', informacoes: '#/informacoes' };
-      if (params.get('p')) route = '#/produto/' + encodeURIComponent(params.get('p'));
+      if (params.get('cesta')) route = '#/cesta/' + encodeURIComponent(params.get('cesta'));
+      else if (params.get('kit')) route = '#/kit/' + encodeURIComponent(params.get('kit'));
+      else if (params.get('p')) route = '#/produto/' + encodeURIComponent(params.get('p'));
       else if (params.get('categoria')) route = '#/categoria/' + encodeURIComponent(params.get('categoria'));
       else if (params.get('subcategoria')) route = '#/subcategoria/' + encodeURIComponent(params.get('subcategoria'));
       else if (params.get('marca')) route = '#/marca/' + encodeURIComponent(params.get('marca'));
       else if (params.get('busca')) route = '#/busca/' + encodeURIComponent(params.get('busca'));
       else if (params.get('secao')) route = sectionRoutes[params.get('secao')] || '';
-      if (route) history.replaceState(null, '', location.pathname + route);
+      if (route) history.replaceState(null, '', location.pathname + location.search + route);
     }
 
     if (location.hash === '#/ofertas/50') {
@@ -154,6 +156,7 @@
   <aside id="menu-drawer" class="drawer" aria-hidden="true" aria-label="Menu"><header class="drawer-header"><div><strong>Menu Dona Antônia</strong><small>Navegação e informações</small></div><button data-close-drawer aria-label="Fechar">×</button></header><div id="menu-content" class="drawer-content"></div></aside>
   <aside id="checkout-drawer" class="drawer checkout-drawer" aria-hidden="true" aria-label="Minha compra"><header class="drawer-header"><div><strong>Minha compra</strong><small>Revise e envie pelo WhatsApp</small></div><button data-close-drawer aria-label="Fechar">×</button></header><div id="checkout-content" class="drawer-content"></div></aside>
 
+  <script type="module" src="app-next/src/seo-combos.js?v=20260726-1"></script>
   <script type="module" src="app-next/src/image-performance.js?v=20260724-4"></script>
   <script type="module" src="app-next/src/detail-review.js?v=20260725-1"></script>
   <script type="module" src="app-next/src/main.js?v=20260724-8"></script>
