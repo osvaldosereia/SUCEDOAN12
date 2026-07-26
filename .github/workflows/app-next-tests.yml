@@ -11,6 +11,7 @@ on:
       - 'scripts/aplicar-seo-delivery-v2.js'
       - 'scripts/seo-delivery-payload/**'
       - 'scripts/catalogos-combos-lib.js'
+      - 'scripts/garantir-sinal-delivery.js'
       - 'scripts/gerar-merchant.js'
       - 'scripts/gerar-meta-combos.js'
       - 'scripts/gerar-paginas-seo-combos.js'
@@ -64,6 +65,7 @@ jobs:
           set -o pipefail
           {
             node scripts/normalizar-seo-delivery.js
+            node scripts/garantir-sinal-delivery.js
             node scripts/injetar-seo-combos.js
             node scripts/gerar-paginas-seo-combos.js
             node scripts/gerar-merchant.js
@@ -110,6 +112,7 @@ jobs:
           {
             node --check scripts/aplicar-seo-delivery-v2.js
             node --check scripts/catalogos-combos-lib.js
+            node --check scripts/garantir-sinal-delivery.js
             node --check scripts/gerar-merchant.js
             node --check scripts/gerar-meta-combos.js
             node --check scripts/gerar-paginas-seo-combos.js
