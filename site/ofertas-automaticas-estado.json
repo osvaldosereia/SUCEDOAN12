@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-07-26T13:58:01.501Z",
+  "ultima_execucao": "2026-07-26T15:30:12.229Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -4708,6 +4708,20 @@
       "historico_id": "oferta-1776338129167-1784957230089-aly8o"
     },
     {
+      "produto_key": "1776338129191",
+      "codigo": "P0225",
+      "nome": "Lixa Enox P.unha Pop 6x1 06pc X Unidade",
+      "categoria": "BELEZA",
+      "regra_id": "regra-beleza-1784031773317",
+      "origem": "campanha_automatica",
+      "preco_normal": 3.9,
+      "preco_oferta": 2.93,
+      "desconto_percentual": 24.87,
+      "inicio": "2026-07-26",
+      "fim": "2026-07-29T23:59:59-04:00",
+      "historico_id": "oferta-1776338129191-1785079812229-kfdjg"
+    },
+    {
       "produto_key": "1776338129208",
       "codigo": "P0192",
       "nome": "Lápis de Cor 12 Cores Sextavado Longo Unidade",
@@ -5714,6 +5728,20 @@
       "inicio": "2026-07-25",
       "fim": "2026-07-27T23:59:59-04:00",
       "historico_id": "oferta-1776338130966-1785017487266-ukzpc"
+    },
+    {
+      "produto_key": "1776338130971",
+      "codigo": "P360",
+      "nome": "Lixa para Pés Eva Unidade",
+      "categoria": "BELEZA",
+      "regra_id": "regra-beleza-1784031773317",
+      "origem": "campanha_automatica",
+      "preco_normal": 8.9,
+      "preco_oferta": 6.68,
+      "desconto_percentual": 24.94,
+      "inicio": "2026-07-26",
+      "fim": "2026-07-29T23:59:59-04:00",
+      "historico_id": "oferta-1776338130971-1785079812229-d1fsa"
     },
     {
       "produto_key": "1776338130974",
@@ -12506,6 +12534,20 @@
       "historico_id": "oferta-produto1784838743954-1785007556109-38m46"
     },
     {
+      "produto_key": "produto_1784840506851",
+      "codigo": "skala.camomila.400",
+      "nome": "Loção Hidratante Skala Camomila 400ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-beleza-1784031773317",
+      "origem": "campanha_automatica",
+      "preco_normal": 9.5,
+      "preco_oferta": 7.13,
+      "desconto_percentual": 24.95,
+      "inicio": "2026-07-26",
+      "fim": "2026-07-29T23:59:59-04:00",
+      "historico_id": "oferta-produto1784840506851-1785079812229-ayt2s"
+    },
+    {
       "produto_key": "produto_1784840702905",
       "codigo": "casaperfume.passione.500",
       "nome": "LIMPADOR CASA Passione 500ml",
@@ -16546,6 +16588,18 @@
     "177887332885863376": {
       "ultima_oferta_em": "2026-07-26T13:58:01.501Z",
       "regra_id": "regra-cafe-da-manha-1784035566798"
+    },
+    "1776338129191": {
+      "ultima_oferta_em": "2026-07-26T15:30:12.229Z",
+      "regra_id": "regra-beleza-1784031773317"
+    },
+    "1776338130971": {
+      "ultima_oferta_em": "2026-07-26T15:30:12.229Z",
+      "regra_id": "regra-beleza-1784031773317"
+    },
+    "produto_1784840506851": {
+      "ultima_oferta_em": "2026-07-26T15:30:12.229Z",
+      "regra_id": "regra-beleza-1784031773317"
     }
   },
   "execucoes": [
@@ -17087,6 +17141,23 @@
         "ofertas_solicitadas": 54,
         "ofertas_criadas": 5,
         "ofertas_nao_criadas": 49,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1785079811598",
+      "executado_em": "2026-07-26T15:30:12.229Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 54,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 51,
         "ofertas_encerradas": 0,
         "vencidos": 0,
         "ofertas_reativadas": 0,
