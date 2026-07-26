@@ -14,15 +14,20 @@ const HEADER = [
 
 function saleWindow(record) {
   if (!(record.details.oldPrice > record.details.price)) return '';
-  const start = record.source?.data_inicio ? `${record.source.data_inicio}T00:00:00-04:00` : '';
-  const end = record.source?.data_fim ? `${record.source.data_fim}T23:59:59-04:00` : '';
-  return start && end ? `${start}/${end}` : '';
+  const start = record.source?.data_inicio || record.source?.dataInicio || '';
+  const end = record.source?.data_fim || record.source?.dataFim || '';
+  return start && end ? `${start}T00:00:00-04:00/${end}T23:59:59-04:00` : '';
 }
 
 function labelSize(record) {
   const name = String(record.source?.nome || '').toLowerCase();
   for (const value of ['econômica', 'economica', 'mini', 'pequena', 'média', 'media', 'grande', 'premium']) {
-    if (name.includes(value)) return value.replace('economica', 'Econômica').replace('media', 'Média').replace(/^./, letter => letter.toUpperCase());
+    if (name.includes(value)) {
+      return value
+        .replace('economica', 'Econômica')
+        .replace('media', 'Média')
+        .replace(/^./, letter => letter.toUpperCase());
+    }
   }
   return record.type === 'kit' ? 'Promocional' : 'Cesta pronta';
 }
@@ -52,7 +57,7 @@ function csvRow(record) {
     labelSize(record),
     'Cuiabá e Várzea Grande',
     `${details.uniqueProducts} produtos`,
-    'Dona Antônia',
+    'Somente delivery',
     details.stock,
     details.price,
     discount,
@@ -79,6 +84,9 @@ function adminRecord(record) {
     titulo_meta: record.title,
     descricao_meta: record.description,
     link: record.link,
+    link_legado: record.legacyLink,
+    caminho_seo: record.seoPath,
+    ultima_alteracao: record.lastmod || null,
     imagem: record.image,
     preco: record.details.price,
     preco_anterior: record.details.oldPrice || null,
@@ -93,7 +101,7 @@ function adminRecord(record) {
       codigo_usado: item.selectedCode,
       quantidade: item.qty,
       produto_encontrado: Boolean(item.product),
-      estoque: item.product ? Number(item.product.estoque || 0) : 0,
+      estoque: item.product ? Number(item.product.estoque || item.product.stock || 0) : 0,
     })),
   };
 }
@@ -102,6 +110,7 @@ function buildAdminJson(catalog) {
   const payload = {
     generatedAt: catalog.generatedAt,
     source: 'cestas-e-kits-oficiais',
+    deliveryOnly: true,
     summary: {
       total: catalog.all.length,
       ativos_no_catalogo: catalog.active.length,
@@ -124,4 +133,4 @@ if (require.main === module) {
   try { main(); } catch (error) { console.error('Erro ao gerar catálogo da Meta:', error); process.exit(1); }
 }
 
-module.exports = { HEADER, buildAdminJson, buildCsv, csvRow };
+module.exports = { HEADER, buildAdminJson, buildCsv, csvRow, saleWindow };

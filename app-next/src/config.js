@@ -3,10 +3,10 @@ const IS_PRODUCTION = !RUNTIME_PATH.includes('/app-next/');
 
 export const CONFIG = Object.freeze({
   APP_NAME: 'Dona Antônia',
-  APP_VERSION: IS_PRODUCTION ? '2026-07-25-modular-production-v8' : '2026-07-25-modular-preview-v8',
+  APP_VERSION: IS_PRODUCTION ? '2026-07-26-seo-delivery-v9' : '2026-07-26-seo-delivery-preview-v9',
   ENVIRONMENT: IS_PRODUCTION ? 'production' : 'preview',
   IS_PRODUCTION,
-  SITE_BASE_URL: 'https://www.donaantonia.com.br',
+  SITE_BASE_URL: 'https://donaantonia.com.br',
   GITHUB_RAW_BASE: 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main',
   ENDPOINTS: Object.freeze({
     PRODUCTS: '../site/produtos-home.json',

@@ -11,7 +11,7 @@ const required = [
   'styles/bundle-confirmation.css', 'styles/live-polish.css',
   'src/config.js', 'src/core.js', 'src/catalog.js', 'src/commerce.js', 'src/offer-engine.js', 'src/integrations.js',
   'src/personalization.js', 'src/ui.js', 'src/checkout.js', 'src/main.js',
-  'src/live-polish.js', 'src/image-performance.js'
+  'src/live-polish.js', 'src/image-performance.js', 'src/seo-combos.js', 'src/delivery-only.js'
 ];
 required.forEach(file => {
   if (!fs.existsSync(path.join(root, file))) throw new Error(`Arquivo ausente: ${file}`);
@@ -31,23 +31,33 @@ if (preview.includes('visual-parity.js')) throw new Error('Prévia ainda carrega
 
 const production = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const marker of [
-  '2026-07-24-modular-production-v8', 'content="index, follow"',
+  '2026-07-26-combos-seo-delivery-v2', 'content="index,follow,max-image-preview:large,max-snippet:-1"',
   'app-next/styles/home-parity.css?v=20260724-7',
   'app-next/styles/live-polish.css?v=20260724-8',
   'app-next/src/main.js?v=20260724-8',
   'app-next/src/image-performance.js?v=20260724-4',
+  'app-next/src/seo-combos.js?v=20260726-2',
+  'app-next/src/delivery-only.js?v=20260726-1',
   'da_v8_cache_migrated_20260724', "params.get('p')", "params.get('categoria')",
   "params.get('secao')", 'window.__DA_PRODUCTION__ = true',
-  'previewModular = false', 'preview_modular = false'
+  'previewModular = false', 'preview_modular = false',
+  'https://donaantonia.com.br/', '"@type":"OnlineStore"', 'Somente delivery'
 ]) if (!production.includes(marker)) throw new Error(`Produção incompleta: ${marker}`);
 if (production.includes('noindex, nofollow')) throw new Error('Index da raiz bloqueia indexação');
 if (production.includes('visual-parity.js')) throw new Error('Produção ainda carrega visual-parity.js');
 if (production.includes('raw.githubusercontent.com')) throw new Error('Index abre conexão externa para imagens');
+if (production.includes('https://www.donaantonia.com.br')) throw new Error('Index ainda usa domínio com www');
+if (production.includes('"@type":"GroceryStore"')) throw new Error('Index ainda declara loja física');
+if (production.includes('R. Trinta, 105')) throw new Error('Index ainda publica endereço como ponto de atendimento');
 
 const config = read('src/config.js');
-for (const marker of ['IS_PRODUCTION', "PREFIX: IS_PRODUCTION ? 'da_v2_' : 'da_next_'", 'modular-production-v8']) {
+for (const marker of [
+  'IS_PRODUCTION', "PREFIX: IS_PRODUCTION ? 'da_v2_' : 'da_next_'", 'seo-delivery-v9',
+  "SITE_BASE_URL: 'https://donaantonia.com.br'"
+]) {
   if (!config.includes(marker)) throw new Error(`Separação de ambientes incompleta: ${marker}`);
 }
+if (config.includes('https://www.donaantonia.com.br')) throw new Error('Configuração ainda usa www');
 
 const core = read('src/core.js');
 if (!core.includes('return `../${clean}`')) throw new Error('Imagens internas não usam a mesma origem');
@@ -79,6 +89,19 @@ for (const marker of [
 ]) if (!ui.includes(marker)) throw new Error(`Renderizador público incompleto: ${marker}`);
 for (const removed of ['class="home-hero"', 'class="quick-links"', "section('Ofertas de hoje'", 'visualParityApplied']) {
   if (ui.includes(removed)) throw new Error(`Renderizador ainda cria conteúdo removido: ${removed}`);
+}
+
+const seoCombos = read('src/seo-combos.js');
+for (const marker of [
+  "'/cestas/'", "'/kits/'", "'@type': 'Product'", "'@type': 'Offer'",
+  "'@type': 'BreadcrumbList'", "params.get('cesta')", "params.get('kit')",
+  'kitStockCapacity', 'resolveBundleRows', "seller: { '@id':"
+]) if (!seoCombos.includes(marker)) throw new Error(`SEO de combos incompleto: ${marker}`);
+if (seoCombos.includes('/?cesta=') || seoCombos.includes('/?kit=')) throw new Error('Canonical dinâmico ainda usa parâmetros');
+
+const deliveryOnly = read('src/delivery-only.js');
+for (const marker of ['Somente delivery, sem loja física', 'Delivery local', 'MutationObserver']) {
+  if (!deliveryOnly.includes(marker)) throw new Error(`Ajuste delivery incompleto: ${marker}`);
 }
 
 const checkout = read('src/checkout.js');
