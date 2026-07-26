@@ -10,7 +10,7 @@ import {
   basketFixedAdjustment
 } from './basket-pricing.js';
 
-const REVIEW_VERSION = '2026-07-25-detail-v4';
+const REVIEW_VERSION = '2026-07-26-detail-v5';
 let catalogStatePromise;
 let scheduled = false;
 
@@ -90,26 +90,38 @@ function bundleProductCardHtml({ bundle, row, draft = null, type = 'basket' }) {
   const product = row.product;
   const id = String(product.id);
   const qty = type === 'basket' ? Number(draft?.[id] || 0) : Number(row.qty || 0);
+  const unitLabel = qty === 1 ? 'unidade' : 'unidades';
+  const quantityBadge = type === 'basket'
+    ? `${qty} ${unitLabel} na cesta`
+    : `${qty} ${unitLabel} no kit`;
+  const quantityContext = type === 'basket'
+    ? `Esta cesta inclui ${qty} ${unitLabel}`
+    : `Este kit inclui ${qty} ${unitLabel}`;
   const expiry = product.validade && formatDateBR(product.validade)
     ? `<div class="product-expiry">Val. ${escapeHtml(formatDateBR(product.validade))}</div>`
     : '';
   const controls = type === 'basket'
-    ? `<div class="qty-control bundle-product-qty">
-        <button data-action="basket-dec" data-basket-id="${escapeHtml(bundle.id)}" data-id="${escapeHtml(id)}" aria-label="Diminuir ${escapeHtml(product.name)}">−</button>
-        <span>${qty}</span>
-        <button data-action="basket-inc" data-basket-id="${escapeHtml(bundle.id)}" data-id="${escapeHtml(id)}" aria-label="Aumentar ${escapeHtml(product.name)}">+</button>
+    ? `<div class="bundle-product-quantity-control" style="display:grid;justify-items:end;gap:4px">
+        <small style="color:var(--muted);font-size:9px;font-weight:700;line-height:1.1;text-align:right">Quantidade na cesta</small>
+        <div class="qty-control bundle-product-qty">
+          <button data-action="basket-dec" data-basket-id="${escapeHtml(bundle.id)}" data-id="${escapeHtml(id)}" aria-label="Diminuir ${escapeHtml(product.name)}">−</button>
+          <span>${qty}</span>
+          <button data-action="basket-inc" data-basket-id="${escapeHtml(bundle.id)}" data-id="${escapeHtml(id)}" aria-label="Aumentar ${escapeHtml(product.name)}">+</button>
+        </div>
       </div>`
-    : `<button class="qty-add bundle-product-add" data-action="add" data-id="${escapeHtml(id)}" aria-label="Adicionar ${escapeHtml(product.name)} avulso">+</button>`;
+    : `<button class="secondary-button bundle-product-buy-single" style="min-height:40px;padding:0 10px;font-size:10px;white-space:nowrap" data-action="add" data-id="${escapeHtml(id)}" aria-label="Comprar ${escapeHtml(product.name)} avulso">Comprar avulso</button>`;
 
   return `<article class="product-card bundle-product-card" data-bundle-product="${escapeHtml(id)}">
     <div class="product-card-media bundle-product-media">
       <a href="#/produto/${productRoute(product)}" aria-label="Abrir ${escapeHtml(product.name)}">
         <img loading="lazy" decoding="async" fetchpriority="low" width="300" height="300" src="${escapeHtml(product.img)}" data-detail-fallback="${escapeHtml(imageFallbackValue(product))}" alt="">
       </a>
+      <span class="bundle-product-badge">${escapeHtml(quantityBadge)}</span>
     </div>
     <div class="product-card-body">
       ${product.embalagem ? `<div class="product-packaging">${escapeHtml(product.embalagem)}</div>` : '<div class="product-packaging">&nbsp;</div>'}
       <a class="product-name" href="#/produto/${productRoute(product)}" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</a>
+      <div class="bundle-product-context">${escapeHtml(quantityContext)}</div>
       ${expiry}
       <div class="product-card-footer">
         <div class="product-price"><strong>${fmt(product.price)}</strong><small>cada</small></div>
@@ -154,7 +166,7 @@ async function reviewBasketPage() {
         </div>
       </article>
       <section class="content-section basket-products-section">
-        <div class="section-heading"><div><h2>Produtos da cesta</h2><p>Ajuste as quantidades antes de adicionar.</p></div></div>
+        <div class="section-heading"><div><h2>Produtos da cesta</h2><p>Confira quantas unidades de cada produto estão incluídas e ajuste se precisar.</p></div></div>
         <div class="bundle-products-grid basket-products-grid">${rows.map(row => bundleProductCardHtml({ bundle: basket, row, draft, type: 'basket' })).join('')}</div>
       </section>
       <section class="basket-total-card">
@@ -215,7 +227,7 @@ async function reviewKitPage() {
         </div>
       </article>
       <section class="content-section kit-products-section">
-        <div class="section-heading"><div><h2>Produtos do kit</h2><p>Veja os itens incluídos no combo.</p></div></div>
+        <div class="section-heading"><div><h2>Produtos do kit</h2><p>As quantidades incluídas aparecem em destaque em cada produto.</p></div></div>
         <div class="bundle-products-grid kit-products-grid">${rows.map(row => bundleProductCardHtml({ bundle: kit, row, type: 'kit' })).join('')}</div>
       </section>
       <section class="basket-total-card kit-total-card">
