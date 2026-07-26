@@ -8,11 +8,16 @@ on:
       - 'app-next/**'
       - 'site-public/**'
       - 'producao-v2/js/services/collections.js'
+      - 'scripts/aplicar-seo-delivery-v2.js'
+      - 'scripts/seo-delivery-payload/**'
       - 'scripts/catalogos-combos-lib.js'
+      - 'scripts/garantir-sinal-delivery.js'
       - 'scripts/gerar-merchant.js'
       - 'scripts/gerar-meta-combos.js'
+      - 'scripts/gerar-paginas-seo-combos.js'
       - 'scripts/gerar-sitemap.js'
       - 'scripts/injetar-seo-combos.js'
+      - 'scripts/normalizar-seo-delivery.js'
       - 'scripts/check-public-site.mjs'
       - 'sobre-nos.html'
       - 'contato.html'
@@ -23,6 +28,9 @@ on:
       - 'robots.txt'
       - 'sitemap.xml'
       - 'merchant.xml'
+      - 'cestas/**'
+      - 'kits/**'
+      - 'site/seo-combos-manifest.json'
       - 'site/produtos_meta.csv'
       - 'site/produtos_admin_meta.json'
       - '.github/workflows/app-next-tests.yml'
@@ -38,20 +46,43 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: app-next/package.json
+
+      - name: Aplicar migração SEO delivery v2
+        run: node scripts/aplicar-seo-delivery-v2.js
+
+      - name: Gerar SEO, páginas e feeds para validação
+        id: seo
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            node scripts/normalizar-seo-delivery.js
+            node scripts/garantir-sinal-delivery.js
+            node scripts/injetar-seo-combos.js
+            node scripts/gerar-paginas-seo-combos.js
+            node scripts/gerar-merchant.js
+            node scripts/gerar-meta-combos.js
+            node scripts/gerar-sitemap.js
+          } 2>&1 | tee public-site-test-report.txt
+
       - name: Testar módulos
         id: modules
+        if: always()
         continue-on-error: true
         working-directory: app-next
         shell: bash
         run: |
           set -o pipefail
-          npm test 2>&1 | tee ../public-site-test-report.txt
+          npm test 2>&1 | tee -a ../public-site-test-report.txt
+
       - name: Smoke test modular
         id: smoke
         if: always()
@@ -61,14 +92,7 @@ jobs:
         run: |
           set -o pipefail
           npm run check 2>&1 | tee -a ../public-site-test-report.txt
-      - name: Aplicar SEO de cestas e kits para validação
-        id: seo
-        if: always()
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          node scripts/injetar-seo-combos.js 2>&1 | tee -a public-site-test-report.txt
+
       - name: Validar estrutura pública, políticas e feeds
         id: public
         if: always()
@@ -77,6 +101,7 @@ jobs:
         run: |
           set -o pipefail
           node scripts/check-public-site.mjs 2>&1 | tee -a public-site-test-report.txt
+
       - name: Verificar sintaxe dos geradores
         id: generators
         if: always()
@@ -85,14 +110,20 @@ jobs:
         run: |
           set -o pipefail
           {
+            node --check scripts/aplicar-seo-delivery-v2.js
             node --check scripts/catalogos-combos-lib.js
+            node --check scripts/garantir-sinal-delivery.js
             node --check scripts/gerar-merchant.js
             node --check scripts/gerar-meta-combos.js
+            node --check scripts/gerar-paginas-seo-combos.js
             node --check scripts/gerar-sitemap.js
             node --check scripts/injetar-seo-combos.js
+            node --check scripts/normalizar-seo-delivery.js
             node --check scripts/check-public-site.mjs
             node --check app-next/src/seo-combos.js
+            node --check app-next/src/delivery-only.js
           } 2>&1 | tee -a public-site-test-report.txt
+
       - name: Anexar relatório do site
         if: always()
         uses: actions/upload-artifact@v4
@@ -101,6 +132,7 @@ jobs:
           path: public-site-test-report.txt
           if-no-files-found: error
           retention-days: 7
+
       - name: Confirmar resultado
         if: steps.modules.outcome == 'failure' || steps.smoke.outcome == 'failure' || steps.seo.outcome == 'failure' || steps.public.outcome == 'failure' || steps.generators.outcome == 'failure'
         run: |
