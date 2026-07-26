@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-26T17:47:52.532Z",
+  "checkedAt": "2026-07-26T18:16:44.246Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": true,
   "checks": [
@@ -11,17 +11,17 @@
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1785088074135"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1785089805778"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1785088074588"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1785089806455"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1785088074603"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1785089806542"
     },
     {
       "name": "Módulos sob demanda das 18 abas estão publicados",
@@ -56,12 +56,12 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 278 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 284 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 131 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 209 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
@@ -91,16 +91,16 @@
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.5h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "1.0h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [],
   "warnings": [],
   "workflow": {
-    "event": "schedule",
-    "runId": "30213312334",
+    "event": "push",
+    "runId": "30214328125",
     "attempt": "1",
-    "sourceSha": "05823a0c2000a8fb634beb845df74cd504c9ca76",
-    "publishedAt": "2026-07-26T17:47:56.725Z"
+    "sourceSha": "6c01414e5d34f50e75d0fc861722e331a968a6d8",
+    "publishedAt": "2026-07-26T18:16:50.807Z"
   }
 }
