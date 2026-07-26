@@ -9,22 +9,22 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Dona Antônia — Admin oficial</title>
-  <link rel="stylesheet" href="./assets/admin.css?admin_build=20260725-admin-v12-fix-abas2">
-  <link rel="stylesheet" href="./assets/navigation.css?admin_build=20260725-admin-v12-fix-abas2">
+  <link rel="stylesheet" href="./assets/admin.css?admin_build=20260726-admin-v13-nfe-real">
+  <link rel="stylesheet" href="./assets/navigation.css?admin_build=20260726-admin-v13-nfe-real">
   <script type="importmap">
   {
     "imports": {
-      "/producao-v2/js/config.js": "/producao-v2/js/config.js?admin_build=20260725-admin-v12-fix-abas2",
-      "/producao-v2/js/core/catalog.js": "/producao-v2/js/core/catalog.js?admin_build=20260725-admin-v12-fix-abas2",
-      "/producao-v2/js/core/store.js": "/producao-v2/js/core/store.js?admin_build=20260725-admin-v12-fix-abas2",
-      "/producao-v2/js/core/utils.js": "/producao-v2/js/core/utils.js?admin_build=20260725-admin-v12-fix-abas2",
-      "/producao-v2/js/services/firebase.js": "/producao-v2/js/services/firebase.js?admin_build=20260725-admin-v12-fix-abas2",
-      "/producao-v2/js/services/github.js": "/producao-v2/js/services/github.js?admin_build=20260725-admin-v12-fix-abas2",
-      "/producao-v2/js/services/github-binary.js": "/producao-v2/js/services/github-binary.js?admin_build=20260725-admin-v12-fix-abas2",
-      "/producao-v2/js/modules/make.js": "/producao-v2/js/modules/make.js?admin_build=20260725-admin-v12-fix-abas2",
-      "/producao-v2/js/modules/products.js": "/producao-v2/js/modules/products.js?admin_build=20260725-admin-v12-fix-abas2",
-      "/producao-v2/js/modules/publish.js": "/producao-v2/js/modules/publish.js?admin_build=20260725-admin-v12-fix-abas2",
-      "/producao-v2/js/modules/stock.js": "/producao-v2/js/modules/stock.js?admin_build=20260725-admin-v12-fix-abas2"
+      "/producao-v2/js/config.js": "/producao-v2/js/config.js?admin_build=20260726-admin-v13-nfe-real",
+      "/producao-v2/js/core/catalog.js": "/producao-v2/js/core/catalog.js?admin_build=20260726-admin-v13-nfe-real",
+      "/producao-v2/js/core/store.js": "/producao-v2/js/core/store.js?admin_build=20260726-admin-v13-nfe-real",
+      "/producao-v2/js/core/utils.js": "/producao-v2/js/core/utils.js?admin_build=20260726-admin-v13-nfe-real",
+      "/producao-v2/js/services/firebase.js": "/producao-v2/js/services/firebase.js?admin_build=20260726-admin-v13-nfe-real",
+      "/producao-v2/js/services/github.js": "/producao-v2/js/services/github.js?admin_build=20260726-admin-v13-nfe-real",
+      "/producao-v2/js/services/github-binary.js": "/producao-v2/js/services/github-binary.js?admin_build=20260726-admin-v13-nfe-real",
+      "/producao-v2/js/modules/make.js": "/producao-v2/js/modules/make.js?admin_build=20260726-admin-v13-nfe-real",
+      "/producao-v2/js/modules/products.js": "/producao-v2/js/modules/products.js?admin_build=20260726-admin-v13-nfe-real",
+      "/producao-v2/js/modules/publish.js": "/producao-v2/js/modules/publish.js?admin_build=20260726-admin-v13-nfe-real",
+      "/producao-v2/js/modules/stock.js": "/producao-v2/js/modules/stock.js?admin_build=20260726-admin-v13-nfe-real"
     }
   }
   </script>
@@ -45,7 +45,6 @@
           <div class="nav-group-label">Catálogo e estoque</div>
           <button class="nav-item" data-route="products" type="button"><span class="nav-icon">PR</span><span>Produtos</span></button>
           <button class="nav-item" data-route="stock" type="button"><span class="nav-icon">ES</span><span>Estoque e validade</span></button>
-          <button class="nav-item" data-route="quick-read" type="button"><span class="nav-icon">LR</span><span>Leitura rápida</span></button>
           <button class="nav-item" data-route="nfe" type="button"><span class="nav-icon">NF</span><span>Entrada de NF-e</span></button>
         </section>
         <section class="nav-group">
@@ -87,7 +86,7 @@
         </div>
       </header>
 
-      <div class="environment-banner" role="status"><strong>Sistema oficial v12.2.</strong> Estoque corrigido, contingência leve e validação ampliada das abas.</div>
+      <div class="environment-banner" role="status"><strong>Sistema oficial v13.0.</strong> Entrada real de NF-e, edição completa no XML e imagens de cestas corrigidas.</div>
 
       <main class="main-content" id="mainContent" tabindex="-1">
         <section class="view active" data-view="dashboard" aria-labelledby="pageTitle">
@@ -125,8 +124,7 @@
         </section>
 
         <section class="view route-view" data-view="stock"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">ES</span><strong>Preparando estoque e validade</strong><small>Os indicadores serão atualizados após carregar os produtos.</small></div></div></section>
-        <section class="view route-view" data-view="quick-read"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">LR</span><strong>Preparando leitura rápida</strong><small>Use leitor de código, EAN, código interno ou nome.</small></div></div></section>
-        <section class="view route-view" data-view="nfe"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">NF</span><strong>Preparando entrada de NF-e</strong><small>O módulo fiscal será carregado sem bloquear o restante do Admin.</small></div></div></section>
+        <section class="view route-view" data-view="nfe"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">NF</span><strong>Preparando entrada de NF-e</strong><small>O XML será conferido e poderá ser importado diretamente no estoque.</small></div></div></section>
         <section class="view route-view" data-view="orders"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">PD</span><strong>Preparando pedidos recentes</strong><small>A tela carrega no máximo 120 pedidos inicialmente e mostra 30 por página.</small></div></div></section>
         <section class="view route-view" data-view="order-tools"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CT</span><strong>Preparando contingência</strong><small>Consulta limitada a 60 pedidos e no máximo 30 linhas visíveis.</small></div></div></section>
         <section class="view route-view" data-view="baskets"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CB</span><strong>Preparando cestas básicas</strong><small>Composição, substituições, estoque e publicação.</small></div></div></section>
@@ -233,8 +231,8 @@
   </section>
 
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="./js/app.js?admin_build=20260725-admin-v12-fix-abas2"></script>
-  <script type="module" src="./js/navigation-v12.js?admin_build=20260725-admin-v12-fix-abas2"></script>
-  <script type="module" src="./js/stock-bootstrap.js?admin_build=20260725-admin-v12-fix-abas2"></script>
+  <script type="module" src="./js/app.js?admin_build=20260726-admin-v13-nfe-real"></script>
+  <script type="module" src="./js/navigation-v12.js?admin_build=20260726-admin-v13-nfe-real"></script>
+  <script type="module" src="./js/stock-bootstrap.js?admin_build=20260726-admin-v13-nfe-real"></script>
 </body>
 </html>
