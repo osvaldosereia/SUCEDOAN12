@@ -21,6 +21,12 @@ function ensureModule(output, modulePath, anchorPath) {
     : output.replace('</body>', `${tag}</body>`);
 }
 
+function dedupeModule(output, modulePath) {
+  const tag = `  <script type="module" src="${modulePath}"></script>\n`;
+  const parts = output.split(tag);
+  return parts.length <= 2 ? output : `${parts.shift()}${tag}${parts.join('')}`;
+}
+
 function injectSeo(html) {
   let output = html.replaceAll('https://www.donaantonia.com.br', SITE_URL);
   output = output.replace(/<meta name="da-build-version" content="[^"]+">/, '<meta name="da-build-version" content="2026-07-26-combos-seo-delivery-v2">');
@@ -52,6 +58,8 @@ function injectSeo(html) {
     'app-next/src/seo-combos.js?v=20260726-2',
   );
   output = ensureModule(output, 'app-next/src/delivery-only.js?v=20260726-1', 'app-next/src/image-performance.js?v=20260724-4');
+  output = dedupeModule(output, 'app-next/src/seo-combos.js?v=20260726-2');
+  output = dedupeModule(output, 'app-next/src/delivery-only.js?v=20260726-1');
   return output;
 }
 
