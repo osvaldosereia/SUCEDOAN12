@@ -1,7 +1,7 @@
 import { NfeAdvancedModule } from './modules/nfe-advanced.js?admin_build=20260726-admin-v13-xml-editor-parity';
 import { updateNfeItem } from './core/nfe-simulation.js?admin_build=20260726-admin-v13-xml-editor-parity';
 import {
-  clone, escapeHtml, number, productKey, text,
+  clone, escapeHtml, number, text,
 } from './core/utils.js';
 import {
   assertMakeProductIdentity, callMake, compactProductForMake, extractMakeTags, unwrapMakeResult,
@@ -130,7 +130,7 @@ if (!NfeAdvancedModule.prototype.__nfeEditorParityInstalled) {
       return `<label${full ? ' class="span-2"' : ''}>${escapeHtml(label)}<input type="${escapeHtml(type)}" ${type === 'number' ? 'step="0.01" min="0"' : ''} ${extra} value="${escapeHtml(value)}" data-nfe-draft-field="${escapeHtml(name)}" data-nfe-item="${escapeHtml(item.id)}"></label>`;
     };
     const brandField = brandInline
-      ? `<label class="nfe-new-brand-field">Nova marca<input autofocus value="${escapeHtml(currentBrand)}" data-nfe-draft-field="marca" data-nfe-new-brand-input="1" data-nfe-item="${escapeHtml(item.id)}" placeholder="Digite o nome da nova marca"><small>A marca será cadastrada ao importar o produto.</small><button class="button ghost compact" type="button" data-nfe-use-existing-brand="${escapeHtml(item.id)}">Escolher marca existente</button></label>`
+      ? `<label class="nfe-new-brand-field">Nova marca<input value="${escapeHtml(currentBrand)}" data-nfe-draft-field="marca" data-nfe-new-brand-input="1" data-nfe-item="${escapeHtml(item.id)}" placeholder="Digite o nome da nova marca"><small>A marca será cadastrada ao importar o produto.</small><button class="button ghost compact" type="button" data-nfe-use-existing-brand="${escapeHtml(item.id)}">Escolher marca existente</button></label>`
       : selectHtml({
         itemId: item.id,
         field: 'marca',
