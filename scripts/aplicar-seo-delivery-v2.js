@@ -5,6 +5,19 @@ const zlib = require('zlib');
 const root = path.join(__dirname, '..');
 const markerPath = path.join(root, '.seo-delivery-v2-aplicado');
 const payloadDir = path.join(__dirname, 'seo-delivery-payload');
+const PAYLOAD_PARTS = [
+  'part-01.txt',
+  'part-02.txt',
+  'part-03.txt',
+  'part-04a.txt',
+  'part-04b.txt',
+  'part-05a.txt',
+  'part-05b1.txt',
+  'part-05b2.txt',
+  'part-06.txt',
+  'part-07.txt',
+  'part-08.txt',
+];
 
 function writeAtomic(filePath, content) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -14,9 +27,7 @@ function writeAtomic(filePath, content) {
 }
 
 function readPayload() {
-  const encoded = fs.readdirSync(payloadDir)
-    .filter(file => /^part-\d+\.txt$/.test(file))
-    .sort()
+  const encoded = PAYLOAD_PARTS
     .map(file => fs.readFileSync(path.join(payloadDir, file), 'utf8'))
     .join('');
   return JSON.parse(encoded);
