@@ -1,6 +1,6 @@
 import { validateProduct } from '../core/catalog.js';
 import { digits, round } from '../core/nfe.js';
-import { buildNfeImportRecord } from '../core/nfe-simulation.js';
+import { buildNfeImportRecord, NFE_EDITABLE_FIELDS } from '../core/nfe-simulation.js?admin_build=20260726-admin-v13-nfe-real';
 import { clone, number, productKey, text } from '../core/utils.js';
 import { loadProduct, saveProduct } from './firebase.js';
 import { archiveNfeXml, inspectNfeImport, nfeXmlPath, writeNfeImportRecord } from './github.js';
@@ -28,14 +28,17 @@ export function materializeExistingPlan(plan, remote) {
   const originalStockStamp = text(plan.originalSnapshot?.stock_updated_at);
   const remoteStockStamp = text(remote.stock_updated_at);
   if (plan.item.addStock !== false && (remoteStock !== originalStock || remoteStockStamp !== originalStockStamp)) {
-    throw new Error(`O estoque mudou após a simulação (${originalStock} → ${remoteStock}). Recarregue a nota antes de importar.`);
+    throw new Error(`O estoque mudou após a conferência (${originalStock} → ${remoteStock}). Recalcule a NF-e antes de importar.`);
   }
 
   const payload = clone(remote);
-  const scalarFields = ['nome', 'gtin', 'ean', 'ncm', 'embalagem', 'preco_custo', 'preco', 'validade'];
-  scalarFields.forEach(field => {
+  const editableFields = Array.isArray(plan.editableFields) && plan.editableFields.length
+    ? plan.editableFields
+    : NFE_EDITABLE_FIELDS;
+  editableFields.forEach(field => {
     if (Object.prototype.hasOwnProperty.call(plan.nextProduct, field)) payload[field] = clone(plan.nextProduct[field]);
   });
+  payload.validade = clone(plan.nextProduct.validade);
   payload.estoque = plan.item.addStock !== false ? round(remoteStock + number(plan.item.incomingUnits)) : remoteStock;
 
   const entries = listFromValue(remote.entradas_nfe);
@@ -55,24 +58,27 @@ export function materializeExistingPlan(plan, remote) {
     ? [...history, clone(newHistory)]
     : history;
 
+  payload.last_update = Date.now();
+  payload.updated_at = new Date().toISOString();
+  if (plan.item.addStock !== false) payload.stock_updated_at = payload.updated_at;
   return payload;
 }
 
 export function materializeNewPlan(plan, remote) {
-  if (remote) throw new Error(`A chave ${plan.productKey} passou a existir no Firebase após a simulação. Refaça o vínculo antes de importar.`);
+  if (remote) throw new Error(`A chave ${plan.productKey} passou a existir no Firebase após a conferência. Refaça o vínculo antes de importar.`);
   return clone(plan.nextProduct);
 }
 
 function assertConfig(config) {
   if (!config.writeMode) throw new Error('O modo de gravação geral da V2 está bloqueado.');
-  if (!config.nfeImportMode) throw new Error('A importação de NF-e está bloqueada. Ative-a somente para um teste controlado.');
-  if (!text(config.githubToken)) throw new Error('Informe o token do GitHub para registrar e arquivar a NF-e.');
+  if (!config.nfeImportMode) throw new Error('A importação de NF-e está bloqueada nesta bancada.');
+  if (!text(config.githubToken)) throw new Error('Informe o token do GitHub para arquivar o XML e registrar a NF-e.');
 }
 
 export async function executeNfeImport({ config, analysis, simulation, rawXml, onProgress = () => {} }) {
   assertConfig(config);
   if (!analysis?.note?.key || digits(analysis.note.key).length !== 44) throw new Error('Análise sem chave válida da NF-e.');
-  if (!simulation?.canImport) throw new Error('A simulação possui bloqueadores. Corrija todos antes de importar.');
+  if (!simulation?.canImport) throw new Error('A conferência possui bloqueadores. Corrija todos antes de importar.');
   if (!String(rawXml || '').trim()) throw new Error('O XML original não está disponível para arquivamento.');
 
   const pendingPlans = simulation.plans.filter(plan => ['update', 'new'].includes(plan.status));
@@ -89,7 +95,10 @@ export async function executeNfeImport({ config, analysis, simulation, rawXml, o
   const applied = Array.isArray(remoteRecord?.itens_aplicados) ? clone(remoteRecord.itens_aplicados) : [];
   const ignored = [
     ...(Array.isArray(remoteRecord?.itens_ignorados) ? clone(remoteRecord.itens_ignorados) : []),
-    ...simulation.plans.filter(plan => plan.status === 'skipped').map(plan => ({ grupo: plan.groupKey, motivo: 'Ignorado na simulação V2' })),
+    ...simulation.plans.filter(plan => plan.status === 'skipped').map(plan => ({
+      grupo: plan.groupKey,
+      motivo: 'Ignorado na conferência da NF-e',
+    })),
   ];
   let record = buildNfeImportRecord(analysis, simulation, { status: 'processando', session, applied, ignored });
   let xmlResult = null;
@@ -139,7 +148,12 @@ export async function executeNfeImport({ config, analysis, simulation, rawXml, o
     record.xml_path = nfeXmlPath(analysis.note);
     record.xml_arquivado_em = xmlResult.archivedAt;
     record = (await writeNfeImportRecord(config, record)).record;
-    onProgress({ step: 'done', message: 'NF-e importada e conciliada com sucesso.', current: pendingPlans.length, total: pendingPlans.length });
+    onProgress({
+      step: 'done',
+      message: 'NF-e importada no Firebase e conciliada com sucesso.',
+      current: pendingPlans.length,
+      total: pendingPlans.length,
+    });
     return { record, savedProducts, xml: xmlResult, session };
   } catch (error) {
     const failure = buildNfeImportRecord(analysis, simulation, {
