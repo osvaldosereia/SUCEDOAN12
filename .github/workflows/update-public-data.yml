@@ -1,14 +1,21 @@
-name: Atualizar Merchant e sitemap
+name: Atualizar catálogos públicos de cestas e kits
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '20 9 * * *'
+    - cron: '12 * * * *'
   push:
     branches: [main]
     paths:
+      - 'site/produtos-home.json'
+      - 'site/produtos-cesta-basica.json'
+      - 'site/kits.json'
+      - 'scripts/catalogos-combos-lib.js'
       - 'scripts/gerar-merchant.js'
+      - 'scripts/gerar-meta-combos.js'
       - 'scripts/gerar-sitemap.js'
+      - 'scripts/injetar-seo-combos.js'
+      - 'app-next/src/seo-combos.js'
       - 'scripts/check-public-site.mjs'
       - '.github/workflows/update-public-data.yml'
 
@@ -16,43 +23,78 @@ permissions:
   contents: write
 
 concurrency:
-  group: public-data-main
+  group: public-data-combos-main
   cancel-in-progress: false
 
 jobs:
   generate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout do main
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 1
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Gerar feed Merchant
+
+      - name: Gerar Merchant de cestas e kits
         run: node scripts/gerar-merchant.js
-      - name: Gerar sitemap e robots
+
+      - name: Gerar catálogo da Meta de cestas e kits
+        run: node scripts/gerar-meta-combos.js
+
+      - name: Gerar sitemap focado em cestas e kits
         run: node scripts/gerar-sitemap.js
+
+      - name: Aplicar metadados de cestas e kits sem alterar o layout
+        run: node scripts/injetar-seo-combos.js
+
       - name: Validar arquivos públicos
+        shell: bash
         run: |
+          set -euo pipefail
           node scripts/check-public-site.mjs
           test -s merchant.xml
           grep -q '<item>' merchant.xml
-          grep -q '<g:minimum_order_value>' merchant.xml
+          grep -Eq '<g:id>(cesta|kit)-' merchant.xml
+          ! grep -q '<g:id>clight\.' merchant.xml
+          test -s site/produtos_meta.csv
+          head -n 1 site/produtos_meta.csv | grep -q 'availability'
+          grep -Eq '^((cesta|kit)-)' <(tail -n +2 site/produtos_meta.csv)
+          test -s site/produtos_admin_meta.json
+          grep -q 'cestas-e-kits-oficiais' site/produtos_admin_meta.json
           test -s sitemap.xml
-          grep -q 'contato.html' sitemap.xml
-          grep -q '?p=' sitemap.xml
-      - name: Publicar somente dados gerados
+          grep -q '?cesta=' sitemap.xml
+          grep -q '?secao=cestas' sitemap.xml
+          test -s robots.txt
+          grep -q 'app-next/src/seo-combos.js' index.html
+          grep -q "params.get('cesta')" index.html
+          grep -q 'Cestas Básicas e Kits em Cuiabá e Várzea Grande' index.html
+
+      - name: Publicar dados gerados
+        shell: bash
         run: |
-          git add merchant.xml sitemap.xml robots.txt
-          if git diff --cached --quiet; then
-            echo 'Merchant e sitemap já estão atualizados.'
-            exit 0
-          fi
+          set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Atualizar Merchant, sitemap e robots'
-          git push origin main
+          git add merchant.xml sitemap.xml robots.txt site/produtos_meta.csv site/produtos_admin_meta.json index.html
+          if git diff --cached --quiet; then
+            echo 'Catálogos de cestas e kits já estão atualizados.'
+            exit 0
+          fi
+          git commit -m 'Atualiza catálogos de cestas e kits'
+          for tentativa in 1 2 3 4 5; do
+            if git push origin 'HEAD:main'; then
+              exit 0
+            fi
+            git fetch origin main
+            git rebase origin/main
+            sleep $((tentativa * 2))
+          done
+          echo 'Não foi possível publicar os catálogos após cinco tentativas.' >&2
+          exit 1

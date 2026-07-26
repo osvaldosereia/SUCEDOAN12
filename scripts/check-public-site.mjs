@@ -15,21 +15,24 @@ const required = [
   'politica-de-troca.html', 'politica-de-privacidade.html', 'termos-de-uso.html',
   'app-next/index.html', 'app-next/styles/home-parity.css', 'app-next/styles/live-polish.css',
   'app-next/src/ui.js', 'app-next/src/main.js', 'app-next/src/offer-engine.js', 'app-next/src/live-polish.js',
-  'site-public/assets/institutional.css', 'site-public/README.md',
-  'scripts/gerar-merchant.js', 'scripts/gerar-sitemap.js'
+  'app-next/src/seo-combos.js', 'site-public/assets/institutional.css', 'site-public/README.md',
+  'scripts/catalogos-combos-lib.js', 'scripts/gerar-merchant.js', 'scripts/gerar-meta-combos.js',
+  'scripts/gerar-sitemap.js', 'scripts/injetar-seo-combos.js',
+  'producao-v2/js/services/collections.js'
 ];
 required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}`));
 
 const production = read('index.html');
 for (const marker of [
-  '2026-07-24-modular-production-v8',
+  '2026-07-26-combos-seo-v1',
   'app-next/styles/home-parity.css?v=20260724-7',
   'app-next/styles/live-polish.css?v=20260724-8',
   'app-next/src/main.js?v=20260724-8',
+  'app-next/src/seo-combos.js?v=20260726-1',
   'da_v8_cache_migrated_20260724',
-  "params.get('p')",
-  "params.get('categoria')",
-  "params.get('secao')",
+  "params.get('cesta')", "params.get('kit')", "params.get('p')",
+  "params.get('categoria')", "params.get('secao')",
+  'Cestas Básicas e Kits em Cuiabá e Várzea Grande',
   'window.__DA_PRODUCTION__ = true'
 ]) assert(production.includes(marker), `Index público incompleto: ${marker}`);
 assert(!production.includes('noindex, nofollow'), 'Index de produção bloqueia indexação');
@@ -96,6 +99,12 @@ for (const marker of ['window.__DA_CATALOG_STATE__', 'da:catalog-ready', '.slice
 assert(!exists('app-next/src/visual-parity.js'), 'Módulo visual redundante ainda existe');
 assert(!livePolish.includes('observe(document.documentElement'), 'live-polish observa o documento inteiro');
 
+const seoCombos = read('app-next/src/seo-combos.js');
+for (const marker of [
+  "'@type': 'Product'", "'@type': 'Offer'", 'Cestas Básicas em Cuiabá e Várzea Grande',
+  "params.get('cesta')", "params.get('kit')", 'combo-product-jsonld'
+]) assert(seoCombos.includes(marker), `SEO de cestas e kits incompleto: ${marker}`);
+
 const liveCss = read('app-next/styles/live-polish.css');
 for (const marker of [
   '--product-card-gap:22px', '--product-card-body-height:158px',
@@ -123,28 +132,52 @@ const legacyFiles = [
 ];
 legacyFiles.forEach(file => assert(!exists(file), `Arquivo legado ainda presente: ${file}`));
 
-const merchant = require('./gerar-merchant.js');
-const sample = {
-  nome: 'Arroz Teste 5kg', codigo: 'TESTE-1', preco: 20, preco_oferta: 16,
-  estoque: 5, marca: 'Marca Teste', categoria: 'Mercearia', subcategoria: 'Arroz',
-  ean: '7891234567890', url_imagem: 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/img/produtos/teste.webp'
+const { buildComboCatalog } = require('./catalogos-combos-lib.js');
+const sampleProducts = {
+  arroz: { codigo: 'ARROZ-1', nome: 'Arroz Teste 5kg', preco: 20, estoque: 10, situacao: 'A' },
+  feijao: { codigo: 'FEIJAO-1', nome: 'Feijão Teste 1kg', preco: 10, estoque: 6, situacao: 'A' },
+  sabao: { codigo: 'SABAO-1', nome: 'Sabão Teste', preco: 30, estoque: 3, situacao: 'A' }
 };
-const item = merchant.itemXml('firebase-teste', sample);
+const sampleBaskets = [{
+  id: 'cesta-teste', codigo: 'cesta-economica-teste', nome: 'Econômica Teste', preco: 35,
+  imagem: 'img/cesta-teste.webp', produtos: [{ codigo: 'ARROZ-1', qtd: 1 }, { codigo: 'FEIJAO-1', qtd: 1 }]
+}];
+const sampleKits = [{
+  id: 'kit-teste', codigo: 'kit-limpeza-teste', nome: 'Kit Limpeza Teste', preco: 25, preco_anterior: 30,
+  imagem: 'site/img/kits/kit-teste.webp', ativo: true, estoque_disponivel: 2,
+  data_inicio: '2026-07-01', data_fim: '2026-12-31', produtos: [{ codigo: 'SABAO-1', qtd: 1 }]
+}];
+const catalog = buildComboCatalog({ productsRaw: sampleProducts, basketsRaw: sampleBaskets, kitsRaw: sampleKits, now: new Date('2026-07-26T12:00:00-04:00') });
+assert(catalog.active.length === 2, 'Catálogo de teste deveria ter cesta e kit ativos');
+
+const merchant = require('./gerar-merchant.js');
+const merchantXml = merchant.buildFeed(catalog);
 for (const marker of [
-  '<g:price>20.00 BRL</g:price>', '<g:sale_price>16.00 BRL</g:sale_price>',
-  '<g:minimum_order_value>', '<g:price>75.00 BRL</g:price>',
-  'https://www.donaantonia.com.br/site/img/produtos/teste.webp', '?p=TESTE-1'
-]) assert(item.includes(marker), `Feed Merchant de teste incompleto: ${marker}`);
-assert(!item.includes('<g:shipping>'), 'Feed informa frete gratuito para todo o Brasil');
-assert(!item.includes('<g:unit_pricing_measure>'), 'Feed ainda envia embalagem livre como medida unitária');
+  '<g:id>cesta-cesta-economica-teste</g:id>', '<g:id>kit-kit-limpeza-teste</g:id>',
+  '<g:sale_price>25.00 BRL</g:sale_price>', '?cesta=cesta-teste', '?kit=kit-teste',
+  '<g:product_type>Cestas básicas</g:product_type>', '<g:product_type>Kits promocionais</g:product_type>'
+]) assert(merchantXml.includes(marker), `Feed Merchant de combos incompleto: ${marker}`);
+assert(!merchantXml.includes('?p='), 'Merchant ainda anuncia produto avulso');
+
+const meta = require('./gerar-meta-combos.js');
+const metaCsv = meta.buildCsv(catalog);
+for (const marker of ['availability,condition', 'cesta-cesta-economica-teste', 'kit-kit-limpeza-teste', 'Cesta básica', 'Kit promocional']) {
+  assert(metaCsv.includes(marker), `Feed Meta de combos incompleto: ${marker}`);
+}
 
 const sitemap = require('./gerar-sitemap.js');
-const sitemapXml = sitemap.buildSitemap([{ ...sample, firebaseKey: 'firebase-teste' }], '2026-07-24');
+const sitemapXml = sitemap.buildSitemap(catalog, '2026-07-26');
 for (const marker of [
   'https://www.donaantonia.com.br/sobre-nos.html',
   'https://www.donaantonia.com.br/contato.html',
-  '?secao=ofertas', '?categoria=Mercearia', '?p=firebase-teste'
-]) assert(sitemapXml.includes(marker), `Sitemap de teste incompleto: ${marker}`);
-assert(!sitemapXml.includes('?cidade='), 'Sitemap ainda contém páginas locais artificiais');
+  '?secao=cestas', '?secao=kits', '?cesta=cesta-teste', '?kit=kit-teste'
+]) assert(sitemapXml.includes(marker), `Sitemap de combos incompleto: ${marker}`);
+assert(!sitemapXml.includes('?p='), 'Sitemap ainda prioriza produtos avulsos');
+assert(!sitemapXml.includes('?cidade='), 'Sitemap contém páginas locais artificiais');
 
-console.log(`Site público validado: ${required.length} arquivos essenciais, ${institutionalFiles.length} páginas institucionais e feed/sitemap testados.`);
+const collectionsService = read('producao-v2/js/services/collections.js');
+for (const marker of ["catalogVersionPayload", "'merchant'", "'meta'", "'sitemap'"]) {
+  assert(collectionsService.includes(marker), `Admin não integra cestas e kits aos canais: ${marker}`);
+}
+
+console.log(`Site público validado: ${required.length} arquivos essenciais, ${institutionalFiles.length} páginas institucionais e catálogos de cestas/kits testados.`);
