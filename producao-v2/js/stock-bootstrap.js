@@ -3,7 +3,7 @@ import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
 import { loadProducts } from './services/firebase.js';
 
-const BUILD = '20260726-admin-v13-nfe-real';
+const BUILD = '20260726-admin-v13-xml-editor-parity';
 const imports = new Map();
 
 function loadConfig() {
