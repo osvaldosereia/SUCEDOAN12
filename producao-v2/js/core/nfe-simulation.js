@@ -9,11 +9,15 @@ export function normalizeNfeDate(value = '') {
   let year;
   let match = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (match) {
-    day = Number(match[1]); month = Number(match[2]); year = Number(match[3]);
+    day = Number(match[1]);
+    month = Number(match[2]);
+    year = Number(match[3]);
   } else {
     match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (!match) return '';
-    year = Number(match[1]); month = Number(match[2]); day = Number(match[3]);
+    year = Number(match[1]);
+    month = Number(match[2]);
+    day = Number(match[3]);
   }
   const date = new Date(Date.UTC(year, month - 1, day));
   if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return '';
@@ -41,14 +45,62 @@ function listFromValue(value) {
   return [];
 }
 
-function defaultChoices(product = null) {
+export const NFE_EDITABLE_FIELDS = Object.freeze([
+  'nome', 'codigo', 'gtin', 'ean', 'ncm', 'cest', 'embalagem', 'categoria', 'subcategoria',
+  'subsubcategoria', 'marca', 'fornecedor', 'preco_custo', 'preco', 'preco_oferta',
+  'validade_oferta', 'situacao', 'url_imagem', 'imagem', 'imagem_url', 'imagens',
+  'imagem_path', 'imagem_storage', 'imagem_origem', 'imagem_status', 'imagem_gerada_em',
+  'descricao', 'descricao_curta', 'tags', 'gondola', 'prateleira', 'localizacao',
+]);
+
+function defaultDraft(item, note = null) {
+  const product = item.matchedProduct || null;
+  if (product) {
+    const draft = {};
+    NFE_EDITABLE_FIELDS.forEach(field => {
+      if (Object.prototype.hasOwnProperty.call(product, field)) draft[field] = clone(product[field]);
+    });
+    draft.nome = text(draft.nome || product.nome);
+    draft.codigo = text(draft.codigo || product.codigo || product.sku || productKey(product));
+    draft.gtin = text(draft.gtin || draft.ean || product.gtin || product.ean);
+    draft.ean = text(draft.ean || draft.gtin);
+    draft.ncm = text(draft.ncm || product.ncm);
+    draft.cest = text(draft.cest || product.cest);
+    draft.embalagem = text(draft.embalagem || product.embalagem || item.packaging || 'UN');
+    draft.preco_custo = round(number(item.unitCost || draft.preco_custo || product.preco_custo));
+    draft.preco = number(draft.preco ?? product.preco);
+    draft.situacao = text(draft.situacao || product.situacao || 'A').toUpperCase();
+    return draft;
+  }
   return {
-    name: product ? 'old' : 'nfe',
-    gtin: product?.gtin || product?.ean ? 'old' : 'nfe',
-    ncm: product?.ncm ? 'old' : 'nfe',
-    packaging: product?.embalagem ? 'old' : 'nfe',
-    cost: 'nfe',
-    price: product?.preco ? 'old' : 'nfe',
+    codigo: item.ean || item.supplierCodes?.[0] || '',
+    nome: item.name,
+    gtin: item.ean,
+    ean: item.ean,
+    ncm: item.ncm,
+    cest: item.cest || '',
+    embalagem: item.packaging || 'UN',
+    categoria: 'A CLASSIFICAR',
+    subcategoria: '',
+    subsubcategoria: '',
+    marca: '',
+    fornecedor: note?.supplier || '',
+    preco_custo: item.unitCost,
+    preco: item.suggestedPrice,
+    preco_oferta: 0,
+    validade_oferta: '',
+    situacao: 'A',
+    url_imagem: '',
+    imagem: '',
+    imagem_url: '',
+    imagens: [],
+    descricao: '',
+    descricao_curta: '',
+    tags: [],
+    gondola: '',
+    prateleira: '',
+    localizacao: '',
+    manualPrice: false,
   };
 }
 
@@ -58,25 +110,19 @@ function ensureItemDefaults(item, note = null) {
   item.noExpiry = Boolean(item.noExpiry);
   item.addStock = item.addStock !== false;
   item.skipped = Boolean(item.skipped);
-  item.choices = { ...defaultChoices(item.matchedProduct), ...(item.choices || {}) };
-  item.newProductDraft = {
-    codigo: item.ean || item.supplierCodes?.[0] || '',
-    nome: item.name,
-    gtin: item.ean,
-    ncm: item.ncm,
-    embalagem: item.packaging || 'UN',
-    categoria: 'A CLASSIFICAR',
-    subcategoria: '',
-    marca: '',
-    fornecedor: note?.supplier || '',
-    preco_custo: item.unitCost,
-    preco: item.suggestedPrice,
-    estoque: 0,
-    situacao: 'A',
-    url_imagem: '',
-    descricao: '',
-    ...(item.newProductDraft || {}),
-  };
+
+  const baseDraft = defaultDraft(item, note);
+  item.productDraft = { ...baseDraft, ...(item.productDraft || item.newProductDraft || {}) };
+  if (!item.matchedProduct && !item.productDraft.manualPrice) {
+    item.productDraft.preco_custo = round(item.unitCost);
+    item.productDraft.preco = round(item.suggestedPrice);
+  }
+  item.productDraft.gtin = String(item.productDraft.gtin || item.productDraft.ean || '').replace(/\D/g, '');
+  item.productDraft.ean = String(item.productDraft.ean || item.productDraft.gtin || '').replace(/\D/g, '');
+  item.productDraft.ncm = String(item.productDraft.ncm || '').replace(/\D/g, '');
+  item.productDraft.cest = String(item.productDraft.cest || '').replace(/\D/g, '');
+  item.productDraft.situacao = text(item.productDraft.situacao || 'A').toUpperCase();
+  item.newProductDraft = clone(item.productDraft);
   return item;
 }
 
@@ -93,9 +139,12 @@ export function updateNfeItem(analysis, itemId, patch, margin = 40) {
   const item = result.items.find(candidate => candidate.id === itemId);
   if (!item) return result;
   Object.entries(patch || {}).forEach(([key, value]) => {
-    if (key === 'choices') item.choices = { ...(item.choices || {}), ...(value || {}) };
-    else if (key === 'newProductDraft') item.newProductDraft = { ...(item.newProductDraft || {}), ...(value || {}) };
-    else item[key] = value;
+    if (key === 'productDraft' || key === 'newProductDraft') {
+      item.productDraft = { ...(item.productDraft || {}), ...(value || {}) };
+      item.newProductDraft = clone(item.productDraft);
+    } else {
+      item[key] = value;
+    }
   });
   item.validity = normalizeNfeDate(item.validity);
   if (item.noExpiry) item.validity = '';
@@ -105,19 +154,21 @@ export function updateNfeItem(analysis, itemId, patch, margin = 40) {
   return result;
 }
 
-function chosenValue(item, product, field) {
-  const imported = { name: item.name, gtin: item.ean, ncm: item.ncm, packaging: item.packaging, cost: item.unitCost, price: item.suggestedPrice };
-  const current = { name: product?.nome || '', gtin: product?.gtin || product?.ean || '', ncm: product?.ncm || '', packaging: product?.embalagem || '', cost: number(product?.preco_custo), price: number(product?.preco) };
-  return item.choices?.[field] === 'nfe' ? imported[field] : current[field];
-}
-
 function deterministicNewKey(item, note, usedKeys) {
-  const candidates = [item.ean, item.supplierCodes?.[0], `NFE${note.number || ''}${item.lines?.[0] || ''}`]
-    .map(value => text(value).replace(/[^a-zA-Z0-9_-]/g, '')).filter(Boolean);
+  const candidates = [
+    item.productDraft?.firebaseKey,
+    item.productDraft?.codigo,
+    item.ean,
+    item.supplierCodes?.[0],
+    `NFE${note.number || ''}${item.lines?.[0] || ''}`,
+  ].map(value => text(value).replace(/[^a-zA-Z0-9_-]/g, '')).filter(Boolean);
   const base = candidates[0] || `nfe_${Date.now()}`;
   let candidate = base;
   let suffix = 2;
-  while (usedKeys.has(candidate)) { candidate = `${base}_${suffix}`; suffix += 1; }
+  while (usedKeys.has(candidate)) {
+    candidate = `${base}_${suffix}`;
+    suffix += 1;
+  }
   usedKeys.add(candidate);
   return candidate;
 }
@@ -133,24 +184,83 @@ function futureValidity(item, product, isNew) {
 
 function lotRecord(item, note, createdAt) {
   return {
-    id: `${note.key}|${item.groupKey}`, chave_nfe: note.key, grupo_nfe: item.groupKey,
-    numero_nfe: note.number || '', serie_nfe: note.series || '', fornecedor: note.supplier || '',
-    fornecedor_documento: note.supplierCnpj || '', quantidade: round(item.incomingUnits),
-    quantidade_comercial: round(item.commercialQuantity), multiplicador: number(item.multiplier),
-    custo_unitario: round(item.unitCost), valor_bruto: round(item.gross), desconto: round(item.discount),
-    valor_liquido: round(item.net), validade: item.noExpiry ? '' : normalizeNfeDate(item.validity),
-    sem_validade: Boolean(item.noExpiry), recebido_em: note.issuedAt || '', registrado_em: createdAt,
+    id: `${note.key}|${item.groupKey}`,
+    chave_nfe: note.key,
+    grupo_nfe: item.groupKey,
+    numero_nfe: note.number || '',
+    serie_nfe: note.series || '',
+    fornecedor: note.supplier || '',
+    fornecedor_documento: note.supplierCnpj || '',
+    quantidade: round(item.incomingUnits),
+    quantidade_comercial: round(item.commercialQuantity),
+    multiplicador: number(item.multiplier),
+    custo_unitario: round(item.unitCost),
+    valor_bruto: round(item.gross),
+    desconto: round(item.discount),
+    valor_liquido: round(item.net),
+    validade: item.noExpiry ? '' : normalizeNfeDate(item.validity),
+    sem_validade: Boolean(item.noExpiry),
+    recebido_em: note.issuedAt || '',
+    registrado_em: createdAt,
   };
 }
 
 function entryRecord(item, note, key, createdAt) {
   return {
-    id: `${note.key}|${item.groupKey}`, chave_nfe: note.key, grupo: item.groupKey,
-    numero_nfe: note.number || '', serie_nfe: note.series || '', fornecedor: note.supplier || '',
-    fornecedor_documento: note.supplierCnpj || '', produto_key: key, quantidade: round(item.incomingUnits),
-    estoque_somado: item.addStock !== false, custo_unitario: round(item.unitCost), valor_liquido: round(item.net),
-    validade: item.noExpiry ? '' : normalizeNfeDate(item.validity), sem_validade: Boolean(item.noExpiry), aplicado_em: createdAt,
+    id: `${note.key}|${item.groupKey}`,
+    chave_nfe: note.key,
+    grupo: item.groupKey,
+    numero_nfe: note.number || '',
+    serie_nfe: note.series || '',
+    fornecedor: note.supplier || '',
+    fornecedor_documento: note.supplierCnpj || '',
+    produto_key: key,
+    quantidade: round(item.incomingUnits),
+    estoque_somado: item.addStock !== false,
+    custo_unitario: round(item.unitCost),
+    valor_liquido: round(item.net),
+    validade: item.noExpiry ? '' : normalizeNfeDate(item.validity),
+    sem_validade: Boolean(item.noExpiry),
+    aplicado_em: createdAt,
   };
+}
+
+function sanitizeDraft(draft = {}) {
+  const clean = {};
+  NFE_EDITABLE_FIELDS.forEach(field => {
+    if (Object.prototype.hasOwnProperty.call(draft, field)) clean[field] = clone(draft[field]);
+  });
+  clean.nome = text(clean.nome);
+  clean.codigo = text(clean.codigo);
+  clean.gtin = String(clean.gtin || clean.ean || '').replace(/\D/g, '');
+  clean.ean = String(clean.ean || clean.gtin || '').replace(/\D/g, '');
+  clean.ncm = String(clean.ncm || '').replace(/\D/g, '');
+  clean.cest = String(clean.cest || '').replace(/\D/g, '');
+  clean.embalagem = text(clean.embalagem);
+  clean.categoria = text(clean.categoria);
+  clean.subcategoria = text(clean.subcategoria);
+  clean.subsubcategoria = text(clean.subsubcategoria);
+  clean.marca = text(clean.marca);
+  clean.fornecedor = text(clean.fornecedor);
+  clean.preco_custo = round(number(clean.preco_custo));
+  clean.preco = round(number(clean.preco));
+  clean.preco_oferta = round(number(clean.preco_oferta));
+  clean.validade_oferta = normalizeNfeDate(clean.validade_oferta);
+  clean.situacao = text(clean.situacao || 'A').toUpperCase();
+  clean.url_imagem = text(clean.url_imagem || clean.imagem_url || clean.imagem);
+  if (clean.url_imagem) {
+    clean.imagem = clean.url_imagem;
+    clean.imagem_url = clean.url_imagem;
+    if (!Array.isArray(clean.imagens) || !clean.imagens.length) clean.imagens = [clean.url_imagem];
+  }
+  clean.descricao = text(clean.descricao);
+  clean.descricao_curta = text(clean.descricao_curta);
+  clean.gondola = text(clean.gondola);
+  clean.prateleira = text(clean.prateleira);
+  clean.localizacao = text(clean.localizacao);
+  if (Array.isArray(clean.tags)) clean.tags = [...new Set(clean.tags.map(text).filter(Boolean))];
+  else clean.tags = [...new Set(text(clean.tags).split(/[,;|]/).map(text).filter(Boolean))];
+  return clean;
 }
 
 export function buildNfeSimulation(analysis, products = [], { margin = 40, createdAt = new Date().toISOString() } = {}) {
@@ -164,53 +274,189 @@ export function buildNfeSimulation(analysis, products = [], { margin = 40, creat
     const isNew = !item.matchedProduct;
     const current = item.matchedProduct ? clone(item.matchedProduct) : null;
     if (item.skipped) {
-      plans.push({ itemId: item.id, groupKey: item.groupKey, status: 'skipped', errors, warnings, item: clone(item), currentProduct: current, nextProduct: current });
+      plans.push({
+        itemId: item.id,
+        groupKey: item.groupKey,
+        status: 'skipped',
+        errors,
+        warnings,
+        item: clone(item),
+        currentProduct: current,
+        nextProduct: current,
+        editableFields: [...NFE_EDITABLE_FIELDS],
+      });
       continue;
     }
+
     if (item.duplicate || source.globalDuplicate) errors.push(item.duplicateReason || 'Entrada duplicada bloqueada.');
     if (number(item.incomingUnits) <= 0) errors.push('Quantidade calculada precisa ser maior que zero.');
     if (number(item.unitCost) <= 0) errors.push('Custo unitário calculado precisa ser maior que zero.');
-    if (!item.noExpiry && item.addStock !== false && !normalizeNfeDate(item.validity)) errors.push('Informe a validade do lote ou marque produto sem validade.');
-
-    let key = current ? productKey(current) : '';
-    if (isNew) key = text(item.newProductDraft?.firebaseKey) || deterministicNewKey(item, source.note || {}, usedKeys);
-    const base = current || { firebaseKey:key,id:key,codigo:text(item.newProductDraft?.codigo)||item.ean||item.supplierCodes?.[0]||key,estoque:0,situacao:'A',entradas_nfe:[],lotes:[],historico_custos:[] };
-    const next = clone(base);
-
-    if (isNew) {
-      Object.assign(next, clone(item.newProductDraft || {}));
-      next.firebaseKey=key; next.id=text(next.id)||key; next.codigo=text(next.codigo)||item.ean||item.supplierCodes?.[0]||key;
-      next.nome=text(next.nome)||item.name; next.gtin=String(next.gtin||item.ean||'').replace(/\D/g,''); next.ean=String(next.ean||next.gtin||'').replace(/\D/g,'');
-      next.ncm=String(next.ncm||item.ncm||'').replace(/\D/g,''); next.embalagem=text(next.embalagem||item.packaging||'UN');
-      next.fornecedor=text(next.fornecedor||source.note?.supplier); next.preco_custo=round(number(next.preco_custo||item.unitCost)); next.preco=round(number(next.preco||item.suggestedPrice));
-      next.categoria=text(next.categoria); next.situacao=text(next.situacao||'A').toUpperCase();
-      if(!next.nome)errors.push('Produto novo sem nome.'); if(!next.codigo)errors.push('Produto novo sem código comercial.');
-      if(!next.categoria)errors.push('Produto novo sem categoria.'); if(!next.embalagem)errors.push('Produto novo sem embalagem.');
-      if(next.situacao!=='I'&&number(next.preco)<=0)errors.push('Produto novo sem preço de venda válido.'); if(!next.url_imagem)warnings.push('Produto novo sem imagem pública.');
-    } else {
-      next.nome=chosenValue(item,current,'name')||current.nome; const gtin=String(chosenValue(item,current,'gtin')||'').replace(/\D/g,''); if(gtin){next.gtin=gtin;next.ean=gtin;}
-      next.ncm=String(chosenValue(item,current,'ncm')||current.ncm||'').replace(/\D/g,''); next.embalagem=text(chosenValue(item,current,'packaging'))||current.embalagem;
-      next.preco_custo=round(number(chosenValue(item,current,'cost'))); next.preco=round(number(chosenValue(item,current,'price')));
+    if (!item.noExpiry && item.addStock !== false && !normalizeNfeDate(item.validity)) {
+      errors.push('Informe a validade do lote ou marque produto sem validade.');
     }
 
-    const stockBefore=round(number(base.estoque)); const stockAfter=round(stockBefore+(item.addStock!==false?number(item.incomingUnits):0)); next.estoque=stockAfter;
-    const validityBefore=normalizeNfeDate(base.validade); const validityAfter=futureValidity(item,base,isNew); next.validade=validityAfter;
-    const id=`${source.note.key}|${item.groupKey}`; const entries=listFromValue(base.entradas_nfe); if(entries.some(entry=>String(entry?.id||'')===id))errors.push('A entrada já existe no produto selecionado.');
-    const lots=listFromValue(base.lotes); const history=listFromValue(base.historico_custos); const entry=entryRecord(item,source.note,key,createdAt); const lot=item.addStock!==false?lotRecord(item,source.note,createdAt):null;
-    next.entradas_nfe=[...entries,entry]; next.lotes=lot?[...lots.filter(row=>String(row?.id||'')!==lot.id),lot]:lots;
-    if(round(number(base.preco_custo))!==round(number(next.preco_custo))) next.historico_custos=[...history,{id,custo_anterior:round(number(base.preco_custo)),custo_novo:round(number(next.preco_custo)),origem:'NF-e',chave_nfe:source.note.key,alterado_em:createdAt}]; else next.historico_custos=history;
-    next.last_update=Date.now(); next.updated_at=createdAt; if(item.addStock!==false)next.stock_updated_at=createdAt;
+    const draft = sanitizeDraft(item.productDraft || {});
+    let key = current ? productKey(current) : '';
+    if (isNew) key = text(item.productDraft?.firebaseKey) || deterministicNewKey(item, source.note || {}, usedKeys);
 
-    const changes=[]; [['nome','Nome'],['gtin','EAN / GTIN'],['ncm','NCM'],['embalagem','Embalagem'],['preco_custo','Preço de custo'],['preco','Preço de venda'],['estoque','Estoque'],['validade','Validade']].forEach(([field,label])=>{const before=base[field]??'',after=next[field]??'';if(String(before)!==String(after))changes.push({field,label,before,after});});
-    if(lot)changes.push({field:'lotes',label:'Lote',before:`${lots.length} lote(s)`,after:`${next.lotes.length} lote(s)`}); changes.push({field:'entradas_nfe',label:'Histórico NF-e',before:`${entries.length} entrada(s)`,after:`${next.entradas_nfe.length} entrada(s)`});
-    plans.push({itemId:item.id,groupKey:item.groupKey,status:errors.length?'blocked':isNew?'new':'update',isNew,productKey:key,errors,warnings,item:clone(item),currentProduct:current,originalSnapshot:current?clone(current):null,nextProduct:next,stockBefore,stockAfter,validityBefore,validityAfter,lotRecord:lot,entryRecord:entry,changes});
+    const base = current || {
+      firebaseKey: key,
+      id: key,
+      codigo: draft.codigo || item.ean || item.supplierCodes?.[0] || key,
+      estoque: 0,
+      situacao: 'A',
+      entradas_nfe: [],
+      lotes: [],
+      historico_custos: [],
+    };
+    const next = clone(base);
+    Object.assign(next, draft);
+
+    next.firebaseKey = key;
+    next.id = text(next.id || key);
+    next.codigo = text(next.codigo || item.ean || item.supplierCodes?.[0] || key);
+    next.nome = text(next.nome || item.name);
+    next.gtin = String(next.gtin || next.ean || item.ean || '').replace(/\D/g, '');
+    next.ean = String(next.ean || next.gtin || '').replace(/\D/g, '');
+    next.ncm = String(next.ncm || item.ncm || '').replace(/\D/g, '');
+    next.cest = String(next.cest || item.cest || '').replace(/\D/g, '');
+    next.embalagem = text(next.embalagem || item.packaging || 'UN');
+    next.fornecedor = text(next.fornecedor || source.note?.supplier);
+    next.preco_custo = round(number(next.preco_custo || item.unitCost));
+    next.preco = round(number(next.preco || item.suggestedPrice));
+    next.categoria = text(next.categoria);
+    next.situacao = text(next.situacao || 'A').toUpperCase();
+
+    if (!next.nome) errors.push('Produto sem nome.');
+    if (!next.codigo) errors.push('Produto sem código comercial.');
+    if (!next.categoria) errors.push('Produto sem categoria.');
+    if (!next.embalagem) errors.push('Produto sem embalagem.');
+    if (next.situacao !== 'I' && number(next.preco) <= 0) errors.push('Produto sem preço de venda válido.');
+    if (!text(next.url_imagem || next.imagem || next.imagem_url)) warnings.push('Produto sem imagem pública.');
+
+    const stockBefore = round(number(base.estoque));
+    const stockAfter = round(stockBefore + (item.addStock !== false ? number(item.incomingUnits) : 0));
+    next.estoque = stockAfter;
+    const validityBefore = normalizeNfeDate(base.validade);
+    const validityAfter = futureValidity(item, base, isNew);
+    next.validade = validityAfter;
+
+    const id = `${source.note.key}|${item.groupKey}`;
+    const entries = listFromValue(base.entradas_nfe);
+    if (entries.some(entry => String(entry?.id || '') === id)) errors.push('A entrada já existe no produto selecionado.');
+    const lots = listFromValue(base.lotes);
+    const history = listFromValue(base.historico_custos);
+    const entry = entryRecord(item, source.note, key, createdAt);
+    const lot = item.addStock !== false ? lotRecord(item, source.note, createdAt) : null;
+
+    next.entradas_nfe = [...entries, entry];
+    next.lotes = lot ? [...lots.filter(row => String(row?.id || '') !== lot.id), lot] : lots;
+    if (round(number(base.preco_custo)) !== round(number(next.preco_custo))) {
+      next.historico_custos = [...history, {
+        id,
+        custo_anterior: round(number(base.preco_custo)),
+        custo_novo: round(number(next.preco_custo)),
+        origem: 'NF-e',
+        chave_nfe: source.note.key,
+        alterado_em: createdAt,
+      }];
+    } else {
+      next.historico_custos = history;
+    }
+    next.last_update = Date.now();
+    next.updated_at = createdAt;
+    if (item.addStock !== false) next.stock_updated_at = createdAt;
+
+    const changes = [];
+    const labels = {
+      nome: 'Nome', codigo: 'Código', gtin: 'EAN / GTIN', ncm: 'NCM', cest: 'CEST',
+      embalagem: 'Embalagem', categoria: 'Categoria', subcategoria: 'Subcategoria',
+      subsubcategoria: 'Subsubcategoria', marca: 'Marca', fornecedor: 'Fornecedor',
+      preco_custo: 'Preço de custo', preco: 'Preço de venda', preco_oferta: 'Preço de oferta',
+      validade_oferta: 'Validade da oferta', situacao: 'Situação', url_imagem: 'Imagem',
+      descricao: 'Descrição', descricao_curta: 'Descrição curta', tags: 'Tags',
+      gondola: 'Gôndola', prateleira: 'Prateleira', localizacao: 'Localização',
+      estoque: 'Estoque', validade: 'Validade',
+    };
+    [...NFE_EDITABLE_FIELDS, 'estoque', 'validade'].forEach(field => {
+      const before = base[field] ?? '';
+      const after = next[field] ?? '';
+      if (JSON.stringify(before) !== JSON.stringify(after)) {
+        changes.push({ field, label: labels[field] || field, before, after });
+      }
+    });
+    if (lot) changes.push({ field: 'lotes', label: 'Lote', before: `${lots.length} lote(s)`, after: `${next.lotes.length} lote(s)` });
+    changes.push({ field: 'entradas_nfe', label: 'Histórico NF-e', before: `${entries.length} entrada(s)`, after: `${next.entradas_nfe.length} entrada(s)` });
+
+    plans.push({
+      itemId: item.id,
+      groupKey: item.groupKey,
+      status: errors.length ? 'blocked' : isNew ? 'new' : 'update',
+      isNew,
+      productKey: key,
+      errors,
+      warnings,
+      item: clone(item),
+      currentProduct: current,
+      originalSnapshot: current ? clone(current) : null,
+      nextProduct: next,
+      editableFields: [...NFE_EDITABLE_FIELDS],
+      stockBefore,
+      stockAfter,
+      validityBefore,
+      validityAfter,
+      lotRecord: lot,
+      entryRecord: entry,
+      changes,
+    });
   }
 
-  const active=plans.filter(plan=>plan.status!=='skipped'); const errors=active.flatMap(plan=>plan.errors.map(message=>({itemId:plan.itemId,groupKey:plan.groupKey,message})));
-  return {createdAt,mode:'simulation',note:clone(source.note),globalDuplicate:Boolean(source.globalDuplicate),plans,errors,warnings:active.flatMap(plan=>plan.warnings.map(message=>({itemId:plan.itemId,groupKey:plan.groupKey,message}))),canImport:active.length>0&&errors.length===0,summary:{total:plans.length,updates:plans.filter(plan=>plan.status==='update').length,newProducts:plans.filter(plan=>plan.status==='new').length,blocked:plans.filter(plan=>plan.status==='blocked').length,skipped:plans.filter(plan=>plan.status==='skipped').length,stockUnits:round(plans.filter(plan=>['update','new'].includes(plan.status)).reduce((sum,plan)=>sum+(plan.item.addStock!==false?number(plan.item.incomingUnits):0),0))}};
+  const active = plans.filter(plan => plan.status !== 'skipped');
+  const errors = active.flatMap(plan => plan.errors.map(message => ({
+    itemId: plan.itemId,
+    groupKey: plan.groupKey,
+    message,
+  })));
+  const summary = {
+    updates: plans.filter(plan => plan.status === 'update').length,
+    newProducts: plans.filter(plan => plan.status === 'new').length,
+    blocked: plans.filter(plan => plan.status === 'blocked').length,
+    skipped: plans.filter(plan => plan.status === 'skipped').length,
+    stockUnits: round(plans.filter(plan => ['update', 'new'].includes(plan.status) && plan.item.addStock !== false)
+      .reduce((sum, plan) => sum + number(plan.item.incomingUnits), 0)),
+  };
+  return {
+    createdAt,
+    mode: 'preview-before-import',
+    note: clone(source.note),
+    globalDuplicate: source.globalDuplicate,
+    plans,
+    errors,
+    summary,
+    canImport: Boolean(active.length && errors.length === 0),
+  };
 }
 
-export function buildNfeImportRecord(analysis, simulation, { status='processando',session='',applied=[],ignored=[],error='' }={}) {
-  const now=new Date().toISOString();
-  return {chave_nfe:analysis.note.key,codigo_xml:analysis.note.key,numero_nfe:analysis.note.number||'',serie_nfe:analysis.note.series||'',fornecedor:analysis.note.supplier||'',fornecedor_documento:analysis.note.supplierCnpj||'',emitida_em:analysis.note.issuedAt||'',valor_total:round(analysis.note.total),xml_sha256:analysis.note.xmlHash||'',total_itens:simulation.plans.length,itens_aplicados:clone(applied),itens_ignorados:clone(ignored),status,sessao:session||null,erro:error||null,atualizada_em:now,...(status==='concluida'?{concluida_em:now}:{}),...(status==='falhou'?{falhou_em:now}:{}),registro_path:`fiscal/nfe-importadas/registros/${analysis.note.key}.json`};
+export function buildNfeImportRecord(analysis, simulation, {
+  status = 'processando', session = '', applied = [], ignored = [], error = '',
+} = {}) {
+  const now = new Date().toISOString();
+  return {
+    chave_nfe: analysis.note.key,
+    numero_nfe: analysis.note.number || '',
+    serie_nfe: analysis.note.series || '',
+    fornecedor: analysis.note.supplier || '',
+    fornecedor_documento: analysis.note.supplierCnpj || '',
+    emissao: analysis.note.issuedAt || '',
+    xml_hash: analysis.note.xmlHash || '',
+    status,
+    sessao: session,
+    atualizado_em: now,
+    iniciada_em: analysis.importRecord?.iniciada_em || now,
+    concluida_em: status === 'concluida' ? now : '',
+    erro: error || '',
+    itens_aplicados: clone(applied),
+    itens_ignorados: clone(ignored),
+    resumo: clone(simulation?.summary || {}),
+  };
 }
