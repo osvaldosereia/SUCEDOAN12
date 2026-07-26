@@ -3,6 +3,7 @@ import './commerce-enhancements.js';
 import './instagram-queue-review.js';
 import './basket-context.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
+import { installCollectionImageResolver } from './collection-image-resolver.js';
 import { CollectionsModule } from './modules/collections.js';
 import { loadProducts } from './services/firebase.js';
 import { loadCollections } from './services/collections.js';
@@ -25,7 +26,7 @@ function installCss() {
   if (document.querySelector('link[data-admin-v2-collections]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './assets/collections.css';
+  link.href = './assets/collections.css?admin_build=20260726-admin-v13-nfe-real';
   link.dataset.adminV2Collections = '1';
   document.head.appendChild(link);
 }
@@ -94,6 +95,7 @@ function start() {
   installCss();
   installSettings();
   installErrorGuard();
+  installCollectionImageResolver(document);
   view.insertAdjacentHTML('afterbegin', panelMarkup());
   document.body.insertAdjacentHTML('beforeend', editorMarkup());
 
