@@ -15,12 +15,12 @@ const BREADCRUMB_ASSIGNMENT = `  const normalized = value?.['@type'] === 'Produc
           {
             '@type': 'BreadcrumbList',
             itemListElement: [
-              { '@type': 'ListItem', position: 1, name: 'Início', item: \`${CONFIG.SITE_BASE_URL}/\` },
+              { '@type': 'ListItem', position: 1, name: 'Início', item: CONFIG.SITE_BASE_URL + '/' },
               {
                 '@type': 'ListItem',
                 position: 2,
                 name: value.category || 'Cestas e kits',
-                item: \`${CONFIG.SITE_BASE_URL}\${value.category === 'Kits promocionais' ? CLEAN_SECTION_PATHS.kits : CLEAN_SECTION_PATHS.baskets}\`,
+                item: CONFIG.SITE_BASE_URL + (value.category === 'Kits promocionais' ? CLEAN_SECTION_PATHS.kits : CLEAN_SECTION_PATHS.baskets),
               },
               { '@type': 'ListItem', position: 3, name: value.name || document.title, item: value.url || location.href },
             ],
