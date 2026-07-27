@@ -21,7 +21,7 @@ permissions:
 jobs:
   validar:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
 
     steps:
       - name: Baixar branch
@@ -32,17 +32,20 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Validar sintaxe do gerador e dos testes
+      - name: Validar sintaxe do gerador, diagnóstico e testes
         run: |
           node --check site-do-zero/build/gerar-seo-cestas.mjs
+          node --check site-do-zero/build/diagnosticar-firebase.mjs
           node --check site-do-zero/tests/validar-projeto.mjs
 
-      - name: Bloquear métodos de escrita no gerador
+      - name: Bloquear métodos de escrita nas ferramentas
         shell: bash
         run: |
           set -euo pipefail
-          if grep -En "method:[[:space:]]*['\"](POST|PUT|PATCH|DELETE)['\"]" site-do-zero/build/gerar-seo-cestas.mjs; then
-            echo 'ERRO: método de escrita encontrado no gerador.'
+          if grep -En "method:[[:space:]]*['\"](POST|PUT|PATCH|DELETE)['\"]" \
+            site-do-zero/build/gerar-seo-cestas.mjs \
+            site-do-zero/build/diagnosticar-firebase.mjs; then
+            echo 'ERRO: método de escrita encontrado nas ferramentas de leitura.'
             exit 1
           fi
 
@@ -51,6 +54,7 @@ jobs:
         run: |
           set -euo pipefail
           grep -En "method:[[:space:]]*['\"]GET['\"]" site-do-zero/build/gerar-seo-cestas.mjs
+          grep -En "method:[[:space:]]*['\"]GET['\"]" site-do-zero/build/diagnosticar-firebase.mjs
 
       - name: Validar JavaScript interno do HTML
         shell: bash
@@ -77,6 +81,9 @@ jobs:
           test -f site-do-zero/build/README.md
           grep -q 'GET_ONLY' site-do-zero/build/gerar-seo-cestas.mjs
 
+      - name: Diagnosticar caminhos do Firebase por GET raso
+        run: node site-do-zero/build/diagnosticar-firebase.mjs
+
       - name: Gerar preview SEO e Merchant por leitura
         id: gerar
         continue-on-error: true
@@ -84,12 +91,14 @@ jobs:
           OUTPUT_DIR: site-do-zero/generated
         run: node site-do-zero/build/gerar-seo-cestas.mjs
 
-      - name: Publicar relatório e arquivos de preview
+      - name: Publicar diagnóstico, relatório e preview
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: site-do-zero-seo-preview
-          path: site-do-zero/generated
+          path: |
+            site-do-zero/diagnosticos
+            site-do-zero/generated
           if-no-files-found: warn
           retention-days: 7
 
