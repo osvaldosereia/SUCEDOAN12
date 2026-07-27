@@ -35,9 +35,12 @@ function findProduct(index, code) {
   return index.get(raw) || index.get(normalizeSearch(raw)) || null;
 }
 
-export function resolveCollectionItem(item, productsOrIndex) {
+export function resolveCollectionItem(item, productsOrIndex, { allowSubstitutes = true } = {}) {
   const index = productsOrIndex instanceof Map ? productsOrIndex : collectionProductIndex(productsOrIndex);
-  const codes = [item?.codigo, ...(Array.isArray(item?.substitutos) ? item.substitutos : [])].map(text).filter(Boolean);
+  const codes = [
+    item?.codigo,
+    ...(allowSubstitutes && Array.isArray(item?.substitutos) ? item.substitutos : []),
+  ].map(text).filter(Boolean);
   const candidates = codes.map(code => ({ code, product: findProduct(index, code) })).filter(row => row.product);
   const valid = candidates.find(row => isActiveProduct(row.product) && number(row.product.preco) > 0 && number(row.product.estoque) > 0);
   const selected = valid || candidates[0] || null;
@@ -71,12 +74,19 @@ function validIsoDate(value) {
   return `${match[1]}-${match[2]}-${match[3]}`;
 }
 
+function availabilityIssue(type, warnings, errors, message) {
+  if (type === 'kit') warnings.push(`${message}; o kit ficará fora do ar.`);
+  else errors.push(message);
+}
+
 export function auditCollection(collection, type, products = [], queue = [], { today = new Date() } = {}) {
   const source = clone(collection || {});
   const errors = [];
   const warnings = [];
   const index = collectionProductIndex(products);
   const items = Array.isArray(source.produtos) ? source.produtos : [];
+  const stockControlled = type === 'kit' && source.ativo_ate_estoque_zero === true;
+
   if (!text(source.id)) errors.push('ID ausente');
   if (!text(source.nome)) errors.push('Nome ausente');
   if (!text(source.codigo)) errors.push('Código ausente');
@@ -89,22 +99,42 @@ export function auditCollection(collection, type, products = [], queue = [], { t
   let available = Infinity;
   const resolvedItems = items.map((item, indexPosition) => {
     const quantity = Math.max(0, Math.floor(number(item?.qtd)));
-    const resolved = resolveCollectionItem(item, index);
+    const resolved = resolveCollectionItem(item, index, { allowSubstitutes: !stockControlled });
     const rowErrors = [];
+    const rowWarnings = [];
+    const prefix = `Item ${indexPosition + 1} (${text(item?.codigo) || 'sem código'})`;
+
     if (quantity <= 0) rowErrors.push('Quantidade inválida');
     if (!text(item?.codigo)) rowErrors.push('Código ausente');
-    if (!resolved.product) rowErrors.push('Produto inexistente');
-    else {
-      if (!isActiveProduct(resolved.product)) rowErrors.push('Produto inativo');
+    if (!resolved.product) {
+      rowErrors.push('Produto inexistente');
+      available = 0;
+    } else {
+      const stock = number(resolved.product.estoque);
+      if (!isActiveProduct(resolved.product)) {
+        rowWarnings.push('Produto inativo');
+        available = 0;
+      }
       if (number(resolved.product.preco) <= 0) rowErrors.push('Produto sem preço');
-      if (number(resolved.product.estoque) <= 0) rowErrors.push('Produto sem estoque');
-      else if (quantity > 0 && number(resolved.product.estoque) < quantity) rowErrors.push('Estoque insuficiente para a quantidade configurada');
-      if (quantity > 0) available = Math.min(available, Math.floor(number(resolved.product.estoque) / quantity));
+      if (stock <= 0) {
+        rowWarnings.push('Produto sem estoque');
+        available = 0;
+      } else if (quantity > 0 && stock < quantity) {
+        rowWarnings.push('Estoque insuficiente para a quantidade configurada');
+        available = 0;
+      } else if (quantity > 0) {
+        available = Math.min(available, Math.floor(stock / quantity));
+      }
       regularTotal += round(number(resolved.product.preco) * quantity);
     }
-    rowErrors.forEach(message => errors.push(`Item ${indexPosition + 1} (${text(item?.codigo) || 'sem código'}): ${message}`));
+
+    rowErrors.forEach(message => errors.push(`${prefix}: ${message}`));
+    rowWarnings.forEach(message => availabilityIssue(type, warnings, errors, `${prefix}: ${message}`));
     if (resolved.usedSubstitute) warnings.push(`Item ${indexPosition + 1}: usando substituto ${resolved.selectedCode}`);
-    return { ...clone(item), qtd: quantity, resolved, errors: rowErrors };
+    if (stockControlled && Array.isArray(item?.substitutos) && item.substitutos.some(value => text(value))) {
+      warnings.push(`Item ${indexPosition + 1}: substitutos serão ignorados no modo “ativo até zerar estoque”`);
+    }
+    return { ...clone(item), qtd: quantity, resolved, errors: rowErrors, warnings: rowWarnings };
   });
 
   if (!Number.isFinite(available)) available = 0;
@@ -112,21 +142,32 @@ export function auditCollection(collection, type, products = [], queue = [], { t
   const economy = round(Math.max(0, regularTotal - price));
   const discount = regularTotal > 0 ? round((economy / regularTotal) * 100) : 0;
   let active = source.ativo !== false;
-  let periodStatus = 'sem período';
+  let periodStatus = stockControlled ? 'controlado por estoque' : 'sem período';
   const start = validIsoDate(source.data_inicio);
   const end = validIsoDate(source.data_fim);
+
   if (type === 'kit') {
-    if (!start) errors.push('Data inicial inválida ou ausente');
-    if (!end) errors.push('Data final inválida ou ausente');
-    if (start && end && start > end) errors.push('Data inicial posterior à data final');
+    if (!stockControlled) {
+      if (!start) errors.push('Data inicial inválida ou ausente');
+      if (!end) errors.push('Data final inválida ou ausente');
+      if (start && end && start > end) errors.push('Data inicial posterior à data final');
+    } else if (start && end && start > end) {
+      warnings.push('A data final é ignorada no modo controlado por estoque');
+    }
+
     const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    if (start && end) {
-      if (todayIso < start) periodStatus = 'agendado';
-      else if (todayIso > end) { periodStatus = 'encerrado'; active = false; }
+    if (start && todayIso < start) {
+      periodStatus = 'agendado';
+      active = false;
+    } else if (!stockControlled && start && end) {
+      if (todayIso > end) { periodStatus = 'encerrado'; active = false; }
       else periodStatus = 'vigente';
+    } else if (stockControlled) {
+      periodStatus = available > 0 ? 'estoque disponível' : 'sem estoque';
     }
     if (price >= regularTotal && regularTotal > 0) warnings.push('Kit sem economia em relação à compra avulsa');
   }
+
   if (available <= 0) active = false;
   if (errors.length) active = false;
 
@@ -134,6 +175,7 @@ export function auditCollection(collection, type, products = [], queue = [], { t
   return {
     type,
     source,
+    stockControlled,
     errors: [...new Set(errors)],
     warnings: [...new Set(warnings)],
     items: resolvedItems,
@@ -168,27 +210,30 @@ export function normalizeCollectionForPublish(collection, type, products = [], q
   }));
 
   if (type === 'kit') {
+    const stockControlled = normalized.ativo_ate_estoque_zero === true;
+    normalized.ativo_ate_estoque_zero = stockControlled;
     normalized.data_inicio = validIsoDate(normalized.data_inicio);
-    normalized.data_fim = validIsoDate(normalized.data_fim);
+    normalized.data_fim = stockControlled ? '' : validIsoDate(normalized.data_fim);
     normalized.limite_kits = Math.max(0, Math.floor(number(normalized.limite_kits) || audit.available));
     normalized.preco_anterior = audit.regularTotal;
     normalized.preco_novo = normalized.preco;
     normalized.economia = audit.economy;
     normalized.desconto_percentual = audit.discount;
     normalized.estoque_disponivel = audit.available;
-    normalized.ativo = Boolean(normalized.ativo !== false && audit.active);
+    normalized.ativo = normalized.ativo !== false;
     normalized.preco_anterior_formatado = formatMoney(audit.regularTotal);
     normalized.preco_novo_formatado = formatMoney(normalized.preco);
     normalized.economia_formatada = formatMoney(audit.economy);
     normalized.produtos = normalized.produtos.map(item => {
-      const resolved = resolveCollectionItem(item, products);
+      const cleanItem = stockControlled ? { ...item, substitutos: [] } : item;
+      const resolved = resolveCollectionItem(cleanItem, products, { allowSubstitutes: !stockControlled });
       const oldUnit = round(resolved.product?.preco);
       const factor = audit.regularTotal > 0 ? normalized.preco / audit.regularTotal : 1;
       const newUnit = round(oldUnit * factor);
-      const oldTotal = round(oldUnit * item.qtd);
-      const newTotal = round(newUnit * item.qtd);
+      const oldTotal = round(oldUnit * cleanItem.qtd);
+      const newTotal = round(newUnit * cleanItem.qtd);
       return {
-        ...item,
+        ...cleanItem,
         preco_antigo_unitario: oldUnit,
         preco_antigo_total: oldTotal,
         preco_novo_unitario_kit: newUnit,
