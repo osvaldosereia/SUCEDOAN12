@@ -1,8 +1,11 @@
-import { CONFIG } from './config.js?v=20260727-4';
+import { CONFIG } from './config.js?v=20260727-6';
 import {
   assetUrl, codeVariants, formatName, norm, parseMoney, readStorage,
   slug, words, writeStorage
-} from './core.js?v=20260727-4';
+} from './core.js?v=20260727-6';
+
+const REFRESH_EVENT = 'da:catalog-refreshed';
+let backgroundRefreshPromise = null;
 
 export async function fetchJson(url, { timeoutMs = CONFIG.REQUEST_TIMEOUT_MS, cache = 'default' } = {}) {
   const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -146,7 +149,7 @@ export function normalizeBaskets(data) {
     id: String(item.id),
     codigo: String(item.codigo || item.id),
     nome: String(item.nome || 'Cesta básica'),
-    descricao: String(item.descricao || item.description || 'Kit de produtos selecionados.'),
+    descricao: String(item.descricao || item.description || 'Cesta básica com produtos selecionados.'),
     imagem: assetUrl(item.imagem || item.img || item.url_imagem || 'img/logoantonia5.png'),
     preco: parseMoney(item.preco || item.price || 0),
     precoOriginal: parseMoney(item.precoOriginal || item.preco_original || 0),
@@ -181,55 +184,132 @@ export function normalizeCoupons(data) {
     .sort((a, b) => Number(a.posicao || 99) - Number(b.posicao || 99));
 }
 
+function cachedResource(storageName, normalize, optional = false) {
+  const cached = readStorage(storageName, null);
+  if (!cached?.data) return optional ? { data: [], version: '', source: 'empty' } : null;
+  try {
+    return {
+      data: normalize(cached.data),
+      version: String(cached.version || ''),
+      source: 'cache'
+    };
+  } catch {
+    return optional ? { data: [], version: '', source: 'empty' } : null;
+  }
+}
+
 async function latestCatalogVersion() {
   try {
-    const data = await fetchJson(`${CONFIG.ENDPOINTS.CATALOG_VERSION}?t=${Date.now()}`, { timeoutMs: 3000, cache: 'no-store' });
-    return String(data?.version || data?.catalogVersion || data?.build || data?.updatedAt || CONFIG.APP_VERSION);
+    const data = await fetchJson(`${CONFIG.ENDPOINTS.CATALOG_VERSION}?t=${Date.now()}`, {
+      timeoutMs: 3000,
+      cache: 'no-store'
+    });
+    return String(data?.version || data?.catalogVersion || data?.build || CONFIG.APP_VERSION);
   } catch {
     return CONFIG.APP_VERSION;
   }
 }
 
-async function loadResource({ endpoint, storageName, normalize, version, timeoutMs = CONFIG.REQUEST_TIMEOUT_MS, optional = false }) {
-  const cached = readStorage(storageName, null);
-  let cachedValue = null;
-  if (cached?.data) {
-    try { cachedValue = normalize(cached.data); } catch {}
-  }
-  const resolvedVersion = version || await latestCatalogVersion();
+async function networkResource({ endpoint, storageName, normalize, version, timeoutMs = CONFIG.REQUEST_TIMEOUT_MS, optional = false }) {
   try {
     const separator = endpoint.includes('?') ? '&' : '?';
-    const data = await fetchJson(`${endpoint}${separator}v=${encodeURIComponent(resolvedVersion)}`, { timeoutMs });
-    writeStorage(storageName, { savedAt: Date.now(), version: resolvedVersion, data });
-    return { data: normalize(data), version: resolvedVersion, source: 'network', changed: cached?.version !== resolvedVersion };
+    const data = await fetchJson(`${endpoint}${separator}v=${encodeURIComponent(version)}`, { timeoutMs });
+    writeStorage(storageName, { savedAt: Date.now(), version, data });
+    return { data: normalize(data), version, source: 'network' };
   } catch (error) {
-    if (cachedValue) return { data: cachedValue, version: cached?.version || resolvedVersion, source: 'cache', changed: false, error };
-    if (optional) return { data: [], version: resolvedVersion, source: 'empty', changed: false, error };
+    const cached = cachedResource(storageName, normalize, optional);
+    if (cached) return { ...cached, error };
+    if (optional) return { data: [], version, source: 'empty', error };
     throw error;
   }
 }
 
-export async function loadCatalog() {
-  const version = await latestCatalogVersion();
-  const productsPromise = loadResource({ endpoint: CONFIG.ENDPOINTS.PRODUCTS, storageName: CONFIG.STORAGE.PRODUCTS, normalize: normalizeProducts, version, timeoutMs: 9000 });
-  const auxiliary = await Promise.all([
-    loadResource({ endpoint: CONFIG.ENDPOINTS.BASKETS, storageName: CONFIG.STORAGE.BASKETS, normalize: normalizeBaskets, version, optional: true }),
-    loadResource({ endpoint: CONFIG.ENDPOINTS.KITS, storageName: CONFIG.STORAGE.KITS, normalize: normalizeKits, version, optional: true }),
-    loadResource({ endpoint: CONFIG.ENDPOINTS.COUPONS, storageName: CONFIG.STORAGE.COUPONS, normalize: normalizeCoupons, version, optional: true, timeoutMs: 5000 })
-  ]);
-  const productsResult = await productsPromise;
+function assembleCatalog(productsResult, basketsResult, kitsResult, couponsResult) {
   const indexes = indexProducts(productsResult.data);
   return {
     products: productsResult.data,
     ...indexes,
-    baskets: auxiliary[0].data,
-    kits: auxiliary[1].data,
-    coupons: auxiliary[2].data,
+    baskets: basketsResult.data,
+    kits: kitsResult.data,
+    coupons: couponsResult.data,
     banners: [],
     catalogVersion: productsResult.version,
     catalogSource: productsResult.source,
     catalogLoadedAt: Date.now()
   };
+}
+
+function cachedCatalog() {
+  const products = cachedResource(CONFIG.STORAGE.PRODUCTS, normalizeProducts);
+  if (!products?.data?.length) return null;
+  return assembleCatalog(
+    products,
+    cachedResource(CONFIG.STORAGE.BASKETS, normalizeBaskets, true),
+    cachedResource(CONFIG.STORAGE.KITS, normalizeKits, true),
+    cachedResource(CONFIG.STORAGE.COUPONS, normalizeCoupons, true)
+  );
+}
+
+async function fetchCatalogFromNetwork() {
+  const version = await latestCatalogVersion();
+  const [products, baskets, kits, coupons] = await Promise.all([
+    networkResource({
+      endpoint: CONFIG.ENDPOINTS.PRODUCTS,
+      storageName: CONFIG.STORAGE.PRODUCTS,
+      normalize: normalizeProducts,
+      version,
+      timeoutMs: 9000
+    }),
+    networkResource({
+      endpoint: CONFIG.ENDPOINTS.BASKETS,
+      storageName: CONFIG.STORAGE.BASKETS,
+      normalize: normalizeBaskets,
+      version,
+      optional: true
+    }),
+    networkResource({
+      endpoint: CONFIG.ENDPOINTS.KITS,
+      storageName: CONFIG.STORAGE.KITS,
+      normalize: normalizeKits,
+      version,
+      optional: true
+    }),
+    networkResource({
+      endpoint: CONFIG.ENDPOINTS.COUPONS,
+      storageName: CONFIG.STORAGE.COUPONS,
+      normalize: normalizeCoupons,
+      version,
+      optional: true,
+      timeoutMs: 5000
+    })
+  ]);
+  return assembleCatalog(products, baskets, kits, coupons);
+}
+
+function refreshInBackground(currentVersion = '') {
+  if (backgroundRefreshPromise) return backgroundRefreshPromise;
+  backgroundRefreshPromise = fetchCatalogFromNetwork()
+    .then(catalog => {
+      if (typeof window !== 'undefined' && String(catalog.catalogVersion) !== String(currentVersion)) {
+        window.dispatchEvent(new CustomEvent(REFRESH_EVENT, { detail: catalog }));
+      }
+      return catalog;
+    })
+    .catch(error => {
+      console.warn('Atualização do catálogo em segundo plano falhou:', error);
+      return null;
+    })
+    .finally(() => { backgroundRefreshPromise = null; });
+  return backgroundRefreshPromise;
+}
+
+export async function loadCatalog() {
+  const cached = cachedCatalog();
+  if (cached) {
+    refreshInBackground(cached.catalogVersion);
+    return cached;
+  }
+  return fetchCatalogFromNetwork();
 }
 
 export function findProductByReference(state, reference) {

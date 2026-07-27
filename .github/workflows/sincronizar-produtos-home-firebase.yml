@@ -12,6 +12,7 @@ on:
     paths:
       - ".github/workflows/sincronizar-produtos-home-firebase.yml"
       - "scripts/sincronizar-produtos-home-firebase.mjs"
+      - "scripts/estabilizar-catalogo-publico.mjs"
 
 permissions:
   contents: write
@@ -25,10 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Baixar catálogo e sincronizador
+      - name: Baixar catálogo e sincronizadores
         uses: actions/checkout@v5
         with:
-          fetch-depth: 1
+          fetch-depth: 2
           show-progress: false
           sparse-checkout-cone-mode: false
           sparse-checkout: |
@@ -36,6 +37,7 @@ jobs:
             site/produtos-admin.json
             catalog-version.json
             scripts/sincronizar-produtos-home-firebase.mjs
+            scripts/estabilizar-catalogo-publico.mjs
 
       - name: Configurar Node.js
         uses: actions/setup-node@v5
@@ -52,6 +54,20 @@ jobs:
           CATALOG_VERSION_PATH: catalog-version.json
         run: node scripts/sincronizar-produtos-home-firebase.mjs
 
+      - name: Compactar catálogo e preservar versão pública
+        env:
+          PRODUCTS_HOME_PATH: site/produtos-home.json
+          PRODUCTS_ADMIN_PATH: site/produtos-admin.json
+          CATALOG_VERSION_PATH: catalog-version.json
+        run: node scripts/estabilizar-catalogo-publico.mjs
+
+      - name: Validar catálogos gerados
+        run: |
+          node --check scripts/estabilizar-catalogo-publico.mjs
+          node -e "const v=require('./catalog-version.json'); if(!v.version || !v.productCount) process.exit(1)"
+          test -s site/produtos-home.json
+          test -s site/produtos-admin.json
+
       - name: Publicar catálogos e versão
         shell: bash
         run: |
@@ -60,7 +76,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add site/produtos-home.json site/produtos-admin.json catalog-version.json
           if git diff --cached --quiet; then
-            echo "Catálogos já estão sincronizados com o Firebase."
+            echo "Catálogos já estão sincronizados e a versão pública foi preservada."
             exit 0
           fi
           git commit -m "Sincroniza catálogos diretamente do Firebase"

@@ -9,9 +9,9 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const assert = (ok, message) => { if (!ok) throw new Error(message); };
 
 const required = [
-  'index.html', 'styles/app.css', 'styles/visual-parity.css', 'styles/home-parity.css',
-  'styles/live-polish.css', 'src/main.js', 'src/ui.js', 'src/catalog.js',
-  'src/core.js', 'src/live-polish.js', 'src/image-performance.js', 'src/bundle-routes.js'
+  'index.html', 'styles/storefront-base.css', 'styles/storefront-components.css',
+  'styles/storefront-responsive.css', 'src/main.js', 'src/ui.js', 'src/catalog.js',
+  'src/core.js', 'src/image-performance.js', 'src/bundle-routes.js'
 ];
 required.forEach(file => assert(fs.existsSync(path.join(root, file)), `Arquivo ausente: ${file}`));
 
@@ -22,28 +22,49 @@ assert(!preview.includes('src/main.js'), '/app-next ainda carrega uma segunda ap
 
 const production = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const marker of [
-  '2026-07-27-site-estavel-v1',
-  '/app-next/styles/live-polish.css?v=20260727-5',
-  '/app-next/src/live-polish.js?v=20260727-5',
-  'da_v10_site_estavel_20260727',
-  'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"'
+  '2026-07-27-storefront-performance-v6',
+  '/app-next/styles/storefront-base.css?v=20260727-6',
+  '/app-next/styles/storefront-components.css?v=20260727-6',
+  '/app-next/styles/storefront-responsive.css?v=20260727-6',
+  '/app-next/src/main.js?v=20260727-6',
+  'da_v11_storefront_performance_20260727',
+  'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
+  'id="menu-drawer"', 'inert'
 ]) assert(production.includes(marker), `Produção incompleta: ${marker}`);
-assert(!production.includes('requestIdleCallback'), 'Acabamento ainda é carregado com atraso');
-assert(!production.includes('loadPolish'), 'Layout ainda é reescrito depois de abrir');
 
-const polish = read('src/live-polish.js');
-for (const marker of ['prepareLinks', 'prepareImages', 'closeTransientLayers', 'da:route-rendered']) {
-  assert(polish.includes(marker), `Rotina estável incompleta: ${marker}`);
-}
-for (const removed of ['MutationObserver', 'IntersectionObserver', 'appendCarouselBatch', 'restoreBasketPosition']) {
-  assert(!polish.includes(removed), `Rotina dinâmica ainda presente: ${removed}`);
-}
+for (const removed of [
+  'styles/visual-parity.css', 'styles/home-parity.css', 'styles/live-polish.css',
+  'src/live-polish.js', 'src/seo-combos.js', 'html.booting #app{opacity:0}'
+]) assert(!production.includes(removed), `Camada antiga ainda carregada: ${removed}`);
 
-const polishCss = read('styles/live-polish.css');
-assert(polishCss.includes('.bundle-detail-hero>img'), 'Imagem principal de cesta sem ajuste');
-assert(polishCss.includes('.bottom-bar{pointer-events:auto}'), 'Menu inferior sem proteção de clique');
-assert(!polishCss.includes('.home-page .home-bundle-carousel'), 'Carrossel dinâmico ainda presente');
-assert(!polishCss.includes('--product-card-gap'), 'CSS ainda redefine todos os cards');
+const css = [
+  read('styles/storefront-base.css'),
+  read('styles/storefront-components.css'),
+  read('styles/storefront-responsive.css')
+].join('\n');
+assert(css.includes('@media(min-width:1040px)'), 'Breakpoint desktop ausente');
+assert(css.includes('.product-grid{grid-template-columns:repeat(4'), 'Grid de produtos não usa quatro colunas');
+assert(css.includes('.bundle-grid{grid-template-columns:repeat(4'), 'Grid de cestas e kits não usa quatro colunas');
+assert(!css.includes('repeat(5,minmax'), 'Layout ainda cria cinco colunas de cards');
+assert(css.includes('[inert]'), 'Elementos inertes não possuem proteção visual');
+
+const ui = read('src/ui.js');
+for (const marker of [
+  'HOME_BUNDLE_LIMIT = 100', 'editable: true', 'editable: false',
+  'bundle-fixed-qty', 'setDrawerHidden', 'setAttribute(\'inert\'',
+  'Cestas básicas em Cuiabá e Várzea Grande'
+]) assert(ui.includes(marker), `UI incompleta: ${marker}`);
+
+const main = read('src/main.js');
+for (const marker of [
+  'internalAppNavigation', 'da:catalog-refreshed', 'applyCatalog',
+  'overlay.setAttribute(\'inert\'', 'router.navigate(target)'
+]) assert(main.includes(marker), `Entrada principal incompleta: ${marker}`);
+
+const catalog = read('src/catalog.js');
+for (const marker of ['cachedCatalog', 'refreshInBackground', 'da:catalog-refreshed']) {
+  assert(catalog.includes(marker), `Carregamento de catálogo incompleto: ${marker}`);
+}
 
 const jsFiles = fs.readdirSync(path.join(root, 'src')).filter(file => file.endsWith('.js'));
 for (const file of jsFiles) {
@@ -54,4 +75,4 @@ for (const file of jsFiles) {
 await import('../src/ui.js');
 await import('../src/checkout.js');
 await import('../src/offer-engine.js');
-console.log(`Smoke test concluído: entrada única, navegação estável e ${jsFiles.length} módulos válidos.`);
+console.log(`Smoke test concluído: entrada única, cache progressivo, navegação estável e ${jsFiles.length} módulos válidos.`);

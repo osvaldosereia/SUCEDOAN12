@@ -9,7 +9,6 @@ const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(__dirname, '..');
 const STATIC_PAGES = [
   '/',
   '/cestas/',
-  '/kits/',
   '/sobre-nos.html',
   '/contato.html',
   '/politica-de-entrega.html',
@@ -55,13 +54,6 @@ function buildSitemap(catalog, fallbackDate = '') {
     imageTitle: record.title,
   }));
 
-  catalog.kits.filter(record => record.details.catalogActive).forEach(record => entries.push({
-    loc: record.link,
-    lastmod: fileDate(`${record.seoPath.replace(/^\/|\/$/g, '')}/index.html`, record.lastmod || fallbackDate),
-    image: record.image,
-    imageTitle: record.title,
-  }));
-
   const unique = [...new Map(entries.map(entry => [entry.loc, entry])).values()];
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${unique.map(urlXml).join('\n')}\n</urlset>\n`;
 }
@@ -72,13 +64,19 @@ function robotsText() {
 
 function main() {
   const catalog = loadComboCatalog();
+  const baskets = catalog.baskets.filter(item => item.details.valid);
   atomicWrite(path.join(OUTPUT_DIR, 'sitemap.xml'), buildSitemap(catalog));
   atomicWrite(path.join(OUTPUT_DIR, 'robots.txt'), robotsText());
-  console.log(`Sitemap gerado com ${catalog.baskets.filter(item => item.details.valid).length} cestas e ${catalog.kits.filter(item => item.details.catalogActive).length} kits ativos.`);
+  console.log(`Sitemap focado em cestas básicas gerado com ${baskets.length} páginas de cestas.`);
 }
 
 if (require.main === module) {
-  try { main(); } catch (error) { console.error('Erro ao gerar sitemap:', error); process.exit(1); }
+  try {
+    main();
+  } catch (error) {
+    console.error('Erro ao gerar sitemap:', error);
+    process.exit(1);
+  }
 }
 
 module.exports = { buildSitemap, robotsText, urlXml };

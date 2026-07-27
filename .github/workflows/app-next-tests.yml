@@ -1,4 +1,4 @@
-name: Validar site público modular
+name: Validar site público
 
 on:
   pull_request:
@@ -6,8 +6,6 @@ on:
     paths:
       - 'index.html'
       - 'app-next/**'
-      - 'site-public/**'
-      - 'producao-v2/js/services/collections.js'
       - 'scripts/catalogos-combos-lib.js'
       - 'scripts/gerar-merchant.js'
       - 'scripts/gerar-meta-combos.js'
@@ -15,6 +13,7 @@ on:
       - 'scripts/gerar-sitemap.js'
       - 'scripts/injetar-seo-combos.js'
       - 'scripts/normalizar-seo-delivery.js'
+      - 'scripts/estabilizar-catalogo-publico.mjs'
       - 'scripts/check-public-site.mjs'
       - 'sobre-nos.html'
       - 'contato.html'
@@ -32,6 +31,7 @@ on:
       - 'site/produtos_admin_meta.json'
       - '.github/workflows/app-next-tests.yml'
       - '.github/workflows/update-public-data.yml'
+      - '.github/workflows/sincronizar-produtos-home-firebase.yml'
   workflow_dispatch:
 
 permissions:
@@ -64,21 +64,18 @@ jobs:
             node scripts/gerar-merchant.js
             node scripts/gerar-meta-combos.js
             node scripts/gerar-sitemap.js
-            test "$(grep -o 'app-next/src/seo-combos.js?v=20260727-4' index.html | wc -l)" -eq 1
-            test "$(grep -o 'app-next/src/main.js?v=20260727-4' index.html | wc -l)" -eq 2
-            ! grep -q 'app-next/src/delivery-only.js' index.html
-            ! grep -q 'app-next/src/detail-review.js' index.html app-next/index.html
-            ! grep -q 'detail-review.css' index.html app-next/index.html
-            ! grep -q '#/cesta/' app-next/src/ui.js app-next/src/live-polish.js
-            ! grep -q '#/kit/' app-next/src/ui.js app-next/src/live-polish.js
-            test ! -e scripts/refatorar-rotas-combos.js
-            test ! -e scripts/corrigir-validacoes-rotas.js
-            test ! -e app-next/src/delivery-only.js
-            test ! -e app-next/src/detail-review.js
-            test ! -e app-next/styles/detail-review.css
-            test ! -e scripts/aplicar-seo-delivery-v2.js
-            test ! -e scripts/garantir-sinal-delivery.js
-            test ! -e scripts/seo-delivery-payload
+            grep -q 'app-next/src/main.js?v=20260727-6' index.html
+            grep -q 'storefront-base.css?v=20260727-6' index.html
+            grep -q 'storefront-components.css?v=20260727-6' index.html
+            grep -q 'storefront-responsive.css?v=20260727-6' index.html
+            ! grep -q 'app-next/src/seo-combos.js' index.html
+            ! grep -q 'app-next/src/live-polish.js' index.html
+            ! grep -q 'styles/visual-parity.css' index.html
+            ! grep -q 'styles/home-parity.css' index.html
+            ! grep -q 'styles/live-polish.css' index.html
+            grep -q '"@type":"FAQPage"' cestas/index.html
+            grep -q 'noindex,follow' kits/index.html
+            ! grep -q 'https://donaantonia.com.br/kits/' sitemap.xml
           } 2>&1 | tee public-site-test-report.txt
 
       - name: Testar módulos
@@ -91,7 +88,7 @@ jobs:
           set -o pipefail
           npm test 2>&1 | tee -a ../public-site-test-report.txt
 
-      - name: Smoke test modular
+      - name: Smoke test
         id: smoke
         if: always()
         continue-on-error: true
@@ -101,7 +98,7 @@ jobs:
           set -o pipefail
           npm run check 2>&1 | tee -a ../public-site-test-report.txt
 
-      - name: Validar estrutura pública, políticas e feeds
+      - name: Validar estrutura pública
         id: public
         if: always()
         continue-on-error: true
@@ -110,7 +107,7 @@ jobs:
           set -o pipefail
           node scripts/check-public-site.mjs 2>&1 | tee -a public-site-test-report.txt
 
-      - name: Verificar sintaxe dos geradores
+      - name: Verificar sintaxe
         id: generators
         if: always()
         continue-on-error: true
@@ -125,17 +122,17 @@ jobs:
             node --check scripts/gerar-sitemap.js
             node --check scripts/injetar-seo-combos.js
             node --check scripts/normalizar-seo-delivery.js
+            node --check scripts/estabilizar-catalogo-publico.mjs
             node --check scripts/check-public-site.mjs
             node --check app-next/src/bundle-routes.js
             node --check app-next/src/core.js
             node --check app-next/src/catalog.js
             node --check app-next/src/ui.js
             node --check app-next/src/main.js
-            node --check app-next/src/live-polish.js
-            node --check app-next/src/seo-combos.js
+            node --check app-next/src/image-performance.js
           } 2>&1 | tee -a public-site-test-report.txt
 
-      - name: Anexar relatório do site
+      - name: Anexar relatório
         if: always()
         uses: actions/upload-artifact@v4
         with:

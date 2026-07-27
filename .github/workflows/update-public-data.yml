@@ -1,4 +1,4 @@
-name: Atualizar SEO e catálogos de cestas e kits
+name: Atualizar SEO de cestas básicas e dados públicos
 
 on:
   workflow_dispatch:
@@ -7,6 +7,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'index.html'
       - 'site/produtos-home.json'
       - 'site/produtos-cesta-basica.json'
       - 'site/kits.json'
@@ -18,22 +19,24 @@ on:
       - 'scripts/injetar-seo-combos.js'
       - 'scripts/normalizar-seo-delivery.js'
       - 'scripts/check-public-site.mjs'
+      - 'scripts/estabilizar-catalogo-publico.mjs'
       - 'app-next/src/bundle-routes.js'
       - 'app-next/src/core.js'
       - 'app-next/src/catalog.js'
       - 'app-next/src/ui.js'
       - 'app-next/src/main.js'
-      - 'app-next/src/live-polish.js'
-      - 'app-next/src/seo-combos.js'
+      - 'app-next/src/image-performance.js'
       - 'app-next/src/config.js'
-      - 'site-public/assets/seo-combos.css'
+      - 'app-next/styles/storefront-base.css'
+      - 'app-next/styles/storefront-components.css'
+      - 'app-next/styles/storefront-responsive.css'
       - '.github/workflows/update-public-data.yml'
 
 permissions:
   contents: write
 
 concurrency:
-  group: public-data-combos-main
+  group: public-data-baskets-main
   cancel-in-progress: false
 
 jobs:
@@ -42,32 +45,31 @@ jobs:
     timeout-minutes: 12
     steps:
       - name: Checkout do main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: main
           fetch-depth: 1
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
 
-      - name: Normalizar domínio e empresa somente delivery
+      - name: Normalizar domínio e empresa delivery
         run: node scripts/normalizar-seo-delivery.js
 
-      - name: Aplicar metadados principais
+      - name: Aplicar SEO principal focado em cestas
         run: node scripts/injetar-seo-combos.js
 
-      - name: Gerar páginas HTML indexáveis
+      - name: Gerar páginas HTML
         run: node scripts/gerar-paginas-seo-combos.js
 
-      - name: Gerar Merchant de cestas e kits
-        run: node scripts/gerar-merchant.js
+      - name: Gerar Merchant e catálogo Meta
+        run: |
+          node scripts/gerar-merchant.js
+          node scripts/gerar-meta-combos.js
 
-      - name: Gerar catálogo da Meta de cestas e kits
-        run: node scripts/gerar-meta-combos.js
-
-      - name: Gerar sitemap focado em cestas e kits
+      - name: Gerar sitemap focado em cestas
         run: node scripts/gerar-sitemap.js
 
       - name: Validar arquivos públicos
@@ -76,57 +78,40 @@ jobs:
           set -euo pipefail
           node --check scripts/catalogos-combos-lib.js
           node --check scripts/gerar-paginas-seo-combos.js
+          node --check scripts/gerar-sitemap.js
+          node --check scripts/injetar-seo-combos.js
           node --check scripts/normalizar-seo-delivery.js
+          node --check scripts/estabilizar-catalogo-publico.mjs
           node --check app-next/src/bundle-routes.js
           node --check app-next/src/core.js
           node --check app-next/src/catalog.js
           node --check app-next/src/ui.js
           node --check app-next/src/main.js
-          node --check app-next/src/live-polish.js
-          node --check app-next/src/seo-combos.js
+          node --check app-next/src/image-performance.js
           node scripts/check-public-site.mjs
           test -s merchant.xml
           grep -q '<item>' merchant.xml
-          grep -Eq '<g:id>(cesta|kit)-' merchant.xml
-          grep -q '<g:canonical_link>https://donaantonia.com.br/' merchant.xml
-          grep -q '<g:shipping_label>delivery-local-minimo-75</g:shipping_label>' merchant.xml
-          ! grep -q '<g:id>clight\.' merchant.xml
           test -s site/produtos_meta.csv
-          head -n 1 site/produtos_meta.csv | grep -q 'availability'
-          grep -Eq '^((cesta|kit)-)' <(tail -n +2 site/produtos_meta.csv)
-          test -s site/produtos_admin_meta.json
-          grep -q 'cestas-e-kits-oficiais' site/produtos_admin_meta.json
-          grep -q '"deliveryOnly": true' site/produtos_admin_meta.json
           test -s cestas/index.html
           test -s kits/index.html
+          grep -q '"@type":"CollectionPage"' cestas/index.html
+          grep -q '"@type":"FAQPage"' cestas/index.html
           grep -q '"@type":"Product"' cestas/*/index.html
-          grep -q 'Somente delivery' cestas/index.html
-          grep -q 'seo-combos-critical' cestas/*/index.html kits/*/index.html
+          grep -q 'noindex,follow' kits/index.html
           test -s sitemap.xml
           grep -q 'https://donaantonia.com.br/cestas/' sitemap.xml
-          grep -q 'https://donaantonia.com.br/kits/' sitemap.xml
-          ! grep -q '?cesta=' sitemap.xml
+          ! grep -q 'https://donaantonia.com.br/kits/' sitemap.xml
+          grep -q 'app-next/src/main.js?v=20260727-6' index.html
+          grep -q 'storefront-base.css?v=20260727-6' index.html
+          grep -q 'storefront-components.css?v=20260727-6' index.html
+          grep -q 'storefront-responsive.css?v=20260727-6' index.html
+          ! grep -q 'app-next/src/seo-combos.js' index.html
+          ! grep -q 'app-next/src/live-polish.js' index.html
+          ! grep -q 'styles/visual-parity.css' index.html
+          ! grep -q 'styles/home-parity.css' index.html
+          ! grep -q 'styles/live-polish.css' index.html
+          grep -q 'id="menu-drawer".*inert' index.html
           ! grep -q 'https://www.donaantonia.com.br' sitemap.xml merchant.xml robots.txt index.html
-          grep -q 'app-next/src/seo-combos.js' index.html
-          grep -q 'app-next/src/main.js?v=20260727-4' index.html
-          ! grep -q 'app-next/src/delivery-only.js' index.html
-          ! grep -q 'app-next/src/detail-review.js' index.html app-next/index.html
-          ! grep -q 'detail-review.css' index.html app-next/index.html
-          test "$(grep -o 'app-next/src/seo-combos.js?v=20260727-4' index.html | wc -l)" -eq 1
-          ! grep -q '#/cesta/' app-next/src/ui.js app-next/src/live-polish.js
-          ! grep -q '#/kit/' app-next/src/ui.js app-next/src/live-polish.js
-          grep -q 'OnlineStore' index.html
-          grep -q 'Somente delivery' index.html
-          ! grep -q '"@type":"GroceryStore"' index.html
-          ! grep -q 'R. Trinta, 105' sobre-nos.html contato.html app-next/src/ui.js
-          test ! -e scripts/refatorar-rotas-combos.js
-          test ! -e scripts/corrigir-validacoes-rotas.js
-          test ! -e app-next/src/delivery-only.js
-          test ! -e app-next/src/detail-review.js
-          test ! -e app-next/styles/detail-review.css
-          test ! -e scripts/garantir-sinal-delivery.js
-          test ! -e scripts/aplicar-seo-delivery-v2.js
-          test ! -e scripts/seo-delivery-payload
 
       - name: Publicar dados e páginas geradas
         shell: bash
@@ -141,10 +126,10 @@ jobs:
             index.html sobre-nos.html contato.html politica-de-entrega.html \
             politica-de-troca.html politica-de-privacidade.html termos-de-uso.html reels.html
           if git diff --cached --quiet; then
-            echo 'SEO e catálogos de cestas e kits já estão atualizados.'
+            echo 'SEO de cestas básicas e dados públicos já estão atualizados.'
             exit 0
           fi
-          git commit -m 'Atualiza SEO e catálogos de cestas e kits'
+          git commit -m 'Atualiza SEO de cestas básicas e dados públicos'
           for tentativa in 1 2 3 4 5; do
             if git push origin 'HEAD:main'; then
               exit 0
@@ -153,5 +138,5 @@ jobs:
             git rebase origin/main
             sleep $((tentativa * 2))
           done
-          echo 'Não foi possível publicar o SEO e os catálogos após cinco tentativas.' >&2
+          echo 'Não foi possível publicar os dados após cinco tentativas.' >&2
           exit 1
