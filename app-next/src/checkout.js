@@ -1,13 +1,13 @@
-import { CONFIG } from './config.js?v=20260727-4';
+import { CONFIG } from './config.js?v=20260727-5';
 import {
   cleanCpf, escapeHtml, fmt, formatCep, formatCpf, formatPhone,
   readStorage, writeStorage
-} from './core.js?v=20260727-4';
-import { calculateCartPricing } from './commerce.js?v=20260727-4';
+} from './core.js?v=20260727-5';
+import { calculateCartPricing } from './commerce.js?v=20260727-5';
 import {
   buildOrderPayload, buildWhatsAppMessage, enqueueOrder, lookupClientByCpf,
   openWhatsApp, processOrderQueue, validateCheckoutData
-} from './integrations.js?v=20260727-4';
+} from './integrations.js?v=20260727-5';
 
 function addDays(date, days) {
   const copy = new Date(date);
@@ -147,8 +147,15 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
     const items = pricing.items.filter(item => !item.product.isFee);
     const client = savedClient();
     const activeCoupon = state.coupons.find(coupon => String(coupon.codigo).toUpperCase() === state.activeCouponCode);
-    const availableDates = deliveryDates();
-    const selectedDelivery = client.deliveryDate || dateValue(availableDates[0]);
+    const availbleDates = deliveryDates();
+  const availableDateValues = availableDates.map(dateValue);
+  const selectedDelivery = availableDateValues.includes(client.deliveryDate)
+    ? client.deliveryDate
+    : (availableDateValues[0] || '');
+  if (client.deliveryDate !== selectedDelivery) {
+    client.deliveryDate = selectedDelivery;
+    writeStorage(CONFIG.STORAGE.CHECKOUT_CLIENT, { ...client, savedAt: Date.now() });
+  }
     const [statusText, statusClass] = lookupMessage(state);
     const canOrder = items.length > 0 && pricing.subtotalBefore >= CONFIG.MIN_ORDER;
 
@@ -262,7 +269,8 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
         fillClient(result.cliente);
       }
       render();
-    } catch (error) {
+    ui.updateShell();
+  } catch (error) {
       status.textContent = error.name === 'AbortError' ? 'A consulta demorou demais. Você pode preencher os dados manualmente.' : 'Não foi possível consultar agora. Preencha os dados manualmente.';
       status.className = 'lookup-status error';
       button.disabled = false;
@@ -300,7 +308,8 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
   async function send(button) {
     const state = store.getState();
     const form = readForm();
-    const validation = validateCheckoutData(form, state);
+    const allowedDeliveryDates = deliveryDates().map(dateValue);
+  const validation = validateCheckoutData(form, state, { allowedDeliveryDates });
     if (!validation.valid) {
       showErrors(validation.errors);
       return;

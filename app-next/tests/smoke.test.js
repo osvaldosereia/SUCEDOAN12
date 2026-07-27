@@ -13,7 +13,7 @@ const required = [
   'styles/storefront-responsive.css', 'styles/checkout-flow.css', 'styles/bundle-confirmation.css',
   'src/main.js', 'src/ui.js', 'src/catalog.js', 'src/checkout.js',
   'src/core.js', 'src/image-performance.js', 'src/home-carousels.js',
-  'src/fast-offers-v9.js', 'src/bundle-routes.js'
+  'src/bundle-routes.js'
 ];
 required.forEach(file => assert(fs.existsSync(path.join(root, file)), `Arquivo ausente: ${file}`));
 
@@ -24,16 +24,15 @@ assert(!preview.includes('src/main.js'), '/app-next ainda carrega uma segunda ap
 
 const production = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const marker of [
-  '2026-07-27-basket-actions-v9',
+  '2026-07-27-cart-pricing-routing-v10',
   '/app-next/styles/storefront-base.css?v=20260727-7',
-  '/app-next/styles/storefront-components.css?v=20260727-9',
+  '/app-next/styles/storefront-components.css?v=20260727-10',
   '/app-next/styles/storefront-responsive.css?v=20260727-9',
   '/app-next/styles/checkout-flow.css?v=20260727-8',
   '/app-next/styles/bundle-confirmation.css?v=20260727-5',
   '/app-next/src/image-performance.js?v=20260727-8',
   '/app-next/src/home-carousels.js?v=20260727-8',
-  '/app-next/src/fast-offers-v9.js?v=20260727-10',
-  '/app-next/src/main.js?v=20260727-8',
+  '/app-next/src/main.js?v=20260727-9',
   'da_v15_basket_actions_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'id="menu-drawer"', 'inert'
@@ -67,24 +66,19 @@ assert(bundleConfirmation.includes('background:#f28c28!important'), 'Chamada de 
 
 const ui = read('src/ui.js');
 for (const marker of [
-  'HOME_BUNDLE_LIMIT = 100', 'editable: true', 'editable: false',
+  'HOME_BUNDLE_LIMIT = 100', 'OFFER_BATCH_SIZE = 16', 'loadMoreOffers', 'scrollPositions', 'productDisplayPricing', 'editable: true', 'editable: false',
   'bundle-fixed-qty', 'setDrawerHidden', 'setAttribute(\'inert\'',
   'Cestas básicas em Cuiabá e Várzea Grande'
 ]) assert(ui.includes(marker), `UI incompleta: ${marker}`);
 
 const main = read('src/main.js');
 for (const marker of [
-  'internalAppNavigation', 'da:catalog-refreshed', 'applyCatalog',
+  'internalAppNavigation', 'da:catalog-refreshed', 'applyCatalog', 'load-more-offers',
   'overlay.setAttribute(\'inert\'', 'router.navigate(target)',
   "router.navigate('#/ofertas')", 'warmOfferImages',
-  "createCheckout } from './checkout.js?v=20260727-8'", 'query.length < 3'
+  "createCheckout } from './checkout.js?v=20260727-9'", 'query.length < 3'
 ]) assert(main.includes(marker), `Entrada principal incompleta: ${marker}`);
 
-const fastOffers = read('src/fast-offers-v9.js');
-for (const marker of [
-  'OFFER_BATCH_SIZE = 16', 'holdInitialOffersRoute', "window.addEventListener('da:catalog-refreshed'",
-  'queueMicrotask', "dataset.offersRenderer = 'progressive-v10'"
-]) assert(fastOffers.includes(marker), `Ofertas progressivas incompletas: ${marker}`);
 
 const checkout = read('src/checkout.js');
 for (const marker of [

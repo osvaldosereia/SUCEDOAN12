@@ -1,13 +1,13 @@
-import { CONFIG } from './config.js?v=20260727-6';
-import { createEventBus, createInitialState, createRouter, createStore, escapeHtml, fmt } from './core.js?v=20260727-6';
-import { indexProducts, loadCatalog } from './catalog.js?v=20260727-6';
-import { applyProductOffer, calculateCartPricing, CartService, resolveBundleRows } from './commerce.js?v=20260727-4';
+import { CONFIG } from './config.js?v=20260727-7';
+import { createEventBus, createInitialState, createRouter, createStore, escapeHtml, fmt } from './core.js?v=20260727-7';
+import { indexProducts, loadCatalog } from './catalog.js?v=20260727-7';
+import { applyProductOffer, calculateCartPricing, CartService, resolveBundleRows } from './commerce.js?v=20260727-5';
 import { prepareProductOffer } from './offer-engine.js?v=20260727-4';
 import { basketDraftTotal } from './basket-pricing.js?v=20260727-4';
 import { createPersonalization } from './personalization.js?v=20260727-4';
-import { createUI } from './ui.js?v=20260727-6';
-import { createCheckout } from './checkout.js?v=20260727-8';
-import { processOrderQueue } from './integrations.js?v=20260727-4';
+import { createUI } from './ui.js?v=20260727-7';
+import { createCheckout } from './checkout.js?v=20260727-9';
+import { processOrderQueue } from './integrations.js?v=20260727-5';
 
 const events = createEventBus();
 const store = createStore(createInitialState());
@@ -203,9 +203,13 @@ async function handleAction(button) {
   const id = button.dataset.id;
   if (!action) return;
   if (['lookup-client', 'send-order', 'apply-coupon', 'remove-coupon'].includes(action)) {
-    await checkout.handleAction(action, button);
-    return;
-  }
+  await checkout.handleAction(action, button);
+  return;
+}
+if (action === 'load-more-offers') {
+  ui.loadMoreOffers();
+  return;
+}
   if (action === 'bundle-confirm-close') {
     closeBundleConfirmation();
     return;
@@ -410,8 +414,12 @@ function applyCatalog(catalog, reason = 'catalog:ready') {
     Object.assign(state, catalog, indexes, { products, isReady: true });
   }, reason);
   window.__DA_CATALOG_STATE__ = store.getState();
+  const reconciliation = cart.reconcileCatalog();
   cart.rebuildVirtualFees();
   ui.updateShell();
+  if (reason === 'catalog:refreshed' && reconciliation.changed) {
+    ui.showToast('Sua compra foi atualizada conforme o estoque atual.');
+  }
 
   if (!routerStarted) {
     routerStarted = true;

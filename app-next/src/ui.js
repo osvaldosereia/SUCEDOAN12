@@ -1,15 +1,16 @@
-import { CONFIG, ROUTINES } from './config.js?v=20260727-6';
-import { escapeHtml, fmt, formatDateBR, norm, parseDate, slug } from './core.js?v=20260727-6';
-import { findProductByReference, searchProducts } from './catalog.js?v=20260727-6';
+import { CONFIG, ROUTINES } from './config.js?v=20260727-7';
+import { escapeHtml, fmt, formatDateBR, norm, slug } from './core.js?v=20260727-7';
+import { findProductByReference, searchProducts } from './catalog.js?v=20260727-7';
 import { comboSeoPath, findBasketByReference, findKitByReference } from './bundle-routes.js?v=20260727-4';
 import { basketDraftTotal } from './basket-pricing.js?v=20260727-4';
 import {
   applyProductOffer, calculateCartPricing, hasExpiryBulkDiscount, isAvailable,
-  kitDiscountPercent, kitIsVisible, kitOriginalPrice, resolveBundleRows
-} from './commerce.js?v=20260727-4';
+  kitDiscountPercent, kitIsVisible, kitOriginalPrice, productDisplayPricing, resolveBundleRows
+} from './commerce.js?v=20260727-5';
 
 const FALLBACK_IMAGE = '/img/logoantonia5.png';
 const HOME_BUNDLE_LIMIT = 100;
+const OFFER_BATCH_SIZE = 16;
 
 function productRoute(product) {
   return encodeURIComponent(product.firebaseKey || product.id || product.codigo || slug(product.name));
@@ -24,31 +25,8 @@ function effectiveProduct(product) {
   return applyProductOffer(product);
 }
 
-function productDisplay(state, product) {
-  const offered = effectiveProduct(product);
-  const coupon = state.coupons.find(item => norm(item.codigo) === norm(state.activeCouponCode));
-  const original = Number(offered.oldPrice || offered.price || 0);
-  let effective = Number(offered.price || 0);
-  if (coupon?.ativo === true) {
-    const categories = (coupon.categorias || []).map(norm);
-    const brands = (coupon.marcas || []).map(norm);
-    const keywords = (coupon.palavras_chave || []).map(norm);
-    const text = norm([offered.name, offered.marca, offered.categoria, offered.subcategoria].join(' '));
-    const matches = (!categories.length && !brands.length && !keywords.length)
-      || categories.some(value => text.includes(value))
-      || brands.some(value => norm(offered.marca) === value)
-      || keywords.some(value => text.includes(value));
-    if (matches && coupon.tipo === 'percentual') {
-      effective = Math.min(effective, original * (1 - Number(coupon.desconto || 0) / 100));
-    }
-  }
-  return {
-    original,
-    effective: Math.round((effective + Number.EPSILON) * 100) / 100,
-    discountPercent: original > effective
-      ? Math.round(((original - effective) / Math.max(original, 0.01)) * 100)
-      : 0
-  };
+function productDisplay(state, product, pricing = null) {
+  return productDisplayPricing(state, effectiveProduct(product), pricing);
 }
 
 function quantityControl(state, product, mode = 'card') {
@@ -89,7 +67,7 @@ function favoriteButton(state, id, kind = 'product') {
 function productCard(state, product, options = {}) {
   const normalizedOptions = typeof options === 'string' ? { mode: options } : options;
   const mode = normalizedOptions.mode || '';
-  const display = productDisplay(state, product);
+  const display = productDisplay(state, product, normalizedOptions.pricing);
   const id = String(product.id);
   const imageAttrs = normalizedOptions.priority
     ? 'loading="eager" fetchpriority="high"'
@@ -113,7 +91,7 @@ function productCard(state, product, options = {}) {
       <a class="product-name" href="#/produto/${productRoute(product)}" title="${escapeHtml(product.name)}">${escapeHtml(truncate(product.name, mode === 'compact' ? 36 : 48))}</a>
       <div class="product-expiry">${product.validade && formatDateBR(product.validade) ? `Val. ${formatDateBR(product.validade)}` : '&nbsp;'}</div>
       <div class="product-card-footer">
-        <div class="product-price">${display.original > display.effective ? `<s>${fmt(display.original)}</s>` : ''}<strong>${fmt(display.effective)}</strong></div>
+        <div class="product-price" data-price-slot="${escapeHtml(id)}">${display.original > display.effective ? `<s>${fmt(display.original)}</s>` : ''}<strong>${fmt(display.effective)}</strong></div>
         <div ${normalizedOptions.bundle ? '' : `data-control-slot="${escapeHtml(id)}"`}>${control}</div>
       </div>
     </div>
@@ -121,8 +99,10 @@ function productCard(state, product, options = {}) {
 }
 
 function productGrid(state, products, optionsForProduct = () => ({})) {
+  const pricing = calculateCartPricing(state);
   return `<div class="product-grid">${products.map((product, index) => productCard(state, product, {
     priority: index < 8,
+    pricing,
     ...optionsForProduct(product, index)
   })).join('')}</div>`;
 }
@@ -138,32 +118,6 @@ function empty(title, text) {
 function section(title, caption, content, href = '') {
   if (!content) return '';
   return `<section class="content-section"><div class="section-heading"><div><h2>${escapeHtml(title)}</h2>${caption ? `<p>${escapeHtml(caption)}</p>` : ''}</div>${href ? `<a href="${href}">Ver todos</a>` : ''}</div>${content}</section>`;
-}
-
-function currentBanners(state, position, targets = []) {
-  const now = new Date();
-  const normalizedTargets = new Set(targets.map(norm).filter(Boolean));
-  return state.banners.filter(banner => {
-    if (!banner.active) return false;
-    const start = parseDate(banner.start, false);
-    const end = parseDate(banner.end, true);
-    if ((start && now < start) || (end && now > end)) return false;
-    const positionMatches = norm(banner.position) === norm(position) || norm(banner.position).startsWith(`${norm(position)}.`);
-    const targetMatches = !normalizedTargets.size || !banner.target || normalizedTargets.has(norm(banner.target));
-    return positionMatches && targetMatches;
-  }).slice(0, 8);
-}
-
-function bannerZone(state, position, targets = []) {
-  const banners = currentBanners(state, position, targets);
-  if (!banners.length) return '';
-  return `<section class="banner-zone" aria-label="Destaques"><div class="banner-track">${banners.map((banner, index) => {
-    let href = String(banner.link || '').trim();
-    if (href && !/^https?:|^#/.test(href)) href = `#/${href.replace(/^\/+/, '')}`;
-    const priority = index === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy" fetchpriority="low"';
-    const image = `<img ${priority} decoding="async" src="${escapeHtml(banner.image)}" alt="${escapeHtml(banner.alt)}">`;
-    return href ? `<a class="banner-card" href="${escapeHtml(href)}">${image}</a>` : `<div class="banner-card">${image}</div>`;
-  }).join('')}</div></section>`;
 }
 
 function categoryData(state) {
@@ -226,7 +180,6 @@ function homePage(context) {
   const buyAgain = personalization.buyAgain(6);
   return `<div class="page-container home-page">
     <h1 class="sr-only">Cestas básicas com delivery em Cuiabá e Várzea Grande</h1>
-    ${bannerZone(state, 'home.hero')}
     ${paymentNoticesHtml()}
     ${basketSeoIntro()}
     ${section('Cestas básicas', 'Confira a composição completa antes de escolher.', baskets.length ? `<div class="bundle-grid">${baskets.map((basket, index) => basketCard(basket, index)).join('')}</div>` : '', '/cestas/')}
@@ -241,11 +194,11 @@ function homePage(context) {
 }
 
 function categoriesPage(context) {
-  return `<div class="page-container">${pageHeader('Categorias', 'Escolha um setor para navegar.')}${bannerZone(context.state, 'categorias.topo')}${categoryCards(context.state)}</div>`;
+  return `<div class="page-container">${pageHeader('Categorias', 'Escolha um setor para navegar.')}${categoryCards(context.state)}</div>`;
 }
 
-function productGridPage(context, { title, subtitle, products, back = '#/categorias', bannerPosition = '', bannerTargets = [] }) {
-  return `<div class="page-container">${pageHeader(title, subtitle, back)}${bannerPosition ? bannerZone(context.state, bannerPosition, bannerTargets) : ''}${products.length ? productGrid(context.state, products) : empty('Nenhum produto disponível', 'Tente outra categoria ou use a busca.')}</div>`;
+function productGridPage(context, { title, subtitle, products, back = '#/categorias' }) {
+  return `<div class="page-container">${pageHeader(title, subtitle, back)}${products.length ? productGrid(context.state, products) : empty('Nenhum produto disponível', 'Tente outra categoria ou use a busca.')}</div>`;
 }
 
 function categoryPage(context, name) {
@@ -256,17 +209,17 @@ function categoryPage(context, name) {
   const subs = [...new Set(all.map(product => product.subcategoria).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   const filtered = selectedSub === 'Todos' ? all : all.filter(product => norm(product.subcategoria) === norm(selectedSub));
   const chips = `<div class="chips"><a class="chip ${selectedSub === 'Todos' ? 'active' : ''}" href="#/categoria/${encodeURIComponent(canonical)}">Todos</a>${subs.map(sub => `<a class="chip ${sub === selectedSub ? 'active' : ''}" href="#/categoria/${encodeURIComponent(canonical)}?sub=${encodeURIComponent(sub)}">${escapeHtml(sub)}</a>`).join('')}</div>`;
-  return `<div class="page-container">${pageHeader(canonical, `${filtered.length} produtos encontrados`, '#/categorias')}${bannerZone(context.state, 'categoria', [canonical, selectedSub])}${chips}${filtered.length ? productGrid(context.state, filtered) : empty('Nenhum produto disponível', 'Tente outra subcategoria.')}</div>`;
+  return `<div class="page-container">${pageHeader(canonical, `${filtered.length} produtos encontrados`, '#/categorias')}${chips}${filtered.length ? productGrid(context.state, filtered) : empty('Nenhum produto disponível', 'Tente outra subcategoria.')}</div>`;
 }
 
 function subcategoryPage(context, name) {
   const products = context.state.products.filter(product => isAvailable(product) && norm(product.subcategoria) === norm(name));
-  return productGridPage(context, { title: products[0]?.subcategoria || name, subtitle: `${products.length} produtos encontrados`, products, bannerPosition: 'subcategoria', bannerTargets: [name] });
+  return productGridPage(context, { title: products[0]?.subcategoria || name, subtitle: `${products.length} produtos encontrados`, products });
 }
 
 function brandPage(context, name) {
   const products = context.state.products.filter(product => isAvailable(product) && norm(product.marca) === norm(name));
-  return productGridPage(context, { title: products[0]?.marca || name, subtitle: `${products.length} produtos encontrados`, products, back: '#/', bannerPosition: 'marca', bannerTargets: [name] });
+  return productGridPage(context, { title: products[0]?.marca || name, subtitle: `${products.length} produtos encontrados`, products, back: '#/' });
 }
 
 function offersPage(context) {
@@ -275,7 +228,10 @@ function offersPage(context) {
     .map(effectiveProduct)
     .filter(product => Number(product.oldPrice) > Number(product.price))
     .sort((a, b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || a.name.localeCompare(b.name, 'pt-BR'));
-  return productGridPage(context, { title: 'Ofertas', subtitle: 'Produtos disponíveis agora.', products, back: '#/', bannerPosition: 'ofertas.topo' });
+  const visibleCount = Math.max(OFFER_BATCH_SIZE, Number(context.offersVisibleCount || OFFER_BATCH_SIZE));
+  const visible = products.slice(0, visibleCount);
+  const remaining = Math.max(products.length - visible.length, 0);
+  return `<div class="page-container">${pageHeader('Ofertas', `${products.length} produtos em oferta.`, '#/')}<p class="fast-offers-status">As ofertas são carregadas em blocos para manter a página leve e rápida.</p>${visible.length ? productGrid(context.state, visible) : empty('Nenhuma oferta disponível agora.', 'Volte mais tarde para conferir novas ofertas.')}${remaining ? `<div class="fast-offers-more-wrap"><button class="primary-button fast-offers-more" type="button" data-action="load-more-offers">Carregar mais ofertas (${remaining})</button></div>` : ''}</div>`;
 }
 
 function favoritesPage(context) {
@@ -296,12 +252,12 @@ function productPage(context, reference) {
   const related = context.state.products
     .filter(item => isAvailable(item) && item.id !== product.id && (norm(item.categoria) === norm(product.categoria) || norm(item.marca) === norm(product.marca)))
     .slice(0, 16);
-  return `<div class="page-container">${pageHeader('Produto', '', '#/')}<article class="product-detail"><div class="product-detail-media"><img id="product-main-image" loading="eager" fetchpriority="high" src="${escapeHtml(product.img)}" data-fallback="${escapeHtml(product.images?.slice(1).join('|') || '')}" alt="${escapeHtml(product.name)}">${product.images?.length > 1 ? `<div class="image-thumbs">${product.images.slice(0, 6).map((image, index) => `<button data-action="image" data-src="${escapeHtml(image)}"><img loading="lazy" src="${escapeHtml(image)}" alt="Imagem ${index + 1}"></button>`).join('')}</div>` : ''}</div><div class="product-detail-copy">${product.validade && formatDateBR(product.validade) ? `<div class="product-expiry">Validade: ${formatDateBR(product.validade)}</div>` : ''}<h1>${escapeHtml(product.name)}</h1>${hasExpiryBulkDiscount(product) ? '<div class="offer-note">Leve 3 ou mais unidades e ganhe descontos adicionais no checkout.</div>' : ''}<div class="detail-price">${display.original > display.effective ? `<s>${fmt(display.original)}</s>` : ''}<strong>${fmt(display.effective)}</strong></div>${favoriteButton(context.state, product.id)}<div data-control-slot="${escapeHtml(product.id)}">${quantityControl(context.state, product, 'detail')}</div>${product.descricao ? `<p class="product-description">${escapeHtml(product.descricao)}</p>` : ''}<div class="detail-tags">${[product.categoria, product.subcategoria, product.marca].filter(Boolean).map(value => `<span>${escapeHtml(value)}</span>`).join('')}</div></div></article>${section('Produtos relacionados', 'Itens da mesma categoria ou marca.', productGrid(context.state, related))}</div>`;
+  return `<div class="page-container">${pageHeader('Produto', '', '#/')}<article class="product-detail"><div class="product-detail-media"><img id="product-main-image" loading="eager" fetchpriority="high" src="${escapeHtml(product.img)}" data-fallback="${escapeHtml(product.images?.slice(1).join('|') || '')}" alt="${escapeHtml(product.name)}">${product.images?.length > 1 ? `<div class="image-thumbs">${product.images.slice(0, 6).map((image, index) => `<button data-action="image" data-src="${escapeHtml(image)}"><img loading="lazy" src="${escapeHtml(image)}" alt="Imagem ${index + 1}"></button>`).join('')}</div>` : ''}</div><div class="product-detail-copy">${product.validade && formatDateBR(product.validade) ? `<div class="product-expiry">Validade: ${formatDateBR(product.validade)}</div>` : ''}<h1>${escapeHtml(product.name)}</h1>${hasExpiryBulkDiscount(product) ? '<div class="offer-note">Leve 3 ou mais unidades e ganhe descontos adicionais no checkout.</div>' : ''}<div class="detail-price" data-price-slot="${escapeHtml(product.id)}">${display.original > display.effective ? `<s>${fmt(display.original)}</s>` : ''}<strong>${fmt(display.effective)}</strong></div>${favoriteButton(context.state, product.id)}<div data-control-slot="${escapeHtml(product.id)}">${quantityControl(context.state, product, 'detail')}</div>${product.descricao ? `<p class="product-description">${escapeHtml(product.descricao)}</p>` : ''}<div class="detail-tags">${[product.categoria, product.subcategoria, product.marca].filter(Boolean).map(value => `<span>${escapeHtml(value)}</span>`).join('')}</div></div></article>${section('Produtos relacionados', 'Itens da mesma categoria ou marca.', productGrid(context.state, related))}</div>`;
 }
 
 function basketsPage(context) {
   const baskets = context.state.baskets.slice(0, HOME_BUNDLE_LIMIT);
-  return `<div class="page-container">${pageHeader('Cestas básicas', 'Compare tamanhos, preços e todos os produtos.')}${basketSeoIntro()}${bannerZone(context.state, 'cestas.topo')}${baskets.length ? `<div class="bundle-grid">${baskets.map((basket, index) => basketCard(basket, index)).join('')}</div>` : empty('Nenhuma cesta disponível', 'O catálogo de cestas ainda não possui itens.')}</div>`;
+  return `<div class="page-container">${pageHeader('Cestas básicas', 'Compare tamanhos, preços e todos os produtos.')}${basketSeoIntro()}${baskets.length ? `<div class="bundle-grid">${baskets.map((basket, index) => basketCard(basket, index)).join('')}</div>` : empty('Nenhuma cesta disponível', 'O catálogo de cestas ainda não possui itens.')}</div>`;
 }
 
 function basketPage(context, id) {
@@ -320,7 +276,7 @@ function basketPage(context, id) {
 
 function kitsPage(context) {
   const kits = context.state.kits.filter(kit => kitIsVisible(context.state, kit)).slice(0, HOME_BUNDLE_LIMIT);
-  return `<div class="page-container">${pageHeader('Kits promocionais', 'Combos com desconto e quantidades fixas.')}${bannerZone(context.state, 'kits.topo')}${kits.length ? `<div class="bundle-grid">${kits.map((kit, index) => kitCard(context.state, kit, index)).join('')}</div>` : empty('Nenhum kit ativo', 'Volte mais tarde para conferir novas ofertas.')}</div>`;
+  return `<div class="page-container">${pageHeader('Kits promocionais', 'Combos com desconto e quantidades fixas.')}${kits.length ? `<div class="bundle-grid">${kits.map((kit, index) => kitCard(context.state, kit, index)).join('')}</div>` : empty('Nenhum kit ativo', 'Volte mais tarde para conferir novas ofertas.')}</div>`;
 }
 
 function kitPage(context, id) {
@@ -338,7 +294,7 @@ function kitPage(context, id) {
 
 function searchPage(context, query) {
   const products = searchProducts(context.state.products, query, isAvailable);
-  return productGridPage(context, { title: query ? `Busca: ${query}` : 'Busca', subtitle: query ? `${products.length} resultado(s)` : 'Digite um produto na busca acima.', products, back: '#/', bannerPosition: 'busca.topo' });
+  return productGridPage(context, { title: query ? `Busca: ${query}` : 'Busca', subtitle: query ? `${products.length} resultado(s)` : 'Digite um produto na busca acima.', products, back: '#/' });
 }
 
 function routinePage(context, key) {
@@ -390,13 +346,34 @@ export function createUI({ store, cart, events, personalization }) {
   const overlay = document.getElementById('drawer-overlay');
   const toast = document.getElementById('toast');
   let lastDrawerTrigger = null;
+  let offersVisibleCount = OFFER_BATCH_SIZE;
+  const scrollPositions = new Map();
+  let activeScrollKey = '';
+  let scrollFrame = 0;
 
-  function context(route) {
-    return { state: store.getState(), route, cart, events, personalization };
+  function routeScrollKey(route) {
+    const segments = route?.params?.segments || [];
+    const query = route?.query?.toString?.() || '';
+    return `${route?.name || 'home'}:${segments.join('/')}${query ? `?${query}` : ''}`;
   }
 
+  app.addEventListener('scroll', () => {
+    if (!activeScrollKey || scrollFrame) return;
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = 0;
+      scrollPositions.set(activeScrollKey, app.scrollTop);
+    });
+  }, { passive: true });
+
+  function context(route) {
+  return { state: store.getState(), route, cart, events, personalization, offersVisibleCount };
+}
+
   function renderRoute(route) {
-    store.mutate(state => { state.route = route; }, 'route');
+  const nextScrollKey = routeScrollKey(route);
+  if (activeScrollKey) scrollPositions.set(activeScrollKey, app.scrollTop);
+  const restoreScroll = Number(scrollPositions.get(nextScrollKey) || 0);
+  store.mutate(state => { state.route = route; }, 'route');
     const ctx = context(route);
     const segment = route.params.segments[0] || '';
     const pages = {
@@ -427,13 +404,24 @@ export function createUI({ store, cart, events, personalization }) {
     };
     app.innerHTML = (pages[route.name] || pages.home)();
     app.querySelector(':scope > .page-container')?.insertAdjacentHTML('beforeend', publicFooterHtml());
-    app.scrollTop = 0;
-    updateShell();
+  activeScrollKey = nextScrollKey;
+  requestAnimationFrame(() => { app.scrollTop = restoreScroll; });
+  updateShell();
     updateMeta(route, ctx);
     syncCleanComboUrl(route, ctx);
     events.emit('route:rendered', { route, root: app });
     window.dispatchEvent(new CustomEvent('da:route-rendered', { detail: { route, root: app } }));
   }
+
+  function loadMoreOffers() {
+  const state = store.getState();
+  const total = state.products
+    .filter(isAvailable)
+    .map(effectiveProduct)
+    .filter(product => Number(product.oldPrice) > Number(product.price)).length;
+  offersVisibleCount = Math.min(total, offersVisibleCount + OFFER_BATCH_SIZE);
+  renderRoute(state.route);
+}
 
   function updateMeta(route, ctx) {
     const titleMap = {
@@ -476,8 +464,14 @@ export function createUI({ store, cart, events, personalization }) {
       element.hidden = count <= 0;
     });
     document.querySelectorAll('[data-cart-total]').forEach(element => {
-      element.textContent = fmt(pricing.total);
-    });
+    element.textContent = fmt(pricing.total);
+  });
+  document.querySelectorAll('[data-price-slot]').forEach(slot => {
+    const product = state.productMap.get(String(slot.dataset.priceSlot || ''));
+    if (!product) return;
+    const display = productDisplay(state, product, pricing);
+    slot.innerHTML = `${display.original > display.effective ? `<s>${fmt(display.original)}</s>` : ''}<strong>${fmt(display.effective)}</strong>`;
+  });
     document.querySelectorAll('[data-favorite-count]').forEach(element => {
       element.textContent = String(state.favorites.size);
       element.hidden = state.favorites.size <= 0;
@@ -537,7 +531,8 @@ export function createUI({ store, cart, events, personalization }) {
 
   return {
     renderRoute,
-    updateShell,
+  loadMoreOffers,
+  updateShell,
     showToast,
     openDrawer,
     closeDrawers,

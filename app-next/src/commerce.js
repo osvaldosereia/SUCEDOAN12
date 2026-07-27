@@ -1,9 +1,9 @@
-import { CONFIG } from './config.js?v=20260727-4';
+import { CONFIG } from './config.js?v=20260727-5';
 import {
   codeVariants, norm, parseDate, parseMoney, readStorage, removeStorage,
   roundMoney, writeStorage
-} from './core.js?v=20260727-4';
-import { findProductByReference } from './catalog.js?v=20260727-4';
+} from './core.js?v=20260727-5';
+import { findProductByReference } from './catalog.js?v=20260727-5';
 import { basketFixedAdjustment } from './basket-pricing.js?v=20260727-4';
 
 export function applyProductOffer(product, now = new Date()) {
@@ -100,19 +100,27 @@ export function cartUnitPricing(product, qty, coupon, eligibility, today = new D
   const original = Number(product.price || 0);
   const couponPrice = eligibility?.eligible ? couponUnitPrice(product, coupon) : original;
   const wholesaleEligible = !product.isFee && Number(qty || 0) >= CONFIG.WHOLESALE_MIN_QTY;
-  const expiryBulkEligible = wholesaleEligible && hasExpiryBulkDiscount(product, today);
-  const expiryBulkPrice = expiryBulkEligible ? roundMoney(couponPrice * (1 - CONFIG.EXPIRY_BULK_DISCOUNT_RATE)) : couponPrice;
-  const effective = wholesaleEligible ? roundMoney(expiryBulkPrice * (1 - CONFIG.WHOLESALE_DISCOUNT_RATE)) : expiryBulkPrice;
+  const expiryBulkQualified = wholesaleEligible && hasExpiryBulkDiscount(product, today);
+  const expiryCandidate = expiryBulkQualified
+    ? roundMoney(original * (1 - CONFIG.EXPIRY_BULK_DISCOUNT_RATE))
+    : original;
+  const couponApplied = couponPrice < original && couponPrice <= expiryCandidate;
+  const expiryBulkEligible = expiryCandidate < original && expiryCandidate < couponPrice;
+  const nonStackingPrice = couponApplied ? couponPrice : (expiryBulkEligible ? expiryCandidate : original);
+  const effective = wholesaleEligible
+    ? roundMoney(nonStackingPrice * (1 - CONFIG.WHOLESALE_DISCOUNT_RATE))
+    : nonStackingPrice;
   return {
     original,
     couponPrice,
-    expiryBulkPrice,
+    expiryBulkPrice: nonStackingPrice,
     effective,
     wholesaleEligible,
     expiryBulkEligible,
-    couponDiscount: Math.max(0, original - couponPrice),
-    expiryBulkDiscount: Math.max(0, couponPrice - expiryBulkPrice),
-    wholesaleDiscount: Math.max(0, expiryBulkPrice - effective)
+    couponApplied,
+    couponDiscount: couponApplied ? Math.max(0, original - nonStackingPrice) : 0,
+    expiryBulkDiscount: expiryBulkEligible ? Math.max(0, original - nonStackingPrice) : 0,
+    wholesaleDiscount: Math.max(0, nonStackingPrice - effective)
   };
 }
 
@@ -297,6 +305,23 @@ export function calculateCartPricing(state, { includeFees = true, now = new Date
   };
 }
 
+export function productDisplayPricing(state, product, pricing = null) {
+  const cartPricing = pricing || calculateCartPricing(state);
+  const id = String(product?.id || '');
+  const regular = Number(product?.oldPrice || product?.price || 0);
+  const current = Number(product?.price || 0);
+  const line = id ? cartPricing.linePrices.get(id) : null;
+  const unit = line || cartUnitPricing(product, 1, cartPricing.coupon, cartPricing.eligibility);
+  const effective = roundMoney(Number(unit?.effective ?? current));
+  return {
+    original: Math.max(regular, current),
+    effective,
+    discountPercent: regular > effective
+      ? Math.round(((regular - effective) / Math.max(regular, 0.01)) * 100)
+      : 0
+  };
+}
+
 export class CartService {
   constructor(store, events) {
     this.store = store;
@@ -333,7 +358,66 @@ export class CartService {
     writeStorage(CONFIG.STORAGE.FAVORITES, [...state.favorites]);
   }
 
-  getProduct(id) {
+  reconcileCatalog() {
+  const summary = { removed: 0, adjusted: 0, bundlesRemoved: 0, changed: false };
+  this.store.mutate(state => {
+    const removeCartId = id => {
+      const key = String(id);
+      delete state.cart[key];
+      state.cartOrder = state.cartOrder.filter(item => String(item) !== key);
+    };
+
+    for (const id of [...state.cartOrder]) {
+      const key = String(id);
+      if (key.startsWith('fee_')) continue;
+      const qty = Math.max(0, Math.floor(Number(state.cart[key] || 0)));
+      const product = state.productMap.get(key);
+      if (!product || !isAvailable(product)) {
+        if (qty > 0) summary.removed += qty;
+        removeCartId(key);
+        continue;
+      }
+      const max = Math.max(0, Math.floor(Number(product.stock || 0)));
+      const next = Math.min(qty, max);
+      if (next !== qty) {
+        summary.adjusted += Math.max(0, qty - next);
+        if (next > 0) state.cart[key] = next;
+        else removeCartId(key);
+      }
+    }
+
+    for (const [bundleId, info] of Object.entries(state.basketCustomizations || {})) {
+      const selected = normalizeQuantityMap(info?.selectedItems || info?.originalItems);
+      const entries = Object.entries(selected);
+      const intact = entries.length > 0 && entries.every(([id, qty]) => {
+        const product = state.productMap.get(String(id));
+        return product && isAvailable(product) && Number(state.cart[id] || 0) >= Number(qty || 0);
+      });
+      if (intact) continue;
+      delete state.basketCustomizations[bundleId];
+      delete state.basketDrafts[bundleId];
+      removeCartId(`fee_${bundleId}`);
+      summary.bundlesRemoved += 1;
+    }
+
+    const activeFeeIds = new Set(Object.keys(state.basketCustomizations || {}).map(id => `fee_${id}`));
+    for (const id of [...state.cartOrder]) {
+      const key = String(id);
+      if (key.startsWith('fee_') && !activeFeeIds.has(key)) removeCartId(key);
+    }
+    state.cartOrder = [...new Set(state.cartOrder.map(String))]
+      .filter(id => Number(state.cart[id] || 0) > 0);
+    summary.changed = summary.removed > 0 || summary.adjusted > 0 || summary.bundlesRemoved > 0;
+  }, 'cart:catalog-reconciled');
+
+  if (summary.changed) {
+    this.persist();
+    this.events.emit('cart:changed', { reconciled: true, ...summary });
+  }
+  return summary;
+}
+
+getProduct(id) {
     const state = this.store.getState();
     return state.productMap.get(String(id)) || state.virtualFees?.[String(id)] || null;
   }

@@ -1,9 +1,9 @@
-import { CONFIG } from './config.js?v=20260727-4';
+import { CONFIG } from './config.js?v=20260727-5';
 import {
   cleanCep, cleanCpf, cleanPhone, fmt, formatCep, formatPhone,
   parseDate, readStorage, roundMoney, validEmail, validPhone, writeStorage
-} from './core.js?v=20260727-4';
-import { calculateCartPricing, isAvailable } from './commerce.js?v=20260727-4';
+} from './core.js?v=20260727-5';
+import { calculateCartPricing, isAvailable } from './commerce.js?v=20260727-5';
 
 export function normalizePayment(code) {
   const key = String(code || '').trim().toUpperCase();
@@ -18,14 +18,18 @@ export function normalizePayment(code) {
   return { code: key, name: names[key] || code || '', blingId: '' };
 }
 
-export function validateCheckoutData(form, state) {
+export function validateCheckoutData(form, state, { allowedDeliveryDates = [] } = {}) {
   const pricing = calculateCartPricing(state);
   const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Cuiaba' }));
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const sameDayClosed = form.deliveryDate === todayKey && today.getHours() >= 10;
+  const allowedSet = new Set((allowedDeliveryDates || []).map(String));
+  const deliveryAllowed = Boolean(form.deliveryDate)
+    && !sameDayClosed
+    && (!allowedSet.size || allowedSet.has(String(form.deliveryDate)));
   const errors = [];
   const add = (field, label, valid) => { if (!valid) errors.push({ field, label }); };
-  add('deliveryDate', sameDayClosed ? 'Entrega para hoje somente até 10h' : 'Escolha a entrega', Boolean(form.deliveryDate) && !sameDayClosed);
+  add('deliveryDate', sameDayClosed ? 'Entrega para hoje somente até 10h' : 'Escolha uma data de entrega disponível', deliveryAllowed);
   add('name', 'Nome completo', Boolean(form.name));
   add('cpf', 'CPF com 11 números', cleanCpf(form.cpf).length === 11);
   add('phone', 'WhatsApp com DDD', validPhone(form.phone));
@@ -45,7 +49,7 @@ export function buildOrderPayload(state, form, { timestamp = Date.now(), random 
   const pricing = calculateCartPricing(state);
   const payment = normalizePayment(form.payment || 'DINHEIRO');
   const orderId = `${timestamp}${String(random).padStart(3, '0')}`;
-  const orderNumber = String(timestamp).slice(-6);
+  const orderNumber = orderId;
   const productItems = pricing.items.filter(item => !item.product.isFee && isAvailable(item.product));
   const orderItems = productItems.map(item => {
     const line = pricing.linePrices.get(item.id) || { effective: Number(item.product.price || 0) };

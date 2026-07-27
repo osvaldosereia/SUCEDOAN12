@@ -1,4 +1,4 @@
-import { norm, slug } from './core.js?v=20260727-4';
+import { norm, slug } from './core.js?v=20260727-5';
 
 const ROOT_APP_PATH = '/';
 

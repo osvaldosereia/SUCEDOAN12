@@ -27,11 +27,6 @@
 .detail-tags{display:flex;flex-wrap:wrap;gap:6px}
 .detail-tags span{padding:6px 9px;border-radius:99px;background:var(--surface-soft);font-size:12px}
 
-.banner-zone{margin-bottom:14px}
-.banner-track{display:flex;gap:10px;overflow:auto;scroll-snap-type:x mandatory}
-.banner-card{min-width:min(72vw,260px);aspect-ratio:.78;border-radius:18px;overflow:hidden;scroll-snap-align:start;background:#fff;border:1px solid var(--line)}
-.banner-card img{width:100%;height:100%;object-fit:cover}
-
 .payment-notices{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:18px}
 .payment-notice{padding:14px;display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:16px;background:#fff}
 .payment-notice-mark{width:48px;height:48px;flex:0 0 auto;display:grid;place-items:center;border-radius:14px;background:var(--surface-soft);color:var(--brand);font-weight:900}

@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js?v=20260727-6';
+import { CONFIG } from './config.js?v=20260727-7';
 
 export const hasDOM = typeof window !== 'undefined' && typeof document !== 'undefined';
 
@@ -56,8 +56,6 @@ export function createInitialState() {
     baskets: [],
     kits: [],
     coupons: [],
-    banners: [],
-    bannerConfig: {},
     cart: {},
     cartOrder: [],
     favorites: new Set(),

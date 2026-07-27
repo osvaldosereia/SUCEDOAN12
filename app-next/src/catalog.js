@@ -1,8 +1,8 @@
-import { CONFIG } from './config.js?v=20260727-6';
+import { CONFIG } from './config.js?v=20260727-7';
 import {
   assetUrl, codeVariants, formatName, norm, parseMoney, readStorage,
   slug, words, writeStorage
-} from './core.js?v=20260727-6';
+} from './core.js?v=20260727-7';
 
 const REFRESH_EVENT = 'da:catalog-refreshed';
 let backgroundRefreshPromise = null;
@@ -232,7 +232,6 @@ function assembleCatalog(productsResult, basketsResult, kitsResult, couponsResul
     baskets: basketsResult.data,
     kits: kitsResult.data,
     coupons: couponsResult.data,
-    banners: [],
     catalogVersion: productsResult.version,
     catalogSource: productsResult.source,
     catalogLoadedAt: Date.now()

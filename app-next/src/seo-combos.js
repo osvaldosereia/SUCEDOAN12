@@ -1,6 +1,6 @@
-import { CONFIG } from './config.js?v=20260727-4';
-import { loadCatalog } from './catalog.js?v=20260727-4';
-import { kitIsVisible, kitOriginalPrice, kitStockCapacity, resolveBundleRows } from './commerce.js?v=20260727-4';
+import { CONFIG } from './config.js?v=20260727-5';
+import { loadCatalog } from './catalog.js?v=20260727-5';
+import { kitIsVisible, kitOriginalPrice, kitStockCapacity, resolveBundleRows } from './commerce.js?v=20260727-5';
 import { comboSeoPath, findBasketByReference, findKitByReference } from './bundle-routes.js?v=20260727-4';
 
 const CLEAN_SECTION_PATHS = Object.freeze({ baskets: '/cestas/', kits: '/kits/' });

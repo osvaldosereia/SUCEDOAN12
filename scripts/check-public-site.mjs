@@ -20,7 +20,7 @@ const required = [
   'app-next/styles/checkout-flow.css', 'app-next/styles/bundle-confirmation.css',
   'app-next/src/checkout.js', 'app-next/src/ui.js', 'app-next/src/main.js',
   'app-next/src/home-carousels.js', 'app-next/src/image-performance.js',
-  'app-next/src/fast-offers-v9.js', 'app-next/src/bundle-routes.js',
+  'app-next/src/bundle-routes.js',
   'app-next/src/config.js', 'app-next/src/catalog.js', 'app-next/src/core.js',
   'scripts/catalogos-combos-lib.js', 'scripts/gerar-merchant.js',
   'scripts/gerar-meta-combos.js', 'scripts/gerar-paginas-seo-combos.js',
@@ -31,16 +31,15 @@ required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}
 
 const production = read('index.html');
 for (const marker of [
-  '2026-07-27-basket-actions-v9',
+  '2026-07-27-cart-pricing-routing-v10',
   '/app-next/styles/storefront-base.css?v=20260727-7',
-  '/app-next/styles/storefront-components.css?v=20260727-9',
+  '/app-next/styles/storefront-components.css?v=20260727-10',
   '/app-next/styles/storefront-responsive.css?v=20260727-9',
   '/app-next/styles/checkout-flow.css?v=20260727-8',
   '/app-next/styles/bundle-confirmation.css?v=20260727-5',
   '/app-next/src/image-performance.js?v=20260727-8',
   '/app-next/src/home-carousels.js?v=20260727-8',
-  '/app-next/src/fast-offers-v9.js?v=20260727-10',
-  '/app-next/src/main.js?v=20260727-8',
+  '/app-next/src/main.js?v=20260727-9',
   'da_v15_basket_actions_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'window.__DA_PRODUCTION__ = true', '"@type":"OnlineStore"',
@@ -79,16 +78,11 @@ assert(bundleConfirmation.includes('background:#f28c28!important'), 'Botão de o
 
 const main = read('app-next/src/main.js');
 for (const marker of [
-  'internalAppNavigation', 'da:catalog-refreshed', 'applyCatalog',
+  'internalAppNavigation', 'da:catalog-refreshed', 'applyCatalog', 'load-more-offers',
   'setAttribute(\'inert\'', "router.navigate('#/ofertas')", 'warmOfferImages',
-  "createCheckout } from './checkout.js?v=20260727-8'", 'query.length < 3'
+  "createCheckout } from './checkout.js?v=20260727-9'", 'query.length < 3'
 ]) assert(main.includes(marker), `Main incompleto: ${marker}`);
 
-const fastOffers = read('app-next/src/fast-offers-v9.js');
-for (const marker of [
-  'OFFER_BATCH_SIZE = 16', 'holdInitialOffersRoute', "window.addEventListener('da:catalog-refreshed'",
-  'queueMicrotask', "dataset.offersRenderer = 'progressive-v10'"
-]) assert(fastOffers.includes(marker), `Ofertas progressivas incompletas: ${marker}`);
 
 const checkout = read('app-next/src/checkout.js');
 for (const marker of ['Pedir no WhatsApp', 'Buscar o cadastro é opcional', 'checkout-whatsapp-note', 'openWhatsApp(message)']) {
@@ -97,7 +91,7 @@ for (const marker of ['Pedir no WhatsApp', 'Buscar o cadastro é opcional', 'che
 assert(!checkout.includes('lookupReady ?'), 'Checkout ainda oculta a finalização antes da consulta do CPF');
 
 const ui = read('app-next/src/ui.js');
-for (const marker of ['HOME_BUNDLE_LIMIT = 100', 'editable: true', 'editable: false', 'setDrawerHidden']) {
+for (const marker of ['HOME_BUNDLE_LIMIT = 100', 'OFFER_BATCH_SIZE = 16', 'loadMoreOffers', 'scrollPositions', 'productDisplayPricing', 'editable: true', 'editable: false', 'setDrawerHidden']) {
   assert(ui.includes(marker), `UI incompleta: ${marker}`);
 }
 const catalog = read('app-next/src/catalog.js');
