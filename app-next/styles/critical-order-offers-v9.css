@@ -1,0 +1,35 @@
+/* Correção crítica: botão de pedido sempre visível */
+#checkout-content .checkout-total-review #send-order.send-order,
+#checkout-content #send-order.send-order{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  min-height:56px!important;
+  margin:14px 0 0!important;
+  padding:0 18px!important;
+  border:1px solid #128c4a!important;
+  border-radius:16px!important;
+  background:#19a55a!important;
+  color:#fff!important;
+  font-size:16px!important;
+  font-weight:850!important;
+  line-height:1.2!important;
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+  box-shadow:0 8px 20px rgba(25,165,90,.22)!important;
+}
+#checkout-content #send-order.send-order:disabled{
+  display:flex!important;
+  background:#8ebda0!important;
+  border-color:#8ebda0!important;
+  color:#fff!important;
+  opacity:.72!important;
+  visibility:visible!important;
+  pointer-events:none!important;
+  box-shadow:none!important;
+}
+.fast-offers-more-wrap{display:flex;justify-content:center;padding:24px 0 8px}
+.fast-offers-more{min-width:min(100%,320px)}
+.fast-offers-status{margin:0 0 14px;color:var(--muted);font-size:13px}
