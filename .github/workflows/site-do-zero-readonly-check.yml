@@ -1,0 +1,67 @@
+name: Site do zero - segurança e sintaxe
+
+on:
+  push:
+    branches:
+      - agent/site-do-zero-fase-1
+    paths:
+      - 'site-do-zero/**'
+      - '.github/workflows/site-do-zero-readonly-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Baixar branch
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validar sintaxe do gerador
+        run: node --check site-do-zero/build/gerar-seo-cestas.mjs
+
+      - name: Bloquear métodos de escrita no gerador
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -En "method:[[:space:]]*['\"](POST|PUT|PATCH|DELETE)['\"]" site-do-zero/build/gerar-seo-cestas.mjs; then
+            echo 'ERRO: método de escrita encontrado no gerador.'
+            exit 1
+          fi
+
+      - name: Confirmar método GET explícito
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -En "method:[[:space:]]*['\"]GET['\"]" site-do-zero/build/gerar-seo-cestas.mjs
+
+      - name: Validar JavaScript interno do HTML
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          html = Path('site-do-zero/index.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', html, flags=re.I | re.S)
+          if not scripts:
+              raise SystemExit('Nenhum JavaScript interno encontrado.')
+          Path('/tmp/site-do-zero-inline.js').write_text('\n'.join(scripts), encoding='utf-8')
+          PY
+          node --check /tmp/site-do-zero-inline.js
+
+      - name: Confirmar proteção documentada
+        shell: bash
+        run: |
+          test -f site-do-zero/FIREBASE-SOMENTE-LEITURA.md
+          test -f site-do-zero/build/README.md
+          grep -q 'GET_ONLY' site-do-zero/build/gerar-seo-cestas.mjs
