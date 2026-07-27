@@ -67,6 +67,7 @@ jobs:
             grep -q 'app-next/src/main.js?v=20260727-8' index.html
             grep -q 'app-next/src/image-performance.js?v=20260727-8' index.html
             grep -q 'app-next/src/home-carousels.js?v=20260727-8' index.html
+            grep -q 'app-next/src/fast-offers-v9.js?v=20260727-10' index.html
             grep -q 'storefront-base.css?v=20260727-7' index.html
             grep -q 'storefront-components.css?v=20260727-8' index.html
             grep -q 'storefront-responsive.css?v=20260727-8' index.html
@@ -135,6 +136,7 @@ jobs:
             node --check app-next/src/main.js
             node --check app-next/src/image-performance.js
             node --check app-next/src/home-carousels.js
+            node --check app-next/src/fast-offers-v9.js
           } 2>&1 | tee -a public-site-test-report.txt
 
       - name: Anexar relatório
