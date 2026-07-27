@@ -1,0 +1,226 @@
+name: Corrigir imagens, cache e conflitos das cestas
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-basket-images-cache.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  corrigir:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout da branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Aplicar correções definitivas
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const ROOT = process.cwd();
+          const ASSET = '20260727-4';
+          const BUILD = '2026-07-27-cestas-imagens-cache-v1';
+          const APP_VERSION = '2026-07-27-cestas-imagens-cache-v1';
+
+          const file = relative => path.join(ROOT, relative);
+          const read = relative => fs.readFileSync(file(relative), 'utf8');
+          const write = (relative, content) => {
+            const target = file(relative);
+            fs.mkdirSync(path.dirname(target), { recursive: true });
+            fs.writeFileSync(target, content, 'utf8');
+            console.log('Atualizado:', relative);
+          };
+          const remove = relative => {
+            const target = file(relative);
+            if (fs.existsSync(target)) {
+              fs.rmSync(target, { recursive: true, force: true });
+              console.log('Removido:', relative);
+            }
+          };
+
+          function versionModuleImports(source) {
+            return source
+              .replace(/(from\s+['"])(\.\.?\/[^'"]+?\.js)(?:\?v=[^'"]+)?(['"])/g, `$1$2?v=${ASSET}$3`)
+              .replace(/(import\s+['"])(\.\.?\/[^'"]+?\.js)(?:\?v=[^'"]+)?(['"])/g, `$1$2?v=${ASSET}$3`)
+              .replace(/(import\s*\(\s*['"])(\.\.?\/[^'"]+?\.js)(?:\?v=[^'"]+)?(['"]\s*\))/g, `$1$2?v=${ASSET}$3`);
+          }
+
+          const srcDir = file('app-next/src');
+          for (const name of fs.readdirSync(srcDir).filter(name => name.endsWith('.js') && name !== 'detail-review.js')) {
+            const relative = `app-next/src/${name}`;
+            write(relative, versionModuleImports(read(relative)));
+          }
+
+          let config = read('app-next/src/config.js');
+          config = config.replace(/APP_VERSION:\s*IS_PRODUCTION\s*\?\s*'[^']+'\s*:\s*'[^']+'/, `APP_VERSION: IS_PRODUCTION ? '${APP_VERSION}' : '${APP_VERSION}-preview'`);
+          write('app-next/src/config.js', config);
+
+          let ui = read('app-next/src/ui.js');
+          if (!ui.includes("new CustomEvent('da:route-rendered'")) {
+            ui = ui.replace(
+              "    events.emit('route:rendered', { route });",
+              "    events.emit('route:rendered', { route });\n    window.dispatchEvent(new CustomEvent('da:route-rendered', { detail: { route } }));"
+            );
+          }
+          write('app-next/src/ui.js', ui);
+
+          let seo = read('app-next/src/seo-combos.js');
+          seo = seo.replace(/const SEO_VERSION = '[^']+';/, `const SEO_VERSION = '${BUILD}';`);
+          if (!seo.includes("window.addEventListener('da:route-rendered'")) {
+            seo = seo.replace(
+              "  window.addEventListener('da:catalog-ready', scheduleComboSeo);",
+              "  window.addEventListener('da:catalog-ready', scheduleComboSeo);\n  window.addEventListener('da:route-rendered', scheduleComboSeo);"
+            );
+          }
+          write('app-next/src/seo-combos.js', seo);
+
+          function cleanHtml(html, prefix) {
+            html = html.replace(/<meta name="da-build-version" content="[^"]+">/, `<meta name="da-build-version" content="${BUILD}">`);
+            html = html.replace(/(app-next\/styles\/[^"']+?\.css|styles\/[^"']+?\.css)(?:\?v=[^"']+)?/g, `$1?v=${ASSET}`);
+            html = html.replace(/(app-next\/src\/[^"']+?\.js|src\/[^"']+?\.js)(?:\?v=[^"']+)?/g, `$1?v=${ASSET}`);
+            html = html.replace(/\n\s*<link[^>]+detail-review\.css[^>]*>/g, '');
+            html = html.replace(/\n\s*<script[^>]+detail-review\.js[^>]*><\/script>/g, '');
+            html = html.replace(/\n\s*<link rel="modulepreload"[^>]+detail-review\.js[^>]*>/g, '');
+            html = html.replace(/\n\s*<link rel="stylesheet"[^>]+detail-review\.css[^>]*>/g, '');
+            html = html.replace(/\n\s*<link rel="preload"[^>]+detail-review\.css[^>]*>/g, '');
+            html = html.replace(/\n\s*let detailsPromise;[\s\S]*?\n\s*if \('requestIdleCallback' in window\)/, `\n    let polishPromise;\n    const loadPolish = () => polishPromise || (polishPromise = import('${prefix}src/live-polish.js?v=${ASSET}'));\n    if ('requestIdleCallback' in window)`);
+            html = html.replace(/var migrationKey = '[^']+';/, "var migrationKey = 'da_v9_cache_migrated_20260727';");
+            return html;
+          }
+
+          write('index.html', cleanHtml(read('index.html'), './app-next/'));
+          write('app-next/index.html', cleanHtml(read('app-next/index.html'), './'));
+
+          let generator = read('scripts/gerar-paginas-seo-combos.js');
+          generator = generator.replace(/institutional\.css\?v=[^"']+/, `institutional.css?v=${ASSET}`);
+          generator = generator.replace(/seo-combos\.css\?v=[^"']+/, `seo-combos.css?v=${ASSET}`);
+          const critical = `  <style id="seo-combos-critical">.seo-combo-items{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:10px}.seo-combo-items li{display:grid!important;grid-template-columns:64px minmax(0,1fr) auto!important;gap:14px!important;align-items:center!important;padding:10px!important;border:1px solid #e5e7eb!important;border-radius:14px!important}.seo-combo-items li>img{display:block!important;width:64px!important;height:64px!important;min-width:64px!important;max-width:64px!important;object-fit:contain!important;background:#fff!important;border-radius:10px!important}.seo-combo-items li>div{min-width:0!important}.seo-combo-items li strong{overflow-wrap:anywhere}.seo-combo-items li>span{font-weight:800;white-space:nowrap}@media(max-width:600px){.seo-combo-items li{grid-template-columns:54px minmax(0,1fr) auto!important}.seo-combo-items li>img{width:54px!important;height:54px!important;min-width:54px!important;max-width:54px!important}}</style>`;
+          if (!generator.includes('id="seo-combos-critical"')) {
+            generator = generator.replace(
+              /  <link rel="stylesheet" href="\/site-public\/assets\/seo-combos\.css\?v=[^"]+">/,
+              match => `${match}\n${critical}`
+            );
+          }
+          write('scripts/gerar-paginas-seo-combos.js', generator);
+
+          let inject = read('scripts/injetar-seo-combos.js');
+          inject = inject.replace(/2026-07-26-combos-seo-delivery-v2/g, BUILD);
+          inject = inject.replace(/app-next\/src\/seo-combos\.js\?v=[^'"\s]+/g, `app-next/src/seo-combos.js?v=${ASSET}`);
+          inject = inject.replace(/app-next\/src\/image-performance\.js\?v=[^'"\s]+/g, `app-next/src/image-performance.js?v=${ASSET}`);
+          write('scripts/injetar-seo-combos.js', inject);
+
+          let css = read('site-public/assets/seo-combos.css');
+          const guard = `\n/* Proteção contra CSS antigo ou parcialmente armazenado em cache */\n.seo-combo-items li>img{display:block!important;width:64px!important;height:64px!important;min-width:64px!important;max-width:64px!important;object-fit:contain!important}\n@media(max-width:600px){.seo-combo-items li>img{width:54px!important;height:54px!important;min-width:54px!important;max-width:54px!important}}\n`;
+          css = css.replace(/\n\/\* Proteção contra CSS antigo[\s\S]*$/m, '');
+          write('site-public/assets/seo-combos.css', css.trimEnd() + guard);
+
+          const versionJson = {
+            version: APP_VERSION,
+            updatedAt: new Date().toISOString(),
+            purpose: 'Correção do carregamento das páginas de cestas, imagens, rotas limpas e invalidação segura de cache'
+          };
+          write('site/app-version.json', JSON.stringify(versionJson, null, 2) + '\n');
+
+          let atualizar = read('atualizar.html');
+          atualizar = atualizar.replace(/const BUILD = '[^']+';/, `const BUILD = '${BUILD}';`);
+          write('atualizar.html', atualizar);
+
+          remove('app-next/src/detail-review.js');
+          remove('app-next/styles/detail-review.css');
+
+          let smoke = read('app-next/tests/smoke.test.js');
+          smoke = smoke.replace(/'styles\/detail-review\.css',?\s*/g, '');
+          smoke = smoke.replace(/'src\/detail-review\.js',?\s*/g, '');
+          smoke = smoke.replace(/\nconst detailReview = read\('src\/detail-review\.js'\);[\s\S]*?\n\nconst homeCss/, '\n\nconst homeCss');
+          smoke = smoke.replace(/2026-07-26-combos-seo-delivery-v2/g, BUILD);
+          smoke = smoke.replace(/20260724-7|20260724-8|20260726-9|20260724-4|20260726-2/g, ASSET);
+          smoke = smoke.replace("'seo-delivery-v9'", `'${APP_VERSION}'`);
+          smoke = smoke.replace('da_v8_cache_migrated_20260724', 'da_v9_cache_migrated_20260727');
+          smoke = smoke.replace("\"import { prepareProductOffer } from './offer-engine.js'\"", `\"import { prepareProductOffer } from './offer-engine.js?v=${ASSET}'\"`);
+          if (!smoke.includes('detail-review.js ainda existe')) {
+            smoke = smoke.replace(
+              "if (fs.existsSync(path.join(root, 'src/visual-parity.js'))) throw new Error('Módulo visual redundante ainda existe');",
+              "if (fs.existsSync(path.join(root, 'src/visual-parity.js'))) throw new Error('Módulo visual redundante ainda existe');\nif (fs.existsSync(path.join(root, 'src/detail-review.js'))) throw new Error('detail-review.js ainda existe');\nif (fs.existsSync(path.join(root, 'styles/detail-review.css'))) throw new Error('detail-review.css ainda existe');"
+            );
+          }
+          write('app-next/tests/smoke.test.js', smoke);
+
+          let check = read('scripts/check-public-site.mjs');
+          check = check.replace(/2026-07-26-combos-seo-delivery-v2/g, BUILD);
+          check = check.replace(/20260724-7|20260724-8|20260726-9|20260726-2/g, ASSET);
+          check = check.replace('da_v8_cache_migrated_20260724', 'da_v9_cache_migrated_20260727');
+          check = check.replace("\"import { prepareProductOffer } from './offer-engine.js'\"", `\"import { prepareProductOffer } from './offer-engine.js?v=${ASSET}'\"`);
+          if (!check.includes('detail-review.js ainda existe')) {
+            check = check.replace(
+              "assert(!exists('app-next/src/visual-parity.js'), 'Módulo visual redundante ainda existe');",
+              "assert(!exists('app-next/src/visual-parity.js'), 'Módulo visual redundante ainda existe');\nassert(!exists('app-next/src/detail-review.js'), 'detail-review.js ainda existe');\nassert(!exists('app-next/styles/detail-review.css'), 'detail-review.css ainda existe');"
+            );
+          }
+          if (!check.includes('seo-combos-critical')) {
+            check = check.replace(
+              "for (const marker of ['\"@type\":\"Product\"', '\"@type\":\"Offer\"', '\"@type\":\"BreadcrumbList\"', '<h1>', 'Somente delivery'])",
+              "for (const marker of ['\"@type\":\"Product\"', '\"@type\":\"Offer\"', '\"@type\":\"BreadcrumbList\"', '<h1>', 'Somente delivery', 'seo-combos-critical'])"
+            );
+          }
+          write('scripts/check-public-site.mjs', check);
+
+          function patchWorkflow(relative) {
+            let source = read(relative);
+            source = source.replace(/20260726-9|20260726-2/g, ASSET);
+            if (!source.includes('test ! -e app-next/src/detail-review.js')) {
+              source = source.replace(
+                'test ! -e app-next/src/delivery-only.js',
+                'test ! -e app-next/src/delivery-only.js\n            test ! -e app-next/src/detail-review.js\n            test ! -e app-next/styles/detail-review.css'
+              );
+            }
+            write(relative, source);
+          }
+          patchWorkflow('.github/workflows/app-next-tests.yml');
+          patchWorkflow('.github/workflows/update-public-data.yml');
+
+          console.log('Correções aplicadas com versão', ASSET);
+          NODE
+
+      - name: Regenerar páginas indexáveis
+        run: |
+          node scripts/normalizar-seo-delivery.js
+          node scripts/injetar-seo-combos.js
+          node scripts/gerar-paginas-seo-combos.js
+          node scripts/gerar-sitemap.js
+
+      - name: Validar código e páginas
+        run: |
+          node --check scripts/gerar-paginas-seo-combos.js
+          node --check scripts/injetar-seo-combos.js
+          node --check app-next/src/main.js
+          node --check app-next/src/ui.js
+          node --check app-next/src/seo-combos.js
+          node scripts/check-public-site.mjs
+          cd app-next
+          npm test
+          npm run check
+
+      - name: Publicar correção na branch e remover instalador
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/fix-basket-images-cache.yml
+          git add -A
+          git commit -m 'Corrige imagens, cache e conflitos das cestas'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
