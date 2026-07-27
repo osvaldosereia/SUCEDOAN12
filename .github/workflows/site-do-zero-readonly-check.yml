@@ -1,4 +1,4 @@
-name: Site do zero - segurança e sintaxe
+name: Site do zero - segurança, sintaxe e geração
 
 on:
   push:
@@ -15,7 +15,7 @@ permissions:
 jobs:
   validar:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
 
     steps:
       - name: Baixar branch
@@ -65,3 +65,44 @@ jobs:
           test -f site-do-zero/FIREBASE-SOMENTE-LEITURA.md
           test -f site-do-zero/build/README.md
           grep -q 'GET_ONLY' site-do-zero/build/gerar-seo-cestas.mjs
+
+      - name: Gerar preview SEO e Merchant por leitura
+        id: gerar
+        continue-on-error: true
+        env:
+          OUTPUT_DIR: site-do-zero/generated
+        run: node site-do-zero/build/gerar-seo-cestas.mjs
+
+      - name: Publicar relatório e arquivos de preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-do-zero-seo-preview
+          path: site-do-zero/generated
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Exigir geração válida
+        if: steps.gerar.outcome != 'success'
+        shell: bash
+        run: |
+          echo 'A leitura ou a validação dos dados não gerou páginas válidas.'
+          if test -f site-do-zero/generated/relatorio.json; then
+            cat site-do-zero/generated/relatorio.json
+          fi
+          exit 1
+
+      - name: Validar arquivos gerados
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s site-do-zero/generated/cestas/index.html
+          test -s site-do-zero/generated/merchant.xml
+          test -s site-do-zero/generated/sitemap.xml
+          test -s site-do-zero/generated/robots.txt
+          test -s site-do-zero/generated/relatorio.json
+          grep -q '<g:product_type>Cestas básicas</g:product_type>' site-do-zero/generated/merchant.xml
+          if grep -Eiq '<g:product_type>.*(kit|produto avulso)' site-do-zero/generated/merchant.xml; then
+            echo 'ERRO: feed contém item fora de cestas básicas.'
+            exit 1
+          fi
