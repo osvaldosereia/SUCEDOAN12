@@ -107,14 +107,16 @@ jobs:
           test -s sitemap.xml
           grep -q 'https://donaantonia.com.br/cestas/' sitemap.xml
           ! grep -q 'https://donaantonia.com.br/kits/' sitemap.xml
-          grep -q 'app-next/src/main.js?v=20260727-8' index.html
+          grep -q '2026-07-27-product-cards-spacing-v11' index.html
+          grep -q 'app-next/src/main.js?v=20260727-9' index.html
           grep -q 'app-next/src/image-performance.js?v=20260727-8' index.html
           grep -q 'app-next/src/home-carousels.js?v=20260727-8' index.html
-          grep -q 'storefront-base.css?v=20260727-7' index.html
-          grep -q 'storefront-components.css?v=20260727-9' index.html
-          grep -q 'storefront-responsive.css?v=20260727-9' index.html
+          grep -q 'storefront-base.css?v=20260727-8' index.html
+          grep -q 'storefront-components.css?v=20260727-10' index.html
+          grep -q 'storefront-responsive.css?v=20260727-10' index.html
           grep -q 'checkout-flow.css?v=20260727-8' index.html
           grep -q 'bundle-confirmation.css?v=20260727-5' index.html
+          grep -q 'da_v16_product_cards_20260727' index.html
           ! grep -q 'app-next/src/seo-combos.js' index.html
           ! grep -q 'app-next/src/live-polish.js' index.html
           ! grep -q 'styles/visual-parity.css' index.html

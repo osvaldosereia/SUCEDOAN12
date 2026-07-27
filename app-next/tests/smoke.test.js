@@ -24,16 +24,16 @@ assert(!preview.includes('src/main.js'), '/app-next ainda carrega uma segunda ap
 
 const production = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const marker of [
-  '2026-07-27-cart-pricing-routing-v10',
-  '/app-next/styles/storefront-base.css?v=20260727-7',
+  '2026-07-27-product-cards-spacing-v11',
+  '/app-next/styles/storefront-base.css?v=20260727-8',
   '/app-next/styles/storefront-components.css?v=20260727-10',
-  '/app-next/styles/storefront-responsive.css?v=20260727-9',
+  '/app-next/styles/storefront-responsive.css?v=20260727-10',
   '/app-next/styles/checkout-flow.css?v=20260727-8',
   '/app-next/styles/bundle-confirmation.css?v=20260727-5',
   '/app-next/src/image-performance.js?v=20260727-8',
   '/app-next/src/home-carousels.js?v=20260727-8',
   '/app-next/src/main.js?v=20260727-9',
-  'da_v15_basket_actions_20260727',
+  'da_v16_product_cards_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'id="menu-drawer"', 'inert'
 ]) assert(production.includes(marker), `Produção incompleta: ${marker}`);
@@ -52,7 +52,12 @@ assert(css.includes('@media(min-width:1040px)'), 'Breakpoint desktop ausente');
 assert(css.includes('.product-grid{grid-template-columns:repeat(4'), 'Grid de produtos não usa quatro colunas');
 assert(css.includes('.home-page .bundle-grid{display:flex'), 'Cestas e kits da home não usam carrossel horizontal');
 assert(css.includes('calc(58.8235% - 7px)'), 'Carrossel mobile não mostra aproximadamente 1,7 card');
+assert(css.includes('.product-card{position:relative;min-width:0;min-height:100%;overflow:hidden;display:flex;flex-direction:column'), 'Card de produto não usa estrutura vertical flexível');
+assert(css.includes('.product-card-media{position:relative;width:100%;height:auto;aspect-ratio:1/1'), 'Imagem do card não permanece quadrada');
+assert(css.includes('.product-card-body{position:relative;min-width:0;min-height:168px'), 'Área de conteúdo do card não possui altura e respiro mínimos');
 assert(css.includes('.product-packaging{display:inline-flex'), 'Etiqueta de embalagem não possui estilo consistente');
+assert(css.includes('.product-packaging{position:absolute;z-index:3;left:11px;top:-40px'), 'Etiqueta mobile não está posicionada sobre a imagem');
+assert(css.includes('.product-card-body{min-height:194px;padding:17px 15px 15px;gap:11px}'), 'Card desktop não possui espaço suficiente para todas as informações');
 assert(css.includes('.category-grid{width:100%;min-width:0'), 'Grid de categorias ainda pode extrapolar a tela');
 assert(css.includes('.bundle-detail-hero>img{width:100%;max-width:360px'), 'Foto da cesta não foi ampliada');
 assert(css.includes('.bundle-total{position:static'), 'Resumo da cesta não está no fluxo normal da página');
@@ -78,7 +83,6 @@ for (const marker of [
   "router.navigate('#/ofertas')", 'warmOfferImages',
   "createCheckout } from './checkout.js?v=20260727-9'", 'query.length < 3'
 ]) assert(main.includes(marker), `Entrada principal incompleta: ${marker}`);
-
 
 const checkout = read('src/checkout.js');
 for (const marker of [
@@ -112,4 +116,4 @@ for (const file of jsFiles) {
 await import('../src/ui.js');
 await import('../src/checkout.js');
 await import('../src/offer-engine.js');
-console.log(`Smoke test concluído: resumo da cesta no fluxo, ofertas destacadas e ${jsFiles.length} módulos válidos.`);
+console.log(`Smoke test concluído: cards verticais completos, resumo da cesta no fluxo e ${jsFiles.length} módulos válidos.`);

@@ -31,16 +31,16 @@ required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}
 
 const production = read('index.html');
 for (const marker of [
-  '2026-07-27-cart-pricing-routing-v10',
-  '/app-next/styles/storefront-base.css?v=20260727-7',
+  '2026-07-27-product-cards-spacing-v11',
+  '/app-next/styles/storefront-base.css?v=20260727-8',
   '/app-next/styles/storefront-components.css?v=20260727-10',
-  '/app-next/styles/storefront-responsive.css?v=20260727-9',
+  '/app-next/styles/storefront-responsive.css?v=20260727-10',
   '/app-next/styles/checkout-flow.css?v=20260727-8',
   '/app-next/styles/bundle-confirmation.css?v=20260727-5',
   '/app-next/src/image-performance.js?v=20260727-8',
   '/app-next/src/home-carousels.js?v=20260727-8',
   '/app-next/src/main.js?v=20260727-9',
-  'da_v15_basket_actions_20260727',
+  'da_v16_product_cards_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'window.__DA_PRODUCTION__ = true', '"@type":"OnlineStore"',
   '"@type":"WebSite"', 'Cestas Básicas em Cuiabá e Várzea Grande',
@@ -63,7 +63,12 @@ assert(css.includes('.product-grid{grid-template-columns:repeat(4'), 'Cards de p
 assert(css.includes('.home-page .bundle-grid{display:flex'), 'Cestas e kits da home não usam carrossel');
 assert(css.includes('calc(58.8235% - 7px)'), 'Carrossel mobile não exibe aproximadamente 1,7 card');
 assert(css.includes('.home-page .bundle-card{flex:0 0'), 'Cards de cestas e kits da home não são verticais e roláveis');
+assert(css.includes('.product-card{position:relative;min-width:0;min-height:100%;overflow:hidden;display:flex;flex-direction:column'), 'Card de produto não usa estrutura vertical completa');
+assert(css.includes('.product-card-media{position:relative;width:100%;height:auto;aspect-ratio:1/1'), 'Imagem dos cards não permanece quadrada');
+assert(css.includes('.product-card-body{position:relative;min-width:0;min-height:168px'), 'Conteúdo dos cards não possui altura mínima');
 assert(css.includes('.product-packaging{display:inline-flex'), 'Etiqueta de embalagem sem estilo consistente');
+assert(css.includes('.product-packaging{position:absolute;z-index:3;left:11px;top:-40px'), 'Etiqueta mobile não fica sobre a imagem com respiro inferior');
+assert(css.includes('.product-card-body{min-height:194px;padding:17px 15px 15px;gap:11px}'), 'Card desktop não reserva espaço para nome, embalagem, validade e preço');
 assert(css.includes('.category-grid{width:100%;min-width:0'), 'Categorias ainda podem ultrapassar a largura mobile');
 assert(css.includes('.bundle-detail-hero>img{width:100%;max-width:360px'), 'Foto da cesta não foi ampliada');
 assert(css.includes('.bundle-total{position:static'), 'Resumo da cesta não está no final natural da lista');
@@ -82,7 +87,6 @@ for (const marker of [
   'setAttribute(\'inert\'', "router.navigate('#/ofertas')", 'warmOfferImages',
   "createCheckout } from './checkout.js?v=20260727-9'", 'query.length < 3'
 ]) assert(main.includes(marker), `Main incompleto: ${marker}`);
-
 
 const checkout = read('app-next/src/checkout.js');
 for (const marker of ['Pedir no WhatsApp', 'Buscar o cadastro é opcional', 'checkout-whatsapp-note', 'openWhatsApp(message)']) {
@@ -176,4 +180,4 @@ const sampleCatalog = buildComboCatalog({
 });
 assert(sampleCatalog.active.length === 2, 'Catálogo de teste deveria manter cesta e kit funcionais');
 
-console.log(`Site validado: ${baskets.length} cestas, resumo no fim da lista e chamada de ofertas destacada.`);
+console.log(`Site validado: ${baskets.length} cestas, cards de produtos completos e layout responsivo consistente.`);

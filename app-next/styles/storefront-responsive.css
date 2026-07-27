@@ -24,7 +24,11 @@
   .brand-text{display:block}
   .app{padding:24px 24px 36px}
   .product-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-  .product-card-media{height:180px}
+  .product-card-body{min-height:184px;padding:16px 14px 14px;gap:10px}
+  .product-packaging{min-height:24px;padding:5px 9px;font-size:10.5px}
+  .product-name{min-height:44px;font-size:14.5px;line-height:1.42}
+  .product-expiry{min-height:16px;font-size:11.5px}
+  .product-price strong{font-size:19px}
   .category-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
   .bundle-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .product-detail{grid-template-columns:minmax(0,1fr) minmax(320px,.8fr);padding:24px}
@@ -48,6 +52,12 @@
   .nav-item.active{background:var(--surface-soft)}
   .sidebar-cart-total{display:block;font-size:11px;color:var(--brand)}
   .product-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .product-card-body{min-height:194px;padding:17px 15px 15px;gap:11px}
+  .product-packaging{min-height:25px;padding:5px 10px;font-size:11px}
+  .product-name{min-height:46px;font-size:15.5px;line-height:1.45}
+  .product-expiry{min-height:17px;font-size:12px}
+  .product-card-footer{gap:12px;padding-top:5px}
+  .product-price strong{font-size:20px}
   .category-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
   .bundle-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
   .bundle-card{grid-template-columns:1fr;align-content:start}
@@ -63,6 +73,11 @@
   .basket-seo-intro,.home-offers-banner{align-items:flex-start;flex-direction:column}
   .basket-seo-intro .primary-button,.home-offers-banner-button{width:100%}
   .app{padding-inline:10px}
+  .product-card-body{min-height:166px;padding:12px 11px 13px;gap:10px}
+  .product-packaging{position:absolute;z-index:3;left:11px;top:-40px;max-width:calc(100% - 22px);box-shadow:0 4px 12px rgba(20,50,28,.12)}
+  .product-name{min-height:42px;line-height:1.42}
+  .product-expiry{min-height:15px}
+  .product-card-footer{padding-top:5px;gap:9px}
   .category-grid{gap:8px}
   .category-card{padding:8px;grid-template-columns:48px minmax(0,1fr);gap:7px}
   .category-card img{width:48px;height:48px}
@@ -84,6 +99,11 @@
 }
 
 @media(max-width:360px){
+  .product-card-body{padding-inline:9px}
+  .product-packaging{left:9px;max-width:calc(100% - 18px)}
+  .product-name{font-size:13px}
+  .product-price strong{font-size:17px}
+  .qty-control{grid-template-columns:30px minmax(22px,auto) 30px}
   .category-card{grid-template-columns:42px minmax(0,1fr);padding:7px;gap:6px}
   .category-card img{width:42px;height:42px}
   .category-card strong{font-size:12px}
