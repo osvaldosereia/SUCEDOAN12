@@ -1,5 +1,7 @@
 import { norm, slug } from './core.js?v=20260727-4';
 
+const ROOT_APP_PATH = '/';
+
 function decodeRouteReference(value) {
   try { return decodeURIComponent(String(value || '').trim()); }
   catch { return String(value || '').trim(); }
@@ -65,7 +67,7 @@ export function cleanComboRouteFromLocation(locationLike = globalThis.location) 
 
 export function rootHashTarget(href) {
   const value = String(href || '').trim();
-  return value.startsWith('#/') ? `/${value}` : '';
+  return value.startsWith('#/') ? `${ROOT_APP_PATH}${value}` : '';
 }
 
 export function installCleanComboNavigationGuard(documentLike = globalThis.document, locationLike = globalThis.location) {
